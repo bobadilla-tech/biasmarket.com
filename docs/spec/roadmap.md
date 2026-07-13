@@ -15,7 +15,7 @@ Where this ships, what ships when, and what could go wrong.
 
 ## 12. Roadmap
 
-### MVP (Week 1–2)
+### MVP
 
 - Auth
 - Store creation
