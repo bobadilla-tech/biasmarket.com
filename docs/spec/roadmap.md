@@ -27,15 +27,22 @@ Where this ships, what ships when, and what could go wrong.
 
 ### MVP
 
-- Auth
+- Auth (seller + buyer — see
+  [product.md §4.8](product.md#48-buyer-authentication-public-storefront))
 - Store creation
 - Product CRUD
+- Payment & delivery configuration (per store — see
+  [product.md §4.4](product.md#44-payment-configuration-seller-panel) and
+  [§4.5](product.md#45-delivery-methods-seller-panel))
 - Order flow
 - Payment proof upload
 - Admin review
+- Order expiration handling — auto-cancel unpaid `PENDING_PAYMENT` orders
+  and release the stock hold (see
+  [security-payments.md §9.2](security-payments.md#92-flow))
 - i18n foundation — ES/EN UI strings, `User.locale`/`Store.locale` (see
   [i18n.md](i18n.md))
-
+  
 ### v1
 
 - Themes marketplace
@@ -47,7 +54,10 @@ Where this ships, what ships when, and what could go wrong.
 ### v2
 
 - Real payment integrations
-- Inventory tracking
+- Advanced inventory management — low-stock alerts, restock workflows,
+  multi-warehouse (basic per-variant stock and soft-hold already ship in
+  MVP, see [product.md §4.2](product.md#42-product-management--crud-seller-panel)
+  and [security-payments.md §9.2](security-payments.md#92-flow))
 - Group order system (K-pop specific)
 
 ---
@@ -57,12 +67,17 @@ Where this ships, what ships when, and what could go wrong.
 - Fraud (fake payment screenshots)
 - Charge disputes (manual systems)
 - Scaling multi-tenant themes
+- Stock griefing — buyers creating `PENDING_PAYMENT` orders on
+  limited-stock items without ever paying, holding them from other buyers
 
 Mitigation:
 
 - Admin verification tools
 - Audit logs
 - Rate limiting
+- Soft-hold expiration + rate limiting on order creation (see
+  [security-payments.md §7.4](security-payments.md#74-abuse-prevention) and
+  [§9.2](security-payments.md#92-flow))
 
 ---
 
