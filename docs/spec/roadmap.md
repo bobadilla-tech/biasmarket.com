@@ -31,12 +31,16 @@ Where this ships, what ships when, and what could go wrong.
 - Order flow
 - Payment proof upload
 - Admin review
+- i18n foundation — ES/EN UI strings, `User.locale`/`Store.locale` (see
+  [i18n.md](i18n.md))
 
 ### v1
 
 - Themes marketplace
 - Subdomain support
 - Analytics dashboard
+- Multi-locale storefront content (bilingual same-store, see
+  [i18n.md](i18n.md))
 
 ### v2
 
