@@ -58,6 +58,7 @@ User answers:
 - Business name
 - Store handle (URL slug)
 - Business type (default: artist merch)
+- Store language (ES / EN — see [i18n.md](i18n.md))
 - Product categories (albums, photocards, bundles)
 - Payment methods:
 

@@ -16,6 +16,7 @@ barristore/
     db/                   # Prisma schema + client, migrations
     types/                # Shared DTOs/interfaces (Order, Product, Store, Theme...)
     ui/                   # Shared React components (design system, theme-aware)
+    i18n/                 # ES/EN translation dictionaries, shared by api + web
     utils/                # Shared pure functions (slugify, currency format, date utils)
   docker-compose.yml
   turbo.json / pnpm-workspace.yaml
@@ -308,6 +309,9 @@ apps/web/app/
   replacement for the NestJS API — see Security section, they're still public
   endpoints and duplicating auth/validation logic in two places is how one of
   them ends up weaker.
+- **Locale**: storefront renders in `Store.locale`, dashboard/onboarding render
+  in `User.locale` — no URL locale prefix at MVP. Full strategy in
+  [i18n.md](i18n.md).
 
 ---
 
