@@ -12,6 +12,8 @@ Where this ships, what ships when, and what could go wrong.
 - DB: Postgres in a container on the same VPS (see
   [architecture.md](architecture.md#8-docker--deployment-improvements))
 - Storage: Cloudflare R2
+- Email: Resend (transactional — signup, payment status, see
+  [architecture.md](architecture.md#9-performance--scaling))
 
 ### Post-MVP
 
