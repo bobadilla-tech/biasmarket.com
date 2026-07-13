@@ -4,12 +4,20 @@ Where this ships, what ships when, and what could go wrong.
 
 ## 11. Deployment
 
-### Recommended Stack
+### MVP Stack
 
-- Backend: Fly.io / Railway / VPS
-- DB: Managed Postgres (Neon / Supabase / RDS)
-- Storage: R2
-- CDN: Cloudflare
+- Host: Hetzner VPS — single box, docker compose (`web`, `api`, `db` images)
+- Reverse proxy / TLS: Caddy (auto HTTPS, no subdomain routing yet — see
+  [architecture.md](architecture.md#3-multi-tenant-design-critical))
+- DB: Postgres in a container on the same VPS (see
+  [architecture.md](architecture.md#8-docker--deployment-improvements))
+- Storage: Cloudflare R2
+
+### Post-MVP
+
+- DB: move to managed Postgres (Neon / Supabase / RDS) once a single-box DB
+  becomes the bottleneck
+- Subdomain routing (`:slug.barri.store`) once themes/store count justify it
 
 ---
 
