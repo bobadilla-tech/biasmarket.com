@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id     String  @id @default(cuid())
+  email  String  @unique
+  locale String  @default("es")
+  stores Store[]
+}
+
+model Store {
+  id                  String   @id @default(cuid())
+  name                String
+  slug                String   @unique
+  locale              String   @default("es")
+  ownerId             String
+  themeConfig         Json
+  paymentInstructions String
+  createdAt           DateTime @default(now())
+
+  owner    User      @relation(fields: [ownerId], references: [id])
+  products Product[]
+  orders   Order[]
+
+  @@index([ownerId])
+}
+
+model Product {
+  id      String  @id @default(cuid())
+  storeId String
+  name    String
+  price   Decimal @db.Decimal(10, 2)
+  store   Store   @relation(fields: [storeId], references: [id])
+
+  @@index([storeId])
+}
+
+model Order {
+  id                String            @id @default(cuid())
+  storeId           String
+  customerEmail     String
+  paymentStatus     PaymentStatus     @default(PENDING)
+  fulfillmentStatus FulfillmentStatus @default(UNFULFILLED)
+  totalAmount       Decimal           @db.Decimal(10, 2)
+  createdAt         DateTime          @default(now())
+
+  store Store @relation(fields: [storeId], references: [id])
+
+  @@index([storeId, paymentStatus])
+  @@index([storeId, createdAt])
+}
+
+enum PaymentStatus {
+  PENDING
+  SUBMITTED
+  VERIFIED
+  REJECTED
+}
+
+enum FulfillmentStatus {
+  UNFULFILLED
+  SHIPPED
+  DELIVERED
+}
