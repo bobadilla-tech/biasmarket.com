@@ -10,6 +10,7 @@
     "studio": "prisma studio"
   },
   "devDependencies": {
+    "dotenv": "^17.4.2",
     "prisma": "^6.19.3",
     "typescript": "^5.9.3"
   },

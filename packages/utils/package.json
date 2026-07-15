@@ -1,1 +1,12 @@
-{"name":"@barristore/utils","version":"1.0.0","private":true,"main":"index.ts","types":"index.ts","dependencies":{"bcrypt":"^6.0.0"},"devDependencies":{"@types/bcrypt":"^6.0.0"}}
+{
+    "name": "@barristore/utils",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "scripts": {
+        "build": "tsc"
+    },
+    "dependencies": {},
+    "devDependencies": {
+        "typescript": "^5.5.0"
+    }
+}

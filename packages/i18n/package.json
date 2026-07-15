@@ -1,1 +1,10 @@
-{ "name": "@barristore/i18n", "version": "1.0.0", "private": true,"main": "index.ts", "types": "index.ts" }
+{
+    "name": "@barristore/i18n",
+    "version": "1.0.0",
+    "private": true,
+    "main": "index.js",
+    "types": "index.d.ts",
+    "scripts": {
+        "build": "tsc"
+    }
+}
