@@ -1,1 +1,1 @@
-{ "name": "@barristore/utils","version": "1.0.0","private": true, "main": "index.ts", "types": "index.ts" }
+{"name":"@barristore/utils","version":"1.0.0","private":true,"main":"index.ts","types":"index.ts","dependencies":{"bcrypt":"^6.0.0"},"devDependencies":{"@types/bcrypt":"^6.0.0"}}
