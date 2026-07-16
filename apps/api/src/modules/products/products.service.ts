@@ -47,7 +47,7 @@ export class ProductsService {
   async findAllForStore(storeId: string, userId: string) {
     await this.assertOwnership(storeId, userId);
     return this.prisma.product.findMany({
-      where: { storeId, deletedAt: null }, 
+      where: { storeId, deletedAt: null },
       include: { variants: true },
     });
   }

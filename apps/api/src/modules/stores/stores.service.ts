@@ -21,4 +21,8 @@ export class StoresService {
       data: { name, slug, ownerId, themeConfig: {}, paymentInstructions: '' },
     });
   }
+
+  async findAllForUser(userId: string) {
+    return this.prisma.store.findMany({ where: { ownerId: userId } });
+  }
 }
