@@ -1,0 +1,103 @@
+name: barriomart-dev
+
+networks:
+  stack:
+    driver: bridge
+
+services:
+  db:
+    image: postgres:15
+    networks: [stack]
+    env_file:
+      - .env.example
+      - path: .env.local
+        required: false
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U barri -d barristore"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ../..
+      dockerfile: infra/docker/api.dev.Dockerfile
+    networks: [stack]
+    working_dir: /app
+    env_file:
+      - .env.example
+      - path: .env.local
+        required: false
+    command: >
+      sh -c "
+        pnpm install --frozen-lockfile --filter=\"api...\" &&
+        pnpm --filter @barristore/db exec prisma migrate deploy &&
+        pnpm --filter api run start:dev
+      "
+    volumes:
+      - ../..:/app
+      - api_root_node_modules:/app/node_modules
+      - api_app_node_modules:/app/apps/api/node_modules
+      - api_db_node_modules:/app/packages/db/node_modules
+      - api_i18n_node_modules:/app/packages/i18n/node_modules
+      - api_types_node_modules:/app/packages/types/node_modules
+      - api_utils_node_modules:/app/packages/utils/node_modules
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  web:
+    build:
+      context: ../..
+      dockerfile: infra/docker/web.dev.Dockerfile
+    networks: [stack]
+    working_dir: /app
+    env_file:
+      - .env.example
+      - path: .env.local
+        required: false
+    command: >
+      sh -c "
+        pnpm install --frozen-lockfile --filter=\"web...\" &&
+        pnpm --filter web run dev
+      "
+    volumes:
+      - ../..:/app
+      - web_root_node_modules:/app/node_modules
+      - web_app_node_modules:/app/apps/web/node_modules
+      - web_i18n_node_modules:/app/packages/i18n/node_modules
+      - web_types_node_modules:/app/packages/types/node_modules
+      - web_ui_node_modules:/app/packages/ui/node_modules
+      - web_next_cache:/app/apps/web/.next
+    ports:
+      - "3001:3001"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  db_data:
+  api_root_node_modules:
+  api_app_node_modules:
+  api_db_node_modules:
+  api_i18n_node_modules:
+  api_types_node_modules:
+  api_utils_node_modules:
+  web_root_node_modules:
+  web_app_node_modules:
+  web_i18n_node_modules:
+  web_types_node_modules:
+  web_ui_node_modules:
+  web_next_cache:
