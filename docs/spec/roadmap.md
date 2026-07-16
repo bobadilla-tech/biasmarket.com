@@ -37,27 +37,26 @@ Where this ships, what ships when, and what could go wrong.
 - Order flow
 - Payment proof upload
 - Admin review
-- Order expiration handling — auto-cancel unpaid `PENDING_PAYMENT` orders
-  and release the stock hold (see
+- Order expiration handling — auto-cancel unpaid `PENDING_PAYMENT` orders and
+  release the stock hold (see
   [security-payments.md §9.2](security-payments.md#92-flow))
 - i18n foundation — ES/EN UI strings, `User.locale`/`Store.locale` (see
   [i18n.md](i18n.md))
-  
+
 ### v1
 
 - Themes marketplace
 - Subdomain support
 - Analytics dashboard
-- Multi-locale storefront content (bilingual same-store, see
-  [i18n.md](i18n.md))
+- Multi-locale storefront content (bilingual same-store, see [i18n.md](i18n.md))
 
 ### v2
 
 - Real payment integrations
 - Advanced inventory management — low-stock alerts, restock workflows,
-  multi-warehouse (basic per-variant stock and soft-hold already ship in
-  MVP, see [product.md §4.2](product.md#42-product-management--crud-seller-panel)
-  and [security-payments.md §9.2](security-payments.md#92-flow))
+  multi-warehouse (basic per-variant stock and soft-hold already ship in MVP,
+  see [product.md §4.2](product.md#42-product-management--crud-seller-panel) and
+  [security-payments.md §9.2](security-payments.md#92-flow))
 - Group order system (K-pop specific)
 
 ---
@@ -67,8 +66,8 @@ Where this ships, what ships when, and what could go wrong.
 - Fraud (fake payment screenshots)
 - Charge disputes (manual systems)
 - Scaling multi-tenant themes
-- Stock griefing — buyers creating `PENDING_PAYMENT` orders on
-  limited-stock items without ever paying, holding them from other buyers
+- Stock griefing — buyers creating `PENDING_PAYMENT` orders on limited-stock
+  items without ever paying, holding them from other buyers
 
 Mitigation:
 
