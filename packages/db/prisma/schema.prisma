@@ -43,13 +43,40 @@ model Store {
 }
 
 model Product {
-  id      String  @id @default(cuid())
-  storeId String
-  name    String
-  price   Decimal @db.Decimal(10, 2)
-  store   Store   @relation(fields: [storeId], references: [id])
+  id          String        @id @default(cuid())
+  storeId     String
+  name        String
+  description String        @default("")
+  price       Decimal       @db.Decimal(10, 2)
+  images      String[]      @default([])
+  status      ProductStatus @default(DRAFT)
+  soldOut     Boolean       @default(false)
+  deletedAt   DateTime?
+  createdAt   DateTime      @default(now())
+
+  store    Store            @relation(fields: [storeId], references: [id])
+  variants ProductVariant[]
 
   @@index([storeId])
+  @@index([storeId, status])
+}
+
+model ProductVariant {
+  id        String  @id @default(cuid())
+  productId String
+  name      String
+  stock     Int?
+  priceOverride Decimal? @db.Decimal(10, 2)
+  imageOverride String?
+
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([productId])
+}
+
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
 }
 
 model Order {
