@@ -37,7 +37,7 @@ services:
         pnpm install --frozen-lockfile --filter=\"api...\" &&
         pnpm --filter @barristore/db run db:generate &&
         pnpm --filter @barristore/db exec prisma migrate deploy &&
-        pnpm --filter api run start:dev
+        pnpm exec concurrently -k -n pkg,build,run \"pnpm exec turbo watch build --filter=@barristore/i18n --filter=@barristore/types --filter=@barristore/utils\" \"pnpm --filter api exec nest build --watch\" \"pnpm exec nodemon --watch apps/api/dist --watch packages/i18n/dist --watch packages/types/dist --watch packages/utils/dist -e js,json --delay 300ms --exec 'node apps/api/dist/main.js'\"
       "
     volumes:
       - ../..:/app
@@ -78,7 +78,7 @@ services:
     command: >
       sh -c "
         pnpm install --frozen-lockfile --filter=\"web...\" &&
-        pnpm --filter web run dev
+        pnpm exec concurrently -k -n pkg,dev \"pnpm exec turbo watch build --filter=@barristore/i18n --filter=@barristore/types\" \"pnpm --filter web run dev\"
       "
     volumes:
       - ../..:/app

@@ -375,6 +375,9 @@ jobs:
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=@barristore/utils
 
+      - name: Test
+        run: pnpm turbo run test --filter=@barristore/utils
+
   ci-success:
     name: CI Success
     runs-on: ubuntu-latest

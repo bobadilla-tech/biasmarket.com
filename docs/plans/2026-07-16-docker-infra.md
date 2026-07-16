@@ -147,3 +147,54 @@ Full dev stack brought up from a clean state
   signed-up user after a restart).
 - Both prod Dockerfiles (`api.Dockerfile`, `web.Dockerfile`) build clean via
   `docker compose -f infra/docker/docker-compose.yml build`.
+
+## Follow-up: hot reload for shared workspace packages
+
+The initial dev setup only hot-reloaded each app's own source tree
+(`apps/api/src`, `apps/web`) — editing a shared workspace package
+(`packages/db`, `i18n`, `types`, `utils`) did nothing, confirmed by actually
+editing `packages/utils` in the running stack and observing no reaction, then
+manually rebuilding its `dist/` and still observing no reaction. Root cause,
+found empirically rather than assumed:
+
+- Nothing rebuilt a workspace package's `dist/` on source change — install at
+  container start builds once, no watcher.
+- Even with `dist/` rebuilt, `nest start --watch`'s watcher only covers
+  `apps/api`'s own tsconfig scope, so it never restarts on a dependency's
+  `dist/` changing.
+
+Fix, added to both `docker-compose.dev.yml` service commands via
+`concurrently`:
+
+- `turbo watch build --filter=...` keeps each service's actually-consumed
+  packages' `dist/` fresh on source change (`db`/`i18n`/`types`/`utils` for
+  `api`; `i18n`/`types` for `web` — `ui` needs nothing, Next transpiles its
+  raw `.tsx` directly).
+- `web` needed no further change — verified empirically (temporarily wired a
+  probe import into `apps/web/app/page.tsx`, edited a package's compiled
+  output directly) that Next/Turbopack's own dev server already watches the
+  real, symlink-resolved path of workspace packages and hot-reloads on its
+  own.
+- `api` needed two more processes: `nest build --watch` (compile-only) and
+  `nodemon` watching `apps/api/dist` plus every consumed package's `dist`,
+  restarting `node apps/api/dist/main.js` on any change — `nest start --watch`
+  itself was replaced for this reason.
+
+Two bugs surfaced while wiring this, both fixed:
+
+- YAML's `>` (folded) scalar silently swallows trailing `\` line-continuations
+  in a multi-line shell command — the intended `concurrently "..." "..." "..."`
+  invocation was actually being read by `sh` as several separate, malformed
+  statements (`sh: ...: not found`). Fixed by keeping each `concurrently`
+  invocation on a single line rather than manually wrapping it.
+- `apps/api/nest-cli.json` had `"deleteOutDir": true`, which wipes the entire
+  `dist/` directory before every incremental rebuild — `nodemon` would
+  sometimes catch that directory mid-wipe and crash trying to run a `main.js`
+  that momentarily didn't exist (`MODULE_NOT_FOUND`). Set to `false`.
+
+Verified end-to-end with a temporary `@Public() GET /api/probe` endpoint in
+`apps/api/src/app.controller.ts` calling `slugify` from `@barristore/utils`:
+edited `packages/utils/index.ts` in the running stack, watched `turbo watch`
+rebuild it and `nodemon` restart `api` on its own, and confirmed the response
+changed accordingly — then reverted both the probe endpoint and the test
+edit.

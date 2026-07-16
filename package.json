@@ -20,6 +20,7 @@
   "packageManager": "pnpm@10.11.0",
   "devDependencies": {
     "concurrently": "^10.0.3",
+    "nodemon": "^3.1.10",
     "turbo": "^2.10.5"
   }
 }
