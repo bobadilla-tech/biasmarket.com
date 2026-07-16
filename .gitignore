@@ -7,3 +7,4 @@ dist
 *.log
 postgres_data/
 .pnpm-store/
+.claude/

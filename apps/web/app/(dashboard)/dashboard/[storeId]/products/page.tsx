@@ -25,13 +25,24 @@ export default function ProductsPage() {
     try {
       const data = await apiFetch(`/stores/${storeId}/products`);
       setProducts(data);
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
     }
   };
 
   useEffect(() => {
-    loadProducts();
+    let ignore = false;
+    (async () => {
+      try {
+        const data = await apiFetch(`/stores/${storeId}/products`);
+        if (!ignore) setProducts(data);
+      } catch (e) {
+        if (!ignore) setError(e instanceof Error ? e.message : String(e));
+      }
+    })();
+    return () => {
+      ignore = true;
+    };
   }, [storeId]);
 
   const handleCreate = async () => {
@@ -46,8 +57,8 @@ export default function ProductsPage() {
       setDescription("");
       setPrice("");
       await loadProducts();
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }

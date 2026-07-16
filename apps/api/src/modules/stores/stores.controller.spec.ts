@@ -2,6 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { StoresController } from './stores.controller';
 import { StoresService } from './stores.service';
 
+jest.mock('@thallesp/nestjs-better-auth', () => ({
+  AuthGuard: class AuthGuard {},
+  Session: () => () => undefined,
+}));
+
 describe('StoresController', () => {
   let controller: StoresController;
 
