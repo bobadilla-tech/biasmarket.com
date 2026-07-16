@@ -163,18 +163,16 @@ found empirically rather than assumed:
   `apps/api`'s own tsconfig scope, so it never restarts on a dependency's
   `dist/` changing.
 
-Fix, added to both `docker-compose.dev.yml` service commands via
-`concurrently`:
+Fix, added to both `docker-compose.dev.yml` service commands via `concurrently`:
 
 - `turbo watch build --filter=...` keeps each service's actually-consumed
   packages' `dist/` fresh on source change (`db`/`i18n`/`types`/`utils` for
-  `api`; `i18n`/`types` for `web` — `ui` needs nothing, Next transpiles its
-  raw `.tsx` directly).
+  `api`; `i18n`/`types` for `web` — `ui` needs nothing, Next transpiles its raw
+  `.tsx` directly).
 - `web` needed no further change — verified empirically (temporarily wired a
-  probe import into `apps/web/app/page.tsx`, edited a package's compiled
-  output directly) that Next/Turbopack's own dev server already watches the
-  real, symlink-resolved path of workspace packages and hot-reloads on its
-  own.
+  probe import into `apps/web/app/page.tsx`, edited a package's compiled output
+  directly) that Next/Turbopack's own dev server already watches the real,
+  symlink-resolved path of workspace packages and hot-reloads on its own.
 - `api` needed two more processes: `nest build --watch` (compile-only) and
   `nodemon` watching `apps/api/dist` plus every consumed package's `dist`,
   restarting `node apps/api/dist/main.js` on any change — `nest start --watch`
@@ -188,13 +186,12 @@ Two bugs surfaced while wiring this, both fixed:
   statements (`sh: ...: not found`). Fixed by keeping each `concurrently`
   invocation on a single line rather than manually wrapping it.
 - `apps/api/nest-cli.json` had `"deleteOutDir": true`, which wipes the entire
-  `dist/` directory before every incremental rebuild — `nodemon` would
-  sometimes catch that directory mid-wipe and crash trying to run a `main.js`
-  that momentarily didn't exist (`MODULE_NOT_FOUND`). Set to `false`.
+  `dist/` directory before every incremental rebuild — `nodemon` would sometimes
+  catch that directory mid-wipe and crash trying to run a `main.js` that
+  momentarily didn't exist (`MODULE_NOT_FOUND`). Set to `false`.
 
 Verified end-to-end with a temporary `@Public() GET /api/probe` endpoint in
 `apps/api/src/app.controller.ts` calling `slugify` from `@barristore/utils`:
 edited `packages/utils/index.ts` in the running stack, watched `turbo watch`
 rebuild it and `nodemon` restart `api` on its own, and confirmed the response
-changed accordingly — then reverted both the probe endpoint and the test
-edit.
+changed accordingly — then reverted both the probe endpoint and the test edit.
