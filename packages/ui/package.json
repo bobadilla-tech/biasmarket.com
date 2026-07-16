@@ -1,1 +1,17 @@
-{ "name": "@barristore/ui","version": "1.0.0","private": true, "main": "index.tsx", "types": "index.tsx" }
+{
+  "name": "@barristore/ui",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.tsx",
+  "types": "index.tsx",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^19"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "@types/react": "^19"
+  }
+}

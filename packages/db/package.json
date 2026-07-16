@@ -7,7 +7,9 @@
   "scripts": {
     "db:generate": "prisma generate",
     "migrate": "prisma migrate dev",
-    "studio": "prisma studio"
+    "studio": "prisma studio",
+    "build": "prisma generate",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "dotenv": "^17.4.2",
