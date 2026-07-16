@@ -4,6 +4,9 @@
     "build": { "dependsOn": ["^build"], "outputs": ["dist/**", ".next/**"] },
     "dev": { "cache": false, "persistent": true },
     "lint": {},
+    "typecheck": { "dependsOn": ["^build"] },
+    "test": { "dependsOn": ["^build"] },
+    "@barristore/db#typecheck": { "dependsOn": ["^build", "build"] },
     "db:generate": { "cache": false }
   }
 }

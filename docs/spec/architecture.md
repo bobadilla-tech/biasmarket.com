@@ -436,10 +436,10 @@ barristore.example.com {
   that doesn't need to block the HTTP response. BullMQ (Redis-backed) is the
   natural fit given NestJS + Redis already in the stack.
 - **Email delivery**: Resend, via a thin `EmailService` in a `notifications`
-  module — call sites send `{template, locale, data}`, never raw HTML, so
-  every email stays routed through the localized templates in
-  [i18n.md](i18n.md). MVP fires sends inline (signup confirmation, etc.); move
-  to the queue above once send volume or retry-on-failure matters.
+  module — call sites send `{template, locale, data}`, never raw HTML, so every
+  email stays routed through the localized templates in [i18n.md](i18n.md). MVP
+  fires sends inline (signup confirmation, etc.); move to the queue above once
+  send volume or retry-on-failure matters.
 - **Scaling path**: single Hetzner VPS (api + web + db + Caddy via compose) →
   split DB to managed Postgres (Neon/Supabase/RDS) first, since it's the hardest
   thing to scale horizontally yourself → then split `api` into multiple

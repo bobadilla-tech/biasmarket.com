@@ -6,3 +6,5 @@ dist
 .turbo
 *.log
 postgres_data/
+.pnpm-store/
+.claude/

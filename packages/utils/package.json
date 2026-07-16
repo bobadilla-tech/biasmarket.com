@@ -3,10 +3,13 @@
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "scripts": {
-        "build": "tsc"
+        "build": "tsc",
+        "typecheck": "tsc --noEmit",
+        "test": "vitest run"
     },
     "dependencies": {},
     "devDependencies": {
-        "typescript": "^5.5.0"
+        "typescript": "^5.5.0",
+        "vitest": "^3.2.4"
     }
 }

@@ -5,11 +5,14 @@
   "main": "index.ts",
   "types": "index.ts",
   "scripts": {
-    "generate": "prisma generate",
+    "db:generate": "prisma generate",
     "migrate": "prisma migrate dev",
-    "studio": "prisma studio"
+    "studio": "prisma studio",
+    "build": "prisma generate",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@types/node": "^24.0.0",
     "dotenv": "^17.4.2",
     "prisma": "^6.19.3",
     "typescript": "^5.9.3"
