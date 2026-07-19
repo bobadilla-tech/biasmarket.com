@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "A store builder for fandom sellers who already sell but struggle with messy, manual workflows, organize orders, manage reservations, and keep the human touch.",
   "author": "Bobadilla Technologie",
+  "packageManager": "pnpm@10.11.0",
   "scripts": {
     "test": "turbo run test",
     "dev": "turbo run dev --parallel",
