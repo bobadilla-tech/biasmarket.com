@@ -6,13 +6,7 @@ built-in proof-of-payment review, no Stripe required.
 
 ## Stack
 
-Next.js · NestJS · Prisma · PostgreSQL · Docker · Cloudflare R2 · JWT · Resend
-
-## Status
-
-MVP in active development — core backend (auth, stores, products) and
-frontend onboarding flow are implemented; see [`docs/spec/roadmap.md`](docs/spec/roadmap.md)
-for what's next.
+Next.js · NestJS · Prisma · PostgreSQL · Docker · Cloudflare R2 · JWT · Resen
 
 ## Docs
 

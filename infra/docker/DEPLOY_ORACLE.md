@@ -13,7 +13,7 @@ deliberately deferred.
 ## 1. Provision the VM
 
 - Shape: an Ampere A1 (arm64) instance is the free-tier default and is fine —
-  every image in this stack (`node:24-slim`, `postgres:15`, `caddy:2-alpine`)
+  every image in this stack (`node:26-slim`, `postgres:15`, `caddy:2-alpine`)
   is multi-arch, no x86-only dependency anywhere in the build.
 - OS: Ubuntu 24.04 (matches what's assumed below; aarch64).
 - **Attach a reserved/static public IP**, not the default ephemeral one. A
@@ -84,7 +84,7 @@ Edit `.env` and replace every value that isn't dev-safe:
 | Var | Set to |
 |---|---|
 | `POSTGRES_PASSWORD` | a strong random password |
-| `DATABASE_URL` | same password as above, e.g. `postgresql://barri:<new-password>@db:5432/biasmarket` |
+| `DATABASE_URL` | same password as above, e.g. `postgresql://biasmarket:<new-password>@db:5432/biasmarket` |
 | `BETTER_AUTH_SECRET` | a fresh secret — **never reuse the committed dev value**. Generate one: `openssl rand -hex 32` |
 | `BETTER_AUTH_URL` | `https://yourdomain.com` |
 | `WEB_URL` | `https://yourdomain.com` |
@@ -124,7 +124,7 @@ list/iptables (steps 1–2).
   restarts anything that changed, migrations reapply automatically.
 - **Logs:** `docker compose -f infra/docker/docker-compose.yml logs -f <service>`
 - **DB backup:** the Postgres data lives in the `db_data` named volume.
-  Simplest snapshot: `docker compose -f infra/docker/docker-compose.yml exec db pg_dump -U barri biasmarket > backup.sql`
+  Simplest snapshot: `docker compose -f infra/docker/docker-compose.yml exec db pg_dump -U biasmarket biasmarket > backup.sql`
 - **Stack won't come up after a reboot:** confirm `docker` and the containers
   restarted (`restart: unless-stopped` is set on every service, so a VM
   reboot should bring everything back — verify with `docker compose ps`).

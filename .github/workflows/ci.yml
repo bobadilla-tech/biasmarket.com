@@ -22,7 +22,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: "22"
+  NODE_VERSION: "26"
   PNPM_VERSION: "10.11.0"
   # Dummy connection string — `prisma generate` validates the schema's env()
   # reference but never opens a connection, so a syntactically valid URL is enough.

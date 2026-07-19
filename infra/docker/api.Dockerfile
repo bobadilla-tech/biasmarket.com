@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
-FROM node:24-slim AS deps
-RUN corepack enable pnpm && corepack prepare pnpm@10.11.0 --activate
+FROM node:26-slim AS deps
+RUN npm install -g corepack@latest && corepack enable pnpm && corepack prepare pnpm@10.11.0 --activate
 WORKDIR /repo
 
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
@@ -19,12 +19,17 @@ FROM deps AS build
 WORKDIR /repo
 COPY . .
 
+# prisma generate only validates the schema's env() reference at build time,
+# it never opens a connection — a syntactically valid dummy URL is enough
+# (same workaround CI uses, see .github/workflows/ci.yml). The real
+# DATABASE_URL is injected at container runtime via env_file.
+ENV DATABASE_URL="postgresql://build:build@localhost:5432/build?schema=public"
 RUN pnpm --filter @biasmarket/db run db:generate
 RUN pnpm exec turbo run build --filter=api
 RUN pnpm install --prod --frozen-lockfile --filter=api...
 
-FROM node:24-slim AS runtime
-RUN corepack enable pnpm && corepack prepare pnpm@10.11.0 --activate
+FROM node:26-slim AS runtime
+RUN npm install -g corepack@latest && corepack enable pnpm && corepack prepare pnpm@10.11.0 --activate
 WORKDIR /repo
 ENV NODE_ENV=production
 

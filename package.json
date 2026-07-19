@@ -1,8 +1,8 @@
 {
-  "name": "biasmarket2",
+  "name": "biasmarket",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "A store builder for fandom sellers who already sell but struggle with messy, manual workflows, organize orders, manage reservations, and keep the human touch.",
+  "author": "Bobadilla Technologie",
   "scripts": {
     "test": "turbo run test",
     "dev": "turbo run dev --parallel",
@@ -14,10 +14,12 @@
     "docker:dev:down": "docker compose -f infra/docker/docker-compose.dev.yml down",
     "docker:prod": "docker compose -f infra/docker/docker-compose.yml up -d --build"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "packageManager": "pnpm@10.11.0",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "10.11.0"
+    }
+  },
   "devDependencies": {
     "concurrently": "^10.0.3",
     "nodemon": "^3.1.10",

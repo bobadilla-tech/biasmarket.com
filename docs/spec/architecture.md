@@ -383,7 +383,7 @@ services:
     image: postgres:15
     restart: always
     environment:
-      POSTGRES_USER: barri
+      POSTGRES_USER: biasmarket
       POSTGRES_PASSWORD: ${DB_PASSWORD} # never hardcode in compose file
       POSTGRES_DB: biasmarket
     expose:
@@ -416,7 +416,7 @@ biasmarket.example.com {
 - Caddy does TLS termination + auto-renewal (no certbot needed) and routes
   `/api/*` → `api`, everything else → `web`.
 - `DB_PASSWORD` from `.env`, never committed, never hardcoded in the compose
-  file — the original spec's `barri`/`barri` is a placeholder to replace before
+  file — the original spec's `biasmarket`/`biasmarket` is a placeholder to replace before
   anything touches real data.
 - R2 stays external (S3-compatible API, no container) — object storage isn't
   something you self-host on the VPS.

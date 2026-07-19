@@ -12,7 +12,7 @@ Root cause was two-fold:
 2. After fixing that, a second bug surfaced: Homebrew's `postgresql@17` service
    was squatting host port 5432, so Docker's `db` container (started via the old
    root `docker-compose.dev.yml`) never got its port published — the app was
-   silently connecting to the native Postgres instead, which had no `barri`
+   silently connecting to the native Postgres instead, which had no `biasmarket`
    role/database, producing `P1010: User was denied access`.
 
 Both bugs traced back to the same root cause: **local dev setup was manual and
