@@ -1,8 +1,12 @@
 {
   "name": "@biasmarket/utils",
   "type": "module",
-  "main": "./dist/strings/index.js",
-  "types": "./dist/strings/index.d.ts",
+  "exports": {
+    "./*": {
+      "types": "./dist/*/index.d.ts",
+      "default": "./dist/*/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
