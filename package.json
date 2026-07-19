@@ -4,6 +4,7 @@
   "description": "A store builder for fandom sellers who already sell but struggle with messy, manual workflows, organize orders, manage reservations, and keep the human touch.",
   "author": "Bobadilla Technologie",
   "packageManager": "pnpm@10.11.0",
+  "type": "module",
   "scripts": {
     "test": "turbo run test",
     "dev": "turbo run dev --parallel",
@@ -11,13 +12,16 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "db:generate": "turbo run db:generate",
+    "env:init": "node scripts/init-env.ts",
     "docker:dev": "docker compose -f infra/docker/docker-compose.dev.yml up --build",
     "docker:dev:down": "docker compose -f infra/docker/docker-compose.dev.yml down",
     "docker:prod": "docker compose -f infra/docker/docker-compose.yml up -d --build"
   },
   "devDependencies": {
+    "@types/node": "^26.0.0",
     "concurrently": "^10.0.3",
     "nodemon": "^3.1.10",
-    "turbo": "^2.10.5"
+    "turbo": "^2.10.5",
+    "typescript": "^7.0.2"
   }
 }
