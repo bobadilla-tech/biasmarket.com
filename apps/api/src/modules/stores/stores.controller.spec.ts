@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { StoresController } from './stores.controller';
-import { StoresService } from './stores.service';
+import { StoresController } from './stores.controller.js';
+import { StoresService } from './stores.service.js';
 
 jest.mock('@thallesp/nestjs-better-auth', () => ({
   AuthGuard: class AuthGuard {},

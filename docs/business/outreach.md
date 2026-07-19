@@ -1,4 +1,4 @@
-# BarriStore — 50 Leads in 7 Days (Outreach Playbook)
+# Bias Market — 50 Leads in 7 Days (Outreach Playbook)
 
 ## 🎯 Objective
 

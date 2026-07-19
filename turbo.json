@@ -6,7 +6,7 @@
     "lint": {},
     "typecheck": { "dependsOn": ["^build"] },
     "test": { "dependsOn": ["^build"] },
-    "@barristore/db#typecheck": { "dependsOn": ["^build", "build"] },
+    "@biasmarket/db#typecheck": { "dependsOn": ["^build", "build"] },
     "db:generate": { "cache": false }
   }
 }

@@ -10,9 +10,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@barristore/i18n": "workspace:*",
-    "@barristore/types": "workspace:*",
-    "@barristore/ui": "workspace:*",
+    "@biasmarket/i18n": "workspace:*",
+    "@biasmarket/types": "workspace:*",
+    "@biasmarket/ui": "workspace:*",
     "better-auth": "^1.6.23",
     "next": "16.2.10",
     "react": "19.2.4",

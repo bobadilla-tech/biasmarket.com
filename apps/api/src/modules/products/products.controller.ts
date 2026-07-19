@@ -10,10 +10,10 @@ import {
 } from '@nestjs/common';
 import { AuthGuard, Session } from '@thallesp/nestjs-better-auth';
 import type { UserSession } from '@thallesp/nestjs-better-auth';
-import { ProductsService } from './products.service';
-import { CreateProductDto } from './dto/create-product.dto';
-import { UpdateProductDto } from './dto/update-product.dto';
-import { CreateVariantDto } from './dto/create-variant.dto';
+import { ProductsService } from './products.service.js';
+import { CreateProductDto } from './dto/create-product.dto.js';
+import { UpdateProductDto } from './dto/update-product.dto.js';
+import { CreateVariantDto } from './dto/create-variant.dto.js';
 
 @Controller('stores/:storeId/products')
 @UseGuards(AuthGuard)

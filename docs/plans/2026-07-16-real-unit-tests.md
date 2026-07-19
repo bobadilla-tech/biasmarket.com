@@ -93,7 +93,7 @@ logic worth testing.
 
 ## Verification
 
-1. `pnpm --filter api test` and `pnpm --filter @barristore/utils test` — pass
+1. `pnpm --filter api test` and `pnpm --filter @biasmarket/utils test` — pass
    individually.
 2. **Regression check**: temporarily removed the `status: 'DRAFT'` line from
    `products.service.ts`'s `softDelete()` — the corresponding new test failed

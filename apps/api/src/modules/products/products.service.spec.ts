@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
-import { ProductsService } from './products.service';
-import { PrismaService } from '../../prisma/prisma.service';
+import { ProductsService } from './products.service.js';
+import { PrismaService } from '../../prisma/prisma.service.js';
 
 describe('ProductsService', () => {
   let service: ProductsService;

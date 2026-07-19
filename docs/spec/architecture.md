@@ -1,6 +1,6 @@
 # Architecture
 
-Production-grade architecture for BarriStore: monorepo, multi-tenant backend,
+Production-grade architecture for Bias Market: monorepo, multi-tenant backend,
 database, theming, Next.js frontend, security, deployment, scaling.
 
 ---
@@ -8,7 +8,7 @@ database, theming, Next.js frontend, security, deployment, scaling.
 ## 1. Monorepo Design
 
 ```
-barristore/
+biasmarket/
   apps/
     api/                  # NestJS backend
     web/                  # Next.js frontend (storefront + dashboard + onboarding)
@@ -363,7 +363,7 @@ services:
 
   api:
     build: ./apps/api
-    image: barristore/api
+    image: biasmarket/api
     env_file: .env
     expose:
       - "3000" # not published to host — only Caddy reaches it
@@ -372,7 +372,7 @@ services:
 
   web:
     build: ./apps/web
-    image: barristore/web
+    image: biasmarket/web
     env_file: .env
     expose:
       - "3001"
@@ -385,7 +385,7 @@ services:
     environment:
       POSTGRES_USER: barri
       POSTGRES_PASSWORD: ${DB_PASSWORD} # never hardcode in compose file
-      POSTGRES_DB: barristore
+      POSTGRES_DB: biasmarket
     expose:
       - "5432" # not published — only api reaches it
     volumes:
@@ -400,7 +400,7 @@ volumes:
 `infra/caddy/Caddyfile`:
 
 ```
-barristore.example.com {
+biasmarket.example.com {
   handle /api/* {
     reverse_proxy api:3000
   }

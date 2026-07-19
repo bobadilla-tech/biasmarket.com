@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
-import { slugify } from '@barristore/utils';
+import { PrismaService } from '../../prisma/prisma.service.js';
+import { slugify } from '@biasmarket/utils';
 
 const RESERVED_SLUGS = ['www', 'api', 'admin', 'app'];
 

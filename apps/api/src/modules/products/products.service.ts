@@ -3,10 +3,10 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
-import { CreateProductDto } from './dto/create-product.dto';
-import { UpdateProductDto } from './dto/update-product.dto';
-import { CreateVariantDto } from './dto/create-variant.dto';
+import { PrismaService } from '../../prisma/prisma.service.js';
+import { CreateProductDto } from './dto/create-product.dto.js';
+import { UpdateProductDto } from './dto/update-product.dto.js';
+import { CreateVariantDto } from './dto/create-variant.dto.js';
 
 @Injectable()
 export class ProductsService {

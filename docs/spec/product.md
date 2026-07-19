@@ -1,10 +1,10 @@
 # Product
 
-What BarriStore is, who it's for, and what the MVP ships.
+What Bias Market is, who it's for, and what the MVP ships.
 
 ## 1. Product Overview
 
-**BarriStore** is a store **manager** (not a single store) that lets an operator
+**Bias Market** is a store **manager** (not a single store) that lets an operator
 create and run one or more storefronts from a single account, starting with
 **K-pop / artist merchandise stores** (albums, photocards, fan-made goods) as
 the first vertical.
@@ -54,7 +54,7 @@ deploy.
 
 ### Opportunity
 
-BarriStore replaces:
+Bias Market replaces:
 
 - Google Forms + Sheets
 - Manual DM tracking
@@ -138,7 +138,7 @@ to exactly one of them, so it's always clear who configures what.
 ### 4.1 Platform Layer (superadmin)
 
 - Manages all stores and their owners (accounts, plans, suspension)
-- Not customer-facing; used only by the BarriStore operator
+- Not customer-facing; used only by the Bias Market operator
 - Out of scope for MVP beyond basic account/store listing (see
   [architecture.md](architecture.md#3-multi-tenant-design-critical))
 
@@ -226,7 +226,7 @@ without it, and it's listed as an MVP deliverable in [roadmap.md](roadmap.md).
 
 ### 5.4 Payment Configuration (Seller Panel)
 
-This is the piece that makes BarriStore a _manager_ rather than a single
+This is the piece that makes Bias Market a _manager_ rather than a single
 hardcoded store.
 
 Per store, the seller can:
@@ -360,7 +360,7 @@ Still unresolved:
 
 ## 13. Key Differentiator
 
-BarriStore is not Shopify-lite.
+Bias Market is not Shopify-lite.
 
 It is: → **Fan-commerce infrastructure** → Built for chaotic, manual workflows →
 Then gradually automates them

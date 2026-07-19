@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
-import { StoresService } from './stores.service';
-import { PrismaService } from '../../prisma/prisma.service';
+import { StoresService } from './stores.service.js';
+import { PrismaService } from '../../prisma/prisma.service.js';
 
 describe('StoresService', () => {
   let service: StoresService;

@@ -1,4 +1,4 @@
-# BarriStore — Ideal Customer Profile (First 10 Users)
+# Bias Market — Ideal Customer Profile (First 10 Users)
 
 ## 🎯 Core ICP
 

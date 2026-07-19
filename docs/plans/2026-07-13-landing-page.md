@@ -1,4 +1,4 @@
-# BarriStore Landing Page (K-pop GOM Focus)
+# Bias Market Landing Page (K-pop GOM Focus)
 
 ## 🧠 HERO SECTION
 
@@ -41,7 +41,7 @@ It doesn’t scale.
 
 **Content:**
 
-With BarriStore, you get:
+With Bias Market, you get:
 
 - A clean storefront for your group orders
 - Customers submit orders directly

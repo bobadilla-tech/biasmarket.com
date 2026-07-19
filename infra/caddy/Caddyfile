@@ -1,4 +1,7 @@
-barristore.example.com {
+# Replace with the real domain before `docker compose up` — Caddy issues a
+# Let's Encrypt cert for whatever's here, and this placeholder can't get one.
+# See infra/docker/DEPLOY_ORACLE.md.
+CHANGE_ME_TO_YOUR_DOMAIN.example {
   handle /api/* {
     reverse_proxy api:3000
   }

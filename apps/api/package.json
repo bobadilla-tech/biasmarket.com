@@ -5,6 +5,7 @@
   "author": "",
   "private": true,
   "license": "UNLICENSED",
+  "type": "module",
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
@@ -15,22 +16,23 @@
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "typecheck": "tsc --noEmit",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:cov": "jest --coverage",
-    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test": "node --experimental-vm-modules node_modules/.bin/jest",
+    "test:watch": "node --experimental-vm-modules node_modules/.bin/jest --watch",
+    "test:cov": "node --experimental-vm-modules node_modules/.bin/jest --coverage",
+    "test:debug": "node --experimental-vm-modules --inspect-brk node_modules/.bin/jest --runInBand",
+    "test:e2e": "node --experimental-vm-modules node_modules/.bin/jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
-    "@barristore/db": "workspace:*",
-    "@barristore/i18n": "workspace:*",
-    "@barristore/types": "workspace:*",
-    "@barristore/utils": "workspace:*",
+    "@biasmarket/db": "workspace:*",
+    "@biasmarket/i18n": "workspace:*",
+    "@biasmarket/types": "workspace:*",
+    "@biasmarket/utils": "workspace:*",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/throttler": "^6.5.0",
+    "@prisma/adapter-pg": "^7.8.0",
     "@thallesp/nestjs-better-auth": "^2.7.0",
     "better-auth": "^1.6.23",
     "class-transformer": "^0.5.1",
@@ -59,12 +61,11 @@
     "supertest": "^7.0.0",
     "ts-jest": "^29.2.5",
     "ts-loader": "^9.5.2",
-    "ts-node": "^10.9.2",
-    "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.7.3",
+    "typescript": "^5.9.3",
     "typescript-eslint": "^8.20.0"
   },
   "jest": {
+    "extensionsToTreatAsEsm": [".ts"],
     "moduleFileExtensions": [
       "js",
       "json",
@@ -73,10 +74,13 @@
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
+      "^.+\\.(t|j)s$": ["ts-jest", { "useESM": true }]
+    },
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1"
     },
     "transformIgnorePatterns": [
-      "/node_modules/(?!@barristore/)"
+      "/node_modules/(?!@biasmarket/)"
     ],
     "collectCoverageFrom": [
       "**/*.(t|j)s"

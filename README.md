@@ -1,4 +1,4 @@
-# BarriStore
+# Bias Market
 
 Niche-first store builder for creator-led commerce — starting with K-pop /
 artist merch stores. Manual payment-first (bank transfer, Wise, PayPal) with
@@ -10,7 +10,9 @@ Next.js · NestJS · Prisma · PostgreSQL · Docker · Cloudflare R2 · JWT · R
 
 ## Status
 
-Pre-code — spec stage.
+MVP in active development — core backend (auth, stores, products) and
+frontend onboarding flow are implemented; see [`docs/spec/roadmap.md`](docs/spec/roadmap.md)
+for what's next.
 
 ## Docs
 
