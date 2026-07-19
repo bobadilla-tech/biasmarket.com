@@ -85,24 +85,21 @@ retries.
 
 ```bash
 git clone <your-repo-url> biasmarket
-cd biasmarket/infra/docker
-cp .env.example .env
+cd biasmarket
+pnpm install
+pnpm env:init --prod
 ```
 
-Edit `.env` and replace every value that isn't dev-safe:
+`pnpm env:init --prod` writes `infra/docker/.env` from `.env.example` with a
+fresh `POSTGRES_PASSWORD`, matching `DATABASE_URL`, and a fresh
+`BETTER_AUTH_SECRET` (never reuse the committed dev value), and points
+`BETTER_AUTH_URL`/`WEB_URL`/`NEXT_PUBLIC_API_URL` at
+`api.biasmarket.com`/`biasmarket.com`. Refuses to overwrite an existing `.env`
+— pass `--force` to regenerate. See `scripts/init-env.ts`.
 
-| Var | Set to |
-|---|---|
-| `POSTGRES_PASSWORD` | a strong random password |
-| `DATABASE_URL` | same password as above, e.g. `postgresql://biasmarket:<new-password>@db:5432/biasmarket` |
-| `BETTER_AUTH_SECRET` | a fresh secret — **never reuse the committed dev value**. Generate one: `openssl rand -hex 32` |
-| `BETTER_AUTH_URL` | `https://api.biasmarket.com` |
-| `WEB_URL` | `https://biasmarket.com` |
-| `NEXT_PUBLIC_API_URL` | `https://api.biasmarket.com` (no `/api` suffix — the app appends that itself) |
-
-The Caddyfile itself already points at `api.biasmarket.com` /
-`biasmarket.com` — only edit it if you're deploying under a different
-domain.
+Deploying under a different domain? Run `pnpm env:init --prod`, then edit
+the three URL vars by hand — and update `../caddy/Caddyfile`, which is
+hardcoded to `api.biasmarket.com` / `biasmarket.com`.
 
 ## 6. Bring up the stack
 
