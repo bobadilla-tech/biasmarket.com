@@ -4,10 +4,10 @@ What Bias Market is, who it's for, and what the MVP ships.
 
 ## 1. Product Overview
 
-**Bias Market** is a store **manager** (not a single store) that lets an operator
-create and run one or more storefronts from a single account, starting with
-**K-pop / artist merchandise stores** (albums, photocards, fan-made goods) as
-the first vertical.
+**Bias Market** is a store **manager** (not a single store) that lets an
+operator create and run one or more storefronts from a single account, starting
+with **K-pop / artist merchandise stores** (albums, photocards, fan-made goods)
+as the first vertical.
 
 ### Core Value Proposition
 
