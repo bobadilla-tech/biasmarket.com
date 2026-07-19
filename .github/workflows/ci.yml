@@ -191,6 +191,9 @@ jobs:
       - name: Build
         run: pnpm turbo run build --filter=web
 
+      - name: Test
+        run: pnpm turbo run test --filter=web
+
   db:
     name: DB (Prisma)
     needs: detect-changes

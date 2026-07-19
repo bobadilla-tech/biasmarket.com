@@ -1,8 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { vi, type Mock } from 'vitest';
 import { ProductsController } from './products.controller.js';
 import { ProductsService } from './products.service.js';
 
-jest.mock('@thallesp/nestjs-better-auth', () => ({
+vi.mock('@thallesp/nestjs-better-auth', () => ({
   AuthGuard: class AuthGuard {},
   Session: () => () => undefined,
 }));
@@ -10,13 +11,13 @@ jest.mock('@thallesp/nestjs-better-auth', () => ({
 describe('ProductsController', () => {
   let controller: ProductsController;
   let service: {
-    create: jest.Mock;
-    findAllForStore: jest.Mock;
-    update: jest.Mock;
-    publish: jest.Mock;
-    softDelete: jest.Mock;
-    addVariant: jest.Mock;
-    listVariants: jest.Mock;
+    create: Mock;
+    findAllForStore: Mock;
+    update: Mock;
+    publish: Mock;
+    softDelete: Mock;
+    addVariant: Mock;
+    listVariants: Mock;
   };
 
   const storeId = 'store-1';
@@ -25,13 +26,13 @@ describe('ProductsController', () => {
 
   beforeEach(async () => {
     service = {
-      create: jest.fn(),
-      findAllForStore: jest.fn(),
-      update: jest.fn(),
-      publish: jest.fn(),
-      softDelete: jest.fn(),
-      addVariant: jest.fn(),
-      listVariants: jest.fn(),
+      create: vi.fn(),
+      findAllForStore: vi.fn(),
+      update: vi.fn(),
+      publish: vi.fn(),
+      softDelete: vi.fn(),
+      addVariant: vi.fn(),
+      listVariants: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({

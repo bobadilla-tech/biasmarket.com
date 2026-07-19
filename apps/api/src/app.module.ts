@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { AppController } from './app.controller.js';
-import { AppService } from './app.service.js';
 import { StoresModule } from './modules/stores/stores.module.js';
 import { ProductsModule } from './modules/products/products.module.js';
 import { UsersModule } from './modules/users/users.module.js';
+import { HealthModule } from './modules/health/health.module.js';
 import { SellerAuthModule } from './auth/auth.module.js';
 
 @Module({
@@ -13,9 +13,9 @@ import { SellerAuthModule } from './auth/auth.module.js';
     ProductsModule,
     PrismaModule,
     UsersModule,
+    HealthModule,
     SellerAuthModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}
