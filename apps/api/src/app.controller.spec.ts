@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { vi } from 'vitest';
+import { AppController } from './app.controller.js';
 
-jest.mock('@thallesp/nestjs-better-auth', () => ({
-  Public: () => () => undefined,
+vi.mock('@thallesp/nestjs-better-auth', () => ({
+  AllowAnonymous: () => () => undefined,
 }));
 
 describe('AppController', () => {
@@ -12,15 +12,17 @@ describe('AppController', () => {
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
-      providers: [AppService],
     }).compile();
 
     appController = app.get<AppController>(AppController);
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('redirects to WEB_URL', () => {
+      expect(appController.root()).toEqual({
+        url: 'http://localhost:3001',
+        statusCode: 302,
+      });
     });
   });
 });

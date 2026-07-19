@@ -1,4 +1,4 @@
-name: barriomart-dev
+name: biasmarket-dev
 
 networks:
   stack:
@@ -17,7 +17,7 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U barri -d barristore"]
+      test: ["CMD-SHELL", "pg_isready -U biasmarket -d biasmarket"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -35,9 +35,9 @@ services:
     command: >
       sh -c "
         pnpm install --frozen-lockfile --filter=\"api...\" &&
-        pnpm --filter @barristore/db run db:generate &&
-        pnpm --filter @barristore/db exec prisma migrate deploy &&
-        pnpm exec concurrently -k -n pkg,build,run \"pnpm exec turbo watch build --filter=@barristore/i18n --filter=@barristore/types --filter=@barristore/utils\" \"pnpm --filter api exec nest build --watch\" \"pnpm exec nodemon --watch apps/api/dist --watch packages/i18n/dist --watch packages/types/dist --watch packages/utils/dist -e js,json --delay 300ms --exec 'node apps/api/dist/main.js'\"
+        pnpm --filter @biasmarket/db run db:generate &&
+        pnpm --filter @biasmarket/db exec prisma migrate deploy &&
+        pnpm exec concurrently -k -n pkg,build,run \"pnpm exec turbo watch build --filter=@biasmarket/i18n --filter=@biasmarket/types --filter=@biasmarket/utils\" \"pnpm --filter api exec nest build --watch\" \"pnpm exec nodemon --watch apps/api/dist --watch packages/i18n/dist --watch packages/types/dist --watch packages/utils/dist -e js,json --delay 300ms --exec 'node apps/api/dist/main.js'\"
       "
     volumes:
       - ../..:/app
@@ -58,7 +58,7 @@ services:
           "CMD",
           "node",
           "-e",
-          "require('http').get('http://127.0.0.1:3000/api',(r)=>{r.resume();r.on('end',()=>process.exit(r.statusCode<500?0:1));}).on('error',()=>process.exit(1))",
+          "require('http').get('http://127.0.0.1:3000/api/health',(r)=>{r.resume();r.on('end',()=>process.exit(r.statusCode<500?0:1));}).on('error',()=>process.exit(1))",
         ]
       interval: 10s
       timeout: 5s
@@ -78,7 +78,7 @@ services:
     command: >
       sh -c "
         pnpm install --frozen-lockfile --filter=\"web...\" &&
-        pnpm exec concurrently -k -n pkg,dev \"pnpm exec turbo watch build --filter=@barristore/i18n --filter=@barristore/types\" \"pnpm --filter web run dev\"
+        pnpm exec concurrently -k -n pkg,dev \"pnpm exec turbo watch build --filter=@biasmarket/i18n --filter=@biasmarket/types\" \"pnpm --filter web run dev\"
       "
     volumes:
       - ../..:/app

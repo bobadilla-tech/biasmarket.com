@@ -1,8 +1,7 @@
-barristore.example.com {
-  handle /api/* {
-    reverse_proxy api:3000
-  }
-  handle {
-    reverse_proxy web:3001
-  }
+api.biasmarket.com {
+  reverse_proxy api:3000
+}
+
+biasmarket.com {
+  reverse_proxy web:3001
 }

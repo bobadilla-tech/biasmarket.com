@@ -1,7 +1,8 @@
 {
-  "name": "@barristore/db",
+  "name": "@biasmarket/db",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "main": "index.ts",
   "types": "index.ts",
   "scripts": {
@@ -12,12 +13,13 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
+    "@types/node": "^26.0.0",
     "dotenv": "^17.4.2",
-    "prisma": "^6.19.3",
-    "typescript": "^5.9.3"
+    "typescript": "^7.0.2"
   },
   "dependencies": {
-    "@prisma/client": "^6.19.3"
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "prisma": "^7.8.0"
   }
 }

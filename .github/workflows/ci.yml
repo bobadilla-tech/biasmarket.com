@@ -22,7 +22,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: "22"
+  NODE_VERSION: "26"
   PNPM_VERSION: "10.11.0"
   # Dummy connection string — `prisma generate` validates the schema's env()
   # reference but never opens a connection, so a syntactically valid URL is enough.
@@ -191,6 +191,9 @@ jobs:
       - name: Build
         run: pnpm turbo run build --filter=web
 
+      - name: Test
+        run: pnpm turbo run test --filter=web
+
   db:
     name: DB (Prisma)
     needs: detect-changes
@@ -225,10 +228,10 @@ jobs:
             turbo-db-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
       - name: Build (prisma generate)
-        run: pnpm turbo run build --filter=@barristore/db
+        run: pnpm turbo run build --filter=@biasmarket/db
 
       - name: Typecheck
-        run: pnpm turbo run typecheck --filter=@barristore/db
+        run: pnpm turbo run typecheck --filter=@biasmarket/db
 
   i18n:
     name: i18n
@@ -262,10 +265,10 @@ jobs:
             turbo-i18n-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
       - name: Build
-        run: pnpm turbo run build --filter=@barristore/i18n
+        run: pnpm turbo run build --filter=@biasmarket/i18n
 
       - name: Typecheck
-        run: pnpm turbo run typecheck --filter=@barristore/i18n
+        run: pnpm turbo run typecheck --filter=@biasmarket/i18n
 
   types:
     name: Types
@@ -299,10 +302,10 @@ jobs:
             turbo-types-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
       - name: Build
-        run: pnpm turbo run build --filter=@barristore/types
+        run: pnpm turbo run build --filter=@biasmarket/types
 
       - name: Typecheck
-        run: pnpm turbo run typecheck --filter=@barristore/types
+        run: pnpm turbo run typecheck --filter=@biasmarket/types
 
   ui:
     name: UI
@@ -336,7 +339,7 @@ jobs:
             turbo-ui-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
       - name: Typecheck
-        run: pnpm turbo run typecheck --filter=@barristore/ui
+        run: pnpm turbo run typecheck --filter=@biasmarket/ui
 
   utils:
     name: Utils
@@ -370,13 +373,13 @@ jobs:
             turbo-utils-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
       - name: Build
-        run: pnpm turbo run build --filter=@barristore/utils
+        run: pnpm turbo run build --filter=@biasmarket/utils
 
       - name: Typecheck
-        run: pnpm turbo run typecheck --filter=@barristore/utils
+        run: pnpm turbo run typecheck --filter=@biasmarket/utils
 
       - name: Test
-        run: pnpm turbo run test --filter=@barristore/utils
+        run: pnpm turbo run test --filter=@biasmarket/utils
 
   ci-success:
     name: CI Success

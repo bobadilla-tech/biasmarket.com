@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
-FROM node:24-slim AS deps
-RUN corepack enable pnpm && corepack prepare pnpm@10.11.0 --activate
+FROM node:26-slim AS deps
+RUN npm install -g corepack@latest && corepack enable pnpm && corepack prepare pnpm@10.11.0 --activate
 WORKDIR /repo
 
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
@@ -24,7 +24,7 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
 RUN pnpm exec turbo run build --filter=web
 
-FROM node:24-slim AS runtime
+FROM node:26-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3001

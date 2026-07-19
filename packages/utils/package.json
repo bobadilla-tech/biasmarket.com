@@ -1,15 +1,20 @@
 {
-    "name": "@barristore/utils",
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
-    "scripts": {
-        "build": "tsc",
-        "typecheck": "tsc --noEmit",
-        "test": "vitest run"
-    },
-    "dependencies": {},
-    "devDependencies": {
-        "typescript": "^5.5.0",
-        "vitest": "^3.2.4"
+  "name": "@biasmarket/utils",
+  "type": "module",
+  "exports": {
+    "./*": {
+      "types": "./dist/*/index.d.ts",
+      "default": "./dist/*/index.js"
     }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vitest": "^3.2.4"
+  }
 }

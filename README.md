@@ -1,4 +1,4 @@
-# BarriStore
+# Bias Market
 
 Niche-first store builder for creator-led commerce — starting with K-pop /
 artist merch stores. Manual payment-first (bank transfer, Wise, PayPal) with
@@ -6,11 +6,7 @@ built-in proof-of-payment review, no Stripe required.
 
 ## Stack
 
-Next.js · NestJS · Prisma · PostgreSQL · Docker · Cloudflare R2 · JWT · Resend
-
-## Status
-
-Pre-code — spec stage.
+Next.js · NestJS · Prisma · PostgreSQL · Docker · Cloudflare R2 · JWT · Resen
 
 ## Docs
 

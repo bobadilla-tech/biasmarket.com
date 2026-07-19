@@ -19,7 +19,7 @@ Where this ships, what ships when, and what could go wrong.
 
 - DB: move to managed Postgres (Neon / Supabase / RDS) once a single-box DB
   becomes the bottleneck
-- Subdomain routing (`:slug.barri.store`) once themes/store count justify it
+- Subdomain routing (`:slug.biasmarket.com`) once themes/store count justify it
 
 ---
 

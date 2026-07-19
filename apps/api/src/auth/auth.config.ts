@@ -1,6 +1,6 @@
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service.js';
 
 export const createAuth = (prisma: PrismaService) =>
   betterAuth({

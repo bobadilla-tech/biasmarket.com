@@ -1,9 +1,13 @@
 # infra
 
-Docker-based dev and prod setup for barriomart-app, mirroring the pattern used in `requiems-api`.
+Docker-based dev and prod setup for biasmarket-app, mirroring the pattern used in `requiems-api`.
 
 - `docker/` — dev and prod Docker Compose files, Dockerfiles, and env defaults. See `docker/readme.md`.
 - `caddy/` — reverse proxy config used only by the prod stack. See `caddy/readme.md`.
+
+Deploying to production on Oracle Cloud? See
+[`docker/DEPLOY_ORACLE.md`](docker/DEPLOY_ORACLE.md) for the full walkthrough
+(VM provisioning, firewall gotchas, secrets, DNS, verification).
 
 ## Quick start (dev)
 

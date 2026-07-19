@@ -1,12 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
-import { StoresService } from './stores.service';
-import { PrismaService } from '../../prisma/prisma.service';
+import { vi, type Mock } from 'vitest';
+import { StoresService } from './stores.service.js';
+import { PrismaService } from '../../prisma/prisma.service.js';
 
 describe('StoresService', () => {
   let service: StoresService;
   let prisma: {
-    store: { findUnique: jest.Mock; create: jest.Mock; findMany: jest.Mock };
+    store: { findUnique: Mock; create: Mock; findMany: Mock };
   };
 
   const ownerId = 'user-1';
@@ -14,9 +15,9 @@ describe('StoresService', () => {
   beforeEach(async () => {
     prisma = {
       store: {
-        findUnique: jest.fn(),
-        create: jest.fn(),
-        findMany: jest.fn(),
+        findUnique: vi.fn(),
+        create: vi.fn(),
+        findMany: vi.fn(),
       },
     };
 

@@ -12,7 +12,7 @@ Root cause was two-fold:
 2. After fixing that, a second bug surfaced: Homebrew's `postgresql@17` service
    was squatting host port 5432, so Docker's `db` container (started via the old
    root `docker-compose.dev.yml`) never got its port published — the app was
-   silently connecting to the native Postgres instead, which had no `barri`
+   silently connecting to the native Postgres instead, which had no `biasmarket`
    role/database, producing `P1010: User was denied access`.
 
 Both bugs traced back to the same root cause: **local dev setup was manual and
@@ -36,7 +36,7 @@ away for future dev setup.
   db only, keep running api/web via `pnpm dev`" because the whole point was to
   stop the four-`.env`-files problem for every service, not just the database.
 - **Adapted for a single pnpm workspace.** Unlike requiems-api (polyglot, one
-  self-contained repo per language/service), barriomart-app is one pnpm/turbo
+  self-contained repo per language/service), biasmarket-app is one pnpm/turbo
   workspace with a single root lockfile. Docker build `context:` for every image
   is the **repo root**, not the app subfolder, and workspace-package
   `node_modules` in dev containers are named Docker volumes layered over the
@@ -191,7 +191,7 @@ Two bugs surfaced while wiring this, both fixed:
   momentarily didn't exist (`MODULE_NOT_FOUND`). Set to `false`.
 
 Verified end-to-end with a temporary `@Public() GET /api/probe` endpoint in
-`apps/api/src/app.controller.ts` calling `slugify` from `@barristore/utils`:
+`apps/api/src/app.controller.ts` calling `slugify` from `@biasmarket/utils`:
 edited `packages/utils/index.ts` in the running stack, watched `turbo watch`
 rebuild it and `nodemon` restart `api` on its own, and confirmed the response
 changed accordingly — then reverted both the probe endpoint and the test edit.

@@ -2,7 +2,7 @@
 
 ## Spec
 
-- [product.md](spec/product.md) — what BarriStore is, target market, MVP scope,
+- [product.md](spec/product.md) — what Bias Market is, target market, MVP scope,
   key differentiator
 - [architecture.md](spec/architecture.md) — monorepo layout, DDD-lite backend
   structure, multi-tenant isolation, database schema, theming, Next.js

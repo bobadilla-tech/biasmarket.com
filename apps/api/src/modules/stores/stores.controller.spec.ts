@@ -1,18 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { StoresController } from './stores.controller';
-import { StoresService } from './stores.service';
+import { vi, type Mock } from 'vitest';
+import { StoresController } from './stores.controller.js';
+import { StoresService } from './stores.service.js';
 
-jest.mock('@thallesp/nestjs-better-auth', () => ({
+vi.mock('@thallesp/nestjs-better-auth', () => ({
   AuthGuard: class AuthGuard {},
   Session: () => () => undefined,
 }));
 
 describe('StoresController', () => {
   let controller: StoresController;
-  let service: { create: jest.Mock };
+  let service: { create: Mock };
 
   beforeEach(async () => {
-    service = { create: jest.fn() };
+    service = { create: vi.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [StoresController],

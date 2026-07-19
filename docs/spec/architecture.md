@@ -1,6 +1,6 @@
 # Architecture
 
-Production-grade architecture for BarriStore: monorepo, multi-tenant backend,
+Production-grade architecture for Bias Market: monorepo, multi-tenant backend,
 database, theming, Next.js frontend, security, deployment, scaling.
 
 ---
@@ -8,7 +8,7 @@ database, theming, Next.js frontend, security, deployment, scaling.
 ## 1. Monorepo Design
 
 ```
-barristore/
+biasmarket/
   apps/
     api/                  # NestJS backend
     web/                  # Next.js frontend (storefront + dashboard + onboarding)
@@ -363,7 +363,7 @@ services:
 
   api:
     build: ./apps/api
-    image: barristore/api
+    image: biasmarket/api
     env_file: .env
     expose:
       - "3000" # not published to host — only Caddy reaches it
@@ -372,7 +372,7 @@ services:
 
   web:
     build: ./apps/web
-    image: barristore/web
+    image: biasmarket/web
     env_file: .env
     expose:
       - "3001"
@@ -383,9 +383,9 @@ services:
     image: postgres:15
     restart: always
     environment:
-      POSTGRES_USER: barri
+      POSTGRES_USER: biasmarket
       POSTGRES_PASSWORD: ${DB_PASSWORD} # never hardcode in compose file
-      POSTGRES_DB: barristore
+      POSTGRES_DB: biasmarket
     expose:
       - "5432" # not published — only api reaches it
     volumes:
@@ -400,7 +400,7 @@ volumes:
 `infra/caddy/Caddyfile`:
 
 ```
-barristore.example.com {
+biasmarket.example.com {
   handle /api/* {
     reverse_proxy api:3000
   }
@@ -416,8 +416,8 @@ barristore.example.com {
 - Caddy does TLS termination + auto-renewal (no certbot needed) and routes
   `/api/*` → `api`, everything else → `web`.
 - `DB_PASSWORD` from `.env`, never committed, never hardcoded in the compose
-  file — the original spec's `barri`/`barri` is a placeholder to replace before
-  anything touches real data.
+  file — the original spec's `biasmarket`/`biasmarket` is a placeholder to
+  replace before anything touches real data.
 - R2 stays external (S3-compatible API, no container) — object storage isn't
   something you self-host on the VPS.
 

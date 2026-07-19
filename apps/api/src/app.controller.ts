@@ -1,12 +1,12 @@
-import { Controller, Get } from '@nestjs/common';
-import { AppService } from './app.service';
+import { Controller, Get, Redirect } from '@nestjs/common';
+import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
-
+  @AllowAnonymous()
   @Get()
-  getHello(): string {
-    return this.appService.getHello();
+  @Redirect()
+  root() {
+    return { url: process.env.WEB_URL ?? 'http://localhost:3001', statusCode: 302 };
   }
 }

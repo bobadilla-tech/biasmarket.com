@@ -3,6 +3,11 @@
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "resolvePackageJsonExports": true,
+    // Nest builds via SWC, not tsc — this config is only ever run with
+    // --noEmit for typechecking. Needed so tsc can follow the literal
+    // ".ts" import in packages/db/index.ts (see packages/db/tsconfig.json).
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
     "esModuleInterop": true,
     "isolatedModules": true,
     "declaration": true,
@@ -13,7 +18,6 @@
     "target": "ES2023",
     "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": true,
@@ -21,6 +25,7 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
-    "strictPropertyInitialization": false
+    "strictPropertyInitialization": false,
+    "types": ["node", "vitest/globals"]
   }
 }

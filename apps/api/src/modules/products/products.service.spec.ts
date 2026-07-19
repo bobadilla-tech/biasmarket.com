@@ -1,19 +1,20 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
-import { ProductsService } from './products.service';
-import { PrismaService } from '../../prisma/prisma.service';
+import { vi, type Mock } from 'vitest';
+import { ProductsService } from './products.service.js';
+import { PrismaService } from '../../prisma/prisma.service.js';
 
 describe('ProductsService', () => {
   let service: ProductsService;
   let prisma: {
-    store: { findUnique: jest.Mock };
+    store: { findUnique: Mock };
     product: {
-      findUnique: jest.Mock;
-      findMany: jest.Mock;
-      create: jest.Mock;
-      update: jest.Mock;
+      findUnique: Mock;
+      findMany: Mock;
+      create: Mock;
+      update: Mock;
     };
-    productVariant: { create: jest.Mock; findMany: jest.Mock };
+    productVariant: { create: Mock; findMany: Mock };
   };
 
   const ownerId = 'user-1';
@@ -22,14 +23,14 @@ describe('ProductsService', () => {
 
   beforeEach(async () => {
     prisma = {
-      store: { findUnique: jest.fn() },
+      store: { findUnique: vi.fn() },
       product: {
-        findUnique: jest.fn(),
-        findMany: jest.fn(),
-        create: jest.fn(),
-        update: jest.fn(),
+        findUnique: vi.fn(),
+        findMany: vi.fn(),
+        create: vi.fn(),
+        update: vi.fn(),
       },
-      productVariant: { create: jest.fn(), findMany: jest.fn() },
+      productVariant: { create: vi.fn(), findMany: vi.fn() },
     };
 
     const module: TestingModule = await Test.createTestingModule({

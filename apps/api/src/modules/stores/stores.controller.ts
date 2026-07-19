@@ -1,7 +1,7 @@
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard, Session } from '@thallesp/nestjs-better-auth';
 import type { UserSession } from '@thallesp/nestjs-better-auth';
-import { StoresService } from './stores.service';
+import { StoresService } from './stores.service.js';
 
 @Controller('stores')
 export class StoresController {

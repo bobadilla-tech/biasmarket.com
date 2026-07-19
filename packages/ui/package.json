@@ -1,5 +1,5 @@
 {
-  "name": "@barristore/ui",
+  "name": "@biasmarket/ui",
   "version": "1.0.0",
   "private": true,
   "main": "index.tsx",
@@ -11,7 +11,7 @@
     "react": "^19"
   },
   "devDependencies": {
-    "typescript": "^5.9.3",
+    "typescript": "^7.0.2",
     "@types/react": "^19"
   }
 }
