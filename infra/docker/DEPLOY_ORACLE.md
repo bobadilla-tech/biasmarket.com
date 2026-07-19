@@ -66,10 +66,20 @@ docker compose version   # confirm the compose plugin is present
 
 ## 4. Point DNS at the VM
 
-Create an A record for your domain (and any subdomain you're using) pointing
-at the reserved public IP from step 1. Confirm it resolves
-(`dig +short yourdomain.com`) before starting the stack — Caddy's automatic
-HTTPS will fail its ACME challenge if DNS isn't live yet, though it retries.
+The stack uses two subdomains — `biasmarket.com` for the storefront/dashboard
+(`web`) and `api.biasmarket.com` for the API (`api`), each getting its own
+Caddy-issued cert (see [`../caddy/Caddyfile`](../caddy/Caddyfile)). Create
+**two** A records pointing at the reserved public IP from step 1:
+
+| Host | Points to |
+|---|---|
+| `biasmarket.com` (and `www` if you use it) | VM's reserved public IP |
+| `api.biasmarket.com` | VM's reserved public IP |
+
+Confirm both resolve (`dig +short biasmarket.com`, `dig +short
+api.biasmarket.com`) before starting the stack — Caddy's automatic HTTPS
+will fail its ACME challenge for a domain that isn't live yet, though it
+retries.
 
 ## 5. Clone the repo and configure secrets
 
@@ -86,12 +96,13 @@ Edit `.env` and replace every value that isn't dev-safe:
 | `POSTGRES_PASSWORD` | a strong random password |
 | `DATABASE_URL` | same password as above, e.g. `postgresql://biasmarket:<new-password>@db:5432/biasmarket` |
 | `BETTER_AUTH_SECRET` | a fresh secret — **never reuse the committed dev value**. Generate one: `openssl rand -hex 32` |
-| `BETTER_AUTH_URL` | `https://yourdomain.com` |
-| `WEB_URL` | `https://yourdomain.com` |
-| `NEXT_PUBLIC_API_URL` | `https://yourdomain.com` (no `/api` suffix — the app appends that itself) |
+| `BETTER_AUTH_URL` | `https://api.biasmarket.com` |
+| `WEB_URL` | `https://biasmarket.com` |
+| `NEXT_PUBLIC_API_URL` | `https://api.biasmarket.com` (no `/api` suffix — the app appends that itself) |
 
-Then edit [`../caddy/Caddyfile`](../caddy/Caddyfile) and replace the
-placeholder domain on the first non-comment line with your real domain.
+The Caddyfile itself already points at `api.biasmarket.com` /
+`biasmarket.com` — only edit it if you're deploying under a different
+domain.
 
 ## 6. Bring up the stack
 
@@ -110,8 +121,8 @@ created on first boot — no manual migration step needed.
 ```bash
 docker compose -f infra/docker/docker-compose.yml ps        # all healthy
 docker compose -f infra/docker/docker-compose.yml logs api  # migrations ran, no errors
-curl -I https://yourdomain.com                               # 200, valid cert
-curl -I https://yourdomain.com/api                            # API reachable through Caddy
+curl -I https://biasmarket.com                                # 200, valid cert
+curl https://api.biasmarket.com/api/health                    # {"status":"ok","db":"ok"}
 ```
 
 If the cert didn't issue: check `docker compose logs caddy` — almost always
