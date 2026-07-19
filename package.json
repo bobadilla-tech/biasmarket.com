@@ -14,12 +14,6 @@
     "docker:dev:down": "docker compose -f infra/docker/docker-compose.dev.yml down",
     "docker:prod": "docker compose -f infra/docker/docker-compose.yml up -d --build"
   },
-  "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "version": "10.11.0"
-    }
-  },
   "devDependencies": {
     "concurrently": "^10.0.3",
     "nodemon": "^3.1.10",
