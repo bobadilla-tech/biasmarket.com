@@ -84,7 +84,7 @@ retries.
 ## 5. Clone the repo and configure secrets
 
 ```bash
-git clone <your-repo-url> biasmarket
+git clone https://github.com/bobadilla-tech/biasmarket.com.git biasmarket
 cd biasmarket
 pnpm install
 pnpm env:init --prod
