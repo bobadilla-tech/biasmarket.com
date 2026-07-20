@@ -13,14 +13,15 @@ model User {
   email         String    @unique
   emailVerified Boolean
   image         String?
-  role          String    @default("seller") 
+  role          String    @default("seller")
   locale        String    @default("es")
   createdAt     DateTime
   updatedAt     DateTime
 
-  sessions Session[]
-  accounts Account[]
-  stores   Store[]
+  sessions       Session[]
+  accounts       Account[]
+  stores         Store[]
+  reviewedProofs PaymentProof[]
 
   @@map("user")
 }
@@ -33,11 +34,16 @@ model Store {
   ownerId             String
   themeConfig         Json
   paymentInstructions String
+  holdWindowHours     Int      @default(48)
   createdAt           DateTime @default(now())
 
-  owner    User      @relation(fields: [ownerId], references: [id])
-  products Product[]
-  orders   Order[]
+  owner           User                   @relation(fields: [ownerId], references: [id])
+  products        Product[]
+  orders          Order[]
+  categories      Category[]
+  customers       Customer[]
+  paymentMethods  PaymentMethodConfig[]
+  deliveryMethods DeliveryMethodConfig[]
 
   @@index([ownerId])
 }
@@ -45,6 +51,7 @@ model Store {
 model Product {
   id          String        @id @default(cuid())
   storeId     String
+  categoryId  String?
   name        String
   description String        @default("")
   price       Decimal       @db.Decimal(10, 2)
@@ -54,24 +61,30 @@ model Product {
   deletedAt   DateTime?
   createdAt   DateTime      @default(now())
 
-  store    Store            @relation(fields: [storeId], references: [id])
-  variants ProductVariant[]
+  store      Store            @relation(fields: [storeId], references: [id])
+  category   Category?        @relation(fields: [categoryId], references: [id])
+  variants   ProductVariant[]
+  orderItems OrderItem[]
 
   @@index([storeId])
   @@index([storeId, status])
 }
 
 model ProductVariant {
-  id        String  @id @default(cuid())
-  productId String
-  name      String
-  stock     Int?
+  id            String   @id @default(cuid())
+  productId     String
+  storeId       String
+  name          String
+  stock         Int?
+  reserved      Int      @default(0)
   priceOverride Decimal? @db.Decimal(10, 2)
   imageOverride String?
 
-  product Product @relation(fields: [productId], references: [id])
+  product    Product     @relation(fields: [productId], references: [id])
+  orderItems OrderItem[]
 
   @@index([productId])
+  @@index([storeId])
 }
 
 enum ProductStatus {
@@ -79,35 +92,164 @@ enum ProductStatus {
   PUBLISHED
 }
 
-model Order {
-  id                String            @id @default(cuid())
-  storeId           String
-  customerEmail     String
-  paymentStatus     PaymentStatus     @default(PENDING)
-  fulfillmentStatus FulfillmentStatus @default(UNFULFILLED)
-  totalAmount       Decimal           @db.Decimal(10, 2)
-  createdAt         DateTime          @default(now())
+model Category {
+  id        String   @id @default(cuid())
+  storeId   String
+  name      String
+  createdAt DateTime @default(now())
 
-  store Store @relation(fields: [storeId], references: [id])
+  store    Store     @relation(fields: [storeId], references: [id])
+  products Product[]
+
+  @@unique([storeId, name])
+  @@index([storeId])
+}
+
+model Order {
+  id                 String             @id @default(cuid())
+  storeId            String
+  customerId         String?
+  customerEmail      String
+  deliveryMethodType DeliveryMethodType
+  deliveryDetails    Json
+  paymentStatus      PaymentStatus      @default(PENDING_PAYMENT)
+  fulfillmentStatus  FulfillmentStatus  @default(ORDERING)
+  totalAmount        Decimal            @db.Decimal(10, 2)
+  requiredAmount     Decimal            @db.Decimal(10, 2)
+  expiresAt          DateTime
+  createdAt          DateTime           @default(now())
+
+  store    Store          @relation(fields: [storeId], references: [id])
+  customer Customer?      @relation(fields: [customerId], references: [id])
+  items    OrderItem[]
+  proofs   PaymentProof[]
 
   @@index([storeId, paymentStatus])
   @@index([storeId, createdAt])
+  @@index([paymentStatus, expiresAt])
+}
+
+model OrderItem {
+  id                  String   @id @default(cuid())
+  orderId             String
+  storeId             String
+  productId           String
+  variantId           String?
+  quantity            Int
+  unitPriceAtPurchase Decimal  @db.Decimal(10, 2)
+  createdAt           DateTime @default(now())
+
+  order   Order           @relation(fields: [orderId], references: [id])
+  product Product         @relation(fields: [productId], references: [id])
+  variant ProductVariant? @relation(fields: [variantId], references: [id])
+
+  @@index([orderId])
+  @@index([storeId])
+}
+
+model PaymentProof {
+  id          String      @id @default(cuid())
+  orderId     String
+  storeId     String
+  imageUrl    String
+  status      ProofStatus @default(PENDING_REVIEW)
+  submittedAt DateTime    @default(now())
+  reviewedBy  String?
+  reviewedAt  DateTime?
+
+  order    Order @relation(fields: [orderId], references: [id])
+  reviewer User? @relation(fields: [reviewedBy], references: [id])
+
+  @@index([orderId])
+  @@index([storeId, status])
 }
 
 enum PaymentStatus {
-  PENDING
-  SUBMITTED
+  PENDING_PAYMENT
+  PAYMENT_SUBMITTED
   VERIFIED
   REJECTED
+  CANCELLED
 }
 
 enum FulfillmentStatus {
-  UNFULFILLED
-  SHIPPED
-  DELIVERED
+  ORDERING
+  IN_TRANSIT
+  READY
+  COMPLETED
 }
 
-//BETHER AUTH 
+enum ProofStatus {
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum DeliveryMethodType {
+  PICKUP
+  COURIER
+}
+
+model PaymentMethodConfig {
+  id                    String   @id @default(cuid())
+  storeId               String
+  method                String
+  enabled               Boolean  @default(true)
+  details               Json
+  depositPercentPickup  Int      @default(100)
+  depositPercentCourier Int      @default(100)
+  createdAt             DateTime @default(now())
+
+  store Store @relation(fields: [storeId], references: [id])
+
+  @@unique([storeId, method])
+  @@index([storeId])
+}
+
+model DeliveryMethodConfig {
+  id        String             @id @default(cuid())
+  storeId   String
+  type      DeliveryMethodType
+  enabled   Boolean            @default(true)
+  details   Json
+  createdAt DateTime           @default(now())
+
+  store Store @relation(fields: [storeId], references: [id])
+
+  @@unique([storeId, type])
+  @@index([storeId])
+}
+
+model Customer {
+  id           String   @id @default(cuid())
+  storeId      String
+  phone        String
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+
+  store  Store   @relation(fields: [storeId], references: [id])
+  orders Order[]
+
+  @@unique([storeId, phone])
+  @@index([storeId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  storeId    String
+  action     String
+  entityType String
+  entityId   String
+  metadata   Json     @default("{}")
+  createdAt  DateTime @default(now())
+
+  @@index([storeId, createdAt])
+  @@index([entityType, entityId])
+}
+
+//BETHER AUTH
 
 model Session {
   id        String   @id

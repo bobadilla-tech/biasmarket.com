@@ -1,0 +1,93 @@
+{
+  "languageToggle": { "en": "EN", "es": "ES" },
+  "hero": {
+    "badge": "Built for K-pop GOMs",
+    "headline": "Run your K-pop merch & photocard store without the spreadsheet chaos",
+    "subheadline": "Track orders, collect payment proofs, and manage your whole drop in one place — built for sellers moving albums, photocards, and fan merch.",
+    "ctaPrimary": "Get early access",
+    "ctaSecondary": "I'll set up your first store for you"
+  },
+  "problem": {
+    "title": "Your current workflow is breaking",
+    "intro": "You're juggling:",
+    "items": [
+      "Google Forms for orders",
+      "Spreadsheets for tracking",
+      "DMs for payment confirmations",
+      "Random screenshots for every photocard slot"
+    ],
+    "escalation": "And it gets worse with every drop.",
+    "painPoints": [
+      "\"Did you get my payment?\"",
+      "Missing proofs",
+      "Manual checking, slot by slot",
+      "Endless scrolling through DMs"
+    ],
+    "outro": "It doesn't scale past your third drop."
+  },
+  "solution": {
+    "title": "One clean store for every drop",
+    "intro": "With Bias Market, you get:",
+    "items": [
+      "A storefront for your merch, albums, and photocards",
+      "Buyers order directly — no forms",
+      "They upload proof of payment themselves",
+      "Every order tracked automatically"
+    ],
+    "outro": "No more switching between five apps to run one group order."
+  },
+  "features": {
+    "title": "Built for how you actually sell",
+    "items": [
+      {
+        "title": "Order tracking",
+        "description": "Every order, every buyer, one dashboard. No more spreadsheets."
+      },
+      {
+        "title": "Payment proof collection",
+        "description": "Buyers upload screenshots straight to their order. No more DM chaos."
+      },
+      {
+        "title": "Order status control",
+        "description": "Mark orders Pending, Paid, or Verified. Stay in control of every slot."
+      },
+      {
+        "title": "Your own store page",
+        "description": "One link for merch, albums, and photocards — instead of five messy forms."
+      }
+    ]
+  },
+  "socialProof": {
+    "title": "Built around real GOM workflows",
+    "intro": "Designed specifically for:",
+    "items": ["Album group orders", "Photocard slot sales", "Fan merch drops"]
+  },
+  "cta": {
+    "title": "Ready to simplify your next drop?",
+    "content": "I'll personally help you set up your first store. No setup stress, no risk.",
+    "ctaPrimary": "Try it for your next drop",
+    "ctaSecondary": "Get early access"
+  },
+  "faq": {
+    "title": "Questions",
+    "items": [
+      {
+        "question": "Do I need a payment gateway?",
+        "answer": "No — buyers upload proof of payment manually. Bank transfer, Wise, PayPal, whatever you already use."
+      },
+      {
+        "question": "Can I sell photocards, not just full group orders?",
+        "answer": "Yes — built for albums, individual photocard slots, and merch drops alike."
+      },
+      {
+        "question": "Is this free?",
+        "answer": "Free for early sellers while we build out the product."
+      }
+    ]
+  },
+  "finalHook": {
+    "title": "Stop managing chaos.",
+    "content": "Start running clean, scalable drops.",
+    "cta": "Get early access"
+  }
+}

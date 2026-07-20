@@ -1,0 +1,93 @@
+{
+  "languageToggle": { "en": "EN", "es": "ES" },
+  "hero": {
+    "badge": "Hecho para GOMs de K-pop",
+    "headline": "Lleva tu tienda de merch y photocards sin el caos de las hojas de cálculo",
+    "subheadline": "Controla pedidos, junta comprobantes de pago y maneja todo tu drop en un solo lugar — pensado para quienes venden álbumes, photocards y merch.",
+    "ctaPrimary": "Quiero acceso anticipado",
+    "ctaSecondary": "Te ayudo a montar tu primera tienda"
+  },
+  "problem": {
+    "title": "Tu flujo actual se está rompiendo",
+    "intro": "Estás combinando:",
+    "items": [
+      "Google Forms para pedidos",
+      "Hojas de cálculo para el seguimiento",
+      "DMs para confirmar pagos",
+      "Capturas sueltas por cada slot de photocard"
+    ],
+    "escalation": "Y empeora con cada drop.",
+    "painPoints": [
+      "\"¿Ya viste mi pago?\"",
+      "Comprobantes perdidos",
+      "Revisar todo a mano, slot por slot",
+      "Scroll infinito en los DMs"
+    ],
+    "outro": "No aguanta pasado tu tercer drop."
+  },
+  "solution": {
+    "title": "Una sola tienda para cada drop",
+    "intro": "Con Bias Market tienes:",
+    "items": [
+      "Una tienda para tu merch, álbumes y photocards",
+      "Los compradores piden directo — sin formularios",
+      "Ellos mismos suben su comprobante de pago",
+      "Cada pedido se registra solo"
+    ],
+    "outro": "Se acabó saltar entre cinco apps para manejar un solo GO."
+  },
+  "features": {
+    "title": "Hecho para cómo realmente vendes",
+    "items": [
+      {
+        "title": "Seguimiento de pedidos",
+        "description": "Todos tus pedidos y compradores en un solo panel. Se acabaron las hojas de cálculo."
+      },
+      {
+        "title": "Comprobantes de pago",
+        "description": "Los compradores suben su captura directo al pedido. Se acabó el caos en los DMs."
+      },
+      {
+        "title": "Control del estado del pedido",
+        "description": "Marca cada pedido como Pendiente, Pagado o Verificado. Tú tienes el control de cada slot."
+      },
+      {
+        "title": "Tu propia página de tienda",
+        "description": "Un solo link para merch, álbumes y photocards — en vez de cinco formularios sueltos."
+      }
+    ]
+  },
+  "socialProof": {
+    "title": "Pensado desde el flujo real de un GOM",
+    "intro": "Hecho especialmente para:",
+    "items": ["Group orders de álbumes", "Venta de slots de photocards", "Drops de merch de fans"]
+  },
+  "cta": {
+    "title": "¿Listo para simplificar tu próximo drop?",
+    "content": "Te ayudo personalmente a montar tu primera tienda. Sin estrés, sin riesgo.",
+    "ctaPrimary": "Pruébalo en tu próximo drop",
+    "ctaSecondary": "Quiero acceso anticipado"
+  },
+  "faq": {
+    "title": "Preguntas frecuentes",
+    "items": [
+      {
+        "question": "¿Necesito una pasarela de pago?",
+        "answer": "No — los compradores suben su comprobante manualmente. Transferencia, Wise, PayPal, lo que ya uses."
+      },
+      {
+        "question": "¿Puedo vender solo photocards, no group orders completos?",
+        "answer": "Sí — sirve para álbumes, slots individuales de photocards y drops de merch por igual."
+      },
+      {
+        "question": "¿Es gratis?",
+        "answer": "Gratis para las primeras vendedoras mientras seguimos construyendo el producto."
+      }
+    ]
+  },
+  "finalHook": {
+    "title": "Deja de manejar el caos.",
+    "content": "Empieza a correr drops limpios y que sí escalan.",
+    "cta": "Quiero acceso anticipado"
+  }
+}

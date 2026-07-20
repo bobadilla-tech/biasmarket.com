@@ -153,7 +153,7 @@ describe('ProductsService', () => {
     await service.addVariant(productId, storeId, ownerId, dto);
 
     expect(prisma.productVariant.create).toHaveBeenCalledWith({
-      data: { ...dto, productId },
+      data: { ...dto, productId, storeId },
     });
   });
 

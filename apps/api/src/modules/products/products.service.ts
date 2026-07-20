@@ -84,7 +84,7 @@ export class ProductsService {
     dto: CreateVariantDto,
   ) {
     await this.findOwnedProduct(productId, storeId, userId);
-    return this.prisma.productVariant.create({ data: { ...dto, productId } });
+    return this.prisma.productVariant.create({ data: { ...dto, productId, storeId } });
   }
 
   async listVariants(productId: string, storeId: string, userId: string) {
