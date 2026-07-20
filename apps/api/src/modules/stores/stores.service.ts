@@ -44,4 +44,18 @@ export class StoresService {
       );
     }
   }
+
+  async findPublicBySlug(slug: string) {
+    const store = await this.prisma.store.findUnique({
+      where: { slug },
+      include: {
+        products: {
+          where: { status: 'PUBLISHED', deletedAt: null },
+          include: { variants: true },
+        },
+      },
+    });
+    if (!store) throw new NotFoundException('Tienda no encontrada');
+    return store;
+  }
 }

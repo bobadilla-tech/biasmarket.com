@@ -28,4 +28,9 @@ export class StoresController {
     return this.stores.delete(storeId, session.user.id);
   }
 
+  @Get(':slug/public')
+  findPublic(@Param('slug') slug: string) {
+    return this.stores.findPublicBySlug(slug);
+  }
+
 }
