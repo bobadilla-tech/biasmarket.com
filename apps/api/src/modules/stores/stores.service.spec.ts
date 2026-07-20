@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { vi, type Mock } from 'vitest';
 import { StoresService } from './stores.service.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
@@ -7,7 +7,7 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 describe('StoresService', () => {
   let service: StoresService;
   let prisma: {
-    store: { findUnique: Mock; create: Mock; findMany: Mock };
+    store: { findUnique: Mock; create: Mock; findMany: Mock; update: Mock };
   };
 
   const ownerId = 'user-1';
@@ -18,6 +18,7 @@ describe('StoresService', () => {
         findUnique: vi.fn(),
         create: vi.fn(),
         findMany: vi.fn(),
+        update: vi.fn(),
       },
     };
 
@@ -73,6 +74,36 @@ describe('StoresService', () => {
 
     expect(prisma.store.findMany).toHaveBeenCalledWith({
       where: { ownerId },
+    });
+  });
+
+  describe('update()', () => {
+    it('throws NotFoundException when the store does not exist', async () => {
+      prisma.store.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.update('store-1', ownerId, { whatsappNumber: '+51999999999' }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('throws ForbiddenException when the user does not own the store', async () => {
+      prisma.store.findUnique.mockResolvedValue({ id: 'store-1', ownerId: 'someone-else' });
+
+      await expect(
+        service.update('store-1', ownerId, { whatsappNumber: '+51999999999' }),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('updates whatsappNumber when the user owns the store', async () => {
+      prisma.store.findUnique.mockResolvedValue({ id: 'store-1', ownerId });
+      prisma.store.update.mockResolvedValue({ id: 'store-1' });
+
+      await service.update('store-1', ownerId, { whatsappNumber: '+51999999999' });
+
+      expect(prisma.store.update).toHaveBeenCalledWith({
+        where: { id: 'store-1' },
+        data: { whatsappNumber: '+51999999999' },
+      });
     });
   });
 });

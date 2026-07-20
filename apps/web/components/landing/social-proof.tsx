@@ -1,21 +1,21 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
-import { useLanguage } from "./language-provider";
 
 export function SocialProof() {
-  const { copy } = useLanguage();
-  const { socialProof } = copy;
+  const t = useTranslations("landing.socialProof");
+  const items = t.raw("items") as string[];
 
   return (
     <section className="px-6 py-16 sm:px-10">
       <div className="mx-auto max-w-3xl text-center">
         <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-          {socialProof.title}
+          {t("title")}
         </h2>
-        <p className="mt-3 text-muted-foreground">{socialProof.intro}</p>
+        <p className="mt-3 text-muted-foreground">{t("intro")}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
-          {socialProof.items.map((item) => (
+          {items.map((item) => (
             <Badge
               key={item}
               variant="secondary"

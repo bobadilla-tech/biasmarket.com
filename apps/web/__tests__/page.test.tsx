@@ -1,13 +1,27 @@
-import { expect, test } from 'vitest';
+import { expect, test, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import Page from '../app/page';
+import { NextIntlClientProvider } from 'next-intl';
+import { getMessages } from '@biasmarket/i18n';
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  usePathname: () => '/',
+  redirect: vi.fn(),
+  permanentRedirect: vi.fn(),
+}));
+
+const { default: Page } = await import('../app/[locale]/page');
 
 test('Page', () => {
-  render(<Page />);
+  render(
+    <NextIntlClientProvider locale="es" messages={getMessages('es')}>
+      <Page />
+    </NextIntlClientProvider>,
+  );
   expect(
     screen.getByRole('heading', {
       level: 1,
-      name: 'To get started, edit the page.tsx file.',
+      name: /photocards/i,
     }),
   ).toBeDefined();
 });

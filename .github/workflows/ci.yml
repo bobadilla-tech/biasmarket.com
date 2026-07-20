@@ -148,8 +148,16 @@ jobs:
       - name: Build
         run: pnpm turbo run build --filter=api
 
-      - name: Test
-        run: pnpm turbo run test --filter=api
+      - name: Test with coverage
+        run: pnpm --filter api test:cov
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: apps/api/coverage/lcov.info
+          flags: api
+          fail_ci_if_error: true
 
   web:
     name: Web
@@ -191,8 +199,16 @@ jobs:
       - name: Build
         run: pnpm turbo run build --filter=web
 
-      - name: Test
-        run: pnpm turbo run test --filter=web
+      - name: Test with coverage
+        run: pnpm --filter web test:cov
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: apps/web/coverage/lcov.info
+          flags: web
+          fail_ci_if_error: true
 
   db:
     name: DB (Prisma)
@@ -378,8 +394,16 @@ jobs:
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=@biasmarket/utils
 
-      - name: Test
-        run: pnpm turbo run test --filter=@biasmarket/utils
+      - name: Test with coverage
+        run: pnpm --filter @biasmarket/utils test:cov
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: packages/utils/coverage/lcov.info
+          flags: utils
+          fail_ci_if_error: true
 
   ci-success:
     name: CI Success

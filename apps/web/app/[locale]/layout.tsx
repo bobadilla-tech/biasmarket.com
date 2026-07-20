@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
+import { hasLocale, NextIntlClientProvider, type Locale } from "next-intl";
+import { getTranslations } from "next-intl/server";
+import { notFound } from "next/navigation";
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import { routing } from "@/i18n/routing";
+import "../globals.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -12,23 +16,43 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Bias Market — Storefronts for K-pop merch & photocard sellers",
-  description:
-    "Run your K-pop merch and photocard store without the spreadsheet chaos. Order tracking, payment proof review, and a clean storefront — built for GOMs.",
-};
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
 
-export default function RootLayout({
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: Locale }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "common.meta" });
+  return {
+    title: t("title"),
+    description: t("description"),
+  };
+}
+
+export default async function RootLayout({
   children,
-}: Readonly<{
+  params,
+}: {
   children: React.ReactNode;
-}>) {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  if (!hasLocale(routing.locales, locale)) notFound();
+
   return (
     <html
-      lang="es"
+      lang={locale}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <NextIntlClientProvider locale={locale}>
+          {children}
+        </NextIntlClientProvider>
+      </body>
     </html>
   );
 }

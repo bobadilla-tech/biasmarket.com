@@ -1,6 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { slugify } from '@biasmarket/utils/strings';
+import { UpdateStoreDto } from './dto/update-store.dto.js';
 
 const RESERVED_SLUGS = ['www', 'api', 'admin', 'app'];
 
@@ -28,6 +29,15 @@ export class StoresService {
 
   async findAllForUser(userId: string) {
     return this.prisma.store.findMany({ where: { ownerId: userId } });
+  }
+
+  async update(storeId: string, userId: string, dto: UpdateStoreDto) {
+    const store = await this.prisma.store.findUnique({ where: { id: storeId } });
+    if (!store) throw new NotFoundException('Store no encontrada');
+    if (store.ownerId !== userId) {
+      throw new ForbiddenException('No sos dueño de esta store');
+    }
+    return this.prisma.store.update({ where: { id: storeId }, data: dto });
   }
 
   async delete(storeId: string, userId: string) {

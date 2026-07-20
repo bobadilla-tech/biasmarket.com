@@ -1,21 +1,20 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { useLanguage } from "./language-provider";
 
 export function FinalHook() {
-  const { copy } = useLanguage();
-  const { finalHook } = copy;
+  const t = useTranslations("landing.finalHook");
 
   return (
     <footer className="border-t border-white/10 px-6 py-16 text-center sm:px-10">
       <div className="mx-auto max-w-xl">
         <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-          {finalHook.title}
+          {t("title")}
         </h2>
-        <p className="mt-2 text-muted-foreground">{finalHook.content}</p>
+        <p className="mt-2 text-muted-foreground">{t("content")}</p>
         <Button size="lg" className="mt-6 h-11 px-6">
-          {finalHook.cta}
+          {t("cta")}
         </Button>
       </div>
     </footer>

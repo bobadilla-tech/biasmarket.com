@@ -1,0 +1,35 @@
+{
+  "login": {
+    "title": "Log in",
+    "emailPlaceholder": "Email",
+    "passwordPlaceholder": "Password",
+    "submit": "Log in",
+    "submitting": "Logging in...",
+    "invalidCredentials": "Incorrect email or password",
+    "noAccount": "Don't have an account?",
+    "signUpLink": "Sign up"
+  },
+  "signup": {
+    "title": "Create account",
+    "namePlaceholder": "Name",
+    "emailPlaceholder": "Email",
+    "passwordPlaceholder": "Password",
+    "submit": "Sign up",
+    "genericError": "Something went wrong signing up",
+    "hasAccount": "Already have an account?",
+    "loginLink": "Log in"
+  },
+  "createStore": {
+    "title": "Your stores",
+    "empty": "You don't have any stores yet. Create your first one below.",
+    "delete": "Delete",
+    "createNew": "Create new store",
+    "namePlaceholder": "Store name",
+    "submit": "Create store",
+    "submitting": "Creating...",
+    "genericError": "Something went wrong creating the store",
+    "deleteError": "Something went wrong deleting the store",
+    "networkDeleteError": "Network error while deleting",
+    "confirmDelete": "Are you sure you want to delete this store?"
+  }
+}

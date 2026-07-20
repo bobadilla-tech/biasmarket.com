@@ -1,3 +1,7 @@
+import { getTranslations } from "next-intl/server";
+import { ProductCard } from "./product-card";
+import { CartLink } from "./cart-link";
+
 async function getStore(slug: string) {
   const apiUrl = process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
   const res = await fetch(`${apiUrl}/api/stores/${slug}/public`, {
@@ -9,14 +13,21 @@ async function getStore(slug: string) {
   return res.json();
 }
 
-export default async function StorePage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function StorePage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
   const { slug } = await params;
-  const store = await getStore(slug);
+  const [store, t] = await Promise.all([
+    getStore(slug),
+    getTranslations("storefront"),
+  ]);
 
   if (!store) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">Tienda no encontrada.</p>
+        <p className="text-gray-500">{t("notFound")}</p>
       </div>
     );
   }
@@ -28,28 +39,16 @@ export default async function StorePage({ params }: { params: Promise<{ slug: st
       </header>
       <main className="max-w-5xl mx-auto px-4 py-8">
         {store.products.length === 0 ? (
-          <p className="text-gray-500 text-center">
-            Todavía no hay productos publicados.
-          </p>
+          <p className="text-gray-500 text-center">{t("noProducts")}</p>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {store.products.map((product: any) => (
-              <a
-                key={product.id}
-                href={`/store/${slug}/products/${product.id}`}
-                className="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-md transition"
-              >
-                <div className="aspect-square bg-gray-100 rounded-lg mb-3" />
-                <p className="font-semibold text-gray-900 text-sm">{product.name}</p>
-                <p className="text-emerald-600 font-bold text-sm">${product.price}</p>
-                {product.soldOut && (
-                  <span className="text-xs text-red-500 font-semibold">Agotado</span>
-                )}
-              </a>
+              <ProductCard key={product.id} slug={slug} product={product} />
             ))}
           </div>
         )}
       </main>
+      <CartLink slug={slug} />
     </div>
   );
 }

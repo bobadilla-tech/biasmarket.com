@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 
 interface Store {
   id: string;
@@ -9,6 +10,8 @@ interface Store {
 }
 
 export default function CreateStorePage() {
+  const t = useTranslations("onboarding.createStore");
+  const tCommon = useTranslations("common");
   const router = useRouter();
   const [stores, setStores] = useState<Store[]>([]);
   const [loadingStores, setLoadingStores] = useState(true);
@@ -35,6 +38,7 @@ export default function CreateStorePage() {
 
   useEffect(() => {
     loadStores();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleCreate = async () => {
@@ -49,7 +53,7 @@ export default function CreateStorePage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.message ?? "Error al crear la tienda");
+        setError(data.message ?? t("genericError"));
         return;
       }
       setStores((prev) => [...prev, data]);
@@ -61,7 +65,7 @@ export default function CreateStorePage() {
   };
 
   const handleDeleteStore = async (storeId: string) => {
-    if (!confirm("¿Seguro que querés eliminar esta tienda?")) return;
+    if (!confirm(t("confirmDelete"))) return;
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/stores/${storeId}`,
@@ -72,26 +76,26 @@ export default function CreateStorePage() {
       );
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        alert(data?.message ?? "Error al eliminar la tienda");
+        alert(data?.message ?? t("deleteError"));
         return;
       }
       setStores((prev) => prev.filter((s) => s.id !== storeId));
     } catch {
-      alert("Error de red al eliminar");
+      alert(t("networkDeleteError"));
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-100 p-8 flex flex-col gap-5">
-        <h1 className="text-2xl font-bold text-gray-900">Tus tiendas</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
 
-        {loadingStores && <p className="text-sm text-gray-500">Cargando...</p>}
+        {loadingStores && (
+          <p className="text-sm text-gray-500">{tCommon("loading")}</p>
+        )}
 
         {!loadingStores && stores.length === 0 && (
-          <p className="text-sm text-gray-500">
-            Todavía no tenés ninguna tienda. Creá la primera abajo.
-          </p>
+          <p className="text-sm text-gray-500">{t("empty")}</p>
         )}
 
         {stores.length > 0 && (
@@ -112,7 +116,7 @@ export default function CreateStorePage() {
                   onClick={() => handleDeleteStore(store.id)}
                   className="text-red-500 text-xs font-semibold hover:text-red-700 ml-2"
                 >
-                  Eliminar
+                  {t("delete")}
                 </button>
               </div>
             ))}
@@ -122,12 +126,12 @@ export default function CreateStorePage() {
         <hr className="border-gray-100" />
 
         <h2 className="text-sm font-semibold text-gray-700">
-          Crear nueva tienda
+          {t("createNew")}
         </h2>
 
         <input
           className="placeholder:text-gray-400 text-gray-900 border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400"
-          placeholder="Nombre de la tienda"
+          placeholder={t("namePlaceholder")}
           value={name}
           onChange={(e) => {
             const value = e.target.value;
@@ -148,7 +152,7 @@ export default function CreateStorePage() {
           disabled={loading || !name}
           className="w-full rounded-xl bg-emerald-500 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-60"
         >
-          {loading ? "Creando..." : "Crear tienda"}
+          {loading ? t("submitting") : t("submit")}
         </button>
       </div>
     </div>

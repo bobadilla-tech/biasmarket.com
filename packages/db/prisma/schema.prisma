@@ -34,6 +34,7 @@ model Store {
   ownerId             String
   themeConfig         Json
   paymentInstructions String
+  whatsappNumber      String?
   holdWindowHours     Int      @default(48)
   createdAt           DateTime @default(now())
 
@@ -109,7 +110,9 @@ model Order {
   id                 String             @id @default(cuid())
   storeId            String
   customerId         String?
-  customerEmail      String
+  customerEmail      String?
+  customerPhone      String
+  customerName       String?
   deliveryMethodType DeliveryMethodType
   deliveryDetails    Json
   paymentStatus      PaymentStatus      @default(PENDING_PAYMENT)

@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Post, UseGuards, Delete, Param } from '@nestjs/common';
+import { Body, Controller, Get, Post, Patch, UseGuards, Delete, Param } from '@nestjs/common';
 import { AuthGuard, Public, Session } from '@thallesp/nestjs-better-auth';
 import type { UserSession } from '@thallesp/nestjs-better-auth';
 import { StoresService } from './stores.service.js';
+import { UpdateStoreDto } from './dto/update-store.dto.js';
 
 @Controller('stores')
 export class StoresController {
@@ -20,6 +21,16 @@ export class StoresController {
   @Get('/me/stores')
   findMine(@Session() session: UserSession) {
     return this.stores.findAllForUser(session.user.id);
+  }
+
+  @UseGuards(AuthGuard)
+  @Patch(':storeId')
+  update(
+    @Param('storeId') storeId: string,
+    @Session() session: UserSession,
+    @Body() dto: UpdateStoreDto,
+  ) {
+    return this.stores.update(storeId, session.user.id, dto);
   }
 
   @UseGuards(AuthGuard)

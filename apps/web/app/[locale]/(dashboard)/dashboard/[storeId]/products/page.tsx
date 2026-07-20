@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { apiFetch } from "@/lib/api";
 
 interface Product {
@@ -13,6 +14,8 @@ interface Product {
 }
 
 export default function ProductsPage() {
+  const t = useTranslations("dashboard");
+  const tCommon = useTranslations("common");
   const { storeId } = useParams<{ storeId: string }>();
   const [products, setProducts] = useState<Product[]>([]);
   const [name, setName] = useState("");
@@ -23,7 +26,11 @@ export default function ProductsPage() {
 
   const loadProducts = async () => {
     try {
-      const data = await apiFetch(`/stores/${storeId}/products`);
+      const data = await apiFetch(
+        `/stores/${storeId}/products`,
+        {},
+        tCommon("networkError"),
+      );
       setProducts(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -34,7 +41,11 @@ export default function ProductsPage() {
     let ignore = false;
     (async () => {
       try {
-        const data = await apiFetch(`/stores/${storeId}/products`);
+        const data = await apiFetch(
+          `/stores/${storeId}/products`,
+          {},
+          tCommon("networkError"),
+        );
         if (!ignore) setProducts(data);
       } catch (e) {
         if (!ignore) setError(e instanceof Error ? e.message : String(e));
@@ -43,16 +54,21 @@ export default function ProductsPage() {
     return () => {
       ignore = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
 
   const handleCreate = async () => {
     setLoading(true);
     setError(null);
     try {
-      await apiFetch(`/stores/${storeId}/products`, {
-        method: "POST",
-        body: JSON.stringify({ name, description, price: parseFloat(price) }),
-      });
+      await apiFetch(
+        `/stores/${storeId}/products`,
+        {
+          method: "POST",
+          body: JSON.stringify({ name, description, price: parseFloat(price) }),
+        },
+        tCommon("networkError"),
+      );
       setName("");
       setDescription("");
       setPrice("");
@@ -79,23 +95,23 @@ export default function ProductsPage() {
   return (
     <div className="min-h-screen bg-gray-50 px-6 py-10">
       <div className="max-w-5xl mx-auto flex flex-col gap-6">
-        <h1 className="text-2xl font-bold text-gray-900">Productos</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-wrap gap-3 items-center ">
           <input
-            placeholder="Nombre"
+            placeholder={t("form.namePlaceholder")}
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="flex-1 min-w-[160px] rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 placeholder:text-gray-600"
           />
           <input
-            placeholder="Descripción"
+            placeholder={t("form.descriptionPlaceholder")}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="flex-1 min-w-[160px] rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 placeholder:text-gray-600"
           />
           <input
-            placeholder="Precio"
+            placeholder={t("form.pricePlaceholder")}
             value={price}
             onChange={(e) => setPrice(e.target.value)}
             className="w-32 rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 placeholder:text-gray-600"
@@ -105,7 +121,7 @@ export default function ProductsPage() {
             disabled={loading || !name || !price}
             className="rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-60"
           >
-            {loading ? "Creando..." : "Agregar producto"}
+            {loading ? t("form.creating") : t("form.addProduct")}
           </button>
         </div>
 
@@ -115,10 +131,10 @@ export default function ProductsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50 text-left text-gray-500">
-                <th className="px-6 py-3 font-medium">Nombre</th>
-                <th className="px-6 py-3 font-medium">Precio</th>
-                <th className="px-6 py-3 font-medium">Estado</th>
-                <th className="px-6 py-3 font-medium">Acciones</th>
+                <th className="px-6 py-3 font-medium">{t("table.name")}</th>
+                <th className="px-6 py-3 font-medium">{t("table.price")}</th>
+                <th className="px-6 py-3 font-medium">{t("table.status")}</th>
+                <th className="px-6 py-3 font-medium">{t("table.actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -147,14 +163,14 @@ export default function ProductsPage() {
                           onClick={() => handlePublish(p.id)}
                           className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-600"
                         >
-                          Publicar
+                          {t("actions.publish")}
                         </button>
                       )}
                       <button
                         onClick={() => handleDelete(p.id)}
                         className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-50"
                       >
-                        Eliminar
+                        {t("actions.delete")}
                       </button>
                     </div>
                   </td>

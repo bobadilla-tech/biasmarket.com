@@ -1,0 +1,20 @@
+{
+  "title": "Products",
+  "form": {
+    "namePlaceholder": "Name",
+    "descriptionPlaceholder": "Description",
+    "pricePlaceholder": "Price",
+    "addProduct": "Add product",
+    "creating": "Creating..."
+  },
+  "table": {
+    "name": "Name",
+    "price": "Price",
+    "status": "Status",
+    "actions": "Actions"
+  },
+  "actions": {
+    "publish": "Publish",
+    "delete": "Delete"
+  }
+}

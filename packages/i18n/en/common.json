@@ -1,1 +1,8 @@
-{ "hello": "Hello" }
+{
+  "loading": "Loading...",
+  "networkError": "Network error",
+  "meta": {
+    "title": "Bias Market — Storefronts for K-pop merch & photocard sellers",
+    "description": "Run your K-pop merch and photocard store without the spreadsheet chaos. Order tracking, payment proof review, and a clean storefront — built for GOMs."
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "login": {
+    "title": "Iniciar sesión",
+    "emailPlaceholder": "Email",
+    "passwordPlaceholder": "Contraseña",
+    "submit": "Ingresar",
+    "submitting": "Ingresando...",
+    "invalidCredentials": "Email o contraseña incorrectos",
+    "noAccount": "¿No tenés cuenta?",
+    "signUpLink": "Registrate"
+  },
+  "signup": {
+    "title": "Crear cuenta",
+    "namePlaceholder": "Nombre",
+    "emailPlaceholder": "Email",
+    "passwordPlaceholder": "Contraseña",
+    "submit": "Registrarme",
+    "genericError": "Error al registrarse",
+    "hasAccount": "¿Ya tenés cuenta?",
+    "loginLink": "Iniciar sesión"
+  },
+  "createStore": {
+    "title": "Tus tiendas",
+    "empty": "Todavía no tenés ninguna tienda. Creá la primera abajo.",
+    "delete": "Eliminar",
+    "createNew": "Crear nueva tienda",
+    "namePlaceholder": "Nombre de la tienda",
+    "submit": "Crear tienda",
+    "submitting": "Creando...",
+    "genericError": "Error al crear la tienda",
+    "deleteError": "Error al eliminar la tienda",
+    "networkDeleteError": "Error de red al eliminar",
+    "confirmDelete": "¿Seguro que querés eliminar esta tienda?"
+  }
+}

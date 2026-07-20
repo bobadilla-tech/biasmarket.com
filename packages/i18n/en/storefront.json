@@ -1,0 +1,9 @@
+{
+  "notFound": "Store not found.",
+  "noProducts": "No products published yet.",
+  "soldOut": "Sold out",
+  "variantSoldOut": "(sold out)",
+  "addToCart": "Add to cart",
+  "addedToCart": "Added ✓",
+  "cart": "Cart"
+}
