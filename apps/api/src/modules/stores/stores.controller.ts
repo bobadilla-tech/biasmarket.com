@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Post, UseGuards, Delete, Param } from '@nestjs/common';
-import { AuthGuard, Session } from '@thallesp/nestjs-better-auth';
+import { AuthGuard, Public, Session } from '@thallesp/nestjs-better-auth';
 import type { UserSession } from '@thallesp/nestjs-better-auth';
 import { StoresService } from './stores.service.js';
 
@@ -28,6 +28,7 @@ export class StoresController {
     return this.stores.delete(storeId, session.user.id);
   }
 
+  @Public()
   @Get(':slug/public')
   findPublic(@Param('slug') slug: string) {
     return this.stores.findPublicBySlug(slug);
