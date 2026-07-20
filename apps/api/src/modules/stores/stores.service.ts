@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { slugify } from '@biasmarket/utils/strings';
 
@@ -28,5 +28,20 @@ export class StoresService {
 
   async findAllForUser(userId: string) {
     return this.prisma.store.findMany({ where: { ownerId: userId } });
+  }
+
+  async delete(storeId: string, userId: string) {
+    const store = await this.prisma.store.findUnique({ where: { id: storeId } });
+    if (!store) throw new NotFoundException('Store no encontrada');
+    if (store.ownerId !== userId) {
+      throw new ForbiddenException('No eres dueño de esta store');
+    }
+    try {
+      return await this.prisma.store.delete({ where: { id: storeId } });
+    } catch {
+      throw new BadRequestException(
+        'No se puede eliminar: la tienda tiene productos u órdenes asociadas',
+      );
+    }
   }
 }

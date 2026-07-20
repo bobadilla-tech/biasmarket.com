@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards, Delete, Param } from '@nestjs/common';
 import { AuthGuard, Session } from '@thallesp/nestjs-better-auth';
 import type { UserSession } from '@thallesp/nestjs-better-auth';
 import { StoresService } from './stores.service.js';
@@ -15,4 +15,17 @@ export class StoresController {
   ) {
     return this.stores.create(session.user.id, body.name, body.slug);
   }
+
+  @UseGuards(AuthGuard)
+  @Get('/me/stores')
+  findMine(@Session() session: UserSession) {
+    return this.stores.findAllForUser(session.user.id);
+  }
+
+  @UseGuards(AuthGuard)
+  @Delete(':storeId')
+  delete(@Param('storeId') storeId: string, @Session() session: UserSession) {
+    return this.stores.delete(storeId, session.user.id);
+  }
+
 }
