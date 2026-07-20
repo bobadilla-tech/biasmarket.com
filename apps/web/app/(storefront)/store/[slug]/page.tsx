@@ -1,12 +1,11 @@
 async function getStore(slug: string) {
-
-  const url = `${process.env.NEXT_PUBLIC_API_URL}/api/stores/${slug}/public`;
-  console.log(url)
-  
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/stores/${slug}/public`, {
+  const apiUrl = process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
+  const res = await fetch(`${apiUrl}/api/stores/${slug}/public`, {
     cache: "no-store",
   });
+
   if (!res.ok) return null;
+
   return res.json();
 }
 
