@@ -225,3 +225,63 @@ feature or migration reason for `15`, just an unbumped default.
   `--health-cmd="node /app/infra/docker/api-healthcheck.ts"` against a dummy
   `200` response and confirmed `docker inspect .State.Health.Status` reports
   `"healthy"`.
+
+## Follow-up: prod outage on deploy, and a second local port conflict
+
+Two more problems surfaced once this actually shipped, both after the plan
+above had already landed.
+
+**Local: port 3000 already bound.** `pnpm docker:dev` failed with
+`address already in use` on port 3000. Not a Docker problem — a native
+`nest start --watch` (`pnpm --filter api dev`) was already running outside
+Docker from an earlier session, holding the port. Traced via `lsof -nP
+-iTCP:3000 -sTCP:LISTEN` → pid → `ps -p <pid> -o pid,ppid,command` up the
+parent chain to find the actual long-lived watcher (killing the child alone
+wasn't enough — `nest --watch` just respawned it). Fixed by killing the
+watcher process itself, confirmed with the same `lsof` check.
+
+**Prod: `db-1` failed to start on the Oracle VM after `git pull && pnpm
+docker:prod`.** This looked at first like the same `postgres:18`
+`PGDATA`-relocation issue documented above (see the `postgres:15` →
+`postgres:18` decision), but the risk profile was different and worth
+recording separately: `docker compose up`'s output showed
+`biasmarket-caddy-1` as already `Running` (not newly created) before `db`
+failed — meaning this VM had a **prior real deployment**, not a fresh one.
+That matters because the earlier decision to bump `postgres:15` → `:18`
+freely (see above) was made on the premise that nothing was deployed yet;
+this VM contradicted that premise, so the safe response was to treat it as
+a possible-real-data incident until proven otherwise rather than assume the
+dev fix applied cleanly:
+
+1. Did **not** run any destructive command (`down -v`, `volume rm`) without
+   confirming first. Asked for `docker compose -f
+   infra/docker/docker-compose.yml logs db --tail=50` to see the actual
+   Postgres error before touching anything, and explicitly flagged that if
+   it showed a version-incompatibility error, the right move would be
+   rolling the image tag back to `postgres:15` to restore service on the
+   existing data, then planning a deliberate `pg_upgrade`/dump-restore
+   migration separately — not wiping the volume.
+2. User confirmed the prod `db_data` volume was actually empty (no real
+   deploy had put data in it yet), which changed the situation back to the
+   same class of fix as the dev case. Gave the exact remote commands to run
+   (this repo's Bash tool has no access to the Oracle VM, so these were
+   handed to the user to run themselves, not executed here):
+   ```bash
+   cd ~/biasmarket
+   docker compose -f infra/docker/docker-compose.yml down
+   docker volume rm biasmarket_db_data
+   docker compose -f infra/docker/docker-compose.yml up -d
+   docker compose -f infra/docker/docker-compose.yml logs db --tail=30
+   ```
+   (Volume name derived from the compose file's top-level `name: biasmarket`
+   — prod's volume is `biasmarket_db_data`, not `biasmarket-dev_db_data`
+   like the dev project.)
+
+**Takeaway for next time a Postgres major-version bump touches a VM that
+might already be running:** always get read-only confirmation (`logs`,
+volume contents, or an explicit "is this empty" answer) before any volume
+mutation, even when the local dev fix for the same symptom is already known
+and looks like it obviously applies — a passing resemblance to an
+already-diagnosed bug is not the same as confirming this instance is that
+bug, and the two failure modes (empty volume vs. real pg15 data) require
+opposite responses.
