@@ -181,8 +181,19 @@ Look for a "certificate obtained successfully" log line before retesting
 
 ## Day 2
 
-- **Redeploy after a change:** `git pull && pnpm docker:prod` — rebuilds and
-  restarts anything that changed, migrations reapply automatically.
+### Redeploy after a change
+
+```bash
+cd ~/biasmarket
+git pull
+pnpm docker:prod
+```
+
+Rebuilds and restarts anything that changed, migrations reapply
+automatically (same `prisma migrate deploy` on `api` boot as step 6). No
+firewall/DNS/cert steps needed again — those are one-time, tied to the VM
+and domain, not the code.
+
 - **Logs:** `docker compose -f infra/docker/docker-compose.yml logs -f <service>`
 - **DB backup:** the Postgres data lives in the `db_data` named volume.
   Simplest snapshot: `docker compose -f infra/docker/docker-compose.yml exec db pg_dump -U biasmarket biasmarket > backup.sql`
