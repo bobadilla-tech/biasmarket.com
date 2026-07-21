@@ -22,6 +22,20 @@ services:
       timeout: 5s
       retries: 10
 
+  minio:
+    image: minio/minio
+    container_name: barriostore-minio
+    networks: [stack]
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password123
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+
   api:
     build:
       context: ../..
@@ -92,6 +106,7 @@ services:
 
 volumes:
   db_data:
+  minio_data:
   api_root_node_modules:
   api_app_node_modules:
   api_db_node_modules:

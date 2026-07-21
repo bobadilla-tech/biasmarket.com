@@ -10,6 +10,7 @@ import { CreateVariantDto } from './dto/create-variant.dto.js';
 
 @Injectable()
 export class ProductsService {
+  
   constructor(private prisma: PrismaService) {}
 
   private async assertOwnership(storeId: string, userId: string) {
@@ -92,5 +93,13 @@ export class ProductsService {
   async listVariants(productId: string, storeId: string, userId: string) {
     await this.findOwnedProduct(productId, storeId, userId);
     return this.prisma.productVariant.findMany({ where: { productId } });
+  }
+  
+  async addImage(productId: string, storeId: string, userId: string, url: string) {
+    const product = await this.findOwnedProduct(productId, storeId, userId);
+    return this.prisma.product.update({
+      where: { id: productId },
+      data: { images: [...product.images, url] },
+    });
   }
 }

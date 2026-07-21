@@ -33,6 +33,7 @@ model Store {
   locale              String   @default("es")
   ownerId             String
   themeConfig         Json
+  logoUrl             String?
   paymentInstructions String
   whatsappNumber      String?
   defaultCurrency     String   @default("PEN")

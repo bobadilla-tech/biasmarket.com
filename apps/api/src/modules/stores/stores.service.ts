@@ -8,7 +8,7 @@ const RESERVED_SLUGS = ['www', 'api', 'admin', 'app'];
 
 @Injectable()
 export class StoresService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(ownerId: string, dto: CreateStoreDto) {
     const slug = slugify(dto.slug);
@@ -91,5 +91,14 @@ export class StoresService {
     });
     if (!store) throw new NotFoundException('Tienda no encontrada');
     return store;
+  }
+
+  async updateLogo(storeId: string, userId: string, url: string) {
+    const store = await this.prisma.store.findUnique({ where: { id: storeId } });
+    if (!store) throw new NotFoundException('Store no encontrada');
+    if (store.ownerId !== userId) {
+      throw new ForbiddenException('No eres dueño de esta store');
+    }
+    return this.prisma.store.update({ where: { id: storeId }, data: { logoUrl: url } });
   }
 }
