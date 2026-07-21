@@ -30,6 +30,8 @@ export default function ProductsPage() {
   const [availableUntil, setAvailableUntil] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (store?.defaultCurrency) setCurrency(store.defaultCurrency);
@@ -74,7 +76,7 @@ export default function ProductsPage() {
     setLoading(true);
     setError(null);
     try {
-      await apiFetch(
+      const newProduct = await apiFetch(
         `/stores/${storeId}/products`,
         {
           method: "POST",
@@ -83,7 +85,6 @@ export default function ProductsPage() {
             description,
             price: parseFloat(price),
             currency,
-            images: imageUrl ? [imageUrl] : undefined,
             availableUntil: availableUntil
               ? new Date(availableUntil).toISOString()
               : undefined,
@@ -91,10 +92,15 @@ export default function ProductsPage() {
         },
         tCommon("networkError"),
       );
+
+      if (imageFile) {
+        await handleUploadImage(newProduct.id, imageFile);
+      }
+
       setName("");
       setDescription("");
       setPrice("");
-      setImageUrl("");
+      setImageFile(null);
       setAvailableUntil("");
       await loadProducts();
     } catch (e) {
@@ -114,6 +120,29 @@ export default function ProductsPage() {
   const handleDelete = async (id: string) => {
     await apiFetch(`/stores/${storeId}/products/${id}`, { method: "DELETE" });
     await loadProducts();
+  };
+
+  const handleUploadImage = async (productId: string, file: File) => {
+    setUploadingImage(productId);
+    setError(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/stores/${storeId}/products/${productId}/images`,
+        { method: "POST", credentials: "include", body: formData },
+      );
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setError(data?.message ?? tCommon("networkError"));
+        return;
+      }
+      setProducts((prev) => prev.map((p) => (p.id === productId ? data : p)));
+    } catch {
+      setError(tCommon("networkError"));
+    } finally {
+      setUploadingImage(null);
+    }
   };
 
   if (storeLoading) {
@@ -158,6 +187,12 @@ export default function ProductsPage() {
             onChange={(e) => setPrice(e.target.value)}
             className="w-32 rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 placeholder:text-gray-600"
           />
+          <input
+            type="file"
+            accept="image/jpeg,image/png"
+            onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
+            className="flex-1 min-w-[160px] text-sm text-gray-600"
+          />
           <select
             value={currency}
             onChange={(e) => setCurrency(e.target.value)}
@@ -169,12 +204,6 @@ export default function ProductsPage() {
               </option>
             ))}
           </select>
-          <input
-            placeholder={t("form.imageUrlPlaceholder")}
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            className="flex-1 min-w-[160px] rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 placeholder:text-gray-600"
-          />
           <input
             type="date"
             aria-label={t("form.availableUntilPlaceholder")}
@@ -199,9 +228,12 @@ export default function ProductsPage() {
               <tr className="border-b border-gray-100 bg-gray-50 text-left text-gray-500">
                 <th className="px-6 py-3 font-medium">{t("table.name")}</th>
                 <th className="px-6 py-3 font-medium">{t("table.price")}</th>
-                <th className="px-6 py-3 font-medium">{t("table.availableUntil")}</th>
+                <th className="px-6 py-3 font-medium">
+                  {t("table.availableUntil")}
+                </th>
                 <th className="px-6 py-3 font-medium">{t("table.status")}</th>
                 <th className="px-6 py-3 font-medium">{t("table.actions")}</th>
+                <th className="px-6 py-3 font-medium">Imagen</th>
               </tr>
             </thead>
             <tbody>
@@ -247,6 +279,30 @@ export default function ProductsPage() {
                         {t("actions.delete")}
                       </button>
                     </div>
+                  </td>
+                  <td className="px-6 py-3">
+                    {p.images.length > 0 ? (
+                      <img
+                        src={p.images[0]}
+                        alt={p.name}
+                        className="w-12 h-12 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <label className="text-xs text-emerald-600 cursor-pointer">
+                        {uploadingImage === p.id
+                          ? "..."
+                          : (t("actions.uploadImage") ?? "Subir imagen")}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleUploadImage(p.id, file);
+                          }}
+                        />
+                      </label>
+                    )}
                   </td>
                 </tr>
               ))}
