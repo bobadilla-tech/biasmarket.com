@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 // Generates infra/docker/.env (production) from .env.example with fresh secrets.
 // Dev already runs off the committed .env.example defaults — this script is prod-only.
 // Usage: pnpm env:init [--force]
@@ -20,6 +21,7 @@ if (existsSync(envPath) && !force) {
 }
 
 const genSecret = (bytes: number) => randomBytes(bytes).toString("hex");
+
 // Alphanumeric only — safe to embed unescaped in a Postgres connection URL.
 const genPassword = () => randomBytes(24).toString("base64url");
 
@@ -36,14 +38,18 @@ const replacements: Record<string, string> = {
 };
 
 const lines = readFileSync(examplePath, "utf8").split("\n");
+
 const out = lines.map((line) => {
   const match = /^([A-Z_][A-Z0-9_]*)=/.exec(line);
+  
   if (match && match[1] in replacements) {
     return `${match[1]}=${replacements[match[1]]}`;
   }
+
   return line;
 });
 
 writeFileSync(envPath, out.join("\n"));
+
 console.log(`Wrote ${envPath} (prod)`);
 console.log("Generated: POSTGRES_PASSWORD, DATABASE_URL, BETTER_AUTH_SECRET");
