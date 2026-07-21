@@ -20,5 +20,34 @@
   "actions": {
     "publish": "Publish",
     "delete": "Delete"
+  },
+  "settings": {
+    "title": "Settings",
+    "whatsappTitle": "Store WhatsApp",
+    "whatsappHelp": "Orders redirect the buyer to this number with the order details.",
+    "whatsappPlaceholder": "+51999999999",
+    "currencyTitle": "Store currency",
+    "currencyHelp": "Default currency for new products. You can change a specific product's currency when creating or editing it.",
+    "save": "Save",
+    "saving": "Saving...",
+    "saved": "Saved ✓",
+    "pickupTitle": "Store pickup",
+    "courierTitle": "Courier shipping",
+    "enabled": "Enabled",
+    "addressPlaceholder": "Pickup address",
+    "costPlaceholder": "Estimated cost"
+  },
+  "orders": {
+    "title": "Orders",
+    "columns": {
+      "customer": "Customer",
+      "total": "Total",
+      "payment": "Payment",
+      "delivery": "Delivery",
+      "actions": "Actions"
+    },
+    "approve": "Approve",
+    "reject": "Reject",
+    "markAs": "Mark {status}"
   }
 }

@@ -20,5 +20,34 @@
   "actions": {
     "publish": "Publicar",
     "delete": "Eliminar"
+  },
+  "settings": {
+    "title": "Configuración",
+    "whatsappTitle": "WhatsApp de la tienda",
+    "whatsappHelp": "Los pedidos redirigen al comprador a este número con el detalle del pedido.",
+    "whatsappPlaceholder": "+51999999999",
+    "currencyTitle": "Moneda de la tienda",
+    "currencyHelp": "Moneda por defecto para productos nuevos. Podés cambiar la moneda de un producto en particular al crearlo o editarlo.",
+    "save": "Guardar",
+    "saving": "Guardando...",
+    "saved": "Guardado ✓",
+    "pickupTitle": "Retiro en tienda",
+    "courierTitle": "Envío por courier",
+    "enabled": "Habilitado",
+    "addressPlaceholder": "Dirección de retiro",
+    "costPlaceholder": "Costo estimado"
+  },
+  "orders": {
+    "title": "Pedidos",
+    "columns": {
+      "customer": "Cliente",
+      "total": "Total",
+      "payment": "Pago",
+      "delivery": "Entrega",
+      "actions": "Acciones"
+    },
+    "approve": "Aprobar",
+    "reject": "Rechazar",
+    "markAs": "Marcar {status}"
   }
 }

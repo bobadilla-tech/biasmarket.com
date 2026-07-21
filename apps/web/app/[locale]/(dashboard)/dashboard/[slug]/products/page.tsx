@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { SUPPORTED_CURRENCIES } from "@biasmarket/utils/currency";
 import { apiFetch } from "@/lib/api";
 import { useStore } from "@/lib/use-store";
 
@@ -9,6 +10,7 @@ interface Product {
   name: string;
   description: string;
   price: string;
+  currency: string;
   status: "DRAFT" | "PUBLISHED";
   soldOut: boolean;
   images: string[];
@@ -18,15 +20,20 @@ interface Product {
 export default function ProductsPage() {
   const t = useTranslations("dashboard");
   const tCommon = useTranslations("common");
-  const { storeId, slug, loading: storeLoading } = useStore();
+  const { store, storeId, slug, loading: storeLoading } = useStore();
   const [products, setProducts] = useState<Product[]>([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
+  const [currency, setCurrency] = useState<string>(SUPPORTED_CURRENCIES[0]);
   const [imageUrl, setImageUrl] = useState("");
   const [availableUntil, setAvailableUntil] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (store?.defaultCurrency) setCurrency(store.defaultCurrency);
+  }, [store]);
 
   const loadProducts = async () => {
     if (!storeId) return;
@@ -75,6 +82,7 @@ export default function ProductsPage() {
             name,
             description,
             price: parseFloat(price),
+            currency,
             images: imageUrl ? [imageUrl] : undefined,
             availableUntil: availableUntil
               ? new Date(availableUntil).toISOString()
@@ -150,6 +158,17 @@ export default function ProductsPage() {
             onChange={(e) => setPrice(e.target.value)}
             className="w-32 rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 placeholder:text-gray-600"
           />
+          <select
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value)}
+            className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600"
+          >
+            {SUPPORTED_CURRENCIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
           <input
             placeholder={t("form.imageUrlPlaceholder")}
             value={imageUrl}
@@ -192,7 +211,9 @@ export default function ProductsPage() {
                   className="border-b border-gray-100 last:border-0"
                 >
                   <td className="px-6 py-3 text-gray-900">{p.name}</td>
-                  <td className="px-6 py-3 text-gray-900">${p.price}</td>
+                  <td className="px-6 py-3 text-gray-900">
+                    {p.price} {p.currency}
+                  </td>
                   <td className="px-6 py-3 text-gray-600">
                     {p.availableUntil
                       ? new Date(p.availableUntil).toLocaleDateString()

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { SUPPORTED_CURRENCIES } from "@biasmarket/utils/currency";
 import { useRouter } from "@/i18n/navigation";
 
 interface Store {
@@ -19,6 +20,7 @@ export default function CreateStorePage() {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [defaultCurrency, setDefaultCurrency] = useState<string>(SUPPORTED_CURRENCIES[0]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -50,7 +52,7 @@ export default function CreateStorePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ name, slug, whatsappNumber }),
+        body: JSON.stringify({ name, slug, whatsappNumber, defaultCurrency }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -156,6 +158,18 @@ export default function CreateStorePage() {
           />
           <p className="text-xs text-gray-500">{t("whatsappHelp")}</p>
         </div>
+
+        <select
+          value={defaultCurrency}
+          onChange={(e) => setDefaultCurrency(e.target.value)}
+          className="text-gray-900 border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400"
+        >
+          {SUPPORTED_CURRENCIES.map((currency) => (
+            <option key={currency} value={currency}>
+              {currency}
+            </option>
+          ))}
+        </select>
 
         {error && <p className="text-sm text-red-500">{error}</p>}
 

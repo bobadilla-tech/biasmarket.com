@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { apiFetch } from "@/lib/api";
 import { useStore } from "@/lib/use-store";
 
@@ -9,6 +10,7 @@ interface Order {
   customerName: string | null;
   customerPhone: string;
   totalAmount: string;
+  currency: string;
   paymentStatus: "PENDING_PAYMENT" | "PAYMENT_SUBMITTED" | "VERIFIED" | "REJECTED" | "CANCELLED";
   fulfillmentStatus: "ORDERING" | "IN_TRANSIT" | "READY" | "COMPLETED";
   createdAt: string;
@@ -22,6 +24,8 @@ const NEXT_FULFILLMENT: Record<string, string | undefined> = {
 };
 
 export default function OrdersPage() {
+  const t = useTranslations("dashboard.orders");
+  const tCommon = useTranslations("common");
   const { storeId, loading: storeLoading } = useStore();
   const [orders, setOrders] = useState<Order[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +42,7 @@ export default function OrdersPage() {
 
   useEffect(() => {
     loadOrders();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
 
   const handleReview = async (orderId: string, decision: "approve" | "reject") => {
@@ -65,13 +70,17 @@ export default function OrdersPage() {
   };
 
   if (storeLoading) {
-    return <div className="min-h-screen bg-gray-50 px-6 py-10 text-sm text-gray-500">Cargando...</div>;
+    return (
+      <div className="min-h-screen bg-gray-50 px-6 py-10 text-sm text-gray-500">
+        {tCommon("loading")}
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-gray-50 px-6 py-10">
       <div className="max-w-5xl mx-auto flex flex-col gap-6">
-        <h1 className="text-2xl font-bold text-gray-900">Pedidos</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
 
         {error && <p className="text-sm text-red-500">{error}</p>}
 
@@ -79,11 +88,11 @@ export default function OrdersPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50 text-left text-gray-500">
-                <th className="px-6 py-3 font-medium">Cliente</th>
-                <th className="px-6 py-3 font-medium">Total</th>
-                <th className="px-6 py-3 font-medium">Pago</th>
-                <th className="px-6 py-3 font-medium">Entrega</th>
-                <th className="px-6 py-3 font-medium">Acciones</th>
+                <th className="px-6 py-3 font-medium">{t("columns.customer")}</th>
+                <th className="px-6 py-3 font-medium">{t("columns.total")}</th>
+                <th className="px-6 py-3 font-medium">{t("columns.payment")}</th>
+                <th className="px-6 py-3 font-medium">{t("columns.delivery")}</th>
+                <th className="px-6 py-3 font-medium">{t("columns.actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -97,7 +106,9 @@ export default function OrdersPage() {
                     <td className="px-6 py-3 text-gray-900">
                       {order.customerName ?? order.customerPhone}
                     </td>
-                    <td className="px-6 py-3 text-gray-900">${order.totalAmount}</td>
+                    <td className="px-6 py-3 text-gray-900">
+                      {order.totalAmount} {order.currency}
+                    </td>
                     <td className="px-6 py-3">
                       <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
                         {order.paymentStatus}
@@ -116,13 +127,13 @@ export default function OrdersPage() {
                               onClick={() => handleReview(order.id, "approve")}
                               className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-600"
                             >
-                              Aprobar
+                              {t("approve")}
                             </button>
                             <button
                               onClick={() => handleReview(order.id, "reject")}
                               className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-50"
                             >
-                              Rechazar
+                              {t("reject")}
                             </button>
                           </>
                         )}
@@ -131,7 +142,7 @@ export default function OrdersPage() {
                             onClick={() => handleAdvance(order.id, nextFulfillment)}
                             className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-50"
                           >
-                            Marcar {nextFulfillment}
+                            {t("markAs", { status: nextFulfillment })}
                           </button>
                         )}
                       </div>

@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
+import { SUPPORTED_CURRENCIES } from "@biasmarket/utils/currency";
 import { apiFetch } from "@/lib/api";
 import { useStore } from "@/lib/use-store";
 
@@ -11,8 +13,11 @@ interface DeliveryMethod {
 }
 
 export default function SettingsPage() {
-  const { storeId, loading: storeLoading } = useStore();
+  const t = useTranslations("dashboard.settings");
+  const tCommon = useTranslations("common");
+  const { store, storeId, loading: storeLoading } = useStore();
   const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [defaultCurrency, setDefaultCurrency] = useState<string>(SUPPORTED_CURRENCIES[0]);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -22,6 +27,11 @@ export default function SettingsPage() {
   const [pickupAddress, setPickupAddress] = useState("");
   const [courierEnabled, setCourierEnabled] = useState(false);
   const [courierCost, setCourierCost] = useState("");
+
+  useEffect(() => {
+    if (store?.whatsappNumber) setWhatsappNumber(store.whatsappNumber);
+    if (store?.defaultCurrency) setDefaultCurrency(store.defaultCurrency);
+  }, [store]);
 
   const loadDeliveryMethods = async () => {
     if (!storeId) return;
@@ -37,6 +47,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     loadDeliveryMethods();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
 
   const handleSaveWhatsapp = async () => {
@@ -45,7 +56,7 @@ export default function SettingsPage() {
     try {
       await apiFetch(`/stores/${storeId}`, {
         method: "PATCH",
-        body: JSON.stringify({ whatsappNumber }),
+        body: JSON.stringify({ whatsappNumber, defaultCurrency }),
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 1500);
@@ -81,47 +92,64 @@ export default function SettingsPage() {
   };
 
   if (storeLoading) {
-    return <div className="min-h-screen bg-gray-50 px-6 py-10 text-sm text-gray-500">Cargando...</div>;
+    return (
+      <div className="min-h-screen bg-gray-50 px-6 py-10 text-sm text-gray-500">
+        {tCommon("loading")}
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-gray-50 px-6 py-10">
       <div className="max-w-2xl mx-auto flex flex-col gap-6">
-        <h1 className="text-2xl font-bold text-gray-900">Configuración</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col gap-3">
-          <h2 className="font-semibold text-gray-900">WhatsApp de la tienda</h2>
-          <p className="text-sm text-gray-500">
-            Los pedidos redirigen al comprador a este número con el detalle del pedido.
-          </p>
+          <h2 className="font-semibold text-gray-900">{t("whatsappTitle")}</h2>
+          <p className="text-sm text-gray-500">{t("whatsappHelp")}</p>
           <input
-            placeholder="+51999999999"
+            placeholder={t("whatsappPlaceholder")}
             value={whatsappNumber}
             onChange={(e) => setWhatsappNumber(e.target.value)}
             className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
           />
+
+          <h2 className="font-semibold text-gray-900">{t("currencyTitle")}</h2>
+          <p className="text-sm text-gray-500">{t("currencyHelp")}</p>
+          <select
+            value={defaultCurrency}
+            onChange={(e) => setDefaultCurrency(e.target.value)}
+            className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600"
+          >
+            {SUPPORTED_CURRENCIES.map((currency) => (
+              <option key={currency} value={currency}>
+                {currency}
+              </option>
+            ))}
+          </select>
+
           <button
             onClick={handleSaveWhatsapp}
             disabled={loading || !whatsappNumber}
             className="self-start rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-60"
           >
-            {saved ? "Guardado ✓" : loading ? "Guardando..." : "Guardar"}
+            {saved ? t("saved") : loading ? t("saving") : t("save")}
           </button>
           {error && <p className="text-sm text-red-500">{error}</p>}
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col gap-3">
-          <h2 className="font-semibold text-gray-900">Retiro en tienda</h2>
+          <h2 className="font-semibold text-gray-900">{t("pickupTitle")}</h2>
           <label className="flex items-center gap-2 text-sm text-gray-600">
             <input
               type="checkbox"
               checked={pickupEnabled}
               onChange={(e) => setPickupEnabled(e.target.checked)}
             />
-            Habilitado
+            {t("enabled")}
           </label>
           <input
-            placeholder="Dirección de retiro"
+            placeholder={t("addressPlaceholder")}
             value={pickupAddress}
             onChange={(e) => setPickupAddress(e.target.value)}
             className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
@@ -130,22 +158,22 @@ export default function SettingsPage() {
             onClick={handleSavePickup}
             className="self-start rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-600"
           >
-            Guardar
+            {t("save")}
           </button>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col gap-3">
-          <h2 className="font-semibold text-gray-900">Envío por courier</h2>
+          <h2 className="font-semibold text-gray-900">{t("courierTitle")}</h2>
           <label className="flex items-center gap-2 text-sm text-gray-600">
             <input
               type="checkbox"
               checked={courierEnabled}
               onChange={(e) => setCourierEnabled(e.target.checked)}
             />
-            Habilitado
+            {t("enabled")}
           </label>
           <input
-            placeholder="Costo estimado"
+            placeholder={t("costPlaceholder")}
             value={courierCost}
             onChange={(e) => setCourierCost(e.target.value)}
             className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
@@ -154,7 +182,7 @@ export default function SettingsPage() {
             onClick={handleSaveCourier}
             className="self-start rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-600"
           >
-            Guardar
+            {t("save")}
           </button>
         </div>
       </div>

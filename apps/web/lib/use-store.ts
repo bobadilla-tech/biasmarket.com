@@ -9,6 +9,7 @@ export interface DashboardStore {
   name: string;
   slug: string;
   whatsappNumber: string | null;
+  defaultCurrency: string;
 }
 
 export function useStore() {
