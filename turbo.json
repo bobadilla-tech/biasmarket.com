@@ -8,6 +8,7 @@
     "typecheck": { "dependsOn": ["^build"] },
     "test": { "dependsOn": ["^build"] },
     "@biasmarket/db#typecheck": { "dependsOn": ["^build", "build"] },
+    "@biasmarket/db#build": { "cache": false, "outputs": ["generated/**"] },
     "db:generate": { "cache": false }
   }
 }

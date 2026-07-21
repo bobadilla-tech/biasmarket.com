@@ -1,0 +1,73 @@
+{
+  "footer": {
+    "navHeading": "Site",
+    "navHome": "Home",
+    "navFounder": "Founders",
+    "navEnterprise": "Enterprise",
+    "credit": "Developed by <name>Bobadilla Tech</name>",
+    "copyright": "© {year} Bias Market. All rights reserved."
+  },
+  "founderPage": {
+    "meta": {
+      "title": "Founders — Bias Market",
+      "description": "Meet the three-person team behind Bias Market, a store builder built for K-pop GOMs and photocard sellers."
+    },
+    "overline": "Founders",
+    "headline": "Three founders, not one",
+    "intro": "Bias Market started as a three-person team. We split the work along what each of us is actually good at, instead of one person trying to do everything.",
+    "team": [
+      {
+        "name": "Carlos Bonifacio",
+        "role": "Founding Engineer",
+        "bio": "Builds and ships the core product day to day."
+      },
+      {
+        "name": "Eliaz Bobadilla",
+        "role": "Tech Lead",
+        "bio": "Owns the architecture — the backend, data model, and multi-tenant isolation the whole platform relies on."
+      },
+      {
+        "name": "Alexandra Flores",
+        "role": "Distribution & Marketing",
+        "bio": "Gets Bias Market in front of the sellers who need it, and runs how we grow."
+      }
+    ],
+    "cta": {
+      "heading": "Want to talk through your store?",
+      "body": "If you're running group orders or photocard drops and want to see whether Bias Market fits, reach out directly.",
+      "button": "Get in touch"
+    }
+  },
+  "enterprisePage": {
+    "meta": {
+      "title": "Enterprise — Bias Market",
+      "description": "Bias Market for agencies and larger sellers running multiple stores or high-volume drops."
+    },
+    "overline": "Enterprise",
+    "headline": "For agencies and multi-store sellers",
+    "intro": "Running more than one storefront, or drops big enough that you need closer support? We work directly with larger sellers and agencies to fit Bias Market to that scale.",
+    "features": [
+      {
+        "title": "Multiple stores",
+        "body": "Manage several storefronts — one per artist, group, or drop — without juggling separate accounts."
+      },
+      {
+        "title": "Priority support",
+        "body": "Direct access to the team building the product, not a support queue."
+      },
+      {
+        "title": "Onboarding help",
+        "body": "We'll help migrate your existing order history and get your first drop live."
+      },
+      {
+        "title": "Custom requests",
+        "body": "Tell us what your workflow actually needs — we build in the direction our sellers push us."
+      }
+    ],
+    "cta": {
+      "heading": "Let's talk about your setup",
+      "body": "Tell us about your stores and volume, and we'll figure out the right fit together.",
+      "button": "Contact us"
+    }
+  }
+}

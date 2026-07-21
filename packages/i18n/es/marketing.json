@@ -1,0 +1,73 @@
+{
+  "footer": {
+    "navHeading": "Sitio",
+    "navHome": "Inicio",
+    "navFounder": "Fundadores",
+    "navEnterprise": "Empresas",
+    "credit": "Desarrollado por <name>Bobadilla Tech</name>",
+    "copyright": "© {year} Bias Market. Todos los derechos reservados."
+  },
+  "founderPage": {
+    "meta": {
+      "title": "Fundadores — Bias Market",
+      "description": "Conoce al equipo de tres personas detrás de Bias Market, un creador de tiendas para GOMs y vendedoras de photocards de K-pop."
+    },
+    "overline": "Fundadores",
+    "headline": "Tres fundadores, no uno solo",
+    "intro": "Bias Market empezó como un equipo de tres personas. Dividimos el trabajo según lo que cada uno hace mejor, en vez de que una sola persona intente hacerlo todo.",
+    "team": [
+      {
+        "name": "Carlos Bonifacio",
+        "role": "Founding Engineer",
+        "bio": "Construye y lanza el producto día a día."
+      },
+      {
+        "name": "Eliaz Bobadilla",
+        "role": "Tech Lead",
+        "bio": "Dirige la arquitectura — el backend, el modelo de datos y el aislamiento multi-tenant en el que se apoya toda la plataforma."
+      },
+      {
+        "name": "Alexandra Flores",
+        "role": "Distribución y Marketing",
+        "bio": "Lleva Bias Market a las vendedoras que lo necesitan y dirige cómo crecemos."
+      }
+    ],
+    "cta": {
+      "heading": "¿Quieres hablar sobre tu tienda?",
+      "body": "Si manejas group orders o drops de photocards y quieres ver si Bias Market encaja, escríbeme directamente.",
+      "button": "Contáctame"
+    }
+  },
+  "enterprisePage": {
+    "meta": {
+      "title": "Empresas — Bias Market",
+      "description": "Bias Market para agencias y vendedoras grandes que manejan varias tiendas o drops de alto volumen."
+    },
+    "overline": "Empresas",
+    "headline": "Para agencias y vendedoras con varias tiendas",
+    "intro": "¿Manejas más de una tienda, o drops lo bastante grandes como para necesitar soporte más cercano? Trabajamos directo con vendedoras grandes y agencias para adaptar Bias Market a esa escala.",
+    "features": [
+      {
+        "title": "Varias tiendas",
+        "body": "Maneja varias tiendas — una por artista, grupo o drop — sin tener que usar cuentas separadas."
+      },
+      {
+        "title": "Soporte prioritario",
+        "body": "Acceso directo al equipo que construye el producto, no una cola de soporte."
+      },
+      {
+        "title": "Ayuda con el onboarding",
+        "body": "Te ayudamos a migrar tu historial de pedidos y a lanzar tu primer drop."
+      },
+      {
+        "title": "Pedidos a medida",
+        "body": "Cuéntanos qué necesita tu flujo real — construimos en la dirección que nos marcan nuestras vendedoras."
+      }
+    ],
+    "cta": {
+      "heading": "Hablemos de tu caso",
+      "body": "Cuéntanos sobre tus tiendas y volumen, y juntos vemos qué encaja mejor.",
+      "button": "Contáctanos"
+    }
+  }
+}

@@ -106,6 +106,18 @@ feature or migration reason for `15`, just an unbumped default.
   already deployed against a real volume, this would need `pg_upgrade` or a
   dump/restore, not a version string change. Confirmed nothing is deployed yet,
   so bumped both dev and prod freely with no migration step needed.
+  - This surfaced a second, unrelated compatibility break: starting with
+    `postgres:18`, the official image's default `PGDATA` moved from
+    `/var/lib/postgresql/data` to a versioned path,
+    `/var/lib/postgresql/$PG_MAJOR/docker` (`pg_ctlcluster`-style layout — see
+    docker-library/postgres#1259). Both compose files mounted the named volume
+    at the old `.../data` path, which the `postgres:18` entrypoint now actively
+    refuses to start against (it detects data — or a mount — at the old path and
+    exits 1 rather than silently ignoring it, pointing at
+    docker-library/postgres#37). Fixed by mounting the volume one level up, at
+    `/var/lib/postgresql` instead of `/var/lib/postgresql/data`, which is the
+    new expected convention — the entrypoint's own versioned `PGDATA`
+    subdirectory then lives inside that mount and persists correctly.
 
 ## What changed
 
@@ -123,10 +135,12 @@ feature or migration reason for `15`, just an unbumped default.
 - `infra/docker/web.Dockerfile` — same multi-target pattern; `runtime` stage
   kept on bare `node:26-slim` (no pnpm needed for Next standalone output).
 - `infra/docker/docker-compose.dev.yml` — `api`/`web` builds now reference
-  `target: dev` on the consolidated Dockerfiles; `postgres:15` → `:18`;
-  healthcheck now points at `api-healthcheck.ts` instead of an inline one-liner.
-- `infra/docker/docker-compose.yml` — `postgres:15` → `:18`; same healthcheck
-  script reference.
+  `target: dev` on the consolidated Dockerfiles; `postgres:15` → `:18`; `db`
+  volume mount moved from `/var/lib/postgresql/data` to `/var/lib/postgresql`
+  (required by the `postgres:18` layout change); healthcheck now points at
+  `api-healthcheck.ts` instead of an inline one-liner.
+- `infra/docker/docker-compose.yml` — same `postgres:15` → `:18`, volume mount,
+  and healthcheck script changes as above.
 - `docs/spec/architecture.md`, `docs/spec/deploy.md` — updated the two
   `postgres:15` mentions to `:18` to match.
 
@@ -166,6 +180,20 @@ feature or migration reason for `15`, just an unbumped default.
   Not a bug in the healthcheck script itself, just a bad test harness; replaced
   with two plain sequential commands (start a background server, run the script,
   check its exit code) which worked immediately.
+- **`postgres:18` initially failed to boot at all**, and it was misdiagnosed the
+  first time. The very first `db`-only smoke test after the version bump showed
+  the container start then immediately report not-running — assumed at the time
+  to be the already-known "old pg15 data in a pg18 container" incompatibility (a
+  real class of problem, just not what was actually happening here, since the
+  volume was empty), so it was torn down via `down -v` and the run was written
+  up as "boots cleanly" without actually re-checking. It resurfaced for real
+  once the user ran `pnpm docker:dev` from their own terminal:
+  `db-1 exited with code 1`, with the _actual_ Postgres log pointing at
+  docker-library/postgres#37 — `postgres:18` changed its default `PGDATA`
+  location and now refuses to start when the volume is mounted at the old path
+  (see the volume-mount fix above). The earlier "verified" claim in this doc was
+  wrong and has been corrected; the entries below reflect what was actually
+  re-checked afterward.
 
 ## Verification
 
@@ -182,9 +210,13 @@ feature or migration reason for `15`, just an unbumped default.
   `docker-compose.yml` (prod) fails only on a missing local `.env` file
   (pre-existing, gitignored, unrelated to this change) — not a syntax or
   reference problem.
-- Started the `db` service alone via dev compose on a fresh volume to confirm
-  `postgres:18` boots cleanly with no migration step needed (nothing was
-  deployed against the old `postgres:15` volume).
+- After fixing the volume-mount path, started the `db` service alone via dev
+  compose on a fresh volume and confirmed real
+  `PostgreSQL 18.4 ... database
+  system is ready to accept connections` log
+  output, then `docker inspect` reporting `Status: "healthy"` across three
+  consecutive healthcheck runs — not just an assumption after a teardown, as the
+  first pass had been.
 - `api-healthcheck.ts` verified two ways: directly with
   `node
   infra/docker/api-healthcheck.ts` against a dummy server (exit `0` when

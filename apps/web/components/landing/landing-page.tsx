@@ -1,3 +1,4 @@
+import { Footer } from "@/components/marketing/footer";
 import { Cta } from "./cta";
 import { Faq } from "./faq";
 import { Features } from "./features";
@@ -18,6 +19,7 @@ export function LandingPage() {
       <Cta />
       <Faq />
       <FinalHook />
+      <Footer />
     </div>
   );
 }

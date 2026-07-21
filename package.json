@@ -8,9 +8,9 @@
   "scripts": {
     "test": "turbo run test",
     "dev": "turbo run dev --parallel",
-    "build": "turbo run build",
+    "build": "DATABASE_URL=\"${DATABASE_URL:-postgresql://build:build@localhost:5432/build?schema=public}\" turbo run build",
     "lint": "turbo run lint",
-    "typecheck": "turbo run typecheck",
+    "typecheck": "DATABASE_URL=\"${DATABASE_URL:-postgresql://build:build@localhost:5432/build?schema=public}\" turbo run typecheck",
     "db:generate": "turbo run db:generate",
     "env:init": "node scripts/init-env.ts",
     "docker:dev": "docker compose -f infra/docker/docker-compose.dev.yml up --build",

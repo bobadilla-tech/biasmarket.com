@@ -4,6 +4,8 @@ import dashboardEn from "./en/dashboard.json" with { type: "json" };
 import dashboardEs from "./es/dashboard.json" with { type: "json" };
 import landingEn from "./en/landing.json" with { type: "json" };
 import landingEs from "./es/landing.json" with { type: "json" };
+import marketingEn from "./en/marketing.json" with { type: "json" };
+import marketingEs from "./es/marketing.json" with { type: "json" };
 import onboardingEn from "./en/onboarding.json" with { type: "json" };
 import onboardingEs from "./es/onboarding.json" with { type: "json" };
 import storefrontEn from "./en/storefront.json" with { type: "json" };
@@ -13,6 +15,7 @@ const messages = {
   en: {
     common: commonEn,
     landing: landingEn,
+    marketing: marketingEn,
     dashboard: dashboardEn,
     onboarding: onboardingEn,
     storefront: storefrontEn,
@@ -20,6 +23,7 @@ const messages = {
   es: {
     common: commonEs,
     landing: landingEs,
+    marketing: marketingEs,
     dashboard: dashboardEs,
     onboarding: onboardingEs,
     storefront: storefrontEs,
