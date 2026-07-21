@@ -6,7 +6,7 @@ networks:
 
 services:
   db:
-    image: postgres:15
+    image: postgres:18
     networks: [stack]
     env_file:
       - .env.example
@@ -25,7 +25,8 @@ services:
   api:
     build:
       context: ../..
-      dockerfile: infra/docker/api.dev.Dockerfile
+      dockerfile: infra/docker/api.Dockerfile
+      target: dev
     networks: [stack]
     working_dir: /app
     env_file:
@@ -53,13 +54,7 @@ services:
       db:
         condition: service_healthy
     healthcheck:
-      test:
-        [
-          "CMD",
-          "node",
-          "-e",
-          "require('http').get('http://127.0.0.1:3000/api/health',(r)=>{r.resume();r.on('end',()=>process.exit(r.statusCode<500?0:1));}).on('error',()=>process.exit(1))",
-        ]
+      test: ["CMD", "node", "/app/infra/docker/api-healthcheck.ts"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -68,7 +63,8 @@ services:
   web:
     build:
       context: ../..
-      dockerfile: infra/docker/web.dev.Dockerfile
+      dockerfile: infra/docker/web.Dockerfile
+      target: dev
     networks: [stack]
     working_dir: /app
     env_file:

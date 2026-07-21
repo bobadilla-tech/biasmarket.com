@@ -13,7 +13,7 @@ deferred.
 ## 1. Provision the VM
 
 - Shape: an Ampere A1 (arm64) instance is the free-tier default and is fine —
-  every image in this stack (`node:26-slim`, `postgres:15`, `caddy:2-alpine`) is
+  every image in this stack (`node:26-slim`, `postgres:18`, `caddy:2-alpine`) is
   multi-arch, no x86-only dependency anywhere in the build.
 - OS: Ubuntu 24.04 (matches what's assumed below; aarch64).
 - **Attach a reserved/static public IP**, not the default ephemeral one. A

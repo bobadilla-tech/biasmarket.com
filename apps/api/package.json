@@ -1,10 +1,9 @@
 {
   "name": "api",
   "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "description": "API for BiasMarket.",
+  "author": "Bobadilla Technologies.",
   "private": true,
-  "license": "UNLICENSED",
   "type": "module",
   "scripts": {
     "build": "nest build",

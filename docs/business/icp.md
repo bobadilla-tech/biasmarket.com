@@ -143,6 +143,7 @@ Hey — quick question
 I saw you're running group orders and handling payments manually.
 
 I'm building a tool specifically for GOMs to:
+
 - track orders
 - collect proof of payment
 - reduce DM chaos

@@ -380,7 +380,7 @@ services:
       - api
 
   db:
-    image: postgres:15
+    image: postgres:18
     restart: always
     environment:
       POSTGRES_USER: biasmarket
