@@ -1,5 +1,7 @@
 # Bias Market
 
+[![codecov](https://codecov.io/gh/bobadilla-tech/biasmarket.com/graph/badge.svg)](https://codecov.io/gh/bobadilla-tech/biasmarket.com)
+
 Niche-first store builder for creator-led commerce — starting with K-pop /
 artist merch stores. Manual payment-first (bank transfer, Wise, PayPal) with
 built-in proof-of-payment review, no Stripe required.

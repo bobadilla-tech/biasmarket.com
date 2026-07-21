@@ -24,9 +24,6 @@ concurrency:
 env:
   NODE_VERSION: "26"
   PNPM_VERSION: "10.11.0"
-  # Dummy connection string — `prisma generate` validates the schema's env()
-  # reference but never opens a connection, so a syntactically valid URL is enough.
-  CI_DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci?schema=public"
 
 jobs:
   detect-changes:
@@ -113,7 +110,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      DATABASE_URL: ${{ env.CI_DATABASE_URL }}
+      # Dummy connection string — `prisma generate` validates the schema's env()
+      # reference but never opens a connection, so a syntactically valid URL is enough.
+      DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci?schema=public"
     steps:
       - uses: actions/checkout@v7
         with:
@@ -217,7 +216,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      DATABASE_URL: ${{ env.CI_DATABASE_URL }}
+      # Dummy connection string — `prisma generate` validates the schema's env()
+      # reference but never opens a connection, so a syntactically valid URL is enough.
+      DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci?schema=public"
     steps:
       - uses: actions/checkout@v7
         with:
