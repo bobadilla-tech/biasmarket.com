@@ -1,4 +1,5 @@
-import { IsString, MinLength } from 'class-validator';
+import { IsIn, IsOptional, IsString, MinLength } from 'class-validator';
+import { SUPPORTED_CURRENCIES } from '@biasmarket/utils/currency';
 
 export class CreateStoreDto {
   @IsString()
@@ -11,4 +12,8 @@ export class CreateStoreDto {
   @IsString()
   @MinLength(6)
   whatsappNumber: string;
+
+  @IsOptional()
+  @IsIn(SUPPORTED_CURRENCIES)
+  defaultCurrency?: string;
 }

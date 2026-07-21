@@ -39,8 +39,10 @@ export class ProductsService {
   }
 
   async create(storeId: string, userId: string, dto: CreateProductDto) {
-    await this.assertOwnership(storeId, userId);
-    return this.prisma.product.create({ data: { ...dto, storeId } });
+    const store = await this.assertOwnership(storeId, userId);
+    return this.prisma.product.create({
+      data: { ...dto, storeId, currency: dto.currency ?? store.defaultCurrency },
+    });
   }
 
   async findAllForStore(storeId: string, userId: string) {

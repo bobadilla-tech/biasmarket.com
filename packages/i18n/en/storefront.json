@@ -6,5 +6,30 @@
   "variantSoldOut": "(sold out)",
   "addToCart": "Add to cart",
   "addedToCart": "Added ✓",
-  "cart": "Cart"
+  "cart": "Cart",
+  "cartPage": {
+    "title": "Your cart",
+    "empty": "Your cart is empty.",
+    "continueShopping": "Keep browsing",
+    "total": "Total",
+    "goToCheckout": "Go to checkout",
+    "mixedCurrencyWarning": "Your cart has products in different currencies — remove one to check out."
+  },
+  "checkoutPage": {
+    "title": "Confirm order",
+    "total": "Total",
+    "deliveryPickup": "Store pickup",
+    "deliveryCourier": "Courier shipping",
+    "namePlaceholder": "Name",
+    "phonePlaceholder": "Phone (WhatsApp)",
+    "emailPlaceholder": "Email (optional)",
+    "submit": "Confirm and continue on WhatsApp",
+    "submitting": "Sending...",
+    "noDeliveryMethod": "The store hasn't set up a delivery method yet — contact the seller.",
+    "mixedCurrencyWarning": "You can't check out products in different currencies in the same order. Remove one from your cart.",
+    "orderCreatedTitle": "Order created!",
+    "orderCreatedBody": "Order #{orderId}. The store will reach out to confirm payment.",
+    "emptyCart": "Your cart is empty.",
+    "backToStore": "Back to the store"
+  }
 }

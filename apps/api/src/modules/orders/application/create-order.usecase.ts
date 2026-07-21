@@ -27,6 +27,7 @@ export class CreateOrderUseCase {
       // only Decimal instances Prisma itself already returned. `items` is
       // validated non-empty by CreateOrderDto, so the loop always runs once.
       let totalAmount: Prisma.Decimal | undefined;
+      let currency: string | undefined;
       const itemsData: Prisma.OrderItemCreateManyOrderInput[] = [];
 
       for (const item of dto.items) {
@@ -65,6 +66,13 @@ export class CreateOrderUseCase {
           }
         }
 
+        if (currency && currency !== product.currency) {
+          throw new BadRequestException(
+            'No se pueden combinar productos con distinta moneda en un mismo pedido',
+          );
+        }
+        currency = product.currency;
+
         const lineAmount = unitPrice.times(item.quantity);
         totalAmount = totalAmount ? totalAmount.plus(lineAmount) : lineAmount;
         itemsData.push({
@@ -73,6 +81,7 @@ export class CreateOrderUseCase {
           variantId: item.variantId,
           quantity: item.quantity,
           unitPriceAtPurchase: unitPrice,
+          currency: product.currency,
         });
         messageItems.push({
           name: variantName ? `${product.name} (${variantName})` : product.name,
@@ -99,6 +108,7 @@ export class CreateOrderUseCase {
           deliveryDetails: deliveryConfig.details ?? {},
           totalAmount: finalAmount,
           requiredAmount: finalAmount,
+          currency: currency!,
           expiresAt,
           items: { create: itemsData },
         },
@@ -114,6 +124,7 @@ export class CreateOrderUseCase {
             storeName: store.name,
             items: messageItems,
             totalAmount: order.totalAmount.toNumber(),
+            currency: order.currency,
             deliveryMethodType: order.deliveryMethodType,
             customerName: order.customerName,
             customerPhone: order.customerPhone,

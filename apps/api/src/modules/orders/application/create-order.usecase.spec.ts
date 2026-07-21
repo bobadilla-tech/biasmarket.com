@@ -100,6 +100,7 @@ describe('CreateOrderUseCase', () => {
       status: 'DRAFT',
       deletedAt: null,
       price: new FakeDecimal(10),
+      currency: 'PEN',
       name: 'Widget',
     });
 
@@ -113,6 +114,7 @@ describe('CreateOrderUseCase', () => {
       status: 'PUBLISHED',
       deletedAt: null,
       price: new FakeDecimal(10),
+      currency: 'PEN',
       name: 'Widget',
     });
     prisma.productVariant.findUnique.mockResolvedValue({
@@ -136,6 +138,7 @@ describe('CreateOrderUseCase', () => {
       status: 'PUBLISHED',
       deletedAt: null,
       price: new FakeDecimal(10),
+      currency: 'PEN',
       name: 'Widget',
     });
     prisma.productVariant.findUnique.mockResolvedValue({
@@ -149,6 +152,7 @@ describe('CreateOrderUseCase', () => {
     prisma.order.create.mockResolvedValue({
       id: 'order-1',
       totalAmount: new FakeDecimal(20),
+      currency: 'PEN',
       deliveryMethodType: 'PICKUP',
       customerName: 'Jane',
       customerPhone: dto.customerPhone,
@@ -174,7 +178,40 @@ describe('CreateOrderUseCase', () => {
       }),
     );
     expect(result.whatsappUrl).toContain('https://wa.me/51999999999');
-    expect(result.whatsappUrl).toContain('order-1');
+    expect(result.whatsappUrl).toContain(encodeURIComponent('20.00 PEN'));
+    expect(result.whatsappUrl).toContain(encodeURIComponent('Widget (Large)'));
+  });
+
+  it('rejects a cart mixing products with different currencies', async () => {
+    prisma.product.findUnique
+      .mockResolvedValueOnce({
+        id: 'product-1',
+        storeId: store.id,
+        status: 'PUBLISHED',
+        deletedAt: null,
+        price: new FakeDecimal(10),
+        currency: 'PEN',
+        name: 'Widget',
+      })
+      .mockResolvedValueOnce({
+        id: 'product-2',
+        storeId: store.id,
+        status: 'PUBLISHED',
+        deletedAt: null,
+        price: new FakeDecimal(10),
+        currency: 'USD',
+        name: 'Gadget',
+      });
+
+    await expect(
+      useCase.execute(slug, {
+        ...dto,
+        items: [
+          { productId: 'product-1', quantity: 1 },
+          { productId: 'product-2', quantity: 1 },
+        ],
+      }),
+    ).rejects.toThrow(BadRequestException);
   });
 
   it('does not build a whatsapp url when the store has no whatsappNumber configured', async () => {
@@ -185,11 +222,13 @@ describe('CreateOrderUseCase', () => {
       status: 'PUBLISHED',
       deletedAt: null,
       price: new FakeDecimal(10),
+      currency: 'PEN',
       name: 'Widget',
     });
     prisma.order.create.mockResolvedValue({
       id: 'order-1',
       totalAmount: new FakeDecimal(20),
+      currency: 'PEN',
       deliveryMethodType: 'PICKUP',
       customerName: 'Jane',
       customerPhone: dto.customerPhone,

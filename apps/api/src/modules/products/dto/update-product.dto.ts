@@ -5,8 +5,10 @@ import {
   IsBoolean,
   IsArray,
   IsDateString,
+  IsIn,
   MinLength,
 } from 'class-validator';
+import { SUPPORTED_CURRENCIES } from '@biasmarket/utils/currency';
 
 export class UpdateProductDto {
   @IsOptional()
@@ -34,4 +36,8 @@ export class UpdateProductDto {
   @IsOptional()
   @IsDateString()
   availableUntil?: string;
+
+  @IsOptional()
+  @IsIn(SUPPORTED_CURRENCIES)
+  currency?: string;
 }

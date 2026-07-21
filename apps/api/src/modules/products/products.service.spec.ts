@@ -90,14 +90,26 @@ describe('ProductsService', () => {
   });
 
   it('create() creates the product scoped to the store after ownership passes', async () => {
-    prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
+    prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId, defaultCurrency: 'PEN' });
     prisma.product.create.mockResolvedValue({ id: productId });
     const dto = { name: 'Widget', price: 10 };
 
     await service.create(storeId, ownerId, dto);
 
     expect(prisma.product.create).toHaveBeenCalledWith({
-      data: { ...dto, storeId },
+      data: { ...dto, storeId, currency: 'PEN' },
+    });
+  });
+
+  it("create() uses the dto's currency instead of the store default when provided", async () => {
+    prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId, defaultCurrency: 'PEN' });
+    prisma.product.create.mockResolvedValue({ id: productId });
+    const dto = { name: 'Widget', price: 10, currency: 'USD' };
+
+    await service.create(storeId, ownerId, dto);
+
+    expect(prisma.product.create).toHaveBeenCalledWith({
+      data: { ...dto, storeId, currency: 'USD' },
     });
   });
 

@@ -3,6 +3,7 @@ export interface CartItem {
   variantId?: string;
   name: string;
   price: number;
+  currency: string;
   quantity: number;
 }
 
@@ -57,4 +58,17 @@ export function clearCart(slug: string) {
 
 export function cartTotal(items: CartItem[]): number {
   return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+}
+
+// Returns the shared currency across all cart items, or null when the cart
+// is empty or mixes currencies (checkout can't sum different currencies into
+// one total, so callers should block submission and warn in that case).
+export function cartCurrency(items: CartItem[]): string | null {
+  if (items.length === 0) return null;
+  const currencies = new Set(items.map((item) => item.currency));
+  return currencies.size === 1 ? items[0].currency : null;
+}
+
+export function hasMixedCurrencies(items: CartItem[]): boolean {
+  return new Set(items.map((item) => item.currency)).size > 1;
 }

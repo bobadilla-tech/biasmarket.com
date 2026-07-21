@@ -32,6 +32,7 @@ export class StoresService {
           themeConfig: {},
           paymentInstructions: '',
           whatsappNumber: dto.whatsappNumber,
+          ...(dto.defaultCurrency && { defaultCurrency: dto.defaultCurrency }),
         },
       });
       await tx.deliveryMethodConfig.create({

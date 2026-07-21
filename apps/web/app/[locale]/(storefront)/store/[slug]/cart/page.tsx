@@ -2,9 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { cartTotal, getCart, updateQuantity, type CartItem } from "@/lib/cart";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
+import {
+  cartTotal,
+  getCart,
+  hasMixedCurrencies,
+  updateQuantity,
+  type CartItem,
+} from "@/lib/cart";
 
 export default function CartPage() {
+  const t = useTranslations("storefront.cartPage");
   const { slug } = useParams<{ slug: string }>();
   const [items, setItems] = useState<CartItem[]>([]);
 
@@ -20,14 +29,14 @@ export default function CartPage() {
   return (
     <div className="min-h-screen bg-gray-50 px-6 py-10">
       <div className="max-w-2xl mx-auto flex flex-col gap-6">
-        <h1 className="text-2xl font-bold text-gray-900">Tu carrito</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
 
         {items.length === 0 ? (
           <p className="text-gray-500">
-            Tu carrito está vacío.{" "}
-            <a href={`/store/${slug}`} className="text-emerald-600 font-semibold">
-              Seguir viendo productos
-            </a>
+            {t("empty")}{" "}
+            <Link href={`/store/${slug}`} className="text-emerald-600 font-semibold">
+              {t("continueShopping")}
+            </Link>
           </p>
         ) : (
           <>
@@ -39,7 +48,9 @@ export default function CartPage() {
                 >
                   <div>
                     <p className="font-semibold text-gray-900 text-sm">{item.name}</p>
-                    <p className="text-emerald-600 text-sm">${item.price}</p>
+                    <p className="text-emerald-600 text-sm">
+                      {item.price} {item.currency}
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
@@ -61,18 +72,22 @@ export default function CartPage() {
             </div>
 
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex items-center justify-between">
-              <span className="font-semibold text-gray-900">Total</span>
+              <span className="font-semibold text-gray-900">{t("total")}</span>
               <span className="font-bold text-emerald-600 text-lg">
-                ${cartTotal(items).toFixed(2)}
+                {cartTotal(items).toFixed(2)} {items[0].currency}
               </span>
             </div>
 
-            <a
-              href={`/store/${slug}/checkout`}
-              className="rounded-xl bg-emerald-500 px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-emerald-600"
-            >
-              Ir a pagar
-            </a>
+            {hasMixedCurrencies(items) ? (
+              <p className="text-sm text-amber-600">{t("mixedCurrencyWarning")}</p>
+            ) : (
+              <Link
+                href={`/store/${slug}/checkout`}
+                className="rounded-xl bg-emerald-500 px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-emerald-600"
+              >
+                {t("goToCheckout")}
+              </Link>
+            )}
           </>
         )}
       </div>
