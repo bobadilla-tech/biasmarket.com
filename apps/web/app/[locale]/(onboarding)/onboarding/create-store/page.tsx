@@ -18,6 +18,7 @@ export default function CreateStorePage() {
 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
+  const [whatsappNumber, setWhatsappNumber] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -49,7 +50,7 @@ export default function CreateStorePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ name, slug }),
+        body: JSON.stringify({ name, slug, whatsappNumber }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -59,6 +60,7 @@ export default function CreateStorePage() {
       setStores((prev) => [...prev, data]);
       setName("");
       setSlug("");
+      setWhatsappNumber("");
     } finally {
       setLoading(false);
     }
@@ -106,7 +108,7 @@ export default function CreateStorePage() {
                 className="w-full rounded-xl border border-gray-200 px-4 py-3 hover:border-emerald-400 hover:bg-emerald-50 transition flex items-center justify-between"
               >
                 <button
-                  onClick={() => router.push(`/dashboard/${store.id}/products`)}
+                  onClick={() => router.push(`/dashboard/${store.slug}/products`)}
                   className="text-left flex-1"
                 >
                   <p className="font-semibold text-gray-900">{store.name}</p>
@@ -145,11 +147,21 @@ export default function CreateStorePage() {
           }}
         />
 
+        <div className="flex flex-col gap-1">
+          <input
+            className="placeholder:text-gray-400 text-gray-900 border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400"
+            placeholder={t("whatsappPlaceholder")}
+            value={whatsappNumber}
+            onChange={(e) => setWhatsappNumber(e.target.value)}
+          />
+          <p className="text-xs text-gray-500">{t("whatsappHelp")}</p>
+        </div>
+
         {error && <p className="text-sm text-red-500">{error}</p>}
 
         <button
           onClick={handleCreate}
-          disabled={loading || !name}
+          disabled={loading || !name || !whatsappNumber}
           className="w-full rounded-xl bg-emerald-500 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-60"
         >
           {loading ? t("submitting") : t("submit")}

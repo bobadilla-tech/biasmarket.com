@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
 import { apiFetch } from "@/lib/api";
+import { useStore } from "@/lib/use-store";
 
 interface Order {
   id: string;
@@ -22,11 +22,12 @@ const NEXT_FULFILLMENT: Record<string, string | undefined> = {
 };
 
 export default function OrdersPage() {
-  const { storeId } = useParams<{ storeId: string }>();
+  const { storeId, loading: storeLoading } = useStore();
   const [orders, setOrders] = useState<Order[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const loadOrders = async () => {
+    if (!storeId) return;
     try {
       const data = await apiFetch(`/stores/${storeId}/orders`);
       setOrders(data);
@@ -62,6 +63,10 @@ export default function OrdersPage() {
       setError(e instanceof Error ? e.message : String(e));
     }
   };
+
+  if (storeLoading) {
+    return <div className="min-h-screen bg-gray-50 px-6 py-10 text-sm text-gray-500">Cargando...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 px-6 py-10">

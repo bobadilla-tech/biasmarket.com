@@ -1,15 +1,19 @@
 {
   "title": "Products",
+  "viewStorefront": "View storefront",
   "form": {
     "namePlaceholder": "Name",
     "descriptionPlaceholder": "Description",
     "pricePlaceholder": "Price",
+    "imageUrlPlaceholder": "Image URL (optional)",
+    "availableUntilPlaceholder": "Available until (optional)",
     "addProduct": "Add product",
     "creating": "Creating..."
   },
   "table": {
     "name": "Name",
     "price": "Price",
+    "availableUntil": "Available until",
     "status": "Status",
     "actions": "Actions"
   },

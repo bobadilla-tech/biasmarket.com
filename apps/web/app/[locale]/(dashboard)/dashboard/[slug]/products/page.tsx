@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { apiFetch } from "@/lib/api";
+import { useStore } from "@/lib/use-store";
 
 interface Product {
   id: string;
@@ -11,20 +11,25 @@ interface Product {
   price: string;
   status: "DRAFT" | "PUBLISHED";
   soldOut: boolean;
+  images: string[];
+  availableUntil: string | null;
 }
 
 export default function ProductsPage() {
   const t = useTranslations("dashboard");
   const tCommon = useTranslations("common");
-  const { storeId } = useParams<{ storeId: string }>();
+  const { storeId, slug, loading: storeLoading } = useStore();
   const [products, setProducts] = useState<Product[]>([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [availableUntil, setAvailableUntil] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const loadProducts = async () => {
+    if (!storeId) return;
     try {
       const data = await apiFetch(
         `/stores/${storeId}/products`,
@@ -39,6 +44,7 @@ export default function ProductsPage() {
 
   useEffect(() => {
     let ignore = false;
+    if (!storeId) return;
     (async () => {
       try {
         const data = await apiFetch(
@@ -65,13 +71,23 @@ export default function ProductsPage() {
         `/stores/${storeId}/products`,
         {
           method: "POST",
-          body: JSON.stringify({ name, description, price: parseFloat(price) }),
+          body: JSON.stringify({
+            name,
+            description,
+            price: parseFloat(price),
+            images: imageUrl ? [imageUrl] : undefined,
+            availableUntil: availableUntil
+              ? new Date(availableUntil).toISOString()
+              : undefined,
+          }),
         },
         tCommon("networkError"),
       );
       setName("");
       setDescription("");
       setPrice("");
+      setImageUrl("");
+      setAvailableUntil("");
       await loadProducts();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -92,10 +108,28 @@ export default function ProductsPage() {
     await loadProducts();
   };
 
+  if (storeLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 px-6 py-10 text-sm text-gray-500">
+        {tCommon("loading")}
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 px-6 py-10">
       <div className="max-w-5xl mx-auto flex flex-col gap-6">
-        <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+          <a
+            href={`/store/${slug}`}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-50"
+          >
+            {t("viewStorefront")}
+          </a>
+        </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-wrap gap-3 items-center ">
           <input
@@ -116,6 +150,19 @@ export default function ProductsPage() {
             onChange={(e) => setPrice(e.target.value)}
             className="w-32 rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 placeholder:text-gray-600"
           />
+          <input
+            placeholder={t("form.imageUrlPlaceholder")}
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+            className="flex-1 min-w-[160px] rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 placeholder:text-gray-600"
+          />
+          <input
+            type="date"
+            aria-label={t("form.availableUntilPlaceholder")}
+            value={availableUntil}
+            onChange={(e) => setAvailableUntil(e.target.value)}
+            className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+          />
           <button
             onClick={handleCreate}
             disabled={loading || !name || !price}
@@ -133,6 +180,7 @@ export default function ProductsPage() {
               <tr className="border-b border-gray-100 bg-gray-50 text-left text-gray-500">
                 <th className="px-6 py-3 font-medium">{t("table.name")}</th>
                 <th className="px-6 py-3 font-medium">{t("table.price")}</th>
+                <th className="px-6 py-3 font-medium">{t("table.availableUntil")}</th>
                 <th className="px-6 py-3 font-medium">{t("table.status")}</th>
                 <th className="px-6 py-3 font-medium">{t("table.actions")}</th>
               </tr>
@@ -145,6 +193,11 @@ export default function ProductsPage() {
                 >
                   <td className="px-6 py-3 text-gray-900">{p.name}</td>
                   <td className="px-6 py-3 text-gray-900">${p.price}</td>
+                  <td className="px-6 py-3 text-gray-600">
+                    {p.availableUntil
+                      ? new Date(p.availableUntil).toLocaleDateString()
+                      : "—"}
+                  </td>
                   <td className="px-6 py-3">
                     <span
                       className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${

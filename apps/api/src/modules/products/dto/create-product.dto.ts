@@ -3,6 +3,8 @@ import {
   IsNumber,
   IsOptional,
   IsBoolean,
+  IsArray,
+  IsDateString,
   MinLength,
 } from 'class-validator';
 
@@ -23,4 +25,13 @@ export class CreateProductDto {
   @IsOptional()
   @IsBoolean()
   soldOut?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  images?: string[];
+
+  @IsOptional()
+  @IsDateString()
+  availableUntil?: string;
 }

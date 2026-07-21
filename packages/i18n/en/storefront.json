@@ -2,6 +2,7 @@
   "notFound": "Store not found.",
   "noProducts": "No products published yet.",
   "soldOut": "Sold out",
+  "availableUntil": "Available until {date}",
   "variantSoldOut": "(sold out)",
   "addToCart": "Add to cart",
   "addedToCart": "Added ✓",

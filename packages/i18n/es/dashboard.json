@@ -1,15 +1,19 @@
 {
   "title": "Productos",
+  "viewStorefront": "Ver tienda",
   "form": {
     "namePlaceholder": "Nombre",
     "descriptionPlaceholder": "Descripción",
     "pricePlaceholder": "Precio",
+    "imageUrlPlaceholder": "URL de imagen (opcional)",
+    "availableUntilPlaceholder": "Disponible hasta (opcional)",
     "addProduct": "Agregar producto",
     "creating": "Creando..."
   },
   "table": {
     "name": "Nombre",
     "price": "Precio",
+    "availableUntil": "Disponible hasta",
     "status": "Estado",
     "actions": "Acciones"
   },

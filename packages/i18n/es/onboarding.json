@@ -25,6 +25,8 @@
     "delete": "Eliminar",
     "createNew": "Crear nueva tienda",
     "namePlaceholder": "Nombre de la tienda",
+    "whatsappPlaceholder": "Número de WhatsApp del negocio",
+    "whatsappHelp": "Los compradores te van a contactar por acá para pagar. Es obligatorio.",
     "submit": "Crear tienda",
     "submitting": "Creando...",
     "genericError": "Error al crear la tienda",

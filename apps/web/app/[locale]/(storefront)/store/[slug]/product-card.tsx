@@ -17,6 +17,7 @@ interface Product {
   price: string;
   soldOut: boolean;
   variants: Variant[];
+  availableUntil: string | null;
 }
 
 export function ProductCard({ slug, product }: { slug: string; product: Product }) {
@@ -45,6 +46,11 @@ export function ProductCard({ slug, product }: { slug: string; product: Product 
       <div className="aspect-square bg-gray-100 rounded-lg mb-3" />
       <p className="font-semibold text-gray-900 text-sm">{product.name}</p>
       <p className="text-emerald-600 font-bold text-sm">${price}</p>
+      {product.availableUntil && (
+        <p className="text-xs text-gray-500">
+          {t("availableUntil", { date: new Date(product.availableUntil).toLocaleDateString() })}
+        </p>
+      )}
 
       {product.variants.length > 0 && (
         <select

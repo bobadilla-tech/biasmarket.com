@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
 import { apiFetch } from "@/lib/api";
+import { useStore } from "@/lib/use-store";
 
 interface DeliveryMethod {
   type: "PICKUP" | "COURIER";
@@ -11,7 +11,7 @@ interface DeliveryMethod {
 }
 
 export default function SettingsPage() {
-  const { storeId } = useParams<{ storeId: string }>();
+  const { storeId, loading: storeLoading } = useStore();
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +24,7 @@ export default function SettingsPage() {
   const [courierCost, setCourierCost] = useState("");
 
   const loadDeliveryMethods = async () => {
+    if (!storeId) return;
     const methods = await apiFetch(`/stores/${storeId}/delivery-methods`);
     setDeliveryMethods(methods);
     const pickup = methods.find((m: DeliveryMethod) => m.type === "PICKUP");
@@ -78,6 +79,10 @@ export default function SettingsPage() {
     });
     await loadDeliveryMethods();
   };
+
+  if (storeLoading) {
+    return <div className="min-h-screen bg-gray-50 px-6 py-10 text-sm text-gray-500">Cargando...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 px-6 py-10">

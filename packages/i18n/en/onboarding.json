@@ -25,6 +25,8 @@
     "delete": "Delete",
     "createNew": "Create new store",
     "namePlaceholder": "Store name",
+    "whatsappPlaceholder": "Business WhatsApp number",
+    "whatsappHelp": "Buyers will reach you here to pay. Required.",
     "submit": "Create store",
     "submitting": "Creating...",
     "genericError": "Something went wrong creating the store",

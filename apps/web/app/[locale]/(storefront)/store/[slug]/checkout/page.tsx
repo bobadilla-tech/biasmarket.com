@@ -15,6 +15,7 @@ export default function CheckoutPage() {
   const { slug } = useParams<{ slug: string }>();
   const [items, setItems] = useState<CartItem[]>([]);
   const [deliveryMethods, setDeliveryMethods] = useState<DeliveryMethod[]>([]);
+  const [deliveryMethodsLoaded, setDeliveryMethodsLoaded] = useState(false);
   const [deliveryMethodType, setDeliveryMethodType] = useState<string>("");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
@@ -30,7 +31,8 @@ export default function CheckoutPage() {
         setDeliveryMethods(methods);
         if (methods[0]) setDeliveryMethodType(methods[0].type);
       })
-      .catch(() => setDeliveryMethods([]));
+      .catch(() => setDeliveryMethods([]))
+      .finally(() => setDeliveryMethodsLoaded(true));
   }, [slug]);
 
   const handleSubmit = async () => {
@@ -150,6 +152,12 @@ export default function CheckoutPage() {
         </div>
 
         {error && <p className="text-sm text-red-500">{error}</p>}
+
+        {deliveryMethodsLoaded && deliveryMethods.length === 0 && (
+          <p className="text-sm text-amber-600">
+            La tienda todavía no configuró un método de entrega — contactá al vendedor.
+          </p>
+        )}
 
         <button
           onClick={handleSubmit}

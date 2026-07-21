@@ -57,6 +57,7 @@ model Product {
   description String        @default("")
   price       Decimal       @db.Decimal(10, 2)
   images      String[]      @default([])
+  availableUntil DateTime?
   status      ProductStatus @default(DRAFT)
   soldOut     Boolean       @default(false)
   deletedAt   DateTime?

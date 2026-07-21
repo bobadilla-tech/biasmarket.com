@@ -4,8 +4,8 @@ import { redirect } from "@/i18n/navigation";
 export default async function DashboardHome({
   params,
 }: {
-  params: Promise<{ locale: Locale; storeId: string }>;
+  params: Promise<{ locale: Locale; slug: string }>;
 }) {
-  const { locale, storeId } = await params;
-  redirect({ href: `/dashboard/${storeId}/products`, locale });
+  const { locale, slug } = await params;
+  redirect({ href: `/dashboard/${slug}/products`, locale });
 }

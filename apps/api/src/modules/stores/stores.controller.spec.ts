@@ -28,15 +28,12 @@ describe('StoresController', () => {
     expect(controller).toBeDefined();
   });
 
-  it('create() delegates to service.create with userId, name, slug', () => {
+  it('create() delegates to service.create with userId and the dto', () => {
     const session = { user: { id: 'user-1' } } as never;
+    const dto = { name: 'My Store', slug: 'my-store', whatsappNumber: '+51999999999' };
 
-    controller.create(session, { name: 'My Store', slug: 'my-store' });
+    controller.create(session, dto);
 
-    expect(service.create).toHaveBeenCalledWith(
-      'user-1',
-      'My Store',
-      'my-store',
-    );
+    expect(service.create).toHaveBeenCalledWith('user-1', dto);
   });
 });
