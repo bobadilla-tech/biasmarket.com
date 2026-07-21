@@ -6,6 +6,7 @@ import { StoresService } from './stores.service.js';
 vi.mock('@thallesp/nestjs-better-auth', () => ({
   AuthGuard: class AuthGuard {},
   Session: () => () => undefined,
+  Public: () => () => undefined,
 }));
 
 describe('StoresController', () => {
