@@ -1,7 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { Link } from "@/i18n/navigation";
 
 export function FinalHook() {
   const t = useTranslations("landing.finalHook");
@@ -13,9 +14,12 @@ export function FinalHook() {
           {t("title")}
         </h2>
         <p className="mt-2 text-muted-foreground">{t("content")}</p>
-        <Button size="lg" className="mt-6 h-11 px-6">
+        <Link
+          href="/onboarding"
+          className={buttonVariants({ size: "lg", className: "mt-6 h-11 px-6" })}
+        >
           {t("cta")}
-        </Button>
+        </Link>
       </div>
     </footer>
   );

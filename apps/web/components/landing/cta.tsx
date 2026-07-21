@@ -1,7 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { Link } from "@/i18n/navigation";
 
 export function Cta() {
   const t = useTranslations("landing.cta");
@@ -14,16 +15,23 @@ export function Cta() {
         </h2>
         <p className="mt-4 text-muted-foreground">{t("content")}</p>
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-          <Button size="lg" className="h-11 px-6">
+          <Link
+            href="/onboarding"
+            className={buttonVariants({ size: "lg", className: "h-11 px-6" })}
+          >
             {t("ctaPrimary")}
-          </Button>
-          <Button
-            size="lg"
-            variant="outline"
-            className="h-11 border-white/15 bg-white/5 px-6 text-foreground hover:bg-white/10"
+          </Link>
+          <Link
+            href="/onboarding"
+            className={buttonVariants({
+              size: "lg",
+              variant: "outline",
+              className:
+                "h-11 border-white/15 bg-white/5 px-6 text-foreground hover:bg-white/10",
+            })}
           >
             {t("ctaSecondary")}
-          </Button>
+          </Link>
         </div>
       </div>
     </section>

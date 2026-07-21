@@ -2,7 +2,8 @@
 
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { Link } from "@/i18n/navigation";
 import { LanguageToggle } from "./language-toggle";
 import { PhotocardStack } from "./photocard-stack";
 
@@ -13,9 +14,12 @@ export function Hero() {
     <header className="relative overflow-hidden px-6 pt-8 pb-20 sm:px-10">
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,_oklch(0.3_0.1_320)_0%,_transparent_60%)]" />
       <nav className="mx-auto flex max-w-5xl items-center justify-between">
-        <span className="font-heading text-lg font-semibold tracking-tight">
+        <Link
+          href="/"
+          className="font-heading text-lg font-semibold tracking-tight"
+        >
           Bias Market
-        </span>
+        </Link>
         <LanguageToggle />
       </nav>
 
@@ -31,16 +35,23 @@ export function Hero() {
             {t("subheadline")}
           </p>
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Button size="lg" className="h-11 px-6">
+            <Link
+              href="/onboarding"
+              className={buttonVariants({ size: "lg", className: "h-11 px-6" })}
+            >
               {t("ctaPrimary")}
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="h-11 border-white/15 bg-white/5 px-6 text-foreground hover:bg-white/10"
+            </Link>
+            <Link
+              href="/onboarding"
+              className={buttonVariants({
+                size: "lg",
+                variant: "outline",
+                className:
+                  "h-11 border-white/15 bg-white/5 px-6 text-foreground hover:bg-white/10",
+              })}
             >
               {t("ctaSecondary")}
-            </Button>
+            </Link>
           </div>
         </div>
         <PhotocardStack />

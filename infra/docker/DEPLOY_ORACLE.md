@@ -27,22 +27,48 @@ deliberately deferred.
   - `80/tcp`, `443/tcp` (HTTP/HTTPS — Caddy needs 80 for the ACME challenge
     even though it upgrades everything to HTTPS)
 
+  Console path: **Networking → Virtual Cloud Networks → (your VCN) →
+  Subnets → (your subnet) → Security Lists → Default Security List →
+  Ingress Rules → Add Ingress Rules**. The Default Security List ships with
+  only `22/tcp` + ICMP — 80/443 are **not** there by default and are easy to
+  assume are already open when they aren't. For each: Source CIDR
+  `0.0.0.0/0`, IP Protocol `TCP`, Destination Port Range `80` (repeat for
+  `443`), Stateless unchecked.
+
 ## 2. Open the OS firewall (the actual "why can't I connect" fix)
 
 Ubuntu images on OCI ship with pre-populated `iptables` rules
 (netfilter-persistent) that drop unsolicited inbound traffic — opening the
 port in the OCI console alone is not enough, this trips up almost everyone on
-their first OCI deploy. Either:
+their first OCI deploy.
+
+**Check the actual rule order first** — don't assume a fixed position:
 
 ```bash
-sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 80 -j ACCEPT
-sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 443 -j ACCEPT
+sudo iptables -L INPUT -n --line-numbers
+```
+
+Find the line number of the `REJECT ... reject-with icmp-host-prohibited`
+rule. New ACCEPT rules must be inserted **at that line number** (pushing
+REJECT down), not after it — the position isn't reliably `6`, it drifts as
+other rules (ufw, prior attempts) get added. If you insert after REJECT
+instead of before it, the rule is silently dead: traffic hits REJECT first
+and never reaches your ACCEPT rule.
+
+```bash
+# replace 5 with the REJECT line number you found above
+sudo iptables -I INPUT 5 -m state --state NEW -p tcp --dport 80 -j ACCEPT
+sudo iptables -I INPUT 5 -m state --state NEW -p tcp --dport 443 -j ACCEPT
 sudo netfilter-persistent save
 ```
 
-(insert position `6` targets before the default REJECT rule — run
-`sudo iptables -L INPUT -n --line-numbers` first and adjust if your rule
-order differs), or replace iptables with `ufw`:
+If you already ran a version of this before and it didn't work, check for
+**duplicate dead rules** sitting below REJECT (`iptables -L INPUT -n
+--line-numbers` again) — delete them instead of adding more on top
+(`sudo iptables -D INPUT <n>`, highest number first so line numbers don't
+shift under you), then re-insert at the correct position.
+
+Or replace iptables with `ufw`:
 
 ```bash
 sudo apt install -y ufw
@@ -80,6 +106,21 @@ Confirm both resolve (`dig +short biasmarket.com`, `dig +short
 api.biasmarket.com`) before starting the stack — Caddy's automatic HTTPS
 will fail its ACME challenge for a domain that isn't live yet, though it
 retries.
+
+**If DNS is proxied through Cloudflare** (orange cloud, not grey/DNS-only):
+set SSL/TLS mode to **Full** in Cloudflare dashboard → SSL/TLS → Overview.
+Not Flexible (Caddy always serves HTTPS, so Flexible mismatches). Not
+Full-strict until you've confirmed Caddy's origin cert issued successfully
+— strict mode will hard-fail the handshake against an unissued/self-signed
+cert.
+
+Cloudflare surfaces origin-connectivity problems as its own error codes,
+useful for diagnosing which layer is broken:
+
+| Code | Meaning | Check |
+|---|---|---|
+| `522` | Cloudflare can't reach the origin at all (TCP timeout) | OS iptables (step 2) **and** OCI Security List/NSG (step 1) — both must allow 80/443, not just one |
+| `525` | Cloudflare reached the origin but the TLS handshake failed | Caddy likely hasn't obtained a valid cert yet — see the cert troubleshooting note in step 7 |
 
 ## 5. Clone the repo and configure secrets
 
@@ -125,6 +166,18 @@ curl https://api.biasmarket.com/api/health                    # {"status":"ok","
 If the cert didn't issue: check `docker compose logs caddy` — almost always
 either DNS not yet resolving, or port 80/443 still blocked by security
 list/iptables (steps 1–2).
+
+Caddy attempts the ACME challenge once at container boot and does **not**
+retry immediately if it fails — if you fix DNS or firewall issues *after*
+the stack is already up, restart Caddy to force a retry rather than waiting:
+
+```bash
+docker restart biasmarket-caddy-1
+docker logs biasmarket-caddy-1 --tail 50 -f
+```
+
+Look for a "certificate obtained successfully" log line before retesting
+`curl -I https://biasmarket.com`.
 
 ## Day 2
 
