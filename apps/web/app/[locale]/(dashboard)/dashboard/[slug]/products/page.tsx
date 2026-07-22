@@ -187,12 +187,24 @@ export default function ProductsPage() {
             onChange={(e) => setPrice(e.target.value)}
             className="w-32 rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 placeholder:text-gray-600"
           />
+          <label
+            htmlFor="image-upload"
+            className="inline-flex items-center px-4 py-2 bg-emerald-300 text-white rounded-lg cursor-pointer hover:bg-emerald-500 transition"
+          >
+            {t("actions.uploadImage")}
+          </label>
+
           <input
+            id="image-upload"
             type="file"
             accept="image/jpeg,image/png"
             onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
-            className="flex-1 min-w-[160px] text-sm text-gray-600"
+            className="hidden"
           />
+
+          {imageFile && (
+            <p className="mt-2 text-sm text-gray-600">{imageFile.name}</p>
+          )}
           <select
             value={currency}
             onChange={(e) => setCurrency(e.target.value)}
@@ -233,7 +245,7 @@ export default function ProductsPage() {
                 </th>
                 <th className="px-6 py-3 font-medium">{t("table.status")}</th>
                 <th className="px-6 py-3 font-medium">{t("table.actions")}</th>
-                <th className="px-6 py-3 font-medium">Imagen</th>
+                <th className="px-6 py-3 font-medium">{t("table.image")}</th>
               </tr>
             </thead>
             <tbody>
@@ -291,7 +303,7 @@ export default function ProductsPage() {
                       <label className="text-xs text-emerald-600 cursor-pointer">
                         {uploadingImage === p.id
                           ? "..."
-                          : (t("actions.uploadImage") ?? "Subir imagen")}
+                          : (t("actions.uploadImage") )}
                         <input
                           type="file"
                           accept="image/jpeg,image/png"

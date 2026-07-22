@@ -15,11 +15,13 @@
     "price": "Precio",
     "availableUntil": "Disponible hasta",
     "status": "Estado",
-    "actions": "Acciones"
+    "actions": "Acciones",
+    "image" : "imagen"
   },
   "actions": {
     "publish": "Publicar",
-    "delete": "Eliminar"
+    "delete": "Eliminar",
+    "uploadImage": "Subir imagen"
   },
   "settings": {
     "title": "Configuración",

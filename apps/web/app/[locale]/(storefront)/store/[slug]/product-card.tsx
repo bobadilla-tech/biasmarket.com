@@ -19,6 +19,7 @@ interface Product {
   soldOut: boolean;
   variants: Variant[];
   availableUntil: string | null;
+  images: [];
 }
 
 export function ProductCard({ slug, product }: { slug: string; product: Product }) {
@@ -45,14 +46,24 @@ export function ProductCard({ slug, product }: { slug: string; product: Product 
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4">
-      <div className="aspect-square bg-gray-100 rounded-lg mb-3" />
+      {product.images?.length > 0 ? (
+        <img
+          src={product.images[0]}
+          alt={product.name}
+          className="aspect-square w-full object-cover rounded-lg mb-3"
+        />
+      ) : (
+        <div className="aspect-square bg-gray-100 rounded-lg mb-3" />
+      )}
       <p className="font-semibold text-gray-900 text-sm">{product.name}</p>
       <p className="text-emerald-600 font-bold text-sm">
         {price} {product.currency}
       </p>
       {product.availableUntil && (
         <p className="text-xs text-gray-500">
-          {t("availableUntil", { date: new Date(product.availableUntil).toLocaleDateString() })}
+          {t("availableUntil", {
+            date: new Date(product.availableUntil).toLocaleDateString(),
+          })}
         </p>
       )}
 
@@ -72,7 +83,9 @@ export function ProductCard({ slug, product }: { slug: string; product: Product 
       )}
 
       {outOfStock ? (
-        <span className="mt-2 block text-xs text-red-500 font-semibold">{t("soldOut")}</span>
+        <span className="mt-2 block text-xs text-red-500 font-semibold">
+          {t("soldOut")}
+        </span>
       ) : (
         <button
           onClick={handleAddToCart}
