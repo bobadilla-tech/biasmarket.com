@@ -15,6 +15,9 @@ describe('ProductsService', () => {
       update: Mock;
     };
     productVariant: { create: Mock; findMany: Mock };
+    productCategory: { createMany: Mock; deleteMany: Mock };
+    category: { count: Mock };
+    $transaction: Mock;
   };
 
   const ownerId = 'user-1';
@@ -31,6 +34,9 @@ describe('ProductsService', () => {
         update: vi.fn(),
       },
       productVariant: { create: vi.fn(), findMany: vi.fn() },
+      productCategory: { createMany: vi.fn(), deleteMany: vi.fn() },
+      category: { count: vi.fn() },
+      $transaction: vi.fn((cb) => cb(prisma)),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -121,7 +127,7 @@ describe('ProductsService', () => {
 
     expect(prisma.product.findMany).toHaveBeenCalledWith({
       where: { storeId, deletedAt: null },
-      include: { variants: true },
+      include: { variants: true, categories: { include: { category: true } } },
     });
   });
 

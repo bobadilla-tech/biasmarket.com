@@ -1,6 +1,12 @@
 {
   "title": "Productos",
   "viewStorefront": "Ver tienda",
+  "nav": {
+    "products": "Productos",
+    "categories": "Categorías",
+    "collections": "Colecciones",
+    "sections": "Secciones"
+  },
   "form": {
     "namePlaceholder": "Nombre",
     "descriptionPlaceholder": "Descripción",
@@ -8,7 +14,54 @@
     "imageUrlPlaceholder": "URL de imagen (opcional)",
     "availableUntilPlaceholder": "Disponible hasta (opcional)",
     "addProduct": "Agregar producto",
-    "creating": "Creando..."
+    "creating": "Creando...",
+    "categoriesLabel": "Categorías"
+  },
+  "variants": {
+    "manage": "Variantes",
+    "namePlaceholder": "Nombre de variante (ej. Versión A)",
+    "stockPlaceholder": "Stock (opcional)",
+    "priceOverridePlaceholder": "Precio especial (opcional)",
+    "attributeKeyPlaceholder": "Atributo (ej. miembro)",
+    "attributeValuePlaceholder": "Valor (ej. Jungkook)",
+    "addAttribute": "Agregar atributo",
+    "add": "Agregar variante",
+    "none": "Todavía no hay variantes"
+  },
+  "categories": {
+    "title": "Categorías",
+    "namePlaceholder": "Nombre de categoría",
+    "parentPlaceholder": "Categoría padre",
+    "noParent": "Sin categoría padre",
+    "add": "Agregar categoría",
+    "delete": "Eliminar"
+  },
+  "collections": {
+    "title": "Colecciones",
+    "namePlaceholder": "Nombre de colección",
+    "descriptionPlaceholder": "Descripción (opcional)",
+    "add": "Agregar colección",
+    "delete": "Eliminar",
+    "addProduct": "Agregar producto",
+    "selectProduct": "Elegí un producto",
+    "moveUp": "Subir",
+    "moveDown": "Bajar",
+    "remove": "Quitar"
+  },
+  "sections": {
+    "title": "Secciones de la tienda",
+    "typeLabel": "Tipo",
+    "collection": "Colección",
+    "banner": "Banner",
+    "textBlock": "Bloque de texto",
+    "selectCollection": "Elegí una colección",
+    "imageUrlPlaceholder": "URL de imagen",
+    "linkUrlPlaceholder": "URL de enlace (opcional)",
+    "bodyPlaceholder": "Contenido de texto",
+    "add": "Agregar sección",
+    "delete": "Eliminar",
+    "moveUp": "Subir",
+    "moveDown": "Bajar"
   },
   "table": {
     "name": "Nombre",

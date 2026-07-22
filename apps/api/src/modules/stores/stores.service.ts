@@ -86,17 +86,102 @@ export class StoresService {
   }
 
   async findPublicBySlug(slug: string) {
-    const store = await this.prisma.store.findUnique({
-      where: { slug },
+    const store = await this.prisma.store.findUnique({ where: { slug } });
+    if (!store) throw new NotFoundException('Tienda no encontrada');
+
+    const rawSections = await this.prisma.storeSection.findMany({
+      where: { storeId: store.id },
+      orderBy: { position: 'asc' },
       include: {
-        products: {
-          where: { status: 'PUBLISHED', deletedAt: null },
-          include: { variants: true },
+        collection: {
+          include: {
+            products: {
+              orderBy: { position: 'asc' },
+              include: { product: { include: { variants: true } } },
+            },
+          },
         },
       },
     });
+
+    // Filter out unpublished/deleted products after the fetch — Prisma
+    // relation-filter-in-include semantics for nested to-many-through-join
+    // reads are easy to get subtly wrong, application-level filtering isn't.
+    const sections = rawSections.map((section) => ({
+      ...section,
+      collection: section.collection && {
+        ...section.collection,
+        products: section.collection.products.filter(
+          (cp) => cp.product.status === 'PUBLISHED' && cp.product.deletedAt === null,
+        ),
+      },
+    }));
+
+    if (sections.length > 0) {
+      return { ...store, sections };
+    }
+
+    // No sections configured yet — fall back to a single implicit
+    // "all published products" section so existing/new stores don't render blank.
+    const products = await this.prisma.product.findMany({
+      where: { storeId: store.id, status: 'PUBLISHED', deletedAt: null },
+      include: { variants: true },
+    });
+    return {
+      ...store,
+      sections: [
+        {
+          id: 'default',
+          type: 'COLLECTION' as const,
+          collectionId: null,
+          content: {},
+          position: 0,
+          collection: {
+            id: null,
+            name: '',
+            slug: '',
+            description: '',
+            products: products.map((product, position) => ({
+              collectionId: null,
+              productId: product.id,
+              position,
+              product,
+            })),
+          },
+        },
+      ],
+    };
+  }
+
+  async findCollectionsPublic() {
+    const collections = await this.prisma.collection.findMany({
+      include: {
+        store: { select: { slug: true } },
+        products: {
+          include: { product: { select: { status: true, deletedAt: true } } },
+        },
+      },
+    });
+    return collections
+      .filter((c) =>
+        c.products.some(
+          (cp) => cp.product.status === 'PUBLISHED' && cp.product.deletedAt === null,
+        ),
+      )
+      .map((c) => ({
+        storeSlug: c.store.slug,
+        collectionSlug: c.slug,
+        createdAt: c.createdAt,
+      }));
+  }
+
+  async findCategoriesPublic(slug: string) {
+    const store = await this.prisma.store.findUnique({ where: { slug } });
     if (!store) throw new NotFoundException('Tienda no encontrada');
-    return store;
+    return this.prisma.category.findMany({
+      where: { storeId: store.id },
+      select: { id: true, name: true, parentId: true },
+    });
   }
 
   async updateLogo(storeId: string, userId: string, url: string) {

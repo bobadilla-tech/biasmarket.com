@@ -19,7 +19,7 @@ interface Product {
   soldOut: boolean;
   variants: Variant[];
   availableUntil: string | null;
-  images: [];
+  images: string[];
 }
 
 export function ProductCard({ slug, product }: { slug: string; product: Product }) {

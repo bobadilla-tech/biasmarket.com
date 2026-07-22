@@ -3,6 +3,7 @@ import { routing } from "@/i18n/routing";
 import { SITE_URL } from "@/lib/site-config";
 
 const STATIC_PATHS = ["", "/founder", "/enterprise"];
+const CHUNK_SIZE = 50000;
 
 function localizedUrl(locale: string, path: string) {
   return `${SITE_URL}/${locale}${path}`;
@@ -25,7 +26,7 @@ async function getStoreSlugs(): Promise<{ slug: string; createdAt: string }[]> {
   return res.json();
 }
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+async function getAllEntries(): Promise<MetadataRoute.Sitemap> {
   const staticEntries: MetadataRoute.Sitemap = STATIC_PATHS.flatMap((path) =>
     routing.locales.map((locale) => ({
       url: localizedUrl(locale, path),
@@ -41,11 +42,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     routing.locales.map((locale) => ({
       url: localizedUrl(locale, `/store/${slug}`),
       lastModified: createdAt,
-      changeFrequency: "daily",
+      changeFrequency: "daily" as const,
       priority: 0.8,
       alternates: alternates(`/store/${slug}`),
     })),
   );
 
   return [...staticEntries, ...storeEntries];
+}
+
+// Splits the sitemap into multiple files of at most CHUNK_SIZE URLs each —
+// Next.js emits a sitemap index automatically once generateSitemaps() is
+// present. See app/sitemap.ts docs for the id-as-Promise<string> contract
+// (changed in Next 16 — this repo's installed version).
+export async function generateSitemaps() {
+  const entries = await getAllEntries();
+  const chunkCount = Math.max(1, Math.ceil(entries.length / CHUNK_SIZE));
+  return Array.from({ length: chunkCount }, (_, id) => ({ id }));
+}
+
+export default async function sitemap({
+  id,
+}: {
+  id: Promise<string>;
+}): Promise<MetadataRoute.Sitemap> {
+  const chunkId = Number(await id);
+  const entries = await getAllEntries();
+  return entries.slice(chunkId * CHUNK_SIZE, (chunkId + 1) * CHUNK_SIZE);
 }

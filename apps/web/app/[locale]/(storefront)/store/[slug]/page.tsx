@@ -15,6 +15,17 @@ async function getStore(slug: string) {
   return res.json();
 }
 
+function collectProducts(store: any): any[] {
+  const seen = new Map<string, any>();
+  for (const section of store.sections ?? []) {
+    if (section.type !== "COLLECTION" || !section.collection) continue;
+    for (const cp of section.collection.products) {
+      seen.set(cp.product.id, cp.product);
+    }
+  }
+  return Array.from(seen.values());
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -25,7 +36,8 @@ export async function generateMetadata({
 
   if (!store) return { robots: { index: false, follow: false } };
 
-  const description = `Shop ${store.name} — ${store.products.length} product${store.products.length === 1 ? "" : "s"} available.`;
+  const products = collectProducts(store);
+  const description = `Shop ${store.name} — ${products.length} product${products.length === 1 ? "" : "s"} available.`;
 
   return {
     title: store.name,
@@ -40,6 +52,7 @@ export async function generateMetadata({
 
 function buildJsonLd(locale: string, slug: string, store: any) {
   const pageUrl = `${SITE_URL}/${locale}/store/${slug}`;
+  const products = collectProducts(store);
 
   return {
     "@context": "https://schema.org",
@@ -51,7 +64,7 @@ function buildJsonLd(locale: string, slug: string, store: any) {
         url: pageUrl,
         ...(store.logoUrl && { logo: store.logoUrl, image: store.logoUrl }),
       },
-      ...store.products.map((product: any) => ({
+      ...products.map((product: any) => ({
         "@type": "Product",
         name: product.name,
         ...(product.images?.[0] && { image: product.images[0] }),
@@ -99,15 +112,50 @@ export default async function StorePage({
       <header className="bg-white border-b border-gray-100 px-6 py-8 text-center">
         <h1 className="text-2xl font-bold text-gray-900">{store.name}</h1>
       </header>
-      <main className="max-w-5xl mx-auto px-4 py-8">
-        {store.products.length === 0 ? (
+      <main className="max-w-5xl mx-auto px-4 py-8 space-y-10">
+        {store.sections.length === 0 ? (
           <p className="text-gray-500 text-center">{t("noProducts")}</p>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {store.products.map((product: any) => (
-              <ProductCard key={product.id} slug={slug} product={product} />
-            ))}
-          </div>
+          store.sections.map((section: any) => {
+            if (section.type === "COLLECTION") {
+              const products = section.collection?.products ?? [];
+              if (products.length === 0) return null;
+              return (
+                <section key={section.id}>
+                  {section.collection?.name && (
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                      {section.collection.name}
+                    </h2>
+                  )}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                    {products.map((cp: any) => (
+                      <ProductCard key={cp.product.id} slug={slug} product={cp.product} />
+                    ))}
+                  </div>
+                </section>
+              );
+            }
+            if (section.type === "BANNER") {
+              return (
+                <section key={section.id}>
+                  {section.content?.imageUrl && (
+                    <a href={section.content?.linkUrl ?? "#"}>
+                      <img
+                        src={section.content.imageUrl}
+                        alt={section.content.alt ?? ""}
+                        className="w-full rounded-xl object-cover"
+                      />
+                    </a>
+                  )}
+                </section>
+              );
+            }
+            return (
+              <section key={section.id} className="prose max-w-none">
+                <p>{section.content?.body}</p>
+              </section>
+            );
+          })
         )}
       </main>
       <CartLink slug={slug} />

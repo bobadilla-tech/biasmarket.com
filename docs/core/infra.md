@@ -23,6 +23,17 @@ Next.js web app all start from one command, with zero manual `.env` setup —
 `infra/docker/.env.example` is committed with working dev defaults and is loaded
 automatically.
 
+The `api` container also seeds two admin accounts on every boot
+(`apps/api/scripts/seed-dev-admins.ts`, idempotent) so `@Roles(['admin'])`
+routes like `/admin/inquiries` are testable right away:
+
+| Email                  | Password          |
+| ----------------------- | ----------------- |
+| `admin@biasmarket.dev`  | `devpassword123`  |
+| `owner@biasmarket.dev`  | `devpassword123`  |
+
+Dev/native only — never runs against `docker-compose.yml` (prod).
+
 Running `pnpm dev` natively on the host (outside Docker) still works, but now
 requires manually recreating your own gitignored `.env` files (root,
 `apps/api/.env`, `apps/web/.env`, `packages/db/.env`) since the ones that used

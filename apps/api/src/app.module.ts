@@ -11,6 +11,9 @@ import { SellerAuthModule } from './auth/auth.module.js';
 import { OrdersModule } from './modules/orders/orders.module.js';
 import { DeliveryConfigModule } from './modules/delivery-config/delivery-config.module.js';
 import { ContactModule } from './modules/contact/contact.module.js';
+import { CategoriesModule } from './modules/categories/categories.module.js';
+import { CollectionsModule } from './modules/collections/collections.module.js';
+import { StoreSectionsModule } from './modules/store-sections/store-sections.module.js';
 
 @Module({
   imports: [
@@ -25,6 +28,9 @@ import { ContactModule } from './modules/contact/contact.module.js';
     OrdersModule,
     DeliveryConfigModule,
     ContactModule,
+    CategoriesModule,
+    CollectionsModule,
+    StoreSectionsModule,
   ],
   controllers: [AppController],
 })
