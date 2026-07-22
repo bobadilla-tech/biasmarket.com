@@ -14,11 +14,14 @@ export function Hero() {
     <header className="relative overflow-hidden px-6 pt-8 pb-20 sm:px-10">
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,_oklch(0.3_0.1_320)_0%,_transparent_60%)]" />
       <nav className="mx-auto flex max-w-5xl items-center justify-between">
-        <Link
-          href="/"
-          className="font-heading text-lg font-semibold tracking-tight"
-        >
-          Bias Market
+        <Link href="/" className="flex items-center">
+          <img
+            src="/logos/horizontal.png"
+            alt="Bias Market"
+            width={164}
+            height={81}
+            className="h-9 w-auto"
+          />
         </Link>
         <LanguageToggle />
       </nav>
