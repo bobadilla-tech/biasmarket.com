@@ -79,6 +79,12 @@ export class StoresService {
     return store;
   }
 
+  async findAllPublic() {
+    return this.prisma.store.findMany({
+      select: { slug: true, createdAt: true },
+    });
+  }
+
   async findPublicBySlug(slug: string) {
     const store = await this.prisma.store.findUnique({
       where: { slug },

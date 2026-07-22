@@ -49,6 +49,12 @@ export class StoresController {
   }
 
   @Public()
+  @Get('public')
+  findAllPublic() {
+    return this.stores.findAllPublic();
+  }
+
+  @Public()
   @Get(':slug/public')
   findPublic(@Param('slug') slug: string) {
     return this.stores.findPublicBySlug(slug);

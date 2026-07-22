@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { buttonVariants } from "@/components/ui/button";
 import { CONTACT_EMAIL } from "@/lib/site-config";
 import { Footer } from "./footer";
+import { ScheduleCallCard } from "./schedule-call-card";
 
 interface FeatureItem {
   title: string;
@@ -51,6 +52,10 @@ export function EnterprisePage() {
             {t("cta.button")}
           </a>
         </section>
+
+        <div className="mt-6">
+          <ScheduleCallCard />
+        </div>
       </div>
       <Footer />
     </div>

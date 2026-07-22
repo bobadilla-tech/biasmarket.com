@@ -31,6 +31,9 @@ export function Footer() {
             <Link href="/enterprise" className="hover:text-foreground">
               {t("navEnterprise")}
             </Link>
+            <Link href="/contact" className="hover:text-foreground">
+              {t("navContact")}
+            </Link>
           </nav>
         </div>
 

@@ -244,6 +244,24 @@ model Customer {
   @@index([storeId])
 }
 
+enum InquiryStatus {
+  NEW
+  REVIEWED
+  ARCHIVED
+}
+
+// Platform-level sales inbox — not tenant data, no storeId by design.
+model ContactInquiry {
+  id          String        @id @default(cuid())
+  name        String
+  email       String
+  company     String?
+  inquiryType String?
+  message     String
+  status      InquiryStatus @default(NEW)
+  createdAt   DateTime      @default(now())
+}
+
 model AuditLog {
   id         String   @id @default(cuid())
   actorId    String

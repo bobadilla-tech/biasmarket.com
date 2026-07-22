@@ -13,7 +13,7 @@ export const createAuth = (prisma: PrismaService) =>
         role: {
           type: 'string',
           defaultValue: 'seller',
-          input: true, // permite mandarlo en el sign-up
+          input: false, // server-controlled only — see scripts/promote-admin.ts
         },
       },
     },
