@@ -1,4 +1,12 @@
 {
+  "sidebar": {
+    "admin": "Admin",
+    "inquiries": "Consultas",
+    "stores": "Tiendas",
+    "users": "Usuarios",
+    "comingSoon": "Pronto",
+    "signOut": "Cerrar sesión"
+  },
   "inquiries": {
     "title": "Consultas de contacto",
     "empty": "Todavía no hay consultas.",

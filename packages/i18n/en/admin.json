@@ -1,4 +1,12 @@
 {
+  "sidebar": {
+    "admin": "Admin",
+    "inquiries": "Inquiries",
+    "stores": "Stores",
+    "users": "Users",
+    "comingSoon": "Soon",
+    "signOut": "Sign out"
+  },
   "inquiries": {
     "title": "Contact inquiries",
     "empty": "No inquiries yet.",
