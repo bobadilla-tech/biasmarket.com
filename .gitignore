@@ -9,3 +9,4 @@ postgres_data/
 .pnpm-store/
 .claude/
 coverage/
+cookies.txt
