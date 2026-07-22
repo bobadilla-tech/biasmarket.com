@@ -12,15 +12,22 @@ unbuilt.
 
 ## Access
 
-- URL: `/admin/inquiries` (Next.js, under
-  `apps/web/app/[locale]/(dashboard)/admin/`).
-- Not linked from any nav — there's no shared dashboard nav component yet
-  (every other dashboard page renders its own header inline). Reachable by
-  typing the URL directly once logged in as an admin.
+- URL: `/admin` (redirects to `/admin/inquiries`) or any `/admin/*` page
+  directly, under `apps/web/app/[locale]/(dashboard)/admin/`.
+- Full sidebar shell (`apps/web/components/admin/app-sidebar.tsx`, built on
+  shadcn's `Sidebar` primitives — `apps/web/components/ui/sidebar.tsx`,
+  `style: "base-nova"` per `apps/web/components.json`): collapsible on
+  desktop, slides in as a sheet on mobile. Footer shows the logged-in admin's
+  name/email (`authClient.useSession()`) and a working sign-out. "Stores" and
+  "Users" nav items exist as disabled "coming soon" placeholders — no pages
+  behind them yet, matching product.md §4.1's still-unbuilt scope.
+- This sidebar is scoped to `admin/*` only — the seller dashboard
+  (`dashboard/[slug]/...`) is untouched and still renders its own inline
+  header per page.
 - No client-side auth redirect. Like every other dashboard page, it just
   calls the API and renders whatever comes back — a non-admin or logged-out
-  visitor sees the page shell but the fetch fails (401/403), same pattern as
-  the seller dashboard.
+  visitor sees the sidebar shell but the fetch fails (401/403), same pattern
+  as the seller dashboard.
 
 ## Becoming an admin
 
@@ -81,10 +88,9 @@ a project-wide throttling rollout (see
 
 ## Extending this later
 
-If a second admin feature gets added, it'll need:
-
-- A shared nav/header for the `(dashboard)/admin/*` tree (doesn't exist yet —
-  today's single page renders its own header).
-- Reconsidering whether `@Roles(['admin'])` per-route is still enough, or
-  whether a dedicated `AdminModule`/guard composition makes more sense once
-  there's more than one admin-only resource.
+A shared nav shell already exists (see Access, above) — adding a second
+admin feature is: build the page under `admin/<name>/page.tsx`, flip its
+`NAV_ITEMS` entry in `app-sidebar.tsx` from `disabled: true` to a real
+`href`, add its i18n strings. Still worth reconsidering once there's more
+than one admin-only resource: whether `@Roles(['admin'])` per-route is
+enough, or a dedicated `AdminModule`/guard composition makes more sense.
