@@ -2,6 +2,7 @@ import {
   Injectable,
   ForbiddenException,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { CreateProductDto } from './dto/create-product.dto.js';
@@ -39,10 +40,30 @@ export class ProductsService {
     return product;
   }
 
+  private async assertCategoriesInStore(categoryIds: string[], storeId: string) {
+    if (categoryIds.length === 0) return;
+    const count = await this.prisma.category.count({
+      where: { id: { in: categoryIds }, storeId },
+    });
+    if (count !== categoryIds.length) {
+      throw new BadRequestException('Categoría inválida');
+    }
+  }
+
   async create(storeId: string, userId: string, dto: CreateProductDto) {
     const store = await this.assertOwnership(storeId, userId);
-    return this.prisma.product.create({
-      data: { ...dto, storeId, currency: dto.currency ?? store.defaultCurrency },
+    const { categoryIds, ...data } = dto;
+    if (categoryIds) await this.assertCategoriesInStore(categoryIds, storeId);
+    return this.prisma.$transaction(async (tx) => {
+      const product = await tx.product.create({
+        data: { ...data, storeId, currency: dto.currency ?? store.defaultCurrency },
+      });
+      if (categoryIds?.length) {
+        await tx.productCategory.createMany({
+          data: categoryIds.map((categoryId) => ({ productId: product.id, categoryId })),
+        });
+      }
+      return product;
     });
   }
 
@@ -50,7 +71,7 @@ export class ProductsService {
     await this.assertOwnership(storeId, userId);
     return this.prisma.product.findMany({
       where: { storeId, deletedAt: null },
-      include: { variants: true },
+      include: { variants: true, categories: { include: { category: true } } },
     });
   }
 
@@ -69,7 +90,20 @@ export class ProductsService {
     dto: UpdateProductDto,
   ) {
     await this.findOwnedProduct(productId, storeId, userId);
-    return this.prisma.product.update({ where: { id: productId }, data: dto });
+    const { categoryIds, ...data } = dto;
+    if (categoryIds) await this.assertCategoriesInStore(categoryIds, storeId);
+    return this.prisma.$transaction(async (tx) => {
+      const product = await tx.product.update({ where: { id: productId }, data });
+      if (categoryIds) {
+        await tx.productCategory.deleteMany({ where: { productId } });
+        if (categoryIds.length) {
+          await tx.productCategory.createMany({
+            data: categoryIds.map((categoryId) => ({ productId, categoryId })),
+          });
+        }
+      }
+      return product;
+    });
   }
 
   async softDelete(productId: string, storeId: string, userId: string) {

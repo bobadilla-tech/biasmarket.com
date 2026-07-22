@@ -141,6 +141,9 @@ to exactly one of them, so it's always clear who configures what.
 - Not customer-facing; used only by the Bias Market operator
 - Out of scope for MVP beyond basic account/store listing (see
   [architecture.md](architecture.md#3-multi-tenant-design-critical))
+- What actually exists today: a `role: "admin"` gate + one screen (contact
+  inquiries from the public `/contact` form) — see [admin.md](admin.md).
+  Account/store management described above is still unbuilt.
 
 ### 4.2 Seller Panel (per store)
 

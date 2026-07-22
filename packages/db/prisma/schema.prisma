@@ -44,6 +44,8 @@ model Store {
   products        Product[]
   orders          Order[]
   categories      Category[]
+  collections     Collection[]
+  sections        StoreSection[]
   customers       Customer[]
   paymentMethods  PaymentMethodConfig[]
   deliveryMethods DeliveryMethodConfig[]
@@ -54,7 +56,6 @@ model Store {
 model Product {
   id          String        @id @default(cuid())
   storeId     String
-  categoryId  String?
   name        String
   description String        @default("")
   price       Decimal       @db.Decimal(10, 2)
@@ -66,10 +67,11 @@ model Product {
   deletedAt   DateTime?
   createdAt   DateTime      @default(now())
 
-  store      Store            @relation(fields: [storeId], references: [id])
-  category   Category?        @relation(fields: [categoryId], references: [id])
-  variants   ProductVariant[]
-  orderItems OrderItem[]
+  store       Store               @relation(fields: [storeId], references: [id])
+  variants    ProductVariant[]
+  orderItems  OrderItem[]
+  categories  ProductCategory[]
+  collections CollectionProduct[]
 
   @@index([storeId])
   @@index([storeId, status])
@@ -84,6 +86,7 @@ model ProductVariant {
   reserved      Int      @default(0)
   priceOverride Decimal? @db.Decimal(10, 2)
   imageOverride String?
+  attributes    Json     @default("{}")
 
   product    Product     @relation(fields: [productId], references: [id])
   orderItems OrderItem[]
@@ -100,14 +103,79 @@ enum ProductStatus {
 model Category {
   id        String   @id @default(cuid())
   storeId   String
+  parentId  String?
   name      String
   createdAt DateTime @default(now())
 
-  store    Store     @relation(fields: [storeId], references: [id])
-  products Product[]
+  store    Store             @relation(fields: [storeId], references: [id])
+  parent   Category?         @relation("CategoryTree", fields: [parentId], references: [id])
+  children Category[]        @relation("CategoryTree")
+  products ProductCategory[]
 
-  @@unique([storeId, name])
+  @@unique([storeId, parentId, name])
   @@index([storeId])
+  @@index([parentId])
+}
+
+model ProductCategory {
+  productId  String
+  categoryId String
+
+  product  Product  @relation(fields: [productId], references: [id])
+  category Category @relation(fields: [categoryId], references: [id])
+
+  @@id([productId, categoryId])
+  @@index([categoryId])
+}
+
+model Collection {
+  id          String   @id @default(cuid())
+  storeId     String
+  name        String
+  slug        String
+  description String   @default("")
+  createdAt   DateTime @default(now())
+
+  store    Store               @relation(fields: [storeId], references: [id])
+  products CollectionProduct[]
+  sections StoreSection[]
+
+  @@unique([storeId, slug])
+  @@index([storeId])
+}
+
+model CollectionProduct {
+  collectionId String
+  productId    String
+  position     Int
+
+  collection Collection @relation(fields: [collectionId], references: [id])
+  product    Product    @relation(fields: [productId], references: [id])
+
+  @@id([collectionId, productId])
+  @@index([productId])
+}
+
+enum StoreSectionType {
+  COLLECTION
+  BANNER
+  TEXT_BLOCK
+}
+
+model StoreSection {
+  id           String           @id @default(cuid())
+  storeId      String
+  type         StoreSectionType
+  collectionId String?
+  content      Json             @default("{}")
+  position     Int
+  createdAt    DateTime         @default(now())
+
+  store      Store       @relation(fields: [storeId], references: [id])
+  collection Collection? @relation(fields: [collectionId], references: [id])
+
+  @@index([storeId])
+  @@index([storeId, position])
 }
 
 model Order {
@@ -242,6 +310,24 @@ model Customer {
 
   @@unique([storeId, phone])
   @@index([storeId])
+}
+
+enum InquiryStatus {
+  NEW
+  REVIEWED
+  ARCHIVED
+}
+
+// Platform-level sales inbox — not tenant data, no storeId by design.
+model ContactInquiry {
+  id          String        @id @default(cuid())
+  name        String
+  email       String
+  company     String?
+  inquiryType String?
+  message     String
+  status      InquiryStatus @default(NEW)
+  createdAt   DateTime      @default(now())
 }
 
 model AuditLog {

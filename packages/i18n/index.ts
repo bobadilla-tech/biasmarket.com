@@ -1,3 +1,5 @@
+import adminEn from "./en/admin.json" with { type: "json" };
+import adminEs from "./es/admin.json" with { type: "json" };
 import commonEn from "./en/common.json" with { type: "json" };
 import commonEs from "./es/common.json" with { type: "json" };
 import dashboardEn from "./en/dashboard.json" with { type: "json" };
@@ -13,6 +15,7 @@ import storefrontEs from "./es/storefront.json" with { type: "json" };
 
 const messages = {
   en: {
+    admin: adminEn,
     common: commonEn,
     landing: landingEn,
     marketing: marketingEn,
@@ -21,6 +24,7 @@ const messages = {
     storefront: storefrontEn,
   },
   es: {
+    admin: adminEs,
     common: commonEs,
     landing: landingEs,
     marketing: marketingEs,

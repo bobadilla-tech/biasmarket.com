@@ -49,9 +49,27 @@ export class StoresController {
   }
 
   @Public()
+  @Get('public')
+  findAllPublic() {
+    return this.stores.findAllPublic();
+  }
+
+  @Public()
+  @Get('collections/public')
+  findCollectionsPublic() {
+    return this.stores.findCollectionsPublic();
+  }
+
+  @Public()
   @Get(':slug/public')
   findPublic(@Param('slug') slug: string) {
     return this.stores.findPublicBySlug(slug);
+  }
+
+  @Public()
+  @Get(':slug/categories/public')
+  findCategoriesPublic(@Param('slug') slug: string) {
+    return this.stores.findCategoriesPublic(slug);
   }
 
   @UseGuards(AuthGuard)

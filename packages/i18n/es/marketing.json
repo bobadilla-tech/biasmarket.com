@@ -4,8 +4,42 @@
     "navHome": "Inicio",
     "navFounder": "Fundadores",
     "navEnterprise": "Empresas",
+    "navContact": "Contacto",
     "credit": "Desarrollado por <name>Bobadilla Tech</name>",
     "copyright": "© {year} Bias Market. Todos los derechos reservados."
+  },
+  "scheduleCallCard": {
+    "text": "¿Quieres hablar? Agenda una llamada de 15 min con Alexandra, nuestra líder de ventas.",
+    "subtitle": "Alexandra Flores · Líder de Ventas · 15 min · Sin preparación previa",
+    "cta": "Agendar llamada",
+    "opensInNewTab": "(se abre en una pestaña nueva)"
+  },
+  "contactPage": {
+    "meta": {
+      "title": "Contacto — Bias Market",
+      "description": "Contáctate con Bias Market — agenda una llamada o envíanos un mensaje."
+    },
+    "overline": "Contacto",
+    "headline": "Hablemos",
+    "intro": "¿Preguntas sobre configurar tu tienda, precios, o una alianza más grande? Agenda una llamada o envíanos un mensaje y te respondemos.",
+    "emailHeading": "Escríbenos directamente",
+    "emailBody": "Para cualquier otra cosa, contáctanos en",
+    "form": {
+      "name": "Nombre",
+      "email": "Correo",
+      "company": "Empresa (opcional)",
+      "inquiryType": "¿Sobre qué es?",
+      "inquiryGeneral": "Pregunta general",
+      "inquiryTechnical": "Soporte técnico",
+      "inquiryPricing": "Precios",
+      "inquiryPartnership": "Alianza",
+      "inquiryOther": "Otro",
+      "message": "Mensaje",
+      "submit": "Enviar mensaje",
+      "submitting": "Enviando...",
+      "success": "Gracias — recibimos tu mensaje y te responderemos pronto.",
+      "error": "Algo salió mal al enviar tu mensaje. Intenta de nuevo."
+    }
   },
   "founderPage": {
     "meta": {

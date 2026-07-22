@@ -3,6 +3,7 @@ import {
   IsOptional,
   IsInt,
   IsNumber,
+  IsObject,
   MinLength,
 } from 'class-validator';
 
@@ -22,4 +23,8 @@ export class CreateVariantDto {
   @IsOptional()
   @IsString()
   imageOverride?: string;
+
+  @IsOptional()
+  @IsObject()
+  attributes?: Record<string, string>; // ej: { member: "Jungkook", version: "A" }
 }

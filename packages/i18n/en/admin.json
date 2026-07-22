@@ -1,0 +1,24 @@
+{
+  "inquiries": {
+    "title": "Contact inquiries",
+    "empty": "No inquiries yet.",
+    "table": {
+      "name": "Name",
+      "email": "Email",
+      "company": "Company",
+      "type": "Type",
+      "message": "Message",
+      "status": "Status",
+      "createdAt": "Received",
+      "actions": "Actions"
+    },
+    "status": {
+      "NEW": "New",
+      "REVIEWED": "Reviewed",
+      "ARCHIVED": "Archived"
+    },
+    "actions": {
+      "markReviewed": "Mark reviewed"
+    }
+  }
+}

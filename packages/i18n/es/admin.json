@@ -1,0 +1,24 @@
+{
+  "inquiries": {
+    "title": "Consultas de contacto",
+    "empty": "Todavía no hay consultas.",
+    "table": {
+      "name": "Nombre",
+      "email": "Correo",
+      "company": "Empresa",
+      "type": "Tipo",
+      "message": "Mensaje",
+      "status": "Estado",
+      "createdAt": "Recibido",
+      "actions": "Acciones"
+    },
+    "status": {
+      "NEW": "Nueva",
+      "REVIEWED": "Revisada",
+      "ARCHIVED": "Archivada"
+    },
+    "actions": {
+      "markReviewed": "Marcar revisada"
+    }
+  }
+}

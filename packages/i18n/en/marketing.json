@@ -4,8 +4,42 @@
     "navHome": "Home",
     "navFounder": "Founders",
     "navEnterprise": "Enterprise",
+    "navContact": "Contact",
     "credit": "Developed by <name>Bobadilla Tech</name>",
     "copyright": "© {year} Bias Market. All rights reserved."
+  },
+  "scheduleCallCard": {
+    "text": "Want to talk? Schedule a 15-min intro call with Alexandra, our sales lead.",
+    "subtitle": "Alexandra Flores · Sales Lead · 15 min · No prep needed",
+    "cta": "Book a Call",
+    "opensInNewTab": "(opens in new tab)"
+  },
+  "contactPage": {
+    "meta": {
+      "title": "Contact — Bias Market",
+      "description": "Get in touch with Bias Market — book a call or send us a message."
+    },
+    "overline": "Contact",
+    "headline": "Let's talk",
+    "intro": "Questions about setting up your store, pricing, or a bigger partnership? Book a call or send us a message and we'll get back to you.",
+    "emailHeading": "Email us directly",
+    "emailBody": "For anything else, reach us at",
+    "form": {
+      "name": "Name",
+      "email": "Email",
+      "company": "Company (optional)",
+      "inquiryType": "What's this about?",
+      "inquiryGeneral": "General question",
+      "inquiryTechnical": "Technical support",
+      "inquiryPricing": "Pricing",
+      "inquiryPartnership": "Partnership",
+      "inquiryOther": "Other",
+      "message": "Message",
+      "submit": "Send message",
+      "submitting": "Sending...",
+      "success": "Thanks — we got your message and will get back to you soon.",
+      "error": "Something went wrong sending your message. Please try again."
+    }
   },
   "founderPage": {
     "meta": {

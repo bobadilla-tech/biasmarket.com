@@ -1,6 +1,12 @@
 {
   "title": "Products",
   "viewStorefront": "View storefront",
+  "nav": {
+    "products": "Products",
+    "categories": "Categories",
+    "collections": "Collections",
+    "sections": "Sections"
+  },
   "form": {
     "namePlaceholder": "Name",
     "descriptionPlaceholder": "Description",
@@ -8,7 +14,54 @@
     "imageUrlPlaceholder": "Image URL (optional)",
     "availableUntilPlaceholder": "Available until (optional)",
     "addProduct": "Add product",
-    "creating": "Creating..."
+    "creating": "Creating...",
+    "categoriesLabel": "Categories"
+  },
+  "variants": {
+    "manage": "Variants",
+    "namePlaceholder": "Variant name (e.g. Version A)",
+    "stockPlaceholder": "Stock (optional)",
+    "priceOverridePlaceholder": "Price override (optional)",
+    "attributeKeyPlaceholder": "Attribute (e.g. member)",
+    "attributeValuePlaceholder": "Value (e.g. Jungkook)",
+    "addAttribute": "Add attribute",
+    "add": "Add variant",
+    "none": "No variants yet"
+  },
+  "categories": {
+    "title": "Categories",
+    "namePlaceholder": "Category name",
+    "parentPlaceholder": "Parent category",
+    "noParent": "No parent",
+    "add": "Add category",
+    "delete": "Delete"
+  },
+  "collections": {
+    "title": "Collections",
+    "namePlaceholder": "Collection name",
+    "descriptionPlaceholder": "Description (optional)",
+    "add": "Add collection",
+    "delete": "Delete",
+    "addProduct": "Add product",
+    "selectProduct": "Select a product",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "remove": "Remove"
+  },
+  "sections": {
+    "title": "Store sections",
+    "typeLabel": "Type",
+    "collection": "Collection",
+    "banner": "Banner",
+    "textBlock": "Text block",
+    "selectCollection": "Select a collection",
+    "imageUrlPlaceholder": "Image URL",
+    "linkUrlPlaceholder": "Link URL (optional)",
+    "bodyPlaceholder": "Text content",
+    "add": "Add section",
+    "delete": "Delete",
+    "moveUp": "Move up",
+    "moveDown": "Move down"
   },
   "table": {
     "name": "Name",

@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Geist, Geist_Mono } from "next/font/google";
 import { routing } from "@/i18n/routing";
+import { SITE_URL } from "@/lib/site-config";
 import "../globals.css";
 
 const geistSans = Geist({
@@ -27,9 +28,26 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "common.meta" });
+  const title = t("title");
+  const description = t("description");
   return {
-    title: t("title"),
-    description: t("description"),
+    metadataBase: new URL(SITE_URL),
+    title: { default: title, template: "%s — Bias Market" },
+    description,
+    openGraph: {
+      title,
+      description,
+      siteName: "Bias Market",
+      locale,
+      type: "website",
+      images: [{ url: "/og-image.png", width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: ["/og-image.png"],
+    },
   };
 }
 
