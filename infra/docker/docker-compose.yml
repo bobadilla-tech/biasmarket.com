@@ -24,6 +24,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "node", "/app/infra/docker/api-healthcheck.ts"]
       interval: 10s
@@ -45,6 +47,39 @@ services:
       api:
         condition: service_healthy
 
+  minio:
+    image: minio/minio
+    restart: unless-stopped
+    environment:
+      - MINIO_ROOT_USER=${S3_ACCESS_KEY}
+      - MINIO_ROOT_PASSWORD=${S3_SECRET_KEY}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    # Not published to the host — only reachable inside the compose network.
+    # Public read access is exposed exclusively via Caddy (cdn.biasmarket.com),
+    # the admin console (9001) is intentionally not routed anywhere.
+
+  # One-shot: creates the bucket and sets it public-read, then exits.
+  # Safe to re-run on every `pnpm docker:prod` — both mc commands are
+  # idempotent (--ignore-existing / re-applying the same anonymous policy).
+  minio-init:
+    image: minio/mc
+    restart: "no"
+    environment:
+      - MC_HOST_local=http://${S3_ACCESS_KEY}:${S3_SECRET_KEY}@minio:9000
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      sh -c "mc mb --ignore-existing local/${S3_BUCKET} && mc anonymous set download local/${S3_BUCKET}"
+
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
@@ -52,6 +87,7 @@ services:
     depends_on:
       - api
       - web
+      - minio
     ports:
       - "80:80"
       - "443:443"
@@ -64,3 +100,4 @@ volumes:
   db_data:
   caddy_data:
   caddy_config:
+  minio_data:

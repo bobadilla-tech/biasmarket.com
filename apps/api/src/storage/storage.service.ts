@@ -2,23 +2,24 @@ import { Injectable } from '@nestjs/common';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { randomUUID } from 'crypto';
 
+function requiredEnv(name: string): string {
+    const value = process.env[name];
+    if (!value) throw new Error(`Missing required env var: ${name}`);
+    return value;
+}
+
 @Injectable()
 export class StorageService {
-    
-    constructor() {
-        console.log('S3 CONFIG', {
-            endpoint: process.env.S3_ENDPOINT,
-            bucket: process.env.S3_BUCKET,
-            access: process.env.S3_ACCESS_KEY,
-        });
-    }
+    private readonly bucket = requiredEnv('S3_BUCKET');
+    private readonly publicUrl = requiredEnv('S3_PUBLIC_URL');
+
     private client = new S3Client({
         region: 'us-east-1',
-        endpoint: process.env.S3_ENDPOINT, 
+        endpoint: requiredEnv('S3_ENDPOINT'),
         forcePathStyle: true, // requerido por MinIO
         credentials: {
-            accessKeyId: process.env.S3_ACCESS_KEY!,
-            secretAccessKey: process.env.S3_SECRET_KEY!,
+            accessKeyId: requiredEnv('S3_ACCESS_KEY'),
+            secretAccessKey: requiredEnv('S3_SECRET_KEY'),
         },
     });
 
@@ -28,13 +29,13 @@ export class StorageService {
 
         await this.client.send(
             new PutObjectCommand({
-                Bucket: process.env.S3_BUCKET,
+                Bucket: this.bucket,
                 Key: key,
                 Body: buffer,
                 ContentType: mimeType,
             }),
         );
 
-        return `${process.env.S3_PUBLIC_URL}/${process.env.S3_BUCKET}/${key}`;
+        return `${this.publicUrl}/${this.bucket}/${key}`;
     }
 }

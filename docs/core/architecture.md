@@ -419,7 +419,9 @@ biasmarket.example.com {
   file — the original spec's `biasmarket`/`biasmarket` is a placeholder to
   replace before anything touches real data.
 - R2 stays external (S3-compatible API, no container) — object storage isn't
-  something you self-host on the VPS.
+  something you self-host on the VPS. **Not what's actually deployed today:**
+  the MVP runs self-hosted MinIO instead (`docker-compose.yml`'s `minio`
+  service), a deliberate shortcut — see [deploy.md](deploy.md#image-uploads-minio).
 
 ---
 

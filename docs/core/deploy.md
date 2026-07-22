@@ -92,21 +92,23 @@ docker compose version   # confirm the compose plugin is present
 
 ## 4. Point DNS at the VM
 
-The stack uses two subdomains — `biasmarket.com` for the storefront/dashboard
-(`web`) and `api.biasmarket.com` for the API (`api`), each getting its own
+The stack uses three subdomains — `biasmarket.com` for the storefront/dashboard
+(`web`), `api.biasmarket.com` for the API (`api`), and `cdn.biasmarket.com` for
+public product images/store logos (`minio`) — each getting its own
 Caddy-issued cert (see [`../caddy/Caddyfile`](../caddy/Caddyfile)). Create
-**two** A records pointing at the reserved public IP from step 1:
+**three** A records pointing at the reserved public IP from step 1:
 
 | Host                                       | Points to               |
 | ------------------------------------------ | ----------------------- |
 | `biasmarket.com` (and `www` if you use it) | VM's reserved public IP |
 | `api.biasmarket.com`                       | VM's reserved public IP |
+| `cdn.biasmarket.com`                       | VM's reserved public IP |
 
-Confirm both resolve (`dig +short biasmarket.com`,
+Confirm all three resolve (`dig +short biasmarket.com`,
 `dig +short
-api.biasmarket.com`) before starting the stack — Caddy's automatic
-HTTPS will fail its ACME challenge for a domain that isn't live yet, though it
-retries.
+api.biasmarket.com`, `dig +short cdn.biasmarket.com`) before starting the
+stack — Caddy's automatic HTTPS will fail its ACME challenge for a domain
+that isn't live yet, though it retries.
 
 **If DNS is proxied through Cloudflare** (orange cloud, not grey/DNS-only): set
 SSL/TLS mode to **Full** in Cloudflare dashboard → SSL/TLS → Overview. Not
@@ -139,8 +141,9 @@ fresh `POSTGRES_PASSWORD`, matching `DATABASE_URL`, and a fresh
 pass `--force` to regenerate. See `scripts/init-env.ts`.
 
 Deploying under a different domain? Run `pnpm env:init --prod`, then edit the
-three URL vars by hand — and update `../caddy/Caddyfile`, which is hardcoded to
-`api.biasmarket.com` / `biasmarket.com`.
+four URL vars by hand (`BETTER_AUTH_URL`, `WEB_URL`, `NEXT_PUBLIC_API_URL`,
+`S3_PUBLIC_URL`) — and update `../caddy/Caddyfile`, which is hardcoded to
+`api.biasmarket.com` / `biasmarket.com` / `cdn.biasmarket.com`.
 
 ## 6. Bring up the stack
 
@@ -179,6 +182,27 @@ docker logs biasmarket-caddy-1 --tail 50 -f
 Look for a "certificate obtained successfully" log line before retesting
 `curl -I https://biasmarket.com`.
 
+### Image uploads (MinIO)
+
+Product images and store logos are stored in a self-hosted MinIO instance
+(the `minio` service), not the R2 setup described in
+[`roadmap.md`](roadmap.md) — see the note there. On first boot the one-shot
+`minio-init` service (`minio/mc`) creates the `S3_BUCKET` bucket and sets it
+public-read; it's idempotent, so it also runs harmlessly on every redeploy.
+
+Verify it worked:
+
+```bash
+docker compose -f infra/docker/docker-compose.yml logs minio-init
+# should show "Bucket created successfully" / "Access permission ... set successfully"
+```
+
+Then upload a product image through the dashboard and confirm the returned
+URL (`https://cdn.biasmarket.com/<bucket>/products/<uuid>.jpg`) loads over
+HTTPS in a browser. If uploads fail, check `docker compose logs api` for a
+`Missing required env var: S3_...` error first — `StorageService` now
+validates these at boot instead of failing silently.
+
 ## Day 2
 
 ### Redeploy after a change
@@ -197,6 +221,10 @@ code.
 - **DB backup:** the Postgres data lives in the `db_data` named volume. Simplest
   snapshot:
   `docker compose -f infra/docker/docker-compose.yml exec db pg_dump -U biasmarket biasmarket > backup.sql`
+- **Uploaded images backup:** MinIO's data lives in the `minio_data` named
+  volume — back it up the same way you'd back up any other Docker volume
+  (e.g. `docker run --rm -v biasmarket_minio_data:/data -v $(pwd):/backup
+  alpine tar czf /backup/minio-backup.tar.gz /data`).
 - **Stack won't come up after a reboot:** confirm `docker` and the containers
   restarted (`restart: unless-stopped` is set on every service, so a VM reboot
   should bring everything back — verify with `docker compose ps`).
@@ -215,3 +243,8 @@ share the link," not for handling real traffic or real payment data at volume:
 - **Single VM, no managed DB.** Fine at MVP scale; see
   [`docs/spec/roadmap.md`](../../docs/spec/roadmap.md) §11 for the documented
   scaling path (managed Postgres once this is the bottleneck).
+- **Self-hosted MinIO, not Cloudflare R2.** `roadmap.md`/`architecture.md`/
+  `security-payments.md` spec R2 specifically to avoid self-hosting object
+  storage on the VPS; MinIO is a deliberate MVP shortcut instead — no image
+  resizing/CDN caching layer, and one more stateful volume (`minio_data`) to
+  back up on the single VM.

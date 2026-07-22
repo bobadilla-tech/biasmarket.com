@@ -5,3 +5,9 @@ api.biasmarket.com {
 biasmarket.com {
   reverse_proxy web:3001
 }
+
+# Public-read MinIO bucket (product images, store logos). Only the S3 API
+# port (9000) is proxied — the admin console (9001) is never routed here.
+cdn.biasmarket.com {
+  reverse_proxy minio:9000
+}

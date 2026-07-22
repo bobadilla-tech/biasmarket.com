@@ -11,7 +11,9 @@ Where this ships, what ships when, and what could go wrong.
   [architecture.md](architecture.md#3-multi-tenant-design-critical))
 - DB: Postgres in a container on the same VPS (see
   [architecture.md](architecture.md#8-docker--deployment-improvements))
-- Storage: Cloudflare R2
+- Storage: Cloudflare R2 (planned) — actual MVP deploy uses self-hosted MinIO
+  instead, see [deploy.md](deploy.md#image-uploads-minio) and "Known
+  limitations"; not yet reconciled with this doc
 - Email: Resend (transactional — signup, payment status, see
   [architecture.md](architecture.md#9-performance--scaling))
 

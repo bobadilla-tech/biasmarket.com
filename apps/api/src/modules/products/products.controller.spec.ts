@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { vi, type Mock } from 'vitest';
 import { ProductsController } from './products.controller.js';
 import { ProductsService } from './products.service.js';
+import { StorageService } from '../../storage/storage.service.js';
 
 vi.mock('@thallesp/nestjs-better-auth', () => ({
   AuthGuard: class AuthGuard {},
@@ -37,7 +38,10 @@ describe('ProductsController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ProductsController],
-      providers: [{ provide: ProductsService, useValue: service }],
+      providers: [
+        { provide: ProductsService, useValue: service },
+        { provide: StorageService, useValue: { uploadImage: vi.fn() } },
+      ],
     }).compile();
 
     controller = module.get<ProductsController>(ProductsController);
