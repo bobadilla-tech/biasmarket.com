@@ -4,6 +4,19 @@ How to get someone admin access — in prod and in dev. See [admin.md](admin.md)
 for what admin access actually unlocks (`/admin/inquiries`, `/admin/stores` +
 impersonation).
 
+## Quick reference
+
+Run from the repo root — these wrap `docker compose exec` for you, no need
+to remember the container/compose-file details:
+
+```bash
+pnpm admin:create:prod you@example.com "Your Name"     # new account, prod
+pnpm admin:promote:prod you@example.com                # existing account, prod
+
+pnpm admin:create:dev you@example.com "Your Name"       # new account, dev
+pnpm admin:promote:dev you@example.com                  # existing account, dev
+```
+
 ## How it works
 
 `role` is **not** self-assignable — `apps/api/src/auth/auth.config.ts`
@@ -15,11 +28,6 @@ nothing in the signup API can set it. Two scripts, two situations:
 - **Person already signed up normally** → `admin:promote` — flips their existing
   account's role, no new credentials involved.
 
-```bash
-pnpm --filter api run admin:create <email> [name]     # new account
-pnpm --filter api run admin:promote <email>            # existing account
-```
-
 `admin:create` refuses to run if the email already exists (tells you to use
 `admin:promote` instead) — it only ever creates, never silently overwrites. The
 printed password is generated once and not stored anywhere else — save it before
@@ -30,35 +38,27 @@ looked up fresh from the database on every request (not cached in a JWT), so a
 user who's already logged in when you promote them gets admin access on their
 very next request, confirmed by testing this exact sequence.
 
-## Prod
+**These must run inside the `api` container** — never bare on the host, even
+after `pnpm install`. Two reasons a bare host run fails: the Prisma client
+(`packages/db/generated/prisma/client.ts`) only gets generated as part of the
+container's build, and prod's `db` container has no host port published
+(`docs/core/readme.md`: reachable only on the internal Docker network) — a
+host process has no route to Postgres at all. The root `pnpm admin:*:prod`/
+`pnpm admin:*:dev` scripts above already handle this for you
+(`docker compose -f <compose file> exec api pnpm --filter api run admin:...`)
+— use those instead of running `pnpm --filter api run admin:...` directly
+unless you're already inside the container.
 
-```bash
-docker compose -f infra/docker/docker-compose.yml exec api pnpm run admin:create you@example.com "Your Name"
-# or, for an existing account:
-docker compose -f infra/docker/docker-compose.yml exec api pnpm run admin:promote you@example.com
-```
+## Dev note
 
-Run this on the VM, from wherever `docker-compose.yml` lives relative to your
-shell (adjust the `-f` path if you're elsewhere). The `api` container's working
-directory is already `/app`, so no `cd` is needed.
-
-## Dev
-
-Same commands, against the dev compose file instead:
-
-```bash
-docker compose -f infra/docker/docker-compose.dev.yml exec api pnpm run admin:create you@example.com
-```
-
-Usually unnecessary though — the dev stack already seeds two ready-to-use admin
+Usually unnecessary in dev — the dev stack already seeds two ready-to-use admin
 logins on every boot (`apps/api/scripts/seed-dev.ts`, see [infra.md](infra.md)'s
-credentials table). Only reach for this if you need another admin beyond those
-two.
+credentials table). Only reach for `admin:create:dev`/`admin:promote:dev` if you
+need another admin beyond those two.
 
 ## Revoking admin access
 
-No script for this (kept both scripts single-purpose). Direct SQL, run the same
-way:
+No script for this (kept both scripts single-purpose). Direct SQL:
 
 ```bash
 docker compose -f infra/docker/docker-compose.yml exec db psql -U biasmarket -d biasmarket \

@@ -15,7 +15,11 @@
     "env:init": "node scripts/init-env.ts",
     "docker:dev": "docker compose -f infra/docker/docker-compose.dev.yml up --build",
     "docker:dev:down": "docker compose -f infra/docker/docker-compose.dev.yml down",
-    "docker:prod": "docker compose -f infra/docker/docker-compose.yml up -d --build"
+    "docker:prod": "docker compose -f infra/docker/docker-compose.yml up -d --build",
+    "admin:create:prod": "docker compose -f infra/docker/docker-compose.yml exec api pnpm --filter api run admin:create",
+    "admin:promote:prod": "docker compose -f infra/docker/docker-compose.yml exec api pnpm --filter api run admin:promote",
+    "admin:create:dev": "docker compose -f infra/docker/docker-compose.dev.yml exec api pnpm --filter api run admin:create",
+    "admin:promote:dev": "docker compose -f infra/docker/docker-compose.dev.yml exec api pnpm --filter api run admin:promote"
   },
   "devDependencies": {
     "@types/node": "^26.0.0",
