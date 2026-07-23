@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Post, Patch, UseGuards, Delete, Param, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
-import { AuthGuard, Public, Session } from '@thallesp/nestjs-better-auth';
+import { AuthGuard, Public, Roles, Session } from '@thallesp/nestjs-better-auth';
 import type { UserSession } from '@thallesp/nestjs-better-auth';
 import { StoresService } from './stores.service.js';
 import { UpdateStoreDto } from './dto/update-store.dto.js';
@@ -24,6 +24,13 @@ export class StoresController {
   @Get('/me/stores')
   findMine(@Session() session: UserSession) {
     return this.stores.findAllForUser(session.user.id);
+  }
+
+  @UseGuards(AuthGuard)
+  @Roles(['admin'])
+  @Get()
+  findAllForAdmin() {
+    return this.stores.findAllForAdmin();
   }
 
   @UseGuards(AuthGuard)

@@ -1,4 +1,12 @@
 {
+  "sidebar": {
+    "admin": "Admin",
+    "inquiries": "Consultas",
+    "stores": "Tiendas",
+    "users": "Usuarios",
+    "comingSoon": "Pronto",
+    "signOut": "Cerrar sesión"
+  },
   "inquiries": {
     "title": "Consultas de contacto",
     "empty": "Todavía no hay consultas.",
@@ -19,6 +27,21 @@
     },
     "actions": {
       "markReviewed": "Marcar revisada"
+    }
+  },
+  "stores": {
+    "title": "Tiendas",
+    "empty": "Todavía no hay tiendas.",
+    "table": {
+      "name": "Nombre",
+      "slug": "Slug",
+      "owner": "Dueño",
+      "createdAt": "Creada",
+      "actions": "Acciones"
+    },
+    "actions": {
+      "impersonate": "Suplantar",
+      "impersonating": "Suplantando..."
     }
   }
 }

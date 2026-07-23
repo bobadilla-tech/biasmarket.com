@@ -44,14 +44,14 @@ export default function AdminInquiriesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 px-6 py-10 text-sm text-gray-500">
+      <div className="px-6 py-10 text-sm text-gray-500">
         {tCommon("loading")}
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 px-6 py-10">
+    <div className="bg-gray-50 px-6 py-10">
       <div className="mx-auto flex max-w-5xl flex-col gap-6">
         <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
 

@@ -15,6 +15,9 @@ model User {
   image         String?
   role          String    @default("seller")
   locale        String    @default("es")
+  banned        Boolean?  @default(false)
+  banReason     String?
+  banExpires    DateTime?
   createdAt     DateTime
   updatedAt     DateTime
 
@@ -355,6 +358,7 @@ model Session {
   ipAddress String?
   userAgent String?
   userId    String
+  impersonatedBy String?
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("session")

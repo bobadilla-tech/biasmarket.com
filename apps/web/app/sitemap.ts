@@ -19,11 +19,16 @@ function alternates(path: string) {
 
 async function getStoreSlugs(): Promise<{ slug: string; createdAt: string }[]> {
   const apiUrl = process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
-  const res = await fetch(`${apiUrl}/api/stores/public`, {
-    next: { revalidate: 3600 },
-  });
-  if (!res.ok) return [];
-  return res.json();
+  if (!apiUrl) return [];
+  try {
+    const res = await fetch(`${apiUrl}/api/stores/public`, {
+      next: { revalidate: 3600 },
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
+  }
 }
 
 async function getAllEntries(): Promise<MetadataRoute.Sitemap> {
