@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 
-// Grants the platform-admin role to an existing user by email.
-// This is the only way to create an admin account — role can no longer be
-// set by the client at signup (see apps/api/src/auth/auth.config.ts).
-// Usage: pnpm --filter api exec node scripts/promote-admin.ts <email>
+// Grants the platform-admin role to an EXISTING user by email — use this
+// when the person already has an account (signed up normally) and just
+// needs to be promoted. To create a brand-new admin account from scratch,
+// use create-admin.ts instead. Role can't be self-assigned at signup
+// either way (see apps/api/src/auth/auth.config.ts).
+// Usage: pnpm --filter api run admin:promote <email>
 
 import { PrismaClient } from '@biasmarket/db';
 import { PrismaPg } from '@prisma/adapter-pg';

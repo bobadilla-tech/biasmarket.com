@@ -19,7 +19,8 @@
     "test:cov": "vitest run --coverage",
     "test:debug": "vitest --inspect-brk --inspect --logHeapUsage --no-file-parallelism",
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
-    "admin:promote": "node scripts/promote-admin.ts"
+    "admin:promote": "node scripts/promote-admin.ts",
+    "admin:create": "node scripts/create-admin.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1091.0",
