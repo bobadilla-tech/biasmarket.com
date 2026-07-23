@@ -2,13 +2,12 @@
 
 ## Context
 
-One long session, six threads, roughly in order. The last three (contact page →
-admin sidebar → login/impersonation/seed) each already got their own dated plan
-doc as they landed; the first two (MinIO, logos) didn't at the time —
-retroactively summarized here so the day's work is findable in one place. This
-doc also pulls every "not built yet" / "deferred" note scattered across the
-individual docs into one gaps/TODO list, since none of them was written as a
-gaps roundup on its own.
+One long session, seven threads, roughly in order. Threads 3-6 each already got
+their own dated plan doc as they landed; the first two (MinIO, logos) didn't at
+the time — retroactively summarized here so the day's work is findable in one
+place. This doc also pulls every "not built yet" / "deferred" note scattered
+across the individual docs into one gaps/TODO list, since none of them was
+written as a gaps roundup on its own.
 
 ## Work done
 
@@ -56,6 +55,17 @@ Admins land on `/admin` on login; adopted better-auth's official `admin` plugin
 (not hand-rolled) to make the "Stores" tab real with a working
 impersonate/stop-impersonate flow; consolidated the seed script into a fuller
 setup (2 admins, 2 sellers each with a store + published products).
+
+### 6. Docker build caching audit + a real prod bug found along the way
+
+[`2026-07-22-docker-build-caching.md`](2026-07-22-docker-build-caching.md), full
+research in [`docs/core/docker.md`](../core/docker.md). Prompted by a slow prod
+rebuild. Added a BuildKit cache mount for Turbo's own cache (previously
+recompiled every workspace package from scratch on every deploy). Verifying that
+fix surfaced a real, separate bug: `apps/api/scripts` was never copied into the
+prod `runtime` image at all — meaning `admin:create:prod`/`admin:promote:prod`
+could never have worked in prod, exactly the failure the user had just hit live
+on the Oracle VM. Fixed both.
 
 ## Future improvements / TODO / documented gaps
 
@@ -105,6 +115,13 @@ across the docs above, organized by area.
 - `@Roles(['admin'])` is applied per-route by hand (`contact.controller.ts`,
   `stores.controller.ts`) — fine at 2 resources, worth a dedicated
   `AdminModule`/guard composition if a third admin-only resource shows up.
+
+**Docker builds**
+
+- No Turbo Remote Cache — every `turbo` run shows "Remote caching disabled." The
+  local BuildKit cache mount added today solves the actual pain point (single
+  VM, redeploy after a small change); remote caching would only matter once
+  builds happen on more than one machine.
 
 **Platform-wide (pre-existing, not touched by any of today's work)**
 
