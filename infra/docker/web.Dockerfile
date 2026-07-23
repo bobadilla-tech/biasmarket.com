@@ -44,7 +44,12 @@ COPY . .
 
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-RUN pnpm exec turbo run build --filter=web
+# Turbo's own cache (task hashes/outputs) is BuildKit-cache-mounted the same
+# way the pnpm store is above — without it, every build recompiles every
+# workspace package from scratch even when only one file changed, since
+# .turbo is gitignored/dockerignored and this stage starts from a fresh COPY.
+RUN --mount=type=cache,id=turbo-cache,target=/app/.turbo \
+    pnpm exec turbo run build --filter=web
 
 # ---------------------------------------------------------------------------
 # runtime: prod image, non-root. Next standalone output bundles its own

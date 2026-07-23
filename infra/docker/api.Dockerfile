@@ -51,7 +51,12 @@ COPY . .
 # DATABASE_URL is injected at container runtime via env_file.
 ENV DATABASE_URL="postgresql://build:build@localhost:5432/build?schema=public"
 RUN pnpm --filter @biasmarket/db run db:generate
-RUN pnpm exec turbo run build --filter=api
+# Turbo's own cache (task hashes/outputs) is BuildKit-cache-mounted the same
+# way the pnpm store is above — without it, every build recompiles every
+# workspace package from scratch even when only one file changed, since
+# .turbo is gitignored/dockerignored and this stage starts from a fresh COPY.
+RUN --mount=type=cache,id=turbo-cache,target=/app/.turbo \
+    pnpm exec turbo run build --filter=api
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm-store \
     pnpm install --prod --frozen-lockfile --filter=api... --store-dir=/pnpm-store
 
@@ -68,6 +73,11 @@ COPY --from=build --chown=nestjs:nestjs /app/node_modules ./node_modules
 COPY --from=build --chown=nestjs:nestjs /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=build --chown=nestjs:nestjs /app/apps/api/dist ./apps/api/dist
 COPY --from=build --chown=nestjs:nestjs /app/apps/api/package.json ./apps/api/package.json
+# One-off ops scripts (admin:create/admin:promote — see docs/core/admin-access.md)
+# run via `docker compose exec api pnpm --filter api run admin:...`, not as
+# part of the app's own boot — but that still needs the source files present
+# in the runtime image, which nothing above actually copied until now.
+COPY --from=build --chown=nestjs:nestjs /app/apps/api/scripts ./apps/api/scripts
 COPY --from=build --chown=nestjs:nestjs /app/packages ./packages
 COPY --from=build --chown=nestjs:nestjs /app/package.json ./package.json
 COPY --from=build --chown=nestjs:nestjs /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
