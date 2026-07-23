@@ -6,8 +6,8 @@ impersonation).
 
 ## Quick reference
 
-Run from the repo root — these wrap `docker compose exec` for you, no need
-to remember the container/compose-file details:
+Run from the repo root — these wrap `docker compose exec` for you, no need to
+remember the container/compose-file details:
 
 ```bash
 pnpm admin:create:prod you@example.com "Your Name"     # new account, prod
@@ -42,12 +42,12 @@ very next request, confirmed by testing this exact sequence.
 after `pnpm install`. Two reasons a bare host run fails: the Prisma client
 (`packages/db/generated/prisma/client.ts`) only gets generated as part of the
 container's build, and prod's `db` container has no host port published
-(`docs/core/readme.md`: reachable only on the internal Docker network) — a
-host process has no route to Postgres at all. The root `pnpm admin:*:prod`/
+(`docs/core/readme.md`: reachable only on the internal Docker network) — a host
+process has no route to Postgres at all. The root `pnpm admin:*:prod`/
 `pnpm admin:*:dev` scripts above already handle this for you
-(`docker compose -f <compose file> exec api pnpm --filter api run admin:...`)
-— use those instead of running `pnpm --filter api run admin:...` directly
-unless you're already inside the container.
+(`docker compose -f <compose file> exec api pnpm --filter api run admin:...`) —
+use those instead of running `pnpm --filter api run admin:...` directly unless
+you're already inside the container.
 
 ## Dev note
 
