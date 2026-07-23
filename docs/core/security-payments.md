@@ -179,10 +179,10 @@ as a confirmed sale at each step.
 
 Use:
 
-- Cloudflare R2 (cheap, scalable) — **spec only.** The MVP deploy actually
-  uses self-hosted MinIO instead (see
-  [deploy.md](deploy.md#image-uploads-minio)); payment-proof uploads aren't
-  implemented yet, only product images and store logos.
+- Cloudflare R2 (cheap, scalable) — **spec only.** The MVP deploy actually uses
+  self-hosted MinIO instead (see [deploy.md](deploy.md#image-uploads-minio));
+  payment-proof uploads aren't implemented yet, only product images and store
+  logos.
 
 Store:
 

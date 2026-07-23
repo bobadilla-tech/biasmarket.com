@@ -4,7 +4,8 @@
 
 Your job is simple:
 
-> **Find K-pop GOMs → contact them → get them to try Bias Market → help them launch their first drop**
+> **Find K-pop GOMs → contact them → get them to try Bias Market → help them
+> launch their first drop**
 
 Everything you do should push this forward.
 
@@ -67,8 +68,8 @@ hey! saw your group order 👀
 
 quick question — are you still using forms + sheets + dms to manage everything?
 
-i'm working on something that replaces all of that
-(buyers order + upload payment in one place)
+i'm working on something that replaces all of that (buyers order + upload
+payment in one place)
 
 i can set it up for your next drop for free if you want to try 🙌
 
@@ -199,11 +200,8 @@ main goal is helping you run smoother drops
 
 nice 🙌
 
-it’s basically:
-• one link for your drop
-• buyers order there
-• they upload payment proof
-• you track everything in one place
+it’s basically: • one link for your drop • buyers order there • they upload
+payment proof • you track everything in one place
 
 i can set yours up if you want to try
 

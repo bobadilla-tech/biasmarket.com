@@ -94,9 +94,9 @@ docker compose version   # confirm the compose plugin is present
 
 The stack uses three subdomains — `biasmarket.com` for the storefront/dashboard
 (`web`), `api.biasmarket.com` for the API (`api`), and `cdn.biasmarket.com` for
-public product images/store logos (`minio`) — each getting its own
-Caddy-issued cert (see [`../caddy/Caddyfile`](../caddy/Caddyfile)). Create
-**three** A records pointing at the reserved public IP from step 1:
+public product images/store logos (`minio`) — each getting its own Caddy-issued
+cert (see [`../caddy/Caddyfile`](../caddy/Caddyfile)). Create **three** A
+records pointing at the reserved public IP from step 1:
 
 | Host                                       | Points to               |
 | ------------------------------------------ | ----------------------- |
@@ -106,9 +106,9 @@ Caddy-issued cert (see [`../caddy/Caddyfile`](../caddy/Caddyfile)). Create
 
 Confirm all three resolve (`dig +short biasmarket.com`,
 `dig +short
-api.biasmarket.com`, `dig +short cdn.biasmarket.com`) before starting the
-stack — Caddy's automatic HTTPS will fail its ACME challenge for a domain
-that isn't live yet, though it retries.
+api.biasmarket.com`, `dig +short cdn.biasmarket.com`) before
+starting the stack — Caddy's automatic HTTPS will fail its ACME challenge for a
+domain that isn't live yet, though it retries.
 
 **If DNS is proxied through Cloudflare** (orange cloud, not grey/DNS-only): set
 SSL/TLS mode to **Full** in Cloudflare dashboard → SSL/TLS → Overview. Not
@@ -184,11 +184,11 @@ Look for a "certificate obtained successfully" log line before retesting
 
 ### Image uploads (MinIO)
 
-Product images and store logos are stored in a self-hosted MinIO instance
-(the `minio` service), not the R2 setup described in
-[`roadmap.md`](roadmap.md) — see the note there. On first boot the one-shot
-`minio-init` service (`minio/mc`) creates the `S3_BUCKET` bucket and sets it
-public-read; it's idempotent, so it also runs harmlessly on every redeploy.
+Product images and store logos are stored in a self-hosted MinIO instance (the
+`minio` service), not the R2 setup described in [`roadmap.md`](roadmap.md) — see
+the note there. On first boot the one-shot `minio-init` service (`minio/mc`)
+creates the `S3_BUCKET` bucket and sets it public-read; it's idempotent, so it
+also runs harmlessly on every redeploy.
 
 Verify it worked:
 
@@ -197,11 +197,11 @@ docker compose -f infra/docker/docker-compose.yml logs minio-init
 # should show "Bucket created successfully" / "Access permission ... set successfully"
 ```
 
-Then upload a product image through the dashboard and confirm the returned
-URL (`https://cdn.biasmarket.com/<bucket>/products/<uuid>.jpg`) loads over
-HTTPS in a browser. If uploads fail, check `docker compose logs api` for a
-`Missing required env var: S3_...` error first — `StorageService` now
-validates these at boot instead of failing silently.
+Then upload a product image through the dashboard and confirm the returned URL
+(`https://cdn.biasmarket.com/<bucket>/products/<uuid>.jpg`) loads over HTTPS in
+a browser. If uploads fail, check `docker compose logs api` for a
+`Missing required env var: S3_...` error first — `StorageService` now validates
+these at boot instead of failing silently.
 
 ## Day 2
 
@@ -222,8 +222,8 @@ code.
   snapshot:
   `docker compose -f infra/docker/docker-compose.yml exec db pg_dump -U biasmarket biasmarket > backup.sql`
 - **Uploaded images backup:** MinIO's data lives in the `minio_data` named
-  volume — back it up the same way you'd back up any other Docker volume
-  (e.g. `docker run --rm -v biasmarket_minio_data:/data -v $(pwd):/backup
+  volume — back it up the same way you'd back up any other Docker volume (e.g.
+  `docker run --rm -v biasmarket_minio_data:/data -v $(pwd):/backup
   alpine tar czf /backup/minio-backup.tar.gz /data`).
 - **Stack won't come up after a reboot:** confirm `docker` and the containers
   restarted (`restart: unless-stopped` is set on every service, so a VM reboot
