@@ -8,6 +8,7 @@ vi.mock('@thallesp/nestjs-better-auth', () => ({
   AuthGuard: class AuthGuard {},
   Session: () => () => undefined,
   Public: () => () => undefined,
+  Roles: () => () => undefined,
 }));
 
 describe('StoresController', () => {

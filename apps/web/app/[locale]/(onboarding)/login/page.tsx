@@ -15,10 +15,14 @@ export default function LoginPage() {
   const handleLogin = async () => {
     setLoading(true);
     setError(null);
-    const { error } = await authClient.signIn.email({ email, password });
+    const { data, error } = await authClient.signIn.email({ email, password });
     setLoading(false);
     if (error) {
       setError(error.message ?? t("invalidCredentials"));
+      return;
+    }
+    if (data.user.role === "admin") {
+      router.push("/admin");
       return;
     }
     router.push("/onboarding/create-store");

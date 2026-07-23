@@ -46,6 +46,15 @@ export class StoresService {
     return this.prisma.store.findMany({ where: { ownerId: userId } });
   }
 
+  // Platform-admin view — deliberately unfiltered by ownership, same
+  // documented exception as ContactInquiry (see docs/core/admin.md).
+  async findAllForAdmin() {
+    return this.prisma.store.findMany({
+      include: { owner: { select: { id: true, email: true, name: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async update(storeId: string, userId: string, dto: UpdateStoreDto) {
     const store = await this.prisma.store.findUnique({ where: { id: storeId } });
     if (!store) throw new NotFoundException('Store no encontrada');

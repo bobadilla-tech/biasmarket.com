@@ -23,14 +23,17 @@ Next.js web app all start from one command, with zero manual `.env` setup —
 `infra/docker/.env.example` is committed with working dev defaults and is loaded
 automatically.
 
-The `api` container also seeds two admin accounts on every boot
-(`apps/api/scripts/seed-dev-admins.ts`, idempotent) so `@Roles(['admin'])`
-routes like `/admin/inquiries` are testable right away:
+The `api` container also runs a full seed setup on every boot
+(`apps/api/scripts/seed-dev.ts`, idempotent) so the admin panel, seller
+dashboard, and storefront all have real data to look at right away — two
+admins, two sellers each with a store and a few published products:
 
-| Email                  | Password          |
-| ----------------------- | ----------------- |
-| `admin@biasmarket.dev`  | `devpassword123`  |
-| `owner@biasmarket.dev`  | `devpassword123`  |
+| Email                    | Password          | Role   |
+| ------------------------- | ----------------- | ------ |
+| `admin@biasmarket.dev`    | `devpassword123`  | admin  |
+| `owner@biasmarket.dev`    | `devpassword123`  | admin  |
+| `seller1@biasmarket.dev`  | `devpassword123`  | seller (owns `tienda-de-camila`) |
+| `seller2@biasmarket.dev`  | `devpassword123`  | seller (owns `kpop-corner`) |
 
 Dev/native only — never runs against `docker-compose.yml` (prod).
 

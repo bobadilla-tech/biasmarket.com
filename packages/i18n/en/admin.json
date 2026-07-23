@@ -28,5 +28,20 @@
     "actions": {
       "markReviewed": "Mark reviewed"
     }
+  },
+  "stores": {
+    "title": "Stores",
+    "empty": "No stores yet.",
+    "table": {
+      "name": "Name",
+      "slug": "Slug",
+      "owner": "Owner",
+      "createdAt": "Created",
+      "actions": "Actions"
+    },
+    "actions": {
+      "impersonate": "Impersonate",
+      "impersonating": "Impersonating..."
+    }
   }
 }

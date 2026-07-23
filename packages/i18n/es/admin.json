@@ -28,5 +28,20 @@
     "actions": {
       "markReviewed": "Marcar revisada"
     }
+  },
+  "stores": {
+    "title": "Tiendas",
+    "empty": "Todavía no hay tiendas.",
+    "table": {
+      "name": "Nombre",
+      "slug": "Slug",
+      "owner": "Dueño",
+      "createdAt": "Creada",
+      "actions": "Acciones"
+    },
+    "actions": {
+      "impersonate": "Suplantar",
+      "impersonating": "Suplantando..."
+    }
   }
 }

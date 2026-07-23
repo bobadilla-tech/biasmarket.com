@@ -1,5 +1,10 @@
 # Seed dev admin accounts
 
+> Superseded: `seed-dev-admins.ts` was later consolidated into a fuller
+> `seed-dev.ts` (admins + sellers + stores + products) — see
+> [`2026-07-22-admin-login-redirect-impersonation-seed.md`](2026-07-22-admin-login-redirect-impersonation-seed.md).
+> Kept below as the historical record of this step.
+
 ## Context
 
 Follow-up to
