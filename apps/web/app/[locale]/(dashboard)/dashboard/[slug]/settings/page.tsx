@@ -15,6 +15,19 @@ import {
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { SUPPORTED_CURRENCIES } from "@biasmarket/utils/currency";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { apiFetch } from "@/lib/api";
 import {
   buildStoreThemeConfig,
@@ -43,41 +56,34 @@ const PAYMENT_METHODS = [
   { key: "cash", color: "bg-[#ebf9ef] text-[#27965e]" },
 ] as const;
 
-function Card({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <section
-      className={cn("rounded-[28px] border border-[#eadcf7] bg-white p-6 shadow-sm", className)}
-    >
-      {children}
-    </section>
-  );
-}
-
-function CardHeader({
+function SectionCard({
   icon: Icon,
   title,
   description,
+  children,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   title: string;
   description: string;
+  children: React.ReactNode;
 }) {
   return (
-    <div className="mb-5 flex items-start gap-3">
-      <div className="store-theme-icon-surface flex size-11 shrink-0 items-center justify-center rounded-2xl">
-        <Icon className="size-5" />
-      </div>
-      <div>
-        <h2 className="text-lg font-semibold text-[#2d1649]">{title}</h2>
-        <p className="mt-1 text-sm text-[#8f7da8]">{description}</p>
-      </div>
-    </div>
+    <Card className="rounded-[28px] border-[#eadcf7] bg-white py-0 shadow-sm">
+      <CardHeader className="px-6 pt-6">
+        <div className="flex items-start gap-3">
+          <div className="store-theme-icon-surface flex size-11 items-center justify-center rounded-2xl">
+            <Icon className="size-5" />
+          </div>
+          <div>
+            <CardTitle className="text-lg text-[#2d1649]">{title}</CardTitle>
+            <CardDescription className="mt-1 text-sm text-[#8f7da8]">
+              {description}
+            </CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="px-6 pb-6">{children}</CardContent>
+    </Card>
   );
 }
 
@@ -117,9 +123,11 @@ function ToggleRow({
         <p className="text-sm font-medium text-[#341b55]">{label}</p>
         {description ? <p className="text-xs text-[#9582ad]">{description}</p> : null}
       </div>
-      <button
-        type="button"
-        onClick={() => !disabled && onChange(!enabled)}
+      <Switch
+        checked={enabled}
+        onCheckedChange={onChange}
+        disabled={disabled}
+        className="data-[checked]:bg-transparent"
         style={
           enabled
             ? {
@@ -128,19 +136,7 @@ function ToggleRow({
               }
             : undefined
         }
-        className={cn(
-          "relative inline-flex h-7 w-12 shrink-0 rounded-full border transition",
-          enabled ? "border-transparent" : "border-[#e3d5f1] bg-white",
-          disabled && "cursor-not-allowed opacity-55",
-        )}
-      >
-        <span
-          className={cn(
-            "absolute top-1 size-5 rounded-full bg-white shadow-sm transition",
-            enabled ? "left-6" : "left-1",
-          )}
-        />
-      </button>
+      />
     </div>
   );
 }
@@ -211,9 +207,7 @@ export default function SettingsPage() {
     return () => window.clearTimeout(timer);
   }, [savedSection]);
 
-  const storefrontUrl = useMemo(() => {
-    return `/${locale}/store/${slug}`;
-  }, [locale, slug]);
+  const storefrontUrl = useMemo(() => `/${locale}/store/${slug}`, [locale, slug]);
 
   const selectedPalette = useMemo(
     () =>
@@ -357,44 +351,46 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen px-5 py-6 lg:px-8 lg:py-8">
       <div className="mx-auto max-w-7xl space-y-6">
-        <header className="flex flex-col gap-4 rounded-[28px] border border-white/60 bg-white/55 px-5 py-4 shadow-[0_10px_35px_rgba(89,35,126,0.05)] backdrop-blur sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-medium text-[#8e7ca7]">{t("eyebrow")}</p>
-            <h1 className="text-3xl font-bold tracking-tight text-[#2d1649]">{t("title")}</h1>
-            <p className="mt-1 text-sm text-[#8f7da8]">{t("subtitle")}</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="hidden min-w-[250px] rounded-2xl border border-[#eadcf7] bg-white px-4 py-3 text-sm text-[#a18eb8] sm:block">
-              {t("searchPlaceholder")}
+        <Card className="rounded-[28px] border-white/60 bg-white/55 py-0 shadow-[0_10px_35px_rgba(89,35,126,0.05)] backdrop-blur">
+          <CardContent className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-medium text-[#8e7ca7]">{t("eyebrow")}</p>
+              <h1 className="text-3xl font-bold tracking-tight text-[#2d1649]">{t("title")}</h1>
+              <p className="mt-1 text-sm text-[#8f7da8]">{t("subtitle")}</p>
             </div>
-            <div
-              className="flex size-12 items-center justify-center rounded-2xl text-sm font-semibold text-white"
-              style={{
-                background:
-                  "linear-gradient(135deg, var(--store-accent) 0%, var(--store-primary) 100%)",
-                boxShadow: "0 10px 30px var(--store-shadow)",
-              }}
-            >
-              {(storeName || "BM").slice(0, 2).toUpperCase()}
+            <div className="flex items-center gap-3">
+              <Input
+                value={t("searchPlaceholder")}
+                readOnly
+                className="hidden min-w-[250px] rounded-2xl border-[#eadcf7] bg-white text-[#a18eb8] shadow-none sm:flex"
+              />
+              <div
+                className="flex size-12 items-center justify-center rounded-2xl text-sm font-semibold text-white"
+                style={{
+                  background:
+                    "linear-gradient(135deg, var(--store-accent) 0%, var(--store-primary) 100%)",
+                  boxShadow: "0 10px 30px var(--store-shadow)",
+                }}
+              >
+                {(storeName || "BM").slice(0, 2).toUpperCase()}
+              </div>
             </div>
-          </div>
-        </header>
+          </CardContent>
+        </Card>
 
         {error ? (
-          <div className="rounded-2xl border border-[#f3cbd8] bg-[#fff3f7] px-4 py-3 text-sm text-[#b24368]">
-            {error}
-          </div>
+          <Card className="rounded-2xl border-[#f3cbd8] bg-[#fff3f7] py-0 shadow-none">
+            <CardContent className="px-4 py-3 text-sm text-[#b24368]">{error}</CardContent>
+          </Card>
         ) : null}
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)]">
           <div className="space-y-6">
-            <Card>
-              <CardHeader
-                icon={Store}
-                title={t("profile.title")}
-                description={t("profile.description")}
-              />
-
+            <SectionCard
+              icon={Store}
+              title={t("profile.title")}
+              description={t("profile.description")}
+            >
               <div
                 className="mb-6 flex flex-col gap-4 rounded-[24px] p-4 sm:flex-row sm:items-center sm:justify-between"
                 style={{ backgroundColor: "var(--store-surface)" }}
@@ -419,35 +415,43 @@ export default function SettingsPage() {
                     </div>
                   )}
                   <div>
-                    <p className="text-lg font-semibold text-[#2d1649]">{storeName || t("emptyName")}</p>
+                    <p className="text-lg font-semibold text-[#2d1649]">
+                      {storeName || t("emptyName")}
+                    </p>
                     <p className="text-sm text-[#8f7da8]">{storefrontUrl}</p>
                   </div>
                 </div>
-                <label className="store-theme-secondary-button inline-flex cursor-pointer items-center gap-2 rounded-2xl border bg-white px-4 py-2.5 text-sm font-semibold transition">
-                  <Upload className="size-4" />
-                  {logoUploading ? t("profile.uploading") : t("profile.upload")}
+                <label className="inline-flex cursor-pointer">
                   <input
                     type="file"
                     accept="image/png,image/jpeg"
                     className="hidden"
                     onChange={(event) => handleUploadLogo(event.target.files?.[0] ?? null)}
                   />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="store-theme-secondary-button h-11 rounded-2xl border bg-white px-4 text-sm font-semibold shadow-none"
+                  >
+                    <Upload className="size-4" />
+                    {logoUploading ? t("profile.uploading") : t("profile.upload")}
+                  </Button>
                 </label>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label={t("profile.nameLabel")}>
-                  <input
+                  <Input
                     value={storeName}
                     onChange={(event) => setStoreName(event.target.value)}
-                    className="store-theme-input w-full rounded-2xl border border-[#e7dcf3] bg-[#fbf8fe] px-4 py-3 text-sm text-[#341b55] outline-none transition focus:bg-white"
+                    className="store-theme-input h-12 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] text-[#341b55] shadow-none"
                   />
                 </Field>
                 <Field label={t("profile.urlLabel")}>
-                  <input
+                  <Input
                     value={storefrontUrl}
                     readOnly
-                    className="w-full rounded-2xl border border-[#ede2f6] bg-[#f5effb] px-4 py-3 text-sm text-[#8d7ba7] outline-none"
+                    className="h-12 rounded-2xl border-[#ede2f6] bg-[#f5effb] text-[#8d7ba7] shadow-none"
                   />
                 </Field>
               </div>
@@ -456,11 +460,11 @@ export default function SettingsPage() {
                 <Field label={t("profile.whatsappLabel")}>
                   <div className="relative">
                     <MessageCircle className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[#ab92c6]" />
-                    <input
+                    <Input
                       value={whatsappNumber}
                       onChange={(event) => setWhatsappNumber(event.target.value)}
                       placeholder={t("profile.whatsappPlaceholder")}
-                      className="store-theme-input w-full rounded-2xl border border-[#e7dcf3] bg-[#fbf8fe] py-3 pl-11 pr-4 text-sm text-[#341b55] outline-none transition focus:bg-white"
+                      className="store-theme-input h-12 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] pl-11 text-[#341b55] shadow-none"
                     />
                   </div>
                 </Field>
@@ -468,7 +472,7 @@ export default function SettingsPage() {
                   <select
                     value={defaultCurrency}
                     onChange={(event) => setDefaultCurrency(event.target.value)}
-                    className="store-theme-input w-full rounded-2xl border border-[#e7dcf3] bg-[#fbf8fe] px-4 py-3 text-sm text-[#341b55] outline-none transition focus:bg-white"
+                    className="store-theme-input h-12 w-full rounded-2xl border border-[#e7dcf3] bg-[#fbf8fe] px-4 text-sm text-[#341b55] outline-none"
                   >
                     {SUPPORTED_CURRENCIES.map((currency) => (
                       <option key={currency} value={currency}>
@@ -481,47 +485,48 @@ export default function SettingsPage() {
 
               <div className="mt-4">
                 <Field label={t("profile.instructionsLabel")}>
-                  <textarea
+                  <Textarea
                     value={paymentInstructions}
                     onChange={(event) => setPaymentInstructions(event.target.value)}
                     placeholder={t("profile.instructionsPlaceholder")}
                     rows={4}
-                    className="store-theme-input w-full resize-none rounded-2xl border border-[#e7dcf3] bg-[#fbf8fe] px-4 py-3 text-sm text-[#341b55] outline-none transition focus:bg-white"
+                    className="store-theme-input rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] text-[#341b55] shadow-none"
                   />
                 </Field>
               </div>
 
-              <div className="mt-5 flex items-center justify-between gap-4">
+              <Separator className="my-5 bg-[#f0e7f8]" />
+
+              <div className="flex items-center justify-between gap-4">
                 <p className="text-sm text-[#8f7da8]">{t("profile.help")}</p>
-                <button
+                <Button
                   onClick={handleSaveProfile}
                   disabled={profileSaving || !storeName || !whatsappNumber}
-                  className="store-theme-primary-button rounded-2xl px-5 py-3 text-sm font-semibold transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="store-theme-primary-button h-11 rounded-2xl px-5 text-sm font-semibold hover:scale-[1.01] hover:opacity-100"
                 >
                   {savedSection === "profile"
                     ? t("saved")
                     : profileSaving
                       ? t("saving")
                       : t("save")}
-                </button>
+                </Button>
               </div>
-            </Card>
+            </SectionCard>
 
-            <Card>
-              <CardHeader
-                icon={Palette}
-                title={t("appearance.title")}
-                description={t("appearance.description")}
-              />
-
+            <SectionCard
+              icon={Palette}
+              title={t("appearance.title")}
+              description={t("appearance.description")}
+            >
               <div className="grid gap-3 sm:grid-cols-2">
                 {STORE_PALETTES.map((palette) => (
-                  <button
+                  <Button
                     key={palette.id}
                     type="button"
+                    variant="outline"
                     onClick={() => setSelectedPaletteId(palette.id)}
                     className={cn(
-                      "rounded-[22px] border p-4 text-left transition",
+                      "h-auto flex-col items-stretch rounded-[22px] p-4 text-left shadow-none",
                       selectedPaletteId === palette.id
                         ? "bg-white shadow-sm"
                         : "bg-[#fcf9ff] hover:bg-white",
@@ -533,7 +538,7 @@ export default function SettingsPage() {
                           : "#eadcf8",
                     }}
                   >
-                    <div className="mb-3 flex gap-2">
+                    <div className="mb-3 flex w-full gap-2">
                       {Object.values(palette.colors).map((color) => (
                         <span
                           key={color}
@@ -542,73 +547,76 @@ export default function SettingsPage() {
                         />
                       ))}
                     </div>
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex w-full items-start justify-between gap-3">
                       <div>
                         <p className="font-semibold text-[#301848]">{palette.name}</p>
                         <p className="mt-1 text-xs text-[#8d79a5]">{palette.description}</p>
                       </div>
                       {selectedPaletteId === palette.id ? (
-                        <span className="store-theme-soft-badge rounded-full px-2.5 py-1 text-[11px] font-semibold">
+                        <Badge className="store-theme-soft-badge rounded-full px-2.5 py-1 text-[11px] font-semibold">
                           {t("appearance.selected")}
-                        </span>
+                        </Badge>
                       ) : null}
                     </div>
-                  </button>
+                  </Button>
                 ))}
               </div>
 
-              <div
-                className="mt-5 rounded-[24px] p-4"
+              <Card
+                className="mt-5 rounded-[24px] py-0 shadow-none ring-0"
                 style={{ backgroundColor: selectedPalette.colors.surface }}
               >
-                <p className="text-sm font-semibold" style={{ color: selectedPalette.colors.text }}>
-                  {t("appearance.previewTitle")}
-                </p>
-                <div className="mt-3 flex items-center gap-4">
-                  <div
-                    className="flex size-14 items-center justify-center rounded-2xl text-sm font-black text-white"
-                    style={{
-                      background: `linear-gradient(135deg, ${selectedPalette.colors.accent} 0%, ${selectedPalette.colors.primary} 100%)`,
-                    }}
-                  >
-                    {(storeName || "BM").slice(0, 2).toUpperCase()}
-                  </div>
-                  <div className="flex-1">
+                <CardContent className="px-4 py-4">
+                  <p className="text-sm font-semibold" style={{ color: selectedPalette.colors.text }}>
+                    {t("appearance.previewTitle")}
+                  </p>
+                  <div className="mt-3 flex items-center gap-4">
                     <div
-                      className="rounded-2xl px-4 py-3 text-sm font-semibold text-white"
+                      className="flex size-14 items-center justify-center rounded-2xl text-sm font-black text-white"
                       style={{
                         background: `linear-gradient(135deg, ${selectedPalette.colors.accent} 0%, ${selectedPalette.colors.primary} 100%)`,
                       }}
                     >
-                      {t("appearance.previewButton")}
+                      {(storeName || "BM").slice(0, 2).toUpperCase()}
+                    </div>
+                    <div className="flex-1">
+                      <Button
+                        type="button"
+                        className="h-11 w-full rounded-2xl text-sm font-semibold hover:opacity-100"
+                        style={{
+                          background: `linear-gradient(135deg, ${selectedPalette.colors.accent} 0%, ${selectedPalette.colors.primary} 100%)`,
+                        }}
+                      >
+                        {t("appearance.previewButton")}
+                      </Button>
                     </div>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
 
-              <div className="mt-5 flex items-center justify-between gap-4">
+              <Separator className="my-5 bg-[#f0e7f8]" />
+
+              <div className="flex items-center justify-between gap-4">
                 <p className="text-sm text-[#8f7da8]">{t("appearance.help")}</p>
-                <button
+                <Button
                   onClick={handleSaveAppearance}
                   disabled={appearanceSaving}
-                  className="store-theme-primary-button rounded-2xl px-5 py-3 text-sm font-semibold transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="store-theme-primary-button h-11 rounded-2xl px-5 text-sm font-semibold hover:scale-[1.01] hover:opacity-100"
                 >
                   {savedSection === "appearance"
                     ? t("saved")
                     : appearanceSaving
                       ? t("saving")
                       : t("appearance.apply")}
-                </button>
+                </Button>
               </div>
-            </Card>
+            </SectionCard>
 
-            <Card>
-              <CardHeader
-                icon={CreditCard}
-                title={t("payments.title")}
-                description={t("payments.description")}
-              />
-
+            <SectionCard
+              icon={CreditCard}
+              title={t("payments.title")}
+              description={t("payments.description")}
+            >
               <div className="space-y-3">
                 {PAYMENT_METHODS.map((method) => (
                   <div
@@ -616,9 +624,9 @@ export default function SettingsPage() {
                     className="flex items-center justify-between rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3"
                   >
                     <div className="flex items-center gap-3">
-                      <div className={cn("rounded-2xl px-2.5 py-1.5 text-xs font-semibold", method.color)}>
+                      <Badge className={cn("rounded-2xl px-2.5 py-1.5 text-xs font-semibold", method.color)}>
                         {t(`payments.items.${method.key}.short`)}
-                      </div>
+                      </Badge>
                       <div>
                         <p className="text-sm font-medium text-[#341b55]">
                           {t(`payments.items.${method.key}.label`)}
@@ -628,23 +636,24 @@ export default function SettingsPage() {
                         </p>
                       </div>
                     </div>
-                    <span className="rounded-full border border-[#eadcf7] bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-[#8e7ca7]">
+                    <Badge
+                      variant="outline"
+                      className="rounded-full border-[#eadcf7] bg-white px-2.5 py-1 text-[11px] uppercase tracking-wide text-[#8e7ca7]"
+                    >
                       {t("payments.manual")}
-                    </span>
+                    </Badge>
                   </div>
                 ))}
               </div>
-            </Card>
+            </SectionCard>
           </div>
 
           <div className="space-y-6">
-            <Card>
-              <CardHeader
-                icon={Truck}
-                title={t("delivery.title")}
-                description={t("delivery.description")}
-              />
-
+            <SectionCard
+              icon={Truck}
+              title={t("delivery.title")}
+              description={t("delivery.description")}
+            >
               <div className="space-y-4">
                 <ToggleRow
                   label={t("delivery.pickupToggle")}
@@ -656,11 +665,11 @@ export default function SettingsPage() {
                 <Field label={t("delivery.pickupAddressLabel")}>
                   <div className="relative">
                     <MapPin className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[#ab92c6]" />
-                    <input
+                    <Input
                       value={pickupAddress}
                       onChange={(event) => setPickupAddress(event.target.value)}
                       placeholder={t("delivery.pickupAddressPlaceholder")}
-                      className="store-theme-input w-full rounded-2xl border border-[#e7dcf3] bg-[#fbf8fe] py-3 pl-11 pr-4 text-sm text-[#341b55] outline-none transition focus:bg-white"
+                      className="store-theme-input h-12 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] pl-11 text-[#341b55] shadow-none"
                     />
                   </div>
                 </Field>
@@ -673,61 +682,74 @@ export default function SettingsPage() {
                 />
 
                 <Field label={t("delivery.courierCostLabel")}>
-                  <input
+                  <Input
                     value={courierCost}
                     onChange={(event) => setCourierCost(event.target.value)}
                     placeholder={t("delivery.courierCostPlaceholder")}
-                    className="store-theme-input w-full rounded-2xl border border-[#e7dcf3] bg-[#fbf8fe] px-4 py-3 text-sm text-[#341b55] outline-none transition focus:bg-white"
+                    className="store-theme-input h-12 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] text-[#341b55] shadow-none"
                   />
                 </Field>
               </div>
 
-              <div className="mt-5 flex items-center justify-between gap-4">
+              <Separator className="my-5 bg-[#f0e7f8]" />
+
+              <div className="flex items-center justify-between gap-4">
                 <p className="text-sm text-[#8f7da8]">{t("delivery.footer")}</p>
-                <button
+                <Button
                   onClick={handleSaveDelivery}
                   disabled={deliverySaving}
-                  className="store-theme-secondary-button rounded-2xl border px-5 py-3 text-sm font-semibold transition disabled:opacity-60"
+                  variant="outline"
+                  className="store-theme-secondary-button h-11 rounded-2xl border px-5 text-sm font-semibold shadow-none"
                 >
                   {savedSection === "delivery"
                     ? t("saved")
                     : deliverySaving
                       ? t("saving")
                       : t("save")}
-                </button>
+                </Button>
               </div>
-            </Card>
+            </SectionCard>
 
-            <Card>
-              <CardHeader
-                icon={Building2}
-                title={t("defaults.title")}
-                description={t("defaults.description")}
-              />
-
+            <SectionCard
+              icon={Building2}
+              title={t("defaults.title")}
+              description={t("defaults.description")}
+            >
               <div className="space-y-3">
-                <div className="rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3">
-                  <p className="text-sm font-medium text-[#341b55]">{t("defaults.currencyCardTitle")}</p>
-                  <p className="mt-1 text-xs text-[#9582ad]">{t("defaults.currencyCardDescription")}</p>
-                  <p className="store-theme-soft-badge mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold">
-                    {defaultCurrency}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3">
-                  <p className="text-sm font-medium text-[#341b55]">{t("defaults.urlCardTitle")}</p>
-                  <p className="mt-1 text-xs text-[#9582ad]">{t("defaults.urlCardDescription")}</p>
-                  <p className="store-theme-active-text mt-3 text-sm font-medium">{storefrontUrl}</p>
-                </div>
+                <Card className="rounded-2xl border-[#f0e7f8] bg-[#fcf9ff] py-0 shadow-none">
+                  <CardContent className="px-4 py-3">
+                    <p className="text-sm font-medium text-[#341b55]">
+                      {t("defaults.currencyCardTitle")}
+                    </p>
+                    <p className="mt-1 text-xs text-[#9582ad]">
+                      {t("defaults.currencyCardDescription")}
+                    </p>
+                    <Badge className="store-theme-soft-badge mt-3 rounded-full px-3 py-1 text-xs font-semibold">
+                      {defaultCurrency}
+                    </Badge>
+                  </CardContent>
+                </Card>
+                <Card className="rounded-2xl border-[#f0e7f8] bg-[#fcf9ff] py-0 shadow-none">
+                  <CardContent className="px-4 py-3">
+                    <p className="text-sm font-medium text-[#341b55]">
+                      {t("defaults.urlCardTitle")}
+                    </p>
+                    <p className="mt-1 text-xs text-[#9582ad]">
+                      {t("defaults.urlCardDescription")}
+                    </p>
+                    <p className="store-theme-active-text mt-3 text-sm font-medium">
+                      {storefrontUrl}
+                    </p>
+                  </CardContent>
+                </Card>
               </div>
-            </Card>
+            </SectionCard>
 
-            <Card>
-              <CardHeader
-                icon={Bell}
-                title={t("notifications.title")}
-                description={t("notifications.description")}
-              />
-
+            <SectionCard
+              icon={Bell}
+              title={t("notifications.title")}
+              description={t("notifications.description")}
+            >
               <div className="space-y-3">
                 {notifications.map((notification) => (
                   <ToggleRow
@@ -746,7 +768,7 @@ export default function SettingsPage() {
                   />
                 ))}
               </div>
-            </Card>
+            </SectionCard>
           </div>
         </div>
       </div>

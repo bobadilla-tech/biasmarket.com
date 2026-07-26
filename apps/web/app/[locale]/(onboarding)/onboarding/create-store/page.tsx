@@ -11,6 +11,17 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { SUPPORTED_CURRENCIES } from "@biasmarket/utils/currency";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import { useRouter } from "@/i18n/navigation";
 import { buildStoreThemeConfig, STORE_PALETTES } from "@/lib/store-theme";
 import { cn } from "@/lib/utils";
@@ -123,7 +134,7 @@ export default function CreateStorePage() {
           slug,
           whatsappNumber,
           defaultCurrency,
-            themeConfig: buildStoreThemeConfig(selectedPalette.id),
+          themeConfig: buildStoreThemeConfig(selectedPalette.id),
         }),
       });
       const data = await res.json();
@@ -187,19 +198,22 @@ export default function CreateStorePage() {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(167,139,250,0.2),transparent_28%),linear-gradient(180deg,#f7f0ff_0%,#fdfbff_100%)] px-4 py-8 md:px-6">
       <div className="mx-auto grid max-w-7xl gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <aside className="rounded-[30px] border border-white/70 bg-[#2a0d50] p-5 text-white shadow-[0_22px_65px_rgba(67,24,109,0.22)]">
-          <div className="rounded-[24px] border border-white/10 bg-white/6 p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.26em] text-white/45">
-              Bias Market
-            </p>
-            <h1 className="mt-3 text-2xl font-bold">{t("storesTitle")}</h1>
-            <p className="mt-2 text-sm text-white/65">{t("storesDescription")}</p>
-          </div>
-
-          <div className="mt-5 space-y-3">
-            {loadingStores ? (
-              <p className="text-sm text-white/70">{tCommon("loading")}</p>
-            ) : null}
+        <Card className="rounded-[30px] border-white/10 bg-[#2a0d50] py-0 text-white ring-white/10">
+          <CardHeader className="px-5 pt-5">
+            <div className="rounded-[24px] border border-white/10 bg-white/6 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.26em] text-white/45">
+                Bias Market
+              </p>
+              <CardTitle className="mt-3 text-2xl font-bold text-white">
+                {t("storesTitle")}
+              </CardTitle>
+              <CardDescription className="mt-2 text-sm text-white/65">
+                {t("storesDescription")}
+              </CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3 px-5 pb-5">
+            {loadingStores ? <p className="text-sm text-white/70">{tCommon("loading")}</p> : null}
 
             {!loadingStores && stores.length === 0 ? (
               <div className="rounded-[22px] border border-dashed border-white/14 bg-white/5 p-4 text-sm text-white/68">
@@ -208,277 +222,323 @@ export default function CreateStorePage() {
             ) : null}
 
             {stores.map((store) => (
-              <div
+              <Card
                 key={store.id}
-                className="rounded-[22px] border border-white/10 bg-white/6 p-4 transition hover:bg-white/10"
+                className="rounded-[22px] border-white/10 bg-white/6 py-0 text-white ring-white/10"
               >
-                <button
-                  onClick={() => router.push(`/dashboard/${store.slug}/settings`)}
-                  className="flex w-full items-center justify-between gap-3 text-left"
-                >
-                  <div>
-                    <p className="font-semibold text-white">{store.name}</p>
-                    <p className="mt-1 text-xs text-white/50">/{store.slug}</p>
-                  </div>
-                  <ChevronRight className="size-4 text-white/45" />
-                </button>
-                <button
-                  onClick={() => handleDeleteStore(store.id)}
-                  className="mt-3 text-xs font-semibold text-[#ff9bc7] transition hover:text-white"
-                >
-                  {t("delete")}
-                </button>
-              </div>
-            ))}
-          </div>
-        </aside>
-
-        <section className="rounded-[34px] border border-[#efe5fb] bg-white/86 p-6 shadow-[0_24px_80px_rgba(120,74,170,0.08)] backdrop-blur md:p-8">
-          <div className="grid gap-8 xl:grid-cols-[minmax(0,1.1fr)_360px]">
-            <div className="space-y-8">
-              <div>
-                <div className="inline-flex items-center gap-2 rounded-full bg-[#f3e8ff] px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-[#7a38d8]">
-                  <WandSparkles className="size-3.5" />
-                  {t("createNew")}
-                </div>
-                <h2 className="mt-4 text-3xl font-bold tracking-tight text-[#2c1647]">
-                  {t("title")}
-                </h2>
-                <p className="mt-2 max-w-2xl text-sm text-[#8d79a5]">{t("subtitle")}</p>
-              </div>
-
-              <div className="grid gap-8 lg:grid-cols-2">
-                <div className="space-y-5">
-                  <Field label={t("namePlaceholder")} help={t("nameHelp")}>
-                    <div className="relative">
-                      <Store className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[#a38dbc]" />
-                      <input
-                        value={name}
-                        onChange={(event) => setName(event.target.value)}
-                        placeholder={t("namePlaceholder")}
-                        className="w-full rounded-[20px] border border-[#e7daf6] bg-[#fcf9ff] py-3 pl-11 pr-4 text-sm text-[#311948] outline-none transition focus:border-[#b388eb] focus:bg-white"
-                      />
-                    </div>
-                  </Field>
-
-                  <Field label={t("slugLabel")} help={t("slugHelp")}>
-                    <input
-                      value={slug}
-                      onChange={(event) => {
-                        setSlugTouched(true);
-                        setSlug(slugifyValue(event.target.value));
-                      }}
-                      placeholder={t("slugPlaceholder")}
-                      className="w-full rounded-[20px] border border-[#e7daf6] bg-[#fcf9ff] px-4 py-3 text-sm text-[#311948] outline-none transition focus:border-[#b388eb] focus:bg-white"
-                    />
-                  </Field>
-
-                  <Field label={t("whatsappPlaceholder")} help={t("whatsappHelp")}>
-                    <div className="relative">
-                      <Phone className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[#a38dbc]" />
-                      <input
-                        value={whatsappNumber}
-                        onChange={(event) => setWhatsappNumber(event.target.value)}
-                        placeholder={t("whatsappPlaceholder")}
-                        className="w-full rounded-[20px] border border-[#e7daf6] bg-[#fcf9ff] py-3 pl-11 pr-4 text-sm text-[#311948] outline-none transition focus:border-[#b388eb] focus:bg-white"
-                      />
-                    </div>
-                  </Field>
-
-                  <Field label={t("currencyLabel")}>
-                    <select
-                      value={defaultCurrency}
-                      onChange={(event) => setDefaultCurrency(event.target.value)}
-                      className="w-full rounded-[20px] border border-[#e7daf6] bg-[#fcf9ff] px-4 py-3 text-sm text-[#311948] outline-none transition focus:border-[#b388eb] focus:bg-white"
-                    >
-                      {SUPPORTED_CURRENCIES.map((currency) => (
-                        <option key={currency} value={currency}>
-                          {currency}
-                        </option>
-                      ))}
-                    </select>
-                  </Field>
-                </div>
-
-                <div className="space-y-5">
-                  <div className="rounded-[26px] border border-[#eadcf9] bg-[#fbf7ff] p-5">
-                    <div className="mb-4 flex items-center gap-3">
-                      <div className="flex size-11 items-center justify-center rounded-2xl bg-[#f1e6ff] text-[#7a38d8]">
-                        <ImagePlus className="size-5" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-[#301848]">{t("logoLabel")}</p>
-                        <p className="text-xs text-[#8d79a5]">{t("logoHelp")}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                      <div
-                        className="flex size-[92px] shrink-0 items-center justify-center rounded-[28px] border border-dashed border-[#d8c3f1] bg-white text-xl font-black text-[#7a38d8]"
-                        style={{
-                          background: logoPreviewUrl
-                            ? `center/cover no-repeat url(${logoPreviewUrl})`
-                            : `linear-gradient(135deg, ${selectedPalette.colors.accent} 0%, ${selectedPalette.colors.primary} 100%)`,
-                          color: logoPreviewUrl ? "transparent" : "#fff",
-                        }}
-                      >
-                        {!logoPreviewUrl ? (name || "BM").slice(0, 2).toUpperCase() : ""}
-                      </div>
-
-                      <label className="inline-flex cursor-pointer items-center justify-center rounded-2xl border border-[#decaf5] bg-white px-4 py-3 text-sm font-semibold text-[#6d28d9] transition hover:border-[#cfb1f0] hover:bg-[#fdf9ff]">
-                        {t("logoCta")}
-                        <input
-                          type="file"
-                          accept="image/png,image/jpeg"
-                          className="hidden"
-                          onChange={(event) => setLogoFile(event.target.files?.[0] ?? null)}
-                        />
-                      </label>
-                    </div>
-                  </div>
-
-                  <div className="rounded-[26px] border border-[#eadcf9] bg-[#fbf7ff] p-5">
-                    <div className="mb-4 flex items-center gap-3">
-                      <div className="flex size-11 items-center justify-center rounded-2xl bg-[#f1e6ff] text-[#7a38d8]">
-                        <Palette className="size-5" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-[#301848]">{t("brandingTitle")}</p>
-                        <p className="text-xs text-[#8d79a5]">{t("brandingDescription")}</p>
-                      </div>
-                    </div>
-
-                    <p className="mb-3 text-sm font-semibold text-[#301848]">{t("paletteLabel")}</p>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {STORE_PALETTES.map((palette) => (
-                        <button
-                          key={palette.id}
-                          type="button"
-                          onClick={() => setSelectedPaletteId(palette.id)}
-                          className={cn(
-                            "rounded-[22px] border p-3 text-left transition",
-                            selectedPaletteId === palette.id
-                              ? "border-[#bb92ed] bg-white shadow-[0_12px_30px_rgba(151,94,220,0.12)]"
-                              : "border-[#eadcf8] bg-[#fdfbff] hover:border-[#d9c2f5] hover:bg-white",
-                          )}
-                        >
-                          <div className="mb-3 flex gap-2">
-                            {Object.values(palette.colors).map((color) => (
-                              <span
-                                key={color}
-                                className="h-8 flex-1 rounded-full"
-                                style={{ backgroundColor: color }}
-                              />
-                            ))}
-                          </div>
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <p className="font-semibold text-[#301848]">{palette.name}</p>
-                              <p className="mt-1 text-xs text-[#8d79a5]">{palette.description}</p>
-                            </div>
-                            {selectedPaletteId === palette.id ? (
-                              <span className="rounded-full bg-[#f3e8ff] px-2.5 py-1 text-[11px] font-semibold text-[#7a38d8]">
-                                {t("paletteSelected")}
-                              </span>
-                            ) : null}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {error ? (
-                <div className="rounded-[22px] border border-[#f3cadc] bg-[#fff4f8] px-4 py-3 text-sm text-[#b54472]">
-                  {error}
-                </div>
-              ) : null}
-
-              <div className="rounded-[26px] border border-dashed border-[#ddcaf3] bg-[#fcf8ff] p-5">
-                <p className="font-semibold text-[#301848]">{t("futureTitle")}</p>
-                <p className="mt-2 text-sm text-[#8d79a5]">{t("futureDescription")}</p>
-              </div>
-
-              <button
-                onClick={handleCreate}
-                disabled={loading || !name || !slug || !whatsappNumber}
-                className="inline-flex items-center justify-center rounded-[22px] bg-[linear-gradient(135deg,#ff62b0_0%,#9e48ff_100%)] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_18px_36px_rgba(154,72,255,0.26)] transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {loading ? t("submitting") : t("submit")}
-              </button>
-            </div>
-
-            <aside className="space-y-5">
-              <div className="rounded-[28px] border border-[#eadcf8] bg-white p-5 shadow-[0_16px_45px_rgba(130,87,181,0.08)]">
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#9b85b7]">
-                  {t("previewBadge")}
-                </p>
-                <div
-                  className="mt-4 rounded-[24px] p-5"
-                  style={{
-                    background: `linear-gradient(180deg, ${selectedPalette.colors.surface} 0%, #ffffff 100%)`,
-                  }}
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="flex size-[64px] items-center justify-center rounded-[22px] text-lg font-black text-white"
-                      style={{
-                        background: logoPreviewUrl
-                          ? `center/cover no-repeat url(${logoPreviewUrl})`
-                          : `linear-gradient(135deg, ${selectedPalette.colors.accent} 0%, ${selectedPalette.colors.primary} 100%)`,
-                        color: logoPreviewUrl ? "transparent" : "#fff",
-                      }}
-                    >
-                      {!logoPreviewUrl ? (name || "BM").slice(0, 2).toUpperCase() : ""}
-                    </div>
+                <CardContent className="px-4 py-4">
+                  <Button
+                    variant="ghost"
+                    onClick={() => router.push(`/dashboard/${store.slug}/settings`)}
+                    className="h-auto w-full justify-between px-0 py-0 text-left text-white hover:bg-transparent hover:text-white"
+                  >
                     <div>
-                      <p
-                        className="text-lg font-semibold"
-                        style={{ color: selectedPalette.colors.text }}
-                      >
-                        {name || t("namePlaceholder")}
-                      </p>
-                      <p className="text-sm text-[#8d79a5]">
-                        /{slug || t("slugPlaceholder")}
-                      </p>
+                      <p className="font-semibold">{store.name}</p>
+                      <p className="mt-1 text-xs text-white/50">/{store.slug}</p>
                     </div>
+                    <ChevronRight className="size-4 text-white/45" />
+                  </Button>
+                  <Button
+                    variant="link"
+                    onClick={() => handleDeleteStore(store.id)}
+                    className="mt-3 h-auto p-0 text-xs font-semibold text-[#ff9bc7]"
+                  >
+                    {t("delete")}
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-[34px] border-[#efe5fb] bg-white/86 py-0 shadow-[0_24px_80px_rgba(120,74,170,0.08)] backdrop-blur">
+          <CardContent className="px-6 py-6 md:px-8 md:py-8">
+            <div className="grid gap-8 xl:grid-cols-[minmax(0,1.1fr)_360px]">
+              <div className="space-y-8">
+                <div>
+                  <Badge className="rounded-full bg-[#f3e8ff] px-4 py-1.5 text-xs uppercase tracking-[0.2em] text-[#7a38d8]">
+                    <WandSparkles className="size-3.5" />
+                    {t("createNew")}
+                  </Badge>
+                  <h2 className="mt-4 text-3xl font-bold tracking-tight text-[#2c1647]">
+                    {t("title")}
+                  </h2>
+                  <p className="mt-2 max-w-2xl text-sm text-[#8d79a5]">{t("subtitle")}</p>
+                </div>
+
+                <div className="grid gap-8 lg:grid-cols-2">
+                  <div className="space-y-5">
+                    <Field label={t("namePlaceholder")} help={t("nameHelp")}>
+                      <div className="relative">
+                        <Store className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[#a38dbc]" />
+                        <Input
+                          value={name}
+                          onChange={(event) => setName(event.target.value)}
+                          placeholder={t("namePlaceholder")}
+                          className="h-12 rounded-[20px] border-[#e7daf6] bg-[#fcf9ff] pl-11 text-[#311948] shadow-none"
+                        />
+                      </div>
+                    </Field>
+
+                    <Field label={t("slugLabel")} help={t("slugHelp")}>
+                      <Input
+                        value={slug}
+                        onChange={(event) => {
+                          setSlugTouched(true);
+                          setSlug(slugifyValue(event.target.value));
+                        }}
+                        placeholder={t("slugPlaceholder")}
+                        className="h-12 rounded-[20px] border-[#e7daf6] bg-[#fcf9ff] text-[#311948] shadow-none"
+                      />
+                    </Field>
+
+                    <Field label={t("whatsappPlaceholder")} help={t("whatsappHelp")}>
+                      <div className="relative">
+                        <Phone className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[#a38dbc]" />
+                        <Input
+                          value={whatsappNumber}
+                          onChange={(event) => setWhatsappNumber(event.target.value)}
+                          placeholder={t("whatsappPlaceholder")}
+                          className="h-12 rounded-[20px] border-[#e7daf6] bg-[#fcf9ff] pl-11 text-[#311948] shadow-none"
+                        />
+                      </div>
+                    </Field>
+
+                    <Field label={t("currencyLabel")}>
+                      <select
+                        value={defaultCurrency}
+                        onChange={(event) => setDefaultCurrency(event.target.value)}
+                        className="h-12 w-full rounded-[20px] border border-[#e7daf6] bg-[#fcf9ff] px-4 text-sm text-[#311948] outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
+                      >
+                        {SUPPORTED_CURRENCIES.map((currency) => (
+                          <option key={currency} value={currency}>
+                            {currency}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
                   </div>
 
-                  <div className="mt-5 grid gap-3">
-                    <div className="rounded-[20px] bg-white p-4 shadow-sm">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#a390bb]">
-                        {t("previewUrlLabel")}
-                      </p>
-                      <p className="mt-2 text-sm font-medium text-[#301848]">
-                        biasmarket.com/store/{slug || "your-store"}
-                      </p>
-                    </div>
-                    <div className="rounded-[20px] bg-white p-4 shadow-sm">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#a390bb]">
-                        {t("previewPaletteLabel")}
-                      </p>
-                      <div className="mt-3 flex gap-2">
-                        {Object.values(selectedPalette.colors).map((color) => (
-                          <span
-                            key={color}
-                            className="h-10 flex-1 rounded-full"
-                            style={{ backgroundColor: color }}
-                          />
-                        ))}
-                      </div>
-                    </div>
+                  <div className="space-y-5">
+                    <Card className="rounded-[26px] border-[#eadcf9] bg-[#fbf7ff] py-0 shadow-none">
+                      <CardHeader className="px-5 pt-5">
+                        <div className="flex items-center gap-3">
+                          <div className="flex size-11 items-center justify-center rounded-2xl bg-[#f1e6ff] text-[#7a38d8]">
+                            <ImagePlus className="size-5" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-base text-[#301848]">
+                              {t("logoLabel")}
+                            </CardTitle>
+                            <CardDescription className="text-xs text-[#8d79a5]">
+                              {t("logoHelp")}
+                            </CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="px-5 pb-5">
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                          <div
+                            className="flex size-[92px] shrink-0 items-center justify-center rounded-[28px] border border-dashed border-[#d8c3f1] bg-white text-xl font-black"
+                            style={{
+                              background: logoPreviewUrl
+                                ? `center/cover no-repeat url(${logoPreviewUrl})`
+                                : `linear-gradient(135deg, ${selectedPalette.colors.accent} 0%, ${selectedPalette.colors.primary} 100%)`,
+                              color: logoPreviewUrl ? "transparent" : "#fff",
+                            }}
+                          >
+                            {!logoPreviewUrl ? (name || "BM").slice(0, 2).toUpperCase() : ""}
+                          </div>
+
+                          <label className="inline-flex cursor-pointer">
+                            <input
+                              type="file"
+                              accept="image/png,image/jpeg"
+                              className="hidden"
+                              onChange={(event) => setLogoFile(event.target.files?.[0] ?? null)}
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="h-11 rounded-2xl border-[#decaf5] bg-white px-4 text-[#6d28d9] shadow-none hover:bg-[#fdf9ff]"
+                            >
+                              {t("logoCta")}
+                            </Button>
+                          </label>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="rounded-[26px] border-[#eadcf9] bg-[#fbf7ff] py-0 shadow-none">
+                      <CardHeader className="px-5 pt-5">
+                        <div className="flex items-center gap-3">
+                          <div className="flex size-11 items-center justify-center rounded-2xl bg-[#f1e6ff] text-[#7a38d8]">
+                            <Palette className="size-5" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-base text-[#301848]">
+                              {t("brandingTitle")}
+                            </CardTitle>
+                            <CardDescription className="text-xs text-[#8d79a5]">
+                              {t("brandingDescription")}
+                            </CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-4 px-5 pb-5">
+                        <p className="text-sm font-semibold text-[#301848]">{t("paletteLabel")}</p>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          {STORE_PALETTES.map((palette) => (
+                            <Button
+                              key={palette.id}
+                              type="button"
+                              variant="outline"
+                              onClick={() => setSelectedPaletteId(palette.id)}
+                              className={cn(
+                                "h-auto flex-col items-stretch rounded-[22px] px-3 py-3 text-left shadow-none",
+                                selectedPaletteId === palette.id
+                                  ? "border-[#bb92ed] bg-white shadow-[0_12px_30px_rgba(151,94,220,0.12)]"
+                                  : "border-[#eadcf8] bg-[#fdfbff] hover:bg-white",
+                              )}
+                            >
+                              <div className="mb-3 flex w-full gap-2">
+                                {Object.values(palette.colors).map((color) => (
+                                  <span
+                                    key={color}
+                                    className="h-8 flex-1 rounded-full"
+                                    style={{ backgroundColor: color }}
+                                  />
+                                ))}
+                              </div>
+                              <div className="flex w-full items-start justify-between gap-3">
+                                <div>
+                                  <p className="font-semibold text-[#301848]">{palette.name}</p>
+                                  <p className="mt-1 text-xs text-[#8d79a5]">
+                                    {palette.description}
+                                  </p>
+                                </div>
+                                {selectedPaletteId === palette.id ? (
+                                  <Badge className="rounded-full bg-[#f3e8ff] px-2.5 py-1 text-[11px] text-[#7a38d8]">
+                                    {t("paletteSelected")}
+                                  </Badge>
+                                ) : null}
+                              </div>
+                            </Button>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
                 </div>
+
+                {error ? (
+                  <Card className="rounded-[22px] border-[#f3cadc] bg-[#fff4f8] py-0 shadow-none">
+                    <CardContent className="px-4 py-3 text-sm text-[#b54472]">
+                      {error}
+                    </CardContent>
+                  </Card>
+                ) : null}
+
+                <Card className="rounded-[26px] border-dashed border-[#ddcaf3] bg-[#fcf8ff] py-0 shadow-none">
+                  <CardContent className="px-5 py-5">
+                    <p className="font-semibold text-[#301848]">{t("futureTitle")}</p>
+                    <p className="mt-2 text-sm text-[#8d79a5]">{t("futureDescription")}</p>
+                  </CardContent>
+                </Card>
+
+                <Button
+                  onClick={handleCreate}
+                  disabled={loading || !name || !slug || !whatsappNumber}
+                  className="h-12 rounded-[22px] bg-[linear-gradient(135deg,#ff62b0_0%,#9e48ff_100%)] px-6 text-sm font-semibold text-white shadow-[0_18px_36px_rgba(154,72,255,0.26)] hover:opacity-95"
+                >
+                  {loading ? t("submitting") : t("submit")}
+                </Button>
               </div>
 
-              <div className="rounded-[28px] border border-[#eadcf8] bg-[#faf6ff] p-5">
-                <p className="font-semibold text-[#301848]">{t("previewTitle")}</p>
-                <p className="mt-2 text-sm text-[#8d79a5]">{t("previewDescription")}</p>
+              <div className="space-y-5">
+                <Card className="rounded-[28px] border-[#eadcf8] bg-white py-0 shadow-[0_16px_45px_rgba(130,87,181,0.08)]">
+                  <CardHeader className="px-5 pt-5">
+                    <Badge
+                      variant="outline"
+                      className="w-fit rounded-full border-[#eadcf8] bg-white px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-[#9b85b7]"
+                    >
+                      {t("previewBadge")}
+                    </Badge>
+                  </CardHeader>
+                  <CardContent className="px-5 pb-5">
+                    <div
+                      className="rounded-[24px] p-5"
+                      style={{
+                        background: `linear-gradient(180deg, ${selectedPalette.colors.surface} 0%, #ffffff 100%)`,
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="flex size-[64px] items-center justify-center rounded-[22px] text-lg font-black text-white"
+                          style={{
+                            background: logoPreviewUrl
+                              ? `center/cover no-repeat url(${logoPreviewUrl})`
+                              : `linear-gradient(135deg, ${selectedPalette.colors.accent} 0%, ${selectedPalette.colors.primary} 100%)`,
+                            color: logoPreviewUrl ? "transparent" : "#fff",
+                          }}
+                        >
+                          {!logoPreviewUrl ? (name || "BM").slice(0, 2).toUpperCase() : ""}
+                        </div>
+                        <div>
+                          <p
+                            className="text-lg font-semibold"
+                            style={{ color: selectedPalette.colors.text }}
+                          >
+                            {name || t("namePlaceholder")}
+                          </p>
+                          <p className="text-sm text-[#8d79a5]">/{slug || t("slugPlaceholder")}</p>
+                        </div>
+                      </div>
+
+                      <Separator className="my-5 bg-white/70" />
+
+                      <div className="grid gap-3">
+                        <Card className="rounded-[20px] bg-white py-0 shadow-sm ring-0">
+                          <CardContent className="px-4 py-4">
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#a390bb]">
+                              {t("previewUrlLabel")}
+                            </p>
+                            <p className="mt-2 text-sm font-medium text-[#301848]">
+                              biasmarket.com/store/{slug || "your-store"}
+                            </p>
+                          </CardContent>
+                        </Card>
+                        <Card className="rounded-[20px] bg-white py-0 shadow-sm ring-0">
+                          <CardContent className="px-4 py-4">
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#a390bb]">
+                              {t("previewPaletteLabel")}
+                            </p>
+                            <div className="mt-3 flex gap-2">
+                              {Object.values(selectedPalette.colors).map((color) => (
+                                <span
+                                  key={color}
+                                  className="h-10 flex-1 rounded-full"
+                                  style={{ backgroundColor: color }}
+                                />
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="rounded-[28px] border-[#eadcf8] bg-[#faf6ff] py-0 shadow-none">
+                  <CardContent className="px-5 py-5">
+                    <p className="font-semibold text-[#301848]">{t("previewTitle")}</p>
+                    <p className="mt-2 text-sm text-[#8d79a5]">{t("previewDescription")}</p>
+                  </CardContent>
+                </Card>
               </div>
-            </aside>
-          </div>
-        </section>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
