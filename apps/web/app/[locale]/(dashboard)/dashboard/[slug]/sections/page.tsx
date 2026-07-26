@@ -195,7 +195,7 @@ export default function SectionsPage() {
               (type === "BANNER" && !imageUrl) ||
               (type === "TEXT_BLOCK" && !body)
             }
-            className="self-start rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-60"
+            className="store-theme-primary-button self-start rounded-xl px-5 py-2.5 text-sm font-semibold transition disabled:opacity-60"
           >
             {t("sections.add")}
           </button>

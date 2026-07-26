@@ -19,7 +19,7 @@ export function DashboardNav({ slug, active }: { slug: string; active: string })
           href={link.href}
           className={
             active === link.key
-              ? "font-semibold text-emerald-600"
+              ? "store-theme-active-text font-semibold"
               : "text-gray-500 hover:text-gray-900"
           }
         >

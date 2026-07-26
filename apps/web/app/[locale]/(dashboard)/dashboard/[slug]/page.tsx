@@ -7,5 +7,5 @@ export default async function DashboardHome({
   params: Promise<{ locale: Locale; slug: string }>;
 }) {
   const { locale, slug } = await params;
-  redirect({ href: `/dashboard/${slug}/products`, locale });
+  redirect({ href: `/dashboard/${slug}/settings`, locale });
 }

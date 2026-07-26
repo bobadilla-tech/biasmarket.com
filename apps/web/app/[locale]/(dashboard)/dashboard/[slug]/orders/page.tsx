@@ -125,7 +125,7 @@ export default function OrdersPage() {
                           <>
                             <button
                               onClick={() => handleReview(order.id, "approve")}
-                              className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-600"
+                              className="store-theme-primary-button rounded-lg px-3 py-1.5 text-xs font-semibold transition"
                             >
                               {t("approve")}
                             </button>

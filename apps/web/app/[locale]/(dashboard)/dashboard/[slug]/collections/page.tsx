@@ -164,7 +164,7 @@ export default function CollectionsPage() {
           <button
             onClick={handleCreate}
             disabled={loading || !name}
-            className="rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-60"
+            className="store-theme-primary-button rounded-xl px-5 py-2.5 text-sm font-semibold transition disabled:opacity-60"
           >
             {t("collections.add")}
           </button>
@@ -232,7 +232,7 @@ export default function CollectionsPage() {
                   </select>
                   <button
                     onClick={() => handleAddProduct(c.id)}
-                    className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600"
+                    className="store-theme-primary-button rounded-xl px-4 py-2 text-sm font-semibold transition"
                   >
                     {t("collections.addProduct")}
                   </button>

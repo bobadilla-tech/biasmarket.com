@@ -3,6 +3,12 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { apiFetch } from "@/lib/api";
+import type { StoreThemeConfig } from "@/lib/store-theme";
+
+export interface DashboardStoreUpdatedDetail {
+  slug: string;
+  store: Partial<DashboardStore>;
+}
 
 export interface DashboardStore {
   id: string;
@@ -10,6 +16,18 @@ export interface DashboardStore {
   slug: string;
   whatsappNumber: string | null;
   defaultCurrency: string;
+  logoUrl?: string | null;
+  paymentInstructions?: string;
+  themeConfig?: StoreThemeConfig | null;
+}
+
+export function broadcastStoreUpdate(detail: DashboardStoreUpdatedDetail) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent<DashboardStoreUpdatedDetail>("biasmarket:store-updated", {
+      detail,
+    }),
+  );
 }
 
 export function useStore() {
@@ -30,6 +48,23 @@ export function useStore() {
       });
     return () => {
       ignore = true;
+    };
+  }, [slug]);
+
+  useEffect(() => {
+    const handleStoreUpdated = (event: Event) => {
+      const customEvent = event as CustomEvent<DashboardStoreUpdatedDetail>;
+      if (customEvent.detail.slug !== slug) return;
+
+      setStore((current) => {
+        if (!current) return current;
+        return { ...current, ...customEvent.detail.store };
+      });
+    };
+
+    window.addEventListener("biasmarket:store-updated", handleStoreUpdated);
+    return () => {
+      window.removeEventListener("biasmarket:store-updated", handleStoreUpdated);
     };
   }, [slug]);
 

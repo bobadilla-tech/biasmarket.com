@@ -76,21 +76,137 @@
     "delete": "Eliminar",
     "uploadImage": "Subir imagen"
   },
+  "shell": {
+    "brand": "Bias Market",
+    "workspace": "Espacio de tienda",
+    "sections": {
+      "store": "Gestión de tienda",
+      "growth": "Crecimiento",
+      "settings": "Preferencias"
+    },
+    "nav": {
+      "overview": "Resumen",
+      "storefront": "Mi tienda",
+      "orders": "Pedidos",
+      "products": "Productos",
+      "shipping": "Envíos",
+      "payments": "Pagos",
+      "customers": "Clientes",
+      "analytics": "Analíticas",
+      "settings": "Configuración",
+      "ideas": "Sugerencias"
+    },
+    "soon": "Pronto",
+    "fallbackName": "Vendedor",
+    "fallbackRole": "Dueño de tienda",
+    "signOut": "Cerrar sesión"
+  },
   "settings": {
     "title": "Configuración",
-    "whatsappTitle": "WhatsApp de la tienda",
-    "whatsappHelp": "Los pedidos redirigen al comprador a este número con el detalle del pedido.",
-    "whatsappPlaceholder": "+51999999999",
-    "currencyTitle": "Moneda de la tienda",
-    "currencyHelp": "Moneda por defecto para productos nuevos. Podés cambiar la moneda de un producto en particular al crearlo o editarlo.",
+    "eyebrow": "Ajustes de tienda",
+    "subtitle": "Definí la primera experiencia de administración de tu tienda con una vista más pulida.",
+    "searchPlaceholder": "Buscar ajustes...",
     "save": "Guardar",
     "saving": "Guardando...",
-    "saved": "Guardado ✓",
-    "pickupTitle": "Retiro en tienda",
-    "courierTitle": "Envío por courier",
-    "enabled": "Habilitado",
-    "addressPlaceholder": "Dirección de retiro",
-    "costPlaceholder": "Costo estimado"
+    "saved": "Guardado",
+    "emptyName": "Tu tienda",
+    "profile": {
+      "title": "Perfil de la tienda",
+      "description": "Actualizá lo esencial de tu marca y cómo te contactan los compradores.",
+      "upload": "Editar logo",
+      "uploading": "Subiendo...",
+      "nameLabel": "Nombre de la tienda",
+      "urlLabel": "URL de la tienda",
+      "whatsappLabel": "WhatsApp de contacto",
+      "whatsappPlaceholder": "+51999999999",
+      "currencyLabel": "Moneda por defecto",
+      "instructionsLabel": "Instrucciones de pago",
+      "instructionsPlaceholder": "Compartí los datos de pago o la guía que querés mostrar después del checkout.",
+      "help": "Estos valores se usan en la tienda pública y en el flujo de pedidos."
+    },
+    "appearance": {
+      "title": "Apariencia",
+      "description": "Elegí la paleta que usa la barra lateral, los botones principales y los acentos clave de la interfaz.",
+      "selected": "Seleccionada",
+      "previewTitle": "Vista previa del tema",
+      "previewButton": "Acción principal",
+      "help": "Aplicá una nueva paleta cuando quieras y el dashboard se actualiza al instante.",
+      "apply": "Aplicar paleta"
+    },
+    "payments": {
+      "title": "Métodos de pago aceptados",
+      "description": "Opciones manuales alineadas con el flujo MVP actual.",
+      "manual": "Manual",
+      "items": {
+        "yape": {
+          "short": "YP",
+          "label": "Yape",
+          "description": "Pagos rápidos con billetera local en Perú."
+        },
+        "plin": {
+          "short": "PL",
+          "label": "Plin",
+          "description": "Transferencias instantáneas con una experiencia simple."
+        },
+        "transfer": {
+          "short": "BCP",
+          "label": "Transferencia bancaria",
+          "description": "Usá las instrucciones de pago para compartir la cuenta."
+        },
+        "cash": {
+          "short": "COD",
+          "label": "Efectivo en recojo",
+          "description": "Aceptá efectivo cuando el comprador retire el pedido."
+        }
+      }
+    },
+    "delivery": {
+      "title": "Configuración de entrega",
+      "description": "Definí si la tienda ofrece recojo, courier o ambos.",
+      "pickupToggle": "Retiro en tienda",
+      "pickupHelp": "Habilitá pedidos para compradores que recogen en persona.",
+      "pickupAddressLabel": "Dirección de recojo",
+      "pickupAddressPlaceholder": "Distrito, avenida, punto de referencia",
+      "courierToggle": "Envío por courier",
+      "courierHelp": "Habilitá courier y definí el costo estimado.",
+      "courierCostLabel": "Costo estimado de courier",
+      "courierCostPlaceholder": "0.00",
+      "footer": "Las opciones de entrega se muestran durante el checkout."
+    },
+    "defaults": {
+      "title": "Valores por defecto",
+      "description": "Un resumen rápido de los datos compartidos que usa tu tienda.",
+      "currencyCardTitle": "Moneda por defecto",
+      "currencyCardDescription": "Se usa como moneda inicial para productos nuevos.",
+      "urlCardTitle": "URL pública de la tienda",
+      "urlCardDescription": "Compartí este enlace para que los compradores vean tu catálogo."
+    },
+    "notifications": {
+      "title": "Notificaciones",
+      "description": "Vista previa de los controles de notificaciones que vivirán en esta nueva configuración.",
+      "items": {
+        "newOrder": {
+          "label": "Nuevo pedido recibido",
+          "description": "Avisate apenas un comprador haga un pedido."
+        },
+        "paymentReview": {
+          "label": "Comprobante por revisar",
+          "description": "Enterate cuando un pago manual necesite aprobación."
+        },
+        "lowStock": {
+          "label": "Alerta de stock bajo",
+          "description": "Detectá productos o variantes cerca de agotarse."
+        },
+        "orderDelivered": {
+          "label": "Actualizaciones de pedido entregado",
+          "description": "Notificaciones planificadas para pedidos completados."
+        },
+        "weeklySummary": {
+          "label": "Resumen semanal por WhatsApp",
+          "description": "Digest planificado con lo más importante de la tienda."
+        }
+      }
+    }
   },
   "orders": {
     "title": "Pedidos",

@@ -76,21 +76,137 @@
     "delete": "Delete",
     "uploadImage": "Upload Image"
   },
+  "shell": {
+    "brand": "Bias Market",
+    "workspace": "Store workspace",
+    "sections": {
+      "store": "Store management",
+      "growth": "Growth",
+      "settings": "Preferences"
+    },
+    "nav": {
+      "overview": "Overview",
+      "storefront": "My store",
+      "orders": "Orders",
+      "products": "Products",
+      "shipping": "Shipping",
+      "payments": "Payments",
+      "customers": "Customers",
+      "analytics": "Analytics",
+      "settings": "Configuration",
+      "ideas": "Suggestions"
+    },
+    "soon": "Soon",
+    "fallbackName": "Seller",
+    "fallbackRole": "Store owner",
+    "signOut": "Sign out"
+  },
   "settings": {
-    "title": "Settings",
-    "whatsappTitle": "Store WhatsApp",
-    "whatsappHelp": "Orders redirect the buyer to this number with the order details.",
-    "whatsappPlaceholder": "+51999999999",
-    "currencyTitle": "Store currency",
-    "currencyHelp": "Default currency for new products. You can change a specific product's currency when creating or editing it.",
+    "title": "Configuration",
+    "eyebrow": "Store settings",
+    "subtitle": "Shape the first admin experience for your store with a polished setup view.",
+    "searchPlaceholder": "Search settings...",
     "save": "Save",
     "saving": "Saving...",
-    "saved": "Saved ✓",
-    "pickupTitle": "Store pickup",
-    "courierTitle": "Courier shipping",
-    "enabled": "Enabled",
-    "addressPlaceholder": "Pickup address",
-    "costPlaceholder": "Estimated cost"
+    "saved": "Saved",
+    "emptyName": "Your store",
+    "profile": {
+      "title": "Store profile",
+      "description": "Update the essentials that define your brand and how buyers contact you.",
+      "upload": "Edit logo",
+      "uploading": "Uploading...",
+      "nameLabel": "Store name",
+      "urlLabel": "Store URL",
+      "whatsappLabel": "Contact WhatsApp",
+      "whatsappPlaceholder": "+51999999999",
+      "currencyLabel": "Default currency",
+      "instructionsLabel": "Payment instructions",
+      "instructionsPlaceholder": "Share the payment details or guidance you want buyers to see after checkout.",
+      "help": "These values are used across the storefront and the order flow."
+    },
+    "appearance": {
+      "title": "Appearance",
+      "description": "Choose the palette used by the sidebar, primary buttons, and key store UI accents.",
+      "selected": "Selected",
+      "previewTitle": "Theme preview",
+      "previewButton": "Primary action",
+      "help": "Apply a new palette at any time and the dashboard updates right away.",
+      "apply": "Apply palette"
+    },
+    "payments": {
+      "title": "Accepted payment methods",
+      "description": "Manual payment-first options aligned with the current MVP flow.",
+      "manual": "Manual",
+      "items": {
+        "yape": {
+          "short": "YP",
+          "label": "Yape",
+          "description": "Fast local wallet payments for Peru."
+        },
+        "plin": {
+          "short": "PL",
+          "label": "Plin",
+          "description": "Instant transfers with a buyer-friendly flow."
+        },
+        "transfer": {
+          "short": "BCP",
+          "label": "Bank transfer",
+          "description": "Use payment instructions for account details."
+        },
+        "cash": {
+          "short": "COD",
+          "label": "Pickup cash",
+          "description": "Accept cash when the buyer picks up the order."
+        }
+      }
+    },
+    "delivery": {
+      "title": "Delivery setup",
+      "description": "Decide whether the store offers pickup, courier shipping, or both.",
+      "pickupToggle": "Store pickup",
+      "pickupHelp": "Enable pickup orders for buyers who collect in person.",
+      "pickupAddressLabel": "Pickup address",
+      "pickupAddressPlaceholder": "District, avenue, reference point",
+      "courierToggle": "Courier shipping",
+      "courierHelp": "Enable courier and set the expected delivery charge.",
+      "courierCostLabel": "Estimated courier cost",
+      "courierCostPlaceholder": "0.00",
+      "footer": "Delivery choices are shown during checkout."
+    },
+    "defaults": {
+      "title": "Store defaults",
+      "description": "A quick summary of the shared values your storefront relies on.",
+      "currencyCardTitle": "Default currency",
+      "currencyCardDescription": "Used as the initial currency for new catalog items.",
+      "urlCardTitle": "Public storefront URL",
+      "urlCardDescription": "Share this link so buyers can browse your catalog."
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Preview the notification controls that will live in this new configuration area.",
+      "items": {
+        "newOrder": {
+          "label": "New order received",
+          "description": "Be alerted the moment a buyer places an order."
+        },
+        "paymentReview": {
+          "label": "Payment proof to review",
+          "description": "Know when a manual payment needs seller approval."
+        },
+        "lowStock": {
+          "label": "Low stock warning",
+          "description": "Catch products or variants that are close to selling out."
+        },
+        "orderDelivered": {
+          "label": "Delivered order updates",
+          "description": "Planned follow-up notifications for completed orders."
+        },
+        "weeklySummary": {
+          "label": "Weekly WhatsApp summary",
+          "description": "Planned digest with store activity highlights."
+        }
+      }
+    }
   },
   "orders": {
     "title": "Orders",

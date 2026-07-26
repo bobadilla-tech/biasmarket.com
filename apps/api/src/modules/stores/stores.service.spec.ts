@@ -79,6 +79,33 @@ describe('StoresService', () => {
     });
   });
 
+  it('persists a provided themeConfig during creation', async () => {
+    prisma.store.findUnique.mockResolvedValue(null);
+    prisma.store.create.mockResolvedValue({ id: 'store-2' });
+
+    await service.create(ownerId, {
+      ...createDto,
+      themeConfig: {
+        paletteId: 'royal-bloom',
+        colors: { primary: '#7c3aed', accent: '#f472b6' },
+      },
+    });
+
+    expect(prisma.store.create).toHaveBeenCalledWith({
+      data: {
+        name: 'My Store',
+        slug: 'my-store',
+        ownerId,
+        themeConfig: {
+          paletteId: 'royal-bloom',
+          colors: { primary: '#7c3aed', accent: '#f472b6' },
+        },
+        paymentInstructions: '',
+        whatsappNumber: '+51999999999',
+      },
+    });
+  });
+
   it('findAllForUser() lists stores scoped to the owner', async () => {
     prisma.store.findMany.mockResolvedValue([]);
 
@@ -141,6 +168,28 @@ describe('StoresService', () => {
       expect(prisma.store.update).toHaveBeenCalledWith({
         where: { id: 'store-1' },
         data: { whatsappNumber: '+51999999999' },
+      });
+    });
+
+    it('updates themeConfig when the user changes the palette', async () => {
+      prisma.store.findUnique.mockResolvedValue({ id: 'store-1', ownerId });
+      prisma.store.update.mockResolvedValue({ id: 'store-1' });
+
+      await service.update('store-1', ownerId, {
+        themeConfig: {
+          paletteId: 'mint-stage',
+          colors: { primary: '#0f766e', accent: '#22c55e' },
+        },
+      });
+
+      expect(prisma.store.update).toHaveBeenCalledWith({
+        where: { id: 'store-1' },
+        data: {
+          themeConfig: {
+            paletteId: 'mint-stage',
+            colors: { primary: '#0f766e', accent: '#22c55e' },
+          },
+        },
       });
     });
   });

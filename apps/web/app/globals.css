@@ -163,3 +163,63 @@
     @apply font-sans;
   }
 }
+
+.store-dashboard-theme {
+  --store-primary: #6d28d9;
+  --store-accent: #f472b6;
+  --store-surface: #faf5ff;
+  --store-text: #2d1649;
+  --store-ring: rgba(109, 40, 217, 0.18);
+  --store-shadow: rgba(109, 40, 217, 0.24);
+  --store-soft-border: rgba(109, 40, 217, 0.18);
+  --store-sidebar-start: rgb(45, 16, 90);
+  --store-sidebar-mid: rgb(36, 12, 72);
+  --store-sidebar-end: rgb(24, 8, 50);
+}
+
+.store-theme-input:focus {
+  border-color: var(--store-primary);
+  box-shadow: 0 0 0 3px var(--store-ring);
+}
+
+.store-theme-primary-button {
+  background: linear-gradient(135deg, var(--store-accent) 0%, var(--store-primary) 100%);
+  color: white;
+  box-shadow: 0 14px 30px var(--store-shadow);
+}
+
+.store-theme-primary-button:hover {
+  filter: brightness(0.98);
+}
+
+.store-theme-primary-button:disabled {
+  box-shadow: none;
+}
+
+.store-theme-secondary-button {
+  background: var(--store-surface);
+  color: var(--store-primary);
+  border-color: var(--store-soft-border);
+}
+
+.store-theme-secondary-button:hover {
+  filter: brightness(0.98);
+}
+
+.store-theme-link {
+  color: var(--store-primary);
+}
+
+.store-theme-active-text {
+  color: var(--store-primary);
+}
+
+.store-theme-soft-badge {
+  background: var(--store-surface);
+  color: var(--store-primary);
+}
+
+.store-theme-icon-surface {
+  background: var(--store-surface);
+  color: var(--store-primary);
+}

@@ -1,10 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Bell,
+  Building2,
+  CreditCard,
+  MapPin,
+  MessageCircle,
+  Palette,
+  Store,
+  Truck,
+  Upload,
+} from "lucide-react";
+import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { SUPPORTED_CURRENCIES } from "@biasmarket/utils/currency";
 import { apiFetch } from "@/lib/api";
-import { useStore } from "@/lib/use-store";
+import {
+  buildStoreThemeConfig,
+  resolveStorePalette,
+  STORE_PALETTES,
+} from "@/lib/store-theme";
+import { broadcastStoreUpdate, useStore } from "@/lib/use-store";
+import { cn } from "@/lib/utils";
 
 interface DeliveryMethod {
   type: "PICKUP" | "COURIER";
@@ -12,178 +30,724 @@ interface DeliveryMethod {
   details: Record<string, unknown>;
 }
 
+interface NotificationSetting {
+  key: "newOrder" | "paymentReview" | "lowStock" | "orderDelivered" | "weeklySummary";
+  enabled: boolean;
+  locked?: boolean;
+}
+
+const PAYMENT_METHODS = [
+  { key: "yape", color: "bg-[#f8ddf2] text-[#bd2d84]" },
+  { key: "plin", color: "bg-[#ece0ff] text-[#7540d9]" },
+  { key: "transfer", color: "bg-[#e4f5ff] text-[#2472ae]" },
+  { key: "cash", color: "bg-[#ebf9ef] text-[#27965e]" },
+] as const;
+
+function Card({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <section
+      className={cn("rounded-[28px] border border-[#eadcf7] bg-white p-6 shadow-sm", className)}
+    >
+      {children}
+    </section>
+  );
+}
+
+function CardHeader({
+  icon: Icon,
+  title,
+  description,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="mb-5 flex items-start gap-3">
+      <div className="store-theme-icon-surface flex size-11 shrink-0 items-center justify-center rounded-2xl">
+        <Icon className="size-5" />
+      </div>
+      <div>
+        <h2 className="text-lg font-semibold text-[#2d1649]">{title}</h2>
+        <p className="mt-1 text-sm text-[#8f7da8]">{description}</p>
+      </div>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block space-y-2">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#927fac]">
+        {label}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+function ToggleRow({
+  label,
+  description,
+  enabled,
+  onChange,
+  disabled = false,
+}: {
+  label: string;
+  description?: string;
+  enabled: boolean;
+  onChange: (enabled: boolean) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3">
+      <div>
+        <p className="text-sm font-medium text-[#341b55]">{label}</p>
+        {description ? <p className="text-xs text-[#9582ad]">{description}</p> : null}
+      </div>
+      <button
+        type="button"
+        onClick={() => !disabled && onChange(!enabled)}
+        style={
+          enabled
+            ? {
+                background:
+                  "linear-gradient(135deg, var(--store-accent) 0%, var(--store-primary) 100%)",
+              }
+            : undefined
+        }
+        className={cn(
+          "relative inline-flex h-7 w-12 shrink-0 rounded-full border transition",
+          enabled ? "border-transparent" : "border-[#e3d5f1] bg-white",
+          disabled && "cursor-not-allowed opacity-55",
+        )}
+      >
+        <span
+          className={cn(
+            "absolute top-1 size-5 rounded-full bg-white shadow-sm transition",
+            enabled ? "left-6" : "left-1",
+          )}
+        />
+      </button>
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const t = useTranslations("dashboard.settings");
   const tCommon = useTranslations("common");
+  const { locale, slug } = useParams<{ locale: string; slug: string }>();
   const { store, storeId, loading: storeLoading } = useStore();
-  const [whatsappNumber, setWhatsappNumber] = useState("");
-  const [defaultCurrency, setDefaultCurrency] = useState<string>(SUPPORTED_CURRENCIES[0]);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
 
-  const [deliveryMethods, setDeliveryMethods] = useState<DeliveryMethod[]>([]);
+  const [storeName, setStoreName] = useState("");
+  const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [paymentInstructions, setPaymentInstructions] = useState("");
+  const [defaultCurrency, setDefaultCurrency] = useState<string>(SUPPORTED_CURRENCIES[0]);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [selectedPaletteId, setSelectedPaletteId] = useState(STORE_PALETTES[0].id);
+
   const [pickupEnabled, setPickupEnabled] = useState(false);
   const [pickupAddress, setPickupAddress] = useState("");
   const [courierEnabled, setCourierEnabled] = useState(false);
   const [courierCost, setCourierCost] = useState("");
 
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [appearanceSaving, setAppearanceSaving] = useState(false);
+  const [deliverySaving, setDeliverySaving] = useState(false);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [savedSection, setSavedSection] = useState<"profile" | "appearance" | "delivery" | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const [notifications, setNotifications] = useState<NotificationSetting[]>([
+    { key: "newOrder", enabled: true },
+    { key: "paymentReview", enabled: true },
+    { key: "lowStock", enabled: true },
+    { key: "orderDelivered", enabled: false, locked: true },
+    { key: "weeklySummary", enabled: false, locked: true },
+  ]);
+
   useEffect(() => {
-    if (store?.whatsappNumber) setWhatsappNumber(store.whatsappNumber);
-    if (store?.defaultCurrency) setDefaultCurrency(store.defaultCurrency);
+    if (!store) return;
+    setStoreName(store.name ?? "");
+    setWhatsappNumber(store.whatsappNumber ?? "");
+    setDefaultCurrency(store.defaultCurrency ?? SUPPORTED_CURRENCIES[0]);
+    setPaymentInstructions(store.paymentInstructions ?? "");
+    setLogoUrl(store.logoUrl ?? null);
+    setSelectedPaletteId(resolveStorePalette(store.themeConfig).id);
   }, [store]);
 
   const loadDeliveryMethods = async () => {
     if (!storeId) return;
     const methods = await apiFetch(`/stores/${storeId}/delivery-methods`);
-    setDeliveryMethods(methods);
-    const pickup = methods.find((m: DeliveryMethod) => m.type === "PICKUP");
-    const courier = methods.find((m: DeliveryMethod) => m.type === "COURIER");
+    const pickup = (methods as DeliveryMethod[]).find((method) => method.type === "PICKUP");
+    const courier = (methods as DeliveryMethod[]).find((method) => method.type === "COURIER");
+
     setPickupEnabled(pickup?.enabled ?? false);
     setPickupAddress((pickup?.details?.address as string) ?? "");
     setCourierEnabled(courier?.enabled ?? false);
-    setCourierCost((courier?.details?.estimatedCost as string)?.toString() ?? "");
+    setCourierCost(String(courier?.details?.estimatedCost ?? ""));
   };
 
   useEffect(() => {
-    loadDeliveryMethods();
+    loadDeliveryMethods().catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
 
-  const handleSaveWhatsapp = async () => {
-    setLoading(true);
+  useEffect(() => {
+    if (!savedSection) return;
+    const timer = window.setTimeout(() => setSavedSection(null), 1800);
+    return () => window.clearTimeout(timer);
+  }, [savedSection]);
+
+  const storefrontUrl = useMemo(() => {
+    return `/${locale}/store/${slug}`;
+  }, [locale, slug]);
+
+  const selectedPalette = useMemo(
+    () =>
+      STORE_PALETTES.find((palette) => palette.id === selectedPaletteId) ??
+      STORE_PALETTES[0],
+    [selectedPaletteId],
+  );
+
+  const handleSaveProfile = async () => {
+    if (!storeId) return;
+    setProfileSaving(true);
     setError(null);
+
     try {
       await apiFetch(`/stores/${storeId}`, {
         method: "PATCH",
-        body: JSON.stringify({ whatsappNumber, defaultCurrency }),
+        body: JSON.stringify({
+          name: storeName,
+          whatsappNumber,
+          paymentInstructions,
+          defaultCurrency,
+        }),
       });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 1500);
+      broadcastStoreUpdate({
+        slug,
+        store: {
+          name: storeName,
+          whatsappNumber,
+          paymentInstructions,
+          defaultCurrency,
+        },
+      });
+      setSavedSection("profile");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
-      setLoading(false);
+      setProfileSaving(false);
     }
   };
 
-  const handleSavePickup = async () => {
-    await apiFetch(`/stores/${storeId}/delivery-methods`, {
-      method: "POST",
-      body: JSON.stringify({
-        type: "PICKUP",
-        enabled: pickupEnabled,
-        details: { address: pickupAddress },
-      }),
-    });
-    await loadDeliveryMethods();
+  const handleSaveAppearance = async () => {
+    if (!storeId) return;
+    setAppearanceSaving(true);
+    setError(null);
+
+    try {
+      const themeConfig = buildStoreThemeConfig(selectedPaletteId);
+      await apiFetch(`/stores/${storeId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ themeConfig }),
+      });
+      broadcastStoreUpdate({
+        slug,
+        store: { themeConfig },
+      });
+      setSavedSection("appearance");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setAppearanceSaving(false);
+    }
   };
 
-  const handleSaveCourier = async () => {
-    await apiFetch(`/stores/${storeId}/delivery-methods`, {
-      method: "POST",
-      body: JSON.stringify({
-        type: "COURIER",
-        enabled: courierEnabled,
-        details: { estimatedCost: Number(courierCost || 0) },
-      }),
-    });
-    await loadDeliveryMethods();
+  const handleSaveDelivery = async () => {
+    if (!storeId) return;
+    setDeliverySaving(true);
+    setError(null);
+
+    try {
+      await Promise.all([
+        apiFetch(`/stores/${storeId}/delivery-methods`, {
+          method: "POST",
+          body: JSON.stringify({
+            type: "PICKUP",
+            enabled: pickupEnabled,
+            details: { address: pickupAddress },
+          }),
+        }),
+        apiFetch(`/stores/${storeId}/delivery-methods`, {
+          method: "POST",
+          body: JSON.stringify({
+            type: "COURIER",
+            enabled: courierEnabled,
+            details: { estimatedCost: Number(courierCost || 0) },
+          }),
+        }),
+      ]);
+      setSavedSection("delivery");
+      await loadDeliveryMethods();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setDeliverySaving(false);
+    }
+  };
+
+  const handleUploadLogo = async (file: File | null) => {
+    if (!file || !storeId) return;
+    setLogoUploading(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/stores/${storeId}/logo`,
+        {
+          method: "POST",
+          credentials: "include",
+          body: formData,
+        },
+      );
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(data?.message ?? tCommon("networkError"));
+      }
+
+      setLogoUrl(data.logoUrl ?? null);
+      broadcastStoreUpdate({
+        slug,
+        store: { logoUrl: data.logoUrl ?? null },
+      });
+      setSavedSection("profile");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLogoUploading(false);
+    }
   };
 
   if (storeLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 px-6 py-10 text-sm text-gray-500">
+      <div className="flex min-h-screen items-center justify-center px-6 text-sm text-[#8f7da8]">
         {tCommon("loading")}
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 px-6 py-10">
-      <div className="max-w-2xl mx-auto flex flex-col gap-6">
-        <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+    <div className="min-h-screen px-5 py-6 lg:px-8 lg:py-8">
+      <div className="mx-auto max-w-7xl space-y-6">
+        <header className="flex flex-col gap-4 rounded-[28px] border border-white/60 bg-white/55 px-5 py-4 shadow-[0_10px_35px_rgba(89,35,126,0.05)] backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-medium text-[#8e7ca7]">{t("eyebrow")}</p>
+            <h1 className="text-3xl font-bold tracking-tight text-[#2d1649]">{t("title")}</h1>
+            <p className="mt-1 text-sm text-[#8f7da8]">{t("subtitle")}</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="hidden min-w-[250px] rounded-2xl border border-[#eadcf7] bg-white px-4 py-3 text-sm text-[#a18eb8] sm:block">
+              {t("searchPlaceholder")}
+            </div>
+            <div
+              className="flex size-12 items-center justify-center rounded-2xl text-sm font-semibold text-white"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--store-accent) 0%, var(--store-primary) 100%)",
+                boxShadow: "0 10px 30px var(--store-shadow)",
+              }}
+            >
+              {(storeName || "BM").slice(0, 2).toUpperCase()}
+            </div>
+          </div>
+        </header>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col gap-3">
-          <h2 className="font-semibold text-gray-900">{t("whatsappTitle")}</h2>
-          <p className="text-sm text-gray-500">{t("whatsappHelp")}</p>
-          <input
-            placeholder={t("whatsappPlaceholder")}
-            value={whatsappNumber}
-            onChange={(e) => setWhatsappNumber(e.target.value)}
-            className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
-          />
+        {error ? (
+          <div className="rounded-2xl border border-[#f3cbd8] bg-[#fff3f7] px-4 py-3 text-sm text-[#b24368]">
+            {error}
+          </div>
+        ) : null}
 
-          <h2 className="font-semibold text-gray-900">{t("currencyTitle")}</h2>
-          <p className="text-sm text-gray-500">{t("currencyHelp")}</p>
-          <select
-            value={defaultCurrency}
-            onChange={(e) => setDefaultCurrency(e.target.value)}
-            className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600"
-          >
-            {SUPPORTED_CURRENCIES.map((currency) => (
-              <option key={currency} value={currency}>
-                {currency}
-              </option>
-            ))}
-          </select>
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)]">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader
+                icon={Store}
+                title={t("profile.title")}
+                description={t("profile.description")}
+              />
 
-          <button
-            onClick={handleSaveWhatsapp}
-            disabled={loading || !whatsappNumber}
-            className="self-start rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-60"
-          >
-            {saved ? t("saved") : loading ? t("saving") : t("save")}
-          </button>
-          {error && <p className="text-sm text-red-500">{error}</p>}
-        </div>
+              <div
+                className="mb-6 flex flex-col gap-4 rounded-[24px] p-4 sm:flex-row sm:items-center sm:justify-between"
+                style={{ backgroundColor: "var(--store-surface)" }}
+              >
+                <div className="flex items-center gap-4">
+                  {logoUrl ? (
+                    <img
+                      src={logoUrl}
+                      alt={storeName || "Store logo"}
+                      className="size-[72px] rounded-[22px] object-cover shadow-sm"
+                    />
+                  ) : (
+                    <div
+                      className="flex size-[72px] items-center justify-center rounded-[22px] text-xl font-black text-white"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, var(--store-accent) 0%, var(--store-primary) 100%)",
+                        boxShadow: "0 18px 36px var(--store-shadow)",
+                      }}
+                    >
+                      {(storeName || "BM").slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-lg font-semibold text-[#2d1649]">{storeName || t("emptyName")}</p>
+                    <p className="text-sm text-[#8f7da8]">{storefrontUrl}</p>
+                  </div>
+                </div>
+                <label className="store-theme-secondary-button inline-flex cursor-pointer items-center gap-2 rounded-2xl border bg-white px-4 py-2.5 text-sm font-semibold transition">
+                  <Upload className="size-4" />
+                  {logoUploading ? t("profile.uploading") : t("profile.upload")}
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg"
+                    className="hidden"
+                    onChange={(event) => handleUploadLogo(event.target.files?.[0] ?? null)}
+                  />
+                </label>
+              </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col gap-3">
-          <h2 className="font-semibold text-gray-900">{t("pickupTitle")}</h2>
-          <label className="flex items-center gap-2 text-sm text-gray-600">
-            <input
-              type="checkbox"
-              checked={pickupEnabled}
-              onChange={(e) => setPickupEnabled(e.target.checked)}
-            />
-            {t("enabled")}
-          </label>
-          <input
-            placeholder={t("addressPlaceholder")}
-            value={pickupAddress}
-            onChange={(e) => setPickupAddress(e.target.value)}
-            className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
-          />
-          <button
-            onClick={handleSavePickup}
-            className="self-start rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-600"
-          >
-            {t("save")}
-          </button>
-        </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label={t("profile.nameLabel")}>
+                  <input
+                    value={storeName}
+                    onChange={(event) => setStoreName(event.target.value)}
+                    className="store-theme-input w-full rounded-2xl border border-[#e7dcf3] bg-[#fbf8fe] px-4 py-3 text-sm text-[#341b55] outline-none transition focus:bg-white"
+                  />
+                </Field>
+                <Field label={t("profile.urlLabel")}>
+                  <input
+                    value={storefrontUrl}
+                    readOnly
+                    className="w-full rounded-2xl border border-[#ede2f6] bg-[#f5effb] px-4 py-3 text-sm text-[#8d7ba7] outline-none"
+                  />
+                </Field>
+              </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col gap-3">
-          <h2 className="font-semibold text-gray-900">{t("courierTitle")}</h2>
-          <label className="flex items-center gap-2 text-sm text-gray-600">
-            <input
-              type="checkbox"
-              checked={courierEnabled}
-              onChange={(e) => setCourierEnabled(e.target.checked)}
-            />
-            {t("enabled")}
-          </label>
-          <input
-            placeholder={t("costPlaceholder")}
-            value={courierCost}
-            onChange={(e) => setCourierCost(e.target.value)}
-            className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
-          />
-          <button
-            onClick={handleSaveCourier}
-            className="self-start rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-600"
-          >
-            {t("save")}
-          </button>
+              <div className="mt-4 grid gap-4 sm:grid-cols-[minmax(0,1fr)_180px]">
+                <Field label={t("profile.whatsappLabel")}>
+                  <div className="relative">
+                    <MessageCircle className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[#ab92c6]" />
+                    <input
+                      value={whatsappNumber}
+                      onChange={(event) => setWhatsappNumber(event.target.value)}
+                      placeholder={t("profile.whatsappPlaceholder")}
+                      className="store-theme-input w-full rounded-2xl border border-[#e7dcf3] bg-[#fbf8fe] py-3 pl-11 pr-4 text-sm text-[#341b55] outline-none transition focus:bg-white"
+                    />
+                  </div>
+                </Field>
+                <Field label={t("profile.currencyLabel")}>
+                  <select
+                    value={defaultCurrency}
+                    onChange={(event) => setDefaultCurrency(event.target.value)}
+                    className="store-theme-input w-full rounded-2xl border border-[#e7dcf3] bg-[#fbf8fe] px-4 py-3 text-sm text-[#341b55] outline-none transition focus:bg-white"
+                  >
+                    {SUPPORTED_CURRENCIES.map((currency) => (
+                      <option key={currency} value={currency}>
+                        {currency}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+
+              <div className="mt-4">
+                <Field label={t("profile.instructionsLabel")}>
+                  <textarea
+                    value={paymentInstructions}
+                    onChange={(event) => setPaymentInstructions(event.target.value)}
+                    placeholder={t("profile.instructionsPlaceholder")}
+                    rows={4}
+                    className="store-theme-input w-full resize-none rounded-2xl border border-[#e7dcf3] bg-[#fbf8fe] px-4 py-3 text-sm text-[#341b55] outline-none transition focus:bg-white"
+                  />
+                </Field>
+              </div>
+
+              <div className="mt-5 flex items-center justify-between gap-4">
+                <p className="text-sm text-[#8f7da8]">{t("profile.help")}</p>
+                <button
+                  onClick={handleSaveProfile}
+                  disabled={profileSaving || !storeName || !whatsappNumber}
+                  className="store-theme-primary-button rounded-2xl px-5 py-3 text-sm font-semibold transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {savedSection === "profile"
+                    ? t("saved")
+                    : profileSaving
+                      ? t("saving")
+                      : t("save")}
+                </button>
+              </div>
+            </Card>
+
+            <Card>
+              <CardHeader
+                icon={Palette}
+                title={t("appearance.title")}
+                description={t("appearance.description")}
+              />
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                {STORE_PALETTES.map((palette) => (
+                  <button
+                    key={palette.id}
+                    type="button"
+                    onClick={() => setSelectedPaletteId(palette.id)}
+                    className={cn(
+                      "rounded-[22px] border p-4 text-left transition",
+                      selectedPaletteId === palette.id
+                        ? "bg-white shadow-sm"
+                        : "bg-[#fcf9ff] hover:bg-white",
+                    )}
+                    style={{
+                      borderColor:
+                        selectedPaletteId === palette.id
+                          ? "var(--store-primary)"
+                          : "#eadcf8",
+                    }}
+                  >
+                    <div className="mb-3 flex gap-2">
+                      {Object.values(palette.colors).map((color) => (
+                        <span
+                          key={color}
+                          className="h-8 flex-1 rounded-full"
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold text-[#301848]">{palette.name}</p>
+                        <p className="mt-1 text-xs text-[#8d79a5]">{palette.description}</p>
+                      </div>
+                      {selectedPaletteId === palette.id ? (
+                        <span className="store-theme-soft-badge rounded-full px-2.5 py-1 text-[11px] font-semibold">
+                          {t("appearance.selected")}
+                        </span>
+                      ) : null}
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              <div
+                className="mt-5 rounded-[24px] p-4"
+                style={{ backgroundColor: selectedPalette.colors.surface }}
+              >
+                <p className="text-sm font-semibold" style={{ color: selectedPalette.colors.text }}>
+                  {t("appearance.previewTitle")}
+                </p>
+                <div className="mt-3 flex items-center gap-4">
+                  <div
+                    className="flex size-14 items-center justify-center rounded-2xl text-sm font-black text-white"
+                    style={{
+                      background: `linear-gradient(135deg, ${selectedPalette.colors.accent} 0%, ${selectedPalette.colors.primary} 100%)`,
+                    }}
+                  >
+                    {(storeName || "BM").slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="flex-1">
+                    <div
+                      className="rounded-2xl px-4 py-3 text-sm font-semibold text-white"
+                      style={{
+                        background: `linear-gradient(135deg, ${selectedPalette.colors.accent} 0%, ${selectedPalette.colors.primary} 100%)`,
+                      }}
+                    >
+                      {t("appearance.previewButton")}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 flex items-center justify-between gap-4">
+                <p className="text-sm text-[#8f7da8]">{t("appearance.help")}</p>
+                <button
+                  onClick={handleSaveAppearance}
+                  disabled={appearanceSaving}
+                  className="store-theme-primary-button rounded-2xl px-5 py-3 text-sm font-semibold transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {savedSection === "appearance"
+                    ? t("saved")
+                    : appearanceSaving
+                      ? t("saving")
+                      : t("appearance.apply")}
+                </button>
+              </div>
+            </Card>
+
+            <Card>
+              <CardHeader
+                icon={CreditCard}
+                title={t("payments.title")}
+                description={t("payments.description")}
+              />
+
+              <div className="space-y-3">
+                {PAYMENT_METHODS.map((method) => (
+                  <div
+                    key={method.key}
+                    className="flex items-center justify-between rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={cn("rounded-2xl px-2.5 py-1.5 text-xs font-semibold", method.color)}>
+                        {t(`payments.items.${method.key}.short`)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-[#341b55]">
+                          {t(`payments.items.${method.key}.label`)}
+                        </p>
+                        <p className="text-xs text-[#9582ad]">
+                          {t(`payments.items.${method.key}.description`)}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="rounded-full border border-[#eadcf7] bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-[#8e7ca7]">
+                      {t("payments.manual")}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+
+          <div className="space-y-6">
+            <Card>
+              <CardHeader
+                icon={Truck}
+                title={t("delivery.title")}
+                description={t("delivery.description")}
+              />
+
+              <div className="space-y-4">
+                <ToggleRow
+                  label={t("delivery.pickupToggle")}
+                  description={t("delivery.pickupHelp")}
+                  enabled={pickupEnabled}
+                  onChange={setPickupEnabled}
+                />
+
+                <Field label={t("delivery.pickupAddressLabel")}>
+                  <div className="relative">
+                    <MapPin className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[#ab92c6]" />
+                    <input
+                      value={pickupAddress}
+                      onChange={(event) => setPickupAddress(event.target.value)}
+                      placeholder={t("delivery.pickupAddressPlaceholder")}
+                      className="store-theme-input w-full rounded-2xl border border-[#e7dcf3] bg-[#fbf8fe] py-3 pl-11 pr-4 text-sm text-[#341b55] outline-none transition focus:bg-white"
+                    />
+                  </div>
+                </Field>
+
+                <ToggleRow
+                  label={t("delivery.courierToggle")}
+                  description={t("delivery.courierHelp")}
+                  enabled={courierEnabled}
+                  onChange={setCourierEnabled}
+                />
+
+                <Field label={t("delivery.courierCostLabel")}>
+                  <input
+                    value={courierCost}
+                    onChange={(event) => setCourierCost(event.target.value)}
+                    placeholder={t("delivery.courierCostPlaceholder")}
+                    className="store-theme-input w-full rounded-2xl border border-[#e7dcf3] bg-[#fbf8fe] px-4 py-3 text-sm text-[#341b55] outline-none transition focus:bg-white"
+                  />
+                </Field>
+              </div>
+
+              <div className="mt-5 flex items-center justify-between gap-4">
+                <p className="text-sm text-[#8f7da8]">{t("delivery.footer")}</p>
+                <button
+                  onClick={handleSaveDelivery}
+                  disabled={deliverySaving}
+                  className="store-theme-secondary-button rounded-2xl border px-5 py-3 text-sm font-semibold transition disabled:opacity-60"
+                >
+                  {savedSection === "delivery"
+                    ? t("saved")
+                    : deliverySaving
+                      ? t("saving")
+                      : t("save")}
+                </button>
+              </div>
+            </Card>
+
+            <Card>
+              <CardHeader
+                icon={Building2}
+                title={t("defaults.title")}
+                description={t("defaults.description")}
+              />
+
+              <div className="space-y-3">
+                <div className="rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3">
+                  <p className="text-sm font-medium text-[#341b55]">{t("defaults.currencyCardTitle")}</p>
+                  <p className="mt-1 text-xs text-[#9582ad]">{t("defaults.currencyCardDescription")}</p>
+                  <p className="store-theme-soft-badge mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold">
+                    {defaultCurrency}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3">
+                  <p className="text-sm font-medium text-[#341b55]">{t("defaults.urlCardTitle")}</p>
+                  <p className="mt-1 text-xs text-[#9582ad]">{t("defaults.urlCardDescription")}</p>
+                  <p className="store-theme-active-text mt-3 text-sm font-medium">{storefrontUrl}</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card>
+              <CardHeader
+                icon={Bell}
+                title={t("notifications.title")}
+                description={t("notifications.description")}
+              />
+
+              <div className="space-y-3">
+                {notifications.map((notification) => (
+                  <ToggleRow
+                    key={notification.key}
+                    label={t(`notifications.items.${notification.key}.label`)}
+                    description={t(`notifications.items.${notification.key}.description`)}
+                    enabled={notification.enabled}
+                    disabled={notification.locked}
+                    onChange={(enabled) =>
+                      setNotifications((current) =>
+                        current.map((item) =>
+                          item.key === notification.key ? { ...item, enabled } : item,
+                        ),
+                      )
+                    }
+                  />
+                ))}
+              </div>
+            </Card>
+          </div>
         </div>
       </div>
     </div>

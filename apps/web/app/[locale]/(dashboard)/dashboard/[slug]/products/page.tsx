@@ -260,23 +260,23 @@ export default function ProductsPage() {
             placeholder={t("form.namePlaceholder")}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="flex-1 min-w-[160px] rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 placeholder:text-gray-600"
+            className="store-theme-input flex-1 min-w-[160px] rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none transition placeholder:text-gray-600"
           />
           <input
             placeholder={t("form.descriptionPlaceholder")}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="flex-1 min-w-[160px] rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 placeholder:text-gray-600"
+            className="store-theme-input flex-1 min-w-[160px] rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none transition placeholder:text-gray-600"
           />
           <input
             placeholder={t("form.pricePlaceholder")}
             value={price}
             onChange={(e) => setPrice(e.target.value)}
-            className="w-32 rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 placeholder:text-gray-600"
+            className="store-theme-input w-32 rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none transition placeholder:text-gray-600"
           />
           <label
             htmlFor="image-upload"
-            className="inline-flex items-center px-4 py-2 bg-emerald-300 text-white rounded-lg cursor-pointer hover:bg-emerald-500 transition"
+            className="store-theme-primary-button inline-flex items-center rounded-lg px-4 py-2 transition"
           >
             {t("actions.uploadImage")}
           </label>
@@ -308,7 +308,7 @@ export default function ProductsPage() {
             aria-label={t("form.availableUntilPlaceholder")}
             value={availableUntil}
             onChange={(e) => setAvailableUntil(e.target.value)}
-            className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+            className="store-theme-input rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none transition"
           />
 
           {categories.length > 0 && (
@@ -334,7 +334,7 @@ export default function ProductsPage() {
           <button
             onClick={handleCreate}
             disabled={loading || !name || !price}
-            className="rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-60"
+            className="store-theme-primary-button rounded-xl px-5 py-2.5 text-sm font-semibold transition disabled:opacity-60"
           >
             {loading ? t("form.creating") : t("form.addProduct")}
           </button>
@@ -375,7 +375,7 @@ export default function ProductsPage() {
                       <span
                         className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
                           p.status === "PUBLISHED"
-                            ? "bg-emerald-100 text-emerald-700"
+                            ? "store-theme-soft-badge"
                             : "bg-gray-100 text-gray-600"
                         }`}
                       >
@@ -387,7 +387,7 @@ export default function ProductsPage() {
                         {p.status === "DRAFT" && (
                           <button
                             onClick={() => handlePublish(p.id)}
-                            className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-600"
+                            className="store-theme-primary-button rounded-lg px-3 py-1.5 text-xs font-semibold transition"
                           >
                             {t("actions.publish")}
                           </button>
@@ -414,7 +414,7 @@ export default function ProductsPage() {
                           className="w-12 h-12 rounded-lg object-cover"
                         />
                       ) : (
-                        <label className="text-xs text-emerald-600 cursor-pointer">
+                        <label className="store-theme-link cursor-pointer text-xs">
                           {uploadingImage === p.id
                             ? "..."
                             : (t("actions.uploadImage") )}
@@ -455,19 +455,19 @@ export default function ProductsPage() {
                               placeholder={t("variants.namePlaceholder")}
                               value={variantName}
                               onChange={(e) => setVariantName(e.target.value)}
-                              className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-600"
+                              className="store-theme-input rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-600"
                             />
                             <input
                               placeholder={t("variants.stockPlaceholder")}
                               value={variantStock}
                               onChange={(e) => setVariantStock(e.target.value)}
-                              className="w-24 rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-600"
+                              className="store-theme-input w-24 rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-600"
                             />
                             <input
                               placeholder={t("variants.priceOverridePlaceholder")}
                               value={variantPriceOverride}
                               onChange={(e) => setVariantPriceOverride(e.target.value)}
-                              className="w-32 rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-600"
+                              className="store-theme-input w-32 rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-600"
                             />
                           </div>
 
@@ -482,7 +482,7 @@ export default function ProductsPage() {
                                       prev.map((r, ri) => (ri === i ? { ...r, key: e.target.value } : r)),
                                     )
                                   }
-                                  className="w-32 rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-600"
+                                  className="store-theme-input w-32 rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-600"
                                 />
                                 <input
                                   placeholder={t("variants.attributeValuePlaceholder")}
@@ -492,13 +492,13 @@ export default function ProductsPage() {
                                       prev.map((r, ri) => (ri === i ? { ...r, value: e.target.value } : r)),
                                     )
                                   }
-                                  className="w-32 rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-600"
+                                  className="store-theme-input w-32 rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-600"
                                 />
                               </div>
                             ))}
                             <button
                               onClick={() => setAttributeRows((prev) => [...prev, { key: "", value: "" }])}
-                              className="self-start text-xs text-emerald-600"
+                              className="store-theme-link self-start text-xs"
                             >
                               {t("variants.addAttribute")}
                             </button>
@@ -507,7 +507,7 @@ export default function ProductsPage() {
                           <button
                             onClick={() => handleAddVariant(p.id)}
                             disabled={!variantName}
-                            className="self-start rounded-lg bg-emerald-500 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-60"
+                            className="store-theme-primary-button self-start rounded-lg px-4 py-1.5 text-xs font-semibold transition disabled:opacity-60"
                           >
                             {t("variants.add")}
                           </button>

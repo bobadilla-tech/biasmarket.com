@@ -1,4 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import type { Prisma } from '@biasmarket/db';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { slugify } from '@biasmarket/utils/strings';
 import { UpdateStoreDto } from './dto/update-store.dto.js';
@@ -29,7 +30,7 @@ export class StoresService {
           name: dto.name,
           slug,
           ownerId,
-          themeConfig: {},
+          themeConfig: (dto.themeConfig ?? {}) as Prisma.InputJsonValue,
           paymentInstructions: '',
           whatsappNumber: dto.whatsappNumber,
           ...(dto.defaultCurrency && { defaultCurrency: dto.defaultCurrency }),
@@ -61,7 +62,16 @@ export class StoresService {
     if (store.ownerId !== userId) {
       throw new ForbiddenException('No sos dueño de esta store');
     }
-    return this.prisma.store.update({ where: { id: storeId }, data: dto });
+    const { themeConfig, ...rest } = dto;
+    return this.prisma.store.update({
+      where: { id: storeId },
+      data: {
+        ...rest,
+        ...(themeConfig !== undefined && {
+          themeConfig: themeConfig as Prisma.InputJsonValue,
+        }),
+      },
+    });
   }
 
   async delete(storeId: string, userId: string) {
