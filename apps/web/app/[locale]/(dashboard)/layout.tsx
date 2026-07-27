@@ -8,7 +8,7 @@ export default function DashboardLayout({
   return (
     <>
       <ImpersonationBanner />
-      <div style={{ padding: 24 }}>{children}</div>
+      {children}
     </>
   );
 }
