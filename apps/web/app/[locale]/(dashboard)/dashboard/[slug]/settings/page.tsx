@@ -350,7 +350,7 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen px-5 py-6 lg:px-8 lg:py-8">
-      <div className="mx-auto max-w-[1600px] space-y-6">
+      <div className="space-y-6">
         <Card className="rounded-[28px] border-white/60 bg-white/55 py-0 shadow-[0_10px_35px_rgba(89,35,126,0.05)] backdrop-blur">
           <CardContent className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
