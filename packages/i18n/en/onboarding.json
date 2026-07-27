@@ -40,6 +40,7 @@
     "brandingDescription": "Pick a starting palette for your storefront. You can expand this later.",
     "paletteLabel": "Color palette",
     "paletteSelected": "Selected",
+    "customColorLabel": "Custom color",
     "previewTitle": "Live preview",
     "previewDescription": "A quick look at how your store branding starts to come together.",
     "previewBadge": "Storefront",

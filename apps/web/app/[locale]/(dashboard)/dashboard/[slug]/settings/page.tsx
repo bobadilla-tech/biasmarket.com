@@ -254,7 +254,7 @@ export default function SettingsPage() {
     setError(null);
 
     try {
-      const themeConfig = buildStoreThemeConfig(selectedPaletteId);
+      const themeConfig = buildStoreThemeConfig(selectedPalette);
       await apiFetch(`/stores/${storeId}`, {
         method: "PATCH",
         body: JSON.stringify({ themeConfig }),
@@ -350,7 +350,7 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen px-5 py-6 lg:px-8 lg:py-8">
-      <div className="mx-auto max-w-7xl space-y-6">
+      <div className="mx-auto max-w-[1600px] space-y-6">
         <Card className="rounded-[28px] border-white/60 bg-white/55 py-0 shadow-[0_10px_35px_rgba(89,35,126,0.05)] backdrop-blur">
           <CardContent className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -462,7 +462,7 @@ export default function SettingsPage() {
                     value={whatsappNumber}
                     onChange={setWhatsappNumber}
                     placeholder={t("profile.whatsappPlaceholder")}
-                    selectClassName="store-theme-input h-12 rounded-2xl border border-[#e7dcf3] bg-[#fbf8fe] px-2 text-sm text-[#341b55] outline-none"
+                    selectClassName="store-theme-input h-12 rounded-2xl border border-[#e7dcf3] bg-[#fbf8fe] pl-3 pr-6 text-sm text-[#341b55] outline-none"
                     inputClassName="store-theme-input h-12 rounded-2xl border border-[#e7dcf3] bg-[#fbf8fe] px-4 text-[#341b55] outline-none"
                   />
                 </Field>

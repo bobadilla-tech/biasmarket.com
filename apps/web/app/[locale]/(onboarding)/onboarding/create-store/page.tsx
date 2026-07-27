@@ -5,6 +5,7 @@ import {
   ChevronRight,
   ImagePlus,
   Palette,
+  Pipette,
   Store,
   WandSparkles,
 } from "lucide-react";
@@ -21,9 +22,10 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { PhoneInput } from "@/components/ui/phone-input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { useRouter } from "@/i18n/navigation";
-import { buildStoreThemeConfig, STORE_PALETTES } from "@/lib/store-theme";
+import { buildCustomStorePalette, buildStoreThemeConfig, STORE_PALETTES } from "@/lib/store-theme";
 import { cn } from "@/lib/utils";
 
 interface StoreSummary {
@@ -73,18 +75,19 @@ export default function CreateStorePage() {
   const [slugTouched, setSlugTouched] = useState(false);
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [defaultCurrency, setDefaultCurrency] = useState<string>(SUPPORTED_CURRENCIES[0]);
-  const [selectedPaletteId, setSelectedPaletteId] = useState(STORE_PALETTES[0].id);
+  const [selectedPaletteId, setSelectedPaletteId] = useState<string>(STORE_PALETTES[0].id);
+  const [customColor, setCustomColor] = useState("#6d28d9");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const selectedPalette = useMemo(
-    () =>
-      STORE_PALETTES.find((palette) => palette.id === selectedPaletteId) ??
-      STORE_PALETTES[0],
-    [selectedPaletteId],
-  );
+  const selectedPalette = useMemo(() => {
+    if (selectedPaletteId === "custom") return buildCustomStorePalette(customColor);
+    return (
+      STORE_PALETTES.find((palette) => palette.id === selectedPaletteId) ?? STORE_PALETTES[0]
+    );
+  }, [selectedPaletteId, customColor]);
 
   useEffect(() => {
     const loadStores = async () => {
@@ -134,7 +137,7 @@ export default function CreateStorePage() {
           slug,
           whatsappNumber,
           defaultCurrency,
-          themeConfig: buildStoreThemeConfig(selectedPalette.id),
+          themeConfig: buildStoreThemeConfig(selectedPalette),
         }),
       });
       const data = await res.json();
@@ -297,7 +300,7 @@ export default function CreateStorePage() {
                         value={whatsappNumber}
                         onChange={setWhatsappNumber}
                         placeholder={t("whatsappPlaceholder")}
-                        selectClassName="h-12 rounded-[20px] border border-[#e7daf6] bg-[#fcf9ff] px-2 text-sm text-[#311948] outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
+                        selectClassName="h-12 rounded-[20px] border border-[#e7daf6] bg-[#fcf9ff] pl-3 pr-6 text-sm text-[#311948] outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
                         inputClassName="h-12 rounded-[20px] border border-[#e7daf6] bg-[#fcf9ff] px-4 text-[#311948] outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
                       />
                     </Field>
@@ -385,44 +388,61 @@ export default function CreateStorePage() {
                       </CardHeader>
                       <CardContent className="space-y-4 px-5 pb-5">
                         <p className="text-sm font-semibold text-[#301848]">{t("paletteLabel")}</p>
-                        <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="flex flex-wrap items-center gap-3">
                           {STORE_PALETTES.map((palette) => (
-                            <Button
+                            <button
                               key={palette.id}
                               type="button"
-                              variant="outline"
+                              title={palette.name}
+                              aria-label={palette.name}
                               onClick={() => setSelectedPaletteId(palette.id)}
                               className={cn(
-                                "h-auto flex-col items-stretch whitespace-normal rounded-[22px] px-3 py-3 text-left shadow-none",
+                                "size-10 shrink-0 rounded-full ring-2 ring-offset-2 ring-offset-[#fbf7ff] transition-transform hover:scale-105",
                                 selectedPaletteId === palette.id
-                                  ? "border-[#bb92ed] bg-white shadow-[0_12px_30px_rgba(151,94,220,0.12)]"
-                                  : "border-[#eadcf8] bg-[#fdfbff] hover:bg-white",
+                                  ? "ring-[#7a38d8]"
+                                  : "ring-transparent",
                               )}
-                            >
-                              <div className="mb-3 flex w-full gap-2">
-                                {Object.values(palette.colors).map((color) => (
-                                  <span
-                                    key={color}
-                                    className="h-8 flex-1 rounded-full"
-                                    style={{ backgroundColor: color }}
-                                  />
-                                ))}
-                              </div>
-                              <div className="flex w-full items-start justify-between gap-3">
-                                <div>
-                                  <p className="font-semibold text-[#301848]">{palette.name}</p>
-                                  <p className="mt-1 text-xs text-[#8d79a5]">
-                                    {palette.description}
-                                  </p>
-                                </div>
-                                {selectedPaletteId === palette.id ? (
-                                  <Badge className="rounded-full bg-[#f3e8ff] px-2.5 py-1 text-[11px] text-[#7a38d8]">
-                                    {t("paletteSelected")}
-                                  </Badge>
-                                ) : null}
-                              </div>
-                            </Button>
+                              style={{ backgroundColor: palette.colors.primary }}
+                            />
                           ))}
+
+                          <Popover>
+                            <PopoverTrigger
+                              type="button"
+                              title={t("customColorLabel")}
+                              aria-label={t("customColorLabel")}
+                              onClick={() => setSelectedPaletteId("custom")}
+                              className={cn(
+                                "flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-dashed ring-2 ring-offset-2 ring-offset-[#fbf7ff] transition-transform hover:scale-105",
+                                selectedPaletteId === "custom"
+                                  ? "border-solid border-transparent ring-[#7a38d8]"
+                                  : "border-[#c9b3e8] text-[#7a38d8] ring-transparent",
+                              )}
+                              style={
+                                selectedPaletteId === "custom"
+                                  ? { backgroundColor: customColor }
+                                  : undefined
+                              }
+                            >
+                              {selectedPaletteId !== "custom" ? (
+                                <Pipette className="size-4" />
+                              ) : null}
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto">
+                              <p className="mb-3 text-sm font-semibold text-[#301848]">
+                                {t("customColorLabel")}
+                              </p>
+                              <input
+                                type="color"
+                                value={customColor}
+                                onChange={(event) => {
+                                  setCustomColor(event.target.value);
+                                  setSelectedPaletteId("custom");
+                                }}
+                                className="h-10 w-full cursor-pointer rounded-lg border border-[#eadcf8]"
+                              />
+                            </PopoverContent>
+                          </Popover>
                         </div>
                       </CardContent>
                     </Card>

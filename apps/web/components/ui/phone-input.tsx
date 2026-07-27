@@ -35,7 +35,7 @@ export function PhoneInput({
             PHONE_COUNTRIES.find((candidate) => candidate.iso === event.target.value) ?? country;
           onChange(`${nextCountry.dialCode}${nationalNumber}`);
         }}
-        className={cn("w-[110px] shrink-0", selectClassName)}
+        className={cn("w-31 shrink-0", selectClassName)}
       >
         {PHONE_COUNTRIES.map((option) => (
           <option key={option.iso} value={option.iso} title={option.name}>

@@ -100,6 +100,27 @@ function darken(hex: string, amount: number) {
   return `rgb(${toChannel(r)}, ${toChannel(g)}, ${toChannel(b)})`;
 }
 
+function lighten(hex: string, amount: number) {
+  const { r, g, b } = hexToRgb(hex);
+  const ratio = clamp(amount, 0, 1);
+  const toChannel = (channel: number) => Math.round(channel + (255 - channel) * ratio);
+  return `rgb(${toChannel(r)}, ${toChannel(g)}, ${toChannel(b)})`;
+}
+
+export function buildCustomStorePalette(primaryHex: string): StorePalette {
+  return {
+    id: "custom",
+    name: "Custom",
+    description: "Your own color",
+    colors: {
+      primary: primaryHex,
+      accent: lighten(primaryHex, 0.25),
+      surface: lighten(primaryHex, 0.92),
+      text: darken(primaryHex, 0.75),
+    },
+  };
+}
+
 function isThemeConfig(value: unknown): value is StoreThemeConfig {
   return typeof value === "object" && value !== null;
 }
@@ -122,10 +143,7 @@ export function resolveStorePalette(themeConfig?: unknown): StorePalette {
   };
 }
 
-export function buildStoreThemeConfig(paletteId: string): StoreThemeConfig {
-  const palette =
-    STORE_PALETTES.find((item) => item.id === paletteId) ?? DEFAULT_STORE_PALETTE;
-
+export function buildStoreThemeConfig(palette: StorePalette): StoreThemeConfig {
   return {
     paletteId: palette.id,
     colors: palette.colors,
