@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { ChevronDown } from "lucide-react";
 import { PHONE_COUNTRIES, parsePhoneValue } from "@biasmarket/utils/phone-country";
 import { cn } from "@/lib/utils";
 
@@ -27,22 +28,29 @@ export function PhoneInput({
 
   return (
     <div className={cn("flex gap-2", className)}>
-      <select
-        aria-label="Country code"
-        value={country.iso}
-        onChange={(event) => {
-          const nextCountry =
-            PHONE_COUNTRIES.find((candidate) => candidate.iso === event.target.value) ?? country;
-          onChange(`${nextCountry.dialCode}${nationalNumber}`);
-        }}
-        className={cn("w-31 shrink-0", selectClassName)}
-      >
-        {PHONE_COUNTRIES.map((option) => (
-          <option key={option.iso} value={option.iso} title={option.name}>
-            {option.flag} {option.dialCode}
-          </option>
-        ))}
-      </select>
+      <div className="relative w-32 shrink-0">
+        <select
+          aria-label="Country code"
+          value={country.iso}
+          onChange={(event) => {
+            const nextCountry =
+              PHONE_COUNTRIES.find((candidate) => candidate.iso === event.target.value) ??
+              country;
+            onChange(`${nextCountry.dialCode}${nationalNumber}`);
+          }}
+          className={cn(
+            "h-full w-full appearance-none pr-8 pl-3",
+            selectClassName,
+          )}
+        >
+          {PHONE_COUNTRIES.map((option) => (
+            <option key={option.iso} value={option.iso} title={option.name}>
+              {option.flag} {option.dialCode}
+            </option>
+          ))}
+        </select>
+        <ChevronDown className="pointer-events-none absolute top-1/2 right-2.5 size-4 -translate-y-1/2 opacity-60" />
+      </div>
       <input
         id={id}
         name={name}

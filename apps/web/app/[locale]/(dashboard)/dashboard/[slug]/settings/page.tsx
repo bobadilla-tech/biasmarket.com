@@ -462,7 +462,7 @@ export default function SettingsPage() {
                     value={whatsappNumber}
                     onChange={setWhatsappNumber}
                     placeholder={t("profile.whatsappPlaceholder")}
-                    selectClassName="store-theme-input h-12 rounded-2xl border border-[#e7dcf3] bg-[#fbf8fe] pl-3 pr-6 text-sm text-[#341b55] outline-none"
+                    selectClassName="store-theme-input h-12 rounded-2xl border border-[#e7dcf3] bg-[#fbf8fe] text-sm text-[#341b55] outline-none"
                     inputClassName="store-theme-input h-12 rounded-2xl border border-[#e7dcf3] bg-[#fbf8fe] px-4 text-[#341b55] outline-none"
                   />
                 </Field>

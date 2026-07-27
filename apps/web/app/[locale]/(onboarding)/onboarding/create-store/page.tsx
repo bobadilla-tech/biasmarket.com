@@ -300,7 +300,7 @@ export default function CreateStorePage() {
                         value={whatsappNumber}
                         onChange={setWhatsappNumber}
                         placeholder={t("whatsappPlaceholder")}
-                        selectClassName="h-12 rounded-[20px] border border-[#e7daf6] bg-[#fcf9ff] pl-3 pr-6 text-sm text-[#311948] outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
+                        selectClassName="h-12 rounded-[20px] border border-[#e7daf6] bg-[#fcf9ff] text-sm text-[#311948] outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
                         inputClassName="h-12 rounded-[20px] border border-[#e7daf6] bg-[#fcf9ff] px-4 text-[#311948] outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
                       />
                     </Field>

@@ -149,7 +149,7 @@ export default function CheckoutPage() {
             value={customerPhone}
             onChange={setCustomerPhone}
             placeholder={t("phonePlaceholder")}
-            selectClassName="rounded-xl border border-gray-200 pl-3 pr-6 text-sm text-gray-600 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+            selectClassName="rounded-xl border border-gray-200 py-2.5 text-sm text-gray-600 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
             inputClassName="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
           />
           <input
