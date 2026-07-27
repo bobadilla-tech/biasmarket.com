@@ -6,7 +6,6 @@ import {
   Building2,
   CreditCard,
   MapPin,
-  MessageCircle,
   Palette,
   Store,
   Truck,
@@ -25,6 +24,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -458,15 +458,13 @@ export default function SettingsPage() {
 
               <div className="mt-4 grid gap-4 sm:grid-cols-[minmax(0,1fr)_180px]">
                 <Field label={t("profile.whatsappLabel")}>
-                  <div className="relative">
-                    <MessageCircle className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[#ab92c6]" />
-                    <Input
-                      value={whatsappNumber}
-                      onChange={(event) => setWhatsappNumber(event.target.value)}
-                      placeholder={t("profile.whatsappPlaceholder")}
-                      className="store-theme-input h-12 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] pl-11 text-[#341b55] shadow-none"
-                    />
-                  </div>
+                  <PhoneInput
+                    value={whatsappNumber}
+                    onChange={setWhatsappNumber}
+                    placeholder={t("profile.whatsappPlaceholder")}
+                    selectClassName="store-theme-input h-12 rounded-2xl border border-[#e7dcf3] bg-[#fbf8fe] px-2 text-sm text-[#341b55] outline-none"
+                    inputClassName="store-theme-input h-12 rounded-2xl border border-[#e7dcf3] bg-[#fbf8fe] px-4 text-[#341b55] outline-none"
+                  />
                 </Field>
                 <Field label={t("profile.currencyLabel")}>
                   <select

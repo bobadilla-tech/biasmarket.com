@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { Link } from "@/i18n/navigation";
 import { apiFetch } from "@/lib/api";
 import { cartTotal, clearCart, getCart, hasMixedCurrencies, type CartItem } from "@/lib/cart";
@@ -144,11 +145,12 @@ export default function CheckoutPage() {
             onChange={(e) => setCustomerName(e.target.value)}
             className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
           />
-          <input
-            placeholder={t("phonePlaceholder")}
+          <PhoneInput
             value={customerPhone}
-            onChange={(e) => setCustomerPhone(e.target.value)}
-            className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+            onChange={setCustomerPhone}
+            placeholder={t("phonePlaceholder")}
+            selectClassName="rounded-xl border border-gray-200 px-2 text-sm text-gray-600 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+            inputClassName="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
           />
           <input
             placeholder={t("emailPlaceholder")}

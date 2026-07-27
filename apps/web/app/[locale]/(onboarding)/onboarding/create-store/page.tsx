@@ -5,7 +5,6 @@ import {
   ChevronRight,
   ImagePlus,
   Palette,
-  Phone,
   Store,
   WandSparkles,
 } from "lucide-react";
@@ -21,6 +20,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { Separator } from "@/components/ui/separator";
 import { useRouter } from "@/i18n/navigation";
 import { buildStoreThemeConfig, STORE_PALETTES } from "@/lib/store-theme";
@@ -197,7 +197,7 @@ export default function CreateStorePage() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(167,139,250,0.2),transparent_28%),linear-gradient(180deg,#f7f0ff_0%,#fdfbff_100%)] px-4 py-8 md:px-6">
-      <div className="mx-auto grid max-w-7xl gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
+      <div className="mx-auto grid max-w-[1600px] gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
         <Card className="rounded-[30px] border-white/10 bg-[#2a0d50] py-0 text-white ring-white/10">
           <CardHeader className="px-5 pt-5">
             <div className="rounded-[24px] border border-white/10 bg-white/6 p-4">
@@ -266,7 +266,7 @@ export default function CreateStorePage() {
                   <p className="mt-2 max-w-2xl text-sm text-[#8d79a5]">{t("subtitle")}</p>
                 </div>
 
-                <div className="grid gap-8 lg:grid-cols-2">
+                <div className="grid gap-8 2xl:grid-cols-2">
                   <div className="space-y-5">
                     <Field label={t("namePlaceholder")} help={t("nameHelp")}>
                       <div className="relative">
@@ -293,15 +293,13 @@ export default function CreateStorePage() {
                     </Field>
 
                     <Field label={t("whatsappPlaceholder")} help={t("whatsappHelp")}>
-                      <div className="relative">
-                        <Phone className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[#a38dbc]" />
-                        <Input
-                          value={whatsappNumber}
-                          onChange={(event) => setWhatsappNumber(event.target.value)}
-                          placeholder={t("whatsappPlaceholder")}
-                          className="h-12 rounded-[20px] border-[#e7daf6] bg-[#fcf9ff] pl-11 text-[#311948] shadow-none"
-                        />
-                      </div>
+                      <PhoneInput
+                        value={whatsappNumber}
+                        onChange={setWhatsappNumber}
+                        placeholder={t("whatsappPlaceholder")}
+                        selectClassName="h-12 rounded-[20px] border border-[#e7daf6] bg-[#fcf9ff] px-2 text-sm text-[#311948] outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
+                        inputClassName="h-12 rounded-[20px] border border-[#e7daf6] bg-[#fcf9ff] px-4 text-[#311948] outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
+                      />
                     </Field>
 
                     <Field label={t("currencyLabel")}>
@@ -395,7 +393,7 @@ export default function CreateStorePage() {
                               variant="outline"
                               onClick={() => setSelectedPaletteId(palette.id)}
                               className={cn(
-                                "h-auto flex-col items-stretch rounded-[22px] px-3 py-3 text-left shadow-none",
+                                "h-auto flex-col items-stretch whitespace-normal rounded-[22px] px-3 py-3 text-left shadow-none",
                                 selectedPaletteId === palette.id
                                   ? "border-[#bb92ed] bg-white shadow-[0_12px_30px_rgba(151,94,220,0.12)]"
                                   : "border-[#eadcf8] bg-[#fdfbff] hover:bg-white",
@@ -456,6 +454,13 @@ export default function CreateStorePage() {
               </div>
 
               <div className="space-y-5">
+                <Card className="rounded-[28px] border-[#eadcf8] bg-[#faf6ff] py-0 shadow-none">
+                  <CardContent className="px-5 py-5">
+                    <p className="font-semibold text-[#301848]">{t("previewTitle")}</p>
+                    <p className="mt-2 text-sm text-[#8d79a5]">{t("previewDescription")}</p>
+                  </CardContent>
+                </Card>
+
                 <Card className="rounded-[28px] border-[#eadcf8] bg-white py-0 shadow-[0_16px_45px_rgba(130,87,181,0.08)]">
                   <CardHeader className="px-5 pt-5">
                     <Badge
@@ -526,13 +531,6 @@ export default function CreateStorePage() {
                         </Card>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="rounded-[28px] border-[#eadcf8] bg-[#faf6ff] py-0 shadow-none">
-                  <CardContent className="px-5 py-5">
-                    <p className="font-semibold text-[#301848]">{t("previewTitle")}</p>
-                    <p className="mt-2 text-sm text-[#8d79a5]">{t("previewDescription")}</p>
                   </CardContent>
                 </Card>
               </div>
