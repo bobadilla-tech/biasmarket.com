@@ -11,6 +11,7 @@ function requiredEnv(name: string): string {
 @Injectable()
 export class StorageService {
     private readonly bucket = requiredEnv('S3_BUCKET');
+    private readonly logoBucket = requiredEnv('S3_LOGO_BUCKET');
     private readonly publicUrl = requiredEnv('S3_PUBLIC_URL');
 
     private client = new S3Client({
@@ -24,18 +25,31 @@ export class StorageService {
     });
 
     async uploadImage(buffer: Buffer, mimeType: string): Promise<string> {
+        return this.upload(this.bucket, 'products', buffer, mimeType);
+    }
+
+    async uploadLogo(buffer: Buffer, mimeType: string): Promise<string> {
+        return this.upload(this.logoBucket, 'logos', buffer, mimeType);
+    }
+
+    private async upload(
+        bucket: string,
+        prefix: string,
+        buffer: Buffer,
+        mimeType: string,
+    ): Promise<string> {
         const ext = mimeType === 'image/png' ? 'png' : 'jpg';
-        const key = `products/${randomUUID()}.${ext}`;
+        const key = `${prefix}/${randomUUID()}.${ext}`;
 
         await this.client.send(
             new PutObjectCommand({
-                Bucket: this.bucket,
+                Bucket: bucket,
                 Key: key,
                 Body: buffer,
                 ContentType: mimeType,
             }),
         );
 
-        return `${this.publicUrl}/${this.bucket}/${key}`;
+        return `${this.publicUrl}/${bucket}/${key}`;
     }
 }

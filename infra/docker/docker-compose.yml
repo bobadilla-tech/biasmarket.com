@@ -78,7 +78,7 @@ services:
       minio:
         condition: service_healthy
     entrypoint: >
-      sh -c "mc mb --ignore-existing local/${S3_BUCKET} && mc anonymous set download local/${S3_BUCKET}"
+      sh -c "mc mb --ignore-existing local/${S3_BUCKET} && mc anonymous set download local/${S3_BUCKET} && mc mb --ignore-existing local/${S3_LOGO_BUCKET} && mc anonymous set download local/${S3_LOGO_BUCKET}"
 
   caddy:
     image: caddy:2-alpine

@@ -96,7 +96,7 @@ export class StoresController {
     );
     if (!isJpeg && !isPng) throw new BadRequestException('Solo JPEG o PNG');
 
-    const url = await this.storage.uploadImage(file.buffer, isPng ? 'image/png' : 'image/jpeg');
+    const url = await this.storage.uploadLogo(file.buffer, isPng ? 'image/png' : 'image/jpeg');
     return this.stores.updateLogo(storeId, session.user.id, url);
   }
 

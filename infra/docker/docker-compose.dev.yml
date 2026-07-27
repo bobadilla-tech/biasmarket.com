@@ -55,7 +55,7 @@ services:
       minio:
         condition: service_healthy
     entrypoint: >
-      sh -c "mc mb --ignore-existing local/products && mc anonymous set download local/products"
+      sh -c "mc mb --ignore-existing local/products && mc anonymous set download local/products && mc mb --ignore-existing local/logos && mc anonymous set download local/logos"
 
   api:
     build:

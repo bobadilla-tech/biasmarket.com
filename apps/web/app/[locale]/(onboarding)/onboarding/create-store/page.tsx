@@ -311,7 +311,7 @@ export default function CreateStorePage() {
                       <Select
                         value={defaultCurrency}
                         onChange={(event) => setDefaultCurrency(event.target.value)}
-                        className="h-12 w-full"
+                        className="h-12 w-32"
                         selectClassName="h-full rounded-[20px] border border-[#e7daf6] bg-[#fcf9ff] text-sm text-[#311948] outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
                       >
                         {SUPPORTED_CURRENCIES.map((currency) => (
