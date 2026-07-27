@@ -35,6 +35,27 @@ services:
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # One-shot: creates the bucket and sets it public-read, then exits.
+  # Safe to re-run on every `pnpm docker:dev` — both mc commands are
+  # idempotent (--ignore-existing / re-applying the same anonymous policy).
+  minio-init:
+    image: minio/mc
+    networks: [stack]
+    restart: "no"
+    environment:
+      MC_HOST_local: http://admin:password123@minio:9000
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      sh -c "mc mb --ignore-existing local/products && mc anonymous set download local/products"
 
   api:
     build:
@@ -68,6 +89,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "node", "/app/infra/docker/api-healthcheck.ts"]
       interval: 10s

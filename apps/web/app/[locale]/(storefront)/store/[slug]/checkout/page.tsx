@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { PhoneInput } from "@/components/ui/phone-input";
+import { Select } from "@/components/ui/select";
 import { Link } from "@/i18n/navigation";
 import { apiFetch } from "@/lib/api";
 import { cartTotal, clearCart, getCart, hasMixedCurrencies, type CartItem } from "@/lib/cart";
@@ -126,17 +127,17 @@ export default function CheckoutPage() {
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col gap-3">
           {deliveryMethods.length > 0 && (
-            <select
+            <Select
               value={deliveryMethodType}
               onChange={(e) => setDeliveryMethodType(e.target.value)}
-              className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600"
+              selectClassName="rounded-xl border border-gray-200 py-2.5 text-sm text-gray-600"
             >
               {deliveryMethods.map((m) => (
                 <option key={m.type} value={m.type}>
                   {m.type === "PICKUP" ? t("deliveryPickup") : t("deliveryCourier")}
                 </option>
               ))}
-            </select>
+            </Select>
           )}
 
           <input

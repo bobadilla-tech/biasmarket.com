@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { buttonVariants } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import { apiFetch } from "@/lib/api";
 
 const inputClass =
@@ -92,13 +93,18 @@ export function ContactForm() {
         >
           {t("inquiryType")}
         </label>
-        <select id="inquiryType" name="inquiryType" className={inputClass}>
+        <Select
+          id="inquiryType"
+          name="inquiryType"
+          className="w-full"
+          selectClassName={inputClass.replace("px-4", "pl-4")}
+        >
           <option value="general">{t("inquiryGeneral")}</option>
           <option value="technical">{t("inquiryTechnical")}</option>
           <option value="pricing">{t("inquiryPricing")}</option>
           <option value="partnership">{t("inquiryPartnership")}</option>
           <option value="other">{t("inquiryOther")}</option>
-        </select>
+        </Select>
       </div>
 
       <div>

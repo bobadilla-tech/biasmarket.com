@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { Select } from "@/components/ui/select";
 import { addToCart } from "@/lib/cart";
 
 interface Variant {
@@ -68,10 +69,11 @@ export function ProductCard({ slug, product }: { slug: string; product: Product 
       )}
 
       {product.variants.length > 0 && (
-        <select
+        <Select
           value={variantId}
           onChange={(e) => setVariantId(e.target.value)}
-          className="mt-2 w-full rounded-lg border border-gray-200 px-2 py-1.5 text-xs text-gray-600"
+          className="mt-2 w-full"
+          selectClassName="rounded-lg border border-gray-200 py-1.5 pl-2 text-xs text-gray-600"
         >
           {product.variants.map((v) => (
             <option key={v.id} value={v.id} disabled={v.stock === 0}>
@@ -79,7 +81,7 @@ export function ProductCard({ slug, product }: { slug: string; product: Product 
               {v.stock === 0 ? ` ${t("variantSoldOut")}` : ""}
             </option>
           ))}
-        </select>
+        </Select>
       )}
 
       {outOfStock ? (

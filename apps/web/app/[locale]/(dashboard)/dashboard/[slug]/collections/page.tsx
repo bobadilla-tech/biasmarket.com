@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { Select } from "@/components/ui/select";
 import { apiFetch } from "@/lib/api";
 import { useStore } from "@/lib/use-store";
 import { DashboardNav } from "../dashboard-nav";
@@ -218,10 +219,11 @@ export default function CollectionsPage() {
                 </ul>
 
                 <div className="flex gap-2">
-                  <select
+                  <Select
                     value={selectedProduct[c.id] ?? ""}
                     onChange={(e) => setSelectedProduct((prev) => ({ ...prev, [c.id]: e.target.value }))}
-                    className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-600"
+                    className="flex-1"
+                    selectClassName="rounded-xl border border-gray-200 py-2 pl-3 text-sm text-gray-600"
                   >
                     <option value="">{t("collections.selectProduct")}</option>
                     {products.map((p) => (
@@ -229,7 +231,7 @@ export default function CollectionsPage() {
                         {p.name}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                   <button
                     onClick={() => handleAddProduct(c.id)}
                     className="store-theme-primary-button rounded-xl px-4 py-2 text-sm font-semibold transition"

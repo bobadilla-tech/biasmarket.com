@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronRight,
   ImagePlus,
@@ -23,6 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { useRouter } from "@/i18n/navigation";
 import { buildCustomStorePalette, buildStoreThemeConfig, STORE_PALETTES } from "@/lib/store-theme";
@@ -79,6 +80,7 @@ export default function CreateStorePage() {
   const [customColor, setCustomColor] = useState("#6d28d9");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -306,17 +308,18 @@ export default function CreateStorePage() {
                     </Field>
 
                     <Field label={t("currencyLabel")}>
-                      <select
+                      <Select
                         value={defaultCurrency}
                         onChange={(event) => setDefaultCurrency(event.target.value)}
-                        className="h-12 w-full rounded-[20px] border border-[#e7daf6] bg-[#fcf9ff] px-4 text-sm text-[#311948] outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
+                        className="h-12 w-full"
+                        selectClassName="h-full rounded-[20px] border border-[#e7daf6] bg-[#fcf9ff] text-sm text-[#311948] outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
                       >
                         {SUPPORTED_CURRENCIES.map((currency) => (
                           <option key={currency} value={currency}>
                             {currency}
                           </option>
                         ))}
-                      </select>
+                      </Select>
                     </Field>
                   </div>
 
@@ -351,21 +354,21 @@ export default function CreateStorePage() {
                             {!logoPreviewUrl ? (name || "BM").slice(0, 2).toUpperCase() : ""}
                           </div>
 
-                          <label className="inline-flex cursor-pointer">
-                            <input
-                              type="file"
-                              accept="image/png,image/jpeg"
-                              className="hidden"
-                              onChange={(event) => setLogoFile(event.target.files?.[0] ?? null)}
-                            />
-                            <Button
-                              type="button"
-                              variant="outline"
-                              className="h-11 rounded-2xl border-[#decaf5] bg-white px-4 text-[#6d28d9] shadow-none hover:bg-[#fdf9ff]"
-                            >
-                              {t("logoCta")}
-                            </Button>
-                          </label>
+                          <input
+                            ref={logoInputRef}
+                            type="file"
+                            accept="image/png,image/jpeg"
+                            className="hidden"
+                            onChange={(event) => setLogoFile(event.target.files?.[0] ?? null)}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => logoInputRef.current?.click()}
+                            className="h-11 rounded-2xl border-[#decaf5] bg-white px-4 text-[#6d28d9] shadow-none hover:bg-[#fdf9ff]"
+                          >
+                            {t("logoCta")}
+                          </Button>
                         </div>
                       </CardContent>
                     </Card>

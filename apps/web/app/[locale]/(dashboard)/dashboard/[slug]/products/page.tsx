@@ -2,6 +2,7 @@
 import { Fragment, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { SUPPORTED_CURRENCIES } from "@biasmarket/utils/currency";
+import { Select } from "@/components/ui/select";
 import { apiFetch } from "@/lib/api";
 import { useStore } from "@/lib/use-store";
 import { DashboardNav } from "../dashboard-nav";
@@ -292,17 +293,17 @@ export default function ProductsPage() {
           {imageFile && (
             <p className="mt-2 text-sm text-gray-600">{imageFile.name}</p>
           )}
-          <select
+          <Select
             value={currency}
             onChange={(e) => setCurrency(e.target.value)}
-            className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600"
+            selectClassName="rounded-xl border border-gray-200 py-2.5 text-sm text-gray-600"
           >
             {SUPPORTED_CURRENCIES.map((c) => (
               <option key={c} value={c}>
                 {c}
               </option>
             ))}
-          </select>
+          </Select>
           <input
             type="date"
             aria-label={t("form.availableUntilPlaceholder")}

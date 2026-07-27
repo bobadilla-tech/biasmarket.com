@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { Select } from "@/components/ui/select";
 import { apiFetch } from "@/lib/api";
 import { useStore } from "@/lib/use-store";
 import { DashboardNav } from "../dashboard-nav";
@@ -88,10 +89,10 @@ export default function CategoriesPage() {
             onChange={(e) => setName(e.target.value)}
             className="flex-1 min-w-[160px] rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600"
           />
-          <select
+          <Select
             value={parentId}
             onChange={(e) => setParentId(e.target.value)}
-            className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600"
+            selectClassName="rounded-xl border border-gray-200 py-2.5 text-sm text-gray-600"
           >
             <option value="">{t("categories.noParent")}</option>
             {categories.map((c) => (
@@ -99,7 +100,7 @@ export default function CategoriesPage() {
                 {c.name}
               </option>
             ))}
-          </select>
+          </Select>
           <button
             onClick={handleCreate}
             disabled={loading || !name}

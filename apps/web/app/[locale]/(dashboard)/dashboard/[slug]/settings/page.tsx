@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Bell,
   Building2,
@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { PhoneInput } from "@/components/ui/phone-input";
+import { Select } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -152,6 +153,7 @@ export default function SettingsPage() {
   const [paymentInstructions, setPaymentInstructions] = useState("");
   const [defaultCurrency, setDefaultCurrency] = useState<string>(SUPPORTED_CURRENCIES[0]);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const [selectedPaletteId, setSelectedPaletteId] = useState(STORE_PALETTES[0].id);
 
   const [pickupEnabled, setPickupEnabled] = useState(false);
@@ -421,22 +423,22 @@ export default function SettingsPage() {
                     <p className="text-sm text-[#8f7da8]">{storefrontUrl}</p>
                   </div>
                 </div>
-                <label className="inline-flex cursor-pointer">
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg"
-                    className="hidden"
-                    onChange={(event) => handleUploadLogo(event.target.files?.[0] ?? null)}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="store-theme-secondary-button h-11 rounded-2xl border bg-white px-4 text-sm font-semibold shadow-none"
-                  >
-                    <Upload className="size-4" />
-                    {logoUploading ? t("profile.uploading") : t("profile.upload")}
-                  </Button>
-                </label>
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg"
+                  className="hidden"
+                  onChange={(event) => handleUploadLogo(event.target.files?.[0] ?? null)}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => logoInputRef.current?.click()}
+                  className="store-theme-secondary-button h-11 rounded-2xl border bg-white px-4 text-sm font-semibold shadow-none"
+                >
+                  <Upload className="size-4" />
+                  {logoUploading ? t("profile.uploading") : t("profile.upload")}
+                </Button>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
@@ -467,17 +469,18 @@ export default function SettingsPage() {
                   />
                 </Field>
                 <Field label={t("profile.currencyLabel")}>
-                  <select
+                  <Select
                     value={defaultCurrency}
                     onChange={(event) => setDefaultCurrency(event.target.value)}
-                    className="store-theme-input h-12 w-full rounded-2xl border border-[#e7dcf3] bg-[#fbf8fe] px-4 text-sm text-[#341b55] outline-none"
+                    className="h-12 w-full"
+                    selectClassName="store-theme-input h-full rounded-2xl border border-[#e7dcf3] bg-[#fbf8fe] text-sm text-[#341b55] outline-none"
                   >
                     {SUPPORTED_CURRENCIES.map((currency) => (
                       <option key={currency} value={currency}>
                         {currency}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </Field>
               </div>
 

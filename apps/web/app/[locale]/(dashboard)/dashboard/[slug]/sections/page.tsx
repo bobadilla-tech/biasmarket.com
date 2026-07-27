@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { Select } from "@/components/ui/select";
 import { apiFetch } from "@/lib/api";
 import { useStore } from "@/lib/use-store";
 import { DashboardNav } from "../dashboard-nav";
@@ -136,21 +137,21 @@ export default function SectionsPage() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col gap-3">
-          <select
+          <Select
             value={type}
             onChange={(e) => setType(e.target.value as SectionType)}
-            className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600"
+            selectClassName="rounded-xl border border-gray-200 py-2.5 text-sm text-gray-600"
           >
             <option value="COLLECTION">{t("sections.collection")}</option>
             <option value="BANNER">{t("sections.banner")}</option>
             <option value="TEXT_BLOCK">{t("sections.textBlock")}</option>
-          </select>
+          </Select>
 
           {type === "COLLECTION" && (
-            <select
+            <Select
               value={collectionId}
               onChange={(e) => setCollectionId(e.target.value)}
-              className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600"
+              selectClassName="rounded-xl border border-gray-200 py-2.5 text-sm text-gray-600"
             >
               <option value="">{t("sections.selectCollection")}</option>
               {collections.map((c) => (
@@ -158,7 +159,7 @@ export default function SectionsPage() {
                   {c.name}
                 </option>
               ))}
-            </select>
+            </Select>
           )}
 
           {type === "BANNER" && (
