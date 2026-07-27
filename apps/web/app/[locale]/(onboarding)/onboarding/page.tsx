@@ -17,8 +17,6 @@ export default function OnboardingPage() {
       email,
       password,
       name,
-      // @ts-expect-error - additionalField custom
-      role: "seller",
     });
     if (error) setError(error.message ?? t("genericError"));
     else router.push("/onboarding/create-store");

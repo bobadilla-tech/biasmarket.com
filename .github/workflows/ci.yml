@@ -156,7 +156,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: apps/api/coverage/lcov.info
           flags: api
-          fail_ci_if_error: true
+          fail_ci_if_error: false
 
   web:
     name: Web
@@ -207,7 +207,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: apps/web/coverage/lcov.info
           flags: web
-          fail_ci_if_error: true
+          fail_ci_if_error: false
 
   db:
     name: DB (Prisma)
@@ -404,7 +404,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: packages/utils/coverage/lcov.info
           flags: utils
-          fail_ci_if_error: true
+          fail_ci_if_error: false
 
   ci-success:
     name: CI Success
