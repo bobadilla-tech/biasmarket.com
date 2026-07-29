@@ -19,6 +19,25 @@ export class CreateOrderUseCase {
       throw new BadRequestException('Método de entrega no disponible');
     }
 
+    let pickupPoint: { id: string; label: string } | null = null;
+    if (dto.deliveryMethodType === 'PICKUP') {
+      const hasPoints = await this.prisma.pickupPoint.count({
+        where: { storeId: store.id, enabled: true },
+      });
+      if (hasPoints > 0) {
+        if (!dto.pickupPointId) {
+          throw new BadRequestException('Debes seleccionar un punto de recojo');
+        }
+        const point = await this.prisma.pickupPoint.findUnique({
+          where: { id: dto.pickupPointId },
+        });
+        if (!point || point.storeId !== store.id || !point.enabled) {
+          throw new BadRequestException('Punto de recojo no disponible');
+        }
+        pickupPoint = point;
+      }
+    }
+
     const messageItems: { name: string; quantity: number; unitPrice: number }[] = [];
 
     const order = await this.prisma.$transaction(async (tx) => {
@@ -105,7 +124,10 @@ export class CreateOrderUseCase {
           customerPhone: dto.customerPhone,
           customerName: dto.customerName,
           deliveryMethodType: dto.deliveryMethodType,
-          deliveryDetails: deliveryConfig.details ?? {},
+          deliveryDetails: pickupPoint
+            ? { ...((deliveryConfig.details as Record<string, unknown>) ?? {}), pickupPointLabel: pickupPoint.label }
+            : deliveryConfig.details ?? {},
+          pickupPointId: pickupPoint?.id ?? null,
           totalAmount: finalAmount,
           requiredAmount: finalAmount,
           currency: currency!,
@@ -126,6 +148,7 @@ export class CreateOrderUseCase {
             totalAmount: order.totalAmount.toNumber(),
             currency: order.currency,
             deliveryMethodType: order.deliveryMethodType,
+            pickupPointLabel: pickupPoint?.label ?? null,
             customerName: order.customerName,
             customerPhone: order.customerPhone,
           }),

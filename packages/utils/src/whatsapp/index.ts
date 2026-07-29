@@ -11,12 +11,13 @@ export interface WhatsAppOrderInput {
   totalAmount: number;
   currency: string;
   deliveryMethodType: string;
+  pickupPointLabel?: string | null;
   customerName?: string | null;
   customerPhone: string;
 }
 
 const DELIVERY_METHOD_LABELS: Record<string, string> = {
-  PICKUP: "Retiro en tienda",
+  PICKUP: "Retiro presencial",
   COURIER: "Envío a domicilio",
 };
 
@@ -32,7 +33,9 @@ export const buildWhatsAppOrderMessage = (input: WhatsAppOrderInput): string => 
         `${item.quantity}x ${item.name} - ${item.unitPrice.toFixed(2)} ${input.currency} c/u`,
     ),
     "",
-    `Entrega: ${DELIVERY_METHOD_LABELS[input.deliveryMethodType] ?? input.deliveryMethodType}`,
+    input.pickupPointLabel
+      ? `Entrega: ${DELIVERY_METHOD_LABELS[input.deliveryMethodType] ?? input.deliveryMethodType} — ${input.pickupPointLabel}`
+      : `Entrega: ${DELIVERY_METHOD_LABELS[input.deliveryMethodType] ?? input.deliveryMethodType}`,
     `*Total: ${input.totalAmount.toFixed(2)} ${input.currency}*`,
     "",
     input.customerName ? `Cliente: ${input.customerName}` : `Contacto: ${input.customerPhone}`,

@@ -5,8 +5,8 @@ import {
   Bell,
   Building2,
   CreditCard,
-  MapPin,
   Palette,
+  Plus,
   Store,
   Truck,
   Upload,
@@ -43,6 +43,15 @@ interface DeliveryMethod {
   enabled: boolean;
   details: Record<string, unknown>;
 }
+
+interface PickupPoint {
+  id: string;
+  label: string;
+  enabled: boolean;
+  sortOrder: number;
+}
+
+const isNewPickupPoint = (id: string) => id.startsWith("new:");
 
 interface NotificationSetting {
   key: "newOrder" | "paymentReview" | "lowStock" | "orderDelivered" | "weeklySummary";
@@ -157,7 +166,9 @@ export default function SettingsPage() {
   const [selectedPaletteId, setSelectedPaletteId] = useState(STORE_PALETTES[0].id);
 
   const [pickupEnabled, setPickupEnabled] = useState(false);
-  const [pickupAddress, setPickupAddress] = useState("");
+  const [pickupPoints, setPickupPoints] = useState<PickupPoint[]>([]);
+  const [newPointLabel, setNewPointLabel] = useState("");
+  const [deletedPointIds, setDeletedPointIds] = useState<string[]>([]);
   const [courierEnabled, setCourierEnabled] = useState(false);
   const [courierCost, setCourierCost] = useState("");
 
@@ -188,14 +199,42 @@ export default function SettingsPage() {
 
   const loadDeliveryMethods = async () => {
     if (!storeId) return;
-    const methods = await apiFetch(`/stores/${storeId}/delivery-methods`);
+    const [methods, points] = await Promise.all([
+      apiFetch(`/stores/${storeId}/delivery-methods`),
+      apiFetch(`/stores/${storeId}/pickup-points`),
+    ]);
     const pickup = (methods as DeliveryMethod[]).find((method) => method.type === "PICKUP");
     const courier = (methods as DeliveryMethod[]).find((method) => method.type === "COURIER");
 
     setPickupEnabled(pickup?.enabled ?? false);
-    setPickupAddress((pickup?.details?.address as string) ?? "");
+    setPickupPoints(points as PickupPoint[]);
+    setDeletedPointIds([]);
     setCourierEnabled(courier?.enabled ?? false);
     setCourierCost(String(courier?.details?.estimatedCost ?? ""));
+  };
+
+  const handleAddPoint = () => {
+    if (!newPointLabel.trim()) return;
+    setPickupPoints((prev) => [
+      ...prev,
+      { id: `new:${Date.now()}`, label: newPointLabel.trim(), enabled: true, sortOrder: prev.length },
+    ]);
+    setNewPointLabel("");
+  };
+
+  const handleRemovePoint = (id: string) => {
+    setPickupPoints((prev) => prev.filter((point) => point.id !== id));
+    if (!isNewPickupPoint(id)) {
+      setDeletedPointIds((prev) => [...prev, id]);
+    }
+  };
+
+  const handleTogglePoint = (id: string, enabled: boolean) => {
+    setPickupPoints((prev) => prev.map((point) => (point.id === id ? { ...point, enabled } : point)));
+  };
+
+  const handleUpdatePointLabel = (id: string, label: string) => {
+    setPickupPoints((prev) => prev.map((point) => (point.id === id ? { ...point, label } : point)));
   };
 
   useEffect(() => {
@@ -285,7 +324,7 @@ export default function SettingsPage() {
           body: JSON.stringify({
             type: "PICKUP",
             enabled: pickupEnabled,
-            details: { address: pickupAddress },
+            details: {},
           }),
         }),
         apiFetch(`/stores/${storeId}/delivery-methods`, {
@@ -296,6 +335,33 @@ export default function SettingsPage() {
             details: { estimatedCost: Number(courierCost || 0) },
           }),
         }),
+        ...pickupPoints
+          .filter((point) => isNewPickupPoint(point.id))
+          .map((point) =>
+            apiFetch(`/stores/${storeId}/pickup-points`, {
+              method: "POST",
+              body: JSON.stringify({
+                label: point.label,
+                enabled: point.enabled,
+                sortOrder: point.sortOrder,
+              }),
+            }),
+          ),
+        ...pickupPoints
+          .filter((point) => !isNewPickupPoint(point.id))
+          .map((point) =>
+            apiFetch(`/stores/${storeId}/pickup-points/${point.id}`, {
+              method: "PATCH",
+              body: JSON.stringify({
+                label: point.label,
+                enabled: point.enabled,
+                sortOrder: point.sortOrder,
+              }),
+            }),
+          ),
+        ...deletedPointIds.map((id) =>
+          apiFetch(`/stores/${storeId}/pickup-points/${id}`, { method: "DELETE" }),
+        ),
       ]);
       setSavedSection("delivery");
       await loadDeliveryMethods();
@@ -671,15 +737,53 @@ export default function SettingsPage() {
                   onChange={setPickupEnabled}
                 />
 
-                <Field label={t("delivery.pickupAddressLabel")}>
-                  <div className="relative">
-                    <MapPin className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[#ab92c6]" />
-                    <Input
-                      value={pickupAddress}
-                      onChange={(event) => setPickupAddress(event.target.value)}
-                      placeholder={t("delivery.pickupAddressPlaceholder")}
-                      className="store-theme-input h-12 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] pl-11 text-[#341b55] shadow-none"
-                    />
+                <Field label={t("delivery.pickupPointsLabel")}>
+                  <div className="space-y-2">
+                    {pickupPoints.length === 0 ? (
+                      <p className="text-xs text-[#9582ad]">{t("delivery.noPickupPoints")}</p>
+                    ) : (
+                      pickupPoints.map((point) => (
+                        <div
+                          key={point.id}
+                          className="flex items-center gap-3 rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3"
+                        >
+                          <Switch
+                            checked={point.enabled}
+                            onCheckedChange={(enabled) => handleTogglePoint(point.id, enabled)}
+                          />
+                          <Input
+                            value={point.label}
+                            onChange={(event) => handleUpdatePointLabel(point.id, event.target.value)}
+                            className="store-theme-input h-10 rounded-xl border-[#e7dcf3] bg-white text-[#341b55] shadow-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePoint(point.id)}
+                            className="text-lg leading-none text-[var(--store-primary)]"
+                            aria-label={t("delivery.removePickupPoint")}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))
+                    )}
+                    <div className="flex gap-2">
+                      <Input
+                        value={newPointLabel}
+                        onChange={(event) => setNewPointLabel(event.target.value)}
+                        placeholder={t("delivery.pickupPointPlaceholder")}
+                        className="store-theme-input h-11 rounded-2xl border-[#e7dcf3] bg-white text-[#341b55] shadow-none"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleAddPoint}
+                        className="store-theme-secondary-button h-11 shrink-0 rounded-2xl border bg-white px-4 text-sm font-semibold shadow-none"
+                      >
+                        <Plus className="size-4" />
+                        {t("delivery.addPickupPoint")}
+                      </Button>
+                    </div>
                   </div>
                 </Field>
 

@@ -28,6 +28,10 @@ export class CreateOrderDto {
   @IsIn(['PICKUP', 'COURIER'])
   deliveryMethodType: 'PICKUP' | 'COURIER';
 
+  @IsOptional()
+  @IsString()
+  pickupPointId?: string;
+
   @IsString()
   @MinLength(6)
   customerPhone: string;

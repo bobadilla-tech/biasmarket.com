@@ -15,6 +15,12 @@ interface DeliveryMethod {
   details: Record<string, unknown>;
 }
 
+interface PickupPoint {
+  id: string;
+  label: string;
+  enabled: boolean;
+}
+
 export default function CheckoutPage() {
   const t = useTranslations("storefront.checkoutPage");
   const { slug } = useParams<{ slug: string }>();
@@ -22,6 +28,8 @@ export default function CheckoutPage() {
   const [deliveryMethods, setDeliveryMethods] = useState<DeliveryMethod[]>([]);
   const [deliveryMethodsLoaded, setDeliveryMethodsLoaded] = useState(false);
   const [deliveryMethodType, setDeliveryMethodType] = useState<string>("");
+  const [pickupPoints, setPickupPoints] = useState<PickupPoint[]>([]);
+  const [pickupPointId, setPickupPointId] = useState<string>("");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
@@ -40,6 +48,12 @@ export default function CheckoutPage() {
       })
       .catch(() => setDeliveryMethods([]))
       .finally(() => setDeliveryMethodsLoaded(true));
+    apiFetch(`/stores/${slug}/public/pickup-points`)
+      .then((points: PickupPoint[]) => {
+        setPickupPoints(points);
+        if (points[0]) setPickupPointId(points[0].id);
+      })
+      .catch(() => setPickupPoints([]));
   }, [slug]);
 
   const handleSubmit = async () => {
@@ -50,6 +64,8 @@ export default function CheckoutPage() {
         method: "POST",
         body: JSON.stringify({
           deliveryMethodType,
+          pickupPointId:
+            deliveryMethodType === "PICKUP" && pickupPointId ? pickupPointId : undefined,
           customerName: customerName || undefined,
           customerPhone,
           customerEmail: customerEmail || undefined,
@@ -140,6 +156,20 @@ export default function CheckoutPage() {
             </Select>
           )}
 
+          {deliveryMethodType === "PICKUP" && pickupPoints.length > 0 && (
+            <Select
+              value={pickupPointId}
+              onChange={(e) => setPickupPointId(e.target.value)}
+              selectClassName="rounded-xl border border-gray-200 py-2.5 text-sm text-gray-600"
+            >
+              {pickupPoints.map((point) => (
+                <option key={point.id} value={point.id}>
+                  {point.label}
+                </option>
+              ))}
+            </Select>
+          )}
+
           <input
             placeholder={t("namePlaceholder")}
             value={customerName}
@@ -173,7 +203,13 @@ export default function CheckoutPage() {
 
         <button
           onClick={handleSubmit}
-          disabled={loading || !customerPhone || !deliveryMethodType || mixedCurrencies}
+          disabled={
+            loading ||
+            !customerPhone ||
+            !deliveryMethodType ||
+            mixedCurrencies ||
+            (deliveryMethodType === "PICKUP" && pickupPoints.length > 0 && !pickupPointId)
+          }
           className="rounded-xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-60"
         >
           {loading ? t("submitting") : t("submit")}

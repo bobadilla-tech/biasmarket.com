@@ -18,7 +18,7 @@
   "checkoutPage": {
     "title": "Confirmar pedido",
     "total": "Total",
-    "deliveryPickup": "Retiro en tienda",
+    "deliveryPickup": "Retiro presencial",
     "deliveryCourier": "Envío por courier",
     "namePlaceholder": "Nombre",
     "phonePlaceholder": "Teléfono (WhatsApp)",

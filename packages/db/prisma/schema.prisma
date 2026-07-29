@@ -52,6 +52,7 @@ model Store {
   customers       Customer[]
   paymentMethods  PaymentMethodConfig[]
   deliveryMethods DeliveryMethodConfig[]
+  pickupPoints    PickupPoint[]
 
   @@index([ownerId])
 }
@@ -190,6 +191,7 @@ model Order {
   customerName       String?
   deliveryMethodType DeliveryMethodType
   deliveryDetails    Json
+  pickupPointId      String?
   paymentStatus      PaymentStatus      @default(PENDING_PAYMENT)
   fulfillmentStatus  FulfillmentStatus  @default(ORDERING)
   totalAmount        Decimal            @db.Decimal(10, 2)
@@ -198,10 +200,11 @@ model Order {
   expiresAt          DateTime
   createdAt          DateTime           @default(now())
 
-  store    Store          @relation(fields: [storeId], references: [id])
-  customer Customer?      @relation(fields: [customerId], references: [id])
-  items    OrderItem[]
-  proofs   PaymentProof[]
+  store       Store          @relation(fields: [storeId], references: [id])
+  customer    Customer?      @relation(fields: [customerId], references: [id])
+  pickupPoint PickupPoint?   @relation(fields: [pickupPointId], references: [id], onDelete: SetNull)
+  items       OrderItem[]
+  proofs      PaymentProof[]
 
   @@index([storeId, paymentStatus])
   @@index([storeId, createdAt])
@@ -298,6 +301,21 @@ model DeliveryMethodConfig {
 
   @@unique([storeId, type])
   @@index([storeId])
+}
+
+model PickupPoint {
+  id        String   @id @default(cuid())
+  storeId   String
+  label     String
+  enabled   Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  store  Store   @relation(fields: [storeId], references: [id])
+  orders Order[]
+
+  @@index([storeId])
+  @@index([storeId, enabled])
 }
 
 model Customer {

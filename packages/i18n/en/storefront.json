@@ -18,7 +18,7 @@
   "checkoutPage": {
     "title": "Confirm order",
     "total": "Total",
-    "deliveryPickup": "Store pickup",
+    "deliveryPickup": "In-person pickup",
     "deliveryCourier": "Courier shipping",
     "namePlaceholder": "Name",
     "phonePlaceholder": "Phone (WhatsApp)",

@@ -27,6 +27,7 @@ describe('CreateOrderUseCase', () => {
   let prisma: {
     store: { findUnique: Mock };
     deliveryMethodConfig: { findUnique: Mock };
+    pickupPoint: { count: Mock; findUnique: Mock };
     $transaction: Mock;
     product: { findUnique: Mock };
     productVariant: { findUnique: Mock; update: Mock };
@@ -59,6 +60,7 @@ describe('CreateOrderUseCase', () => {
     prisma = {
       store: { findUnique: vi.fn() },
       deliveryMethodConfig: { findUnique: vi.fn() },
+      pickupPoint: { count: vi.fn(), findUnique: vi.fn() },
       $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(prisma)),
       product: { findUnique: vi.fn() },
       productVariant: { findUnique: vi.fn(), update: vi.fn() },
@@ -73,6 +75,7 @@ describe('CreateOrderUseCase', () => {
 
     prisma.store.findUnique.mockResolvedValue(store);
     prisma.deliveryMethodConfig.findUnique.mockResolvedValue(deliveryConfig);
+    prisma.pickupPoint.count.mockResolvedValue(0);
   });
 
   it('throws NotFoundException when the store does not exist', async () => {
@@ -237,5 +240,82 @@ describe('CreateOrderUseCase', () => {
     const result = await useCase.execute(slug, dto);
 
     expect(result.whatsappUrl).toBeNull();
+  });
+
+  describe('pickup points', () => {
+    const point = { id: 'point-1', storeId: store.id, label: 'Alameda 28 de Julio', enabled: true };
+
+    beforeEach(() => {
+      prisma.product.findUnique.mockResolvedValue({
+        id: 'product-1',
+        storeId: store.id,
+        status: 'PUBLISHED',
+        deletedAt: null,
+        price: new FakeDecimal(10),
+        currency: 'PEN',
+        name: 'Widget',
+      });
+      prisma.order.create.mockResolvedValue({
+        id: 'order-1',
+        totalAmount: new FakeDecimal(20),
+        currency: 'PEN',
+        deliveryMethodType: 'PICKUP',
+        customerName: 'Jane',
+        customerPhone: dto.customerPhone,
+      });
+    });
+
+    it('throws BadRequestException when the store has enabled points but none was selected', async () => {
+      prisma.pickupPoint.count.mockResolvedValue(1);
+
+      await expect(useCase.execute(slug, dto)).rejects.toThrow(BadRequestException);
+    });
+
+    it('throws BadRequestException when the selected point belongs to a different store', async () => {
+      prisma.pickupPoint.count.mockResolvedValue(1);
+      prisma.pickupPoint.findUnique.mockResolvedValue({ ...point, storeId: 'other-store' });
+
+      await expect(
+        useCase.execute(slug, { ...dto, pickupPointId: point.id }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('throws BadRequestException when the selected point is disabled', async () => {
+      prisma.pickupPoint.count.mockResolvedValue(1);
+      prisma.pickupPoint.findUnique.mockResolvedValue({ ...point, enabled: false });
+
+      await expect(
+        useCase.execute(slug, { ...dto, pickupPointId: point.id }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('succeeds with pickupPointId null when the store has zero configured points', async () => {
+      prisma.pickupPoint.count.mockResolvedValue(0);
+
+      await useCase.execute(slug, dto);
+
+      expect(prisma.order.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ pickupPointId: null }),
+        }),
+      );
+    });
+
+    it('snapshots the pickup point label into deliveryDetails and the whatsapp message', async () => {
+      prisma.pickupPoint.count.mockResolvedValue(1);
+      prisma.pickupPoint.findUnique.mockResolvedValue(point);
+
+      const result = await useCase.execute(slug, { ...dto, pickupPointId: point.id });
+
+      expect(prisma.order.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            pickupPointId: point.id,
+            deliveryDetails: expect.objectContaining({ pickupPointLabel: point.label }),
+          }),
+        }),
+      );
+      expect(result.whatsappUrl).toContain(encodeURIComponent(point.label));
+    });
   });
 });
