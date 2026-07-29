@@ -12,8 +12,9 @@ export class InvalidOrderTransitionError extends Error {
 // sellers may approve/reject directly from PENDING_PAYMENT based on the
 // WhatsApp conversation.
 const PAYMENT_TRANSITIONS: Record<PaymentStatus, PaymentStatus[]> = {
-  PENDING_PAYMENT: ['PAYMENT_SUBMITTED', 'VERIFIED', 'REJECTED', 'CANCELLED'],
-  PAYMENT_SUBMITTED: ['VERIFIED', 'REJECTED'],
+ PENDING_PAYMENT: ['PARTIALLY_PAID', 'PAYMENT_SUBMITTED', 'VERIFIED', 'REJECTED', 'CANCELLED'],
+  PARTIALLY_PAID: ['PARTIALLY_PAID', 'PAYMENT_SUBMITTED', 'VERIFIED', 'REJECTED', 'CANCELLED'],
+  PAYMENT_SUBMITTED: ['PARTIALLY_PAID', 'VERIFIED', 'REJECTED'],
   VERIFIED: [],
   REJECTED: [],
   CANCELLED: [],

@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Receipt, Wallet } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Sheet,
   SheetContent,
@@ -26,18 +27,30 @@ interface OrderItemRow {
   variant: { id: string; name: string } | null;
 }
 
+interface OrderPaymentRow {
+  id: string;
+  amount: string;
+  note?: string | null;
+  createdAt: string;
+}
+
 interface Order {
   id: string;
   customerName: string | null;
   customerPhone: string;
   totalAmount: string;
+  requiredAmount: string;
+  paidAmount: number;
+  pendingAmount: number;
+  paidPercentage: number;
   currency: string;
-  paymentStatus: "PENDING_PAYMENT" | "PAYMENT_SUBMITTED" | "VERIFIED" | "REJECTED" | "CANCELLED";
+  paymentStatus: "PENDING_PAYMENT" | "PARTIALLY_PAID" | "PAYMENT_SUBMITTED" | "VERIFIED" | "REJECTED" | "CANCELLED";
   fulfillmentStatus: "ORDERING" | "IN_TRANSIT" | "READY" | "COMPLETED";
   deliveryMethodType: "PICKUP" | "COURIER";
   deliveryDetails: Record<string, unknown> | null;
   createdAt: string;
   items: OrderItemRow[];
+  payments: OrderPaymentRow[];
 }
 
 const NEXT_FULFILLMENT: Record<string, string | undefined> = {
@@ -117,6 +130,9 @@ function getOrderStatus(order: Order, t: any) {
   if (order.paymentStatus === "CANCELLED") {
     return { label: t("status.cancelled"), className: "bg-slate-100 text-slate-700" };
   }
+  if (order.paymentStatus === "PARTIALLY_PAID") {
+    return { label: t("status.partial"), className: "border border-sky-200 bg-gradient-to-r from-sky-50 to-blue-50 text-sky-800 shadow-sm" };
+  }
   if (order.paymentStatus !== "VERIFIED") {
     return { label: t("status.toConfirm"), className: "bg-violet-50 text-violet-700" };
   }
@@ -153,6 +169,9 @@ export default function OrdersPage() {
   const [activeTab, setActiveTab] = useState<OrdersTab>("all");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentNote, setPaymentNote] = useState("");
+  const [paymentSubmitting, setPaymentSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadOrders = async () => {
@@ -191,6 +210,25 @@ export default function OrdersPage() {
       await loadOrders();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  const handleRegisterPayment = async (orderId: string) => {
+    const amount = Number(paymentAmount);
+    if (!storeId || !Number.isFinite(amount) || amount <= 0) return;
+    setPaymentSubmitting(true);
+    try {
+      await apiFetch(`/stores/${storeId}/orders/${orderId}/payments`, {
+        method: "POST",
+        body: JSON.stringify({ amount, note: paymentNote || undefined }),
+      });
+      setPaymentAmount("");
+      setPaymentNote("");
+      await loadOrders();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setPaymentSubmitting(false);
     }
   };
 
@@ -406,23 +444,112 @@ export default function OrdersPage() {
                 </SheetHeader>
 
                 <div className="space-y-6 px-4 pb-24 pt-4">
-                  <div className="space-y-2 rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] p-4">
+                  {/* Summary Block */}
+                  <div className="space-y-4 rounded-[24px] border border-[#eadcf8] bg-gradient-to-b from-[#fcf9ff] to-white p-5 shadow-sm">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-[#8f7da8]">{t("details.total")}</span>
-                      <span className="font-semibold text-[#2d1649]">
+                      <span className="font-medium text-[#8f7da8]">{t("details.total")}</span>
+                      <span className="font-bold text-[#2d1649]">
                         {selectedOrder.currency} {selectedOrder.totalAmount}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-[#8f7da8]">{t("details.delivery")}</span>
-                      <span className="font-medium text-[#2d1649]">{getDeliveryLabel(selectedOrder, t)}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-[#8f7da8]">{t("details.date")}</span>
-                      <span className="font-medium text-[#2d1649]">
-                        {formatOrderDate(selectedOrder.createdAt, locale, t)}
+                      <span className="font-medium text-[#8f7da8]">{t("details.paid")}</span>
+                      <span className="font-bold text-[#159a63]">
+                        {selectedOrder.currency} {selectedOrder.paidAmount.toFixed(2)}
                       </span>
                     </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium text-[#8f7da8]">{t("details.pending")}</span>
+                      <span className="font-bold text-[#d11d52]">
+                        {selectedOrder.currency} {selectedOrder.pendingAmount.toFixed(2)}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2.5 border-t border-[#f3ebff] pt-3">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-semibold text-[#2d1649]">{t("details.progress")}</span>
+                        <span className="font-bold text-[var(--store-primary)]">{Math.round(selectedOrder.paidPercentage)}%</span>
+                      </div>
+                      <div className="h-2.5 overflow-hidden rounded-full bg-[#f0e7f8] shadow-inner">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-[var(--store-accent)] to-[var(--store-primary)] transition-all duration-500"
+                          style={{ width: `${selectedOrder.paidPercentage}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 border-t border-[#f3ebff] pt-3">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium text-[#8f7da8]">{t("details.delivery")}</span>
+                        <span className="font-semibold text-[#2d1649]">{getDeliveryLabel(selectedOrder, t)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium text-[#8f7da8]">{t("details.date")}</span>
+                        <span className="font-semibold text-[#2d1649]">
+                          {formatOrderDate(selectedOrder.createdAt, locale, t)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Payments Block */}
+                  <div className="space-y-4 rounded-[24px] border border-[#eadcf8] bg-white p-5 shadow-sm">
+                    <div className="flex items-center gap-2 text-[#2d1649]">
+                      <Wallet className="size-5 text-[var(--store-primary)]" />
+                      <h3 className="font-semibold">{t("details.addPayment")}</h3>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Input
+                        value={paymentAmount}
+                        onChange={(event) => setPaymentAmount(event.target.value)}
+                        inputMode="decimal"
+                        placeholder={t("details.paymentAmountPlaceholder")}
+                        className="store-theme-input h-11 rounded-xl border-[#e7dcf3] bg-[#fbf8fe] shadow-none"
+                      />
+                      <Button
+                        type="button"
+                        onClick={() => handleRegisterPayment(selectedOrder.id)}
+                        disabled={paymentSubmitting || selectedOrder.pendingAmount <= 0 || !paymentAmount}
+                        className="store-theme-primary-button h-11 shrink-0 rounded-xl px-5 text-sm font-semibold hover:opacity-100"
+                      >
+                        {t("details.registerPayment")}
+                      </Button>
+                    </div>
+                    <Input
+                      value={paymentNote}
+                      onChange={(event) => setPaymentNote(event.target.value)}
+                      placeholder={t("details.paymentNotePlaceholder")}
+                      className="store-theme-input h-11 rounded-xl border-[#e7dcf3] bg-[#fbf8fe] shadow-none"
+                    />
+
+                    {selectedOrder.payments.length > 0 && (
+                      <div className="space-y-3 border-t border-[#f3ebff] pt-4">
+                        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#927fac]">
+                          {t("details.paymentHistory", { fallback: "Historial de abonos" })}
+                        </p>
+                        <div className="space-y-2">
+                          {selectedOrder.payments.map((payment) => (
+                            <div key={payment.id} className="flex items-start gap-3 rounded-xl border border-[#f0e7f8] bg-[#fcf9ff] p-3 transition hover:bg-white">
+                              <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-[#f0e7f8] text-[var(--store-primary)]">
+                                <Receipt className="size-3.5" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="font-bold text-[#2d1649]">
+                                    {selectedOrder.currency} {payment.amount}
+                                  </span>
+                                  <span className="text-[11px] font-medium text-[#8f7da8]">
+                                    {formatOrderDate(payment.createdAt, locale, t)}
+                                  </span>
+                                </div>
+                                {payment.note ? <p className="mt-1 truncate text-xs text-[#6e5a87]">{payment.note}</p> : null}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-3">
