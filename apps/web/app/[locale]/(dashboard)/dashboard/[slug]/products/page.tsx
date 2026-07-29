@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Grid2X2, LayoutList, Plus, Search, Upload } from "lucide-react";
+import { Grid2X2, LayoutList, Plus, Search,Store,  Upload } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { SUPPORTED_CURRENCIES } from "@biasmarket/utils/currency";
@@ -89,16 +89,22 @@ function ProductsHeader({
   search,
   onSearchChange,
   onOpenCreate,
+  onViewStorefront,
   searchPlaceholder,
   addProductLabel,
+  viewStorefrontLabel,
+  viewStorefrontDisabled,
 }: {
   title: string;
   subtitle: string;
   search: string;
   onSearchChange: (value: string) => void;
   onOpenCreate: () => void;
+  onViewStorefront: () => void;
   searchPlaceholder: string;
   addProductLabel: string;
+  viewStorefrontLabel: string;
+  viewStorefrontDisabled?: boolean;
 }) {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -116,6 +122,16 @@ function ProductsHeader({
             className="store-theme-input h-12 rounded-2xl border-[#eadcf7] bg-white pl-11 text-[#341b55] shadow-none"
           />
         </div>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onViewStorefront}
+          disabled={viewStorefrontDisabled}
+          className="store-theme-secondary-button h-12 rounded-2xl border bg-white px-5 text-sm font-semibold shadow-none"
+        >
+          <Store className="size-4" />
+          {viewStorefrontLabel}
+        </Button>
         <Button
           onClick={onOpenCreate}
           className="store-theme-primary-button h-12 rounded-2xl px-5 text-sm font-semibold hover:opacity-100"
@@ -1383,8 +1399,14 @@ export default function ProductsPage() {
           search={search}
           onSearchChange={setSearch}
           onOpenCreate={() => setCreateOpen(true)}
+          onViewStorefront={() => {
+            if (!storeSlug) return;
+            router.push(`/store/${storeSlug}`);
+          }}
           searchPlaceholder={t("products.searchPlaceholder")}
           addProductLabel={t("products.createTitle")}
+          viewStorefrontLabel={t("viewStorefront")}
+          viewStorefrontDisabled={!storeSlug}
         />
 
         <div className="flex flex-wrap items-center justify-between gap-3">
