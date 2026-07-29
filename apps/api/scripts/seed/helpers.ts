@@ -99,6 +99,23 @@ export async function ensureDeliveryMethod(
   });
 }
 
+export async function ensurePickupPoint(
+  prisma: PrismaClient,
+  input: { id: string; storeId: string; label: string; enabled?: boolean; sortOrder?: number },
+) {
+  const data = {
+    storeId: input.storeId,
+    label: input.label,
+    enabled: input.enabled ?? true,
+    sortOrder: input.sortOrder ?? 0,
+  };
+  return prisma.pickupPoint.upsert({
+    where: { id: input.id },
+    update: data,
+    create: { id: input.id, ...data },
+  });
+}
+
 export async function ensureCategory(
   prisma: PrismaClient,
   input: { storeId: string; parentId: string | null; name: string },
@@ -269,6 +286,7 @@ export async function ensureOrder(
     customerName?: string | null;
     deliveryMethodType: DeliveryMethodType;
     deliveryDetails: Record<string, unknown>;
+    pickupPointId?: string | null;
     paymentStatus: PaymentStatus;
     fulfillmentStatus: FulfillmentStatus;
     totalAmount: string;
@@ -285,6 +303,7 @@ export async function ensureOrder(
     customerName: input.customerName ?? null,
     deliveryMethodType: input.deliveryMethodType,
     deliveryDetails: json(input.deliveryDetails),
+    pickupPointId: input.pickupPointId ?? null,
     paymentStatus: input.paymentStatus,
     fulfillmentStatus: input.fulfillmentStatus,
     totalAmount: input.totalAmount,

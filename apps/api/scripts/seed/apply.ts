@@ -15,6 +15,19 @@ export async function applyStoreFixture(prisma: PrismaClient, batch: string, spe
     await db.ensureDeliveryMethod(prisma, { storeId: store.id, type: dm.type, details: dm.details });
   }
 
+  const pickupPointIds = new Map<string, string>();
+  for (const [index, point] of spec.pickupPoints.entries()) {
+    const id = seedId(batch, 'pickup-point', store.slug, point.key);
+    await db.ensurePickupPoint(prisma, {
+      id,
+      storeId: store.id,
+      label: point.label,
+      enabled: point.enabled,
+      sortOrder: index,
+    });
+    pickupPointIds.set(point.key, id);
+  }
+
   const categoryIds = new Map<string, string>();
   for (const cat of spec.categories.filter((c) => !c.parentKey)) {
     const row = await db.ensureCategory(prisma, { storeId: store.id, parentId: null, name: cat.name });
@@ -109,10 +122,18 @@ export async function applyStoreFixture(prisma: PrismaClient, batch: string, spe
       resolvedItems.push({ ...item, unitPrice });
     }
 
-    const deliveryDetails =
+    const baseDeliveryDetails =
       spec.deliveryMethods.find((d) => d.type === order.deliveryMethodType)?.details ?? {};
-    const deliveryCost = Number((deliveryDetails as Record<string, unknown>)['estimatedCost'] ?? 0);
+    const deliveryCost = Number((baseDeliveryDetails as Record<string, unknown>)['estimatedCost'] ?? 0);
     const finalAmount = (subtotal + deliveryCost).toFixed(2);
+
+    const pickupPointId = order.pickupPointKey ? (pickupPointIds.get(order.pickupPointKey) ?? null) : null;
+    const pickupPointLabel = order.pickupPointKey
+      ? spec.pickupPoints.find((p) => p.key === order.pickupPointKey)?.label
+      : undefined;
+    const deliveryDetails = pickupPointLabel
+      ? { ...baseDeliveryDetails, pickupPointLabel }
+      : baseDeliveryDetails;
 
     const createdAt = order.createdDaysAgo
       ? new Date(Date.now() - order.createdDaysAgo * 24 * 60 * 60 * 1000)
@@ -126,6 +147,7 @@ export async function applyStoreFixture(prisma: PrismaClient, batch: string, spe
       customerName: order.customerName,
       deliveryMethodType: order.deliveryMethodType,
       deliveryDetails,
+      pickupPointId,
       paymentStatus: order.paymentStatus,
       fulfillmentStatus: order.fulfillmentStatus,
       totalAmount: finalAmount,

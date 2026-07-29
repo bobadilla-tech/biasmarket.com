@@ -21,7 +21,7 @@ describe("buildWhatsAppOrderMessage", () => {
     expect(message).toContain("Ref: #ABCDEF");
     expect(message).toContain("2x Album v1 - 15.00 PEN c/u");
     expect(message).toContain("1x Photocard - 5.00 PEN c/u");
-    expect(message).toContain("Entrega: Retiro en tienda");
+    expect(message).toContain("Entrega: Retiro presencial");
     expect(message).toContain("*Total: 35.00 PEN*");
   });
 

@@ -737,7 +737,10 @@ export default function SettingsPage() {
                   onChange={setPickupEnabled}
                 />
 
-                <Field label={t("delivery.pickupPointsLabel")}>
+                <div className="block space-y-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#927fac]">
+                    {t("delivery.pickupPointsLabel")}
+                  </span>
                   <div className="space-y-2">
                     {pickupPoints.length === 0 ? (
                       <p className="text-xs text-[#9582ad]">{t("delivery.noPickupPoints")}</p>
@@ -759,7 +762,7 @@ export default function SettingsPage() {
                           <button
                             type="button"
                             onClick={() => handleRemovePoint(point.id)}
-                            className="text-lg leading-none text-[var(--store-primary)]"
+                            className="text-lg leading-none text-(--store-primary)"
                             aria-label={t("delivery.removePickupPoint")}
                           >
                             ×
@@ -785,7 +788,7 @@ export default function SettingsPage() {
                       </Button>
                     </div>
                   </div>
-                </Field>
+                </div>
 
                 <ToggleRow
                   label={t("delivery.courierToggle")}

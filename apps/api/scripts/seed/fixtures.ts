@@ -60,16 +60,24 @@ export interface OrderSpec {
   customerName?: string;
   customerEmail?: string;
   deliveryMethodType: 'PICKUP' | 'COURIER';
+  pickupPointKey?: string;
   paymentStatus: 'PENDING_PAYMENT' | 'PAYMENT_SUBMITTED' | 'VERIFIED' | 'REJECTED' | 'CANCELLED';
   fulfillmentStatus: 'ORDERING' | 'IN_TRANSIT' | 'READY' | 'COMPLETED';
   items: OrderItemSpec[];
   createdDaysAgo?: number;
 }
 
+export interface PickupPointSpec {
+  key: string;
+  label: string;
+  enabled?: boolean;
+}
+
 export interface StoreFixtureSpec {
   seller: { email: string; name: string };
   store: { name: string; slug: string; whatsappNumber: string; defaultCurrency: string };
   deliveryMethods: { type: 'PICKUP' | 'COURIER'; details: Record<string, unknown> }[];
+  pickupPoints: PickupPointSpec[];
   categories: CategorySpec[];
   products: ProductSpec[];
   collections: CollectionSpec[];
@@ -93,6 +101,11 @@ function camilaStore(): StoreFixtureSpec {
     deliveryMethods: [
       { type: 'PICKUP', details: {} },
       { type: 'COURIER', details: { estimatedCost: '8.00' } },
+    ],
+    pickupPoints: [
+      { key: 'alameda', label: 'Alameda 28 de Julio' },
+      { key: 'plaza-norte', label: 'Plaza Norte' },
+      { key: 'estacion-angamos', label: 'Estación Angamos - Línea 1', enabled: false },
     ],
     categories: [
       { key: 'albumes', name: 'Álbumes' },
@@ -216,6 +229,7 @@ function camilaStore(): StoreFixtureSpec {
         customerPhone: '+51900000001',
         customerName: 'Ana Test',
         deliveryMethodType: 'PICKUP',
+        pickupPointKey: 'alameda',
         paymentStatus: 'PENDING_PAYMENT',
         fulfillmentStatus: 'ORDERING',
         items: [{ productKey: 'photocards', quantity: 2 }],
@@ -243,6 +257,7 @@ function camilaStore(): StoreFixtureSpec {
         key: 'verified-completed',
         customerPhone: '+51900000004',
         deliveryMethodType: 'PICKUP',
+        pickupPointKey: 'plaza-norte',
         paymentStatus: 'VERIFIED',
         fulfillmentStatus: 'COMPLETED',
         items: [{ productKey: 'lightstick-v2', variantKey: 'std', quantity: 2 }],
@@ -252,6 +267,7 @@ function camilaStore(): StoreFixtureSpec {
         key: 'rejected',
         customerPhone: '+51900000005',
         deliveryMethodType: 'PICKUP',
+        pickupPointKey: 'alameda',
         paymentStatus: 'REJECTED',
         fulfillmentStatus: 'ORDERING',
         items: [{ productKey: 'photocard-override', variantKey: 'gold', quantity: 1 }],
@@ -283,6 +299,7 @@ function kpopCornerStore(): StoreFixtureSpec {
       { type: 'PICKUP', details: {} },
       { type: 'COURIER', details: { estimatedCost: '10.00' } },
     ],
+    pickupPoints: [{ key: 'estacion-central', label: 'Estación Central - Metropolitano' }],
     categories: [
       { key: 'posters', name: 'Posters' },
       { key: 'photocards', name: 'Photocards' },
@@ -340,6 +357,7 @@ function kpopCornerStore(): StoreFixtureSpec {
         key: 'pending',
         customerPhone: '+51911111111',
         deliveryMethodType: 'PICKUP',
+        pickupPointKey: 'estacion-central',
         paymentStatus: 'PENDING_PAYMENT',
         fulfillmentStatus: 'ORDERING',
         items: [{ productKey: 'poster', quantity: 1 }],
@@ -385,6 +403,7 @@ export function buildAppendFixture(label: string): StoreFixtureSpec {
       { type: 'PICKUP', details: {} },
       { type: 'COURIER', details: { estimatedCost: '5.00' } },
     ],
+    pickupPoints: [{ key: 'punto-demo', label: `Punto Demo ${label}` }],
     categories: [{ key: 'general', name: 'General' }],
     products: [
       {
@@ -433,6 +452,7 @@ export function buildAppendFixture(label: string): StoreFixtureSpec {
         key: 'pending',
         customerPhone: '+51933333333',
         deliveryMethodType: 'PICKUP',
+        pickupPointKey: 'punto-demo',
         paymentStatus: 'PENDING_PAYMENT',
         fulfillmentStatus: 'ORDERING',
         items: [{ productKey: 'unlimited', variantKey: 'default', quantity: 1 }],
