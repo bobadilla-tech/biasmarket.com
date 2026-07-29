@@ -51,3 +51,23 @@
       │
       ▼
 Editar productos
+
+
+
+Si se cancela :
+
+              Pedido
+
+                ↓
+
+         Cancelar pedido
+
+                ↓
+
+              Estado
+
+             cancelled
+
+                ↓
+
+    Stock restaurado automáticamente
