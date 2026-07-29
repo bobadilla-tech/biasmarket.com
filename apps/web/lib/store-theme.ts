@@ -122,7 +122,15 @@ export function buildCustomStorePalette(primaryHex: string): StorePalette {
 }
 
 function isThemeConfig(value: unknown): value is StoreThemeConfig {
-  return typeof value === "object" && value !== null;
+  if (typeof value !== "object" || value === null) return false;
+  const record = value as Record<string, unknown>;
+  const paletteId = record.paletteId;
+  if (paletteId !== undefined && typeof paletteId !== "string") return false;
+  const colors = record.colors;
+  if (colors !== undefined) {
+    if (typeof colors !== "object" || colors === null || Array.isArray(colors)) return false;
+  }
+  return true;
 }
 
 export function resolveStorePalette(themeConfig?: unknown): StorePalette {
@@ -130,17 +138,37 @@ export function resolveStorePalette(themeConfig?: unknown): StorePalette {
     return DEFAULT_STORE_PALETTE;
   }
 
-  const base =
-    STORE_PALETTES.find((palette) => palette.id === themeConfig.paletteId) ??
-    DEFAULT_STORE_PALETTE;
+  const paletteId = themeConfig.paletteId;
+  const preset = paletteId
+    ? STORE_PALETTES.find((palette) => palette.id === paletteId)
+    : undefined;
+  const base = preset ?? DEFAULT_STORE_PALETTE;
+  const isCustomPalette = Boolean(paletteId && !preset);
 
-  return {
+  const merged = {
     ...base,
+    id: isCustomPalette ? paletteId! : base.id,
+    name: isCustomPalette ? "Custom" : base.name,
+    description: isCustomPalette ? "Your own color" : base.description,
     colors: {
       ...base.colors,
       ...(themeConfig.colors ?? {}),
     },
-  };
+  } satisfies StorePalette;
+
+  if (isCustomPalette && merged.colors.primary) {
+    const custom = buildCustomStorePalette(merged.colors.primary);
+    return {
+      ...custom,
+      id: paletteId!,
+      colors: {
+        ...custom.colors,
+        ...merged.colors,
+      },
+    };
+  }
+
+  return merged;
 }
 
 export function buildStoreThemeConfig(palette: StorePalette): StoreThemeConfig {

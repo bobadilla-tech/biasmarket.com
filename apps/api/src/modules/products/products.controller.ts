@@ -14,6 +14,7 @@ import { ProductsService } from './products.service.js';
 import { CreateProductDto } from './dto/create-product.dto.js';
 import { UpdateProductDto } from './dto/update-product.dto.js';
 import { CreateVariantDto } from './dto/create-variant.dto.js';
+import { UpdateVariantDto } from './dto/update-variant.dto.js';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { StorageService } from '../../storage/storage.service.js';
 
@@ -39,6 +40,15 @@ export class ProductsController {
   @Get()
   findAll(@Param('storeId') storeId: string, @Session() session: UserSession) {
     return this.products.findAllForStore(storeId, session.user.id);
+  }
+
+  @Get(':productId')
+  findOne(
+    @Param('storeId') storeId: string,
+    @Param('productId') productId: string,
+    @Session() session: UserSession,
+  ) {
+    return this.products.findOne(storeId, productId, session.user.id);
   }
 
   @Patch(':productId')
@@ -86,6 +96,27 @@ export class ProductsController {
     @Session() session: UserSession,
   ) {
     return this.products.listVariants(productId, storeId, session.user.id);
+  }
+
+  @Patch(':productId/variants/:variantId')
+  updateVariant(
+    @Param('storeId') storeId: string,
+    @Param('productId') productId: string,
+    @Param('variantId') variantId: string,
+    @Session() session: UserSession,
+    @Body() dto: UpdateVariantDto,
+  ) {
+    return this.products.updateVariant(productId, variantId, storeId, session.user.id, dto);
+  }
+
+  @Delete(':productId/variants/:variantId')
+  deleteVariant(
+    @Param('storeId') storeId: string,
+    @Param('productId') productId: string,
+    @Param('variantId') variantId: string,
+    @Session() session: UserSession,
+  ) {
+    return this.products.deleteVariant(productId, variantId, storeId, session.user.id);
   }
 
   @Post(':productId/images')

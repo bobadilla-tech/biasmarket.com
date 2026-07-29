@@ -6,8 +6,8 @@
     "submit": "Ingresar",
     "submitting": "Ingresando...",
     "invalidCredentials": "Email o contraseña incorrectos",
-    "noAccount": "¿No tenés cuenta?",
-    "signUpLink": "Registrate"
+    "noAccount": "¿No tienes cuenta?",
+    "signUpLink": "Regístrate"
   },
   "signup": {
     "title": "Crear cuenta",
@@ -16,28 +16,28 @@
     "passwordPlaceholder": "Contraseña",
     "submit": "Registrarme",
     "genericError": "Error al registrarse",
-    "hasAccount": "¿Ya tenés cuenta?",
+    "hasAccount": "¿Ya tienes cuenta?",
     "loginLink": "Iniciar sesión"
   },
   "createStore": {
-    "title": "Creá tu tienda",
-    "subtitle": "Configurá lo esencial ahora y dejá espacio para más personalización a medida que tu marca crece.",
-    "empty": "Todavía no tenés ninguna tienda. Creá la primera abajo.",
+    "title": "Crea tu tienda",
+    "subtitle": "Configura lo esencial ahora y deja espacio para más personalización a medida que tu marca crece.",
+    "empty": "Todavía no tienes ninguna tienda. Crea la primera abajo.",
     "storesTitle": "Tus tiendas",
-    "storesDescription": "Volvé a una tienda existente o empezá un nuevo espacio de trabajo con identidad propia.",
+    "storesDescription": "Vuelve a una tienda existente o empieza un nuevo espacio de trabajo con identidad propia.",
     "delete": "Eliminar",
     "createNew": "Crear nueva tienda",
     "namePlaceholder": "Nombre de la tienda",
-    "nameHelp": "Usá el nombre público con el que te van a reconocer tus compradores.",
+    "nameHelp": "Usa el nombre público con el que te van a reconocer tus compradores.",
     "slugLabel": "Slug de la tienda",
     "slugPlaceholder": "mi-tienda",
     "slugHelp": "Esto forma parte de la URL pública y puede incluir letras, números y guiones.",
     "logoLabel": "Logo de la tienda",
-    "logoHelp": "Subí un PNG o JPG para darle identidad desde el primer día.",
+    "logoHelp": "Sube un PNG o JPG para darle identidad desde el primer día.",
     "logoCta": "Elegir logo",
-    "logoUploadingError": "La tienda se creó, pero falló la subida del logo. Abrila y probá de nuevo desde configuración.",
+    "logoUploadingError": "La tienda se creó, pero falló la subida del logo. Ábrela y prueba de nuevo desde configuración.",
     "brandingTitle": "Configuración de marca",
-    "brandingDescription": "Elegí una paleta inicial para tu storefront. Después la podés expandir.",
+    "brandingDescription": "Elige una paleta inicial para tu storefront. Después la puedes expandir.",
     "paletteLabel": "Paleta de colores",
     "paletteSelected": "Seleccionada",
     "customColorLabel": "Color personalizado",
@@ -56,6 +56,6 @@
     "genericError": "Error al crear la tienda",
     "deleteError": "Error al eliminar la tienda",
     "networkDeleteError": "Error de red al eliminar",
-    "confirmDelete": "¿Seguro que querés eliminar esta tienda?"
+    "confirmDelete": "¿Seguro que quieres eliminar esta tienda?"
   }
 }

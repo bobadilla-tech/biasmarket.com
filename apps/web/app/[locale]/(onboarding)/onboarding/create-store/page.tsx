@@ -470,7 +470,11 @@ export default function CreateStorePage() {
                 <Button
                   onClick={handleCreate}
                   disabled={loading || !name || !slug || !whatsappNumber}
-                  className="h-12 rounded-[22px] bg-[linear-gradient(135deg,#ff62b0_0%,#9e48ff_100%)] px-6 text-sm font-semibold text-white shadow-[0_18px_36px_rgba(154,72,255,0.26)] hover:opacity-95"
+                  style={{
+                    background: `linear-gradient(135deg, ${selectedPalette.colors.accent} 0%, ${selectedPalette.colors.primary} 100%)`,
+                    boxShadow: `0 18px 36px rgba(0, 0, 0, 0.14)`,
+                  }}
+                  className="h-12 rounded-[22px] px-6 text-sm font-semibold text-white hover:opacity-95"
                 >
                   {loading ? t("submitting") : t("submit")}
                 </Button>

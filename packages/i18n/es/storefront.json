@@ -13,7 +13,7 @@
     "continueShopping": "Seguir viendo productos",
     "total": "Total",
     "goToCheckout": "Ir a pagar",
-    "mixedCurrencyWarning": "Tenés productos en distintas monedas — sacá alguno del carrito para poder pagar."
+    "mixedCurrencyWarning": "Tienes productos en distintas monedas — quita alguno del carrito para poder pagar."
   },
   "checkoutPage": {
     "title": "Confirmar pedido",
@@ -25,8 +25,8 @@
     "emailPlaceholder": "Email (opcional)",
     "submit": "Confirmar y continuar por WhatsApp",
     "submitting": "Enviando...",
-    "noDeliveryMethod": "La tienda todavía no configuró un método de entrega — contactá al vendedor.",
-    "mixedCurrencyWarning": "No podés pagar productos en distintas monedas en el mismo pedido. Sacá alguno del carrito.",
+    "noDeliveryMethod": "La tienda todavía no configuró un método de entrega — contacta al vendedor.",
+    "mixedCurrencyWarning": "No puedes pagar productos en distintas monedas en el mismo pedido. Quita alguno del carrito.",
     "orderCreatedTitle": "¡Pedido creado!",
     "orderCreatedBody": "Pedido #{orderId}. La tienda se pondrá en contacto para confirmar el pago.",
     "emptyCart": "Tu carrito está vacío.",

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo } from "react";
 import { StoreSidebar } from "@/components/dashboard/store-sidebar";
 import { getStoreThemeStyle } from "@/lib/store-theme";
 import { useStore } from "@/lib/use-store";
@@ -12,11 +13,34 @@ export function StoreThemeFrame({
   children: React.ReactNode;
 }) {
   const { store } = useStore();
+  const themeStyle = useMemo(() => getStoreThemeStyle(store?.themeConfig), [store?.themeConfig]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const previous = new Map<string, string>();
+
+    Object.entries(themeStyle).forEach(([key, value]) => {
+      const cssVar = String(key);
+      if (!cssVar.startsWith("--")) return;
+      previous.set(cssVar, root.style.getPropertyValue(cssVar));
+      root.style.setProperty(cssVar, String(value));
+    });
+
+    return () => {
+      previous.forEach((value, cssVar) => {
+        if (value) {
+          root.style.setProperty(cssVar, value);
+        } else {
+          root.style.removeProperty(cssVar);
+        }
+      });
+    };
+  }, [themeStyle]);
 
   return (
     <div
       className="store-dashboard-theme min-h-screen bg-[#f5eefb]"
-      style={getStoreThemeStyle(store?.themeConfig)}
+      style={themeStyle}
     >
       <div className="flex min-h-screen">
         <StoreSidebar slug={slug} />
