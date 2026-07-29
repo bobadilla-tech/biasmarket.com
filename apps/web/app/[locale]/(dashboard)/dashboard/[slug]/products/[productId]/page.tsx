@@ -68,6 +68,7 @@ export default function ProductDetailsPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [variants, setVariants] = useState<Variant[]>([]);
   const [loading, setLoading] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -134,6 +135,20 @@ export default function ProductDetailsPage() {
       </Badge>
     );
   }, [product, t]);
+
+  const handlePublish = async () => {
+    if (!storeId || !product) return;
+    setPublishing(true);
+    setError(null);
+    try {
+      await apiFetch(`/stores/${storeId}/products/${product.id}/publish`, { method: "PATCH" }, tCommon("networkError"));
+      setProduct((prev) => (prev ? { ...prev, status: "PUBLISHED" } : prev));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setPublishing(false);
+    }
+  };
 
   if (storeLoading || loading) {
     return (
@@ -208,6 +223,16 @@ export default function ProductDetailsPage() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            {product.status === "DRAFT" ? (
+              <Button
+                type="button"
+                onClick={handlePublish}
+                disabled={publishing}
+                className="store-theme-primary-button h-10 rounded-2xl px-4 text-sm font-semibold hover:opacity-100"
+              >
+                {t("products.actions.publish")}
+              </Button>
+            ) : null}
             {statusBadge}
             <Badge variant="outline" className={cn("rounded-full border-[#eadcf7] px-3 py-1 text-xs", stockClassName)}>
               <Package className="size-3.5" />

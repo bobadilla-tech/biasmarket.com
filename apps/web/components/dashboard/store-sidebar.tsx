@@ -151,7 +151,6 @@ export function StoreSidebar({
         )}
         <div>
           <p className="text-sm font-semibold text-white">{store?.name ?? t("brand")}</p>
-          <p className="text-xs text-white/55">{t("workspace")}</p>
         </div>
       </div>
 

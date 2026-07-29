@@ -19,7 +19,10 @@ export class OrderRepository {
   async findRowByIdForStore(orderId: string, storeId: string) {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
-      include: { items: true, proofs: true },
+      include: {
+        items: { include: { product: true, variant: true } },
+        proofs: true,
+      },
     });
     if (!order || order.storeId !== storeId) {
       throw new NotFoundException('Orden no encontrada');
@@ -37,7 +40,7 @@ export class OrderRepository {
         ...(filters.paymentStatus && { paymentStatus: filters.paymentStatus }),
         ...(filters.fulfillmentStatus && { fulfillmentStatus: filters.fulfillmentStatus }),
       },
-      include: { items: true },
+      include: { items: { include: { product: true, variant: true } } },
       orderBy: { createdAt: 'desc' },
     });
   }

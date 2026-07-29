@@ -15,11 +15,13 @@
       "price": "Precio",
       "stock": "Stock",
       "sold": "Vendidos",
+      "status": "Estado",
       "actions": "Acciones"
     },
     "actions": {
       "edit": "Editar",
-      "delete": "Eliminar"
+      "delete": "Eliminar",
+      "publish": "Publicar"
     },
     "createTitle": "Agregar producto",
     "createDescription": "Crea un producto y define su stock inicial.",
@@ -307,12 +309,56 @@
   },
   "orders": {
     "title": "Pedidos",
+    "subtitle": "Gestión de pedidos",
+    "titleWithCount": "Todos los pedidos ({count})",
+    "newOrder": "Nuevo pedido",
+    "newOrderSoon": "Pronto",
+    "view": "Ver",
+    "empty": "Todavía no hay pedidos.",
+    "unknownProduct": "Producto",
+    "productSummaryMore": "{product} +{count}",
+    "showingCount": "Mostrando {count} de {total}",
+    "tabs": {
+      "all": "Todos",
+      "pending": "Pendientes",
+      "transit": "En camino",
+      "delivered": "Entregados"
+    },
     "columns": {
+      "number": "#",
       "customer": "Cliente",
+      "product": "Producto",
       "total": "Total",
       "payment": "Pago",
       "delivery": "Entrega",
+      "date": "Fecha",
+      "status": "Estado",
       "actions": "Acciones"
+    },
+    "delivery": {
+      "pickup": "Recojo",
+      "courier": "Envío",
+      "estimatedCost": "S/{cost}"
+    },
+    "status": {
+      "toConfirm": "Por confirmar",
+      "pending": "Pendiente",
+      "inTransit": "En camino",
+      "delivered": "Entregado",
+      "rejected": "Rechazado",
+      "cancelled": "Cancelado"
+    },
+    "date": {
+      "today": "Hoy {time}",
+      "yesterday": "Ayer {time}"
+    },
+    "details": {
+      "title": "Pedido {number}",
+      "total": "Total",
+      "delivery": "Entrega",
+      "date": "Fecha",
+      "items": "Productos",
+      "quantity": "{count} unidades"
     },
     "approve": "Aprobar",
     "reject": "Rechazar",

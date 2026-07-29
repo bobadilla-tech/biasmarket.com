@@ -15,11 +15,13 @@
       "price": "Price",
       "stock": "Stock",
       "sold": "Sold",
+      "status": "Status",
       "actions": "Actions"
     },
     "actions": {
       "edit": "Edit",
-      "delete": "Delete"
+      "delete": "Delete",
+      "publish": "Publish"
     },
     "createTitle": "Add product",
     "createDescription": "Create a product and set its initial stock.",
@@ -307,12 +309,56 @@
   },
   "orders": {
     "title": "Orders",
+    "subtitle": "Order management",
+    "titleWithCount": "All orders ({count})",
+    "newOrder": "New order",
+    "newOrderSoon": "Coming soon",
+    "view": "View",
+    "empty": "No orders yet.",
+    "unknownProduct": "Product",
+    "productSummaryMore": "{product} +{count}",
+    "showingCount": "Showing {count} of {total}",
+    "tabs": {
+      "all": "All",
+      "pending": "Pending",
+      "transit": "In transit",
+      "delivered": "Delivered"
+    },
     "columns": {
+      "number": "#",
       "customer": "Customer",
+      "product": "Product",
       "total": "Total",
       "payment": "Payment",
       "delivery": "Delivery",
+      "date": "Date",
+      "status": "Status",
       "actions": "Actions"
+    },
+    "delivery": {
+      "pickup": "Pickup",
+      "courier": "Delivery",
+      "estimatedCost": "S/{cost}"
+    },
+    "status": {
+      "toConfirm": "To confirm",
+      "pending": "Pending",
+      "inTransit": "In transit",
+      "delivered": "Delivered",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled"
+    },
+    "date": {
+      "today": "Today {time}",
+      "yesterday": "Yesterday {time}"
+    },
+    "details": {
+      "title": "Order {number}",
+      "total": "Total",
+      "delivery": "Delivery",
+      "date": "Date",
+      "items": "Items",
+      "quantity": "{count} units"
     },
     "approve": "Approve",
     "reject": "Reject",

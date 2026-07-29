@@ -135,9 +135,13 @@ function ProductTile({
   stockClassName,
   editLabel,
   deleteLabel,
+  publishLabel,
+  statusDraftLabel,
+  statusPublishedLabel,
   onOpen,
   onEdit,
   onDelete,
+  onPublish,
 }: {
   product: Product;
   category: string;
@@ -145,11 +149,25 @@ function ProductTile({
   stockClassName: string;
   editLabel: string;
   deleteLabel: string;
+  publishLabel: string;
+  statusDraftLabel: string;
+  statusPublishedLabel: string;
   onOpen: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onPublish: () => void;
 }) {
   const image = product.images?.[0];
+  const statusBadge =
+    product.status === "PUBLISHED" ? (
+      <Badge className="store-theme-soft-badge rounded-full px-3 py-1 text-[11px] font-semibold">
+        {statusPublishedLabel}
+      </Badge>
+    ) : (
+      <Badge variant="outline" className="rounded-full border-[#eadcf7] px-3 py-1 text-[11px] font-semibold text-[#8f7da8]">
+        {statusDraftLabel}
+      </Badge>
+    );
   return (
     <Card
       role="button"
@@ -163,10 +181,25 @@ function ProductTile({
       <CardContent className="px-0 pb-0">
         <div className="rounded-t-[26px] bg-[#fff2f7] p-6">
           <div className="flex items-start justify-between gap-3">
-            <Badge className="store-theme-soft-badge rounded-full px-3 py-1 text-[11px] font-semibold">
-              {category}
-            </Badge>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className="store-theme-soft-badge rounded-full px-3 py-1 text-[11px] font-semibold">
+                {category}
+              </Badge>
+              {statusBadge}
+            </div>
             <div className="flex gap-2">
+              {product.status === "DRAFT" ? (
+                <Button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onPublish();
+                  }}
+                  className="store-theme-primary-button h-8 rounded-full px-3 text-xs font-semibold hover:opacity-100"
+                >
+                  {publishLabel}
+                </Button>
+              ) : null}
               <Button
                 type="button"
                 variant="outline"
@@ -231,9 +264,13 @@ function ProductRow({
   stockClassName,
   editLabel,
   deleteLabel,
+  publishLabel,
+  statusDraftLabel,
+  statusPublishedLabel,
   onOpen,
   onEdit,
   onDelete,
+  onPublish,
 }: {
   product: Product;
   category: string;
@@ -241,10 +278,24 @@ function ProductRow({
   stockClassName: string;
   editLabel: string;
   deleteLabel: string;
+  publishLabel: string;
+  statusDraftLabel: string;
+  statusPublishedLabel: string;
   onOpen: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onPublish: () => void;
 }) {
+  const statusBadge =
+    product.status === "PUBLISHED" ? (
+      <Badge className="store-theme-soft-badge rounded-full px-3 py-1 text-xs font-semibold">
+        {statusPublishedLabel}
+      </Badge>
+    ) : (
+      <Badge variant="outline" className="rounded-full border-[#eadcf7] px-3 py-1 text-xs font-semibold text-[#8f7da8]">
+        {statusDraftLabel}
+      </Badge>
+    );
   return (
     <tr
       onClick={onOpen}
@@ -275,8 +326,21 @@ function ProductRow({
       </td>
       <td className={cn("px-6 py-4 text-sm font-semibold", stockClassName)}>{stockLabel}</td>
       <td className="px-6 py-4 text-sm text-[#8f7da8]">{product.soldUnits ?? 0}</td>
+      <td className="px-6 py-4">{statusBadge}</td>
       <td className="px-6 py-4">
         <div className="flex items-center gap-2">
+          {product.status === "DRAFT" ? (
+            <Button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onPublish();
+              }}
+              className="store-theme-primary-button h-8 rounded-full px-3 text-xs font-semibold hover:opacity-100"
+            >
+              {publishLabel}
+            </Button>
+          ) : null}
           <Button
             type="button"
             variant="outline"
@@ -1274,6 +1338,24 @@ export default function ProductsPage() {
     }
   };
 
+  const handlePublish = async (productId: string) => {
+    if (!storeId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await apiFetch(
+        `/stores/${storeId}/products/${productId}/publish`,
+        { method: "PATCH" },
+        tCommon("networkError"),
+      );
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (storeLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center px-6 text-sm text-[#8f7da8]">
@@ -1365,9 +1447,13 @@ export default function ProductsPage() {
                   stockClassName={tone}
                   editLabel={t("products.actions.edit")}
                   deleteLabel={t("products.actions.delete")}
+                  publishLabel={t("products.actions.publish")}
+                  statusDraftLabel={t("products.details.draft")}
+                  statusPublishedLabel={t("products.details.published")}
                   onOpen={() => handleOpenProduct(product.id)}
                   onEdit={() => handleEditOpen(product)}
                   onDelete={() => handleDelete(product.id)}
+                  onPublish={() => handlePublish(product.id)}
                 />
               );
             })}
@@ -1387,6 +1473,7 @@ export default function ProductsPage() {
                       <th className="px-6 py-3">{t("products.columns.price")}</th>
                       <th className="px-6 py-3">{t("products.columns.stock")}</th>
                       <th className="px-6 py-3">{t("products.columns.sold")}</th>
+                      <th className="px-6 py-3">{t("products.columns.status")}</th>
                       <th className="px-6 py-3">{t("products.columns.actions")}</th>
                     </tr>
                   </thead>
@@ -1409,9 +1496,13 @@ export default function ProductsPage() {
                           stockClassName={tone}
                           editLabel={t("products.actions.edit")}
                           deleteLabel={t("products.actions.delete")}
+                          publishLabel={t("products.actions.publish")}
+                          statusDraftLabel={t("products.details.draft")}
+                          statusPublishedLabel={t("products.details.published")}
                           onOpen={() => handleOpenProduct(product.id)}
                           onEdit={() => handleEditOpen(product)}
                           onDelete={() => handleDelete(product.id)}
+                          onPublish={() => handlePublish(product.id)}
                         />
                       );
                     })}
