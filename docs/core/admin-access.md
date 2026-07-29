@@ -80,18 +80,18 @@ pnpm seed:base:dev                               # base fixtures (also runs auto
 pnpm seed:append:dev -- --batch=<label>          # + one labeled demo store
 ```
 
-Idempotent and additive-only — every fixture is `upsert`ed by a natural key or
-a deterministic id (`apps/api/scripts/seed/ids.ts`), so reruns repair existing
-rows instead of duplicating them, and nothing is ever deleted. Seeded emails
-and store slugs are prefixed `seed-`/`demo-` so they stay identifiable in a
-real database. There's no confirmation gate beyond running the command itself
-— same as `admin:create:prod`, the manual `docker compose exec` invocation is
-the safeguard.
+Idempotent and additive-only — every fixture is `upsert`ed by a natural key or a
+deterministic id (`apps/api/scripts/seed/ids.ts`), so reruns repair existing
+rows instead of duplicating them, and nothing is ever deleted. Seeded emails and
+store slugs are prefixed `seed-`/`demo-` so they stay identifiable in a real
+database. There's no confirmation gate beyond running the command itself — same
+as `admin:create:prod`, the manual `docker compose exec` invocation is the
+safeguard.
 
 `--append --batch=<label>` adds one more demo seller/store namespaced by
-`<label>` on top of the base fixtures, without touching them. Rerunning with
-the same label repairs that batch; a new label adds a separate one — use this
-to pile up more test data on demand instead of re-running base mode.
+`<label>` on top of the base fixtures, without touching them. Rerunning with the
+same label repairs that batch; a new label adds a separate one — use this to
+pile up more test data on demand instead of re-running base mode.
 
 ## Revoking admin access
 

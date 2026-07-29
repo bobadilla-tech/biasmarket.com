@@ -191,10 +191,10 @@ creates two buckets — `S3_BUCKET` for product images and `S3_LOGO_BUCKET` for
 store logos, kept separate — and sets both public-read; it's idempotent, so it
 also runs harmlessly on every redeploy.
 
-`S3_LOGO_BUCKET` is validated at boot the same way as the other `S3_*` vars —
-if it's missing from the server's `.env`, the API crashes on startup rather
-than just failing logo uploads. When pulling in the change that introduced
-this var for the first time, add `S3_LOGO_BUCKET=logos` to
+`S3_LOGO_BUCKET` is validated at boot the same way as the other `S3_*` vars — if
+it's missing from the server's `.env`, the API crashes on startup rather than
+just failing logo uploads. When pulling in the change that introduced this var
+for the first time, add `S3_LOGO_BUCKET=logos` to
 `~/biasmarket/infra/docker/.env` **before** running `pnpm docker:prod`.
 
 Verify it worked:
@@ -206,10 +206,10 @@ docker compose -f infra/docker/docker-compose.yml logs minio-init
 
 Then upload a product image through the dashboard and confirm the returned URL
 (`https://cdn.biasmarket.com/<bucket>/products/<uuid>.jpg`) loads over HTTPS in
-a browser, and a store logo the same way (`.../<S3_LOGO_BUCKET>/logos/<uuid>.jpg`).
-If uploads fail, check `docker compose logs api` for a
-`Missing required env var: S3_...` error first — `StorageService` now validates
-these at boot instead of failing silently.
+a browser, and a store logo the same way
+(`.../<S3_LOGO_BUCKET>/logos/<uuid>.jpg`). If uploads fail, check
+`docker compose logs api` for a `Missing required env var: S3_...` error first —
+`StorageService` now validates these at boot instead of failing silently.
 
 ## Day 2
 
