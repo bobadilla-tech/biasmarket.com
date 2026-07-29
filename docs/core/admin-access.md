@@ -52,9 +52,46 @@ you're already inside the container.
 ## Dev note
 
 Usually unnecessary in dev — the dev stack already seeds two ready-to-use admin
-logins on every boot (`apps/api/scripts/seed-dev.ts`, see [infra.md](infra.md)'s
+logins on every boot (`apps/api/scripts/seed/run.ts`, see [infra.md](infra.md)'s
 credentials table). Only reach for `admin:create:dev`/`admin:promote:dev` if you
 need another admin beyond those two.
+
+## Seeding demo data
+
+Same wrapper pattern as above, for populating a store with demo data to test
+storefront browsing, checkout, and payment review end to end.
+
+**In prod**, SSH into the VM first — same "must run where the containers are"
+constraint as above (line 41), and `pnpm seed:*:prod` only works from the repo
+checkout that has the compose files, i.e. `~/biasmarket` (see
+[deploy.md](deploy.md)'s clone step):
+
+```bash
+ssh <you>@<vm-ip>
+cd ~/biasmarket
+pnpm seed:base:prod                              # base fixtures
+pnpm seed:append:prod -- --batch=<label>         # + one labeled demo store
+```
+
+**In dev**, run from your local repo root — no SSH needed:
+
+```bash
+pnpm seed:base:dev                               # base fixtures (also runs automatically on boot)
+pnpm seed:append:dev -- --batch=<label>          # + one labeled demo store
+```
+
+Idempotent and additive-only — every fixture is `upsert`ed by a natural key or
+a deterministic id (`apps/api/scripts/seed/ids.ts`), so reruns repair existing
+rows instead of duplicating them, and nothing is ever deleted. Seeded emails
+and store slugs are prefixed `seed-`/`demo-` so they stay identifiable in a
+real database. There's no confirmation gate beyond running the command itself
+— same as `admin:create:prod`, the manual `docker compose exec` invocation is
+the safeguard.
+
+`--append --batch=<label>` adds one more demo seller/store namespaced by
+`<label>` on top of the base fixtures, without touching them. Rerunning with
+the same label repairs that batch; a new label adds a separate one — use this
+to pile up more test data on demand instead of re-running base mode.
 
 ## Revoking admin access
 

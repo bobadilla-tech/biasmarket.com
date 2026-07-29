@@ -36,7 +36,7 @@ unbuilt.
 
 `role` is **not** self-assignable — no self-service UI or API endpoint, by
 design. Dev gets two admin accounts seeded automatically
-(`apps/api/scripts/seed-dev.ts`, see [infra.md](infra.md)); granting it to any
+(`apps/api/scripts/seed/`, see [infra.md](infra.md)); granting it to any
 other account (prod included) is one `pnpm` command against `promote-admin.ts` —
 see [admin-access.md](admin-access.md) for the exact commands.
 

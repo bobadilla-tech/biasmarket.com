@@ -73,10 +73,11 @@ COPY --from=build --chown=nestjs:nestjs /app/node_modules ./node_modules
 COPY --from=build --chown=nestjs:nestjs /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=build --chown=nestjs:nestjs /app/apps/api/dist ./apps/api/dist
 COPY --from=build --chown=nestjs:nestjs /app/apps/api/package.json ./apps/api/package.json
-# One-off ops scripts (admin:create/admin:promote — see docs/core/admin-access.md)
-# run via `docker compose exec api pnpm --filter api run admin:...`, not as
-# part of the app's own boot — but that still needs the source files present
-# in the runtime image, which nothing above actually copied until now.
+# One-off ops scripts (admin:create/admin:promote, seed:base/seed:append —
+# see docs/core/admin-access.md) run via `docker compose exec api pnpm
+# --filter api run <script>`, not as part of the app's own boot — but that
+# still needs the source files present in the runtime image, which nothing
+# above actually copied until now.
 COPY --from=build --chown=nestjs:nestjs /app/apps/api/scripts ./apps/api/scripts
 COPY --from=build --chown=nestjs:nestjs /app/packages ./packages
 COPY --from=build --chown=nestjs:nestjs /app/package.json ./package.json

@@ -1,0 +1,50 @@
+#!/usr/bin/env node
+
+// Seed command for both dev auto-boot and manual prod operator runs.
+//
+// Base mode (default, no flags): idempotent core fixtures — 2 admins plus
+// demo sellers/stores covering storefront browsing, merchandising blocks
+// (categories/collections/sections), checkout-relevant inventory edge cases
+// (unlimited/low/sold-out stock, reserved units, price/image overrides,
+// draft & expired products), and the order payment/fulfillment state
+// combinations a seller sees in their dashboard. Safe to rerun any number of
+// times — every fixture is upserted by natural key or a deterministic seed
+// id (see ids.ts), never duplicated.
+//
+// Append mode (--append --batch=<label>): adds one more labeled demo store
+// on top of the base fixtures without touching them. Rerunning with the same
+// label repairs that batch in place; a new label adds a separate batch.
+//
+// Reachable in prod via `pnpm seed:base:prod` / `pnpm seed:append:prod --
+// --batch=<label>` — same idempotent, additive-only guarantee as dev, no
+// destructive operations.
+
+import { createSeedClient } from './client.ts';
+import { applyStoreFixture } from './apply.ts';
+import { ensureUser } from './helpers.ts';
+import { buildBaseFixtures, buildAppendFixture } from './fixtures.ts';
+
+const args = process.argv.slice(2);
+const append = args.includes('--append');
+const batch = args.find((a) => a.startsWith('--batch='))?.slice('--batch='.length);
+
+if (append && !batch) {
+  console.error('Usage: node scripts/seed/run.ts --append --batch=<label>');
+  process.exit(1);
+}
+
+const prisma = createSeedClient();
+
+if (append) {
+  await applyStoreFixture(prisma, batch!, buildAppendFixture(batch!));
+} else {
+  const { admins, stores } = buildBaseFixtures();
+  for (const admin of admins) {
+    await ensureUser(prisma, { email: admin.email, name: admin.name, role: 'admin' });
+  }
+  for (const store of stores) {
+    await applyStoreFixture(prisma, 'base', store);
+  }
+}
+
+await prisma.$disconnect();

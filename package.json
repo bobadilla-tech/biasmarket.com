@@ -19,7 +19,11 @@
     "admin:create:prod": "docker compose -f infra/docker/docker-compose.yml exec api pnpm --filter api run admin:create",
     "admin:promote:prod": "docker compose -f infra/docker/docker-compose.yml exec api pnpm --filter api run admin:promote",
     "admin:create:dev": "docker compose -f infra/docker/docker-compose.dev.yml exec api pnpm --filter api run admin:create",
-    "admin:promote:dev": "docker compose -f infra/docker/docker-compose.dev.yml exec api pnpm --filter api run admin:promote"
+    "admin:promote:dev": "docker compose -f infra/docker/docker-compose.dev.yml exec api pnpm --filter api run admin:promote",
+    "seed:base:prod": "docker compose -f infra/docker/docker-compose.yml exec api pnpm --filter api run seed:base",
+    "seed:append:prod": "docker compose -f infra/docker/docker-compose.yml exec api pnpm --filter api run seed:append",
+    "seed:base:dev": "docker compose -f infra/docker/docker-compose.dev.yml exec api pnpm --filter api run seed:base",
+    "seed:append:dev": "docker compose -f infra/docker/docker-compose.dev.yml exec api pnpm --filter api run seed:append"
   },
   "devDependencies": {
     "@types/node": "^26.0.0",
