@@ -116,3 +116,58 @@ different concept, same word.
 - No map/geocoding integration — explicitly deferred; a free option (e.g.
   OpenStreetMap Nominatim) could be layered on later for point-address
   autocomplete without changing the `PickupPoint.label` free-text model.
+
+## Hotfix (same day): CI break + points not persisting
+
+Two issues surfaced right after the above shipped:
+
+**CI red**: `packages/utils/src/whatsapp/index.test.ts:24` still asserted the
+old `"Entrega: Retiro en tienda"` string; the feature work above renamed that
+label to `"Retiro presencial"` without updating this pre-existing test. One-line
+fix.
+
+**Bug report** (dashboard settings): sellers could add pickup points and see
+them appear locally, but after "Guardar" + reload the list was empty again, and
+checkout never showed a point selector as a downstream consequence. Initial
+suspicion (wrong, but fixed defensively anyway): the whole pickup-points list in
+`settings/page.tsx` was nested inside `<Field>`, which renders a native
+`<label>` — semantically incorrect for a list of multiple interactive
+`Switch`/`Input`/`Button` elements (all "labelable" per the HTML spec). Replaced
+with a plain `<div>`, same styling, no logic change.
+
+**Actual root cause**, found by reproducing live: the local
+`docker-compose.dev.yml` `api` service runs `prisma generate` exactly once, as
+the first step of its container `command:` (see that file's `api.command`) — it
+does not re-run on file watch. The running `biasmarket-dev-api-1` container had
+been up for 3 hours, i.e. since before the `PickupPoint` model was added to
+`schema.prisma` this session. Every `prisma.pickupPoint.*` call in the running
+container was therefore hitting a Prisma Client that didn't know that model
+existed, throwing and producing a 500 on every pickup-points request — which
+explains both symptoms (nothing ever actually saved; the public checkout
+endpoint had nothing to return). Fixed by
+`docker compose -f infra/docker/docker-compose.dev.yml restart api`, which
+re-runs the full startup chain (`db:generate` → `migrate deploy` → seed → watch)
+and picks up the current schema. Confirmed via `docker logs` (new
+`PickupPointsController`/`PublicPickupPointsController` routes now mapped) and a
+real authed round trip via curl: `POST .../pickup-points` → `GET` → new point
+present; public `GET .../public/pickup-points` correctly excludes the disabled
+seeded point.
+
+**Gotcha for future schema changes in local dev**: after editing
+`schema.prisma`, the running `docker:dev` `api` container needs a manual
+`docker compose -f infra/docker/docker-compose.dev.yml restart api` (or a full
+`pnpm docker:dev` down/up) to pick up the new Prisma Client — the compose file's
+live-reload only covers application source, not a schema change requiring
+`prisma generate`. Not fixed here (out of scope for this hotfix); worth
+automating later (e.g. watching `schema.prisma` and re-running `db:generate` in
+the container's command chain) if it recurs.
+
+Also finished, same session: wired
+`apps/api/scripts/seed/{fixtures,helpers,
+apply}.ts` to seed pickup points too
+(`PickupPointSpec`, `ensurePickupPoint`, `pickupPointKey` on seeded orders) —
+verified by running `seed:base` twice locally: stable point counts across reruns
+(3 for `demo-tienda-de-camila`, 1 for `demo-kpop-corner`, one seeded point
+deliberately `enabled: false` to exercise the disabled-point-hidden-at-checkout
+path), and seeded PICKUP orders correctly carry `pickupPointId` +
+`deliveryDetails.pickupPointLabel`.
