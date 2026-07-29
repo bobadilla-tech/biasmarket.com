@@ -17,32 +17,72 @@ export class OrderRepository {
   }
 
   async findRowByIdForStore(orderId: string, storeId: string) {
-    const order = await this.prisma.order.findUnique({
-      where: { id: orderId },
-      include: {
-        items: { include: { product: true, variant: true } },
-        proofs: true,
-      },
-    });
+    const includeWithPayments = {
+      items: { include: { product: true, variant: true } },
+      proofs: true,
+      payments: { orderBy: { createdAt: 'desc' } },
+    } as const;
+
+    const includeWithoutPayments = {
+      items: { include: { product: true, variant: true } },
+      proofs: true,
+    } as const;
+
+    let order: any;
+    try {
+      order = await this.prisma.order.findUnique({
+        where: { id: orderId },
+        include: includeWithPayments,
+      });
+    } catch (e) {
+      order = await this.prisma.order.findUnique({
+        where: { id: orderId },
+        include: includeWithoutPayments,
+      });
+      if (order) {
+        order.payments = [];
+      }
+    }
     if (!order || order.storeId !== storeId) {
       throw new NotFoundException('Orden no encontrada');
     }
-    return order;
+    return this.withPaymentSummary(order);
   }
 
   async findManyForStore(
     storeId: string,
     filters: { paymentStatus?: PaymentStatus; fulfillmentStatus?: FulfillmentStatus },
   ) {
-    return this.prisma.order.findMany({
-      where: {
-        storeId,
-        ...(filters.paymentStatus && { paymentStatus: filters.paymentStatus }),
-        ...(filters.fulfillmentStatus && { fulfillmentStatus: filters.fulfillmentStatus }),
-      },
-      include: { items: { include: { product: true, variant: true } } },
-      orderBy: { createdAt: 'desc' },
-    });
+    const where = {
+      storeId,
+      ...(filters.paymentStatus && { paymentStatus: filters.paymentStatus }),
+      ...(filters.fulfillmentStatus && { fulfillmentStatus: filters.fulfillmentStatus }),
+    } as const;
+
+    const includeWithPayments = {
+      items: { include: { product: true, variant: true } },
+      payments: { orderBy: { createdAt: 'desc' } },
+    } as const;
+
+    const includeWithoutPayments = {
+      items: { include: { product: true, variant: true } },
+    } as const;
+
+    try {
+      const orders = await this.prisma.order.findMany({
+        where,
+        include: includeWithPayments,
+        orderBy: { createdAt: 'desc' },
+      });
+      return orders.map((order) => this.withPaymentSummary(order));
+    } catch (e) {
+      const orders = await this.prisma.order.findMany({
+        where,
+        include: includeWithoutPayments,
+        orderBy: { createdAt: 'desc' },
+      });
+      return orders.map((order) => this.withPaymentSummary({ ...order, payments: [] }));
+    }
   }
 
   toDomainEntity(row: { id: string; storeId: string; paymentStatus: PaymentStatus; fulfillmentStatus: FulfillmentStatus }): Order {
@@ -55,5 +95,16 @@ export class OrderRepository {
     tx: Prisma.TransactionClient | PrismaService = this.prisma,
   ) {
     return tx.order.update({ where: { id: orderId }, data });
+  }
+
+  private withPaymentSummary<T extends { requiredAmount: Prisma.Decimal; payments?: { amount: Prisma.Decimal }[] }>(order: T) {
+    const paid = (order.payments ?? []).reduce((sum, payment) => sum + Number(payment.amount), 0);
+    const required = Number(order.requiredAmount);
+    return {
+      ...order,
+      paidAmount: paid,
+      pendingAmount: Math.max(required - paid, 0),
+      paidPercentage: required > 0 ? Math.min((paid / required) * 100, 100) : 0,
+    };
   }
 }

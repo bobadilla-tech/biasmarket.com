@@ -346,6 +346,7 @@
     "status": {
       "toConfirm": "To confirm",
       "pending": "Pending",
+      "partial": "Partial payment",
       "inTransit": "In transit",
       "delivered": "Delivered",
       "rejected": "Rejected",
@@ -358,10 +359,18 @@
     "details": {
       "title": "Order {number}",
       "total": "Total",
+      "paid": "Paid",
+      "pending": "Pending balance",
+      "progress": "Paid %",
       "delivery": "Delivery",
       "date": "Date",
       "items": "Items",
-      "quantity": "{count} units"
+      "quantity": "{count} units",
+      "addPayment": "Register payment",
+      "paymentHistory": "Payment history",
+      "paymentAmountPlaceholder": "Amount paid",
+      "paymentNotePlaceholder": "Note (optional)",
+      "registerPayment": "Save payment"
     },
     "approve": "Approve",
     "reject": "Reject",

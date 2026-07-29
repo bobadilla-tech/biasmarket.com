@@ -346,6 +346,7 @@
     "status": {
       "toConfirm": "Por confirmar",
       "pending": "Pendiente",
+      "partial": "Pago parcial",
       "inTransit": "En camino",
       "delivered": "Entregado",
       "rejected": "Rechazado",
@@ -358,10 +359,18 @@
     "details": {
       "title": "Pedido {number}",
       "total": "Total",
+      "paid": "Abonado",
+      "pending": "Saldo pendiente",
+      "progress": "% pagado",
       "delivery": "Entrega",
       "date": "Fecha",
       "items": "Productos",
-      "quantity": "{count} unidades"
+      "quantity": "{count} unidades",
+      "addPayment": "Registrar abono",
+      "paymentHistory": "Historial de abonos",
+      "paymentAmountPlaceholder": "Monto abonado",
+      "paymentNotePlaceholder": "Nota (opcional)",
+      "registerPayment": "Guardar abono"
     },
     "approve": "Aprobar",
     "reject": "Rechazar",

@@ -205,6 +205,7 @@ model Order {
   pickupPoint PickupPoint?   @relation(fields: [pickupPointId], references: [id], onDelete: SetNull)
   items       OrderItem[]
   proofs      PaymentProof[]
+  payments    OrderPayment[]
 
   @@index([storeId, paymentStatus])
   @@index([storeId, createdAt])
@@ -247,8 +248,24 @@ model PaymentProof {
   @@index([storeId, status])
 }
 
+model OrderPayment {
+  id        String   @id @default(cuid())
+  orderId   String
+  storeId   String
+  amount    Decimal  @db.Decimal(10, 2)
+  currency  String
+  note      String?
+  createdAt DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([orderId, createdAt])
+  @@index([storeId, createdAt])
+}
+
 enum PaymentStatus {
   PENDING_PAYMENT
+  PARTIALLY_PAID
   PAYMENT_SUBMITTED
   VERIFIED
   REJECTED
