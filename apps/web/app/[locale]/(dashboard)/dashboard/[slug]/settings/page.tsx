@@ -366,16 +366,24 @@ export default function SettingsPage() {
                 readOnly
                 className="hidden min-w-[250px] rounded-2xl border-[#eadcf7] bg-white text-[#a18eb8] shadow-none sm:flex"
               />
-              <div
-                className="flex size-12 items-center justify-center rounded-2xl text-sm font-semibold text-white"
-                style={{
-                  background:
-                    "linear-gradient(135deg, var(--store-accent) 0%, var(--store-primary) 100%)",
-                  boxShadow: "0 10px 30px var(--store-shadow)",
-                }}
-              >
-                {(storeName || "BM").slice(0, 2).toUpperCase()}
-              </div>
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt={storeName || "Store logo"}
+                  className="size-12 rounded-2xl object-cover shadow-[0_10px_30px_var(--store-shadow)]"
+                />
+              ) : (
+                <div
+                  className="flex size-12 items-center justify-center rounded-2xl text-sm font-semibold text-white"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, var(--store-accent) 0%, var(--store-primary) 100%)",
+                    boxShadow: "0 10px 30px var(--store-shadow)",
+                  }}
+                >
+                  {(storeName || "BM").slice(0, 2).toUpperCase()}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

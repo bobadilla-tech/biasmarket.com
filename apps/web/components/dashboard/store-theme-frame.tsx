@@ -43,7 +43,7 @@ export function StoreThemeFrame({
       style={themeStyle}
     >
       <div className="flex min-h-screen">
-        <StoreSidebar slug={slug} />
+        <StoreSidebar slug={slug} store={store} />
         <div className="min-w-0 flex-1">{children}</div>
       </div>
     </div>

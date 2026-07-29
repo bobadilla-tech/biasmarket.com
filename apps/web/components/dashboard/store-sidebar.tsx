@@ -17,6 +17,7 @@ import { useTranslations } from "next-intl";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
+import type { DashboardStore } from "@/lib/use-store";
 
 type NavItem = {
   key: string;
@@ -104,7 +105,13 @@ function SidebarSection({
   );
 }
 
-export function StoreSidebar({ slug }: { slug: string }) {
+export function StoreSidebar({
+  slug,
+  store,
+}: {
+  slug: string;
+  store: DashboardStore | null;
+}) {
   const t = useTranslations("dashboard.shell");
   const pathname = usePathname();
   const router = useRouter();
@@ -124,18 +131,26 @@ export function StoreSidebar({ slug }: { slug: string }) {
       }}
     >
       <div className="mb-8 flex items-center gap-3 px-2">
-        <div
-          className="flex size-11 items-center justify-center rounded-2xl text-lg font-black text-white"
-          style={{
-            background:
-              "linear-gradient(135deg, var(--store-accent) 0%, var(--store-primary) 100%)",
-            boxShadow: "0 12px 30px var(--store-shadow)",
-          }}
-        >
-          BM
-        </div>
+        {store?.logoUrl ? (
+          <img
+            src={store.logoUrl}
+            alt={store.name}
+            className="size-11 rounded-2xl object-cover shadow-[0_12px_30px_var(--store-shadow)]"
+          />
+        ) : (
+          <div
+            className="flex size-11 items-center justify-center rounded-2xl text-lg font-black text-white"
+            style={{
+              background:
+                "linear-gradient(135deg, var(--store-accent) 0%, var(--store-primary) 100%)",
+              boxShadow: "0 12px 30px var(--store-shadow)",
+            }}
+          >
+            {(store?.name ?? t("brand")).slice(0, 2).toUpperCase()}
+          </div>
+        )}
         <div>
-          <p className="text-sm font-semibold text-white">{t("brand")}</p>
+          <p className="text-sm font-semibold text-white">{store?.name ?? t("brand")}</p>
           <p className="text-xs text-white/55">{t("workspace")}</p>
         </div>
       </div>

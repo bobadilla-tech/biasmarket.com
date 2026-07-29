@@ -109,8 +109,21 @@ export default async function StorePage({
           __html: JSON.stringify(buildJsonLd(locale, slug, store)).replace(/</g, "\\u003c"),
         }}
       />
-      <header className="bg-white border-b border-gray-100 px-6 py-8 text-center">
-        <h1 className="text-2xl font-bold text-gray-900">{store.name}</h1>
+      <header className="border-b border-gray-100 bg-white px-6 py-8">
+        <div className="mx-auto flex max-w-5xl items-center justify-center gap-3">
+          {store.logoUrl ? (
+            <img
+              src={store.logoUrl}
+              alt={store.name}
+              className="size-12 rounded-2xl object-cover shadow-sm"
+            />
+          ) : (
+            <div className="flex size-12 items-center justify-center rounded-2xl bg-gray-900 text-sm font-semibold text-white">
+              {String(store.name ?? "").slice(0, 2).toUpperCase()}
+            </div>
+          )}
+          <h1 className="text-2xl font-bold text-gray-900">{store.name}</h1>
+        </div>
       </header>
       <main className="max-w-5xl mx-auto px-4 py-8 space-y-10">
         {store.sections.length === 0 ? (
