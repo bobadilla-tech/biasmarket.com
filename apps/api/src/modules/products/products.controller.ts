@@ -6,7 +6,11 @@ import {
   Param,
   Patch,
   Post,
-  UseGuards, UseInterceptors, UploadedFile, BadRequestException
+  UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+  Query,
 } from '@nestjs/common';
 import { AuthGuard, Session } from '@thallesp/nestjs-better-auth';
 import type { UserSession } from '@thallesp/nestjs-better-auth';
@@ -126,6 +130,7 @@ export class ProductsController {
     @Param('productId') productId: string,
     @Session() session: UserSession,
     @UploadedFile() file: Express.Multer.File,
+    @Query('replace') replace?: string,
   ) {
     if (!file) throw new BadRequestException('Missing File');
     if (file.size > 5 * 1024 * 1024) throw new BadRequestException('Max 5MB');
@@ -137,7 +142,13 @@ export class ProductsController {
     if (!isJpeg && !isPng) throw new BadRequestException('Just JPEG or PNG');
 
     const url = await this.storage.uploadImage(file.buffer, isPng ? 'image/png' : 'image/jpeg');
-    return this.products.addImage(productId, storeId, session.user.id, url);
+    return this.products.addImage(
+      productId,
+      storeId,
+      session.user.id,
+      url,
+      replace === '1' || replace === 'true',
+    );
 
     
   }

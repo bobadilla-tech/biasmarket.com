@@ -245,11 +245,22 @@ export class ProductsService {
     return this.prisma.productVariant.delete({ where: { id: variantId } });
   }
   
-  async addImage(productId: string, storeId: string, userId: string, url: string) {
+  async addImage(
+    productId: string,
+    storeId: string,
+    userId: string,
+    url: string,
+    replace?: boolean,
+  ) {
     const product = await this.findOwnedProduct(productId, storeId, userId);
+    const images = replace
+      ? product.images.length
+        ? [url, ...product.images.slice(1)]
+        : [url]
+      : [...product.images, url];
     return this.prisma.product.update({
       where: { id: productId },
-      data: { images: [...product.images, url] },
+      data: { images },
     });
   }
 }

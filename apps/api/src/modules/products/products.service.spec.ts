@@ -304,6 +304,20 @@ describe('ProductsService', () => {
       where: { productId },
     });
   });
+  it('addImage() replaces the first image when replace is true', async () => {
+    prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
+    prisma.product.findUnique.mockResolvedValue({ id: productId, storeId, images: ['old.png', '2.png'] });
+    prisma.product.update.mockResolvedValue({});
+
+    await service.addImage(productId, storeId, ownerId, 'new.png', true);
+
+    expect(prisma.product.update).toHaveBeenCalledWith({
+      where: { id: productId },
+      data: { images: ['new.png', '2.png'] },
+    });
+  });
+
+
 
   it('updateVariant() updates a variant scoped to the owned product', async () => {
     prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });

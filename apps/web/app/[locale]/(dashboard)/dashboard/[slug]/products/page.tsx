@@ -350,6 +350,7 @@ function ProductSheet({
   const { locale } = useParams<{ locale: string }>();
   const [values, setValues] = useState(initialValues);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [hasVariants, setHasVariants] = useState(false);
   const [options, setOptions] = useState<OptionTypeDraft[]>([]);
   const [newOptionName, setNewOptionName] = useState("");
@@ -375,6 +376,7 @@ function ProductSheet({
     setNewCategoryName("");
     setCategoryTab("default");
     setCategorySearch("");
+    setImagePreviewUrl(null);
 
     const keyForAttributes = (attributes: Record<string, string> | null | undefined) =>
       Object.entries(attributes ?? {})
@@ -426,6 +428,16 @@ function ProductSheet({
       ),
     );
   }, [initialValues]);
+
+  useEffect(() => {
+    if (!values.imageFile) {
+      setImagePreviewUrl(null);
+      return;
+    }
+    const nextUrl = URL.createObjectURL(values.imageFile);
+    setImagePreviewUrl(nextUrl);
+    return () => URL.revokeObjectURL(nextUrl);
+  }, [values.imageFile]);
 
   const variantsPreview = useMemo(() => {
     const readyOptions = options
@@ -905,6 +917,11 @@ function ProductSheet({
               <Upload className="size-4" />
               {values.imageFile ? values.imageFile.name : t("products.form.imageUpload")}
             </Button>
+            {imagePreviewUrl ? (
+              <div className="overflow-hidden rounded-2xl border border-[#f0e7f8] bg-white">
+                <img src={imagePreviewUrl} alt="" className="h-36 w-full object-cover" />
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -1216,7 +1233,7 @@ export default function ProductsPage() {
         const formData = new FormData();
         formData.append("file", values.imageFile);
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/stores/${storeId}/products/${editingProduct.id}/images`,
+          `${process.env.NEXT_PUBLIC_API_URL}/api/stores/${storeId}/products/${editingProduct.id}/images?replace=1`,
           {
             method: "POST",
             credentials: "include",
