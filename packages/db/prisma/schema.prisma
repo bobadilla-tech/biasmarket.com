@@ -258,6 +258,7 @@ model OrderPayment {
   amount    Decimal  @db.Decimal(10, 2)
   currency  String
   note      String?
+  imageUrl  String?
   createdAt DateTime @default(now())
 
   order Order @relation(fields: [orderId], references: [id])

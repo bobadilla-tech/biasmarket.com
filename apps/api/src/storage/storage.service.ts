@@ -32,6 +32,10 @@ export class StorageService {
         return this.upload(this.logoBucket, 'logos', buffer, mimeType);
     }
 
+    async uploadPaymentImage(buffer: Buffer, mimeType: string): Promise<string> {
+        return this.upload(this.bucket, 'payments', buffer, mimeType);
+    }
+
     private async upload(
         bucket: string,
         prefix: string,

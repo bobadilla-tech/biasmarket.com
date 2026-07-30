@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Plus, Receipt, Wallet } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Plus, Receipt, Wallet, Upload, X, ImageIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
@@ -29,10 +29,10 @@ import { apiFetch } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/use-store";
 
-interface OrderItemRow {
+interface OrderItemRow {Upload: any
   id: string;
   quantity: number;
-  product: { id: string; name: string };
+  product: { id: string; name: string; images?: string[] };
   variant: { id: string; name: string } | null;
 }
 
@@ -40,6 +40,7 @@ interface OrderPaymentRow {
   id: string;
   amount: string;
   note?: string | null;
+  imageUrl?: string | null;
   createdAt: string;
 }
 
@@ -185,8 +186,11 @@ export default function OrdersPage() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentNote, setPaymentNote] = useState("");
+  const [paymentImage, setPaymentImage] = useState<File | null>(null);
   const [paymentSubmitting, setPaymentSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [paymentPreviewUrl, setPaymentPreviewUrl] = useState<string | null>(null);
   const [pendingChange, setPendingChange] = useState<
     Record<string, { field: "paymentStatus" | "fulfillmentStatus"; previousValue: string }>
   >({});
@@ -328,12 +332,26 @@ export default function OrdersPage() {
     if (!storeId || !Number.isFinite(amount) || amount <= 0) return;
     setPaymentSubmitting(true);
     try {
-      await apiFetch(`/stores/${storeId}/orders/${orderId}/payments`, {
-        method: "POST",
-        body: JSON.stringify({ amount, note: paymentNote || undefined }),
-      });
+      const formData = new FormData();
+      formData.append("amount", String(amount));
+      if (paymentNote) formData.append("note", paymentNote);
+      if (paymentImage) formData.append("file", paymentImage);
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/stores/${storeId}/orders/${orderId}/payments`,
+        {
+          method: "POST",
+          credentials: "include",
+          body: formData,
+        },
+      );
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.message ?? tCommon("networkError"));
+
       setPaymentAmount("");
       setPaymentNote("");
+      setPaymentImage(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       await loadOrders();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -371,11 +389,13 @@ export default function OrdersPage() {
   }
 
   return (
-    <div className="min-h-screen px-5 py-6 lg:px-8 lg:py-8">
+    <div className="min-h-screen px-5 py-6 lg:px-8 lg:py-8 ">
       <div className="mx-auto max-w-7xl space-y-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between ">
           <div>
-            <p className="text-sm font-medium text-[#8e7ca7]">{t("subtitle")}</p>
+            <p className="text-sm font-medium text-[#8e7ca7]">
+              {t("subtitle")}
+            </p>
             <h1 className="text-3xl font-bold tracking-tight text-[#2d1649]">
               {t("titleWithCount", { count: orders.length })}
             </h1>
@@ -390,8 +410,8 @@ export default function OrdersPage() {
           </Button>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2 rounded-2xl border border-[#eadcf7] bg-white p-1">
+        <div className="flex flex-wrap items-center justify-between gap-3 ">
+          <div className="flex items-center gap-2 rounded-2xl border border-[#eadcf7] bg-white p-1 overflow-x-auto">
             <Button
               type="button"
               variant="ghost"
@@ -446,20 +466,27 @@ export default function OrdersPage() {
             </Button>
           </div>
           <p className="text-sm text-[#8f7da8]">
-            {t("showingCount", { count: filteredOrders.length, total: counts[activeTab] })}
+            {t("showingCount", {
+              count: filteredOrders.length,
+              total: counts[activeTab],
+            })}
           </p>
         </div>
 
         {error ? (
-          <Card className="rounded-2xl border-[#f3cbd8] bg-[#fff3f7] py-0 shadow-none">
-            <CardContent className="px-4 py-3 text-sm text-[#b24368]">{error}</CardContent>
+          <Card className="rounded-2xl border-[#f3cbd8] bg-[#fff3f7] py-0 shadow-none ">
+            <CardContent className="px-4 py-3 text-sm text-[#b24368]">
+              {error}
+            </CardContent>
           </Card>
         ) : null}
 
-        <Card className="overflow-hidden rounded-[30px] border-[#eadcf8] bg-white py-0 shadow-sm">
+        <Card className="rounded-[30px] border-[#eadcf8] bg-white py-0 shadow-sm overflow-x-auto">
           <CardContent className="px-0">
             {filteredOrders.length === 0 ? (
-              <div className="px-6 py-10 text-sm text-[#8f7da8]">{t("empty")}</div>
+              <div className="px-6 py-10 text-sm text-[#8f7da8] ">
+                {t("empty")}
+              </div>
             ) : (
               <table className="w-full text-sm">
                 <thead>
@@ -471,46 +498,75 @@ export default function OrdersPage() {
                     <th className="px-6 py-4">{t("columns.delivery")}</th>
                     <th className="px-6 py-4">{t("columns.date")}</th>
                     <th className="px-6 py-4">{t("columns.status")}</th>
-                    <th className="px-6 py-4 text-right">{t("columns.actions")}</th>
+                    <th className="px-6 py-4 text-right">
+                      {t("columns.actions")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredOrders.map((order) => {
                     const number = getOrderNumber(order.id);
-                    const initials = getInitials(order.customerName, order.customerPhone);
+                    const initials = getInitials(
+                      order.customerName,
+                      order.customerPhone,
+                    );
                     const customer = order.customerName ?? order.customerPhone;
                     const product = getProductSummary(order, t);
                     const delivery = getDeliveryLabel(order, t);
                     const date = formatOrderDate(order.createdAt, locale, t);
                     const status = getOrderStatus(order, t);
+                    const avatar = order.items?.[0]?.product?.images?.[0];
                     return (
                       <tr
                         key={order.id}
                         className="border-b border-[#f3ebff] last:border-0 hover:bg-[#fcf9ff]"
                       >
-                        <td className="px-6 py-4 text-xs font-semibold text-[#8f7da8]">{number}</td>
+                        <td className="px-6 py-4 text-xs font-semibold text-[#8f7da8]">
+                          {number}
+                        </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <div
-                              className="flex size-9 items-center justify-center rounded-full text-[11px] font-semibold text-white"
-                              style={{
-                                background:
-                                  "linear-gradient(135deg, var(--store-accent) 0%, var(--store-primary) 100%)",
-                              }}
-                            >
-                              {initials}
-                            </div>
-                            <p className="text-sm font-semibold text-[#2d1649]">{customer}</p>
+                            {avatar ? (
+                              <img
+                                className="size-9 rounded-full object-cover"
+                                src={avatar}
+                                alt={customer}
+                              />
+                            ) : (
+                              <div
+                                className="flex size-9 items-center justify-center rounded-full text-[11px] font-semibold text-white"
+                                style={{
+                                  background:
+                                    "linear-gradient(135deg, var(--store-accent) 0%, var(--store-primary) 100%)",
+                                }}
+                              >
+                                {initials}
+                              </div>
+                            )}
+                            <p className="text-sm font-semibold text-[#2d1649]">
+                              {customer}
+                            </p>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-sm text-[#2d1649]">{product}</td>
+                        <td className="px-6 py-4 text-sm text-[#2d1649]">
+                          {product}
+                        </td>
                         <td className="px-6 py-4 text-sm font-semibold text-[var(--store-accent)]">
                           {order.currency} {order.totalAmount}
                         </td>
-                        <td className="px-6 py-4 text-sm text-[#8f7da8]">{delivery}</td>
-                        <td className="px-6 py-4 text-sm text-[#8f7da8]">{date}</td>
+                        <td className="px-6 py-4 text-sm text-[#8f7da8]">
+                          {delivery}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-[#8f7da8]">
+                          {date}
+                        </td>
                         <td className="px-6 py-4">
-                          <Badge className={cn("rounded-full px-3 py-1 text-xs font-semibold", status.className)}>
+                          <Badge
+                            className={cn(
+                              "rounded-full px-3 py-1 text-xs font-semibold",
+                              status.className,
+                            )}
+                          >
                             {status.label}
                           </Badge>
                         </td>
@@ -580,11 +636,34 @@ export default function OrdersPage() {
             if (!open) setSelectedOrderId(null);
           }}
         >
+          {paymentPreviewUrl ? (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6"
+              role="dialog"
+              aria-modal="true"
+              onClick={() => setPaymentPreviewUrl(null)}
+            >
+              <div
+                className="max-h-[85vh] w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-xl"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <img
+                  src={paymentPreviewUrl}
+                  alt=""
+                  className="h-full w-full object-contain"
+                />
+              </div>
+            </div>
+          ) : null}
           <SheetContent className="h-dvh w-[420px] gap-0 overflow-y-auto sm:max-w-[420px]">
             {selectedOrder ? (
               <>
                 <SheetHeader>
-                  <SheetTitle>{t("details.title", { number: getOrderNumber(selectedOrder.id) })}</SheetTitle>
+                  <SheetTitle>
+                    {t("details.title", {
+                      number: getOrderNumber(selectedOrder.id),
+                    })}
+                  </SheetTitle>
                   <SheetDescription>
                     {selectedOrder.customerName ?? selectedOrder.customerPhone}
                   </SheetDescription>
@@ -594,28 +673,40 @@ export default function OrdersPage() {
                   {/* Summary Block */}
                   <div className="space-y-4 rounded-[24px] border border-[#eadcf8] bg-gradient-to-b from-[#fcf9ff] to-white p-5 shadow-sm">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium text-[#8f7da8]">{t("details.total")}</span>
+                      <span className="font-medium text-[#8f7da8]">
+                        {t("details.total")}
+                      </span>
                       <span className="font-bold text-[#2d1649]">
                         {selectedOrder.currency} {selectedOrder.totalAmount}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium text-[#8f7da8]">{t("details.paid")}</span>
+                      <span className="font-medium text-[#8f7da8]">
+                        {t("details.paid")}
+                      </span>
                       <span className="font-bold text-[#159a63]">
-                        {selectedOrder.currency} {selectedOrder.paidAmount.toFixed(2)}
+                        {selectedOrder.currency}{" "}
+                        {selectedOrder.paidAmount.toFixed(2)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium text-[#8f7da8]">{t("details.pending")}</span>
+                      <span className="font-medium text-[#8f7da8]">
+                        {t("details.pending")}
+                      </span>
                       <span className="font-bold text-[#d11d52]">
-                        {selectedOrder.currency} {selectedOrder.pendingAmount.toFixed(2)}
+                        {selectedOrder.currency}{" "}
+                        {selectedOrder.pendingAmount.toFixed(2)}
                       </span>
                     </div>
 
                     <div className="space-y-2.5 border-t border-[#f3ebff] pt-3">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="font-semibold text-[#2d1649]">{t("details.progress")}</span>
-                        <span className="font-bold text-[var(--store-primary)]">{Math.round(selectedOrder.paidPercentage)}%</span>
+                        <span className="font-semibold text-[#2d1649]">
+                          {t("details.progress")}
+                        </span>
+                        <span className="font-bold text-[var(--store-primary)]">
+                          {Math.round(selectedOrder.paidPercentage)}%
+                        </span>
                       </div>
                       <div className="h-2.5 overflow-hidden rounded-full bg-[#f0e7f8] shadow-inner">
                         <div
@@ -627,11 +718,17 @@ export default function OrdersPage() {
 
                     <div className="space-y-2 border-t border-[#f3ebff] pt-3">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium text-[#8f7da8]">{t("details.delivery")}</span>
-                        <span className="font-semibold text-[#2d1649]">{getDeliveryLabel(selectedOrder, t)}</span>
+                        <span className="font-medium text-[#8f7da8]">
+                          {t("details.delivery")}
+                        </span>
+                        <span className="font-semibold text-[#2d1649]">
+                          {getDeliveryLabel(selectedOrder, t)}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium text-[#8f7da8]">{t("details.date")}</span>
+                        <span className="font-medium text-[#8f7da8]">
+                          {t("details.date")}
+                        </span>
                         <span className="font-semibold text-[#2d1649]">
                           {formatOrderDate(selectedOrder.createdAt, locale, t)}
                         </span>
@@ -643,13 +740,17 @@ export default function OrdersPage() {
                   <div className="space-y-4 rounded-[24px] border border-[#eadcf8] bg-white p-5 shadow-sm">
                     <div className="flex items-center gap-2 text-[#2d1649]">
                       <Wallet className="size-5 text-[var(--store-primary)]" />
-                      <h3 className="font-semibold">{t("details.addPayment")}</h3>
+                      <h3 className="font-semibold">
+                        {t("details.addPayment")}
+                      </h3>
                     </div>
 
                     <div className="flex gap-2">
                       <Input
                         value={paymentAmount}
-                        onChange={(event) => setPaymentAmount(event.target.value)}
+                        onChange={(event) =>
+                          setPaymentAmount(event.target.value)
+                        }
                         inputMode="decimal"
                         placeholder={t("details.paymentAmountPlaceholder")}
                         className="store-theme-input h-11 rounded-xl border-[#e7dcf3] bg-[#fbf8fe] shadow-none"
@@ -657,7 +758,11 @@ export default function OrdersPage() {
                       <Button
                         type="button"
                         onClick={() => handleRegisterPayment(selectedOrder.id)}
-                        disabled={paymentSubmitting || selectedOrder.pendingAmount <= 0 || !paymentAmount}
+                        disabled={
+                          paymentSubmitting ||
+                          selectedOrder.pendingAmount <= 0 ||
+                          !paymentAmount
+                        }
                         className="store-theme-primary-button h-11 shrink-0 rounded-xl px-5 text-sm font-semibold hover:opacity-100"
                       >
                         {t("details.registerPayment")}
@@ -669,17 +774,131 @@ export default function OrdersPage() {
                       placeholder={t("details.paymentNotePlaceholder")}
                       className="store-theme-input h-11 rounded-xl border-[#e7dcf3] bg-[#fbf8fe] shadow-none"
                     />
+                    <div className="space-y-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/png,image/jpeg"
+                        className="hidden"
+                        id="payment-image-upload"
+                        onChange={(event) => {
+                          const file = event.target.files?.[0] ?? null;
+                          setPaymentImage(file);
+                        }}
+                      />
+
+                      <label
+                        htmlFor="payment-image-upload"
+                        className={cn(
+                          "flex cursor-pointer items-center justify-center gap-3 rounded-xl border border-dashed px-4 py-3 transition",
+                          "border-[#d9c7ee] bg-[#fbf8fe] hover:bg-[#f7f0ff]",
+                          paymentImage &&
+                            "border-[var(--store-primary)] bg-[#faf5ff]",
+                        )}
+                      >
+                        <div className="flex size-9 items-center justify-center rounded-full bg-[#f0e7f8]">
+                          {paymentImage ? (
+                            <ImageIcon className="size-4 text-[var(--store-primary)]" />
+                          ) : (
+                            <Upload className="size-4 text-[var(--store-primary)]" />
+                          )}
+                        </div>
+
+                        <div className="flex-1">
+                          {paymentImage ? (
+                            <>
+                              <p className="truncate text-sm font-semibold text-[#2d1649]">
+                                {paymentImage.name}
+                              </p>
+                              <p className="text-xs text-[#8f7da8]">
+                                {t("details.imageSize", {
+                                  size: (paymentImage.size / 1024).toFixed(1),
+                                })}
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="text-sm font-semibold text-[#2d1649]">
+                                {t("details.uploadPaymentImage")}
+                              </p>
+
+                              <p className="text-xs text-[#8f7da8]">
+                                {t("details.uploadPaymentImageHint")}
+                              </p>
+                            </>
+                          )}
+                        </div>
+
+                        {!paymentImage && (
+                          <span className="rounded-full bg-[var(--store-primary)] px-3 py-1 text-xs font-semibold text-white">
+                            {t("details.chooseImage")}
+                          </span>
+                        )}
+                      </label>
+
+                      {paymentImage && (
+                        <div className="flex items-center justify-between rounded-xl border border-[#f0e7f8] bg-white p-2">
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={URL.createObjectURL(paymentImage)}
+                              alt=""
+                              className="size-12 rounded-lg object-cover"
+                            />
+
+                            <span className="text-xs text-[#8f7da8]">
+                              {t("details.imagePreview")}
+                            </span>
+                          </div>
+
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            className="size-8 rounded-full p-0 text-[#b24368] hover:bg-[#fff0f5]"
+                            onClick={() => {
+                              setPaymentImage(null);
+                              if (fileInputRef.current) {
+                                fileInputRef.current.value = "";
+                              }
+                            }}
+                          >
+                            <X className="size-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
 
                     {selectedOrder.payments.length > 0 && (
                       <div className="space-y-3 border-t border-[#f3ebff] pt-4">
                         <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#927fac]">
-                          {t("details.paymentHistory", { fallback: "Historial de abonos" })}
+                          {t("details.paymentHistory", {
+                            fallback: "Historial de abonos",
+                          })}
                         </p>
                         <div className="space-y-2">
                           {selectedOrder.payments.map((payment) => (
-                            <div key={payment.id} className="flex items-start gap-3 rounded-xl border border-[#f0e7f8] bg-[#fcf9ff] p-3 transition hover:bg-white">
-                              <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-[#f0e7f8] text-[var(--store-primary)]">
-                                <Receipt className="size-3.5" />
+                            <div
+                              key={payment.id}
+                              className="flex items-start gap-3 rounded-xl border border-[#f0e7f8] bg-[#fcf9ff] p-3 transition hover:bg-white"
+                            >
+                              <div
+                                className={cn(
+                                  "mt-0.5 flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#f0e7f8] text-[var(--store-primary)]",
+                                  payment.imageUrl ? "cursor-pointer" : "",
+                                )}
+                                onClick={() => {
+                                  if (!payment.imageUrl) return;
+                                  setPaymentPreviewUrl(payment.imageUrl);
+                                }}
+                              >
+                                {payment.imageUrl ? (
+                                  <img
+                                    src={payment.imageUrl}
+                                    alt=""
+                                    className="h-full w-full object-cover"
+                                  />
+                                ) : (
+                                  <Receipt className="size-3.5" />
+                                )}
                               </div>
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center justify-between gap-2">
@@ -687,10 +906,18 @@ export default function OrdersPage() {
                                     {selectedOrder.currency} {payment.amount}
                                   </span>
                                   <span className="text-[11px] font-medium text-[#8f7da8]">
-                                    {formatOrderDate(payment.createdAt, locale, t)}
+                                    {formatOrderDate(
+                                      payment.createdAt,
+                                      locale,
+                                      t,
+                                    )}
                                   </span>
                                 </div>
-                                {payment.note ? <p className="mt-1 truncate text-xs text-[#6e5a87]">{payment.note}</p> : null}
+                                {payment.note ? (
+                                  <p className="mt-1 truncate text-xs text-[#6e5a87]">
+                                    {payment.note}
+                                  </p>
+                                ) : null}
                               </div>
                             </div>
                           ))}
@@ -712,9 +939,13 @@ export default function OrdersPage() {
                           <div className="min-w-0">
                             <p className="truncate text-sm font-semibold text-[#2d1649]">
                               {item.product.name}
-                              {item.variant?.name ? ` (${item.variant.name})` : ""}
+                              {item.variant?.name
+                                ? ` (${item.variant.name})`
+                                : ""}
                             </p>
-                            <p className="text-xs text-[#8f7da8]">{t("details.quantity", { count: item.quantity })}</p>
+                            <p className="text-xs text-[#8f7da8]">
+                              {t("details.quantity", { count: item.quantity })}
+                            </p>
                           </div>
                         </div>
                       ))}
@@ -751,12 +982,18 @@ export default function OrdersPage() {
                       <Button
                         type="button"
                         variant="outline"
-                        onClick={() => handleAdvanceClick(selectedOrder)}
+                        onClick={async () => {
+                          const next = NEXT_FULFILLMENT[selectedOrder.fulfillmentStatus];
+                          if (!next) return;
+                          await handleAdvance(selectedOrder.id, next);
+                          setDetailsOpen(false);
+                        }}
                         className="h-11 flex-1 rounded-2xl border-[#eadcf7] bg-white text-sm font-semibold text-[#2d1649] shadow-none hover:bg-[#fcf9ff]"
                       >
-                        {t("markAs", {
-                          status: fulfillmentLabels[NEXT_FULFILLMENT[selectedOrder.fulfillmentStatus]!],
-                        })}
+                        {(() => {
+                          const next = NEXT_FULFILLMENT[selectedOrder.fulfillmentStatus];
+                          return next ? t("markAs", { status: next }) : null;
+                        })()}
                       </Button>
                     ) : null}
                   </div>
