@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { Geist, Geist_Mono } from "next/font/google";
 import { routing } from "@/i18n/routing";
 import { SITE_URL } from "@/lib/site-config";
+import { Toaster } from "sonner";
 import "../globals.css";
 
 const geistSans = Geist({
@@ -70,7 +71,10 @@ export default async function RootLayout({
         <NextIntlClientProvider locale={locale}>
           {children}
         </NextIntlClientProvider>
+
+        <Toaster position="top-center" richColors closeButton />
       </body>
     </html>
   );
 }
+

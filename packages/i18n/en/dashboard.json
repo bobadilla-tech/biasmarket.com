@@ -280,6 +280,7 @@
       "description": "A quick summary of the shared values your storefront relies on.",
       "currencyCardTitle": "Default currency",
       "currencyCardDescription": "Used as the initial currency for new catalog items.",
+      "copyMessage":"URL copied to clipboard",
       "urlCardTitle": "Public storefront URL",
       "urlCardDescription": "Share this link so buyers can browse your catalog."
     },

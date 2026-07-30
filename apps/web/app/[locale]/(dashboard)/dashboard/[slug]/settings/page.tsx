@@ -5,6 +5,7 @@ import {
   Bell,
   Building2,
   CreditCard,
+  Copy,
   Palette,
   Plus,
   Store,
@@ -37,6 +38,7 @@ import {
 } from "@/lib/store-theme";
 import { broadcastStoreUpdate, useStore } from "@/lib/use-store";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface DeliveryMethod {
   type: "PICKUP" | "COURIER";
@@ -248,7 +250,13 @@ export default function SettingsPage() {
     return () => window.clearTimeout(timer);
   }, [savedSection]);
 
-  const storefrontUrl = useMemo(() => `/${locale}/store/${slug}`, [locale, slug]);
+  const storefrontUrl = useMemo(() => {
+    if (typeof window === "undefined") {
+      return `/${locale}/store/${slug}`;
+    }
+
+    return `${window.location.origin}/${locale}/store/${slug}`;
+  }, [locale, slug]);
 
   const selectedPalette = useMemo(
     () =>
@@ -422,8 +430,12 @@ export default function SettingsPage() {
         <Card className="rounded-[28px] border-white/60 bg-white/55 py-0 shadow-[0_10px_35px_rgba(89,35,126,0.05)] backdrop-blur">
           <CardContent className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-medium text-[#8e7ca7]">{t("eyebrow")}</p>
-              <h1 className="text-3xl font-bold tracking-tight text-[#2d1649]">{t("title")}</h1>
+              <p className="text-sm font-medium text-[#8e7ca7]">
+                {t("eyebrow")}
+              </p>
+              <h1 className="text-3xl font-bold tracking-tight text-[#2d1649]">
+                {t("title")}
+              </h1>
               <p className="mt-1 text-sm text-[#8f7da8]">{t("subtitle")}</p>
             </div>
             <div className="flex items-center gap-3">
@@ -456,7 +468,9 @@ export default function SettingsPage() {
 
         {error ? (
           <Card className="rounded-2xl border-[#f3cbd8] bg-[#fff3f7] py-0 shadow-none">
-            <CardContent className="px-4 py-3 text-sm text-[#b24368]">{error}</CardContent>
+            <CardContent className="px-4 py-3 text-sm text-[#b24368]">
+              {error}
+            </CardContent>
           </Card>
         ) : null}
 
@@ -502,7 +516,9 @@ export default function SettingsPage() {
                   type="file"
                   accept="image/png,image/jpeg"
                   className="hidden"
-                  onChange={(event) => handleUploadLogo(event.target.files?.[0] ?? null)}
+                  onChange={(event) =>
+                    handleUploadLogo(event.target.files?.[0] ?? null)
+                  }
                 />
                 <Button
                   type="button"
@@ -562,7 +578,9 @@ export default function SettingsPage() {
                 <Field label={t("profile.instructionsLabel")}>
                   <Textarea
                     value={paymentInstructions}
-                    onChange={(event) => setPaymentInstructions(event.target.value)}
+                    onChange={(event) =>
+                      setPaymentInstructions(event.target.value)
+                    }
                     placeholder={t("profile.instructionsPlaceholder")}
                     rows={4}
                     className="store-theme-input rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] text-[#341b55] shadow-none"
@@ -624,8 +642,12 @@ export default function SettingsPage() {
                     </div>
                     <div className="flex w-full items-start justify-between gap-3">
                       <div>
-                        <p className="font-semibold text-[#301848]">{palette.name}</p>
-                        <p className="mt-1 text-xs text-[#8d79a5]">{palette.description}</p>
+                        <p className="font-semibold text-[#301848]">
+                          {palette.name}
+                        </p>
+                        <p className="mt-1 text-xs text-[#8d79a5]">
+                          {palette.description}
+                        </p>
                       </div>
                       {selectedPaletteId === palette.id ? (
                         <Badge className="store-theme-soft-badge rounded-full px-2.5 py-1 text-[11px] font-semibold">
@@ -642,7 +664,10 @@ export default function SettingsPage() {
                 style={{ backgroundColor: selectedPalette.colors.surface }}
               >
                 <CardContent className="px-4 py-4">
-                  <p className="text-sm font-semibold" style={{ color: selectedPalette.colors.text }}>
+                  <p
+                    className="text-sm font-semibold"
+                    style={{ color: selectedPalette.colors.text }}
+                  >
                     {t("appearance.previewTitle")}
                   </p>
                   <div className="mt-3 flex items-center gap-4">
@@ -699,7 +724,12 @@ export default function SettingsPage() {
                     className="flex items-center justify-between rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3"
                   >
                     <div className="flex items-center gap-3">
-                      <Badge className={cn("rounded-2xl px-2.5 py-1.5 text-xs font-semibold", method.color)}>
+                      <Badge
+                        className={cn(
+                          "rounded-2xl px-2.5 py-1.5 text-xs font-semibold",
+                          method.color,
+                        )}
+                      >
                         {t(`payments.items.${method.key}.short`)}
                       </Badge>
                       <div>
@@ -743,7 +773,9 @@ export default function SettingsPage() {
                   </span>
                   <div className="space-y-2">
                     {pickupPoints.length === 0 ? (
-                      <p className="text-xs text-[#9582ad]">{t("delivery.noPickupPoints")}</p>
+                      <p className="text-xs text-[#9582ad]">
+                        {t("delivery.noPickupPoints")}
+                      </p>
                     ) : (
                       pickupPoints.map((point) => (
                         <div
@@ -752,11 +784,18 @@ export default function SettingsPage() {
                         >
                           <Switch
                             checked={point.enabled}
-                            onCheckedChange={(enabled) => handleTogglePoint(point.id, enabled)}
+                            onCheckedChange={(enabled) =>
+                              handleTogglePoint(point.id, enabled)
+                            }
                           />
                           <Input
                             value={point.label}
-                            onChange={(event) => handleUpdatePointLabel(point.id, event.target.value)}
+                            onChange={(event) =>
+                              handleUpdatePointLabel(
+                                point.id,
+                                event.target.value,
+                              )
+                            }
                             className="store-theme-input h-10 rounded-xl border-[#e7dcf3] bg-white text-[#341b55] shadow-none"
                           />
                           <button
@@ -773,7 +812,9 @@ export default function SettingsPage() {
                     <div className="flex gap-2">
                       <Input
                         value={newPointLabel}
-                        onChange={(event) => setNewPointLabel(event.target.value)}
+                        onChange={(event) =>
+                          setNewPointLabel(event.target.value)
+                        }
                         placeholder={t("delivery.pickupPointPlaceholder")}
                         className="store-theme-input h-11 rounded-2xl border-[#e7dcf3] bg-white text-[#341b55] shadow-none"
                       />
@@ -850,12 +891,29 @@ export default function SettingsPage() {
                     <p className="text-sm font-medium text-[#341b55]">
                       {t("defaults.urlCardTitle")}
                     </p>
+
                     <p className="mt-1 text-xs text-[#9582ad]">
                       {t("defaults.urlCardDescription")}
                     </p>
-                    <p className="store-theme-active-text mt-3 text-sm font-medium">
-                      {storefrontUrl}
-                    </p>
+
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <p className="store-theme-active-text truncate text-sm font-medium">
+                        {storefrontUrl}
+                      </p>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8 shrink-0 rounded-lg border-[#e5d8f5] hover:bg-[#f5effd]"
+                        onClick={async () => {
+                          await navigator.clipboard.writeText(storefrontUrl);
+                          toast.success(t("defaults.copyMessage"));
+                        }}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -871,13 +929,17 @@ export default function SettingsPage() {
                   <ToggleRow
                     key={notification.key}
                     label={t(`notifications.items.${notification.key}.label`)}
-                    description={t(`notifications.items.${notification.key}.description`)}
+                    description={t(
+                      `notifications.items.${notification.key}.description`,
+                    )}
                     enabled={notification.enabled}
                     disabled={notification.locked}
                     onChange={(enabled) =>
                       setNotifications((current) =>
                         current.map((item) =>
-                          item.key === notification.key ? { ...item, enabled } : item,
+                          item.key === notification.key
+                            ? { ...item, enabled }
+                            : item,
                         ),
                       )
                     }

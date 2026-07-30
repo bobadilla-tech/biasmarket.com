@@ -280,6 +280,7 @@
       "description": "Un resumen rápido de los datos compartidos que usa tu tienda.",
       "currencyCardTitle": "Moneda por defecto",
       "currencyCardDescription": "Se usa como moneda inicial para productos nuevos.",
+      "copyMessage": "URL copiada",
       "urlCardTitle": "URL pública de la tienda",
       "urlCardDescription": "Comparte este enlace para que los compradores vean tu catálogo."
     },
