@@ -124,7 +124,7 @@ export function StoreSidebar({
 
   return (
     <aside
-      className="hidden w-[288px] shrink-0 flex-col px-5 py-6 text-white lg:flex"
+      className="flex h-full w-full flex-col overflow-y-auto px-5 py-6 text-white"
       style={{
         background:
           "linear-gradient(180deg, var(--store-sidebar-start) 0%, var(--store-sidebar-mid) 50%, var(--store-sidebar-end) 100%)",
@@ -150,7 +150,9 @@ export function StoreSidebar({
           </div>
         )}
         <div>
-          <p className="text-sm font-semibold text-white">{store?.name ?? t("brand")}</p>
+          <p className="text-sm font-semibold text-white">
+            {store?.name ?? t("brand")}
+          </p>
         </div>
       </div>
 
