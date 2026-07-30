@@ -3,6 +3,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { vi, type Mock } from 'vitest';
 import { CreateOrderUseCase } from './create-order.usecase.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
+import { NotificationsService } from '../../notifications/notifications.service.js';
 
 // Minimal stand-in for the decimal.js `Decimal` instances the real
 // PrismaService returns for `Decimal(10,2)` columns — the unit-test alias
@@ -33,6 +34,7 @@ describe('CreateOrderUseCase', () => {
     productVariant: { findUnique: Mock; update: Mock };
     order: { create: Mock };
   };
+  let notifications: { syncStockAlerts: Mock };
 
   const slug = 'my-store';
   const store = {
@@ -66,9 +68,14 @@ describe('CreateOrderUseCase', () => {
       productVariant: { findUnique: vi.fn(), update: vi.fn() },
       order: { create: vi.fn() },
     };
+    notifications = { syncStockAlerts: vi.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [CreateOrderUseCase, { provide: PrismaService, useValue: prisma }],
+      providers: [
+        CreateOrderUseCase,
+        { provide: PrismaService, useValue: prisma },
+        { provide: NotificationsService, useValue: notifications },
+      ],
     }).compile();
 
     useCase = module.get(CreateOrderUseCase);
@@ -160,6 +167,13 @@ describe('CreateOrderUseCase', () => {
       customerName: 'Jane',
       customerPhone: dto.customerPhone,
     });
+    prisma.productVariant.update.mockResolvedValue({
+      id: 'variant-1',
+      productId: 'product-1',
+      name: 'Large',
+      stock: 5,
+      reserved: 2,
+    });
 
     const result = await useCase.execute(slug, {
       ...dto,
@@ -183,6 +197,12 @@ describe('CreateOrderUseCase', () => {
     expect(result.whatsappUrl).toContain('https://wa.me/51999999999');
     expect(result.whatsappUrl).toContain(encodeURIComponent('20.00 PEN'));
     expect(result.whatsappUrl).toContain(encodeURIComponent('Widget (Large)'));
+    expect(notifications.syncStockAlerts).toHaveBeenCalledWith(
+      prisma,
+      store,
+      expect.objectContaining({ id: 'product-1' }),
+      expect.objectContaining({ id: 'variant-1' }),
+    );
   });
 
   it('rejects a cart mixing products with different currencies', async () => {

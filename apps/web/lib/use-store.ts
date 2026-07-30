@@ -19,6 +19,8 @@ export interface DashboardStore {
   logoUrl?: string | null;
   paymentInstructions?: string;
   themeConfig?: StoreThemeConfig | null;
+  lowStockThreshold?: number;
+  lowStockAlertsEnabled?: boolean;
 }
 
 export function broadcastStoreUpdate(detail: DashboardStoreUpdatedDetail) {

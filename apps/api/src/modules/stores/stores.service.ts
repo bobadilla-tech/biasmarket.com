@@ -136,40 +136,53 @@ export class StoresService {
       },
     }));
 
-    if (sections.length > 0) {
-      return { ...store, sections };
-    }
-
-    // No sections configured yet — fall back to a single implicit
-    // "all published products" section so existing/new stores don't render blank.
-    const products = await this.prisma.product.findMany({
-      where: { storeId: store.id, status: 'PUBLISHED', deletedAt: null },
+    // A product only shows up if it's attached to a collection wired into
+    // one of the sections above — that's a manual curation step, separate
+    // from creating/publishing a product. Any published product a seller
+    // never got around to adding to a collection would otherwise be
+    // invisible forever, so always append a catch-all trailing section for
+    // whatever's left over (this also replaces the old "zero sections"
+    // fallback — that's just the case where every product is left over).
+    const coveredProductIds = sections.flatMap(
+      (section) => section.collection?.products.map((cp) => cp.productId) ?? [],
+    );
+    const orphanProducts = await this.prisma.product.findMany({
+      where: {
+        storeId: store.id,
+        status: 'PUBLISHED',
+        deletedAt: null,
+        id: { notIn: coveredProductIds },
+      },
       include: { variants: true },
     });
-    return {
-      ...store,
-      sections: [
-        {
-          id: 'default',
-          type: 'COLLECTION' as const,
-          collectionId: null,
-          content: {},
-          position: 0,
-          collection: {
-            id: null,
-            name: '',
-            slug: '',
-            description: '',
-            products: products.map((product, position) => ({
-              collectionId: null,
-              productId: product.id,
-              position,
-              product,
-            })),
-          },
+
+    if (orphanProducts.length > 0) {
+      sections.push({
+        id: 'default',
+        storeId: store.id,
+        type: 'COLLECTION' as const,
+        collectionId: null,
+        content: {},
+        position: sections.length,
+        createdAt: new Date(),
+        collection: {
+          id: null as unknown as string,
+          storeId: store.id,
+          name: '',
+          slug: '',
+          description: '',
+          createdAt: new Date(),
+          products: orphanProducts.map((product, position) => ({
+            collectionId: null as unknown as string,
+            productId: product.id,
+            position,
+            product,
+          })),
         },
-      ],
-    };
+      });
+    }
+
+    return { ...store, sections };
   }
 
   async findCollectionsPublic() {

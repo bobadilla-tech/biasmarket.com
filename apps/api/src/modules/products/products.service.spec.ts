@@ -3,6 +3,7 @@ import { BadRequestException, ForbiddenException, NotFoundException } from '@nes
 import { vi, type Mock } from 'vitest';
 import { ProductsService } from './products.service.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 
 describe('ProductsService', () => {
   let service: ProductsService;
@@ -53,6 +54,7 @@ describe('ProductsService', () => {
       providers: [
         ProductsService,
         { provide: PrismaService, useValue: prisma },
+        { provide: NotificationsService, useValue: { syncStockAlerts: vi.fn() } },
       ],
     }).compile();
 

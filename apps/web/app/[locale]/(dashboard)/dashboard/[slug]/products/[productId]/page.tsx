@@ -51,10 +51,10 @@ interface Product {
   createdAt?: string;
 }
 
-function stockTone(stock: number | null | undefined) {
+function stockTone(stock: number | null | undefined, threshold = 5) {
   if (stock === null || stock === undefined) return "text-[#2c1647]";
-  if (stock <= 2) return "text-[#d11d52]";
-  if (stock <= 8) return "text-[#d97706]";
+  if (stock <= 0) return "text-[#d11d52]";
+  if (stock <= threshold) return "text-[#d97706]";
   return "text-[#159a63]";
 }
 
@@ -63,7 +63,7 @@ export default function ProductDetailsPage() {
   const tCommon = useTranslations("common");
   const router = useRouter();
   const { productId } = useParams<{ productId: string }>();
-  const { storeId, slug, loading: storeLoading } = useStore();
+  const { store, storeId, slug, loading: storeLoading } = useStore();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [variants, setVariants] = useState<Variant[]>([]);
@@ -199,7 +199,7 @@ export default function ProductDetailsPage() {
   }
 
   const image = product.images?.[0];
-  const stockClassName = stockTone(product.availableStock);
+  const stockClassName = stockTone(product.availableStock, store?.lowStockThreshold);
 
   return (
     <div className="min-h-screen px-5 py-6 lg:px-8 lg:py-8">
@@ -367,7 +367,7 @@ export default function ProductDetailsPage() {
                             variant="outline"
                             className={cn(
                               "rounded-full border-[#eadcf7] px-3 py-1 text-xs",
-                              stockTone(variant.stock),
+                              stockTone(variant.stock, store?.lowStockThreshold),
                             )}
                           >
                             {variant.stock === null ? t("products.stockUnlimited") : variant.stock}

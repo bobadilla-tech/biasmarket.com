@@ -9,6 +9,8 @@ describe('StoresService', () => {
   let prisma: {
     store: { findUnique: Mock; create: Mock; findMany: Mock; update: Mock };
     deliveryMethodConfig: { create: Mock };
+    storeSection: { findMany: Mock };
+    product: { findMany: Mock };
     $transaction: Mock;
   };
 
@@ -23,6 +25,8 @@ describe('StoresService', () => {
         update: vi.fn(),
       },
       deliveryMethodConfig: { create: vi.fn() },
+      storeSection: { findMany: vi.fn() },
+      product: { findMany: vi.fn() },
       $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(prisma)),
     };
 
@@ -191,6 +195,113 @@ describe('StoresService', () => {
           },
         },
       });
+    });
+  });
+
+  describe('findPublicBySlug()', () => {
+    const storeId = 'store-1';
+    const productA = { id: 'product-a', status: 'PUBLISHED', deletedAt: null };
+    const productB = { id: 'product-b', status: 'PUBLISHED', deletedAt: null };
+
+    beforeEach(() => {
+      prisma.store.findUnique.mockResolvedValue({ id: storeId, slug: 'my-store' });
+    });
+
+    it('throws NotFoundException when no store has that slug', async () => {
+      prisma.store.findUnique.mockResolvedValue(null);
+
+      await expect(service.findPublicBySlug('missing')).rejects.toThrow(NotFoundException);
+    });
+
+    it('lists every published product directly when the store has no sections configured', async () => {
+      prisma.storeSection.findMany.mockResolvedValue([]);
+      prisma.product.findMany.mockResolvedValue([productA, productB]);
+
+      const result = await service.findPublicBySlug('my-store');
+
+      expect(prisma.product.findMany).toHaveBeenCalledWith({
+        where: { storeId, status: 'PUBLISHED', deletedAt: null, id: { notIn: [] } },
+        include: { variants: true },
+      });
+      expect(result.sections).toHaveLength(1);
+      const productIds = result.sections[0].collection!.products.map((cp: { productId: string }) => cp.productId);
+      expect(productIds).toEqual([productA.id, productB.id]);
+    });
+
+    it('appends a trailing catch-all section for a published product never added to a collection', async () => {
+      prisma.storeSection.findMany.mockResolvedValue([
+        {
+          id: 'section-1',
+          storeId,
+          position: 0,
+          collection: {
+            id: 'collection-1',
+            name: 'Destacados',
+            products: [{ collectionId: 'collection-1', productId: productA.id, position: 0, product: productA }],
+          },
+        },
+      ]);
+      prisma.product.findMany.mockResolvedValue([productB]);
+
+      const result = await service.findPublicBySlug('my-store');
+
+      expect(prisma.product.findMany).toHaveBeenCalledWith({
+        where: { storeId, status: 'PUBLISHED', deletedAt: null, id: { notIn: [productA.id] } },
+        include: { variants: true },
+      });
+      expect(result.sections).toHaveLength(2);
+      expect(result.sections[0].collection!.name).toBe('Destacados');
+      expect(result.sections[1].collection!.products.map((cp: { productId: string }) => cp.productId)).toEqual([
+        productB.id,
+      ]);
+    });
+
+    it('does not append a trailing section when every published product is already covered', async () => {
+      prisma.storeSection.findMany.mockResolvedValue([
+        {
+          id: 'section-1',
+          storeId,
+          position: 0,
+          collection: {
+            id: 'collection-1',
+            name: 'Destacados',
+            products: [{ collectionId: 'collection-1', productId: productA.id, position: 0, product: productA }],
+          },
+        },
+      ]);
+      prisma.product.findMany.mockResolvedValue([]);
+
+      const result = await service.findPublicBySlug('my-store');
+
+      expect(result.sections).toHaveLength(1);
+    });
+
+    it('excludes DRAFT and soft-deleted products from a real collection section', async () => {
+      const draftProduct = { id: 'product-draft', status: 'DRAFT', deletedAt: null };
+      const deletedProduct = { id: 'product-deleted', status: 'PUBLISHED', deletedAt: new Date() };
+      prisma.storeSection.findMany.mockResolvedValue([
+        {
+          id: 'section-1',
+          storeId,
+          position: 0,
+          collection: {
+            id: 'collection-1',
+            name: 'Destacados',
+            products: [
+              { collectionId: 'collection-1', productId: productA.id, position: 0, product: productA },
+              { collectionId: 'collection-1', productId: draftProduct.id, position: 1, product: draftProduct },
+              { collectionId: 'collection-1', productId: deletedProduct.id, position: 2, product: deletedProduct },
+            ],
+          },
+        },
+      ]);
+      prisma.product.findMany.mockResolvedValue([]);
+
+      const result = await service.findPublicBySlug('my-store');
+
+      expect(result.sections[0].collection!.products.map((cp: { productId: string }) => cp.productId)).toEqual([
+        productA.id,
+      ]);
     });
   });
 });

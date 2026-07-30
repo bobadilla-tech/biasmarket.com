@@ -15,6 +15,7 @@ import { ContactModule } from './modules/contact/contact.module.js';
 import { CategoriesModule } from './modules/categories/categories.module.js';
 import { CollectionsModule } from './modules/collections/collections.module.js';
 import { StoreSectionsModule } from './modules/store-sections/store-sections.module.js';
+import { NotificationsModule } from './modules/notifications/notifications.module.js';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { StoreSectionsModule } from './modules/store-sections/store-sections.mod
     CategoriesModule,
     CollectionsModule,
     StoreSectionsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
 })

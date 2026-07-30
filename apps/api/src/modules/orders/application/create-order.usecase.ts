@@ -3,10 +3,14 @@ import type { Prisma } from '@biasmarket/db';
 import { buildWhatsAppOrderMessage, buildWhatsAppUrl } from '@biasmarket/utils/whatsapp';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { CreateOrderDto } from '../dto/create-order.dto.js';
+import { NotificationsService } from '../../notifications/notifications.service.js';
 
 @Injectable()
 export class CreateOrderUseCase {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notifications: NotificationsService,
+  ) {}
 
   async execute(slug: string, dto: CreateOrderDto) {
     const store = await this.prisma.store.findUnique({ where: { slug } });
@@ -78,10 +82,11 @@ export class CreateOrderUseCase {
             if (available < item.quantity) {
               throw new BadRequestException(`Stock insuficiente para ${variant.name}`);
             }
-            await tx.productVariant.update({
+            const updatedVariant = await tx.productVariant.update({
               where: { id: variant.id },
               data: { reserved: { increment: item.quantity } },
             });
+            await this.notifications.syncStockAlerts(tx, store, product, updatedVariant);
           }
         }
 

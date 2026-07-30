@@ -196,7 +196,8 @@
       "customers": "Clientes",
       "analytics": "Analíticas",
       "settings": "Configuración",
-      "ideas": "Sugerencias"
+      "ideas": "Sugerencias",
+      "notifications": "Notificaciones"
     },
     "soon": "Pronto",
     "fallbackName": "Vendedor",
@@ -314,7 +315,24 @@
           "label": "Resumen semanal por WhatsApp",
           "description": "Digest planificado con lo más importante de la tienda."
         }
-      }
+      },
+      "thresholdLabel": "Umbral de stock bajo (unidades)"
+    }
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "empty": "Todavía no hay notificaciones",
+    "markRead": "Marcar como leída",
+    "archive": "Archivar",
+    "markAllRead": "Marcar todas como leídas",
+    "seeAll": "Ver todas",
+    "tabs": {
+      "active": "Activas",
+      "archived": "Archivadas"
+    },
+    "types": {
+      "LOW_STOCK": "Stock bajo",
+      "OUT_OF_STOCK": "Sin stock"
     }
   },
   "orders": {

@@ -2,6 +2,7 @@
 
 import {
   BarChart3,
+  Bell,
   CreditCard,
   LayoutDashboard,
   Lightbulb,
@@ -17,6 +18,7 @@ import { useTranslations } from "next-intl";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
+import { StoreLogo } from "@/components/store-logo";
 import type { DashboardStore } from "@/lib/use-store";
 
 type NavItem = {
@@ -38,6 +40,7 @@ const primaryItems: NavItem[] = [
 const growthItems: NavItem[] = [
   { key: "customers", icon: Users },
   { key: "analytics", icon: BarChart3 },
+  { key: "notifications", icon: Bell, href: "notifications" },
 ];
 
 const settingsItems: NavItem[] = [
@@ -131,24 +134,13 @@ export function StoreSidebar({
       }}
     >
       <div className="mb-8 flex items-center gap-3 px-2">
-        {store?.logoUrl ? (
-          <img
-            src={store.logoUrl}
-            alt={store.name}
-            className="size-11 rounded-2xl object-cover shadow-[0_12px_30px_var(--store-shadow)]"
-          />
-        ) : (
-          <div
-            className="flex size-11 items-center justify-center rounded-2xl text-lg font-black text-white"
-            style={{
-              background:
-                "linear-gradient(135deg, var(--store-accent) 0%, var(--store-primary) 100%)",
-              boxShadow: "0 12px 30px var(--store-shadow)",
-            }}
-          >
-            {(store?.name ?? t("brand")).slice(0, 2).toUpperCase()}
-          </div>
-        )}
+        <StoreLogo
+          name={store?.name ?? t("brand")}
+          logoUrl={store?.logoUrl}
+          size={44}
+          className="text-lg font-black"
+          style={{ boxShadow: "0 12px 30px var(--store-shadow)" }}
+        />
         <div>
           <p className="text-sm font-semibold text-white">
             {store?.name ?? t("brand")}

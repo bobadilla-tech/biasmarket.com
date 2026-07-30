@@ -2,12 +2,15 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { vi, type Mock } from 'vitest';
 import { ExpireOrdersUseCase } from './expire-orders.usecase.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
+import { NotificationsService } from '../../notifications/notifications.service.js';
 
 describe('ExpireOrdersUseCase', () => {
   let useCase: ExpireOrdersUseCase;
   let prisma: {
     order: { findMany: Mock; update: Mock };
     productVariant: { findUnique: Mock; update: Mock };
+    store: { findUnique: Mock };
+    product: { findUnique: Mock };
     $transaction: Mock;
   };
 
@@ -15,11 +18,17 @@ describe('ExpireOrdersUseCase', () => {
     prisma = {
       order: { findMany: vi.fn(), update: vi.fn() },
       productVariant: { findUnique: vi.fn(), update: vi.fn() },
+      store: { findUnique: vi.fn() },
+      product: { findUnique: vi.fn() },
       $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(prisma)),
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [ExpireOrdersUseCase, { provide: PrismaService, useValue: prisma }],
+      providers: [
+        ExpireOrdersUseCase,
+        { provide: PrismaService, useValue: prisma },
+        { provide: NotificationsService, useValue: { syncStockAlerts: vi.fn() } },
+      ],
     }).compile();
 
     useCase = module.get(ExpireOrdersUseCase);

@@ -41,6 +41,8 @@ model Store {
   whatsappNumber      String?
   defaultCurrency     String   @default("PEN")
   holdWindowHours     Int      @default(48)
+  lowStockThreshold     Int      @default(5)
+  lowStockAlertsEnabled Boolean  @default(true)
   createdAt           DateTime @default(now())
 
   owner           User                   @relation(fields: [ownerId], references: [id])
@@ -53,6 +55,7 @@ model Store {
   paymentMethods  PaymentMethodConfig[]
   deliveryMethods DeliveryMethodConfig[]
   pickupPoints    PickupPoint[]
+  notifications   Notification[]
 
   @@index([ownerId])
 }
@@ -366,6 +369,33 @@ model ContactInquiry {
   message     String
   status      InquiryStatus @default(NEW)
   createdAt   DateTime      @default(now())
+}
+
+enum NotificationType {
+  LOW_STOCK
+  OUT_OF_STOCK
+}
+
+model Notification {
+  id         String           @id @default(cuid())
+  storeId    String
+  type       NotificationType
+  entityType String
+  entityId   String
+  title      String
+  body       String           @default("")
+  metadata   Json             @default("{}")
+  read       Boolean          @default(false)
+  readAt     DateTime?
+  archived   Boolean          @default(false)
+  archivedAt DateTime?
+  createdAt  DateTime         @default(now())
+
+  store Store @relation(fields: [storeId], references: [id])
+
+  @@index([storeId, createdAt])
+  @@index([storeId, archived, read])
+  @@index([entityType, entityId])
 }
 
 model AuditLog {

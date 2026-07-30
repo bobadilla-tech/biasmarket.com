@@ -42,6 +42,7 @@ import {
 import { broadcastStoreUpdate, useStore } from "@/lib/use-store";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { StoreLogo } from "@/components/store-logo";
 
 interface DeliveryMethod {
   type: "PICKUP" | "COURIER";
@@ -59,7 +60,7 @@ interface PickupPoint {
 const isNewPickupPoint = (id: string) => id.startsWith("new:");
 
 interface NotificationSetting {
-  key: "newOrder" | "paymentReview" | "lowStock" | "orderDelivered" | "weeklySummary";
+  key: "newOrder" | "paymentReview" | "orderDelivered" | "weeklySummary";
   enabled: boolean;
   locked?: boolean;
 }
@@ -181,14 +182,19 @@ export default function SettingsPage() {
   const [profileSaving, setProfileSaving] = useState(false);
   const [appearanceSaving, setAppearanceSaving] = useState(false);
   const [deliverySaving, setDeliverySaving] = useState(false);
+  const [notificationsSaving, setNotificationsSaving] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
-  const [savedSection, setSavedSection] = useState<"profile" | "appearance" | "delivery" | null>(null);
+  const [savedSection, setSavedSection] = useState<
+    "profile" | "appearance" | "delivery" | "notifications" | null
+  >(null);
   const [error, setError] = useState<string | null>(null);
+
+  const [lowStockAlertsEnabled, setLowStockAlertsEnabled] = useState(true);
+  const [lowStockThreshold, setLowStockThreshold] = useState("5");
 
   const [notifications, setNotifications] = useState<NotificationSetting[]>([
     { key: "newOrder", enabled: true },
     { key: "paymentReview", enabled: true },
-    { key: "lowStock", enabled: true },
     { key: "orderDelivered", enabled: false, locked: true },
     { key: "weeklySummary", enabled: false, locked: true },
   ]);
@@ -200,6 +206,8 @@ export default function SettingsPage() {
     setDefaultCurrency(store.defaultCurrency ?? SUPPORTED_CURRENCIES[0]);
     setPaymentInstructions(store.paymentInstructions ?? "");
     setLogoUrl(store.logoUrl ?? null);
+    setLowStockAlertsEnabled(store.lowStockAlertsEnabled ?? true);
+    setLowStockThreshold(String(store.lowStockThreshold ?? 5));
     const resolved = resolveStorePalette(store.themeConfig);
     const isPreset = STORE_PALETTES.some((palette) => palette.id === resolved.id);
     setSelectedPaletteId(isPreset ? resolved.id : "custom");
@@ -385,6 +393,32 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSaveNotifications = async () => {
+    if (!storeId) return;
+    setNotificationsSaving(true);
+    setError(null);
+
+    try {
+      const threshold = Math.max(0, Number(lowStockThreshold) || 0);
+      await apiFetch(`/stores/${storeId}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          lowStockAlertsEnabled,
+          lowStockThreshold: threshold,
+        }),
+      });
+      broadcastStoreUpdate({
+        slug,
+        store: { lowStockAlertsEnabled, lowStockThreshold: threshold },
+      });
+      setSavedSection("notifications");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setNotificationsSaving(false);
+    }
+  };
+
   const handleUploadLogo = async (file: File | null) => {
     if (!file || !storeId) return;
     setLogoUploading(true);
@@ -449,24 +483,13 @@ export default function SettingsPage() {
                 readOnly
                 className="hidden min-w-[250px] rounded-2xl border-[#eadcf7] bg-white text-[#a18eb8] shadow-none sm:flex"
               />
-              {logoUrl ? (
-                <img
-                  src={logoUrl}
-                  alt={storeName || "Store logo"}
-                  className="size-12 rounded-2xl object-cover shadow-[0_10px_30px_var(--store-shadow)]"
-                />
-              ) : (
-                <div
-                  className="flex size-12 items-center justify-center rounded-2xl text-sm font-semibold text-white"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, var(--store-accent) 0%, var(--store-primary) 100%)",
-                    boxShadow: "0 10px 30px var(--store-shadow)",
-                  }}
-                >
-                  {(storeName || "BM").slice(0, 2).toUpperCase()}
-                </div>
-              )}
+              <StoreLogo
+                name={storeName}
+                logoUrl={logoUrl}
+                size={48}
+                className="text-sm font-semibold"
+                style={{ boxShadow: "0 10px 30px var(--store-shadow)" }}
+              />
             </div>
           </CardContent>
         </Card>
@@ -491,24 +514,13 @@ export default function SettingsPage() {
                 style={{ backgroundColor: "var(--store-surface)" }}
               >
                 <div className="flex items-center gap-4">
-                  {logoUrl ? (
-                    <img
-                      src={logoUrl}
-                      alt={storeName || "Store logo"}
-                      className="size-[72px] rounded-[22px] object-cover shadow-sm"
-                    />
-                  ) : (
-                    <div
-                      className="flex size-[72px] items-center justify-center rounded-[22px] text-xl font-black text-white"
-                      style={{
-                        background:
-                          "linear-gradient(135deg, var(--store-accent) 0%, var(--store-primary) 100%)",
-                        boxShadow: "0 18px 36px var(--store-shadow)",
-                      }}
-                    >
-                      {(storeName || "BM").slice(0, 2).toUpperCase()}
-                    </div>
-                  )}
+                  <StoreLogo
+                    name={storeName}
+                    logoUrl={logoUrl}
+                    size={72}
+                    className="rounded-[22px] text-xl font-black"
+                    style={{ boxShadow: "0 18px 36px var(--store-shadow)" }}
+                  />
                   <div>
                     <p className="text-lg font-semibold text-[#2d1649]">
                       {storeName || t("emptyName")}
@@ -737,14 +749,12 @@ export default function SettingsPage() {
                     {t("appearance.previewTitle")}
                   </p>
                   <div className="mt-3 flex items-center gap-4">
-                    <div
-                      className="flex size-14 items-center justify-center rounded-2xl text-sm font-black text-white"
-                      style={{
-                        background: `linear-gradient(135deg, ${selectedPalette.colors.accent} 0%, ${selectedPalette.colors.primary} 100%)`,
-                      }}
-                    >
-                      {(storeName || "BM").slice(0, 2).toUpperCase()}
-                    </div>
+                    <StoreLogo
+                      name={storeName}
+                      size={56}
+                      className="text-sm font-black"
+                      gradient={{ from: selectedPalette.colors.accent, to: selectedPalette.colors.primary }}
+                    />
                     <div className="flex-1">
                       <Button
                         type="button"
@@ -991,6 +1001,24 @@ export default function SettingsPage() {
               description={t("notifications.description")}
             >
               <div className="space-y-3">
+                <ToggleRow
+                  label={t("notifications.items.lowStock.label")}
+                  description={t("notifications.items.lowStock.description")}
+                  enabled={lowStockAlertsEnabled}
+                  onChange={setLowStockAlertsEnabled}
+                />
+                {lowStockAlertsEnabled ? (
+                  <Field label={t("notifications.thresholdLabel")}>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={lowStockThreshold}
+                      onChange={(event) => setLowStockThreshold(event.target.value)}
+                      className="store-theme-input h-11 w-32 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] text-[#341b55] shadow-none"
+                    />
+                  </Field>
+                ) : null}
+
                 {notifications.map((notification) => (
                   <ToggleRow
                     key={notification.key}
@@ -1011,6 +1039,22 @@ export default function SettingsPage() {
                     }
                   />
                 ))}
+              </div>
+
+              <Separator className="my-5 bg-[#f0e7f8]" />
+
+              <div className="flex items-center justify-end gap-4">
+                <Button
+                  onClick={handleSaveNotifications}
+                  disabled={notificationsSaving}
+                  className="store-theme-primary-button h-11 rounded-2xl px-5 text-sm font-semibold hover:scale-[1.01] hover:opacity-100"
+                >
+                  {savedSection === "notifications"
+                    ? t("saved")
+                    : notificationsSaving
+                      ? t("saving")
+                      : t("save")}
+                </Button>
               </div>
             </SectionCard>
           </div>

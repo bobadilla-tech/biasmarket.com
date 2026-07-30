@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { ProductCard } from "./product-card";
 import { CartLink } from "./cart-link";
 import { SITE_URL } from "@/lib/site-config";
+import { StoreLogo } from "@/components/store-logo";
 
 async function getStore(slug: string) {
   const apiUrl = process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
@@ -111,17 +112,7 @@ export default async function StorePage({
       />
       <header className="border-b border-gray-100 bg-white px-6 py-8">
         <div className="mx-auto flex max-w-5xl items-center justify-center gap-3">
-          {store.logoUrl ? (
-            <img
-              src={store.logoUrl}
-              alt={store.name}
-              className="size-12 rounded-2xl object-cover shadow-sm"
-            />
-          ) : (
-            <div className="flex size-12 items-center justify-center rounded-2xl bg-gray-900 text-sm font-semibold text-white">
-              {String(store.name ?? "").slice(0, 2).toUpperCase()}
-            </div>
-          )}
+          <StoreLogo name={store.name} logoUrl={store.logoUrl} size={48} className="text-sm" />
           <h1 className="text-2xl font-bold text-gray-900">{store.name}</h1>
         </div>
       </header>

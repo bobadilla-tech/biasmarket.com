@@ -196,7 +196,8 @@
       "customers": "Customers",
       "analytics": "Analytics",
       "settings": "Configuration",
-      "ideas": "Suggestions"
+      "ideas": "Suggestions",
+      "notifications": "Notifications"
     },
     "soon": "Soon",
     "fallbackName": "Seller",
@@ -314,7 +315,24 @@
           "label": "Weekly WhatsApp summary",
           "description": "Planned digest with store activity highlights."
         }
-      }
+      },
+      "thresholdLabel": "Low stock threshold (units)"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications yet",
+    "markRead": "Mark as read",
+    "archive": "Archive",
+    "markAllRead": "Mark all as read",
+    "seeAll": "See all",
+    "tabs": {
+      "active": "Active",
+      "archived": "Archived"
+    },
+    "types": {
+      "LOW_STOCK": "Low stock",
+      "OUT_OF_STOCK": "Out of stock"
     }
   },
   "orders": {

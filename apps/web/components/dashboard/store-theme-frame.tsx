@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from "react";
 import { StoreSidebar } from "@/components/dashboard/store-sidebar";
 import { MobileSidebar } from "./mobile-sidebar";
+import { NotificationsBell } from "./notifications-bell";
 import { getStoreThemeStyle } from "@/lib/store-theme";
 import { useStore } from "@/lib/use-store";
 
@@ -43,14 +44,20 @@ export function StoreThemeFrame({
       className="store-dashboard-theme flex min-h-screen flex-col lg:flex-row"
       style={themeStyle}
     >
-      <div className="flex items-center p-4 lg:hidden">
-        <MobileSidebar slug={slug} store={store} />
-      </div>
       <div className="hidden lg:flex">
         <StoreSidebar slug={slug} store={store} />
       </div>
 
-      <main className="min-w-0 flex-1">{children}</main>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex items-center justify-between p-4 lg:justify-end lg:px-8 lg:py-4">
+          <div className="lg:hidden">
+            <MobileSidebar slug={slug} store={store} />
+          </div>
+          <NotificationsBell slug={slug} storeId={store?.id} />
+        </div>
+
+        <main className="min-w-0 flex-1">{children}</main>
+      </div>
     </div>
   );
 }

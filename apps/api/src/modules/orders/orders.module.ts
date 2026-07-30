@@ -7,8 +7,10 @@ import { ReviewPaymentUseCase } from './application/review-payment.usecase.js';
 import { AdvanceFulfillmentUseCase } from './application/advance-fulfillment.usecase.js';
 import { ExpireOrdersUseCase } from './application/expire-orders.usecase.js';
 import { OrdersCronService } from './application/orders-cron.service.js';
+import { NotificationsModule } from '../notifications/notifications.module.js';
 
 @Module({
+  imports: [NotificationsModule],
   controllers: [OrderController, CheckoutController],
   providers: [
     OrderRepository,

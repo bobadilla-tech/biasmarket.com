@@ -5,6 +5,7 @@ import { ReviewPaymentUseCase } from './review-payment.usecase.js';
 import { OrderRepository } from '../infrastructure/order.repository.js';
 import { InvalidOrderTransitionError } from '../domain/order-status.vo.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
+import { NotificationsService } from '../../notifications/notifications.service.js';
 
 describe('ReviewPaymentUseCase', () => {
   let useCase: ReviewPaymentUseCase;
@@ -12,9 +13,11 @@ describe('ReviewPaymentUseCase', () => {
     store: { findUnique: Mock };
     order: { findUnique: Mock; update: Mock };
     productVariant: { findUnique: Mock; update: Mock };
+    product: { findUnique: Mock };
     auditLog: { create: Mock };
     $transaction: Mock;
   };
+  let notifications: { syncStockAlerts: Mock };
 
   const ownerId = 'user-1';
   const storeId = 'store-1';
@@ -25,15 +28,18 @@ describe('ReviewPaymentUseCase', () => {
       store: { findUnique: vi.fn() },
       order: { findUnique: vi.fn(), update: vi.fn() },
       productVariant: { findUnique: vi.fn(), update: vi.fn() },
+      product: { findUnique: vi.fn() },
       auditLog: { create: vi.fn() },
       $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(prisma)),
     };
+    notifications = { syncStockAlerts: vi.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ReviewPaymentUseCase,
         OrderRepository,
         { provide: PrismaService, useValue: prisma },
+        { provide: NotificationsService, useValue: notifications },
       ],
     }).compile();
 
@@ -64,13 +70,19 @@ describe('ReviewPaymentUseCase', () => {
       storeId,
       paymentStatus: 'PENDING_PAYMENT',
       fulfillmentStatus: 'ORDERING',
-      items: [{ variantId: 'variant-1', quantity: 2 }],
+      items: [{ variantId: 'variant-1', productId: 'product-1', quantity: 2 }],
     });
     prisma.productVariant.findUnique.mockResolvedValue({
       id: 'variant-1',
       stock: 10,
       reserved: 2,
     });
+    prisma.productVariant.update.mockResolvedValue({
+      id: 'variant-1',
+      stock: 8,
+      reserved: 0,
+    });
+    prisma.product.findUnique.mockResolvedValue({ id: 'product-1', name: 'Widget' });
     prisma.order.update.mockResolvedValue({ id: orderId, paymentStatus: 'VERIFIED' });
 
     await useCase.execute(orderId, storeId, ownerId, 'approve');
@@ -93,6 +105,12 @@ describe('ReviewPaymentUseCase', () => {
         metadata: {},
       },
     });
+    expect(notifications.syncStockAlerts).toHaveBeenCalledWith(
+      prisma,
+      expect.objectContaining({ id: storeId }),
+      expect.objectContaining({ id: 'product-1' }),
+      expect.objectContaining({ id: 'variant-1' }),
+    );
   });
 
   it('reject() releases reserved stock without touching real stock', async () => {

@@ -9,11 +9,15 @@ import { CreateProductDto } from './dto/create-product.dto.js';
 import { UpdateProductDto } from './dto/update-product.dto.js';
 import { CreateVariantDto } from './dto/create-variant.dto.js';
 import { UpdateVariantDto } from './dto/update-variant.dto.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 
 @Injectable()
 export class ProductsService {
-  
-  constructor(private prisma: PrismaService) {}
+
+  constructor(
+    private prisma: PrismaService,
+    private notifications: NotificationsService,
+  ) {}
 
   private computeAvailableStock(variants: { stock: number | null; reserved: number }[]) {
     const hasUnlimited = variants.some((v) => v.stock === null);
@@ -219,15 +223,18 @@ export class ProductsService {
     userId: string,
     dto: UpdateVariantDto,
   ) {
-    await this.findOwnedProduct(productId, storeId, userId);
+    const product = await this.findOwnedProduct(productId, storeId, userId);
     const variant = await this.prisma.productVariant.findUnique({ where: { id: variantId } });
     if (!variant || variant.productId !== productId || variant.storeId !== storeId) {
       throw new NotFoundException('Variante no encontrada');
     }
-    return this.prisma.productVariant.update({
+    const updated = await this.prisma.productVariant.update({
       where: { id: variantId },
       data: { ...dto },
     });
+    const store = await this.prisma.store.findUnique({ where: { id: storeId } });
+    if (store) await this.notifications.syncStockAlerts(this.prisma, store, product, updated);
+    return updated;
   }
 
   async deleteVariant(

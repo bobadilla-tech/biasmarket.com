@@ -84,10 +84,10 @@ function getCategoryLabel(product: Product) {
   return `${names[0]} +${names.length - 1}`;
 }
 
-function stockTone(stock: number | null | undefined) {
+function stockTone(stock: number | null | undefined, threshold = 5) {
   if (stock === null || stock === undefined) return "text-[#2c1647]";
-  if (stock <= 2) return "text-[#d11d52]";
-  if (stock <= 8) return "text-[#d97706]";
+  if (stock <= 0) return "text-[#d11d52]";
+  if (stock <= threshold) return "text-[#d97706]";
   return "text-[#159a63]";
 }
 
@@ -1554,7 +1554,7 @@ export default function ProductsPage() {
                 availableStock === null || availableStock === undefined
                   ? t("products.stockUnlimited")
                   : t("products.stockUnits", { count: availableStock });
-              const tone = stockTone(availableStock);
+              const tone = stockTone(availableStock, store?.lowStockThreshold);
 
               return (
                 <ProductTile
@@ -1603,7 +1603,7 @@ export default function ProductsPage() {
                         availableStock === null || availableStock === undefined
                           ? t("products.stockUnlimited")
                           : t("products.stockUnits", { count: availableStock });
-                      const tone = stockTone(availableStock);
+                      const tone = stockTone(availableStock, store?.lowStockThreshold);
 
                       return (
                         <ProductRow
