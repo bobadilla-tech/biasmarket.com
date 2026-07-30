@@ -381,6 +381,26 @@
     },
     "approve": "Approve",
     "reject": "Reject",
-    "markAs": "Mark {status}"
+    "markAs": "Mark {status}",
+    "fulfillmentLabels": {
+      "ORDERING": "Preparing",
+      "IN_TRANSIT": "In transit",
+      "READY": "Ready for delivery",
+      "COMPLETED": "Completed"
+    },
+    "paymentActionLabels": {
+      "approve": "Verified",
+      "reject": "Rejected"
+    },
+    "confirmStatus": {
+      "title": "Confirm status change",
+      "body": "Are you sure you want to mark this order as {status}?",
+      "confirm": "Yes, mark it",
+      "cancel": "Cancel"
+    },
+    "undoToast": {
+      "message": "Order marked as {status}.",
+      "undo": "Undo"
+    }
   }
 }

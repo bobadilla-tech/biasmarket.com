@@ -4,6 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 import { Plus, Receipt, Wallet } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -59,6 +68,11 @@ const NEXT_FULFILLMENT: Record<string, string | undefined> = {
   READY: "COMPLETED",
   COMPLETED: undefined,
 };
+
+// Sensitive = hard to revert / strong customer impact -> confirm modal.
+// Everything else = frequent, low-risk -> optimistic change + undo toast.
+const SENSITIVE_FULFILLMENT = new Set(["COMPLETED"]);
+const UNDO_WINDOW_MS = 8000;
 
 type OrdersTab = "all" | "pending" | "transit" | "delivered";
 
@@ -173,6 +187,27 @@ export default function OrdersPage() {
   const [paymentNote, setPaymentNote] = useState("");
   const [paymentSubmitting, setPaymentSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingChange, setPendingChange] = useState<
+    Record<string, { field: "paymentStatus" | "fulfillmentStatus"; previousValue: string }>
+  >({});
+  const [confirmTarget, setConfirmTarget] = useState<{
+    orderId: string;
+    kind: "review" | "advance";
+    decision?: "approve" | "reject";
+    nextStatus?: string;
+    label: string;
+  } | null>(null);
+
+  const fulfillmentLabels: Record<string, string> = {
+    ORDERING: t("fulfillmentLabels.ORDERING"),
+    IN_TRANSIT: t("fulfillmentLabels.IN_TRANSIT"),
+    READY: t("fulfillmentLabels.READY"),
+    COMPLETED: t("fulfillmentLabels.COMPLETED"),
+  };
+  const paymentActionLabels: Record<"approve" | "reject", string> = {
+    approve: t("paymentActionLabels.approve"),
+    reject: t("paymentActionLabels.reject"),
+  };
 
   const loadOrders = async () => {
     if (!storeId) return;
@@ -211,6 +246,81 @@ export default function OrdersPage() {
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
+  };
+
+  // Normal (low-risk) transitions: apply optimistically, delay the real
+  // PATCH by UNDO_WINDOW_MS. Nothing is persisted unless the window elapses
+  // without the seller clicking "Deshacer".
+  const scheduleNormalChange = (
+    orderId: string,
+    field: "paymentStatus" | "fulfillmentStatus",
+    previousValue: string,
+    nextValue: string,
+    label: string,
+    commit: () => Promise<void>,
+  ) => {
+    setOrders((prev) => prev.map((o) => (o.id === orderId ? ({ ...o, [field]: nextValue } as Order) : o)));
+
+    const timeoutId = setTimeout(() => {
+      setPendingChange((prev) => {
+        const { [orderId]: _removed, ...rest } = prev;
+        return rest;
+      });
+      commit();
+    }, UNDO_WINDOW_MS);
+
+    setPendingChange((prev) => ({ ...prev, [orderId]: { field, previousValue } }));
+
+    toast(t("undoToast.message", { status: label }), {
+      duration: UNDO_WINDOW_MS,
+      action: {
+        label: t("undoToast.undo"),
+        onClick: () => {
+          clearTimeout(timeoutId);
+          setOrders((prev) =>
+            prev.map((o) => (o.id === orderId ? ({ ...o, [field]: previousValue } as Order) : o)),
+          );
+          setPendingChange((prev) => {
+            const { [orderId]: _removed, ...rest } = prev;
+            return rest;
+          });
+        },
+      },
+    });
+  };
+
+  const handleReviewClick = (order: Order, decision: "approve" | "reject") => {
+    const label = paymentActionLabels[decision];
+    if (decision === "reject") {
+      setConfirmTarget({ orderId: order.id, kind: "review", decision, label });
+      return;
+    }
+    scheduleNormalChange(order.id, "paymentStatus", order.paymentStatus, "VERIFIED", label, () =>
+      handleReview(order.id, decision),
+    );
+  };
+
+  const handleAdvanceClick = (order: Order) => {
+    const next = NEXT_FULFILLMENT[order.fulfillmentStatus];
+    if (!next) return;
+    const label = fulfillmentLabels[next] ?? next;
+    if (SENSITIVE_FULFILLMENT.has(next)) {
+      setConfirmTarget({ orderId: order.id, kind: "advance", nextStatus: next, label });
+      return;
+    }
+    scheduleNormalChange(order.id, "fulfillmentStatus", order.fulfillmentStatus, next, label, () =>
+      handleAdvance(order.id, next),
+    );
+  };
+
+  const handleConfirmTransition = async () => {
+    if (!confirmTarget) return;
+    if (confirmTarget.kind === "review" && confirmTarget.decision) {
+      await handleReview(confirmTarget.orderId, confirmTarget.decision);
+    } else if (confirmTarget.kind === "advance" && confirmTarget.nextStatus) {
+      await handleAdvance(confirmTarget.orderId, confirmTarget.nextStatus);
+    }
+    setConfirmTarget(null);
   };
 
   const handleRegisterPayment = async (orderId: string) => {
@@ -405,17 +515,54 @@ export default function OrdersPage() {
                           </Badge>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => {
-                              setSelectedOrderId(order.id);
-                              setDetailsOpen(true);
-                            }}
-                            className="h-8 rounded-full border-[#eadcf7] bg-white px-4 text-xs font-semibold text-[#2d1649] shadow-none hover:bg-[#fcf9ff]"
-                          >
-                            {t("view")}
-                          </Button>
+                          <div className="flex flex-wrap items-center justify-end gap-1.5">
+                            {!pendingChange[order.id] &&
+                              (order.paymentStatus === "PENDING_PAYMENT" ||
+                                order.paymentStatus === "PAYMENT_SUBMITTED") && (
+                                <>
+                                  <Button
+                                    type="button"
+                                    onClick={() => handleReviewClick(order, "approve")}
+                                    className="store-theme-primary-button h-8 rounded-full px-3 text-xs font-semibold hover:opacity-100"
+                                  >
+                                    {t("approve")}
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => handleReviewClick(order, "reject")}
+                                    className="h-8 rounded-full border-[#eadcf7] bg-white px-3 text-xs font-semibold text-[#2d1649] shadow-none hover:bg-[#fcf9ff]"
+                                  >
+                                    {t("reject")}
+                                  </Button>
+                                </>
+                              )}
+                            {!pendingChange[order.id] &&
+                              order.paymentStatus === "VERIFIED" &&
+                              NEXT_FULFILLMENT[order.fulfillmentStatus] && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => handleAdvanceClick(order)}
+                                  className="h-8 rounded-full border-[#eadcf7] bg-white px-3 text-xs font-semibold text-[#2d1649] shadow-none hover:bg-[#fcf9ff]"
+                                >
+                                  {t("markAs", {
+                                    status: fulfillmentLabels[NEXT_FULFILLMENT[order.fulfillmentStatus]!],
+                                  })}
+                                </Button>
+                              )}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedOrderId(order.id);
+                                setDetailsOpen(true);
+                              }}
+                              className="h-8 rounded-full border-[#eadcf7] bg-white px-4 text-xs font-semibold text-[#2d1649] shadow-none hover:bg-[#fcf9ff]"
+                            >
+                              {t("view")}
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -577,49 +724,39 @@ export default function OrdersPage() {
 
                 <SheetFooter className="sticky bottom-0 border-t border-[#f0e7f8] bg-white px-4 py-4">
                   <div className="flex w-full flex-wrap gap-2">
-                    {(selectedOrder.paymentStatus === "PENDING_PAYMENT" ||
-                      selectedOrder.paymentStatus === "PAYMENT_SUBMITTED") && (
-                      <>
-                        <Button
-                          type="button"
-                          onClick={async () => {
-                            await handleReview(selectedOrder.id, "approve");
-                            setDetailsOpen(false);
-                          }}
-                          className="store-theme-primary-button h-11 flex-1 rounded-2xl text-sm font-semibold hover:opacity-100"
-                        >
-                          {t("approve")}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={async () => {
-                            await handleReview(selectedOrder.id, "reject");
-                            setDetailsOpen(false);
-                          }}
-                          className="h-11 flex-1 rounded-2xl border-[#eadcf7] bg-white text-sm font-semibold text-[#2d1649] shadow-none hover:bg-[#fcf9ff]"
-                        >
-                          {t("reject")}
-                        </Button>
-                      </>
-                    )}
-                    {selectedOrder.paymentStatus === "VERIFIED" &&
+                    {!pendingChange[selectedOrder.id] &&
+                      (selectedOrder.paymentStatus === "PENDING_PAYMENT" ||
+                        selectedOrder.paymentStatus === "PAYMENT_SUBMITTED") && (
+                        <>
+                          <Button
+                            type="button"
+                            onClick={() => handleReviewClick(selectedOrder, "approve")}
+                            className="store-theme-primary-button h-11 flex-1 rounded-2xl text-sm font-semibold hover:opacity-100"
+                          >
+                            {t("approve")}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => handleReviewClick(selectedOrder, "reject")}
+                            className="h-11 flex-1 rounded-2xl border-[#eadcf7] bg-white text-sm font-semibold text-[#2d1649] shadow-none hover:bg-[#fcf9ff]"
+                          >
+                            {t("reject")}
+                          </Button>
+                        </>
+                      )}
+                    {!pendingChange[selectedOrder.id] &&
+                    selectedOrder.paymentStatus === "VERIFIED" &&
                     NEXT_FULFILLMENT[selectedOrder.fulfillmentStatus] ? (
                       <Button
                         type="button"
                         variant="outline"
-                        onClick={async () => {
-                          const next = NEXT_FULFILLMENT[selectedOrder.fulfillmentStatus];
-                          if (!next) return;
-                          await handleAdvance(selectedOrder.id, next);
-                          setDetailsOpen(false);
-                        }}
+                        onClick={() => handleAdvanceClick(selectedOrder)}
                         className="h-11 flex-1 rounded-2xl border-[#eadcf7] bg-white text-sm font-semibold text-[#2d1649] shadow-none hover:bg-[#fcf9ff]"
                       >
-                        {(() => {
-                          const next = NEXT_FULFILLMENT[selectedOrder.fulfillmentStatus];
-                          return next ? t("markAs", { status: next }) : null;
-                        })()}
+                        {t("markAs", {
+                          status: fulfillmentLabels[NEXT_FULFILLMENT[selectedOrder.fulfillmentStatus]!],
+                        })}
                       </Button>
                     ) : null}
                   </div>
@@ -628,6 +765,39 @@ export default function OrdersPage() {
             ) : null}
           </SheetContent>
         </Sheet>
+
+        <AlertDialog
+          open={!!confirmTarget}
+          onOpenChange={(open) => {
+            if (!open) setConfirmTarget(null);
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t("confirmStatus.title")}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {confirmTarget ? t("confirmStatus.body", { status: confirmTarget.label }) : null}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setConfirmTarget(null)}
+                className="h-11 rounded-2xl border-[#eadcf7] bg-white text-sm font-semibold text-[#2d1649] shadow-none hover:bg-[#fcf9ff]"
+              >
+                {t("confirmStatus.cancel")}
+              </Button>
+              <Button
+                type="button"
+                onClick={handleConfirmTransition}
+                className="store-theme-primary-button h-11 rounded-2xl text-sm font-semibold hover:opacity-100"
+              >
+                {t("confirmStatus.confirm")}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

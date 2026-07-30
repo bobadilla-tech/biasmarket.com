@@ -381,6 +381,26 @@
     },
     "approve": "Aprobar",
     "reject": "Rechazar",
-    "markAs": "Marcar {status}"
+    "markAs": "Marcar {status}",
+    "fulfillmentLabels": {
+      "ORDERING": "En preparación",
+      "IN_TRANSIT": "En camino",
+      "READY": "Listo para entrega",
+      "COMPLETED": "Completado"
+    },
+    "paymentActionLabels": {
+      "approve": "Verificado",
+      "reject": "Rechazado"
+    },
+    "confirmStatus": {
+      "title": "Confirmar cambio de estado",
+      "body": "¿Estás seguro de que deseas marcar este pedido como {status}?",
+      "confirm": "Sí, marcar",
+      "cancel": "Cancelar"
+    },
+    "undoToast": {
+      "message": "Pedido marcado como {status}.",
+      "undo": "Deshacer"
+    }
   }
 }
