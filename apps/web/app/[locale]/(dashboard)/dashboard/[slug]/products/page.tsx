@@ -655,7 +655,7 @@ function ProductSheet({
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#927fac]">
-                {t("products.form.priceLabel")}
+                {hasVariants ? t("products.form.priceBaseLabel") : t("products.form.priceLabel")}
               </p>
               <Input
                 value={values.price}
@@ -665,6 +665,9 @@ function ProductSheet({
                 inputMode="decimal"
                 className="store-theme-input h-11 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] shadow-none"
               />
+              {hasVariants && (
+                <p className="text-xs text-[#8f7da8]">{t("products.form.priceBaseHelp")}</p>
+              )}
             </div>
             <div className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#927fac]">

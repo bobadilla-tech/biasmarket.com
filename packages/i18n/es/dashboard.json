@@ -33,6 +33,8 @@
       "nameLabel": "Nombre",
       "descriptionLabel": "Descripción",
       "priceLabel": "Precio",
+      "priceBaseLabel": "Precio base",
+      "priceBaseHelp": "Se usa solo si una variante no tiene su propio precio.",
       "currencyLabel": "Moneda",
       "stockLabel": "Stock",
       "stockPlaceholder": "Opcional",
@@ -230,7 +232,10 @@
       "previewTitle": "Vista previa del tema",
       "previewButton": "Acción principal",
       "help": "Aplica una nueva paleta cuando quieras y el dashboard se actualiza al instante.",
-      "apply": "Aplicar paleta"
+      "apply": "Aplicar paleta",
+      "customLabel": "Personalizado",
+      "customDescription": "Define tu propio color de marca",
+      "customColorLabel": "Elige tu color"
     },
     "payments": {
       "title": "Métodos de pago aceptados",

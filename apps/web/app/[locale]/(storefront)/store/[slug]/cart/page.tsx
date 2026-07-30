@@ -34,7 +34,7 @@ export default function CartPage() {
         {items.length === 0 ? (
           <p className="text-gray-500">
             {t("empty")}{" "}
-            <Link href={`/store/${slug}`} className="text-emerald-600 font-semibold">
+            <Link href={`/store/${slug}`} className="store-theme-link font-semibold">
               {t("continueShopping")}
             </Link>
           </p>
@@ -48,7 +48,7 @@ export default function CartPage() {
                 >
                   <div>
                     <p className="font-semibold text-gray-900 text-sm">{item.name}</p>
-                    <p className="text-emerald-600 text-sm">
+                    <p className="store-theme-active-text text-sm">
                       {item.price} {item.currency}
                     </p>
                   </div>
@@ -73,7 +73,7 @@ export default function CartPage() {
 
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex items-center justify-between">
               <span className="font-semibold text-gray-900">{t("total")}</span>
-              <span className="font-bold text-emerald-600 text-lg">
+              <span className="store-theme-active-text font-bold text-lg">
                 {cartTotal(items).toFixed(2)} {items[0].currency}
               </span>
             </div>
@@ -83,7 +83,7 @@ export default function CartPage() {
             ) : (
               <Link
                 href={`/store/${slug}/checkout`}
-                className="rounded-xl bg-emerald-500 px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-emerald-600"
+                className="store-theme-primary-button rounded-xl px-5 py-3 text-center text-sm font-semibold transition"
               >
                 {t("goToCheckout")}
               </Link>

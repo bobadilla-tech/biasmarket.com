@@ -33,6 +33,8 @@
       "nameLabel": "Name",
       "descriptionLabel": "Description",
       "priceLabel": "Price",
+      "priceBaseLabel": "Base price",
+      "priceBaseHelp": "Only used when a variant has no price of its own.",
       "currencyLabel": "Currency",
       "stockLabel": "Stock",
       "stockPlaceholder": "Optional",
@@ -230,7 +232,10 @@
       "previewTitle": "Theme preview",
       "previewButton": "Primary action",
       "help": "Apply a new palette at any time and the dashboard updates right away.",
-      "apply": "Apply palette"
+      "apply": "Apply palette",
+      "customLabel": "Custom",
+      "customDescription": "Set your own brand color",
+      "customColorLabel": "Pick your color"
     },
     "payments": {
       "title": "Accepted payment methods",

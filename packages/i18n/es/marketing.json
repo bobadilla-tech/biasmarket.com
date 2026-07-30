@@ -44,7 +44,7 @@
   "founderPage": {
     "meta": {
       "title": "Fundadores — Bias Market",
-      "description": "Conoce al equipo de tres personas detrás de Bias Market, un creador de tiendas para GOMs y vendedoras de photocards de K-pop."
+      "description": "Conoce al equipo de tres personas detrás de Bias Market, un creador de tiendas para GO's y vendedoras de photocards de K-pop."
     },
     "overline": "Fundadores",
     "headline": "Tres fundadores, no uno solo",
@@ -68,22 +68,22 @@
     ],
     "cta": {
       "heading": "¿Quieres hablar sobre tu tienda?",
-      "body": "Si manejas group orders o drops de photocards y quieres ver si Bias Market encaja, escríbeme directamente.",
+      "body": "Si manejas GO's de photocards y quieres ver si Bias Market encaja, escríbeme directamente.",
       "button": "Contáctame"
     }
   },
   "enterprisePage": {
     "meta": {
       "title": "Empresas — Bias Market",
-      "description": "Bias Market para agencias y vendedoras grandes que manejan varias tiendas o drops de alto volumen."
+      "description": "Bias Market para agencias y vendedoras grandes que manejan varias tiendas o GO's de alto volumen."
     },
     "overline": "Empresas",
     "headline": "Para agencias y vendedoras con varias tiendas",
-    "intro": "¿Manejas más de una tienda, o drops lo bastante grandes como para necesitar soporte más cercano? Trabajamos directo con vendedoras grandes y agencias para adaptar Bias Market a esa escala.",
+    "intro": "¿Manejas más de una tienda, o GO's lo bastante grandes como para necesitar soporte más cercano? Trabajamos directo con vendedoras grandes y agencias para adaptar Bias Market a esa escala.",
     "features": [
       {
         "title": "Varias tiendas",
-        "body": "Maneja varias tiendas — una por artista, grupo o drop — sin tener que usar cuentas separadas."
+        "body": "Maneja varias tiendas — una por artista, grupo o GO — sin tener que usar cuentas separadas."
       },
       {
         "title": "Soporte prioritario",
@@ -91,7 +91,7 @@
       },
       {
         "title": "Ayuda con el onboarding",
-        "body": "Te ayudamos a migrar tu historial de pedidos y a lanzar tu primer drop."
+        "body": "Te ayudamos a migrar tu historial de pedidos y a lanzar tu primer GO."
       },
       {
         "title": "Pedidos a medida",

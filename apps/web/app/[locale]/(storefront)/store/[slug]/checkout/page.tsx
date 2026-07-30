@@ -106,7 +106,7 @@ export default function CheckoutPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
         <p className="text-gray-500">
           {t("emptyCart")}{" "}
-          <Link href={`/store/${slug}`} className="text-emerald-600 font-semibold">
+          <Link href={`/store/${slug}`} className="store-theme-link font-semibold">
             {t("backToStore")}
           </Link>
         </p>
@@ -174,20 +174,20 @@ export default function CheckoutPage() {
             placeholder={t("namePlaceholder")}
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
-            className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+            className="store-theme-input rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none"
           />
           <PhoneInput
             value={customerPhone}
             onChange={setCustomerPhone}
             placeholder={t("phonePlaceholder")}
-            selectClassName="rounded-xl border border-gray-200 py-2.5 text-sm text-gray-600 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
-            inputClassName="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+            selectClassName="store-theme-input rounded-xl border border-gray-200 py-2.5 text-sm text-gray-600 outline-none"
+            inputClassName="store-theme-input rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none"
           />
           <input
             placeholder={t("emailPlaceholder")}
             value={customerEmail}
             onChange={(e) => setCustomerEmail(e.target.value)}
-            className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+            className="store-theme-input rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none"
           />
         </div>
 
@@ -210,7 +210,7 @@ export default function CheckoutPage() {
             mixedCurrencies ||
             (deliveryMethodType === "PICKUP" && pickupPoints.length > 0 && !pickupPointId)
           }
-          className="rounded-xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-60"
+          className="store-theme-primary-button rounded-xl px-5 py-3 text-sm font-semibold transition disabled:opacity-60"
         >
           {loading ? t("submitting") : t("submit")}
         </button>

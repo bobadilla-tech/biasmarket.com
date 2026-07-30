@@ -29,7 +29,11 @@ export function ProductCard({ slug, product }: { slug: string; product: Product 
   const [added, setAdded] = useState(false);
 
   const selectedVariant = product.variants.find((v) => v.id === variantId);
-  const price = Number(selectedVariant?.priceOverride ?? product.price);
+  const effectivePrices = product.variants.map((v) => Number(v.priceOverride ?? product.price));
+  const minPrice = effectivePrices.length > 0 ? Math.min(...effectivePrices) : Number(product.price);
+  const maxPrice = effectivePrices.length > 0 ? Math.max(...effectivePrices) : Number(product.price);
+  const showFromPrice = product.variants.length > 1 && minPrice !== maxPrice;
+  const price = showFromPrice ? minPrice : Number(selectedVariant?.priceOverride ?? product.price);
   const outOfStock = product.soldOut || selectedVariant?.stock === 0;
 
   const handleAddToCart = () => {
@@ -57,7 +61,8 @@ export function ProductCard({ slug, product }: { slug: string; product: Product 
         <div className="aspect-square bg-gray-100 rounded-lg mb-3" />
       )}
       <p className="font-semibold text-gray-900 text-sm">{product.name}</p>
-      <p className="text-emerald-600 font-bold text-sm">
+      <p className="store-theme-active-text font-bold text-sm">
+        {showFromPrice ? `${t("fromPrice")} ` : ""}
         {price} {product.currency}
       </p>
       {product.availableUntil && (
@@ -91,7 +96,7 @@ export function ProductCard({ slug, product }: { slug: string; product: Product 
       ) : (
         <button
           onClick={handleAddToCart}
-          className="mt-2 w-full rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-600"
+          className="store-theme-primary-button mt-2 w-full rounded-lg px-3 py-1.5 text-xs font-semibold transition"
         >
           {added ? t("addedToCart") : t("addToCart")}
         </button>

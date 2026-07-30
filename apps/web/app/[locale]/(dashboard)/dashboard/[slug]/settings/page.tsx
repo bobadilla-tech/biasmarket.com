@@ -7,6 +7,7 @@ import {
   CreditCard,
   Copy,
   Palette,
+  Pipette,
   Plus,
   Store,
   Truck,
@@ -26,12 +27,14 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { PhoneInput } from "@/components/ui/phone-input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { apiFetch } from "@/lib/api";
 import {
+  buildCustomStorePalette,
   buildStoreThemeConfig,
   resolveStorePalette,
   STORE_PALETTES,
@@ -166,6 +169,7 @@ export default function SettingsPage() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [selectedPaletteId, setSelectedPaletteId] = useState(STORE_PALETTES[0].id);
+  const [customColor, setCustomColor] = useState("#6d28d9");
 
   const [pickupEnabled, setPickupEnabled] = useState(false);
   const [pickupPoints, setPickupPoints] = useState<PickupPoint[]>([]);
@@ -196,7 +200,10 @@ export default function SettingsPage() {
     setDefaultCurrency(store.defaultCurrency ?? SUPPORTED_CURRENCIES[0]);
     setPaymentInstructions(store.paymentInstructions ?? "");
     setLogoUrl(store.logoUrl ?? null);
-    setSelectedPaletteId(resolveStorePalette(store.themeConfig).id);
+    const resolved = resolveStorePalette(store.themeConfig);
+    const isPreset = STORE_PALETTES.some((palette) => palette.id === resolved.id);
+    setSelectedPaletteId(isPreset ? resolved.id : "custom");
+    if (!isPreset) setCustomColor(resolved.colors.primary);
   }, [store]);
 
   const loadDeliveryMethods = async () => {
@@ -258,12 +265,10 @@ export default function SettingsPage() {
     return `${window.location.origin}/${locale}/store/${slug}`;
   }, [locale, slug]);
 
-  const selectedPalette = useMemo(
-    () =>
-      STORE_PALETTES.find((palette) => palette.id === selectedPaletteId) ??
-      STORE_PALETTES[0],
-    [selectedPaletteId],
-  );
+  const selectedPalette = useMemo(() => {
+    if (selectedPaletteId === "custom") return buildCustomStorePalette(customColor);
+    return STORE_PALETTES.find((palette) => palette.id === selectedPaletteId) ?? STORE_PALETTES[0];
+  }, [selectedPaletteId, customColor]);
 
   const handleSaveProfile = async () => {
     if (!storeId) return;
@@ -657,6 +662,67 @@ export default function SettingsPage() {
                     </div>
                   </Button>
                 ))}
+
+                <Popover>
+                  <PopoverTrigger
+                    type="button"
+                    onClick={() => setSelectedPaletteId("custom")}
+                    className={cn(
+                      "h-auto flex-col items-stretch rounded-[22px] border p-4 text-left shadow-none",
+                      selectedPaletteId === "custom"
+                        ? "bg-white shadow-sm"
+                        : "bg-[#fcf9ff] hover:bg-white",
+                    )}
+                    style={{
+                      borderColor: selectedPaletteId === "custom" ? "var(--store-primary)" : "#eadcf8",
+                    }}
+                  >
+                    <div className="mb-3 flex w-full gap-2">
+                      {selectedPaletteId === "custom" ? (
+                        Object.values(selectedPalette.colors).map((color) => (
+                          <span
+                            key={color}
+                            className="h-8 flex-1 rounded-full"
+                            style={{ backgroundColor: color }}
+                          />
+                        ))
+                      ) : (
+                        <div className="flex h-8 flex-1 items-center justify-center rounded-full border-2 border-dashed border-[#c9b3e8] text-[#7a38d8]">
+                          <Pipette className="size-4" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex w-full items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold text-[#301848]">
+                          {t("appearance.customLabel")}
+                        </p>
+                        <p className="mt-1 text-xs text-[#8d79a5]">
+                          {t("appearance.customDescription")}
+                        </p>
+                      </div>
+                      {selectedPaletteId === "custom" ? (
+                        <Badge className="store-theme-soft-badge rounded-full px-2.5 py-1 text-[11px] font-semibold">
+                          {t("appearance.selected")}
+                        </Badge>
+                      ) : null}
+                    </div>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto">
+                    <p className="mb-3 text-sm font-semibold text-[#301848]">
+                      {t("appearance.customColorLabel")}
+                    </p>
+                    <input
+                      type="color"
+                      value={customColor}
+                      onChange={(event) => {
+                        setCustomColor(event.target.value);
+                        setSelectedPaletteId("custom");
+                      }}
+                      className="h-10 w-full cursor-pointer rounded-lg border border-[#eadcf8]"
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <Card

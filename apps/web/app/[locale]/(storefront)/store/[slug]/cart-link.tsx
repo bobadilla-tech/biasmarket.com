@@ -22,7 +22,7 @@ export function CartLink({ slug }: { slug: string }) {
   return (
     <Link
       href={`/store/${slug}/cart`}
-      className="fixed bottom-6 right-6 rounded-full bg-emerald-500 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-600"
+      className="store-theme-primary-button fixed bottom-6 right-6 rounded-full px-5 py-3 text-sm font-semibold shadow-lg transition"
     >
       {t("cart")} {count > 0 ? `(${count})` : ""}
     </Link>
