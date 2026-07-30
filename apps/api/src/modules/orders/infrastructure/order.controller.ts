@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { AuthGuard, Session } from '@thallesp/nestjs-better-auth';
 import type { UserSession } from '@thallesp/nestjs-better-auth';
-import type { FulfillmentStatus, PaymentStatus } from '@biasmarket/db';
+import type { FulfillmentStatus, PaymentMethodType, PaymentStatus } from '@biasmarket/db';
 import { OrderRepository } from './order.repository.js';
 import { ReviewPaymentUseCase } from '../application/review-payment.usecase.js';
 import { AdvanceFulfillmentUseCase } from '../application/advance-fulfillment.usecase.js';
@@ -62,6 +62,7 @@ export class OrderController {
     @Param('orderId') orderId: string,
     @Session() session: UserSession,
     @Body('amount') amount: string,
+    @Body('method') method: string,
     @Body('note') note?: string,
     @UploadedFile() file?: Express.Multer.File,
   ) {
@@ -73,6 +74,10 @@ export class OrderController {
     }
     if (numericAmount > order.pendingAmount) {
       throw new BadRequestException('El abono excede el saldo pendiente');
+    }
+    const PAYMENT_METHODS: PaymentMethodType[] = ['YAPE', 'PLIN', 'TRANSFER', 'CASH'];
+    if (!method || !PAYMENT_METHODS.includes(method as PaymentMethodType)) {
+      throw new BadRequestException('Selecciona un método de pago');
     }
 
     const nextPaid = order.paidAmount + numericAmount;
@@ -101,6 +106,7 @@ export class OrderController {
             storeId,
             amount: numericAmount,
             currency: order.currency,
+            method: method as PaymentMethodType,
             note,
             ...(imageUrl && { imageUrl }),
           },

@@ -4,6 +4,7 @@ import type {
   ProductStatus,
   StoreSectionType,
   DeliveryMethodType,
+  PaymentMethodType,
   PaymentStatus,
   FulfillmentStatus,
 } from '@biasmarket/db';
@@ -113,6 +114,17 @@ export async function ensurePickupPoint(
     where: { id: input.id },
     update: data,
     create: { id: input.id, ...data },
+  });
+}
+
+export async function ensurePaymentMethod(
+  prisma: PrismaClient,
+  input: { storeId: string; method: PaymentMethodType; enabled?: boolean },
+) {
+  return prisma.paymentMethodConfig.upsert({
+    where: { storeId_method: { storeId: input.storeId, method: input.method } },
+    update: { enabled: input.enabled ?? true },
+    create: { storeId: input.storeId, method: input.method, enabled: input.enabled ?? true, details: {} },
   });
 }
 

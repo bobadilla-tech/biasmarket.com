@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import {
   Sheet,
   SheetContent,
@@ -39,6 +40,7 @@ interface OrderItemRow {Upload: any
 interface OrderPaymentRow {
   id: string;
   amount: string;
+  method?: string | null;
   note?: string | null;
   imageUrl?: string | null;
   createdAt: string;
@@ -185,6 +187,8 @@ export default function OrdersPage() {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("");
+  const [enabledPaymentMethods, setEnabledPaymentMethods] = useState<string[]>([]);
   const [paymentNote, setPaymentNote] = useState("");
   const [paymentImage, setPaymentImage] = useState<File | null>(null);
   const [paymentSubmitting, setPaymentSubmitting] = useState(false);
@@ -212,6 +216,12 @@ export default function OrdersPage() {
     approve: t("paymentActionLabels.approve"),
     reject: t("paymentActionLabels.reject"),
   };
+  const paymentMethodLabels: Record<string, string> = {
+    YAPE: t("paymentMethodLabels.YAPE"),
+    PLIN: t("paymentMethodLabels.PLIN"),
+    TRANSFER: t("paymentMethodLabels.TRANSFER"),
+    CASH: t("paymentMethodLabels.CASH"),
+  };
 
   const loadOrders = async () => {
     if (!storeId) return;
@@ -226,6 +236,13 @@ export default function OrdersPage() {
   useEffect(() => {
     loadOrders();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeId]);
+
+  useEffect(() => {
+    if (!storeId) return;
+    apiFetch(`/stores/${storeId}/payment-methods?enabled=1`)
+      .then((methods: { method: string }[]) => setEnabledPaymentMethods(methods.map((m) => m.method)))
+      .catch(() => setEnabledPaymentMethods([]));
   }, [storeId]);
 
   const handleReview = async (orderId: string, decision: "approve" | "reject") => {
@@ -329,11 +346,12 @@ export default function OrdersPage() {
 
   const handleRegisterPayment = async (orderId: string) => {
     const amount = Number(paymentAmount);
-    if (!storeId || !Number.isFinite(amount) || amount <= 0) return;
+    if (!storeId || !Number.isFinite(amount) || amount <= 0 || !paymentMethod) return;
     setPaymentSubmitting(true);
     try {
       const formData = new FormData();
       formData.append("amount", String(amount));
+      formData.append("method", paymentMethod);
       if (paymentNote) formData.append("note", paymentNote);
       if (paymentImage) formData.append("file", paymentImage);
 
@@ -349,6 +367,7 @@ export default function OrdersPage() {
       if (!res.ok) throw new Error(data?.message ?? tCommon("networkError"));
 
       setPaymentAmount("");
+      setPaymentMethod("");
       setPaymentNote("");
       setPaymentImage(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -761,13 +780,28 @@ export default function OrdersPage() {
                         disabled={
                           paymentSubmitting ||
                           selectedOrder.pendingAmount <= 0 ||
-                          !paymentAmount
+                          !paymentAmount ||
+                          !paymentMethod
                         }
                         className="store-theme-primary-button h-11 shrink-0 rounded-xl px-5 text-sm font-semibold hover:opacity-100"
                       >
                         {t("details.registerPayment")}
                       </Button>
                     </div>
+                    <Select
+                      value={paymentMethod}
+                      onChange={(event) => setPaymentMethod(event.target.value)}
+                      selectClassName="store-theme-input h-11 rounded-xl border-[#e7dcf3] bg-[#fbf8fe] text-sm text-[#341b55]"
+                    >
+                      <option value="" disabled>
+                        {t("details.selectPaymentMethod")}
+                      </option>
+                      {enabledPaymentMethods.map((method) => (
+                        <option key={method} value={method}>
+                          {paymentMethodLabels[method] ?? method}
+                        </option>
+                      ))}
+                    </Select>
                     <Input
                       value={paymentNote}
                       onChange={(event) => setPaymentNote(event.target.value)}
@@ -904,6 +938,11 @@ export default function OrdersPage() {
                                 <div className="flex items-center justify-between gap-2">
                                   <span className="font-bold text-[#2d1649]">
                                     {selectedOrder.currency} {payment.amount}
+                                    {payment.method ? (
+                                      <span className="ml-1 font-medium text-[#8f7da8]">
+                                        · {paymentMethodLabels[payment.method] ?? payment.method}
+                                      </span>
+                                    ) : null}
                                   </span>
                                   <span className="text-[11px] font-medium text-[#8f7da8]">
                                     {formatOrderDate(

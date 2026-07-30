@@ -39,6 +39,14 @@ export class StoresService {
       await tx.deliveryMethodConfig.create({
         data: { storeId: store.id, type: 'PICKUP', enabled: true, details: {} },
       });
+      await tx.paymentMethodConfig.createMany({
+        data: (['YAPE', 'PLIN', 'TRANSFER', 'CASH'] as const).map((method) => ({
+          storeId: store.id,
+          method,
+          enabled: true,
+          details: {},
+        })),
+      });
       return store;
     });
   }

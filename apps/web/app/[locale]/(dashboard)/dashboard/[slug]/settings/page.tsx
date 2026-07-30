@@ -66,10 +66,10 @@ interface NotificationSetting {
 }
 
 const PAYMENT_METHODS = [
-  { key: "yape", color: "bg-[#f8ddf2] text-[#bd2d84]" },
-  { key: "plin", color: "bg-[#ece0ff] text-[#7540d9]" },
-  { key: "transfer", color: "bg-[#e4f5ff] text-[#2472ae]" },
-  { key: "cash", color: "bg-[#ebf9ef] text-[#27965e]" },
+  { key: "yape", method: "YAPE", color: "bg-[#f8ddf2] text-[#bd2d84]" },
+  { key: "plin", method: "PLIN", color: "bg-[#ece0ff] text-[#7540d9]" },
+  { key: "transfer", method: "TRANSFER", color: "bg-[#e4f5ff] text-[#2472ae]" },
+  { key: "cash", method: "CASH", color: "bg-[#ebf9ef] text-[#27965e]" },
 ] as const;
 
 function SectionCard({
@@ -179,13 +179,21 @@ export default function SettingsPage() {
   const [courierEnabled, setCourierEnabled] = useState(false);
   const [courierCost, setCourierCost] = useState("");
 
+  const [paymentMethodsEnabled, setPaymentMethodsEnabled] = useState<Record<string, boolean>>({
+    YAPE: true,
+    PLIN: true,
+    TRANSFER: true,
+    CASH: true,
+  });
+
   const [profileSaving, setProfileSaving] = useState(false);
   const [appearanceSaving, setAppearanceSaving] = useState(false);
   const [deliverySaving, setDeliverySaving] = useState(false);
   const [notificationsSaving, setNotificationsSaving] = useState(false);
+  const [paymentMethodsSaving, setPaymentMethodsSaving] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
   const [savedSection, setSavedSection] = useState<
-    "profile" | "appearance" | "delivery" | "notifications" | null
+    "profile" | "appearance" | "delivery" | "notifications" | "payments" | null
   >(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -230,6 +238,45 @@ export default function SettingsPage() {
     setCourierCost(String(courier?.details?.estimatedCost ?? ""));
   };
 
+  const loadPaymentMethods = async () => {
+    if (!storeId) return;
+    const methods = await apiFetch(`/stores/${storeId}/payment-methods`);
+    const next: Record<string, boolean> = { YAPE: true, PLIN: true, TRANSFER: true, CASH: true };
+    for (const row of methods as { method: string; enabled: boolean }[]) {
+      next[row.method] = row.enabled;
+    }
+    setPaymentMethodsEnabled(next);
+  };
+
+  const handleTogglePaymentMethod = (method: string, enabled: boolean) => {
+    setPaymentMethodsEnabled((prev) => ({ ...prev, [method]: enabled }));
+  };
+
+  const handleSavePaymentMethods = async () => {
+    if (!storeId) return;
+    setPaymentMethodsSaving(true);
+    setError(null);
+    try {
+      await Promise.all(
+        PAYMENT_METHODS.map((method) =>
+          apiFetch(`/stores/${storeId}/payment-methods`, {
+            method: "POST",
+            body: JSON.stringify({
+              method: method.method,
+              enabled: paymentMethodsEnabled[method.method] ?? true,
+            }),
+          }),
+        ),
+      );
+      setSavedSection("payments");
+      await loadPaymentMethods();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setPaymentMethodsSaving(false);
+    }
+  };
+
   const handleAddPoint = () => {
     if (!newPointLabel.trim()) return;
     setPickupPoints((prev) => [
@@ -256,6 +303,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     loadDeliveryMethods().catch(() => undefined);
+    loadPaymentMethods().catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
 
@@ -817,14 +865,29 @@ export default function SettingsPage() {
                         </p>
                       </div>
                     </div>
-                    <Badge
-                      variant="outline"
-                      className="rounded-full border-[#eadcf7] bg-white px-2.5 py-1 text-[11px] uppercase tracking-wide text-[#8e7ca7]"
-                    >
-                      {t("payments.manual")}
-                    </Badge>
+                    <Switch
+                      checked={paymentMethodsEnabled[method.method] ?? true}
+                      onCheckedChange={(checked) => handleTogglePaymentMethod(method.method, checked)}
+                    />
                   </div>
                 ))}
+              </div>
+
+              <Separator className="my-5 bg-[#f0e7f8]" />
+
+              <div className="flex items-center justify-between gap-4">
+                <p className="text-sm text-[#8f7da8]">{t("payments.footer")}</p>
+                <Button
+                  onClick={handleSavePaymentMethods}
+                  disabled={paymentMethodsSaving}
+                  className="store-theme-primary-button h-11 rounded-2xl px-5 text-sm font-semibold hover:opacity-100"
+                >
+                  {savedSection === "payments"
+                    ? t("saved")
+                    : paymentMethodsSaving
+                      ? t("saving")
+                      : t("save")}
+                </Button>
               </div>
             </SectionCard>
           </div>

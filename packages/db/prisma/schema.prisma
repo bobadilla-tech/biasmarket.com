@@ -252,14 +252,15 @@ model PaymentProof {
 }
 
 model OrderPayment {
-  id        String   @id @default(cuid())
+  id        String             @id @default(cuid())
   orderId   String
   storeId   String
-  amount    Decimal  @db.Decimal(10, 2)
+  amount    Decimal            @db.Decimal(10, 2)
   currency  String
+  method    PaymentMethodType?
   note      String?
   imageUrl  String?
-  createdAt DateTime @default(now())
+  createdAt DateTime           @default(now())
 
   order Order @relation(fields: [orderId], references: [id])
 
@@ -294,10 +295,17 @@ enum DeliveryMethodType {
   COURIER
 }
 
+enum PaymentMethodType {
+  YAPE
+  PLIN
+  TRANSFER
+  CASH
+}
+
 model PaymentMethodConfig {
-  id                    String   @id @default(cuid())
+  id                    String            @id @default(cuid())
   storeId               String
-  method                String
+  method                PaymentMethodType
   enabled               Boolean  @default(true)
   details               Json
   depositPercentPickup  Int      @default(100)

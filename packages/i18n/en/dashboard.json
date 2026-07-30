@@ -264,7 +264,8 @@
           "label": "Pickup cash",
           "description": "Accept cash when the buyer picks up the order."
         }
-      }
+      },
+      "footer": "Enabled methods are shown when registering order payments."
     },
     "delivery": {
       "title": "Delivery setup",
@@ -394,6 +395,7 @@
       "addPayment": "Register payment",
       "paymentHistory": "Payment history",
       "paymentAmountPlaceholder": "Amount paid",
+      "selectPaymentMethod": "Select a payment method",
       "paymentNotePlaceholder": "Note (optional)",
       "registerPayment": "Save payment",
       "uploadPaymentImage": "Upload payment proof",
@@ -415,6 +417,12 @@
     "paymentActionLabels": {
       "approve": "Verified",
       "reject": "Rejected"
+    },
+    "paymentMethodLabels": {
+      "YAPE": "Yape",
+      "PLIN": "Plin",
+      "TRANSFER": "Bank transfer",
+      "CASH": "Cash"
     },
     "confirmStatus": {
       "title": "Confirm status change",

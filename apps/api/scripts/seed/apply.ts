@@ -15,6 +15,10 @@ export async function applyStoreFixture(prisma: PrismaClient, batch: string, spe
     await db.ensureDeliveryMethod(prisma, { storeId: store.id, type: dm.type, details: dm.details });
   }
 
+  for (const method of ['YAPE', 'PLIN', 'TRANSFER', 'CASH'] as const) {
+    await db.ensurePaymentMethod(prisma, { storeId: store.id, method, enabled: true });
+  }
+
   const pickupPointIds = new Map<string, string>();
   for (const [index, point] of spec.pickupPoints.entries()) {
     const id = seedId(batch, 'pickup-point', store.slug, point.key);

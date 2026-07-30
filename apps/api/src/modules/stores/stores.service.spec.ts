@@ -9,6 +9,7 @@ describe('StoresService', () => {
   let prisma: {
     store: { findUnique: Mock; create: Mock; findMany: Mock; update: Mock };
     deliveryMethodConfig: { create: Mock };
+    paymentMethodConfig: { createMany: Mock };
     storeSection: { findMany: Mock };
     product: { findMany: Mock };
     $transaction: Mock;
@@ -25,6 +26,7 @@ describe('StoresService', () => {
         update: vi.fn(),
       },
       deliveryMethodConfig: { create: vi.fn() },
+      paymentMethodConfig: { createMany: vi.fn() },
       storeSection: { findMany: vi.fn() },
       product: { findMany: vi.fn() },
       $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(prisma)),

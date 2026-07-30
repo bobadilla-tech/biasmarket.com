@@ -264,7 +264,8 @@
           "label": "Efectivo en recojo",
           "description": "Acepta efectivo cuando el comprador retire el pedido."
         }
-      }
+      },
+      "footer": "Los métodos habilitados se muestran al registrar abonos de pedidos."
     },
     "delivery": {
       "title": "Configuración de entrega",
@@ -394,6 +395,7 @@
       "addPayment": "Registrar pago",
       "paymentHistory": "Historial de pagos",
       "paymentAmountPlaceholder": "Monto pagado",
+      "selectPaymentMethod": "Selecciona un método de pago",
       "paymentNotePlaceholder": "Nota (opcional)",
       "registerPayment": "Guardar pago",
       "uploadPaymentImage": "Subir comprobante de pago",
@@ -415,6 +417,12 @@
     "paymentActionLabels": {
       "approve": "Verificado",
       "reject": "Rechazado"
+    },
+    "paymentMethodLabels": {
+      "YAPE": "Yape",
+      "PLIN": "Plin",
+      "TRANSFER": "Transferencia bancaria",
+      "CASH": "Efectivo"
     },
     "confirmStatus": {
       "title": "Confirmar cambio de estado",
