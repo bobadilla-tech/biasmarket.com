@@ -49,6 +49,7 @@
       "variantsPreview": "Variants preview",
       "variantStock": "Stock",
       "variantPrice": "Price",
+      "variantImageUpload": "Upload photo",
       "noVariantsYet": "Add a type and values to generate variants.",
       "variantsHelp": "Enable variants to offer options like color or size.",
       "categoryLabel": "Category",

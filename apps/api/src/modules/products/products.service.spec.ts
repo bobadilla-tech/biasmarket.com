@@ -10,6 +10,7 @@ describe('ProductsService', () => {
     store: { findUnique: Mock };
     product: {
       findUnique: Mock;
+      findUniqueOrThrow: Mock;
       findMany: Mock;
       create: Mock;
       update: Mock;
@@ -30,6 +31,7 @@ describe('ProductsService', () => {
       store: { findUnique: vi.fn() },
       product: {
         findUnique: vi.fn(),
+        findUniqueOrThrow: vi.fn(),
         findMany: vi.fn(),
         create: vi.fn(),
         update: vi.fn(),
@@ -180,6 +182,29 @@ describe('ProductsService', () => {
     expect(prisma.product.create).toHaveBeenCalledWith({
       data: { ...dto, storeId, currency: 'USD' },
     });
+  });
+
+  it('create() returns the product with its created variants included', async () => {
+    prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId, defaultCurrency: 'PEN' });
+    prisma.product.create.mockResolvedValue({ id: productId });
+    const created = {
+      id: productId,
+      variants: [{ id: 'v1', name: 'Red / S' }],
+    };
+    prisma.product.findUniqueOrThrow.mockResolvedValue(created);
+    const dto = {
+      name: 'Widget',
+      price: 10,
+      variants: [{ name: 'Red / S', stock: 3, attributes: { Color: 'Red', Size: 'S' } }],
+    };
+
+    const result = await service.create(storeId, ownerId, dto);
+
+    expect(prisma.product.findUniqueOrThrow).toHaveBeenCalledWith({
+      where: { id: productId },
+      include: { variants: true },
+    });
+    expect(result).toBe(created);
   });
 
   it('findAllForStore() filters out soft-deleted products and includes variants', async () => {
@@ -342,5 +367,44 @@ describe('ProductsService', () => {
     await expect(service.deleteVariant(productId, 'v1', storeId, ownerId)).rejects.toThrow(
       BadRequestException,
     );
+  });
+
+  describe('addVariantImage', () => {
+    beforeEach(() => {
+      prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
+      prisma.product.findUnique.mockResolvedValue({ id: productId, storeId });
+    });
+
+    it('sets imageOverride on the owned variant', async () => {
+      prisma.productVariant.findUnique.mockResolvedValue({ id: 'v1', productId, storeId });
+      prisma.productVariant.update.mockResolvedValue({});
+
+      await service.addVariantImage('v1', productId, storeId, ownerId, 'photo.png');
+
+      expect(prisma.productVariant.update).toHaveBeenCalledWith({
+        where: { id: 'v1' },
+        data: { imageOverride: 'photo.png' },
+      });
+    });
+
+    it('throws NotFoundException when the variant does not exist', async () => {
+      prisma.productVariant.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.addVariantImage('v1', productId, storeId, ownerId, 'photo.png'),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('throws NotFoundException when the variant belongs to a different product', async () => {
+      prisma.productVariant.findUnique.mockResolvedValue({
+        id: 'v1',
+        productId: 'other-product',
+        storeId,
+      });
+
+      await expect(
+        service.addVariantImage('v1', productId, storeId, ownerId, 'photo.png'),
+      ).rejects.toThrow(NotFoundException);
+    });
   });
 });

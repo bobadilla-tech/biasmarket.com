@@ -149,7 +149,27 @@ export class ProductsController {
       url,
       replace === '1' || replace === 'true',
     );
+  }
 
-    
+  @Post(':productId/variants/:variantId/images')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadVariantImage(
+    @Param('storeId') storeId: string,
+    @Param('productId') productId: string,
+    @Param('variantId') variantId: string,
+    @Session() session: UserSession,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) throw new BadRequestException('Missing File');
+    if (file.size > 5 * 1024 * 1024) throw new BadRequestException('Max 5MB');
+
+    const isJpeg = file.buffer[0] === 0xff && file.buffer[1] === 0xd8;
+    const isPng = file.buffer.subarray(0, 8).equals(
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    );
+    if (!isJpeg && !isPng) throw new BadRequestException('Just JPEG or PNG');
+
+    const url = await this.storage.uploadImage(file.buffer, isPng ? 'image/png' : 'image/jpeg');
+    return this.products.addVariantImage(variantId, productId, storeId, session.user.id, url);
   }
 }

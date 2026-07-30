@@ -10,6 +10,7 @@ interface Variant {
   name: string;
   stock: number | null;
   priceOverride: string | null;
+  imageOverride: string | null;
 }
 
 interface Product {
@@ -51,15 +52,18 @@ export function ProductCard({ slug, product }: { slug: string; product: Product 
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4">
-      {product.images?.length > 0 ? (
-        <img
-          src={product.images[0]}
-          alt={product.name}
-          className="aspect-square w-full object-cover rounded-lg mb-3"
-        />
-      ) : (
-        <div className="aspect-square bg-gray-100 rounded-lg mb-3" />
-      )}
+      {(() => {
+        const imageUrl = selectedVariant?.imageOverride ?? product.images?.[0];
+        return imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={product.name}
+            className="aspect-square w-full object-cover rounded-lg mb-3"
+          />
+        ) : (
+          <div className="aspect-square bg-gray-100 rounded-lg mb-3" />
+        );
+      })()}
       <p className="font-semibold text-gray-900 text-sm">{product.name}</p>
       <p className="store-theme-active-text font-bold text-sm">
         {showFromPrice ? `${t("fromPrice")} ` : ""}
@@ -73,7 +77,7 @@ export function ProductCard({ slug, product }: { slug: string; product: Product 
         </p>
       )}
 
-      {product.variants.length > 0 && (
+      {product.variants.length > 1 && (
         <Select
           value={variantId}
           onChange={(e) => setVariantId(e.target.value)}

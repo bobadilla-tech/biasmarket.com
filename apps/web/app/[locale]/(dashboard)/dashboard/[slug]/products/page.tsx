@@ -35,7 +35,15 @@ interface Variant {
   stock: number | null;
   reserved: number;
   priceOverride: string | null;
+  imageOverride: string | null;
   attributes: Record<string, string>;
+}
+
+function keyForAttributes(attributes: Record<string, string> | null | undefined) {
+  return Object.entries(attributes ?? {})
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${k}:${v}`)
+    .join("|");
 }
 
 interface Product {
@@ -423,6 +431,7 @@ function ProductSheet({
     categoryId: string;
     imageFile: File | null;
     variants: VariantDraft[];
+    variantImages: Record<string, File | null>;
   }) => void;
   submitting: boolean;
 }) {
@@ -441,6 +450,11 @@ function ProductSheet({
   const [variantOverrides, setVariantOverrides] = useState<Record<string, { stock: string; price: string }>>(
     {},
   );
+  const [variantExistingImages, setVariantExistingImages] = useState<Record<string, string | null>>({});
+  const [variantImageFiles, setVariantImageFiles] = useState<Record<string, File | null>>({});
+  const [variantImagePreviews, setVariantImagePreviews] = useState<Record<string, string>>({});
+  const [activeVariantImageKey, setActiveVariantImageKey] = useState<string | null>(null);
+  const variantFileRef = useRef<HTMLInputElement>(null);
 
   const defaultCategories = useMemo(() => {
     const isSpanish = (locale ?? "").startsWith("es");
@@ -457,12 +471,7 @@ function ProductSheet({
     setCategoryTab("default");
     setCategorySearch("");
     setImagePreviewUrl(null);
-
-    const keyForAttributes = (attributes: Record<string, string> | null | undefined) =>
-      Object.entries(attributes ?? {})
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([k, v]) => `${k}:${v}`)
-        .join("|");
+    setVariantImageFiles({});
 
     const providedVariants = initialValues.variants ?? [];
     const hasStructuredVariants =
@@ -473,6 +482,7 @@ function ProductSheet({
       setHasVariants(false);
       setOptions([]);
       setVariantOverrides({});
+      setVariantExistingImages({});
       return;
     }
 
@@ -507,6 +517,11 @@ function ProductSheet({
         }),
       ),
     );
+    setVariantExistingImages(
+      Object.fromEntries(
+        providedVariants.map((variant) => [keyForAttributes(variant.attributes), variant.imageOverride]),
+      ),
+    );
   }, [initialValues]);
 
   useEffect(() => {
@@ -518,6 +533,19 @@ function ProductSheet({
     setImagePreviewUrl(nextUrl);
     return () => URL.revokeObjectURL(nextUrl);
   }, [values.imageFile]);
+
+  useEffect(() => {
+    const entries = Object.entries(variantImageFiles).filter(
+      (entry): entry is [string, File] => entry[1] !== null,
+    );
+    const nextPreviews = Object.fromEntries(
+      entries.map(([key, file]) => [key, URL.createObjectURL(file)]),
+    );
+    setVariantImagePreviews(nextPreviews);
+    return () => {
+      Object.values(nextPreviews).forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [variantImageFiles]);
 
   const variantsPreview = useMemo(() => {
     const readyOptions = options
@@ -541,10 +569,7 @@ function ProductSheet({
     });
 
     return combos.map((attributes) => {
-      const key = Object.entries(attributes)
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([k, v]) => `${k}:${v}`)
-        .join("|");
+      const key = keyForAttributes(attributes);
       const name = Object.values(attributes).join(" / ");
       const override = variantOverrides[key];
       const stock = override?.stock ? Number(override.stock) : undefined;
@@ -781,46 +806,83 @@ function ProductSheet({
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#927fac]">
                       {t("products.form.variantsPreview")}
                     </p>
+                    <input
+                      ref={variantFileRef}
+                      type="file"
+                      accept="image/png,image/jpeg"
+                      className="hidden"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0] ?? null;
+                        if (activeVariantImageKey) {
+                          setVariantImageFiles((prev) => ({ ...prev, [activeVariantImageKey]: file }));
+                        }
+                        event.target.value = "";
+                      }}
+                    />
                     <div className="space-y-2">
-                      {variantsPreview.map(({ key, draft }) => (
-                        <div
-                          key={key}
-                          className="grid gap-2 rounded-2xl border border-[#f0e7f8] bg-white px-3 py-3 sm:grid-cols-[minmax(0,1fr)_110px_110px]"
-                        >
-                          <div>
-                            <p className="text-sm font-semibold text-[#2d1649]">{draft.name}</p>
-                            <p className="text-xs text-[#8f7da8]">
-                              {Object.entries(draft.attributes ?? {})
-                                .map(([k, v]) => `${k}: ${v}`)
-                                .join(" · ")}
-                            </p>
+                      {variantsPreview.map(({ key, draft }) => {
+                        const previewUrl = variantImagePreviews[key] ?? variantExistingImages[key] ?? null;
+                        return (
+                          <div
+                            key={key}
+                            className="space-y-2 rounded-2xl border border-[#f0e7f8] bg-white px-3 py-3"
+                          >
+                            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_110px_110px]">
+                              <div>
+                                <p className="text-sm font-semibold text-[#2d1649]">{draft.name}</p>
+                                <p className="text-xs text-[#8f7da8]">
+                                  {Object.entries(draft.attributes ?? {})
+                                    .map(([k, v]) => `${k}: ${v}`)
+                                    .join(" · ")}
+                                </p>
+                              </div>
+                              <Input
+                                value={variantOverrides[key]?.stock ?? ""}
+                                onChange={(event) =>
+                                  setVariantOverrides((prev) => ({
+                                    ...prev,
+                                    [key]: { stock: event.target.value, price: prev[key]?.price ?? "" },
+                                  }))
+                                }
+                                inputMode="numeric"
+                                placeholder={t("products.form.variantStock")}
+                                className="store-theme-input h-10 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] shadow-none"
+                              />
+                              <Input
+                                value={variantOverrides[key]?.price ?? ""}
+                                onChange={(event) =>
+                                  setVariantOverrides((prev) => ({
+                                    ...prev,
+                                    [key]: { stock: prev[key]?.stock ?? "", price: event.target.value },
+                                  }))
+                                }
+                                inputMode="decimal"
+                                placeholder={t("products.form.variantPrice")}
+                                className="store-theme-input h-10 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] shadow-none"
+                              />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {previewUrl ? (
+                                <img src={previewUrl} alt="" className="size-10 rounded-lg object-cover" />
+                              ) : (
+                                <div className="size-10 rounded-lg bg-[#fbf8fe]" />
+                              )}
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                  setActiveVariantImageKey(key);
+                                  variantFileRef.current?.click();
+                                }}
+                                className="store-theme-secondary-button h-9 rounded-xl border bg-white px-3 text-xs font-semibold shadow-none"
+                              >
+                                <Upload className="size-3.5" />
+                                {t("products.form.variantImageUpload")}
+                              </Button>
+                            </div>
                           </div>
-                          <Input
-                            value={variantOverrides[key]?.stock ?? ""}
-                            onChange={(event) =>
-                              setVariantOverrides((prev) => ({
-                                ...prev,
-                                [key]: { stock: event.target.value, price: prev[key]?.price ?? "" },
-                              }))
-                            }
-                            inputMode="numeric"
-                            placeholder={t("products.form.variantStock")}
-                            className="store-theme-input h-10 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] shadow-none"
-                          />
-                          <Input
-                            value={variantOverrides[key]?.price ?? ""}
-                            onChange={(event) =>
-                              setVariantOverrides((prev) => ({
-                                ...prev,
-                                [key]: { stock: prev[key]?.stock ?? "", price: event.target.value },
-                              }))
-                            }
-                            inputMode="decimal"
-                            placeholder={t("products.form.variantPrice")}
-                            className="store-theme-input h-10 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] shadow-none"
-                          />
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 ) : (
@@ -1015,6 +1077,7 @@ function ProductSheet({
                 ...values,
                 stock: hasVariants ? "" : values.stock,
                 variants: hasVariants ? variantsPreview.map((v) => v.draft) : [],
+                variantImages: hasVariants ? variantImageFiles : {},
               })
             }
             disabled={submitting || !values.name || !values.price}
@@ -1105,6 +1168,23 @@ export default function ProductsPage() {
     }
   };
 
+  const uploadVariantImage = async (productId: string, variantId: string, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/stores/${storeId}/products/${productId}/variants/${variantId}/images`,
+      {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      },
+    );
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      throw new Error(data?.message ?? tCommon("networkError"));
+    }
+  };
+
   const handleCreate = async (values: {
     name: string;
     description: string;
@@ -1114,6 +1194,7 @@ export default function ProductsPage() {
     categoryId: string;
     imageFile: File | null;
     variants: VariantDraft[];
+    variantImages: Record<string, File | null>;
   }) => {
     if (!storeId) return;
     setCreateSubmitting(true);
@@ -1156,6 +1237,17 @@ export default function ProductsPage() {
         }
       }
 
+      const createdVariants = (created.variants as Variant[] | undefined) ?? [];
+      for (const draft of values.variants) {
+        const file = values.variantImages[keyForAttributes(draft.attributes)];
+        if (!file) continue;
+        const match = createdVariants.find(
+          (variant) => keyForAttributes(variant.attributes) === keyForAttributes(draft.attributes),
+        );
+        if (!match) continue;
+        await uploadVariantImage(created.id, match.id, file);
+      }
+
       setCreateOpen(false);
       await load();
     } catch (e) {
@@ -1184,6 +1276,7 @@ export default function ProductsPage() {
     categoryId: string;
     imageFile: File | null;
     variants: VariantDraft[];
+    variantImages: Record<string, File | null>;
   }) => {
     if (!storeId || !editingProduct) return;
     setEditSubmitting(true);
@@ -1215,12 +1308,6 @@ export default function ProductsPage() {
         attributes: (variant.attributes ?? {}) as Record<string, string>,
       }));
 
-      const keyForAttributes = (attributes: Record<string, string> | null | undefined) =>
-        Object.entries(attributes ?? {})
-          .sort(([a], [b]) => a.localeCompare(b))
-          .map(([k, v]) => `${k}:${v}`)
-          .join("|");
-
       if (values.variants.length > 0) {
         const existingByKey = new Map<string, Variant>();
         currentVariants.forEach((variant) => {
@@ -1233,6 +1320,7 @@ export default function ProductsPage() {
           const key = keyForAttributes(draft.attributes);
           desiredKeys.add(key);
           const existing = existingByKey.get(key);
+          let variantId: string;
           if (existing) {
             await apiFetch(
               `/stores/${storeId}/products/${editingProduct.id}/variants/${existing.id}`,
@@ -1247,6 +1335,7 @@ export default function ProductsPage() {
               },
               tCommon("networkError"),
             );
+            variantId = existing.id;
           } else {
             const payload: Record<string, unknown> = {
               name: draft.name,
@@ -1254,12 +1343,16 @@ export default function ProductsPage() {
             };
             if (draft.stock !== undefined) payload.stock = draft.stock;
             if (draft.priceOverride !== undefined) payload.priceOverride = draft.priceOverride;
-            await apiFetch(
+            const createdVariant = await apiFetch(
               `/stores/${storeId}/products/${editingProduct.id}/variants`,
               { method: "POST", body: JSON.stringify(payload) },
               tCommon("networkError"),
             );
+            variantId = createdVariant.id;
           }
+
+          const file = values.variantImages[key];
+          if (file) await uploadVariantImage(editingProduct.id, variantId, file);
         }
 
         for (const variant of currentVariants) {

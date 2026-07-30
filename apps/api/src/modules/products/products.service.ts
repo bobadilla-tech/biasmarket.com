@@ -94,7 +94,10 @@ export class ProductsService {
           data: categoryIds.map((categoryId) => ({ productId: product.id, categoryId })),
         });
       }
-      return product;
+      return tx.product.findUniqueOrThrow({
+        where: { id: product.id },
+        include: { variants: true },
+      });
     });
   }
 
@@ -261,6 +264,24 @@ export class ProductsService {
     return this.prisma.product.update({
       where: { id: productId },
       data: { images },
+    });
+  }
+
+  async addVariantImage(
+    variantId: string,
+    productId: string,
+    storeId: string,
+    userId: string,
+    url: string,
+  ) {
+    await this.findOwnedProduct(productId, storeId, userId);
+    const variant = await this.prisma.productVariant.findUnique({ where: { id: variantId } });
+    if (!variant || variant.productId !== productId || variant.storeId !== storeId) {
+      throw new NotFoundException('Variante no encontrada');
+    }
+    return this.prisma.productVariant.update({
+      where: { id: variantId },
+      data: { imageOverride: url },
     });
   }
 }
