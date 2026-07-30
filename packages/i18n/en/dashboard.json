@@ -377,7 +377,13 @@
       "paymentHistory": "Payment history",
       "paymentAmountPlaceholder": "Amount paid",
       "paymentNotePlaceholder": "Note (optional)",
-      "registerPayment": "Save payment"
+      "registerPayment": "Save payment",
+      "uploadPaymentImage": "Upload payment proof",
+      "uploadPaymentImageHint": "PNG or JPG (max. recommended 5MB)",
+      "chooseImage": "Choose",
+      "imagePreview": "Preview",
+      "imageSize": "{size} KB",
+      "removeImage": "Remove image"
     },
     "approve": "Approve",
     "reject": "Reject",

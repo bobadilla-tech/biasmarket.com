@@ -8,6 +8,8 @@ import {
   Post,
   Query,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { AuthGuard, Session } from '@thallesp/nestjs-better-auth';
 import type { UserSession } from '@thallesp/nestjs-better-auth';
@@ -18,6 +20,8 @@ import { AdvanceFulfillmentUseCase } from '../application/advance-fulfillment.us
 import { ReviewPaymentDto } from '../dto/review-payment.dto.js';
 import { AdvanceFulfillmentDto } from '../dto/advance-fulfillment.dto.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { StorageService } from '../../../storage/storage.service.js';
 
 @Controller('stores/:storeId/orders')
 @UseGuards(AuthGuard)
@@ -27,6 +31,7 @@ export class OrderController {
     private reviewPayment: ReviewPaymentUseCase,
     private advanceFulfillment: AdvanceFulfillmentUseCase,
     private prisma: PrismaService,
+    private storage: StorageService,
   ) {}
 
   @Get()
@@ -51,12 +56,14 @@ export class OrderController {
   }
 
   @Post(':orderId/payments')
+  @UseInterceptors(FileInterceptor('file'))
   async addPayment(
     @Param('storeId') storeId: string,
     @Param('orderId') orderId: string,
     @Session() session: UserSession,
-    @Body('amount') amount: number,
+    @Body('amount') amount: string,
     @Body('note') note?: string,
+    @UploadedFile() file?: Express.Multer.File,
   ) {
     await this.orders.assertOwnership(storeId, session.user.id);
     const order = await this.orders.findRowByIdForStore(orderId, storeId);
@@ -72,16 +79,37 @@ export class OrderController {
     const nextStatus: PaymentStatus =
       nextPaid >= Number(order.requiredAmount) ? 'VERIFIED' : 'PARTIALLY_PAID';
 
+    let imageUrl: string | null = null;
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) throw new BadRequestException('Máximo 5MB');
+      const isJpeg = file.buffer[0] === 0xff && file.buffer[1] === 0xd8;
+      const isPng = file.buffer.subarray(0, 8).equals(
+        Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+      );
+      if (!isJpeg && !isPng) throw new BadRequestException('Solo JPEG o PNG');
+      imageUrl = await this.storage.uploadPaymentImage(
+        file.buffer,
+        isPng ? 'image/png' : 'image/jpeg',
+      );
+    }
+
     try {
       await this.prisma.$transaction(async (tx) => {
         await tx.orderPayment.create({
-          data: { orderId, storeId, amount: numericAmount, currency: order.currency, note },
+          data: {
+            orderId,
+            storeId,
+            amount: numericAmount,
+            currency: order.currency,
+            note,
+            ...(imageUrl && { imageUrl }),
+          },
         });
         await this.orders.saveStatus(orderId, { paymentStatus: nextStatus }, tx);
       });
     } catch (e) {
       throw new BadRequestException(
-        'No se pudo registrar el abono. Verifica que la migración de OrderPayment esté aplicada en la base de datos.',
+        e instanceof Error ? e.message : String(e),
       );
     }
 
