@@ -25,6 +25,7 @@ function statusLabel(status: AccountOrder["paymentStatus"], t: ReturnType<typeof
   if (status === "CANCELLED") return t("status.cancelled");
   if (status === "PARTIALLY_PAID") return t("status.partial");
   if (status === "VERIFIED") return t("status.verified");
+  
   return t("status.toConfirm");
 }
 
