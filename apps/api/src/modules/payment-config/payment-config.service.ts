@@ -4,7 +4,7 @@ import { UpsertPaymentMethodDto } from './dto/upsert-payment-method.dto.js';
 
 @Injectable()
 export class PaymentConfigService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   private async assertOwnership(storeId: string, userId: string) {
     const store = await this.prisma.store.findUnique({
@@ -41,6 +41,23 @@ export class PaymentConfigService {
       },
       update: {
         ...(dto.enabled !== undefined && { enabled: dto.enabled }),
+      },
+    });
+  }
+  
+  async findEnabledForSlug(slug: string) {
+    const store = await this.prisma.store.findUnique({
+      where: { slug },
+    });
+
+    if (!store) {
+      throw new NotFoundException('Store no encontrada');
+    }
+
+    return this.prisma.paymentMethodConfig.findMany({
+      where: {
+        storeId: store.id,
+        enabled: true,
       },
     });
   }

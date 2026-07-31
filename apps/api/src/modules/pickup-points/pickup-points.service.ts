@@ -64,7 +64,9 @@ export class PickupPointsService {
 
   async findEnabledForSlug(slug: string) {
     const store = await this.prisma.store.findUnique({ where: { slug } });
+
     if (!store) throw new NotFoundException('Tienda no encontrada');
+    
     return this.prisma.pickupPoint.findMany({
       where: { storeId: store.id, enabled: true },
       orderBy: { sortOrder: 'asc' },

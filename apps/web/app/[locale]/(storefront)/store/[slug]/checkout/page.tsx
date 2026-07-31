@@ -21,6 +21,12 @@ interface PickupPoint {
   enabled: boolean;
 }
 
+interface PaymentMethod {
+  method: "YAPE" | "PLIN" | "TRANSFER" | "CASH";
+  enabled: boolean;
+  details: Record<string, unknown>;
+}
+
 export default function CheckoutPage() {
   const t = useTranslations("storefront.checkoutPage");
   const { slug } = useParams<{ slug: string }>();
@@ -30,6 +36,8 @@ export default function CheckoutPage() {
   const [deliveryMethodType, setDeliveryMethodType] = useState<string>("");
   const [pickupPoints, setPickupPoints] = useState<PickupPoint[]>([]);
   const [pickupPointId, setPickupPointId] = useState<string>("");
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [paymentMethodId, setPaymentMethodId] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
@@ -54,6 +62,14 @@ export default function CheckoutPage() {
         if (points[0]) setPickupPointId(points[0].id);
       })
       .catch(() => setPickupPoints([]));
+    apiFetch(`/stores/${slug}/public/payment-methods`)
+      .then((methods: PaymentMethod[]) => {
+        setPaymentMethods(methods);
+        if (methods[0]) {
+          setPaymentMethodId(methods[0].id);
+        }
+      })
+      .catch(() => setPaymentMethods([]));
   }, [slug]);
 
   const handleSubmit = async () => {
@@ -151,7 +167,9 @@ export default function CheckoutPage() {
             >
               {deliveryMethods.map((m) => (
                 <option key={m.type} value={m.type}>
-                  {m.type === "PICKUP" ? t("deliveryPickup") : t("deliveryCourier")}
+                  {m.type === "PICKUP"
+                    ? t("deliveryPickup")
+                    : t("deliveryCourier")}
                 </option>
               ))}
             </Select>
@@ -170,6 +188,18 @@ export default function CheckoutPage() {
               ))}
             </Select>
           )}
+
+          <Select
+            value={paymentMethodId}
+            onChange={(e) => setPaymentMethodId(e.target.value)}
+            selectClassName="rounded-xl border border-gray-200 py-2.5 text-sm text-gray-600"
+          >
+            {paymentMethods.map((method) => (
+              <option key={method.method} value={method.method}>
+                {method.method}
+              </option>
+            ))}
+          </Select>
 
           <input
             placeholder={t("namePlaceholder")}
@@ -209,7 +239,9 @@ export default function CheckoutPage() {
             !customerPhone ||
             !deliveryMethodType ||
             mixedCurrencies ||
-            (deliveryMethodType === "PICKUP" && pickupPoints.length > 0 && !pickupPointId)
+            (deliveryMethodType === "PICKUP" &&
+              pickupPoints.length > 0 &&
+              !pickupPointId)
           }
           className="store-theme-primary-button rounded-xl px-5 py-3 text-sm font-semibold transition disabled:opacity-60"
         >
