@@ -33,9 +33,11 @@ export const storesApi = {
       credentials: "include",
       body: formData,
     });
+    const data = await res.json().catch(() => null);
     if (!res.ok) {
-      throw new Error(fallbackErrorMessage ?? "Network error");
+      throw new Error(data?.message ?? fallbackErrorMessage ?? "Network error");
     }
+    return storeSchema.parse(data);
   },
   remove(storeId: string) {
     return apiFetch(`/stores/${storeId}`, { method: "DELETE" });

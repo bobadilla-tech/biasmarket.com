@@ -53,11 +53,22 @@ test("create POSTs the payload and validates the response", async () => {
 });
 
 test("uploadLogo throws with the fallback message on a non-ok response", async () => {
-  fetchMock.mockResolvedValueOnce({ ok: false });
+  fetchMock.mockResolvedValueOnce({ ok: false, json: () => Promise.resolve(null) });
 
   await expect(
     storesApi.uploadLogo("store-1", new File(["x"], "logo.png"), "upload failed"),
   ).rejects.toThrow("upload failed");
+});
+
+test("uploadLogo returns the parsed store on success", async () => {
+  fetchMock.mockResolvedValueOnce({
+    ok: true,
+    json: () => Promise.resolve({ id: "1", name: "Demo", slug: "demo", logoUrl: "https://x/logo.png" }),
+  });
+
+  const result = await storesApi.uploadLogo("store-1", new File(["x"], "logo.png"));
+
+  expect(result.logoUrl).toBe("https://x/logo.png");
 });
 
 test("remove DELETEs the store", async () => {

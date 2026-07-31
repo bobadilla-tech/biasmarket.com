@@ -45,6 +45,18 @@ but are not a substitute for an actual mobile pass, especially for Phase 4's
 sidebar, which the requester flagged as the one regression that actually
 matters.
 
+**Known red test as of this doc's last edit, not from this batch's work**:
+`apps/web/features/stores/api/stores.api.test.ts`'s `uploadLogo` error-path test
+fails (`res.json is not a function` instead of the expected thrown message) —
+root cause is `stores.api.ts`'s `uploadLogo` now calling
+`res.json().catch(() => null)` on a mocked `Response` that has no `.json`
+method, so the call throws synchronously before `.catch` ever attaches. This
+landed from the concurrent session's own `features/stores` work (its diff added
+the `res.json()` parse), not from any of Phases 1/2/4 above. Don't assume it's
+yours to fix or that it's stale — re-run `pnpm exec vitest run` fresh before
+doing anything else, since the other session may well have already fixed it by
+the time this doc is read.
+
 ## What changed under us (read this before touching `features/stores` or auth)
 
 The concurrent feature-sliced-migration session finished more of its own roadmap
@@ -80,6 +92,21 @@ than existed when the original plan was written. As of now:
   change files out from under this one mid-task with no conflict markers, just a
   changed file. This was confirmed harmless twice (both times additive, not
   contradictory), but isn't guaranteed to stay that way.
+- **`features/store-settings` has appeared and is actively growing** (seen as of
+  this doc's last edit: `api/settings.api.ts`,
+  `components/
+  profile-section.tsx`+`section-primitives.tsx`, mutations for
+  profile/appearance/delivery/payment-methods/stock-alerts,
+  `queries/use-payment-methods.ts`+`use-delivery-settings.ts`, matching schemas)
+  — this is the concurrent session splitting the monolithic `settings/page.tsx`
+  (still 1118 lines, not yet swapped over to these pieces as of this doc's last
+  edit) section-by-section. **Directly relevant to Phase 6** ("My Store"
+  resolution touches the settings sidebar entry/label) **and Phase 8** (Payments
+  tab needs the payment-method config data — `use-payment-methods.ts` may
+  already be exactly what it should read from, check there before writing a new
+  query). Re-check `features/store-settings` and `settings/page.tsx`'s actual
+  current state before starting either phase — by the time work resumes here,
+  the split may already be finished.
 
 ## Conventions confirmed working (apply to every remaining phase)
 

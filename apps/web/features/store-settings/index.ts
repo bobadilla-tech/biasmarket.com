@@ -1,0 +1,6 @@
+export { ProfileSection } from "./components/profile-section";
+export { AppearanceSection } from "./components/appearance-section";
+export { PaymentsSection } from "./components/payments-section";
+export { DeliverySection } from "./components/delivery-section";
+export { DefaultsSection } from "./components/defaults-section";
+export { NotificationsSection } from "./components/notifications-section";
