@@ -219,3 +219,63 @@ relocated).
 **Not yet done**: the actual prod redeploy — this fix needs merging to `main`,
 then `git pull && pnpm docker:prod` on the server (rebuilds the image with the
 fix baked in) before `pnpm seed:base:prod` will work there.
+
+## Hotfix (same day, #2): dev docker seeded before `@biasmarket/utils` was built
+
+Coworker (Carlos) hit the same `ERR_MODULE_NOT_FOUND` as the prod hotfix above,
+but on `pnpm docker:dev` from a fresh clone — one layer deeper.
+
+**Root cause**: `infra/docker/docker-compose.dev.yml`'s `api` service `command`
+ran the seed step (`node scripts/seed/run.ts`) _before_ `@biasmarket/utils` (and
+`i18n`/`types`) ever got built — those three packages were only built inside the
+trailing `concurrently` block, which starts _after_ seed. `packages/utils`'s
+exports point at `dist/*/index.js`; on a genuinely fresh clone (empty named
+volumes, no pre-existing `dist/`) that path doesn't exist yet when seed runs.
+This gap predates today — `apps/api/scripts/seed/*.ts` never imported from any
+`@biasmarket/*` package besides `@biasmarket/db` (whose build step,
+`prisma generate`, was already sequenced correctly) until hotfix #1 above moved
+`customer-account-token.ts` into `packages/utils`, adding the first such import
+and exposing the ordering gap. Didn't reproduce locally because a
+stale-but-present `dist/` from an earlier manual `pnpm build` sat on the
+bind-mounted host filesystem, masking it.
+
+Separately, an open PR (#40, "Build NestJS before running concurrently," not
+merged) fixed an adjacent but different race: `nest build --watch` and the
+`nodemon` process that execs `apps/api/dist/main.js` both start in parallel
+inside the same `concurrently` block, nothing guaranteeing the first
+`nest build` finishes before `nodemon`'s first exec attempt. Confirmed correct
+via `gh pr diff 40`, but it doesn't touch the seed step — wouldn't have fixed
+Carlos's crash on its own.
+
+Prod unaffected by either: `api.Dockerfile`'s build stage runs
+`turbo run build --filter=api`, which (per `turbo.json`'s
+`dependsOn: ["^build"]`) transitively builds every workspace dependency before
+the image is even created — nothing builds at prod container-boot time.
+
+**Fix**: two one-shot build steps added to the same `api` `command` in
+`docker-compose.dev.yml`:
+
+1. `pnpm exec turbo run build --filter=@biasmarket/i18n --filter=@biasmarket/types --filter=@biasmarket/utils`
+   before the seed step.
+2. `pnpm --filter api exec nest build` after seed, before `concurrently` — folds
+   in PR #40's fix (same line region, same root-cause category).
+
+New order: install → `db:generate` → `migrate deploy` → **build
+i18n/types/utils** → seed → **`nest build`** → `concurrently` (unchanged: turbo
+watch build + `nest build --watch` + nodemon).
+
+**Verified**: `docker compose ... down -v` + deleted all `dist/` dirs (true
+fresh-clone repro) → `pnpm docker:dev` clean boot → seed completed with zero
+errors → `/api/health` 200 → confirmed hot-reload still works (edited
+`packages/utils/src`, watched rebuild + app restart).
+
+**Follow-up incident, same fix**: Carlos re-ran `git pull` and hit
+`error: Your local changes to ... docker-compose.dev.yml would be
+overwritten by merge ... Aborting`
+— his pull silently no-opped (uncommitted local edits to that exact file, likely
+a hand-applied copy of PR #40's line), so he re-ran `docker:dev` against his
+still-stale pre-fix file and saw the identical crash again. Not a bug in the fix
+— confirmed the fix was already committed and pushed to `origin/main`
+(`4eae5e7`, verified present in the actual file content). Resolution is local to
+his machine: `git checkout -- infra/docker/docker-compose.dev.yml && git pull`
+(or `git stash` first if he wants to keep his local edit) before retrying.
