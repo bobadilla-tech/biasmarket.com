@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { StorageModule } from './storage/storage.module.js';
+import { MailerModule } from './mailer/mailer.module.js';
 import { AppController } from './app.controller.js';
 import { StoresModule } from './modules/stores/stores.module.js';
 import { ProductsModule } from './modules/products/products.module.js';
@@ -25,6 +26,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     ProductsModule,
     PrismaModule,
     StorageModule,
+    MailerModule,
     UsersModule,
     HealthModule,
     SellerAuthModule,
