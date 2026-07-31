@@ -239,12 +239,12 @@ code.
 
 ### Reset (wipe DB, start clean)
 
-For wiping prod's database and starting from an empty schema — e.g. before
-real users exist, when only seed/test accounts are on the server. Targets
-**only** the `db_data` volume — deliberately not `docker compose down -v`,
-which would also delete `caddy_data`/`caddy_config` (forcing Let's Encrypt
-re-issuance, burning into its rate limits) and `minio_data` (uploaded product
-images/store logos).
+For wiping prod's database and starting from an empty schema — e.g. before real
+users exist, when only seed/test accounts are on the server. Targets **only**
+the `db_data` volume — deliberately not `docker compose down -v`, which would
+also delete `caddy_data`/`caddy_config` (forcing Let's Encrypt re-issuance,
+burning into its rate limits) and `minio_data` (uploaded product images/store
+logos).
 
 ```bash
 cd ~/biasmarket
