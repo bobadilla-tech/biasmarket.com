@@ -1,24 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Bell } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { apiFetch } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/use-store";
-
-interface NotificationItem {
-  id: string;
-  type: "LOW_STOCK" | "OUT_OF_STOCK";
-  title: string;
-  body: string;
-  read: boolean;
-  archived: boolean;
-  createdAt: string;
-}
+import {
+  useNotifications,
+  useMarkRead,
+  useMarkAllRead,
+  useArchiveNotification,
+  NotificationRow,
+} from "@/features/notifications";
 
 export default function NotificationsPage() {
   const t = useTranslations("dashboard.notifications");
@@ -26,41 +21,10 @@ export default function NotificationsPage() {
   const { storeId, loading: storeLoading } = useStore();
 
   const [tab, setTab] = useState<"active" | "archived">("active");
-  const [items, setItems] = useState<NotificationItem[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  const load = async () => {
-    if (!storeId) return;
-    setLoading(true);
-    try {
-      const data = await apiFetch(
-        `/stores/${storeId}/notifications?archived=${tab === "archived"}`,
-      );
-      setItems(data);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storeId, tab]);
-
-  const handleMarkRead = async (id: string) => {
-    await apiFetch(`/stores/${storeId}/notifications/${id}/read`, { method: "PATCH" });
-    setItems((current) => current.map((item) => (item.id === id ? { ...item, read: true } : item)));
-  };
-
-  const handleMarkAllRead = async () => {
-    await apiFetch(`/stores/${storeId}/notifications/read-all`, { method: "POST" });
-    setItems((current) => current.map((item) => ({ ...item, read: true })));
-  };
-
-  const handleArchive = async (id: string) => {
-    await apiFetch(`/stores/${storeId}/notifications/${id}/archive`, { method: "PATCH" });
-    setItems((current) => current.filter((item) => item.id !== id));
-  };
+  const { data: items = [], isPending } = useNotifications(storeId, tab === "archived");
+  const markRead = useMarkRead(storeId);
+  const markAllRead = useMarkAllRead(storeId);
+  const archive = useArchiveNotification(storeId);
 
   if (storeLoading) {
     return (
@@ -78,7 +42,7 @@ export default function NotificationsPage() {
           {tab === "active" && items.some((item) => !item.read) ? (
             <Button
               variant="outline"
-              onClick={handleMarkAllRead}
+              onClick={() => markAllRead.mutate()}
               className="store-theme-secondary-button h-10 rounded-2xl border bg-white px-4 text-sm font-semibold shadow-none"
             >
               {t("markAllRead")}
@@ -118,7 +82,7 @@ export default function NotificationsPage() {
             <CardTitle>{t("title")}</CardTitle>
           </CardHeader>
           <CardContent className="divide-y divide-[#f0e7f8] px-0 py-0">
-            {loading ? (
+            {isPending ? (
               <p className="px-6 py-10 text-center text-sm text-[#9582ad]">{tCommon("loading")}</p>
             ) : items.length === 0 ? (
               <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
@@ -127,51 +91,13 @@ export default function NotificationsPage() {
               </div>
             ) : (
               items.map((item) => (
-                <div key={item.id} className="flex items-start justify-between gap-4 px-6 py-4">
-                  <div className="flex-1">
-                    <div className="mb-1 flex items-center gap-2">
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
-                          item.type === "OUT_OF_STOCK"
-                            ? "border-[#f3cbd8] bg-[#fff3f7] text-[#b24368]"
-                            : "border-[#f5e0bb] bg-[#fff8ea] text-[#a8730f]",
-                        )}
-                      >
-                        {t(`types.${item.type}`)}
-                      </Badge>
-                      {!item.read ? (
-                        <span className="size-2 rounded-full bg-[var(--store-primary)]" />
-                      ) : null}
-                    </div>
-                    <p className="text-sm font-medium text-[#341b55]">{item.title}</p>
-                    <p className="mt-0.5 text-xs text-[#9582ad]">{item.body}</p>
-                    <p className="mt-1 text-[11px] text-[#b3a3c7]">
-                      {new Date(item.createdAt).toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 gap-2">
-                    {!item.read ? (
-                      <Button
-                        variant="outline"
-                        onClick={() => handleMarkRead(item.id)}
-                        className="h-9 rounded-xl border-[#eadcf7] bg-white px-3 text-xs font-semibold shadow-none"
-                      >
-                        {t("markRead")}
-                      </Button>
-                    ) : null}
-                    {tab === "active" ? (
-                      <Button
-                        variant="outline"
-                        onClick={() => handleArchive(item.id)}
-                        className="h-9 rounded-xl border-[#eadcf7] bg-white px-3 text-xs font-semibold shadow-none"
-                      >
-                        {t("archive")}
-                      </Button>
-                    ) : null}
-                  </div>
-                </div>
+                <NotificationRow
+                  key={item.id}
+                  item={item}
+                  showArchive={tab === "active"}
+                  onMarkRead={(id) => markRead.mutate(id)}
+                  onArchive={(id) => archive.mutate(id)}
+                />
               ))
             )}
           </CardContent>

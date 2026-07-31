@@ -191,6 +191,8 @@
       "orders": "Orders",
       "products": "Products",
       "categories": "Categories",
+      "collections": "Collections",
+      "sections": "Sections",
       "shipping": "Shipping",
       "payments": "Payments",
       "customers": "Customers",
@@ -200,6 +202,9 @@
       "notifications": "Notifications"
     },
     "soon": "Soon",
+    "collapse": "Collapse sidebar",
+    "expand": "Expand sidebar",
+    "openMenu": "Open menu",
     "fallbackName": "Seller",
     "fallbackRole": "Store owner",
     "signOut": "Sign out"
