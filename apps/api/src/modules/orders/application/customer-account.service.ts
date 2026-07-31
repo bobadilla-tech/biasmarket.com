@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import type { Customer, Store } from '@biasmarket/db';
+import type { Customer, Prisma, Store } from '@biasmarket/db';
+import { escapeHtml } from '@biasmarket/utils/strings';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { MailerService } from '../../../mailer/mailer.service.js';
 import { createCustomerAccountToken, verifyCustomerAccountToken } from './customer-account-token.js';
@@ -11,16 +12,18 @@ function requiredEnv(name: string): string {
 }
 
 function buildCustomerVerificationEmailHtml(url: string, storeName: string): string {
+  const safeStoreName = escapeHtml(storeName);
+  const safeUrl = escapeHtml(url);
   return `
     <p>Hola,</p>
-    <p>Confirma tu cuenta de comprador en ${storeName} y revisa el estado de tu pedido haciendo clic en el siguiente enlace:</p>
-    <p><a href="${url}">${url}</a></p>
-    <p>Si no compraste en ${storeName}, ignora este correo.</p>
+    <p>Confirma tu cuenta de comprador en ${safeStoreName} y revisa el estado de tu pedido haciendo clic en el siguiente enlace:</p>
+    <p><a href="${safeUrl}">${safeUrl}</a></p>
+    <p>Si no compraste en ${safeStoreName}, ignora este correo.</p>
     <hr />
     <p>Hi,</p>
-    <p>Confirm your buyer account at ${storeName} and check your order status by clicking the link below:</p>
-    <p><a href="${url}">${url}</a></p>
-    <p>If you didn't buy from ${storeName}, ignore this email.</p>
+    <p>Confirm your buyer account at ${safeStoreName} and check your order status by clicking the link below:</p>
+    <p><a href="${safeUrl}">${safeUrl}</a></p>
+    <p>If you didn't buy from ${safeStoreName}, ignore this email.</p>
   `;
 }
 
@@ -34,27 +37,38 @@ export class CustomerAccountService {
   ) {}
 
   async findOrCreateCustomer(
+    tx: Prisma.TransactionClient | PrismaService,
     storeId: string,
     phone: string,
     email: string,
     name: string | undefined,
-  ): Promise<{ customer: Customer; needsVerificationEmail: boolean }> {
-    const existing = await this.prisma.customer.findUnique({
+  ): Promise<{ customer: Customer | null; needsVerificationEmail: boolean }> {
+    const existing = await tx.customer.findUnique({
       where: { storeId_phone: { storeId, phone } },
     });
 
     if (!existing) {
-      const customer = await this.prisma.customer.create({
+      const customer = await tx.customer.create({
         data: { storeId, phone, email, name, emailVerified: false },
       });
       return { customer, needsVerificationEmail: true };
     }
 
-    if (existing.email === email && existing.emailVerified) {
+    if (existing.email !== email) {
+      // Matching phone with a different email than what's on file — could be
+      // a typo, or someone else's checkout using a phone number they know
+      // but don't own the account for. Never mutate an existing customer's
+      // identity from an unauthenticated checkout request: don't touch
+      // email/emailVerified, don't link this order to their customerId,
+      // don't send a verification email. Falls back to a guest order.
+      return { customer: null, needsVerificationEmail: false };
+    }
+
+    if (existing.emailVerified) {
       return { customer: existing, needsVerificationEmail: false };
     }
 
-    const customer = await this.prisma.customer.update({
+    const customer = await tx.customer.update({
       where: { id: existing.id },
       data: { email, emailVerified: false },
     });
@@ -65,7 +79,7 @@ export class CustomerAccountService {
     if (!customer.email) return;
 
     try {
-      const secret = requiredEnv('BETTER_AUTH_SECRET');
+      const secret = requiredEnv('CUSTOMER_ACCOUNT_TOKEN_SECRET');
       const token = createCustomerAccountToken(customer.id, secret);
       const webUrl = process.env.WEB_URL ?? 'http://localhost:3001';
       const url = `${webUrl}/store/${store.slug}/account/confirm?token=${token}`;
@@ -86,7 +100,7 @@ export class CustomerAccountService {
     const store = await this.prisma.store.findUnique({ where: { slug: storeSlug } });
     if (!store) throw new NotFoundException('Store no encontrada');
 
-    const secret = requiredEnv('BETTER_AUTH_SECRET');
+    const secret = requiredEnv('CUSTOMER_ACCOUNT_TOKEN_SECRET');
     const verified = verifyCustomerAccountToken(token, secret);
     if (!verified) throw new BadRequestException('Enlace inválido o expirado');
 

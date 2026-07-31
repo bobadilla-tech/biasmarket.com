@@ -46,21 +46,23 @@ export class CreateOrderUseCase {
 
     const messageItems: { name: string; quantity: number; unitPrice: number }[] = [];
 
-    let customerId: string | undefined;
     let pendingVerificationCustomer: Awaited<
       ReturnType<CustomerAccountService['findOrCreateCustomer']>
     > | null = null;
-    if (dto.customerEmail) {
-      pendingVerificationCustomer = await this.customerAccounts.findOrCreateCustomer(
-        store.id,
-        dto.customerPhone,
-        dto.customerEmail,
-        dto.customerName,
-      );
-      customerId = pendingVerificationCustomer.customer.id;
-    }
 
     const order = await this.prisma.$transaction(async (tx) => {
+      let customerId: string | undefined;
+      if (dto.customerEmail) {
+        pendingVerificationCustomer = await this.customerAccounts.findOrCreateCustomer(
+          tx,
+          store.id,
+          dto.customerPhone,
+          dto.customerEmail,
+          dto.customerName,
+        );
+        customerId = pendingVerificationCustomer.customer?.id;
+      }
+
       // Seeded from the first line amount (rather than `new Prisma.Decimal(0)`)
       // so this file never needs a runtime import of the `Prisma` namespace —
       // only Decimal instances Prisma itself already returned. `items` is
@@ -177,7 +179,7 @@ export class CreateOrderUseCase {
         )
       : null;
 
-    if (pendingVerificationCustomer?.needsVerificationEmail) {
+    if (pendingVerificationCustomer?.needsVerificationEmail && pendingVerificationCustomer.customer) {
       await this.customerAccounts.sendVerificationEmail(pendingVerificationCustomer.customer, store);
     }
 
