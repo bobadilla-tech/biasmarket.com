@@ -4,7 +4,7 @@ import { vi, type Mock } from 'vitest';
 import { CustomerAccountService } from './customer-account.service.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { MailerService } from '../../../mailer/mailer.service.js';
-import { createCustomerAccountToken } from './customer-account-token.js';
+import { createCustomerAccountToken } from '@biasmarket/utils/customer-account-token';
 
 describe('CustomerAccountService', () => {
   let service: CustomerAccountService;

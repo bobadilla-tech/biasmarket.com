@@ -288,6 +288,9 @@ importers:
 
   packages/utils:
     devDependencies:
+      '@types/node':
+        specifier: ^26.0.0
+        version: 26.1.1
       '@vitest/coverage-v8':
         specifier: ^3.2.4
         version: 3.2.7(vitest@3.2.7(@types/node@26.1.1)(jiti@2.7.0)(jsdom@25.0.1)(lightningcss@1.32.0)(terser@5.49.0))

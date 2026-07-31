@@ -1,9 +1,9 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { Customer, Prisma, Store } from '@biasmarket/db';
 import { escapeHtml } from '@biasmarket/utils/strings';
+import { createCustomerAccountToken, verifyCustomerAccountToken } from '@biasmarket/utils/customer-account-token';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { MailerService } from '../../../mailer/mailer.service.js';
-import { createCustomerAccountToken, verifyCustomerAccountToken } from './customer-account-token.js';
 
 function requiredEnv(name: string): string {
   const value = process.env[name];

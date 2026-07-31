@@ -2,7 +2,7 @@ import type { PrismaClient } from '@biasmarket/db';
 import { seedId } from './ids.ts';
 import * as db from './helpers.ts';
 import type { StoreFixtureSpec } from './fixtures.ts';
-import { createCustomerAccountToken } from '../../src/modules/orders/application/customer-account-token.ts';
+import { createCustomerAccountToken } from '@biasmarket/utils/customer-account-token';
 
 function requiredEnv(name: string): string {
   const value = process.env[name];
