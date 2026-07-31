@@ -21,12 +21,6 @@ export class StoresController {
   }
 
   @UseGuards(AuthGuard)
-  @Get('/me/stores')
-  findMine(@Session() session: UserSession) {
-    return this.stores.findAllForUser(session.user.id);
-  }
-
-  @UseGuards(AuthGuard)
   @Roles(['admin'])
   @Get()
   findAllForAdmin() {

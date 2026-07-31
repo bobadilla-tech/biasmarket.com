@@ -10,7 +10,7 @@ vi.mock('next/navigation', () => ({
   permanentRedirect: vi.fn(),
 }));
 
-const { default: Page } = await import('../app/[locale]/page');
+const { default: Page } = await import('../app/[locale]/(marketing)/page');
 
 test('Page', () => {
   render(

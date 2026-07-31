@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { authClient } from "@/lib/auth-client";
 import { Link, useRouter } from "@/i18n/navigation";
+import { storesApi } from "@/features/stores";
 import { loginSchema, type LoginInput } from "../schemas/login.schema";
 
 const inputClassName =
@@ -31,7 +32,18 @@ export function LoginForm() {
       router.push("/admin");
       return;
     }
-    router.push("/onboarding/create-store");
+
+    // First-time sellers (no store yet) still go through first-store
+    // onboarding; returning sellers skip it — onboarding is a one-time
+    // setup flow, not the permanent post-login landing page.
+    const stores = await storesApi.listMine();
+    if (stores.length === 0) {
+      router.push("/onboarding/create-store");
+    } else if (stores.length === 1) {
+      router.push(`/dashboard/${stores[0].slug}`);
+    } else {
+      router.push("/account");
+    }
   };
 
   return (

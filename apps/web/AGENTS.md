@@ -35,9 +35,14 @@ should surface through the same error channel as a network failure, not be
 silently swallowed by `safeParse`). This stays the standing convention even if
 a generated OpenAPI client is introduced later — see the OpenAPI note below.
 
-**Forms rule** (once introduced — not installed yet, see roadmap below): new
-forms use `react-hook-form` + `@hookform/resolvers/zod` + shadcn's
-`components/ui/form.tsx`, not per-field `useState`.
+**Forms rule**: new forms use `react-hook-form` + `@hookform/resolvers/zod`,
+not per-field `useState`. There is no shadcn `components/ui/form.tsx` — the
+`form` registry item resolves empty for this project's `base-nova` style
+(Base UI backend, not Radix; shadcn hasn't shipped a Base-UI-flavored form
+wrapper). `features/auth/components/login-form.tsx` is the reference: `useForm`
++ `zodResolver`, plain `register()` on existing inputs, per-field errors from
+`formState.errors`, and `setError("root", ...)` for submit-level failures
+(e.g. wrong credentials) instead of a separate `useState<string | null>`.
 
 **Shared async-state UI**: use `components/shared/{loading-state,error-state,empty-state}.tsx`
 instead of ad hoc loading/error/empty markup.
@@ -66,8 +71,8 @@ convention, not a stopgap to be ripped out later.
 ## Migration roadmap (not all built yet)
 
 1. ~~Infra (TanStack Query provider, zod, shared async-state components) + `features/account` reference~~ — done.
-2. `features/notifications` — dedup `notifications-bell.tsx` + the notifications page onto a shared query, add mutations with `invalidateQueries`.
-3. `features/auth` — first `react-hook-form` + `zodResolver` form (install `react-hook-form`, `@hookform/resolvers`, add shadcn `form.tsx` at this point).
+2. ~~`features/notifications` — dedup `notifications-bell.tsx` + the notifications page onto a shared query, add mutations with `invalidateQueries`~~ — done.
+3. ~~`features/auth` — first `react-hook-form` + `zodResolver` form~~ — done (no shadcn `form.tsx`, see Forms rule above).
 4. create-store form — same RHF+Zod pattern plus multipart file upload.
 5. `features/stores` — replace `lib/use-store.ts`'s hand-rolled cache + `CustomEvent` broadcast with `useQuery`/`invalidateQueries`, keeping its public return shape stable for existing call sites.
 6. products/settings/orders pages — largest, highest-risk; migrate only once the pattern is proven across steps 2-5.

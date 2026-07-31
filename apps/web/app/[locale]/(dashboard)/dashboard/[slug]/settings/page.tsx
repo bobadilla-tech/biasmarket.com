@@ -39,7 +39,8 @@ import {
   resolveStorePalette,
   STORE_PALETTES,
 } from "@/lib/store-theme";
-import { broadcastStoreUpdate, useStore } from "@/lib/use-store";
+import { useStore } from "@/lib/use-store";
+import { useUpdateDashboardStoreCache } from "@/features/stores";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { StoreLogo } from "@/components/store-logo";
@@ -162,6 +163,7 @@ export default function SettingsPage() {
   const tCommon = useTranslations("common");
   const { locale, slug } = useParams<{ locale: string; slug: string }>();
   const { store, storeId, loading: storeLoading } = useStore();
+  const updateStoreCache = useUpdateDashboardStoreCache();
 
   const [storeName, setStoreName] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
@@ -341,14 +343,11 @@ export default function SettingsPage() {
           defaultCurrency,
         }),
       });
-      broadcastStoreUpdate({
-        slug,
-        store: {
-          name: storeName,
-          whatsappNumber,
-          paymentInstructions,
-          defaultCurrency,
-        },
+      updateStoreCache(slug, {
+        name: storeName,
+        whatsappNumber,
+        paymentInstructions,
+        defaultCurrency,
       });
       setSavedSection("profile");
     } catch (e) {
@@ -369,10 +368,7 @@ export default function SettingsPage() {
         method: "PATCH",
         body: JSON.stringify({ themeConfig }),
       });
-      broadcastStoreUpdate({
-        slug,
-        store: { themeConfig },
-      });
+      updateStoreCache(slug, { themeConfig });
       setSavedSection("appearance");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -455,10 +451,7 @@ export default function SettingsPage() {
           lowStockThreshold: threshold,
         }),
       });
-      broadcastStoreUpdate({
-        slug,
-        store: { lowStockAlertsEnabled, lowStockThreshold: threshold },
-      });
+      updateStoreCache(slug, { lowStockAlertsEnabled, lowStockThreshold: threshold });
       setSavedSection("notifications");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -491,10 +484,7 @@ export default function SettingsPage() {
       }
 
       setLogoUrl(data.logoUrl ?? null);
-      broadcastStoreUpdate({
-        slug,
-        store: { logoUrl: data.logoUrl ?? null },
-      });
+      updateStoreCache(slug, { logoUrl: data.logoUrl ?? null });
       setSavedSection("profile");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
