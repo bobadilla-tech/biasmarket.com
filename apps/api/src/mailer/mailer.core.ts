@@ -10,6 +10,13 @@ function requiredEnv(name: string): string {
   return value;
 }
 
+function resolveDriver(): 'file' | 'resend' {
+  const raw = process.env.MAIL_DRIVER;
+  if (raw === undefined) return 'file';
+  if (raw === 'file' || raw === 'resend') return raw;
+  throw new Error(`Invalid MAIL_DRIVER: "${raw}". Expected "file" or "resend".`);
+}
+
 // apps/api/src/mailer -> apps/api — works whether cwd is apps/api/ (bare
 // `pnpm dev`) or the repo root (Docker dev stack).
 const apiRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -24,8 +31,7 @@ export interface SendEmailParams {
 }
 
 export class MailerCore {
-  private readonly driver: 'file' | 'resend' =
-    process.env.MAIL_DRIVER === 'resend' ? 'resend' : 'file';
+  private readonly driver: 'file' | 'resend' = resolveDriver();
   private readonly apiKey = requiredEnv('RESEND_API_KEY');
   private readonly fromEmail = requiredEnv('RESEND_FROM_EMAIL');
   private client = new Resend(this.apiKey);

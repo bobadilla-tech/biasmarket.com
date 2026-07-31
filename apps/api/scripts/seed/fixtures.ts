@@ -54,16 +54,26 @@ export interface OrderItemSpec {
   quantity: number;
 }
 
+export interface OrderPaymentSpec {
+  key: string;
+  amount: string;
+  method?: 'YAPE' | 'PLIN' | 'TRANSFER' | 'CASH';
+  note?: string;
+  createdDaysAgo?: number;
+}
+
 export interface OrderSpec {
   key: string;
   customerPhone: string;
   customerName?: string;
   customerEmail?: string;
+  customerKey?: string;
   deliveryMethodType: 'PICKUP' | 'COURIER';
   pickupPointKey?: string;
-  paymentStatus: 'PENDING_PAYMENT' | 'PAYMENT_SUBMITTED' | 'VERIFIED' | 'REJECTED' | 'CANCELLED';
+  paymentStatus: 'PENDING_PAYMENT' | 'PARTIALLY_PAID' | 'PAYMENT_SUBMITTED' | 'VERIFIED' | 'REJECTED' | 'CANCELLED';
   fulfillmentStatus: 'ORDERING' | 'IN_TRANSIT' | 'READY' | 'COMPLETED';
   items: OrderItemSpec[];
+  payments?: OrderPaymentSpec[];
   createdDaysAgo?: number;
 }
 
@@ -71,6 +81,23 @@ export interface PickupPointSpec {
   key: string;
   label: string;
   enabled?: boolean;
+}
+
+export interface CustomerSpec {
+  key: string;
+  phone: string;
+  email: string;
+  name?: string;
+  emailVerified?: boolean;
+}
+
+export interface ContactInquirySpec {
+  key: string;
+  name: string;
+  email: string;
+  company?: string;
+  inquiryType?: string;
+  message: string;
 }
 
 export interface StoreFixtureSpec {
@@ -82,6 +109,7 @@ export interface StoreFixtureSpec {
   products: ProductSpec[];
   collections: CollectionSpec[];
   sections: SectionSpec[];
+  customers: CustomerSpec[];
   orders: OrderSpec[];
 }
 
@@ -223,6 +251,22 @@ function camilaStore(): StoreFixtureSpec {
         position: 2,
       },
     ],
+    customers: [
+      {
+        key: 'bruno',
+        phone: '+51900000002',
+        email: 'seed-bruno@example.com',
+        name: 'Bruno Test',
+        emailVerified: false,
+      },
+      {
+        key: 'ana',
+        phone: '+51900000007',
+        email: 'seed-ana@example.com',
+        name: 'Ana Verified',
+        emailVerified: true,
+      },
+    ],
     orders: [
       {
         key: 'pending',
@@ -238,10 +282,45 @@ function camilaStore(): StoreFixtureSpec {
         key: 'submitted',
         customerPhone: '+51900000002',
         customerEmail: 'seed-bruno@example.com',
+        customerKey: 'bruno',
         deliveryMethodType: 'COURIER',
         paymentStatus: 'PAYMENT_SUBMITTED',
         fulfillmentStatus: 'ORDERING',
         items: [{ productKey: 'photobook', variantKey: 'a', quantity: 1 }],
+        createdDaysAgo: 1,
+      },
+      {
+        key: 'ana-completed',
+        customerPhone: '+51900000007',
+        customerEmail: 'seed-ana@example.com',
+        customerKey: 'ana',
+        deliveryMethodType: 'COURIER',
+        paymentStatus: 'VERIFIED',
+        fulfillmentStatus: 'COMPLETED',
+        items: [{ productKey: 'photocards', quantity: 1 }],
+        createdDaysAgo: 6,
+      },
+      {
+        key: 'ana-pending',
+        customerPhone: '+51900000007',
+        customerEmail: 'seed-ana@example.com',
+        customerKey: 'ana',
+        deliveryMethodType: 'PICKUP',
+        pickupPointKey: 'plaza-norte',
+        paymentStatus: 'PENDING_PAYMENT',
+        fulfillmentStatus: 'ORDERING',
+        items: [{ productKey: 'lightstick', variantKey: 'default', quantity: 1 }],
+      },
+      {
+        key: 'partial',
+        customerPhone: '+51900000008',
+        customerName: 'Diego Partial',
+        deliveryMethodType: 'PICKUP',
+        pickupPointKey: 'alameda',
+        paymentStatus: 'PARTIALLY_PAID',
+        fulfillmentStatus: 'ORDERING',
+        items: [{ productKey: 'photobook', variantKey: 'a', quantity: 1 }],
+        payments: [{ key: 'first', amount: '15.00', method: 'YAPE', note: 'Adelanto' }],
         createdDaysAgo: 1,
       },
       {
@@ -352,6 +431,15 @@ function kpopCornerStore(): StoreFixtureSpec {
         position: 1,
       },
     ],
+    customers: [
+      {
+        key: 'sofia',
+        phone: '+51922222222',
+        email: 'seed-sofia@example.com',
+        name: 'Sofia Test',
+        emailVerified: true,
+      },
+    ],
     orders: [
       {
         key: 'pending',
@@ -365,7 +453,9 @@ function kpopCornerStore(): StoreFixtureSpec {
       {
         key: 'verified-completed',
         customerPhone: '+51922222222',
-        customerName: 'Bruno Test',
+        customerName: 'Sofia Test',
+        customerEmail: 'seed-sofia@example.com',
+        customerKey: 'sofia',
         deliveryMethodType: 'COURIER',
         paymentStatus: 'VERIFIED',
         fulfillmentStatus: 'COMPLETED',
@@ -447,6 +537,15 @@ export function buildAppendFixture(label: string): StoreFixtureSpec {
       { key: 'catalogo', type: 'COLLECTION', collectionKey: 'catalogo', content: { title: 'Catálogo' }, position: 0 },
       { key: 'banner', type: 'BANNER', content: { imageUrl: 'https://placehold.co/1200x400?text=Demo', headline: 'Demo store' }, position: 1 },
     ],
+    customers: [
+      {
+        key: 'buyer',
+        phone: '+51944444444',
+        email: `seed-buyer-${safeLabel}@example.com`,
+        name: `Demo Buyer ${label}`,
+        emailVerified: true,
+      },
+    ],
     orders: [
       {
         key: 'pending',
@@ -460,6 +559,8 @@ export function buildAppendFixture(label: string): StoreFixtureSpec {
       {
         key: 'verified-completed',
         customerPhone: '+51944444444',
+        customerEmail: `seed-buyer-${safeLabel}@example.com`,
+        customerKey: 'buyer',
         deliveryMethodType: 'COURIER',
         paymentStatus: 'VERIFIED',
         fulfillmentStatus: 'COMPLETED',
@@ -468,4 +569,26 @@ export function buildAppendFixture(label: string): StoreFixtureSpec {
       },
     ],
   };
+}
+
+// Platform-level — not scoped to a store, matches ContactInquiry's schema
+// (no storeId). Seeded so the admin inquiries dashboard has data to show.
+export function buildContactInquiries(): ContactInquirySpec[] {
+  return [
+    {
+      key: 'demo-1',
+      name: 'Valeria Seed',
+      email: 'seed-valeria@example.com',
+      company: 'Valeria Merch',
+      inquiryType: 'general',
+      message: 'Hola, quisiera saber cómo crear mi tienda en Bias Market.',
+    },
+    {
+      key: 'demo-2',
+      name: 'Marco Seed',
+      email: 'seed-marco@example.com',
+      inquiryType: 'support',
+      message: 'Tengo un problema para configurar mis métodos de entrega.',
+    },
+  ];
 }

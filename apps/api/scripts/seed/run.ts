@@ -21,8 +21,9 @@
 
 import { createSeedClient } from './client.ts';
 import { applyStoreFixture } from './apply.ts';
-import { ensureUser } from './helpers.ts';
-import { buildBaseFixtures, buildAppendFixture } from './fixtures.ts';
+import { ensureUser, ensureContactInquiry } from './helpers.ts';
+import { seedId } from './ids.ts';
+import { buildBaseFixtures, buildAppendFixture, buildContactInquiries } from './fixtures.ts';
 
 const args = process.argv.slice(2);
 const append = args.includes('--append');
@@ -34,16 +35,36 @@ if (append && !batch) {
 }
 
 const prisma = createSeedClient();
+const unverifiedCustomerLinks: { email: string; url: string }[] = [];
 
 if (append) {
-  await applyStoreFixture(prisma, batch!, buildAppendFixture(batch!));
+  const result = await applyStoreFixture(prisma, batch!, buildAppendFixture(batch!));
+  unverifiedCustomerLinks.push(...result.unverifiedCustomerLinks);
 } else {
   const { admins, stores } = buildBaseFixtures();
   for (const admin of admins) {
     await ensureUser(prisma, { email: admin.email, name: admin.name, role: 'admin' });
   }
   for (const store of stores) {
-    await applyStoreFixture(prisma, 'base', store);
+    const result = await applyStoreFixture(prisma, 'base', store);
+    unverifiedCustomerLinks.push(...result.unverifiedCustomerLinks);
+  }
+  for (const inquiry of buildContactInquiries()) {
+    await ensureContactInquiry(prisma, {
+      id: seedId('base', 'contact-inquiry', inquiry.key),
+      name: inquiry.name,
+      email: inquiry.email,
+      company: inquiry.company,
+      inquiryType: inquiry.inquiryType,
+      message: inquiry.message,
+    });
+  }
+}
+
+if (unverifiedCustomerLinks.length > 0) {
+  console.log('\nUnverified seeded buyer accounts — confirm links (30-day tokens):');
+  for (const link of unverifiedCustomerLinks) {
+    console.log(`  ${link.email} -> ${link.url}`);
   }
 }
 
