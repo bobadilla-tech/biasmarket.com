@@ -348,12 +348,14 @@ model PickupPoint {
 }
 
 model Customer {
-  id           String   @id @default(cuid())
-  storeId      String
-  phone        String
-  passwordHash String
-  name         String?
-  createdAt    DateTime @default(now())
+  id            String   @id @default(cuid())
+  storeId       String
+  phone         String
+  passwordHash  String?
+  email         String?
+  emailVerified Boolean  @default(false)
+  name          String?
+  createdAt     DateTime @default(now())
 
   store  Store   @relation(fields: [storeId], references: [id])
   orders Order[]

@@ -4,12 +4,14 @@ import { buildWhatsAppOrderMessage, buildWhatsAppUrl } from '@biasmarket/utils/w
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { CreateOrderDto } from '../dto/create-order.dto.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
+import { CustomerAccountService } from './customer-account.service.js';
 
 @Injectable()
 export class CreateOrderUseCase {
   constructor(
     private prisma: PrismaService,
     private notifications: NotificationsService,
+    private customerAccounts: CustomerAccountService,
   ) {}
 
   async execute(slug: string, dto: CreateOrderDto) {
@@ -43,6 +45,20 @@ export class CreateOrderUseCase {
     }
 
     const messageItems: { name: string; quantity: number; unitPrice: number }[] = [];
+
+    let customerId: string | undefined;
+    let pendingVerificationCustomer: Awaited<
+      ReturnType<CustomerAccountService['findOrCreateCustomer']>
+    > | null = null;
+    if (dto.customerEmail) {
+      pendingVerificationCustomer = await this.customerAccounts.findOrCreateCustomer(
+        store.id,
+        dto.customerPhone,
+        dto.customerEmail,
+        dto.customerName,
+      );
+      customerId = pendingVerificationCustomer.customer.id;
+    }
 
     const order = await this.prisma.$transaction(async (tx) => {
       // Seeded from the first line amount (rather than `new Prisma.Decimal(0)`)
@@ -125,6 +141,7 @@ export class CreateOrderUseCase {
       return tx.order.create({
         data: {
           storeId: store.id,
+          customerId,
           customerEmail: dto.customerEmail,
           customerPhone: dto.customerPhone,
           customerName: dto.customerName,
@@ -159,6 +176,10 @@ export class CreateOrderUseCase {
           }),
         )
       : null;
+
+    if (pendingVerificationCustomer?.needsVerificationEmail) {
+      await this.customerAccounts.sendVerificationEmail(pendingVerificationCustomer.customer, store);
+    }
 
     return { order, whatsappUrl };
   }

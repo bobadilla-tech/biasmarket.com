@@ -4,6 +4,7 @@ import { vi, type Mock } from 'vitest';
 import { CreateOrderUseCase } from './create-order.usecase.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
+import { CustomerAccountService } from './customer-account.service.js';
 
 // Minimal stand-in for the decimal.js `Decimal` instances the real
 // PrismaService returns for `Decimal(10,2)` columns — the unit-test alias

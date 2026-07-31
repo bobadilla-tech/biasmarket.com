@@ -17,7 +17,17 @@
     "submit": "Sign up",
     "genericError": "Something went wrong signing up",
     "hasAccount": "Already have an account?",
-    "loginLink": "Log in"
+    "loginLink": "Log in",
+    "checkEmailTitle": "Check your email",
+    "checkEmailBody": "We sent you a link to verify your account. Open it to be able to log in."
+  },
+  "verifyEmail": {
+    "successTitle": "Account verified",
+    "successBody": "Your email was successfully verified. You can now log in.",
+    "errorTitle": "We couldn't verify your account",
+    "errorBody": "The link expired or is invalid. Try signing up again to get a new one.",
+    "backToLogin": "Log in",
+    "signUpAgain": "Sign up again"
   },
   "createStore": {
     "title": "Create your store",

@@ -17,7 +17,17 @@
     "submit": "Registrarme",
     "genericError": "Error al registrarse",
     "hasAccount": "¿Ya tienes cuenta?",
-    "loginLink": "Iniciar sesión"
+    "loginLink": "Iniciar sesión",
+    "checkEmailTitle": "Revisa tu correo",
+    "checkEmailBody": "Te enviamos un enlace para verificar tu cuenta. Ábrelo para poder iniciar sesión."
+  },
+  "verifyEmail": {
+    "successTitle": "Cuenta verificada",
+    "successBody": "Tu correo fue verificado correctamente. Ya puedes iniciar sesión.",
+    "errorTitle": "No pudimos verificar tu cuenta",
+    "errorBody": "El enlace expiró o no es válido. Intenta registrarte de nuevo para recibir uno nuevo.",
+    "backToLogin": "Iniciar sesión",
+    "signUpAgain": "Registrarme de nuevo"
   },
   "createStore": {
     "title": "Crea tu tienda",
