@@ -47,12 +47,16 @@ wrapper). `features/auth/components/login-form.tsx` is the reference: `useForm`
 **Shared async-state UI**: use `components/shared/{loading-state,error-state,empty-state}.tsx`
 instead of ad hoc loading/error/empty markup.
 
-**Known deprecated pattern — do not copy**: `lib/use-store.ts` hand-rolls a
-cache (manual `useState`+`useEffect` fetch) and syncs other components via a
-`window` `CustomEvent` broadcast (`broadcastStoreUpdate`). This predates
-TanStack Query in this codebase and is slated for removal once `features/stores`
-lands (see roadmap). Don't extend it or copy the `CustomEvent` pattern into
-new code.
+**`lib/use-store.ts`**: thin compatibility re-export of
+`features/stores`'s `useDashboardStore` (as `useStore`) — the real
+implementation is TanStack Query, no more hand-rolled cache or `CustomEvent`
+broadcast. Kept as a re-export only so the many existing dashboard pages
+importing from this path don't all need touching in one change; new code
+should import `useDashboardStore`/`DashboardStore` from `@/features/stores`
+directly. Local optimistic updates after a mutation (e.g. settings saves) go
+through `useUpdateDashboardStoreCache()` (`queryClient.setQueryData`), not a
+`window` event — see `settings/page.tsx`'s `updateStoreCache` calls for the
+pattern.
 
 **`packages/types` (`@biasmarket/types`)**: currently unused/dead — do not
 hand-populate it with feature-local zod-inferred types. It's reserved as the
@@ -73,6 +77,6 @@ convention, not a stopgap to be ripped out later.
 1. ~~Infra (TanStack Query provider, zod, shared async-state components) + `features/account` reference~~ — done.
 2. ~~`features/notifications` — dedup `notifications-bell.tsx` + the notifications page onto a shared query, add mutations with `invalidateQueries`~~ — done.
 3. ~~`features/auth` — first `react-hook-form` + `zodResolver` form~~ — done (no shadcn `form.tsx`, see Forms rule above).
-4. create-store form — same RHF+Zod pattern plus multipart file upload.
-5. `features/stores` — replace `lib/use-store.ts`'s hand-rolled cache + `CustomEvent` broadcast with `useQuery`/`invalidateQueries`, keeping its public return shape stable for existing call sites.
-6. products/settings/orders pages — largest, highest-risk; migrate only once the pattern is proven across steps 2-5.
+4. ~~create-store form — same RHF+Zod pattern plus multipart file upload~~ — done (`features/stores/components/create-store-form.tsx`; `MyStoresList` split out as a separate component in the same feature).
+5. ~~`features/stores` — replace `lib/use-store.ts`'s hand-rolled cache + `CustomEvent` broadcast with `useQuery`/`setQueryData`~~ — done. `lib/use-store.ts` is now a thin re-export; `settings/page.tsx`'s four `broadcastStoreUpdate` call sites were switched to `useUpdateDashboardStoreCache()` (the only other consumer of the old broadcast function) — that was the one small, surgical touch to `settings/page.tsx` in this step, not a full migration of that page.
+6. products/settings/orders pages — largest, highest-risk; migrate only once the pattern is proven across steps 2-5. (`settings/page.tsx` still needs its full migration — step 5 only touched its store-cache-update calls.)

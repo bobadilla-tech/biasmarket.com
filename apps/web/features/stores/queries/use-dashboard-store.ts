@@ -1,3 +1,5 @@
+"use client";
+
 import { useParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { storesApi } from "../api/stores.api";
