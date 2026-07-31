@@ -172,3 +172,50 @@ full command sequence — targets only the `db_data` Docker volume, not
 - Prod DB reset itself is a manual step for the user to run (server access, not
   executable from here) — command sequence lives in `docs/core/deploy.md`.
 - `RESEND_API_KEY` rotation is a manual Resend-dashboard action for the user.
+
+## Hotfix (same day): `seed:base:prod` crashed with `ERR_MODULE_NOT_FOUND`
+
+User ran the reset runbook above; `pnpm seed:base:prod` failed:
+
+```
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module
+'/app/apps/api/src/modules/orders/application/customer-account-token.ts'
+imported from /app/apps/api/scripts/seed/apply.ts
+```
+
+**Root cause**: `apply.ts` imported `createCustomerAccountToken` via a relative
+path reaching into `apps/api/src/...` (added when the
+`CUSTOMER_ACCOUNT_TOKEN_SECRET` fix above moved the seed script off
+`BETTER_AUTH_SECRET`). `apps/api/src` is never copied into the prod runtime
+image — `api.Dockerfile`'s final stage only `COPY`s `apps/api/scripts`,
+`apps/api/dist`, and `packages/`. Worked in dev only because
+`docker-compose.dev.yml` bind-mounts the whole repo. This exact cross-boundary
+import pattern actually dates back to the original buyer-accounts session (not
+today's fix) — it just never ran in prod until this deploy, since prod hadn't
+redeployed since before that work landed.
+
+**Fix**: moved `createCustomerAccountToken`/`verifyCustomerAccountToken` out of
+`apps/api/src/modules/orders/application/customer-account-token.ts` into
+`packages/utils/src/customer-account-token/index.ts` — a real workspace package
+that _is_ copied to prod (`packages/` in the Dockerfile COPY list, already how
+`escapeHtml`/`slugify`/whatsapp helpers are shared). Updated the three consumers
+(`customer-account.service.ts`, its spec, `apps/api/scripts/seed/apply.ts`) to
+import from `@biasmarket/utils/customer-account-token` instead. `packages/utils`
+needed a new `@types/node` devDependency + explicit `"types": ["node"]` in its
+`tsconfig.json` — first file in that package to touch `node:crypto`/`Buffer`.
+
+**Still latent, not fixed**: `apps/api/scripts/send-test-email.ts` has the
+identical pattern (`import { MailerCore } from '../src/mailer/mailer.core.ts'`)
+— breaks the same way if `pnpm mail:test` is ever run in prod. Not touched since
+it's a manual-only debug script, not part of any auto-run boot/seed path, and
+out of scope for this fix.
+
+**Verified**: ran the exact failing command inside the running dev container —
+`pnpm --filter api run seed:base` — succeeded, seeded both stores. Repo-wide
+`pnpm turbo run typecheck` clean; `pnpm --filter api exec vitest run` 171/171 (4
+token tests moved to `packages/utils`, now 25/25 there — same total coverage,
+relocated).
+
+**Not yet done**: the actual prod redeploy — this fix needs merging to `main`,
+then `git pull && pnpm docker:prod` on the server (rebuilds the image with the
+fix baked in) before `pnpm seed:base:prod` will work there.
