@@ -36,6 +36,7 @@ describe('CreateOrderUseCase', () => {
     order: { create: Mock };
   };
   let notifications: { syncStockAlerts: Mock };
+  let customerAccounts: { findOrCreateCustomer: Mock; sendVerificationEmail: Mock };
 
   const slug = 'my-store';
   const store = {
@@ -70,12 +71,17 @@ describe('CreateOrderUseCase', () => {
       order: { create: vi.fn() },
     };
     notifications = { syncStockAlerts: vi.fn() };
+    customerAccounts = {
+      findOrCreateCustomer: vi.fn(),
+      sendVerificationEmail: vi.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreateOrderUseCase,
         { provide: PrismaService, useValue: prisma },
         { provide: NotificationsService, useValue: notifications },
+        { provide: CustomerAccountService, useValue: customerAccounts },
       ],
     }).compile();
 
@@ -261,6 +267,71 @@ describe('CreateOrderUseCase', () => {
     const result = await useCase.execute(slug, dto);
 
     expect(result.whatsappUrl).toBeNull();
+  });
+
+  describe('customer accounts', () => {
+    beforeEach(() => {
+      prisma.product.findUnique.mockResolvedValue({
+        id: 'product-1',
+        storeId: store.id,
+        status: 'PUBLISHED',
+        deletedAt: null,
+        price: new FakeDecimal(10),
+        currency: 'PEN',
+        name: 'Widget',
+      });
+      prisma.order.create.mockResolvedValue({
+        id: 'order-1',
+        totalAmount: new FakeDecimal(20),
+        currency: 'PEN',
+        deliveryMethodType: 'PICKUP',
+        customerName: 'Jane',
+        customerPhone: dto.customerPhone,
+      });
+    });
+
+    it('does not touch customer accounts when no email was provided', async () => {
+      await useCase.execute(slug, dto);
+
+      expect(customerAccounts.findOrCreateCustomer).not.toHaveBeenCalled();
+      expect(customerAccounts.sendVerificationEmail).not.toHaveBeenCalled();
+      expect(prisma.order.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ customerId: undefined }) }),
+      );
+    });
+
+    it('links the order to the customer account and sends a verification email for a new/unverified customer', async () => {
+      const customer = { id: 'customer-1', storeId: store.id, email: 'jane@example.com' };
+      customerAccounts.findOrCreateCustomer.mockResolvedValue({
+        customer,
+        needsVerificationEmail: true,
+      });
+
+      await useCase.execute(slug, { ...dto, customerEmail: 'jane@example.com' });
+
+      expect(customerAccounts.findOrCreateCustomer).toHaveBeenCalledWith(
+        store.id,
+        dto.customerPhone,
+        'jane@example.com',
+        dto.customerName,
+      );
+      expect(prisma.order.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ customerId: 'customer-1' }) }),
+      );
+      expect(customerAccounts.sendVerificationEmail).toHaveBeenCalledWith(customer, store);
+    });
+
+    it('skips the verification email for an already-verified repeat customer', async () => {
+      const customer = { id: 'customer-1', storeId: store.id, email: 'jane@example.com' };
+      customerAccounts.findOrCreateCustomer.mockResolvedValue({
+        customer,
+        needsVerificationEmail: false,
+      });
+
+      await useCase.execute(slug, { ...dto, customerEmail: 'jane@example.com' });
+
+      expect(customerAccounts.sendVerificationEmail).not.toHaveBeenCalled();
+    });
   });
 
   describe('pickup points', () => {

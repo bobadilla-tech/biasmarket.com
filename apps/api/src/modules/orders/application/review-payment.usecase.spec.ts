@@ -6,6 +6,7 @@ import { OrderRepository } from '../infrastructure/order.repository.js';
 import { InvalidOrderTransitionError } from '../domain/order-status.vo.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
+import { MailerService } from '../../../mailer/mailer.service.js';
 
 describe('ReviewPaymentUseCase', () => {
   let useCase: ReviewPaymentUseCase;
@@ -40,6 +41,7 @@ describe('ReviewPaymentUseCase', () => {
         OrderRepository,
         { provide: PrismaService, useValue: prisma },
         { provide: NotificationsService, useValue: notifications },
+        { provide: MailerService, useValue: { send: vi.fn() } },
       ],
     }).compile();
 
