@@ -46,12 +46,11 @@ export class CreateOrderUseCase {
 
     const messageItems: { name: string; quantity: number; unitPrice: number }[] = [];
 
-    let pendingVerificationCustomer: Awaited<
-      ReturnType<CustomerAccountService['findOrCreateCustomer']>
-    > | null = null;
-
-    const order = await this.prisma.$transaction(async (tx) => {
+    const { order, pendingVerificationCustomer } = await this.prisma.$transaction(async (tx) => {
       let customerId: string | undefined;
+      let pendingVerificationCustomer: Awaited<
+        ReturnType<CustomerAccountService['findOrCreateCustomer']>
+      > | null = null;
       if (dto.customerEmail) {
         pendingVerificationCustomer = await this.customerAccounts.findOrCreateCustomer(
           tx,
@@ -140,7 +139,7 @@ export class CreateOrderUseCase {
         Date.now() + store.holdWindowHours * 60 * 60 * 1000,
       );
 
-      return tx.order.create({
+      const order = await tx.order.create({
         data: {
           storeId: store.id,
           customerId,
@@ -160,6 +159,8 @@ export class CreateOrderUseCase {
         },
         include: { items: true },
       });
+
+      return { order, pendingVerificationCustomer };
     });
 
     const whatsappUrl = store.whatsappNumber

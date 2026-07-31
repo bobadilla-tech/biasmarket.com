@@ -18,7 +18,7 @@ describe('CustomerAccountService', () => {
   const store = { id: 'store-1', slug: 'my-store', name: 'My Store' };
 
   beforeEach(async () => {
-    process.env.BETTER_AUTH_SECRET = 'test-secret';
+    process.env.CUSTOMER_ACCOUNT_TOKEN_SECRET = 'test-secret';
     process.env.WEB_URL = 'https://web.example.com';
 
     prisma = {
@@ -46,6 +46,7 @@ describe('CustomerAccountService', () => {
       prisma.customer.create.mockResolvedValue(created);
 
       const result = await service.findOrCreateCustomer(
+        prisma as never,
         store.id,
         '+51988888888',
         'jane@example.com',
@@ -73,6 +74,7 @@ describe('CustomerAccountService', () => {
       prisma.customer.findUnique.mockResolvedValue(existing);
 
       const result = await service.findOrCreateCustomer(
+        prisma as never,
         store.id,
         '+51988888888',
         'jane@example.com',
@@ -83,28 +85,70 @@ describe('CustomerAccountService', () => {
       expect(result).toEqual({ customer: existing, needsVerificationEmail: false });
     });
 
-    it('re-flags for verification when the email changed', async () => {
+    it('re-sends verification when the same unverified email checks out again', async () => {
       const existing = {
         id: 'customer-1',
-        email: 'old@example.com',
-        emailVerified: true,
+        email: 'jane@example.com',
+        emailVerified: false,
       };
-      const updated = { ...existing, email: 'new@example.com', emailVerified: false };
+      const updated = { ...existing, emailVerified: false };
       prisma.customer.findUnique.mockResolvedValue(existing);
       prisma.customer.update.mockResolvedValue(updated);
 
       const result = await service.findOrCreateCustomer(
+        prisma as never,
         store.id,
         '+51988888888',
-        'new@example.com',
+        'jane@example.com',
         'Jane',
       );
 
       expect(prisma.customer.update).toHaveBeenCalledWith({
         where: { id: 'customer-1' },
-        data: { email: 'new@example.com', emailVerified: false },
+        data: { email: 'jane@example.com', emailVerified: false },
       });
       expect(result).toEqual({ customer: updated, needsVerificationEmail: true });
+    });
+
+    it('does not touch a verified customer when a different email is submitted for the same phone', async () => {
+      const existing = {
+        id: 'customer-1',
+        email: 'jane@example.com',
+        emailVerified: true,
+      };
+      prisma.customer.findUnique.mockResolvedValue(existing);
+
+      const result = await service.findOrCreateCustomer(
+        prisma as never,
+        store.id,
+        '+51988888888',
+        'attacker@example.com',
+        'Attacker',
+      );
+
+      expect(prisma.customer.update).not.toHaveBeenCalled();
+      expect(prisma.customer.create).not.toHaveBeenCalled();
+      expect(result).toEqual({ customer: null, needsVerificationEmail: false });
+    });
+
+    it('does not touch an unverified customer when a different email is submitted for the same phone', async () => {
+      const existing = {
+        id: 'customer-1',
+        email: 'jane@example.com',
+        emailVerified: false,
+      };
+      prisma.customer.findUnique.mockResolvedValue(existing);
+
+      const result = await service.findOrCreateCustomer(
+        prisma as never,
+        store.id,
+        '+51988888888',
+        'someone-else@example.com',
+        'Someone Else',
+      );
+
+      expect(prisma.customer.update).not.toHaveBeenCalled();
+      expect(result).toEqual({ customer: null, needsVerificationEmail: false });
     });
   });
 

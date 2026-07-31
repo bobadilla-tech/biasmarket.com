@@ -129,21 +129,7 @@ flagged to the user to rotate it in the Resend dashboard afterward.
   contact-form emails — all explicitly post-MVP per the docs, left alone.
 - `OrderController.addPayment`'s manual-deposit `paymentStatus` writes don't
   send email — separate call site from `ReviewPaymentUseCase`, out of scope.
-- No "resend verification email" UI/endpoint — better-auth exposes
-  `POST /send-verification-email` but nothing calls it yet if a link expires.
-
-## Aside: concurrent uncommitted changes found in the working tree
-
-While writing this doc, `git status` showed uncommitted changes this session did
-**not** make: `create-order.usecase.ts` (wiring a new `CustomerAccountService`
-into checkout), `packages/db/prisma/schema.prisma` (`Customer.passwordHash` now
-optional, `Customer.email`/`emailVerified` added), a new migration
-(`packages/db/prisma/migrations/20260731151214_customer_email_verification/`),
-and two new files (`customer-account-token.ts`, `customer-account.service.ts`)
-implementing **buyer**-account email verification for storefront checkout —
-distinct from the seller/`User` verification this session built, and already
-consuming this session's `MailerService`. Same pattern flagged in
-`2026-07-22-contact-page-cal-com-admin-inquiries.md`'s "Aside" — something
-outside this session (another window/process) is actively working in this same
-repo concurrently. Not reverted, not touched, not folded into this changelog
-since it isn't this session's work — flagged to the user.
+- ~~No "resend verification email" UI/endpoint~~ — closed in
+  `2026-07-31-review-fixes-and-prod-reset.md` via
+  `emailVerification.sendOnSignIn: true` (resends automatically on a failed
+  sign-in attempt, no dedicated UI needed).

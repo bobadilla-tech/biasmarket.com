@@ -23,8 +23,6 @@
     "admin:create": "node scripts/create-admin.ts",
     "seed:base": "node scripts/seed/run.ts",
     "seed:append": "node scripts/seed/run.ts --append",
-    "backfill:pickup-points": "node scripts/backfill-pickup-points.ts",
-    "backfill:payment-methods": "node scripts/backfill-payment-methods.ts",
     "mail:test": "node scripts/send-test-email.ts"
   },
   "dependencies": {

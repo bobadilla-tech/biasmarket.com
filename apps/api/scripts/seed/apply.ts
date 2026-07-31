@@ -11,7 +11,7 @@ function requiredEnv(name: string): string {
 }
 
 function buildCustomerConfirmUrl(storeSlug: string, customerId: string): string {
-  const secret = requiredEnv('BETTER_AUTH_SECRET');
+  const secret = requiredEnv('CUSTOMER_ACCOUNT_TOKEN_SECRET');
   const webUrl = process.env.WEB_URL ?? 'http://localhost:3001';
   const token = createCustomerAccountToken(customerId, secret);
   return `${webUrl}/store/${storeSlug}/account/confirm?token=${token}`;

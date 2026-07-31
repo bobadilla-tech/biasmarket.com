@@ -310,6 +310,7 @@ describe('CreateOrderUseCase', () => {
       await useCase.execute(slug, { ...dto, customerEmail: 'jane@example.com' });
 
       expect(customerAccounts.findOrCreateCustomer).toHaveBeenCalledWith(
+        prisma,
         store.id,
         dto.customerPhone,
         'jane@example.com',
@@ -331,6 +332,23 @@ describe('CreateOrderUseCase', () => {
       await useCase.execute(slug, { ...dto, customerEmail: 'jane@example.com' });
 
       expect(customerAccounts.sendVerificationEmail).not.toHaveBeenCalled();
+      expect(prisma.order.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ customerId: customer.id }) }),
+      );
+    });
+
+    it('does not link the order to a customer when the mismatch guard returns null', async () => {
+      customerAccounts.findOrCreateCustomer.mockResolvedValue({
+        customer: null,
+        needsVerificationEmail: false,
+      });
+
+      await useCase.execute(slug, { ...dto, customerEmail: 'attacker@example.com' });
+
+      expect(customerAccounts.sendVerificationEmail).not.toHaveBeenCalled();
+      expect(prisma.order.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ customerId: undefined }) }),
+      );
     });
   });
 

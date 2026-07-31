@@ -44,11 +44,18 @@ same link doubles as a long-lived "check my order" bookmark.
 `apps/api/src/modules/orders/application/customer-account.service.ts`
 (`CustomerAccountService`):
 
-- `findOrCreateCustomer(storeId, phone, email, name)` — looks up by
-  `(storeId, phone)` (the existing unique constraint). New phone → creates
-  unverified. Existing phone with a different/unset email → updates email,
-  resets `emailVerified: false`. Existing phone with matching, already-verified
-  email → no-op, no re-send (avoids spamming repeat buyers).
+- `findOrCreateCustomer(tx, storeId, phone, email, name)` — looks up by
+  `(storeId, phone)` (the existing unique constraint) within the same Prisma
+  transaction as order creation (`tx`, not the bare `PrismaService`), so a
+  failed checkout rolls back any customer create/update too. New phone →
+  creates unverified. Existing phone with a **different** email → returns
+  `customer: null` and does **not** touch the existing row at all — an
+  unauthenticated checkout request can't repoint or re-verify someone else's
+  account just by knowing their phone number (fixed post-launch, see
+  `2026-07-31-review-fixes-and-prod-reset.md`); the order falls back to a
+  guest order in that case. Existing phone with matching, already-verified
+  email → no-op, no re-send (avoids spamming repeat buyers). Matching but
+  unverified email → re-sends (same claimed identity, no risk).
 - `sendVerificationEmail(customer, store)` — bilingual ES/EN inline HTML
   (matching the existing `buildVerificationEmailHtml` style in
   `auth.config.ts`), link points at

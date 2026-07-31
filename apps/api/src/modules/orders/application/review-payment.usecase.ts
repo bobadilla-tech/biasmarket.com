@@ -1,4 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { ConflictException, Injectable, Logger } from '@nestjs/common';
+import { escapeHtml } from '@biasmarket/utils/strings';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { OrderRepository } from '../infrastructure/order.repository.js';
 import { Order } from '../domain/order.entity.js';
@@ -6,16 +7,17 @@ import { NotificationsService } from '../../notifications/notifications.service.
 import { MailerService } from '../../../mailer/mailer.service.js';
 
 function buildPaymentStatusEmailHtml(decision: 'approve' | 'reject', storeName: string): string {
+  const safeStoreName = escapeHtml(storeName);
   return decision === 'approve'
     ? `
-      <p>Tu pago para el pedido en ${storeName} fue aprobado. ¡Gracias por tu compra!</p>
+      <p>Tu pago para el pedido en ${safeStoreName} fue aprobado. ¡Gracias por tu compra!</p>
       <hr />
-      <p>Your payment for the order at ${storeName} was approved. Thanks for your purchase!</p>
+      <p>Your payment for the order at ${safeStoreName} was approved. Thanks for your purchase!</p>
     `
     : `
-      <p>Tu pago para el pedido en ${storeName} fue rechazado. Contacta a la tienda para más información.</p>
+      <p>Tu pago para el pedido en ${safeStoreName} fue rechazado. Contacta a la tienda para más información.</p>
       <hr />
-      <p>Your payment for the order at ${storeName} was rejected. Contact the store for more details.</p>
+      <p>Your payment for the order at ${safeStoreName} was rejected. Contact the store for more details.</p>
     `;
 }
 
@@ -53,6 +55,19 @@ export class ReviewPaymentUseCase {
       const store = await tx.store.findUnique({ where: { id: storeId } });
       storeName = store?.name ?? '';
 
+      // Guard against two concurrent reviews of the same order (double
+      // click, retry): only proceed if the row is still at the status
+      // `row` was read at. If another request already changed it, `count`
+      // is 0 — bail out before any stock mutation or email send, instead of
+      // the previous plain `update` which would silently double-apply both.
+      const guard = await tx.order.updateMany({
+        where: { id: orderId, paymentStatus: row.paymentStatus },
+        data: { paymentStatus: entity.currentPaymentStatus },
+      });
+      if (guard.count === 0) {
+        throw new ConflictException('Este pedido ya fue revisado por otra solicitud.');
+      }
+
       for (const item of row.items) {
         if (!item.variantId) continue;
         const variant = await tx.productVariant.findUnique({ where: { id: item.variantId } });
@@ -72,11 +87,7 @@ export class ReviewPaymentUseCase {
         }
       }
 
-      const updated = await this.orders.saveStatus(
-        orderId,
-        { paymentStatus: entity.currentPaymentStatus },
-        tx,
-      );
+      const updated = await tx.order.findUniqueOrThrow({ where: { id: orderId } });
 
       await tx.auditLog.create({
         data: {

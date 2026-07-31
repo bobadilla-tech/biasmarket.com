@@ -237,6 +237,42 @@ code.
   restarted (`restart: unless-stopped` is set on every service, so a VM reboot
   should bring everything back — verify with `docker compose ps`).
 
+### Reset (wipe DB, start clean)
+
+For wiping prod's database and starting from an empty schema — e.g. before
+real users exist, when only seed/test accounts are on the server. Targets
+**only** the `db_data` volume — deliberately not `docker compose down -v`,
+which would also delete `caddy_data`/`caddy_config` (forcing Let's Encrypt
+re-issuance, burning into its rate limits) and `minio_data` (uploaded product
+images/store logos).
+
+```bash
+cd ~/biasmarket
+git pull
+
+# stop just the two containers that touch the DB, remove them (not volumes)
+docker compose -f infra/docker/docker-compose.yml stop api db
+docker compose -f infra/docker/docker-compose.yml rm -f api db
+
+# actually delete the Postgres data (compose project name is "biasmarket")
+docker volume rm biasmarket_db_data
+
+# regenerate .env so any env vars added since the last env:init exist —
+# --force since infra/docker/.env already exists. This rotates EVERY
+# secret (Postgres password, BETTER_AUTH_SECRET, S3 keys), not just new
+# ones — every existing session/login invalidates
+pnpm env:init --prod --force
+# then manually re-add RESEND_API_KEY / RESEND_FROM_EMAIL to
+# infra/docker/.env — never auto-generated, see script output
+
+# bring everything back up; api's CMD runs `prisma migrate deploy` against
+# the now-empty DB, applying every migration in order from scratch
+pnpm docker:prod
+
+docker compose -f infra/docker/docker-compose.yml logs api --tail 50
+pnpm seed:base:prod
+```
+
 ## Known limitations
 
 Deliberately out of scope for this first deploy — fine for "get pages live and
