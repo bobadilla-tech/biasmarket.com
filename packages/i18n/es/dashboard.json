@@ -398,6 +398,7 @@
       "selectPaymentMethod": "Selecciona un método de pago",
       "paymentNotePlaceholder": "Nota (opcional)",
       "registerPayment": "Guardar pago",
+      "paymentsLocked": "Este pedido no permite registrar más pagos.",
       "uploadPaymentImage": "Subir comprobante de pago",
       "uploadPaymentImageHint": "PNG o JPG (máx. recomendado 5MB)",
       "chooseImage": "Elegir",

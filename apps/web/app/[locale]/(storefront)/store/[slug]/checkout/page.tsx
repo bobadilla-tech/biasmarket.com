@@ -66,7 +66,7 @@ export default function CheckoutPage() {
       .then((methods: PaymentMethod[]) => {
         setPaymentMethods(methods);
         if (methods[0]) {
-          setPaymentMethodId(methods[0].id);
+          setPaymentMethodId(methods[0].method);
         }
       })
       .catch(() => setPaymentMethods([]));

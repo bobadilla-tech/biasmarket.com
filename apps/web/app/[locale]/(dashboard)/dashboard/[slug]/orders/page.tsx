@@ -177,6 +177,16 @@ function matchesTab(order: Order, tab: OrdersTab) {
   );
 }
 
+function paymentsLocked(order: Order) {
+  if (order.paymentStatus === "CANCELLED") return true;
+  if (order.paymentStatus === "REJECTED") return true;
+  if (order.paymentStatus === "VERIFIED") return true;
+  if (order.fulfillmentStatus === "IN_TRANSIT") return true;
+  if (order.fulfillmentStatus === "READY") return true;
+  if (order.fulfillmentStatus === "COMPLETED") return true;
+  return false;
+}
+
 export default function OrdersPage() {
   const t = useTranslations("dashboard.orders");
   const tCommon = useTranslations("common");
@@ -345,6 +355,8 @@ export default function OrdersPage() {
   };
 
   const handleRegisterPayment = async (orderId: string) => {
+    const order = orders.find((row) => row.id === orderId);
+    if (!order || paymentsLocked(order)) return;
     const amount = Number(paymentAmount);
     if (!storeId || !Number.isFinite(amount) || amount <= 0 || !paymentMethod) return;
     setPaymentSubmitting(true);
@@ -724,13 +736,13 @@ export default function OrdersPage() {
                           {t("details.progress")}
                         </span>
                         <span className="font-bold text-[var(--store-primary)]">
-                          {Math.round(selectedOrder.paidPercentage)}%
+                          {Math.round(selectedOrder.fulfillmentStatus === "COMPLETED" ? 100 : selectedOrder.paidPercentage)}%
                         </span>
                       </div>
                       <div className="h-2.5 overflow-hidden rounded-full bg-[#f0e7f8] shadow-inner">
                         <div
                           className="h-full rounded-full bg-gradient-to-r from-[var(--store-accent)] to-[var(--store-primary)] transition-all duration-500"
-                          style={{ width: `${selectedOrder.paidPercentage}%` }}
+                          style={{ width: `${selectedOrder.fulfillmentStatus === "COMPLETED" ? 100 : selectedOrder.paidPercentage}%` }}
                         />
                       </div>
                     </div>
@@ -759,210 +771,215 @@ export default function OrdersPage() {
                   <div className="space-y-4 rounded-[24px] border border-[#eadcf8] bg-white p-5 shadow-sm">
                     <div className="flex items-center gap-2 text-[#2d1649]">
                       <Wallet className="size-5 text-[var(--store-primary)]" />
-                      <h3 className="font-semibold">
-                        {t("details.addPayment")}
-                      </h3>
+                      <h3 className="font-semibold">{t("details.addPayment")}</h3>
                     </div>
 
-                    <div className="flex gap-2">
-                      <Input
-                        value={paymentAmount}
-                        onChange={(event) =>
-                          setPaymentAmount(event.target.value)
-                        }
-                        inputMode="decimal"
-                        placeholder={t("details.paymentAmountPlaceholder")}
-                        className="store-theme-input h-11 rounded-xl border-[#e7dcf3] bg-[#fbf8fe] shadow-none"
-                      />
-                      <Button
-                        type="button"
-                        onClick={() => handleRegisterPayment(selectedOrder.id)}
-                        disabled={
-                          paymentSubmitting ||
-                          selectedOrder.pendingAmount <= 0 ||
-                          !paymentAmount ||
-                          !paymentMethod
-                        }
-                        className="store-theme-primary-button h-11 shrink-0 rounded-xl px-5 text-sm font-semibold hover:opacity-100"
-                      >
-                        {t("details.registerPayment")}
-                      </Button>
-                    </div>
-                    <Select
-                      value={paymentMethod}
-                      onChange={(event) => setPaymentMethod(event.target.value)}
-                      selectClassName="store-theme-input h-11 rounded-xl border-[#e7dcf3] bg-[#fbf8fe] text-sm text-[#341b55]"
-                    >
-                      <option value="" disabled>
-                        {t("details.selectPaymentMethod")}
-                      </option>
-                      {enabledPaymentMethods.map((method) => (
-                        <option key={method} value={method}>
-                          {paymentMethodLabels[method] ?? method}
-                        </option>
-                      ))}
-                    </Select>
-                    <Input
-                      value={paymentNote}
-                      onChange={(event) => setPaymentNote(event.target.value)}
-                      placeholder={t("details.paymentNotePlaceholder")}
-                      className="store-theme-input h-11 rounded-xl border-[#e7dcf3] bg-[#fbf8fe] shadow-none"
-                    />
-                    <div className="space-y-2">
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/png,image/jpeg"
-                        className="hidden"
-                        id="payment-image-upload"
-                        onChange={(event) => {
-                          const file = event.target.files?.[0] ?? null;
-                          setPaymentImage(file);
-                        }}
-                      />
-
-                      <label
-                        htmlFor="payment-image-upload"
-                        className={cn(
-                          "flex cursor-pointer items-center justify-center gap-3 rounded-xl border border-dashed px-4 py-3 transition",
-                          "border-[#d9c7ee] bg-[#fbf8fe] hover:bg-[#f7f0ff]",
-                          paymentImage &&
-                            "border-[var(--store-primary)] bg-[#faf5ff]",
-                        )}
-                      >
-                        <div className="flex size-9 items-center justify-center rounded-full bg-[#f0e7f8]">
-                          {paymentImage ? (
-                            <ImageIcon className="size-4 text-[var(--store-primary)]" />
-                          ) : (
-                            <Upload className="size-4 text-[var(--store-primary)]" />
-                          )}
-                        </div>
-
-                        <div className="flex-1">
-                          {paymentImage ? (
-                            <>
-                              <p className="truncate text-sm font-semibold text-[#2d1649]">
-                                {paymentImage.name}
-                              </p>
-                              <p className="text-xs text-[#8f7da8]">
-                                {t("details.imageSize", {
-                                  size: (paymentImage.size / 1024).toFixed(1),
-                                })}
-                              </p>
-                            </>
-                          ) : (
-                            <>
-                              <p className="text-sm font-semibold text-[#2d1649]">
-                                {t("details.uploadPaymentImage")}
-                              </p>
-
-                              <p className="text-xs text-[#8f7da8]">
-                                {t("details.uploadPaymentImageHint")}
-                              </p>
-                            </>
-                          )}
-                        </div>
-
-                        {!paymentImage && (
-                          <span className="rounded-full bg-[var(--store-primary)] px-3 py-1 text-xs font-semibold text-white">
-                            {t("details.chooseImage")}
-                          </span>
-                        )}
-                      </label>
-
-                      {paymentImage && (
-                        <div className="flex items-center justify-between rounded-xl border border-[#f0e7f8] bg-white p-2">
-                          <div className="flex items-center gap-3">
-                            <img
-                              src={URL.createObjectURL(paymentImage)}
-                              alt=""
-                              className="size-12 rounded-lg object-cover"
-                            />
-
-                            <span className="text-xs text-[#8f7da8]">
-                              {t("details.imagePreview")}
-                            </span>
-                          </div>
-
+                    {paymentsLocked(selectedOrder) ? (
+                      <Card className="rounded-2xl border-[#eadcf8] bg-[#fcf9ff] py-0 shadow-none">
+                        <CardContent className="px-4 py-3 text-sm text-[#8f7da8]">
+                          {t("details.paymentsLocked")}
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      <>
+                        <div className="flex gap-2">
+                          <Input
+                            value={paymentAmount}
+                            onChange={(event) => setPaymentAmount(event.target.value)}
+                            inputMode="decimal"
+                            placeholder={t("details.paymentAmountPlaceholder")}
+                            className="store-theme-input h-11 rounded-xl border-[#e7dcf3] bg-[#fbf8fe] shadow-none"
+                          />
                           <Button
                             type="button"
-                            variant="ghost"
-                            className="size-8 rounded-full p-0 text-[#b24368] hover:bg-[#fff0f5]"
-                            onClick={() => {
-                              setPaymentImage(null);
-                              if (fileInputRef.current) {
-                                fileInputRef.current.value = "";
-                              }
-                            }}
+                            onClick={() => handleRegisterPayment(selectedOrder.id)}
+                            disabled={
+                              paymentSubmitting ||
+                              selectedOrder.pendingAmount <= 0 ||
+                              !paymentAmount ||
+                              !paymentMethod
+                            }
+                            className="store-theme-primary-button h-11 shrink-0 rounded-xl px-5 text-sm font-semibold hover:opacity-100"
                           >
-                            <X className="size-4" />
+                            {t("details.registerPayment")}
                           </Button>
                         </div>
-                      )}
-                    </div>
-
-                    {selectedOrder.payments.length > 0 && (
-                      <div className="space-y-3 border-t border-[#f3ebff] pt-4">
-                        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#927fac]">
-                          {t("details.paymentHistory", {
-                            fallback: "Historial de abonos",
-                          })}
-                        </p>
+                        <Select
+                          value={paymentMethod}
+                          onChange={(event) => setPaymentMethod(event.target.value)}
+                          selectClassName="store-theme-input h-11 rounded-xl border-[#e7dcf3] bg-[#fbf8fe] text-sm text-[#341b55]"
+                        >
+                          <option value="" disabled>
+                            {t("details.selectPaymentMethod")}
+                          </option>
+                          {enabledPaymentMethods.map((method) => (
+                            <option key={method} value={method}>
+                              {paymentMethodLabels[method] ?? method}
+                            </option>
+                          ))}
+                        </Select>
+                        <Input
+                          value={paymentNote}
+                          onChange={(event) => setPaymentNote(event.target.value)}
+                          placeholder={t("details.paymentNotePlaceholder")}
+                          className="store-theme-input h-11 rounded-xl border-[#e7dcf3] bg-[#fbf8fe] shadow-none"
+                        />
                         <div className="space-y-2">
-                          {selectedOrder.payments.map((payment) => (
-                            <div
-                              key={payment.id}
-                              className="flex items-start gap-3 rounded-xl border border-[#f0e7f8] bg-[#fcf9ff] p-3 transition hover:bg-white"
-                            >
-                              <div
-                                className={cn(
-                                  "mt-0.5 flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#f0e7f8] text-[var(--store-primary)]",
-                                  payment.imageUrl ? "cursor-pointer" : "",
-                                )}
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/png,image/jpeg"
+                            className="hidden"
+                            id="payment-image-upload"
+                            onChange={(event) => {
+                              const file = event.target.files?.[0] ?? null;
+                              setPaymentImage(file);
+                            }}
+                          />
+
+                          <label
+                            htmlFor="payment-image-upload"
+                            className={cn(
+                              "flex cursor-pointer items-center justify-center gap-3 rounded-xl border border-dashed px-4 py-3 transition",
+                              "border-[#d9c7ee] bg-[#fbf8fe] hover:bg-[#f7f0ff]",
+                              paymentImage && "border-[var(--store-primary)] bg-[#faf5ff]",
+                            )}
+                          >
+                            <div className="flex size-9 items-center justify-center rounded-full bg-[#f0e7f8]">
+                              {paymentImage ? (
+                                <ImageIcon className="size-4 text-[var(--store-primary)]" />
+                              ) : (
+                                <Upload className="size-4 text-[var(--store-primary)]" />
+                              )}
+                            </div>
+
+                            <div className="flex-1">
+                              {paymentImage ? (
+                                <>
+                                  <p className="truncate text-sm font-semibold text-[#2d1649]">
+                                    {paymentImage.name}
+                                  </p>
+                                  <p className="text-xs text-[#8f7da8]">
+                                    {t("details.imageSize", {
+                                      size: (paymentImage.size / 1024).toFixed(1),
+                                    })}
+                                  </p>
+                                </>
+                              ) : (
+                                <>
+                                  <p className="text-sm font-semibold text-[#2d1649]">
+                                    {t("details.uploadPaymentImage")}
+                                  </p>
+
+                                  <p className="text-xs text-[#8f7da8]">
+                                    {t("details.uploadPaymentImageHint")}
+                                  </p>
+                                </>
+                              )}
+                            </div>
+
+                            {!paymentImage && (
+                              <span className="rounded-full bg-[var(--store-primary)] px-3 py-1 text-xs font-semibold text-white">
+                                {t("details.chooseImage")}
+                              </span>
+                            )}
+                          </label>
+
+                          {paymentImage && (
+                            <div className="flex items-center justify-between rounded-xl border border-[#f0e7f8] bg-white p-2">
+                              <div className="flex items-center gap-3">
+                                <img
+                                  src={URL.createObjectURL(paymentImage)}
+                                  alt=""
+                                  className="size-12 rounded-lg object-cover"
+                                />
+
+                                <span className="text-xs text-[#8f7da8]">
+                                  {t("details.imagePreview")}
+                                </span>
+                              </div>
+
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                className="size-8 rounded-full p-0 text-[#b24368] hover:bg-[#fff0f5]"
                                 onClick={() => {
-                                  if (!payment.imageUrl) return;
-                                  setPaymentPreviewUrl(payment.imageUrl);
+                                  setPaymentImage(null);
+                                  if (fileInputRef.current) {
+                                    fileInputRef.current.value = "";
+                                  }
                                 }}
                               >
-                                {payment.imageUrl ? (
-                                  <img
-                                    src={payment.imageUrl}
-                                    alt=""
-                                    className="h-full w-full object-cover"
-                                  />
-                                ) : (
-                                  <Receipt className="size-3.5" />
-                                )}
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center justify-between gap-2">
-                                  <span className="font-bold text-[#2d1649]">
-                                    {selectedOrder.currency} {payment.amount}
-                                    {payment.method ? (
-                                      <span className="ml-1 font-medium text-[#8f7da8]">
-                                        · {paymentMethodLabels[payment.method] ?? payment.method}
-                                      </span>
-                                    ) : null}
-                                  </span>
-                                  <span className="text-[11px] font-medium text-[#8f7da8]">
-                                    {formatOrderDate(
-                                      payment.createdAt,
-                                      locale,
-                                      t,
-                                    )}
-                                  </span>
-                                </div>
-                                {payment.note ? (
-                                  <p className="mt-1 truncate text-xs text-[#6e5a87]">
-                                    {payment.note}
-                                  </p>
-                                ) : null}
-                              </div>
+                                <X className="size-4" />
+                              </Button>
                             </div>
-                          ))}
+                          )}
                         </div>
-                      </div>
+                      </>
                     )}
+
+                      {selectedOrder.payments.length > 0 && (
+                        <div className="space-y-3 border-t border-[#f3ebff] pt-4">
+                          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#927fac]">
+                            {t("details.paymentHistory", {
+                              fallback: "Historial de abonos",
+                            })}
+                          </p>
+                          <div className="space-y-2">
+                            {selectedOrder.payments.map((payment) => (
+                              <div
+                                key={payment.id}
+                                className="flex items-start gap-3 rounded-xl border border-[#f0e7f8] bg-[#fcf9ff] p-3 transition hover:bg-white"
+                              >
+                                <div
+                                  className={cn(
+                                    "mt-0.5 flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#f0e7f8] text-[var(--store-primary)]",
+                                    payment.imageUrl ? "cursor-pointer" : "",
+                                  )}
+                                  onClick={() => {
+                                    if (!payment.imageUrl) return;
+                                    setPaymentPreviewUrl(payment.imageUrl);
+                                  }}
+                                >
+                                  {payment.imageUrl ? (
+                                    <img
+                                      src={payment.imageUrl}
+                                      alt=""
+                                      className="h-full w-full object-cover"
+                                    />
+                                  ) : (
+                                    <Receipt className="size-3.5" />
+                                  )}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="font-bold text-[#2d1649]">
+                                      {selectedOrder.currency} {payment.amount}
+                                      {payment.method ? (
+                                        <span className="ml-1 font-medium text-[#8f7da8]">
+                                          · {paymentMethodLabels[payment.method] ?? payment.method}
+                                        </span>
+                                      ) : null}
+                                    </span>
+                                    <span className="text-[11px] font-medium text-[#8f7da8]">
+                                      {formatOrderDate(
+                                        payment.createdAt,
+                                        locale,
+                                        t,
+                                      )}
+                                    </span>
+                                  </div>
+                                  {payment.note ? (
+                                    <p className="mt-1 truncate text-xs text-[#6e5a87]">
+                                      {payment.note}
+                                    </p>
+                                  ) : null}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                   </div>
 
                   <div className="space-y-3">
