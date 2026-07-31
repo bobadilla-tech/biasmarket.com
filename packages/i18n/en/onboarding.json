@@ -6,6 +6,8 @@
     "submit": "Log in",
     "submitting": "Logging in...",
     "invalidCredentials": "Incorrect email or password",
+    "invalidEmail": "Enter a valid email",
+    "passwordRequired": "Enter your password",
     "noAccount": "Don't have an account?",
     "signUpLink": "Sign up"
   },

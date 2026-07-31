@@ -6,6 +6,8 @@
     "submit": "Ingresar",
     "submitting": "Ingresando...",
     "invalidCredentials": "Email o contraseña incorrectos",
+    "invalidEmail": "Ingresá un email válido",
+    "passwordRequired": "Ingresá tu contraseña",
     "noAccount": "¿No tienes cuenta?",
     "signUpLink": "Regístrate"
   },
