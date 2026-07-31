@@ -73,6 +73,13 @@ Requester's stated priorities, in the requester's own words, condensed:
   risk is non-obvious (mainly Phase 4, the sidebar).
 - **`web` never talks to Postgres directly** — every new stat/list/search
   surface is a new `api` endpoint, consumed over HTTP, per `CLAUDE.md`.
+- **Feature-based web architecture is required for new web surfaces.** Pages
+  render feature TanStack Query hooks instead of calling transports directly;
+  feature `api/` modules call `apiFetch` and validate every response with
+  `schema.parse(data)`; feature-local schemas and zod-inferred types live under
+  `apps/web/features/<name>/schemas/`; each feature exposes a barrel
+  `index.ts`; and new forms use the repository's established
+  `react-hook-form` + `@hookform/resolvers/zod` stack.
 - **Every store-scoped query filters by `storeId` and re-verifies ownership**
   via the existing `assertOwnership`/`findOwnedProduct`-style pattern
   (`products.service.ts`) — no new endpoint gets a pass on this.
@@ -95,7 +102,7 @@ Requester's stated priorities, in the requester's own words, condensed:
 
 ## Phase ordering and dependency graph
 
-```
+```text
 Phase 1 (navbar + session-aware landing)          — independent
 Phase 2 (login/onboarding redirect fix)            — independent for the redirect logic itself;
                                                        its "single store → dashboard" destination
@@ -495,16 +502,22 @@ as a bug fix, not a side effect of the UI work.
 **Decline-with-reason** (new): requester wants to decline a payment (e.g. a
 faked Yape screenshot) with a stated reason.
 
-- **Schema**: add `paymentRejectionReason String?` to `Order`
-  (`packages/db/prisma/schema.prisma`) — new migration. Set it when
-  `ReviewPaymentUseCase.execute(..., 'reject', reason)` runs; `null` for the
-  approve path.
+- **Schema**: move rejection metadata to the payment being reviewed, not the
+  order as a whole: add `paymentRejectionReason String?` to `OrderPayment`
+  (`packages/db/prisma/schema.prisma`) — new migration — or add a dedicated
+  payment-review history model if richer audit detail is needed. This preserves
+  the reason for each rejected proof across partial-payment reviews. Set it on
+  the specific `OrderPayment`/review record when
+  `ReviewPaymentUseCase.execute(..., 'reject', reason)` runs; keep it `null`
+  for approve paths.
 - **Backend**: `ReviewPaymentUseCase.execute` gains an optional `reason` param;
   `review-payment.controller` route (wherever the review endpoint is wired —
   confirm exact file, likely `order.controller.ts` or a dedicated review
   controller) accepts it in the request body, validated
   (`whitelist`/`forbidNonWhitelisted` per global `ValidationPipe` — add a DTO
-  field, not a bare untyped body). Include the reason in the buyer-facing
+  field, not a bare untyped body). Update the Prisma write, the review endpoint
+  read path, and the buyer-facing email lookup to use the reason for the
+  specific payment being reviewed. Include that reason in the buyer-facing
   rejection email (`buildPaymentStatusEmailHtml`, already escaped via
   `escapeHtml` per the prior review-fixes plan — apply the same escaping to the
   new free-text reason field, since it's seller-authored and reaches
@@ -560,12 +573,16 @@ the new required-reason text field doesn't break the mobile sheet layout.
 No "list customers for a store" endpoint exists today — `Customer` rows are
 currently only ever touched from checkout and the buyer magic-link flow. New
 query: `Customer.findMany({ where: { storeId } })` joined with an aggregate per
-customer — order count, lifetime spend (`sum` of `OrderPayment.amount` across
-that customer's orders), most recent order date. Add to the same `stats` module
-from Phase 5, or a small dedicated `customers` read endpoint inside the existing
-`orders` module (where `Customer` is already touched) — prefer the latter, since
-`Customer` is conceptually part of the orders/checkout domain already and this
-avoids a new module for a single query. Optional:
+customer — order count, lifetime spend, most recent order date. Lifetime spend
+uses the same verified-payment rule as Phase 5 revenue: sum only
+`OrderPayment.amount` attached to orders whose `paymentStatus = VERIFIED`,
+excluding pending, rejected, and cancelled payments. If partial payments are
+supported in the same order, only approved/verified portions contribute to a
+customer's lifetime spend; rejected or still-pending portions do not. Add to the
+same `stats` module from Phase 5, or a small dedicated `customers` read endpoint
+inside the existing `orders` module (where `Customer` is already touched) —
+prefer the latter, since `Customer` is conceptually part of the orders/checkout
+domain already and this avoids a new module for a single query. Optional:
 `GET /stores/:storeId/customers/:customerId` for a detail view (that customer's
 full order history) if the list view alone isn't enough for "see what they
 bought" — likely needed given "list what they bought" is explicit in the ask.
@@ -599,9 +616,13 @@ point-in-time snapshot.
 revenue-over-time (bucketed by day/week/month depending on range), order-count
 over time, top products by units sold (reuse the existing `soldUnits`
 aggregation already computed in `products.service.ts`, just resorted/limited
-rather than reimplemented), new-vs-returning customer split (derived from Phase
-9's per-customer order-count query — a "returning" customer is one with
-`orderCount > 1` as of the bucket).
+rather than reimplemented), new-vs-returning customer split. Compute each
+new/returning bucket from date-bounded cumulative order counts per customer:
+for a given bucket, count that customer's orders up through the end of the
+bucket, and classify the customer as returning only when that cumulative count
+exceeds one as of that bucket. Do not use a current-lifetime total to label
+historical buckets unless the metric is explicitly named current-lifetime
+new-vs-returning.
 
 Given current expected data volumes (single-store sellers, not high-volume yet),
 a straightforward `groupBy`/date-truncation query against `OrderPayment`/`Order`
@@ -689,8 +710,11 @@ Shape of the work:
   `scrypt`/`bcrypt` under the hood) and reuse the same primitive rather than
   adding a second hashing dependency — confirm exact library before deciding.
 - `POST /stores/:slug/account/register` — sets a password for an existing
-  (checkout-created) `Customer` row matched by phone, or the magic-link flow can
-  gain a "set your password" step post-confirmation.
+  (checkout-created) `Customer` row only after the requester presents a
+  verified magic-link or OTP claim for that customer; a phone match alone is not
+  enough to create buyer credentials. The verification proof is single-use and
+  must be consumed after successful registration for every password-registration
+  path, including the post-confirmation magic-link "set your password" flow.
 - `POST /stores/:slug/account/login` — phone + password, per-store scoped (a
   phone can be a `Customer` in multiple stores independently, per the existing
   `@@unique([storeId, phone])` constraint) — issues a session scoped to
@@ -705,11 +729,24 @@ Shape of the work:
   customer at once) — on password change, the practical mitigation is embedding
   the password hash's version/timestamp into the signed payload so a changed
   password invalidates tokens issued before it, without a revocation table.
+  Deliver the session in an HttpOnly, Secure cookie scoped to the storefront
+  account routes or store slug, with an explicit SameSite policy, expiration,
+  and renewal rule (for example, fixed absolute expiry plus sliding renewal only
+  on authenticated reads if chosen deliberately).
 - `POST /stores/:slug/account/change-password`, guarded by that session.
+  State-changing customer-account endpoints require CSRF protection or strict
+  origin validation; the existing "general CSRF out of scope" deployment note
+  does not exempt these new authenticated buyer routes.
 - `GET /stores/:slug/account/me` — profile + order history, replacing the
   magic-link's `confirmAccount` as the primary path once logged in (the
   magic-link stays working for buyers who never set a password — don't break the
   existing flow).
+- `PATCH /stores/:slug/account/me` — authenticated profile update for name,
+  email, and phone. Validate all inputs, enforce per-store uniqueness for phone
+  and email where applicable, and require verification before committing email
+  or phone changes (or stage the change until verified). Frontend profile fields
+  may stay editable only if this contract is implemented; otherwise render
+  name/email/phone as read-only.
 - New guard (e.g. `CustomerSessionGuard`) parallel to the existing `AuthGuard`,
   scoped to the `Customer` session cookie, not better-auth's.
 
@@ -766,6 +803,14 @@ exists.
   least one published product, optional name search (`ILIKE` on `Store.name`, no
   full-text infra needed at this scale). Same banned-seller exclusion as
   `/stores/featured`.
+- Shared public-list contract for `/stores/featured`, `/stores/directory`, and
+  `/products/search`: validate `limit`, `page`, and `q` server-side with one
+  consistent policy. `limit` defaults to 24, maximum 50; `page` defaults to 1
+  and must be a positive integer; `q` is trimmed and capped at 100 characters.
+  Missing values use defaults; non-numeric or out-of-range `limit`/`page` and
+  over-limit `q` return `400 Bad Request` instead of silently widening the
+  query. Preserve each endpoint's filtering and ranking semantics after applying
+  these bounds.
 - Both endpoints only return stores with published products — a store with zero
   live inventory shouldn't appear in either. Public/cross-store-read
   justification against `CLAUDE.md`'s storeId rule: see the cross-cutting ground
@@ -795,8 +840,9 @@ doesn't violate `CLAUDE.md`'s storeId rule). Filters to `status: PUBLISHED`,
 (same exclusion as Phase 13's `/stores/featured`/ `/stores/directory`). Query:
 case-insensitive `contains` on `Product.name` (and maybe `description`) to start
 — Postgres `pg_trgm` + a GIN index only if `ILIKE '%...%'` proves too slow in
-practice; don't add that extension speculatively. Returns product + its store's
-name/slug so results can link into the right storefront.
+practice; don't add that extension speculatively. Uses the shared public-list
+pagination/query contract from Phase 13. Returns product + its store's name/slug
+so results can link into the right storefront.
 
 **Frontend**: new `apps/web/app/[locale]/search/page.tsx` — search input +
 result grid (product image/name/price/store name). **Correction from plan

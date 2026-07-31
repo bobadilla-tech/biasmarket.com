@@ -277,5 +277,8 @@ a hand-applied copy of PR #40's line), so he re-ran `docker:dev` against his
 still-stale pre-fix file and saw the identical crash again. Not a bug in the fix
 — confirmed the fix was already committed and pushed to `origin/main`
 (`4eae5e7`, verified present in the actual file content). Resolution is local to
-his machine: `git checkout -- infra/docker/docker-compose.dev.yml && git pull`
-(or `git stash` first if he wants to keep his local edit) before retrying.
+his machine: first preserve any local edits he wants to keep with
+`git stash push -- infra/docker/docker-compose.dev.yml` or by copying the file
+elsewhere. If the local edit is disposable, intentionally discard it with
+`git checkout -- infra/docker/docker-compose.dev.yml`, then update with
+`git pull --ff-only` before retrying.

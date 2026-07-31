@@ -109,7 +109,7 @@ per-test `QueryClientProvider` + the existing `NextIntlClientProvider` +
   is intentionally dead and reserved for a future OpenAPI-codegen initiative,
   not to be hand-populated with feature-local zod-inferred types; and the staged
   roadmap (see "Follow-up" below).
-- Root `CLAUDE.md` — new `### Web structure (apps/web)` subsection under
+- Root `claude.md` — new `### Web structure (apps/web)` subsection under
   Architecture, mirroring the existing `### API structure` one, pointing at
   `apps/web/AGENTS.md` for the full convention.
 

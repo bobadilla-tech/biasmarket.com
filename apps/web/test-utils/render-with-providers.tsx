@@ -6,7 +6,7 @@ import { getMessages } from "@biasmarket/i18n";
 
 export function renderWithProviders(ui: ReactElement, locale: "es" | "en" = "es") {
   const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
+    defaultOptions: { queries: { retry: false, gcTime: Infinity } },
   });
 
   return render(

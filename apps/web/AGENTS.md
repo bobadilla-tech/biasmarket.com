@@ -8,7 +8,7 @@ New feature work lives under `features/<name>/`, not directly in `app/` or a
 growing `components/`/`lib/` grab-bag. Not every feature needs every folder —
 build only what the feature actually uses:
 
-```
+```text
 features/<name>/
   schemas/    zod schemas — the runtime contract, source of truth for types (z.infer)
   api/        thin wrappers over lib/api.ts's apiFetch, one object export per feature
