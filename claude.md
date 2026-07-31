@@ -119,6 +119,20 @@ existing flat modules unless asked.
   `typeCheck: false`) — `pnpm typecheck` runs `tsc --noEmit` separately from the
   build.
 
+### Web structure (apps/web)
+
+App Router, no `src/` — `app/`, `components/`, `lib/`, `hooks/`, `features/`
+sit at `apps/web` root. New feature work (data fetching, forms, feature-local
+types) lives under `features/<name>/{schemas,api,queries,mutations,components}`;
+`app/` stays routing + page composition, `components/ui` is shadcn primitives,
+`components/shared` holds cross-feature `LoadingState`/`ErrorState`/`EmptyState`.
+Stack: `@tanstack/react-query` for server state (provider wired in
+`app/[locale]/query-provider.tsx`), `zod` for runtime validation at the
+`api/` boundary. `react-hook-form` is planned but not yet installed. Large
+existing pages (`products`, `settings`, `orders`) haven't been migrated to
+this structure yet — see `apps/web/AGENTS.md` for the full convention and
+staged migration roadmap.
+
 ### Database (packages/db/prisma/schema.prisma)
 
 Current models: `User`, `Store`, `Product`, `ProductVariant`, `Order`, plus

@@ -191,6 +191,8 @@
       "orders": "Pedidos",
       "products": "Productos",
       "categories": "Categorías",
+      "collections": "Colecciones",
+      "sections": "Secciones",
       "shipping": "Envíos",
       "payments": "Pagos",
       "customers": "Clientes",
@@ -200,6 +202,9 @@
       "notifications": "Notificaciones"
     },
     "soon": "Pronto",
+    "collapse": "Contraer barra lateral",
+    "expand": "Expandir barra lateral",
+    "openMenu": "Abrir menú",
     "fallbackName": "Vendedor",
     "fallbackRole": "Dueño de tienda",
     "signOut": "Cerrar sesión"

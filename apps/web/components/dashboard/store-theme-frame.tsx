@@ -3,7 +3,7 @@
 import { useEffect, useMemo } from "react";
 import { StoreSidebar } from "@/components/dashboard/store-sidebar";
 import { MobileSidebar } from "./mobile-sidebar";
-import { NotificationsBell } from "./notifications-bell";
+import { NotificationsBell } from "@/features/notifications";
 import { getStoreThemeStyle } from "@/lib/store-theme";
 import { useStore } from "@/lib/use-store";
 

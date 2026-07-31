@@ -6,6 +6,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { routing } from "@/i18n/routing";
 import { SITE_URL } from "@/lib/site-config";
 import { Toaster } from "sonner";
+import { QueryProvider } from "./query-provider";
 import "../globals.css";
 
 const geistSans = Geist({
@@ -69,7 +70,7 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <NextIntlClientProvider locale={locale}>
-          {children}
+          <QueryProvider>{children}</QueryProvider>
         </NextIntlClientProvider>
 
         <Toaster position="top-center" richColors closeButton />

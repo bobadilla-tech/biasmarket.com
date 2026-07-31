@@ -1,4 +1,15 @@
 {
+  "navbar": {
+    "links": {
+      "founder": "Founders",
+      "enterprise": "Enterprise",
+      "contact": "Contact"
+    },
+    "logIn": "Log in",
+    "signUp": "Sign up",
+    "myAccount": "My account",
+    "openMenu": "Open menu"
+  },
   "footer": {
     "navHeading": "Site",
     "navHome": "Home",

@@ -6,7 +6,6 @@ export function DashboardNav({ slug, active }: { slug: string; active: string })
   const t = useTranslations("dashboard.nav");
   const links = [
     { key: "products", label: t("products"), href: `/dashboard/${slug}/products` },
-    { key: "categories", label: t("categories"), href: `/dashboard/${slug}/categories` },
     { key: "collections", label: t("collections"), href: `/dashboard/${slug}/collections` },
     { key: "sections", label: t("sections"), href: `/dashboard/${slug}/sections` },
   ];
