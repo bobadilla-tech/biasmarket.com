@@ -96,6 +96,7 @@ export default function CheckoutPage() {
         <div className="max-w-md text-center">
           <h1 className="text-xl font-bold text-gray-900">{t("orderCreatedTitle")}</h1>
           <p className="mt-2 text-gray-500">{t("orderCreatedBody", { orderId })}</p>
+          {customerEmail && <p className="mt-2 text-gray-500">{t("checkEmailNotice")}</p>}
         </div>
       </div>
     );

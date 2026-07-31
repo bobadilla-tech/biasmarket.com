@@ -30,7 +30,24 @@
     "mixedCurrencyWarning": "You can't check out products in different currencies in the same order. Remove one from your cart.",
     "orderCreatedTitle": "Order created!",
     "orderCreatedBody": "Order #{orderId}. The store will reach out to confirm payment.",
+    "checkEmailNotice": "Check your email to confirm your account and track this order.",
     "emptyCart": "Your cart is empty.",
     "backToStore": "Back to the store"
+  },
+  "accountConfirmPage": {
+    "loading": "Confirming your account...",
+    "title": "Account confirmed",
+    "errorTitle": "Link expired or invalid",
+    "errorBody": "Place a new order to get a fresh confirmation email, or contact the store.",
+    "ordersTitle": "Your orders",
+    "noOrders": "No orders yet.",
+    "backToStore": "Back to the store",
+    "status": {
+      "toConfirm": "To confirm",
+      "partial": "Partial payment",
+      "verified": "Payment confirmed",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled"
+    }
   }
 }

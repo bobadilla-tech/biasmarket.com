@@ -10,3 +10,4 @@ postgres_data/
 .claude/
 coverage/
 cookies.txt
+.mailer-dev/

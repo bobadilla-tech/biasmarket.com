@@ -30,7 +30,24 @@
     "mixedCurrencyWarning": "No puedes pagar productos en distintas monedas en el mismo pedido. Quita alguno del carrito.",
     "orderCreatedTitle": "¡Pedido creado!",
     "orderCreatedBody": "Pedido #{orderId}. La tienda se pondrá en contacto para confirmar el pago.",
+    "checkEmailNotice": "Revisa tu correo para confirmar tu cuenta y seguir el estado de este pedido.",
     "emptyCart": "Tu carrito está vacío.",
     "backToStore": "Volver a la tienda"
+  },
+  "accountConfirmPage": {
+    "loading": "Confirmando tu cuenta...",
+    "title": "Cuenta confirmada",
+    "errorTitle": "Enlace inválido o expirado",
+    "errorBody": "Haz un nuevo pedido para recibir un correo de confirmación nuevo, o contacta a la tienda.",
+    "ordersTitle": "Tus pedidos",
+    "noOrders": "Todavía no tienes pedidos.",
+    "backToStore": "Volver a la tienda",
+    "status": {
+      "toConfirm": "Por confirmar",
+      "partial": "Pago parcial",
+      "verified": "Pago confirmado",
+      "rejected": "Rechazado",
+      "cancelled": "Cancelado"
+    }
   }
 }

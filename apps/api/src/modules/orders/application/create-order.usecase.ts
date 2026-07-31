@@ -4,12 +4,14 @@ import { buildWhatsAppOrderMessage, buildWhatsAppUrl } from '@biasmarket/utils/w
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { CreateOrderDto } from '../dto/create-order.dto.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
+import { CustomerAccountService } from './customer-account.service.js';
 
 @Injectable()
 export class CreateOrderUseCase {
   constructor(
     private prisma: PrismaService,
     private notifications: NotificationsService,
+    private customerAccounts: CustomerAccountService,
   ) {}
 
   async execute(slug: string, dto: CreateOrderDto) {
@@ -44,7 +46,22 @@ export class CreateOrderUseCase {
 
     const messageItems: { name: string; quantity: number; unitPrice: number }[] = [];
 
-    const order = await this.prisma.$transaction(async (tx) => {
+    const { order, pendingVerificationCustomer } = await this.prisma.$transaction(async (tx) => {
+      let customerId: string | undefined;
+      let pendingVerificationCustomer: Awaited<
+        ReturnType<CustomerAccountService['findOrCreateCustomer']>
+      > | null = null;
+      if (dto.customerEmail) {
+        pendingVerificationCustomer = await this.customerAccounts.findOrCreateCustomer(
+          tx,
+          store.id,
+          dto.customerPhone,
+          dto.customerEmail,
+          dto.customerName,
+        );
+        customerId = pendingVerificationCustomer.customer?.id;
+      }
+
       // Seeded from the first line amount (rather than `new Prisma.Decimal(0)`)
       // so this file never needs a runtime import of the `Prisma` namespace —
       // only Decimal instances Prisma itself already returned. `items` is
@@ -122,9 +139,10 @@ export class CreateOrderUseCase {
         Date.now() + store.holdWindowHours * 60 * 60 * 1000,
       );
 
-      return tx.order.create({
+      const order = await tx.order.create({
         data: {
           storeId: store.id,
+          customerId,
           customerEmail: dto.customerEmail,
           customerPhone: dto.customerPhone,
           customerName: dto.customerName,
@@ -141,6 +159,8 @@ export class CreateOrderUseCase {
         },
         include: { items: true },
       });
+
+      return { order, pendingVerificationCustomer };
     });
 
     const whatsappUrl = store.whatsappNumber
@@ -159,6 +179,10 @@ export class CreateOrderUseCase {
           }),
         )
       : null;
+
+    if (pendingVerificationCustomer?.needsVerificationEmail && pendingVerificationCustomer.customer) {
+      await this.customerAccounts.sendVerificationEmail(pendingVerificationCustomer.customer, store);
+    }
 
     return { order, whatsappUrl };
   }

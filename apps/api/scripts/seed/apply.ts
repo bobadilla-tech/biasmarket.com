@@ -2,14 +2,54 @@ import type { PrismaClient } from '@biasmarket/db';
 import { seedId } from './ids.ts';
 import * as db from './helpers.ts';
 import type { StoreFixtureSpec } from './fixtures.ts';
+import { createCustomerAccountToken } from '../../src/modules/orders/application/customer-account-token.ts';
 
-export async function applyStoreFixture(prisma: PrismaClient, batch: string, spec: StoreFixtureSpec) {
+function requiredEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) throw new Error(`Missing required env var: ${name}`);
+  return value;
+}
+
+function buildCustomerConfirmUrl(storeSlug: string, customerId: string): string {
+  const secret = requiredEnv('CUSTOMER_ACCOUNT_TOKEN_SECRET');
+  const webUrl = process.env.WEB_URL ?? 'http://localhost:3001';
+  const token = createCustomerAccountToken(customerId, secret);
+  return `${webUrl}/store/${storeSlug}/account/confirm?token=${token}`;
+}
+
+export async function applyStoreFixture(
+  prisma: PrismaClient,
+  batch: string,
+  spec: StoreFixtureSpec,
+): Promise<{
+  store: Awaited<ReturnType<typeof db.ensureStore>>;
+  unverifiedCustomerLinks: { email: string; url: string }[];
+}> {
   const ownerId = await db.ensureUser(prisma, {
     email: spec.seller.email,
     name: spec.seller.name,
     role: 'seller',
   });
   const store = await db.ensureStore(prisma, { ownerId, ...spec.store });
+
+  const customerIds = new Map<string, string>();
+  const unverifiedCustomerLinks: { email: string; url: string }[] = [];
+  for (const customer of spec.customers) {
+    const row = await db.ensureCustomer(prisma, {
+      storeId: store.id,
+      phone: customer.phone,
+      email: customer.email,
+      name: customer.name,
+      emailVerified: customer.emailVerified,
+    });
+    customerIds.set(customer.key, row.id);
+    if (!row.emailVerified) {
+      unverifiedCustomerLinks.push({
+        email: customer.email,
+        url: buildCustomerConfirmUrl(store.slug, row.id),
+      });
+    }
+  }
 
   for (const dm of spec.deliveryMethods) {
     await db.ensureDeliveryMethod(prisma, { storeId: store.id, type: dm.type, details: dm.details });
@@ -143,12 +183,16 @@ export async function applyStoreFixture(prisma: PrismaClient, batch: string, spe
       ? new Date(Date.now() - order.createdDaysAgo * 24 * 60 * 60 * 1000)
       : undefined;
 
+    const customer = order.customerKey ? spec.customers.find((c) => c.key === order.customerKey) : undefined;
+    const customerId = order.customerKey ? (customerIds.get(order.customerKey) ?? null) : null;
+
     await db.ensureOrder(prisma, {
       id: orderId,
       storeId: store.id,
-      customerEmail: order.customerEmail,
-      customerPhone: order.customerPhone,
-      customerName: order.customerName,
+      customerId,
+      customerEmail: customer?.email ?? order.customerEmail,
+      customerPhone: customer?.phone ?? order.customerPhone,
+      customerName: customer?.name ?? order.customerName,
       deliveryMethodType: order.deliveryMethodType,
       deliveryDetails,
       pickupPointId,
@@ -173,8 +217,24 @@ export async function applyStoreFixture(prisma: PrismaClient, batch: string, spe
         currency: spec.store.defaultCurrency,
       });
     }
+
+    for (const payment of order.payments ?? []) {
+      const paymentCreatedAt = payment.createdDaysAgo
+        ? new Date(Date.now() - payment.createdDaysAgo * 24 * 60 * 60 * 1000)
+        : createdAt;
+      await db.ensureOrderPayment(prisma, {
+        id: seedId(batch, 'order-payment', store.slug, order.key, payment.key),
+        orderId,
+        storeId: store.id,
+        amount: payment.amount,
+        currency: spec.store.defaultCurrency,
+        method: payment.method,
+        note: payment.note,
+        createdAt: paymentCreatedAt,
+      });
+    }
   }
 
   console.log(`[${batch}] seeded store ${store.slug} (${spec.products.length} products, ${spec.orders.length} orders)`);
-  return store;
+  return { store, unverifiedCustomerLinks };
 }

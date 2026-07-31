@@ -293,6 +293,7 @@ export async function ensureOrder(
   input: {
     id: string;
     storeId: string;
+    customerId?: string | null;
     customerEmail?: string | null;
     customerPhone: string;
     customerName?: string | null;
@@ -310,6 +311,7 @@ export async function ensureOrder(
 ) {
   const data = {
     storeId: input.storeId,
+    customerId: input.customerId ?? null,
     customerEmail: input.customerEmail ?? null,
     customerPhone: input.customerPhone,
     customerName: input.customerName ?? null,
@@ -324,6 +326,56 @@ export async function ensureOrder(
     expiresAt: input.expiresAt,
   };
   return prisma.order.upsert({
+    where: { id: input.id },
+    update: data,
+    create: { id: input.id, ...data, createdAt: input.createdAt },
+  });
+}
+
+export async function ensureCustomer(
+  prisma: PrismaClient,
+  input: {
+    storeId: string;
+    phone: string;
+    email: string;
+    name?: string;
+    emailVerified?: boolean;
+  },
+) {
+  const data = {
+    email: input.email,
+    name: input.name ?? null,
+    emailVerified: input.emailVerified ?? false,
+  };
+  return prisma.customer.upsert({
+    where: { storeId_phone: { storeId: input.storeId, phone: input.phone } },
+    update: data,
+    create: { storeId: input.storeId, phone: input.phone, ...data },
+  });
+}
+
+export async function ensureOrderPayment(
+  prisma: PrismaClient,
+  input: {
+    id: string;
+    orderId: string;
+    storeId: string;
+    amount: string;
+    currency: string;
+    method?: PaymentMethodType | null;
+    note?: string | null;
+    createdAt?: Date;
+  },
+) {
+  const data = {
+    orderId: input.orderId,
+    storeId: input.storeId,
+    amount: input.amount,
+    currency: input.currency,
+    method: input.method ?? null,
+    note: input.note ?? null,
+  };
+  return prisma.orderPayment.upsert({
     where: { id: input.id },
     update: data,
     create: { id: input.id, ...data, createdAt: input.createdAt },

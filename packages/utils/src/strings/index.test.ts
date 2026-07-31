@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { slugify } from "./index";
+import { escapeHtml, slugify } from "./index";
 
 describe("slugify", () => {
   it("lowercases and hyphenates spaces", () => {
@@ -32,5 +32,21 @@ describe("slugify", () => {
 
   it("drops accented/unicode letters as non-alphanumeric", () => {
     expect(slugify("Café Örnek")).toBe("caf-rnek");
+  });
+});
+
+describe("escapeHtml", () => {
+  it("escapes all HTML-sensitive characters", () => {
+    expect(escapeHtml(`<script>alert("hi") & 'bye'</script>`)).toBe(
+      "&lt;script&gt;alert(&quot;hi&quot;) &amp; &#39;bye&#39;&lt;/script&gt;",
+    );
+  });
+
+  it("leaves plain text unchanged", () => {
+    expect(escapeHtml("Tienda de Camila")).toBe("Tienda de Camila");
+  });
+
+  it("returns an empty string for empty input", () => {
+    expect(escapeHtml("")).toBe("");
   });
 });
