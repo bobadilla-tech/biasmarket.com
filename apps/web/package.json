@@ -18,6 +18,7 @@
     "@biasmarket/types": "workspace:*",
     "@biasmarket/ui": "workspace:*",
     "@biasmarket/utils": "workspace:*",
+    "@tanstack/react-query": "^5.101.4",
     "better-auth": "^1.6.23",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -29,7 +30,8 @@
     "shadcn": "^4.13.1",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.6.0",
-    "tw-animate-css": "^1.4.0"
+    "tw-animate-css": "^1.4.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
