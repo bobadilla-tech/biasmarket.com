@@ -2,7 +2,9 @@ import { Module } from '@nestjs/common';
 import { OrderController } from './infrastructure/order.controller.js';
 import { CheckoutController } from './infrastructure/checkout.controller.js';
 import { CustomerAccountController } from './infrastructure/customer-account.controller.js';
+import { CustomersController } from './infrastructure/customers.controller.js';
 import { OrderRepository } from './infrastructure/order.repository.js';
+import { CustomersService } from './application/customers.service.js';
 import { CreateOrderUseCase } from './application/create-order.usecase.js';
 import { ReviewPaymentUseCase } from './application/review-payment.usecase.js';
 import { AdvanceFulfillmentUseCase } from './application/advance-fulfillment.usecase.js';
@@ -13,7 +15,7 @@ import { NotificationsModule } from '../notifications/notifications.module.js';
 
 @Module({
   imports: [NotificationsModule],
-  controllers: [OrderController, CheckoutController, CustomerAccountController],
+  controllers: [OrderController, CheckoutController, CustomerAccountController, CustomersController],
   providers: [
     OrderRepository,
     CreateOrderUseCase,
@@ -22,6 +24,7 @@ import { NotificationsModule } from '../notifications/notifications.module.js';
     ExpireOrdersUseCase,
     OrdersCronService,
     CustomerAccountService,
+    CustomersService,
   ],
 })
 export class OrdersModule {}

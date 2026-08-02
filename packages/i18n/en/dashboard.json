@@ -342,6 +342,19 @@
       "OUT_OF_STOCK": "Out of stock"
     }
   },
+  "customers": {
+    "title": "Customers",
+    "subtitle": "Everyone who has bought from your store",
+    "titleWithCount": "Customers ({count})",
+    "empty": "No customers yet.",
+    "verified": "Verified email",
+    "orderCount": "Orders",
+    "lifetimeSpend": "Lifetime spend",
+    "viewHistory": "View history",
+    "whatsappGreeting": "Hi {name}!",
+    "orderHistory": "Order history",
+    "noOrders": "No orders yet."
+  },
   "payments": {
     "title": "Payments",
     "subtitle": "Orders needing payment attention",
