@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { StoreLogo } from "@/components/store-logo";
-import { useStore } from "@/lib/use-store";
+import { useDashboardStore } from "@/features/stores";
 import {
   ProfileSection,
   AppearanceSection,
@@ -17,7 +17,7 @@ import {
 export default function SettingsPage() {
   const t = useTranslations("dashboard.settings");
   const tCommon = useTranslations("common");
-  const { store, loading: storeLoading } = useStore();
+  const { store, loading: storeLoading } = useDashboardStore();
 
   if (storeLoading || !store) {
     return (

@@ -1,6 +1,17 @@
 {
   "loading": "Loading...",
   "networkError": "Network error",
+  "notFoundPage": {
+    "title": "Page not found",
+    "body": "The page you're looking for doesn't exist or was moved.",
+    "backHome": "Back to home"
+  },
+  "errorPage": {
+    "title": "Something went wrong",
+    "body": "An unexpected error occurred. Try again, or go back to home.",
+    "retry": "Try again",
+    "backHome": "Back to home"
+  },
   "impersonation": {
     "banner": "You're impersonating {email}",
     "stop": "Stop impersonating"

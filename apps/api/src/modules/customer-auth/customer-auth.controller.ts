@@ -82,4 +82,16 @@ export class CustomerAuthController {
   ) {
     return this.customerAuth.updateProfile(slug, session, dto.name);
   }
+
+  // Not in the original plan doc — added because the session-aware header
+  // (Phase 12's frontend requirement) needs a way to sign out, and the
+  // session cookie is HttpOnly so the frontend can't just clear it itself.
+  // No guard needed: logging out an already-invalid/missing session is a
+  // harmless no-op, and clearing a cookie carries no meaningful CSRF risk.
+  @Public()
+  @Post('logout')
+  logout(@Res({ passthrough: true }) res: Response) {
+    res.clearCookie(CUSTOMER_SESSION_COOKIE, { path: '/' });
+    return { ok: true };
+  }
 }

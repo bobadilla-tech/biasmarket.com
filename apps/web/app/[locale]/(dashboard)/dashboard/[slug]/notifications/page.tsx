@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { useStore } from "@/lib/use-store";
+import { useDashboardStore } from "@/features/stores";
 import {
   useNotifications,
   useMarkRead,
@@ -18,7 +18,7 @@ import {
 export default function NotificationsPage() {
   const t = useTranslations("dashboard.notifications");
   const tCommon = useTranslations("common");
-  const { storeId, loading: storeLoading } = useStore();
+  const { storeId, loading: storeLoading } = useDashboardStore();
 
   const [tab, setTab] = useState<"active" | "archived">("active");
   const { data: items = [], isPending } = useNotifications(storeId, tab === "archived");

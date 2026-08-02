@@ -16,7 +16,7 @@ vi.mock('@nestjs/throttler', async (importOriginal) => {
 describe('CustomerAuthController', () => {
   let controller: CustomerAuthController;
   let service: { register: Mock; login: Mock; changePassword: Mock; getProfile: Mock; updateProfile: Mock };
-  let res: { cookie: Mock };
+  let res: { cookie: Mock; clearCookie: Mock };
 
   beforeEach(async () => {
     service = {
@@ -26,7 +26,7 @@ describe('CustomerAuthController', () => {
       getProfile: vi.fn(),
       updateProfile: vi.fn(),
     };
-    res = { cookie: vi.fn() };
+    res = { cookie: vi.fn(), clearCookie: vi.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CustomerAuthController],
@@ -99,5 +99,12 @@ describe('CustomerAuthController', () => {
 
     expect(service.updateProfile).toHaveBeenCalledWith('my-store', session, 'New Name');
     expect(result).toEqual({ name: 'New Name' });
+  });
+
+  it('logout() clears the session cookie', () => {
+    const result = controller.logout(res as never);
+
+    expect(res.clearCookie).toHaveBeenCalledWith('bm_customer_session', expect.objectContaining({ path: '/' }));
+    expect(result).toEqual({ ok: true });
   });
 });

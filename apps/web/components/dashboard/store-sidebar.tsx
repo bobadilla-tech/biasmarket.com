@@ -25,7 +25,7 @@ import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { StoreLogo } from "@/components/store-logo";
-import type { DashboardStore } from "@/lib/use-store";
+import type { DashboardStore } from "@/features/stores";
 
 const COLLAPSE_STORAGE_KEY = "store-sidebar-collapsed";
 

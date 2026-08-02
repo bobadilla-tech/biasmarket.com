@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 import { StoreSidebar } from "./store-sidebar";
-import type { DashboardStore } from "@/lib/use-store";
+import type { DashboardStore } from "@/features/stores";
 
 export function MobileSidebar({
   slug,

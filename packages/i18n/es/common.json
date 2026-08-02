@@ -1,6 +1,17 @@
 {
   "loading": "Cargando...",
   "networkError": "Error de red",
+  "notFoundPage": {
+    "title": "Página no encontrada",
+    "body": "La página que buscas no existe o fue movida.",
+    "backHome": "Volver al inicio"
+  },
+  "errorPage": {
+    "title": "Algo salió mal",
+    "body": "Ocurrió un error inesperado. Intenta de nuevo o vuelve al inicio.",
+    "retry": "Intentar de nuevo",
+    "backHome": "Volver al inicio"
+  },
   "impersonation": {
     "banner": "Estás suplantando a {email}",
     "stop": "Dejar de suplantar"

@@ -5,7 +5,7 @@ import { StoreSidebar } from "@/components/dashboard/store-sidebar";
 import { MobileSidebar } from "./mobile-sidebar";
 import { NotificationsBell } from "@/features/notifications";
 import { getStoreThemeStyle } from "@/lib/store-theme";
-import { useStore } from "@/lib/use-store";
+import { useDashboardStore } from "@/features/stores";
 
 export function StoreThemeFrame({
   slug,
@@ -14,7 +14,7 @@ export function StoreThemeFrame({
   slug: string;
   children: React.ReactNode;
 }) {
-  const { store } = useStore();
+  const { store } = useDashboardStore();
   const themeStyle = useMemo(() => getStoreThemeStyle(store?.themeConfig), [store?.themeConfig]);
 
   useEffect(() => {

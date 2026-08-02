@@ -24,6 +24,7 @@
     "namePlaceholder": "Nombre",
     "phonePlaceholder": "Teléfono (WhatsApp)",
     "emailPlaceholder": "Email (opcional)",
+    "invalidEmail": "Ingresa un email válido",
     "submit": "Confirmar y continuar por WhatsApp",
     "submitting": "Enviando...",
     "noDeliveryMethod": "La tienda todavía no configuró un método de entrega — contacta al vendedor.",

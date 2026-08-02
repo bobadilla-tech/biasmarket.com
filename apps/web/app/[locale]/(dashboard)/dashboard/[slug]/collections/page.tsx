@@ -1,101 +1,63 @@
 "use client";
-import { useEffect, useState } from "react";
+
+import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Select } from "@/components/ui/select";
-import { apiFetch } from "@/lib/api";
-import { useStore } from "@/lib/use-store";
+import { useDashboardStore } from "@/features/stores";
+import { useProducts } from "@/features/products";
+import {
+  useCollections,
+  useCreateCollection,
+  useDeleteCollection,
+  useAddCollectionProduct,
+  useRemoveCollectionProduct,
+  useReorderCollectionProducts,
+  CollectionForm,
+  CollectionCard,
+  type Collection,
+  type CreateCollectionInput,
+} from "@/features/collections";
 import { DashboardNav } from "../dashboard-nav";
-
-interface Product {
-  id: string;
-  name: string;
-}
-
-interface CollectionProduct {
-  productId: string;
-  position: number;
-  product: Product;
-}
-
-interface Collection {
-  id: string;
-  name: string;
-  slug: string;
-  description: string;
-  products: CollectionProduct[];
-}
 
 export default function CollectionsPage() {
   const t = useTranslations("dashboard");
   const tCommon = useTranslations("common");
-  const { storeId, slug, loading: storeLoading } = useStore();
-  const [collections, setCollections] = useState<Collection[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  const { storeId, slug, loading: storeLoading } = useDashboardStore();
+
+  const collectionsQuery = useCollections(storeId, tCommon("networkError"));
+  const productsQuery = useProducts(storeId, tCommon("networkError"));
+  const createCollection = useCreateCollection(storeId, tCommon("networkError"));
+  const deleteCollection = useDeleteCollection(storeId, tCommon("networkError"));
+  const addProduct = useAddCollectionProduct(storeId, tCommon("networkError"));
+  const removeProduct = useRemoveCollectionProduct(storeId, tCommon("networkError"));
+  const reorderProducts = useReorderCollectionProducts(storeId, tCommon("networkError"));
+
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<Record<string, string>>({});
 
-  const load = async () => {
-    if (!storeId) return;
+  const collections = collectionsQuery.data ?? [];
+  const products = productsQuery.data ?? [];
+
+  const handleCreate = async (values: CreateCollectionInput) => {
+    setError(null);
     try {
-      const [collectionsData, productsData] = await Promise.all([
-        apiFetch(`/stores/${storeId}/collections`, {}, tCommon("networkError")),
-        apiFetch(`/stores/${storeId}/products`, {}, tCommon("networkError")),
-      ]);
-      setCollections(collectionsData);
-      setProducts(productsData);
+      await createCollection.mutateAsync(values);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
   };
 
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storeId]);
-
-  const handleCreate = async () => {
-    setLoading(true);
+  const handleDelete = async (collectionId: string) => {
     setError(null);
     try {
-      await apiFetch(
-        `/stores/${storeId}/collections`,
-        { method: "POST", body: JSON.stringify({ name, description: description || undefined }) },
-        tCommon("networkError"),
-      );
-      setName("");
-      setDescription("");
-      await load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    setError(null);
-    try {
-      await apiFetch(`/stores/${storeId}/collections/${id}`, { method: "DELETE" }, tCommon("networkError"));
-      await load();
+      await deleteCollection.mutateAsync(collectionId);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
   };
 
-  const handleAddProduct = async (collectionId: string) => {
-    const productId = selectedProduct[collectionId];
-    if (!productId) return;
+  const handleAddProduct = async (collectionId: string, productId: string) => {
     setError(null);
     try {
-      await apiFetch(
-        `/stores/${storeId}/collections/${collectionId}/products`,
-        { method: "POST", body: JSON.stringify({ productId }) },
-        tCommon("networkError"),
-      );
-      await load();
+      await addProduct.mutateAsync({ collectionId, productId });
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -104,12 +66,7 @@ export default function CollectionsPage() {
   const handleRemoveProduct = async (collectionId: string, productId: string) => {
     setError(null);
     try {
-      await apiFetch(
-        `/stores/${storeId}/collections/${collectionId}/products/${productId}`,
-        { method: "DELETE" },
-        tCommon("networkError"),
-      );
-      await load();
+      await removeProduct.mutateAsync({ collectionId, productId });
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -122,12 +79,10 @@ export default function CollectionsPage() {
     [items[index], items[target]] = [items[target], items[index]];
     setError(null);
     try {
-      await apiFetch(
-        `/stores/${storeId}/collections/${collection.id}/products/reorder`,
-        { method: "PATCH", body: JSON.stringify({ productIds: items.map((i) => i.productId) }) },
-        tCommon("networkError"),
-      );
-      await load();
+      await reorderProducts.mutateAsync({
+        collectionId: collection.id,
+        productIds: items.map((i) => i.productId),
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -149,99 +104,22 @@ export default function CollectionsPage() {
           <DashboardNav slug={slug} active="collections" />
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-wrap gap-3 items-center">
-          <input
-            placeholder={t("collections.namePlaceholder")}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="flex-1 min-w-[160px] rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600"
-          />
-          <input
-            placeholder={t("collections.descriptionPlaceholder")}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="flex-1 min-w-[160px] rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600"
-          />
-          <button
-            onClick={handleCreate}
-            disabled={loading || !name}
-            className="store-theme-primary-button rounded-xl px-5 py-2.5 text-sm font-semibold transition disabled:opacity-60"
-          >
-            {t("collections.add")}
-          </button>
-        </div>
+        <CollectionForm submitting={createCollection.isPending} onSubmit={handleCreate} />
 
         {error && <p className="text-sm text-red-500">{error}</p>}
 
         <div className="flex flex-col gap-4">
-          {collections.map((c) => {
-            const items = [...c.products].sort((a, b) => a.position - b.position);
-            return (
-              <div key={c.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="font-semibold text-gray-900">{c.name}</p>
-                  <button
-                    onClick={() => handleDelete(c.id)}
-                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-50"
-                  >
-                    {t("collections.delete")}
-                  </button>
-                </div>
-
-                <ul className="flex flex-col gap-1 mb-3">
-                  {items.map((cp, index) => (
-                    <li key={cp.productId} className="flex items-center justify-between text-sm text-gray-700 py-1">
-                      <span>{cp.product.name}</span>
-                      <span className="flex gap-1">
-                        <button
-                          onClick={() => handleReorder(c, index, -1)}
-                          disabled={index === 0}
-                          className="px-2 py-1 text-xs rounded-lg border border-gray-200 disabled:opacity-40"
-                        >
-                          {t("collections.moveUp")}
-                        </button>
-                        <button
-                          onClick={() => handleReorder(c, index, 1)}
-                          disabled={index === items.length - 1}
-                          className="px-2 py-1 text-xs rounded-lg border border-gray-200 disabled:opacity-40"
-                        >
-                          {t("collections.moveDown")}
-                        </button>
-                        <button
-                          onClick={() => handleRemoveProduct(c.id, cp.productId)}
-                          className="px-2 py-1 text-xs rounded-lg border border-gray-200"
-                        >
-                          {t("collections.remove")}
-                        </button>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-
-                <div className="flex gap-2">
-                  <Select
-                    value={selectedProduct[c.id] ?? ""}
-                    onChange={(e) => setSelectedProduct((prev) => ({ ...prev, [c.id]: e.target.value }))}
-                    className="flex-1"
-                    selectClassName="rounded-xl border border-gray-200 py-2 pl-3 text-sm text-gray-600"
-                  >
-                    <option value="">{t("collections.selectProduct")}</option>
-                    {products.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </Select>
-                  <button
-                    onClick={() => handleAddProduct(c.id)}
-                    className="store-theme-primary-button rounded-xl px-4 py-2 text-sm font-semibold transition"
-                  >
-                    {t("collections.addProduct")}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+          {collections.map((c) => (
+            <CollectionCard
+              key={c.id}
+              collection={c}
+              products={products}
+              onDelete={handleDelete}
+              onReorder={handleReorder}
+              onRemoveProduct={handleRemoveProduct}
+              onAddProduct={handleAddProduct}
+            />
+          ))}
         </div>
       </div>
     </div>

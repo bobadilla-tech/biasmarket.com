@@ -1,50 +1,38 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { buttonVariants } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
-import { apiFetch } from "@/lib/api";
+import {
+  useSubmitInquiry,
+  inquirySubmissionSchema,
+  type InquirySubmissionInput,
+} from "@/features/contact";
 
 const inputClass =
   "w-full rounded-lg border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-foreground outline-none transition focus:border-brand-pink focus:ring-2 focus:ring-brand-pink/30 placeholder:text-muted-foreground";
 
 export function ContactForm() {
   const t = useTranslations("marketing.contactPage.form");
-  const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const submitInquiry = useSubmitInquiry(t("error"));
 
-  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
+  const { register, handleSubmit } = useForm<InquirySubmissionInput>({
+    resolver: zodResolver(inquirySubmissionSchema),
+    defaultValues: { name: "", email: "", company: "", inquiryType: "general", message: "" },
+  });
 
-    const form = new FormData(e.currentTarget);
-
+  const onSubmit = handleSubmit(async (values) => {
     try {
-      await apiFetch(
-        "/contact",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            name: form.get("name"),
-            email: form.get("email"),
-            company: form.get("company") || undefined,
-            inquiryType: form.get("inquiryType"),
-            message: form.get("message"),
-          }),
-        },
-        t("error"),
-      );
+      await submitInquiry.mutateAsync(values);
       setSuccess(true);
-      e.currentTarget.reset();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("error"));
-    } finally {
-      setLoading(false);
+    } catch {
+      // error surfaces via submitInquiry.error
     }
-  }
+  });
 
   if (success) {
     return (
@@ -55,49 +43,37 @@ export function ContactForm() {
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex flex-col gap-4 rounded-2xl border border-white/10 p-8"
-    >
+    <form onSubmit={onSubmit} className="flex flex-col gap-4 rounded-2xl border border-white/10 p-8">
       <div>
         <label htmlFor="name" className="mb-2 block text-sm font-medium">
           {t("name")}
         </label>
-        <input id="name" name="name" required className={inputClass} />
+        <input id="name" required className={inputClass} {...register("name")} />
       </div>
 
       <div>
         <label htmlFor="email" className="mb-2 block text-sm font-medium">
           {t("email")}
         </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          required
-          className={inputClass}
-        />
+        <input id="email" type="email" required className={inputClass} {...register("email")} />
       </div>
 
       <div>
         <label htmlFor="company" className="mb-2 block text-sm font-medium">
           {t("company")}
         </label>
-        <input id="company" name="company" className={inputClass} />
+        <input id="company" className={inputClass} {...register("company")} />
       </div>
 
       <div>
-        <label
-          htmlFor="inquiryType"
-          className="mb-2 block text-sm font-medium"
-        >
+        <label htmlFor="inquiryType" className="mb-2 block text-sm font-medium">
           {t("inquiryType")}
         </label>
         <Select
           id="inquiryType"
-          name="inquiryType"
           className="w-full"
           selectClassName={inputClass.replace("px-4", "pl-4")}
+          {...register("inquiryType")}
         >
           <option value="general">{t("inquiryGeneral")}</option>
           <option value="technical">{t("inquiryTechnical")}</option>
@@ -111,23 +87,21 @@ export function ContactForm() {
         <label htmlFor="message" className="mb-2 block text-sm font-medium">
           {t("message")}
         </label>
-        <textarea
-          id="message"
-          name="message"
-          rows={5}
-          required
-          className={inputClass}
-        />
+        <textarea id="message" rows={5} required className={inputClass} {...register("message")} />
       </div>
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {submitInquiry.isError && (
+        <p className="text-sm text-red-400">
+          {submitInquiry.error instanceof Error ? submitInquiry.error.message : t("error")}
+        </p>
+      )}
 
       <button
         type="submit"
-        disabled={loading}
+        disabled={submitInquiry.isPending}
         className={buttonVariants({ className: "h-11 w-full px-6" })}
       >
-        {loading ? t("submitting") : t("submit")}
+        {submitInquiry.isPending ? t("submitting") : t("submit")}
       </button>
     </form>
   );
