@@ -19,6 +19,7 @@ import { CollectionsModule } from './modules/collections/collections.module.js';
 import { StoreSectionsModule } from './modules/store-sections/store-sections.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { StatsModule } from './modules/stats/stats.module.js';
+import { CustomerAuthModule } from './modules/customer-auth/customer-auth.module.js';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { StatsModule } from './modules/stats/stats.module.js';
     StoreSectionsModule,
     NotificationsModule,
     StatsModule,
+    CustomerAuthModule,
   ],
   controllers: [AppController],
 })
