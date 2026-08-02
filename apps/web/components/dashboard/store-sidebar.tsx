@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CreditCard,
+  ExternalLink,
   FolderKanban,
   LayoutDashboard,
   Lightbulb,
@@ -15,11 +16,11 @@ import {
   Rows3,
   Settings,
   ShoppingBag,
-  Store,
   Truck,
+  UserCircle,
   Users,
 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
@@ -37,7 +38,6 @@ type NavItem = {
 
 const primaryItems: NavItem[] = [
   { key: "overview", icon: LayoutDashboard, href: "" },
-  { key: "storefront", icon: Store },
   { key: "orders", icon: ShoppingBag, href: "orders" },
   { key: "products", icon: Package, href: "products" },
   { key: "collections", icon: FolderKanban, href: "collections" },
@@ -149,6 +149,7 @@ export function StoreSidebar({
   forceExpanded?: boolean;
 }) {
   const t = useTranslations("dashboard.shell");
+  const locale = useLocale();
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = authClient.useSession();
@@ -203,6 +204,17 @@ export function StoreSidebar({
             <p className="truncate text-sm font-semibold text-white">
               {store?.name ?? t("brand")}
             </p>
+            {slug ? (
+              <a
+                href={`/${locale}/store/${slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-xs text-white/50 transition hover:text-white/80"
+              >
+                {t("viewStore")}
+                <ExternalLink className="size-3" />
+              </a>
+            ) : null}
           </div>
         )}
         {!forceExpanded && (
@@ -259,6 +271,17 @@ export function StoreSidebar({
             </p>
           </div>
         )}
+        <Link
+          href="/account"
+          title={effectiveCollapsed ? t("myAccount") : undefined}
+          className={cn(
+            "flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm text-white/72 transition hover:bg-white/8 hover:text-white",
+            effectiveCollapsed && "justify-center px-0",
+          )}
+        >
+          <UserCircle className="size-4 shrink-0" />
+          {!effectiveCollapsed && <span>{t("myAccount")}</span>}
+        </Link>
         <button
           onClick={handleSignOut}
           title={effectiveCollapsed ? t("signOut") : undefined}

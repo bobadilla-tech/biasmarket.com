@@ -187,7 +187,6 @@
     },
     "nav": {
       "overview": "Resumen",
-      "storefront": "Mi tienda",
       "orders": "Pedidos",
       "products": "Productos",
       "categories": "Categorías",
@@ -202,11 +201,13 @@
       "notifications": "Notificaciones"
     },
     "soon": "Pronto",
+    "viewStore": "Ver tienda",
     "collapse": "Contraer barra lateral",
     "expand": "Expandir barra lateral",
     "openMenu": "Abrir menú",
     "fallbackName": "Vendedor",
     "fallbackRole": "Dueño de tienda",
+    "myAccount": "Mi cuenta",
     "signOut": "Cerrar sesión"
   },
   "settings": {
@@ -439,5 +440,47 @@
       "message": "Pedido marcado como {status}.",
       "undo": "Deshacer"
     }
+  },
+  "overview": {
+    "title": "Resumen",
+    "subtitle": "Un vistazo a la actividad de tu tienda.",
+    "stats": {
+      "revenue": "Ingresos verificados",
+      "totalOrders": "Total de pedidos",
+      "lowStock": "Productos con poco/sin stock",
+      "pendingReview": "Pedidos por revisar"
+    },
+    "recentOrdersTitle": "Pedidos recientes",
+    "recentOrdersEmpty": "Todavía no hay pedidos.",
+    "paymentBreakdownTitle": "Pedidos por estado de pago",
+    "fulfillmentBreakdownTitle": "Pedidos por estado de envío",
+    "paymentStatusLabels": {
+      "PENDING_PAYMENT": "Pago pendiente",
+      "PARTIALLY_PAID": "Pago parcial",
+      "PAYMENT_SUBMITTED": "Comprobante enviado",
+      "VERIFIED": "Verificado",
+      "REJECTED": "Rechazado",
+      "CANCELLED": "Cancelado"
+    }
+  },
+  "account": {
+    "title": "Mi cuenta",
+    "subtitle": "Gestiona tu perfil y mira tus tiendas de un vistazo.",
+    "signedInAs": "Sesión iniciada como",
+    "goToDashboard": "Ir al panel",
+    "yourStores": "Tus tiendas",
+    "addStore": "Agregar otra tienda",
+    "changePassword": {
+      "title": "Cambiar contraseña",
+      "description": "Actualiza la contraseña que usas para iniciar sesión.",
+      "currentLabel": "Contraseña actual",
+      "newLabel": "Nueva contraseña",
+      "confirmLabel": "Confirmar nueva contraseña",
+      "mismatch": "Las contraseñas no coinciden",
+      "submit": "Actualizar contraseña",
+      "submitting": "Actualizando...",
+      "saved": "Contraseña actualizada"
+    },
+    "signOut": "Cerrar sesión"
   }
 }

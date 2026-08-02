@@ -187,7 +187,6 @@
     },
     "nav": {
       "overview": "Overview",
-      "storefront": "My store",
       "orders": "Orders",
       "products": "Products",
       "categories": "Categories",
@@ -202,11 +201,13 @@
       "notifications": "Notifications"
     },
     "soon": "Soon",
+    "viewStore": "View store",
     "collapse": "Collapse sidebar",
     "expand": "Expand sidebar",
     "openMenu": "Open menu",
     "fallbackName": "Seller",
     "fallbackRole": "Store owner",
+    "myAccount": "My account",
     "signOut": "Sign out"
   },
   "settings": {
@@ -439,5 +440,47 @@
       "message": "Order marked as {status}.",
       "undo": "Undo"
     }
+  },
+  "overview": {
+    "title": "Overview",
+    "subtitle": "A snapshot of your store's activity.",
+    "stats": {
+      "revenue": "Verified revenue",
+      "totalOrders": "Total orders",
+      "lowStock": "Low/out of stock items",
+      "pendingReview": "Orders needing review"
+    },
+    "recentOrdersTitle": "Recent orders",
+    "recentOrdersEmpty": "No orders yet.",
+    "paymentBreakdownTitle": "Orders by payment status",
+    "fulfillmentBreakdownTitle": "Orders by fulfillment status",
+    "paymentStatusLabels": {
+      "PENDING_PAYMENT": "Pending payment",
+      "PARTIALLY_PAID": "Partially paid",
+      "PAYMENT_SUBMITTED": "Proof submitted",
+      "VERIFIED": "Verified",
+      "REJECTED": "Rejected",
+      "CANCELLED": "Cancelled"
+    }
+  },
+  "account": {
+    "title": "My account",
+    "subtitle": "Manage your profile and see your stores at a glance.",
+    "signedInAs": "Signed in as",
+    "goToDashboard": "Go to dashboard",
+    "yourStores": "Your stores",
+    "addStore": "Add another store",
+    "changePassword": {
+      "title": "Change password",
+      "description": "Update the password you use to sign in.",
+      "currentLabel": "Current password",
+      "newLabel": "New password",
+      "confirmLabel": "Confirm new password",
+      "mismatch": "Passwords don't match",
+      "submit": "Update password",
+      "submitting": "Updating...",
+      "saved": "Password updated"
+    },
+    "signOut": "Sign out"
   }
 }
