@@ -30,6 +30,7 @@ export const orderSchema = z.object({
   pendingAmount: z.number(),
   paidPercentage: z.number(),
   currency: z.string(),
+  paymentRejectionReason: z.string().nullable().optional(),
   paymentStatus: z.enum([
     "PENDING_PAYMENT",
     "PARTIALLY_PAID",

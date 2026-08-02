@@ -48,6 +48,7 @@ export default function OrdersPage() {
     nextStatus?: string;
     label: string;
   } | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
 
   const { pending, scheduleReview, scheduleAdvance, reviewPayment, advanceFulfillment } =
     useOptimisticStatusChange(storeId, t);
@@ -99,11 +100,16 @@ export default function OrdersPage() {
   const handleConfirmTransition = async () => {
     if (!confirmTarget) return;
     if (confirmTarget.kind === "review" && confirmTarget.decision) {
-      await reviewPayment.mutateAsync({ orderId: confirmTarget.orderId, decision: confirmTarget.decision });
+      await reviewPayment.mutateAsync({
+        orderId: confirmTarget.orderId,
+        decision: confirmTarget.decision,
+        ...(confirmTarget.decision === "reject" && { reason: rejectReason.trim() }),
+      });
     } else if (confirmTarget.kind === "advance" && confirmTarget.nextStatus) {
       await advanceFulfillment.mutateAsync({ orderId: confirmTarget.orderId, status: confirmTarget.nextStatus });
     }
     setConfirmTarget(null);
+    setRejectReason("");
   };
 
   const filteredOrders = useMemo(
@@ -217,8 +223,17 @@ export default function OrdersPage() {
           open={!!confirmTarget}
           label={confirmTarget?.label ?? null}
           pending={reviewPayment.isPending || advanceFulfillment.isPending}
-          onCancel={() => setConfirmTarget(null)}
+          onCancel={() => {
+            setConfirmTarget(null);
+            setRejectReason("");
+          }}
           onConfirm={handleConfirmTransition}
+          {...(confirmTarget?.kind === "review" &&
+            confirmTarget.decision === "reject" && {
+              reason: rejectReason,
+              onReasonChange: setRejectReason,
+              reasonRequired: true,
+            })}
         />
       </div>
     </div>

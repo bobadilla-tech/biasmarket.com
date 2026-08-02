@@ -342,6 +342,18 @@
       "OUT_OF_STOCK": "Sin stock"
     }
   },
+  "payments": {
+    "title": "Pagos",
+    "subtitle": "Pedidos que necesitan atención de pago",
+    "titleWithCount": "Pagos ({count})",
+    "empty": "No hay pedidos que necesiten atención de pago por ahora.",
+    "columns": {
+      "paid": "Pagado",
+      "pending": "Pendiente",
+      "progress": "% pagado"
+    },
+    "contactBuyer": "Contactar comprador"
+  },
   "shipping": {
     "title": "Envíos",
     "subtitle": "Pedidos en curso de entrega",
@@ -439,6 +451,7 @@
     "confirmStatus": {
       "title": "Confirmar cambio de estado",
       "body": "¿Estás seguro de que deseas marcar este pedido como {status}?",
+      "reasonPlaceholder": "Motivo del rechazo (obligatorio) — ej. el comprobante parece editado",
       "confirm": "Sí, marcar",
       "cancel": "Cancelar"
     },

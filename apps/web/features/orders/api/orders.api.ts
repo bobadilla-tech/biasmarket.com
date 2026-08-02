@@ -12,10 +12,16 @@ export const ordersApi = {
     return orderListSchema.parse(data);
   },
 
-  review(storeId: string, orderId: string, decision: "approve" | "reject", fallbackErrorMessage?: string) {
+  review(
+    storeId: string,
+    orderId: string,
+    decision: "approve" | "reject",
+    reason?: string,
+    fallbackErrorMessage?: string,
+  ) {
     return apiFetch(
       `/stores/${storeId}/orders/${orderId}/review`,
-      { method: "PATCH", body: JSON.stringify({ decision }) },
+      { method: "PATCH", body: JSON.stringify({ decision, ...(reason && { reason }) }) },
       fallbackErrorMessage,
     );
   },

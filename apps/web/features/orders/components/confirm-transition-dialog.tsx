@@ -10,6 +10,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 export function ConfirmTransitionDialog({
   open,
@@ -17,14 +18,25 @@ export function ConfirmTransitionDialog({
   pending,
   onCancel,
   onConfirm,
+  reason,
+  onReasonChange,
+  reasonRequired = false,
 }: {
   open: boolean;
   label: string | null;
   pending: boolean;
   onCancel: () => void;
   onConfirm: () => void;
+  /** When provided (together with `onReasonChange`), renders a reason
+   * textarea below the confirm body — used for the reject-with-reason flow. */
+  reason?: string;
+  onReasonChange?: (value: string) => void;
+  reasonRequired?: boolean;
 }) {
   const t = useTranslations("dashboard.orders");
+  const showReasonInput = onReasonChange !== undefined;
+  const confirmDisabled = pending || (showReasonInput && reasonRequired && !reason?.trim());
+
   return (
     <AlertDialog
       open={open}
@@ -39,6 +51,15 @@ export function ConfirmTransitionDialog({
             {label ? t("confirmStatus.body", { status: label }) : null}
           </AlertDialogDescription>
         </AlertDialogHeader>
+        {showReasonInput ? (
+          <Textarea
+            value={reason ?? ""}
+            onChange={(event) => onReasonChange?.(event.target.value)}
+            placeholder={t("confirmStatus.reasonPlaceholder")}
+            rows={3}
+            className="rounded-2xl border-[#eadcf7] shadow-none"
+          />
+        ) : null}
         <AlertDialogFooter>
           <Button
             type="button"
@@ -51,7 +72,7 @@ export function ConfirmTransitionDialog({
           <Button
             type="button"
             onClick={onConfirm}
-            disabled={pending}
+            disabled={confirmDisabled}
             className="store-theme-primary-button h-11 rounded-2xl text-sm font-semibold hover:opacity-100"
           >
             {t("confirmStatus.confirm")}

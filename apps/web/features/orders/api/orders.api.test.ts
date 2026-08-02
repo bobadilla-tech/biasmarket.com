@@ -21,6 +21,18 @@ test("review PATCHes the review endpoint with the decision", async () => {
   );
 });
 
+test("review includes the reason in the body when rejecting with a reason", async () => {
+  apiFetch.mockResolvedValue({});
+
+  await ordersApi.review("store-1", "o1", "reject", "Comprobante adulterado");
+
+  expect(apiFetch).toHaveBeenCalledWith(
+    "/stores/store-1/orders/o1/review",
+    { method: "PATCH", body: JSON.stringify({ decision: "reject", reason: "Comprobante adulterado" }) },
+    undefined,
+  );
+});
+
 test("advance PATCHes the fulfillment endpoint with the status", async () => {
   apiFetch.mockResolvedValue({});
 

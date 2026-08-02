@@ -43,7 +43,7 @@ const primaryItems: NavItem[] = [
   { key: "collections", icon: FolderKanban, href: "collections" },
   { key: "sections", icon: Rows3, href: "sections" },
   { key: "shipping", icon: Truck, href: "shipping" },
-  { key: "payments", icon: CreditCard },
+  { key: "payments", icon: CreditCard, href: "payments" },
 ];
 
 const growthItems: NavItem[] = [

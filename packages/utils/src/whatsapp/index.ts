@@ -43,6 +43,25 @@ export const buildWhatsAppOrderMessage = (input: WhatsAppOrderInput): string => 
   return lines.join("\n");
 };
 
+export interface WhatsAppPaymentReminderInput {
+  orderId: string;
+  storeName: string;
+  pendingAmount: number;
+  currency: string;
+  customerName?: string | null;
+}
+
+export const buildWhatsAppPaymentReminderMessage = (input: WhatsAppPaymentReminderInput): string => {
+  const greeting = input.customerName ? `Hola ${input.customerName},` : "Hola,";
+  const lines = [
+    greeting,
+    `Sobre tu pedido #${shortOrderRef(input.orderId)} en ${input.storeName}:`,
+    `Todavía tenés un saldo pendiente de ${input.pendingAmount.toFixed(2)} ${input.currency}.`,
+    "¿Podrías completar el pago para que podamos avanzar con tu pedido? ¡Gracias!",
+  ];
+  return lines.join("\n");
+};
+
 export const buildWhatsAppUrl = (phoneNumber: string, message: string): string => {
   const digits = phoneNumber.replace(/[^0-9]/g, "");
   return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;

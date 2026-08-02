@@ -6,18 +6,26 @@ import { Order } from '../domain/order.entity.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
 import { MailerService } from '../../../mailer/mailer.service.js';
 
-function buildPaymentStatusEmailHtml(decision: 'approve' | 'reject', storeName: string): string {
+function buildPaymentStatusEmailHtml(
+  decision: 'approve' | 'reject',
+  storeName: string,
+  reason?: string | null,
+): string {
   const safeStoreName = escapeHtml(storeName);
-  return decision === 'approve'
-    ? `
+  if (decision === 'approve') {
+    return `
       <p>Tu pago para el pedido en ${safeStoreName} fue aprobado. ¡Gracias por tu compra!</p>
       <hr />
       <p>Your payment for the order at ${safeStoreName} was approved. Thanks for your purchase!</p>
-    `
-    : `
+    `;
+  }
+  const safeReason = reason ? escapeHtml(reason) : null;
+  return `
       <p>Tu pago para el pedido en ${safeStoreName} fue rechazado. Contacta a la tienda para más información.</p>
+      ${safeReason ? `<p><strong>Motivo:</strong> ${safeReason}</p>` : ''}
       <hr />
       <p>Your payment for the order at ${safeStoreName} was rejected. Contact the store for more details.</p>
+      ${safeReason ? `<p><strong>Reason:</strong> ${safeReason}</p>` : ''}
     `;
 }
 
@@ -37,6 +45,7 @@ export class ReviewPaymentUseCase {
     storeId: string,
     userId: string,
     decision: 'approve' | 'reject',
+    reason?: string,
   ) {
     await this.orders.assertOwnership(storeId, userId);
 
@@ -62,7 +71,10 @@ export class ReviewPaymentUseCase {
       // the previous plain `update` which would silently double-apply both.
       const guard = await tx.order.updateMany({
         where: { id: orderId, paymentStatus: row.paymentStatus },
-        data: { paymentStatus: entity.currentPaymentStatus },
+        data: {
+          paymentStatus: entity.currentPaymentStatus,
+          paymentRejectionReason: decision === 'reject' ? (reason ?? null) : null,
+        },
       });
       if (guard.count === 0) {
         throw new ConflictException('Este pedido ya fue revisado por otra solicitud.');
@@ -111,7 +123,7 @@ export class ReviewPaymentUseCase {
             decision === 'approve'
               ? 'Pago aprobado — Bias Market / Payment approved'
               : 'Pago rechazado — Bias Market / Payment rejected',
-          html: buildPaymentStatusEmailHtml(decision, storeName),
+          html: buildPaymentStatusEmailHtml(decision, storeName, reason),
         });
       } catch (err) {
         this.logger.error(`Failed to send payment status email for order ${orderId}`, err);

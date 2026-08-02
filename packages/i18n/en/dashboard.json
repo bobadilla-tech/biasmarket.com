@@ -342,6 +342,18 @@
       "OUT_OF_STOCK": "Out of stock"
     }
   },
+  "payments": {
+    "title": "Payments",
+    "subtitle": "Orders needing payment attention",
+    "titleWithCount": "Payments ({count})",
+    "empty": "No orders need payment attention right now.",
+    "columns": {
+      "paid": "Paid",
+      "pending": "Pending",
+      "progress": "Paid %"
+    },
+    "contactBuyer": "Contact buyer"
+  },
   "shipping": {
     "title": "Shipping",
     "subtitle": "Orders being fulfilled",
@@ -439,6 +451,7 @@
     "confirmStatus": {
       "title": "Confirm status change",
       "body": "Are you sure you want to mark this order as {status}?",
+      "reasonPlaceholder": "Reason for declining (required) — e.g. the proof looks edited",
       "confirm": "Yes, mark it",
       "cancel": "Cancel"
     },

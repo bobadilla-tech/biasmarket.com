@@ -8,8 +8,15 @@ export function useReviewPayment(storeId: string | undefined, fallbackErrorMessa
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ orderId, decision }: { orderId: string; decision: "approve" | "reject" }) =>
-      ordersApi.review(storeId as string, orderId, decision, fallbackErrorMessage),
+    mutationFn: ({
+      orderId,
+      decision,
+      reason,
+    }: {
+      orderId: string;
+      decision: "approve" | "reject";
+      reason?: string;
+    }) => ordersApi.review(storeId as string, orderId, decision, reason, fallbackErrorMessage),
     onSuccess: () => {
       if (!storeId) return;
       queryClient.invalidateQueries({ queryKey: ordersKeys.byStore(storeId) });

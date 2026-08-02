@@ -111,12 +111,24 @@ export class OrderController {
             ...(imageUrl && { imageUrl }),
           },
         });
-        await this.orders.saveStatus(orderId, { paymentStatus: nextStatus }, tx);
+        // A payment that reaches the required amount here must go through
+        // ReviewPaymentUseCase (below, outside this transaction) instead of a
+        // direct status write — that's the only path that decrements real
+        // `stock` (converting the soft-hold `reserved`), runs the domain
+        // transition guard, and sends the buyer email. Writing `VERIFIED`
+        // directly here would leave stock reserved forever, never sold down.
+        if (nextStatus === 'PARTIALLY_PAID') {
+          await this.orders.saveStatus(orderId, { paymentStatus: nextStatus }, tx);
+        }
       });
     } catch (e) {
       throw new BadRequestException(
         e instanceof Error ? e.message : String(e),
       );
+    }
+
+    if (nextStatus === 'VERIFIED') {
+      await this.reviewPayment.execute(orderId, storeId, session.user.id, 'approve');
     }
 
     return this.orders.findRowByIdForStore(orderId, storeId);
@@ -130,7 +142,7 @@ export class OrderController {
     @Session() session: UserSession,
     @Body() dto: ReviewPaymentDto,
   ) {
-    return this.reviewPayment.execute(orderId, storeId, session.user.id, dto.decision);
+    return this.reviewPayment.execute(orderId, storeId, session.user.id, dto.decision, dto.reason);
   }
 
   @Patch(':orderId/fulfillment')

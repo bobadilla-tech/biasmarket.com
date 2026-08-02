@@ -101,7 +101,7 @@ describe('ReviewPaymentUseCase', () => {
     });
     expect(prisma.order.updateMany).toHaveBeenCalledWith({
       where: { id: orderId, paymentStatus: 'PENDING_PAYMENT' },
-      data: { paymentStatus: 'VERIFIED' },
+      data: { paymentStatus: 'VERIFIED', paymentRejectionReason: null },
     });
     expect(prisma.auditLog.create).toHaveBeenCalledWith({
       data: {
@@ -222,6 +222,44 @@ describe('ReviewPaymentUseCase', () => {
       expect.objectContaining({ to: 'buyer@example.com', subject: expect.stringContaining('Pago rechazado') }),
     );
     expect(result).toEqual({ id: orderId, paymentStatus: 'REJECTED' });
+  });
+
+  it('persists the rejection reason on the order when rejecting with a reason', async () => {
+    prisma.order.findUnique.mockResolvedValue({
+      id: orderId,
+      storeId,
+      paymentStatus: 'PENDING_PAYMENT',
+      fulfillmentStatus: 'ORDERING',
+      items: [],
+    });
+    prisma.order.findUniqueOrThrow.mockResolvedValue({ id: orderId, paymentStatus: 'REJECTED' });
+
+    await useCase.execute(orderId, storeId, ownerId, 'reject', 'Comprobante adulterado');
+
+    expect(prisma.order.updateMany).toHaveBeenCalledWith({
+      where: { id: orderId, paymentStatus: 'PENDING_PAYMENT' },
+      data: { paymentStatus: 'REJECTED', paymentRejectionReason: 'Comprobante adulterado' },
+    });
+  });
+
+  it('includes the escaped rejection reason in the buyer email', async () => {
+    prisma.order.findUnique.mockResolvedValue({
+      id: orderId,
+      storeId,
+      paymentStatus: 'PENDING_PAYMENT',
+      fulfillmentStatus: 'ORDERING',
+      customerEmail: 'buyer@example.com',
+      items: [],
+    });
+    prisma.order.findUniqueOrThrow.mockResolvedValue({ id: orderId, paymentStatus: 'REJECTED' });
+
+    await useCase.execute(orderId, storeId, ownerId, 'reject', '<script>alert(1)</script>');
+
+    expect(mailer.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        html: expect.stringContaining('&lt;script&gt;alert(1)&lt;/script&gt;'),
+      }),
+    );
   });
 
   it('rejects approving an already-VERIFIED order', async () => {
