@@ -57,3 +57,12 @@ test("savePaymentMethods POSTs all four methods with their enabled state", async
   );
   expect(JSON.parse(yapeCall![1].body as string)).toEqual({ method: "YAPE", enabled: false });
 });
+
+test("getEnabledPaymentMethods hits the enabled=1 endpoint and returns a plain method list", async () => {
+  apiFetch.mockResolvedValue([{ method: "YAPE" }, { method: "CASH" }]);
+
+  const result = await settingsApi.getEnabledPaymentMethods("store-1");
+
+  expect(apiFetch).toHaveBeenCalledWith("/stores/store-1/payment-methods?enabled=1", {}, undefined);
+  expect(result).toEqual(["YAPE", "CASH"]);
+});

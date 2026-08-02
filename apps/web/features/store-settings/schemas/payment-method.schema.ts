@@ -8,3 +8,11 @@ export const paymentMethodConfigSchema = z.object({
 export const paymentMethodConfigListSchema = z.array(paymentMethodConfigSchema);
 
 export type PaymentMethodConfig = z.infer<typeof paymentMethodConfigSchema>;
+
+// Looser than paymentMethodConfigSchema: the `?enabled=1` filtered response
+// isn't guaranteed to echo back the `enabled` field, only `method`.
+export const enabledPaymentMethodSchema = z.object({
+  method: z.enum(["YAPE", "PLIN", "TRANSFER", "CASH"]),
+});
+
+export const enabledPaymentMethodListSchema = z.array(enabledPaymentMethodSchema);

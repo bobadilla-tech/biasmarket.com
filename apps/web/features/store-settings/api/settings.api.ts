@@ -6,7 +6,10 @@ import {
   isNewPickupPoint,
   type PickupPoint,
 } from "../schemas/delivery.schema";
-import { paymentMethodConfigListSchema } from "../schemas/payment-method.schema";
+import {
+  paymentMethodConfigListSchema,
+  enabledPaymentMethodListSchema,
+} from "../schemas/payment-method.schema";
 import type { StoreThemeConfig } from "@/lib/store-theme";
 
 const PAYMENT_METHOD_TYPES = ["YAPE", "PLIN", "TRANSFER", "CASH"] as const;
@@ -92,6 +95,13 @@ export const settingsApi = {
   async getPaymentMethods(storeId: string) {
     const data = await apiFetch(`/stores/${storeId}/payment-methods`);
     return paymentMethodConfigListSchema.parse(data);
+  },
+
+  // Used by the orders "register payment" method picker — only the enabled
+  // methods, as a plain method list.
+  async getEnabledPaymentMethods(storeId: string, fallbackErrorMessage?: string) {
+    const data = await apiFetch(`/stores/${storeId}/payment-methods?enabled=1`, {}, fallbackErrorMessage);
+    return enabledPaymentMethodListSchema.parse(data).map((entry) => entry.method);
   },
 
   savePaymentMethods: (storeId: string, enabledByMethod: Record<string, boolean>) =>

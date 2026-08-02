@@ -342,6 +342,12 @@
       "OUT_OF_STOCK": "Sin stock"
     }
   },
+  "shipping": {
+    "title": "Envíos",
+    "subtitle": "Pedidos en curso de entrega",
+    "titleWithCount": "Envíos ({count})",
+    "empty": "No hay pedidos en camino por ahora."
+  },
   "orders": {
     "title": "Pedidos",
     "subtitle": "Gestión de pedidos",

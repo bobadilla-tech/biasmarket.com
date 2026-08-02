@@ -42,7 +42,7 @@ const primaryItems: NavItem[] = [
   { key: "products", icon: Package, href: "products" },
   { key: "collections", icon: FolderKanban, href: "collections" },
   { key: "sections", icon: Rows3, href: "sections" },
-  { key: "shipping", icon: Truck },
+  { key: "shipping", icon: Truck, href: "shipping" },
   { key: "payments", icon: CreditCard },
 ];
 

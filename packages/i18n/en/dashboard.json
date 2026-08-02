@@ -342,6 +342,12 @@
       "OUT_OF_STOCK": "Out of stock"
     }
   },
+  "shipping": {
+    "title": "Shipping",
+    "subtitle": "Orders being fulfilled",
+    "titleWithCount": "Shipping ({count})",
+    "empty": "No orders in transit right now."
+  },
   "orders": {
     "title": "Orders",
     "subtitle": "Order management",
