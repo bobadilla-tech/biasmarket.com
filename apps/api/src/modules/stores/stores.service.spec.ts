@@ -11,7 +11,7 @@ describe('StoresService', () => {
     deliveryMethodConfig: { create: Mock };
     paymentMethodConfig: { createMany: Mock };
     storeSection: { findMany: Mock };
-    product: { findMany: Mock };
+    product: { findMany: Mock; findUnique: Mock };
     order: { findMany: Mock };
     $transaction: Mock;
   };
@@ -30,7 +30,7 @@ describe('StoresService', () => {
       deliveryMethodConfig: { create: vi.fn() },
       paymentMethodConfig: { createMany: vi.fn() },
       storeSection: { findMany: vi.fn() },
-      product: { findMany: vi.fn() },
+      product: { findMany: vi.fn(), findUnique: vi.fn() },
       order: { findMany: vi.fn() },
       $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(prisma)),
     };
@@ -393,6 +393,62 @@ describe('StoresService', () => {
           },
         }),
       );
+    });
+  });
+
+  describe('findPublicProduct', () => {
+    it('throws NotFoundException when the store does not exist', async () => {
+      prisma.store.findUnique.mockResolvedValue(null);
+      await expect(service.findPublicProduct('missing', 'product-1')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('throws NotFoundException when the product belongs to a different store', async () => {
+      prisma.store.findUnique.mockResolvedValue({ id: 'store-1', slug: 'my-store', name: 'My Store', logoUrl: null });
+      prisma.product.findUnique.mockResolvedValue({
+        id: 'product-1',
+        storeId: 'other-store',
+        status: 'PUBLISHED',
+        deletedAt: null,
+      });
+
+      await expect(service.findPublicProduct('my-store', 'product-1')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('throws NotFoundException for a DRAFT or soft-deleted product', async () => {
+      prisma.store.findUnique.mockResolvedValue({ id: 'store-1', slug: 'my-store', name: 'My Store', logoUrl: null });
+      prisma.product.findUnique.mockResolvedValue({
+        id: 'product-1',
+        storeId: 'store-1',
+        status: 'DRAFT',
+        deletedAt: null,
+      });
+
+      await expect(service.findPublicProduct('my-store', 'product-1')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('returns the store summary and product for a published, owned product', async () => {
+      prisma.store.findUnique.mockResolvedValue({ id: 'store-1', slug: 'my-store', name: 'My Store', logoUrl: null });
+      prisma.product.findUnique.mockResolvedValue({
+        id: 'product-1',
+        storeId: 'store-1',
+        status: 'PUBLISHED',
+        deletedAt: null,
+        name: 'Album',
+        variants: [],
+      });
+
+      const result = await service.findPublicProduct('my-store', 'product-1');
+
+      expect(result).toEqual({
+        store: { name: 'My Store', slug: 'my-store', logoUrl: null },
+        product: expect.objectContaining({ id: 'product-1', name: 'Album' }),
+      });
     });
   });
 });

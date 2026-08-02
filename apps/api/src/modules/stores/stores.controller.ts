@@ -92,6 +92,12 @@ export class StoresController {
     return this.stores.findCategoriesPublic(slug);
   }
 
+  @Public()
+  @Get(':slug/products/:productId/public')
+  findPublicProduct(@Param('slug') slug: string, @Param('productId') productId: string) {
+    return this.stores.findPublicProduct(slug, productId);
+  }
+
   @UseGuards(AuthGuard)
   @Post(':storeId/logo')
   @UseInterceptors(FileInterceptor('file'))

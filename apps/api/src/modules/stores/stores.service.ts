@@ -293,6 +293,29 @@ export class StoresService {
     });
   }
 
+  async findPublicProduct(slug: string, productId: string) {
+    const store = await this.prisma.store.findUnique({ where: { slug } });
+    if (!store) throw new NotFoundException('Tienda no encontrada');
+
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+      include: { variants: true },
+    });
+    if (
+      !product ||
+      product.storeId !== store.id ||
+      product.status !== 'PUBLISHED' ||
+      product.deletedAt !== null
+    ) {
+      throw new NotFoundException('Producto no encontrado');
+    }
+
+    return {
+      store: { name: store.name, slug: store.slug, logoUrl: store.logoUrl },
+      product,
+    };
+  }
+
   async updateLogo(storeId: string, userId: string, url: string) {
     const store = await this.prisma.store.findUnique({ where: { id: storeId } });
     if (!store) throw new NotFoundException('Store no encontrada');
