@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   ArrowLeft,
   Calendar,
@@ -15,92 +15,24 @@ import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { apiFetch } from "@/lib/api";
 import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
-import { useStore } from "@/lib/use-store";
-
-interface Category {
-  id: string;
-  name: string;
-}
-
-interface Variant {
-  id: string;
-  name: string;
-  stock: number | null;
-  reserved: number;
-  priceOverride: string | null;
-  attributes: Record<string, string>;
-}
-
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: string;
-  currency: string;
-  status: "DRAFT" | "PUBLISHED";
-  soldOut: boolean;
-  images: string[];
-  availableUntil: string | null;
-  categories?: { category: Category }[];
-  variants?: Variant[];
-  availableStock?: number | null;
-  soldUnits?: number;
-  createdAt?: string;
-}
-
-function stockTone(stock: number | null | undefined, threshold = 5) {
-  if (stock === null || stock === undefined) return "text-[#2c1647]";
-  if (stock <= 0) return "text-[#d11d52]";
-  if (stock <= threshold) return "text-[#d97706]";
-  return "text-[#159a63]";
-}
+import { useDashboardStore } from "@/features/stores";
+import { useProduct, usePublishProduct, stockTone } from "@/features/products";
 
 export default function ProductDetailsPage() {
   const t = useTranslations("dashboard");
   const tCommon = useTranslations("common");
   const router = useRouter();
   const { productId } = useParams<{ productId: string }>();
-  const { store, storeId, slug, loading: storeLoading } = useStore();
+  const { store, storeId, slug, loading: storeLoading } = useDashboardStore();
 
-  const [product, setProduct] = useState<Product | null>(null);
-  const [variants, setVariants] = useState<Variant[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [publishing, setPublishing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const productQuery = useProduct(storeId, productId, tCommon("networkError"));
+  const product = productQuery.data ?? null;
+  const variants = product?.variants ?? [];
+  const error = productQuery.error instanceof Error ? productQuery.error.message : null;
 
-  useEffect(() => {
-    if (!storeId) return;
-    let ignore = false;
-    setLoading(true);
-    setError(null);
-
-    (async () => {
-      try {
-        const data = await apiFetch(
-          `/stores/${storeId}/products/${productId}`,
-          {},
-          tCommon("networkError"),
-        );
-
-        const loadedVariants = (data?.variants as Variant[] | undefined) ?? [];
-        if (!ignore) {
-          setProduct(data);
-          setVariants(loadedVariants);
-        }
-      } catch (e) {
-        if (!ignore) setError(e instanceof Error ? e.message : String(e));
-      } finally {
-        if (!ignore) setLoading(false);
-      }
-    })();
-
-    return () => {
-      ignore = true;
-    };
-  }, [productId, storeId, tCommon]);
+  const publishProduct = usePublishProduct(storeId, tCommon("networkError"));
 
   const categoryNames = useMemo(
     () => (product?.categories ?? []).map((row) => row.category.name).filter(Boolean),
@@ -136,21 +68,12 @@ export default function ProductDetailsPage() {
     );
   }, [product, t]);
 
-  const handlePublish = async () => {
-    if (!storeId || !product) return;
-    setPublishing(true);
-    setError(null);
-    try {
-      await apiFetch(`/stores/${storeId}/products/${product.id}/publish`, { method: "PATCH" }, tCommon("networkError"));
-      setProduct((prev) => (prev ? { ...prev, status: "PUBLISHED" } : prev));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setPublishing(false);
-    }
+  const handlePublish = () => {
+    if (!product) return;
+    publishProduct.mutate(product.id);
   };
 
-  if (storeLoading || loading) {
+  if (storeLoading || productQuery.isPending) {
     return (
       <div className="flex min-h-screen items-center justify-center px-6 text-sm text-[#8f7da8]">
         {tCommon("loading")}
@@ -227,7 +150,7 @@ export default function ProductDetailsPage() {
               <Button
                 type="button"
                 onClick={handlePublish}
-                disabled={publishing}
+                disabled={publishProduct.isPending}
                 className="store-theme-primary-button h-10 rounded-2xl px-4 text-sm font-semibold hover:opacity-100"
               >
                 {t("products.actions.publish")}

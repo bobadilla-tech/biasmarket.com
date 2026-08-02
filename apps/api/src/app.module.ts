@@ -18,6 +18,7 @@ import { CategoriesModule } from './modules/categories/categories.module.js';
 import { CollectionsModule } from './modules/collections/collections.module.js';
 import { StoreSectionsModule } from './modules/store-sections/store-sections.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
+import { StatsModule } from './modules/stats/stats.module.js';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     CollectionsModule,
     StoreSectionsModule,
     NotificationsModule,
+    StatsModule,
   ],
   controllers: [AppController],
 })

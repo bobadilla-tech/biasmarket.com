@@ -36,7 +36,7 @@ type NavItem = {
 };
 
 const primaryItems: NavItem[] = [
-  { key: "overview", icon: LayoutDashboard },
+  { key: "overview", icon: LayoutDashboard, href: "" },
   { key: "storefront", icon: Store },
   { key: "orders", icon: ShoppingBag, href: "orders" },
   { key: "products", icon: Package, href: "products" },
@@ -82,7 +82,12 @@ function SidebarSection({
       <div className="space-y-1.5">
         {items.map((item) => {
           const Icon = item.icon;
-          const href = item.href ? `/dashboard/${slug}/${item.href}` : undefined;
+          const href =
+            item.href === undefined
+              ? undefined
+              : item.href === ""
+                ? `/dashboard/${slug}`
+                : `/dashboard/${slug}/${item.href}`;
           const isActive = href ? pathname === href : false;
           const label = t(`nav.${item.key}`);
 
