@@ -7,11 +7,12 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 describe('StoresService', () => {
   let service: StoresService;
   let prisma: {
-    store: { findUnique: Mock; create: Mock; findMany: Mock; update: Mock };
+    store: { findUnique: Mock; create: Mock; findMany: Mock; update: Mock; count: Mock };
     deliveryMethodConfig: { create: Mock };
     paymentMethodConfig: { createMany: Mock };
     storeSection: { findMany: Mock };
     product: { findMany: Mock };
+    order: { findMany: Mock };
     $transaction: Mock;
   };
 
@@ -24,11 +25,13 @@ describe('StoresService', () => {
         create: vi.fn(),
         findMany: vi.fn(),
         update: vi.fn(),
+        count: vi.fn(),
       },
       deliveryMethodConfig: { create: vi.fn() },
       paymentMethodConfig: { createMany: vi.fn() },
       storeSection: { findMany: vi.fn() },
       product: { findMany: vi.fn() },
+      order: { findMany: vi.fn() },
       $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(prisma)),
     };
 
@@ -304,6 +307,92 @@ describe('StoresService', () => {
       expect(result.sections[0].collection!.products.map((cp: { productId: string }) => cp.productId)).toEqual([
         productA.id,
       ]);
+    });
+  });
+
+  describe('findFeatured', () => {
+    it('excludes stores below the minimum order-count floor', async () => {
+      prisma.store.findMany.mockResolvedValue([
+        { id: 'store-1', name: 'A', slug: 'a', logoUrl: null },
+      ]);
+      prisma.order.findMany.mockResolvedValue([
+        { storeId: 'store-1', payments: [{ amount: 500 }] },
+        { storeId: 'store-1', payments: [{ amount: 200 }] },
+      ]);
+
+      const result = await service.findFeatured(10);
+
+      expect(result).toEqual([]);
+    });
+
+    it('ranks eligible stores by revenue, tie-broken by order count', async () => {
+      prisma.store.findMany.mockResolvedValue([
+        { id: 'store-1', name: 'A', slug: 'a', logoUrl: null },
+        { id: 'store-2', name: 'B', slug: 'b', logoUrl: null },
+      ]);
+      prisma.order.findMany.mockResolvedValue([
+        { storeId: 'store-1', payments: [{ amount: 50 }] },
+        { storeId: 'store-1', payments: [{ amount: 50 }] },
+        { storeId: 'store-1', payments: [{ amount: 50 }] },
+        { storeId: 'store-2', payments: [{ amount: 100 }] },
+        { storeId: 'store-2', payments: [{ amount: 100 }] },
+        { storeId: 'store-2', payments: [{ amount: 100 }] },
+      ]);
+
+      const result = await service.findFeatured(10);
+
+      expect(result.map((s) => s.id)).toEqual(['store-2', 'store-1']);
+      expect(result[0].revenue).toBe(300);
+      expect(result[0].orderCount).toBe(3);
+    });
+
+    it('scopes eligibility to stores with a published product and a non-banned owner', async () => {
+      prisma.store.findMany.mockResolvedValue([]);
+      prisma.order.findMany.mockResolvedValue([]);
+
+      await service.findFeatured(10);
+
+      expect(prisma.store.findMany).toHaveBeenCalledWith({
+        where: {
+          products: { some: { status: 'PUBLISHED', deletedAt: null } },
+          owner: { banned: { not: true } },
+        },
+        select: { id: true, name: true, slug: true, logoUrl: true },
+      });
+    });
+  });
+
+  describe('findDirectory', () => {
+    it('paginates and filters by name when q is provided', async () => {
+      prisma.store.findMany.mockResolvedValue([{ id: 'store-1', name: 'Kpop Shop', slug: 'kpop', logoUrl: null }]);
+      prisma.store.count.mockResolvedValue(1);
+
+      const result = await service.findDirectory(2, 24, 'kpop');
+
+      expect(prisma.store.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ name: { contains: 'kpop', mode: 'insensitive' } }),
+          skip: 24,
+          take: 24,
+        }),
+      );
+      expect(result).toEqual({ stores: [{ id: 'store-1', name: 'Kpop Shop', slug: 'kpop', logoUrl: null }], total: 1, page: 2, limit: 24 });
+    });
+
+    it('omits the name filter when q is not provided', async () => {
+      prisma.store.findMany.mockResolvedValue([]);
+      prisma.store.count.mockResolvedValue(0);
+
+      await service.findDirectory(1, 24, undefined);
+
+      expect(prisma.store.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            products: { some: { status: 'PUBLISHED', deletedAt: null } },
+            owner: { banned: { not: true } },
+          },
+        }),
+      );
     });
   });
 });

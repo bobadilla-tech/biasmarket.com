@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Patch, UseGuards, Delete, Param, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { Body, Controller, Get, Post, Patch, Query, UseGuards, Delete, Param, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
 import { AuthGuard, Public, Roles, Session } from '@thallesp/nestjs-better-auth';
 import type { UserSession } from '@thallesp/nestjs-better-auth';
 import { StoresService } from './stores.service.js';
@@ -6,6 +6,7 @@ import { UpdateStoreDto } from './dto/update-store.dto.js';
 import { CreateStoreDto } from './dto/create-store.dto.js';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { StorageService } from '../../storage/storage.service.js';
+import { parsePublicListQuery } from '../../common/public-list-query.js';
 
 @Controller('stores')
 export class StoresController {
@@ -59,6 +60,24 @@ export class StoresController {
   @Get('collections/public')
   findCollectionsPublic() {
     return this.stores.findCollectionsPublic();
+  }
+
+  @Public()
+  @Get('featured')
+  findFeatured(@Query('limit') limit: string | undefined) {
+    const parsed = parsePublicListQuery(limit, undefined, undefined);
+    return this.stores.findFeatured(parsed.limit);
+  }
+
+  @Public()
+  @Get('directory')
+  findDirectory(
+    @Query('q') q: string | undefined,
+    @Query('page') page: string | undefined,
+    @Query('limit') limit: string | undefined,
+  ) {
+    const parsed = parsePublicListQuery(limit, page, q);
+    return this.stores.findDirectory(parsed.page, parsed.limit, parsed.q);
   }
 
   @Public()

@@ -1,7 +1,6 @@
 import { expect, test, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from '@biasmarket/i18n';
+import { screen } from '@testing-library/react';
+import { renderWithProviders } from '../test-utils/render-with-providers';
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
@@ -13,11 +12,7 @@ vi.mock('next/navigation', () => ({
 const { default: Page } = await import('../app/[locale]/(marketing)/page');
 
 test('Page', () => {
-  render(
-    <NextIntlClientProvider locale="es" messages={getMessages('es')}>
-      <Page />
-    </NextIntlClientProvider>,
-  );
+  renderWithProviders(<Page />);
   expect(
     screen.getByRole('heading', {
       level: 1,

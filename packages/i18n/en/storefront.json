@@ -49,5 +49,30 @@
       "rejected": "Rejected",
       "cancelled": "Cancelled"
     }
+  },
+  "storeDirectory": {
+    "title": "Discover stores",
+    "subtitle": "Browse every store selling on Bias Market.",
+    "searchPlaceholder": "Search stores by name...",
+    "empty": "No stores found.",
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {page} of {total}"
+  },
+  "productSearch": {
+    "title": "Search products",
+    "subtitle": "Find a product across every store on Bias Market.",
+    "searchPlaceholder": "Search products by name...",
+    "empty": "No products found.",
+    "prompt": "Start typing to search.",
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {page} of {total}",
+    "viewStore": "Sold by {name}"
+  },
+  "productDetail": {
+    "back": "Back to store",
+    "notFound": "Product not found.",
+    "soldOut": "Sold out"
   }
 }

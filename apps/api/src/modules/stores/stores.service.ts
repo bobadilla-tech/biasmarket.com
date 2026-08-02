@@ -112,6 +112,75 @@ export class StoresService {
     });
   }
 
+  // v1 ranking: minimum order-count floor (>=3 VERIFIED orders in the
+  // trailing 30-day window) before ranking by revenue within that eligible
+  // set, tie-broken by order count — plain revenue-only ranking would let a
+  // single large sale outrank many smaller repeat-sale stores with no
+  // tie-break. Computed at request time, same as every other aggregate in
+  // this batch — revisit with a rollup table only if this becomes a real
+  // load concern.
+  async findFeatured(limit: number) {
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const MIN_ORDER_COUNT = 3;
+
+    const candidates = await this.prisma.store.findMany({
+      where: {
+        products: { some: { status: 'PUBLISHED', deletedAt: null } },
+        owner: { banned: { not: true } },
+      },
+      select: { id: true, name: true, slug: true, logoUrl: true },
+    });
+    if (candidates.length === 0) return [];
+
+    const orders = await this.prisma.order.findMany({
+      where: {
+        storeId: { in: candidates.map((c) => c.id) },
+        paymentStatus: 'VERIFIED',
+        createdAt: { gte: since },
+      },
+      select: { storeId: true, payments: { select: { amount: true } } },
+    });
+
+    const revenueByStore = new Map<string, number>();
+    const orderCountByStore = new Map<string, number>();
+    for (const order of orders) {
+      const revenue = order.payments.reduce((sum, p) => sum + Number(p.amount), 0);
+      revenueByStore.set(order.storeId, (revenueByStore.get(order.storeId) ?? 0) + revenue);
+      orderCountByStore.set(order.storeId, (orderCountByStore.get(order.storeId) ?? 0) + 1);
+    }
+
+    return candidates
+      .map((store) => ({
+        ...store,
+        revenue: revenueByStore.get(store.id) ?? 0,
+        orderCount: orderCountByStore.get(store.id) ?? 0,
+      }))
+      .filter((store) => store.orderCount >= MIN_ORDER_COUNT)
+      .sort((a, b) => b.revenue - a.revenue || b.orderCount - a.orderCount)
+      .slice(0, limit);
+  }
+
+  async findDirectory(page: number, limit: number, q: string | undefined) {
+    const where: Prisma.StoreWhereInput = {
+      products: { some: { status: 'PUBLISHED', deletedAt: null } },
+      owner: { banned: { not: true } },
+      ...(q && { name: { contains: q, mode: 'insensitive' as const } }),
+    };
+
+    const [stores, total] = await Promise.all([
+      this.prisma.store.findMany({
+        where,
+        select: { id: true, name: true, slug: true, logoUrl: true },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.store.count({ where }),
+    ]);
+
+    return { stores, total, page, limit };
+  }
+
   async findPublicBySlug(slug: string) {
     const store = await this.prisma.store.findUnique({ where: { slug } });
     if (!store) throw new NotFoundException('Tienda no encontrada');

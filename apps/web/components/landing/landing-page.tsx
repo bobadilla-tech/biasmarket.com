@@ -1,4 +1,5 @@
 import { Footer } from "@/components/marketing/footer";
+import { FeaturedStoresSection } from "@/features/discovery";
 import { Cta } from "./cta";
 import { Faq } from "./faq";
 import { Features } from "./features";
@@ -14,6 +15,7 @@ export function LandingPage() {
       <Hero />
       <Problem />
       <Solution />
+      <FeaturedStoresSection />
       <Features />
       <SocialProof />
       <Cta />

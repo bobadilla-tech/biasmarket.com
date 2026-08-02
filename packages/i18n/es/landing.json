@@ -36,6 +36,10 @@
     ],
     "outro": "Se acabó saltar entre cinco apps para manejar un solo GO."
   },
+  "featuredStores": {
+    "title": "Tiendas destacadas",
+    "subtitle": "Vendedores reales que ya manejan sus GOs en Bias Market."
+  },
   "features": {
     "title": "Hecho para cómo realmente vendes",
     "items": [
