@@ -3,192 +3,238 @@
 Companion to
 [`2026-07-31-platform-growth-features-plan.md`](2026-07-31-platform-growth-features-plan.md)
 (left untouched — that doc's phase numbering/design/open-questions-resolved
-section is still the source of truth for scope). This doc exists because
-implementation started mid-session, a second concurrent Claude Code session was
-independently running the `apps/web` feature-sliced migration
-(`2026-07-31-web-feature-sliced-migration.md`) on the same repo at the same
-time, and that reshaped the ground under several not-yet-built phases enough to
-be worth writing down before continuing. Only what's left + what changed is
-below — full phase design for anything already shipped stays in the original
-doc, not repeated here.
+section is still the source of truth for scope). Only what's left + what
+changed is below — full phase design for anything already shipped stays in the
+original doc, not repeated here.
 
-## Shipped (Phases 4, 1, 2 — done, verified)
+## Status: 14 of 15 phases shipped. Only Phase 12 (buyer accounts) remains.
 
-- **Phase 4** — `StoreSidebar` collapse: `collapsed` state +
-  `localStorage("store-sidebar-collapsed")`, `forceExpanded` prop threaded from
-  `MobileSidebar` so the mobile sheet always renders expanded regardless of
-  desktop toggle state (the exact contradiction the plan review flagged — fixed
-  as designed). `collections`/`sections` given real sidebar `href`s (previously
-  orphaned, URL-only). Dead `categories` link dropped from `dashboard-nav.tsx`.
-  Automated regression test added
-  (`components/dashboard/mobile-sidebar.test.tsx`) and manually verified it
-  actually fails without the fix.
-- **Phase 1** — real `(marketing)` route group created (`page.tsx`, `contact/`,
-  `enterprise/`, `founder/` moved under it via `git mv`), new
-  `components/marketing/navbar.tsx` (session-aware: Sign up/Log in vs. My
-  Account, via `authClient.useSession()`), mobile sheet menu, `hero.tsx`'s old
-  inline nav removed (logo+language-toggle now live in the navbar).
-- **Phase 2** — login redirect fixed (in
-  `features/auth/components/
-  login-form.tsx`, not `login/page.tsx` — see
-  below) to branch on `storesApi.listMine()`: 0 stores → `create-store`, 1 →
-  straight to that store's dashboard, 2+ → `/account`. Duplicate
-  `/stores/me/stores` route deleted from `stores.controller.ts` (dead, unused by
-  the frontend).
+Phases 4, 1, 2 shipped in an earlier session (see git history — commits
+before this doc's current revision). Phases 5, 3, 6, 7, 8, 9, 10, 11, 15, 13,
+14 all shipped and committed in this session, one commit per phase on
+`feat/more-lots`:
 
-Verification for all three: `pnpm exec tsc --noEmit` clean in both
-`apps/web`/`apps/api`, `pnpm exec vitest run` green (24/24 web, 171/171 api at
-time of writing), `pnpm turbo run build --filter=web` succeeds with the expected
-route table. **Not done**: live browser/viewport verification — no browser tool
-is available in this agent environment. Typecheck+tests+build are real signal
-but are not a substitute for an actual mobile pass, especially for Phase 4's
-sidebar, which the requester flagged as the one regression that actually
-matters.
+- `b9f16f5` — Phase 5 (Overview/stats) + Phase 3 (account page) + Phase 6 (My
+  Store resolution), combined because they landed together before the first
+  checkpoint.
+- `ced4c6e` — Phase 7 (Shipping tab).
+- `8e1b9cf` — Phase 8 (Payments tab + decline-with-reason + the `addPayment`
+  stock-decrement bug fix).
+- `27389c3` — Phase 9 (Customers tab).
+- `7ee4c1b` — Phase 10 (Analytics tab).
+- `c5abd55` — Phase 11 (Preferences/Suggestions).
+- `9a0b033` — Phase 15 (Admin Users table).
+- `0ce0aa8` — Phase 13 (Featured stores + directory).
+- `9cbc2af` — Phase 14 (Cross-store product search + product-detail page).
 
-**Known red test as of this doc's last edit, not from this batch's work**:
-`apps/web/features/stores/api/stores.api.test.ts`'s `uploadLogo` error-path test
-fails (`res.json is not a function` instead of the expected thrown message) —
-root cause is `stores.api.ts`'s `uploadLogo` now calling
-`res.json().catch(() => null)` on a mocked `Response` that has no `.json`
-method, so the call throws synchronously before `.catch` ever attaches. This
-landed from the concurrent session's own `features/stores` work (its diff added
-the `res.json()` parse), not from any of Phases 1/2/4 above. Don't assume it's
-yours to fix or that it's stale — re-run `pnpm exec vitest run` fresh before
-doing anything else, since the other session may well have already fixed it by
-the time this doc is read.
+Every commit was verified with `pnpm exec tsc --noEmit` (clean) and
+`pnpm exec vitest run` (green) in both `apps/web`/`apps/api`, plus
+`pnpm turbo run build --filter=web` producing the expected route table, before
+being committed. **Not done, any phase**: live browser/viewport verification —
+no browser tool is available in this agent environment, stated explicitly
+rather than claiming a mobile check that didn't happen.
 
-## What changed under us (read this before touching `features/stores` or auth)
+**Only Phase 12 (buyer accounts: login + profile) is left.** It's explicitly
+the largest/riskiest phase in the original plan — a second, parallel
+authentication system, its own session/cookie handling, CSRF, and rate
+limiting — sequenced last on purpose. Stopped here deliberately rather than
+starting it after 14 other phases in one sitting; see "Starting Phase 12" below
+for what the next session needs to know before touching it.
 
-The concurrent feature-sliced-migration session finished more of its own roadmap
-than existed when the original plan was written. As of now:
+## A concurrent session ran into this one mid-way — what happened, for context
 
-- **`features/auth`** is real: `login/page.tsx` is now a thin wrapper
-  (`<LoginForm />`), all form/validation/redirect logic lives in
-  `features/auth/components/login-form.tsx` (RHF + `zodResolver` +
-  `features/auth/schemas/login.schema.ts`). Phase 2's fix landed here.
-- **`features/stores`** is real and already has: `api/stores.api.ts`
-  (`listMine`, `create`, `uploadLogo`, `remove` — I only wrote `listMine`
-  originally, the other session added the rest while building create-store's
-  migration), `queries/use-my-stores.ts` (`useMyStores`),
-  `mutations/use-create-store.ts`, `mutations/use-delete-store.ts`,
-  `schemas/store.schema.ts` + `schemas/create-store.schema.ts`,
-  `components/create-store-form.tsx` (`CreateStoreForm`),
-  `components/my-stores-list.tsx` (`MyStoresList`). `create-store/page.tsx` is
-  now a 12-line wrapper around these two components.
-- **Implication for Phase 3 (personal account page)**: don't rebuild a stores
-  list from scratch. Start from `useMyStores()` (already returns parsed, typed
-  `Store[]`) and look at `MyStoresList`'s current props/shape before deciding
-  whether to reuse it directly or need a stats-augmented variant (it doesn't
-  carry per-store revenue/order-count — that's Phase 5's job to add, likely as a
-  new `features/stores` query like `useStoreStats(storeId)` sitting next to
-  `useMyStores`, not a separate module).
-- **Implication for Phase 5 (overview/stats)**: same feature folder is the
-  natural home for a `features/stores/queries/use-store-stats.ts` (or a new
-  `features/stats` folder if the aggregation genuinely spans more than `Store` —
-  decide when you get there, but check `features/stores`'s current contents
-  first since it may have grown further by the time this phase starts).
-- **General rule for the rest of this batch**: before editing any file under
-  `apps/web`, re-check its current state — a second live session can and did
-  change files out from under this one mid-task with no conflict markers, just a
-  changed file. This was confirmed harmless twice (both times additive, not
-  contradictory), but isn't guaranteed to stay that way.
-- **`features/store-settings` has appeared and is actively growing** (seen as of
-  this doc's last edit: `api/settings.api.ts`,
-  `components/
-  profile-section.tsx`+`section-primitives.tsx`, mutations for
-  profile/appearance/delivery/payment-methods/stock-alerts,
-  `queries/use-payment-methods.ts`+`use-delivery-settings.ts`, matching schemas)
-  — this is the concurrent session splitting the monolithic `settings/page.tsx`
-  (still 1118 lines, not yet swapped over to these pieces as of this doc's last
-  edit) section-by-section. **Directly relevant to Phase 6** ("My Store"
-  resolution touches the settings sidebar entry/label) **and Phase 8** (Payments
-  tab needs the payment-method config data — `use-payment-methods.ts` may
-  already be exactly what it should read from, check there before writing a new
-  query). Re-check `features/store-settings` and `settings/page.tsx`'s actual
-  current state before starting either phase — by the time work resumes here,
-  the split may already be finished.
+Partway through this session (after Phase 6, before Phase 7), a `git stash` ran
+on this repo that wasn't triggered by this session — it turned out another
+Claude Code session was running in parallel on the same working tree. It
+stashed several in-progress uncommitted edits (the Overview page rewrite, a
+sidebar edit, two i18n files) into `stash@{0}` ("WIP on feat/more-lots"), and a
+second unrelated stash (`stash@{1}`) showed that same activity had also been
+switching to a different branch (`feat/admin-panel`) at some point. The user
+confirmed it was their other Claude Code session and asked to redo the lost
+edits by hand (not pop the stash, since it also held the other session's own
+in-flight work) and commit as soon as things were stable, so they could safely
+resume that other session and tell it not to stash anymore.
 
-## Conventions confirmed working (apply to every remaining phase)
+Net effect: no work was actually lost (everything was recovered by hand,
+re-verified, and committed), but **this confirms the repo is being actively
+shared with another live session** at least some of the time. Every commit
+from `ced4c6e` onward was staged with explicit file paths (never `git add -A`
+or `git add .`) specifically to avoid sweeping up that other session's
+uncommitted work into this session's commits — one exception:
+`docs/plans/2026-08-02-web-app-audit-fixes-plan.md` (the other session's own
+plan doc, unrelated to this batch) got swept into the `8e1b9cf` commit despite
+being unstaged moments before — almost certainly a staging race from the other
+session running its own `git add`/`git commit` between this session's `git
+add` and `git commit` calls. Harmless (it's their own file, correctly
+attributed to them in content, just not in which commit carried it), but worth
+knowing: **the staging step and the commit step are not atomic against a
+concurrent session touching the index** — re-check `git status` immediately
+before `git commit`, not just before `git add`, if this happens again.
+
+**If starting Phase 12 in a new session**: re-run the same baseline check this
+session started with — `pnpm exec tsc --noEmit` and `pnpm exec vitest run` in
+both apps — before touching anything, and don't trust this doc's file
+inventory below without re-reading the actual files first. The other session
+may have shipped more of its own work (or, per the incident above, may still
+be active) since this was written.
+
+## Deviations from the original plan doc, with reasons
+
+- **Phase 8's `paymentRejectionReason` field lives on `Order`, not
+  `OrderPayment`** as the original plan suggested. Reason: traced through
+  `ReviewPaymentUseCase.execute()` and confirmed it flips `Order.paymentStatus`
+  wholesale via `tx.order.updateMany(...)` — there is no per-`OrderPayment`
+  reference anywhere in the review flow (the `PaymentProof` model exists in
+  the schema with a `status`/`reviewedBy` shape that looks like it should be
+  the reviewed entity, but a full-repo grep confirms it's completely dormant,
+  never created or read by any code path). Putting the reason on `Order`
+  matches what the code actually reviews. New migration:
+  `packages/db/prisma/migrations/20260802163702_add_payment_rejection_reason/`.
+- **Phase 7/8's shared row-rendering component didn't need extracting** — the
+  concurrent session had already migrated `orders/page.tsx` to a
+  `features/orders` slice (`OrdersTable`, `OrderStatusBadge`,
+  `ConfirmTransitionDialog`, `useOptimisticStatusChange`, etc.) partway through
+  this session, ahead of when Phase 7 was reached. Shipping and Payments both
+  reuse those pieces directly instead of duplicating or re-extracting
+  anything — see `dashboard/[slug]/shipping/page.tsx` and
+  `dashboard/[slug]/payments/page.tsx`.
+- **Phase 7's `GET /stores/:storeId/orders` param-shape change never
+  happened** — the plan assumed the endpoint only supported single
+  exact-match `paymentStatus`/`fulfillmentStatus` filters and would need a new
+  IN-list param shape for Shipping's `fulfillmentStatus IN (...)` filter. By
+  the time Phase 7 was reached, the concurrent session's `features/orders`
+  migration had already moved all tab/status filtering to the client
+  (`ordersApi.list()` fetches every order unfiltered, `matchesTab()` filters
+  in JS) — so Shipping and Payments both just filter the same unfiltered
+  `useOrders()` result client-side instead. No backend param change was
+  needed or made.
+- **`ConfirmTransitionDialog` gained an optional reason textarea** (Phase 8)
+  rather than building a separate reject-with-reason dialog — it's the same
+  component Shipping uses for its COMPLETED-transition confirm, now with
+  `reason`/`onReasonChange`/`reasonRequired` props that no-op when omitted.
+- **Phase 13's ranking/eligibility check is computed with two Prisma queries
+  (one relation-filter `where`, one `groupBy`-style JS reduce over trailing
+  30-day orders)**, not a single query — Prisma's relation filters
+  (`products: { some: {...} }`, `owner: { banned: { not: true } }`) handle
+  eligibility, then revenue/order-count ranking is computed in JS the same way
+  Phase 5/10 do it. No precedent existed in this codebase for the
+  `owner: { banned }` filter shape before this — added a test asserting the
+  exact `where` clause since there was nothing to copy from.
+
+## Conventions confirmed working (apply to Phase 12 and any future work)
 
 - `features/<name>/{schemas,api,queries,mutations,components}` +
   `apps/web/test-utils/render-with-providers.tsx` (wraps
   `NextIntlClientProvider` + a fresh `QueryClientProvider` per test) is the
-  standing pattern — used it for Phase 2's new tests, works cleanly.
+  standing pattern, used for every phase this session.
+- Every new i18n key lives in `packages/db`-sibling `packages/i18n/{en,es}/*.json`
+  — and **`packages/i18n` and `packages/utils` are both dist-based workspace
+  packages** (`main`/`types` point at `dist/`, not source) — after editing any
+  `packages/i18n/**/*.json` or `packages/utils/src/**`, run
+  `pnpm --filter @biasmarket/i18n build` / `pnpm --filter @biasmarket/utils
+  build` before `apps/web`'s typecheck will see the change. This bit twice
+  this session (new i18n keys not showing up in `apps/web`'s `Messages` type
+  until the dist rebuild ran).
+- **`packages/db` also needs `prisma generate`** after any `schema.prisma`
+  change, and Prisma 7's `prisma generate` needs a `DATABASE_URL` env var
+  present (even though `generate` itself never opens a DB connection) — e.g.
+  `DATABASE_URL="postgresql://ultirequiem@localhost:5432/biasmarket" pnpm
+  db:generate`. Migrations in this session were hand-written
+  (`migration.sql` files matching the existing naming/style convention) rather
+  than run live against a database, specifically to avoid touching the
+  running dev Postgres container's actual schema state from an agent session
+  — `prisma migrate deploy` on the docker `api` container picks them up at
+  next boot per the existing deploy convention.
 - **Mocking navigation in tests**: mock `next/navigation`'s
   `useRouter`/`usePathname`/`redirect`/`permanentRedirect` — not
-  `@/i18n/navigation` directly, since `@/i18n/navigation`'s `createNavigation`
-  wraps the former and runs its own (unmocked, real) locale-prefixing logic on
-  top. **This means `router.push`/`Link href` calls in a test actually arrive
-  locale-prefixed** (e.g. `push("/account")` shows up in the mock as
-  `"/es/account"` when the test renders with the `es` locale) — assert on the
-  prefixed path, not the bare one, or the assertion will silently never match.
-- **`localStorage` in jsdom**: `window.localStorage` is not reliably present in
-  this repo's vitest+jsdom setup (a Node experimental-global warning shows up:
-  `localStorage is not available because --localstorage-file was not
-  provided`).
-  Any test that touches `localStorage` needs
-  `vi.stubGlobal("localStorage", <small in-memory Storage fake>)` — don't assume
-  `window.localStorage.setItem(...)` just works in a test the way it does in the
-  browser. Relevant for Phase 4 (done, worked around) and any of Phase 9/11's
-  client-only persisted UI state.
-- Tailwind arbitrary-value classes (`w-[76px]`, `w-[280px]`) get flagged by this
-  repo's editor tooling with a canonical-scale suggestion (`w-19`, `w-70`) — use
-  the scale class when one resolves exactly, don't reach for brackets by
-  default.
+  `@/i18n/navigation` directly. `router.push`/`Link href` calls in a test
+  arrive locale-prefixed (e.g. `push("/account")` → asserted as `/es/account`
+  under the `es` locale).
+- **`localStorage` in jsdom** needs `vi.stubGlobal("localStorage", <fake>)` —
+  not reliably present otherwise.
+- **next-intl + a dynamic (runtime-determined) message key**: when a key isn't
+  known at compile time (e.g. Phase 11's suggestion `titleKey` coming from the
+  backend), `useTranslations(...)`'s strict per-namespace key typing rejects a
+  template-string key. Fix used: cast the `t` function itself to a plain
+  `(key: string, values?: Record<string, string | number>) => string`
+  signature at the point of declaration, not the individual call sites (see
+  `features/suggestions/components/suggestion-card.tsx`).
+- **NestJS controller unit tests need `@thallesp/nestjs-better-auth` mocked**
+  whenever the controller under test has `@UseGuards(AuthGuard)`/`@Roles(...)`
+  at the class or method level — otherwise `Test.createTestingModule` fails
+  trying to resolve `AuthGuard`'s real constructor deps. Standing pattern
+  (copy verbatim):
+  ```ts
+  vi.mock('@thallesp/nestjs-better-auth', () => ({
+    AuthGuard: class AuthGuard {},
+    Session: () => () => undefined,
+    Roles: () => () => undefined, // only if the controller uses @Roles
+  }));
+  ```
+  Used in every new controller spec this session
+  (`order.controller.spec.ts`, `users.controller.spec.ts`).
+- Tailwind arbitrary-value classes (`w-[76px]`) get flagged by this repo's
+  editor tooling in favor of the canonical scale (`w-19`) when one resolves
+  exactly.
 - `authClient.useSession()` returns `isPending` alongside `data` — check it
-  (used in the new navbar to avoid a Sign-up/My-Account flash before the session
-  resolves) rather than treating `data == null` as "logged out."
-- The `forceExpanded`-prop pattern from Phase 4 (same component instance
-  rendered in two contexts, one context must override the other's persisted
-  local state) is the template if this need recurs elsewhere in the batch.
-- No browser/screenshot tool is available in this agent environment this
-  session. State that explicitly rather than claiming a mobile check that didn't
-  happen — typecheck/vitest/`next build`'s route table are the actual extent of
-  automated verification available here.
+  rather than treating `data == null` as "logged out."
+- No browser/screenshot tool is available in this agent environment.
+  Typecheck/vitest/`next build`'s route table are the actual extent of
+  automated verification possible here — every phase this session said so
+  explicitly rather than claiming a mobile check that didn't happen.
+- **Public/unauthenticated cross-store endpoints** (`@Public()` decorator from
+  `@thallesp/nestjs-better-auth`) all share one validation helper,
+  `apps/api/src/common/public-list-query.ts` — `limit` (default 24, max 50),
+  `page` (default 1, positive int), `q` (trimmed, capped at 100 chars, blank
+  → `undefined`), everything else 400s. Reuse this for anything new in the
+  public-discovery space rather than re-deriving the bounds per endpoint.
 
-## Remaining phases (unchanged in scope/design from the original doc)
+## Starting Phase 12 (buyer accounts) — what the next session needs
 
-Full design for each is in the original plan doc — only noting deltas here.
+Full design is in the original plan doc's Phase 12 section — this is only the
+delta/context a fresh session won't otherwise have.
 
-- **Phase 5 — Overview/stats**: as designed. New `stats` module in `apps/api`;
-  frontend home is likely `features/stores` (see above) rather than a brand-new
-  `features/stats` folder, decide at implementation time based on how far
-  `features/stores` has grown by then.
-- **Phase 3 — Personal account page**: as designed (single-store primary case,
-  multi-store card list, `changePassword` action). Reuse
-  `useMyStores`/`MyStoresList` per the note above instead of rebuilding.
-- **Phase 6 — Resolve "My Store"**: as designed (confirmed answer: drop the
-  placeholder, add a "View store" link — no distinct concept exists).
-- **Phase 7 — Shipping tab**: as designed, including the corrected mobile note
-  (`orders/page.tsx` is a table, not a card layout — design for that, don't
-  assume a freebie) and the required order-list filter param change.
-- **Phase 8 — Payments tab**: as designed, **with the resolved interpretation
-  baked in**: "request more payment" means seller-facing visibility into the
-  outstanding amount so they can manually message the buyer (WhatsApp deep link)
-  — not wiring up the dormant `PaymentMethodConfig.depositPercent*`
-  automated-deposit columns, which stay out of scope. The `addPayment`
-  stock-decrement bug fix and the decline-with-reason schema addition are both
-  still in scope and unchanged.
-- **Phase 9 — Customers tab**: as designed, including the corrected mobile
-  default (card/grid, not `products/page.tsx`'s list-by-default table pattern).
-- **Phase 10 — Analytics tab**: as designed. Charting library confirmed:
-  **`recharts`**.
-- **Phase 11 — Preferences/Suggestions**: as designed (rule-based, no AI).
-- **Phase 15 — Admin Users table**: as designed, **use better-auth's `admin`
-  plugin client methods** (`authClient.admin.listUsers/banUser/
-  unbanUser`)
-  rather than hand-rolled endpoints — only the per-user store-count needs a new
-  small backend endpoint.
-- **Phase 13 — Featured stores + directory**: as designed. Algorithm confirmed:
-  minimum order-count floor (≥3 verified orders in the trailing 30-day window) +
-  revenue sort, tie-broken by order count.
-- **Phase 14 — Cross-store product search**: as designed, including building a
-  real product-detail route (none exists today) as part of this phase, not a
-  pre-existing target to link to.
-- **Phase 12 — Buyer accounts (login + profile)**: **confirmed in scope for this
-  batch** (not split into a follow-up doc), sequenced last. Session storage:
-  follow the existing pattern — stateless HMAC-signed token/cookie matching the
-  current magic-link mechanism, not a new `CustomerSession` DB table.
-
-Recommended remaining order (unchanged): 5, 3, 6, 7, 8, 9, 10, 11, 15, 13,
-14, 12.
+- **Re-verify the concurrent-session risk is resolved** before starting —
+  check `git log --oneline -5` and `git stash list`; if a stash exists that
+  this doc didn't create, stop and ask before touching anything (see the
+  incident writeup above).
+- **This phase is exactly as scoped in the original doc, nothing shipped
+  ahead of it** — no `customer-auth` module, no `CustomerSessionGuard`, no
+  buyer-facing login/register/profile pages exist yet. `Customer.passwordHash`
+  is still nullable and completely unused. The magic-link flow
+  (`features/account`, `CustomerAccountService`,
+  `apps/api/src/modules/orders/infrastructure/customer-account.controller.ts`)
+  is the only buyer-identity mechanism live today, and per the plan it must
+  keep working unchanged alongside whatever Phase 12 adds.
+- **Session storage decision already made** (per the original plan's
+  "resolved" section): stateless, HMAC-signed token/cookie following the
+  existing `createCustomerAccountToken`/`verifyCustomerAccountToken`
+  /`CUSTOMER_ACCOUNT_TOKEN_SECRET` pattern already used by the magic-link
+  flow — not a new `CustomerSession` DB table. Read
+  `apps/api/src/modules/orders/application/customer-account.service.ts` (or
+  wherever that token helper actually lives now — re-check, it may have moved)
+  before designing the new login-session token, since the plan wants the same
+  primitive reused, not reinvented.
+- **Password hashing**: the plan says to check what better-auth uses
+  internally and reuse the same primitive rather than adding a second hashing
+  dependency. Not yet investigated this session — first task of Phase 12
+  proper.
+- **Rate limiting**: the plan requires wiring up `@nestjs/throttler` on both
+  the seller and buyer login endpoints if this phase ships at all — it's
+  already an installed dependency per `docs/core/deploy.md`'s known-gaps list,
+  just never wired in. This is not optional cleanup, it's called out as
+  required alongside this phase specifically because a second password-login
+  surface makes the existing "no rate limiting" gap materially worse.
+- **CSRF/origin validation** on the new state-changing customer-account
+  endpoints is required per the plan, and is *not* covered by the general
+  "CSRF out of scope" note elsewhere in the codebase's deploy docs — that
+  exemption doesn't extend to this new surface.
+- **Frontend**: needs its own small session-aware header for the storefront
+  (`store/[slug]/...`), separate from Phase 1's marketing navbar and separate
+  from the seller dashboard sidebar — three distinct nav/session surfaces will
+  exist in the app after this phase (marketing, seller dashboard, buyer
+  storefront), don't conflate them.
+- Given the size, consider whether this phase itself should be split into a
+  backend-first checkpoint (customer-auth module + guard + endpoints, fully
+  tested) before starting the frontend pages, rather than attempting the whole
+  phase in one pass the way the smaller phases were done this session.
