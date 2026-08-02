@@ -342,6 +342,23 @@
       "OUT_OF_STOCK": "Sin stock"
     }
   },
+  "analytics": {
+    "title": "Analíticas",
+    "subtitle": "Crecimiento a lo largo del tiempo",
+    "range": {
+      "30d": "30 días",
+      "90d": "90 días",
+      "12m": "12 meses"
+    },
+    "revenueTitle": "Ingresos",
+    "ordersTitle": "Pedidos",
+    "newVsReturningTitle": "Clientes nuevos vs. recurrentes",
+    "newCustomers": "Nuevos",
+    "returningCustomers": "Recurrentes",
+    "topProductsTitle": "Productos más vendidos",
+    "topProductsEmpty": "Todavía no hay ventas en este período.",
+    "unitsSold": "{count} vendidos"
+  },
   "customers": {
     "title": "Clientes",
     "subtitle": "Todos los que compraron en tu tienda",

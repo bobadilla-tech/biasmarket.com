@@ -1,6 +1,10 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import type { FulfillmentStatus, PaymentStatus, Prisma } from '@biasmarket/db';
 import { PrismaService } from '../../prisma/prisma.service.js';
+import { buildBuckets } from './analytics-buckets.js';
+import type { AnalyticsRange, AnalyticsResult } from './analytics.types.js';
+
+const TOP_PRODUCTS_LIMIT = 5;
 
 const PAYMENT_STATUSES: PaymentStatus[] = [
   'PENDING_PAYMENT',
@@ -103,5 +107,101 @@ export class StatsService {
       lowStockCount,
       recentOrders: recentOrdersRaw.map((order) => this.withPaymentSummary(order)),
     };
+  }
+
+  async getAnalytics(storeId: string, userId: string, range: AnalyticsRange): Promise<AnalyticsResult> {
+    await this.assertOwnership(storeId, userId);
+
+    const buckets = buildBuckets(range);
+    const rangeStart = buckets[0].start;
+    const rangeEnd = buckets[buckets.length - 1].end;
+
+    const [rangeOrders, allCustomerOrders, topProductRows] = await Promise.all([
+      this.prisma.order.findMany({
+        where: { storeId, createdAt: { gte: rangeStart, lt: rangeEnd } },
+        select: {
+          customerId: true,
+          createdAt: true,
+          paymentStatus: true,
+          payments: { select: { amount: true } },
+        },
+      }),
+      this.prisma.order.findMany({
+        where: { storeId, customerId: { not: null } },
+        select: { customerId: true, createdAt: true },
+      }),
+      this.prisma.orderItem.groupBy({
+        by: ['productId'],
+        where: { storeId, order: { createdAt: { gte: rangeStart, lt: rangeEnd } } },
+        _sum: { quantity: true },
+        orderBy: { _sum: { quantity: 'desc' } },
+        take: TOP_PRODUCTS_LIMIT,
+      }),
+    ]);
+
+    // The customer a bucket's orders belong to is only "returning" if they
+    // have ordered before — determined from this store's FULL order history,
+    // not just the orders inside the requested range (a customer whose only
+    // prior order predates the range must still show as returning, not new).
+    const firstOrderAtByCustomer = new Map<string, Date>();
+    for (const order of allCustomerOrders) {
+      const customerId = order.customerId as string;
+      const existing = firstOrderAtByCustomer.get(customerId);
+      if (!existing || order.createdAt < existing) {
+        firstOrderAtByCustomer.set(customerId, order.createdAt);
+      }
+    }
+
+    const analyticsBuckets = buckets.map(({ start, end }) => {
+      const ordersInBucket = rangeOrders.filter(
+        (order) => order.createdAt >= start && order.createdAt < end,
+      );
+
+      const revenue = ordersInBucket
+        .filter((order) => order.paymentStatus === 'VERIFIED')
+        .reduce(
+          (sum, order) => sum + order.payments.reduce((s, p) => s + Number(p.amount), 0),
+          0,
+        );
+
+      const customersInBucket = new Set(
+        ordersInBucket.map((order) => order.customerId).filter((id): id is string => !!id),
+      );
+
+      let newCustomers = 0;
+      let returningCustomers = 0;
+      for (const customerId of customersInBucket) {
+        const firstOrderAt = firstOrderAtByCustomer.get(customerId);
+        if (firstOrderAt && firstOrderAt >= start && firstOrderAt < end) {
+          newCustomers += 1;
+        } else {
+          returningCustomers += 1;
+        }
+      }
+
+      return {
+        start: start.toISOString(),
+        end: end.toISOString(),
+        revenue,
+        orderCount: ordersInBucket.length,
+        newCustomers,
+        returningCustomers,
+      };
+    });
+
+    const productIds = topProductRows.map((row) => row.productId);
+    const products = await this.prisma.product.findMany({
+      where: { id: { in: productIds } },
+      select: { id: true, name: true },
+    });
+    const productNameById = new Map(products.map((p) => [p.id, p.name]));
+
+    const topProducts = topProductRows.map((row) => ({
+      productId: row.productId,
+      name: productNameById.get(row.productId) ?? '',
+      unitsSold: row._sum.quantity ?? 0,
+    }));
+
+    return { range, buckets: analyticsBuckets, topProducts };
   }
 }

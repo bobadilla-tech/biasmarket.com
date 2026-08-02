@@ -11,6 +11,8 @@ describe('StatsService', () => {
     orderPayment: { aggregate: Mock };
     order: { groupBy: Mock; findMany: Mock };
     notification: { count: Mock };
+    orderItem: { groupBy: Mock };
+    product: { findMany: Mock };
   };
 
   const ownerId = 'user-1';
@@ -22,6 +24,8 @@ describe('StatsService', () => {
       orderPayment: { aggregate: vi.fn() },
       order: { groupBy: vi.fn(), findMany: vi.fn() },
       notification: { count: vi.fn() },
+      orderItem: { groupBy: vi.fn() },
+      product: { findMany: vi.fn() },
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -134,6 +138,90 @@ describe('StatsService', () => {
           take: 10,
         }),
       );
+    });
+  });
+
+  describe('getAnalytics', () => {
+    beforeEach(() => stubOwnedStore());
+
+    it('buckets revenue from VERIFIED orders only, and order count from every order', async () => {
+      const now = new Date('2026-08-15T12:00:00Z');
+      vi.useFakeTimers();
+      vi.setSystemTime(now);
+
+      prisma.order.findMany
+        .mockResolvedValueOnce([
+          {
+            customerId: 'customer-1',
+            createdAt: new Date('2026-08-15T01:00:00Z'),
+            paymentStatus: 'VERIFIED',
+            payments: [{ amount: 40 }],
+          },
+          {
+            customerId: 'customer-2',
+            createdAt: new Date('2026-08-15T02:00:00Z'),
+            paymentStatus: 'PENDING_PAYMENT',
+            payments: [],
+          },
+        ])
+        .mockResolvedValueOnce([
+          { customerId: 'customer-1', createdAt: new Date('2026-08-15T01:00:00Z') },
+          { customerId: 'customer-2', createdAt: new Date('2026-08-15T02:00:00Z') },
+        ]);
+      prisma.orderItem.groupBy.mockResolvedValue([]);
+      prisma.product.findMany.mockResolvedValue([]);
+
+      const result = await service.getAnalytics(storeId, ownerId, '30d');
+
+      const todayBucket = result.buckets[result.buckets.length - 1];
+      expect(todayBucket.revenue).toBe(40);
+      expect(todayBucket.orderCount).toBe(2);
+
+      vi.useRealTimers();
+    });
+
+    it('classifies a customer as new only in the bucket containing their first-ever order', async () => {
+      const now = new Date('2026-08-15T12:00:00Z');
+      vi.useFakeTimers();
+      vi.setSystemTime(now);
+
+      prisma.order.findMany
+        .mockResolvedValueOnce([
+          {
+            customerId: 'customer-1',
+            createdAt: new Date('2026-08-15T01:00:00Z'),
+            paymentStatus: 'VERIFIED',
+            payments: [],
+          },
+        ])
+        .mockResolvedValueOnce([
+          // This customer's first-ever order was before the visible range —
+          // they must still be "returning", not "new", inside the range.
+          { customerId: 'customer-1', createdAt: new Date('2026-01-01T00:00:00Z') },
+          { customerId: 'customer-1', createdAt: new Date('2026-08-15T01:00:00Z') },
+        ]);
+      prisma.orderItem.groupBy.mockResolvedValue([]);
+      prisma.product.findMany.mockResolvedValue([]);
+
+      const result = await service.getAnalytics(storeId, ownerId, '30d');
+
+      const todayBucket = result.buckets[result.buckets.length - 1];
+      expect(todayBucket.newCustomers).toBe(0);
+      expect(todayBucket.returningCustomers).toBe(1);
+
+      vi.useRealTimers();
+    });
+
+    it('resolves top product names from the aggregated orderItem groupBy', async () => {
+      prisma.order.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+      prisma.orderItem.groupBy.mockResolvedValue([
+        { productId: 'product-1', _sum: { quantity: 12 } },
+      ]);
+      prisma.product.findMany.mockResolvedValue([{ id: 'product-1', name: 'Widget' }]);
+
+      const result = await service.getAnalytics(storeId, ownerId, '30d');
+
+      expect(result.topProducts).toEqual([{ productId: 'product-1', name: 'Widget', unitsSold: 12 }]);
     });
   });
 });

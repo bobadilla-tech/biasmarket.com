@@ -48,7 +48,7 @@ const primaryItems: NavItem[] = [
 
 const growthItems: NavItem[] = [
   { key: "customers", icon: Users, href: "customers" },
-  { key: "analytics", icon: BarChart3 },
+  { key: "analytics", icon: BarChart3, href: "analytics" },
   { key: "notifications", icon: Bell, href: "notifications" },
 ];
 

@@ -37,3 +37,12 @@ test("getOverview throws when the response fails schema validation", async () =>
 
   await expect(statsApi.getOverview("store-1")).rejects.toThrow();
 });
+
+test("getAnalytics calls the store-scoped analytics endpoint with the range query param", async () => {
+  apiFetch.mockResolvedValueOnce({ range: "30d", buckets: [], topProducts: [] });
+
+  const result = await statsApi.getAnalytics("store-1", "30d");
+
+  expect(apiFetch).toHaveBeenCalledWith("/stores/store-1/stats/analytics?range=30d");
+  expect(result.range).toBe("30d");
+});
