@@ -10,11 +10,17 @@ vi.mock('@thallesp/nestjs-better-auth', () => ({
 
 describe('CustomerAuthController', () => {
   let controller: CustomerAuthController;
-  let service: { register: Mock; login: Mock; changePassword: Mock };
+  let service: { register: Mock; login: Mock; changePassword: Mock; getProfile: Mock; updateProfile: Mock };
   let res: { cookie: Mock };
 
   beforeEach(async () => {
-    service = { register: vi.fn(), login: vi.fn(), changePassword: vi.fn() };
+    service = {
+      register: vi.fn(),
+      login: vi.fn(),
+      changePassword: vi.fn(),
+      getProfile: vi.fn(),
+      updateProfile: vi.fn(),
+    };
     res = { cookie: vi.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -68,5 +74,25 @@ describe('CustomerAuthController', () => {
     expect(service.changePassword).toHaveBeenCalledWith('customer-1', 'old-1', 'new-1');
     expect(res.cookie).toHaveBeenCalledWith('bm_customer_session', 'new-signed-token', expect.any(Object));
     expect(result).toEqual({ ok: true });
+  });
+
+  it('me() delegates to the service with the slug and session', async () => {
+    const session = { id: 'customer-1', storeId: 'store-1' };
+    service.getProfile.mockResolvedValue({ customer: {}, orders: [] });
+
+    const result = await controller.me('my-store', session);
+
+    expect(service.getProfile).toHaveBeenCalledWith('my-store', session);
+    expect(result).toEqual({ customer: {}, orders: [] });
+  });
+
+  it('updateMe() delegates to the service with the slug, session, and name', async () => {
+    const session = { id: 'customer-1', storeId: 'store-1' };
+    service.updateProfile.mockResolvedValue({ name: 'New Name' });
+
+    const result = await controller.updateMe('my-store', session, { name: 'New Name' });
+
+    expect(service.updateProfile).toHaveBeenCalledWith('my-store', session, 'New Name');
+    expect(result).toEqual({ name: 'New Name' });
   });
 });

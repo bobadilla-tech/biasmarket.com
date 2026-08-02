@@ -1,5 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, ConflictException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { vi, type Mock } from 'vitest';
 import { hashPassword } from 'better-auth/crypto';
 import { createCustomerAccountToken, verifyCustomerSessionToken } from '@biasmarket/utils/customer-account-token';
@@ -9,8 +15,9 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 describe('CustomerAuthService', () => {
   let service: CustomerAuthService;
   let prisma: {
-    customer: { findUnique: Mock; update: Mock };
+    customer: { findUnique: Mock; findUniqueOrThrow: Mock; update: Mock };
     store: { findUnique: Mock };
+    order: { findMany: Mock };
   };
 
   const store = { id: 'store-1', slug: 'my-store' };
@@ -19,8 +26,9 @@ describe('CustomerAuthService', () => {
     process.env.CUSTOMER_ACCOUNT_TOKEN_SECRET = 'test-secret';
 
     prisma = {
-      customer: { findUnique: vi.fn(), update: vi.fn() },
+      customer: { findUnique: vi.fn(), findUniqueOrThrow: vi.fn(), update: vi.fn() },
       store: { findUnique: vi.fn().mockResolvedValue(store) },
+      order: { findMany: vi.fn() },
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -179,6 +187,73 @@ describe('CustomerAuthService', () => {
       await expect(service.changePassword('customer-1', 'anything', 'new-password-1')).rejects.toBeInstanceOf(
         UnauthorizedException,
       );
+    });
+  });
+
+  describe('getProfile', () => {
+    const session = { id: 'customer-1', storeId: store.id };
+
+    it('returns the customer plus their order history, scoped to their own store', async () => {
+      prisma.customer.findUniqueOrThrow.mockResolvedValue({
+        id: 'customer-1',
+        storeId: store.id,
+        name: 'Jane',
+        email: 'jane@example.com',
+        phone: '+51988888888',
+        emailVerified: true,
+      });
+      const orders = [{ id: 'order-1', paymentStatus: 'VERIFIED', fulfillmentStatus: 'READY' }];
+      prisma.order.findMany.mockResolvedValue(orders);
+
+      const result = await service.getProfile('my-store', session);
+
+      expect(result).toEqual({
+        customer: { name: 'Jane', email: 'jane@example.com', phone: '+51988888888', emailVerified: true },
+        orders,
+      });
+      expect(prisma.order.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { customerId: 'customer-1', storeId: store.id } }),
+      );
+    });
+
+    it('rejects when the route slug belongs to a different store than the session', async () => {
+      prisma.store.findUnique.mockResolvedValue({ id: 'other-store-id', slug: 'a-different-store' });
+
+      await expect(service.getProfile('a-different-store', session)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+      expect(prisma.customer.findUniqueOrThrow).not.toHaveBeenCalled();
+    });
+
+    it('rejects when the store does not exist', async () => {
+      prisma.store.findUnique.mockResolvedValue(null);
+
+      await expect(service.getProfile('missing-store', session)).rejects.toBeInstanceOf(NotFoundException);
+    });
+  });
+
+  describe('updateProfile', () => {
+    const session = { id: 'customer-1', storeId: store.id };
+
+    it('updates the name only', async () => {
+      prisma.customer.update.mockResolvedValue({ name: 'New Name' });
+
+      const result = await service.updateProfile('my-store', session, 'New Name');
+
+      expect(prisma.customer.update).toHaveBeenCalledWith({
+        where: { id: 'customer-1' },
+        data: { name: 'New Name' },
+      });
+      expect(result).toEqual({ name: 'New Name' });
+    });
+
+    it('rejects when the route slug belongs to a different store than the session', async () => {
+      prisma.store.findUnique.mockResolvedValue({ id: 'other-store-id', slug: 'a-different-store' });
+
+      await expect(service.updateProfile('a-different-store', session, 'New Name')).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+      expect(prisma.customer.update).not.toHaveBeenCalled();
     });
   });
 });

@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -107,5 +108,53 @@ export class CustomerAuthService {
     await this.prisma.customer.update({ where: { id: customer.id }, data: { passwordHash } });
 
     return this.issueSessionToken(customer.id, customer.storeId, passwordHash);
+  }
+
+  // `slug` comes from the route, `session.storeId` from the signed cookie —
+  // asserting they match is what stops a valid session for store A from
+  // reading/editing a profile through store B's URL. Same ownership-check
+  // discipline as `assertOwnership` elsewhere in the codebase, just against
+  // a store slug instead of a User-owned resource.
+  private async assertStoreMatch(slug: string, storeId: string) {
+    const store = await this.findStoreBySlug(slug);
+    if (store.id !== storeId) throw new ForbiddenException('No autorizado');
+  }
+
+  async getProfile(slug: string, session: { id: string; storeId: string }) {
+    await this.assertStoreMatch(slug, session.storeId);
+
+    const customer = await this.prisma.customer.findUniqueOrThrow({ where: { id: session.id } });
+    const orders = await this.prisma.order.findMany({
+      where: { customerId: customer.id, storeId: customer.storeId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        paymentStatus: true,
+        fulfillmentStatus: true,
+        totalAmount: true,
+        currency: true,
+        createdAt: true,
+      },
+    });
+
+    return {
+      customer: {
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone,
+        emailVerified: customer.emailVerified,
+      },
+      orders,
+    };
+  }
+
+  async updateProfile(slug: string, session: { id: string; storeId: string }, name: string) {
+    await this.assertStoreMatch(slug, session.storeId);
+
+    const customer = await this.prisma.customer.update({
+      where: { id: session.id },
+      data: { name },
+    });
+    return { name: customer.name };
   }
 }
