@@ -1,8 +1,10 @@
 import { Body, Controller, Get, Param, Patch, Post, Res, UseGuards } from '@nestjs/common';
 import { Public } from '@thallesp/nestjs-better-auth';
+import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { CustomerAuthService } from './customer-auth.service.js';
 import { CustomerSessionGuard } from './customer-session.guard.js';
+import { OriginGuard } from './origin.guard.js';
 import { CustomerSession } from './customer-session.decorator.js';
 import { RegisterCustomerDto } from './dto/register-customer.dto.js';
 import { LoginCustomerDto } from './dto/login-customer.dto.js';
@@ -25,12 +27,16 @@ export class CustomerAuthController {
   constructor(private customerAuth: CustomerAuthService) {}
 
   @Public()
+  @UseGuards(OriginGuard, ThrottlerGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
   @Post('register')
   register(@Param('slug') slug: string, @Body() dto: RegisterCustomerDto) {
     return this.customerAuth.register(slug, dto.token, dto.password);
   }
 
   @Public()
+  @UseGuards(OriginGuard, ThrottlerGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
   @Post('login')
   async login(
     @Param('slug') slug: string,
@@ -43,7 +49,7 @@ export class CustomerAuthController {
   }
 
   @Public()
-  @UseGuards(CustomerSessionGuard)
+  @UseGuards(CustomerSessionGuard, OriginGuard)
   @Post('change-password')
   async changePassword(
     @CustomerSession() session: { id: string; storeId: string },
@@ -67,7 +73,7 @@ export class CustomerAuthController {
   }
 
   @Public()
-  @UseGuards(CustomerSessionGuard)
+  @UseGuards(CustomerSessionGuard, OriginGuard)
   @Patch('me')
   updateMe(
     @Param('slug') slug: string,

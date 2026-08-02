@@ -8,6 +8,11 @@ vi.mock('@thallesp/nestjs-better-auth', () => ({
   Public: () => () => undefined,
 }));
 
+vi.mock('@nestjs/throttler', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@nestjs/throttler')>();
+  return { ...actual, ThrottlerGuard: class ThrottlerGuard {} };
+});
+
 describe('CustomerAuthController', () => {
   let controller: CustomerAuthController;
   let service: { register: Mock; login: Mock; changePassword: Mock; getProfile: Mock; updateProfile: Mock };

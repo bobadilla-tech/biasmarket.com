@@ -87,6 +87,21 @@ export const createAuth = (prisma: PrismaService, mailer: MailerService): Auth =
       }),
     ],
     trustedOrigins: [process.env.WEB_URL ?? 'http://localhost:3001'],
+    // Better-auth mounts its handler via `httpAdapter.use()` inside its own
+    // module's `onModuleInit` (raw Express middleware, before Nest's router
+    // even runs) — so a Nest `@nestjs/throttler` guard can never reach
+    // `/sign-in/email` and friends, no matter how it's registered. This is
+    // better-auth's own native rate limiter instead, which runs inside its
+    // request handling and is guaranteed to apply. It defaults to
+    // `enabled: isProduction`; forced on here so it's active in every
+    // environment, matching the buyer-login throttling added alongside it
+    // (see modules/customer-auth). Its built-in default rule already covers
+    // sign-in/sign-up/change-password/change-email paths at 3 requests per
+    // 10s (see better-auth's `getDefaultSpecialRules`) — stricter than the
+    // buyer-side 5/60s, so no `customRules` override is needed here.
+    rateLimit: {
+      enabled: true,
+    },
     advanced: {
       // Without this, every better-auth call that sends an email (signup
       // verification, sign-in resend above) awaits it inline, blocking the
