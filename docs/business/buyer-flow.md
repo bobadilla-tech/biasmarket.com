@@ -8,48 +8,13 @@
       ┌────────────────┼────────────────┐
       │                │                │
       ▼                ▼                ▼
-Productos         Categorías        Buscar
-destacados                           producto
-      │
-      ▼
-Selecciona un producto
-      │
-      ▼
-Página del producto
-/store/korealexa/products/skz-album
-      │
-      ├────────────────────────────┐
-      │                            │
-      ▼                            ▼
-Ver información             Ver tienda
-del producto                (KoreaLexa)
-                                   │
-                                   ▼
-                         /store/korealexa
-                                   │
-                                   ▼
-                     Explora más productos
-                                   │
-                                   └───────────────┐
-                                                   │
-                                                   ▼
-                                        Regresa al producto
-                                                   │
-                                                   ▼
-                                        Selecciona variante
-                                   (Standard / Limited / etc.)
-                                                   │
-                                                   ▼
-                                         Agregar al carrito
-                                                   │
-                                                   ▼
-                                               Carrito
-                                                   │
-                                                   ▼
-                                              Checkout
-                                                   │
-                                                   ▼
-                                      Escoge método de entrega
+
+Productos Categorías Buscar destacados producto │ ▼ Selecciona un producto │ ▼
+Página del producto /store/korealexa/products/skz-album │
+├────────────────────────────┐ │ │ ▼ ▼ Ver información Ver tienda del producto
+(KoreaLexa) │ ▼ /store/korealexa │ ▼ Explora más productos │ └───────────────┐ │
+▼ Regresa al producto │ ▼ Selecciona variante (Standard / Limited / etc.) │ ▼
+Agregar al carrito │ ▼ Carrito │ ▼ Checkout │ ▼ Escoge método de entrega
 
                                      • Recojo
                                      • Envío

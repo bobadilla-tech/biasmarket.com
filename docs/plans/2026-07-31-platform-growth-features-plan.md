@@ -77,9 +77,9 @@ Requester's stated priorities, in the requester's own words, condensed:
   render feature TanStack Query hooks instead of calling transports directly;
   feature `api/` modules call `apiFetch` and validate every response with
   `schema.parse(data)`; feature-local schemas and zod-inferred types live under
-  `apps/web/features/<name>/schemas/`; each feature exposes a barrel
-  `index.ts`; and new forms use the repository's established
-  `react-hook-form` + `@hookform/resolvers/zod` stack.
+  `apps/web/features/<name>/schemas/`; each feature exposes a barrel `index.ts`;
+  and new forms use the repository's established `react-hook-form` +
+  `@hookform/resolvers/zod` stack.
 - **Every store-scoped query filters by `storeId` and re-verifies ownership**
   via the existing `assertOwnership`/`findOwnedProduct`-style pattern
   (`products.service.ts`) — no new endpoint gets a pass on this.
@@ -508,8 +508,8 @@ faked Yape screenshot) with a stated reason.
   payment-review history model if richer audit detail is needed. This preserves
   the reason for each rejected proof across partial-payment reviews. Set it on
   the specific `OrderPayment`/review record when
-  `ReviewPaymentUseCase.execute(..., 'reject', reason)` runs; keep it `null`
-  for approve paths.
+  `ReviewPaymentUseCase.execute(..., 'reject', reason)` runs; keep it `null` for
+  approve paths.
 - **Backend**: `ReviewPaymentUseCase.execute` gains an optional `reason` param;
   `review-payment.controller` route (wherever the review endpoint is wired —
   confirm exact file, likely `order.controller.ts` or a dedicated review
@@ -617,12 +617,11 @@ revenue-over-time (bucketed by day/week/month depending on range), order-count
 over time, top products by units sold (reuse the existing `soldUnits`
 aggregation already computed in `products.service.ts`, just resorted/limited
 rather than reimplemented), new-vs-returning customer split. Compute each
-new/returning bucket from date-bounded cumulative order counts per customer:
-for a given bucket, count that customer's orders up through the end of the
-bucket, and classify the customer as returning only when that cumulative count
-exceeds one as of that bucket. Do not use a current-lifetime total to label
-historical buckets unless the metric is explicitly named current-lifetime
-new-vs-returning.
+new/returning bucket from date-bounded cumulative order counts per customer: for
+a given bucket, count that customer's orders up through the end of the bucket,
+and classify the customer as returning only when that cumulative count exceeds
+one as of that bucket. Do not use a current-lifetime total to label historical
+buckets unless the metric is explicitly named current-lifetime new-vs-returning.
 
 Given current expected data volumes (single-store sellers, not high-volume yet),
 a straightforward `groupBy`/date-truncation query against `OrderPayment`/`Order`
@@ -710,11 +709,11 @@ Shape of the work:
   `scrypt`/`bcrypt` under the hood) and reuse the same primitive rather than
   adding a second hashing dependency — confirm exact library before deciding.
 - `POST /stores/:slug/account/register` — sets a password for an existing
-  (checkout-created) `Customer` row only after the requester presents a
-  verified magic-link or OTP claim for that customer; a phone match alone is not
-  enough to create buyer credentials. The verification proof is single-use and
-  must be consumed after successful registration for every password-registration
-  path, including the post-confirmation magic-link "set your password" flow.
+  (checkout-created) `Customer` row only after the requester presents a verified
+  magic-link or OTP claim for that customer; a phone match alone is not enough
+  to create buyer credentials. The verification proof is single-use and must be
+  consumed after successful registration for every password-registration path,
+  including the post-confirmation magic-link "set your password" flow.
 - `POST /stores/:slug/account/login` — phone + password, per-store scoped (a
   phone can be a `Customer` in multiple stores independently, per the existing
   `@@unique([storeId, phone])` constraint) — issues a session scoped to
