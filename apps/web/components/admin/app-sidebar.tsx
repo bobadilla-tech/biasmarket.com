@@ -28,7 +28,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { href: "/admin/inquiries", labelKey: "inquiries", icon: Inbox },
   { href: "/admin/stores", labelKey: "stores", icon: Store },
-  { href: "/admin/users", labelKey: "users", icon: Users, disabled: true },
+  { href: "/admin/users", labelKey: "users", icon: Users },
 ];
 
 export function AppSidebar() {

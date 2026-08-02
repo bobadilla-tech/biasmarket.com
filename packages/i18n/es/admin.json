@@ -43,5 +43,25 @@
       "impersonate": "Suplantar",
       "impersonating": "Suplantando..."
     }
+  },
+  "users": {
+    "title": "Usuarios",
+    "empty": "Todavía no hay usuarios.",
+    "table": {
+      "name": "Nombre",
+      "email": "Correo",
+      "role": "Rol",
+      "stores": "Tiendas",
+      "status": "Estado",
+      "actions": "Acciones"
+    },
+    "status": {
+      "active": "Activo",
+      "banned": "Suspendido"
+    },
+    "actions": {
+      "ban": "Suspender",
+      "unban": "Reactivar"
+    }
   }
 }
