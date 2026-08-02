@@ -197,7 +197,7 @@
       "customers": "Clientes",
       "analytics": "Analíticas",
       "settings": "Configuración",
-      "ideas": "Sugerencias",
+      "preferences": "Preferencias",
       "notifications": "Notificaciones"
     },
     "soon": "Pronto",
@@ -340,6 +340,30 @@
     "types": {
       "LOW_STOCK": "Stock bajo",
       "OUT_OF_STOCK": "Sin stock"
+    }
+  },
+  "preferences": {
+    "title": "Preferencias",
+    "subtitle": "Sugerencias basadas en la actividad de tu tienda",
+    "empty": "No hay sugerencias por ahora — vuelve más tarde.",
+    "dismiss": "Descartar",
+    "suggestions": {
+      "lowStock": {
+        "title": "Reabastece tus productos con poco stock",
+        "body": "{count} producto(s) tienen poco o nada de stock."
+      },
+      "staleOrders": {
+        "title": "Algunos pedidos necesitan seguimiento",
+        "body": "{count} pedido(s) llevan más de {hours}h esperando el pago."
+      },
+      "noRecentOrders": {
+        "title": "Sin pedidos recientes",
+        "body": "No hubo pedidos en los últimos {days} días — revisa que tu configuración de pago y entrega sea fácil de encontrar."
+      },
+      "topSeller": {
+        "title": "Destaca tu producto más vendido",
+        "body": "{name} es tu producto más vendido con {count} unidades vendidas — considera reabastecerlo o destacarlo."
+      }
     }
   },
   "analytics": {

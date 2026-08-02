@@ -54,7 +54,7 @@ const growthItems: NavItem[] = [
 
 const settingsItems: NavItem[] = [
   { key: "settings", icon: Settings, href: "settings" },
-  { key: "ideas", icon: Lightbulb },
+  { key: "preferences", icon: Lightbulb, href: "preferences" },
 ];
 
 function SidebarSection({

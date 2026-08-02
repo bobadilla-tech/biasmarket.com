@@ -197,7 +197,7 @@
       "customers": "Customers",
       "analytics": "Analytics",
       "settings": "Configuration",
-      "ideas": "Suggestions",
+      "preferences": "Preferences",
       "notifications": "Notifications"
     },
     "soon": "Soon",
@@ -340,6 +340,30 @@
     "types": {
       "LOW_STOCK": "Low stock",
       "OUT_OF_STOCK": "Out of stock"
+    }
+  },
+  "preferences": {
+    "title": "Preferences",
+    "subtitle": "Suggestions based on your store's activity",
+    "empty": "No suggestions right now — check back later.",
+    "dismiss": "Dismiss",
+    "suggestions": {
+      "lowStock": {
+        "title": "Restock your low-stock items",
+        "body": "{count} product(s) are low or out of stock."
+      },
+      "staleOrders": {
+        "title": "Some orders need follow-up",
+        "body": "{count} order(s) have been awaiting payment for over {hours}h."
+      },
+      "noRecentOrders": {
+        "title": "No recent orders",
+        "body": "No orders in the last {days} days — check that your payment and delivery setup is easy for buyers to find."
+      },
+      "topSeller": {
+        "title": "Feature your best seller",
+        "body": "{name} is your top seller with {count} units sold — consider restocking or featuring it."
+      }
     }
   },
   "analytics": {
