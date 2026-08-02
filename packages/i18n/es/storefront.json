@@ -48,7 +48,30 @@
       "verified": "Pago confirmado",
       "rejected": "Rechazado",
       "cancelled": "Cancelado"
+    },
+    "setPassword": {
+      "title": "Configura una contraseña",
+      "subtitle": "Configura una contraseña para ingresar directamente la próxima vez, sin necesitar un nuevo enlace por correo.",
+      "passwordPlaceholder": "Contraseña (mín. 8 caracteres)",
+      "confirmPasswordPlaceholder": "Confirmar contraseña",
+      "submit": "Configurar contraseña",
+      "submitting": "Guardando...",
+      "success": "Contraseña configurada — ya puedes ingresar con tu número de teléfono.",
+      "passwordTooShort": "Debe tener al menos 8 caracteres",
+      "passwordsDontMatch": "Las contraseñas no coinciden",
+      "genericError": "Algo salió mal. Intenta de nuevo.",
+      "goToLogin": "Ingresar"
     }
+  },
+  "loginPage": {
+    "title": "Ingresar",
+    "phonePlaceholder": "Teléfono (WhatsApp)",
+    "passwordPlaceholder": "Contraseña",
+    "phoneRequired": "Ingresa tu número de teléfono",
+    "passwordRequired": "Ingresa tu contraseña",
+    "invalidCredentials": "Teléfono o contraseña inválidos",
+    "submit": "Ingresar",
+    "submitting": "Ingresando..."
   },
   "storeDirectory": {
     "title": "Descubre tiendas",

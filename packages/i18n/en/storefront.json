@@ -48,7 +48,30 @@
       "verified": "Payment confirmed",
       "rejected": "Rejected",
       "cancelled": "Cancelled"
+    },
+    "setPassword": {
+      "title": "Set a password",
+      "subtitle": "Set a password to log in directly next time, without needing a new email link.",
+      "passwordPlaceholder": "Password (min. 8 characters)",
+      "confirmPasswordPlaceholder": "Confirm password",
+      "submit": "Set password",
+      "submitting": "Saving...",
+      "success": "Password set — you can now log in with your phone number.",
+      "passwordTooShort": "Must be at least 8 characters",
+      "passwordsDontMatch": "Passwords don't match",
+      "genericError": "Something went wrong. Try again.",
+      "goToLogin": "Log in"
     }
+  },
+  "loginPage": {
+    "title": "Log in",
+    "phonePlaceholder": "Phone (WhatsApp)",
+    "passwordPlaceholder": "Password",
+    "phoneRequired": "Enter your phone number",
+    "passwordRequired": "Enter your password",
+    "invalidCredentials": "Invalid phone or password",
+    "submit": "Log in",
+    "submitting": "Logging in..."
   },
   "storeDirectory": {
     "title": "Discover stores",

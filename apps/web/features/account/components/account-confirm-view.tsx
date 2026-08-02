@@ -1,5 +1,6 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { SetPasswordForm } from "@/features/customer-auth";
 import type { AccountOrder, ConfirmResult } from "../schemas/confirm-result.schema";
 
 function statusLabel(
@@ -16,9 +17,11 @@ function statusLabel(
 
 export function AccountConfirmView({
   slug,
+  token,
   result,
 }: {
   slug: string;
+  token: string;
   result: ConfirmResult;
 }) {
   const t = useTranslations("storefront.accountConfirmPage");
@@ -57,6 +60,8 @@ export function AccountConfirmView({
             ))
           )}
         </div>
+
+        <SetPasswordForm slug={slug} token={token} />
 
         <Link href={`/store/${slug}`} className="store-theme-link text-center font-semibold">
           {t("backToStore")}

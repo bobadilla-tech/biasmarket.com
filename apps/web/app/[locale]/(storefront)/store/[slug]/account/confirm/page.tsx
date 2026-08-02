@@ -29,7 +29,7 @@ export default function AccountConfirmPage() {
     return <ErrorFallback slug={slug} t={t} />;
   }
 
-  return <AccountConfirmView slug={slug} result={data} />;
+  return <AccountConfirmView slug={slug} token={token} result={data} />;
 }
 
 function ErrorFallback({
