@@ -8,7 +8,7 @@ built-in proof-of-payment review, no Stripe required.
 
 ## Stack
 
-Next.js · NestJS · Prisma · PostgreSQL · Docker · Cloudflare R2 · JWT · Resen
+Next.js · NestJS · Prisma · PostgreSQL · Docker · Cloudflare R2 · JWT · Resend
 
 ## Getting started
 
