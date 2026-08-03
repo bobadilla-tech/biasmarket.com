@@ -237,3 +237,96 @@ seller session. Don't conflate any of the three.
 
 Re-run the full verification bar before each commit, not just once at the
 end — this repo has shown it can change under you mid-session.
+
+## Shipped (2026-08-02)
+
+All 5 steps landed on `feat/more-lots`, one commit each, in the order
+above:
+
+1. `20bbf71` — `customer-auth` module skeleton: `CustomerSessionGuard`,
+   register/login/change-password, session token functions added to
+   `@biasmarket/utils/customer-account-token` (same file, per the plan).
+2. `86f6573` — `GET`/`PATCH .../account/me`.
+3. `a69f7ba` — `OriginGuard` (Origin/Referer same-origin check) on every
+   state-changing route, `@nestjs/throttler` on buyer register/login,
+   better-auth's native `rateLimit` turned on for the seller's own
+   sign-in/sign-up/change-password (its built-in default rule already
+   covers those paths at 3 req/10s once enabled — no `customRules` needed).
+4. `4ac65b2` — `features/customer-auth` frontend slice, `/store/[slug]/
+   account/login` page, registration folded into the existing confirm page
+   (`SetPasswordForm` in `AccountConfirmView`) rather than a separate
+   `/register` route.
+5. `fa647f0` — `/store/[slug]/account` profile page, `AccountNavLink`
+   header widget wired into `store/[slug]/layout.tsx`.
+
+### Decisions made while implementing (not fully pinned down in the plan)
+
+- **Session token "version"**: instead of adding a `passwordChangedAt`
+  column, the session token embeds a hash-derived fingerprint of
+  `Customer.passwordHash` itself (`derivePasswordVersion` in
+  `customer-auth.service.ts`) — changing the password changes the hash,
+  which naturally invalidates old tokens with no schema migration needed.
+- **Register single-use enforcement**: the magic-link token is the
+  "verified proof," reused as-is (not consumed/marked invalid). Single-use
+  for registration specifically comes from rejecting the call once
+  `Customer.passwordHash` is already set — simpler than adding a
+  single-use grant table, but means the same magic-link token can still be
+  replayed for *other* purposes (e.g. `confirmAccount`) within its 30-day
+  TTL. Accepted as consistent with the existing magic-link flow's own
+  security model.
+- **Session renewal**: fixed 7-day token TTL, but `CustomerSessionGuard`
+  reissues a fresh cookie on every authenticated request (sliding renewal)
+  — an active session never expires mid-use; idle ones expire 7 days after
+  last use.
+- **PATCH `.../account/me`**: `name` only. Email/phone changes need a
+  verification step not built in this pass — left out of the DTO entirely
+  (not silently accepted), and the frontend profile page shows all three
+  fields read-only rather than a partial edit UI.
+- **Logout endpoint**: `POST .../account/logout` — not in the original
+  plan, added in step 5 because the header widget needs a way to sign out
+  and the session cookie is HttpOnly (frontend can't clear it directly).
+  Public, unguarded — logging out an already-invalid session is a harmless
+  no-op.
+- **Rate limiting on the seller's own login**: `@nestjs/throttler` can't
+  reach it — `@thallesp/nestjs-better-auth` mounts its handler via
+  `httpAdapter.use()` inside its own `onModuleInit`, as raw Express
+  middleware ahead of Nest's router, so no Nest guard (global or
+  route-level) ever sees those requests. Used better-auth's own native
+  `rateLimit` config instead (`auth.config.ts`), which runs inside its
+  request handling and is guaranteed to apply.
+- **Header placement**: `AccountNavLink` is a small fixed-position pill
+  (top-right), mirroring the existing `CartLink`'s fixed-position
+  convention, rather than a full nav bar layout change across every
+  storefront page — lower risk with no browser tool available to visually
+  verify a bigger layout change.
+
+### Known gaps / follow-ups for whoever picks this up next
+
+- A customer revisiting an old magic-link confirmation URL after already
+  setting a password still sees the "set a password" CTA on the confirm
+  page; submitting it surfaces the backend's "already registered" error
+  instead of the CTA being hidden upfront. The confirm-account response
+  doesn't currently expose whether a password is already set — fixing this
+  cleanly means either adding a field to that response or querying session
+  state separately on that page.
+- No email/phone change flow (verification-gated) — see PATCH decision
+  above.
+- No "forgot password" flow for a buyer who set a password and lost it —
+  only the original magic-link path exists as a recovery mechanism (it
+  still works, since `confirmAccount` was kept unchanged), but there's no
+  direct "reset password" entry point from the login page.
+- **No browser/live check was possible in this environment** — every step
+  was verified via `tsc --noEmit`, `vitest run`, and `pnpm turbo run build
+  --filter=web` (confirms the new routes appear in the build's route
+  table), never in an actual browser. Visual/interaction QA (styling,
+  responsive layout, the fixed-position header pill not overlapping page
+  content on smaller viewports, real end-to-end login/register/logout
+  flows against a running API) is still outstanding.
+- This repo was actively shared with another concurrent Claude Code
+  session throughout this work. An automated commit unrelated to this
+  session (`3b6880`, `"tweaks: session limit"`) swept up this session's
+  then-in-progress `customer-auth` files alongside a large batch of the
+  other session's work (admin/checkout/collections/sections/contact
+  features) partway through step 5. Nothing was lost or corrupted — verify
+  this yourself with `git log --oneline` and `git show --stat 3b6880` if
+  anything looks unfamiliar before building further on this branch.
