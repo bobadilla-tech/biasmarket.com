@@ -30,7 +30,11 @@ import {
   useOrders,
 } from "@/features/orders";
 
-const SHIPPING_FULFILLMENT_STATUSES = new Set(["ORDERING", "IN_TRANSIT", "READY"]);
+const SHIPPING_FULFILLMENT_STATUSES = new Set([
+  "ORDERING",
+  "IN_TRANSIT",
+  "READY",
+]);
 
 export function ShippingPageClient() {
   const t = useTranslations("dashboard.shipping");
@@ -42,17 +46,20 @@ export function ShippingPageClient() {
     storeId,
     tCommon("networkError"),
   );
-  const { pending, scheduleAdvance, advanceFulfillment } = useOptimisticStatusChange(
-    storeId,
-    tOrders,
-  );
+  const { pending, scheduleAdvance, advanceFulfillment } =
+    useOptimisticStatusChange(
+      storeId,
+      tOrders,
+    );
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [confirmTarget, setConfirmTarget] = useState<{
-    orderId: string;
-    nextStatus: string;
-    label: string;
-  } | null>(null);
+  const [confirmTarget, setConfirmTarget] = useState<
+    {
+      orderId: string;
+      nextStatus: string;
+      label: string;
+    } | null
+  >(null);
 
   const fulfillmentLabels: Record<string, string> = {
     ORDERING: tOrders("fulfillmentLabels.ORDERING"),
@@ -103,7 +110,11 @@ export function ShippingPageClient() {
   if (error) {
     return (
       <div className="px-5 py-6 lg:px-8 lg:py-8">
-        <ErrorState message={error instanceof Error ? error.message : tCommon("networkError")} />
+        <ErrorState
+          message={error instanceof Error
+            ? error.message
+            : tCommon("networkError")}
+        />
       </div>
     );
   }
@@ -120,22 +131,26 @@ export function ShippingPageClient() {
 
         <Card className="overflow-x-auto rounded-[30px] border-[#eadcf8] bg-white py-0 shadow-sm">
           <CardContent className="px-0">
-            {shippingOrders.length === 0 ? (
-              <div className="px-6 py-10 text-sm text-[#8f7da8]">{t("empty")}</div>
-            ) : (
-              <OrdersTable
-                orders={shippingOrders}
-                pendingOrderIds={new Set(Object.keys(pending))}
-                fulfillmentLabels={fulfillmentLabels}
-                onApprove={() => undefined}
-                onReject={() => undefined}
-                onAdvance={handleAdvance}
-                onView={(order) => {
-                  setSelectedOrderId(order.id);
-                  setDetailsOpen(true);
-                }}
-              />
-            )}
+            {shippingOrders.length === 0
+              ? (
+                <div className="px-6 py-10 text-sm text-[#8f7da8]">
+                  {t("empty")}
+                </div>
+              )
+              : (
+                <OrdersTable
+                  orders={shippingOrders}
+                  pendingOrderIds={new Set(Object.keys(pending))}
+                  fulfillmentLabels={fulfillmentLabels}
+                  onApprove={() => undefined}
+                  onReject={() => undefined}
+                  onAdvance={handleAdvance}
+                  onView={(order) => {
+                    setSelectedOrderId(order.id);
+                    setDetailsOpen(true);
+                  }}
+                />
+              )}
           </CardContent>
         </Card>
       </div>
@@ -148,80 +163,102 @@ export function ShippingPageClient() {
         }}
       >
         <SheetContent className="h-dvh w-[420px] gap-0 overflow-y-auto sm:max-w-[420px]">
-          {selectedOrder ? (
-            <>
-              <SheetHeader>
-                <SheetTitle>
-                  {tOrders("details.title", { number: getOrderNumber(selectedOrder.id) })}
-                </SheetTitle>
-                <SheetDescription>
-                  {selectedOrder.customerName ?? selectedOrder.customerPhone}
-                </SheetDescription>
-              </SheetHeader>
-
-              <div className="space-y-6 px-4 pb-24 pt-4">
-                <div className="space-y-3 rounded-[24px] border border-[#eadcf8] bg-gradient-to-b from-[#fcf9ff] to-white p-5 shadow-sm">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-[#8f7da8]">{tOrders("details.delivery")}</span>
-                    <span className="font-semibold text-[#2d1649]">
-                      {getDeliveryLabel(selectedOrder, tOrders)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-[#8f7da8]">{tOrders("details.date")}</span>
-                    <span className="font-semibold text-[#2d1649]">
-                      {formatOrderDate(selectedOrder.createdAt, locale, tOrders)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-[#8f7da8]">{tOrders("columns.status")}</span>
-                    <OrderStatusBadge order={selectedOrder} />
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#927fac]">
-                    {tOrders("details.items")}
-                  </p>
-                  <div className="space-y-2">
-                    {selectedOrder.items.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-start justify-between rounded-2xl border border-[#f0e7f8] bg-white px-4 py-3"
-                      >
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-[#2d1649]">
-                            {item.product.name}
-                            {item.variant?.name ? ` (${item.variant.name})` : ""}
-                          </p>
-                          <p className="text-xs text-[#8f7da8]">
-                            {tOrders("details.quantity", { count: item.quantity })}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <SheetFooter className="sticky bottom-0 border-t border-[#f0e7f8] bg-white px-4 py-4">
-                {NEXT_FULFILLMENT[selectedOrder.fulfillmentStatus] ? (
-                  <Button
-                    type="button"
-                    className="store-theme-primary-button h-11 w-full rounded-2xl text-sm font-semibold hover:opacity-100"
-                    onClick={() => {
-                      handleAdvance(selectedOrder);
-                      setDetailsOpen(false);
-                    }}
-                  >
-                    {tOrders("markAs", {
-                      status: fulfillmentLabels[NEXT_FULFILLMENT[selectedOrder.fulfillmentStatus]!],
+          {selectedOrder
+            ? (
+              <>
+                <SheetHeader>
+                  <SheetTitle>
+                    {tOrders("details.title", {
+                      number: getOrderNumber(selectedOrder.id),
                     })}
-                  </Button>
-                ) : null}
-              </SheetFooter>
-            </>
-          ) : null}
+                  </SheetTitle>
+                  <SheetDescription>
+                    {selectedOrder.customerName ?? selectedOrder.customerPhone}
+                  </SheetDescription>
+                </SheetHeader>
+
+                <div className="space-y-6 px-4 pb-24 pt-4">
+                  <div className="space-y-3 rounded-[24px] border border-[#eadcf8] bg-gradient-to-b from-[#fcf9ff] to-white p-5 shadow-sm">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium text-[#8f7da8]">
+                        {tOrders("details.delivery")}
+                      </span>
+                      <span className="font-semibold text-[#2d1649]">
+                        {getDeliveryLabel(selectedOrder, tOrders)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium text-[#8f7da8]">
+                        {tOrders("details.date")}
+                      </span>
+                      <span className="font-semibold text-[#2d1649]">
+                        {formatOrderDate(
+                          selectedOrder.createdAt,
+                          locale,
+                          tOrders,
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium text-[#8f7da8]">
+                        {tOrders("columns.status")}
+                      </span>
+                      <OrderStatusBadge order={selectedOrder} />
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#927fac]">
+                      {tOrders("details.items")}
+                    </p>
+                    <div className="space-y-2">
+                      {selectedOrder.items.map((item) => (
+                        <div
+                          key={item.id}
+                          className="flex items-start justify-between rounded-2xl border border-[#f0e7f8] bg-white px-4 py-3"
+                        >
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-[#2d1649]">
+                              {item.product.name}
+                              {item.variant?.name
+                                ? ` (${item.variant.name})`
+                                : ""}
+                            </p>
+                            <p className="text-xs text-[#8f7da8]">
+                              {tOrders("details.quantity", {
+                                count: item.quantity,
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <SheetFooter className="sticky bottom-0 border-t border-[#f0e7f8] bg-white px-4 py-4">
+                  {NEXT_FULFILLMENT[selectedOrder.fulfillmentStatus]
+                    ? (
+                      <Button
+                        type="button"
+                        className="store-theme-primary-button h-11 w-full rounded-2xl text-sm font-semibold hover:opacity-100"
+                        onClick={() => {
+                          handleAdvance(selectedOrder);
+                          setDetailsOpen(false);
+                        }}
+                      >
+                        {tOrders("markAs", {
+                          status: fulfillmentLabels[
+                            NEXT_FULFILLMENT[selectedOrder.fulfillmentStatus]!
+                          ],
+                        })}
+                      </Button>
+                    )
+                    : null}
+                </SheetFooter>
+              </>
+            )
+            : null}
         </SheetContent>
       </Sheet>
 

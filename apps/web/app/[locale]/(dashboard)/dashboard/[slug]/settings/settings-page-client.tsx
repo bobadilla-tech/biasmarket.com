@@ -33,8 +33,12 @@ export function SettingsPageClient() {
         <Card className="rounded-[28px] border-white/60 bg-white/55 py-0 shadow-[0_10px_35px_rgba(89,35,126,0.05)] backdrop-blur">
           <CardContent className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-medium text-[#8e7ca7]">{t("eyebrow")}</p>
-              <h1 className="text-3xl font-bold tracking-tight text-[#2d1649]">{t("title")}</h1>
+              <p className="text-sm font-medium text-[#8e7ca7]">
+                {t("eyebrow")}
+              </p>
+              <h1 className="text-3xl font-bold tracking-tight text-[#2d1649]">
+                {t("title")}
+              </h1>
               <p className="mt-1 text-sm text-[#8f7da8]">{t("subtitle")}</p>
             </div>
             <div className="flex items-center gap-3">

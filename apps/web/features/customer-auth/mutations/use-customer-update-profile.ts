@@ -9,7 +9,9 @@ export function useCustomerUpdateProfile(slug: string) {
     mutationFn: (dto: { name: string; email?: string; phone?: string }) =>
       customerAuthApi.updateProfile(slug, dto),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: customerAuthKeys.profile(slug) });
+      queryClient.invalidateQueries({
+        queryKey: customerAuthKeys.profile(slug),
+      });
     },
   });
 }

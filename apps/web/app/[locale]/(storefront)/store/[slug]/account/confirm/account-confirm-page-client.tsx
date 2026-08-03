@@ -43,7 +43,10 @@ function ErrorFallback({
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
       <div className="max-w-md w-full text-center flex flex-col gap-4">
         <ErrorState title={t("errorTitle")} message={t("errorBody")} />
-        <Link href={`/store/${slug}`} className="store-theme-link font-semibold">
+        <Link
+          href={`/store/${slug}`}
+          className="store-theme-link font-semibold"
+        >
           {t("backToStore")}
         </Link>
       </div>

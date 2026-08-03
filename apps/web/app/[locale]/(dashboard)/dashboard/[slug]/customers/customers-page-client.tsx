@@ -6,7 +6,12 @@ import { LoadingState } from "@/components/shared/loading-state";
 import { ErrorState } from "@/components/shared/error-state";
 import { EmptyState } from "@/components/shared/empty-state";
 import { useDashboardStore } from "@/features/stores";
-import { CustomerCard, CustomerDetailSheet, type CustomerListItem, useCustomers } from "@/features/customers";
+import {
+  CustomerCard,
+  CustomerDetailSheet,
+  type CustomerListItem,
+  useCustomers,
+} from "@/features/customers";
 
 export function CustomersPageClient() {
   const t = useTranslations("dashboard.customers");
@@ -17,7 +22,9 @@ export function CustomersPageClient() {
     tCommon("networkError"),
   );
 
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
+    null,
+  );
   const [detailsOpen, setDetailsOpen] = useState(false);
 
   const handleView = (customer: CustomerListItem) => {
@@ -32,7 +39,11 @@ export function CustomersPageClient() {
   if (error) {
     return (
       <div className="px-5 py-6 lg:px-8 lg:py-8">
-        <ErrorState message={error instanceof Error ? error.message : tCommon("networkError")} />
+        <ErrorState
+          message={error instanceof Error
+            ? error.message
+            : tCommon("networkError")}
+        />
       </div>
     );
   }
@@ -49,20 +60,20 @@ export function CustomersPageClient() {
           </h1>
         </div>
 
-        {!customers || customers.length === 0 ? (
-          <EmptyState message={t("empty")} />
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {customers.map((customer) => (
-              <CustomerCard
-                key={customer.id}
-                customer={customer}
-                currency={currency}
-                onView={handleView}
-              />
-            ))}
-          </div>
-        )}
+        {!customers || customers.length === 0
+          ? <EmptyState message={t("empty")} />
+          : (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {customers.map((customer) => (
+                <CustomerCard
+                  key={customer.id}
+                  customer={customer}
+                  currency={currency}
+                  onView={handleView}
+                />
+              ))}
+            </div>
+          )}
       </div>
 
       <CustomerDetailSheet

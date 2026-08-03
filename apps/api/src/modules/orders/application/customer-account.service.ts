@@ -155,7 +155,10 @@ export class CustomerAccountService {
     }
   }
 
-  async sendPasswordResetEmail(customer: Customer, store: Store): Promise<void> {
+  async sendPasswordResetEmail(
+    customer: Customer,
+    store: Store,
+  ): Promise<void> {
     if (!customer.email) return;
 
     try {
@@ -193,7 +196,8 @@ export class CustomerAccountService {
 
       await this.mailer.send({
         to: newEmail,
-        subject: "Confirma tu nuevo correo — Bias Market / Confirm your new email",
+        subject:
+          "Confirma tu nuevo correo — Bias Market / Confirm your new email",
         html: buildEmailChangeEmailHtml(url, store.name),
       });
     } catch (err) {
@@ -224,7 +228,8 @@ export class CustomerAccountService {
 
       await this.mailer.send({
         to: customer.email,
-        subject: "Confirma tu nuevo teléfono — Bias Market / Confirm your new phone",
+        subject:
+          "Confirma tu nuevo teléfono — Bias Market / Confirm your new phone",
         html: buildPhoneChangeEmailHtml(url, store.name),
       });
     } catch (err) {

@@ -231,16 +231,21 @@ export class CustomerAuthService {
       where: { id: session.id },
     });
 
-    const data: { name: string; pendingEmail?: string; pendingPhone?: string } = {
-      name: dto.name,
-    };
+    const data: { name: string; pendingEmail?: string; pendingPhone?: string } =
+      {
+        name: dto.name,
+      };
 
     let sendEmailChangeTo: string | undefined;
     let sendPhoneChange = false;
 
     if (dto.email && dto.email !== customer.email) {
       const clash = await this.prisma.customer.findFirst({
-        where: { storeId: store.id, email: dto.email, NOT: { id: customer.id } },
+        where: {
+          storeId: store.id,
+          email: dto.email,
+          NOT: { id: customer.id },
+        },
       });
       if (clash) throw new ConflictException("Este correo ya está en uso");
 

@@ -47,7 +47,8 @@ export function ProductsPageClient() {
   const tCommon = useTranslations("common");
   const { locale } = useParams<{ locale: string }>();
   const router = useRouter();
-  const { store, storeId, slug: storeSlug, loading: storeLoading } = useDashboardStore();
+  const { store, storeId, slug: storeSlug, loading: storeLoading } =
+    useDashboardStore();
 
   const productsQuery = useProducts(storeId, tCommon("networkError"));
   const categoriesQuery = useCategories(storeId, tCommon("networkError"));
@@ -115,7 +116,11 @@ export function ProductsPageClient() {
   ) => {
     if (!editingProduct) return;
     updateProduct.mutate(
-      { ...values, productId: editingProduct.id, fallbackErrorMessage: tCommon("networkError") },
+      {
+        ...values,
+        productId: editingProduct.id,
+        fallbackErrorMessage: tCommon("networkError"),
+      },
       {
         onSuccess: () => {
           setEditOpen(false);
@@ -141,10 +146,12 @@ export function ProductsPageClient() {
     );
   }
 
-  const subtitle = new Intl.DateTimeFormat(locale, { dateStyle: "full" }).format(new Date());
-  const editingBaseVariant = editingProduct?.variants?.find((variant) =>
-    Object.keys(variant.attributes ?? {}).length === 0
-  ) ?? editingProduct?.variants?.[0];
+  const subtitle = new Intl.DateTimeFormat(locale, { dateStyle: "full" })
+    .format(new Date());
+  const editingBaseVariant =
+    editingProduct?.variants?.find((variant) =>
+      Object.keys(variant.attributes ?? {}).length === 0
+    ) ?? editingProduct?.variants?.[0];
   const editingStock = editingBaseVariant
     ? editingBaseVariant.stock === null ? "" : String(editingBaseVariant.stock)
     : "";
@@ -199,107 +206,143 @@ export function ProductsPageClient() {
               {t("products.view.list")}
             </Button>
           </div>
-          {deleteProduct.isPending || publishProduct.isPending ? (
-            <p className="text-sm text-[#8f7da8]">{tCommon("loading")}</p>
-          ) : null}
+          {deleteProduct.isPending || publishProduct.isPending
+            ? <p className="text-sm text-[#8f7da8]">{tCommon("loading")}</p>
+            : null}
         </div>
 
-        {error ? (
-          <Card className="rounded-2xl border-[#f3cbd8] bg-[#fff3f7] py-0 shadow-none">
-            <CardContent className="px-4 py-3 text-sm text-[#b24368]">{error}</CardContent>
-          </Card>
-        ) : null}
+        {error
+          ? (
+            <Card className="rounded-2xl border-[#f3cbd8] bg-[#fff3f7] py-0 shadow-none">
+              <CardContent className="px-4 py-3 text-sm text-[#b24368]">
+                {error}
+              </CardContent>
+            </Card>
+          )
+          : null}
 
-        {viewMode === "grid" ? (
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {filteredProducts.map((product) => {
-              const category = getCategoryLabel(product);
-              const availableStock = product.availableStock;
-              const stockLabel = availableStock === null || availableStock === undefined
-                ? t("products.stockUnlimited")
-                : t("products.stockUnits", { count: availableStock });
-              const tone = stockTone(availableStock, store?.lowStockThreshold);
+        {viewMode === "grid"
+          ? (
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {filteredProducts.map((product) => {
+                const category = getCategoryLabel(product);
+                const availableStock = product.availableStock;
+                const stockLabel =
+                  availableStock === null || availableStock === undefined
+                    ? t("products.stockUnlimited")
+                    : t("products.stockUnits", { count: availableStock });
+                const tone = stockTone(
+                  availableStock,
+                  store?.lowStockThreshold,
+                );
 
-              return (
-                <ProductTile
-                  key={product.id}
-                  product={product}
-                  category={category}
-                  stockLabel={stockLabel}
-                  stockClassName={tone}
-                  editLabel={t("products.actions.edit")}
-                  deleteLabel={t("products.actions.delete")}
-                  publishLabel={t("products.actions.publish")}
-                  statusDraftLabel={t("products.details.draft")}
-                  statusPublishedLabel={t("products.details.published")}
-                  onOpen={() => handleOpenProduct(product.id)}
-                  onEdit={() => handleEditOpen(product)}
-                  onDelete={() => handleDelete(product.id)}
-                  onPublish={() => handlePublish(product.id)}
-                />
-              );
-            })}
-          </div>
-        ) : (
-          <Card className="rounded-[26px] border-[#eadcf8] bg-white py-0 shadow-sm">
-            <CardHeader className="px-6 pt-6">
-              <CardTitle className="text-base text-[#2d1649]">{t("products.listTitle")}</CardTitle>
-            </CardHeader>
-            <CardContent className="px-0 pb-0">
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[820px] text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-[#f3ebff] text-xs font-semibold uppercase tracking-[0.18em] text-[#8f7da8]">
-                      <th className="px-6 py-3">{t("products.columns.product")}</th>
-                      <th className="px-6 py-3">{t("products.columns.category")}</th>
-                      <th className="px-6 py-3">{t("products.columns.price")}</th>
-                      <th className="px-6 py-3">{t("products.columns.stock")}</th>
-                      <th className="px-6 py-3">{t("products.columns.sold")}</th>
-                      <th className="px-6 py-3">{t("products.columns.status")}</th>
-                      <th className="px-6 py-3">{t("products.columns.actions")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredProducts.map((product) => {
-                      const category = getCategoryLabel(product);
-                      const availableStock = product.availableStock;
-                      const stockLabel = availableStock === null || availableStock === undefined
-                        ? t("products.stockUnlimited")
-                        : t("products.stockUnits", { count: availableStock });
-                      const tone = stockTone(availableStock, store?.lowStockThreshold);
+                return (
+                  <ProductTile
+                    key={product.id}
+                    product={product}
+                    category={category}
+                    stockLabel={stockLabel}
+                    stockClassName={tone}
+                    editLabel={t("products.actions.edit")}
+                    deleteLabel={t("products.actions.delete")}
+                    publishLabel={t("products.actions.publish")}
+                    statusDraftLabel={t("products.details.draft")}
+                    statusPublishedLabel={t("products.details.published")}
+                    onOpen={() => handleOpenProduct(product.id)}
+                    onEdit={() => handleEditOpen(product)}
+                    onDelete={() => handleDelete(product.id)}
+                    onPublish={() => handlePublish(product.id)}
+                  />
+                );
+              })}
+            </div>
+          )
+          : (
+            <Card className="rounded-[26px] border-[#eadcf8] bg-white py-0 shadow-sm">
+              <CardHeader className="px-6 pt-6">
+                <CardTitle className="text-base text-[#2d1649]">
+                  {t("products.listTitle")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-0 pb-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[820px] text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-[#f3ebff] text-xs font-semibold uppercase tracking-[0.18em] text-[#8f7da8]">
+                        <th className="px-6 py-3">
+                          {t("products.columns.product")}
+                        </th>
+                        <th className="px-6 py-3">
+                          {t("products.columns.category")}
+                        </th>
+                        <th className="px-6 py-3">
+                          {t("products.columns.price")}
+                        </th>
+                        <th className="px-6 py-3">
+                          {t("products.columns.stock")}
+                        </th>
+                        <th className="px-6 py-3">
+                          {t("products.columns.sold")}
+                        </th>
+                        <th className="px-6 py-3">
+                          {t("products.columns.status")}
+                        </th>
+                        <th className="px-6 py-3">
+                          {t("products.columns.actions")}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredProducts.map((product) => {
+                        const category = getCategoryLabel(product);
+                        const availableStock = product.availableStock;
+                        const stockLabel = availableStock === null ||
+                            availableStock === undefined
+                          ? t("products.stockUnlimited")
+                          : t("products.stockUnits", {
+                            count: availableStock,
+                          });
+                        const tone = stockTone(
+                          availableStock,
+                          store?.lowStockThreshold,
+                        );
 
-                      return (
-                        <ProductRow
-                          key={product.id}
-                          product={product}
-                          category={category}
-                          stockLabel={stockLabel}
-                          stockClassName={tone}
-                          editLabel={t("products.actions.edit")}
-                          deleteLabel={t("products.actions.delete")}
-                          publishLabel={t("products.actions.publish")}
-                          statusDraftLabel={t("products.details.draft")}
-                          statusPublishedLabel={t("products.details.published")}
-                          onOpen={() => handleOpenProduct(product.id)}
-                          onEdit={() => handleEditOpen(product)}
-                          onDelete={() => handleDelete(product.id)}
-                          onPublish={() => handlePublish(product.id)}
-                        />
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                        return (
+                          <ProductRow
+                            key={product.id}
+                            product={product}
+                            category={category}
+                            stockLabel={stockLabel}
+                            stockClassName={tone}
+                            editLabel={t("products.actions.edit")}
+                            deleteLabel={t("products.actions.delete")}
+                            publishLabel={t("products.actions.publish")}
+                            statusDraftLabel={t("products.details.draft")}
+                            statusPublishedLabel={t(
+                              "products.details.published",
+                            )}
+                            onOpen={() => handleOpenProduct(product.id)}
+                            onEdit={() => handleEditOpen(product)}
+                            onDelete={() => handleDelete(product.id)}
+                            onPublish={() => handlePublish(product.id)}
+                          />
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
         <ProductSheet
           open={createOpen}
           onOpenChange={setCreateOpen}
           title={t("products.createTitle")}
           description={t("products.createDescription")}
-          submitLabel={createProduct.isPending ? t("products.form.submitting") : t("products.form.create")}
+          submitLabel={createProduct.isPending
+            ? t("products.form.submitting")
+            : t("products.form.create")}
           categories={categories}
           onEnsureCategory={ensureCategory.mutateAsync}
           submitting={createProduct.isPending}
@@ -323,7 +366,9 @@ export function ProductsPageClient() {
           }}
           title={t("products.editTitle")}
           description={t("products.editDescription")}
-          submitLabel={updateProduct.isPending ? t("products.form.submitting") : t("products.form.save")}
+          submitLabel={updateProduct.isPending
+            ? t("products.form.submitting")
+            : t("products.form.save")}
           categories={categories}
           onEnsureCategory={ensureCategory.mutateAsync}
           submitting={updateProduct.isPending}

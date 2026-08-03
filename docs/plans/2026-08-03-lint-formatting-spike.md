@@ -8,8 +8,8 @@ is already leaning into TypeScript 7, which is good and should not be rolled
 back just to satisfy older tooling.
 
 TypeScript 7's native compiler path is faster and worth keeping, but a lot of
-the JavaScript tooling ecosystem still assumes the old `typescript` compiler
-API exists behind `require("typescript")`. That is the same underlying reason
+the JavaScript tooling ecosystem still assumes the old `typescript` compiler API
+exists behind `require("typescript")`. That is the same underlying reason
 ESLint/`typescript-eslint`, Next's historical lint stack, and other type-aware
 tooling are painful here. The right posture is to wait for the ecosystem to
 catch up, then reintroduce linting on top of tools that actually support the

@@ -22,7 +22,8 @@ function bucketLabel(startIso: string, range: AnalyticsRange, locale: string) {
   if (range === "12m") {
     return new Intl.DateTimeFormat(locale, { month: "short" }).format(date);
   }
-  return new Intl.DateTimeFormat(locale, { day: "2-digit", month: "short" }).format(date);
+  return new Intl.DateTimeFormat(locale, { day: "2-digit", month: "short" })
+    .format(date);
 }
 
 export function AnalyticsPageClient() {
@@ -62,8 +63,12 @@ export function AnalyticsPageClient() {
       <div className="mx-auto max-w-7xl space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-medium text-[#8e7ca7]">{t("subtitle")}</p>
-            <h1 className="text-3xl font-bold tracking-tight text-[#2d1649]">{t("title")}</h1>
+            <p className="text-sm font-medium text-[#8e7ca7]">
+              {t("subtitle")}
+            </p>
+            <h1 className="text-3xl font-bold tracking-tight text-[#2d1649]">
+              {t("title")}
+            </h1>
           </div>
           <div className="flex items-center gap-2 overflow-x-auto rounded-2xl border border-[#eadcf7] bg-white p-1">
             {analyticsRangeValues.map((value) => (
@@ -85,29 +90,35 @@ export function AnalyticsPageClient() {
           </div>
         </div>
 
-        {error || !analytics ? (
-          <ErrorState message={error ?? tCommon("networkError")} />
-        ) : (
-          <>
-            <div className="grid gap-6 xl:grid-cols-2">
-              <SingleSeriesBarChart
-                title={t("revenueTitle")}
-                data={chartData.map((d) => ({ label: d.label, value: d.revenue }))}
-                valueFormatter={(value) => `${currency} ${value.toFixed(2)}`}
-              />
-              <SingleSeriesBarChart
-                title={t("ordersTitle")}
-                data={chartData.map((d) => ({ label: d.label, value: d.orderCount }))}
-                color="#8f7da8"
-              />
-            </div>
+        {error || !analytics
+          ? <ErrorState message={error ?? tCommon("networkError")} />
+          : (
+            <>
+              <div className="grid gap-6 xl:grid-cols-2">
+                <SingleSeriesBarChart
+                  title={t("revenueTitle")}
+                  data={chartData.map((d) => ({
+                    label: d.label,
+                    value: d.revenue,
+                  }))}
+                  valueFormatter={(value) => `${currency} ${value.toFixed(2)}`}
+                />
+                <SingleSeriesBarChart
+                  title={t("ordersTitle")}
+                  data={chartData.map((d) => ({
+                    label: d.label,
+                    value: d.orderCount,
+                  }))}
+                  color="#8f7da8"
+                />
+              </div>
 
-            <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
-              <NewVsReturningChart data={chartData} />
-              <TopProductsList products={analytics.topProducts} />
-            </div>
-          </>
-        )}
+              <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
+                <NewVsReturningChart data={chartData} />
+                <TopProductsList products={analytics.topProducts} />
+              </div>
+            </>
+          )}
       </div>
     </div>
   );

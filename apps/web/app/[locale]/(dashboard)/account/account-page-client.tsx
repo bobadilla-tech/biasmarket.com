@@ -18,7 +18,8 @@ export function AccountPageClient() {
   const tCommon = useTranslations("common");
   const router = useRouter();
   const { data: session } = authClient.useSession();
-  const { data: stores, isPending: storesLoading, error: storesError } = useMyStores();
+  const { data: stores, isPending: storesLoading, error: storesError } =
+    useMyStores();
 
   const handleSignOut = async () => {
     await authClient.signOut();
@@ -29,15 +30,21 @@ export function AccountPageClient() {
     <div className="min-h-screen bg-[#faf7fd] px-5 py-6 lg:px-8 lg:py-8">
       <div className="mx-auto max-w-3xl space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[#2d1649]">{t("title")}</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-[#2d1649]">
+            {t("title")}
+          </h1>
           <p className="mt-1 text-sm text-[#8f7da8]">{t("subtitle")}</p>
         </div>
 
         <Card className="rounded-[26px] border-[#eadcf8] bg-white py-0 shadow-sm">
           <CardContent className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-xs font-medium text-[#8f7da8]">{t("signedInAs")}</p>
-              <p className="text-lg font-semibold text-[#2d1649]">{session?.user.name}</p>
+              <p className="text-xs font-medium text-[#8f7da8]">
+                {t("signedInAs")}
+              </p>
+              <p className="text-lg font-semibold text-[#2d1649]">
+                {session?.user.name}
+              </p>
               <p className="text-sm text-[#8f7da8]">{session?.user.email}</p>
             </div>
             <Button
@@ -52,35 +59,37 @@ export function AccountPageClient() {
           </CardContent>
         </Card>
 
-        {storesLoading ? (
-          <LoadingState />
-        ) : storesError ? (
-          <ErrorState message={tCommon("networkError")} />
-        ) : stores && stores.length === 1 ? (
-          <SingleStoreSummary storeId={stores[0].id} slug={stores[0].slug} />
-        ) : (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-[#2d1649]">{t("yourStores")}</h2>
-              <Link
-                href="/onboarding/create-store"
-                className="flex items-center gap-1.5 text-sm font-semibold text-[#6d28d9] hover:underline"
-              >
-                <Plus className="size-4" />
-                {t("addStore")}
-              </Link>
-            </div>
-            {stores && stores.length > 0 ? (
-              <div className="grid gap-4 sm:grid-cols-2">
-                {stores.map((store) => (
-                  <StoreLinkCard key={store.id} store={store} />
-                ))}
+        {storesLoading
+          ? <LoadingState />
+          : storesError
+          ? <ErrorState message={tCommon("networkError")} />
+          : stores && stores.length === 1
+          ? <SingleStoreSummary storeId={stores[0].id} slug={stores[0].slug} />
+          : (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-[#2d1649]">
+                  {t("yourStores")}
+                </h2>
+                <Link
+                  href="/onboarding/create-store"
+                  className="flex items-center gap-1.5 text-sm font-semibold text-[#6d28d9] hover:underline"
+                >
+                  <Plus className="size-4" />
+                  {t("addStore")}
+                </Link>
               </div>
-            ) : (
-              <EmptyState message={t("yourStores")} />
-            )}
-          </div>
-        )}
+              {stores && stores.length > 0
+                ? (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {stores.map((store) => (
+                      <StoreLinkCard key={store.id} store={store} />
+                    ))}
+                  </div>
+                )
+                : <EmptyState message={t("yourStores")} />}
+            </div>
+          )}
 
         <ChangePasswordForm />
       </div>
@@ -88,7 +97,9 @@ export function AccountPageClient() {
   );
 }
 
-function SingleStoreSummary({ storeId, slug }: { storeId: string; slug: string }) {
+function SingleStoreSummary(
+  { storeId, slug }: { storeId: string; slug: string },
+) {
   const t = useTranslations("dashboard.overview");
   const tAccount = useTranslations("dashboard.account");
   const { stats, loading, error } = useStatsOverview(storeId);
@@ -103,7 +114,11 @@ function SingleStoreSummary({ storeId, slug }: { storeId: string; slug: string }
   return (
     <div className="space-y-3">
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatTile icon={Wallet} label={t("stats.revenue")} value={stats.revenue.toFixed(2)} />
+        <StatTile
+          icon={Wallet}
+          label={t("stats.revenue")}
+          value={stats.revenue.toFixed(2)}
+        />
         <StatTile
           icon={ShoppingBag}
           label={t("stats.totalOrders")}
