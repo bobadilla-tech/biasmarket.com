@@ -23,6 +23,8 @@ import { ReviewPaymentUseCase } from "../application/review-payment.usecase.js";
 import { AdvanceFulfillmentUseCase } from "../application/advance-fulfillment.usecase.js";
 import { ReviewPaymentDto } from "../dto/review-payment.dto.js";
 import { AdvanceFulfillmentDto } from "../dto/advance-fulfillment.dto.js";
+import { CancelOrderUseCase } from "../application/cancel-order.usecase.js";
+import { CancelOrderDto } from "../dto/cancel-order.dto.js";
 import { PrismaService } from "../../../prisma/prisma.service.js";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { StorageService } from "../../../storage/storage.service.js";
@@ -34,6 +36,7 @@ export class OrderController {
     private orders: OrderRepository,
     private reviewPayment: ReviewPaymentUseCase,
     private advanceFulfillment: AdvanceFulfillmentUseCase,
+    private cancelOrder: CancelOrderUseCase,
     private prisma: PrismaService,
     private storage: StorageService,
   ) {}
@@ -212,4 +215,21 @@ export class OrderController {
       dto.status,
     );
   }
+
+  @Patch(":orderId/cancel")
+  cancel(
+    @Param("storeId") storeId: string,
+    @Param("orderId") orderId: string,
+    @Session() session: UserSession,
+    @Body() dto: CancelOrderDto,
+  ) {
+    console.log(dto);
+    return this.cancelOrder.execute(
+      orderId,
+      storeId,
+      session.user.id,
+      dto,
+    );
+  }
+  
 }

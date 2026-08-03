@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import type { FulfillmentStatus, PaymentStatus, Prisma } from "@biasmarket/db";
+import type { CancellationResolution, FulfillmentStatus, PaymentStatus,OrderStatus ,Prisma } from "@biasmarket/db";
 import { PrismaService } from "../../../prisma/prisma.service.js";
 import { Order } from "../domain/order.entity.js";
 
@@ -116,12 +116,20 @@ export class OrderRepository {
   async saveStatus(
     orderId: string,
     data: {
+      status?: OrderStatus;
+      cancellationResolution?: CancellationResolution | null;
+      cancellationReason?: string | null;
+      cancelledAt?: Date | null;
       paymentStatus?: PaymentStatus;
       fulfillmentStatus?: FulfillmentStatus;
+      paymentRejectionReason?: string | null;
     },
     tx: Prisma.TransactionClient | PrismaService = this.prisma,
   ) {
-    return tx.order.update({ where: { id: orderId }, data });
+    return tx.order.update({
+      where: { id: orderId },
+      data,
+    });
   }
 
   private withPaymentSummary<

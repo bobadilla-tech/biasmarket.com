@@ -185,6 +185,12 @@ model StoreSection {
   @@index([storeId, position])
 }
 
+enum CancellationResolution {
+  REFUNDED
+  RETAINED
+  STORE_CREDIT
+}
+
 model Order {
   id                 String             @id @default(cuid())
   storeId            String
@@ -192,6 +198,10 @@ model Order {
   customerEmail      String?
   customerPhone      String
   customerName       String?
+  status             OrderStatus @default(ACTIVE) 
+  cancellationResolution CancellationResolution?
+  cancellationReason String?
+  cancelledAt DateTime?
   deliveryMethodType DeliveryMethodType
   deliveryDetails    Json
   pickupPointId      String?
@@ -275,6 +285,11 @@ enum PaymentStatus {
   PAYMENT_SUBMITTED
   VERIFIED
   REJECTED
+  CANCELLED
+}
+
+enum OrderStatus {
+  ACTIVE
   CANCELLED
 }
 
