@@ -7,7 +7,7 @@ import {
 import type { Request } from "express";
 
 // The codebase's "CSRF out of scope" deployment note (see
-// infra/docker/DEPLOY_ORACLE.md) doesn't cover these routes — buyer
+// docs/core/deploy.md) doesn't cover these routes — buyer
 // register/login/change-password/PATCH-me all mutate state under a
 // browser-held cookie, so they need at least strict same-origin
 // enforcement. A full CSRF-token scheme is out of scope for this pass;

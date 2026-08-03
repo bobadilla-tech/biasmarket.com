@@ -3,14 +3,14 @@
 Docker-based dev and prod setup for biasmarket-app, mirroring the pattern used
 in `requiems-api`.
 
-- `docker/` — dev and prod Docker Compose files, Dockerfiles, and env defaults.
-  See `docker/readme.md`.
-- `caddy/` — reverse proxy config used only by the prod stack. See
-  `caddy/readme.md`.
+- `infra/docker/` — dev and prod Docker Compose files, Dockerfiles, and env
+  defaults. See [readme.md](readme.md).
+- `infra/caddy/` — reverse proxy config used only by the prod stack. See
+  [caddy.md](caddy.md).
 
-Deploying to production on Oracle Cloud? See
-[`docker/DEPLOY_ORACLE.md`](docker/DEPLOY_ORACLE.md) for the full walkthrough
-(VM provisioning, firewall gotchas, secrets, DNS, verification).
+Deploying to production on Oracle Cloud? See [deploy.md](deploy.md) for the
+full walkthrough (VM provisioning, firewall gotchas, secrets, DNS,
+verification).
 
 ## Quick start (dev)
 
@@ -49,7 +49,29 @@ Dev-only by default — `docker-compose.dev.yml` only ever runs base mode. The
 same command is also safe to run manually against prod as an explicit operator
 action; see [admin-access.md](admin-access.md).
 
-Running `pnpm dev` natively on the host (outside Docker) still works, but now
+Running `pnpm dev` natively on the host (outside Docker) is possible but
+**unsupported** — it only starts `api`/`web` (no Postgres, no MinIO), and
 requires manually recreating your own gitignored `.env` files (root,
-`apps/api/.env`, `apps/web/.env`, `packages/db/.env`) since the ones that used
-to live there have been removed in favor of this setup.
+`apps/api/.env`, `apps/web/.env`, `packages/db/.env`) since no example template
+exists for host mode — everything documented here assumes `docker:dev`.
+
+## Known issues
+
+- **`ERR_PNPM_BROKEN_LOCKFILE` on install.** Your global `pnpm` is probably
+  newer than the pinned `10.11.0` and is silently corrupting `pnpm-lock.yaml`
+  on every install (a known upstream pnpm bug, not something this repo can
+  work around). Fix: `npx pnpm@10.11.0 install` instead of bare `pnpm install`.
+  Full root cause: [pnpm-lockfile-corruption
+  plan](../plans/2026-07-19-pnpm-lockfile-corruption.md).
+- **`role "biasmarket" does not exist` / migrations hit the wrong DB.** If you
+  also have a native Postgres running on the host, it can silently win the
+  connection on `localhost:5432` ahead of the Docker one. Either stop the
+  native Postgres, or run Prisma commands via `docker compose -f
+  infra/docker/docker-compose.dev.yml exec api pnpm --filter @biasmarket/db
+  exec prisma <command>` so they run inside the container against the
+  Docker-internal `db` hostname.
+- **Edited `schema.prisma`, but the API isn't picking it up.** The compose
+  file's live-reload only covers application source, not schema changes that
+  need a fresh `prisma generate`. Run `docker compose -f
+  infra/docker/docker-compose.dev.yml restart api` (or a full `pnpm
+  docker:dev` down/up) after any Prisma schema edit.

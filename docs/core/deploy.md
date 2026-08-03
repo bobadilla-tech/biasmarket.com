@@ -3,8 +3,7 @@
 Prod deploy target for the MVP: a single Oracle Cloud VM running the
 `infra/docker/docker-compose.yml` stack. This doc covers everything specific to
 OCI — the stack itself (Docker Compose + Caddy) is host-agnostic and already
-documented in [`infra/readme.md`](../readme.md) and
-[`docker/readme.md`](readme.md).
+documented in [`infra.md`](infra.md) and [`readme.md`](readme.md).
 
 Goal here is "get it live and shareable," not a hardened production setup — see
 [Known limitations](#known-limitations) at the bottom for what's deliberately
@@ -288,7 +287,7 @@ share the link," not for handling real traffic or real payment data at volume:
   forgetting to set `WEB_URL`) fail silently or fall back to a `localhost`
   default rather than refusing to boot.
 - **Single VM, no managed DB.** Fine at MVP scale; see
-  [`docs/spec/roadmap.md`](../../docs/spec/roadmap.md) §11 for the documented
+  [`roadmap.md`](roadmap.md) §11 for the documented
   scaling path (managed Postgres once this is the bottleneck).
 - **Self-hosted MinIO, not Cloudflare R2.** `roadmap.md`/`architecture.md`/
   `security-payments.md` spec R2 specifically to avoid self-hosting object

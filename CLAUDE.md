@@ -100,7 +100,7 @@ packages/
 ### API structure (apps/api/src)
 
 Flat NestJS `controller/service/dto` per module today:
-`modules/{stores,products,users,health}`. `docs/spec/architecture.md` describes
+`modules/{stores,products,users,health}`. `docs/core/architecture.md` describes
 a DDD-lite layering (`domain/application/infrastructure`) intended for
 `orders`/`payments` once those modules exist — don't apply that layering to
 `users`/`uploads`/`themes`-style CRUD modules, and don't retrofit it onto
@@ -139,7 +139,7 @@ Current models: `User`, `Store`, `Product`, `ProductVariant`, `Order`, plus
 better-auth's `Session`/`Account`/`Verification`. Money fields are `Decimal`,
 never `Float`. `Order` currently has a single `paymentStatus` +
 `fulfillmentStatus` pair (not yet the fuller state machine with soft-hold/
-expiration described in `docs/spec/security-payments.md` §9 — that flow is
+expiration described in `docs/core/security-payments.md` §9 — that flow is
 spec'd but not implemented).
 
 ### Multi-tenancy
@@ -154,18 +154,18 @@ Single Oracle Cloud VM, three containers (`api`, `web`, `db`) behind Caddy
 (`infra/docker/docker-compose.yml`, `infra/caddy/Caddyfile`). Caddy does TLS
 termination for two subdomains: `biasmarket.com` (web) and `api.biasmarket.com`
 (api). `api` container runs `prisma migrate deploy` automatically on boot. Full
-runbook: `infra/docker/DEPLOY_ORACLE.md`. Known gaps called out there: buyer and
+runbook: `docs/core/deploy.md`. Known gaps called out there: buyer and
 seller login/register/forgot-password surfaces are throttled
 (`@nestjs/throttler` + better-auth's native rate limiter), but there's still no
 CSRF/`helmet`, no startup env-var validation.
 
 ## Docs worth reading before large changes
 
-- `docs/spec/architecture.md` — monorepo layout, DDD-lite plan, multi-tenant
+- `docs/core/architecture.md` — monorepo layout, DDD-lite plan, multi-tenant
   design, theming system, deployment/scaling path
-- `docs/spec/security-payments.md` — validation rules, REST-over-tRPC rationale,
+- `docs/core/security-payments.md` — validation rules, REST-over-tRPC rationale,
   manual payment flow state machine (spec, not yet fully built)
-- `docs/spec/product.md`, `docs/spec/roadmap.md`, `docs/spec/i18n.md`
+- `docs/core/product.md`, `docs/core/roadmap.md`, `docs/core/i18n.md`
 - `docs/plans/` — dated implementation-plan records as work lands
 - `apps/web/AGENTS.md` — flags that the installed Next.js version has breaking
   changes vs. training data; check `node_modules/next/dist/docs/` before writing
