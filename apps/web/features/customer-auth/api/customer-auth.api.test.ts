@@ -66,6 +66,8 @@ test("me() fetches the profile and returns the parsed result", async () => {
       email: "jane@example.com",
       phone: "+51988888888",
       emailVerified: true,
+      pendingEmail: null,
+      pendingPhone: null,
     },
     orders: [],
   };
@@ -74,6 +76,44 @@ test("me() fetches the profile and returns the parsed result", async () => {
   const result = await customerAuthApi.me("my-store");
 
   expect(apiFetch).toHaveBeenCalledWith("/stores/my-store/account/me");
+  expect(result).toEqual(payload);
+});
+
+test("forgotPassword() posts the phone, returns the parsed result", async () => {
+  apiFetch.mockResolvedValueOnce({ ok: true });
+
+  const result = await customerAuthApi.forgotPassword(
+    "my-store",
+    "+51988888888",
+  );
+
+  expect(apiFetch).toHaveBeenCalledWith(
+    "/stores/my-store/account/forgot-password",
+    {
+      method: "POST",
+      body: JSON.stringify({ phone: "+51988888888" }),
+    },
+  );
+  expect(result).toEqual({ ok: true });
+});
+
+test("updateProfile() patches the profile, returns the parsed result", async () => {
+  const payload = {
+    name: "Jane",
+    pendingEmail: "new@example.com",
+    pendingPhone: null,
+  };
+  apiFetch.mockResolvedValueOnce(payload);
+
+  const result = await customerAuthApi.updateProfile("my-store", {
+    name: "Jane",
+    email: "new@example.com",
+  });
+
+  expect(apiFetch).toHaveBeenCalledWith("/stores/my-store/account/me", {
+    method: "PATCH",
+    body: JSON.stringify({ name: "Jane", email: "new@example.com" }),
+  });
   expect(result).toEqual(payload);
 });
 

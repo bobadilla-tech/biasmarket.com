@@ -5,6 +5,7 @@ import { Link, useRouter } from "@/i18n/navigation";
 import type { AccountOrder } from "@/features/account";
 import { useCustomerLogout } from "../mutations/use-customer-logout";
 import { CustomerChangePasswordForm } from "./customer-change-password-form";
+import { EditContactForm } from "./edit-contact-form";
 import type { CustomerProfile } from "../schemas/profile.schema";
 
 function statusLabel(
@@ -95,6 +96,8 @@ export function CustomerProfileView(
               ))
             )}
         </div>
+
+        <EditContactForm slug={slug} profile={profile} />
 
         <CustomerChangePasswordForm slug={slug} />
 

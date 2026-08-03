@@ -13,10 +13,12 @@ vi.mock("next/navigation", () => ({
 
 const logout = vi.fn();
 const changePassword = vi.fn();
+const updateProfile = vi.fn();
 vi.mock("../api/customer-auth.api", () => ({
   customerAuthApi: {
     logout: (...args: unknown[]) => logout(...args),
     changePassword: (...args: unknown[]) => changePassword(...args),
+    updateProfile: (...args: unknown[]) => updateProfile(...args),
   },
 }));
 
@@ -28,6 +30,8 @@ const profile = {
     email: "jane@example.com",
     phone: "+51988888888",
     emailVerified: true,
+    pendingEmail: null,
+    pendingPhone: null,
   },
   orders: [
     {
