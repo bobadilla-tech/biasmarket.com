@@ -74,6 +74,43 @@
     "submit": "Ingresar",
     "submitting": "Ingresando..."
   },
+  "accountNav": {
+    "myAccount": "Mi cuenta",
+    "login": "Ingresar"
+  },
+  "accountPage": {
+    "title": "Mi cuenta",
+    "logout": "Cerrar sesión",
+    "infoTitle": "Datos de la cuenta",
+    "noName": "Sin nombre registrado",
+    "noEmail": "Sin email registrado",
+    "ordersTitle": "Tus pedidos",
+    "noOrders": "Todavía no tienes pedidos.",
+    "backToStore": "Volver a la tienda",
+    "loggedOutTitle": "No has iniciado sesión",
+    "loggedOutBody": "Ingresa para ver tu cuenta y el historial de pedidos.",
+    "goToLogin": "Ingresar",
+    "status": {
+      "toConfirm": "Por confirmar",
+      "partial": "Pago parcial",
+      "verified": "Pago confirmado",
+      "rejected": "Rechazado",
+      "cancelled": "Cancelado"
+    },
+    "changePassword": {
+      "title": "Cambiar contraseña",
+      "currentPasswordPlaceholder": "Contraseña actual",
+      "currentPasswordRequired": "Ingresa tu contraseña actual",
+      "newPasswordPlaceholder": "Nueva contraseña (mín. 8 caracteres)",
+      "passwordTooShort": "Debe tener al menos 8 caracteres",
+      "confirmNewPasswordPlaceholder": "Confirmar nueva contraseña",
+      "passwordsDontMatch": "Las contraseñas no coinciden",
+      "genericError": "Algo salió mal. Intenta de nuevo.",
+      "success": "Contraseña actualizada.",
+      "submit": "Actualizar contraseña",
+      "submitting": "Guardando..."
+    }
+  },
   "storeDirectory": {
     "title": "Descubre tiendas",
     "subtitle": "Explora todas las tiendas que venden en Bias Market.",

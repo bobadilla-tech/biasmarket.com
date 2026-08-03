@@ -74,6 +74,43 @@
     "submit": "Log in",
     "submitting": "Logging in..."
   },
+  "accountNav": {
+    "myAccount": "My account",
+    "login": "Log in"
+  },
+  "accountPage": {
+    "title": "My account",
+    "logout": "Log out",
+    "infoTitle": "Account details",
+    "noName": "No name on file",
+    "noEmail": "No email on file",
+    "ordersTitle": "Your orders",
+    "noOrders": "No orders yet.",
+    "backToStore": "Back to the store",
+    "loggedOutTitle": "You're not logged in",
+    "loggedOutBody": "Log in to see your account and order history.",
+    "goToLogin": "Log in",
+    "status": {
+      "toConfirm": "To confirm",
+      "partial": "Partial payment",
+      "verified": "Payment confirmed",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled"
+    },
+    "changePassword": {
+      "title": "Change password",
+      "currentPasswordPlaceholder": "Current password",
+      "currentPasswordRequired": "Enter your current password",
+      "newPasswordPlaceholder": "New password (min. 8 characters)",
+      "passwordTooShort": "Must be at least 8 characters",
+      "confirmNewPasswordPlaceholder": "Confirm new password",
+      "passwordsDontMatch": "Passwords don't match",
+      "genericError": "Something went wrong. Try again.",
+      "success": "Password updated.",
+      "submit": "Update password",
+      "submitting": "Saving..."
+    }
+  },
   "storeDirectory": {
     "title": "Discover stores",
     "subtitle": "Browse every store selling on Bias Market.",
