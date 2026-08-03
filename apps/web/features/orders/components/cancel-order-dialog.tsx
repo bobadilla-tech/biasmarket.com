@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -41,6 +41,12 @@ export function CancelOrderDialog({
     useState<CancellationResolution>("REFUNDED");
 
   const [reason, setReason] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+    setResolution("REFUNDED");
+    setReason("");
+  }, [open, order?.id]);
 
   if (!order) return null;
 
@@ -139,12 +145,13 @@ export function CancelOrderDialog({
             type="button"
             variant="destructive"
             disabled={pending}
-            onClick={() =>
-              onConfirm({
-                resolution,
-                reason,
-              })
-            }
+            onClick={() => {
+              Promise.resolve(onConfirm({ resolution, reason })).catch(
+                () => {
+                  // Surfaced via the parent's mutation error state.
+                },
+              );
+            }}
             className="rounded-xl"
           >
             {t("cancelOrder")}

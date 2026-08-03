@@ -69,12 +69,13 @@ export function OrdersPageClient() {
     advanceFulfillment,
   } = useOptimisticStatusChange(storeId, t);
   const registerPayment = useRegisterPayment(storeId, tCommon("networkError"));
-  const cancelOrder = useCancelOrder(storeId);
+  const cancelOrder = useCancelOrder(storeId, tCommon("networkError"));
 
   const error = errorMessage(ordersQuery.error) ??
     errorMessage(reviewPayment.error) ??
     errorMessage(advanceFulfillment.error) ??
-    errorMessage(registerPayment.error);
+    errorMessage(registerPayment.error) ??
+    errorMessage(cancelOrder.error);
 
   const fulfillmentLabels: Record<string, string> = {
     ORDERING: t("fulfillmentLabels.ORDERING"),
@@ -239,10 +240,10 @@ export function OrdersPageClient() {
           onClose={() => setCancelDialogOpen(false)}
           order={selectedOrder}
           pending={cancelOrder.isPending}
-          onConfirm={(values) => {
+          onConfirm={async (values) => {
             if (!selectedOrder) return;
 
-            cancelOrder.mutate({
+            await cancelOrder.mutateAsync({
               orderId: selectedOrder.id,
               values,
             });
