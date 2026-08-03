@@ -5,7 +5,10 @@ import { collectionsApi } from "../api/collections.api";
 import { collectionsKeys } from "../queries/use-collections";
 import type { CreateCollectionInput } from "../schemas/collection.schema";
 
-export function useCreateCollection(storeId: string | undefined, fallbackErrorMessage?: string) {
+export function useCreateCollection(
+  storeId: string | undefined,
+  fallbackErrorMessage?: string,
+) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -13,7 +16,9 @@ export function useCreateCollection(storeId: string | undefined, fallbackErrorMe
       collectionsApi.create(storeId as string, values, fallbackErrorMessage),
     onSuccess: () => {
       if (!storeId) return;
-      queryClient.invalidateQueries({ queryKey: collectionsKeys.byStore(storeId) });
+      queryClient.invalidateQueries({
+        queryKey: collectionsKeys.byStore(storeId),
+      });
     },
   });
 }

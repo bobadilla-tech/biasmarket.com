@@ -1,7 +1,10 @@
 import { afterEach, expect, test, vi } from "vitest";
 
 const apiFetch = vi.fn();
-vi.mock("@/lib/api", () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }));
+vi.mock(
+  "@/lib/api",
+  () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }),
+);
 
 const { checkoutApi } = await import("./checkout.api");
 
@@ -29,7 +32,14 @@ test("submit POSTs the checkout payload, omitting empty optional fields", async 
   const result = await checkoutApi.submit("my-store", {
     deliveryMethodType: "COURIER",
     customerPhone: "+51999999999",
-    items: [{ productId: "p1", variantId: undefined, quantity: 2, name: "T", price: 10, currency: "PEN" }],
+    items: [{
+      productId: "p1",
+      variantId: undefined,
+      quantity: 2,
+      name: "T",
+      price: 10,
+      currency: "PEN",
+    }],
   });
 
   expect(apiFetch).toHaveBeenCalledWith(

@@ -3,13 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  ImagePlus,
-  Palette,
-  Pipette,
-  Store,
-  WandSparkles,
-} from "lucide-react";
+import { ImagePlus, Palette, Pipette, Store, WandSparkles } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { SUPPORTED_CURRENCIES } from "@biasmarket/utils/currency";
 import { Badge } from "@/components/ui/badge";
@@ -23,14 +17,25 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { PhoneInput } from "@/components/ui/phone-input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Select } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { useRouter } from "@/i18n/navigation";
-import { buildCustomStorePalette, buildStoreThemeConfig, STORE_PALETTES } from "@/lib/store-theme";
+import {
+  buildCustomStorePalette,
+  buildStoreThemeConfig,
+  STORE_PALETTES,
+} from "@/lib/store-theme";
 import { cn } from "@/lib/utils";
 import { useCreateStore } from "../mutations/use-create-store";
-import { createStoreFormSchema, type CreateStoreFormInput } from "../schemas/create-store.schema";
+import {
+  type CreateStoreFormInput,
+  createStoreFormSchema,
+} from "../schemas/create-store.schema";
 
 function slugifyValue(value: string) {
   return value
@@ -65,7 +70,9 @@ export function CreateStoreForm() {
   const router = useRouter();
   const createStore = useCreateStore();
 
-  const [selectedPaletteId, setSelectedPaletteId] = useState<string>(STORE_PALETTES[0].id);
+  const [selectedPaletteId, setSelectedPaletteId] = useState<string>(
+    STORE_PALETTES[0].id,
+  );
   const [customColor, setCustomColor] = useState("#6d28d9");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
@@ -95,9 +102,12 @@ export function CreateStoreForm() {
   const whatsappNumber = watch("whatsappNumber");
 
   const selectedPalette = useMemo(() => {
-    if (selectedPaletteId === "custom") return buildCustomStorePalette(customColor);
+    if (selectedPaletteId === "custom") {
+      return buildCustomStorePalette(customColor);
+    }
     return (
-      STORE_PALETTES.find((palette) => palette.id === selectedPaletteId) ?? STORE_PALETTES[0]
+      STORE_PALETTES.find((palette) => palette.id === selectedPaletteId) ??
+        STORE_PALETTES[0]
     );
   }, [selectedPaletteId, customColor]);
 
@@ -120,7 +130,10 @@ export function CreateStoreForm() {
   const onSubmit = handleSubmit(async (values) => {
     try {
       const store = await createStore.mutateAsync({
-        values: { ...values, themeConfig: buildStoreThemeConfig(selectedPalette) },
+        values: {
+          ...values,
+          themeConfig: buildStoreThemeConfig(selectedPalette),
+        },
         logoFile,
         genericErrorMessage: t("genericError"),
         logoErrorMessage: t("logoUploadingError"),
@@ -131,14 +144,19 @@ export function CreateStoreForm() {
       setSelectedPaletteId(STORE_PALETTES[0].id);
       router.push(`/dashboard/${store.slug}/settings`);
     } catch (e) {
-      setError("root", { message: e instanceof Error ? e.message : t("genericError") });
+      setError("root", {
+        message: e instanceof Error ? e.message : t("genericError"),
+      });
     }
   });
 
   return (
     <Card className="rounded-[34px] border-[#efe5fb] bg-white/86 py-0 shadow-[0_24px_80px_rgba(120,74,170,0.08)] backdrop-blur">
       <CardContent className="px-6 py-6 md:px-8 md:py-8">
-        <form onSubmit={onSubmit} className="grid gap-8 xl:grid-cols-[minmax(0,1.1fr)_360px]">
+        <form
+          onSubmit={onSubmit}
+          className="grid gap-8 xl:grid-cols-[minmax(0,1.1fr)_360px]"
+        >
           <div className="space-y-8">
             <div>
               <Badge className="rounded-full bg-[#f3e8ff] px-4 py-1.5 text-xs uppercase tracking-[0.2em] text-[#7a38d8]">
@@ -148,7 +166,9 @@ export function CreateStoreForm() {
               <h2 className="mt-4 text-3xl font-bold tracking-tight text-[#2c1647]">
                 {t("title")}
               </h2>
-              <p className="mt-2 max-w-2xl text-sm text-[#8d79a5]">{t("subtitle")}</p>
+              <p className="mt-2 max-w-2xl text-sm text-[#8d79a5]">
+                {t("subtitle")}
+              </p>
             </div>
 
             <div className="grid gap-8 2xl:grid-cols-2">
@@ -177,7 +197,10 @@ export function CreateStoreForm() {
                   />
                 </Field>
 
-                <Field label={t("whatsappPlaceholder")} help={t("whatsappHelp")}>
+                <Field
+                  label={t("whatsappPlaceholder")}
+                  help={t("whatsappHelp")}
+                >
                   <Controller
                     control={control}
                     name="whatsappNumber"
@@ -236,7 +259,9 @@ export function CreateStoreForm() {
                           color: logoPreviewUrl ? "transparent" : "#fff",
                         }}
                       >
-                        {!logoPreviewUrl ? (name || "BM").slice(0, 2).toUpperCase() : ""}
+                        {!logoPreviewUrl
+                          ? (name || "BM").slice(0, 2).toUpperCase()
+                          : ""}
                       </div>
 
                       <input
@@ -275,7 +300,9 @@ export function CreateStoreForm() {
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4 px-5 pb-5">
-                    <p className="text-sm font-semibold text-[#301848]">{t("paletteLabel")}</p>
+                    <p className="text-sm font-semibold text-[#301848]">
+                      {t("paletteLabel")}
+                    </p>
                     <div className="flex flex-wrap items-center gap-3">
                       {STORE_PALETTES.map((palette) => (
                         <button
@@ -306,13 +333,13 @@ export function CreateStoreForm() {
                               ? "border-solid border-transparent ring-[#7a38d8]"
                               : "border-[#c9b3e8] text-[#7a38d8] ring-transparent",
                           )}
-                          style={
-                            selectedPaletteId === "custom"
-                              ? { backgroundColor: customColor }
-                              : undefined
-                          }
+                          style={selectedPaletteId === "custom"
+                            ? { backgroundColor: customColor }
+                            : undefined}
                         >
-                          {selectedPaletteId !== "custom" ? <Pipette className="size-4" /> : null}
+                          {selectedPaletteId !== "custom"
+                            ? <Pipette className="size-4" />
+                            : null}
                         </PopoverTrigger>
                         <PopoverContent className="w-auto">
                           <p className="mb-3 text-sm font-semibold text-[#301848]">
@@ -335,26 +362,34 @@ export function CreateStoreForm() {
               </div>
             </div>
 
-            {errors.root ? (
-              <Card className="rounded-[22px] border-[#f3cadc] bg-[#fff4f8] py-0 shadow-none">
-                <CardContent className="px-4 py-3 text-sm text-[#b54472]">
-                  {errors.root.message}
-                </CardContent>
-              </Card>
-            ) : null}
+            {errors.root
+              ? (
+                <Card className="rounded-[22px] border-[#f3cadc] bg-[#fff4f8] py-0 shadow-none">
+                  <CardContent className="px-4 py-3 text-sm text-[#b54472]">
+                    {errors.root.message}
+                  </CardContent>
+                </Card>
+              )
+              : null}
 
             <Card className="rounded-[26px] border-dashed border-[#ddcaf3] bg-[#fcf8ff] py-0 shadow-none">
               <CardContent className="px-5 py-5">
-                <p className="font-semibold text-[#301848]">{t("futureTitle")}</p>
-                <p className="mt-2 text-sm text-[#8d79a5]">{t("futureDescription")}</p>
+                <p className="font-semibold text-[#301848]">
+                  {t("futureTitle")}
+                </p>
+                <p className="mt-2 text-sm text-[#8d79a5]">
+                  {t("futureDescription")}
+                </p>
               </CardContent>
             </Card>
 
             <Button
               type="submit"
-              disabled={createStore.isPending || !name || !slug || !whatsappNumber}
+              disabled={createStore.isPending || !name || !slug ||
+                !whatsappNumber}
               style={{
-                background: `linear-gradient(135deg, ${selectedPalette.colors.accent} 0%, ${selectedPalette.colors.primary} 100%)`,
+                background:
+                  `linear-gradient(135deg, ${selectedPalette.colors.accent} 0%, ${selectedPalette.colors.primary} 100%)`,
                 boxShadow: `0 18px 36px rgba(0, 0, 0, 0.14)`,
               }}
               className="h-12 rounded-[22px] px-6 text-sm font-semibold text-white hover:opacity-95"
@@ -366,8 +401,12 @@ export function CreateStoreForm() {
           <div className="space-y-5">
             <Card className="rounded-[28px] border-[#eadcf8] bg-[#faf6ff] py-0 shadow-none">
               <CardContent className="px-5 py-5">
-                <p className="font-semibold text-[#301848]">{t("previewTitle")}</p>
-                <p className="mt-2 text-sm text-[#8d79a5]">{t("previewDescription")}</p>
+                <p className="font-semibold text-[#301848]">
+                  {t("previewTitle")}
+                </p>
+                <p className="mt-2 text-sm text-[#8d79a5]">
+                  {t("previewDescription")}
+                </p>
               </CardContent>
             </Card>
 
@@ -384,7 +423,8 @@ export function CreateStoreForm() {
                 <div
                   className="rounded-[24px] p-5"
                   style={{
-                    background: `linear-gradient(180deg, ${selectedPalette.colors.surface} 0%, #ffffff 100%)`,
+                    background:
+                      `linear-gradient(180deg, ${selectedPalette.colors.surface} 0%, #ffffff 100%)`,
                   }}
                 >
                   <div className="flex items-center gap-3">
@@ -397,7 +437,9 @@ export function CreateStoreForm() {
                         color: logoPreviewUrl ? "transparent" : "#fff",
                       }}
                     >
-                      {!logoPreviewUrl ? (name || "BM").slice(0, 2).toUpperCase() : ""}
+                      {!logoPreviewUrl
+                        ? (name || "BM").slice(0, 2).toUpperCase()
+                        : ""}
                     </div>
                     <div>
                       <p
@@ -406,7 +448,9 @@ export function CreateStoreForm() {
                       >
                         {name || t("namePlaceholder")}
                       </p>
-                      <p className="text-sm text-[#8d79a5]">/{slug || t("slugPlaceholder")}</p>
+                      <p className="text-sm text-[#8d79a5]">
+                        /{slug || t("slugPlaceholder")}
+                      </p>
                     </div>
                   </div>
 
@@ -429,7 +473,9 @@ export function CreateStoreForm() {
                           {t("previewPaletteLabel")}
                         </p>
                         <div className="mt-3 flex gap-2">
-                          {Object.values(selectedPalette.colors).map((color) => (
+                          {Object.values(selectedPalette.colors).map((
+                            color,
+                          ) => (
                             <span
                               key={color}
                               className="h-10 flex-1 rounded-full"

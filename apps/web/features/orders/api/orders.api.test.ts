@@ -1,7 +1,10 @@
 import { afterEach, expect, test, vi } from "vitest";
 
 const apiFetch = vi.fn();
-vi.mock("@/lib/api", () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }));
+vi.mock(
+  "@/lib/api",
+  () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }),
+);
 
 const { ordersApi } = await import("./orders.api");
 
@@ -28,7 +31,13 @@ test("review includes the reason in the body when rejecting with a reason", asyn
 
   expect(apiFetch).toHaveBeenCalledWith(
     "/stores/store-1/orders/o1/review",
-    { method: "PATCH", body: JSON.stringify({ decision: "reject", reason: "Comprobante adulterado" }) },
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        decision: "reject",
+        reason: "Comprobante adulterado",
+      }),
+    },
     undefined,
   );
 });
@@ -50,6 +59,10 @@ test("list validates the response against orderListSchema", async () => {
 
   const result = await ordersApi.list("store-1");
 
-  expect(apiFetch).toHaveBeenCalledWith("/stores/store-1/orders", {}, undefined);
+  expect(apiFetch).toHaveBeenCalledWith(
+    "/stores/store-1/orders",
+    {},
+    undefined,
+  );
   expect(result).toEqual([]);
 });

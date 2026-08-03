@@ -1,6 +1,9 @@
 import { apiFetch } from "@/lib/api";
 import { statsOverviewSchema } from "../schemas/stats-overview.schema";
-import { analyticsResultSchema, type AnalyticsRange } from "../schemas/analytics.schema";
+import {
+  type AnalyticsRange,
+  analyticsResultSchema,
+} from "../schemas/analytics.schema";
 
 export const statsApi = {
   async getOverview(storeId: string) {
@@ -8,7 +11,9 @@ export const statsApi = {
     return statsOverviewSchema.parse(data);
   },
   async getAnalytics(storeId: string, range: AnalyticsRange) {
-    const data = await apiFetch(`/stores/${storeId}/stats/analytics?range=${range}`);
+    const data = await apiFetch(
+      `/stores/${storeId}/stats/analytics?range=${range}`,
+    );
     return analyticsResultSchema.parse(data);
   },
 };

@@ -1,5 +1,10 @@
-import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
-import type { Request } from 'express';
+import {
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Injectable,
+} from "@nestjs/common";
+import type { Request } from "express";
 
 // The codebase's "CSRF out of scope" deployment note (see
 // infra/docker/DEPLOY_ORACLE.md) doesn't cover these routes — buyer
@@ -15,18 +20,21 @@ import type { Request } from 'express';
 export class OriginGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const req = context.switchToHttp().getRequest<Request>();
-    const allowedOrigin = new URL(process.env.WEB_URL ?? 'http://localhost:3001').origin;
+    const allowedOrigin =
+      new URL(process.env.WEB_URL ?? "http://localhost:3001").origin;
     const source = req.headers.origin ?? req.headers.referer;
-    if (!source) throw new ForbiddenException('Missing origin');
+    if (!source) throw new ForbiddenException("Missing origin");
 
     let sourceOrigin: string;
     try {
       sourceOrigin = new URL(source).origin;
     } catch {
-      throw new ForbiddenException('Invalid origin');
+      throw new ForbiddenException("Invalid origin");
     }
 
-    if (sourceOrigin !== allowedOrigin) throw new ForbiddenException('Cross-origin request blocked');
+    if (sourceOrigin !== allowedOrigin) {
+      throw new ForbiddenException("Cross-origin request blocked");
+    }
     return true;
   }
 }

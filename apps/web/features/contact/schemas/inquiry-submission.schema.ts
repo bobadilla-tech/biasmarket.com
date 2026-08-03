@@ -8,7 +8,13 @@ export const inquirySubmissionSchema = z.object({
   name: z.string().min(1, "name required"),
   email: z.string().email("invalid email"),
   company: z.string(),
-  inquiryType: z.enum(["general", "technical", "pricing", "partnership", "other"]),
+  inquiryType: z.enum([
+    "general",
+    "technical",
+    "pricing",
+    "partnership",
+    "other",
+  ]),
   message: z.string().min(1, "message required"),
 });
 

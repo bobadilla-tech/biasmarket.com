@@ -9,6 +9,7 @@ import { authClient } from "@/lib/auth-client";
 // currently being impersonated (only one impersonation can be in flight).
 export function useImpersonateStore() {
   return useMutation({
-    mutationFn: (userId: string) => authClient.admin.impersonateUser({ userId }),
+    mutationFn: (userId: string) =>
+      authClient.admin.impersonateUser({ userId }),
   });
 }

@@ -1,7 +1,10 @@
 import { afterEach, expect, test, vi } from "vitest";
 
 const apiFetch = vi.fn();
-vi.mock("@/lib/api", () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }));
+vi.mock(
+  "@/lib/api",
+  () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }),
+);
 
 const { categoriesApi } = await import("./categories.api");
 
@@ -14,7 +17,11 @@ test("list validates the response against categoryListSchema", async () => {
 
   const result = await categoriesApi.list("store-1");
 
-  expect(apiFetch).toHaveBeenCalledWith("/stores/store-1/categories", {}, undefined);
+  expect(apiFetch).toHaveBeenCalledWith(
+    "/stores/store-1/categories",
+    {},
+    undefined,
+  );
   expect(result).toEqual([{ id: "c1", name: "Clothing" }]);
 });
 

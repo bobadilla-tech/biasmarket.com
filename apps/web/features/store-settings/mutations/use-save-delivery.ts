@@ -18,7 +18,9 @@ export function useSaveDelivery(storeId: string | undefined) {
     }) => settingsApi.saveDeliverySettings(storeId as string, input),
     onSuccess: () => {
       if (!storeId) return;
-      queryClient.invalidateQueries({ queryKey: deliverySettingsKeys.byStore(storeId) });
+      queryClient.invalidateQueries({
+        queryKey: deliverySettingsKeys.byStore(storeId),
+      });
     },
   });
 }

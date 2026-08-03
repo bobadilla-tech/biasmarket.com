@@ -4,14 +4,16 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { getCart, type CartItem } from "@/lib/cart";
+import { type CartItem, getCart } from "@/lib/cart";
 import { CheckoutForm, CheckoutSummary } from "@/features/checkout";
 
 export default function CheckoutPage() {
   const t = useTranslations("storefront.checkoutPage");
   const { slug } = useParams<{ slug: string }>();
   const [items, setItems] = useState<CartItem[]>([]);
-  const [order, setOrder] = useState<{ orderId: string; customerEmail: string } | null>(null);
+  const [order, setOrder] = useState<
+    { orderId: string; customerEmail: string } | null
+  >(null);
 
   useEffect(() => {
     setItems(getCart(slug));
@@ -21,9 +23,15 @@ export default function CheckoutPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
         <div className="max-w-md text-center">
-          <h1 className="text-xl font-bold text-gray-900">{t("orderCreatedTitle")}</h1>
-          <p className="mt-2 text-gray-500">{t("orderCreatedBody", { orderId: order.orderId })}</p>
-          {order.customerEmail && <p className="mt-2 text-gray-500">{t("checkEmailNotice")}</p>}
+          <h1 className="text-xl font-bold text-gray-900">
+            {t("orderCreatedTitle")}
+          </h1>
+          <p className="mt-2 text-gray-500">
+            {t("orderCreatedBody", { orderId: order.orderId })}
+          </p>
+          {order.customerEmail && (
+            <p className="mt-2 text-gray-500">{t("checkEmailNotice")}</p>
+          )}
         </div>
       </div>
     );
@@ -34,7 +42,10 @@ export default function CheckoutPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
         <p className="text-gray-500">
           {t("emptyCart")}{" "}
-          <Link href={`/store/${slug}`} className="store-theme-link font-semibold">
+          <Link
+            href={`/store/${slug}`}
+            className="store-theme-link font-semibold"
+          >
             {t("backToStore")}
           </Link>
         </p>

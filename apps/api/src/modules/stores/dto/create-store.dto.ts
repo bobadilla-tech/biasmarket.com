@@ -1,5 +1,11 @@
-import { IsIn, IsObject, IsOptional, IsString, MinLength } from 'class-validator';
-import { SUPPORTED_CURRENCIES } from '@biasmarket/utils/currency';
+import {
+  IsIn,
+  IsObject,
+  IsOptional,
+  IsString,
+  MinLength,
+} from "class-validator";
+import { SUPPORTED_CURRENCIES } from "@biasmarket/utils/currency";
 
 export class CreateStoreDto {
   @IsString()

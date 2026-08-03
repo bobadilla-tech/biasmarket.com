@@ -1,23 +1,35 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../../prisma/prisma.service.js';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
+import { PrismaService } from "../../../prisma/prisma.service.js";
 
 @Injectable()
 export class CustomersService {
   constructor(private prisma: PrismaService) {}
 
   private async assertOwnership(storeId: string, userId: string) {
-    const store = await this.prisma.store.findUnique({ where: { id: storeId } });
-    if (!store) throw new NotFoundException('Store no encontrada');
+    const store = await this.prisma.store.findUnique({
+      where: { id: storeId },
+    });
+    if (!store) throw new NotFoundException("Store no encontrada");
     if (store.ownerId !== userId) {
-      throw new ForbiddenException('No sos dueño de esta store');
+      throw new ForbiddenException("No sos dueño de esta store");
     }
     return store;
   }
 
   private withPaymentSummary<
-    T extends { requiredAmount: { toString(): string }; payments?: { amount: { toString(): string } }[] },
+    T extends {
+      requiredAmount: { toString(): string };
+      payments?: { amount: { toString(): string } }[];
+    },
   >(order: T) {
-    const paid = (order.payments ?? []).reduce((sum, payment) => sum + Number(payment.amount), 0);
+    const paid = (order.payments ?? []).reduce(
+      (sum, payment) => sum + Number(payment.amount),
+      0,
+    );
     const required = Number(order.requiredAmount);
     return {
       ...order,
@@ -31,15 +43,21 @@ export class CustomersService {
     await this.assertOwnership(storeId, userId);
 
     const [customers, orderGroups, payments] = await Promise.all([
-      this.prisma.customer.findMany({ where: { storeId }, orderBy: { createdAt: 'desc' } }),
+      this.prisma.customer.findMany({
+        where: { storeId },
+        orderBy: { createdAt: "desc" },
+      }),
       this.prisma.order.groupBy({
-        by: ['customerId'],
+        by: ["customerId"],
         where: { storeId, customerId: { not: null } },
         _count: true,
         _max: { createdAt: true },
       }),
       this.prisma.orderPayment.findMany({
-        where: { storeId, order: { paymentStatus: 'VERIFIED', customerId: { not: null } } },
+        where: {
+          storeId,
+          order: { paymentStatus: "VERIFIED", customerId: { not: null } },
+        },
         select: { amount: true, order: { select: { customerId: true } } },
       }),
     ]);
@@ -48,13 +66,18 @@ export class CustomersService {
       orderGroups.map((group) => [group.customerId as string, group._count]),
     );
     const lastOrderAtByCustomer = new Map(
-      orderGroups.map((group) => [group.customerId as string, group._max.createdAt]),
+      orderGroups.map((
+        group,
+      ) => [group.customerId as string, group._max.createdAt]),
     );
     const spendByCustomer = new Map<string, number>();
     for (const payment of payments) {
       const customerId = payment.order.customerId;
       if (!customerId) continue;
-      spendByCustomer.set(customerId, (spendByCustomer.get(customerId) ?? 0) + Number(payment.amount));
+      spendByCustomer.set(
+        customerId,
+        (spendByCustomer.get(customerId) ?? 0) + Number(payment.amount),
+      );
     }
 
     return customers.map((customer) => ({
@@ -73,17 +96,19 @@ export class CustomersService {
   async findOneForStore(customerId: string, storeId: string, userId: string) {
     await this.assertOwnership(storeId, userId);
 
-    const customer = await this.prisma.customer.findUnique({ where: { id: customerId } });
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: customerId },
+    });
     if (!customer || customer.storeId !== storeId) {
-      throw new NotFoundException('Cliente no encontrado');
+      throw new NotFoundException("Cliente no encontrado");
     }
 
     const orders = await this.prisma.order.findMany({
       where: { storeId, customerId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       include: {
         items: { include: { product: true, variant: true } },
-        payments: { orderBy: { createdAt: 'desc' } },
+        payments: { orderBy: { createdAt: "desc" } },
       },
     });
 

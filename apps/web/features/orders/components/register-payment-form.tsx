@@ -9,7 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { buildRegisterPaymentSchema, type RegisterPaymentInput } from "../schemas/register-payment.schema";
+import {
+  buildRegisterPaymentSchema,
+  type RegisterPaymentInput,
+} from "../schemas/register-payment.schema";
 
 export function RegisterPaymentForm({
   pendingAmount,
@@ -33,7 +36,9 @@ export function RegisterPaymentForm({
     CASH: t("paymentMethodLabels.CASH"),
   };
 
-  const { register, handleSubmit, watch, control, reset } = useForm<RegisterPaymentInput>({
+  const { register, handleSubmit, watch, control, reset } = useForm<
+    RegisterPaymentInput
+  >({
     resolver: zodResolver(buildRegisterPaymentSchema(pendingAmount)),
     defaultValues: { amount: "", method: "", note: "", file: null },
   });
@@ -109,7 +114,8 @@ export function RegisterPaymentForm({
               accept="image/png,image/jpeg"
               className="hidden"
               id="payment-image-upload"
-              onChange={(event) => field.onChange(event.target.files?.[0] ?? null)}
+              onChange={(event) =>
+                field.onChange(event.target.files?.[0] ?? null)}
             />
           )}
         />
@@ -123,27 +129,35 @@ export function RegisterPaymentForm({
           )}
         >
           <div className="flex size-9 items-center justify-center rounded-full bg-[#f0e7f8]">
-            {file ? (
-              <ImageIcon className="size-4 text-[var(--store-primary)]" />
-            ) : (
-              <Upload className="size-4 text-[var(--store-primary)]" />
-            )}
+            {file
+              ? <ImageIcon className="size-4 text-[var(--store-primary)]" />
+              : <Upload className="size-4 text-[var(--store-primary)]" />}
           </div>
 
           <div className="flex-1">
-            {file ? (
-              <>
-                <p className="truncate text-sm font-semibold text-[#2d1649]">{file.name}</p>
-                <p className="text-xs text-[#8f7da8]">
-                  {t("details.imageSize", { size: (file.size / 1024).toFixed(1) })}
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="text-sm font-semibold text-[#2d1649]">{t("details.uploadPaymentImage")}</p>
-                <p className="text-xs text-[#8f7da8]">{t("details.uploadPaymentImageHint")}</p>
-              </>
-            )}
+            {file
+              ? (
+                <>
+                  <p className="truncate text-sm font-semibold text-[#2d1649]">
+                    {file.name}
+                  </p>
+                  <p className="text-xs text-[#8f7da8]">
+                    {t("details.imageSize", {
+                      size: (file.size / 1024).toFixed(1),
+                    })}
+                  </p>
+                </>
+              )
+              : (
+                <>
+                  <p className="text-sm font-semibold text-[#2d1649]">
+                    {t("details.uploadPaymentImage")}
+                  </p>
+                  <p className="text-xs text-[#8f7da8]">
+                    {t("details.uploadPaymentImageHint")}
+                  </p>
+                </>
+              )}
           </div>
 
           {!file && (
@@ -156,8 +170,14 @@ export function RegisterPaymentForm({
         {file && previewUrl && (
           <div className="flex items-center justify-between rounded-xl border border-[#f0e7f8] bg-white p-2">
             <div className="flex items-center gap-3">
-              <img src={previewUrl} alt="" className="size-12 rounded-lg object-cover" />
-              <span className="text-xs text-[#8f7da8]">{t("details.imagePreview")}</span>
+              <img
+                src={previewUrl}
+                alt=""
+                className="size-12 rounded-lg object-cover"
+              />
+              <span className="text-xs text-[#8f7da8]">
+                {t("details.imagePreview")}
+              </span>
             </div>
 
             <Button

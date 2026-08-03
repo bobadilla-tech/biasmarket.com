@@ -1,9 +1,20 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
-import type { Request, Response } from 'express';
-import { verifyCustomerSessionToken, createCustomerSessionToken } from '@biasmarket/utils/customer-account-token';
-import { PrismaService } from '../../prisma/prisma.service.js';
-import { derivePasswordVersion } from './customer-auth.service.js';
-import { CUSTOMER_SESSION_COOKIE, CUSTOMER_SESSION_TTL_MS } from './customer-session.constants.js';
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from "@nestjs/common";
+import type { Request, Response } from "express";
+import {
+  createCustomerSessionToken,
+  verifyCustomerSessionToken,
+} from "@biasmarket/utils/customer-account-token";
+import { PrismaService } from "../../prisma/prisma.service.js";
+import { derivePasswordVersion } from "./customer-auth.service.js";
+import {
+  CUSTOMER_SESSION_COOKIE,
+  CUSTOMER_SESSION_TTL_MS,
+} from "./customer-session.constants.js";
 
 function requiredEnv(name: string): string {
   const value = process.env[name];
@@ -17,8 +28,8 @@ function requiredEnv(name: string): string {
 function parseCookies(header: string | undefined): Record<string, string> {
   const cookies: Record<string, string> = {};
   if (!header) return cookies;
-  for (const part of header.split(';')) {
-    const separator = part.indexOf('=');
+  for (const part of header.split(";")) {
+    const separator = part.indexOf("=");
     if (separator === -1) continue;
     const key = part.slice(0, separator).trim();
     if (key) cookies[key] = part.slice(separator + 1).trim();
@@ -47,13 +58,15 @@ export class CustomerSessionGuard implements CanActivate {
     const res = context.switchToHttp().getResponse<Response>();
 
     const token = parseCookies(req.headers.cookie)[CUSTOMER_SESSION_COOKIE];
-    if (!token) throw new UnauthorizedException('No autenticado');
+    if (!token) throw new UnauthorizedException("No autenticado");
 
-    const secret = requiredEnv('CUSTOMER_ACCOUNT_TOKEN_SECRET');
+    const secret = requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET");
     const verified = verifyCustomerSessionToken(token, secret);
-    if (!verified) throw new UnauthorizedException('Sesión expirada');
+    if (!verified) throw new UnauthorizedException("Sesión expirada");
 
-    const customer = await this.prisma.customer.findUnique({ where: { id: verified.customerId } });
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: verified.customerId },
+    });
     if (
       !customer?.passwordHash ||
       customer.storeId !== verified.storeId ||
@@ -61,23 +74,31 @@ export class CustomerSessionGuard implements CanActivate {
     ) {
       // Covers: customer deleted, moved store, or (most commonly) password
       // changed since this token was issued — see derivePasswordVersion.
-      throw new UnauthorizedException('Sesión expirada');
+      throw new UnauthorizedException("Sesión expirada");
     }
 
     // Sliding renewal: every authenticated request reissues a fresh 7-day
     // cookie, so an active session never expires mid-use; a fully idle one
     // still expires CUSTOMER_SESSION_TTL_MS after its last authenticated
     // request. Deliberate choice, not the only valid one — see the plan doc.
-    const fresh = createCustomerSessionToken(customer.id, customer.storeId, verified.passwordVersion, secret);
+    const fresh = createCustomerSessionToken(
+      customer.id,
+      customer.storeId,
+      verified.passwordVersion,
+      secret,
+    );
     res.cookie(CUSTOMER_SESSION_COOKIE, fresh, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
       maxAge: CUSTOMER_SESSION_TTL_MS,
-      path: '/',
+      path: "/",
     });
 
-    (req as CustomerSessionRequest).customerSession = { id: customer.id, storeId: customer.storeId };
+    (req as CustomerSessionRequest).customerSession = {
+      id: customer.id,
+      storeId: customer.storeId,
+    };
     return true;
   }
 }

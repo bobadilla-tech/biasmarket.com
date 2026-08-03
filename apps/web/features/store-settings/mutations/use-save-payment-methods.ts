@@ -12,7 +12,9 @@ export function useSavePaymentMethods(storeId: string | undefined) {
       settingsApi.savePaymentMethods(storeId as string, enabledByMethod),
     onSuccess: () => {
       if (!storeId) return;
-      queryClient.invalidateQueries({ queryKey: paymentMethodsKeys.byStore(storeId) });
+      queryClient.invalidateQueries({
+        queryKey: paymentMethodsKeys.byStore(storeId),
+      });
     },
   });
 }

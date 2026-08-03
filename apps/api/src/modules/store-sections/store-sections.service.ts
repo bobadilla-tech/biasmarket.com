@@ -1,14 +1,17 @@
 import {
-  Injectable,
-  ForbiddenException,
-  NotFoundException,
   BadRequestException,
-} from '@nestjs/common';
-import type { Prisma } from '@biasmarket/db';
-import { PrismaService } from '../../prisma/prisma.service.js';
-import { CreateStoreSectionDto, StoreSectionTypeDto } from './dto/create-store-section.dto.js';
-import { UpdateStoreSectionDto } from './dto/update-store-section.dto.js';
-import { ReorderStoreSectionsDto } from './dto/reorder-store-sections.dto.js';
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
+import type { Prisma } from "@biasmarket/db";
+import { PrismaService } from "../../prisma/prisma.service.js";
+import {
+  CreateStoreSectionDto,
+  StoreSectionTypeDto,
+} from "./dto/create-store-section.dto.js";
+import { UpdateStoreSectionDto } from "./dto/update-store-section.dto.js";
+import { ReorderStoreSectionsDto } from "./dto/reorder-store-sections.dto.js";
 
 @Injectable()
 export class StoreSectionsService {
@@ -18,9 +21,9 @@ export class StoreSectionsService {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
-    if (!store) throw new NotFoundException('Store no encontrada');
+    if (!store) throw new NotFoundException("Store no encontrada");
     if (store.ownerId !== userId) {
-      throw new ForbiddenException('No sos dueño de esta store');
+      throw new ForbiddenException("No sos dueño de esta store");
     }
     return store;
   }
@@ -35,7 +38,7 @@ export class StoreSectionsService {
       where: { id: sectionId },
     });
     if (!section || section.storeId !== storeId) {
-      throw new NotFoundException('Sección no encontrada');
+      throw new NotFoundException("Sección no encontrada");
     }
     return section;
   }
@@ -45,7 +48,7 @@ export class StoreSectionsService {
       where: { id: collectionId },
     });
     if (!collection || collection.storeId !== storeId) {
-      throw new BadRequestException('Colección inválida');
+      throw new BadRequestException("Colección inválida");
     }
   }
 
@@ -53,17 +56,21 @@ export class StoreSectionsService {
     await this.assertOwnership(storeId, userId);
     if (dto.type === StoreSectionTypeDto.COLLECTION) {
       if (!dto.collectionId) {
-        throw new BadRequestException('collectionId es requerido para secciones de tipo COLLECTION');
+        throw new BadRequestException(
+          "collectionId es requerido para secciones de tipo COLLECTION",
+        );
       }
       await this.assertCollectionInStore(dto.collectionId, storeId);
     }
-    const position =
-      dto.position ?? (await this.prisma.storeSection.count({ where: { storeId } }));
+    const position = dto.position ??
+      (await this.prisma.storeSection.count({ where: { storeId } }));
     return this.prisma.storeSection.create({
       data: {
         storeId,
         type: dto.type,
-        collectionId: dto.type === StoreSectionTypeDto.COLLECTION ? dto.collectionId : null,
+        collectionId: dto.type === StoreSectionTypeDto.COLLECTION
+          ? dto.collectionId
+          : null,
         content: (dto.content ?? {}) as Prisma.InputJsonValue,
         position,
       },
@@ -74,7 +81,7 @@ export class StoreSectionsService {
     await this.assertOwnership(storeId, userId);
     return this.prisma.storeSection.findMany({
       where: { storeId },
-      orderBy: { position: 'asc' },
+      orderBy: { position: "asc" },
     });
   }
 
@@ -89,7 +96,9 @@ export class StoreSectionsService {
     if (nextType === StoreSectionTypeDto.COLLECTION) {
       const nextCollectionId = dto.collectionId ?? existing.collectionId;
       if (!nextCollectionId) {
-        throw new BadRequestException('collectionId es requerido para secciones de tipo COLLECTION');
+        throw new BadRequestException(
+          "collectionId es requerido para secciones de tipo COLLECTION",
+        );
       }
       await this.assertCollectionInStore(nextCollectionId, storeId);
     }
@@ -97,8 +106,10 @@ export class StoreSectionsService {
       where: { id: sectionId },
       data: {
         ...(dto.type !== undefined && { type: dto.type }),
-        ...(dto.collectionId !== undefined && { collectionId: dto.collectionId }),
-        ...(dto.content !== undefined && { content: dto.content as Prisma.InputJsonValue }),
+        ...(dto.collectionId !== undefined &&
+          { collectionId: dto.collectionId }),
+        ...(dto.content !== undefined &&
+          { content: dto.content as Prisma.InputJsonValue }),
         ...(dto.position !== undefined && { position: dto.position }),
       },
     });
@@ -116,7 +127,7 @@ export class StoreSectionsService {
         this.prisma.storeSection.update({
           where: { id: sectionId },
           data: { position },
-        }),
+        })
       ),
     );
   }

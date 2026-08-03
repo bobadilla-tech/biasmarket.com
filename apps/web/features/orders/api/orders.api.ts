@@ -8,7 +8,11 @@ function apiUrl() {
 
 export const ordersApi = {
   async list(storeId: string, fallbackErrorMessage?: string) {
-    const data = await apiFetch(`/stores/${storeId}/orders`, {}, fallbackErrorMessage);
+    const data = await apiFetch(
+      `/stores/${storeId}/orders`,
+      {},
+      fallbackErrorMessage,
+    );
     return orderListSchema.parse(data);
   },
 
@@ -21,12 +25,20 @@ export const ordersApi = {
   ) {
     return apiFetch(
       `/stores/${storeId}/orders/${orderId}/review`,
-      { method: "PATCH", body: JSON.stringify({ decision, ...(reason && { reason }) }) },
+      {
+        method: "PATCH",
+        body: JSON.stringify({ decision, ...(reason && { reason }) }),
+      },
       fallbackErrorMessage,
     );
   },
 
-  advance(storeId: string, orderId: string, status: string, fallbackErrorMessage?: string) {
+  advance(
+    storeId: string,
+    orderId: string,
+    status: string,
+    fallbackErrorMessage?: string,
+  ) {
     return apiFetch(
       `/stores/${storeId}/orders/${orderId}/fulfillment`,
       { method: "PATCH", body: JSON.stringify({ status }) },
@@ -46,13 +58,18 @@ export const ordersApi = {
     if (values.note) formData.append("note", values.note);
     if (values.file) formData.append("file", values.file);
 
-    const res = await fetch(`${apiUrl()}/api/stores/${storeId}/orders/${orderId}/payments`, {
-      method: "POST",
-      credentials: "include",
-      body: formData,
-    });
+    const res = await fetch(
+      `${apiUrl()}/api/stores/${storeId}/orders/${orderId}/payments`,
+      {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      },
+    );
     const data = await res.json().catch(() => null);
-    if (!res.ok) throw new Error(data?.message ?? fallbackErrorMessage ?? "Network error");
+    if (!res.ok) {
+      throw new Error(data?.message ?? fallbackErrorMessage ?? "Network error");
+    }
     return data;
   },
 };

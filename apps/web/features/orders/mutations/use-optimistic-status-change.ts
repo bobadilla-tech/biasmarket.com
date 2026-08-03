@@ -39,8 +39,12 @@ export function useOptimisticStatusChange(
 
   const patch = (orderId: string, field: StatusField, value: string) => {
     if (!storeId) return;
-    queryClient.setQueryData<Order[]>(ordersKeys.byStore(storeId), (orders) =>
-      orders?.map((order) => (order.id === orderId ? { ...order, [field]: value } : order)),
+    queryClient.setQueryData<Order[]>(
+      ordersKeys.byStore(storeId),
+      (orders) =>
+        orders?.map((
+          order,
+        ) => (order.id === orderId ? { ...order, [field]: value } : order)),
     );
   };
 
@@ -81,16 +85,37 @@ export function useOptimisticStatusChange(
   };
 
   const scheduleReview = (order: Order, label: string) => {
-    schedule(order.id, "paymentStatus", order.paymentStatus, "VERIFIED", label, () =>
-      reviewPayment.mutateAsync({ orderId: order.id, decision: "approve" }),
+    schedule(
+      order.id,
+      "paymentStatus",
+      order.paymentStatus,
+      "VERIFIED",
+      label,
+      () =>
+        reviewPayment.mutateAsync({ orderId: order.id, decision: "approve" }),
     );
   };
 
   const scheduleAdvance = (order: Order, nextStatus: string, label: string) => {
-    schedule(order.id, "fulfillmentStatus", order.fulfillmentStatus, nextStatus, label, () =>
-      advanceFulfillment.mutateAsync({ orderId: order.id, status: nextStatus }),
+    schedule(
+      order.id,
+      "fulfillmentStatus",
+      order.fulfillmentStatus,
+      nextStatus,
+      label,
+      () =>
+        advanceFulfillment.mutateAsync({
+          orderId: order.id,
+          status: nextStatus,
+        }),
     );
   };
 
-  return { pending, scheduleReview, scheduleAdvance, reviewPayment, advanceFulfillment };
+  return {
+    pending,
+    scheduleReview,
+    scheduleAdvance,
+    reviewPayment,
+    advanceFulfillment,
+  };
 }

@@ -1,18 +1,24 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, TestingModule } from "@nestjs/testing";
 import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
   NotFoundException,
   UnauthorizedException,
-} from '@nestjs/common';
-import { vi, type Mock } from 'vitest';
-import { hashPassword } from 'better-auth/crypto';
-import { createCustomerAccountToken, verifyCustomerSessionToken } from '@biasmarket/utils/customer-account-token';
-import { CustomerAuthService, derivePasswordVersion } from './customer-auth.service.js';
-import { PrismaService } from '../../prisma/prisma.service.js';
+} from "@nestjs/common";
+import { type Mock, vi } from "vitest";
+import { hashPassword } from "better-auth/crypto";
+import {
+  createCustomerAccountToken,
+  verifyCustomerSessionToken,
+} from "@biasmarket/utils/customer-account-token";
+import {
+  CustomerAuthService,
+  derivePasswordVersion,
+} from "./customer-auth.service.js";
+import { PrismaService } from "../../prisma/prisma.service.js";
 
-describe('CustomerAuthService', () => {
+describe("CustomerAuthService", () => {
   let service: CustomerAuthService;
   let prisma: {
     customer: { findUnique: Mock; findUniqueOrThrow: Mock; update: Mock };
@@ -20,237 +26,312 @@ describe('CustomerAuthService', () => {
     order: { findMany: Mock };
   };
 
-  const store = { id: 'store-1', slug: 'my-store' };
+  const store = { id: "store-1", slug: "my-store" };
 
   beforeEach(async () => {
-    process.env.CUSTOMER_ACCOUNT_TOKEN_SECRET = 'test-secret';
+    process.env.CUSTOMER_ACCOUNT_TOKEN_SECRET = "test-secret";
 
     prisma = {
-      customer: { findUnique: vi.fn(), findUniqueOrThrow: vi.fn(), update: vi.fn() },
+      customer: {
+        findUnique: vi.fn(),
+        findUniqueOrThrow: vi.fn(),
+        update: vi.fn(),
+      },
       store: { findUnique: vi.fn().mockResolvedValue(store) },
       order: { findMany: vi.fn() },
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [CustomerAuthService, { provide: PrismaService, useValue: prisma }],
+      providers: [CustomerAuthService, {
+        provide: PrismaService,
+        useValue: prisma,
+      }],
     }).compile();
 
     service = module.get(CustomerAuthService);
   });
 
-  describe('register', () => {
-    it('sets a password for a verified, not-yet-registered customer', async () => {
-      const token = createCustomerAccountToken('customer-1', 'test-secret');
+  describe("register", () => {
+    it("sets a password for a verified, not-yet-registered customer", async () => {
+      const token = createCustomerAccountToken("customer-1", "test-secret");
       prisma.customer.findUnique.mockResolvedValue({
-        id: 'customer-1',
+        id: "customer-1",
         storeId: store.id,
         passwordHash: null,
       });
 
-      const result = await service.register('my-store', token, 'super-secret-1');
+      const result = await service.register(
+        "my-store",
+        token,
+        "super-secret-1",
+      );
 
       expect(result).toEqual({ ok: true });
       expect(prisma.customer.update).toHaveBeenCalledWith({
-        where: { id: 'customer-1' },
+        where: { id: "customer-1" },
         data: { passwordHash: expect.any(String), emailVerified: true },
       });
     });
 
-    it('rejects an invalid or expired token', async () => {
-      await expect(service.register('my-store', 'not-a-token', 'super-secret-1')).rejects.toBeInstanceOf(
+    it("rejects an invalid or expired token", async () => {
+      await expect(
+        service.register("my-store", "not-a-token", "super-secret-1"),
+      ).rejects.toBeInstanceOf(
         BadRequestException,
       );
       expect(prisma.customer.update).not.toHaveBeenCalled();
     });
 
-    it('rejects when the token belongs to a customer in a different store', async () => {
-      const token = createCustomerAccountToken('customer-1', 'test-secret');
+    it("rejects when the token belongs to a customer in a different store", async () => {
+      const token = createCustomerAccountToken("customer-1", "test-secret");
       prisma.customer.findUnique.mockResolvedValue({
-        id: 'customer-1',
-        storeId: 'other-store',
+        id: "customer-1",
+        storeId: "other-store",
         passwordHash: null,
       });
 
-      await expect(service.register('my-store', token, 'super-secret-1')).rejects.toBeInstanceOf(
-        BadRequestException,
-      );
+      await expect(service.register("my-store", token, "super-secret-1"))
+        .rejects.toBeInstanceOf(
+          BadRequestException,
+        );
     });
 
-    it('rejects re-registration once a password is already set (single-use)', async () => {
-      const token = createCustomerAccountToken('customer-1', 'test-secret');
+    it("rejects re-registration once a password is already set (single-use)", async () => {
+      const token = createCustomerAccountToken("customer-1", "test-secret");
       prisma.customer.findUnique.mockResolvedValue({
-        id: 'customer-1',
+        id: "customer-1",
         storeId: store.id,
-        passwordHash: 'already-set',
+        passwordHash: "already-set",
       });
 
-      await expect(service.register('my-store', token, 'super-secret-1')).rejects.toBeInstanceOf(
-        ConflictException,
-      );
+      await expect(service.register("my-store", token, "super-secret-1"))
+        .rejects.toBeInstanceOf(
+          ConflictException,
+        );
       expect(prisma.customer.update).not.toHaveBeenCalled();
     });
 
-    it('rejects when the store does not exist', async () => {
+    it("rejects when the store does not exist", async () => {
       prisma.store.findUnique.mockResolvedValue(null);
 
-      await expect(service.register('missing-store', 'any-token', 'super-secret-1')).rejects.toBeInstanceOf(
+      await expect(
+        service.register("missing-store", "any-token", "super-secret-1"),
+      ).rejects.toBeInstanceOf(
         NotFoundException,
       );
     });
   });
 
-  describe('login', () => {
-    it('issues a session token on valid credentials, scoped to the store', async () => {
-      const passwordHash = await hashPassword('super-secret-1');
+  describe("login", () => {
+    it("issues a session token on valid credentials, scoped to the store", async () => {
+      const passwordHash = await hashPassword("super-secret-1");
       prisma.customer.findUnique.mockResolvedValue({
-        id: 'customer-1',
+        id: "customer-1",
         storeId: store.id,
         passwordHash,
       });
 
-      const token = await service.login('my-store', '+51988888888', 'super-secret-1');
+      const token = await service.login(
+        "my-store",
+        "+51988888888",
+        "super-secret-1",
+      );
 
-      const verified = verifyCustomerSessionToken(token, 'test-secret');
+      const verified = verifyCustomerSessionToken(token, "test-secret");
       expect(verified).toEqual({
-        customerId: 'customer-1',
+        customerId: "customer-1",
         storeId: store.id,
         passwordVersion: derivePasswordVersion(passwordHash),
       });
     });
 
-    it('rejects a wrong password without revealing which part was wrong', async () => {
-      const passwordHash = await hashPassword('super-secret-1');
-      prisma.customer.findUnique.mockResolvedValue({ id: 'customer-1', storeId: store.id, passwordHash });
+    it("rejects a wrong password without revealing which part was wrong", async () => {
+      const passwordHash = await hashPassword("super-secret-1");
+      prisma.customer.findUnique.mockResolvedValue({
+        id: "customer-1",
+        storeId: store.id,
+        passwordHash,
+      });
 
-      await expect(service.login('my-store', '+51988888888', 'wrong-password')).rejects.toBeInstanceOf(
-        UnauthorizedException,
-      );
+      await expect(service.login("my-store", "+51988888888", "wrong-password"))
+        .rejects.toBeInstanceOf(
+          UnauthorizedException,
+        );
     });
 
-    it('rejects an unknown phone with the same generic error as a wrong password', async () => {
+    it("rejects an unknown phone with the same generic error as a wrong password", async () => {
       prisma.customer.findUnique.mockResolvedValue(null);
 
-      await expect(service.login('my-store', '+51900000000', 'super-secret-1')).rejects.toBeInstanceOf(
-        UnauthorizedException,
-      );
+      await expect(service.login("my-store", "+51900000000", "super-secret-1"))
+        .rejects.toBeInstanceOf(
+          UnauthorizedException,
+        );
     });
 
-    it('rejects a customer that has never set a password (magic-link only)', async () => {
-      prisma.customer.findUnique.mockResolvedValue({ id: 'customer-1', storeId: store.id, passwordHash: null });
+    it("rejects a customer that has never set a password (magic-link only)", async () => {
+      prisma.customer.findUnique.mockResolvedValue({
+        id: "customer-1",
+        storeId: store.id,
+        passwordHash: null,
+      });
 
-      await expect(service.login('my-store', '+51988888888', 'anything')).rejects.toBeInstanceOf(
-        UnauthorizedException,
-      );
+      await expect(service.login("my-store", "+51988888888", "anything"))
+        .rejects.toBeInstanceOf(
+          UnauthorizedException,
+        );
     });
   });
 
-  describe('changePassword', () => {
-    it('rotates the password and issues a fresh session token', async () => {
-      const currentHash = await hashPassword('old-password-1');
+  describe("changePassword", () => {
+    it("rotates the password and issues a fresh session token", async () => {
+      const currentHash = await hashPassword("old-password-1");
       prisma.customer.findUnique.mockResolvedValue({
-        id: 'customer-1',
+        id: "customer-1",
         storeId: store.id,
         passwordHash: currentHash,
       });
 
-      const token = await service.changePassword('customer-1', 'old-password-1', 'new-password-1');
+      const token = await service.changePassword(
+        "customer-1",
+        "old-password-1",
+        "new-password-1",
+      );
 
       expect(prisma.customer.update).toHaveBeenCalledWith({
-        where: { id: 'customer-1' },
+        where: { id: "customer-1" },
         data: { passwordHash: expect.any(String) },
       });
-      const verified = verifyCustomerSessionToken(token, 'test-secret');
-      expect(verified?.customerId).toBe('customer-1');
+      const verified = verifyCustomerSessionToken(token, "test-secret");
+      expect(verified?.customerId).toBe("customer-1");
       // The new token's embedded version must not match the OLD hash's
       // version — otherwise a token issued before the change would still
       // pass CustomerSessionGuard after it.
-      expect(verified?.passwordVersion).not.toBe(derivePasswordVersion(currentHash));
+      expect(verified?.passwordVersion).not.toBe(
+        derivePasswordVersion(currentHash),
+      );
     });
 
-    it('rejects the wrong current password', async () => {
-      const currentHash = await hashPassword('old-password-1');
+    it("rejects the wrong current password", async () => {
+      const currentHash = await hashPassword("old-password-1");
       prisma.customer.findUnique.mockResolvedValue({
-        id: 'customer-1',
+        id: "customer-1",
         storeId: store.id,
         passwordHash: currentHash,
       });
 
-      await expect(service.changePassword('customer-1', 'not-the-current-one', 'new-password-1')).rejects.toBeInstanceOf(
+      await expect(
+        service.changePassword(
+          "customer-1",
+          "not-the-current-one",
+          "new-password-1",
+        ),
+      ).rejects.toBeInstanceOf(
         BadRequestException,
       );
       expect(prisma.customer.update).not.toHaveBeenCalled();
     });
 
-    it('rejects a customer without a password set', async () => {
-      prisma.customer.findUnique.mockResolvedValue({ id: 'customer-1', storeId: store.id, passwordHash: null });
+    it("rejects a customer without a password set", async () => {
+      prisma.customer.findUnique.mockResolvedValue({
+        id: "customer-1",
+        storeId: store.id,
+        passwordHash: null,
+      });
 
-      await expect(service.changePassword('customer-1', 'anything', 'new-password-1')).rejects.toBeInstanceOf(
+      await expect(
+        service.changePassword("customer-1", "anything", "new-password-1"),
+      ).rejects.toBeInstanceOf(
         UnauthorizedException,
       );
     });
   });
 
-  describe('getProfile', () => {
-    const session = { id: 'customer-1', storeId: store.id };
+  describe("getProfile", () => {
+    const session = { id: "customer-1", storeId: store.id };
 
-    it('returns the customer plus their order history, scoped to their own store', async () => {
+    it("returns the customer plus their order history, scoped to their own store", async () => {
       prisma.customer.findUniqueOrThrow.mockResolvedValue({
-        id: 'customer-1',
+        id: "customer-1",
         storeId: store.id,
-        name: 'Jane',
-        email: 'jane@example.com',
-        phone: '+51988888888',
+        name: "Jane",
+        email: "jane@example.com",
+        phone: "+51988888888",
         emailVerified: true,
       });
-      const orders = [{ id: 'order-1', paymentStatus: 'VERIFIED', fulfillmentStatus: 'READY' }];
+      const orders = [{
+        id: "order-1",
+        paymentStatus: "VERIFIED",
+        fulfillmentStatus: "READY",
+      }];
       prisma.order.findMany.mockResolvedValue(orders);
 
-      const result = await service.getProfile('my-store', session);
+      const result = await service.getProfile("my-store", session);
 
       expect(result).toEqual({
-        customer: { name: 'Jane', email: 'jane@example.com', phone: '+51988888888', emailVerified: true },
+        customer: {
+          name: "Jane",
+          email: "jane@example.com",
+          phone: "+51988888888",
+          emailVerified: true,
+        },
         orders,
       });
       expect(prisma.order.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { customerId: 'customer-1', storeId: store.id } }),
+        expect.objectContaining({
+          where: { customerId: "customer-1", storeId: store.id },
+        }),
       );
     });
 
-    it('rejects when the route slug belongs to a different store than the session', async () => {
-      prisma.store.findUnique.mockResolvedValue({ id: 'other-store-id', slug: 'a-different-store' });
+    it("rejects when the route slug belongs to a different store than the session", async () => {
+      prisma.store.findUnique.mockResolvedValue({
+        id: "other-store-id",
+        slug: "a-different-store",
+      });
 
-      await expect(service.getProfile('a-different-store', session)).rejects.toBeInstanceOf(
-        ForbiddenException,
-      );
+      await expect(service.getProfile("a-different-store", session)).rejects
+        .toBeInstanceOf(
+          ForbiddenException,
+        );
       expect(prisma.customer.findUniqueOrThrow).not.toHaveBeenCalled();
     });
 
-    it('rejects when the store does not exist', async () => {
+    it("rejects when the store does not exist", async () => {
       prisma.store.findUnique.mockResolvedValue(null);
 
-      await expect(service.getProfile('missing-store', session)).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.getProfile("missing-store", session)).rejects
+        .toBeInstanceOf(NotFoundException);
     });
   });
 
-  describe('updateProfile', () => {
-    const session = { id: 'customer-1', storeId: store.id };
+  describe("updateProfile", () => {
+    const session = { id: "customer-1", storeId: store.id };
 
-    it('updates the name only', async () => {
-      prisma.customer.update.mockResolvedValue({ name: 'New Name' });
+    it("updates the name only", async () => {
+      prisma.customer.update.mockResolvedValue({ name: "New Name" });
 
-      const result = await service.updateProfile('my-store', session, 'New Name');
+      const result = await service.updateProfile(
+        "my-store",
+        session,
+        "New Name",
+      );
 
       expect(prisma.customer.update).toHaveBeenCalledWith({
-        where: { id: 'customer-1' },
-        data: { name: 'New Name' },
+        where: { id: "customer-1" },
+        data: { name: "New Name" },
       });
-      expect(result).toEqual({ name: 'New Name' });
+      expect(result).toEqual({ name: "New Name" });
     });
 
-    it('rejects when the route slug belongs to a different store than the session', async () => {
-      prisma.store.findUnique.mockResolvedValue({ id: 'other-store-id', slug: 'a-different-store' });
+    it("rejects when the route slug belongs to a different store than the session", async () => {
+      prisma.store.findUnique.mockResolvedValue({
+        id: "other-store-id",
+        slug: "a-different-store",
+      });
 
-      await expect(service.updateProfile('a-different-store', session, 'New Name')).rejects.toBeInstanceOf(
+      await expect(
+        service.updateProfile("a-different-store", session, "New Name"),
+      ).rejects.toBeInstanceOf(
         ForbiddenException,
       );
       expect(prisma.customer.update).not.toHaveBeenCalled();

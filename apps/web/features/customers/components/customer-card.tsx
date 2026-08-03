@@ -13,7 +13,8 @@ function getInitials(name: string | null, phone: string) {
     const parts = source.split(/\s+/).filter(Boolean);
     const initialA = parts[0]?.slice(0, 1) ?? "";
     const initialB = parts[1]?.slice(0, 1) ?? "";
-    return `${initialA}${initialB}`.toUpperCase() || source.slice(0, 2).toUpperCase();
+    return `${initialA}${initialB}`.toUpperCase() ||
+      source.slice(0, 2).toUpperCase();
   }
   return phone.slice(-2).toUpperCase();
 }
@@ -37,17 +38,27 @@ export function CustomerCard({
         <div className="flex items-center gap-3">
           <div
             className="flex size-11 shrink-0 items-center justify-center rounded-2xl text-sm font-semibold text-white"
-            style={{ background: "linear-gradient(135deg, var(--store-accent) 0%, var(--store-primary) 100%)" }}
+            style={{
+              background:
+                "linear-gradient(135deg, var(--store-accent) 0%, var(--store-primary) 100%)",
+            }}
           >
             {initials}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-[#2d1649]">{displayName}</p>
+            <p className="truncate text-sm font-semibold text-[#2d1649]">
+              {displayName}
+            </p>
             <p className="truncate text-xs text-[#8f7da8]">{customer.phone}</p>
           </div>
-          {customer.emailVerified ? (
-            <ShieldCheck className="size-4 shrink-0 text-emerald-600" aria-label={t("verified")} />
-          ) : null}
+          {customer.emailVerified
+            ? (
+              <ShieldCheck
+                className="size-4 shrink-0 text-emerald-600"
+                aria-label={t("verified")}
+              />
+            )
+            : null}
         </div>
 
         <div className="grid grid-cols-2 gap-3 border-t border-[#f3ebff] pt-4">
@@ -55,7 +66,9 @@ export function CustomerCard({
             <p className="text-[10px] font-semibold uppercase tracking-wide text-[#927fac]">
               {t("orderCount")}
             </p>
-            <p className="text-sm font-bold text-[#2d1649]">{customer.orderCount}</p>
+            <p className="text-sm font-bold text-[#2d1649]">
+              {customer.orderCount}
+            </p>
           </div>
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-wide text-[#927fac]">
@@ -77,7 +90,10 @@ export function CustomerCard({
             {t("viewHistory")}
           </Button>
           <a
-            href={buildWhatsAppUrl(customer.phone, t("whatsappGreeting", { name: displayName }))}
+            href={buildWhatsAppUrl(
+              customer.phone,
+              t("whatsappGreeting", { name: displayName }),
+            )}
             target="_blank"
             rel="noopener noreferrer"
           >

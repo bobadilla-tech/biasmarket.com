@@ -1,8 +1,8 @@
-import type { PrismaClient } from '@biasmarket/db';
-import { seedId } from './ids.ts';
-import * as db from './helpers.ts';
-import type { StoreFixtureSpec } from './fixtures.ts';
-import { createCustomerAccountToken } from '@biasmarket/utils/customer-account-token';
+import type { PrismaClient } from "@biasmarket/db";
+import { seedId } from "./ids.ts";
+import * as db from "./helpers.ts";
+import type { StoreFixtureSpec } from "./fixtures.ts";
+import { createCustomerAccountToken } from "@biasmarket/utils/customer-account-token";
 
 function requiredEnv(name: string): string {
   const value = process.env[name];
@@ -10,9 +10,12 @@ function requiredEnv(name: string): string {
   return value;
 }
 
-function buildCustomerConfirmUrl(storeSlug: string, customerId: string): string {
-  const secret = requiredEnv('CUSTOMER_ACCOUNT_TOKEN_SECRET');
-  const webUrl = process.env.WEB_URL ?? 'http://localhost:3001';
+function buildCustomerConfirmUrl(
+  storeSlug: string,
+  customerId: string,
+): string {
+  const secret = requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET");
+  const webUrl = process.env.WEB_URL ?? "http://localhost:3001";
   const token = createCustomerAccountToken(customerId, secret);
   return `${webUrl}/store/${storeSlug}/account/confirm?token=${token}`;
 }
@@ -28,7 +31,7 @@ export async function applyStoreFixture(
   const ownerId = await db.ensureUser(prisma, {
     email: spec.seller.email,
     name: spec.seller.name,
-    role: 'seller',
+    role: "seller",
   });
   const store = await db.ensureStore(prisma, { ownerId, ...spec.store });
 
@@ -52,16 +55,24 @@ export async function applyStoreFixture(
   }
 
   for (const dm of spec.deliveryMethods) {
-    await db.ensureDeliveryMethod(prisma, { storeId: store.id, type: dm.type, details: dm.details });
+    await db.ensureDeliveryMethod(prisma, {
+      storeId: store.id,
+      type: dm.type,
+      details: dm.details,
+    });
   }
 
-  for (const method of ['YAPE', 'PLIN', 'TRANSFER', 'CASH'] as const) {
-    await db.ensurePaymentMethod(prisma, { storeId: store.id, method, enabled: true });
+  for (const method of ["YAPE", "PLIN", "TRANSFER", "CASH"] as const) {
+    await db.ensurePaymentMethod(prisma, {
+      storeId: store.id,
+      method,
+      enabled: true,
+    });
   }
 
   const pickupPointIds = new Map<string, string>();
   for (const [index, point] of spec.pickupPoints.entries()) {
-    const id = seedId(batch, 'pickup-point', store.slug, point.key);
+    const id = seedId(batch, "pickup-point", store.slug, point.key);
     await db.ensurePickupPoint(prisma, {
       id,
       storeId: store.id,
@@ -74,12 +85,20 @@ export async function applyStoreFixture(
 
   const categoryIds = new Map<string, string>();
   for (const cat of spec.categories.filter((c) => !c.parentKey)) {
-    const row = await db.ensureCategory(prisma, { storeId: store.id, parentId: null, name: cat.name });
+    const row = await db.ensureCategory(prisma, {
+      storeId: store.id,
+      parentId: null,
+      name: cat.name,
+    });
     categoryIds.set(cat.key, row.id);
   }
   for (const cat of spec.categories.filter((c) => c.parentKey)) {
     const parentId = categoryIds.get(cat.parentKey!) ?? null;
-    const row = await db.ensureCategory(prisma, { storeId: store.id, parentId, name: cat.name });
+    const row = await db.ensureCategory(prisma, {
+      storeId: store.id,
+      parentId,
+      name: cat.name,
+    });
     categoryIds.set(cat.key, row.id);
   }
 
@@ -87,7 +106,7 @@ export async function applyStoreFixture(
   const variantIds = new Map<string, string>(); // key: `${productKey}:${variantKey}`
 
   for (const product of spec.products) {
-    const productId = seedId(batch, 'product', store.slug, product.key);
+    const productId = seedId(batch, "product", store.slug, product.key);
     await db.ensureProduct(prisma, {
       id: productId,
       storeId: store.id,
@@ -103,11 +122,19 @@ export async function applyStoreFixture(
 
     for (const categoryKey of product.categoryKeys ?? []) {
       const categoryId = categoryIds.get(categoryKey);
-      if (categoryId) await db.ensureProductCategory(prisma, { productId, categoryId });
+      if (categoryId) {
+        await db.ensureProductCategory(prisma, { productId, categoryId });
+      }
     }
 
     for (const variant of product.variants ?? []) {
-      const variantId = seedId(batch, 'variant', store.slug, product.key, variant.key);
+      const variantId = seedId(
+        batch,
+        "variant",
+        store.slug,
+        product.key,
+        variant.key,
+      );
       await db.ensureVariant(prisma, {
         id: variantId,
         productId,
@@ -136,42 +163,60 @@ export async function applyStoreFixture(
     for (const [position, productKey] of collection.productKeys.entries()) {
       const productId = productIds.get(productKey);
       if (productId) {
-        await db.ensureCollectionProduct(prisma, { collectionId: row.id, productId, position });
+        await db.ensureCollectionProduct(prisma, {
+          collectionId: row.id,
+          productId,
+          position,
+        });
       }
     }
   }
 
   for (const section of spec.sections) {
     await db.ensureStoreSection(prisma, {
-      id: seedId(batch, 'section', store.slug, section.key),
+      id: seedId(batch, "section", store.slug, section.key),
       storeId: store.id,
       type: section.type,
-      collectionId: section.collectionKey ? collectionIds.get(section.collectionKey) : null,
+      collectionId: section.collectionKey
+        ? collectionIds.get(section.collectionKey)
+        : null,
       content: section.content,
       position: section.position,
     });
   }
 
   for (const order of spec.orders) {
-    const orderId = seedId(batch, 'order', store.slug, order.key);
+    const orderId = seedId(batch, "order", store.slug, order.key);
     let subtotal = 0;
-    const resolvedItems: { productKey: string; variantKey?: string; quantity: number; unitPrice: number }[] = [];
+    const resolvedItems: {
+      productKey: string;
+      variantKey?: string;
+      quantity: number;
+      unitPrice: number;
+    }[] = [];
 
     for (const item of order.items) {
       const product = spec.products.find((p) => p.key === item.productKey);
       if (!product) continue;
-      const variant = item.variantKey ? product.variants?.find((v) => v.key === item.variantKey) : undefined;
+      const variant = item.variantKey
+        ? product.variants?.find((v) => v.key === item.variantKey)
+        : undefined;
       const unitPrice = Number(variant?.priceOverride ?? product.price);
       subtotal += unitPrice * item.quantity;
       resolvedItems.push({ ...item, unitPrice });
     }
 
-    const baseDeliveryDetails =
-      spec.deliveryMethods.find((d) => d.type === order.deliveryMethodType)?.details ?? {};
-    const deliveryCost = Number((baseDeliveryDetails as Record<string, unknown>)['estimatedCost'] ?? 0);
+    const baseDeliveryDetails = spec.deliveryMethods.find((d) =>
+      d.type === order.deliveryMethodType
+    )?.details ?? {};
+    const deliveryCost = Number(
+      (baseDeliveryDetails as Record<string, unknown>)["estimatedCost"] ?? 0,
+    );
     const finalAmount = (subtotal + deliveryCost).toFixed(2);
 
-    const pickupPointId = order.pickupPointKey ? (pickupPointIds.get(order.pickupPointKey) ?? null) : null;
+    const pickupPointId = order.pickupPointKey
+      ? (pickupPointIds.get(order.pickupPointKey) ?? null)
+      : null;
     const pickupPointLabel = order.pickupPointKey
       ? spec.pickupPoints.find((p) => p.key === order.pickupPointKey)?.label
       : undefined;
@@ -183,8 +228,12 @@ export async function applyStoreFixture(
       ? new Date(Date.now() - order.createdDaysAgo * 24 * 60 * 60 * 1000)
       : undefined;
 
-    const customer = order.customerKey ? spec.customers.find((c) => c.key === order.customerKey) : undefined;
-    const customerId = order.customerKey ? (customerIds.get(order.customerKey) ?? null) : null;
+    const customer = order.customerKey
+      ? spec.customers.find((c) => c.key === order.customerKey)
+      : undefined;
+    const customerId = order.customerKey
+      ? (customerIds.get(order.customerKey) ?? null)
+      : null;
 
     await db.ensureOrder(prisma, {
       id: orderId,
@@ -207,11 +256,13 @@ export async function applyStoreFixture(
 
     for (const [index, item] of resolvedItems.entries()) {
       await db.ensureOrderItem(prisma, {
-        id: seedId(batch, 'order-item', store.slug, order.key, String(index)),
+        id: seedId(batch, "order-item", store.slug, order.key, String(index)),
         orderId,
         storeId: store.id,
         productId: productIds.get(item.productKey)!,
-        variantId: item.variantKey ? variantIds.get(`${item.productKey}:${item.variantKey}`) : null,
+        variantId: item.variantKey
+          ? variantIds.get(`${item.productKey}:${item.variantKey}`)
+          : null,
         quantity: item.quantity,
         unitPriceAtPurchase: item.unitPrice.toFixed(2),
         currency: spec.store.defaultCurrency,
@@ -223,7 +274,7 @@ export async function applyStoreFixture(
         ? new Date(Date.now() - payment.createdDaysAgo * 24 * 60 * 60 * 1000)
         : createdAt;
       await db.ensureOrderPayment(prisma, {
-        id: seedId(batch, 'order-payment', store.slug, order.key, payment.key),
+        id: seedId(batch, "order-payment", store.slug, order.key, payment.key),
         orderId,
         storeId: store.id,
         amount: payment.amount,
@@ -235,6 +286,8 @@ export async function applyStoreFixture(
     }
   }
 
-  console.log(`[${batch}] seeded store ${store.slug} (${spec.products.length} products, ${spec.orders.length} orders)`);
+  console.log(
+    `[${batch}] seeded store ${store.slug} (${spec.products.length} products, ${spec.orders.length} orders)`,
+  );
   return { store, unverifiedCustomerLinks };
 }

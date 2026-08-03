@@ -32,11 +32,14 @@ export function parsePhoneValue(value: string): {
   nationalNumber: string;
 } {
   const match = COUNTRIES_BY_DIAL_CODE_LENGTH_DESC.find((country) =>
-    value.startsWith(country.dialCode),
+    value.startsWith(country.dialCode)
   );
 
   if (!match) {
-    return { country: DEFAULT_PHONE_COUNTRY, nationalNumber: value.replace(/^\+/, "") };
+    return {
+      country: DEFAULT_PHONE_COUNTRY,
+      nationalNumber: value.replace(/^\+/, ""),
+    };
   }
 
   return { country: match, nationalNumber: value.slice(match.dialCode.length) };

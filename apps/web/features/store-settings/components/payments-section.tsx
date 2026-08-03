@@ -31,7 +31,9 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
   const { data: methods } = usePaymentMethods(storeId);
   const saveMethods = useSavePaymentMethods(storeId);
 
-  const [enabledByMethod, setEnabledByMethod] = useState<Record<string, boolean>>(DEFAULT_ENABLED);
+  const [enabledByMethod, setEnabledByMethod] = useState<
+    Record<string, boolean>
+  >(DEFAULT_ENABLED);
 
   useEffect(() => {
     if (!methods) return;
@@ -43,7 +45,11 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
   useSavedFlash(saveMethods.isSuccess, saveMethods.reset);
 
   return (
-    <SectionCard icon={CreditCard} title={t("payments.title")} description={t("payments.description")}>
+    <SectionCard
+      icon={CreditCard}
+      title={t("payments.title")}
+      description={t("payments.description")}
+    >
       <div className="space-y-3">
         {PAYMENT_METHODS.map((method) => (
           <div
@@ -51,7 +57,12 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
             className="flex items-center justify-between rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3"
           >
             <div className="flex items-center gap-3">
-              <Badge className={cn("rounded-2xl px-2.5 py-1.5 text-xs font-semibold", method.color)}>
+              <Badge
+                className={cn(
+                  "rounded-2xl px-2.5 py-1.5 text-xs font-semibold",
+                  method.color,
+                )}
+              >
                 {t(`payments.items.${method.key}.short`)}
               </Badge>
               <div>
@@ -66,18 +77,24 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
             <Switch
               checked={enabledByMethod[method.method] ?? true}
               onCheckedChange={(checked) =>
-                setEnabledByMethod((prev) => ({ ...prev, [method.method]: checked }))
-              }
+                setEnabledByMethod((prev) => ({
+                  ...prev,
+                  [method.method]: checked,
+                }))}
             />
           </div>
         ))}
       </div>
 
-      {saveMethods.isError ? (
-        <p className="mt-4 text-sm text-[#b24368]">
-          {saveMethods.error instanceof Error ? saveMethods.error.message : String(saveMethods.error)}
-        </p>
-      ) : null}
+      {saveMethods.isError
+        ? (
+          <p className="mt-4 text-sm text-[#b24368]">
+            {saveMethods.error instanceof Error
+              ? saveMethods.error.message
+              : String(saveMethods.error)}
+          </p>
+        )
+        : null}
 
       <Separator className="my-5 bg-[#f0e7f8]" />
 
@@ -88,7 +105,11 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
           disabled={saveMethods.isPending}
           className="store-theme-primary-button h-11 rounded-2xl px-5 text-sm font-semibold hover:opacity-100"
         >
-          {saveMethods.isSuccess ? t("saved") : saveMethods.isPending ? t("saving") : t("save")}
+          {saveMethods.isSuccess
+            ? t("saved")
+            : saveMethods.isPending
+            ? t("saving")
+            : t("save")}
         </Button>
       </div>
     </SectionCard>

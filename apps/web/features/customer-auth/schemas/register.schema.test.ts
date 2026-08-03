@@ -11,7 +11,10 @@ describe("customerRegisterSchema", () => {
   });
 
   it("rejects a password shorter than 8 characters", () => {
-    const result = customerRegisterSchema.safeParse({ password: "short", confirmPassword: "short" });
+    const result = customerRegisterSchema.safeParse({
+      password: "short",
+      confirmPassword: "short",
+    });
     expect(result.success).toBe(false);
   });
 

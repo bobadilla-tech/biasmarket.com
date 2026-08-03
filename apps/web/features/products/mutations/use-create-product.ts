@@ -30,7 +30,9 @@ export function useCreateProduct(storeId: string | undefined) {
           description: input.description || undefined,
           price: Number(input.price),
           currency: input.currency,
-          stock: input.variants.length === 0 && input.stock ? Number(input.stock) : undefined,
+          stock: input.variants.length === 0 && input.stock
+            ? Number(input.stock)
+            : undefined,
           variants: input.variants.length > 0 ? input.variants : undefined,
           categoryIds: input.categoryId ? [input.categoryId] : undefined,
         },
@@ -48,17 +50,27 @@ export function useCreateProduct(storeId: string | undefined) {
         const file = input.variantImages[keyForAttributes(draft.attributes)];
         if (!file) continue;
         const match = createdVariants.find(
-          (variant) => keyForAttributes(variant.attributes) === keyForAttributes(draft.attributes),
+          (variant) =>
+            keyForAttributes(variant.attributes) ===
+              keyForAttributes(draft.attributes),
         );
         if (!match) continue;
-        await productsApi.uploadVariantImage(sid, created.id, match.id, file, input.fallbackErrorMessage);
+        await productsApi.uploadVariantImage(
+          sid,
+          created.id,
+          match.id,
+          file,
+          input.fallbackErrorMessage,
+        );
       }
 
       return created;
     },
     onSuccess: () => {
       if (!storeId) return;
-      queryClient.invalidateQueries({ queryKey: productsKeys.byStore(storeId) });
+      queryClient.invalidateQueries({
+        queryKey: productsKeys.byStore(storeId),
+      });
     },
   });
 }

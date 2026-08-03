@@ -23,18 +23,18 @@ export function SectionRow({
   onDelete,
 }: SectionRowProps) {
   const t = useTranslations("dashboard.sections");
-  const typeLabel =
-    section.type === "COLLECTION"
-      ? t("collection")
-      : section.type === "BANNER"
-        ? t("banner")
-        : t("textBlock");
+  const typeLabel = section.type === "COLLECTION"
+    ? t("collection")
+    : section.type === "BANNER"
+    ? t("banner")
+    : t("textBlock");
 
   return (
     <tr className="border-b border-gray-100 last:border-0">
       <td className="px-6 py-3 text-gray-900">
         {typeLabel}
-        {section.type === "COLLECTION" && `: ${collectionName ?? section.collectionId}`}
+        {section.type === "COLLECTION" &&
+          `: ${collectionName ?? section.collectionId}`}
       </td>
       <td className="px-6 py-3 text-right">
         <div className="flex gap-2 justify-end">

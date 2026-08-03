@@ -16,7 +16,9 @@ export function StoreLinkCard({ store }: { store: Store }) {
             className="text-sm font-semibold"
           />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-[#2d1649]">{store.name}</p>
+            <p className="truncate text-sm font-semibold text-[#2d1649]">
+              {store.name}
+            </p>
             <p className="truncate text-xs text-[#8f7da8]">/{store.slug}</p>
           </div>
           <ArrowRight className="size-4 shrink-0 text-[#8f7da8]" />

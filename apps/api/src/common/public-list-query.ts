@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException } from "@nestjs/common";
 
 const DEFAULT_LIMIT = 24;
 const MAX_LIMIT = 50;
@@ -25,7 +25,7 @@ export function parsePublicListQuery(
   if (rawLimit !== undefined) {
     limit = Number(rawLimit);
     if (!Number.isInteger(limit) || limit < 1 || limit > MAX_LIMIT) {
-      throw new BadRequestException('limit inválido');
+      throw new BadRequestException("limit inválido");
     }
   }
 
@@ -33,7 +33,7 @@ export function parsePublicListQuery(
   if (rawPage !== undefined) {
     page = Number(rawPage);
     if (!Number.isInteger(page) || page < 1) {
-      throw new BadRequestException('page inválido');
+      throw new BadRequestException("page inválido");
     }
   }
 
@@ -41,7 +41,7 @@ export function parsePublicListQuery(
   if (rawQ !== undefined) {
     const trimmed = rawQ.trim();
     if (trimmed.length > MAX_QUERY_LENGTH) {
-      throw new BadRequestException('q demasiado largo');
+      throw new BadRequestException("q demasiado largo");
     }
     q = trimmed.length > 0 ? trimmed : undefined;
   }

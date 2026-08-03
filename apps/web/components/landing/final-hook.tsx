@@ -16,7 +16,10 @@ export function FinalHook() {
         <p className="mt-2 text-muted-foreground">{t("content")}</p>
         <Link
           href="/onboarding"
-          className={buttonVariants({ size: "lg", className: "mt-6 h-11 px-6" })}
+          className={buttonVariants({
+            size: "lg",
+            className: "mt-6 h-11 px-6",
+          })}
         >
           {t("cta")}
         </Link>

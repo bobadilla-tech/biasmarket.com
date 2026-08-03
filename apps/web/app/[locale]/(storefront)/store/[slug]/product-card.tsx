@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Select } from "@/components/ui/select";
 import { addToCart } from "@/lib/cart";
@@ -24,24 +25,36 @@ interface Product {
   images: string[];
 }
 
-export function ProductCard({ slug, product }: { slug: string; product: Product }) {
+export function ProductCard(
+  { slug, product }: { slug: string; product: Product },
+) {
   const t = useTranslations("storefront");
   const [variantId, setVariantId] = useState(product.variants[0]?.id ?? "");
   const [added, setAdded] = useState(false);
 
   const selectedVariant = product.variants.find((v) => v.id === variantId);
-  const effectivePrices = product.variants.map((v) => Number(v.priceOverride ?? product.price));
-  const minPrice = effectivePrices.length > 0 ? Math.min(...effectivePrices) : Number(product.price);
-  const maxPrice = effectivePrices.length > 0 ? Math.max(...effectivePrices) : Number(product.price);
+  const effectivePrices = product.variants.map((v) =>
+    Number(v.priceOverride ?? product.price)
+  );
+  const minPrice = effectivePrices.length > 0
+    ? Math.min(...effectivePrices)
+    : Number(product.price);
+  const maxPrice = effectivePrices.length > 0
+    ? Math.max(...effectivePrices)
+    : Number(product.price);
   const showFromPrice = product.variants.length > 1 && minPrice !== maxPrice;
-  const price = showFromPrice ? minPrice : Number(selectedVariant?.priceOverride ?? product.price);
+  const price = showFromPrice
+    ? minPrice
+    : Number(selectedVariant?.priceOverride ?? product.price);
   const outOfStock = product.soldOut || selectedVariant?.stock === 0;
 
   const handleAddToCart = () => {
     addToCart(slug, {
       productId: product.id,
       variantId: selectedVariant?.id,
-      name: selectedVariant ? `${product.name} (${selectedVariant.name})` : product.name,
+      name: selectedVariant
+        ? `${product.name} (${selectedVariant.name})`
+        : product.name,
       price,
       currency: product.currency,
       quantity: 1,
@@ -54,15 +67,18 @@ export function ProductCard({ slug, product }: { slug: string; product: Product 
     <div className="bg-white rounded-xl border border-gray-100 p-4">
       {(() => {
         const imageUrl = selectedVariant?.imageOverride ?? product.images?.[0];
-        return imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={product.name}
-            className="aspect-square w-full object-cover rounded-lg mb-3"
-          />
-        ) : (
-          <div className="aspect-square bg-gray-100 rounded-lg mb-3" />
-        );
+        return imageUrl
+          ? (
+            <div className="relative aspect-square w-full overflow-hidden rounded-lg mb-3">
+              <Image
+                src={imageUrl}
+                alt={product.name}
+                fill
+                className="object-cover"
+              />
+            </div>
+          )
+          : <div className="aspect-square bg-gray-100 rounded-lg mb-3" />;
       })()}
       <p className="font-semibold text-gray-900 text-sm">{product.name}</p>
       <p className="store-theme-active-text font-bold text-sm">
@@ -93,18 +109,20 @@ export function ProductCard({ slug, product }: { slug: string; product: Product 
         </Select>
       )}
 
-      {outOfStock ? (
-        <span className="mt-2 block text-xs text-red-500 font-semibold">
-          {t("soldOut")}
-        </span>
-      ) : (
-        <button
-          onClick={handleAddToCart}
-          className="store-theme-primary-button mt-2 w-full rounded-lg px-3 py-1.5 text-xs font-semibold transition"
-        >
-          {added ? t("addedToCart") : t("addToCart")}
-        </button>
-      )}
+      {outOfStock
+        ? (
+          <span className="mt-2 block text-xs text-red-500 font-semibold">
+            {t("soldOut")}
+          </span>
+        )
+        : (
+          <button
+            onClick={handleAddToCart}
+            className="store-theme-primary-button mt-2 w-full rounded-lg px-3 py-1.5 text-xs font-semibold transition"
+          >
+            {added ? t("addedToCart") : t("addToCart")}
+          </button>
+        )}
     </div>
   );
 }

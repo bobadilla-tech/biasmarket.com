@@ -1,6 +1,10 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service.js';
-import { UpsertPaymentMethodDto } from './dto/upsert-payment-method.dto.js';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
+import { PrismaService } from "../../prisma/prisma.service.js";
+import { UpsertPaymentMethodDto } from "./dto/upsert-payment-method.dto.js";
 
 @Injectable()
 export class PaymentConfigService {
@@ -10,9 +14,9 @@ export class PaymentConfigService {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
-    if (!store) throw new NotFoundException('Store no encontrada');
+    if (!store) throw new NotFoundException("Store no encontrada");
     if (store.ownerId !== userId) {
-      throw new ForbiddenException('No sos dueño de esta store');
+      throw new ForbiddenException("No sos dueño de esta store");
     }
     return store;
   }

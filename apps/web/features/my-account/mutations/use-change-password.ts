@@ -6,7 +6,9 @@ import type { ChangePasswordInput } from "../schemas/change-password.schema";
 
 export function useChangePassword(fallbackErrorMessage: string) {
   return useMutation({
-    mutationFn: async ({ confirmPassword: _confirmPassword, ...values }: ChangePasswordInput) => {
+    mutationFn: async (
+      { confirmPassword: _confirmPassword, ...values }: ChangePasswordInput,
+    ) => {
       const { data, error } = await authClient.changePassword({
         ...values,
         revokeOtherSessions: true,

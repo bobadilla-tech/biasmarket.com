@@ -1,7 +1,16 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const NEW_COLOR = "#159a63";
@@ -25,7 +34,10 @@ export function NewVsReturningChart({
       <CardContent className="overflow-x-auto px-5 pb-5">
         <div style={{ minWidth }}>
           <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <BarChart
+              data={data}
+              margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
+            >
               <CartesianGrid vertical={false} stroke="#f0e7f8" />
               <XAxis
                 dataKey="label"
@@ -33,16 +45,30 @@ export function NewVsReturningChart({
                 axisLine={false}
                 tick={{ fill: "#927fac", fontSize: 11 }}
               />
-              <YAxis tickLine={false} axisLine={false} tick={{ fill: "#927fac", fontSize: 11 }} width={40} />
-              <Tooltip contentStyle={{ borderRadius: 12, borderColor: "#eadcf8" }} />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                tick={{ fill: "#927fac", fontSize: 11 }}
+                width={40}
+              />
+              <Tooltip
+                contentStyle={{ borderRadius: 12, borderColor: "#eadcf8" }}
+              />
               <Legend
                 formatter={(value) => (
                   <span className="text-xs text-[#8f7da8]">
-                    {value === "newCustomers" ? t("newCustomers") : t("returningCustomers")}
+                    {value === "newCustomers"
+                      ? t("newCustomers")
+                      : t("returningCustomers")}
                   </span>
                 )}
               />
-              <Bar dataKey="newCustomers" stackId="customers" fill={NEW_COLOR} radius={[0, 0, 0, 0]} />
+              <Bar
+                dataKey="newCustomers"
+                stackId="customers"
+                fill={NEW_COLOR}
+                radius={[0, 0, 0, 0]}
+              />
               <Bar
                 dataKey="returningCustomers"
                 stackId="customers"

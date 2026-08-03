@@ -8,7 +8,8 @@ export function useMarkInquiryReviewed(fallbackErrorMessage?: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => inquiriesApi.markReviewed(id, fallbackErrorMessage),
+    mutationFn: (id: string) =>
+      inquiriesApi.markReviewed(id, fallbackErrorMessage),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: inquiriesKeys.all });
     },

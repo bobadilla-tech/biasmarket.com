@@ -4,13 +4,18 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 
 const apiFetch = vi.fn();
-vi.mock("@/lib/api", () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }));
+vi.mock(
+  "@/lib/api",
+  () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }),
+);
 
 const { useUpdateProduct } = await import("./use-update-product");
 
 function createWrapper(queryClient: QueryClient) {
   return function Wrapper({ children }: { children: ReactNode }) {
-    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+    return (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
   };
 }
 
@@ -53,9 +58,16 @@ afterEach(() => {
 test("upserts matched and new variants against a fresh baseline, then deletes stale ones", async () => {
   apiFetch.mockImplementation((path: string, options?: RequestInit) => {
     const method = options?.method;
-    if (path === "/stores/store-1/products/p1" && method === "PATCH") return Promise.resolve({});
-    if (path === "/stores/store-1/products/p1" && !method) return Promise.resolve(baseProduct);
-    if (path === "/stores/store-1/products/p1/variants/v-existing" && method === "PATCH") {
+    if (path === "/stores/store-1/products/p1" && method === "PATCH") {
+      return Promise.resolve({});
+    }
+    if (path === "/stores/store-1/products/p1" && !method) {
+      return Promise.resolve(baseProduct);
+    }
+    if (
+      path === "/stores/store-1/products/p1/variants/v-existing" &&
+      method === "PATCH"
+    ) {
       return Promise.resolve({});
     }
     if (path === "/stores/store-1/products/p1/variants" && method === "POST") {
@@ -69,13 +81,18 @@ test("upserts matched and new variants against a fresh baseline, then deletes st
         attributes: { size: "L" },
       });
     }
-    if (path === "/stores/store-1/products/p1/variants/v-stale" && method === "DELETE") {
+    if (
+      path === "/stores/store-1/products/p1/variants/v-stale" &&
+      method === "DELETE"
+    ) {
       return Promise.resolve({});
     }
     return Promise.reject(new Error(`unexpected call: ${path} ${method}`));
   });
 
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   const { result } = renderHook(() => useUpdateProduct("store-1"), {
     wrapper: createWrapper(queryClient),
   });
@@ -107,15 +124,24 @@ test("upserts matched and new variants against a fresh baseline, then deletes st
 test("aggregates a failed upsert into one error and skips the delete pass", async () => {
   apiFetch.mockImplementation((path: string, options?: RequestInit) => {
     const method = options?.method;
-    if (path === "/stores/store-1/products/p1" && method === "PATCH") return Promise.resolve({});
-    if (path === "/stores/store-1/products/p1" && !method) return Promise.resolve(baseProduct);
-    if (path === "/stores/store-1/products/p1/variants/v-existing" && method === "PATCH") {
+    if (path === "/stores/store-1/products/p1" && method === "PATCH") {
+      return Promise.resolve({});
+    }
+    if (path === "/stores/store-1/products/p1" && !method) {
+      return Promise.resolve(baseProduct);
+    }
+    if (
+      path === "/stores/store-1/products/p1/variants/v-existing" &&
+      method === "PATCH"
+    ) {
       return Promise.reject(new Error("network blip"));
     }
     return Promise.reject(new Error(`unexpected call: ${path} ${method}`));
   });
 
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   const { result } = renderHook(() => useUpdateProduct("store-1"), {
     wrapper: createWrapper(queryClient),
   });

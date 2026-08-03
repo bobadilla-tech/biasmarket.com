@@ -1,7 +1,10 @@
 import { afterEach, expect, test, vi } from "vitest";
 
 const apiFetch = vi.fn();
-vi.mock("@/lib/api", () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }));
+vi.mock(
+  "@/lib/api",
+  () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }),
+);
 
 const { sectionsApi } = await import("./sections.api");
 
@@ -49,7 +52,11 @@ test("create sends collectionId only for COLLECTION type", async () => {
     "/stores/store-1/sections",
     {
       method: "POST",
-      body: JSON.stringify({ type: "COLLECTION", collectionId: "c1", content: {} }),
+      body: JSON.stringify({
+        type: "COLLECTION",
+        collectionId: "c1",
+        content: {},
+      }),
     },
     undefined,
   );

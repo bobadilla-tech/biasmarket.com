@@ -4,7 +4,10 @@ import { z } from "zod";
 // listUsers/banUser/unbanUser — those stay direct authClient calls, not
 // zod-validated. Only /admin/users/store-counts goes through apiFetch and
 // needs a schema.
-export const storeCountSchema = z.object({ userId: z.string(), storeCount: z.number() });
+export const storeCountSchema = z.object({
+  userId: z.string(),
+  storeCount: z.number(),
+});
 export const storeCountListSchema = z.array(storeCountSchema);
 
 export type StoreCount = z.infer<typeof storeCountSchema>;

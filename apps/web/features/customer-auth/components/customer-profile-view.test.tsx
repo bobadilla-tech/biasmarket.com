@@ -23,7 +23,12 @@ vi.mock("../api/customer-auth.api", () => ({
 const { CustomerProfileView } = await import("./customer-profile-view");
 
 const profile = {
-  customer: { name: "Jane Doe", email: "jane@example.com", phone: "+51988888888", emailVerified: true },
+  customer: {
+    name: "Jane Doe",
+    email: "jane@example.com",
+    phone: "+51988888888",
+    emailVerified: true,
+  },
   orders: [
     {
       id: "order-12345678",
@@ -41,7 +46,9 @@ afterEach(() => {
 });
 
 test("renders the customer's details and order history", () => {
-  renderWithProviders(<CustomerProfileView slug="my-store" profile={profile} />);
+  renderWithProviders(
+    <CustomerProfileView slug="my-store" profile={profile} />,
+  );
 
   expect(screen.getByText("Jane Doe")).toBeDefined();
   expect(screen.getByText("jane@example.com")).toBeDefined();
@@ -51,7 +58,9 @@ test("renders the customer's details and order history", () => {
 test("logs out and redirects to the store page", async () => {
   logout.mockResolvedValueOnce({ ok: true });
   const user = userEvent.setup();
-  renderWithProviders(<CustomerProfileView slug="my-store" profile={profile} />);
+  renderWithProviders(
+    <CustomerProfileView slug="my-store" profile={profile} />,
+  );
 
   await user.click(screen.getByRole("button", { name: "Cerrar sesión" }));
 

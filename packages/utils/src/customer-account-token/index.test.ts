@@ -12,7 +12,9 @@ describe("customer account token", () => {
   it("round-trips a valid token", () => {
     const token = createCustomerAccountToken("customer-1", secret);
 
-    expect(verifyCustomerAccountToken(token, secret)).toEqual({ customerId: "customer-1" });
+    expect(verifyCustomerAccountToken(token, secret)).toEqual({
+      customerId: "customer-1",
+    });
   });
 
   it("rejects a token signed with a different secret", () => {
@@ -42,7 +44,12 @@ describe("customer session token", () => {
   const secret = "test-secret";
 
   it("round-trips a valid token", () => {
-    const token = createCustomerSessionToken("customer-1", "store-1", "v1", secret);
+    const token = createCustomerSessionToken(
+      "customer-1",
+      "store-1",
+      "v1",
+      secret,
+    );
 
     expect(verifyCustomerSessionToken(token, secret)).toEqual({
       customerId: "customer-1",
@@ -52,7 +59,12 @@ describe("customer session token", () => {
   });
 
   it("rejects a token signed with a different secret", () => {
-    const token = createCustomerSessionToken("customer-1", "store-1", "v1", secret);
+    const token = createCustomerSessionToken(
+      "customer-1",
+      "store-1",
+      "v1",
+      secret,
+    );
 
     expect(verifyCustomerSessionToken(token, "other-secret")).toBeNull();
   });
@@ -65,7 +77,12 @@ describe("customer session token", () => {
   it("rejects an expired token", () => {
     const realNow = Date.now;
     Date.now = () => new Date("2020-01-01").getTime();
-    const token = createCustomerSessionToken("customer-1", "store-1", "v1", secret);
+    const token = createCustomerSessionToken(
+      "customer-1",
+      "store-1",
+      "v1",
+      secret,
+    );
     Date.now = () => new Date("2021-01-01").getTime();
 
     expect(verifyCustomerSessionToken(token, secret)).toBeNull();

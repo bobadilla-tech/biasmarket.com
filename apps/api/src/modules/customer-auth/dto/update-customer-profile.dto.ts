@@ -1,4 +1,4 @@
-import { IsString, MinLength } from 'class-validator';
+import { IsString, MinLength } from "class-validator";
 
 // name-only for now — email/phone changes need a verification step before
 // they can be committed (see docs/plans/2026-08-02-buyer-accounts-phase12-plan.md),

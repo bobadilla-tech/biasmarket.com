@@ -10,8 +10,8 @@ export { useArchiveNotification } from "./mutations/use-archive-notification";
 export { NotificationsBell } from "./components/notifications-bell";
 export { NotificationRow } from "./components/notification-row";
 export {
-  notificationSchema,
-  notificationListSchema,
-  unreadCountSchema,
   type NotificationItem,
+  notificationListSchema,
+  notificationSchema,
+  unreadCountSchema,
 } from "./schemas/notification.schema";

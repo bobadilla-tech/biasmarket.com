@@ -51,6 +51,9 @@ test("accepts null deliveryDetails and a variant-less item", () => {
 });
 
 test("rejects an invalid paymentStatus", () => {
-  const result = orderSchema.safeParse({ ...baseOrder, paymentStatus: "UNKNOWN" });
+  const result = orderSchema.safeParse({
+    ...baseOrder,
+    paymentStatus: "UNKNOWN",
+  });
   expect(result.success).toBe(false);
 });

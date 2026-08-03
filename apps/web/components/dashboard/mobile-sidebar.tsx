@@ -20,7 +20,10 @@ export function MobileSidebar({
     <Sheet>
       <SheetTrigger
         render={
-          <button aria-label={t("openMenu")} className="rounded-xl p-2 hover:bg-muted">
+          <button
+            aria-label={t("openMenu")}
+            className="rounded-xl p-2 hover:bg-muted"
+          >
             <Menu className="size-6" />
           </button>
         }

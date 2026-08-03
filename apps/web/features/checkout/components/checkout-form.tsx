@@ -6,14 +6,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Select } from "@/components/ui/select";
-import { hasMixedCurrencies, type CartItem } from "@/lib/cart";
+import { type CartItem, hasMixedCurrencies } from "@/lib/cart";
 import { useDeliveryOptions } from "../queries/use-delivery-options";
 import { useSubmitCheckout } from "../mutations/use-submit-checkout";
-import { buildCheckoutFormSchema, type CheckoutFormInput } from "../schemas/checkout.schema";
+import {
+  buildCheckoutFormSchema,
+  type CheckoutFormInput,
+} from "../schemas/checkout.schema";
 
 const inputClassName =
   "store-theme-input rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none";
-const selectClassName = "rounded-xl border border-gray-200 py-2.5 text-sm text-gray-600";
+const selectClassName =
+  "rounded-xl border border-gray-200 py-2.5 text-sm text-gray-600";
 
 interface CheckoutFormProps {
   slug: string;
@@ -21,7 +25,9 @@ interface CheckoutFormProps {
   onOrderCreated: (result: { orderId: string; customerEmail: string }) => void;
 }
 
-export function CheckoutForm({ slug, items, onOrderCreated }: CheckoutFormProps) {
+export function CheckoutForm(
+  { slug, items, onOrderCreated }: CheckoutFormProps,
+) {
   const t = useTranslations("storefront.checkoutPage");
   const deliveryOptions = useDeliveryOptions(slug);
   const submitCheckout = useSubmitCheckout(slug);
@@ -44,7 +50,9 @@ export function CheckoutForm({ slug, items, onOrderCreated }: CheckoutFormProps)
 
   useEffect(() => {
     if (!deliveryOptions.data) return;
-    if (deliveryOptions.data.methods[0] && !form.getValues("deliveryMethodType")) {
+    if (
+      deliveryOptions.data.methods[0] && !form.getValues("deliveryMethodType")
+    ) {
       form.setValue("deliveryMethodType", deliveryOptions.data.methods[0].type);
     }
     if (deliveryOptions.data.points[0] && !form.getValues("pickupPointId")) {
@@ -60,13 +68,18 @@ export function CheckoutForm({ slug, items, onOrderCreated }: CheckoutFormProps)
   const onSubmit = form.handleSubmit(async (values) => {
     const result = await submitCheckout.mutateAsync({
       deliveryMethodType: values.deliveryMethodType,
-      pickupPointId: values.deliveryMethodType === "PICKUP" ? values.pickupPointId : undefined,
+      pickupPointId: values.deliveryMethodType === "PICKUP"
+        ? values.pickupPointId
+        : undefined,
       customerName: values.customerName,
       customerPhone: values.customerPhone,
       customerEmail: values.customerEmail,
       items,
     });
-    onOrderCreated({ orderId: result.order.id, customerEmail: values.customerEmail });
+    onOrderCreated({
+      orderId: result.order.id,
+      customerEmail: values.customerEmail,
+    });
     if (result.whatsappUrl) {
       window.location.href = result.whatsappUrl;
     }
@@ -76,17 +89,25 @@ export function CheckoutForm({ slug, items, onOrderCreated }: CheckoutFormProps)
     <form onSubmit={onSubmit} className="flex flex-col gap-6">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col gap-3">
         {methods.length > 0 && (
-          <Select {...form.register("deliveryMethodType")} selectClassName={selectClassName}>
+          <Select
+            {...form.register("deliveryMethodType")}
+            selectClassName={selectClassName}
+          >
             {methods.map((m) => (
               <option key={m.type} value={m.type}>
-                {m.type === "PICKUP" ? t("deliveryPickup") : t("deliveryCourier")}
+                {m.type === "PICKUP"
+                  ? t("deliveryPickup")
+                  : t("deliveryCourier")}
               </option>
             ))}
           </Select>
         )}
 
         {deliveryMethodType === "PICKUP" && points.length > 0 && (
-          <Select {...form.register("pickupPointId")} selectClassName={selectClassName}>
+          <Select
+            {...form.register("pickupPointId")}
+            selectClassName={selectClassName}
+          >
             {points.map((point) => (
               <option key={point.id} value={point.id}>
                 {point.label}
@@ -137,17 +158,18 @@ export function CheckoutForm({ slug, items, onOrderCreated }: CheckoutFormProps)
         <p className="text-sm text-amber-600">{t("noDeliveryMethod")}</p>
       )}
 
-      {mixedCurrencies && <p className="text-sm text-amber-600">{t("mixedCurrencyWarning")}</p>}
+      {mixedCurrencies && (
+        <p className="text-sm text-amber-600">{t("mixedCurrencyWarning")}</p>
+      )}
 
       <button
         type="submit"
-        disabled={
-          submitCheckout.isPending ||
+        disabled={submitCheckout.isPending ||
           !customerPhone ||
           !deliveryMethodType ||
           mixedCurrencies ||
-          (deliveryMethodType === "PICKUP" && points.length > 0 && !pickupPointId)
-        }
+          (deliveryMethodType === "PICKUP" && points.length > 0 &&
+            !pickupPointId)}
         className="store-theme-primary-button rounded-xl px-5 py-3 text-sm font-semibold transition disabled:opacity-60"
       >
         {submitCheckout.isPending ? t("submitting") : t("submit")}

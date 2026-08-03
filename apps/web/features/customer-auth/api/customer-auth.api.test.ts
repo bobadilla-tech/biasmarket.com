@@ -1,14 +1,21 @@
 import { expect, test, vi } from "vitest";
 
 const apiFetch = vi.fn();
-vi.mock("@/lib/api", () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }));
+vi.mock(
+  "@/lib/api",
+  () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }),
+);
 
 const { customerAuthApi } = await import("./customer-auth.api");
 
 test("register() posts the token and password, returns the parsed result", async () => {
   apiFetch.mockResolvedValueOnce({ ok: true });
 
-  const result = await customerAuthApi.register("my-store", "tok", "super-secret-1");
+  const result = await customerAuthApi.register(
+    "my-store",
+    "tok",
+    "super-secret-1",
+  );
 
   expect(apiFetch).toHaveBeenCalledWith("/stores/my-store/account/register", {
     method: "POST",
@@ -20,7 +27,11 @@ test("register() posts the token and password, returns the parsed result", async
 test("login() posts the phone and password, returns the parsed result", async () => {
   apiFetch.mockResolvedValueOnce({ ok: true });
 
-  const result = await customerAuthApi.login("my-store", "+51988888888", "super-secret-1");
+  const result = await customerAuthApi.login(
+    "my-store",
+    "+51988888888",
+    "super-secret-1",
+  );
 
   expect(apiFetch).toHaveBeenCalledWith("/stores/my-store/account/login", {
     method: "POST",
@@ -32,7 +43,9 @@ test("login() posts the phone and password, returns the parsed result", async ()
 test("rejects when apiFetch resolves with a shape that fails validation", async () => {
   apiFetch.mockResolvedValueOnce({ nope: true });
 
-  await expect(customerAuthApi.login("my-store", "+51988888888", "super-secret-1")).rejects.toThrow();
+  await expect(
+    customerAuthApi.login("my-store", "+51988888888", "super-secret-1"),
+  ).rejects.toThrow();
 });
 
 test("logout() posts to the logout endpoint, returns the parsed result", async () => {
@@ -40,13 +53,20 @@ test("logout() posts to the logout endpoint, returns the parsed result", async (
 
   const result = await customerAuthApi.logout("my-store");
 
-  expect(apiFetch).toHaveBeenCalledWith("/stores/my-store/account/logout", { method: "POST" });
+  expect(apiFetch).toHaveBeenCalledWith("/stores/my-store/account/logout", {
+    method: "POST",
+  });
   expect(result).toEqual({ ok: true });
 });
 
 test("me() fetches the profile and returns the parsed result", async () => {
   const payload = {
-    customer: { name: "Jane", email: "jane@example.com", phone: "+51988888888", emailVerified: true },
+    customer: {
+      name: "Jane",
+      email: "jane@example.com",
+      phone: "+51988888888",
+      emailVerified: true,
+    },
     orders: [],
   };
   apiFetch.mockResolvedValueOnce(payload);
@@ -60,11 +80,18 @@ test("me() fetches the profile and returns the parsed result", async () => {
 test("changePassword() posts the current and new passwords, returns the parsed result", async () => {
   apiFetch.mockResolvedValueOnce({ ok: true });
 
-  const result = await customerAuthApi.changePassword("my-store", "old-1", "new-1");
+  const result = await customerAuthApi.changePassword(
+    "my-store",
+    "old-1",
+    "new-1",
+  );
 
-  expect(apiFetch).toHaveBeenCalledWith("/stores/my-store/account/change-password", {
-    method: "POST",
-    body: JSON.stringify({ currentPassword: "old-1", newPassword: "new-1" }),
-  });
+  expect(apiFetch).toHaveBeenCalledWith(
+    "/stores/my-store/account/change-password",
+    {
+      method: "POST",
+      body: JSON.stringify({ currentPassword: "old-1", newPassword: "new-1" }),
+    },
+  );
   expect(result).toEqual({ ok: true });
 });

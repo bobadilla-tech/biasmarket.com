@@ -1,9 +1,13 @@
 import { apiFetch } from "@/lib/api";
-import { categorySchema, categoryListSchema } from "../schemas/category.schema";
+import { categoryListSchema, categorySchema } from "../schemas/category.schema";
 
 export const categoriesApi = {
   async list(storeId: string, fallbackErrorMessage?: string) {
-    const data = await apiFetch(`/stores/${storeId}/categories`, {}, fallbackErrorMessage);
+    const data = await apiFetch(
+      `/stores/${storeId}/categories`,
+      {},
+      fallbackErrorMessage,
+    );
     return categoryListSchema.parse(data);
   },
 

@@ -6,7 +6,10 @@ function sign(payload: string, secret: string): string {
   return createHmac("sha256", secret).update(payload).digest("base64url");
 }
 
-export function createCustomerAccountToken(customerId: string, secret: string): string {
+export function createCustomerAccountToken(
+  customerId: string,
+  secret: string,
+): string {
   const payload = `${customerId}.${Date.now() + TOKEN_TTL_MS}`;
   const encodedPayload = Buffer.from(payload, "utf8").toString("base64url");
   return `${encodedPayload}.${sign(payload, secret)}`;
@@ -31,7 +34,9 @@ export function verifyCustomerAccountToken(
 
   const [customerId, expiresAtRaw] = payload.split(".");
   const expiresAt = Number(expiresAtRaw);
-  if (!customerId || !Number.isFinite(expiresAt) || Date.now() > expiresAt) return null;
+  if (!customerId || !Number.isFinite(expiresAt) || Date.now() > expiresAt) {
+    return null;
+  }
 
   return { customerId };
 }
@@ -55,7 +60,9 @@ export function createCustomerSessionToken(
   passwordVersion: string,
   secret: string,
 ): string {
-  const payload = `${customerId}.${storeId}.${passwordVersion}.${Date.now() + SESSION_TOKEN_TTL_MS}`;
+  const payload = `${customerId}.${storeId}.${passwordVersion}.${
+    Date.now() + SESSION_TOKEN_TTL_MS
+  }`;
   const encodedPayload = Buffer.from(payload, "utf8").toString("base64url");
   return `${encodedPayload}.${sign(payload, secret)}`;
 }
@@ -77,7 +84,9 @@ export function verifyCustomerSessionToken(
     return null;
   }
 
-  const [customerId, storeId, passwordVersion, expiresAtRaw] = payload.split(".");
+  const [customerId, storeId, passwordVersion, expiresAtRaw] = payload.split(
+    ".",
+  );
   const expiresAt = Number(expiresAtRaw);
   if (
     !customerId ||

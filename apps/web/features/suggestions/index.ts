@@ -1,8 +1,8 @@
 export { suggestionsApi } from "./api/suggestions.api";
-export { useSuggestions, suggestionsKeys } from "./queries/use-suggestions";
+export { suggestionsKeys, useSuggestions } from "./queries/use-suggestions";
 export {
-  suggestionSchema,
-  suggestionListSchema,
   type Suggestion,
+  suggestionListSchema,
+  suggestionSchema,
 } from "./schemas/suggestion.schema";
 export { SuggestionCard } from "./components/suggestion-card";

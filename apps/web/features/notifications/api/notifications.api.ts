@@ -12,7 +12,9 @@ export const notificationsApi = {
     return notificationListSchema.parse(data);
   },
   unreadCount: async (storeId: string) => {
-    const data = await apiFetch(`/stores/${storeId}/notifications/unread-count`);
+    const data = await apiFetch(
+      `/stores/${storeId}/notifications/unread-count`,
+    );
     return unreadCountSchema.parse(data);
   },
   markRead: (storeId: string, notificationId: string) =>

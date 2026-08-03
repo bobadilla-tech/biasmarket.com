@@ -1,28 +1,46 @@
 import { apiFetch } from "@/lib/api";
-import { productSchema, productListSchema } from "../schemas/product.schema";
-import { variantSchema, type VariantDraft } from "../schemas/variant.schema";
+import { productListSchema, productSchema } from "../schemas/product.schema";
+import { type VariantDraft, variantSchema } from "../schemas/variant.schema";
 
 function apiUrl() {
   return process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
 }
 
-async function uploadMultipart(url: string, file: File, fallbackErrorMessage?: string) {
+async function uploadMultipart(
+  url: string,
+  file: File,
+  fallbackErrorMessage?: string,
+) {
   const formData = new FormData();
   formData.append("file", file);
-  const res = await fetch(url, { method: "POST", credentials: "include", body: formData });
+  const res = await fetch(url, {
+    method: "POST",
+    credentials: "include",
+    body: formData,
+  });
   const data = await res.json().catch(() => null);
-  if (!res.ok) throw new Error(data?.message ?? fallbackErrorMessage ?? "Network error");
+  if (!res.ok) {
+    throw new Error(data?.message ?? fallbackErrorMessage ?? "Network error");
+  }
   return data;
 }
 
 export const productsApi = {
   async list(storeId: string, fallbackErrorMessage?: string) {
-    const data = await apiFetch(`/stores/${storeId}/products`, {}, fallbackErrorMessage);
+    const data = await apiFetch(
+      `/stores/${storeId}/products`,
+      {},
+      fallbackErrorMessage,
+    );
     return productListSchema.parse(data);
   },
 
   async get(storeId: string, productId: string, fallbackErrorMessage?: string) {
-    const data = await apiFetch(`/stores/${storeId}/products/${productId}`, {}, fallbackErrorMessage);
+    const data = await apiFetch(
+      `/stores/${storeId}/products/${productId}`,
+      {},
+      fallbackErrorMessage,
+    );
     return productSchema.parse(data);
   },
 
@@ -50,7 +68,13 @@ export const productsApi = {
   update(
     storeId: string,
     productId: string,
-    payload: { name: string; description?: string; price: number; currency: string; categoryIds: string[] },
+    payload: {
+      name: string;
+      description?: string;
+      price: number;
+      currency: string;
+      categoryIds: string[];
+    },
     fallbackErrorMessage?: string,
   ) {
     return apiFetch(
@@ -61,7 +85,9 @@ export const productsApi = {
   },
 
   remove(storeId: string, productId: string, fallbackErrorMessage?: string) {
-    return apiFetch(`/stores/${storeId}/products/${productId}`, { method: "DELETE" }, fallbackErrorMessage);
+    return apiFetch(`/stores/${storeId}/products/${productId}`, {
+      method: "DELETE",
+    }, fallbackErrorMessage);
   },
 
   publish(storeId: string, productId: string, fallbackErrorMessage?: string) {
@@ -129,8 +155,11 @@ export const productsApi = {
   },
 
   deleteVariant(storeId: string, productId: string, variantId: string) {
-    return apiFetch(`/stores/${storeId}/products/${productId}/variants/${variantId}`, {
-      method: "DELETE",
-    }).catch(() => undefined);
+    return apiFetch(
+      `/stores/${storeId}/products/${productId}/variants/${variantId}`,
+      {
+        method: "DELETE",
+      },
+    ).catch(() => undefined);
   },
 };

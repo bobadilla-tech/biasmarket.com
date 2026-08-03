@@ -15,7 +15,9 @@ export function StoreThemeFrame({
   children: React.ReactNode;
 }) {
   const { store } = useDashboardStore();
-  const themeStyle = useMemo(() => getStoreThemeStyle(store?.themeConfig), [store?.themeConfig]);
+  const themeStyle = useMemo(() => getStoreThemeStyle(store?.themeConfig), [
+    store?.themeConfig,
+  ]);
 
   useEffect(() => {
     const root = document.documentElement;

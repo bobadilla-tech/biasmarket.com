@@ -10,7 +10,9 @@ export function useMarkRead(storeId: string | undefined) {
       notificationsApi.markRead(storeId as string, notificationId),
     onSuccess: () => {
       if (!storeId) return;
-      queryClient.invalidateQueries({ queryKey: notificationKeys.all(storeId) });
+      queryClient.invalidateQueries({
+        queryKey: notificationKeys.all(storeId),
+      });
     },
   });
 }

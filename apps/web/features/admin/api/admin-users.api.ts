@@ -7,7 +7,11 @@ import { storeCountListSchema } from "../schemas/admin-user.schema";
 // control the shape of. This file only owns the one apiFetch-backed call.
 export const adminUsersApi = {
   async getStoreCounts(fallbackErrorMessage?: string) {
-    const data = await apiFetch("/admin/users/store-counts", {}, fallbackErrorMessage);
+    const data = await apiFetch(
+      "/admin/users/store-counts",
+      {},
+      fallbackErrorMessage,
+    );
     return storeCountListSchema.parse(data);
   },
 };

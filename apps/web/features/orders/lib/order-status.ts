@@ -14,29 +14,51 @@ export const SENSITIVE_FULFILLMENT = new Set(["COMPLETED"]);
 
 export type OrdersTab = "all" | "pending" | "transit" | "delivered";
 
-export function getOrderStatus(order: Order, t: ReturnType<typeof useTranslations>) {
+export function getOrderStatus(
+  order: Order,
+  t: ReturnType<typeof useTranslations>,
+) {
   if (order.paymentStatus === "REJECTED") {
     return { label: t("status.rejected"), className: "bg-red-50 text-red-700" };
   }
   if (order.paymentStatus === "CANCELLED") {
-    return { label: t("status.cancelled"), className: "bg-slate-100 text-slate-700" };
+    return {
+      label: t("status.cancelled"),
+      className: "bg-slate-100 text-slate-700",
+    };
   }
   if (order.paymentStatus === "PARTIALLY_PAID") {
     return {
       label: t("status.partial"),
-      className: "border border-sky-200 bg-gradient-to-r from-sky-50 to-blue-50 text-sky-800 shadow-sm",
+      className:
+        "border border-sky-200 bg-gradient-to-r from-sky-50 to-blue-50 text-sky-800 shadow-sm",
     };
   }
   if (order.paymentStatus !== "VERIFIED") {
-    return { label: t("status.toConfirm"), className: "bg-violet-50 text-violet-700" };
+    return {
+      label: t("status.toConfirm"),
+      className: "bg-violet-50 text-violet-700",
+    };
   }
   if (order.fulfillmentStatus === "COMPLETED") {
-    return { label: t("status.delivered"), className: "bg-emerald-50 text-emerald-700" };
+    return {
+      label: t("status.delivered"),
+      className: "bg-emerald-50 text-emerald-700",
+    };
   }
-  if (order.fulfillmentStatus === "IN_TRANSIT" || order.fulfillmentStatus === "READY") {
-    return { label: t("status.inTransit"), className: "bg-pink-50 text-pink-700" };
+  if (
+    order.fulfillmentStatus === "IN_TRANSIT" ||
+    order.fulfillmentStatus === "READY"
+  ) {
+    return {
+      label: t("status.inTransit"),
+      className: "bg-pink-50 text-pink-700",
+    };
   }
-  return { label: t("status.pending"), className: "bg-amber-50 text-amber-700" };
+  return {
+    label: t("status.pending"),
+    className: "bg-amber-50 text-amber-700",
+  };
 }
 
 /**
@@ -45,15 +67,20 @@ export function getOrderStatus(order: Order, t: ReturnType<typeof useTranslation
  */
 export function matchesTab(order: Order, tab: OrdersTab) {
   if (tab === "all") return true;
-  if (tab === "delivered") return order.paymentStatus === "VERIFIED" && order.fulfillmentStatus === "COMPLETED";
+  if (tab === "delivered") {
+    return order.paymentStatus === "VERIFIED" &&
+      order.fulfillmentStatus === "COMPLETED";
+  }
   if (tab === "transit") {
     return (
       order.paymentStatus === "VERIFIED" &&
-      (order.fulfillmentStatus === "IN_TRANSIT" || order.fulfillmentStatus === "READY")
+      (order.fulfillmentStatus === "IN_TRANSIT" ||
+        order.fulfillmentStatus === "READY")
     );
   }
   return (
     order.paymentStatus !== "VERIFIED" ||
-    (order.paymentStatus === "VERIFIED" && order.fulfillmentStatus === "ORDERING")
+    (order.paymentStatus === "VERIFIED" &&
+      order.fulfillmentStatus === "ORDERING")
   );
 }

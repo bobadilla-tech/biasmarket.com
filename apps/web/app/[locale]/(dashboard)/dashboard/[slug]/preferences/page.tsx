@@ -6,7 +6,7 @@ import { LoadingState } from "@/components/shared/loading-state";
 import { ErrorState } from "@/components/shared/error-state";
 import { EmptyState } from "@/components/shared/empty-state";
 import { useDashboardStore } from "@/features/stores";
-import { useSuggestions, SuggestionCard } from "@/features/suggestions";
+import { SuggestionCard, useSuggestions } from "@/features/suggestions";
 
 function dismissedStorageKey(storeId: string) {
   return `suggestions-dismissed-${storeId}`;
@@ -16,10 +16,11 @@ export default function PreferencesPage() {
   const t = useTranslations("dashboard.preferences");
   const tCommon = useTranslations("common");
   const { storeId, loading: storeLoading } = useDashboardStore();
-  const { data: suggestions, isPending: suggestionsLoading, error } = useSuggestions(
-    storeId,
-    tCommon("networkError"),
-  );
+  const { data: suggestions, isPending: suggestionsLoading, error } =
+    useSuggestions(
+      storeId,
+      tCommon("networkError"),
+    );
 
   const [dismissedIds, setDismissedIds] = useState<string[]>([]);
 
@@ -33,7 +34,10 @@ export default function PreferencesPage() {
     if (!storeId) return;
     const next = [...dismissedIds, id];
     setDismissedIds(next);
-    window.localStorage.setItem(dismissedStorageKey(storeId), JSON.stringify(next));
+    window.localStorage.setItem(
+      dismissedStorageKey(storeId),
+      JSON.stringify(next),
+    );
   };
 
   if (storeLoading || suggestionsLoading) {
@@ -43,30 +47,42 @@ export default function PreferencesPage() {
   if (error) {
     return (
       <div className="px-5 py-6 lg:px-8 lg:py-8">
-        <ErrorState message={error instanceof Error ? error.message : tCommon("networkError")} />
+        <ErrorState
+          message={error instanceof Error
+            ? error.message
+            : tCommon("networkError")}
+        />
       </div>
     );
   }
 
-  const visibleSuggestions = (suggestions ?? []).filter((s) => !dismissedIds.includes(s.id));
+  const visibleSuggestions = (suggestions ?? []).filter((s) =>
+    !dismissedIds.includes(s.id)
+  );
 
   return (
     <div className="min-h-screen px-5 py-6 lg:px-8 lg:py-8">
       <div className="mx-auto max-w-3xl space-y-6">
         <div>
           <p className="text-sm font-medium text-[#8e7ca7]">{t("subtitle")}</p>
-          <h1 className="text-3xl font-bold tracking-tight text-[#2d1649]">{t("title")}</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-[#2d1649]">
+            {t("title")}
+          </h1>
         </div>
 
-        {visibleSuggestions.length === 0 ? (
-          <EmptyState message={t("empty")} />
-        ) : (
-          <div className="space-y-4">
-            {visibleSuggestions.map((suggestion) => (
-              <SuggestionCard key={suggestion.id} suggestion={suggestion} onDismiss={handleDismiss} />
-            ))}
-          </div>
-        )}
+        {visibleSuggestions.length === 0
+          ? <EmptyState message={t("empty")} />
+          : (
+            <div className="space-y-4">
+              {visibleSuggestions.map((suggestion) => (
+                <SuggestionCard
+                  key={suggestion.id}
+                  suggestion={suggestion}
+                  onDismiss={handleDismiss}
+                />
+              ))}
+            </div>
+          )}
       </div>
     </div>
   );

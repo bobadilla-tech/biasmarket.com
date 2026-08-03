@@ -1,4 +1,4 @@
-import type { AnalyticsRange } from './analytics.types.js';
+import type { AnalyticsRange } from "./analytics.types.js";
 
 export interface DateBucket {
   start: Date;
@@ -6,7 +6,9 @@ export interface DateBucket {
 }
 
 function startOfUtcDay(date: Date): Date {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  return new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+  );
 }
 
 function dailyBuckets(count: number, now: Date): DateBucket[] {
@@ -40,15 +42,22 @@ function weeklyBuckets(count: number, now: Date): DateBucket[] {
 function monthlyBuckets(count: number, now: Date): DateBucket[] {
   const buckets: DateBucket[] = [];
   for (let i = count - 1; i >= 0; i--) {
-    const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
-    const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i + 1, 1));
+    const start = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1),
+    );
+    const end = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i + 1, 1),
+    );
     buckets.push({ start, end });
   }
   return buckets;
 }
 
-export function buildBuckets(range: AnalyticsRange, now: Date = new Date()): DateBucket[] {
-  if (range === '30d') return dailyBuckets(30, now);
-  if (range === '90d') return weeklyBuckets(13, now);
+export function buildBuckets(
+  range: AnalyticsRange,
+  now: Date = new Date(),
+): DateBucket[] {
+  if (range === "30d") return dailyBuckets(30, now);
+  if (range === "90d") return weeklyBuckets(13, now);
   return monthlyBuckets(12, now);
 }

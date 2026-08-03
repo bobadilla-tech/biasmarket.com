@@ -42,9 +42,12 @@ export function buildCheckoutFormSchema(pickupPointsAvailable: boolean) {
     })
     .refine(
       (data) =>
-        !(data.deliveryMethodType === "PICKUP" && pickupPointsAvailable && !data.pickupPointId),
+        !(data.deliveryMethodType === "PICKUP" && pickupPointsAvailable &&
+          !data.pickupPointId),
       { message: "pickup point required", path: ["pickupPointId"] },
     );
 }
 
-export type CheckoutFormInput = z.infer<ReturnType<typeof buildCheckoutFormSchema>>;
+export type CheckoutFormInput = z.infer<
+  ReturnType<typeof buildCheckoutFormSchema>
+>;

@@ -8,11 +8,11 @@ export { useReorderCollectionProducts } from "./mutations/use-reorder-collection
 export { CollectionForm } from "./components/collection-form";
 export { CollectionCard } from "./components/collection-card";
 export {
-  collectionSchema,
-  collectionListSchema,
-  collectionProductSchema,
-  createCollectionSchema,
   type Collection,
+  collectionListSchema,
   type CollectionProduct,
+  collectionProductSchema,
+  collectionSchema,
   type CreateCollectionInput,
+  createCollectionSchema,
 } from "./schemas/collection.schema";

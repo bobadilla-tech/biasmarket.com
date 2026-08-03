@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { cartTotal, type CartItem } from "@/lib/cart";
+import { type CartItem, cartTotal } from "@/lib/cart";
 
 interface CheckoutSummaryProps {
   items: CartItem[];

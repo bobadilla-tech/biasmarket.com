@@ -16,7 +16,8 @@ test("parses a valid notification", () => {
 });
 
 test("throws on an unknown type", () => {
-  expect(() => notificationSchema.parse({ ...validItem, type: "UNKNOWN" })).toThrow();
+  expect(() => notificationSchema.parse({ ...validItem, type: "UNKNOWN" }))
+    .toThrow();
 });
 
 test("parses unread-count payload", () => {

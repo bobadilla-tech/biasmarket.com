@@ -35,7 +35,8 @@ export function ConfirmTransitionDialog({
 }) {
   const t = useTranslations("dashboard.orders");
   const showReasonInput = onReasonChange !== undefined;
-  const confirmDisabled = pending || (showReasonInput && reasonRequired && !reason?.trim());
+  const confirmDisabled = pending ||
+    (showReasonInput && reasonRequired && !reason?.trim());
 
   return (
     <AlertDialog
@@ -51,15 +52,17 @@ export function ConfirmTransitionDialog({
             {label ? t("confirmStatus.body", { status: label }) : null}
           </AlertDialogDescription>
         </AlertDialogHeader>
-        {showReasonInput ? (
-          <Textarea
-            value={reason ?? ""}
-            onChange={(event) => onReasonChange?.(event.target.value)}
-            placeholder={t("confirmStatus.reasonPlaceholder")}
-            rows={3}
-            className="rounded-2xl border-[#eadcf7] shadow-none"
-          />
-        ) : null}
+        {showReasonInput
+          ? (
+            <Textarea
+              value={reason ?? ""}
+              onChange={(event) => onReasonChange?.(event.target.value)}
+              placeholder={t("confirmStatus.reasonPlaceholder")}
+              rows={3}
+              className="rounded-2xl border-[#eadcf7] shadow-none"
+            />
+          )
+          : null}
         <AlertDialogFooter>
           <Button
             type="button"

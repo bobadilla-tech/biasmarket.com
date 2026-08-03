@@ -1,6 +1,11 @@
 import { z } from "zod";
 
-export const PAYMENT_METHOD_TYPES = ["YAPE", "PLIN", "TRANSFER", "CASH"] as const;
+export const PAYMENT_METHOD_TYPES = [
+  "YAPE",
+  "PLIN",
+  "TRANSFER",
+  "CASH",
+] as const;
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png"];
@@ -24,14 +29,22 @@ export function buildRegisterPaymentSchema(maxAmount: number) {
     method: z
       .string()
       .min(1)
-      .refine((value) => (PAYMENT_METHOD_TYPES as readonly string[]).includes(value), "invalid method"),
+      .refine(
+        (value) => (PAYMENT_METHOD_TYPES as readonly string[]).includes(value),
+        "invalid method",
+      ),
     note: z.string(),
     file: z
       .instanceof(File)
       .nullable()
       .refine((file) => !file || file.size <= MAX_FILE_SIZE, "file too large")
-      .refine((file) => !file || ACCEPTED_IMAGE_TYPES.includes(file.type), "invalid file type"),
+      .refine(
+        (file) => !file || ACCEPTED_IMAGE_TYPES.includes(file.type),
+        "invalid file type",
+      ),
   });
 }
 
-export type RegisterPaymentInput = z.infer<ReturnType<typeof buildRegisterPaymentSchema>>;
+export type RegisterPaymentInput = z.infer<
+  ReturnType<typeof buildRegisterPaymentSchema>
+>;

@@ -9,7 +9,12 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const dockerDir = join(dirname(fileURLToPath(import.meta.url)), "..", "infra", "docker");
+const dockerDir = join(
+  dirname(fileURLToPath(import.meta.url)),
+  "..",
+  "infra",
+  "docker",
+);
 const examplePath = join(dockerDir, ".env.example");
 const envPath = join(dockerDir, ".env");
 
@@ -33,7 +38,8 @@ const s3SecretKey = genPassword();
 
 const replacements: Record<string, string> = {
   POSTGRES_PASSWORD: postgresPassword,
-  DATABASE_URL: `postgresql://biasmarket:${postgresPassword}@db:5432/biasmarket`,
+  DATABASE_URL:
+    `postgresql://biasmarket:${postgresPassword}@db:5432/biasmarket`,
   BETTER_AUTH_SECRET: betterAuthSecret,
   CUSTOMER_ACCOUNT_TOKEN_SECRET: customerAccountTokenSecret,
   BETTER_AUTH_URL: "https://api.biasmarket.com",
@@ -50,7 +56,7 @@ const lines = readFileSync(examplePath, "utf8").split("\n");
 
 const out = lines.map((line) => {
   const match = /^([A-Z_][A-Z0-9_]*)=/.exec(line);
-  
+
   if (match && match[1] in replacements) {
     return `${match[1]}=${replacements[match[1]]}`;
   }

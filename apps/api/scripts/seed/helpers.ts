@@ -1,15 +1,15 @@
-import { randomUUID } from 'node:crypto';
+import { randomUUID } from "node:crypto";
 import type {
+  DeliveryMethodType,
+  FulfillmentStatus,
+  PaymentMethodType,
+  PaymentStatus,
   PrismaClient,
   ProductStatus,
   StoreSectionType,
-  DeliveryMethodType,
-  PaymentMethodType,
-  PaymentStatus,
-  FulfillmentStatus,
-} from '@biasmarket/db';
-import { Prisma } from '@biasmarket/db';
-import { hashPassword } from 'better-auth/crypto';
+} from "@biasmarket/db";
+import { Prisma } from "@biasmarket/db";
+import { hashPassword } from "better-auth/crypto";
 
 function json(value: Record<string, unknown>): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
@@ -18,11 +18,11 @@ function json(value: Record<string, unknown>): Prisma.InputJsonValue {
 // Real upserts everywhere — reruns repair/update every fixture instead of
 // the old "skip if any products exist" shortcut, which meant a store that
 // already had one product never got the rest of the seed list.
-export const SEED_PASSWORD = 'seedpassword123';
+export const SEED_PASSWORD = "seedpassword123";
 
 export async function ensureUser(
   prisma: PrismaClient,
-  input: { email: string; name: string; role: 'admin' | 'seller' },
+  input: { email: string; name: string; role: "admin" | "seller" },
 ): Promise<string> {
   const now = new Date();
   const user = await prisma.user.upsert({
@@ -40,14 +40,14 @@ export async function ensureUser(
   });
 
   const hasAccount = await prisma.account.findFirst({
-    where: { userId: user.id, providerId: 'credential' },
+    where: { userId: user.id, providerId: "credential" },
   });
   if (!hasAccount) {
     await prisma.account.create({
       data: {
         id: randomUUID(),
         accountId: user.id,
-        providerId: 'credential',
+        providerId: "credential",
         userId: user.id,
         password: await hashPassword(SEED_PASSWORD),
         createdAt: now,
@@ -82,7 +82,7 @@ export async function ensureStore(
       slug: input.slug,
       ownerId: input.ownerId,
       themeConfig: {},
-      paymentInstructions: '',
+      paymentInstructions: "",
       whatsappNumber: input.whatsappNumber,
       defaultCurrency: input.defaultCurrency,
     },
@@ -91,18 +91,33 @@ export async function ensureStore(
 
 export async function ensureDeliveryMethod(
   prisma: PrismaClient,
-  input: { storeId: string; type: DeliveryMethodType; details: Record<string, unknown> },
+  input: {
+    storeId: string;
+    type: DeliveryMethodType;
+    details: Record<string, unknown>;
+  },
 ) {
   return prisma.deliveryMethodConfig.upsert({
     where: { storeId_type: { storeId: input.storeId, type: input.type } },
     update: { enabled: true, details: json(input.details) },
-    create: { storeId: input.storeId, type: input.type, enabled: true, details: json(input.details) },
+    create: {
+      storeId: input.storeId,
+      type: input.type,
+      enabled: true,
+      details: json(input.details),
+    },
   });
 }
 
 export async function ensurePickupPoint(
   prisma: PrismaClient,
-  input: { id: string; storeId: string; label: string; enabled?: boolean; sortOrder?: number },
+  input: {
+    id: string;
+    storeId: string;
+    label: string;
+    enabled?: boolean;
+    sortOrder?: number;
+  },
 ) {
   const data = {
     storeId: input.storeId,
@@ -124,7 +139,12 @@ export async function ensurePaymentMethod(
   return prisma.paymentMethodConfig.upsert({
     where: { storeId_method: { storeId: input.storeId, method: input.method } },
     update: { enabled: input.enabled ?? true },
-    create: { storeId: input.storeId, method: input.method, enabled: input.enabled ?? true, details: {} },
+    create: {
+      storeId: input.storeId,
+      method: input.method,
+      enabled: input.enabled ?? true,
+      details: {},
+    },
   });
 }
 
@@ -155,7 +175,11 @@ export async function ensureCategory(
       },
     },
     update: {},
-    create: { storeId: input.storeId, parentId: input.parentId, name: input.name },
+    create: {
+      storeId: input.storeId,
+      parentId: input.parentId,
+      name: input.name,
+    },
   });
 }
 
@@ -181,7 +205,10 @@ export async function ensureCollectionProduct(
 ) {
   return prisma.collectionProduct.upsert({
     where: {
-      collectionId_productId: { collectionId: input.collectionId, productId: input.productId },
+      collectionId_productId: {
+        collectionId: input.collectionId,
+        productId: input.productId,
+      },
     },
     update: { position: input.position },
     create: input,
@@ -194,7 +221,10 @@ export async function ensureProductCategory(
 ) {
   return prisma.productCategory.upsert({
     where: {
-      productId_categoryId: { productId: input.productId, categoryId: input.categoryId },
+      productId_categoryId: {
+        productId: input.productId,
+        categoryId: input.categoryId,
+      },
     },
     update: {},
     create: input,

@@ -1,7 +1,10 @@
 import { afterEach, expect, test, vi } from "vitest";
 
 const apiFetch = vi.fn();
-vi.mock("@/lib/api", () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }));
+vi.mock(
+  "@/lib/api",
+  () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }),
+);
 
 const { inquiriesApi } = await import("./inquiries.api");
 
@@ -23,5 +26,7 @@ test("markReviewed PATCHes the review endpoint", async () => {
 
   await inquiriesApi.markReviewed("i1");
 
-  expect(apiFetch).toHaveBeenCalledWith("/contact/i1/review", { method: "PATCH" }, undefined);
+  expect(apiFetch).toHaveBeenCalledWith("/contact/i1/review", {
+    method: "PATCH",
+  }, undefined);
 });

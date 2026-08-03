@@ -6,6 +6,7 @@ import type { InquirySubmissionInput } from "../schemas/inquiry-submission.schem
 
 export function useSubmitInquiry(fallbackErrorMessage?: string) {
   return useMutation({
-    mutationFn: (values: InquirySubmissionInput) => contactApi.submit(values, fallbackErrorMessage),
+    mutationFn: (values: InquirySubmissionInput) =>
+      contactApi.submit(values, fallbackErrorMessage),
   });
 }

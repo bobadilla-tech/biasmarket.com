@@ -11,11 +11,20 @@ export function useRemoveCollectionProduct(
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ collectionId, productId }: { collectionId: string; productId: string }) =>
-      collectionsApi.removeProduct(storeId as string, collectionId, productId, fallbackErrorMessage),
+    mutationFn: (
+      { collectionId, productId }: { collectionId: string; productId: string },
+    ) =>
+      collectionsApi.removeProduct(
+        storeId as string,
+        collectionId,
+        productId,
+        fallbackErrorMessage,
+      ),
     onSuccess: () => {
       if (!storeId) return;
-      queryClient.invalidateQueries({ queryKey: collectionsKeys.byStore(storeId) });
+      queryClient.invalidateQueries({
+        queryKey: collectionsKeys.byStore(storeId),
+      });
     },
   });
 }

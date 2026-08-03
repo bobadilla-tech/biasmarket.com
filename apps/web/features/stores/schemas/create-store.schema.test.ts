@@ -13,17 +13,21 @@ test("accepts a valid create-store payload", () => {
 });
 
 test("rejects a name shorter than 2 chars", () => {
-  expect(createStoreFormSchema.safeParse({ ...valid, name: "a" }).success).toBe(false);
+  expect(createStoreFormSchema.safeParse({ ...valid, name: "a" }).success).toBe(
+    false,
+  );
 });
 
 test("rejects an unsupported currency", () => {
   expect(
-    createStoreFormSchema.safeParse({ ...valid, defaultCurrency: "XYZ" }).success,
+    createStoreFormSchema.safeParse({ ...valid, defaultCurrency: "XYZ" })
+      .success,
   ).toBe(false);
 });
 
 test("rejects a whatsapp number shorter than 6 chars", () => {
   expect(
-    createStoreFormSchema.safeParse({ ...valid, whatsappNumber: "123" }).success,
+    createStoreFormSchema.safeParse({ ...valid, whatsappNumber: "123" })
+      .success,
   ).toBe(false);
 });

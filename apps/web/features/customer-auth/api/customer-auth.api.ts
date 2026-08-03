@@ -20,7 +20,9 @@ export const customerAuthApi = {
   },
 
   logout: async (slug: string) => {
-    const data = await apiFetch(`/stores/${slug}/account/logout`, { method: "POST" });
+    const data = await apiFetch(`/stores/${slug}/account/logout`, {
+      method: "POST",
+    });
     return okResultSchema.parse(data);
   },
 
@@ -29,7 +31,11 @@ export const customerAuthApi = {
     return customerProfileSchema.parse(data);
   },
 
-  changePassword: async (slug: string, currentPassword: string, newPassword: string) => {
+  changePassword: async (
+    slug: string,
+    currentPassword: string,
+    newPassword: string,
+  ) => {
     const data = await apiFetch(`/stores/${slug}/account/change-password`, {
       method: "POST",
       body: JSON.stringify({ currentPassword, newPassword }),

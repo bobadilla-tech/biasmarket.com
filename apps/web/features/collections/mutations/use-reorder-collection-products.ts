@@ -11,11 +11,23 @@ export function useReorderCollectionProducts(
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ collectionId, productIds }: { collectionId: string; productIds: string[] }) =>
-      collectionsApi.reorderProducts(storeId as string, collectionId, productIds, fallbackErrorMessage),
+    mutationFn: (
+      { collectionId, productIds }: {
+        collectionId: string;
+        productIds: string[];
+      },
+    ) =>
+      collectionsApi.reorderProducts(
+        storeId as string,
+        collectionId,
+        productIds,
+        fallbackErrorMessage,
+      ),
     onSuccess: () => {
       if (!storeId) return;
-      queryClient.invalidateQueries({ queryKey: collectionsKeys.byStore(storeId) });
+      queryClient.invalidateQueries({
+        queryKey: collectionsKeys.byStore(storeId),
+      });
     },
   });
 }

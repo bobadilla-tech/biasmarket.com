@@ -12,7 +12,10 @@ test("accepts matching new/confirm passwords", () => {
 });
 
 test("rejects when new and confirm passwords don't match", () => {
-  const result = changePasswordSchema.safeParse({ ...valid, confirmPassword: "different1" });
+  const result = changePasswordSchema.safeParse({
+    ...valid,
+    confirmPassword: "different1",
+  });
   expect(result.success).toBe(false);
 });
 

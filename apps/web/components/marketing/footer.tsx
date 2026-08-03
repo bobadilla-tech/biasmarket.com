@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { BOBADILLA_TECH_URL } from "@/lib/site-config";
@@ -12,7 +13,7 @@ export function Footer() {
       <div className="mx-auto flex max-w-5xl flex-col items-center gap-6 text-center sm:flex-row sm:justify-between sm:text-left">
         <div className="flex flex-col items-center gap-6 sm:flex-row sm:gap-10">
           <Link href="/">
-            <img
+            <Image
               src="/logos/vertical-only-title.png"
               alt="Bias Market"
               width={95}

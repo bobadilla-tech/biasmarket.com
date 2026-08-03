@@ -41,14 +41,16 @@ test("parses a full stats overview payload", () => {
 });
 
 test("parses when recentOrders is empty", () => {
-  expect(statsOverviewSchema.safeParse({ ...valid, recentOrders: [] }).success).toBe(true);
+  expect(statsOverviewSchema.safeParse({ ...valid, recentOrders: [] }).success)
+    .toBe(true);
 });
 
 test("rejects a payload missing a paymentStatusCounts bucket", () => {
   const { CANCELLED, ...rest } = valid.paymentStatusCounts;
   void CANCELLED;
   expect(
-    statsOverviewSchema.safeParse({ ...valid, paymentStatusCounts: rest }).success,
+    statsOverviewSchema.safeParse({ ...valid, paymentStatusCounts: rest })
+      .success,
   ).toBe(false);
 });
 

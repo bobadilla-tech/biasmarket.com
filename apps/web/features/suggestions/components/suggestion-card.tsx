@@ -7,7 +7,10 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Suggestion } from "../schemas/suggestion.schema";
 
-const SEVERITY_STYLES: Record<Suggestion["severity"], { icon: typeof Info; className: string }> = {
+const SEVERITY_STYLES: Record<
+  Suggestion["severity"],
+  { icon: typeof Info; className: string }
+> = {
   info: { icon: Lightbulb, className: "bg-violet-50 text-violet-700" },
   warning: { icon: AlertTriangle, className: "bg-amber-50 text-amber-700" },
   critical: { icon: AlertTriangle, className: "bg-red-50 text-red-700" },
@@ -33,7 +36,12 @@ export function SuggestionCard({
   return (
     <Card className="rounded-[26px] border-[#eadcf8] bg-white py-0 shadow-sm">
       <CardContent className="flex items-start gap-4 px-5 py-5">
-        <div className={cn("flex size-10 shrink-0 items-center justify-center rounded-2xl", className)}>
+        <div
+          className={cn(
+            "flex size-10 shrink-0 items-center justify-center rounded-2xl",
+            className,
+          )}
+        >
           <Icon className="size-5" />
         </div>
         <div className="min-w-0 flex-1">

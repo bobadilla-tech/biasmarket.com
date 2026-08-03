@@ -1,7 +1,10 @@
 import { beforeEach, expect, test, vi } from "vitest";
 
 const apiFetch = vi.fn();
-vi.mock("@/lib/api", () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }));
+vi.mock(
+  "@/lib/api",
+  () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }),
+);
 
 const { discoveryApi } = await import("./discovery.api");
 
@@ -28,7 +31,12 @@ test("getStoreDirectory builds q and page query params", async () => {
 });
 
 test("searchProducts builds q query param only when provided", async () => {
-  apiFetch.mockResolvedValueOnce({ products: [], total: 0, page: 1, limit: 24 });
+  apiFetch.mockResolvedValueOnce({
+    products: [],
+    total: 0,
+    page: 1,
+    limit: 24,
+  });
   await discoveryApi.searchProducts({ q: "album" });
   expect(apiFetch).toHaveBeenCalledWith("/products/search?q=album");
 });

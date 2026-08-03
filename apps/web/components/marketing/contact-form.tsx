@@ -7,9 +7,9 @@ import { useTranslations } from "next-intl";
 import { buttonVariants } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import {
-  useSubmitInquiry,
-  inquirySubmissionSchema,
   type InquirySubmissionInput,
+  inquirySubmissionSchema,
+  useSubmitInquiry,
 } from "@/features/contact";
 
 const inputClass =
@@ -22,7 +22,13 @@ export function ContactForm() {
 
   const { register, handleSubmit } = useForm<InquirySubmissionInput>({
     resolver: zodResolver(inquirySubmissionSchema),
-    defaultValues: { name: "", email: "", company: "", inquiryType: "general", message: "" },
+    defaultValues: {
+      name: "",
+      email: "",
+      company: "",
+      inquiryType: "general",
+      message: "",
+    },
   });
 
   const onSubmit = handleSubmit(async (values) => {
@@ -43,19 +49,33 @@ export function ContactForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4 rounded-2xl border border-white/10 p-8">
+    <form
+      onSubmit={onSubmit}
+      className="flex flex-col gap-4 rounded-2xl border border-white/10 p-8"
+    >
       <div>
         <label htmlFor="name" className="mb-2 block text-sm font-medium">
           {t("name")}
         </label>
-        <input id="name" required className={inputClass} {...register("name")} />
+        <input
+          id="name"
+          required
+          className={inputClass}
+          {...register("name")}
+        />
       </div>
 
       <div>
         <label htmlFor="email" className="mb-2 block text-sm font-medium">
           {t("email")}
         </label>
-        <input id="email" type="email" required className={inputClass} {...register("email")} />
+        <input
+          id="email"
+          type="email"
+          required
+          className={inputClass}
+          {...register("email")}
+        />
       </div>
 
       <div>
@@ -87,12 +107,20 @@ export function ContactForm() {
         <label htmlFor="message" className="mb-2 block text-sm font-medium">
           {t("message")}
         </label>
-        <textarea id="message" rows={5} required className={inputClass} {...register("message")} />
+        <textarea
+          id="message"
+          rows={5}
+          required
+          className={inputClass}
+          {...register("message")}
+        />
       </div>
 
       {submitInquiry.isError && (
         <p className="text-sm text-red-400">
-          {submitInquiry.error instanceof Error ? submitInquiry.error.message : t("error")}
+          {submitInquiry.error instanceof Error
+            ? submitInquiry.error.message
+            : t("error")}
         </p>
       )}
 

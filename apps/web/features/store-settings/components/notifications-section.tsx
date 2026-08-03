@@ -9,7 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import type { DashboardStore } from "@/features/stores";
 import { useSaveStockAlerts } from "../mutations/use-save-stock-alerts";
-import { Field, SectionCard, ToggleRow, useSavedFlash } from "./section-primitives";
+import {
+  Field,
+  SectionCard,
+  ToggleRow,
+  useSavedFlash,
+} from "./section-primitives";
 
 interface NotificationSetting {
   key: "newOrder" | "paymentReview" | "orderDelivered" | "weeklySummary";
@@ -22,8 +27,12 @@ export function NotificationsSection({ store }: { store: DashboardStore }) {
   const { slug } = useParams<{ slug: string }>();
   const saveStockAlerts = useSaveStockAlerts(store.id, slug);
 
-  const [lowStockAlertsEnabled, setLowStockAlertsEnabled] = useState(store.lowStockAlertsEnabled ?? true);
-  const [lowStockThreshold, setLowStockThreshold] = useState(String(store.lowStockThreshold ?? 5));
+  const [lowStockAlertsEnabled, setLowStockAlertsEnabled] = useState(
+    store.lowStockAlertsEnabled ?? true,
+  );
+  const [lowStockThreshold, setLowStockThreshold] = useState(
+    String(store.lowStockThreshold ?? 5),
+  );
 
   // Local-only placeholders for notification channels that don't have a
   // backend setting yet — orderDelivered/weeklySummary stay permanently
@@ -50,7 +59,11 @@ export function NotificationsSection({ store }: { store: DashboardStore }) {
   };
 
   return (
-    <SectionCard icon={Bell} title={t("notifications.title")} description={t("notifications.description")}>
+    <SectionCard
+      icon={Bell}
+      title={t("notifications.title")}
+      description={t("notifications.description")}
+    >
       <div className="space-y-3">
         <ToggleRow
           label={t("notifications.items.lowStock.label")}
@@ -58,41 +71,49 @@ export function NotificationsSection({ store }: { store: DashboardStore }) {
           enabled={lowStockAlertsEnabled}
           onChange={setLowStockAlertsEnabled}
         />
-        {lowStockAlertsEnabled ? (
-          <Field label={t("notifications.thresholdLabel")}>
-            <Input
-              type="number"
-              min={0}
-              value={lowStockThreshold}
-              onChange={(event) => setLowStockThreshold(event.target.value)}
-              className="store-theme-input h-11 w-32 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] text-[#341b55] shadow-none"
-            />
-          </Field>
-        ) : null}
+        {lowStockAlertsEnabled
+          ? (
+            <Field label={t("notifications.thresholdLabel")}>
+              <Input
+                type="number"
+                min={0}
+                value={lowStockThreshold}
+                onChange={(event) => setLowStockThreshold(event.target.value)}
+                className="store-theme-input h-11 w-32 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] text-[#341b55] shadow-none"
+              />
+            </Field>
+          )
+          : null}
 
         {notifications.map((notification) => (
           <ToggleRow
             key={notification.key}
             label={t(`notifications.items.${notification.key}.label`)}
-            description={t(`notifications.items.${notification.key}.description`)}
+            description={t(
+              `notifications.items.${notification.key}.description`,
+            )}
             enabled={notification.enabled}
             disabled={notification.locked}
             onChange={(enabled) =>
               setNotifications((current) =>
-                current.map((item) => (item.key === notification.key ? { ...item, enabled } : item)),
-              )
-            }
+                current.map((item) => (item.key === notification.key
+                  ? { ...item, enabled }
+                  : item)
+                )
+              )}
           />
         ))}
       </div>
 
-      {saveStockAlerts.isError ? (
-        <p className="mt-4 text-sm text-[#b24368]">
-          {saveStockAlerts.error instanceof Error
-            ? saveStockAlerts.error.message
-            : String(saveStockAlerts.error)}
-        </p>
-      ) : null}
+      {saveStockAlerts.isError
+        ? (
+          <p className="mt-4 text-sm text-[#b24368]">
+            {saveStockAlerts.error instanceof Error
+              ? saveStockAlerts.error.message
+              : String(saveStockAlerts.error)}
+          </p>
+        )
+        : null}
 
       <Separator className="my-5 bg-[#f0e7f8]" />
 
@@ -102,7 +123,11 @@ export function NotificationsSection({ store }: { store: DashboardStore }) {
           disabled={saveStockAlerts.isPending}
           className="store-theme-primary-button h-11 rounded-2xl px-5 text-sm font-semibold hover:scale-[1.01] hover:opacity-100"
         >
-          {saveStockAlerts.isSuccess ? t("saved") : saveStockAlerts.isPending ? t("saving") : t("save")}
+          {saveStockAlerts.isSuccess
+            ? t("saved")
+            : saveStockAlerts.isPending
+            ? t("saving")
+            : t("save")}
         </Button>
       </div>
     </SectionCard>

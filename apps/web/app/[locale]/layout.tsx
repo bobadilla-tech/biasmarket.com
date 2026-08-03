@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { hasLocale, NextIntlClientProvider, type Locale } from "next-intl";
+import { hasLocale, type Locale, NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Geist, Geist_Mono } from "next/font/google";
@@ -78,4 +78,3 @@ export default async function RootLayout({
     </html>
   );
 }
-

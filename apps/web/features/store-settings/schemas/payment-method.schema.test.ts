@@ -10,6 +10,9 @@ test("parses a list of payment method configs", () => {
 });
 
 test("rejects an unknown payment method", () => {
-  const result = paymentMethodConfigListSchema.safeParse([{ method: "BITCOIN", enabled: true }]);
+  const result = paymentMethodConfigListSchema.safeParse([{
+    method: "BITCOIN",
+    enabled: true,
+  }]);
   expect(result.success).toBe(false);
 });

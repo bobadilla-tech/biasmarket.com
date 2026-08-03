@@ -41,7 +41,15 @@ test("links to the login page when there is no session", async () => {
 
 test("links to the account page when a session exists", async () => {
   useCustomerProfile.mockReturnValue({
-    data: { customer: { name: "Jane", email: null, phone: "+51988888888", emailVerified: true }, orders: [] },
+    data: {
+      customer: {
+        name: "Jane",
+        email: null,
+        phone: "+51988888888",
+        emailVerified: true,
+      },
+      orders: [],
+    },
     isPending: false,
   });
 

@@ -4,15 +4,27 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { collectionsApi } from "../api/collections.api";
 import { collectionsKeys } from "../queries/use-collections";
 
-export function useAddCollectionProduct(storeId: string | undefined, fallbackErrorMessage?: string) {
+export function useAddCollectionProduct(
+  storeId: string | undefined,
+  fallbackErrorMessage?: string,
+) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ collectionId, productId }: { collectionId: string; productId: string }) =>
-      collectionsApi.addProduct(storeId as string, collectionId, productId, fallbackErrorMessage),
+    mutationFn: (
+      { collectionId, productId }: { collectionId: string; productId: string },
+    ) =>
+      collectionsApi.addProduct(
+        storeId as string,
+        collectionId,
+        productId,
+        fallbackErrorMessage,
+      ),
     onSuccess: () => {
       if (!storeId) return;
-      queryClient.invalidateQueries({ queryKey: collectionsKeys.byStore(storeId) });
+      queryClient.invalidateQueries({
+        queryKey: collectionsKeys.byStore(storeId),
+      });
     },
   });
 }

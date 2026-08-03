@@ -10,7 +10,12 @@ import { Switch } from "@/components/ui/switch";
 import { useDeliverySettings } from "../queries/use-delivery-settings";
 import { useSaveDelivery } from "../mutations/use-save-delivery";
 import { isNewPickupPoint, type PickupPoint } from "../schemas/delivery.schema";
-import { Field, SectionCard, ToggleRow, useSavedFlash } from "./section-primitives";
+import {
+  Field,
+  SectionCard,
+  ToggleRow,
+  useSavedFlash,
+} from "./section-primitives";
 
 export function DeliverySection({ storeId }: { storeId: string }) {
   const t = useTranslations("dashboard.settings");
@@ -32,7 +37,9 @@ export function DeliverySection({ storeId }: { storeId: string }) {
     setPickupPoints(data.points);
     setDeletedPointIds([]);
     setCourierEnabled(courier?.enabled ?? false);
-    setCourierCost(String((courier?.details?.estimatedCost as number | undefined) ?? ""));
+    setCourierCost(
+      String((courier?.details?.estimatedCost as number | undefined) ?? ""),
+    );
   }, [data]);
 
   useSavedFlash(saveDelivery.isSuccess, saveDelivery.reset);
@@ -41,7 +48,12 @@ export function DeliverySection({ storeId }: { storeId: string }) {
     if (!newPointLabel.trim()) return;
     setPickupPoints((prev) => [
       ...prev,
-      { id: `new:${Date.now()}`, label: newPointLabel.trim(), enabled: true, sortOrder: prev.length },
+      {
+        id: `new:${Date.now()}`,
+        label: newPointLabel.trim(),
+        enabled: true,
+        sortOrder: prev.length,
+      },
     ]);
     setNewPointLabel("");
   };
@@ -54,11 +66,15 @@ export function DeliverySection({ storeId }: { storeId: string }) {
   };
 
   const handleTogglePoint = (id: string, enabled: boolean) => {
-    setPickupPoints((prev) => prev.map((point) => (point.id === id ? { ...point, enabled } : point)));
+    setPickupPoints((prev) =>
+      prev.map((point) => (point.id === id ? { ...point, enabled } : point))
+    );
   };
 
   const handleUpdatePointLabel = (id: string, label: string) => {
-    setPickupPoints((prev) => prev.map((point) => (point.id === id ? { ...point, label } : point)));
+    setPickupPoints((prev) =>
+      prev.map((point) => (point.id === id ? { ...point, label } : point))
+    );
   };
 
   const handleSave = () => {
@@ -72,7 +88,11 @@ export function DeliverySection({ storeId }: { storeId: string }) {
   };
 
   return (
-    <SectionCard icon={Truck} title={t("delivery.title")} description={t("delivery.description")}>
+    <SectionCard
+      icon={Truck}
+      title={t("delivery.title")}
+      description={t("delivery.description")}
+    >
       <div className="space-y-4">
         <ToggleRow
           label={t("delivery.pickupToggle")}
@@ -86,34 +106,40 @@ export function DeliverySection({ storeId }: { storeId: string }) {
             {t("delivery.pickupPointsLabel")}
           </span>
           <div className="space-y-2">
-            {pickupPoints.length === 0 ? (
-              <p className="text-xs text-[#9582ad]">{t("delivery.noPickupPoints")}</p>
-            ) : (
-              pickupPoints.map((point) => (
-                <div
-                  key={point.id}
-                  className="flex items-center gap-3 rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3"
-                >
-                  <Switch
-                    checked={point.enabled}
-                    onCheckedChange={(enabled) => handleTogglePoint(point.id, enabled)}
-                  />
-                  <Input
-                    value={point.label}
-                    onChange={(event) => handleUpdatePointLabel(point.id, event.target.value)}
-                    className="store-theme-input h-10 rounded-xl border-[#e7dcf3] bg-white text-[#341b55] shadow-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleRemovePoint(point.id)}
-                    className="text-lg leading-none text-(--store-primary)"
-                    aria-label={t("delivery.removePickupPoint")}
+            {pickupPoints.length === 0
+              ? (
+                <p className="text-xs text-[#9582ad]">
+                  {t("delivery.noPickupPoints")}
+                </p>
+              )
+              : (
+                pickupPoints.map((point) => (
+                  <div
+                    key={point.id}
+                    className="flex items-center gap-3 rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3"
                   >
-                    ×
-                  </button>
-                </div>
-              ))
-            )}
+                    <Switch
+                      checked={point.enabled}
+                      onCheckedChange={(enabled) =>
+                        handleTogglePoint(point.id, enabled)}
+                    />
+                    <Input
+                      value={point.label}
+                      onChange={(event) =>
+                        handleUpdatePointLabel(point.id, event.target.value)}
+                      className="store-theme-input h-10 rounded-xl border-[#e7dcf3] bg-white text-[#341b55] shadow-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePoint(point.id)}
+                      className="text-lg leading-none text-(--store-primary)"
+                      aria-label={t("delivery.removePickupPoint")}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))
+              )}
             <div className="flex gap-2">
               <Input
                 value={newPointLabel}
@@ -151,11 +177,15 @@ export function DeliverySection({ storeId }: { storeId: string }) {
         </Field>
       </div>
 
-      {saveDelivery.isError ? (
-        <p className="mt-4 text-sm text-[#b24368]">
-          {saveDelivery.error instanceof Error ? saveDelivery.error.message : String(saveDelivery.error)}
-        </p>
-      ) : null}
+      {saveDelivery.isError
+        ? (
+          <p className="mt-4 text-sm text-[#b24368]">
+            {saveDelivery.error instanceof Error
+              ? saveDelivery.error.message
+              : String(saveDelivery.error)}
+          </p>
+        )
+        : null}
 
       <Separator className="my-5 bg-[#f0e7f8]" />
 
@@ -167,7 +197,11 @@ export function DeliverySection({ storeId }: { storeId: string }) {
           variant="outline"
           className="store-theme-secondary-button h-11 rounded-2xl border px-5 text-sm font-semibold shadow-none"
         >
-          {saveDelivery.isSuccess ? t("saved") : saveDelivery.isPending ? t("saving") : t("save")}
+          {saveDelivery.isSuccess
+            ? t("saved")
+            : saveDelivery.isPending
+            ? t("saving")
+            : t("save")}
         </Button>
       </div>
     </SectionCard>

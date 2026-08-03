@@ -1,9 +1,17 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import type { Customer, Prisma, Store } from '@biasmarket/db';
-import { escapeHtml } from '@biasmarket/utils/strings';
-import { createCustomerAccountToken, verifyCustomerAccountToken } from '@biasmarket/utils/customer-account-token';
-import { PrismaService } from '../../../prisma/prisma.service.js';
-import { MailerService } from '../../../mailer/mailer.service.js';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from "@nestjs/common";
+import type { Customer, Prisma, Store } from "@biasmarket/db";
+import { escapeHtml } from "@biasmarket/utils/strings";
+import {
+  createCustomerAccountToken,
+  verifyCustomerAccountToken,
+} from "@biasmarket/utils/customer-account-token";
+import { PrismaService } from "../../../prisma/prisma.service.js";
+import { MailerService } from "../../../mailer/mailer.service.js";
 
 function requiredEnv(name: string): string {
   const value = process.env[name];
@@ -11,7 +19,10 @@ function requiredEnv(name: string): string {
   return value;
 }
 
-function buildCustomerVerificationEmailHtml(url: string, storeName: string): string {
+function buildCustomerVerificationEmailHtml(
+  url: string,
+  storeName: string,
+): string {
   const safeStoreName = escapeHtml(storeName);
   const safeUrl = escapeHtml(url);
   return `
@@ -79,36 +90,42 @@ export class CustomerAccountService {
     if (!customer.email) return;
 
     try {
-      const secret = requiredEnv('CUSTOMER_ACCOUNT_TOKEN_SECRET');
+      const secret = requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET");
       const token = createCustomerAccountToken(customer.id, secret);
-      const webUrl = process.env.WEB_URL ?? 'http://localhost:3001';
-      const url = `${webUrl}/store/${store.slug}/account/confirm?token=${token}`;
+      const webUrl = process.env.WEB_URL ?? "http://localhost:3001";
+      const url =
+        `${webUrl}/store/${store.slug}/account/confirm?token=${token}`;
 
       await this.mailer.send({
         to: customer.email,
-        subject: 'Confirma tu cuenta — Bias Market / Confirm your account',
+        subject: "Confirma tu cuenta — Bias Market / Confirm your account",
         html: buildCustomerVerificationEmailHtml(url, store.name),
       });
     } catch (err) {
-      this.logger.error(`Failed to send customer verification email for ${customer.id}`, err);
+      this.logger.error(
+        `Failed to send customer verification email for ${customer.id}`,
+        err,
+      );
     }
   }
 
   async confirmAccount(storeSlug: string, token: string | undefined) {
-    if (!token) throw new BadRequestException('Enlace inválido o expirado');
+    if (!token) throw new BadRequestException("Enlace inválido o expirado");
 
-    const store = await this.prisma.store.findUnique({ where: { slug: storeSlug } });
-    if (!store) throw new NotFoundException('Store no encontrada');
+    const store = await this.prisma.store.findUnique({
+      where: { slug: storeSlug },
+    });
+    if (!store) throw new NotFoundException("Store no encontrada");
 
-    const secret = requiredEnv('CUSTOMER_ACCOUNT_TOKEN_SECRET');
+    const secret = requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET");
     const verified = verifyCustomerAccountToken(token, secret);
-    if (!verified) throw new BadRequestException('Enlace inválido o expirado');
+    if (!verified) throw new BadRequestException("Enlace inválido o expirado");
 
     const customer = await this.prisma.customer.findUnique({
       where: { id: verified.customerId },
     });
     if (!customer || customer.storeId !== store.id) {
-      throw new BadRequestException('Enlace inválido o expirado');
+      throw new BadRequestException("Enlace inválido o expirado");
     }
 
     if (!customer.emailVerified) {
@@ -120,7 +137,7 @@ export class CustomerAccountService {
 
     const orders = await this.prisma.order.findMany({
       where: { customerId: customer.id, storeId: store.id },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       select: {
         id: true,
         paymentStatus: true,
@@ -132,7 +149,11 @@ export class CustomerAccountService {
     });
 
     return {
-      customer: { name: customer.name, email: customer.email, phone: customer.phone },
+      customer: {
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone,
+      },
       orders,
     };
   }

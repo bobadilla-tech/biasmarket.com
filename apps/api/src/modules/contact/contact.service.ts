@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service.js';
-import { CreateInquiryDto } from './dto/create-inquiry.dto.js';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { PrismaService } from "../../prisma/prisma.service.js";
+import { CreateInquiryDto } from "./dto/create-inquiry.dto.js";
 
 @Injectable()
 export class ContactService {
@@ -12,7 +12,7 @@ export class ContactService {
 
   findAll() {
     return this.prisma.contactInquiry.findMany({
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
   }
 
@@ -20,11 +20,11 @@ export class ContactService {
     const inquiry = await this.prisma.contactInquiry.findUnique({
       where: { id },
     });
-    if (!inquiry) throw new NotFoundException('Inquiry not found');
+    if (!inquiry) throw new NotFoundException("Inquiry not found");
 
     return this.prisma.contactInquiry.update({
       where: { id },
-      data: { status: 'REVIEWED' },
+      data: { status: "REVIEWED" },
     });
   }
 }

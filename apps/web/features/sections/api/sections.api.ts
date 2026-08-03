@@ -14,18 +14,28 @@ function buildContent(values: SectionFormInput): Record<string, unknown> {
 
 export const sectionsApi = {
   async list(storeId: string, fallbackErrorMessage?: string) {
-    const data = await apiFetch(`/stores/${storeId}/sections`, {}, fallbackErrorMessage);
+    const data = await apiFetch(
+      `/stores/${storeId}/sections`,
+      {},
+      fallbackErrorMessage,
+    );
     return storeSectionListSchema.parse(data);
   },
 
-  create(storeId: string, values: SectionFormInput, fallbackErrorMessage?: string) {
+  create(
+    storeId: string,
+    values: SectionFormInput,
+    fallbackErrorMessage?: string,
+  ) {
     return apiFetch(
       `/stores/${storeId}/sections`,
       {
         method: "POST",
         body: JSON.stringify({
           type: values.type,
-          collectionId: values.type === "COLLECTION" ? values.collectionId : undefined,
+          collectionId: values.type === "COLLECTION"
+            ? values.collectionId
+            : undefined,
           content: buildContent(values),
         }),
       },
@@ -41,7 +51,11 @@ export const sectionsApi = {
     );
   },
 
-  reorder(storeId: string, sectionIds: string[], fallbackErrorMessage?: string) {
+  reorder(
+    storeId: string,
+    sectionIds: string[],
+    fallbackErrorMessage?: string,
+  ) {
     return apiFetch(
       `/stores/${storeId}/sections/reorder`,
       { method: "PATCH", body: JSON.stringify({ sectionIds }) },

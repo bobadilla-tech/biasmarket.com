@@ -3,11 +3,20 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useChangePassword } from "../mutations/use-change-password";
-import { changePasswordSchema, type ChangePasswordInput } from "../schemas/change-password.schema";
+import {
+  type ChangePasswordInput,
+  changePasswordSchema,
+} from "../schemas/change-password.schema";
 
 export function ChangePasswordForm() {
   const t = useTranslations("dashboard.account.changePassword");
@@ -20,7 +29,9 @@ export function ChangePasswordForm() {
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<ChangePasswordInput>({ resolver: zodResolver(changePasswordSchema) });
+  } = useForm<ChangePasswordInput>({
+    resolver: zodResolver(changePasswordSchema),
+  });
 
   const onSubmit = handleSubmit((values) => {
     changePassword.mutate(values, {
@@ -31,8 +42,12 @@ export function ChangePasswordForm() {
   return (
     <Card className="rounded-[26px] border-[#eadcf8] bg-white py-0 shadow-sm">
       <CardHeader className="px-5 pt-5">
-        <CardTitle className="text-base font-semibold text-[#2d1649]">{t("title")}</CardTitle>
-        <CardDescription className="text-sm text-[#8f7da8]">{t("description")}</CardDescription>
+        <CardTitle className="text-base font-semibold text-[#2d1649]">
+          {t("title")}
+        </CardTitle>
+        <CardDescription className="text-sm text-[#8f7da8]">
+          {t("description")}
+        </CardDescription>
       </CardHeader>
       <CardContent className="px-5 pb-5">
         <form onSubmit={onSubmit} className="space-y-4">
@@ -65,18 +80,20 @@ export function ChangePasswordForm() {
               {...register("confirmPassword")}
               className="h-11 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] text-[#341b55] shadow-none"
             />
-            {errors.confirmPassword ? (
-              <p className="text-sm text-[#b24368]">{t("mismatch")}</p>
-            ) : null}
+            {errors.confirmPassword
+              ? <p className="text-sm text-[#b24368]">{t("mismatch")}</p>
+              : null}
           </div>
 
-          {changePassword.isError ? (
-            <p className="text-sm text-[#b24368]">
-              {changePassword.error instanceof Error
-                ? changePassword.error.message
-                : tCommon("networkError")}
-            </p>
-          ) : null}
+          {changePassword.isError
+            ? (
+              <p className="text-sm text-[#b24368]">
+                {changePassword.error instanceof Error
+                  ? changePassword.error.message
+                  : tCommon("networkError")}
+              </p>
+            )
+            : null}
 
           <Button
             type="submit"
@@ -86,8 +103,8 @@ export function ChangePasswordForm() {
             {changePassword.isSuccess
               ? t("saved")
               : changePassword.isPending
-                ? t("submitting")
-                : t("submit")}
+              ? t("submitting")
+              : t("submit")}
           </Button>
         </form>
       </CardContent>

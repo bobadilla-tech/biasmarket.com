@@ -1,5 +1,5 @@
-import { Controller, Get, Redirect } from '@nestjs/common';
-import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
+import { Controller, Get, Redirect } from "@nestjs/common";
+import { AllowAnonymous } from "@thallesp/nestjs-better-auth";
 
 @Controller()
 export class AppController {
@@ -7,6 +7,9 @@ export class AppController {
   @Get()
   @Redirect()
   root() {
-    return { url: process.env.WEB_URL ?? 'http://localhost:3001', statusCode: 302 };
+    return {
+      url: process.env.WEB_URL ?? "http://localhost:3001",
+      statusCode: 302,
+    };
   }
 }

@@ -31,8 +31,10 @@ export function addToCart(slug: string, item: CartItem): CartItem[] {
   const existing = items.find((i) => itemKey(i) === itemKey(item));
   const next = existing
     ? items.map((i) =>
-        itemKey(i) === itemKey(item) ? { ...i, quantity: i.quantity + item.quantity } : i,
-      )
+      itemKey(i) === itemKey(item)
+        ? { ...i, quantity: i.quantity + item.quantity }
+        : i
+    )
     : [...items, item];
   saveCart(slug, next);
   return next;
@@ -44,10 +46,11 @@ export function updateQuantity(
   quantity: number,
 ): CartItem[] {
   const items = getCart(slug);
-  const next =
-    quantity <= 0
-      ? items.filter((i) => itemKey(i) !== itemKey(target))
-      : items.map((i) => (itemKey(i) === itemKey(target) ? { ...i, quantity } : i));
+  const next = quantity <= 0
+    ? items.filter((i) => itemKey(i) !== itemKey(target))
+    : items.map((
+      i,
+    ) => (itemKey(i) === itemKey(target) ? { ...i, quantity } : i));
   saveCart(slug, next);
   return next;
 }

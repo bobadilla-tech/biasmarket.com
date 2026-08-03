@@ -9,7 +9,9 @@ export function useToggleUserBan() {
 
   return useMutation({
     mutationFn: ({ userId, banned }: { userId: string; banned: boolean }) =>
-      banned ? authClient.admin.unbanUser({ userId }) : authClient.admin.banUser({ userId }),
+      banned
+        ? authClient.admin.unbanUser({ userId })
+        : authClient.admin.banUser({ userId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminUsersKeys.all });
     },

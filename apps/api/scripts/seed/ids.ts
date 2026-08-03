@@ -4,11 +4,15 @@
 // (Product, ProductVariant, StoreSection, Order, OrderItem) be targeted by
 // `upsert` on every rerun instead of duplicating. `batch` namespaces ids so
 // append-mode labels never collide with the base fixtures or each other.
-export function seedId(batch: string, type: string, ...parts: string[]): string {
+export function seedId(
+  batch: string,
+  type: string,
+  ...parts: string[]
+): string {
   const slug = parts
-    .join('-')
+    .join("-")
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-+|-+$)/g, '');
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-+|-+$)/g, "");
   return `seed:${batch}:${type}:${slug}`;
 }

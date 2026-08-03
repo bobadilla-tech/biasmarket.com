@@ -1,7 +1,10 @@
 import { beforeEach, expect, test, vi } from "vitest";
 
 const apiFetch = vi.fn();
-vi.mock("@/lib/api", () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }));
+vi.mock(
+  "@/lib/api",
+  () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }),
+);
 
 const { customersApi } = await import("./customers.api");
 
@@ -26,7 +29,11 @@ test("list calls the store-scoped customers endpoint and validates the response"
 
   const result = await customersApi.list("store-1");
 
-  expect(apiFetch).toHaveBeenCalledWith("/stores/store-1/customers", {}, undefined);
+  expect(apiFetch).toHaveBeenCalledWith(
+    "/stores/store-1/customers",
+    {},
+    undefined,
+  );
   expect(result).toHaveLength(1);
 });
 
@@ -45,6 +52,10 @@ test("getOne calls the customer detail endpoint and validates the response", asy
 
   const result = await customersApi.getOne("store-1", "customer-1");
 
-  expect(apiFetch).toHaveBeenCalledWith("/stores/store-1/customers/customer-1", {}, undefined);
+  expect(apiFetch).toHaveBeenCalledWith(
+    "/stores/store-1/customers/customer-1",
+    {},
+    undefined,
+  );
   expect(result.orders).toEqual([]);
 });

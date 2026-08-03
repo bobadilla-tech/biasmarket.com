@@ -11,7 +11,8 @@ export function useProduct(
 ) {
   return useQuery({
     queryKey: productsKeys.detail(storeId as string, productId),
-    queryFn: () => productsApi.get(storeId as string, productId, fallbackErrorMessage),
+    queryFn: () =>
+      productsApi.get(storeId as string, productId, fallbackErrorMessage),
     enabled: !!storeId && !!productId,
   });
 }

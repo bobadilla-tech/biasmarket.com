@@ -1,6 +1,7 @@
 "use client";
 
 import { Receipt } from "lucide-react";
+import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
@@ -48,27 +49,42 @@ export function PaymentHistoryList({
                 if (payment.imageUrl) onPreview(payment.imageUrl);
               }}
             >
-              {payment.imageUrl ? (
-                <img src={payment.imageUrl} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <Receipt className="size-3.5" />
-              )}
+              {payment.imageUrl
+                ? (
+                  <Image
+                    src={payment.imageUrl}
+                    alt=""
+                    width={28}
+                    height={28}
+                    className="h-full w-full object-cover"
+                  />
+                )
+                : <Receipt className="size-3.5" />}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
                 <span className="font-bold text-[#2d1649]">
                   {currency} {payment.amount}
-                  {payment.method ? (
-                    <span className="ml-1 font-medium text-[#8f7da8]">
-                      · {paymentMethodLabels[payment.method] ?? payment.method}
-                    </span>
-                  ) : null}
+                  {payment.method
+                    ? (
+                      <span className="ml-1 font-medium text-[#8f7da8]">
+                        ·{" "}
+                        {paymentMethodLabels[payment.method] ?? payment.method}
+                      </span>
+                    )
+                    : null}
                 </span>
                 <span className="text-[11px] font-medium text-[#8f7da8]">
                   {formatOrderDate(payment.createdAt, locale, t)}
                 </span>
               </div>
-              {payment.note ? <p className="mt-1 truncate text-xs text-[#6e5a87]">{payment.note}</p> : null}
+              {payment.note
+                ? (
+                  <p className="mt-1 truncate text-xs text-[#6e5a87]">
+                    {payment.note}
+                  </p>
+                )
+                : null}
             </div>
           </div>
         ))}

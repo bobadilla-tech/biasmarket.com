@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash } from "node:crypto";
 import {
   BadRequestException,
   ConflictException,
@@ -6,13 +6,13 @@ import {
   Injectable,
   NotFoundException,
   UnauthorizedException,
-} from '@nestjs/common';
-import { hashPassword, verifyPassword } from 'better-auth/crypto';
+} from "@nestjs/common";
+import { hashPassword, verifyPassword } from "better-auth/crypto";
 import {
   createCustomerSessionToken,
   verifyCustomerAccountToken,
-} from '@biasmarket/utils/customer-account-token';
-import { PrismaService } from '../../prisma/prisma.service.js';
+} from "@biasmarket/utils/customer-account-token";
+import { PrismaService } from "../../prisma/prisma.service.js";
 
 function requiredEnv(name: string): string {
   const value = process.env[name];
@@ -27,7 +27,10 @@ function requiredEnv(name: string): string {
 // stateless-token session design has (see docs/plans/2026-08-02-buyer-accounts-phase12-plan.md,
 // "Session storage").
 export function derivePasswordVersion(passwordHash: string): string {
-  return createHash('sha256').update(passwordHash).digest('base64url').slice(0, 16);
+  return createHash("sha256").update(passwordHash).digest("base64url").slice(
+    0,
+    16,
+  );
 }
 
 @Injectable()
@@ -36,25 +39,40 @@ export class CustomerAuthService {
 
   private async findStoreBySlug(slug: string) {
     const store = await this.prisma.store.findUnique({ where: { slug } });
-    if (!store) throw new NotFoundException('Store no encontrada');
+    if (!store) throw new NotFoundException("Store no encontrada");
     return store;
   }
 
-  private issueSessionToken(customerId: string, storeId: string, passwordHash: string): string {
-    const secret = requiredEnv('CUSTOMER_ACCOUNT_TOKEN_SECRET');
-    return createCustomerSessionToken(customerId, storeId, derivePasswordVersion(passwordHash), secret);
+  private issueSessionToken(
+    customerId: string,
+    storeId: string,
+    passwordHash: string,
+  ): string {
+    const secret = requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET");
+    return createCustomerSessionToken(
+      customerId,
+      storeId,
+      derivePasswordVersion(passwordHash),
+      secret,
+    );
   }
 
-  async register(slug: string, token: string, password: string): Promise<{ ok: true }> {
+  async register(
+    slug: string,
+    token: string,
+    password: string,
+  ): Promise<{ ok: true }> {
     const store = await this.findStoreBySlug(slug);
 
-    const secret = requiredEnv('CUSTOMER_ACCOUNT_TOKEN_SECRET');
+    const secret = requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET");
     const verified = verifyCustomerAccountToken(token, secret);
-    if (!verified) throw new BadRequestException('Enlace inválido o expirado');
+    if (!verified) throw new BadRequestException("Enlace inválido o expirado");
 
-    const customer = await this.prisma.customer.findUnique({ where: { id: verified.customerId } });
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: verified.customerId },
+    });
     if (!customer || customer.storeId !== store.id) {
-      throw new BadRequestException('Enlace inválido o expirado');
+      throw new BadRequestException("Enlace inválido o expirado");
     }
 
     // The magic-link token itself is the "verified proof of email ownership"
@@ -65,7 +83,9 @@ export class CustomerAuthService {
     // rejected, so the same magic-link token can't be replayed to overwrite
     // an already-set password.
     if (customer.passwordHash) {
-      throw new ConflictException('Esta cuenta ya tiene una contraseña configurada');
+      throw new ConflictException(
+        "Esta cuenta ya tiene una contraseña configurada",
+      );
     }
 
     const passwordHash = await hashPassword(password);
@@ -85,12 +105,23 @@ export class CustomerAuthService {
 
     // Same generic error whether the phone doesn't exist or the password is
     // wrong — never leak which one it was.
-    if (!customer?.passwordHash) throw new UnauthorizedException('Teléfono o contraseña inválidos');
+    if (!customer?.passwordHash) {
+      throw new UnauthorizedException("Teléfono o contraseña inválidos");
+    }
 
-    const valid = await verifyPassword({ hash: customer.passwordHash, password });
-    if (!valid) throw new UnauthorizedException('Teléfono o contraseña inválidos');
+    const valid = await verifyPassword({
+      hash: customer.passwordHash,
+      password,
+    });
+    if (!valid) {
+      throw new UnauthorizedException("Teléfono o contraseña inválidos");
+    }
 
-    return this.issueSessionToken(customer.id, customer.storeId, customer.passwordHash);
+    return this.issueSessionToken(
+      customer.id,
+      customer.storeId,
+      customer.passwordHash,
+    );
   }
 
   async changePassword(
@@ -98,14 +129,24 @@ export class CustomerAuthService {
     currentPassword: string,
     newPassword: string,
   ): Promise<string> {
-    const customer = await this.prisma.customer.findUnique({ where: { id: customerId } });
-    if (!customer?.passwordHash) throw new UnauthorizedException('No autenticado');
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: customerId },
+    });
+    if (!customer?.passwordHash) {
+      throw new UnauthorizedException("No autenticado");
+    }
 
-    const valid = await verifyPassword({ hash: customer.passwordHash, password: currentPassword });
-    if (!valid) throw new BadRequestException('Contraseña actual incorrecta');
+    const valid = await verifyPassword({
+      hash: customer.passwordHash,
+      password: currentPassword,
+    });
+    if (!valid) throw new BadRequestException("Contraseña actual incorrecta");
 
     const passwordHash = await hashPassword(newPassword);
-    await this.prisma.customer.update({ where: { id: customer.id }, data: { passwordHash } });
+    await this.prisma.customer.update({
+      where: { id: customer.id },
+      data: { passwordHash },
+    });
 
     return this.issueSessionToken(customer.id, customer.storeId, passwordHash);
   }
@@ -117,16 +158,18 @@ export class CustomerAuthService {
   // a store slug instead of a User-owned resource.
   private async assertStoreMatch(slug: string, storeId: string) {
     const store = await this.findStoreBySlug(slug);
-    if (store.id !== storeId) throw new ForbiddenException('No autorizado');
+    if (store.id !== storeId) throw new ForbiddenException("No autorizado");
   }
 
   async getProfile(slug: string, session: { id: string; storeId: string }) {
     await this.assertStoreMatch(slug, session.storeId);
 
-    const customer = await this.prisma.customer.findUniqueOrThrow({ where: { id: session.id } });
+    const customer = await this.prisma.customer.findUniqueOrThrow({
+      where: { id: session.id },
+    });
     const orders = await this.prisma.order.findMany({
       where: { customerId: customer.id, storeId: customer.storeId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       select: {
         id: true,
         paymentStatus: true,
@@ -148,7 +191,11 @@ export class CustomerAuthService {
     };
   }
 
-  async updateProfile(slug: string, session: { id: string; storeId: string }, name: string) {
+  async updateProfile(
+    slug: string,
+    session: { id: string; storeId: string },
+    name: string,
+  ) {
     await this.assertStoreMatch(slug, session.storeId);
 
     const customer = await this.prisma.customer.update({

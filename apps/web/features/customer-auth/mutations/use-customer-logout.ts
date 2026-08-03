@@ -8,7 +8,9 @@ export function useCustomerLogout(slug: string) {
   return useMutation({
     mutationFn: () => customerAuthApi.logout(slug),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: customerAuthKeys.profile(slug) });
+      queryClient.invalidateQueries({
+        queryKey: customerAuthKeys.profile(slug),
+      });
     },
   });
 }

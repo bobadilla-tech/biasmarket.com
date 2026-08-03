@@ -22,10 +22,12 @@ test("parses a full analytics payload", () => {
 
 test("parses when there are no buckets or top products yet", () => {
   expect(
-    analyticsResultSchema.safeParse({ ...valid, buckets: [], topProducts: [] }).success,
+    analyticsResultSchema.safeParse({ ...valid, buckets: [], topProducts: [] })
+      .success,
   ).toBe(true);
 });
 
 test("rejects an unknown range value", () => {
-  expect(analyticsResultSchema.safeParse({ ...valid, range: "1y" }).success).toBe(false);
+  expect(analyticsResultSchema.safeParse({ ...valid, range: "1y" }).success)
+    .toBe(false);
 });

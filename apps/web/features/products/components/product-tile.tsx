@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -34,13 +35,17 @@ export function ProductTile({
   onPublish: () => void;
 }) {
   const image = product.images?.[0];
-  const statusBadge =
-    product.status === "PUBLISHED" ? (
+  const statusBadge = product.status === "PUBLISHED"
+    ? (
       <Badge className="store-theme-soft-badge rounded-full px-3 py-1 text-[11px] font-semibold">
         {statusPublishedLabel}
       </Badge>
-    ) : (
-      <Badge variant="outline" className="rounded-full border-[#eadcf7] px-3 py-1 text-[11px] font-semibold text-[#8f7da8]">
+    )
+    : (
+      <Badge
+        variant="outline"
+        className="rounded-full border-[#eadcf7] px-3 py-1 text-[11px] font-semibold text-[#8f7da8]"
+      >
         {statusDraftLabel}
       </Badge>
     );
@@ -64,18 +69,20 @@ export function ProductTile({
               {statusBadge}
             </div>
             <div className="flex gap-2">
-              {product.status === "DRAFT" ? (
-                <Button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onPublish();
-                  }}
-                  className="store-theme-primary-button h-8 rounded-full px-3 text-xs font-semibold hover:opacity-100"
-                >
-                  {publishLabel}
-                </Button>
-              ) : null}
+              {product.status === "DRAFT"
+                ? (
+                  <Button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onPublish();
+                    }}
+                    className="store-theme-primary-button h-8 rounded-full px-3 text-xs font-semibold hover:opacity-100"
+                  >
+                    {publishLabel}
+                  </Button>
+                )
+                : null}
               <Button
                 type="button"
                 variant="outline"
@@ -101,31 +108,41 @@ export function ProductTile({
             </div>
           </div>
           <div className="mt-6 flex items-center justify-center">
-            {image ? (
-              <img
-                src={image}
-                alt={product.name}
-                className="size-20 rounded-3xl object-cover shadow-sm"
-              />
-            ) : (
-              <div className="flex size-20 items-center justify-center rounded-3xl bg-white/70 text-sm font-semibold text-[#2d1649]">
-                {product.name.slice(0, 1).toUpperCase()}
-              </div>
-            )}
+            {image
+              ? (
+                <Image
+                  src={image}
+                  alt={product.name}
+                  width={80}
+                  height={80}
+                  className="size-20 rounded-3xl object-cover shadow-sm"
+                />
+              )
+              : (
+                <div className="flex size-20 items-center justify-center rounded-3xl bg-white/70 text-sm font-semibold text-[#2d1649]">
+                  {product.name.slice(0, 1).toUpperCase()}
+                </div>
+              )}
           </div>
         </div>
 
         <div className="space-y-3 px-6 py-5">
           <div>
-            <p className="text-sm font-semibold text-[#2d1649]">{product.name}</p>
-            <p className="mt-1 text-xs text-[#8f7da8]">{product.description || "—"}</p>
+            <p className="text-sm font-semibold text-[#2d1649]">
+              {product.name}
+            </p>
+            <p className="mt-1 text-xs text-[#8f7da8]">
+              {product.description || "—"}
+            </p>
           </div>
 
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold text-[#d11d52]">
               {product.currency} {product.price}
             </p>
-            <p className={cn("text-xs font-semibold", stockClassName)}>{stockLabel}</p>
+            <p className={cn("text-xs font-semibold", stockClassName)}>
+              {stockLabel}
+            </p>
           </div>
         </div>
       </CardContent>

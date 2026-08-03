@@ -4,7 +4,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { Select } from "@/components/ui/select";
-import { sectionFormSchema, type SectionFormInput } from "../schemas/section.schema";
+import {
+  type SectionFormInput,
+  sectionFormSchema,
+} from "../schemas/section.schema";
 
 interface SectionFormProps {
   collections: { id: string; name: string }[];
@@ -12,11 +15,19 @@ interface SectionFormProps {
   onSubmit: (values: SectionFormInput) => Promise<unknown>;
 }
 
-export function SectionForm({ collections, submitting, onSubmit }: SectionFormProps) {
+export function SectionForm(
+  { collections, submitting, onSubmit }: SectionFormProps,
+) {
   const t = useTranslations("dashboard.sections");
   const { register, handleSubmit, watch, reset } = useForm<SectionFormInput>({
     resolver: zodResolver(sectionFormSchema),
-    defaultValues: { type: "COLLECTION", collectionId: "", imageUrl: "", linkUrl: "", body: "" },
+    defaultValues: {
+      type: "COLLECTION",
+      collectionId: "",
+      imageUrl: "",
+      linkUrl: "",
+      body: "",
+    },
   });
 
   const type = watch("type");
@@ -26,11 +37,16 @@ export function SectionForm({ collections, submitting, onSubmit }: SectionFormPr
 
   const submit = handleSubmit(async (values) => {
     await onSubmit(values);
-    reset({ type: values.type, collectionId: "", imageUrl: "", linkUrl: "", body: "" });
+    reset({
+      type: values.type,
+      collectionId: "",
+      imageUrl: "",
+      linkUrl: "",
+      body: "",
+    });
   });
 
-  const disabled =
-    submitting ||
+  const disabled = submitting ||
     (type === "COLLECTION" && !collectionId) ||
     (type === "BANNER" && !imageUrl) ||
     (type === "TEXT_BLOCK" && !body);

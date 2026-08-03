@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 interface StoreLogoProps {
@@ -11,12 +12,16 @@ interface StoreLogoProps {
   gradient?: { from: string; to: string };
 }
 
-export function StoreLogo({ name, logoUrl, size = 48, className, style, gradient }: StoreLogoProps) {
+export function StoreLogo(
+  { name, logoUrl, size = 48, className, style, gradient }: StoreLogoProps,
+) {
   if (logoUrl) {
     return (
-      <img
+      <Image
         src={logoUrl}
         alt={name || "Store logo"}
+        width={size}
+        height={size}
         className={cn("rounded-2xl object-cover shadow-sm", className)}
         style={{ width: size, height: size, ...style }}
       />
@@ -25,7 +30,10 @@ export function StoreLogo({ name, logoUrl, size = 48, className, style, gradient
 
   return (
     <div
-      className={cn("flex items-center justify-center rounded-2xl font-semibold text-white", className)}
+      className={cn(
+        "flex items-center justify-center rounded-2xl font-semibold text-white",
+        className,
+      )}
       style={{
         width: size,
         height: size,

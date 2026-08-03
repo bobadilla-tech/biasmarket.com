@@ -18,7 +18,9 @@ export function StatTile({
         </div>
         <div className="min-w-0">
           <p className="truncate text-xs font-medium text-[#8f7da8]">{label}</p>
-          <p className="truncate text-2xl font-bold tracking-tight text-[#2d1649]">{value}</p>
+          <p className="truncate text-2xl font-bold tracking-tight text-[#2d1649]">
+            {value}
+          </p>
         </div>
       </CardContent>
     </Card>

@@ -10,7 +10,12 @@ export function OrderStatusBadge({ order }: { order: Order }) {
   const t = useTranslations("dashboard.orders");
   const status = getOrderStatus(order, t);
   return (
-    <Badge className={cn("rounded-full px-3 py-1 text-xs font-semibold", status.className)}>
+    <Badge
+      className={cn(
+        "rounded-full px-3 py-1 text-xs font-semibold",
+        status.className,
+      )}
+    >
       {status.label}
     </Badge>
   );

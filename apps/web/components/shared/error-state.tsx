@@ -19,17 +19,19 @@ export function ErrorState({
       {title ? <AlertTitle>{title}</AlertTitle> : null}
       <AlertDescription>
         <p>{message}</p>
-        {retry ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="mt-2"
-            onClick={retry}
-          >
-            {retryLabel}
-          </Button>
-        ) : null}
+        {retry
+          ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mt-2"
+              onClick={retry}
+            >
+              {retryLabel}
+            </Button>
+          )
+          : null}
       </AlertDescription>
     </Alert>
   );

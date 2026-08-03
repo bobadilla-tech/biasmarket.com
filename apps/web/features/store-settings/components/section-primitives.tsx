@@ -1,5 +1,11 @@
 import { useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 
 /**
@@ -80,21 +86,21 @@ export function ToggleRow({
     <div className="flex items-center justify-between gap-4 rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3">
       <div>
         <p className="text-sm font-medium text-[#341b55]">{label}</p>
-        {description ? <p className="text-xs text-[#9582ad]">{description}</p> : null}
+        {description
+          ? <p className="text-xs text-[#9582ad]">{description}</p>
+          : null}
       </div>
       <Switch
         checked={enabled}
         onCheckedChange={onChange}
         disabled={disabled}
         className="data-[checked]:bg-transparent"
-        style={
-          enabled
-            ? {
-                background:
-                  "linear-gradient(135deg, var(--store-accent) 0%, var(--store-primary) 100%)",
-              }
-            : undefined
-        }
+        style={enabled
+          ? {
+            background:
+              "linear-gradient(135deg, var(--store-accent) 0%, var(--store-primary) 100%)",
+          }
+          : undefined}
       />
     </div>
   );

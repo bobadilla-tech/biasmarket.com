@@ -170,7 +170,7 @@
     "availableUntil": "Disponible hasta",
     "status": "Estado",
     "actions": "Acciones",
-    "image" : "imagen"
+    "image": "imagen"
   },
   "actions": {
     "publish": "Publicar",

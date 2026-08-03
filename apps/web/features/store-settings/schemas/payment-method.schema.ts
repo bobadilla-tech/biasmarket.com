@@ -15,4 +15,6 @@ export const enabledPaymentMethodSchema = z.object({
   method: z.enum(["YAPE", "PLIN", "TRANSFER", "CASH"]),
 });
 
-export const enabledPaymentMethodListSchema = z.array(enabledPaymentMethodSchema);
+export const enabledPaymentMethodListSchema = z.array(
+  enabledPaymentMethodSchema,
+);

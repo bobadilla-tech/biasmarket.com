@@ -1,7 +1,10 @@
 import { beforeEach, expect, test, vi } from "vitest";
 
 const apiFetch = vi.fn();
-vi.mock("@/lib/api", () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }));
+vi.mock(
+  "@/lib/api",
+  () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }),
+);
 
 const { statsApi } = await import("./stats.api");
 
@@ -21,7 +24,12 @@ test("getOverview calls the store-scoped overview endpoint and validates the res
       REJECTED: 0,
       CANCELLED: 0,
     },
-    fulfillmentStatusCounts: { ORDERING: 0, IN_TRANSIT: 0, READY: 0, COMPLETED: 1 },
+    fulfillmentStatusCounts: {
+      ORDERING: 0,
+      IN_TRANSIT: 0,
+      READY: 0,
+      COMPLETED: 1,
+    },
     lowStockCount: 0,
     recentOrders: [],
   });
@@ -39,10 +47,16 @@ test("getOverview throws when the response fails schema validation", async () =>
 });
 
 test("getAnalytics calls the store-scoped analytics endpoint with the range query param", async () => {
-  apiFetch.mockResolvedValueOnce({ range: "30d", buckets: [], topProducts: [] });
+  apiFetch.mockResolvedValueOnce({
+    range: "30d",
+    buckets: [],
+    topProducts: [],
+  });
 
   const result = await statsApi.getAnalytics("store-1", "30d");
 
-  expect(apiFetch).toHaveBeenCalledWith("/stores/store-1/stats/analytics?range=30d");
+  expect(apiFetch).toHaveBeenCalledWith(
+    "/stores/store-1/stats/analytics?range=30d",
+  );
   expect(result.range).toBe("30d");
 });

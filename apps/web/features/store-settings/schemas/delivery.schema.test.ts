@@ -1,5 +1,9 @@
 import { expect, test } from "vitest";
-import { deliveryMethodListSchema, pickupPointListSchema, isNewPickupPoint } from "./delivery.schema";
+import {
+  deliveryMethodListSchema,
+  isNewPickupPoint,
+  pickupPointListSchema,
+} from "./delivery.schema";
 
 test("parses a list of delivery methods", () => {
   const result = deliveryMethodListSchema.safeParse([
@@ -10,7 +14,11 @@ test("parses a list of delivery methods", () => {
 });
 
 test("rejects an unknown delivery method type", () => {
-  const result = deliveryMethodListSchema.safeParse([{ type: "DRONE", enabled: true, details: {} }]);
+  const result = deliveryMethodListSchema.safeParse([{
+    type: "DRONE",
+    enabled: true,
+    details: {},
+  }]);
   expect(result.success).toBe(false);
 });
 

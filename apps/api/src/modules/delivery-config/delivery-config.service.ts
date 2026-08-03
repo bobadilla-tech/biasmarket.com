@@ -2,10 +2,10 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-} from '@nestjs/common';
-import type { Prisma } from '@biasmarket/db';
-import { PrismaService } from '../../prisma/prisma.service.js';
-import { UpsertDeliveryMethodDto } from './dto/upsert-delivery-method.dto.js';
+} from "@nestjs/common";
+import type { Prisma } from "@biasmarket/db";
+import { PrismaService } from "../../prisma/prisma.service.js";
+import { UpsertDeliveryMethodDto } from "./dto/upsert-delivery-method.dto.js";
 
 @Injectable()
 export class DeliveryConfigService {
@@ -15,9 +15,9 @@ export class DeliveryConfigService {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
-    if (!store) throw new NotFoundException('Store no encontrada');
+    if (!store) throw new NotFoundException("Store no encontrada");
     if (store.ownerId !== userId) {
-      throw new ForbiddenException('No sos dueño de esta store');
+      throw new ForbiddenException("No sos dueño de esta store");
     }
     return store;
   }
@@ -39,12 +39,13 @@ export class DeliveryConfigService {
       },
       update: {
         ...(dto.enabled !== undefined && { enabled: dto.enabled }),
-        ...(dto.details !== undefined && { details: dto.details as Prisma.InputJsonValue }),
+        ...(dto.details !== undefined &&
+          { details: dto.details as Prisma.InputJsonValue }),
       },
     });
   }
 
-  async remove(storeId: string, userId: string, type: 'PICKUP' | 'COURIER') {
+  async remove(storeId: string, userId: string, type: "PICKUP" | "COURIER") {
     await this.assertOwnership(storeId, userId);
     return this.prisma.deliveryMethodConfig.delete({
       where: { storeId_type: { storeId, type } },
@@ -53,7 +54,7 @@ export class DeliveryConfigService {
 
   async findEnabledForSlug(slug: string) {
     const store = await this.prisma.store.findUnique({ where: { slug } });
-    if (!store) throw new NotFoundException('Tienda no encontrada');
+    if (!store) throw new NotFoundException("Tienda no encontrada");
     return this.prisma.deliveryMethodConfig.findMany({
       where: { storeId: store.id, enabled: true },
     });

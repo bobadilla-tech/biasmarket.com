@@ -10,7 +10,10 @@ import type { Category } from "../schemas/category.schema";
  * name, or create one. If creation fails (someone-else-just-created-it race),
  * refetch the list and re-resolve by name before giving up.
  */
-export function useEnsureCategory(storeId: string | undefined, fallbackErrorMessage?: string) {
+export function useEnsureCategory(
+  storeId: string | undefined,
+  fallbackErrorMessage?: string,
+) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -28,18 +31,23 @@ export function useEnsureCategory(storeId: string | undefined, fallbackErrorMess
       } catch {
         const refreshed = await categoriesApi.list(sid, fallbackErrorMessage);
         queryClient.setQueryData(categoriesKeys.byStore(sid), refreshed);
-        const resolved = refreshed.find((category) => category.name.trim().toLowerCase() === normalized);
+        const resolved = refreshed.find((category) =>
+          category.name.trim().toLowerCase() === normalized
+        );
         if (!resolved) throw new Error(fallbackErrorMessage ?? "Network error");
         return resolved;
       }
     },
     onSuccess: (created) => {
       if (!storeId) return;
-      queryClient.setQueryData<Category[]>(categoriesKeys.byStore(storeId), (prev) => {
-        if (!prev) return prev;
-        if (prev.some((category) => category.id === created.id)) return prev;
-        return [...prev, created];
-      });
+      queryClient.setQueryData<Category[]>(
+        categoriesKeys.byStore(storeId),
+        (prev) => {
+          if (!prev) return prev;
+          if (prev.some((category) => category.id === created.id)) return prev;
+          return [...prev, created];
+        },
+      );
     },
   });
 }

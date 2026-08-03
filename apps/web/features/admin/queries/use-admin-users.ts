@@ -20,11 +20,15 @@ export function useAdminUsers(fallbackErrorMessage?: string) {
         adminUsersApi.getStoreCounts(fallbackErrorMessage),
       ]);
       if (usersResult.error) {
-        throw new Error(usersResult.error.message ?? fallbackErrorMessage ?? "Network error");
+        throw new Error(
+          usersResult.error.message ?? fallbackErrorMessage ?? "Network error",
+        );
       }
       return {
         users: (usersResult.data?.users ?? []) as AdminUser[],
-        storeCounts: Object.fromEntries(counts.map((c) => [c.userId, c.storeCount])) as Record<
+        storeCounts: Object.fromEntries(
+          counts.map((c) => [c.userId, c.storeCount]),
+        ) as Record<
           string,
           number
         >,

@@ -7,6 +7,12 @@ const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: path.join(__dirname, "../.."),
+  images: {
+    remotePatterns: [
+      { protocol: "http", hostname: "localhost", port: "9000" },
+      { protocol: "https", hostname: "cdn.biasmarket.com" },
+    ],
+  },
   typescript: {
     // TypeScript 7 ships no compiler API, so Next's build-time type-check
     // (which requires it) is disabled here; `pnpm typecheck` (tsc --noEmit)

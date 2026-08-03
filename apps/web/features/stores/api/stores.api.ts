@@ -1,5 +1,5 @@
 import { apiFetch } from "@/lib/api";
-import { storeSchema, storeListSchema } from "../schemas/store.schema";
+import { storeListSchema, storeSchema } from "../schemas/store.schema";
 import { dashboardStoreSchema } from "../schemas/dashboard-store.schema";
 import type { CreateStoreFormInput } from "../schemas/create-store.schema";
 
@@ -27,7 +27,8 @@ export const storesApi = {
     const formData = new FormData();
     formData.append("file", file);
 
-    const apiUrl = process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
+    const apiUrl = process.env.INTERNAL_API_URL ??
+      process.env.NEXT_PUBLIC_API_URL;
     const res = await fetch(`${apiUrl}/api/stores/${storeId}/logo`, {
       method: "POST",
       credentials: "include",

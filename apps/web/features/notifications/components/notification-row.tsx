@@ -29,15 +29,17 @@ export function NotificationRow({
       >
         <p className="text-sm font-medium text-[#341b55]">{item.title}</p>
         <p className="mt-0.5 text-xs text-[#9582ad]">{item.body}</p>
-        {!item.read ? (
-          <button
-            type="button"
-            onClick={() => onMarkRead(item.id)}
-            className="mt-1 text-xs font-semibold text-[var(--store-primary)]"
-          >
-            {t("markRead")}
-          </button>
-        ) : null}
+        {!item.read
+          ? (
+            <button
+              type="button"
+              onClick={() => onMarkRead(item.id)}
+              className="mt-1 text-xs font-semibold text-[var(--store-primary)]"
+            >
+              {t("markRead")}
+            </button>
+          )
+          : null}
       </div>
     );
   }
@@ -57,9 +59,9 @@ export function NotificationRow({
           >
             {t(`types.${item.type}`)}
           </Badge>
-          {!item.read ? (
-            <span className="size-2 rounded-full bg-[var(--store-primary)]" />
-          ) : null}
+          {!item.read
+            ? <span className="size-2 rounded-full bg-[var(--store-primary)]" />
+            : null}
         </div>
         <p className="text-sm font-medium text-[#341b55]">{item.title}</p>
         <p className="mt-0.5 text-xs text-[#9582ad]">{item.body}</p>
@@ -68,24 +70,28 @@ export function NotificationRow({
         </p>
       </div>
       <div className="flex shrink-0 gap-2">
-        {!item.read ? (
-          <Button
-            variant="outline"
-            onClick={() => onMarkRead(item.id)}
-            className="h-9 rounded-xl border-[#eadcf7] bg-white px-3 text-xs font-semibold shadow-none"
-          >
-            {t("markRead")}
-          </Button>
-        ) : null}
-        {showArchive && onArchive ? (
-          <Button
-            variant="outline"
-            onClick={() => onArchive(item.id)}
-            className="h-9 rounded-xl border-[#eadcf7] bg-white px-3 text-xs font-semibold shadow-none"
-          >
-            {t("archive")}
-          </Button>
-        ) : null}
+        {!item.read
+          ? (
+            <Button
+              variant="outline"
+              onClick={() => onMarkRead(item.id)}
+              className="h-9 rounded-xl border-[#eadcf7] bg-white px-3 text-xs font-semibold shadow-none"
+            >
+              {t("markRead")}
+            </Button>
+          )
+          : null}
+        {showArchive && onArchive
+          ? (
+            <Button
+              variant="outline"
+              onClick={() => onArchive(item.id)}
+              className="h-9 rounded-xl border-[#eadcf7] bg-white px-3 text-xs font-semibold shadow-none"
+            >
+              {t("archive")}
+            </Button>
+          )
+          : null}
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-export type AnalyticsRange = '30d' | '90d' | '12m';
+export type AnalyticsRange = "30d" | "90d" | "12m";
 
 export interface AnalyticsBucket {
   start: string;

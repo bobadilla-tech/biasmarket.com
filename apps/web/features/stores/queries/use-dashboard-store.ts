@@ -27,7 +27,9 @@ export function useDashboardStore() {
     storeId: store?.id,
     slug,
     loading: isPending,
-    error: error ? (error instanceof Error ? error.message : String(error)) : null,
+    error: error
+      ? (error instanceof Error ? error.message : String(error))
+      : null,
   };
 }
 
@@ -41,8 +43,9 @@ export function useUpdateDashboardStoreCache() {
   const queryClient = useQueryClient();
 
   return (slug: string, patch: Partial<DashboardStore>) => {
-    queryClient.setQueryData<DashboardStore>(dashboardStoreKeys.bySlug(slug), (current) =>
-      current ? { ...current, ...patch } : current,
+    queryClient.setQueryData<DashboardStore>(
+      dashboardStoreKeys.bySlug(slug),
+      (current) => current ? { ...current, ...patch } : current,
     );
   };
 }

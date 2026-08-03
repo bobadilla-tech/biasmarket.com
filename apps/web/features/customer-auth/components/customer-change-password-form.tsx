@@ -6,8 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { useCustomerChangePassword } from "../mutations/use-customer-change-password";
 import {
-  customerChangePasswordSchema,
   type CustomerChangePasswordInput,
+  customerChangePasswordSchema,
 } from "../schemas/change-password.schema";
 
 const inputClassName =
@@ -24,7 +24,9 @@ export function CustomerChangePasswordForm({ slug }: { slug: string }) {
     reset,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm<CustomerChangePasswordInput>({ resolver: zodResolver(customerChangePasswordSchema) });
+  } = useForm<CustomerChangePasswordInput>({
+    resolver: zodResolver(customerChangePasswordSchema),
+  });
 
   const onSubmit = async (values: CustomerChangePasswordInput) => {
     setSaved(false);
@@ -33,7 +35,9 @@ export function CustomerChangePasswordForm({ slug }: { slug: string }) {
       reset();
       setSaved(true);
     } catch (err) {
-      setError("root", { message: err instanceof Error ? err.message : t("genericError") });
+      setError("root", {
+        message: err instanceof Error ? err.message : t("genericError"),
+      });
     }
   };
 
@@ -49,9 +53,13 @@ export function CustomerChangePasswordForm({ slug }: { slug: string }) {
             className={inputClassName}
             {...register("currentPassword")}
           />
-          {errors.currentPassword ? (
-            <p className="text-sm text-red-500">{t("currentPasswordRequired")}</p>
-          ) : null}
+          {errors.currentPassword
+            ? (
+              <p className="text-sm text-red-500">
+                {t("currentPasswordRequired")}
+              </p>
+            )
+            : null}
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -61,7 +69,9 @@ export function CustomerChangePasswordForm({ slug }: { slug: string }) {
             className={inputClassName}
             {...register("newPassword")}
           />
-          {errors.newPassword ? <p className="text-sm text-red-500">{t("passwordTooShort")}</p> : null}
+          {errors.newPassword
+            ? <p className="text-sm text-red-500">{t("passwordTooShort")}</p>
+            : null}
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -71,13 +81,17 @@ export function CustomerChangePasswordForm({ slug }: { slug: string }) {
             className={inputClassName}
             {...register("confirmNewPassword")}
           />
-          {errors.confirmNewPassword ? (
-            <p className="text-sm text-red-500">{t("passwordsDontMatch")}</p>
-          ) : null}
+          {errors.confirmNewPassword
+            ? <p className="text-sm text-red-500">{t("passwordsDontMatch")}</p>
+            : null}
         </div>
 
-        {errors.root ? <p className="text-sm text-red-500">{errors.root.message}</p> : null}
-        {saved ? <p className="text-sm text-emerald-600">{t("success")}</p> : null}
+        {errors.root
+          ? <p className="text-sm text-red-500">{errors.root.message}</p>
+          : null}
+        {saved
+          ? <p className="text-sm text-emerald-600">{t("success")}</p>
+          : null}
 
         <button
           type="submit"

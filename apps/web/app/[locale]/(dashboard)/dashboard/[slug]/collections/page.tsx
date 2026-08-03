@@ -5,16 +5,16 @@ import { useTranslations } from "next-intl";
 import { useDashboardStore } from "@/features/stores";
 import { useProducts } from "@/features/products";
 import {
+  type Collection,
+  CollectionCard,
+  CollectionForm,
+  type CreateCollectionInput,
+  useAddCollectionProduct,
   useCollections,
   useCreateCollection,
   useDeleteCollection,
-  useAddCollectionProduct,
   useRemoveCollectionProduct,
   useReorderCollectionProducts,
-  CollectionForm,
-  CollectionCard,
-  type Collection,
-  type CreateCollectionInput,
 } from "@/features/collections";
 import { DashboardNav } from "../dashboard-nav";
 
@@ -25,11 +25,23 @@ export default function CollectionsPage() {
 
   const collectionsQuery = useCollections(storeId, tCommon("networkError"));
   const productsQuery = useProducts(storeId, tCommon("networkError"));
-  const createCollection = useCreateCollection(storeId, tCommon("networkError"));
-  const deleteCollection = useDeleteCollection(storeId, tCommon("networkError"));
+  const createCollection = useCreateCollection(
+    storeId,
+    tCommon("networkError"),
+  );
+  const deleteCollection = useDeleteCollection(
+    storeId,
+    tCommon("networkError"),
+  );
   const addProduct = useAddCollectionProduct(storeId, tCommon("networkError"));
-  const removeProduct = useRemoveCollectionProduct(storeId, tCommon("networkError"));
-  const reorderProducts = useReorderCollectionProducts(storeId, tCommon("networkError"));
+  const removeProduct = useRemoveCollectionProduct(
+    storeId,
+    tCommon("networkError"),
+  );
+  const reorderProducts = useReorderCollectionProducts(
+    storeId,
+    tCommon("networkError"),
+  );
 
   const [error, setError] = useState<string | null>(null);
 
@@ -63,7 +75,10 @@ export default function CollectionsPage() {
     }
   };
 
-  const handleRemoveProduct = async (collectionId: string, productId: string) => {
+  const handleRemoveProduct = async (
+    collectionId: string,
+    productId: string,
+  ) => {
     setError(null);
     try {
       await removeProduct.mutateAsync({ collectionId, productId });
@@ -72,8 +87,14 @@ export default function CollectionsPage() {
     }
   };
 
-  const handleReorder = async (collection: Collection, index: number, direction: -1 | 1) => {
-    const items = [...collection.products].sort((a, b) => a.position - b.position);
+  const handleReorder = async (
+    collection: Collection,
+    index: number,
+    direction: -1 | 1,
+  ) => {
+    const items = [...collection.products].sort((a, b) =>
+      a.position - b.position
+    );
     const target = index + direction;
     if (target < 0 || target >= items.length) return;
     [items[index], items[target]] = [items[target], items[index]];
@@ -100,11 +121,16 @@ export default function CollectionsPage() {
     <div className="min-h-screen bg-gray-50 px-6 py-10">
       <div className="max-w-3xl mx-auto flex flex-col gap-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">{t("collections.title")}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {t("collections.title")}
+          </h1>
           <DashboardNav slug={slug} active="collections" />
         </div>
 
-        <CollectionForm submitting={createCollection.isPending} onSubmit={handleCreate} />
+        <CollectionForm
+          submitting={createCollection.isPending}
+          onSubmit={handleCreate}
+        />
 
         {error && <p className="text-sm text-red-500">{error}</p>}
 

@@ -26,6 +26,6 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
     "strictPropertyInitialization": false,
-    "types": ["node", "vitest/globals", "multer"],
+    "types": ["node", "vitest/globals", "multer"]
   }
 }

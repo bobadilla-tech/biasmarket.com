@@ -1,4 +1,6 @@
-export function PaymentProofLightbox({ url, onClose }: { url: string | null; onClose: () => void }) {
+export function PaymentProofLightbox(
+  { url, onClose }: { url: string | null; onClose: () => void },
+) {
   if (!url) return null;
   return (
     <div

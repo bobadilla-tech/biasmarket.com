@@ -29,7 +29,9 @@ export function ProductsHeader({
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <p className="text-sm font-medium text-[#8e7ca7]">{subtitle}</p>
-        <h1 className="text-3xl font-bold tracking-tight text-[#2d1649]">{title}</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-[#2d1649]">
+          {title}
+        </h1>
       </div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative sm:w-[340px]">

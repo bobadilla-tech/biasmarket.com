@@ -17,6 +17,8 @@ export function useStatsOverview(storeId: string | undefined) {
   return {
     stats: data ?? null,
     loading: isPending,
-    error: error ? (error instanceof Error ? error.message : String(error)) : null,
+    error: error
+      ? (error instanceof Error ? error.message : String(error))
+      : null,
   };
 }

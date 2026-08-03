@@ -13,6 +13,8 @@ export function useProductSearch(q: string, page: number) {
   return {
     result: data ?? null,
     loading: isPending,
-    error: error ? (error instanceof Error ? error.message : String(error)) : null,
+    error: error
+      ? (error instanceof Error ? error.message : String(error))
+      : null,
   };
 }

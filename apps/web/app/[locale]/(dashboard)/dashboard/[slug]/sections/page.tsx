@@ -5,13 +5,13 @@ import { useTranslations } from "next-intl";
 import { useDashboardStore } from "@/features/stores";
 import { useCollections } from "@/features/collections";
 import {
-  useSections,
+  SectionForm,
+  type SectionFormInput,
+  SectionRow,
   useCreateSection,
   useDeleteSection,
   useReorderSections,
-  SectionForm,
-  SectionRow,
-  type SectionFormInput,
+  useSections,
 } from "@/features/sections";
 import { DashboardNav } from "../dashboard-nav";
 
@@ -78,7 +78,9 @@ export default function SectionsPage() {
     <div className="min-h-screen bg-gray-50 px-6 py-10">
       <div className="max-w-3xl mx-auto flex flex-col gap-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">{t("sections.title")}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {t("sections.title")}
+          </h1>
           <DashboardNav slug={slug} active="sections" />
         </div>
 

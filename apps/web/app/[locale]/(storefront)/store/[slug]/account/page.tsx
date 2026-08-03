@@ -5,7 +5,10 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { LoadingState } from "@/components/shared/loading-state";
 import { ErrorState } from "@/components/shared/error-state";
-import { CustomerProfileView, useCustomerProfile } from "@/features/customer-auth";
+import {
+  CustomerProfileView,
+  useCustomerProfile,
+} from "@/features/customer-auth";
 
 export default function CustomerAccountPage() {
   const t = useTranslations("storefront.accountPage");
@@ -24,8 +27,14 @@ export default function CustomerAccountPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
         <div className="max-w-md w-full text-center flex flex-col gap-4">
-          <ErrorState title={t("loggedOutTitle")} message={t("loggedOutBody")} />
-          <Link href={`/store/${slug}/account/login`} className="store-theme-link font-semibold">
+          <ErrorState
+            title={t("loggedOutTitle")}
+            message={t("loggedOutBody")}
+          />
+          <Link
+            href={`/store/${slug}/account/login`}
+            className="store-theme-link font-semibold"
+          >
             {t("goToLogin")}
           </Link>
         </div>

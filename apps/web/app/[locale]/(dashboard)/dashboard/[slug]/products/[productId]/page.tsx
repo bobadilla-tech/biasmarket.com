@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import Image from "next/image";
 import {
   ArrowLeft,
   Calendar,
@@ -18,7 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { useDashboardStore } from "@/features/stores";
-import { useProduct, usePublishProduct, stockTone } from "@/features/products";
+import { stockTone, useProduct, usePublishProduct } from "@/features/products";
 
 export default function ProductDetailsPage() {
   const t = useTranslations("dashboard");
@@ -30,12 +31,17 @@ export default function ProductDetailsPage() {
   const productQuery = useProduct(storeId, productId, tCommon("networkError"));
   const product = productQuery.data ?? null;
   const variants = product?.variants ?? [];
-  const error = productQuery.error instanceof Error ? productQuery.error.message : null;
+  const error = productQuery.error instanceof Error
+    ? productQuery.error.message
+    : null;
 
   const publishProduct = usePublishProduct(storeId, tCommon("networkError"));
 
   const categoryNames = useMemo(
-    () => (product?.categories ?? []).map((row) => row.category.name).filter(Boolean),
+    () =>
+      (product?.categories ?? []).map((row) => row.category.name).filter(
+        Boolean,
+      ),
     [product],
   );
   const categoryLabel = useMemo(() => {
@@ -46,7 +52,9 @@ export default function ProductDetailsPage() {
 
   const stockLabel = useMemo(() => {
     const availableStock = product?.availableStock;
-    if (availableStock === null || availableStock === undefined) return t("products.stockUnlimited");
+    if (availableStock === null || availableStock === undefined) {
+      return t("products.stockUnlimited");
+    }
     return t("products.stockUnits", { count: availableStock });
   }, [product?.availableStock, t]);
 
@@ -61,7 +69,10 @@ export default function ProductDetailsPage() {
       );
     }
     return (
-      <Badge variant="outline" className="rounded-full border-[#eadcf7] px-3 py-1 text-xs">
+      <Badge
+        variant="outline"
+        className="rounded-full border-[#eadcf7] px-3 py-1 text-xs"
+      >
         <XCircle className="size-3.5" />
         {t("products.details.draft")}
       </Badge>
@@ -95,7 +106,9 @@ export default function ProductDetailsPage() {
             {t("products.details.back")}
           </Button>
           <Card className="rounded-2xl border-[#f3cbd8] bg-[#fff3f7] py-0 shadow-none">
-            <CardContent className="px-4 py-3 text-sm text-[#b24368]">{error}</CardContent>
+            <CardContent className="px-4 py-3 text-sm text-[#b24368]">
+              {error}
+            </CardContent>
           </Card>
         </div>
       </div>
@@ -115,14 +128,19 @@ export default function ProductDetailsPage() {
             <ArrowLeft className="size-4" />
             {t("products.details.back")}
           </Button>
-          <p className="text-sm text-[#8f7da8]">{t("products.details.notFound")}</p>
+          <p className="text-sm text-[#8f7da8]">
+            {t("products.details.notFound")}
+          </p>
         </div>
       </div>
     );
   }
 
   const image = product.images?.[0];
-  const stockClassName = stockTone(product.availableStock, store?.lowStockThreshold);
+  const stockClassName = stockTone(
+    product.availableStock,
+    store?.lowStockThreshold,
+  );
 
   return (
     <div className="min-h-screen px-5 py-6 lg:px-8 lg:py-8">
@@ -139,25 +157,35 @@ export default function ProductDetailsPage() {
               {t("products.details.back")}
             </Button>
             <div>
-              <p className="text-sm font-medium text-[#8e7ca7]">{t("products.details.eyebrow")}</p>
+              <p className="text-sm font-medium text-[#8e7ca7]">
+                {t("products.details.eyebrow")}
+              </p>
               <h1 className="text-3xl font-bold tracking-tight text-[#2d1649]">
                 {product.name}
               </h1>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {product.status === "DRAFT" ? (
-              <Button
-                type="button"
-                onClick={handlePublish}
-                disabled={publishProduct.isPending}
-                className="store-theme-primary-button h-10 rounded-2xl px-4 text-sm font-semibold hover:opacity-100"
-              >
-                {t("products.actions.publish")}
-              </Button>
-            ) : null}
+            {product.status === "DRAFT"
+              ? (
+                <Button
+                  type="button"
+                  onClick={handlePublish}
+                  disabled={publishProduct.isPending}
+                  className="store-theme-primary-button h-10 rounded-2xl px-4 text-sm font-semibold hover:opacity-100"
+                >
+                  {t("products.actions.publish")}
+                </Button>
+              )
+              : null}
             {statusBadge}
-            <Badge variant="outline" className={cn("rounded-full border-[#eadcf7] px-3 py-1 text-xs", stockClassName)}>
+            <Badge
+              variant="outline"
+              className={cn(
+                "rounded-full border-[#eadcf7] px-3 py-1 text-xs",
+                stockClassName,
+              )}
+            >
               <Package className="size-3.5" />
               {stockLabel}
             </Badge>
@@ -175,38 +203,45 @@ export default function ProductDetailsPage() {
           <Card className="rounded-[28px] border-[#eadcf8] bg-white py-0 shadow-sm">
             <CardContent className="px-6 py-6">
               <div className="rounded-[24px] bg-[#fff2f7] p-6">
-                {image ? (
-                  <img
-                    src={image}
-                    alt={product.name}
-                    className="mx-auto aspect-square w-full rounded-[22px] object-cover shadow-sm"
-                  />
-                ) : (
-                  <div className="mx-auto flex aspect-square w-full items-center justify-center rounded-[22px] bg-white/70 text-2xl font-semibold text-[#2d1649]">
-                    {product.name.slice(0, 1).toUpperCase()}
-                  </div>
-                )}
+                {image
+                  ? (
+                    <div className="relative mx-auto aspect-square w-full overflow-hidden rounded-[22px] shadow-sm">
+                      <Image
+                        src={image}
+                        alt={product.name}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  )
+                  : (
+                    <div className="mx-auto flex aspect-square w-full items-center justify-center rounded-[22px] bg-white/70 text-2xl font-semibold text-[#2d1649]">
+                      {product.name.slice(0, 1).toUpperCase()}
+                    </div>
+                  )}
               </div>
 
               <div className="mt-5 space-y-3">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    {categoryNames.length === 0 ? (
-                      <Badge className="store-theme-soft-badge rounded-full px-3 py-1 text-xs font-semibold">
-                        <Tag className="size-3.5" />
-                        {categoryLabel}
-                      </Badge>
-                    ) : (
-                      categoryNames.map((name) => (
-                        <Badge
-                          key={name}
-                          className="store-theme-soft-badge rounded-full px-3 py-1 text-xs font-semibold"
-                        >
+                    {categoryNames.length === 0
+                      ? (
+                        <Badge className="store-theme-soft-badge rounded-full px-3 py-1 text-xs font-semibold">
                           <Tag className="size-3.5" />
-                          {name}
+                          {categoryLabel}
                         </Badge>
-                      ))
-                    )}
+                      )
+                      : (
+                        categoryNames.map((name) => (
+                          <Badge
+                            key={name}
+                            className="store-theme-soft-badge rounded-full px-3 py-1 text-xs font-semibold"
+                          >
+                            <Tag className="size-3.5" />
+                            {name}
+                          </Badge>
+                        ))
+                      )}
                   </div>
                   <p className="text-lg font-semibold text-[#d11d52]">
                     {product.currency} {product.price}
@@ -235,7 +270,9 @@ export default function ProductDetailsPage() {
           <div className="space-y-6">
             <Card className="rounded-[28px] border-[#eadcf8] bg-white py-0 shadow-sm">
               <CardHeader className="px-6 pt-6">
-                <CardTitle className="text-base text-[#2d1649]">{t("products.details.summaryTitle")}</CardTitle>
+                <CardTitle className="text-base text-[#2d1649]">
+                  {t("products.details.summaryTitle")}
+                </CardTitle>
               </CardHeader>
               <CardContent className="grid gap-4 px-6 pb-6 sm:grid-cols-2">
                 <div className="rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3">
@@ -243,85 +280,118 @@ export default function ProductDetailsPage() {
                     {t("products.details.category")}
                   </p>
                   <p className="mt-1 text-sm font-semibold text-[#2d1649]">
-                    {categoryNames.length ? categoryNames.join(", ") : categoryLabel}
+                    {categoryNames.length
+                      ? categoryNames.join(", ")
+                      : categoryLabel}
                   </p>
                 </div>
                 <div className="rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#927fac]">
                     {t("products.details.status")}
                   </p>
-                  <p className="mt-1 text-sm font-semibold text-[#2d1649]">{product.status}</p>
+                  <p className="mt-1 text-sm font-semibold text-[#2d1649]">
+                    {product.status}
+                  </p>
                 </div>
                 <div className="rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#927fac]">
                     {t("products.details.stock")}
                   </p>
-                  <p className={cn("mt-1 text-sm font-semibold", stockClassName)}>{stockLabel}</p>
+                  <p
+                    className={cn("mt-1 text-sm font-semibold", stockClassName)}
+                  >
+                    {stockLabel}
+                  </p>
                 </div>
                 <div className="rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#927fac]">
                     {t("products.details.soldLabel")}
                   </p>
-                  <p className="mt-1 text-sm font-semibold text-[#2d1649]">{product.soldUnits ?? 0}</p>
+                  <p className="mt-1 text-sm font-semibold text-[#2d1649]">
+                    {product.soldUnits ?? 0}
+                  </p>
                 </div>
               </CardContent>
             </Card>
 
             <Card className="rounded-[28px] border-[#eadcf8] bg-white py-0 shadow-sm">
               <CardHeader className="px-6 pt-6">
-                <CardTitle className="text-base text-[#2d1649]">{t("products.details.variantsTitle")}</CardTitle>
+                <CardTitle className="text-base text-[#2d1649]">
+                  {t("products.details.variantsTitle")}
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 px-6 pb-6">
-                {variants.length === 0 ? (
-                  <p className="text-sm text-[#8f7da8]">{t("products.details.noVariants")}</p>
-                ) : (
-                  variants.map((variant) => (
-                    <div
-                      key={variant.id}
-                      className="rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3"
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-semibold text-[#2d1649]">{variant.name}</p>
-                          <p className="text-xs text-[#8f7da8]">{variant.id}</p>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "rounded-full border-[#eadcf7] px-3 py-1 text-xs",
-                              stockTone(variant.stock, store?.lowStockThreshold),
-                            )}
-                          >
-                            {variant.stock === null ? t("products.stockUnlimited") : variant.stock}
-                          </Badge>
-                          {variant.priceOverride ? (
+                {variants.length === 0
+                  ? (
+                    <p className="text-sm text-[#8f7da8]">
+                      {t("products.details.noVariants")}
+                    </p>
+                  )
+                  : (
+                    variants.map((variant) => (
+                      <div
+                        key={variant.id}
+                        className="rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold text-[#2d1649]">
+                              {variant.name}
+                            </p>
+                            <p className="text-xs text-[#8f7da8]">
+                              {variant.id}
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2">
                             <Badge
                               variant="outline"
-                              className="rounded-full border-[#eadcf7] px-3 py-1 text-xs text-[var(--store-primary)]"
+                              className={cn(
+                                "rounded-full border-[#eadcf7] px-3 py-1 text-xs",
+                                stockTone(
+                                  variant.stock,
+                                  store?.lowStockThreshold,
+                                ),
+                              )}
                             >
-                              {t("products.details.priceOverride", { value: variant.priceOverride })}
+                              {variant.stock === null
+                                ? t("products.stockUnlimited")
+                                : variant.stock}
                             </Badge>
-                          ) : null}
+                            {variant.priceOverride
+                              ? (
+                                <Badge
+                                  variant="outline"
+                                  className="rounded-full border-[#eadcf7] px-3 py-1 text-xs text-[var(--store-primary)]"
+                                >
+                                  {t("products.details.priceOverride", {
+                                    value: variant.priceOverride,
+                                  })}
+                                </Badge>
+                              )
+                              : null}
+                          </div>
                         </div>
-                      </div>
 
-                      {Object.keys(variant.attributes ?? {}).length > 0 ? (
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {Object.entries(variant.attributes).map(([key, value]) => (
-                            <Badge
-                              key={`${variant.id}-${key}`}
-                              variant="outline"
-                              className="rounded-full border-[#eadcf7] bg-white px-3 py-1 text-xs text-[#8f7da8]"
-                            >
-                              {key}: {value}
-                            </Badge>
-                          ))}
-                        </div>
-                      ) : null}
-                    </div>
-                  ))
-                )}
+                        {Object.keys(variant.attributes ?? {}).length > 0
+                          ? (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {Object.entries(variant.attributes).map((
+                                [key, value],
+                              ) => (
+                                <Badge
+                                  key={`${variant.id}-${key}`}
+                                  variant="outline"
+                                  className="rounded-full border-[#eadcf7] bg-white px-3 py-1 text-xs text-[#8f7da8]"
+                                >
+                                  {key}: {value}
+                                </Badge>
+                              ))}
+                            </div>
+                          )
+                          : null}
+                      </div>
+                    ))
+                  )}
               </CardContent>
             </Card>
           </div>

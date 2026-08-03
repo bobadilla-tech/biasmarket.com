@@ -9,7 +9,9 @@ export function useMarkAllRead(storeId: string | undefined) {
     mutationFn: () => notificationsApi.markAllRead(storeId as string),
     onSuccess: () => {
       if (!storeId) return;
-      queryClient.invalidateQueries({ queryKey: notificationKeys.all(storeId) });
+      queryClient.invalidateQueries({
+        queryKey: notificationKeys.all(storeId),
+      });
     },
   });
 }

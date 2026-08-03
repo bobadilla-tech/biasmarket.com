@@ -30,12 +30,18 @@ describe("buildWhatsAppOrderMessage", () => {
   });
 
   it("falls back to the raw delivery method when there's no label for it", () => {
-    const message = buildWhatsAppOrderMessage({ ...base, deliveryMethodType: "TELEPORT" });
+    const message = buildWhatsAppOrderMessage({
+      ...base,
+      deliveryMethodType: "TELEPORT",
+    });
     expect(message).toContain("Entrega: TELEPORT");
   });
 
   it("shows the customer name when provided", () => {
-    const message = buildWhatsAppOrderMessage({ ...base, customerName: "Jane" });
+    const message = buildWhatsAppOrderMessage({
+      ...base,
+      customerName: "Jane",
+    });
     expect(message).toContain("Cliente: Jane");
   });
 
@@ -61,7 +67,10 @@ describe("buildWhatsAppPaymentReminderMessage", () => {
   });
 
   it("greets the customer by name when provided", () => {
-    const message = buildWhatsAppPaymentReminderMessage({ ...base, customerName: "Jane" });
+    const message = buildWhatsAppPaymentReminderMessage({
+      ...base,
+      customerName: "Jane",
+    });
     expect(message).toContain("Hola Jane,");
   });
 
@@ -79,6 +88,10 @@ describe("buildWhatsAppUrl", () => {
 
   it("URL-encodes the message", () => {
     const url = buildWhatsAppUrl("51999999999", "line one\nline two");
-    expect(url).toBe(`https://wa.me/51999999999?text=${encodeURIComponent("line one\nline two")}`);
+    expect(url).toBe(
+      `https://wa.me/51999999999?text=${
+        encodeURIComponent("line one\nline two")
+      }`,
+    );
   });
 });

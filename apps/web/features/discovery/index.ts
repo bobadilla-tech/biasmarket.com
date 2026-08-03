@@ -3,17 +3,17 @@ export { useFeaturedStores } from "./queries/use-featured-stores";
 export { useStoreDirectory } from "./queries/use-store-directory";
 export { useProductSearch } from "./queries/use-product-search";
 export {
-  storeListingSchema,
-  storeListingListSchema,
+  type StoreDirectoryResult,
   storeDirectoryResultSchema,
   type StoreListing,
-  type StoreDirectoryResult,
+  storeListingListSchema,
+  storeListingSchema,
 } from "./schemas/store-listing.schema";
 export {
-  searchProductSchema,
+  type ProductSearchResult,
   productSearchResultSchema,
   type SearchProduct,
-  type ProductSearchResult,
+  searchProductSchema,
 } from "./schemas/product-search.schema";
 export { StoreCard } from "./components/store-card";
 export { FeaturedStoresSection } from "./components/featured-stores-section";

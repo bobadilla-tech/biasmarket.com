@@ -1,5 +1,8 @@
 import { expect, test } from "vitest";
-import { collectionListSchema, createCollectionSchema } from "./collection.schema";
+import {
+  collectionListSchema,
+  createCollectionSchema,
+} from "./collection.schema";
 
 test("collectionListSchema strips extra product fields down to id/name", () => {
   const result = collectionListSchema.parse([
@@ -27,11 +30,17 @@ test("collectionListSchema strips extra product fields down to id/name", () => {
 });
 
 test("createCollectionSchema rejects an empty name", () => {
-  const result = createCollectionSchema.safeParse({ name: "", description: "" });
+  const result = createCollectionSchema.safeParse({
+    name: "",
+    description: "",
+  });
   expect(result.success).toBe(false);
 });
 
 test("createCollectionSchema accepts a name with an empty description", () => {
-  const result = createCollectionSchema.safeParse({ name: "Photocards", description: "" });
+  const result = createCollectionSchema.safeParse({
+    name: "Photocards",
+    description: "",
+  });
   expect(result.success).toBe(true);
 });

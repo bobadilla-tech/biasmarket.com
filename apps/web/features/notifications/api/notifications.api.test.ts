@@ -1,7 +1,10 @@
 import { expect, test, vi } from "vitest";
 
 const apiFetch = vi.fn();
-vi.mock("@/lib/api", () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }));
+vi.mock(
+  "@/lib/api",
+  () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }),
+);
 
 const { notificationsApi } = await import("./notifications.api");
 
@@ -10,7 +13,9 @@ test("list calls the archived-scoped URL and validates the response", async () =
 
   const result = await notificationsApi.list("store-1", true);
 
-  expect(apiFetch).toHaveBeenCalledWith("/stores/store-1/notifications?archived=true");
+  expect(apiFetch).toHaveBeenCalledWith(
+    "/stores/store-1/notifications?archived=true",
+  );
   expect(result).toEqual([]);
 });
 
@@ -19,7 +24,9 @@ test("unreadCount validates the response shape", async () => {
 
   const result = await notificationsApi.unreadCount("store-1");
 
-  expect(apiFetch).toHaveBeenCalledWith("/stores/store-1/notifications/unread-count");
+  expect(apiFetch).toHaveBeenCalledWith(
+    "/stores/store-1/notifications/unread-count",
+  );
   expect(result).toEqual({ count: 2 });
 });
 
@@ -28,7 +35,10 @@ test("markRead PATCHes the notification", async () => {
 
   await notificationsApi.markRead("store-1", "notif-1");
 
-  expect(apiFetch).toHaveBeenCalledWith("/stores/store-1/notifications/notif-1/read", {
-    method: "PATCH",
-  });
+  expect(apiFetch).toHaveBeenCalledWith(
+    "/stores/store-1/notifications/notif-1/read",
+    {
+      method: "PATCH",
+    },
+  );
 });

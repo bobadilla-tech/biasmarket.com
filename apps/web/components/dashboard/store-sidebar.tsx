@@ -82,12 +82,11 @@ function SidebarSection({
       <div className="space-y-1.5">
         {items.map((item) => {
           const Icon = item.icon;
-          const href =
-            item.href === undefined
-              ? undefined
-              : item.href === ""
-                ? `/dashboard/${slug}`
-                : `/dashboard/${slug}/${item.href}`;
+          const href = item.href === undefined
+            ? undefined
+            : item.href === ""
+            ? `/dashboard/${slug}`
+            : `/dashboard/${slug}/${item.href}`;
           const isActive = href ? pathname === href : false;
           const label = t(`nav.${item.key}`);
 
@@ -204,17 +203,19 @@ export function StoreSidebar({
             <p className="truncate text-sm font-semibold text-white">
               {store?.name ?? t("brand")}
             </p>
-            {slug ? (
-              <a
-                href={`/${locale}/store/${slug}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 text-xs text-white/50 transition hover:text-white/80"
-              >
-                {t("viewStore")}
-                <ExternalLink className="size-3" />
-              </a>
-            ) : null}
+            {slug
+              ? (
+                <a
+                  href={`/${locale}/store/${slug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-xs text-white/50 transition hover:text-white/80"
+                >
+                  {t("viewStore")}
+                  <ExternalLink className="size-3" />
+                </a>
+              )
+              : null}
           </div>
         )}
         {!forceExpanded && (
@@ -224,11 +225,9 @@ export function StoreSidebar({
             title={t(effectiveCollapsed ? "expand" : "collapse")}
             className="flex size-7 shrink-0 items-center justify-center rounded-full text-white/60 transition hover:bg-white/8 hover:text-white"
           >
-            {effectiveCollapsed ? (
-              <ChevronRight className="size-4" />
-            ) : (
-              <ChevronLeft className="size-4" />
-            )}
+            {effectiveCollapsed
+              ? <ChevronRight className="size-4" />
+              : <ChevronLeft className="size-4" />}
           </button>
         )}
       </div>

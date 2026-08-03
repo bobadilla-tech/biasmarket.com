@@ -5,7 +5,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { useCustomerLogin } from "../mutations/use-customer-login";
-import { customerLoginSchema, type CustomerLoginInput } from "../schemas/login.schema";
+import {
+  type CustomerLoginInput,
+  customerLoginSchema,
+} from "../schemas/login.schema";
 
 const inputClassName =
   "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 placeholder:text-gray-600";
@@ -20,14 +23,18 @@ export function CustomerLoginForm({ slug }: { slug: string }) {
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm<CustomerLoginInput>({ resolver: zodResolver(customerLoginSchema) });
+  } = useForm<CustomerLoginInput>({
+    resolver: zodResolver(customerLoginSchema),
+  });
 
   const onSubmit = async (values: CustomerLoginInput) => {
     try {
       await login.mutateAsync(values);
       router.push(`/store/${slug}/account`);
     } catch (err) {
-      setError("root", { message: err instanceof Error ? err.message : t("invalidCredentials") });
+      setError("root", {
+        message: err instanceof Error ? err.message : t("invalidCredentials"),
+      });
     }
   };
 
@@ -42,7 +49,9 @@ export function CustomerLoginForm({ slug }: { slug: string }) {
             className={inputClassName}
             {...register("phone")}
           />
-          {errors.phone ? <p className="text-sm text-red-500">{t("phoneRequired")}</p> : null}
+          {errors.phone
+            ? <p className="text-sm text-red-500">{t("phoneRequired")}</p>
+            : null}
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -52,10 +61,14 @@ export function CustomerLoginForm({ slug }: { slug: string }) {
             className={inputClassName}
             {...register("password")}
           />
-          {errors.password ? <p className="text-sm text-red-500">{t("passwordRequired")}</p> : null}
+          {errors.password
+            ? <p className="text-sm text-red-500">{t("passwordRequired")}</p>
+            : null}
         </div>
 
-        {errors.root ? <p className="text-sm text-red-500">{errors.root.message}</p> : null}
+        {errors.root
+          ? <p className="text-sm text-red-500">{errors.root.message}</p>
+          : null}
 
         <button
           type="submit"

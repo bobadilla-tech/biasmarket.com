@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from "vitest";
-import { screen, fireEvent, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "../../../test-utils/render-with-providers";
 
@@ -39,12 +39,19 @@ test("submits valid credentials and redirects to the profile page on success", a
   const user = userEvent.setup();
   renderWithProviders(<CustomerLoginForm slug="my-store" />);
 
-  await user.type(screen.getByPlaceholderText("Teléfono (WhatsApp)"), "+51988888888");
+  await user.type(
+    screen.getByPlaceholderText("Teléfono (WhatsApp)"),
+    "+51988888888",
+  );
   await user.type(screen.getByPlaceholderText("Contraseña"), "super-secret-1");
   await user.click(screen.getByRole("button", { name: /ingresar/i }));
 
   await waitFor(() => {
-    expect(login).toHaveBeenCalledWith("my-store", "+51988888888", "super-secret-1");
+    expect(login).toHaveBeenCalledWith(
+      "my-store",
+      "+51988888888",
+      "super-secret-1",
+    );
     expect(push).toHaveBeenCalledWith("/es/store/my-store/account");
   });
 });
@@ -54,7 +61,10 @@ test("surfaces a root error on invalid credentials without redirecting", async (
   const user = userEvent.setup();
   renderWithProviders(<CustomerLoginForm slug="my-store" />);
 
-  await user.type(screen.getByPlaceholderText("Teléfono (WhatsApp)"), "+51988888888");
+  await user.type(
+    screen.getByPlaceholderText("Teléfono (WhatsApp)"),
+    "+51988888888",
+  );
   await user.type(screen.getByPlaceholderText("Contraseña"), "wrong-password");
   await user.click(screen.getByRole("button", { name: /ingresar/i }));
 

@@ -1,19 +1,19 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { vi, type Mock } from 'vitest';
+import { Test, TestingModule } from "@nestjs/testing";
+import { type Mock, vi } from "vitest";
 
-vi.mock('@thallesp/nestjs-better-auth', () => ({
+vi.mock("@thallesp/nestjs-better-auth", () => ({
   AuthGuard: class AuthGuard {},
   Session: () => () => undefined,
 }));
 
-import { OrderController } from './order.controller.js';
-import { OrderRepository } from './order.repository.js';
-import { ReviewPaymentUseCase } from '../application/review-payment.usecase.js';
-import { AdvanceFulfillmentUseCase } from '../application/advance-fulfillment.usecase.js';
-import { PrismaService } from '../../../prisma/prisma.service.js';
-import { StorageService } from '../../../storage/storage.service.js';
+import { OrderController } from "./order.controller.js";
+import { OrderRepository } from "./order.repository.js";
+import { ReviewPaymentUseCase } from "../application/review-payment.usecase.js";
+import { AdvanceFulfillmentUseCase } from "../application/advance-fulfillment.usecase.js";
+import { PrismaService } from "../../../prisma/prisma.service.js";
+import { StorageService } from "../../../storage/storage.service.js";
 
-describe('OrderController.addPayment', () => {
+describe("OrderController.addPayment", () => {
   let controller: OrderController;
   let orders: {
     assertOwnership: Mock;
@@ -23,9 +23,9 @@ describe('OrderController.addPayment', () => {
   let reviewPayment: { execute: Mock };
   let prisma: { $transaction: Mock; orderPayment: { create: Mock } };
 
-  const storeId = 'store-1';
-  const orderId = 'order-1';
-  const userId = 'user-1';
+  const storeId = "store-1";
+  const orderId = "order-1";
+  const userId = "user-1";
   const session = { user: { id: userId } } as any;
 
   beforeEach(async () => {
@@ -55,35 +55,40 @@ describe('OrderController.addPayment', () => {
     controller = module.get(OrderController);
   });
 
-  it('a partial payment writes PARTIALLY_PAID directly and never calls ReviewPaymentUseCase', async () => {
+  it("a partial payment writes PARTIALLY_PAID directly and never calls ReviewPaymentUseCase", async () => {
     orders.findRowByIdForStore.mockResolvedValue({
-      currency: 'PEN',
+      currency: "PEN",
       paidAmount: 0,
       pendingAmount: 100,
-      requiredAmount: '100.00',
+      requiredAmount: "100.00",
     });
 
-    await controller.addPayment(storeId, orderId, session, '40', 'YAPE');
+    await controller.addPayment(storeId, orderId, session, "40", "YAPE");
 
     expect(orders.saveStatus).toHaveBeenCalledWith(
       orderId,
-      { paymentStatus: 'PARTIALLY_PAID' },
+      { paymentStatus: "PARTIALLY_PAID" },
       expect.anything(),
     );
     expect(reviewPayment.execute).not.toHaveBeenCalled();
   });
 
-  it('a payment reaching the required amount routes through ReviewPaymentUseCase instead of writing VERIFIED directly', async () => {
+  it("a payment reaching the required amount routes through ReviewPaymentUseCase instead of writing VERIFIED directly", async () => {
     orders.findRowByIdForStore.mockResolvedValue({
-      currency: 'PEN',
+      currency: "PEN",
       paidAmount: 60,
       pendingAmount: 40,
-      requiredAmount: '100.00',
+      requiredAmount: "100.00",
     });
 
-    await controller.addPayment(storeId, orderId, session, '40', 'YAPE');
+    await controller.addPayment(storeId, orderId, session, "40", "YAPE");
 
     expect(orders.saveStatus).not.toHaveBeenCalled();
-    expect(reviewPayment.execute).toHaveBeenCalledWith(orderId, storeId, userId, 'approve');
+    expect(reviewPayment.execute).toHaveBeenCalledWith(
+      orderId,
+      storeId,
+      userId,
+      "approve",
+    );
   });
 });

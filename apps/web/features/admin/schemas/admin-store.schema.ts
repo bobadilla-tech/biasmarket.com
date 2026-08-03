@@ -8,7 +8,11 @@ export const adminStoreSchema = z.object({
   name: z.string(),
   slug: z.string(),
   createdAt: z.string(),
-  owner: z.object({ id: z.string(), email: z.string(), name: z.string().nullable() }),
+  owner: z.object({
+    id: z.string(),
+    email: z.string(),
+    name: z.string().nullable(),
+  }),
 });
 
 export const adminStoreListSchema = z.array(adminStoreSchema);

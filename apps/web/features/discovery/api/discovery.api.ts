@@ -1,11 +1,16 @@
 import { apiFetch } from "@/lib/api";
-import { storeListingListSchema, storeDirectoryResultSchema } from "../schemas/store-listing.schema";
+import {
+  storeDirectoryResultSchema,
+  storeListingListSchema,
+} from "../schemas/store-listing.schema";
 import { productSearchResultSchema } from "../schemas/product-search.schema";
 
 function buildQuery(params: Record<string, string | number | undefined>) {
   const searchParams = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
-    if (value !== undefined && value !== "") searchParams.set(key, String(value));
+    if (value !== undefined && value !== "") {
+      searchParams.set(key, String(value));
+    }
   }
   const qs = searchParams.toString();
   return qs ? `?${qs}` : "";

@@ -1,25 +1,26 @@
 import {
-  Injectable,
-  ForbiddenException,
-  NotFoundException,
   BadRequestException,
-} from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service.js';
-import { CreateProductDto } from './dto/create-product.dto.js';
-import { UpdateProductDto } from './dto/update-product.dto.js';
-import { CreateVariantDto } from './dto/create-variant.dto.js';
-import { UpdateVariantDto } from './dto/update-variant.dto.js';
-import { NotificationsService } from '../notifications/notifications.service.js';
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
+import { PrismaService } from "../../prisma/prisma.service.js";
+import { CreateProductDto } from "./dto/create-product.dto.js";
+import { UpdateProductDto } from "./dto/update-product.dto.js";
+import { CreateVariantDto } from "./dto/create-variant.dto.js";
+import { UpdateVariantDto } from "./dto/update-variant.dto.js";
+import { NotificationsService } from "../notifications/notifications.service.js";
 
 @Injectable()
 export class ProductsService {
-
   constructor(
     private prisma: PrismaService,
     private notifications: NotificationsService,
   ) {}
 
-  private computeAvailableStock(variants: { stock: number | null; reserved: number }[]) {
+  private computeAvailableStock(
+    variants: { stock: number | null; reserved: number }[],
+  ) {
     const hasUnlimited = variants.some((v) => v.stock === null);
     if (hasUnlimited) return null;
     if (variants.length === 0) return null;
@@ -30,9 +31,9 @@ export class ProductsService {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
-    if (!store) throw new NotFoundException('Store no encontrada');
+    if (!store) throw new NotFoundException("Store no encontrada");
     if (store.ownerId !== userId) {
-      throw new ForbiddenException('No sos dueño de esta store');
+      throw new ForbiddenException("No sos dueño de esta store");
     }
     return store;
   }
@@ -47,18 +48,21 @@ export class ProductsService {
       where: { id: productId },
     });
     if (!product || product.storeId !== storeId) {
-      throw new NotFoundException('Producto no encontrado');
+      throw new NotFoundException("Producto no encontrado");
     }
     return product;
   }
 
-  private async assertCategoriesInStore(categoryIds: string[], storeId: string) {
+  private async assertCategoriesInStore(
+    categoryIds: string[],
+    storeId: string,
+  ) {
     if (categoryIds.length === 0) return;
     const count = await this.prisma.category.count({
       where: { id: { in: categoryIds }, storeId },
     });
     if (count !== categoryIds.length) {
-      throw new BadRequestException('Categoría inválida');
+      throw new BadRequestException("Categoría inválida");
     }
   }
 
@@ -68,7 +72,11 @@ export class ProductsService {
     if (categoryIds) await this.assertCategoriesInStore(categoryIds, storeId);
     return this.prisma.$transaction(async (tx) => {
       const product = await tx.product.create({
-        data: { ...data, storeId, currency: dto.currency ?? store.defaultCurrency },
+        data: {
+          ...data,
+          storeId,
+          currency: dto.currency ?? store.defaultCurrency,
+        },
       });
       if (variants?.length) {
         await Promise.all(
@@ -80,7 +88,7 @@ export class ProductsService {
                 productId: product.id,
                 storeId,
               },
-            }),
+            })
           ),
         );
       } else if (stock !== undefined) {
@@ -88,14 +96,17 @@ export class ProductsService {
           data: {
             productId: product.id,
             storeId,
-            name: 'Default',
+            name: "Default",
             stock,
           },
         });
       }
       if (categoryIds?.length) {
         await tx.productCategory.createMany({
-          data: categoryIds.map((categoryId) => ({ productId: product.id, categoryId })),
+          data: categoryIds.map((categoryId) => ({
+            productId: product.id,
+            categoryId,
+          })),
         });
       }
       return tx.product.findUniqueOrThrow({
@@ -115,7 +126,7 @@ export class ProductsService {
     if (products.length === 0) return products;
 
     const sold = await this.prisma.orderItem.groupBy({
-      by: ['productId'],
+      by: ["productId"],
       where: { storeId, productId: { in: products.map((p) => p.id) } },
       _sum: { quantity: true },
     });
@@ -145,7 +156,7 @@ export class ProductsService {
     });
 
     if (!product || product.storeId !== storeId || product.deletedAt) {
-      throw new NotFoundException('Producto no encontrado');
+      throw new NotFoundException("Producto no encontrado");
     }
 
     const sold = await this.prisma.orderItem.aggregate({
@@ -166,7 +177,7 @@ export class ProductsService {
     await this.findOwnedProduct(productId, storeId, userId);
     return this.prisma.product.update({
       where: { id: productId },
-      data: { status: 'PUBLISHED' },
+      data: { status: "PUBLISHED" },
     });
   }
 
@@ -180,7 +191,10 @@ export class ProductsService {
     const { categoryIds, ...data } = dto;
     if (categoryIds) await this.assertCategoriesInStore(categoryIds, storeId);
     return this.prisma.$transaction(async (tx) => {
-      const product = await tx.product.update({ where: { id: productId }, data });
+      const product = await tx.product.update({
+        where: { id: productId },
+        data,
+      });
       if (categoryIds) {
         await tx.productCategory.deleteMany({ where: { productId } });
         if (categoryIds.length) {
@@ -197,7 +211,7 @@ export class ProductsService {
     await this.findOwnedProduct(productId, storeId, userId);
     return this.prisma.product.update({
       where: { id: productId },
-      data: { deletedAt: new Date(), status: 'DRAFT' },
+      data: { deletedAt: new Date(), status: "DRAFT" },
     });
   }
 
@@ -208,7 +222,9 @@ export class ProductsService {
     dto: CreateVariantDto,
   ) {
     await this.findOwnedProduct(productId, storeId, userId);
-    return this.prisma.productVariant.create({ data: { ...dto, productId, storeId } });
+    return this.prisma.productVariant.create({
+      data: { ...dto, productId, storeId },
+    });
   }
 
   async listVariants(productId: string, storeId: string, userId: string) {
@@ -224,16 +240,29 @@ export class ProductsService {
     dto: UpdateVariantDto,
   ) {
     const product = await this.findOwnedProduct(productId, storeId, userId);
-    const variant = await this.prisma.productVariant.findUnique({ where: { id: variantId } });
-    if (!variant || variant.productId !== productId || variant.storeId !== storeId) {
-      throw new NotFoundException('Variante no encontrada');
+    const variant = await this.prisma.productVariant.findUnique({
+      where: { id: variantId },
+    });
+    if (
+      !variant || variant.productId !== productId || variant.storeId !== storeId
+    ) {
+      throw new NotFoundException("Variante no encontrada");
     }
     const updated = await this.prisma.productVariant.update({
       where: { id: variantId },
       data: { ...dto },
     });
-    const store = await this.prisma.store.findUnique({ where: { id: storeId } });
-    if (store) await this.notifications.syncStockAlerts(this.prisma, store, product, updated);
+    const store = await this.prisma.store.findUnique({
+      where: { id: storeId },
+    });
+    if (store) {
+      await this.notifications.syncStockAlerts(
+        this.prisma,
+        store,
+        product,
+        updated,
+      );
+    }
     return updated;
   }
 
@@ -244,17 +273,25 @@ export class ProductsService {
     userId: string,
   ) {
     await this.findOwnedProduct(productId, storeId, userId);
-    const variant = await this.prisma.productVariant.findUnique({ where: { id: variantId } });
-    if (!variant || variant.productId !== productId || variant.storeId !== storeId) {
-      throw new NotFoundException('Variante no encontrada');
+    const variant = await this.prisma.productVariant.findUnique({
+      where: { id: variantId },
+    });
+    if (
+      !variant || variant.productId !== productId || variant.storeId !== storeId
+    ) {
+      throw new NotFoundException("Variante no encontrada");
     }
-    const usedCount = await this.prisma.orderItem.count({ where: { variantId } });
+    const usedCount = await this.prisma.orderItem.count({
+      where: { variantId },
+    });
     if (usedCount > 0) {
-      throw new BadRequestException('No se puede eliminar una variante con ventas');
+      throw new BadRequestException(
+        "No se puede eliminar una variante con ventas",
+      );
     }
     return this.prisma.productVariant.delete({ where: { id: variantId } });
   }
-  
+
   async addImage(
     productId: string,
     storeId: string,
@@ -264,9 +301,7 @@ export class ProductsService {
   ) {
     const product = await this.findOwnedProduct(productId, storeId, userId);
     const images = replace
-      ? product.images.length
-        ? [url, ...product.images.slice(1)]
-        : [url]
+      ? product.images.length ? [url, ...product.images.slice(1)] : [url]
       : [...product.images, url];
     return this.prisma.product.update({
       where: { id: productId },
@@ -282,9 +317,13 @@ export class ProductsService {
     url: string,
   ) {
     await this.findOwnedProduct(productId, storeId, userId);
-    const variant = await this.prisma.productVariant.findUnique({ where: { id: variantId } });
-    if (!variant || variant.productId !== productId || variant.storeId !== storeId) {
-      throw new NotFoundException('Variante no encontrada');
+    const variant = await this.prisma.productVariant.findUnique({
+      where: { id: variantId },
+    });
+    if (
+      !variant || variant.productId !== productId || variant.storeId !== storeId
+    ) {
+      throw new NotFoundException("Variante no encontrada");
     }
     return this.prisma.productVariant.update({
       where: { id: variantId },

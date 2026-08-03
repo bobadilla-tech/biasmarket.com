@@ -12,6 +12,8 @@ export function useFeaturedStores(limit?: number) {
   return {
     stores: data ?? [],
     loading: isPending,
-    error: error ? (error instanceof Error ? error.message : String(error)) : null,
+    error: error
+      ? (error instanceof Error ? error.message : String(error))
+      : null,
   };
 }

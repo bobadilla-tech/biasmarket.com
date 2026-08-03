@@ -9,7 +9,8 @@ export function useSaveProfile(storeId: string | undefined, slug: string) {
   const updateStoreCache = useUpdateDashboardStoreCache();
 
   return useMutation({
-    mutationFn: (values: ProfileFormInput) => settingsApi.updateProfile(storeId as string, values),
+    mutationFn: (values: ProfileFormInput) =>
+      settingsApi.updateProfile(storeId as string, values),
     onSuccess: (_data, values) => updateStoreCache(slug, values),
   });
 }

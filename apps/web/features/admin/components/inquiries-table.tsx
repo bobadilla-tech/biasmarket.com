@@ -8,7 +8,9 @@ interface InquiriesTableProps {
   onMarkReviewed: (id: string) => void;
 }
 
-export function InquiriesTable({ inquiries, onMarkReviewed }: InquiriesTableProps) {
+export function InquiriesTable(
+  { inquiries, onMarkReviewed }: InquiriesTableProps,
+) {
   const t = useTranslations("admin.inquiries");
 
   return (
@@ -28,20 +30,29 @@ export function InquiriesTable({ inquiries, onMarkReviewed }: InquiriesTableProp
         </thead>
         <tbody>
           {inquiries.map((inquiry) => (
-            <tr key={inquiry.id} className="border-b border-gray-100 align-top last:border-0">
+            <tr
+              key={inquiry.id}
+              className="border-b border-gray-100 align-top last:border-0"
+            >
               <td className="px-6 py-3 text-gray-900">{inquiry.name}</td>
               <td className="px-6 py-3 text-gray-600">{inquiry.email}</td>
-              <td className="px-6 py-3 text-gray-600">{inquiry.company ?? "—"}</td>
-              <td className="px-6 py-3 text-gray-600">{inquiry.inquiryType ?? "—"}</td>
-              <td className="max-w-xs px-6 py-3 text-gray-600">{inquiry.message}</td>
+              <td className="px-6 py-3 text-gray-600">
+                {inquiry.company ?? "—"}
+              </td>
+              <td className="px-6 py-3 text-gray-600">
+                {inquiry.inquiryType ?? "—"}
+              </td>
+              <td className="max-w-xs px-6 py-3 text-gray-600">
+                {inquiry.message}
+              </td>
               <td className="px-6 py-3">
                 <span
                   className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
                     inquiry.status === "REVIEWED"
                       ? "bg-emerald-100 text-emerald-700"
                       : inquiry.status === "ARCHIVED"
-                        ? "bg-gray-100 text-gray-500"
-                        : "bg-amber-100 text-amber-700"
+                      ? "bg-gray-100 text-gray-500"
+                      : "bg-amber-100 text-amber-700"
                   }`}
                 >
                   {t(`status.${inquiry.status}`)}

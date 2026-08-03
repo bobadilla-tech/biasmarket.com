@@ -7,20 +7,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useDashboardStore } from "@/features/stores";
 import {
-  OrdersTabs,
-  OrdersTable,
-  OrderDetailSheet,
-  PaymentProofLightbox,
   ConfirmTransitionDialog,
-  useOrders,
-  useEnabledPaymentMethods,
-  useRegisterPayment,
-  useOptimisticStatusChange,
-  NEXT_FULFILLMENT,
-  SENSITIVE_FULFILLMENT,
   matchesTab,
+  NEXT_FULFILLMENT,
   type Order,
+  OrderDetailSheet,
   type OrdersTab,
+  OrdersTable,
+  OrdersTabs,
+  PaymentProofLightbox,
+  SENSITIVE_FULFILLMENT,
+  useEnabledPaymentMethods,
+  useOptimisticStatusChange,
+  useOrders,
+  useRegisterPayment,
 } from "@/features/orders";
 
 function errorMessage(error: unknown) {
@@ -34,28 +34,39 @@ export default function OrdersPage() {
 
   const ordersQuery = useOrders(storeId, tCommon("networkError"));
   const orders = ordersQuery.data ?? [];
-  const enabledMethodsQuery = useEnabledPaymentMethods(storeId, tCommon("networkError"));
+  const enabledMethodsQuery = useEnabledPaymentMethods(
+    storeId,
+    tCommon("networkError"),
+  );
   const enabledMethods = enabledMethodsQuery.data ?? [];
 
   const [activeTab, setActiveTab] = useState<OrdersTab>("all");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [paymentPreviewUrl, setPaymentPreviewUrl] = useState<string | null>(null);
-  const [confirmTarget, setConfirmTarget] = useState<{
-    orderId: string;
-    kind: "review" | "advance";
-    decision?: "approve" | "reject";
-    nextStatus?: string;
-    label: string;
-  } | null>(null);
+  const [paymentPreviewUrl, setPaymentPreviewUrl] = useState<string | null>(
+    null,
+  );
+  const [confirmTarget, setConfirmTarget] = useState<
+    {
+      orderId: string;
+      kind: "review" | "advance";
+      decision?: "approve" | "reject";
+      nextStatus?: string;
+      label: string;
+    } | null
+  >(null);
   const [rejectReason, setRejectReason] = useState("");
 
-  const { pending, scheduleReview, scheduleAdvance, reviewPayment, advanceFulfillment } =
-    useOptimisticStatusChange(storeId, t);
+  const {
+    pending,
+    scheduleReview,
+    scheduleAdvance,
+    reviewPayment,
+    advanceFulfillment,
+  } = useOptimisticStatusChange(storeId, t);
   const registerPayment = useRegisterPayment(storeId, tCommon("networkError"));
 
-  const error =
-    errorMessage(ordersQuery.error) ??
+  const error = errorMessage(ordersQuery.error) ??
     errorMessage(reviewPayment.error) ??
     errorMessage(advanceFulfillment.error) ??
     errorMessage(registerPayment.error);
@@ -91,7 +102,12 @@ export default function OrdersPage() {
     if (!next) return;
     const label = fulfillmentLabels[next] ?? next;
     if (SENSITIVE_FULFILLMENT.has(next)) {
-      setConfirmTarget({ orderId: order.id, kind: "advance", nextStatus: next, label });
+      setConfirmTarget({
+        orderId: order.id,
+        kind: "advance",
+        nextStatus: next,
+        label,
+      });
       return;
     }
     scheduleAdvance(order, next, label);
@@ -103,10 +119,14 @@ export default function OrdersPage() {
       await reviewPayment.mutateAsync({
         orderId: confirmTarget.orderId,
         decision: confirmTarget.decision,
-        ...(confirmTarget.decision === "reject" && { reason: rejectReason.trim() }),
+        ...(confirmTarget.decision === "reject" &&
+          { reason: rejectReason.trim() }),
       });
     } else if (confirmTarget.kind === "advance" && confirmTarget.nextStatus) {
-      await advanceFulfillment.mutateAsync({ orderId: confirmTarget.orderId, status: confirmTarget.nextStatus });
+      await advanceFulfillment.mutateAsync({
+        orderId: confirmTarget.orderId,
+        status: confirmTarget.nextStatus,
+      });
     }
     setConfirmTarget(null);
     setRejectReason("");
@@ -122,13 +142,16 @@ export default function OrdersPage() {
       all: orders.length,
       pending: orders.filter((order) => matchesTab(order, "pending")).length,
       transit: orders.filter((order) => matchesTab(order, "transit")).length,
-      delivered: orders.filter((order) => matchesTab(order, "delivered")).length,
+      delivered:
+        orders.filter((order) => matchesTab(order, "delivered")).length,
     }),
     [orders],
   );
 
   const selectedOrder = useMemo(
-    () => (selectedOrderId ? orders.find((order) => order.id === selectedOrderId) ?? null : null),
+    () => (selectedOrderId
+      ? orders.find((order) => order.id === selectedOrderId) ?? null
+      : null),
     [orders, selectedOrderId],
   );
 
@@ -145,7 +168,9 @@ export default function OrdersPage() {
       <div className="mx-auto max-w-7xl space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-medium text-[#8e7ca7]">{t("subtitle")}</p>
+            <p className="text-sm font-medium text-[#8e7ca7]">
+              {t("subtitle")}
+            </p>
             <h1 className="text-3xl font-bold tracking-tight text-[#2d1649]">
               {t("titleWithCount", { count: orders.length })}
             </h1>
@@ -161,17 +186,28 @@ export default function OrdersPage() {
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <OrdersTabs activeTab={activeTab} onChange={setActiveTab} labels={tabLabels} />
+          <OrdersTabs
+            activeTab={activeTab}
+            onChange={setActiveTab}
+            labels={tabLabels}
+          />
           <p className="text-sm text-[#8f7da8]">
-            {t("showingCount", { count: filteredOrders.length, total: counts[activeTab] })}
+            {t("showingCount", {
+              count: filteredOrders.length,
+              total: counts[activeTab],
+            })}
           </p>
         </div>
 
-        {error ? (
-          <Card className="rounded-2xl border-[#f3cbd8] bg-[#fff3f7] py-0 shadow-none">
-            <CardContent className="px-4 py-3 text-sm text-[#b24368]">{error}</CardContent>
-          </Card>
-        ) : null}
+        {error
+          ? (
+            <Card className="rounded-2xl border-[#f3cbd8] bg-[#fff3f7] py-0 shadow-none">
+              <CardContent className="px-4 py-3 text-sm text-[#b24368]">
+                {error}
+              </CardContent>
+            </Card>
+          )
+          : null}
 
         <Card className="overflow-x-auto rounded-[30px] border-[#eadcf8] bg-white py-0 shadow-sm">
           <CardContent className="px-0">
@@ -190,7 +226,10 @@ export default function OrdersPage() {
           </CardContent>
         </Card>
 
-        <PaymentProofLightbox url={paymentPreviewUrl} onClose={() => setPaymentPreviewUrl(null)} />
+        <PaymentProofLightbox
+          url={paymentPreviewUrl}
+          onClose={() => setPaymentPreviewUrl(null)}
+        />
 
         <OrderDetailSheet
           open={detailsOpen}
@@ -205,16 +244,24 @@ export default function OrdersPage() {
           registerPaymentSubmitting={registerPayment.isPending}
           onRegisterPayment={(values) => {
             if (!selectedOrder) return Promise.resolve();
-            return registerPayment.mutateAsync({ orderId: selectedOrder.id, values });
+            return registerPayment.mutateAsync({
+              orderId: selectedOrder.id,
+              values,
+            });
           }}
           onPreviewPayment={setPaymentPreviewUrl}
-          onApprove={() => selectedOrder && handleReviewClick(selectedOrder, "approve")}
-          onReject={() => selectedOrder && handleReviewClick(selectedOrder, "reject")}
+          onApprove={() =>
+            selectedOrder && handleReviewClick(selectedOrder, "approve")}
+          onReject={() =>
+            selectedOrder && handleReviewClick(selectedOrder, "reject")}
           onAdvance={async () => {
             if (!selectedOrder) return;
             const next = NEXT_FULFILLMENT[selectedOrder.fulfillmentStatus];
             if (!next) return;
-            await advanceFulfillment.mutateAsync({ orderId: selectedOrder.id, status: next });
+            await advanceFulfillment.mutateAsync({
+              orderId: selectedOrder.id,
+              status: next,
+            });
             setDetailsOpen(false);
           }}
         />
@@ -230,10 +277,10 @@ export default function OrdersPage() {
           onConfirm={handleConfirmTransition}
           {...(confirmTarget?.kind === "review" &&
             confirmTarget.decision === "reject" && {
-              reason: rejectReason,
-              onReasonChange: setRejectReason,
-              reasonRequired: true,
-            })}
+            reason: rejectReason,
+            onReasonChange: setRejectReason,
+            reasonRequired: true,
+          })}
         />
       </div>
     </div>

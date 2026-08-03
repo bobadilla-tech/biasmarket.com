@@ -5,7 +5,10 @@ import { sectionsApi } from "../api/sections.api";
 import { sectionsKeys } from "../queries/use-sections";
 import type { SectionFormInput } from "../schemas/section.schema";
 
-export function useCreateSection(storeId: string | undefined, fallbackErrorMessage?: string) {
+export function useCreateSection(
+  storeId: string | undefined,
+  fallbackErrorMessage?: string,
+) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -13,7 +16,9 @@ export function useCreateSection(storeId: string | undefined, fallbackErrorMessa
       sectionsApi.create(storeId as string, values, fallbackErrorMessage),
     onSuccess: () => {
       if (!storeId) return;
-      queryClient.invalidateQueries({ queryKey: sectionsKeys.byStore(storeId) });
+      queryClient.invalidateQueries({
+        queryKey: sectionsKeys.byStore(storeId),
+      });
     },
   });
 }

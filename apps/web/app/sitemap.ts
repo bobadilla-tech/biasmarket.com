@@ -18,7 +18,8 @@ function alternates(path: string) {
 }
 
 async function getStoreSlugs(): Promise<{ slug: string; createdAt: string }[]> {
-  const apiUrl = process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
+  const apiUrl = process.env.INTERNAL_API_URL ??
+    process.env.NEXT_PUBLIC_API_URL;
   if (!apiUrl) return [];
   try {
     const res = await fetch(`${apiUrl}/api/stores/public`, {
@@ -35,22 +36,23 @@ async function getAllEntries(): Promise<MetadataRoute.Sitemap> {
   const staticEntries: MetadataRoute.Sitemap = STATIC_PATHS.flatMap((path) =>
     routing.locales.map((locale) => ({
       url: localizedUrl(locale, path),
-      changeFrequency:
-        path === "" ? ("weekly" as const) : ("monthly" as const),
+      changeFrequency: path === "" ? ("weekly" as const) : ("monthly" as const),
       priority: path === "" ? 1 : 0.6,
       alternates: alternates(path),
-    })),
+    }))
   );
 
   const stores = await getStoreSlugs();
-  const storeEntries: MetadataRoute.Sitemap = stores.flatMap(({ slug, createdAt }) =>
+  const storeEntries: MetadataRoute.Sitemap = stores.flatMap((
+    { slug, createdAt },
+  ) =>
     routing.locales.map((locale) => ({
       url: localizedUrl(locale, `/store/${slug}`),
       lastModified: createdAt,
       changeFrequency: "daily" as const,
       priority: 0.8,
       alternates: alternates(`/store/${slug}`),
-    })),
+    }))
   );
 
   return [...staticEntries, ...storeEntries];

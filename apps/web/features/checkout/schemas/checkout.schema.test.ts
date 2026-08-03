@@ -1,5 +1,8 @@
 import { expect, test } from "vitest";
-import { buildCheckoutFormSchema, checkoutResultSchema } from "./checkout.schema";
+import {
+  buildCheckoutFormSchema,
+  checkoutResultSchema,
+} from "./checkout.schema";
 
 const validValues = {
   customerName: "",
@@ -23,7 +26,10 @@ test("rejects a missing phone", () => {
 
 test("rejects an invalid email when one is provided", () => {
   const schema = buildCheckoutFormSchema(false);
-  const result = schema.safeParse({ ...validValues, customerEmail: "not-an-email" });
+  const result = schema.safeParse({
+    ...validValues,
+    customerEmail: "not-an-email",
+  });
   expect(result.success).toBe(false);
 });
 
@@ -54,7 +60,10 @@ test("does not require a pickup point when the store has none configured", () =>
 });
 
 test("checkoutResultSchema accepts a null whatsappUrl", () => {
-  const result = checkoutResultSchema.safeParse({ order: { id: "o1" }, whatsappUrl: null });
+  const result = checkoutResultSchema.safeParse({
+    order: { id: "o1" },
+    whatsappUrl: null,
+  });
   expect(result.success).toBe(true);
 });
 

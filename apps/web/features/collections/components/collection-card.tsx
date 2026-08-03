@@ -24,7 +24,9 @@ export function CollectionCard({
 }: CollectionCardProps) {
   const t = useTranslations("dashboard.collections");
   const [selectedProduct, setSelectedProduct] = useState("");
-  const items = [...collection.products].sort((a, b) => a.position - b.position);
+  const items = [...collection.products].sort((a, b) =>
+    a.position - b.position
+  );
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">

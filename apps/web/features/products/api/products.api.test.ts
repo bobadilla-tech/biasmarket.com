@@ -1,7 +1,10 @@
 import { afterEach, expect, test, vi } from "vitest";
 
 const apiFetch = vi.fn();
-vi.mock("@/lib/api", () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }));
+vi.mock(
+  "@/lib/api",
+  () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }),
+);
 
 const { productsApi } = await import("./products.api");
 
@@ -61,7 +64,12 @@ test("update PATCHes the product", async () => {
     "/stores/store-1/products/p1",
     {
       method: "PATCH",
-      body: JSON.stringify({ name: "Tee", price: 12, currency: "USD", categoryIds: ["c1"] }),
+      body: JSON.stringify({
+        name: "Tee",
+        price: 12,
+        currency: "USD",
+        categoryIds: ["c1"],
+      }),
     },
     undefined,
   );
@@ -70,7 +78,8 @@ test("update PATCHes the product", async () => {
 test("deleteVariant swallows a failed request instead of rejecting", async () => {
   apiFetch.mockRejectedValue(new Error("not found"));
 
-  await expect(productsApi.deleteVariant("store-1", "p1", "v1")).resolves.toBeUndefined();
+  await expect(productsApi.deleteVariant("store-1", "p1", "v1")).resolves
+    .toBeUndefined();
 });
 
 test("publish PATCHes the publish endpoint", async () => {

@@ -8,6 +8,10 @@ export const inquiriesApi = {
   },
 
   markReviewed(id: string, fallbackErrorMessage?: string) {
-    return apiFetch(`/contact/${id}/review`, { method: "PATCH" }, fallbackErrorMessage);
+    return apiFetch(
+      `/contact/${id}/review`,
+      { method: "PATCH" },
+      fallbackErrorMessage,
+    );
   },
 };

@@ -3,7 +3,10 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
-import { createCollectionSchema, type CreateCollectionInput } from "../schemas/collection.schema";
+import {
+  type CreateCollectionInput,
+  createCollectionSchema,
+} from "../schemas/collection.schema";
 
 interface CollectionFormProps {
   submitting: boolean;
@@ -12,7 +15,9 @@ interface CollectionFormProps {
 
 export function CollectionForm({ submitting, onSubmit }: CollectionFormProps) {
   const t = useTranslations("dashboard.collections");
-  const { register, handleSubmit, reset, watch } = useForm<CreateCollectionInput>({
+  const { register, handleSubmit, reset, watch } = useForm<
+    CreateCollectionInput
+  >({
     resolver: zodResolver(createCollectionSchema),
     defaultValues: { name: "", description: "" },
   });

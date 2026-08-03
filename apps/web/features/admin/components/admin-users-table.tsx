@@ -34,21 +34,30 @@ export function AdminUsersTable({
         </thead>
         <tbody>
           {users.map((user) => (
-            <tr key={user.id} className="border-b border-gray-100 align-top last:border-0">
+            <tr
+              key={user.id}
+              className="border-b border-gray-100 align-top last:border-0"
+            >
               <td className="px-6 py-3 text-gray-900">{user.name ?? "—"}</td>
               <td className="px-6 py-3 text-gray-600">{user.email}</td>
-              <td className="px-6 py-3 text-gray-600">{user.role ?? "seller"}</td>
-              <td className="px-6 py-3 text-gray-600">{storeCounts[user.id] ?? 0}</td>
+              <td className="px-6 py-3 text-gray-600">
+                {user.role ?? "seller"}
+              </td>
+              <td className="px-6 py-3 text-gray-600">
+                {storeCounts[user.id] ?? 0}
+              </td>
               <td className="px-6 py-3">
-                {user.banned ? (
-                  <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700">
-                    {t("status.banned")}
-                  </span>
-                ) : (
-                  <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-                    {t("status.active")}
-                  </span>
-                )}
+                {user.banned
+                  ? (
+                    <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700">
+                      {t("status.banned")}
+                    </span>
+                  )
+                  : (
+                    <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                      {t("status.active")}
+                    </span>
+                  )}
               </td>
               <td className="px-6 py-3">
                 <button
@@ -59,8 +68,8 @@ export function AdminUsersTable({
                   {pendingUserId === user.id
                     ? tCommon("loading")
                     : user.banned
-                      ? t("actions.unban")
-                      : t("actions.ban")}
+                    ? t("actions.unban")
+                    : t("actions.ban")}
                 </button>
               </td>
             </tr>

@@ -64,7 +64,11 @@
   "socialProof": {
     "title": "Pensado desde el flujo real de un GO",
     "intro": "Hecho especialmente para:",
-    "items": ["Group orders de álbumes", "Venta de slots de photocards", "GO's de merch de fans"]
+    "items": [
+      "Group orders de álbumes",
+      "Venta de slots de photocards",
+      "GO's de merch de fans"
+    ]
   },
   "cta": {
     "title": "¿Listo para crear tu GO?",

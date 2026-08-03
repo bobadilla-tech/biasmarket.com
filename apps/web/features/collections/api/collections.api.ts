@@ -1,18 +1,32 @@
 import { apiFetch } from "@/lib/api";
-import { collectionListSchema, type CreateCollectionInput } from "../schemas/collection.schema";
+import {
+  collectionListSchema,
+  type CreateCollectionInput,
+} from "../schemas/collection.schema";
 
 export const collectionsApi = {
   async list(storeId: string, fallbackErrorMessage?: string) {
-    const data = await apiFetch(`/stores/${storeId}/collections`, {}, fallbackErrorMessage);
+    const data = await apiFetch(
+      `/stores/${storeId}/collections`,
+      {},
+      fallbackErrorMessage,
+    );
     return collectionListSchema.parse(data);
   },
 
-  create(storeId: string, values: CreateCollectionInput, fallbackErrorMessage?: string) {
+  create(
+    storeId: string,
+    values: CreateCollectionInput,
+    fallbackErrorMessage?: string,
+  ) {
     return apiFetch(
       `/stores/${storeId}/collections`,
       {
         method: "POST",
-        body: JSON.stringify({ name: values.name, description: values.description || undefined }),
+        body: JSON.stringify({
+          name: values.name,
+          description: values.description || undefined,
+        }),
       },
       fallbackErrorMessage,
     );
@@ -26,7 +40,12 @@ export const collectionsApi = {
     );
   },
 
-  addProduct(storeId: string, collectionId: string, productId: string, fallbackErrorMessage?: string) {
+  addProduct(
+    storeId: string,
+    collectionId: string,
+    productId: string,
+    fallbackErrorMessage?: string,
+  ) {
     return apiFetch(
       `/stores/${storeId}/collections/${collectionId}/products`,
       { method: "POST", body: JSON.stringify({ productId }) },

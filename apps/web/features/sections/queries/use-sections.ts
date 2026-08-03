@@ -7,7 +7,10 @@ export const sectionsKeys = {
   byStore: (storeId: string) => ["sections", storeId] as const,
 };
 
-export function useSections(storeId: string | undefined, fallbackErrorMessage?: string) {
+export function useSections(
+  storeId: string | undefined,
+  fallbackErrorMessage?: string,
+) {
   return useQuery({
     queryKey: sectionsKeys.byStore(storeId as string),
     queryFn: () => sectionsApi.list(storeId as string, fallbackErrorMessage),

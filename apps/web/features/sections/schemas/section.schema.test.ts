@@ -3,7 +3,13 @@ import { sectionFormSchema, storeSectionListSchema } from "./section.schema";
 
 test("storeSectionListSchema parses each content shape per its type", () => {
   const result = storeSectionListSchema.parse([
-    { id: "s1", type: "COLLECTION", collectionId: "c1", content: {}, position: 0 },
+    {
+      id: "s1",
+      type: "COLLECTION",
+      collectionId: "c1",
+      content: {},
+      position: 0,
+    },
     {
       id: "s2",
       type: "BANNER",
@@ -11,7 +17,13 @@ test("storeSectionListSchema parses each content shape per its type", () => {
       content: { imageUrl: "https://x/y.png", alt: "banner" },
       position: 1,
     },
-    { id: "s3", type: "TEXT_BLOCK", collectionId: null, content: { body: "hi" }, position: 2 },
+    {
+      id: "s3",
+      type: "TEXT_BLOCK",
+      collectionId: null,
+      content: { body: "hi" },
+      position: 2,
+    },
   ]);
 
   expect(result).toHaveLength(3);
@@ -33,7 +45,11 @@ test("sectionFormSchema requires collectionId when type is COLLECTION", () => {
 });
 
 test("sectionFormSchema accepts COLLECTION with a collectionId set", () => {
-  const result = sectionFormSchema.safeParse({ ...base, type: "COLLECTION", collectionId: "c1" });
+  const result = sectionFormSchema.safeParse({
+    ...base,
+    type: "COLLECTION",
+    collectionId: "c1",
+  });
   expect(result.success).toBe(true);
 });
 

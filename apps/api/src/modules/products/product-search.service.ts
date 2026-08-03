@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import type { Prisma } from '@biasmarket/db';
-import { PrismaService } from '../../prisma/prisma.service.js';
+import { Injectable } from "@nestjs/common";
+import type { Prisma } from "@biasmarket/db";
+import { PrismaService } from "../../prisma/prisma.service.js";
 
 @Injectable()
 export class ProductSearchService {
@@ -8,10 +8,10 @@ export class ProductSearchService {
 
   async search(page: number, limit: number, q: string | undefined) {
     const where: Prisma.ProductWhereInput = {
-      status: 'PUBLISHED',
+      status: "PUBLISHED",
       deletedAt: null,
       store: { owner: { banned: { not: true } } },
-      ...(q && { name: { contains: q, mode: 'insensitive' as const } }),
+      ...(q && { name: { contains: q, mode: "insensitive" as const } }),
     };
 
     const [products, total] = await Promise.all([
@@ -25,7 +25,7 @@ export class ProductSearchService {
           images: true,
           store: { select: { name: true, slug: true } },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         skip: (page - 1) * limit,
         take: limit,
       }),

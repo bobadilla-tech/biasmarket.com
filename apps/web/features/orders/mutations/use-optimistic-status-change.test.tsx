@@ -8,21 +8,31 @@ import type { Order } from "../schemas/order.schema";
 
 // Silences "not configured to support act(...)" — RTL sets this once it
 // renders something, but this file drives updates via `act` directly.
-(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean })
+  .IS_REACT_ACT_ENVIRONMENT = true;
 
 const apiFetch = vi.fn();
-vi.mock("@/lib/api", () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }));
+vi.mock(
+  "@/lib/api",
+  () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }),
+);
 
 const toast = vi.fn();
 vi.mock("sonner", () => ({ toast: (...args: unknown[]) => toast(...args) }));
 
-const { useOptimisticStatusChange } = await import("./use-optimistic-status-change");
+const { useOptimisticStatusChange } = await import(
+  "./use-optimistic-status-change"
+);
 
-const t = ((key: string) => key) as unknown as Parameters<typeof useOptimisticStatusChange>[1];
+const t = ((key: string) => key) as unknown as Parameters<
+  typeof useOptimisticStatusChange
+>[1];
 
 function createWrapper(queryClient: QueryClient) {
   return function Wrapper({ children }: { children: ReactNode }) {
-    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+    return (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
   };
 }
 
@@ -57,7 +67,9 @@ afterEach(() => {
 
 test("scheduleReview patches the cache immediately and commits after the undo window", async () => {
   apiFetch.mockResolvedValue({});
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   queryClient.setQueryData(ordersKeys.byStore("store-1"), [order]);
 
   const { result } = renderHook(() => useOptimisticStatusChange("store-1", t), {
@@ -68,9 +80,14 @@ test("scheduleReview patches the cache immediately and commits after the undo wi
     result.current.scheduleReview(order, "Verified");
   });
 
-  const patched = queryClient.getQueryData<Order[]>(ordersKeys.byStore("store-1"));
+  const patched = queryClient.getQueryData<Order[]>(
+    ordersKeys.byStore("store-1"),
+  );
   expect(patched?.[0].paymentStatus).toBe("VERIFIED");
-  expect(result.current.pending["o1"]).toEqual({ field: "paymentStatus", previousValue: "PAYMENT_SUBMITTED" });
+  expect(result.current.pending["o1"]).toEqual({
+    field: "paymentStatus",
+    previousValue: "PAYMENT_SUBMITTED",
+  });
   expect(apiFetch).not.toHaveBeenCalled();
 
   await act(async () => {
@@ -88,7 +105,9 @@ test("scheduleReview patches the cache immediately and commits after the undo wi
 
 test("clicking undo reverts the patch and never commits", async () => {
   apiFetch.mockResolvedValue({});
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   queryClient.setQueryData(ordersKeys.byStore("store-1"), [order]);
 
   const { result } = renderHook(() => useOptimisticStatusChange("store-1", t), {
@@ -106,7 +125,9 @@ test("clicking undo reverts the patch and never commits", async () => {
     options.action.onClick();
   });
 
-  const reverted = queryClient.getQueryData<Order[]>(ordersKeys.byStore("store-1"));
+  const reverted = queryClient.getQueryData<Order[]>(
+    ordersKeys.byStore("store-1"),
+  );
   expect(reverted?.[0].fulfillmentStatus).toBe("ORDERING");
   expect(result.current.pending["o1"]).toBeUndefined();
 

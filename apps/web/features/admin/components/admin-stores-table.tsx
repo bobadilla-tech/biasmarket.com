@@ -9,7 +9,9 @@ interface AdminStoresTableProps {
   onImpersonate: (store: AdminStore) => void;
 }
 
-export function AdminStoresTable({ stores, impersonatingUserId, onImpersonate }: AdminStoresTableProps) {
+export function AdminStoresTable(
+  { stores, impersonatingUserId, onImpersonate }: AdminStoresTableProps,
+) {
   const t = useTranslations("admin.stores");
 
   return (
@@ -28,12 +30,17 @@ export function AdminStoresTable({ stores, impersonatingUserId, onImpersonate }:
           {stores.map((store) => {
             const isImpersonating = impersonatingUserId === store.owner.id;
             return (
-              <tr key={store.id} className="border-b border-gray-100 align-top last:border-0">
+              <tr
+                key={store.id}
+                className="border-b border-gray-100 align-top last:border-0"
+              >
                 <td className="px-6 py-3 text-gray-900">{store.name}</td>
                 <td className="px-6 py-3 text-gray-600">{store.slug}</td>
                 <td className="px-6 py-3 text-gray-600">
                   {store.owner.name ?? store.owner.email}
-                  <div className="text-xs text-gray-400">{store.owner.email}</div>
+                  <div className="text-xs text-gray-400">
+                    {store.owner.email}
+                  </div>
                 </td>
                 <td className="px-6 py-3 text-gray-600">
                   {new Date(store.createdAt).toLocaleDateString()}
@@ -44,7 +51,9 @@ export function AdminStoresTable({ stores, impersonatingUserId, onImpersonate }:
                     disabled={isImpersonating}
                     className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-60"
                   >
-                    {isImpersonating ? t("actions.impersonating") : t("actions.impersonate")}
+                    {isImpersonating
+                      ? t("actions.impersonating")
+                      : t("actions.impersonate")}
                   </button>
                 </td>
               </tr>

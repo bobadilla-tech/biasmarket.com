@@ -6,4 +6,7 @@
  * touching in the same change; new code should import from
  * `@/features/stores` directly.
  */
-export { useDashboardStore as useStore, type DashboardStore } from "@/features/stores";
+export {
+  type DashboardStore,
+  useDashboardStore as useStore,
+} from "@/features/stores";

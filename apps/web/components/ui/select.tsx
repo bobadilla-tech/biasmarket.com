@@ -6,12 +6,17 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   selectClassName?: string;
 }
 
-export function Select({ className, selectClassName, children, ...props }: SelectProps) {
+export function Select(
+  { className, selectClassName, children, ...props }: SelectProps,
+) {
   return (
     <div className={cn("relative", className)}>
       <select
         {...props}
-        className={cn("h-full w-full appearance-none pl-3 pr-8", selectClassName)}
+        className={cn(
+          "h-full w-full appearance-none pl-3 pr-8",
+          selectClassName,
+        )}
       >
         {children}
       </select>
