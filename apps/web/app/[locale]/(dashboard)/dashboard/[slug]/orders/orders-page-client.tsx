@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useDashboardStore } from "@/features/stores";
+import { useCancelOrder } from "@/features/orders";
 import {
   ConfirmTransitionDialog,
   matchesTab,
@@ -22,6 +23,7 @@ import {
   useOptimisticStatusChange,
   useOrders,
   useRegisterPayment,
+  CancelOrderDialog,
 } from "@/features/orders";
 
 function errorMessage(error: unknown) {
@@ -44,6 +46,7 @@ export function OrdersPageClient() {
   const [activeTab, setActiveTab] = useState<OrdersTab>("all");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [paymentPreviewUrl, setPaymentPreviewUrl] = useState<string | null>(
     null,
   );
@@ -66,11 +69,13 @@ export function OrdersPageClient() {
     advanceFulfillment,
   } = useOptimisticStatusChange(storeId, t);
   const registerPayment = useRegisterPayment(storeId, tCommon("networkError"));
+  const cancelOrder = useCancelOrder(storeId, tCommon("networkError"));
 
   const error = errorMessage(ordersQuery.error) ??
     errorMessage(reviewPayment.error) ??
     errorMessage(advanceFulfillment.error) ??
-    errorMessage(registerPayment.error);
+    errorMessage(registerPayment.error) ??
+    errorMessage(cancelOrder.error);
 
   const fulfillmentLabels: Record<string, string> = {
     ORDERING: t("fulfillmentLabels.ORDERING"),
@@ -200,15 +205,13 @@ export function OrdersPageClient() {
           </p>
         </div>
 
-        {error
-          ? (
-            <Card className="rounded-2xl border-[#f3cbd8] bg-[#fff3f7] py-0 shadow-none">
-              <CardContent className="px-4 py-3 text-sm text-[#b24368]">
-                {error}
-              </CardContent>
-            </Card>
-          )
-          : null}
+        {error ? (
+          <Card className="rounded-2xl border-[#f3cbd8] bg-[#fff3f7] py-0 shadow-none">
+            <CardContent className="px-4 py-3 text-sm text-[#b24368]">
+              {error}
+            </CardContent>
+          </Card>
+        ) : null}
 
         <Card className="overflow-x-auto rounded-[30px] border-[#eadcf8] bg-white py-0 shadow-sm">
           <CardContent className="px-0">
@@ -230,6 +233,24 @@ export function OrdersPageClient() {
         <PaymentProofLightbox
           url={paymentPreviewUrl}
           onClose={() => setPaymentPreviewUrl(null)}
+        />
+
+        <CancelOrderDialog
+          open={cancelDialogOpen}
+          onClose={() => setCancelDialogOpen(false)}
+          order={selectedOrder}
+          pending={cancelOrder.isPending}
+          onConfirm={async (values) => {
+            if (!selectedOrder) return;
+
+            await cancelOrder.mutateAsync({
+              orderId: selectedOrder.id,
+              values,
+            });
+
+            setCancelDialogOpen(false);
+            setDetailsOpen(false);
+          }}
         />
 
         <OrderDetailSheet
@@ -254,9 +275,11 @@ export function OrdersPageClient() {
           }}
           onPreviewPayment={setPaymentPreviewUrl}
           onApprove={() =>
-            selectedOrder && handleReviewClick(selectedOrder, "approve")}
+            selectedOrder && handleReviewClick(selectedOrder, "approve")
+          }
           onReject={() =>
-            selectedOrder && handleReviewClick(selectedOrder, "reject")}
+            selectedOrder && handleReviewClick(selectedOrder, "reject")
+          }
           onAdvance={async () => {
             if (!selectedOrder) return;
             const next = NEXT_FULFILLMENT[selectedOrder.fulfillmentStatus];
@@ -266,6 +289,9 @@ export function OrdersPageClient() {
               status: next,
             });
             setDetailsOpen(false);
+          }}
+          onCancel={() => {
+            setCancelDialogOpen(true);
           }}
         />
 
@@ -280,10 +306,10 @@ export function OrdersPageClient() {
           onConfirm={handleConfirmTransition}
           {...(confirmTarget?.kind === "review" &&
             confirmTarget.decision === "reject" && {
-            reason: rejectReason,
-            onReasonChange: setRejectReason,
-            reasonRequired: true,
-          })}
+              reason: rejectReason,
+              onReasonChange: setRejectReason,
+              reasonRequired: true,
+            })}
         />
       </div>
     </div>

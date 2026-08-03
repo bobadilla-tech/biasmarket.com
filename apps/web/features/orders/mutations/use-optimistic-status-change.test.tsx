@@ -46,6 +46,7 @@ const order: Order = {
   pendingAmount: 0,
   paidPercentage: 100,
   currency: "USD",
+  status: "ACTIVE",
   paymentStatus: "PAYMENT_SUBMITTED",
   fulfillmentStatus: "ORDERING",
   deliveryMethodType: "PICKUP",

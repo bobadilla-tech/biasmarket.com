@@ -198,6 +198,9 @@ model Order {
   paymentStatus      PaymentStatus      @default(PENDING_PAYMENT)
   paymentRejectionReason String?
   fulfillmentStatus  FulfillmentStatus  @default(ORDERING)
+  status             OrderStatus        @default(ACTIVE)
+  cancellationResolution CancellationResolution?
+  cancellationReason String?
   totalAmount        Decimal            @db.Decimal(10, 2)
   requiredAmount     Decimal            @db.Decimal(10, 2)
   currency           String
@@ -283,6 +286,17 @@ enum FulfillmentStatus {
   IN_TRANSIT
   READY
   COMPLETED
+}
+
+enum OrderStatus {
+  ACTIVE
+  CANCELLED
+}
+
+enum CancellationResolution {
+  REFUNDED
+  RETAINED
+  STORE_CREDIT
 }
 
 enum ProofStatus {

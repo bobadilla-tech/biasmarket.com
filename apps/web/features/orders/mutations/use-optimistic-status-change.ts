@@ -7,6 +7,7 @@ import type { useTranslations } from "next-intl";
 import { ordersKeys } from "../queries/use-orders";
 import { useReviewPayment } from "./use-review-payment";
 import { useAdvanceFulfillment } from "./use-advance-fulfillment";
+import { useCancelOrder} from "./use-cancel-order";
 import type { Order } from "../schemas/order.schema";
 
 const UNDO_WINDOW_MS = 8000;
@@ -35,6 +36,7 @@ export function useOptimisticStatusChange(
   const queryClient = useQueryClient();
   const reviewPayment = useReviewPayment(storeId);
   const advanceFulfillment = useAdvanceFulfillment(storeId);
+  const cancelOrder = useCancelOrder(storeId);
   const [pending, setPending] = useState<PendingMap>({});
 
   const patch = (orderId: string, field: StatusField, value: string) => {

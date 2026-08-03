@@ -10,6 +10,7 @@ import { OrderController } from "./order.controller.js";
 import { OrderRepository } from "./order.repository.js";
 import { ReviewPaymentUseCase } from "../application/review-payment.usecase.js";
 import { AdvanceFulfillmentUseCase } from "../application/advance-fulfillment.usecase.js";
+import { CancelOrderUseCase } from "../application/cancel-order.usecase.js";
 import { PrismaService } from "../../../prisma/prisma.service.js";
 import { StorageService } from "../../../storage/storage.service.js";
 
@@ -47,6 +48,7 @@ describe("OrderController.addPayment", () => {
         { provide: OrderRepository, useValue: orders },
         { provide: ReviewPaymentUseCase, useValue: reviewPayment },
         { provide: AdvanceFulfillmentUseCase, useValue: { execute: vi.fn() } },
+        { provide: CancelOrderUseCase, useValue: { execute: vi.fn() } },
         { provide: PrismaService, useValue: prisma },
         { provide: StorageService, useValue: { uploadPaymentImage: vi.fn() } },
       ],

@@ -513,7 +513,17 @@
     "undoToast": {
       "message": "Pedido marcado como {status}.",
       "undo": "Deshacer"
-    }
+    },
+    "common": {
+      "cancel": "Cancelar"
+    },
+    "cancelOrder": "Cancelar pedido",
+    "cancelOrderDescription": "¿Estás seguro de que deseas cancelar este pedido? El monto recibido debe tener un tratamiento definido antes de completar la cancelación.",
+    "cancelPaymentHandling": "¿Qué debe pasar con el pago recibido?",
+    "refunded": "Reembolsado",
+    "retained": "Retenido como penalidad de cancelación",
+    "storeCredit": "Saldo a favor del comprador",
+    "cancelReasonPlaceholder": "Motivo de cancelación (opcional)"
   },
   "overview": {
     "title": "Resumen",
