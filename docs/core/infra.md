@@ -70,10 +70,7 @@ exists for host mode — everything documented here assumes `docker:dev`.
   infra/docker/docker-compose.dev.yml exec api pnpm --filter @biasmarket/db
   exec prisma <command>`
   so they run inside the container against the Docker-internal `db` hostname.
-- **Edited `schema.prisma`, but the API isn't picking it up.** The compose
-  file's live-reload only covers application source, not schema changes that
-  need a fresh `prisma generate`. Run
-  `docker compose -f
-  infra/docker/docker-compose.dev.yml restart api` (or a
-  full `pnpm
-  docker:dev` down/up) after any Prisma schema edit.
+- ~~Edited `schema.prisma`, API isn't picking it up~~ — fixed: the `api`
+  container watches `schema.prisma` and re-runs `prisma generate`
+  automatically, restarting the app once the client regenerates. No manual
+  restart needed anymore (see [readme.md](readme.md)'s hot-reload section).

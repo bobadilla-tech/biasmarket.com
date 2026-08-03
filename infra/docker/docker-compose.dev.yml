@@ -68,16 +68,7 @@ services:
       - .env.example
       - path: .env.local
         required: false
-    command: >
-      sh -c "
-        pnpm install --frozen-lockfile --filter=\"api...\" &&
-        pnpm --filter @biasmarket/db run db:generate &&
-        pnpm --filter @biasmarket/db exec prisma migrate deploy &&
-        pnpm exec turbo run build --filter=@biasmarket/i18n --filter=@biasmarket/types --filter=@biasmarket/utils &&
-        pnpm --filter api exec node scripts/seed/run.ts &&
-        pnpm --filter api exec nest build &&
-        pnpm exec concurrently -k -n pkg,build,run \"pnpm exec turbo watch build --filter=@biasmarket/i18n --filter=@biasmarket/types --filter=@biasmarket/utils\" \"pnpm --filter api exec nest build --watch\" \"pnpm exec nodemon --watch apps/api/dist --watch packages/i18n/dist --watch packages/types/dist --watch packages/utils/dist -e js,json --delay 300ms --exec 'node apps/api/dist/main.js'\"
-      "
+    command: sh infra/docker/scripts/api-dev.sh
     volumes:
       - ../..:/app
       - api_root_node_modules:/app/node_modules
@@ -111,11 +102,7 @@ services:
       - .env.example
       - path: .env.local
         required: false
-    command: >
-      sh -c "
-        pnpm install --frozen-lockfile --filter=\"web...\" &&
-        pnpm exec concurrently -k -n pkg,dev \"pnpm exec turbo watch build --filter=@biasmarket/i18n --filter=@biasmarket/types\" \"pnpm --filter web run dev\"
-      "
+    command: sh infra/docker/scripts/web-dev.sh
     volumes:
       - ../..:/app
       - web_root_node_modules:/app/node_modules
