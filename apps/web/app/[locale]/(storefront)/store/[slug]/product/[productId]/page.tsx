@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { StoreLogo } from "@/components/store-logo";
@@ -16,6 +17,17 @@ async function getPublicProduct(slug: string, productId: string) {
   if (!res.ok) return null;
 
   return res.json();
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string; productId: string }>;
+}): Promise<Metadata> {
+  const { slug, productId } = await params;
+  const data = await getPublicProduct(slug, productId);
+  if (!data) return {};
+  return { title: data.product.name };
 }
 
 export default async function ProductDetailPage({

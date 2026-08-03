@@ -38,6 +38,54 @@ function buildCustomerVerificationEmailHtml(
   `;
 }
 
+function buildPasswordResetEmailHtml(url: string, storeName: string): string {
+  const safeStoreName = escapeHtml(storeName);
+  const safeUrl = escapeHtml(url);
+  return `
+    <p>Hola,</p>
+    <p>Restablece tu contraseña en ${safeStoreName} haciendo clic en el siguiente enlace:</p>
+    <p><a href="${safeUrl}">${safeUrl}</a></p>
+    <p>Si no solicitaste esto, ignora este correo.</p>
+    <hr />
+    <p>Hi,</p>
+    <p>Reset your password at ${safeStoreName} by clicking the link below:</p>
+    <p><a href="${safeUrl}">${safeUrl}</a></p>
+    <p>If you didn't request this, ignore this email.</p>
+  `;
+}
+
+function buildEmailChangeEmailHtml(url: string, storeName: string): string {
+  const safeStoreName = escapeHtml(storeName);
+  const safeUrl = escapeHtml(url);
+  return `
+    <p>Hola,</p>
+    <p>Confirma tu nuevo correo para tu cuenta en ${safeStoreName} haciendo clic en el siguiente enlace:</p>
+    <p><a href="${safeUrl}">${safeUrl}</a></p>
+    <p>Si no solicitaste esto, ignora este correo.</p>
+    <hr />
+    <p>Hi,</p>
+    <p>Confirm your new email for your account at ${safeStoreName} by clicking the link below:</p>
+    <p><a href="${safeUrl}">${safeUrl}</a></p>
+    <p>If you didn't request this, ignore this email.</p>
+  `;
+}
+
+function buildPhoneChangeEmailHtml(url: string, storeName: string): string {
+  const safeStoreName = escapeHtml(storeName);
+  const safeUrl = escapeHtml(url);
+  return `
+    <p>Hola,</p>
+    <p>Confirma el cambio de número de teléfono en tu cuenta de ${safeStoreName} haciendo clic en el siguiente enlace:</p>
+    <p><a href="${safeUrl}">${safeUrl}</a></p>
+    <p>Si no solicitaste esto, ignora este correo.</p>
+    <hr />
+    <p>Hi,</p>
+    <p>Confirm the phone number change on your ${safeStoreName} account by clicking the link below:</p>
+    <p><a href="${safeUrl}">${safeUrl}</a></p>
+    <p>If you didn't request this, ignore this email.</p>
+  `;
+}
+
 @Injectable()
 export class CustomerAccountService {
   private readonly logger = new Logger(CustomerAccountService.name);
@@ -91,10 +139,8 @@ export class CustomerAccountService {
 
     try {
       const secret = requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET");
-      const token = createCustomerAccountToken(customer.id, secret);
-      const webUrl = process.env.WEB_URL ?? "http://localhost:3001";
-      const url =
-        `${webUrl}/store/${store.slug}/account/confirm?token=${token}`;
+      const token = createCustomerAccountToken(customer.id, secret, "confirm");
+      const url = this.confirmUrl(store.slug, token);
 
       await this.mailer.send({
         to: customer.email,
@@ -109,6 +155,91 @@ export class CustomerAccountService {
     }
   }
 
+  async sendPasswordResetEmail(customer: Customer, store: Store): Promise<void> {
+    if (!customer.email) return;
+
+    try {
+      const secret = requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET");
+      const token = createCustomerAccountToken(customer.id, secret, "reset");
+      const url = this.confirmUrl(store.slug, token);
+
+      await this.mailer.send({
+        to: customer.email,
+        subject: "Restablece tu contraseña — Bias Market / Reset your password",
+        html: buildPasswordResetEmailHtml(url, store.name),
+      });
+    } catch (err) {
+      this.logger.error(
+        `Failed to send password reset email for ${customer.id}`,
+        err,
+      );
+    }
+  }
+
+  // Sent to the *new* address — that's what proves ownership of it.
+  async sendEmailChangeConfirmation(
+    customer: Customer,
+    store: Store,
+    newEmail: string,
+  ): Promise<void> {
+    try {
+      const secret = requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET");
+      const token = createCustomerAccountToken(
+        customer.id,
+        secret,
+        "change-email",
+      );
+      const url = this.confirmUrl(store.slug, token);
+
+      await this.mailer.send({
+        to: newEmail,
+        subject: "Confirma tu nuevo correo — Bias Market / Confirm your new email",
+        html: buildEmailChangeEmailHtml(url, store.name),
+      });
+    } catch (err) {
+      this.logger.error(
+        `Failed to send email-change confirmation for ${customer.id}`,
+        err,
+      );
+    }
+  }
+
+  // Sent to the *current, already-verified* email — there's no SMS channel
+  // in this app to prove control of the new phone number, so control of the
+  // account's existing verified email stands in for it instead.
+  async sendPhoneChangeConfirmation(
+    customer: Customer,
+    store: Store,
+  ): Promise<void> {
+    if (!customer.email) return;
+
+    try {
+      const secret = requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET");
+      const token = createCustomerAccountToken(
+        customer.id,
+        secret,
+        "change-phone",
+      );
+      const url = this.confirmUrl(store.slug, token);
+
+      await this.mailer.send({
+        to: customer.email,
+        subject: "Confirma tu nuevo teléfono — Bias Market / Confirm your new phone",
+        html: buildPhoneChangeEmailHtml(url, store.name),
+      });
+    } catch (err) {
+      this.logger.error(
+        `Failed to send phone-change confirmation for ${customer.id}`,
+        err,
+      );
+    }
+  }
+
+  private confirmUrl(storeSlug: string, token: string): string {
+    const webUrl = process.env.WEB_URL ?? "http://localhost:3001";
+    return `${webUrl}/store/${storeSlug}/account/confirm?token=${token}`;
+  }
+
   async confirmAccount(storeSlug: string, token: string | undefined) {
     if (!token) throw new BadRequestException("Enlace inválido o expirado");
 
@@ -121,17 +252,31 @@ export class CustomerAccountService {
     const verified = verifyCustomerAccountToken(token, secret);
     if (!verified) throw new BadRequestException("Enlace inválido o expirado");
 
-    const customer = await this.prisma.customer.findUnique({
+    let customer = await this.prisma.customer.findUnique({
       where: { id: verified.customerId },
     });
     if (!customer || customer.storeId !== store.id) {
       throw new BadRequestException("Enlace inválido o expirado");
     }
 
-    if (!customer.emailVerified) {
-      await this.prisma.customer.update({
+    if (verified.purpose === "confirm" && !customer.emailVerified) {
+      customer = await this.prisma.customer.update({
         where: { id: customer.id },
         data: { emailVerified: true },
+      });
+    } else if (verified.purpose === "change-email" && customer.pendingEmail) {
+      customer = await this.prisma.customer.update({
+        where: { id: customer.id },
+        data: {
+          email: customer.pendingEmail,
+          pendingEmail: null,
+          emailVerified: true,
+        },
+      });
+    } else if (verified.purpose === "change-phone" && customer.pendingPhone) {
+      customer = await this.prisma.customer.update({
+        where: { id: customer.id },
+        data: { phone: customer.pendingPhone, pendingPhone: null },
       });
     }
 
@@ -149,10 +294,12 @@ export class CustomerAccountService {
     });
 
     return {
+      purpose: verified.purpose,
       customer: {
         name: customer.name,
         email: customer.email,
         phone: customer.phone,
+        hasPassword: Boolean(customer.passwordHash),
       },
       orders,
     };

@@ -31,5 +31,6 @@ import { NotificationsModule } from "../notifications/notifications.module.js";
     CustomerAccountService,
     CustomersService,
   ],
+  exports: [CustomerAccountService],
 })
 export class OrdersModule {}

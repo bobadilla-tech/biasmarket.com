@@ -13,6 +13,7 @@ import {
   verifyCustomerAccountToken,
 } from "@biasmarket/utils/customer-account-token";
 import { PrismaService } from "../../prisma/prisma.service.js";
+import { CustomerAccountService } from "../orders/application/customer-account.service.js";
 
 function requiredEnv(name: string): string {
   const value = process.env[name];
@@ -35,7 +36,10 @@ export function derivePasswordVersion(passwordHash: string): string {
 
 @Injectable()
 export class CustomerAuthService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private customerAccount: CustomerAccountService,
+  ) {}
 
   private async findStoreBySlug(slug: string) {
     const store = await this.prisma.store.findUnique({ where: { slug } });
@@ -66,7 +70,12 @@ export class CustomerAuthService {
 
     const secret = requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET");
     const verified = verifyCustomerAccountToken(token, secret);
-    if (!verified) throw new BadRequestException("Enlace inválido o expirado");
+    if (
+      !verified ||
+      (verified.purpose !== "confirm" && verified.purpose !== "reset")
+    ) {
+      throw new BadRequestException("Enlace inválido o expirado");
+    }
 
     const customer = await this.prisma.customer.findUnique({
       where: { id: verified.customerId },
@@ -77,12 +86,14 @@ export class CustomerAuthService {
 
     // The magic-link token itself is the "verified proof of email ownership"
     // this endpoint requires — it's not single-use by itself (a stateless
-    // HMAC token, replayable within its own 30-day TTL). Single-use for
-    // *registration* specifically comes from this check instead: once
-    // passwordHash is set, every later register call for this customer is
-    // rejected, so the same magic-link token can't be replayed to overwrite
-    // an already-set password.
-    if (customer.passwordHash) {
+    // HMAC token, replayable within its own TTL). Single-use for *initial
+    // registration* specifically comes from this check instead: once
+    // passwordHash is set, a "confirm"-purpose token can't set it again, so
+    // it can't be replayed to overwrite an already-set password. A
+    // "reset"-purpose token is exempt — that's the whole point of forgot
+    // password — and gets a much shorter TTL to bound the risk (see
+    // `ttlForPurpose` in the token util).
+    if (verified.purpose === "confirm" && customer.passwordHash) {
       throw new ConflictException(
         "Esta cuenta ya tiene una contraseña configurada",
       );
@@ -91,10 +102,25 @@ export class CustomerAuthService {
     const passwordHash = await hashPassword(password);
     await this.prisma.customer.update({
       where: { id: customer.id },
-      data: { passwordHash, emailVerified: true },
+      data: verified.purpose === "confirm"
+        ? { passwordHash, emailVerified: true }
+        : { passwordHash },
     });
 
     return { ok: true };
+  }
+
+  async forgotPassword(slug: string, phone: string): Promise<void> {
+    const store = await this.findStoreBySlug(slug);
+    const customer = await this.prisma.customer.findUnique({
+      where: { storeId_phone: { storeId: store.id, phone } },
+    });
+
+    // Always resolve — never confirm or deny whether an account exists for
+    // this phone number.
+    if (!customer?.passwordHash || !customer.email) return;
+
+    await this.customerAccount.sendPasswordResetEmail(customer, store);
   }
 
   async login(slug: string, phone: string, password: string): Promise<string> {
@@ -186,6 +212,8 @@ export class CustomerAuthService {
         email: customer.email,
         phone: customer.phone,
         emailVerified: customer.emailVerified,
+        pendingEmail: customer.pendingEmail,
+        pendingPhone: customer.pendingPhone,
       },
       orders,
     };
@@ -194,14 +222,67 @@ export class CustomerAuthService {
   async updateProfile(
     slug: string,
     session: { id: string; storeId: string },
-    name: string,
+    dto: { name: string; email?: string; phone?: string },
   ) {
-    await this.assertStoreMatch(slug, session.storeId);
+    const store = await this.findStoreBySlug(slug);
+    if (store.id !== session.storeId) throw new ForbiddenException("No autorizado");
 
-    const customer = await this.prisma.customer.update({
+    const customer = await this.prisma.customer.findUniqueOrThrow({
       where: { id: session.id },
-      data: { name },
     });
-    return { name: customer.name };
+
+    const data: { name: string; pendingEmail?: string; pendingPhone?: string } = {
+      name: dto.name,
+    };
+
+    let sendEmailChangeTo: string | undefined;
+    let sendPhoneChange = false;
+
+    if (dto.email && dto.email !== customer.email) {
+      const clash = await this.prisma.customer.findFirst({
+        where: { storeId: store.id, email: dto.email, NOT: { id: customer.id } },
+      });
+      if (clash) throw new ConflictException("Este correo ya está en uso");
+
+      data.pendingEmail = dto.email;
+      sendEmailChangeTo = dto.email;
+    }
+
+    if (dto.phone && dto.phone !== customer.phone) {
+      if (!customer.emailVerified) {
+        throw new BadRequestException(
+          "Verifica tu correo antes de cambiar tu teléfono",
+        );
+      }
+      const clash = await this.prisma.customer.findUnique({
+        where: { storeId_phone: { storeId: store.id, phone: dto.phone } },
+      });
+      if (clash) throw new ConflictException("Este teléfono ya está en uso");
+
+      data.pendingPhone = dto.phone;
+      sendPhoneChange = true;
+    }
+
+    const updated = await this.prisma.customer.update({
+      where: { id: customer.id },
+      data,
+    });
+
+    if (sendEmailChangeTo) {
+      await this.customerAccount.sendEmailChangeConfirmation(
+        updated,
+        store,
+        sendEmailChangeTo,
+      );
+    }
+    if (sendPhoneChange) {
+      await this.customerAccount.sendPhoneChangeConfirmation(updated, store);
+    }
+
+    return {
+      name: updated.name,
+      pendingEmail: updated.pendingEmail,
+      pendingPhone: updated.pendingPhone,
+    };
   }
 }
