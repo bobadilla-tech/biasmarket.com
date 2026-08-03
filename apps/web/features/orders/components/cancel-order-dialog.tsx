@@ -24,7 +24,7 @@ interface CancelOrderDialogProps {
   onClose: () => void;
   onConfirm: (values: {
     resolution: CancellationResolution;
-    note: string;
+    reason: string;
   }) => Promise<void> | void;
 }
 
@@ -40,7 +40,7 @@ export function CancelOrderDialog({
   const [resolution, setResolution] =
     useState<CancellationResolution>("REFUNDED");
 
-  const [note, setNote] = useState("");
+  const [reason, setReason] = useState("");
 
   if (!order) return null;
 
@@ -119,18 +119,20 @@ export function CancelOrderDialog({
 
           {/* Note */}
           <Textarea
-            value={note}
-            onChange={(event) => setNote(event.target.value)}
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
             placeholder={t("cancelReasonPlaceholder")}
             className="min-h-24 rounded-xl"
           />
         </div>
 
         <AlertDialogFooter>
-          <AlertDialogClose>
-            <Button type="button" variant="outline" className="rounded-xl">
-              {t("common.cancel")}
-            </Button>
+          <AlertDialogClose
+            render={
+              <Button type="button" variant="outline" className="rounded-xl" />
+            }
+          >
+            {t("common.cancel")}
           </AlertDialogClose>
 
           <Button
@@ -140,7 +142,7 @@ export function CancelOrderDialog({
             onClick={() =>
               onConfirm({
                 resolution,
-                note,
+                reason,
               })
             }
             className="rounded-xl"

@@ -46,7 +46,7 @@ export function OrdersPageClient() {
   const [activeTab, setActiveTab] = useState<OrdersTab>("all");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);  
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [paymentPreviewUrl, setPaymentPreviewUrl] = useState<string | null>(
     null,
   );
@@ -60,7 +60,6 @@ export function OrdersPageClient() {
     } | null
   >(null);
   const [rejectReason, setRejectReason] = useState("");
-  
 
   const {
     pending,
@@ -76,7 +75,6 @@ export function OrdersPageClient() {
     errorMessage(reviewPayment.error) ??
     errorMessage(advanceFulfillment.error) ??
     errorMessage(registerPayment.error);
-  
 
   const fulfillmentLabels: Record<string, string> = {
     ORDERING: t("fulfillmentLabels.ORDERING"),
@@ -238,8 +236,9 @@ export function OrdersPageClient() {
 
         <CancelOrderDialog
           open={cancelDialogOpen}
-          onOpenChange={setCancelDialogOpen}
+          onClose={() => setCancelDialogOpen(false)}
           order={selectedOrder}
+          pending={cancelOrder.isPending}
           onConfirm={(values) => {
             if (!selectedOrder) return;
 

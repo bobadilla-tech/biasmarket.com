@@ -11,6 +11,7 @@ const baseOrder = {
   pendingAmount: 60,
   paidPercentage: 40,
   currency: "USD",
+  status: "ACTIVE" as const,
   paymentStatus: "PARTIALLY_PAID" as const,
   fulfillmentStatus: "ORDERING" as const,
   deliveryMethodType: "PICKUP" as const,
