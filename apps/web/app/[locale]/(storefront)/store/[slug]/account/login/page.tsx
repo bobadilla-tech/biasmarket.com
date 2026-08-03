@@ -1,14 +1,18 @@
-"use client";
+import type { Metadata } from "next";
+import type { Locale } from "next-intl";
+import { getTranslations } from "next-intl/server";
+import { CustomerLoginPageClient } from "./login-page-client";
 
-import { useParams } from "next/navigation";
-import { CustomerLoginForm } from "@/features/customer-auth";
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: Locale }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "storefront.loginPage" });
+  return { title: t("title") };
+}
 
 export default function CustomerLoginPage() {
-  const { slug } = useParams<{ slug: string }>();
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
-      <CustomerLoginForm slug={slug} />
-    </div>
-  );
+  return <CustomerLoginPageClient />;
 }

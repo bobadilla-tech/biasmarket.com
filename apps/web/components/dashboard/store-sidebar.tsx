@@ -155,14 +155,14 @@ export function StoreSidebar({
   const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(COLLAPSE_STORAGE_KEY);
+    const stored = globalThis.localStorage.getItem(COLLAPSE_STORAGE_KEY);
     if (stored === "true") setCollapsed(true);
   }, []);
 
   const toggleCollapsed = () => {
     setCollapsed((prev) => {
       const next = !prev;
-      window.localStorage.setItem(COLLAPSE_STORAGE_KEY, String(next));
+      globalThis.localStorage.setItem(COLLAPSE_STORAGE_KEY, String(next));
       return next;
     });
   };

@@ -39,7 +39,7 @@ afterEach(() => {
 
 test("mobile sheet renders StoreSidebar fully expanded even when the desktop collapse state is stored as collapsed", () => {
   vi.stubGlobal("localStorage", createMemoryStorage());
-  window.localStorage.setItem("store-sidebar-collapsed", "true");
+  globalThis.localStorage.setItem("store-sidebar-collapsed", "true");
 
   render(
     <NextIntlClientProvider locale="es" messages={getMessages("es")}>

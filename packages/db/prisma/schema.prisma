@@ -355,6 +355,8 @@ model Customer {
   passwordHash  String?
   email         String?
   emailVerified Boolean  @default(false)
+  pendingEmail  String?
+  pendingPhone  String?
   name          String?
   createdAt     DateTime @default(now())
 

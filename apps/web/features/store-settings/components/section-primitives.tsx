@@ -16,8 +16,8 @@ import { Switch } from "@/components/ui/switch";
 export function useSavedFlash(isSuccess: boolean, reset: () => void) {
   useEffect(() => {
     if (!isSuccess) return;
-    const timer = window.setTimeout(() => reset(), 1800);
-    return () => window.clearTimeout(timer);
+    const timer = globalThis.setTimeout(() => reset(), 1800);
+    return () => globalThis.clearTimeout(timer);
   }, [isSuccess, reset]);
 }
 

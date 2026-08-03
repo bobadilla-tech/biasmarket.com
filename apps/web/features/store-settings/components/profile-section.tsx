@@ -72,7 +72,7 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
 
   const storefrontUrl = useMemo(() => {
     if (typeof window === "undefined") return `/${locale}/store/${slug}`;
-    return `${window.location.origin}/${locale}/store/${slug}`;
+    return `${globalThis.location.origin}/${locale}/store/${slug}`;
   }, [locale, slug]);
 
   useSavedFlash(saveProfile.isSuccess, saveProfile.reset);

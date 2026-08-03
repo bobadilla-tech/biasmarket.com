@@ -81,7 +81,7 @@ export function CheckoutForm(
       customerEmail: values.customerEmail,
     });
     if (result.whatsappUrl) {
-      window.location.href = result.whatsappUrl;
+      globalThis.location.href = result.whatsappUrl;
     }
   });
 

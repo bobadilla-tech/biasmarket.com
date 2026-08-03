@@ -15,7 +15,7 @@ const itemKey = (item: Pick<CartItem, "productId" | "variantId">) =>
 export function getCart(slug: string): CartItem[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = window.localStorage.getItem(cartKey(slug));
+    const raw = globalThis.localStorage.getItem(cartKey(slug));
     return raw ? (JSON.parse(raw) as CartItem[]) : [];
   } catch {
     return [];
@@ -23,7 +23,7 @@ export function getCart(slug: string): CartItem[] {
 }
 
 function saveCart(slug: string, items: CartItem[]) {
-  window.localStorage.setItem(cartKey(slug), JSON.stringify(items));
+  globalThis.localStorage.setItem(cartKey(slug), JSON.stringify(items));
 }
 
 export function addToCart(slug: string, item: CartItem): CartItem[] {
