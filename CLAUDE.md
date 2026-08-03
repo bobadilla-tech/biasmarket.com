@@ -154,10 +154,10 @@ Single Oracle Cloud VM, three containers (`api`, `web`, `db`) behind Caddy
 (`infra/docker/docker-compose.yml`, `infra/caddy/Caddyfile`). Caddy does TLS
 termination for two subdomains: `biasmarket.com` (web) and `api.biasmarket.com`
 (api). `api` container runs `prisma migrate deploy` automatically on boot. Full
-runbook: `docs/core/deploy.md`. Known gaps called out there: buyer and
-seller login/register/forgot-password surfaces are throttled
-(`@nestjs/throttler` + better-auth's native rate limiter), but there's still no
-CSRF/`helmet`, no startup env-var validation.
+runbook: `docs/core/deploy.md`. Known gaps called out there: buyer and seller
+login/register/forgot-password surfaces are throttled (`@nestjs/throttler` +
+better-auth's native rate limiter), but there's still no CSRF/`helmet`, no
+startup env-var validation.
 
 ## Docs worth reading before large changes
 

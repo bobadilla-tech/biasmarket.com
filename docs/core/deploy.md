@@ -287,8 +287,8 @@ share the link," not for handling real traffic or real payment data at volume:
   forgetting to set `WEB_URL`) fail silently or fall back to a `localhost`
   default rather than refusing to boot.
 - **Single VM, no managed DB.** Fine at MVP scale; see
-  [`roadmap.md`](roadmap.md) §11 for the documented
-  scaling path (managed Postgres once this is the bottleneck).
+  [`roadmap.md`](roadmap.md) §11 for the documented scaling path (managed
+  Postgres once this is the bottleneck).
 - **Self-hosted MinIO, not Cloudflare R2.** `roadmap.md`/`architecture.md`/
   `security-payments.md` spec R2 specifically to avoid self-hosting object
   storage on the VPS; MinIO is a deliberate MVP shortcut instead — no image
