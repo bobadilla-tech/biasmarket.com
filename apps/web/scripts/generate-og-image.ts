@@ -25,7 +25,8 @@ const element = createElement(
       flexDirection: "column",
       alignItems: "center",
       justifyContent: "center",
-      backgroundImage: "linear-gradient(135deg, #7c3aed 0%, #16121c 55%, #ec4899 100%)",
+      backgroundImage:
+        "linear-gradient(135deg, #7c3aed 0%, #16121c 55%, #ec4899 100%)",
       fontFamily: "sans-serif",
     },
   },

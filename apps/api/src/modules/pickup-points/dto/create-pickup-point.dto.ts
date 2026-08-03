@@ -1,4 +1,10 @@
-import { IsBoolean, IsInt, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsInt,
+  IsOptional,
+  IsString,
+  MinLength,
+} from "class-validator";
 
 export class CreatePickupPointDto {
   @IsString()

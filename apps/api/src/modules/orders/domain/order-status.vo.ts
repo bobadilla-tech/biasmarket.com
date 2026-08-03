@@ -1,9 +1,9 @@
-import type { FulfillmentStatus, PaymentStatus } from '@biasmarket/db';
+import type { FulfillmentStatus, PaymentStatus } from "@biasmarket/db";
 
 export class InvalidOrderTransitionError extends Error {
   constructor(from: string, to: string) {
     super(`Cannot transition order from ${from} to ${to}`);
-    this.name = 'InvalidOrderTransitionError';
+    this.name = "InvalidOrderTransitionError";
   }
 }
 
@@ -12,26 +12,42 @@ export class InvalidOrderTransitionError extends Error {
 // sellers may approve/reject directly from PENDING_PAYMENT based on the
 // WhatsApp conversation.
 const PAYMENT_TRANSITIONS: Record<PaymentStatus, PaymentStatus[]> = {
- PENDING_PAYMENT: ['PARTIALLY_PAID', 'PAYMENT_SUBMITTED', 'VERIFIED', 'REJECTED', 'CANCELLED'],
-  PARTIALLY_PAID: ['PARTIALLY_PAID', 'PAYMENT_SUBMITTED', 'VERIFIED', 'REJECTED', 'CANCELLED'],
-  PAYMENT_SUBMITTED: ['PARTIALLY_PAID', 'VERIFIED', 'REJECTED'],
+  PENDING_PAYMENT: [
+    "PARTIALLY_PAID",
+    "PAYMENT_SUBMITTED",
+    "VERIFIED",
+    "REJECTED",
+    "CANCELLED",
+  ],
+  PARTIALLY_PAID: [
+    "PARTIALLY_PAID",
+    "PAYMENT_SUBMITTED",
+    "VERIFIED",
+    "REJECTED",
+    "CANCELLED",
+  ],
+  PAYMENT_SUBMITTED: ["PARTIALLY_PAID", "VERIFIED", "REJECTED"],
   VERIFIED: [],
   REJECTED: [],
   CANCELLED: [],
 };
 
-export function assertPaymentTransition(from: PaymentStatus, to: PaymentStatus): void {
+export function assertPaymentTransition(
+  from: PaymentStatus,
+  to: PaymentStatus,
+): void {
   if (!PAYMENT_TRANSITIONS[from]?.includes(to)) {
     throw new InvalidOrderTransitionError(from, to);
   }
 }
 
-const FULFILLMENT_TRANSITIONS: Record<FulfillmentStatus, FulfillmentStatus[]> = {
-  ORDERING: ['IN_TRANSIT'],
-  IN_TRANSIT: ['READY'],
-  READY: ['COMPLETED'],
-  COMPLETED: [],
-};
+const FULFILLMENT_TRANSITIONS: Record<FulfillmentStatus, FulfillmentStatus[]> =
+  {
+    ORDERING: ["IN_TRANSIT"],
+    IN_TRANSIT: ["READY"],
+    READY: ["COMPLETED"],
+    COMPLETED: [],
+  };
 
 export function assertFulfillmentTransition(
   from: FulfillmentStatus,

@@ -1,15 +1,15 @@
 import {
-  Injectable,
-  ForbiddenException,
-  NotFoundException,
   ConflictException,
-} from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service.js';
-import { slugify } from '@biasmarket/utils/strings';
-import { CreateCollectionDto } from './dto/create-collection.dto.js';
-import { UpdateCollectionDto } from './dto/update-collection.dto.js';
-import { AddCollectionProductDto } from './dto/add-collection-product.dto.js';
-import { ReorderCollectionProductsDto } from './dto/reorder-collection-products.dto.js';
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
+import { PrismaService } from "../../prisma/prisma.service.js";
+import { slugify } from "@biasmarket/utils/strings";
+import { CreateCollectionDto } from "./dto/create-collection.dto.js";
+import { UpdateCollectionDto } from "./dto/update-collection.dto.js";
+import { AddCollectionProductDto } from "./dto/add-collection-product.dto.js";
+import { ReorderCollectionProductsDto } from "./dto/reorder-collection-products.dto.js";
 
 @Injectable()
 export class CollectionsService {
@@ -19,9 +19,9 @@ export class CollectionsService {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
-    if (!store) throw new NotFoundException('Store no encontrada');
+    if (!store) throw new NotFoundException("Store no encontrada");
     if (store.ownerId !== userId) {
-      throw new ForbiddenException('No sos dueño de esta store');
+      throw new ForbiddenException("No sos dueño de esta store");
     }
     return store;
   }
@@ -36,7 +36,7 @@ export class CollectionsService {
       where: { id: collectionId },
     });
     if (!collection || collection.storeId !== storeId) {
-      throw new NotFoundException('Colección no encontrada');
+      throw new NotFoundException("Colección no encontrada");
     }
     return collection;
   }
@@ -46,7 +46,7 @@ export class CollectionsService {
       where: { id: productId },
     });
     if (!product || product.storeId !== storeId) {
-      throw new NotFoundException('Producto no encontrado');
+      throw new NotFoundException("Producto no encontrado");
     }
     return product;
   }
@@ -58,10 +58,15 @@ export class CollectionsService {
       where: { storeId_slug: { storeId, slug } },
     });
     if (existing) {
-      throw new ConflictException('Ya existe una colección con ese nombre');
+      throw new ConflictException("Ya existe una colección con ese nombre");
     }
     return this.prisma.collection.create({
-      data: { name: dto.name, description: dto.description ?? '', slug, storeId },
+      data: {
+        name: dto.name,
+        description: dto.description ?? "",
+        slug,
+        storeId,
+      },
     });
   }
 
@@ -69,7 +74,9 @@ export class CollectionsService {
     await this.assertOwnership(storeId, userId);
     return this.prisma.collection.findMany({
       where: { storeId },
-      include: { products: { orderBy: { position: 'asc' }, include: { product: true } } },
+      include: {
+        products: { orderBy: { position: "asc" }, include: { product: true } },
+      },
     });
   }
 
@@ -99,11 +106,12 @@ export class CollectionsService {
   ) {
     await this.findOwnedCollection(collectionId, storeId, userId);
     await this.findOwnedProduct(dto.productId, storeId);
-    const position =
-      dto.position ??
+    const position = dto.position ??
       (await this.prisma.collectionProduct.count({ where: { collectionId } }));
     return this.prisma.collectionProduct.upsert({
-      where: { collectionId_productId: { collectionId, productId: dto.productId } },
+      where: {
+        collectionId_productId: { collectionId, productId: dto.productId },
+      },
       create: { collectionId, productId: dto.productId, position },
       update: { position },
     });
@@ -133,7 +141,7 @@ export class CollectionsService {
         this.prisma.collectionProduct.update({
           where: { collectionId_productId: { collectionId, productId } },
           data: { position },
-        }),
+        })
       ),
     );
   }

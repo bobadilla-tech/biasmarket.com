@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Menu } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { buttonVariants } from "@/components/ui/button";
@@ -9,18 +10,32 @@ import { Link } from "@/i18n/navigation";
 import { authClient } from "@/lib/auth-client";
 import { LanguageToggle } from "@/components/landing/language-toggle";
 
-function NavLinks({ onNavigate, className }: { onNavigate?: () => void; className?: string }) {
+function NavLinks(
+  { onNavigate, className }: { onNavigate?: () => void; className?: string },
+) {
   const t = useTranslations("marketing.navbar");
 
   return (
     <nav className={className}>
-      <Link href="/founder" onClick={onNavigate} className="hover:text-foreground">
+      <Link
+        href="/founder"
+        onClick={onNavigate}
+        className="hover:text-foreground"
+      >
         {t("links.founder")}
       </Link>
-      <Link href="/enterprise" onClick={onNavigate} className="hover:text-foreground">
+      <Link
+        href="/enterprise"
+        onClick={onNavigate}
+        className="hover:text-foreground"
+      >
         {t("links.enterprise")}
       </Link>
-      <Link href="/contact" onClick={onNavigate} className="hover:text-foreground">
+      <Link
+        href="/contact"
+        onClick={onNavigate}
+        className="hover:text-foreground"
+      >
         {t("links.contact")}
       </Link>
     </nav>
@@ -78,7 +93,10 @@ function MobileMenu() {
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger
         render={
-          <button aria-label={t("openMenu")} className="rounded-xl p-2 hover:bg-muted">
+          <button
+            aria-label={t("openMenu")}
+            className="rounded-xl p-2 hover:bg-muted"
+          >
             <Menu className="size-6" />
           </button>
         }
@@ -104,7 +122,7 @@ export function Navbar() {
     <header className="sticky top-0 z-40 border-b border-white/10 bg-background/80 backdrop-blur-sm">
       <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-6 sm:px-10">
         <Link href="/" className="flex items-center">
-          <img
+          <Image
             src="/logos/horizontal.png"
             alt="Bias Market"
             width={164}

@@ -9,7 +9,5 @@ export default async function StoreDashboardLayout({
 }) {
   const { slug } = await params;
 
-  return (
-    <StoreThemeFrame slug={slug}>{children}</StoreThemeFrame>
-  );
+  return <StoreThemeFrame slug={slug}>{children}</StoreThemeFrame>;
 }

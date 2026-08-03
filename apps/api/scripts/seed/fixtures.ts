@@ -19,7 +19,7 @@ export interface ProductSpec {
   name: string;
   description: string;
   price: string;
-  status: 'DRAFT' | 'PUBLISHED';
+  status: "DRAFT" | "PUBLISHED";
   soldOut?: boolean;
   availableUntil?: Date;
   categoryKeys?: string[];
@@ -42,7 +42,7 @@ export interface CollectionSpec {
 
 export interface SectionSpec {
   key: string;
-  type: 'COLLECTION' | 'BANNER' | 'TEXT_BLOCK';
+  type: "COLLECTION" | "BANNER" | "TEXT_BLOCK";
   collectionKey?: string;
   content: Record<string, unknown>;
   position: number;
@@ -57,7 +57,7 @@ export interface OrderItemSpec {
 export interface OrderPaymentSpec {
   key: string;
   amount: string;
-  method?: 'YAPE' | 'PLIN' | 'TRANSFER' | 'CASH';
+  method?: "YAPE" | "PLIN" | "TRANSFER" | "CASH";
   note?: string;
   createdDaysAgo?: number;
 }
@@ -68,10 +68,16 @@ export interface OrderSpec {
   customerName?: string;
   customerEmail?: string;
   customerKey?: string;
-  deliveryMethodType: 'PICKUP' | 'COURIER';
+  deliveryMethodType: "PICKUP" | "COURIER";
   pickupPointKey?: string;
-  paymentStatus: 'PENDING_PAYMENT' | 'PARTIALLY_PAID' | 'PAYMENT_SUBMITTED' | 'VERIFIED' | 'REJECTED' | 'CANCELLED';
-  fulfillmentStatus: 'ORDERING' | 'IN_TRANSIT' | 'READY' | 'COMPLETED';
+  paymentStatus:
+    | "PENDING_PAYMENT"
+    | "PARTIALLY_PAID"
+    | "PAYMENT_SUBMITTED"
+    | "VERIFIED"
+    | "REJECTED"
+    | "CANCELLED";
+  fulfillmentStatus: "ORDERING" | "IN_TRANSIT" | "READY" | "COMPLETED";
   items: OrderItemSpec[];
   payments?: OrderPaymentSpec[];
   createdDaysAgo?: number;
@@ -102,8 +108,16 @@ export interface ContactInquirySpec {
 
 export interface StoreFixtureSpec {
   seller: { email: string; name: string };
-  store: { name: string; slug: string; whatsappNumber: string; defaultCurrency: string };
-  deliveryMethods: { type: 'PICKUP' | 'COURIER'; details: Record<string, unknown> }[];
+  store: {
+    name: string;
+    slug: string;
+    whatsappNumber: string;
+    defaultCurrency: string;
+  };
+  deliveryMethods: {
+    type: "PICKUP" | "COURIER";
+    details: Record<string, unknown>;
+  }[];
   pickupPoints: PickupPointSpec[];
   categories: CategorySpec[];
   products: ProductSpec[];
@@ -119,246 +133,303 @@ const futureDate = () => new Date(Date.now() + 90 * DAY_MS);
 
 function camilaStore(): StoreFixtureSpec {
   return {
-    seller: { email: 'seed-seller1@biasmarket.dev', name: 'Camila Seller' },
+    seller: { email: "seed-seller1@biasmarket.dev", name: "Camila Seller" },
     store: {
-      name: 'Tienda de Camila',
-      slug: 'demo-tienda-de-camila',
-      whatsappNumber: '+51987654321',
-      defaultCurrency: 'PEN',
+      name: "Tienda de Camila",
+      slug: "demo-tienda-de-camila",
+      whatsappNumber: "+51987654321",
+      defaultCurrency: "PEN",
     },
     deliveryMethods: [
-      { type: 'PICKUP', details: {} },
-      { type: 'COURIER', details: { estimatedCost: '8.00' } },
+      { type: "PICKUP", details: {} },
+      { type: "COURIER", details: { estimatedCost: "8.00" } },
     ],
     pickupPoints: [
-      { key: 'alameda', label: 'Alameda 28 de Julio' },
-      { key: 'plaza-norte', label: 'Plaza Norte' },
-      { key: 'estacion-angamos', label: 'Estación Angamos - Línea 1', enabled: false },
+      { key: "alameda", label: "Alameda 28 de Julio" },
+      { key: "plaza-norte", label: "Plaza Norte" },
+      {
+        key: "estacion-angamos",
+        label: "Estación Angamos - Línea 1",
+        enabled: false,
+      },
     ],
     categories: [
-      { key: 'albumes', name: 'Álbumes' },
-      { key: 'albumes-photobook', name: 'Photobook Edition', parentKey: 'albumes' },
-      { key: 'merch', name: 'Merch' },
+      { key: "albumes", name: "Álbumes" },
+      {
+        key: "albumes-photobook",
+        name: "Photobook Edition",
+        parentKey: "albumes",
+      },
+      { key: "merch", name: "Merch" },
     ],
     products: [
       {
-        key: 'photobook',
-        name: 'Álbum Photobook Edition',
-        description: 'Álbum oficial con photobook de 80 páginas.',
-        price: '45.00',
-        status: 'PUBLISHED',
-        categoryKeys: ['albumes-photobook'],
+        key: "photobook",
+        name: "Álbum Photobook Edition",
+        description: "Álbum oficial con photobook de 80 páginas.",
+        price: "45.00",
+        status: "PUBLISHED",
+        categoryKeys: ["albumes-photobook"],
         variants: [
-          { key: 'a', name: 'Versión A', stock: 5, attributes: { version: 'A' } },
-          { key: 'b', name: 'Versión B', stock: 0, attributes: { version: 'B' } }, // sold out
+          {
+            key: "a",
+            name: "Versión A",
+            stock: 5,
+            attributes: { version: "A" },
+          },
+          {
+            key: "b",
+            name: "Versión B",
+            stock: 0,
+            attributes: { version: "B" },
+          }, // sold out
         ],
       },
       {
-        key: 'photocards',
-        name: 'Photocard Set',
-        description: 'Set de 5 photocards random.',
-        price: '15.00',
-        status: 'PUBLISHED',
-        categoryKeys: ['merch'],
+        key: "photocards",
+        name: "Photocard Set",
+        description: "Set de 5 photocards random.",
+        price: "15.00",
+        status: "PUBLISHED",
+        categoryKeys: ["merch"],
         // no variants = unlimited stock
       },
       {
-        key: 'lightstick',
-        name: 'Lightstick Oficial',
-        description: 'Lightstick con bluetooth, edición actual.',
-        price: '60.00',
-        status: 'PUBLISHED',
-        categoryKeys: ['merch'],
-        variants: [{ key: 'default', name: 'Estándar', stock: 1 }], // low stock
+        key: "lightstick",
+        name: "Lightstick Oficial",
+        description: "Lightstick con bluetooth, edición actual.",
+        price: "60.00",
+        status: "PUBLISHED",
+        categoryKeys: ["merch"],
+        variants: [{ key: "default", name: "Estándar", stock: 1 }], // low stock
       },
       {
-        key: 'keyring-draft',
-        name: 'Llavero Bordado (Preview)',
-        description: 'Todavía en preview, no debería verse en la tienda pública.',
-        price: '8.00',
-        status: 'DRAFT',
+        key: "keyring-draft",
+        name: "Llavero Bordado (Preview)",
+        description:
+          "Todavía en preview, no debería verse en la tienda pública.",
+        price: "8.00",
+        status: "DRAFT",
       },
       {
-        key: 'poster-expired',
-        name: 'Poster Edición Limitada 2025',
-        description: 'Edición limitada, disponibilidad ya vencida.',
-        price: '18.00',
-        status: 'PUBLISHED',
+        key: "poster-expired",
+        name: "Poster Edición Limitada 2025",
+        description: "Edición limitada, disponibilidad ya vencida.",
+        price: "18.00",
+        status: "PUBLISHED",
         availableUntil: pastDate(),
       },
       {
-        key: 'lightstick-v2',
-        name: 'Lightstick Bluetooth v2',
-        description: 'Nueva versión, disponible por tiempo limitado.',
-        price: '65.00',
-        status: 'PUBLISHED',
+        key: "lightstick-v2",
+        name: "Lightstick Bluetooth v2",
+        description: "Nueva versión, disponible por tiempo limitado.",
+        price: "65.00",
+        status: "PUBLISHED",
         availableUntil: futureDate(),
-        variants: [{ key: 'std', name: 'Estándar', stock: null }], // unlimited
+        variants: [{ key: "std", name: "Estándar", stock: null }], // unlimited
       },
       {
-        key: 'bundle-reserved',
-        name: 'Bundle Reservado Demo',
-        description: 'Bundle con una unidad ya reservada por un pedido pendiente.',
-        price: '30.00',
-        status: 'PUBLISHED',
-        variants: [{ key: 'only', name: 'Único', stock: 3, reserved: 2 }], // available = 1
+        key: "bundle-reserved",
+        name: "Bundle Reservado Demo",
+        description:
+          "Bundle con una unidad ya reservada por un pedido pendiente.",
+        price: "30.00",
+        status: "PUBLISHED",
+        variants: [{ key: "only", name: "Único", stock: 3, reserved: 2 }], // available = 1
       },
       {
-        key: 'photocard-override',
-        name: 'Photocard Premium',
-        description: 'Edición gold con precio e imagen propios.',
-        price: '10.00',
-        status: 'PUBLISHED',
+        key: "photocard-override",
+        name: "Photocard Premium",
+        description: "Edición gold con precio e imagen propios.",
+        price: "10.00",
+        status: "PUBLISHED",
         variants: [
           {
-            key: 'gold',
-            name: 'Gold Edition',
+            key: "gold",
+            name: "Gold Edition",
             stock: 4,
-            priceOverride: '14.00',
-            imageOverride: 'https://placehold.co/400x400?text=Gold',
+            priceOverride: "14.00",
+            imageOverride: "https://placehold.co/400x400?text=Gold",
           },
         ],
       },
     ],
     collections: [
       {
-        key: 'destacados',
-        name: 'Destacados',
-        slug: 'destacados',
-        description: 'Lo más pedido.',
-        productKeys: ['photobook', 'lightstick', 'bundle-reserved'],
+        key: "destacados",
+        name: "Destacados",
+        slug: "destacados",
+        description: "Lo más pedido.",
+        productKeys: ["photobook", "lightstick", "bundle-reserved"],
       },
       {
-        key: 'nuevos',
-        name: 'Nuevos Ingresos',
-        slug: 'nuevos-ingresos',
-        description: 'Recién agregado al catálogo.',
-        productKeys: ['lightstick-v2', 'photocard-override'],
+        key: "nuevos",
+        name: "Nuevos Ingresos",
+        slug: "nuevos-ingresos",
+        description: "Recién agregado al catálogo.",
+        productKeys: ["lightstick-v2", "photocard-override"],
       },
     ],
     sections: [
-      { key: 'destacados', type: 'COLLECTION', collectionKey: 'destacados', content: { title: 'Destacados' }, position: 0 },
       {
-        key: 'banner',
-        type: 'BANNER',
-        content: { imageUrl: 'https://placehold.co/1200x400?text=Bias+Market', headline: 'Envíos a todo el país' },
+        key: "destacados",
+        type: "COLLECTION",
+        collectionKey: "destacados",
+        content: { title: "Destacados" },
+        position: 0,
+      },
+      {
+        key: "banner",
+        type: "BANNER",
+        content: {
+          imageUrl: "https://placehold.co/1200x400?text=Bias+Market",
+          headline: "Envíos a todo el país",
+        },
         position: 1,
       },
       {
-        key: 'about',
-        type: 'TEXT_BLOCK',
-        content: { title: 'Sobre la tienda', body: 'Tienda oficial de merch, pagos por transferencia o Yape.' },
+        key: "about",
+        type: "TEXT_BLOCK",
+        content: {
+          title: "Sobre la tienda",
+          body: "Tienda oficial de merch, pagos por transferencia o Yape.",
+        },
         position: 2,
       },
     ],
     customers: [
       {
-        key: 'bruno',
-        phone: '+51900000002',
-        email: 'seed-bruno@example.com',
-        name: 'Bruno Test',
+        key: "bruno",
+        phone: "+51900000002",
+        email: "seed-bruno@example.com",
+        name: "Bruno Test",
         emailVerified: false,
       },
       {
-        key: 'ana',
-        phone: '+51900000007',
-        email: 'seed-ana@example.com',
-        name: 'Ana Verified',
+        key: "ana",
+        phone: "+51900000007",
+        email: "seed-ana@example.com",
+        name: "Ana Verified",
         emailVerified: true,
       },
     ],
     orders: [
       {
-        key: 'pending',
-        customerPhone: '+51900000001',
-        customerName: 'Ana Test',
-        deliveryMethodType: 'PICKUP',
-        pickupPointKey: 'alameda',
-        paymentStatus: 'PENDING_PAYMENT',
-        fulfillmentStatus: 'ORDERING',
-        items: [{ productKey: 'photocards', quantity: 2 }],
+        key: "pending",
+        customerPhone: "+51900000001",
+        customerName: "Ana Test",
+        deliveryMethodType: "PICKUP",
+        pickupPointKey: "alameda",
+        paymentStatus: "PENDING_PAYMENT",
+        fulfillmentStatus: "ORDERING",
+        items: [{ productKey: "photocards", quantity: 2 }],
       },
       {
-        key: 'submitted',
-        customerPhone: '+51900000002',
-        customerEmail: 'seed-bruno@example.com',
-        customerKey: 'bruno',
-        deliveryMethodType: 'COURIER',
-        paymentStatus: 'PAYMENT_SUBMITTED',
-        fulfillmentStatus: 'ORDERING',
-        items: [{ productKey: 'photobook', variantKey: 'a', quantity: 1 }],
+        key: "submitted",
+        customerPhone: "+51900000002",
+        customerEmail: "seed-bruno@example.com",
+        customerKey: "bruno",
+        deliveryMethodType: "COURIER",
+        paymentStatus: "PAYMENT_SUBMITTED",
+        fulfillmentStatus: "ORDERING",
+        items: [{ productKey: "photobook", variantKey: "a", quantity: 1 }],
         createdDaysAgo: 1,
       },
       {
-        key: 'ana-completed',
-        customerPhone: '+51900000007',
-        customerEmail: 'seed-ana@example.com',
-        customerKey: 'ana',
-        deliveryMethodType: 'COURIER',
-        paymentStatus: 'VERIFIED',
-        fulfillmentStatus: 'COMPLETED',
-        items: [{ productKey: 'photocards', quantity: 1 }],
+        key: "ana-completed",
+        customerPhone: "+51900000007",
+        customerEmail: "seed-ana@example.com",
+        customerKey: "ana",
+        deliveryMethodType: "COURIER",
+        paymentStatus: "VERIFIED",
+        fulfillmentStatus: "COMPLETED",
+        items: [{ productKey: "photocards", quantity: 1 }],
         createdDaysAgo: 6,
       },
       {
-        key: 'ana-pending',
-        customerPhone: '+51900000007',
-        customerEmail: 'seed-ana@example.com',
-        customerKey: 'ana',
-        deliveryMethodType: 'PICKUP',
-        pickupPointKey: 'plaza-norte',
-        paymentStatus: 'PENDING_PAYMENT',
-        fulfillmentStatus: 'ORDERING',
-        items: [{ productKey: 'lightstick', variantKey: 'default', quantity: 1 }],
+        key: "ana-pending",
+        customerPhone: "+51900000007",
+        customerEmail: "seed-ana@example.com",
+        customerKey: "ana",
+        deliveryMethodType: "PICKUP",
+        pickupPointKey: "plaza-norte",
+        paymentStatus: "PENDING_PAYMENT",
+        fulfillmentStatus: "ORDERING",
+        items: [{
+          productKey: "lightstick",
+          variantKey: "default",
+          quantity: 1,
+        }],
       },
       {
-        key: 'partial',
-        customerPhone: '+51900000008',
-        customerName: 'Diego Partial',
-        deliveryMethodType: 'PICKUP',
-        pickupPointKey: 'alameda',
-        paymentStatus: 'PARTIALLY_PAID',
-        fulfillmentStatus: 'ORDERING',
-        items: [{ productKey: 'photobook', variantKey: 'a', quantity: 1 }],
-        payments: [{ key: 'first', amount: '15.00', method: 'YAPE', note: 'Adelanto' }],
+        key: "partial",
+        customerPhone: "+51900000008",
+        customerName: "Diego Partial",
+        deliveryMethodType: "PICKUP",
+        pickupPointKey: "alameda",
+        paymentStatus: "PARTIALLY_PAID",
+        fulfillmentStatus: "ORDERING",
+        items: [{ productKey: "photobook", variantKey: "a", quantity: 1 }],
+        payments: [{
+          key: "first",
+          amount: "15.00",
+          method: "YAPE",
+          note: "Adelanto",
+        }],
         createdDaysAgo: 1,
       },
       {
-        key: 'verified-transit',
-        customerPhone: '+51900000003',
-        deliveryMethodType: 'COURIER',
-        paymentStatus: 'VERIFIED',
-        fulfillmentStatus: 'IN_TRANSIT',
-        items: [{ productKey: 'lightstick', variantKey: 'default', quantity: 1 }],
+        key: "verified-transit",
+        customerPhone: "+51900000003",
+        deliveryMethodType: "COURIER",
+        paymentStatus: "VERIFIED",
+        fulfillmentStatus: "IN_TRANSIT",
+        items: [{
+          productKey: "lightstick",
+          variantKey: "default",
+          quantity: 1,
+        }],
         createdDaysAgo: 3,
       },
       {
-        key: 'verified-completed',
-        customerPhone: '+51900000004',
-        deliveryMethodType: 'PICKUP',
-        pickupPointKey: 'plaza-norte',
-        paymentStatus: 'VERIFIED',
-        fulfillmentStatus: 'COMPLETED',
-        items: [{ productKey: 'lightstick-v2', variantKey: 'std', quantity: 2 }],
+        key: "verified-completed",
+        customerPhone: "+51900000004",
+        deliveryMethodType: "PICKUP",
+        pickupPointKey: "plaza-norte",
+        paymentStatus: "VERIFIED",
+        fulfillmentStatus: "COMPLETED",
+        items: [{
+          productKey: "lightstick-v2",
+          variantKey: "std",
+          quantity: 2,
+        }],
         createdDaysAgo: 7,
       },
       {
-        key: 'rejected',
-        customerPhone: '+51900000005',
-        deliveryMethodType: 'PICKUP',
-        pickupPointKey: 'alameda',
-        paymentStatus: 'REJECTED',
-        fulfillmentStatus: 'ORDERING',
-        items: [{ productKey: 'photocard-override', variantKey: 'gold', quantity: 1 }],
+        key: "rejected",
+        customerPhone: "+51900000005",
+        deliveryMethodType: "PICKUP",
+        pickupPointKey: "alameda",
+        paymentStatus: "REJECTED",
+        fulfillmentStatus: "ORDERING",
+        items: [{
+          productKey: "photocard-override",
+          variantKey: "gold",
+          quantity: 1,
+        }],
         createdDaysAgo: 2,
       },
       {
-        key: 'cancelled',
-        customerPhone: '+51900000006',
-        deliveryMethodType: 'COURIER',
-        paymentStatus: 'CANCELLED',
-        fulfillmentStatus: 'ORDERING',
-        items: [{ productKey: 'bundle-reserved', variantKey: 'only', quantity: 1 }],
+        key: "cancelled",
+        customerPhone: "+51900000006",
+        deliveryMethodType: "COURIER",
+        paymentStatus: "CANCELLED",
+        fulfillmentStatus: "ORDERING",
+        items: [{
+          productKey: "bundle-reserved",
+          variantKey: "only",
+          quantity: 1,
+        }],
         createdDaysAgo: 4,
       },
     ],
@@ -367,99 +438,116 @@ function camilaStore(): StoreFixtureSpec {
 
 function kpopCornerStore(): StoreFixtureSpec {
   return {
-    seller: { email: 'seed-seller2@biasmarket.dev', name: 'K-Pop Corner' },
+    seller: { email: "seed-seller2@biasmarket.dev", name: "K-Pop Corner" },
     store: {
-      name: 'K-Pop Corner',
-      slug: 'demo-kpop-corner',
-      whatsappNumber: '+51912345678',
-      defaultCurrency: 'PEN',
+      name: "K-Pop Corner",
+      slug: "demo-kpop-corner",
+      whatsappNumber: "+51912345678",
+      defaultCurrency: "PEN",
     },
     deliveryMethods: [
-      { type: 'PICKUP', details: {} },
-      { type: 'COURIER', details: { estimatedCost: '10.00' } },
+      { type: "PICKUP", details: {} },
+      { type: "COURIER", details: { estimatedCost: "10.00" } },
     ],
-    pickupPoints: [{ key: 'estacion-central', label: 'Estación Central - Metropolitano' }],
+    pickupPoints: [{
+      key: "estacion-central",
+      label: "Estación Central - Metropolitano",
+    }],
     categories: [
-      { key: 'posters', name: 'Posters' },
-      { key: 'photocards', name: 'Photocards' },
+      { key: "posters", name: "Posters" },
+      { key: "photocards", name: "Photocards" },
     ],
     products: [
       {
-        key: 'poster',
-        name: 'Poster Oficial',
-        description: 'Poster A2 enrollado, envío protegido.',
-        price: '20.00',
-        status: 'PUBLISHED',
-        categoryKeys: ['posters'],
+        key: "poster",
+        name: "Poster Oficial",
+        description: "Poster A2 enrollado, envío protegido.",
+        price: "20.00",
+        status: "PUBLISHED",
+        categoryKeys: ["posters"],
       },
       {
-        key: 'member-set',
-        name: 'Photocard Member Set',
-        description: 'Photocard random por miembro.',
-        price: '12.00',
-        status: 'PUBLISHED',
-        categoryKeys: ['photocards'],
+        key: "member-set",
+        name: "Photocard Member Set",
+        description: "Photocard random por miembro.",
+        price: "12.00",
+        status: "PUBLISHED",
+        categoryKeys: ["photocards"],
         variants: [
-          { key: 'jk', name: 'Jungkook', stock: 2, attributes: { member: 'Jungkook' } },
-          { key: 'v', name: 'V', stock: 0, attributes: { member: 'V' } }, // sold out
+          {
+            key: "jk",
+            name: "Jungkook",
+            stock: 2,
+            attributes: { member: "Jungkook" },
+          },
+          { key: "v", name: "V", stock: 0, attributes: { member: "V" } }, // sold out
         ],
       },
       {
-        key: 'bundle',
-        name: 'Merch Bundle',
-        description: 'Bundle con llavero + sticker pack.',
-        price: '25.00',
-        status: 'PUBLISHED',
-        variants: [{ key: 'only', name: 'Único', stock: null }],
+        key: "bundle",
+        name: "Merch Bundle",
+        description: "Bundle con llavero + sticker pack.",
+        price: "25.00",
+        status: "PUBLISHED",
+        variants: [{ key: "only", name: "Único", stock: null }],
       },
     ],
     collections: [
       {
-        key: 'catalogo',
-        name: 'Todo el Catálogo',
-        slug: 'catalogo',
-        description: 'Todos los productos disponibles.',
-        productKeys: ['poster', 'member-set', 'bundle'],
+        key: "catalogo",
+        name: "Todo el Catálogo",
+        slug: "catalogo",
+        description: "Todos los productos disponibles.",
+        productKeys: ["poster", "member-set", "bundle"],
       },
     ],
     sections: [
-      { key: 'catalogo', type: 'COLLECTION', collectionKey: 'catalogo', content: { title: 'Catálogo' }, position: 0 },
       {
-        key: 'banner',
-        type: 'BANNER',
-        content: { imageUrl: 'https://placehold.co/1200x400?text=K-Pop+Corner', headline: 'Nuevo stock cada semana' },
+        key: "catalogo",
+        type: "COLLECTION",
+        collectionKey: "catalogo",
+        content: { title: "Catálogo" },
+        position: 0,
+      },
+      {
+        key: "banner",
+        type: "BANNER",
+        content: {
+          imageUrl: "https://placehold.co/1200x400?text=K-Pop+Corner",
+          headline: "Nuevo stock cada semana",
+        },
         position: 1,
       },
     ],
     customers: [
       {
-        key: 'sofia',
-        phone: '+51922222222',
-        email: 'seed-sofia@example.com',
-        name: 'Sofia Test',
+        key: "sofia",
+        phone: "+51922222222",
+        email: "seed-sofia@example.com",
+        name: "Sofia Test",
         emailVerified: true,
       },
     ],
     orders: [
       {
-        key: 'pending',
-        customerPhone: '+51911111111',
-        deliveryMethodType: 'PICKUP',
-        pickupPointKey: 'estacion-central',
-        paymentStatus: 'PENDING_PAYMENT',
-        fulfillmentStatus: 'ORDERING',
-        items: [{ productKey: 'poster', quantity: 1 }],
+        key: "pending",
+        customerPhone: "+51911111111",
+        deliveryMethodType: "PICKUP",
+        pickupPointKey: "estacion-central",
+        paymentStatus: "PENDING_PAYMENT",
+        fulfillmentStatus: "ORDERING",
+        items: [{ productKey: "poster", quantity: 1 }],
       },
       {
-        key: 'verified-completed',
-        customerPhone: '+51922222222',
-        customerName: 'Sofia Test',
-        customerEmail: 'seed-sofia@example.com',
-        customerKey: 'sofia',
-        deliveryMethodType: 'COURIER',
-        paymentStatus: 'VERIFIED',
-        fulfillmentStatus: 'COMPLETED',
-        items: [{ productKey: 'member-set', variantKey: 'jk', quantity: 1 }],
+        key: "verified-completed",
+        customerPhone: "+51922222222",
+        customerName: "Sofia Test",
+        customerEmail: "seed-sofia@example.com",
+        customerKey: "sofia",
+        deliveryMethodType: "COURIER",
+        paymentStatus: "VERIFIED",
+        fulfillmentStatus: "COMPLETED",
+        items: [{ productKey: "member-set", variantKey: "jk", quantity: 1 }],
         createdDaysAgo: 5,
       },
     ],
@@ -472,75 +560,92 @@ export function buildBaseFixtures(): {
 } {
   return {
     admins: [
-      { email: 'admin@biasmarket.dev', name: 'Dev Admin' },
-      { email: 'owner@biasmarket.dev', name: 'Dev Owner' },
+      { email: "admin@biasmarket.dev", name: "Dev Admin" },
+      { email: "owner@biasmarket.dev", name: "Dev Owner" },
     ],
     stores: [camilaStore(), kpopCornerStore()],
   };
 }
 
 export function buildAppendFixture(label: string): StoreFixtureSpec {
-  const safeLabel = label.toLowerCase().replace(/[^a-z0-9-]+/g, '-');
+  const safeLabel = label.toLowerCase().replace(/[^a-z0-9-]+/g, "-");
   return {
-    seller: { email: `seed-seller-${safeLabel}@biasmarket.dev`, name: `Demo Seller ${label}` },
+    seller: {
+      email: `seed-seller-${safeLabel}@biasmarket.dev`,
+      name: `Demo Seller ${label}`,
+    },
     store: {
       name: `Demo Store ${label}`,
       slug: `demo-${safeLabel}`,
-      whatsappNumber: '+51900000000',
-      defaultCurrency: 'PEN',
+      whatsappNumber: "+51900000000",
+      defaultCurrency: "PEN",
     },
     deliveryMethods: [
-      { type: 'PICKUP', details: {} },
-      { type: 'COURIER', details: { estimatedCost: '5.00' } },
+      { type: "PICKUP", details: {} },
+      { type: "COURIER", details: { estimatedCost: "5.00" } },
     ],
-    pickupPoints: [{ key: 'punto-demo', label: `Punto Demo ${label}` }],
-    categories: [{ key: 'general', name: 'General' }],
+    pickupPoints: [{ key: "punto-demo", label: `Punto Demo ${label}` }],
+    categories: [{ key: "general", name: "General" }],
     products: [
       {
-        key: 'unlimited',
+        key: "unlimited",
         name: `Producto Demo Ilimitado (${label})`,
-        description: 'Stock ilimitado / hecho a pedido.',
-        price: '20.00',
-        status: 'PUBLISHED',
-        categoryKeys: ['general'],
-        variants: [{ key: 'default', name: 'Estándar', stock: null }],
+        description: "Stock ilimitado / hecho a pedido.",
+        price: "20.00",
+        status: "PUBLISHED",
+        categoryKeys: ["general"],
+        variants: [{ key: "default", name: "Estándar", stock: null }],
       },
       {
-        key: 'low-stock',
+        key: "low-stock",
         name: `Producto Demo Stock Bajo (${label})`,
-        description: 'Queda solo una unidad.',
-        price: '15.00',
-        status: 'PUBLISHED',
-        categoryKeys: ['general'],
-        variants: [{ key: 'default', name: 'Estándar', stock: 1 }],
+        description: "Queda solo una unidad.",
+        price: "15.00",
+        status: "PUBLISHED",
+        categoryKeys: ["general"],
+        variants: [{ key: "default", name: "Estándar", stock: 1 }],
       },
       {
-        key: 'sold-out',
+        key: "sold-out",
         name: `Producto Demo Agotado (${label})`,
-        description: 'Sin stock disponible.',
-        price: '18.00',
-        status: 'PUBLISHED',
-        categoryKeys: ['general'],
-        variants: [{ key: 'default', name: 'Estándar', stock: 0 }],
+        description: "Sin stock disponible.",
+        price: "18.00",
+        status: "PUBLISHED",
+        categoryKeys: ["general"],
+        variants: [{ key: "default", name: "Estándar", stock: 0 }],
       },
     ],
     collections: [
       {
-        key: 'catalogo',
-        name: 'Catálogo',
-        slug: 'catalogo',
-        description: 'Catálogo demo.',
-        productKeys: ['unlimited', 'low-stock', 'sold-out'],
+        key: "catalogo",
+        name: "Catálogo",
+        slug: "catalogo",
+        description: "Catálogo demo.",
+        productKeys: ["unlimited", "low-stock", "sold-out"],
       },
     ],
     sections: [
-      { key: 'catalogo', type: 'COLLECTION', collectionKey: 'catalogo', content: { title: 'Catálogo' }, position: 0 },
-      { key: 'banner', type: 'BANNER', content: { imageUrl: 'https://placehold.co/1200x400?text=Demo', headline: 'Demo store' }, position: 1 },
+      {
+        key: "catalogo",
+        type: "COLLECTION",
+        collectionKey: "catalogo",
+        content: { title: "Catálogo" },
+        position: 0,
+      },
+      {
+        key: "banner",
+        type: "BANNER",
+        content: {
+          imageUrl: "https://placehold.co/1200x400?text=Demo",
+          headline: "Demo store",
+        },
+        position: 1,
+      },
     ],
     customers: [
       {
-        key: 'buyer',
-        phone: '+51944444444',
+        key: "buyer",
+        phone: "+51944444444",
         email: `seed-buyer-${safeLabel}@example.com`,
         name: `Demo Buyer ${label}`,
         emailVerified: true,
@@ -548,23 +653,31 @@ export function buildAppendFixture(label: string): StoreFixtureSpec {
     ],
     orders: [
       {
-        key: 'pending',
-        customerPhone: '+51933333333',
-        deliveryMethodType: 'PICKUP',
-        pickupPointKey: 'punto-demo',
-        paymentStatus: 'PENDING_PAYMENT',
-        fulfillmentStatus: 'ORDERING',
-        items: [{ productKey: 'unlimited', variantKey: 'default', quantity: 1 }],
+        key: "pending",
+        customerPhone: "+51933333333",
+        deliveryMethodType: "PICKUP",
+        pickupPointKey: "punto-demo",
+        paymentStatus: "PENDING_PAYMENT",
+        fulfillmentStatus: "ORDERING",
+        items: [{
+          productKey: "unlimited",
+          variantKey: "default",
+          quantity: 1,
+        }],
       },
       {
-        key: 'verified-completed',
-        customerPhone: '+51944444444',
+        key: "verified-completed",
+        customerPhone: "+51944444444",
         customerEmail: `seed-buyer-${safeLabel}@example.com`,
-        customerKey: 'buyer',
-        deliveryMethodType: 'COURIER',
-        paymentStatus: 'VERIFIED',
-        fulfillmentStatus: 'COMPLETED',
-        items: [{ productKey: 'low-stock', variantKey: 'default', quantity: 1 }],
+        customerKey: "buyer",
+        deliveryMethodType: "COURIER",
+        paymentStatus: "VERIFIED",
+        fulfillmentStatus: "COMPLETED",
+        items: [{
+          productKey: "low-stock",
+          variantKey: "default",
+          quantity: 1,
+        }],
         createdDaysAgo: 2,
       },
     ],
@@ -576,19 +689,19 @@ export function buildAppendFixture(label: string): StoreFixtureSpec {
 export function buildContactInquiries(): ContactInquirySpec[] {
   return [
     {
-      key: 'demo-1',
-      name: 'Valeria Seed',
-      email: 'seed-valeria@example.com',
-      company: 'Valeria Merch',
-      inquiryType: 'general',
-      message: 'Hola, quisiera saber cómo crear mi tienda en Bias Market.',
+      key: "demo-1",
+      name: "Valeria Seed",
+      email: "seed-valeria@example.com",
+      company: "Valeria Merch",
+      inquiryType: "general",
+      message: "Hola, quisiera saber cómo crear mi tienda en Bias Market.",
     },
     {
-      key: 'demo-2',
-      name: 'Marco Seed',
-      email: 'seed-marco@example.com',
-      inquiryType: 'support',
-      message: 'Tengo un problema para configurar mis métodos de entrega.',
+      key: "demo-2",
+      name: "Marco Seed",
+      email: "seed-marco@example.com",
+      inquiryType: "support",
+      message: "Tengo un problema para configurar mis métodos de entrega.",
     },
   ];
 }

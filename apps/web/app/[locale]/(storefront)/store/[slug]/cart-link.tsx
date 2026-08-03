@@ -15,8 +15,8 @@ export function CartLink({ slug }: { slug: string }) {
       setCount(items.reduce((sum, item) => sum + item.quantity, 0));
     };
     update();
-    window.addEventListener("focus", update);
-    return () => window.removeEventListener("focus", update);
+    globalThis.addEventListener("focus", update);
+    return () => globalThis.removeEventListener("focus", update);
   }, [slug]);
 
   return (

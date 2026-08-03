@@ -1,10 +1,17 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import type { Prisma } from '@biasmarket/db';
-import { buildWhatsAppOrderMessage, buildWhatsAppUrl } from '@biasmarket/utils/whatsapp';
-import { PrismaService } from '../../../prisma/prisma.service.js';
-import { CreateOrderDto } from '../dto/create-order.dto.js';
-import { NotificationsService } from '../../notifications/notifications.service.js';
-import { CustomerAccountService } from './customer-account.service.js';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
+import type { Prisma } from "@biasmarket/db";
+import {
+  buildWhatsAppOrderMessage,
+  buildWhatsAppUrl,
+} from "@biasmarket/utils/whatsapp";
+import { PrismaService } from "../../../prisma/prisma.service.js";
+import { CreateOrderDto } from "../dto/create-order.dto.js";
+import { NotificationsService } from "../../notifications/notifications.service.js";
+import { CustomerAccountService } from "./customer-account.service.js";
 
 @Injectable()
 export class CreateOrderUseCase {
@@ -16,172 +23,208 @@ export class CreateOrderUseCase {
 
   async execute(slug: string, dto: CreateOrderDto) {
     const store = await this.prisma.store.findUnique({ where: { slug } });
-    if (!store) throw new NotFoundException('Tienda no encontrada');
+    if (!store) throw new NotFoundException("Tienda no encontrada");
 
     const deliveryConfig = await this.prisma.deliveryMethodConfig.findUnique({
-      where: { storeId_type: { storeId: store.id, type: dto.deliveryMethodType } },
+      where: {
+        storeId_type: { storeId: store.id, type: dto.deliveryMethodType },
+      },
     });
     if (!deliveryConfig || !deliveryConfig.enabled) {
-      throw new BadRequestException('Método de entrega no disponible');
+      throw new BadRequestException("Método de entrega no disponible");
     }
 
     let pickupPoint: { id: string; label: string } | null = null;
-    if (dto.deliveryMethodType === 'PICKUP') {
+    if (dto.deliveryMethodType === "PICKUP") {
       const hasPoints = await this.prisma.pickupPoint.count({
         where: { storeId: store.id, enabled: true },
       });
       if (hasPoints > 0) {
         if (!dto.pickupPointId) {
-          throw new BadRequestException('Debes seleccionar un punto de recojo');
+          throw new BadRequestException("Debes seleccionar un punto de recojo");
         }
         const point = await this.prisma.pickupPoint.findUnique({
           where: { id: dto.pickupPointId },
         });
         if (!point || point.storeId !== store.id || !point.enabled) {
-          throw new BadRequestException('Punto de recojo no disponible');
+          throw new BadRequestException("Punto de recojo no disponible");
         }
         pickupPoint = point;
       }
     }
 
-    const messageItems: { name: string; quantity: number; unitPrice: number }[] = [];
+    const messageItems: {
+      name: string;
+      quantity: number;
+      unitPrice: number;
+    }[] = [];
 
-    const { order, pendingVerificationCustomer } = await this.prisma.$transaction(async (tx) => {
-      let customerId: string | undefined;
-      let pendingVerificationCustomer: Awaited<
-        ReturnType<CustomerAccountService['findOrCreateCustomer']>
-      > | null = null;
-      if (dto.customerEmail) {
-        pendingVerificationCustomer = await this.customerAccounts.findOrCreateCustomer(
-          tx,
-          store.id,
-          dto.customerPhone,
-          dto.customerEmail,
-          dto.customerName,
-        );
-        customerId = pendingVerificationCustomer.customer?.id;
-      }
-
-      // Seeded from the first line amount (rather than `new Prisma.Decimal(0)`)
-      // so this file never needs a runtime import of the `Prisma` namespace —
-      // only Decimal instances Prisma itself already returned. `items` is
-      // validated non-empty by CreateOrderDto, so the loop always runs once.
-      let totalAmount: Prisma.Decimal | undefined;
-      let currency: string | undefined;
-      const itemsData: Prisma.OrderItemCreateManyOrderInput[] = [];
-
-      for (const item of dto.items) {
-        const product = await tx.product.findUnique({ where: { id: item.productId } });
-        if (
-          !product ||
-          product.storeId !== store.id ||
-          product.status !== 'PUBLISHED' ||
-          product.deletedAt
-        ) {
-          throw new BadRequestException(`Producto no disponible: ${item.productId}`);
+    const { order, pendingVerificationCustomer } = await this.prisma
+      .$transaction(async (tx) => {
+        let customerId: string | undefined;
+        let pendingVerificationCustomer:
+          | Awaited<
+            ReturnType<CustomerAccountService["findOrCreateCustomer"]>
+          >
+          | null = null;
+        if (dto.customerEmail) {
+          pendingVerificationCustomer = await this.customerAccounts
+            .findOrCreateCustomer(
+              tx,
+              store.id,
+              dto.customerPhone,
+              dto.customerEmail,
+              dto.customerName,
+            );
+          customerId = pendingVerificationCustomer.customer?.id;
         }
 
-        let unitPrice = product.price;
-        let variantName: string | null = null;
+        // Seeded from the first line amount (rather than `new Prisma.Decimal(0)`)
+        // so this file never needs a runtime import of the `Prisma` namespace —
+        // only Decimal instances Prisma itself already returned. `items` is
+        // validated non-empty by CreateOrderDto, so the loop always runs once.
+        let totalAmount: Prisma.Decimal | undefined;
+        let currency: string | undefined;
+        const itemsData: Prisma.OrderItemCreateManyOrderInput[] = [];
 
-        if (item.variantId) {
-          const variant = await tx.productVariant.findUnique({
-            where: { id: item.variantId },
+        for (const item of dto.items) {
+          const product = await tx.product.findUnique({
+            where: { id: item.productId },
           });
-          if (!variant || variant.productId !== product.id) {
-            throw new BadRequestException(`Variante no disponible: ${item.variantId}`);
+          if (
+            !product ||
+            product.storeId !== store.id ||
+            product.status !== "PUBLISHED" ||
+            product.deletedAt
+          ) {
+            throw new BadRequestException(
+              `Producto no disponible: ${item.productId}`,
+            );
           }
-          if (variant.priceOverride) unitPrice = variant.priceOverride;
-          variantName = variant.name;
 
-          if (variant.stock !== null) {
-            const available = variant.stock - variant.reserved;
-            if (available < item.quantity) {
-              throw new BadRequestException(`Stock insuficiente para ${variant.name}`);
-            }
-            const updatedVariant = await tx.productVariant.update({
-              where: { id: variant.id },
-              data: { reserved: { increment: item.quantity } },
+          let unitPrice = product.price;
+          let variantName: string | null = null;
+
+          if (item.variantId) {
+            const variant = await tx.productVariant.findUnique({
+              where: { id: item.variantId },
             });
-            await this.notifications.syncStockAlerts(tx, store, product, updatedVariant);
+            if (!variant || variant.productId !== product.id) {
+              throw new BadRequestException(
+                `Variante no disponible: ${item.variantId}`,
+              );
+            }
+            if (variant.priceOverride) unitPrice = variant.priceOverride;
+            variantName = variant.name;
+
+            if (variant.stock !== null) {
+              const available = variant.stock - variant.reserved;
+              if (available < item.quantity) {
+                throw new BadRequestException(
+                  `Stock insuficiente para ${variant.name}`,
+                );
+              }
+              const updatedVariant = await tx.productVariant.update({
+                where: { id: variant.id },
+                data: { reserved: { increment: item.quantity } },
+              });
+              await this.notifications.syncStockAlerts(
+                tx,
+                store,
+                product,
+                updatedVariant,
+              );
+            }
           }
+
+          if (currency && currency !== product.currency) {
+            throw new BadRequestException(
+              "No se pueden combinar productos con distinta moneda en un mismo pedido",
+            );
+          }
+          currency = product.currency;
+
+          const lineAmount = unitPrice.times(item.quantity);
+          totalAmount = totalAmount ? totalAmount.plus(lineAmount) : lineAmount;
+          itemsData.push({
+            storeId: store.id,
+            productId: product.id,
+            variantId: item.variantId,
+            quantity: item.quantity,
+            unitPriceAtPurchase: unitPrice,
+            currency: product.currency,
+          });
+          messageItems.push({
+            name: variantName
+              ? `${product.name} (${variantName})`
+              : product.name,
+            quantity: item.quantity,
+            unitPrice: unitPrice.toNumber(),
+          });
         }
 
-        if (currency && currency !== product.currency) {
-          throw new BadRequestException(
-            'No se pueden combinar productos con distinta moneda en un mismo pedido',
-          );
-        }
-        currency = product.currency;
+        const details = deliveryConfig.details as
+          | Record<string, unknown>
+          | null;
+        const deliveryCost = Number(details?.estimatedCost ?? 0);
+        const finalAmount = totalAmount!.plus(deliveryCost);
 
-        const lineAmount = unitPrice.times(item.quantity);
-        totalAmount = totalAmount ? totalAmount.plus(lineAmount) : lineAmount;
-        itemsData.push({
-          storeId: store.id,
-          productId: product.id,
-          variantId: item.variantId,
-          quantity: item.quantity,
-          unitPriceAtPurchase: unitPrice,
-          currency: product.currency,
+        const expiresAt = new Date(
+          Date.now() + store.holdWindowHours * 60 * 60 * 1000,
+        );
+
+        const order = await tx.order.create({
+          data: {
+            storeId: store.id,
+            customerId,
+            customerEmail: dto.customerEmail,
+            customerPhone: dto.customerPhone,
+            customerName: dto.customerName,
+            deliveryMethodType: dto.deliveryMethodType,
+            deliveryDetails: pickupPoint
+              ? {
+                ...((deliveryConfig.details as Record<string, unknown>) ?? {}),
+                pickupPointLabel: pickupPoint.label,
+              }
+              : deliveryConfig.details ?? {},
+            pickupPointId: pickupPoint?.id ?? null,
+            totalAmount: finalAmount,
+            requiredAmount: finalAmount,
+            currency: currency!,
+            expiresAt,
+            items: { create: itemsData },
+          },
+          include: { items: true },
         });
-        messageItems.push({
-          name: variantName ? `${product.name} (${variantName})` : product.name,
-          quantity: item.quantity,
-          unitPrice: unitPrice.toNumber(),
-        });
-      }
 
-      const details = deliveryConfig.details as Record<string, unknown> | null;
-      const deliveryCost = Number(details?.estimatedCost ?? 0);
-      const finalAmount = totalAmount!.plus(deliveryCost);
-
-      const expiresAt = new Date(
-        Date.now() + store.holdWindowHours * 60 * 60 * 1000,
-      );
-
-      const order = await tx.order.create({
-        data: {
-          storeId: store.id,
-          customerId,
-          customerEmail: dto.customerEmail,
-          customerPhone: dto.customerPhone,
-          customerName: dto.customerName,
-          deliveryMethodType: dto.deliveryMethodType,
-          deliveryDetails: pickupPoint
-            ? { ...((deliveryConfig.details as Record<string, unknown>) ?? {}), pickupPointLabel: pickupPoint.label }
-            : deliveryConfig.details ?? {},
-          pickupPointId: pickupPoint?.id ?? null,
-          totalAmount: finalAmount,
-          requiredAmount: finalAmount,
-          currency: currency!,
-          expiresAt,
-          items: { create: itemsData },
-        },
-        include: { items: true },
+        return { order, pendingVerificationCustomer };
       });
-
-      return { order, pendingVerificationCustomer };
-    });
 
     const whatsappUrl = store.whatsappNumber
       ? buildWhatsAppUrl(
-          store.whatsappNumber,
-          buildWhatsAppOrderMessage({
-            orderId: order.id,
-            storeName: store.name,
-            items: messageItems,
-            totalAmount: order.totalAmount.toNumber(),
-            currency: order.currency,
-            deliveryMethodType: order.deliveryMethodType,
-            pickupPointLabel: pickupPoint?.label ?? null,
-            customerName: order.customerName,
-            customerPhone: order.customerPhone,
-          }),
-        )
+        store.whatsappNumber,
+        buildWhatsAppOrderMessage({
+          orderId: order.id,
+          storeName: store.name,
+          items: messageItems,
+          totalAmount: order.totalAmount.toNumber(),
+          currency: order.currency,
+          deliveryMethodType: order.deliveryMethodType,
+          pickupPointLabel: pickupPoint?.label ?? null,
+          customerName: order.customerName,
+          customerPhone: order.customerPhone,
+        }),
+      )
       : null;
 
-    if (pendingVerificationCustomer?.needsVerificationEmail && pendingVerificationCustomer.customer) {
-      await this.customerAccounts.sendVerificationEmail(pendingVerificationCustomer.customer, store);
+    if (
+      pendingVerificationCustomer?.needsVerificationEmail &&
+      pendingVerificationCustomer.customer
+    ) {
+      await this.customerAccounts.sendVerificationEmail(
+        pendingVerificationCustomer.customer,
+        store,
+      );
     }
 
     return { order, whatsappUrl };

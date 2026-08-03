@@ -5,9 +5,9 @@ import {
   ExceptionFilter,
   HttpException,
   HttpStatus,
-} from '@nestjs/common';
-import type { Response } from 'express';
-import { InvalidOrderTransitionError } from '../../modules/orders/domain/order-status.vo.js';
+} from "@nestjs/common";
+import type { Response } from "express";
+import { InvalidOrderTransitionError } from "../../modules/orders/domain/order-status.vo.js";
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -21,14 +21,16 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     if (exception instanceof InvalidOrderTransitionError) {
       const httpException = new BadRequestException(exception.message);
-      response.status(httpException.getStatus()).json(httpException.getResponse());
+      response.status(httpException.getStatus()).json(
+        httpException.getResponse(),
+      );
       return;
     }
 
     console.error(exception);
     response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-      message: 'Internal server error',
+      message: "Internal server error",
     });
   }
 }

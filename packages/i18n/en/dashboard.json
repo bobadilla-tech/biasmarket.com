@@ -187,7 +187,6 @@
     },
     "nav": {
       "overview": "Overview",
-      "storefront": "My store",
       "orders": "Orders",
       "products": "Products",
       "categories": "Categories",
@@ -198,15 +197,17 @@
       "customers": "Customers",
       "analytics": "Analytics",
       "settings": "Configuration",
-      "ideas": "Suggestions",
+      "preferences": "Preferences",
       "notifications": "Notifications"
     },
     "soon": "Soon",
+    "viewStore": "View store",
     "collapse": "Collapse sidebar",
     "expand": "Expand sidebar",
     "openMenu": "Open menu",
     "fallbackName": "Seller",
     "fallbackRole": "Store owner",
+    "myAccount": "My account",
     "signOut": "Sign out"
   },
   "settings": {
@@ -293,7 +294,7 @@
       "description": "A quick summary of the shared values your storefront relies on.",
       "currencyCardTitle": "Default currency",
       "currencyCardDescription": "Used as the initial currency for new catalog items.",
-      "copyMessage":"URL copied to clipboard",
+      "copyMessage": "URL copied to clipboard",
       "urlCardTitle": "Public storefront URL",
       "urlCardDescription": "Share this link so buyers can browse your catalog."
     },
@@ -340,6 +341,78 @@
       "LOW_STOCK": "Low stock",
       "OUT_OF_STOCK": "Out of stock"
     }
+  },
+  "preferences": {
+    "title": "Preferences",
+    "subtitle": "Suggestions based on your store's activity",
+    "empty": "No suggestions right now — check back later.",
+    "dismiss": "Dismiss",
+    "suggestions": {
+      "lowStock": {
+        "title": "Restock your low-stock items",
+        "body": "{count} product(s) are low or out of stock."
+      },
+      "staleOrders": {
+        "title": "Some orders need follow-up",
+        "body": "{count} order(s) have been awaiting payment for over {hours}h."
+      },
+      "noRecentOrders": {
+        "title": "No recent orders",
+        "body": "No orders in the last {days} days — check that your payment and delivery setup is easy for buyers to find."
+      },
+      "topSeller": {
+        "title": "Feature your best seller",
+        "body": "{name} is your top seller with {count} units sold — consider restocking or featuring it."
+      }
+    }
+  },
+  "analytics": {
+    "title": "Analytics",
+    "subtitle": "Growth over time",
+    "range": {
+      "30d": "30 days",
+      "90d": "90 days",
+      "12m": "12 months"
+    },
+    "revenueTitle": "Revenue",
+    "ordersTitle": "Orders",
+    "newVsReturningTitle": "New vs. returning customers",
+    "newCustomers": "New",
+    "returningCustomers": "Returning",
+    "topProductsTitle": "Top products",
+    "topProductsEmpty": "No sales in this period yet.",
+    "unitsSold": "{count} sold"
+  },
+  "customers": {
+    "title": "Customers",
+    "subtitle": "Everyone who has bought from your store",
+    "titleWithCount": "Customers ({count})",
+    "empty": "No customers yet.",
+    "verified": "Verified email",
+    "orderCount": "Orders",
+    "lifetimeSpend": "Lifetime spend",
+    "viewHistory": "View history",
+    "whatsappGreeting": "Hi {name}!",
+    "orderHistory": "Order history",
+    "noOrders": "No orders yet."
+  },
+  "payments": {
+    "title": "Payments",
+    "subtitle": "Orders needing payment attention",
+    "titleWithCount": "Payments ({count})",
+    "empty": "No orders need payment attention right now.",
+    "columns": {
+      "paid": "Paid",
+      "pending": "Pending",
+      "progress": "Paid %"
+    },
+    "contactBuyer": "Contact buyer"
+  },
+  "shipping": {
+    "title": "Shipping",
+    "subtitle": "Orders being fulfilled",
+    "titleWithCount": "Shipping ({count})",
+    "empty": "No orders in transit right now."
   },
   "orders": {
     "title": "Orders",
@@ -433,6 +506,7 @@
     "confirmStatus": {
       "title": "Confirm status change",
       "body": "Are you sure you want to mark this order as {status}?",
+      "reasonPlaceholder": "Reason for declining (required) — e.g. the proof looks edited",
       "confirm": "Yes, mark it",
       "cancel": "Cancel"
     },
@@ -440,5 +514,47 @@
       "message": "Order marked as {status}.",
       "undo": "Undo"
     }
+  },
+  "overview": {
+    "title": "Overview",
+    "subtitle": "A snapshot of your store's activity.",
+    "stats": {
+      "revenue": "Verified revenue",
+      "totalOrders": "Total orders",
+      "lowStock": "Low/out of stock items",
+      "pendingReview": "Orders needing review"
+    },
+    "recentOrdersTitle": "Recent orders",
+    "recentOrdersEmpty": "No orders yet.",
+    "paymentBreakdownTitle": "Orders by payment status",
+    "fulfillmentBreakdownTitle": "Orders by fulfillment status",
+    "paymentStatusLabels": {
+      "PENDING_PAYMENT": "Pending payment",
+      "PARTIALLY_PAID": "Partially paid",
+      "PAYMENT_SUBMITTED": "Proof submitted",
+      "VERIFIED": "Verified",
+      "REJECTED": "Rejected",
+      "CANCELLED": "Cancelled"
+    }
+  },
+  "account": {
+    "title": "My account",
+    "subtitle": "Manage your profile and see your stores at a glance.",
+    "signedInAs": "Signed in as",
+    "goToDashboard": "Go to dashboard",
+    "yourStores": "Your stores",
+    "addStore": "Add another store",
+    "changePassword": {
+      "title": "Change password",
+      "description": "Update the password you use to sign in.",
+      "currentLabel": "Current password",
+      "newLabel": "New password",
+      "confirmLabel": "Confirm new password",
+      "mismatch": "Passwords don't match",
+      "submit": "Update password",
+      "submitting": "Updating...",
+      "saved": "Password updated"
+    },
+    "signOut": "Sign out"
   }
 }

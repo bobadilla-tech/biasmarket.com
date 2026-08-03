@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Type } from "class-transformer";
 import {
   ArrayMinSize,
   IsEmail,
@@ -9,7 +9,7 @@ import {
   Min,
   MinLength,
   ValidateNested,
-} from 'class-validator';
+} from "class-validator";
 
 export class CreateOrderItemDto {
   @IsString()
@@ -25,8 +25,8 @@ export class CreateOrderItemDto {
 }
 
 export class CreateOrderDto {
-  @IsIn(['PICKUP', 'COURIER'])
-  deliveryMethodType: 'PICKUP' | 'COURIER';
+  @IsIn(["PICKUP", "COURIER"])
+  deliveryMethodType: "PICKUP" | "COURIER";
 
   @IsOptional()
   @IsString()

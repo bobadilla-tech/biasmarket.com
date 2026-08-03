@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { MailerCore, type SendEmailParams } from './mailer.core.js';
+import { Injectable } from "@nestjs/common";
+import { MailerCore, type SendEmailParams } from "./mailer.core.js";
 
 @Injectable()
 export class MailerService {

@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from "vitest";
-import { screen, fireEvent, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "../../../test-utils/render-with-providers";
 
@@ -13,7 +13,9 @@ vi.mock("next/navigation", () => ({
 
 const signInEmail = vi.fn();
 vi.mock("@/lib/auth-client", () => ({
-  authClient: { signIn: { email: (...args: unknown[]) => signInEmail(...args) } },
+  authClient: {
+    signIn: { email: (...args: unknown[]) => signInEmail(...args) },
+  },
 }));
 
 const listMine = vi.fn();
@@ -48,7 +50,10 @@ test("shows validation errors when submitted empty", async () => {
 });
 
 test("submits valid credentials and surfaces a root error on failure", async () => {
-  signInEmail.mockResolvedValueOnce({ data: null, error: { message: "Bad credentials" } });
+  signInEmail.mockResolvedValueOnce({
+    data: null,
+    error: { message: "Bad credentials" },
+  });
   const user = userEvent.setup();
   renderWithProviders(<LoginForm />);
 
@@ -59,11 +64,17 @@ test("submits valid credentials and surfaces a root error on failure", async () 
   await waitFor(() => {
     expect(screen.getByText("Bad credentials")).toBeDefined();
   });
-  expect(signInEmail).toHaveBeenCalledWith({ email: "a@b.com", password: "secret" });
+  expect(signInEmail).toHaveBeenCalledWith({
+    email: "a@b.com",
+    password: "secret",
+  });
 });
 
 test("redirects a seller with no stores to first-store onboarding", async () => {
-  signInEmail.mockResolvedValueOnce({ data: { user: { role: "seller" } }, error: null });
+  signInEmail.mockResolvedValueOnce({
+    data: { user: { role: "seller" } },
+    error: null,
+  });
   listMine.mockResolvedValueOnce([]);
 
   await submitValidCredentials();
@@ -74,8 +85,16 @@ test("redirects a seller with no stores to first-store onboarding", async () => 
 });
 
 test("redirects a returning single-store seller straight to their dashboard", async () => {
-  signInEmail.mockResolvedValueOnce({ data: { user: { role: "seller" } }, error: null });
-  listMine.mockResolvedValueOnce([{ id: "1", name: "Demo", slug: "demo-store", logoUrl: null }]);
+  signInEmail.mockResolvedValueOnce({
+    data: { user: { role: "seller" } },
+    error: null,
+  });
+  listMine.mockResolvedValueOnce([{
+    id: "1",
+    name: "Demo",
+    slug: "demo-store",
+    logoUrl: null,
+  }]);
 
   await submitValidCredentials();
 
@@ -85,7 +104,10 @@ test("redirects a returning single-store seller straight to their dashboard", as
 });
 
 test("sends a multi-store seller to the account page", async () => {
-  signInEmail.mockResolvedValueOnce({ data: { user: { role: "seller" } }, error: null });
+  signInEmail.mockResolvedValueOnce({
+    data: { user: { role: "seller" } },
+    error: null,
+  });
   listMine.mockResolvedValueOnce([
     { id: "1", name: "Demo", slug: "demo-store", logoUrl: null },
     { id: "2", name: "Other", slug: "other-store", logoUrl: null },
@@ -99,7 +121,10 @@ test("sends a multi-store seller to the account page", async () => {
 });
 
 test("admins skip the store lookup entirely and go to /admin", async () => {
-  signInEmail.mockResolvedValueOnce({ data: { user: { role: "admin" } }, error: null });
+  signInEmail.mockResolvedValueOnce({
+    data: { user: { role: "admin" } },
+    error: null,
+  });
 
   await submitValidCredentials();
 

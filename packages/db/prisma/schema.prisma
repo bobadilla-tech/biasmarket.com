@@ -196,6 +196,7 @@ model Order {
   deliveryDetails    Json
   pickupPointId      String?
   paymentStatus      PaymentStatus      @default(PENDING_PAYMENT)
+  paymentRejectionReason String?
   fulfillmentStatus  FulfillmentStatus  @default(ORDERING)
   totalAmount        Decimal            @db.Decimal(10, 2)
   requiredAmount     Decimal            @db.Decimal(10, 2)
@@ -354,6 +355,8 @@ model Customer {
   passwordHash  String?
   email         String?
   emailVerified Boolean  @default(false)
+  pendingEmail  String?
+  pendingPhone  String?
   name          String?
   createdAt     DateTime @default(now())
 

@@ -170,7 +170,7 @@
     "availableUntil": "Disponible hasta",
     "status": "Estado",
     "actions": "Acciones",
-    "image" : "imagen"
+    "image": "imagen"
   },
   "actions": {
     "publish": "Publicar",
@@ -187,7 +187,6 @@
     },
     "nav": {
       "overview": "Resumen",
-      "storefront": "Mi tienda",
       "orders": "Pedidos",
       "products": "Productos",
       "categories": "Categorías",
@@ -198,15 +197,17 @@
       "customers": "Clientes",
       "analytics": "Analíticas",
       "settings": "Configuración",
-      "ideas": "Sugerencias",
+      "preferences": "Preferencias",
       "notifications": "Notificaciones"
     },
     "soon": "Pronto",
+    "viewStore": "Ver tienda",
     "collapse": "Contraer barra lateral",
     "expand": "Expandir barra lateral",
     "openMenu": "Abrir menú",
     "fallbackName": "Vendedor",
     "fallbackRole": "Dueño de tienda",
+    "myAccount": "Mi cuenta",
     "signOut": "Cerrar sesión"
   },
   "settings": {
@@ -341,6 +342,78 @@
       "OUT_OF_STOCK": "Sin stock"
     }
   },
+  "preferences": {
+    "title": "Preferencias",
+    "subtitle": "Sugerencias basadas en la actividad de tu tienda",
+    "empty": "No hay sugerencias por ahora — vuelve más tarde.",
+    "dismiss": "Descartar",
+    "suggestions": {
+      "lowStock": {
+        "title": "Reabastece tus productos con poco stock",
+        "body": "{count} producto(s) tienen poco o nada de stock."
+      },
+      "staleOrders": {
+        "title": "Algunos pedidos necesitan seguimiento",
+        "body": "{count} pedido(s) llevan más de {hours}h esperando el pago."
+      },
+      "noRecentOrders": {
+        "title": "Sin pedidos recientes",
+        "body": "No hubo pedidos en los últimos {days} días — revisa que tu configuración de pago y entrega sea fácil de encontrar."
+      },
+      "topSeller": {
+        "title": "Destaca tu producto más vendido",
+        "body": "{name} es tu producto más vendido con {count} unidades vendidas — considera reabastecerlo o destacarlo."
+      }
+    }
+  },
+  "analytics": {
+    "title": "Analíticas",
+    "subtitle": "Crecimiento a lo largo del tiempo",
+    "range": {
+      "30d": "30 días",
+      "90d": "90 días",
+      "12m": "12 meses"
+    },
+    "revenueTitle": "Ingresos",
+    "ordersTitle": "Pedidos",
+    "newVsReturningTitle": "Clientes nuevos vs. recurrentes",
+    "newCustomers": "Nuevos",
+    "returningCustomers": "Recurrentes",
+    "topProductsTitle": "Productos más vendidos",
+    "topProductsEmpty": "Todavía no hay ventas en este período.",
+    "unitsSold": "{count} vendidos"
+  },
+  "customers": {
+    "title": "Clientes",
+    "subtitle": "Todos los que compraron en tu tienda",
+    "titleWithCount": "Clientes ({count})",
+    "empty": "Todavía no hay clientes.",
+    "verified": "Email verificado",
+    "orderCount": "Pedidos",
+    "lifetimeSpend": "Gasto total",
+    "viewHistory": "Ver historial",
+    "whatsappGreeting": "¡Hola {name}!",
+    "orderHistory": "Historial de pedidos",
+    "noOrders": "Todavía no hay pedidos."
+  },
+  "payments": {
+    "title": "Pagos",
+    "subtitle": "Pedidos que necesitan atención de pago",
+    "titleWithCount": "Pagos ({count})",
+    "empty": "No hay pedidos que necesiten atención de pago por ahora.",
+    "columns": {
+      "paid": "Pagado",
+      "pending": "Pendiente",
+      "progress": "% pagado"
+    },
+    "contactBuyer": "Contactar comprador"
+  },
+  "shipping": {
+    "title": "Envíos",
+    "subtitle": "Pedidos en curso de entrega",
+    "titleWithCount": "Envíos ({count})",
+    "empty": "No hay pedidos en camino por ahora."
+  },
   "orders": {
     "title": "Pedidos",
     "subtitle": "Gestión de pedidos",
@@ -433,6 +506,7 @@
     "confirmStatus": {
       "title": "Confirmar cambio de estado",
       "body": "¿Estás seguro de que deseas marcar este pedido como {status}?",
+      "reasonPlaceholder": "Motivo del rechazo (obligatorio) — ej. el comprobante parece editado",
       "confirm": "Sí, marcar",
       "cancel": "Cancelar"
     },
@@ -440,5 +514,47 @@
       "message": "Pedido marcado como {status}.",
       "undo": "Deshacer"
     }
+  },
+  "overview": {
+    "title": "Resumen",
+    "subtitle": "Un vistazo a la actividad de tu tienda.",
+    "stats": {
+      "revenue": "Ingresos verificados",
+      "totalOrders": "Total de pedidos",
+      "lowStock": "Productos con poco/sin stock",
+      "pendingReview": "Pedidos por revisar"
+    },
+    "recentOrdersTitle": "Pedidos recientes",
+    "recentOrdersEmpty": "Todavía no hay pedidos.",
+    "paymentBreakdownTitle": "Pedidos por estado de pago",
+    "fulfillmentBreakdownTitle": "Pedidos por estado de envío",
+    "paymentStatusLabels": {
+      "PENDING_PAYMENT": "Pago pendiente",
+      "PARTIALLY_PAID": "Pago parcial",
+      "PAYMENT_SUBMITTED": "Comprobante enviado",
+      "VERIFIED": "Verificado",
+      "REJECTED": "Rechazado",
+      "CANCELLED": "Cancelado"
+    }
+  },
+  "account": {
+    "title": "Mi cuenta",
+    "subtitle": "Gestiona tu perfil y mira tus tiendas de un vistazo.",
+    "signedInAs": "Sesión iniciada como",
+    "goToDashboard": "Ir al panel",
+    "yourStores": "Tus tiendas",
+    "addStore": "Agregar otra tienda",
+    "changePassword": {
+      "title": "Cambiar contraseña",
+      "description": "Actualiza la contraseña que usas para iniciar sesión.",
+      "currentLabel": "Contraseña actual",
+      "newLabel": "Nueva contraseña",
+      "confirmLabel": "Confirmar nueva contraseña",
+      "mismatch": "Las contraseñas no coinciden",
+      "submit": "Actualizar contraseña",
+      "submitting": "Actualizando...",
+      "saved": "Contraseña actualizada"
+    },
+    "signOut": "Cerrar sesión"
   }
 }

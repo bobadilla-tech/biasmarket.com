@@ -6,7 +6,8 @@ import { SITE_URL } from "@/lib/site-config";
 import { StoreLogo } from "@/components/store-logo";
 
 async function getStore(slug: string) {
-  const apiUrl = process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
+  const apiUrl = process.env.INTERNAL_API_URL ??
+    process.env.NEXT_PUBLIC_API_URL;
   const res = await fetch(`${apiUrl}/api/stores/${slug}/public`, {
     cache: "no-store",
   });
@@ -38,7 +39,9 @@ export async function generateMetadata({
   if (!store) return { robots: { index: false, follow: false } };
 
   const products = collectProducts(store);
-  const description = `Shop ${store.name} — ${products.length} product${products.length === 1 ? "" : "s"} available.`;
+  const description = `Shop ${store.name} — ${products.length} product${
+    products.length === 1 ? "" : "s"
+  } available.`;
 
   return {
     title: store.name,
@@ -107,60 +110,72 @@ export default async function StorePage({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(buildJsonLd(locale, slug, store)).replace(/</g, "\\u003c"),
+          __html: JSON.stringify(buildJsonLd(locale, slug, store)).replace(
+            /</g,
+            "\\u003c",
+          ),
         }}
       />
       <header className="border-b border-gray-100 bg-white px-6 py-8">
         <div className="mx-auto flex max-w-5xl items-center justify-center gap-3">
-          <StoreLogo name={store.name} logoUrl={store.logoUrl} size={48} className="text-sm" />
+          <StoreLogo
+            name={store.name}
+            logoUrl={store.logoUrl}
+            size={48}
+            className="text-sm"
+          />
           <h1 className="text-2xl font-bold text-gray-900">{store.name}</h1>
         </div>
       </header>
       <main className="max-w-5xl mx-auto px-4 py-8 space-y-10">
-        {store.sections.length === 0 ? (
-          <p className="text-gray-500 text-center">{t("noProducts")}</p>
-        ) : (
-          store.sections.map((section: any) => {
-            if (section.type === "COLLECTION") {
-              const products = section.collection?.products ?? [];
-              if (products.length === 0) return null;
+        {store.sections.length === 0
+          ? <p className="text-gray-500 text-center">{t("noProducts")}</p>
+          : (
+            store.sections.map((section: any) => {
+              if (section.type === "COLLECTION") {
+                const products = section.collection?.products ?? [];
+                if (products.length === 0) return null;
+                return (
+                  <section key={section.id}>
+                    {section.collection?.name && (
+                      <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                        {section.collection.name}
+                      </h2>
+                    )}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                      {products.map((cp: any) => (
+                        <ProductCard
+                          key={cp.product.id}
+                          slug={slug}
+                          product={cp.product}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                );
+              }
+              if (section.type === "BANNER") {
+                return (
+                  <section key={section.id}>
+                    {section.content?.imageUrl && (
+                      <a href={section.content?.linkUrl ?? "#"}>
+                        <img
+                          src={section.content.imageUrl}
+                          alt={section.content.alt ?? ""}
+                          className="w-full rounded-xl object-cover"
+                        />
+                      </a>
+                    )}
+                  </section>
+                );
+              }
               return (
-                <section key={section.id}>
-                  {section.collection?.name && (
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                      {section.collection.name}
-                    </h2>
-                  )}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                    {products.map((cp: any) => (
-                      <ProductCard key={cp.product.id} slug={slug} product={cp.product} />
-                    ))}
-                  </div>
+                <section key={section.id} className="prose max-w-none">
+                  <p>{section.content?.body}</p>
                 </section>
               );
-            }
-            if (section.type === "BANNER") {
-              return (
-                <section key={section.id}>
-                  {section.content?.imageUrl && (
-                    <a href={section.content?.linkUrl ?? "#"}>
-                      <img
-                        src={section.content.imageUrl}
-                        alt={section.content.alt ?? ""}
-                        className="w-full rounded-xl object-cover"
-                      />
-                    </a>
-                  )}
-                </section>
-              );
-            }
-            return (
-              <section key={section.id} className="prose max-w-none">
-                <p>{section.content?.body}</p>
-              </section>
-            );
-          })
-        )}
+            })
+          )}
       </main>
       <CartLink slug={slug} />
     </div>

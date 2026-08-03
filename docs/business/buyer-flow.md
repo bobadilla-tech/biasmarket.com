@@ -1,0 +1,64 @@
+                    BUYER FLOW
+
+               Entra a Bias Market
+                       │
+                       ▼
+                 Homepage (/)
+                       │
+      ┌────────────────┼────────────────┐
+      │                │                │
+      ▼                ▼                ▼
+
+Productos Categorías Buscar destacados producto │ ▼ Selecciona un producto │ ▼
+Página del producto /store/korealexa/products/skz-album │
+├────────────────────────────┐ │ │ ▼ ▼ Ver información Ver tienda del producto
+(KoreaLexa) │ ▼ /store/korealexa │ ▼ Explora más productos │ └───────────────┐ │
+▼ Regresa al producto │ ▼ Selecciona variante (Standard / Limited / etc.) │ ▼
+Agregar al carrito │ ▼ Carrito │ ▼ Checkout │ ▼ Escoge método de entrega
+
+                                     • Recojo
+                                     • Envío
+
+                                                   │
+                                                   ▼
+                                      Completa contacto
+
+                                     Nombre
+                                     Teléfono
+
+                                                   │
+                                                   ▼
+                                            Crear orden
+
+                                        Estado inicial:
+
+                                      awaiting_payment
+                                                   │
+                                                   ▼
+                                 Se muestran instrucciones
+
+                               "Coordina el pago vía WhatsApp"
+
+                                          Botón:
+                                   Hablar por WhatsApp
+                                                   │
+                                                   ▼
+                                             WhatsApp
+                                                   │
+                                                   ▼
+                                  Vendedor confirma pago
+                                                   │
+                                                   ▼
+                                          Mis pedidos
+                                                   │
+                                                   ▼
+                                        Seguimiento awaiting_payment
+                                                   │
+                                                   ▼
+                                        payment_confirmed
+                                                   │
+                                                   ▼
+                                              in_progress
+                                                   │
+                                                   ▼
+                                              delivered

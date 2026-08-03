@@ -9,4 +9,5 @@ const HTML_ESCAPES: Record<string, string> = {
   "'": "&#39;",
 };
 
-export const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => HTML_ESCAPES[c]);
+export const escapeHtml = (s: string) =>
+  s.replace(/[&<>"']/g, (c) => HTML_ESCAPES[c]);

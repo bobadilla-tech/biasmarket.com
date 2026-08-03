@@ -1,18 +1,37 @@
-import { Body, Controller, Get, Post, Patch, UseGuards, Delete, Param, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
-import { AuthGuard, Public, Roles, Session } from '@thallesp/nestjs-better-auth';
-import type { UserSession } from '@thallesp/nestjs-better-auth';
-import { StoresService } from './stores.service.js';
-import { UpdateStoreDto } from './dto/update-store.dto.js';
-import { CreateStoreDto } from './dto/create-store.dto.js';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { StorageService } from '../../storage/storage.service.js';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from "@nestjs/common";
+import {
+  AuthGuard,
+  Public,
+  Roles,
+  Session,
+} from "@thallesp/nestjs-better-auth";
+import type { UserSession } from "@thallesp/nestjs-better-auth";
+import { StoresService } from "./stores.service.js";
+import { UpdateStoreDto } from "./dto/update-store.dto.js";
+import { CreateStoreDto } from "./dto/create-store.dto.js";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { StorageService } from "../../storage/storage.service.js";
+import { parsePublicListQuery } from "../../common/public-list-query.js";
 
-@Controller('stores')
+@Controller("stores")
 export class StoresController {
   constructor(
     private readonly stores: StoresService,
     private readonly storage: StorageService,
-  ) { }
+  ) {}
 
   @UseGuards(AuthGuard)
   @Post()
@@ -21,22 +40,22 @@ export class StoresController {
   }
 
   @UseGuards(AuthGuard)
-  @Roles(['admin'])
+  @Roles(["admin"])
   @Get()
   findAllForAdmin() {
     return this.stores.findAllForAdmin();
   }
 
   @UseGuards(AuthGuard)
-  @Get('by-slug/:slug')
-  findBySlug(@Param('slug') slug: string, @Session() session: UserSession) {
+  @Get("by-slug/:slug")
+  findBySlug(@Param("slug") slug: string, @Session() session: UserSession) {
     return this.stores.findBySlugForOwner(slug, session.user.id);
   }
 
   @UseGuards(AuthGuard)
-  @Patch(':storeId')
+  @Patch(":storeId")
   update(
-    @Param('storeId') storeId: string,
+    @Param("storeId") storeId: string,
     @Session() session: UserSession,
     @Body() dto: UpdateStoreDto,
   ) {
@@ -44,54 +63,85 @@ export class StoresController {
   }
 
   @UseGuards(AuthGuard)
-  @Delete(':storeId')
-  delete(@Param('storeId') storeId: string, @Session() session: UserSession) {
+  @Delete(":storeId")
+  delete(@Param("storeId") storeId: string, @Session() session: UserSession) {
     return this.stores.delete(storeId, session.user.id);
   }
 
   @Public()
-  @Get('public')
+  @Get("public")
   findAllPublic() {
     return this.stores.findAllPublic();
   }
 
   @Public()
-  @Get('collections/public')
+  @Get("collections/public")
   findCollectionsPublic() {
     return this.stores.findCollectionsPublic();
   }
 
   @Public()
-  @Get(':slug/public')
-  findPublic(@Param('slug') slug: string) {
+  @Get("featured")
+  findFeatured(@Query("limit") limit: string | undefined) {
+    const parsed = parsePublicListQuery(limit, undefined, undefined);
+    return this.stores.findFeatured(parsed.limit);
+  }
+
+  @Public()
+  @Get("directory")
+  findDirectory(
+    @Query("q") q: string | undefined,
+    @Query("page") page: string | undefined,
+    @Query("limit") limit: string | undefined,
+  ) {
+    const parsed = parsePublicListQuery(limit, page, q);
+    return this.stores.findDirectory(parsed.page, parsed.limit, parsed.q);
+  }
+
+  @Public()
+  @Get(":slug/public")
+  findPublic(@Param("slug") slug: string) {
     return this.stores.findPublicBySlug(slug);
   }
 
   @Public()
-  @Get(':slug/categories/public')
-  findCategoriesPublic(@Param('slug') slug: string) {
+  @Get(":slug/categories/public")
+  findCategoriesPublic(@Param("slug") slug: string) {
     return this.stores.findCategoriesPublic(slug);
   }
 
+  @Public()
+  @Get(":slug/products/:productId/public")
+  findPublicProduct(
+    @Param("slug") slug: string,
+    @Param("productId") productId: string,
+  ) {
+    return this.stores.findPublicProduct(slug, productId);
+  }
+
   @UseGuards(AuthGuard)
-  @Post(':storeId/logo')
-  @UseInterceptors(FileInterceptor('file'))
+  @Post(":storeId/logo")
+  @UseInterceptors(FileInterceptor("file"))
   async uploadLogo(
-    @Param('storeId') storeId: string,
+    @Param("storeId") storeId: string,
     @Session() session: UserSession,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    if (!file) throw new BadRequestException('Falta el archivo');
-    if (file.size > 5 * 1024 * 1024) throw new BadRequestException('Máximo 5MB');
+    if (!file) throw new BadRequestException("Falta el archivo");
+    if (file.size > 5 * 1024 * 1024) {
+      throw new BadRequestException("Máximo 5MB");
+    }
 
     const isJpeg = file.buffer[0] === 0xff && file.buffer[1] === 0xd8;
     const isPng = file.buffer.subarray(0, 8).equals(
       Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
     );
-    if (!isJpeg && !isPng) throw new BadRequestException('Solo JPEG o PNG');
+    if (!isJpeg && !isPng) throw new BadRequestException("Solo JPEG o PNG");
 
-    const url = await this.storage.uploadLogo(file.buffer, isPng ? 'image/png' : 'image/jpeg');
+    const url = await this.storage.uploadLogo(
+      file.buffer,
+      isPng ? "image/png" : "image/jpeg",
+    );
     return this.stores.updateLogo(storeId, session.user.id, url);
   }
-
 }

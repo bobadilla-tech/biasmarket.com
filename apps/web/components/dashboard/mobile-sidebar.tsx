@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 import { StoreSidebar } from "./store-sidebar";
-import type { DashboardStore } from "@/lib/use-store";
+import type { DashboardStore } from "@/features/stores";
 
 export function MobileSidebar({
   slug,
@@ -20,7 +20,10 @@ export function MobileSidebar({
     <Sheet>
       <SheetTrigger
         render={
-          <button aria-label={t("openMenu")} className="rounded-xl p-2 hover:bg-muted">
+          <button
+            aria-label={t("openMenu")}
+            className="rounded-xl p-2 hover:bg-muted"
+          >
             <Menu className="size-6" />
           </button>
         }

@@ -2,7 +2,13 @@ import { expect, test } from "vitest";
 import { confirmResultSchema } from "./confirm-result.schema";
 
 const validPayload = {
-  customer: { name: "Jane Doe", email: "jane@example.com", phone: "+1234567890" },
+  purpose: "confirm",
+  customer: {
+    name: "Jane Doe",
+    email: "jane@example.com",
+    phone: "+1234567890",
+    hasPassword: false,
+  },
   orders: [
     {
       id: "order-1",

@@ -72,13 +72,12 @@ function clamp(value: number, min: number, max: number) {
 
 function hexToRgb(hex: string) {
   const normalized = hex.replace("#", "");
-  const expanded =
-    normalized.length === 3
-      ? normalized
-          .split("")
-          .map((char) => char + char)
-          .join("")
-      : normalized;
+  const expanded = normalized.length === 3
+    ? normalized
+      .split("")
+      .map((char) => char + char)
+      .join("")
+    : normalized;
 
   const value = Number.parseInt(expanded, 16);
   return {
@@ -103,7 +102,8 @@ function darken(hex: string, amount: number) {
 function lighten(hex: string, amount: number) {
   const { r, g, b } = hexToRgb(hex);
   const ratio = clamp(amount, 0, 1);
-  const toChannel = (channel: number) => Math.round(channel + (255 - channel) * ratio);
+  const toChannel = (channel: number) =>
+    Math.round(channel + (255 - channel) * ratio);
   return `rgb(${toChannel(r)}, ${toChannel(g)}, ${toChannel(b)})`;
 }
 
@@ -128,7 +128,9 @@ function isThemeConfig(value: unknown): value is StoreThemeConfig {
   if (paletteId !== undefined && typeof paletteId !== "string") return false;
   const colors = record.colors;
   if (colors !== undefined) {
-    if (typeof colors !== "object" || colors === null || Array.isArray(colors)) return false;
+    if (
+      typeof colors !== "object" || colors === null || Array.isArray(colors)
+    ) return false;
   }
   return true;
 }

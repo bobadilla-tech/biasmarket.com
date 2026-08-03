@@ -1,8 +1,8 @@
-import { Resend } from 'resend';
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { randomUUID } from 'node:crypto';
+import { Resend } from "resend";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { randomUUID } from "node:crypto";
 
 function requiredEnv(name: string): string {
   const value = process.env[name];
@@ -10,17 +10,19 @@ function requiredEnv(name: string): string {
   return value;
 }
 
-function resolveDriver(): 'file' | 'resend' {
+function resolveDriver(): "file" | "resend" {
   const raw = process.env.MAIL_DRIVER;
-  if (raw === undefined) return 'file';
-  if (raw === 'file' || raw === 'resend') return raw;
-  throw new Error(`Invalid MAIL_DRIVER: "${raw}". Expected "file" or "resend".`);
+  if (raw === undefined) return "file";
+  if (raw === "file" || raw === "resend") return raw;
+  throw new Error(
+    `Invalid MAIL_DRIVER: "${raw}". Expected "file" or "resend".`,
+  );
 }
 
 // apps/api/src/mailer -> apps/api — works whether cwd is apps/api/ (bare
 // `pnpm dev`) or the repo root (Docker dev stack).
-const apiRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const devMailDir = join(apiRoot, '.mailer-dev');
+const apiRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+const devMailDir = join(apiRoot, ".mailer-dev");
 
 export interface SendEmailParams {
   to: string | string[];
@@ -31,14 +33,14 @@ export interface SendEmailParams {
 }
 
 export class MailerCore {
-  private readonly driver: 'file' | 'resend' = resolveDriver();
-  private readonly apiKey = requiredEnv('RESEND_API_KEY');
-  private readonly fromEmail = requiredEnv('RESEND_FROM_EMAIL');
+  private readonly driver: "file" | "resend" = resolveDriver();
+  private readonly apiKey = requiredEnv("RESEND_API_KEY");
+  private readonly fromEmail = requiredEnv("RESEND_FROM_EMAIL");
   private client = new Resend(this.apiKey);
 
   async send(params: SendEmailParams): Promise<{ id: string }> {
     const from = params.from ?? this.fromEmail;
-    return this.driver === 'resend'
+    return this.driver === "resend"
       ? this.sendViaResend({ ...params, from })
       : this.writeToFile({ ...params, from });
   }
@@ -63,7 +65,7 @@ export class MailerCore {
   ): Promise<{ id: string }> {
     mkdirSync(devMailDir, { recursive: true });
     const id = randomUUID();
-    const to = Array.isArray(params.to) ? params.to.join(', ') : params.to;
+    const to = Array.isArray(params.to) ? params.to.join(", ") : params.to;
     const filePath = join(devMailDir, `${Date.now()}-${id}.html`);
     const header = [
       `<!--`,
@@ -74,8 +76,8 @@ export class MailerCore {
       `-->`,
     ]
       .filter(Boolean)
-      .join('\n');
-    writeFileSync(filePath, `${header}\n${params.html}`, 'utf8');
+      .join("\n");
+    writeFileSync(filePath, `${header}\n${params.html}`, "utf8");
     console.log(`[mailer] dev mode — wrote "${params.subject}" -> ${filePath}`);
     return { id };
   }

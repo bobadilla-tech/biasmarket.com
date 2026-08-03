@@ -1,11 +1,11 @@
 import {
-  IsString,
-  IsOptional,
   IsInt,
   IsNumber,
   IsObject,
+  IsOptional,
+  IsString,
   MinLength,
-} from 'class-validator';
+} from "class-validator";
 
 export class CreateVariantDto {
   @IsString()

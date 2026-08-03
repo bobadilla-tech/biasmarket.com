@@ -17,8 +17,11 @@ import { StoreLogo } from "@/components/store-logo";
 import type { DashboardStore } from "@/features/stores";
 import { useSaveProfile } from "../mutations/use-save-profile";
 import { useUploadStoreLogo } from "../mutations/use-upload-store-logo";
-import { profileFormSchema, type ProfileFormInput } from "../schemas/profile.schema";
-import { SectionCard, Field, useSavedFlash } from "./section-primitives";
+import {
+  type ProfileFormInput,
+  profileFormSchema,
+} from "../schemas/profile.schema";
+import { Field, SectionCard, useSavedFlash } from "./section-primitives";
 
 export function ProfileSection({ store }: { store: DashboardStore }) {
   const t = useTranslations("dashboard.settings");
@@ -27,7 +30,11 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   const saveProfile = useSaveProfile(store.id, slug);
-  const uploadLogo = useUploadStoreLogo(store.id, slug, tCommon("networkError"));
+  const uploadLogo = useUploadStoreLogo(
+    store.id,
+    slug,
+    tCommon("networkError"),
+  );
 
   const {
     register,
@@ -42,7 +49,9 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
       name: store.name ?? "",
       whatsappNumber: store.whatsappNumber ?? "",
       paymentInstructions: store.paymentInstructions ?? "",
-      defaultCurrency: (store.defaultCurrency as ProfileFormInput["defaultCurrency"]) ?? SUPPORTED_CURRENCIES[0],
+      defaultCurrency:
+        (store.defaultCurrency as ProfileFormInput["defaultCurrency"]) ??
+          SUPPORTED_CURRENCIES[0],
     },
   });
 
@@ -51,7 +60,9 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
       name: store.name ?? "",
       whatsappNumber: store.whatsappNumber ?? "",
       paymentInstructions: store.paymentInstructions ?? "",
-      defaultCurrency: (store.defaultCurrency as ProfileFormInput["defaultCurrency"]) ?? SUPPORTED_CURRENCIES[0],
+      defaultCurrency:
+        (store.defaultCurrency as ProfileFormInput["defaultCurrency"]) ??
+          SUPPORTED_CURRENCIES[0],
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store.id]);
@@ -61,7 +72,7 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
 
   const storefrontUrl = useMemo(() => {
     if (typeof window === "undefined") return `/${locale}/store/${slug}`;
-    return `${window.location.origin}/${locale}/store/${slug}`;
+    return `${globalThis.location.origin}/${locale}/store/${slug}`;
   }, [locale, slug]);
 
   useSavedFlash(saveProfile.isSuccess, saveProfile.reset);
@@ -69,7 +80,11 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
   const onSubmit = handleSubmit((values) => saveProfile.mutate(values));
 
   return (
-    <SectionCard icon={Store} title={t("profile.title")} description={t("profile.description")}>
+    <SectionCard
+      icon={Store}
+      title={t("profile.title")}
+      description={t("profile.description")}
+    >
       <div
         className="mb-6 flex flex-col gap-4 rounded-[24px] p-4 sm:flex-row sm:items-center sm:justify-between"
         style={{ backgroundColor: "var(--store-surface)" }}
@@ -83,7 +98,9 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
             style={{ boxShadow: "0 18px 36px var(--store-shadow)" }}
           />
           <div>
-            <p className="text-lg font-semibold text-[#2d1649]">{storeName || t("emptyName")}</p>
+            <p className="text-lg font-semibold text-[#2d1649]">
+              {storeName || t("emptyName")}
+            </p>
             <p className="text-sm text-[#8f7da8]">{storefrontUrl}</p>
           </div>
         </div>
@@ -167,13 +184,15 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
           </Field>
         </div>
 
-        {saveProfile.isError || uploadLogo.isError ? (
-          <p className="mt-4 text-sm text-[#b24368]">
-            {(saveProfile.error ?? uploadLogo.error) instanceof Error
-              ? ((saveProfile.error ?? uploadLogo.error) as Error).message
-              : tCommon("networkError")}
-          </p>
-        ) : null}
+        {saveProfile.isError || uploadLogo.isError
+          ? (
+            <p className="mt-4 text-sm text-[#b24368]">
+              {(saveProfile.error ?? uploadLogo.error) instanceof Error
+                ? ((saveProfile.error ?? uploadLogo.error) as Error).message
+                : tCommon("networkError")}
+            </p>
+          )
+          : null}
 
         <Separator className="my-5 bg-[#f0e7f8]" />
 
@@ -181,14 +200,15 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
           <p className="text-sm text-[#8f7da8]">{t("profile.help")}</p>
           <Button
             type="submit"
-            disabled={isSubmitting || saveProfile.isPending || !storeName || !whatsappNumber}
+            disabled={isSubmitting || saveProfile.isPending || !storeName ||
+              !whatsappNumber}
             className="store-theme-primary-button h-11 rounded-2xl px-5 text-sm font-semibold hover:scale-[1.01] hover:opacity-100"
           >
             {saveProfile.isSuccess
               ? t("saved")
               : saveProfile.isPending
-                ? t("saving")
-                : t("save")}
+              ? t("saving")
+              : t("save")}
           </Button>
         </div>
       </form>

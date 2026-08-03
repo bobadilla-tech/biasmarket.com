@@ -1,4 +1,20 @@
+import type { Metadata } from "next";
+import type { Locale } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import { CreateStoreForm, MyStoresList } from "@/features/stores";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: Locale }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({
+    locale,
+    namespace: "onboarding.createStore",
+  });
+  return { title: t("title") };
+}
 
 export default function CreateStorePage() {
   return (

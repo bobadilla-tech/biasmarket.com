@@ -1,17 +1,23 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import type { FulfillmentStatus, PaymentStatus, Prisma } from '@biasmarket/db';
-import { PrismaService } from '../../../prisma/prisma.service.js';
-import { Order } from '../domain/order.entity.js';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
+import type { FulfillmentStatus, PaymentStatus, Prisma } from "@biasmarket/db";
+import { PrismaService } from "../../../prisma/prisma.service.js";
+import { Order } from "../domain/order.entity.js";
 
 @Injectable()
 export class OrderRepository {
   constructor(private prisma: PrismaService) {}
 
   async assertOwnership(storeId: string, userId: string) {
-    const store = await this.prisma.store.findUnique({ where: { id: storeId } });
-    if (!store) throw new NotFoundException('Store no encontrada');
+    const store = await this.prisma.store.findUnique({
+      where: { id: storeId },
+    });
+    if (!store) throw new NotFoundException("Store no encontrada");
     if (store.ownerId !== userId) {
-      throw new ForbiddenException('No sos dueño de esta store');
+      throw new ForbiddenException("No sos dueño de esta store");
     }
     return store;
   }
@@ -20,7 +26,7 @@ export class OrderRepository {
     const includeWithPayments = {
       items: { include: { product: true, variant: true } },
       proofs: true,
-      payments: { orderBy: { createdAt: 'desc' } },
+      payments: { orderBy: { createdAt: "desc" } },
     } as const;
 
     const includeWithoutPayments = {
@@ -44,24 +50,28 @@ export class OrderRepository {
       }
     }
     if (!order || order.storeId !== storeId) {
-      throw new NotFoundException('Orden no encontrada');
+      throw new NotFoundException("Orden no encontrada");
     }
     return this.withPaymentSummary(order);
   }
 
   async findManyForStore(
     storeId: string,
-    filters: { paymentStatus?: PaymentStatus; fulfillmentStatus?: FulfillmentStatus },
+    filters: {
+      paymentStatus?: PaymentStatus;
+      fulfillmentStatus?: FulfillmentStatus;
+    },
   ) {
     const where = {
       storeId,
       ...(filters.paymentStatus && { paymentStatus: filters.paymentStatus }),
-      ...(filters.fulfillmentStatus && { fulfillmentStatus: filters.fulfillmentStatus }),
+      ...(filters.fulfillmentStatus &&
+        { fulfillmentStatus: filters.fulfillmentStatus }),
     } as const;
 
     const includeWithPayments = {
       items: { include: { product: true, variant: true } },
-      payments: { orderBy: { createdAt: 'desc' } },
+      payments: { orderBy: { createdAt: "desc" } },
     } as const;
 
     const includeWithoutPayments = {
@@ -72,33 +82,58 @@ export class OrderRepository {
       const orders = await this.prisma.order.findMany({
         where,
         include: includeWithPayments,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       });
       return orders.map((order) => this.withPaymentSummary(order));
     } catch (e) {
       const orders = await this.prisma.order.findMany({
         where,
         include: includeWithoutPayments,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       });
-      return orders.map((order) => this.withPaymentSummary({ ...order, payments: [] }));
+      return orders.map((order) =>
+        this.withPaymentSummary({ ...order, payments: [] })
+      );
     }
   }
 
-  toDomainEntity(row: { id: string; storeId: string; paymentStatus: PaymentStatus; fulfillmentStatus: FulfillmentStatus }): Order {
-    return new Order(row.id, row.storeId, row.paymentStatus, row.fulfillmentStatus);
+  toDomainEntity(
+    row: {
+      id: string;
+      storeId: string;
+      paymentStatus: PaymentStatus;
+      fulfillmentStatus: FulfillmentStatus;
+    },
+  ): Order {
+    return new Order(
+      row.id,
+      row.storeId,
+      row.paymentStatus,
+      row.fulfillmentStatus,
+    );
   }
 
   async saveStatus(
     orderId: string,
-    data: { paymentStatus?: PaymentStatus; fulfillmentStatus?: FulfillmentStatus },
+    data: {
+      paymentStatus?: PaymentStatus;
+      fulfillmentStatus?: FulfillmentStatus;
+    },
     tx: Prisma.TransactionClient | PrismaService = this.prisma,
   ) {
     return tx.order.update({ where: { id: orderId }, data });
   }
 
-  private withPaymentSummary<T extends { requiredAmount: Prisma.Decimal; payments?: { amount: Prisma.Decimal }[] }>(order: T) {
-    const paid = (order.payments ?? []).reduce((sum, payment) => sum + Number(payment.amount), 0);
+  private withPaymentSummary<
+    T extends {
+      requiredAmount: Prisma.Decimal;
+      payments?: { amount: Prisma.Decimal }[];
+    },
+  >(order: T) {
+    const paid = (order.payments ?? []).reduce(
+      (sum, payment) => sum + Number(payment.amount),
+      0,
+    );
     const required = Number(order.requiredAmount);
     return {
       ...order,

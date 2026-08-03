@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CreditCard,
+  ExternalLink,
   FolderKanban,
   LayoutDashboard,
   Lightbulb,
@@ -15,16 +16,16 @@ import {
   Rows3,
   Settings,
   ShoppingBag,
-  Store,
   Truck,
+  UserCircle,
   Users,
 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { StoreLogo } from "@/components/store-logo";
-import type { DashboardStore } from "@/lib/use-store";
+import type { DashboardStore } from "@/features/stores";
 
 const COLLAPSE_STORAGE_KEY = "store-sidebar-collapsed";
 
@@ -36,25 +37,24 @@ type NavItem = {
 };
 
 const primaryItems: NavItem[] = [
-  { key: "overview", icon: LayoutDashboard },
-  { key: "storefront", icon: Store },
+  { key: "overview", icon: LayoutDashboard, href: "" },
   { key: "orders", icon: ShoppingBag, href: "orders" },
   { key: "products", icon: Package, href: "products" },
   { key: "collections", icon: FolderKanban, href: "collections" },
   { key: "sections", icon: Rows3, href: "sections" },
-  { key: "shipping", icon: Truck },
-  { key: "payments", icon: CreditCard },
+  { key: "shipping", icon: Truck, href: "shipping" },
+  { key: "payments", icon: CreditCard, href: "payments" },
 ];
 
 const growthItems: NavItem[] = [
-  { key: "customers", icon: Users },
-  { key: "analytics", icon: BarChart3 },
+  { key: "customers", icon: Users, href: "customers" },
+  { key: "analytics", icon: BarChart3, href: "analytics" },
   { key: "notifications", icon: Bell, href: "notifications" },
 ];
 
 const settingsItems: NavItem[] = [
   { key: "settings", icon: Settings, href: "settings" },
-  { key: "ideas", icon: Lightbulb },
+  { key: "preferences", icon: Lightbulb, href: "preferences" },
 ];
 
 function SidebarSection({
@@ -82,7 +82,11 @@ function SidebarSection({
       <div className="space-y-1.5">
         {items.map((item) => {
           const Icon = item.icon;
-          const href = item.href ? `/dashboard/${slug}/${item.href}` : undefined;
+          const href = item.href === undefined
+            ? undefined
+            : item.href === ""
+            ? `/dashboard/${slug}`
+            : `/dashboard/${slug}/${item.href}`;
           const isActive = href ? pathname === href : false;
           const label = t(`nav.${item.key}`);
 
@@ -144,20 +148,21 @@ export function StoreSidebar({
   forceExpanded?: boolean;
 }) {
   const t = useTranslations("dashboard.shell");
+  const locale = useLocale();
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = authClient.useSession();
   const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(COLLAPSE_STORAGE_KEY);
+    const stored = globalThis.localStorage.getItem(COLLAPSE_STORAGE_KEY);
     if (stored === "true") setCollapsed(true);
   }, []);
 
   const toggleCollapsed = () => {
     setCollapsed((prev) => {
       const next = !prev;
-      window.localStorage.setItem(COLLAPSE_STORAGE_KEY, String(next));
+      globalThis.localStorage.setItem(COLLAPSE_STORAGE_KEY, String(next));
       return next;
     });
   };
@@ -198,6 +203,19 @@ export function StoreSidebar({
             <p className="truncate text-sm font-semibold text-white">
               {store?.name ?? t("brand")}
             </p>
+            {slug
+              ? (
+                <a
+                  href={`/${locale}/store/${slug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-xs text-white/50 transition hover:text-white/80"
+                >
+                  {t("viewStore")}
+                  <ExternalLink className="size-3" />
+                </a>
+              )
+              : null}
           </div>
         )}
         {!forceExpanded && (
@@ -207,11 +225,9 @@ export function StoreSidebar({
             title={t(effectiveCollapsed ? "expand" : "collapse")}
             className="flex size-7 shrink-0 items-center justify-center rounded-full text-white/60 transition hover:bg-white/8 hover:text-white"
           >
-            {effectiveCollapsed ? (
-              <ChevronRight className="size-4" />
-            ) : (
-              <ChevronLeft className="size-4" />
-            )}
+            {effectiveCollapsed
+              ? <ChevronRight className="size-4" />
+              : <ChevronLeft className="size-4" />}
           </button>
         )}
       </div>
@@ -254,6 +270,17 @@ export function StoreSidebar({
             </p>
           </div>
         )}
+        <Link
+          href="/account"
+          title={effectiveCollapsed ? t("myAccount") : undefined}
+          className={cn(
+            "flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm text-white/72 transition hover:bg-white/8 hover:text-white",
+            effectiveCollapsed && "justify-center px-0",
+          )}
+        >
+          <UserCircle className="size-4 shrink-0" />
+          {!effectiveCollapsed && <span>{t("myAccount")}</span>}
+        </Link>
         <button
           onClick={handleSignOut}
           title={effectiveCollapsed ? t("signOut") : undefined}

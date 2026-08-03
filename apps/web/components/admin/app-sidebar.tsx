@@ -28,7 +28,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { href: "/admin/inquiries", labelKey: "inquiries", icon: Inbox },
   { href: "/admin/stores", labelKey: "stores", icon: Store },
-  { href: "/admin/users", labelKey: "users", icon: Users, disabled: true },
+  { href: "/admin/users", labelKey: "users", icon: Users },
 ];
 
 export function AppSidebar() {
@@ -59,10 +59,16 @@ export function AppSidebar() {
                 if (item.disabled) {
                   return (
                     <SidebarMenuItem key={item.href}>
-                      <SidebarMenuButton disabled className="cursor-not-allowed opacity-50">
+                      <SidebarMenuButton
+                        disabled
+                        className="cursor-not-allowed opacity-50"
+                      >
                         <Icon />
                         <span>{t(item.labelKey)}</span>
-                        <Badge variant="secondary" className="ml-auto text-[10px]">
+                        <Badge
+                          variant="secondary"
+                          className="ml-auto text-[10px]"
+                        >
                           {t("comingSoon")}
                         </Badge>
                       </SidebarMenuButton>

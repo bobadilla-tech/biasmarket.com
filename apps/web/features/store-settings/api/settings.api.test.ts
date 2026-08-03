@@ -1,7 +1,10 @@
 import { afterEach, expect, test, vi } from "vitest";
 
 const apiFetch = vi.fn();
-vi.mock("@/lib/api", () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }));
+vi.mock(
+  "@/lib/api",
+  () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }),
+);
 
 const { settingsApi } = await import("./settings.api");
 
@@ -18,7 +21,12 @@ test("saveDeliverySettings creates new points, updates existing ones, and delete
     courierCost: 15,
     points: [
       { id: "new:123", label: "New spot", enabled: true, sortOrder: 1 },
-      { id: "existing-1", label: "Existing spot", enabled: false, sortOrder: 0 },
+      {
+        id: "existing-1",
+        label: "Existing spot",
+        enabled: false,
+        sortOrder: 0,
+      },
     ],
     deletedPointIds: ["deleted-1"],
   });
@@ -38,7 +46,12 @@ test("saveDeliverySettings creates new points, updates existing ones, and delete
 test("getDeliverySettings validates both methods and points", async () => {
   apiFetch
     .mockResolvedValueOnce([{ type: "PICKUP", enabled: true, details: {} }])
-    .mockResolvedValueOnce([{ id: "p1", label: "Main", enabled: true, sortOrder: 0 }]);
+    .mockResolvedValueOnce([{
+      id: "p1",
+      label: "Main",
+      enabled: true,
+      sortOrder: 0,
+    }]);
 
   const result = await settingsApi.getDeliverySettings("store-1");
 
@@ -53,7 +66,23 @@ test("savePaymentMethods POSTs all four methods with their enabled state", async
 
   expect(apiFetch).toHaveBeenCalledTimes(4);
   const yapeCall = apiFetch.mock.calls.find((call) =>
-    (call[1]?.body as string)?.includes("YAPE"),
+    (call[1]?.body as string)?.includes("YAPE")
   );
-  expect(JSON.parse(yapeCall![1].body as string)).toEqual({ method: "YAPE", enabled: false });
+  expect(JSON.parse(yapeCall![1].body as string)).toEqual({
+    method: "YAPE",
+    enabled: false,
+  });
+});
+
+test("getEnabledPaymentMethods hits the enabled=1 endpoint and returns a plain method list", async () => {
+  apiFetch.mockResolvedValue([{ method: "YAPE" }, { method: "CASH" }]);
+
+  const result = await settingsApi.getEnabledPaymentMethods("store-1");
+
+  expect(apiFetch).toHaveBeenCalledWith(
+    "/stores/store-1/payment-methods?enabled=1",
+    {},
+    undefined,
+  );
+  expect(result).toEqual(["YAPE", "CASH"]);
 });

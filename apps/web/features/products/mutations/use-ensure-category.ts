@@ -1,0 +1,53 @@
+"use client";
+
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { categoriesApi } from "../api/categories.api";
+import { categoriesKeys } from "../queries/use-categories";
+import type { Category } from "../schemas/category.schema";
+
+/**
+ * Preserves the old `ensureCategory` semantic: resolve an existing category by
+ * name, or create one. If creation fails (someone-else-just-created-it race),
+ * refetch the list and re-resolve by name before giving up.
+ */
+export function useEnsureCategory(
+  storeId: string | undefined,
+  fallbackErrorMessage?: string,
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (name: string) => {
+      const sid = storeId as string;
+      const trimmed = name.trim();
+      const normalized = trimmed.toLowerCase();
+      const existing = queryClient
+        .getQueryData<Category[]>(categoriesKeys.byStore(sid))
+        ?.find((category) => category.name.trim().toLowerCase() === normalized);
+      if (existing) return existing;
+
+      try {
+        return await categoriesApi.create(sid, trimmed, fallbackErrorMessage);
+      } catch {
+        const refreshed = await categoriesApi.list(sid, fallbackErrorMessage);
+        queryClient.setQueryData(categoriesKeys.byStore(sid), refreshed);
+        const resolved = refreshed.find((category) =>
+          category.name.trim().toLowerCase() === normalized
+        );
+        if (!resolved) throw new Error(fallbackErrorMessage ?? "Network error");
+        return resolved;
+      }
+    },
+    onSuccess: (created) => {
+      if (!storeId) return;
+      queryClient.setQueryData<Category[]>(
+        categoriesKeys.byStore(storeId),
+        (prev) => {
+          if (!prev) return prev;
+          if (prev.some((category) => category.id === created.id)) return prev;
+          return [...prev, created];
+        },
+      );
+    },
+  });
+}

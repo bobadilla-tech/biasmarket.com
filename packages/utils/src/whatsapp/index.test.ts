@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildWhatsAppOrderMessage, buildWhatsAppUrl } from "./index";
+import {
+  buildWhatsAppOrderMessage,
+  buildWhatsAppPaymentReminderMessage,
+  buildWhatsAppUrl,
+} from "./index";
 
 describe("buildWhatsAppOrderMessage", () => {
   const base = {
@@ -26,18 +30,53 @@ describe("buildWhatsAppOrderMessage", () => {
   });
 
   it("falls back to the raw delivery method when there's no label for it", () => {
-    const message = buildWhatsAppOrderMessage({ ...base, deliveryMethodType: "TELEPORT" });
+    const message = buildWhatsAppOrderMessage({
+      ...base,
+      deliveryMethodType: "TELEPORT",
+    });
     expect(message).toContain("Entrega: TELEPORT");
   });
 
   it("shows the customer name when provided", () => {
-    const message = buildWhatsAppOrderMessage({ ...base, customerName: "Jane" });
+    const message = buildWhatsAppOrderMessage({
+      ...base,
+      customerName: "Jane",
+    });
     expect(message).toContain("Cliente: Jane");
   });
 
   it("falls back to the phone number when no name is provided", () => {
     const message = buildWhatsAppOrderMessage(base);
     expect(message).toContain("Contacto: +51999999999");
+  });
+});
+
+describe("buildWhatsAppPaymentReminderMessage", () => {
+  const base = {
+    orderId: "order-abcdef",
+    storeName: "K-Store",
+    pendingAmount: 12.5,
+    currency: "PEN",
+  };
+
+  it("includes the short order ref, store name, and pending amount", () => {
+    const message = buildWhatsAppPaymentReminderMessage(base);
+    expect(message).toContain("#ABCDEF");
+    expect(message).toContain("K-Store");
+    expect(message).toContain("12.50 PEN");
+  });
+
+  it("greets the customer by name when provided", () => {
+    const message = buildWhatsAppPaymentReminderMessage({
+      ...base,
+      customerName: "Jane",
+    });
+    expect(message).toContain("Hola Jane,");
+  });
+
+  it("falls back to a generic greeting when no name is provided", () => {
+    const message = buildWhatsAppPaymentReminderMessage(base);
+    expect(message).toContain("Hola,");
   });
 });
 
@@ -49,6 +88,10 @@ describe("buildWhatsAppUrl", () => {
 
   it("URL-encodes the message", () => {
     const url = buildWhatsAppUrl("51999999999", "line one\nline two");
-    expect(url).toBe(`https://wa.me/51999999999?text=${encodeURIComponent("line one\nline two")}`);
+    expect(url).toBe(
+      `https://wa.me/51999999999?text=${
+        encodeURIComponent("line one\nline two")
+      }`,
+    );
   });
 });

@@ -10,7 +10,9 @@ export function useArchiveNotification(storeId: string | undefined) {
       notificationsApi.archive(storeId as string, notificationId),
     onSuccess: () => {
       if (!storeId) return;
-      queryClient.invalidateQueries({ queryKey: notificationKeys.all(storeId) });
+      queryClient.invalidateQueries({
+        queryKey: notificationKeys.all(storeId),
+      });
     },
   });
 }

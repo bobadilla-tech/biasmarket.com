@@ -1,10 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
-import { vi, type Mock } from 'vitest';
-import { ContactService } from './contact.service.js';
-import { PrismaService } from '../../prisma/prisma.service.js';
+import { Test, TestingModule } from "@nestjs/testing";
+import { NotFoundException } from "@nestjs/common";
+import { type Mock, vi } from "vitest";
+import { ContactService } from "./contact.service.js";
+import { PrismaService } from "../../prisma/prisma.service.js";
 
-describe('ContactService', () => {
+describe("ContactService", () => {
   let service: ContactService;
   let prisma: {
     contactInquiry: {
@@ -15,7 +15,7 @@ describe('ContactService', () => {
     };
   };
 
-  const inquiryId = 'inquiry-1';
+  const inquiryId = "inquiry-1";
 
   beforeEach(async () => {
     prisma = {
@@ -34,11 +34,11 @@ describe('ContactService', () => {
     service = module.get<ContactService>(ContactService);
   });
 
-  it('create() persists the inquiry as-is', async () => {
+  it("create() persists the inquiry as-is", async () => {
     const dto = {
-      name: 'Jane',
-      email: 'jane@example.com',
-      message: 'Hi there',
+      name: "Jane",
+      email: "jane@example.com",
+      message: "Hi there",
     };
     prisma.contactInquiry.create.mockResolvedValue({ id: inquiryId, ...dto });
 
@@ -47,17 +47,17 @@ describe('ContactService', () => {
     expect(prisma.contactInquiry.create).toHaveBeenCalledWith({ data: dto });
   });
 
-  it('findAll() lists inquiries newest first', async () => {
+  it("findAll() lists inquiries newest first", async () => {
     prisma.contactInquiry.findMany.mockResolvedValue([]);
 
     await service.findAll();
 
     expect(prisma.contactInquiry.findMany).toHaveBeenCalledWith({
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
   });
 
-  it('markReviewed() throws NotFoundException when the inquiry does not exist', async () => {
+  it("markReviewed() throws NotFoundException when the inquiry does not exist", async () => {
     prisma.contactInquiry.findUnique.mockResolvedValue(null);
 
     await expect(service.markReviewed(inquiryId)).rejects.toThrow(
@@ -65,7 +65,7 @@ describe('ContactService', () => {
     );
   });
 
-  it('markReviewed() sets status to REVIEWED', async () => {
+  it("markReviewed() sets status to REVIEWED", async () => {
     prisma.contactInquiry.findUnique.mockResolvedValue({ id: inquiryId });
     prisma.contactInquiry.update.mockResolvedValue({});
 
@@ -73,7 +73,7 @@ describe('ContactService', () => {
 
     expect(prisma.contactInquiry.update).toHaveBeenCalledWith({
       where: { id: inquiryId },
-      data: { status: 'REVIEWED' },
+      data: { status: "REVIEWED" },
     });
   });
 });

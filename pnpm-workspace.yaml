@@ -2,14 +2,14 @@ packages:
   - apps/*
   - packages/*
 allowBuilds:
-  '@prisma/engines': true
-  '@swc/core': true
+  "@prisma/engines": true
+  "@swc/core": true
   esbuild: true
   prisma: true
   sharp: true
 onlyBuiltDependencies:
-  - '@prisma/engines'
-  - '@swc/core'
+  - "@prisma/engines"
+  - "@swc/core"
   - esbuild
   - prisma
   - sharp

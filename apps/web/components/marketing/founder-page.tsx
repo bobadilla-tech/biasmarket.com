@@ -52,7 +52,10 @@ export function FounderPage() {
           <p className="mt-2 text-muted-foreground">{t("cta.body")}</p>
           <a
             href={`mailto:${CONTACT_EMAIL}`}
-            className={buttonVariants({ size: "lg", className: "mt-6 h-11 px-6" })}
+            className={buttonVariants({
+              size: "lg",
+              className: "mt-6 h-11 px-6",
+            })}
           >
             {t("cta.button")}
           </a>

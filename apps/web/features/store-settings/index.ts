@@ -1,3 +1,4 @@
+export { settingsApi } from "./api/settings.api";
 export { ProfileSection } from "./components/profile-section";
 export { AppearanceSection } from "./components/appearance-section";
 export { PaymentsSection } from "./components/payments-section";

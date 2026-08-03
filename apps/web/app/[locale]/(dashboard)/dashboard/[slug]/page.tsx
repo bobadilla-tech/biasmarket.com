@@ -1,11 +1,18 @@
+import type { Metadata } from "next";
 import type { Locale } from "next-intl";
-import { redirect } from "@/i18n/navigation";
+import { getTranslations } from "next-intl/server";
+import { DashboardOverviewPageClient } from "./overview-page-client";
 
-export default async function DashboardHome({
+export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ locale: Locale; slug: string }>;
-}) {
-  const { locale, slug } = await params;
-  redirect({ href: `/dashboard/${slug}/settings`, locale });
+  params: Promise<{ locale: Locale }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "dashboard.overview" });
+  return { title: t("title") };
+}
+
+export default function DashboardOverviewPage() {
+  return <DashboardOverviewPageClient />;
 }

@@ -24,6 +24,7 @@
     "namePlaceholder": "Nombre",
     "phonePlaceholder": "Teléfono (WhatsApp)",
     "emailPlaceholder": "Email (opcional)",
+    "invalidEmail": "Ingresa un email válido",
     "submit": "Confirmar y continuar por WhatsApp",
     "submitting": "Enviando...",
     "noDeliveryMethod": "La tienda todavía no configuró un método de entrega — contacta al vendedor.",
@@ -42,12 +43,128 @@
     "ordersTitle": "Tus pedidos",
     "noOrders": "Todavía no tienes pedidos.",
     "backToStore": "Volver a la tienda",
+    "alreadyConfirmed": "Tu cuenta ya tiene una contraseña configurada.",
+    "emailChanged": "Tu correo fue actualizado correctamente.",
+    "phoneChanged": "Tu teléfono fue actualizado correctamente.",
     "status": {
       "toConfirm": "Por confirmar",
       "partial": "Pago parcial",
       "verified": "Pago confirmado",
       "rejected": "Rechazado",
       "cancelled": "Cancelado"
+    },
+    "setPassword": {
+      "title": "Configura una contraseña",
+      "subtitle": "Configura una contraseña para ingresar directamente la próxima vez, sin necesitar un nuevo enlace por correo.",
+      "titleReset": "Restablece tu contraseña",
+      "subtitleReset": "Configura una nueva contraseña para tu cuenta.",
+      "passwordPlaceholder": "Contraseña (mín. 8 caracteres)",
+      "confirmPasswordPlaceholder": "Confirmar contraseña",
+      "submit": "Configurar contraseña",
+      "submitting": "Guardando...",
+      "success": "Contraseña configurada — ya puedes ingresar con tu número de teléfono.",
+      "successReset": "Contraseña actualizada — ya puedes ingresar con tu número de teléfono.",
+      "passwordTooShort": "Debe tener al menos 8 caracteres",
+      "passwordsDontMatch": "Las contraseñas no coinciden",
+      "genericError": "Algo salió mal. Intenta de nuevo.",
+      "goToLogin": "Ingresar"
     }
+  },
+  "loginPage": {
+    "title": "Ingresar",
+    "phonePlaceholder": "Teléfono (WhatsApp)",
+    "passwordPlaceholder": "Contraseña",
+    "phoneRequired": "Ingresa tu número de teléfono",
+    "passwordRequired": "Ingresa tu contraseña",
+    "invalidCredentials": "Teléfono o contraseña inválidos",
+    "submit": "Ingresar",
+    "submitting": "Ingresando...",
+    "forgotPasswordLink": "¿Olvidaste tu contraseña?"
+  },
+  "forgotPasswordPage": {
+    "title": "Restablecer contraseña",
+    "subtitle": "Ingresa tu número de teléfono y, si tiene una cuenta, te enviaremos un enlace a tu correo para restablecer tu contraseña.",
+    "phonePlaceholder": "Teléfono (WhatsApp)",
+    "phoneRequired": "Ingresa tu número de teléfono",
+    "submit": "Enviar enlace",
+    "submitting": "Enviando...",
+    "success": "Si ese teléfono tiene una cuenta, revisa tu correo para continuar.",
+    "backToLogin": "Volver a ingresar"
+  },
+  "accountNav": {
+    "myAccount": "Mi cuenta",
+    "login": "Ingresar"
+  },
+  "accountPage": {
+    "title": "Mi cuenta",
+    "logout": "Cerrar sesión",
+    "infoTitle": "Datos de la cuenta",
+    "noName": "Sin nombre registrado",
+    "noEmail": "Sin email registrado",
+    "ordersTitle": "Tus pedidos",
+    "noOrders": "Todavía no tienes pedidos.",
+    "backToStore": "Volver a la tienda",
+    "loggedOutTitle": "No has iniciado sesión",
+    "loggedOutBody": "Ingresa para ver tu cuenta y el historial de pedidos.",
+    "goToLogin": "Ingresar",
+    "status": {
+      "toConfirm": "Por confirmar",
+      "partial": "Pago parcial",
+      "verified": "Pago confirmado",
+      "rejected": "Rechazado",
+      "cancelled": "Cancelado"
+    },
+    "changePassword": {
+      "title": "Cambiar contraseña",
+      "currentPasswordPlaceholder": "Contraseña actual",
+      "currentPasswordRequired": "Ingresa tu contraseña actual",
+      "newPasswordPlaceholder": "Nueva contraseña (mín. 8 caracteres)",
+      "passwordTooShort": "Debe tener al menos 8 caracteres",
+      "confirmNewPasswordPlaceholder": "Confirmar nueva contraseña",
+      "passwordsDontMatch": "Las contraseñas no coinciden",
+      "genericError": "Algo salió mal. Intenta de nuevo.",
+      "success": "Contraseña actualizada.",
+      "submit": "Actualizar contraseña",
+      "submitting": "Guardando..."
+    },
+    "editContact": {
+      "title": "Correo y teléfono",
+      "namePlaceholder": "Nombre",
+      "emailPlaceholder": "Correo",
+      "emailInvalid": "Ingresa un correo válido",
+      "phonePlaceholder": "Teléfono (WhatsApp)",
+      "phoneRequired": "Ingresa tu número de teléfono",
+      "genericError": "Algo salió mal. Intenta de nuevo.",
+      "success": "Revisa tu correo para confirmar los cambios.",
+      "submit": "Guardar cambios",
+      "submitting": "Guardando...",
+      "pendingEmail": "Confirmación pendiente para {email}",
+      "pendingPhone": "Confirmación pendiente para {phone}"
+    }
+  },
+  "storeDirectory": {
+    "title": "Descubre tiendas",
+    "subtitle": "Explora todas las tiendas que venden en Bias Market.",
+    "searchPlaceholder": "Buscar tiendas por nombre...",
+    "empty": "No se encontraron tiendas.",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "pageOf": "Página {page} de {total}"
+  },
+  "productSearch": {
+    "title": "Buscar productos",
+    "subtitle": "Encuentra un producto en todas las tiendas de Bias Market.",
+    "searchPlaceholder": "Buscar productos por nombre...",
+    "empty": "No se encontraron productos.",
+    "prompt": "Empieza a escribir para buscar.",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "pageOf": "Página {page} de {total}",
+    "viewStore": "Vendido por {name}"
+  },
+  "productDetail": {
+    "back": "Volver a la tienda",
+    "notFound": "Producto no encontrado.",
+    "soldOut": "Agotado"
   }
 }

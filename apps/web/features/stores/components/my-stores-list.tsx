@@ -3,7 +3,13 @@
 import { ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { useRouter } from "@/i18n/navigation";
 import { useMyStores } from "../queries/use-my-stores";
 import { useDeleteStore } from "../mutations/use-delete-store";
@@ -31,20 +37,26 @@ export function MyStoresList() {
           <p className="text-xs font-semibold uppercase tracking-[0.26em] text-white/45">
             Bias Market
           </p>
-          <CardTitle className="mt-3 text-2xl font-bold text-white">{t("storesTitle")}</CardTitle>
+          <CardTitle className="mt-3 text-2xl font-bold text-white">
+            {t("storesTitle")}
+          </CardTitle>
           <CardDescription className="mt-2 text-sm text-white/65">
             {t("storesDescription")}
           </CardDescription>
         </div>
       </CardHeader>
       <CardContent className="space-y-3 px-5 pb-5">
-        {isPending ? <p className="text-sm text-white/70">{tCommon("loading")}</p> : null}
+        {isPending
+          ? <p className="text-sm text-white/70">{tCommon("loading")}</p>
+          : null}
 
-        {!isPending && stores.length === 0 ? (
-          <div className="rounded-[22px] border border-dashed border-white/14 bg-white/5 p-4 text-sm text-white/68">
-            {t("empty")}
-          </div>
-        ) : null}
+        {!isPending && stores.length === 0
+          ? (
+            <div className="rounded-[22px] border border-dashed border-white/14 bg-white/5 p-4 text-sm text-white/68">
+              {t("empty")}
+            </div>
+          )
+          : null}
 
         {stores.map((store) => (
           <Card

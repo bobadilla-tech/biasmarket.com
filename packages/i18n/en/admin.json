@@ -43,5 +43,25 @@
       "impersonate": "Impersonate",
       "impersonating": "Impersonating..."
     }
+  },
+  "users": {
+    "title": "Users",
+    "empty": "No users yet.",
+    "table": {
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "stores": "Stores",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Active",
+      "banned": "Banned"
+    },
+    "actions": {
+      "ban": "Ban",
+      "unban": "Unban"
+    }
   }
 }

@@ -14,6 +14,3 @@ export async function apiFetch(
   if (!res.ok) throw new Error(data?.message ?? fallbackErrorMessage);
   return data;
 }
-
-
- 

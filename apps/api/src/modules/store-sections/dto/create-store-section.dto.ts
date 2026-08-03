@@ -1,9 +1,9 @@
-import { IsEnum, IsObject, IsOptional, IsString, IsInt } from 'class-validator';
+import { IsEnum, IsInt, IsObject, IsOptional, IsString } from "class-validator";
 
 export enum StoreSectionTypeDto {
-  COLLECTION = 'COLLECTION',
-  BANNER = 'BANNER',
-  TEXT_BLOCK = 'TEXT_BLOCK',
+  COLLECTION = "COLLECTION",
+  BANNER = "BANNER",
+  TEXT_BLOCK = "TEXT_BLOCK",
 }
 
 export class CreateStoreSectionDto {

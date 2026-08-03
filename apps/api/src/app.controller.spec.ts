@@ -1,12 +1,12 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { vi } from 'vitest';
-import { AppController } from './app.controller.js';
+import { Test, TestingModule } from "@nestjs/testing";
+import { vi } from "vitest";
+import { AppController } from "./app.controller.js";
 
-vi.mock('@thallesp/nestjs-better-auth', () => ({
+vi.mock("@thallesp/nestjs-better-auth", () => ({
   AllowAnonymous: () => () => undefined,
 }));
 
-describe('AppController', () => {
+describe("AppController", () => {
   let appController: AppController;
 
   beforeEach(async () => {
@@ -17,10 +17,10 @@ describe('AppController', () => {
     appController = app.get<AppController>(AppController);
   });
 
-  describe('root', () => {
-    it('redirects to WEB_URL', () => {
+  describe("root", () => {
+    it("redirects to WEB_URL", () => {
       expect(appController.root()).toEqual({
-        url: 'http://localhost:3001',
+        url: "http://localhost:3001",
         statusCode: 302,
       });
     });

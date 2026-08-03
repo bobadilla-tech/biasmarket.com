@@ -1,0 +1,76 @@
+"use client";
+
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { productsApi } from "../api/products.api";
+import { productsKeys } from "../queries/use-products";
+import { keyForAttributes } from "../lib/variant-key";
+import type { VariantDraft } from "../schemas/variant.schema";
+
+export function useCreateProduct(storeId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: {
+      name: string;
+      description: string;
+      price: string;
+      currency: string;
+      stock: string;
+      categoryId: string;
+      imageFile: File | null;
+      variants: VariantDraft[];
+      variantImages: Record<string, File | null>;
+      fallbackErrorMessage?: string;
+    }) => {
+      const sid = storeId as string;
+      const created = await productsApi.create(
+        sid,
+        {
+          name: input.name,
+          description: input.description || undefined,
+          price: Number(input.price),
+          currency: input.currency,
+          stock: input.variants.length === 0 && input.stock
+            ? Number(input.stock)
+            : undefined,
+          variants: input.variants.length > 0 ? input.variants : undefined,
+          categoryIds: input.categoryId ? [input.categoryId] : undefined,
+        },
+        input.fallbackErrorMessage,
+      );
+
+      if (input.imageFile) {
+        await productsApi.uploadImage(sid, created.id, input.imageFile, {
+          fallbackErrorMessage: input.fallbackErrorMessage,
+        });
+      }
+
+      const createdVariants = created.variants ?? [];
+      for (const draft of input.variants) {
+        const file = input.variantImages[keyForAttributes(draft.attributes)];
+        if (!file) continue;
+        const match = createdVariants.find(
+          (variant) =>
+            keyForAttributes(variant.attributes) ===
+              keyForAttributes(draft.attributes),
+        );
+        if (!match) continue;
+        await productsApi.uploadVariantImage(
+          sid,
+          created.id,
+          match.id,
+          file,
+          input.fallbackErrorMessage,
+        );
+      }
+
+      return created;
+    },
+    onSuccess: () => {
+      if (!storeId) return;
+      queryClient.invalidateQueries({
+        queryKey: productsKeys.byStore(storeId),
+      });
+    },
+  });
+}
