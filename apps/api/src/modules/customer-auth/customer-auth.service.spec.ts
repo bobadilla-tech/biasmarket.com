@@ -17,13 +17,24 @@ import {
   derivePasswordVersion,
 } from "./customer-auth.service.js";
 import { PrismaService } from "../../prisma/prisma.service.js";
+import { CustomerAccountService } from "../orders/application/customer-account.service.js";
 
 describe("CustomerAuthService", () => {
   let service: CustomerAuthService;
   let prisma: {
-    customer: { findUnique: Mock; findUniqueOrThrow: Mock; update: Mock };
+    customer: {
+      findUnique: Mock;
+      findUniqueOrThrow: Mock;
+      findFirst: Mock;
+      update: Mock;
+    };
     store: { findUnique: Mock };
     order: { findMany: Mock };
+  };
+  let customerAccount: {
+    sendPasswordResetEmail: Mock;
+    sendEmailChangeConfirmation: Mock;
+    sendPhoneChangeConfirmation: Mock;
   };
 
   const store = { id: "store-1", slug: "my-store" };
@@ -35,17 +46,24 @@ describe("CustomerAuthService", () => {
       customer: {
         findUnique: vi.fn(),
         findUniqueOrThrow: vi.fn(),
+        findFirst: vi.fn(),
         update: vi.fn(),
       },
       store: { findUnique: vi.fn().mockResolvedValue(store) },
       order: { findMany: vi.fn() },
     };
+    customerAccount = {
+      sendPasswordResetEmail: vi.fn(),
+      sendEmailChangeConfirmation: vi.fn(),
+      sendPhoneChangeConfirmation: vi.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [CustomerAuthService, {
-        provide: PrismaService,
-        useValue: prisma,
-      }],
+      providers: [
+        CustomerAuthService,
+        { provide: PrismaService, useValue: prisma },
+        { provide: CustomerAccountService, useValue: customerAccount },
+      ],
     }).compile();
 
     service = module.get(CustomerAuthService);
@@ -119,6 +137,83 @@ describe("CustomerAuthService", () => {
       ).rejects.toBeInstanceOf(
         NotFoundException,
       );
+    });
+
+    it("allows a 'reset'-purpose token to overwrite an existing password", async () => {
+      const token = createCustomerAccountToken(
+        "customer-1",
+        "test-secret",
+        "reset",
+      );
+      prisma.customer.findUnique.mockResolvedValue({
+        id: "customer-1",
+        storeId: store.id,
+        passwordHash: "already-set",
+      });
+
+      const result = await service.register(
+        "my-store",
+        token,
+        "brand-new-password-1",
+      );
+
+      expect(result).toEqual({ ok: true });
+      expect(prisma.customer.update).toHaveBeenCalledWith({
+        where: { id: "customer-1" },
+        data: { passwordHash: expect.any(String) },
+      });
+    });
+
+    it("rejects a 'change-email'-purpose token — not a valid purpose for setting a password", async () => {
+      const token = createCustomerAccountToken(
+        "customer-1",
+        "test-secret",
+        "change-email",
+      );
+
+      await expect(service.register("my-store", token, "super-secret-1"))
+        .rejects.toBeInstanceOf(BadRequestException);
+      expect(prisma.customer.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("forgotPassword", () => {
+    it("sends a reset email when the phone matches a registered customer", async () => {
+      const customer = {
+        id: "customer-1",
+        storeId: store.id,
+        email: "jane@example.com",
+        passwordHash: "already-set",
+      };
+      prisma.customer.findUnique.mockResolvedValue(customer);
+
+      await service.forgotPassword("my-store", "+51988888888");
+
+      expect(customerAccount.sendPasswordResetEmail).toHaveBeenCalledWith(
+        customer,
+        store,
+      );
+    });
+
+    it("silently no-ops when the phone doesn't match any customer", async () => {
+      prisma.customer.findUnique.mockResolvedValue(null);
+
+      await expect(service.forgotPassword("my-store", "+51900000000"))
+        .resolves.toBeUndefined();
+      expect(customerAccount.sendPasswordResetEmail).not.toHaveBeenCalled();
+    });
+
+    it("silently no-ops when the customer never set a password", async () => {
+      prisma.customer.findUnique.mockResolvedValue({
+        id: "customer-1",
+        storeId: store.id,
+        email: "jane@example.com",
+        passwordHash: null,
+      });
+
+      await service.forgotPassword("my-store", "+51988888888");
+
+      expect(customerAccount.sendPasswordResetEmail).not.toHaveBeenCalled();
     });
   });
 
@@ -306,21 +401,38 @@ describe("CustomerAuthService", () => {
 
   describe("updateProfile", () => {
     const session = { id: "customer-1", storeId: store.id };
+    const currentCustomer = {
+      id: "customer-1",
+      storeId: store.id,
+      name: "Old Name",
+      email: "old@example.com",
+      phone: "+51988888888",
+      emailVerified: true,
+    };
+
+    beforeEach(() => {
+      prisma.customer.findUniqueOrThrow.mockResolvedValue(currentCustomer);
+    });
 
     it("updates the name only", async () => {
-      prisma.customer.update.mockResolvedValue({ name: "New Name" });
+      prisma.customer.update.mockResolvedValue({
+        ...currentCustomer,
+        name: "New Name",
+      });
 
-      const result = await service.updateProfile(
-        "my-store",
-        session,
-        "New Name",
-      );
+      const result = await service.updateProfile("my-store", session, {
+        name: "New Name",
+      });
 
       expect(prisma.customer.update).toHaveBeenCalledWith({
         where: { id: "customer-1" },
         data: { name: "New Name" },
       });
-      expect(result).toEqual({ name: "New Name" });
+      expect(result).toEqual({
+        name: "New Name",
+        pendingEmail: undefined,
+        pendingPhone: undefined,
+      });
     });
 
     it("rejects when the route slug belongs to a different store than the session", async () => {
@@ -330,10 +442,96 @@ describe("CustomerAuthService", () => {
       });
 
       await expect(
-        service.updateProfile("a-different-store", session, "New Name"),
+        service.updateProfile("a-different-store", session, {
+          name: "New Name",
+        }),
       ).rejects.toBeInstanceOf(
         ForbiddenException,
       );
+      expect(prisma.customer.update).not.toHaveBeenCalled();
+    });
+
+    it("stages a new email and sends a confirmation to the new address", async () => {
+      prisma.customer.findFirst.mockResolvedValue(null);
+      prisma.customer.update.mockResolvedValue({
+        ...currentCustomer,
+        pendingEmail: "new@example.com",
+      });
+
+      await service.updateProfile("my-store", session, {
+        name: "Old Name",
+        email: "new@example.com",
+      });
+
+      expect(prisma.customer.update).toHaveBeenCalledWith({
+        where: { id: "customer-1" },
+        data: { name: "Old Name", pendingEmail: "new@example.com" },
+      });
+      expect(customerAccount.sendEmailChangeConfirmation).toHaveBeenCalledWith(
+        expect.objectContaining({ pendingEmail: "new@example.com" }),
+        store,
+        "new@example.com",
+      );
+    });
+
+    it("rejects an email already used by another customer in the store", async () => {
+      prisma.customer.findFirst.mockResolvedValue({ id: "other-customer" });
+
+      await expect(
+        service.updateProfile("my-store", session, {
+          name: "Old Name",
+          email: "taken@example.com",
+        }),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(prisma.customer.update).not.toHaveBeenCalled();
+    });
+
+    it("stages a new phone and sends a confirmation to the current verified email", async () => {
+      prisma.customer.findUnique.mockResolvedValue(null);
+      prisma.customer.update.mockResolvedValue({
+        ...currentCustomer,
+        pendingPhone: "+51900000001",
+      });
+
+      await service.updateProfile("my-store", session, {
+        name: "Old Name",
+        phone: "+51900000001",
+      });
+
+      expect(prisma.customer.update).toHaveBeenCalledWith({
+        where: { id: "customer-1" },
+        data: { name: "Old Name", pendingPhone: "+51900000001" },
+      });
+      expect(customerAccount.sendPhoneChangeConfirmation).toHaveBeenCalledWith(
+        expect.objectContaining({ pendingPhone: "+51900000001" }),
+        store,
+      );
+    });
+
+    it("rejects a phone change when the current email isn't verified yet", async () => {
+      prisma.customer.findUniqueOrThrow.mockResolvedValue({
+        ...currentCustomer,
+        emailVerified: false,
+      });
+
+      await expect(
+        service.updateProfile("my-store", session, {
+          name: "Old Name",
+          phone: "+51900000001",
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(prisma.customer.update).not.toHaveBeenCalled();
+    });
+
+    it("rejects a phone already used by another customer in the store", async () => {
+      prisma.customer.findUnique.mockResolvedValue({ id: "other-customer" });
+
+      await expect(
+        service.updateProfile("my-store", session, {
+          name: "Old Name",
+          phone: "+51900000001",
+        }),
+      ).rejects.toBeInstanceOf(ConflictException);
       expect(prisma.customer.update).not.toHaveBeenCalled();
     });
   });

@@ -3,7 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
-import { useRouter } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { useCustomerLogin } from "../mutations/use-customer-login";
 import {
   type CustomerLoginInput,
@@ -65,6 +65,13 @@ export function CustomerLoginForm({ slug }: { slug: string }) {
             ? <p className="text-sm text-red-500">{t("passwordRequired")}</p>
             : null}
         </div>
+
+        <Link
+          href={`/store/${slug}/account/forgot-password`}
+          className="store-theme-link text-sm font-medium -mt-3"
+        >
+          {t("forgotPasswordLink")}
+        </Link>
 
         {errors.root
           ? <p className="text-sm text-red-500">{errors.root.message}</p>

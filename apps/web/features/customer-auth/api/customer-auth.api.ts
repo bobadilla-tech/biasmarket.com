@@ -1,6 +1,9 @@
 import { apiFetch } from "@/lib/api";
 import { okResultSchema } from "../schemas/ok-result.schema";
-import { customerProfileSchema } from "../schemas/profile.schema";
+import {
+  customerProfileSchema,
+  updateCustomerProfileResultSchema,
+} from "../schemas/profile.schema";
 
 export const customerAuthApi = {
   register: async (slug: string, token: string, password: string) => {
@@ -41,5 +44,24 @@ export const customerAuthApi = {
       body: JSON.stringify({ currentPassword, newPassword }),
     });
     return okResultSchema.parse(data);
+  },
+
+  forgotPassword: async (slug: string, phone: string) => {
+    const data = await apiFetch(`/stores/${slug}/account/forgot-password`, {
+      method: "POST",
+      body: JSON.stringify({ phone }),
+    });
+    return okResultSchema.parse(data);
+  },
+
+  updateProfile: async (
+    slug: string,
+    dto: { name: string; email?: string; phone?: string },
+  ) => {
+    const data = await apiFetch(`/stores/${slug}/account/me`, {
+      method: "PATCH",
+      body: JSON.stringify(dto),
+    });
+    return updateCustomerProfileResultSchema.parse(data);
   },
 };

@@ -9,12 +9,30 @@ import {
 describe("customer account token", () => {
   const secret = "test-secret";
 
-  it("round-trips a valid token", () => {
+  it("round-trips a valid token, defaulting to the 'confirm' purpose", () => {
     const token = createCustomerAccountToken("customer-1", secret);
 
     expect(verifyCustomerAccountToken(token, secret)).toEqual({
       customerId: "customer-1",
+      purpose: "confirm",
     });
+  });
+
+  it("round-trips each explicit purpose", () => {
+    for (
+      const purpose of [
+        "confirm",
+        "reset",
+        "change-email",
+        "change-phone",
+      ] as const
+    ) {
+      const token = createCustomerAccountToken("customer-1", secret, purpose);
+      expect(verifyCustomerAccountToken(token, secret)).toEqual({
+        customerId: "customer-1",
+        purpose,
+      });
+    }
   });
 
   it("rejects a token signed with a different secret", () => {
@@ -28,13 +46,37 @@ describe("customer account token", () => {
     expect(verifyCustomerAccountToken("", secret)).toBeNull();
   });
 
-  it("rejects an expired token", () => {
+  it("rejects an expired 'confirm' token", () => {
     const realNow = Date.now;
     Date.now = () => new Date("2020-01-01").getTime();
     const token = createCustomerAccountToken("customer-1", secret);
-    Date.now = () => new Date("2021-01-01").getTime();
+    Date.now = () => new Date("2020-02-01").getTime();
 
     expect(verifyCustomerAccountToken(token, secret)).toBeNull();
+
+    Date.now = realNow;
+  });
+
+  it("expires a 'reset' token after its much shorter TTL, while a 'confirm' token from the same moment is still valid", () => {
+    const realNow = Date.now;
+    Date.now = () => new Date("2020-01-01T00:00:00Z").getTime();
+    const resetToken = createCustomerAccountToken(
+      "customer-1",
+      secret,
+      "reset",
+    );
+    const confirmToken = createCustomerAccountToken(
+      "customer-1",
+      secret,
+      "confirm",
+    );
+    Date.now = () => new Date("2020-01-01T02:00:00Z").getTime();
+
+    expect(verifyCustomerAccountToken(resetToken, secret)).toBeNull();
+    expect(verifyCustomerAccountToken(confirmToken, secret)).toEqual({
+      customerId: "customer-1",
+      purpose: "confirm",
+    });
 
     Date.now = realNow;
   });

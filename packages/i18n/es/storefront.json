@@ -43,6 +43,9 @@
     "ordersTitle": "Tus pedidos",
     "noOrders": "Todavía no tienes pedidos.",
     "backToStore": "Volver a la tienda",
+    "alreadyConfirmed": "Tu cuenta ya tiene una contraseña configurada.",
+    "emailChanged": "Tu correo fue actualizado correctamente.",
+    "phoneChanged": "Tu teléfono fue actualizado correctamente.",
     "status": {
       "toConfirm": "Por confirmar",
       "partial": "Pago parcial",
@@ -53,11 +56,14 @@
     "setPassword": {
       "title": "Configura una contraseña",
       "subtitle": "Configura una contraseña para ingresar directamente la próxima vez, sin necesitar un nuevo enlace por correo.",
+      "titleReset": "Restablece tu contraseña",
+      "subtitleReset": "Configura una nueva contraseña para tu cuenta.",
       "passwordPlaceholder": "Contraseña (mín. 8 caracteres)",
       "confirmPasswordPlaceholder": "Confirmar contraseña",
       "submit": "Configurar contraseña",
       "submitting": "Guardando...",
       "success": "Contraseña configurada — ya puedes ingresar con tu número de teléfono.",
+      "successReset": "Contraseña actualizada — ya puedes ingresar con tu número de teléfono.",
       "passwordTooShort": "Debe tener al menos 8 caracteres",
       "passwordsDontMatch": "Las contraseñas no coinciden",
       "genericError": "Algo salió mal. Intenta de nuevo.",
@@ -72,7 +78,18 @@
     "passwordRequired": "Ingresa tu contraseña",
     "invalidCredentials": "Teléfono o contraseña inválidos",
     "submit": "Ingresar",
-    "submitting": "Ingresando..."
+    "submitting": "Ingresando...",
+    "forgotPasswordLink": "¿Olvidaste tu contraseña?"
+  },
+  "forgotPasswordPage": {
+    "title": "Restablecer contraseña",
+    "subtitle": "Ingresa tu número de teléfono y, si tiene una cuenta, te enviaremos un enlace a tu correo para restablecer tu contraseña.",
+    "phonePlaceholder": "Teléfono (WhatsApp)",
+    "phoneRequired": "Ingresa tu número de teléfono",
+    "submit": "Enviar enlace",
+    "submitting": "Enviando...",
+    "success": "Si ese teléfono tiene una cuenta, revisa tu correo para continuar.",
+    "backToLogin": "Volver a ingresar"
   },
   "accountNav": {
     "myAccount": "Mi cuenta",
@@ -109,6 +126,20 @@
       "success": "Contraseña actualizada.",
       "submit": "Actualizar contraseña",
       "submitting": "Guardando..."
+    },
+    "editContact": {
+      "title": "Correo y teléfono",
+      "namePlaceholder": "Nombre",
+      "emailPlaceholder": "Correo",
+      "emailInvalid": "Ingresa un correo válido",
+      "phonePlaceholder": "Teléfono (WhatsApp)",
+      "phoneRequired": "Ingresa tu número de teléfono",
+      "genericError": "Algo salió mal. Intenta de nuevo.",
+      "success": "Revisa tu correo para confirmar los cambios.",
+      "submit": "Guardar cambios",
+      "submitting": "Guardando...",
+      "pendingEmail": "Confirmación pendiente para {email}",
+      "pendingPhone": "Confirmación pendiente para {phone}"
     }
   },
   "storeDirectory": {

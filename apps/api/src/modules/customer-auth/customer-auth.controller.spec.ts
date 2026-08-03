@@ -21,6 +21,7 @@ describe("CustomerAuthController", () => {
     changePassword: Mock;
     getProfile: Mock;
     updateProfile: Mock;
+    forgotPassword: Mock;
   };
   let res: { cookie: Mock; clearCookie: Mock };
 
@@ -31,6 +32,7 @@ describe("CustomerAuthController", () => {
       changePassword: vi.fn(),
       getProfile: vi.fn(),
       updateProfile: vi.fn(),
+      forgotPassword: vi.fn(),
     };
     res = { cookie: vi.fn(), clearCookie: vi.fn() };
 
@@ -116,20 +118,31 @@ describe("CustomerAuthController", () => {
     expect(result).toEqual({ customer: {}, orders: [] });
   });
 
-  it("updateMe() delegates to the service with the slug, session, and name", async () => {
+  it("updateMe() delegates to the service with the slug, session, and dto", async () => {
     const session = { id: "customer-1", storeId: "store-1" };
     service.updateProfile.mockResolvedValue({ name: "New Name" });
+    const dto = { name: "New Name" };
 
-    const result = await controller.updateMe("my-store", session, {
-      name: "New Name",
-    });
+    const result = await controller.updateMe("my-store", session, dto);
 
     expect(service.updateProfile).toHaveBeenCalledWith(
       "my-store",
       session,
-      "New Name",
+      dto,
     );
     expect(result).toEqual({ name: "New Name" });
+  });
+
+  it("forgotPassword() delegates to the service with the slug and phone", async () => {
+    const result = await controller.forgotPassword("my-store", {
+      phone: "+51988888888",
+    });
+
+    expect(service.forgotPassword).toHaveBeenCalledWith(
+      "my-store",
+      "+51988888888",
+    );
+    expect(result).toEqual({ ok: true });
   });
 
   it("logout() clears the session cookie", () => {

@@ -22,10 +22,12 @@ export const accountOrderSchema = z.object({
 });
 
 export const confirmResultSchema = z.object({
+  purpose: z.enum(["confirm", "reset", "change-email", "change-phone"]),
   customer: z.object({
     name: z.string().nullable(),
     email: z.string().nullable(),
     phone: z.string(),
+    hasPassword: z.boolean(),
   }),
   orders: z.array(accountOrderSchema),
 });

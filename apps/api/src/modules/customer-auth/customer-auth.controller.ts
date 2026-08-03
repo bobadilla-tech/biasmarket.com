@@ -19,6 +19,7 @@ import { RegisterCustomerDto } from "./dto/register-customer.dto.js";
 import { LoginCustomerDto } from "./dto/login-customer.dto.js";
 import { ChangeCustomerPasswordDto } from "./dto/change-password.dto.js";
 import { UpdateCustomerProfileDto } from "./dto/update-customer-profile.dto.js";
+import { ForgotPasswordDto } from "./dto/forgot-password.dto.js";
 import {
   CUSTOMER_SESSION_COOKIE,
   CUSTOMER_SESSION_TTL_MS,
@@ -61,6 +62,18 @@ export class CustomerAuthController {
   }
 
   @Public()
+  @UseGuards(OriginGuard, ThrottlerGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
+  @Post("forgot-password")
+  async forgotPassword(
+    @Param("slug") slug: string,
+    @Body() dto: ForgotPasswordDto,
+  ) {
+    await this.customerAuth.forgotPassword(slug, dto.phone);
+    return { ok: true };
+  }
+
+  @Public()
   @UseGuards(CustomerSessionGuard, OriginGuard)
   @Post("change-password")
   async changePassword(
@@ -95,7 +108,7 @@ export class CustomerAuthController {
     @CustomerSession() session: { id: string; storeId: string },
     @Body() dto: UpdateCustomerProfileDto,
   ) {
-    return this.customerAuth.updateProfile(slug, session, dto.name);
+    return this.customerAuth.updateProfile(slug, session, dto);
   }
 
   // Not in the original plan doc — added because the session-aware header

@@ -43,6 +43,9 @@
     "ordersTitle": "Your orders",
     "noOrders": "No orders yet.",
     "backToStore": "Back to the store",
+    "alreadyConfirmed": "Your account already has a password set.",
+    "emailChanged": "Your email was updated successfully.",
+    "phoneChanged": "Your phone was updated successfully.",
     "status": {
       "toConfirm": "To confirm",
       "partial": "Partial payment",
@@ -53,11 +56,14 @@
     "setPassword": {
       "title": "Set a password",
       "subtitle": "Set a password to log in directly next time, without needing a new email link.",
+      "titleReset": "Reset your password",
+      "subtitleReset": "Set a new password for your account.",
       "passwordPlaceholder": "Password (min. 8 characters)",
       "confirmPasswordPlaceholder": "Confirm password",
       "submit": "Set password",
       "submitting": "Saving...",
       "success": "Password set — you can now log in with your phone number.",
+      "successReset": "Password updated — you can now log in with your phone number.",
       "passwordTooShort": "Must be at least 8 characters",
       "passwordsDontMatch": "Passwords don't match",
       "genericError": "Something went wrong. Try again.",
@@ -72,7 +78,18 @@
     "passwordRequired": "Enter your password",
     "invalidCredentials": "Invalid phone or password",
     "submit": "Log in",
-    "submitting": "Logging in..."
+    "submitting": "Logging in...",
+    "forgotPasswordLink": "Forgot your password?"
+  },
+  "forgotPasswordPage": {
+    "title": "Reset password",
+    "subtitle": "Enter your phone number and, if it has an account, we'll email you a link to reset your password.",
+    "phonePlaceholder": "Phone (WhatsApp)",
+    "phoneRequired": "Enter your phone number",
+    "submit": "Send link",
+    "submitting": "Sending...",
+    "success": "If that phone has an account, check your email to continue.",
+    "backToLogin": "Back to log in"
   },
   "accountNav": {
     "myAccount": "My account",
@@ -109,6 +126,20 @@
       "success": "Password updated.",
       "submit": "Update password",
       "submitting": "Saving..."
+    },
+    "editContact": {
+      "title": "Email and phone",
+      "namePlaceholder": "Name",
+      "emailPlaceholder": "Email",
+      "emailInvalid": "Enter a valid email",
+      "phonePlaceholder": "Phone (WhatsApp)",
+      "phoneRequired": "Enter your phone number",
+      "genericError": "Something went wrong. Try again.",
+      "success": "Check your email to confirm the changes.",
+      "submit": "Save changes",
+      "submitting": "Saving...",
+      "pendingEmail": "Confirmation pending for {email}",
+      "pendingPhone": "Confirmation pending for {phone}"
     }
   },
   "storeDirectory": {

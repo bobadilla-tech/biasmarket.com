@@ -29,6 +29,9 @@ export function AccountConfirmView({
 }) {
   const t = useTranslations("storefront.accountConfirmPage");
 
+  const showSetPassword = result.purpose === "reset" ||
+    (result.purpose === "confirm" && !result.customer.hasPassword);
+
   return (
     <div className="min-h-screen bg-gray-50 px-6 py-10">
       <div className="max-w-md mx-auto flex flex-col gap-6">
@@ -70,7 +73,28 @@ export function AccountConfirmView({
             )}
         </div>
 
-        <SetPasswordForm slug={slug} token={token} />
+        {showSetPassword && (
+          <SetPasswordForm
+            slug={slug}
+            token={token}
+            purpose={result.purpose === "reset" ? "reset" : "confirm"}
+          />
+        )}
+        {result.purpose === "confirm" && result.customer.hasPassword && (
+          <p className="text-sm text-gray-500 text-center">
+            {t("alreadyConfirmed")}
+          </p>
+        )}
+        {result.purpose === "change-email" && (
+          <p className="text-sm text-emerald-600 text-center">
+            {t("emailChanged")}
+          </p>
+        )}
+        {result.purpose === "change-phone" && (
+          <p className="text-sm text-emerald-600 text-center">
+            {t("phoneChanged")}
+          </p>
+        )}
 
         <Link
           href={`/store/${slug}`}

@@ -185,6 +185,7 @@ export class CustomerAuthService {
   private async assertStoreMatch(slug: string, storeId: string) {
     const store = await this.findStoreBySlug(slug);
     if (store.id !== storeId) throw new ForbiddenException("No autorizado");
+    return store;
   }
 
   async getProfile(slug: string, session: { id: string; storeId: string }) {
@@ -224,8 +225,7 @@ export class CustomerAuthService {
     session: { id: string; storeId: string },
     dto: { name: string; email?: string; phone?: string },
   ) {
-    const store = await this.findStoreBySlug(slug);
-    if (store.id !== session.storeId) throw new ForbiddenException("No autorizado");
+    const store = await this.assertStoreMatch(slug, session.storeId);
 
     const customer = await this.prisma.customer.findUniqueOrThrow({
       where: { id: session.id },

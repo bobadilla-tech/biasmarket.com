@@ -9,10 +9,12 @@ vi.mock(
 const { accountApi } = await import("./account.api");
 
 const validPayload = {
+  purpose: "confirm",
   customer: {
     name: "Jane Doe",
     email: "jane@example.com",
     phone: "+1234567890",
+    hasPassword: false,
   },
   orders: [],
 };

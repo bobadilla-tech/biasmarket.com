@@ -17,13 +17,15 @@ const inputClassName =
 // Folded into the confirm page rather than a separate /register route (the
 // magic-link token needed as proof of email ownership is already loaded
 // here) — see docs/plans/2026-08-02-buyer-accounts-phase12-plan.md,
-// "Frontend". Always shown regardless of whether a password was already
-// set: the confirm-account response doesn't currently say either way, so a
-// customer revisiting an old confirmation link after already registering
-// just sees the backend's "already has a password" error on submit instead
-// of the CTA being hidden upfront.
+// "Frontend". `purpose` controls copy only — the backend's `register` call
+// (reused for both "confirm" and "reset" token purposes) branches on the
+// token itself, not on anything this form sends.
 export function SetPasswordForm(
-  { slug, token }: { slug: string; token: string },
+  { slug, token, purpose = "confirm" }: {
+    slug: string;
+    token: string;
+    purpose?: "confirm" | "reset";
+  },
 ) {
   const t = useTranslations("storefront.accountConfirmPage.setPassword");
   const register_ = useCustomerRegister(slug);
@@ -52,7 +54,9 @@ export function SetPasswordForm(
   if (success) {
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col gap-3">
-        <p className="text-sm text-gray-700">{t("success")}</p>
+        <p className="text-sm text-gray-700">
+          {purpose === "reset" ? t("successReset") : t("success")}
+        </p>
         <Link
           href={`/store/${slug}/account/login`}
           className="store-theme-link font-semibold text-center"
@@ -66,8 +70,12 @@ export function SetPasswordForm(
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col gap-4">
       <div>
-        <h2 className="text-sm font-semibold text-gray-900">{t("title")}</h2>
-        <p className="mt-1 text-xs text-gray-500">{t("subtitle")}</p>
+        <h2 className="text-sm font-semibold text-gray-900">
+          {purpose === "reset" ? t("titleReset") : t("title")}
+        </h2>
+        <p className="mt-1 text-xs text-gray-500">
+          {purpose === "reset" ? t("subtitleReset") : t("subtitle")}
+        </p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
