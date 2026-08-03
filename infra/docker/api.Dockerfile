@@ -21,6 +21,13 @@ COPY infra/docker/api-healthcheck.ts ./infra/docker/api-healthcheck.ts
 # ---------------------------------------------------------------------------
 FROM base AS dev
 ENV NODE_ENV=development
+# procps provides `ps`, which tree-kill (used by `concurrently -k` in this
+# service's dev command) shells out to when killing sibling processes.
+# node:26-slim omits it, so tree-kill's `spawn('ps', ...)` throws an
+# unhandled ENOENT and crashes the whole container the moment any watched
+# process exits — not just the one it's trying to clean up after.
+RUN apt-get update && apt-get install -y --no-install-recommends procps \
+    && rm -rf /var/lib/apt/lists/*
 EXPOSE 3000
 
 # ---------------------------------------------------------------------------
