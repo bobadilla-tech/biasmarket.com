@@ -22,6 +22,7 @@ import {
   useOptimisticStatusChange,
   useOrders,
   useRegisterPayment,
+  CancelOrderDialog,
 } from "@/features/orders";
 
 function errorMessage(error: unknown) {
@@ -44,6 +45,7 @@ export function OrdersPageClient() {
   const [activeTab, setActiveTab] = useState<OrdersTab>("all");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);  
   const [paymentPreviewUrl, setPaymentPreviewUrl] = useState<string | null>(
     null,
   );
@@ -57,6 +59,7 @@ export function OrdersPageClient() {
     } | null
   >(null);
   const [rejectReason, setRejectReason] = useState("");
+  
 
   const {
     pending,
@@ -200,15 +203,13 @@ export function OrdersPageClient() {
           </p>
         </div>
 
-        {error
-          ? (
-            <Card className="rounded-2xl border-[#f3cbd8] bg-[#fff3f7] py-0 shadow-none">
-              <CardContent className="px-4 py-3 text-sm text-[#b24368]">
-                {error}
-              </CardContent>
-            </Card>
-          )
-          : null}
+        {error ? (
+          <Card className="rounded-2xl border-[#f3cbd8] bg-[#fff3f7] py-0 shadow-none">
+            <CardContent className="px-4 py-3 text-sm text-[#b24368]">
+              {error}
+            </CardContent>
+          </Card>
+        ) : null}
 
         <Card className="overflow-x-auto rounded-[30px] border-[#eadcf8] bg-white py-0 shadow-sm">
           <CardContent className="px-0">
@@ -254,9 +255,11 @@ export function OrdersPageClient() {
           }}
           onPreviewPayment={setPaymentPreviewUrl}
           onApprove={() =>
-            selectedOrder && handleReviewClick(selectedOrder, "approve")}
+            selectedOrder && handleReviewClick(selectedOrder, "approve")
+          }
           onReject={() =>
-            selectedOrder && handleReviewClick(selectedOrder, "reject")}
+            selectedOrder && handleReviewClick(selectedOrder, "reject")
+          }
           onAdvance={async () => {
             if (!selectedOrder) return;
             const next = NEXT_FULFILLMENT[selectedOrder.fulfillmentStatus];
@@ -266,6 +269,9 @@ export function OrdersPageClient() {
               status: next,
             });
             setDetailsOpen(false);
+          }}
+          onCancel={() => {
+            setCancelDialogOpen(true);
           }}
         />
 
@@ -280,10 +286,21 @@ export function OrdersPageClient() {
           onConfirm={handleConfirmTransition}
           {...(confirmTarget?.kind === "review" &&
             confirmTarget.decision === "reject" && {
-            reason: rejectReason,
-            onReasonChange: setRejectReason,
-            reasonRequired: true,
-          })}
+              reason: rejectReason,
+              onReasonChange: setRejectReason,
+              reasonRequired: true,
+            })}
+        />
+        
+        <CancelOrderDialog
+          open={cancelDialogOpen}
+          order={selectedOrder}
+          onClose={() => setCancelDialogOpen(false)}
+          onConfirm={async (values) => {
+            console.log(values);
+
+            setCancelDialogOpen(false);
+          }}
         />
       </div>
     </div>

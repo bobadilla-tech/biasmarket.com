@@ -513,7 +513,17 @@
     "undoToast": {
       "message": "Order marked as {status}.",
       "undo": "Undo"
-    }
+    },
+    "common": {
+      "cancel": "Cancel"
+    },
+    "cancelOrder": "Cancel order",
+    "cancelOrderDescription": "Are you sure you want to cancel this order? The received payment amount must be handled before completing the cancellation.",
+    "cancelPaymentHandling": "What should happen with the received payment?",
+    "refunded": "Refunded",
+    "retained": "Retained as cancellation fee",
+    "storeCredit": "Store credit for buyer",
+    "cancelReasonPlaceholder": "Cancellation reason (optional)"
   },
   "overview": {
     "title": "Overview",

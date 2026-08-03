@@ -35,6 +35,7 @@ export { RegisterPaymentForm } from "./components/register-payment-form";
 export { PaymentHistoryList } from "./components/payment-history-list";
 export { PaymentProofLightbox } from "./components/payment-proof-lightbox";
 export { ConfirmTransitionDialog } from "./components/confirm-transition-dialog";
+export { CancelOrderDialog } from "./components/cancel-order-dialog";
 
 export {
   type Order,
