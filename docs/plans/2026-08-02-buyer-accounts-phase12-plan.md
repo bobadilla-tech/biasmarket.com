@@ -267,6 +267,6 @@ All 5 steps landed on `feat/more-lots`, one commit each, in the order above:
 
 ### Decisions made while implementing, learnings, and follow-up work
 
-Moved to a dedicated doc so a fresh session can pick up follow-up work
-without reading this entire plan first:
+Moved to a dedicated doc so a fresh session can pick up follow-up work without
+reading this entire plan first:
 [`2026-08-02-buyer-accounts-phase12-followups.md`](2026-08-02-buyer-accounts-phase12-followups.md).
