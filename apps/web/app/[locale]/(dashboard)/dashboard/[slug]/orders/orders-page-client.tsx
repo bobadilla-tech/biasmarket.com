@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useDashboardStore } from "@/features/stores";
+import { useCancelOrder } from "@/features/orders";
 import {
   ConfirmTransitionDialog,
   matchesTab,
@@ -69,11 +70,13 @@ export function OrdersPageClient() {
     advanceFulfillment,
   } = useOptimisticStatusChange(storeId, t);
   const registerPayment = useRegisterPayment(storeId, tCommon("networkError"));
+  const cancelOrder = useCancelOrder(storeId);
 
   const error = errorMessage(ordersQuery.error) ??
     errorMessage(reviewPayment.error) ??
     errorMessage(advanceFulfillment.error) ??
     errorMessage(registerPayment.error);
+  
 
   const fulfillmentLabels: Record<string, string> = {
     ORDERING: t("fulfillmentLabels.ORDERING"),
@@ -233,6 +236,23 @@ export function OrdersPageClient() {
           onClose={() => setPaymentPreviewUrl(null)}
         />
 
+        <CancelOrderDialog
+          open={cancelDialogOpen}
+          onOpenChange={setCancelDialogOpen}
+          order={selectedOrder}
+          onConfirm={(values) => {
+            if (!selectedOrder) return;
+
+            cancelOrder.mutate({
+              orderId: selectedOrder.id,
+              values,
+            });
+
+            setCancelDialogOpen(false);
+            setDetailsOpen(false);
+          }}
+        />
+
         <OrderDetailSheet
           open={detailsOpen}
           onOpenChange={(open) => {
@@ -290,17 +310,6 @@ export function OrdersPageClient() {
               onReasonChange: setRejectReason,
               reasonRequired: true,
             })}
-        />
-        
-        <CancelOrderDialog
-          open={cancelDialogOpen}
-          order={selectedOrder}
-          onClose={() => setCancelDialogOpen(false)}
-          onConfirm={async (values) => {
-            console.log(values);
-
-            setCancelDialogOpen(false);
-          }}
         />
       </div>
     </div>

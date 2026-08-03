@@ -72,4 +72,23 @@ export const ordersApi = {
     }
     return data;
   },
+
+  cancelOrder(
+    storeId: string,
+    orderId: string,
+    data: {
+      resolution: "REFUNDED" | "RETAINED" | "STORE_CREDIT";
+      reason?: string;
+    },
+    fallbackErrorMessage?: string,
+  ) {
+    return apiFetch(
+      `/stores/${storeId}/orders/${orderId}/cancel`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      },
+      fallbackErrorMessage,
+    );
+  },
 };

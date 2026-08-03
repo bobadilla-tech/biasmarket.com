@@ -31,6 +31,10 @@ export const orderSchema = z.object({
   paidPercentage: z.number(),
   currency: z.string(),
   paymentRejectionReason: z.string().nullable().optional(),
+  status: z.enum([
+    "ACTIVE",
+    "CANCELLED",
+  ]),
   paymentStatus: z.enum([
     "PENDING_PAYMENT",
     "PARTIALLY_PAID",

@@ -10,6 +10,7 @@ export { useReviewPayment } from "./mutations/use-review-payment";
 export { useAdvanceFulfillment } from "./mutations/use-advance-fulfillment";
 export { useRegisterPayment } from "./mutations/use-register-payment";
 export { useOptimisticStatusChange } from "./mutations/use-optimistic-status-change";
+export { useCancelOrder } from "./mutations/use-cancel-order";
 
 export {
   getOrderStatus,
@@ -36,6 +37,7 @@ export { PaymentHistoryList } from "./components/payment-history-list";
 export { PaymentProofLightbox } from "./components/payment-proof-lightbox";
 export { ConfirmTransitionDialog } from "./components/confirm-transition-dialog";
 export { CancelOrderDialog } from "./components/cancel-order-dialog";
+
 
 export {
   type Order,

@@ -230,7 +230,7 @@ export function OrderDetailSheet({
                     </>
                   )}
                 {!isPending &&
-                  order.paymentStatus !== "CANCELLED" &&
+                  order.status !== "CANCELLED" &&
                   order.fulfillmentStatus !== "COMPLETED" && (
                     <Button
                       type="button"

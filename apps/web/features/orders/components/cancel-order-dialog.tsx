@@ -127,7 +127,7 @@ export function CancelOrderDialog({
         </div>
 
         <AlertDialogFooter>
-          <AlertDialogClose asChild>
+          <AlertDialogClose>
             <Button type="button" variant="outline" className="rounded-xl">
               {t("common.cancel")}
             </Button>

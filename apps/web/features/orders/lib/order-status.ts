@@ -61,12 +61,9 @@ export function getOrderStatus(
   };
 }
 
-export function paymentsLocked(order: Order) {
+export function paymentsLocked(order: Order) { 
   if (order.paymentStatus === "CANCELLED") return true;
   if (order.paymentStatus === "REJECTED") return true;
-  // VERIFIED means the seller approved the order/payment proof.
-  // It does not necessarily mean the order has been paid in full,
-  // so partial payments must remain available.
   if (order.paymentStatus === "VERIFIED") return false;
   if (order.fulfillmentStatus === "IN_TRANSIT") return false;
   if (order.fulfillmentStatus === "READY") return true;
