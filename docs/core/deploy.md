@@ -278,8 +278,11 @@ pnpm seed:base:prod
 Deliberately out of scope for this first deploy — fine for "get pages live and
 share the link," not for handling real traffic or real payment data at volume:
 
-- **No rate limiting wired in.** `@nestjs/throttler` is installed but not
-  registered in `AppModule` — nothing currently throttles request volume.
+- **Rate limiting covers auth surfaces only.** Buyer
+  login/register/forgot-password are throttled via `@nestjs/throttler` (5
+  req/min), and better-auth's native rate limiter (3 req/10s) is forced on for
+  seller sign-in/sign-up — but no general-purpose throttling exists for the rest
+  of the API.
 - **No CSRF middleware, no `helmet`.**
 - **No startup env-var validation.** Missing/misconfigured prod env vars (e.g.
   forgetting to set `WEB_URL`) fail silently or fall back to a `localhost`

@@ -77,21 +77,27 @@ export class OrderController {
   ) {
     await this.orders.assertOwnership(storeId, session.user.id);
     const order = await this.orders.findRowByIdForStore(orderId, storeId);
-    if (order.paymentStatus === 'CANCELLED') {
-      throw new BadRequestException('No se pueden registrar abonos en una orden cancelada');
+    if (order.paymentStatus === "CANCELLED") {
+      throw new BadRequestException(
+        "No se pueden registrar abonos en una orden cancelada",
+      );
     }
-    if (order.paymentStatus === 'REJECTED') {
-      throw new BadRequestException('No se pueden registrar abonos en una orden rechazada');
+    if (order.paymentStatus === "REJECTED") {
+      throw new BadRequestException(
+        "No se pueden registrar abonos en una orden rechazada",
+      );
     }
-    if (order.paymentStatus === 'VERIFIED') {
-      throw new BadRequestException('La orden ya está pagada');
+    if (order.paymentStatus === "VERIFIED") {
+      throw new BadRequestException("La orden ya está pagada");
     }
     if (
-      order.fulfillmentStatus === 'IN_TRANSIT' ||
-      order.fulfillmentStatus === 'READY' ||
-      order.fulfillmentStatus === 'COMPLETED'
+      order.fulfillmentStatus === "IN_TRANSIT" ||
+      order.fulfillmentStatus === "READY" ||
+      order.fulfillmentStatus === "COMPLETED"
     ) {
-      throw new BadRequestException('No se pueden registrar abonos en una orden enviada');
+      throw new BadRequestException(
+        "No se pueden registrar abonos en una orden enviada",
+      );
     }
     const numericAmount = Number(amount);
     if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
