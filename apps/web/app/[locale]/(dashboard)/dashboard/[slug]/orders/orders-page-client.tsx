@@ -16,6 +16,7 @@ import {
   OrdersTable,
   OrdersTabs,
   PaymentProofLightbox,
+  paymentsLocked,
   SENSITIVE_FULFILLMENT,
   useEnabledPaymentMethods,
   useOptimisticStatusChange,
@@ -243,7 +244,9 @@ export function OrdersPageClient() {
           enabledMethods={enabledMethods}
           registerPaymentSubmitting={registerPayment.isPending}
           onRegisterPayment={(values) => {
-            if (!selectedOrder) return Promise.resolve();
+            if (!selectedOrder || paymentsLocked(selectedOrder)) {
+              return Promise.resolve();
+            }
             return registerPayment.mutateAsync({
               orderId: selectedOrder.id,
               values,

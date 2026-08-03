@@ -16,6 +16,7 @@ export {
   matchesTab,
   NEXT_FULFILLMENT,
   type OrdersTab,
+  paymentsLocked,
   SENSITIVE_FULFILLMENT,
 } from "./lib/order-status";
 export {

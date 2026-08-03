@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Sheet,
   SheetContent,
@@ -17,7 +18,7 @@ import {
   getDeliveryLabel,
   getOrderNumber,
 } from "../lib/order-format";
-import { NEXT_FULFILLMENT } from "../lib/order-status";
+import { NEXT_FULFILLMENT, paymentsLocked } from "../lib/order-status";
 import { RegisterPaymentForm } from "./register-payment-form";
 import { PaymentHistoryList } from "./payment-history-list";
 import type { Order } from "../schemas/order.schema";
@@ -103,13 +104,23 @@ export function OrderDetailSheet({
                         {t("details.progress")}
                       </span>
                       <span className="font-bold text-[var(--store-primary)]">
-                        {Math.round(order.paidPercentage)}%
+                        {Math.round(
+                          order.fulfillmentStatus === "COMPLETED"
+                            ? 100
+                            : order.paidPercentage,
+                        )}%
                       </span>
                     </div>
                     <div className="h-2.5 overflow-hidden rounded-full bg-[#f0e7f8] shadow-inner">
                       <div
                         className="h-full rounded-full bg-gradient-to-r from-[var(--store-accent)] to-[var(--store-primary)] transition-all duration-500"
-                        style={{ width: `${order.paidPercentage}%` }}
+                        style={{
+                          width: `${
+                            order.fulfillmentStatus === "COMPLETED"
+                              ? 100
+                              : order.paidPercentage
+                          }%`,
+                        }}
                       />
                     </div>
                   </div>
@@ -140,12 +151,22 @@ export function OrderDetailSheet({
                     <h3 className="font-semibold">{t("details.addPayment")}</h3>
                   </div>
 
-                  <RegisterPaymentForm
-                    pendingAmount={order.pendingAmount}
-                    enabledMethods={enabledMethods}
-                    submitting={registerPaymentSubmitting}
-                    onSubmit={onRegisterPayment}
-                  />
+                  {paymentsLocked(order)
+                    ? (
+                      <Card className="rounded-2xl border-[#eadcf8] bg-[#fcf9ff] py-0 shadow-none">
+                        <CardContent className="px-4 py-3 text-sm text-[#8f7da8]">
+                          {t("details.paymentsLocked")}
+                        </CardContent>
+                      </Card>
+                    )
+                    : (
+                      <RegisterPaymentForm
+                        pendingAmount={order.pendingAmount}
+                        enabledMethods={enabledMethods}
+                        submitting={registerPaymentSubmitting}
+                        onSubmit={onRegisterPayment}
+                      />
+                    )}
 
                   <PaymentHistoryList
                     currency={order.currency}

@@ -16,6 +16,14 @@ export const pickupPointSchema = z.object({
 
 export const pickupPointListSchema = z.array(pickupPointSchema);
 
+export const paymentMethodSchema = z.object({
+  method: z.enum(["YAPE", "PLIN", "TRANSFER", "CASH"]),
+  enabled: z.boolean(),
+  details: z.record(z.string(), z.unknown()),
+});
+
+export const paymentMethodListSchema = z.array(paymentMethodSchema);
+
 // `whatsappUrl` is `null`, never `undefined`, when the store has no WhatsApp
 // number configured (create-order.usecase.ts) — `.nullable()`, not
 // `.optional()`, or a completed checkout without WhatsApp throws on parse.
@@ -26,6 +34,7 @@ export const checkoutResultSchema = z.object({
 
 export type DeliveryMethod = z.infer<typeof deliveryMethodSchema>;
 export type PickupPoint = z.infer<typeof pickupPointSchema>;
+export type PaymentMethod = z.infer<typeof paymentMethodSchema>;
 export type CheckoutResult = z.infer<typeof checkoutResultSchema>;
 
 // Pickup point is only required when the store actually has pickup points

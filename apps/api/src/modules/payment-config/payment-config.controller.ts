@@ -7,7 +7,7 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common";
-import { AuthGuard, Session } from "@thallesp/nestjs-better-auth";
+import { AuthGuard, Public, Session } from "@thallesp/nestjs-better-auth";
 import type { UserSession } from "@thallesp/nestjs-better-auth";
 import { PaymentConfigService } from "./payment-config.service.js";
 import { UpsertPaymentMethodDto } from "./dto/upsert-payment-method.dto.js";
@@ -36,5 +36,16 @@ export class PaymentConfigController {
     @Body() dto: UpsertPaymentMethodDto,
   ) {
     return this.paymentConfig.upsert(storeId, session.user.id, dto);
+  }
+}
+
+@Controller("stores/:slug/public/payment-methods")
+export class PublicPaymentConfigController {
+  constructor(private paymentConfig: PaymentConfigService) {}
+
+  @Public()
+  @Get()
+  findEnabled(@Param("slug") slug: string) {
+    return this.paymentConfig.findEnabledForSlug(slug);
   }
 }

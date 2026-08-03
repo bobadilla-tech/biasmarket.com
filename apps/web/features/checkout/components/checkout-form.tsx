@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
@@ -34,8 +34,17 @@ export function CheckoutForm(
 
   const methods = deliveryOptions.data?.methods ?? [];
   const points = deliveryOptions.data?.points ?? [];
+  const paymentMethods = deliveryOptions.data?.paymentMethods ?? [];
   const deliveryMethodsLoaded = !deliveryOptions.isPending;
   const mixedCurrencies = hasMixedCurrencies(items);
+
+  const [paymentMethodId, setPaymentMethodId] = useState("");
+  useEffect(() => {
+    if (paymentMethods[0] && !paymentMethodId) {
+      setPaymentMethodId(paymentMethods[0].method);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paymentMethods]);
 
   const form = useForm<CheckoutFormInput>({
     resolver: zodResolver(buildCheckoutFormSchema(points.length > 0)),
@@ -111,6 +120,20 @@ export function CheckoutForm(
             {points.map((point) => (
               <option key={point.id} value={point.id}>
                 {point.label}
+              </option>
+            ))}
+          </Select>
+        )}
+
+        {paymentMethods.length > 0 && (
+          <Select
+            value={paymentMethodId}
+            onChange={(e) => setPaymentMethodId(e.target.value)}
+            selectClassName={selectClassName}
+          >
+            {paymentMethods.map((method) => (
+              <option key={method.method} value={method.method}>
+                {method.method}
               </option>
             ))}
           </Select>

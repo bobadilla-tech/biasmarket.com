@@ -12,18 +12,21 @@ afterEach(() => {
   apiFetch.mockReset();
 });
 
-test("getDeliveryOptions fetches both endpoints and validates both responses", async () => {
+test("getDeliveryOptions fetches all endpoints and validates all responses", async () => {
   apiFetch
     .mockResolvedValueOnce([{ type: "PICKUP", enabled: true, details: {} }])
-    .mockResolvedValueOnce([{ id: "p1", label: "Main", enabled: true }]);
+    .mockResolvedValueOnce([{ id: "p1", label: "Main", enabled: true }])
+    .mockResolvedValueOnce([{ method: "YAPE", enabled: true, details: {} }]);
 
   const result = await checkoutApi.getDeliveryOptions("my-store");
 
   const calledUrls = apiFetch.mock.calls.map((call) => call[0]);
   expect(calledUrls).toContain("/stores/my-store/public/delivery-methods");
   expect(calledUrls).toContain("/stores/my-store/public/pickup-points");
+  expect(calledUrls).toContain("/stores/my-store/public/payment-methods");
   expect(result.methods).toHaveLength(1);
   expect(result.points).toHaveLength(1);
+  expect(result.paymentMethods).toHaveLength(1);
 });
 
 test("submit POSTs the checkout payload, omitting empty optional fields", async () => {

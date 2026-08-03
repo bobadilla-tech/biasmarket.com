@@ -3,18 +3,21 @@ import type { CartItem } from "@/lib/cart";
 import {
   checkoutResultSchema,
   deliveryMethodListSchema,
+  paymentMethodListSchema,
   pickupPointListSchema,
 } from "../schemas/checkout.schema";
 
 export const checkoutApi = {
   async getDeliveryOptions(slug: string) {
-    const [methods, points] = await Promise.all([
+    const [methods, points, paymentMethods] = await Promise.all([
       apiFetch(`/stores/${slug}/public/delivery-methods`),
       apiFetch(`/stores/${slug}/public/pickup-points`),
+      apiFetch(`/stores/${slug}/public/payment-methods`),
     ]);
     return {
       methods: deliveryMethodListSchema.parse(methods),
       points: pickupPointListSchema.parse(points),
+      paymentMethods: paymentMethodListSchema.parse(paymentMethods),
     };
   },
 

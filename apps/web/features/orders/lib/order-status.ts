@@ -61,6 +61,16 @@ export function getOrderStatus(
   };
 }
 
+export function paymentsLocked(order: Order) {
+  if (order.paymentStatus === "CANCELLED") return true;
+  if (order.paymentStatus === "REJECTED") return true;
+  if (order.paymentStatus === "VERIFIED") return true;
+  if (order.fulfillmentStatus === "IN_TRANSIT") return true;
+  if (order.fulfillmentStatus === "READY") return true;
+  if (order.fulfillmentStatus === "COMPLETED") return true;
+  return false;
+}
+
 /**
  * "pending" here means "needs seller attention" (not yet VERIFIED, or
  * VERIFIED but still sitting at ORDERING) — not literally "payment pending".
