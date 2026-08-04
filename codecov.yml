@@ -1,0 +1,28 @@
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+    patch: off
+
+flag_management:
+  default_rules:
+    carryforward: true
+  individual_flags:
+    - name: api
+      paths:
+        - apps/api
+      carryforward: true
+    - name: web
+      paths:
+        - apps/web
+      carryforward: true
+    - name: utils
+      paths:
+        - packages/utils
+      carryforward: true
+
+comment:
+  layout: "flags, diff, files"
+  require_changes: true
