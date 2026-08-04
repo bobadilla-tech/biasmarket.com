@@ -65,9 +65,16 @@ export class CancelOrderUseCase {
       releasedResolution = dto.resolution;
     }
 
-    if (row.status === "CANCELLED") {
-      throw new BadRequestException("Esta orden ya está cancelada");
+    if (row.paymentStatus === "CANCELLED") {
+      throw new BadRequestException("La orden ya está cancelada");
     }
+
+    if (row.paymentStatus === "REJECTED") {
+      throw new BadRequestException(
+        "No se puede cancelar una orden con pago rechazado",
+      );
+    }
+
     if (row.fulfillmentStatus === "COMPLETED") {
       throw new BadRequestException(
         "No se puede cancelar una orden ya entregada",
