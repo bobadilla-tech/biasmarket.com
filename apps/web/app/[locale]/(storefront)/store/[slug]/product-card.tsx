@@ -29,23 +29,34 @@ export function ProductCard(
   { slug, product }: { slug: string; product: Product },
 ) {
   const t = useTranslations("storefront");
-  const [variantId, setVariantId] = useState(product.variants[0]?.id ?? "");
+  const [variantId, setVariantId] = useState("");
   const [added, setAdded] = useState(false);
 
   const selectedVariant = product.variants.find((v) => v.id === variantId);
   const effectivePrices = product.variants.map((v) =>
-    Number(v.priceOverride ?? product.price)
+    Number(v.priceOverride ?? product.price),
   );
-  const minPrice = effectivePrices.length > 0
-    ? Math.min(...effectivePrices)
-    : Number(product.price);
-  const maxPrice = effectivePrices.length > 0
-    ? Math.max(...effectivePrices)
-    : Number(product.price);
-  const showFromPrice = product.variants.length > 1 && minPrice !== maxPrice;
-  const price = showFromPrice
-    ? minPrice
-    : Number(selectedVariant?.priceOverride ?? product.price);
+
+  const minPrice =
+    effectivePrices.length > 0
+      ? Math.min(...effectivePrices)
+      : Number(product.price);
+
+  const maxPrice =
+    effectivePrices.length > 0
+      ? Math.max(...effectivePrices)
+      : Number(product.price);
+
+  const hasDifferentVariantPrices =
+    product.variants.length > 1 && minPrice !== maxPrice;
+
+  const hasSelectedVariant = Boolean(selectedVariant);
+
+  const price = selectedVariant
+    ? Number(selectedVariant.priceOverride ?? product.price)
+    : minPrice;
+
+  const showFromPrice = hasDifferentVariantPrices && !hasSelectedVariant;
   const outOfStock = product.soldOut || selectedVariant?.stock === 0;
 
   const handleAddToCart = () => {
