@@ -28,11 +28,11 @@
   "contactPage": {
     "meta": {
       "title": "Contacto — Bias Market",
-      "description": "Contáctate con Bias Market — agenda una llamada o envíanos un mensaje."
+      "description": "Contáctate con Bias Market sobre GO's de K-pop, tiendas de photocards o drops de merch fan-made."
     },
     "overline": "Contacto",
-    "headline": "Hablemos",
-    "intro": "¿Preguntas sobre configurar tu tienda, precios, o una alianza más grande? Agenda una llamada o envíanos un mensaje y te respondemos.",
+    "headline": "Hablemos de tu tienda K-pop",
+    "intro": "¿Preguntas sobre configurar un GO de álbumes, una tienda de claims de photocards, un drop de merch fan-made, precios o una alianza más grande? Agenda una llamada o envíanos un mensaje y te respondemos.",
     "emailHeading": "Escríbenos directamente",
     "emailBody": "Para cualquier otra cosa, contáctanos en",
     "form": {
@@ -78,23 +78,23 @@
       }
     ],
     "cta": {
-      "heading": "¿Quieres hablar sobre tu tienda?",
-      "body": "Si manejas GO's de photocards y quieres ver si Bias Market encaja, escríbeme directamente.",
+      "heading": "¿Quieres hablar sobre tu flujo K-pop?",
+      "body": "Si manejas GO's, claims de photocards o drops de merch fan-made y quieres ver si Bias Market encaja, escríbeme directamente.",
       "button": "Contáctame"
     }
   },
   "enterprisePage": {
     "meta": {
       "title": "Empresas — Bias Market",
-      "description": "Bias Market para agencias y vendedoras grandes que manejan varias tiendas o GO's de alto volumen."
+      "description": "Bias Market para agencias K-pop, GOMs grandes y vendedoras que manejan varias tiendas o drops de alto volumen."
     },
     "overline": "Empresas",
-    "headline": "Para agencias y vendedoras con varias tiendas",
-    "intro": "¿Manejas más de una tienda, o GO's lo bastante grandes como para necesitar soporte más cercano? Trabajamos directo con vendedoras grandes y agencias para adaptar Bias Market a esa escala.",
+    "headline": "Para agencias K-pop y vendedoras de alto volumen",
+    "intro": "¿Manejas varias tiendas por artista, drops de comeback o GO's tan grandes que necesitas soporte más cercano? Trabajamos directo con vendedoras grandes y agencias para adaptar Bias Market a esa escala.",
     "features": [
       {
         "title": "Varias tiendas",
-        "body": "Maneja varias tiendas — una por artista, grupo o GO — sin tener que usar cuentas separadas."
+        "body": "Maneja varias tiendas — una por artista, grupo, comeback o drop — sin tener que usar cuentas separadas."
       },
       {
         "title": "Soporte prioritario",
@@ -102,7 +102,7 @@
       },
       {
         "title": "Ayuda con el onboarding",
-        "body": "Te ayudamos a migrar tu historial de pedidos y a lanzar tu primer GO."
+        "body": "Te ayudamos a migrar tus hojas, tu proceso de comprobantes y tu historial de pedidos para lanzar tu primer drop K-pop sin enredos."
       },
       {
         "title": "Pedidos a medida",
@@ -111,7 +111,7 @@
     ],
     "cta": {
       "heading": "Hablemos de tu caso",
-      "body": "Cuéntanos sobre tus tiendas y volumen, y juntos vemos qué encaja mejor.",
+      "body": "Cuéntanos sobre tus artistas, tiendas y volumen de pedidos, y juntos vemos qué encaja mejor.",
       "button": "Contáctanos"
     }
   }

@@ -28,11 +28,11 @@
   "contactPage": {
     "meta": {
       "title": "Contact — Bias Market",
-      "description": "Get in touch with Bias Market — book a call or send us a message."
+      "description": "Get in touch with Bias Market about K-pop group orders, photocard stores, or fan merch drops."
     },
     "overline": "Contact",
-    "headline": "Let's talk",
-    "intro": "Questions about setting up your store, pricing, or a bigger partnership? Book a call or send us a message and we'll get back to you.",
+    "headline": "Let's talk about your K-pop store",
+    "intro": "Questions about setting up an album GO, photocard claim shop, fan merch drop, pricing, or a bigger partnership? Book a call or send us a message and we'll get back to you.",
     "emailHeading": "Email us directly",
     "emailBody": "For anything else, reach us at",
     "form": {
@@ -78,23 +78,23 @@
       }
     ],
     "cta": {
-      "heading": "Want to talk through your store?",
-      "body": "If you're running group orders or photocard drops and want to see whether Bias Market fits, reach out directly.",
+      "heading": "Want to talk through your K-pop workflow?",
+      "body": "If you're running group orders, photocard claims, or fan merch drops and want to see whether Bias Market fits, reach out directly.",
       "button": "Get in touch"
     }
   },
   "enterprisePage": {
     "meta": {
       "title": "Enterprise — Bias Market",
-      "description": "Bias Market for agencies and larger sellers running multiple stores or high-volume drops."
+      "description": "Bias Market for K-pop agencies, large GOMs, and sellers running multiple stores or high-volume drops."
     },
     "overline": "Enterprise",
-    "headline": "For agencies and multi-store sellers",
-    "intro": "Running more than one storefront, or drops big enough that you need closer support? We work directly with larger sellers and agencies to fit Bias Market to that scale.",
+    "headline": "For K-pop agencies and high-volume sellers",
+    "intro": "Running multiple artist storefronts, comeback drops, or GOs big enough that you need closer support? We work directly with larger sellers and agencies to fit Bias Market to that scale.",
     "features": [
       {
         "title": "Multiple stores",
-        "body": "Manage several storefronts — one per artist, group, or drop — without juggling separate accounts."
+        "body": "Manage several storefronts — one per artist, group, comeback, or drop — without juggling separate accounts."
       },
       {
         "title": "Priority support",
@@ -102,7 +102,7 @@
       },
       {
         "title": "Onboarding help",
-        "body": "We'll help migrate your existing order history and get your first drop live."
+        "body": "We'll help migrate your existing sheets, payment-proof process, and order history so your first K-pop drop can go live cleanly."
       },
       {
         "title": "Custom requests",
@@ -111,7 +111,7 @@
     ],
     "cta": {
       "heading": "Let's talk about your setup",
-      "body": "Tell us about your stores and volume, and we'll figure out the right fit together.",
+      "body": "Tell us about your artists, stores, and order volume, and we'll figure out the right fit together.",
       "button": "Contact us"
     }
   }
