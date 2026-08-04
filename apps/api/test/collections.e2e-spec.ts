@@ -67,7 +67,9 @@ function assertMatchesSchema(
         throw new Error(`${path}: missing required property "${key}"`);
       }
     }
-    for (const [key, propValue] of Object.entries(value as Record<string, unknown>)) {
+    for (
+      const [key, propValue] of Object.entries(value as Record<string, unknown>)
+    ) {
       const propSchema = properties[key];
       if (!propSchema) {
         throw new Error(`${path}.${key}: property not declared in schema`);
@@ -91,7 +93,7 @@ function assertMatchesSchema(
         resolved.items as Record<string, unknown>,
         components,
         `${path}[${i}]`,
-      ),
+      )
     );
     return;
   }
@@ -175,7 +177,11 @@ describe("collections (e2e)", () => {
     const storeRes = await request(app.getHttpServer())
       .post("/stores")
       .set("Cookie", sessionCookie)
-      .send({ name: "E2E Store", slug: storeSlug, whatsappNumber: "+51900000000" })
+      .send({
+        name: "E2E Store",
+        slug: storeSlug,
+        whatsappNumber: "+51900000000",
+      })
       .expect(201);
     storeId = storeRes.body.id;
   });

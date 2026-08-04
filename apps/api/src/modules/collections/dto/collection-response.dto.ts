@@ -72,7 +72,8 @@ export class CollectionProductResponseDto {
   position: number;
 }
 
-export class CollectionProductWithProductResponseDto extends CollectionProductResponseDto {
+export class CollectionProductWithProductResponseDto
+  extends CollectionProductResponseDto {
   @ApiProperty({ type: ProductInCollectionResponseDto })
   product: ProductInCollectionResponseDto;
 }
