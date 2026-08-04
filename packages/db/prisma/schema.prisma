@@ -201,6 +201,9 @@ model Order {
   status             OrderStatus        @default(ACTIVE)
   cancellationResolution CancellationResolution?
   cancellationReason String?
+  retainedAmount Decimal? @db.Decimal(10,2)
+  releasedAmount Decimal? @db.Decimal(10,2)
+  releasedResolution CancellationResolution?
   totalAmount        Decimal            @db.Decimal(10, 2)
   requiredAmount     Decimal            @db.Decimal(10, 2)
   currency           String
