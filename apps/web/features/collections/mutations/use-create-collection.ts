@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { collectionsApi } from "../api/collections.api";
+import { apiClient } from "@/lib/api-client";
 import { collectionsKeys } from "../queries/use-collections";
 import type { CreateCollectionInput } from "../schemas/collection.schema";
 
@@ -13,7 +13,11 @@ export function useCreateCollection(
 
   return useMutation({
     mutationFn: (values: CreateCollectionInput) =>
-      collectionsApi.create(storeId as string, values, fallbackErrorMessage),
+      apiClient.collections.create(
+        storeId as string,
+        { name: values.name, description: values.description || undefined },
+        { fallbackErrorMessage },
+      ),
     onSuccess: () => {
       if (!storeId) return;
       queryClient.invalidateQueries({

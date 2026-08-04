@@ -43,16 +43,20 @@ pnpm turbo run <task> --filter=web
 pnpm turbo run <task> --filter=@biasmarket/db
 
 pnpm --filter api generate:openapi        # emit apps/api/openapi.json from live route/DTO metadata
-pnpm --filter @biasmarket/types generate  # regen packages/types/generated/schema.d.ts from openapi.json
+pnpm --filter @biasmarket/types generate  # regen packages/types/generated/** from openapi.json (Orval)
 ```
 
-`packages/types` holds a generated `openapi-fetch` client (`createApiClient`) typed
-from `apps/api/openapi.json` — `apps/web` uses it instead of hand-written fetch
-wrappers for migrated features (see `apps/web/AGENTS.md`). Both `apps/api/openapi.json`
-and `packages/types/generated/schema.d.ts` are **committed**, not
-build-generated — deliberately, to keep `web`'s build/typecheck independent of
-`apps/api` (no turbo cross-package dependency, no live app boot needed in CI).
-Regenerate both by hand after changing a migrated module's response DTOs:
+`packages/types` holds an [Orval](https://orval.dev)-generated SDK client,
+grouped one namespace per migrated controller tag (`collections`, ...) —
+`apps/web` uses it via `apiClient.collections.findAll(storeId)`-style calls
+instead of hand-written fetch wrappers for migrated features (see
+`apps/web/AGENTS.md`'s OpenAPI note for the full shape, including why a
+plain generated `openapi-fetch` client was tried first and replaced). Both
+`apps/api/openapi.json` and `packages/types/generated/**` are **committed**,
+not build-generated — deliberately, to keep `web`'s build/typecheck
+independent of `apps/api` (no turbo cross-package dependency, no live app
+boot needed in CI). Regenerate both by hand after changing a migrated
+module's response DTOs:
 `pnpm --filter api generate:openapi && pnpm --filter @biasmarket/types generate`,
 then commit the diff.
 

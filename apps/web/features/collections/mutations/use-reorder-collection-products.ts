@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { collectionsApi } from "../api/collections.api";
+import { apiClient } from "@/lib/api-client";
 import { collectionsKeys } from "../queries/use-collections";
 
 export function useReorderCollectionProducts(
@@ -17,11 +17,11 @@ export function useReorderCollectionProducts(
         productIds: string[];
       },
     ) =>
-      collectionsApi.reorderProducts(
+      apiClient.collections.reorderProducts(
         storeId as string,
         collectionId,
-        productIds,
-        fallbackErrorMessage,
+        { productIds },
+        { fallbackErrorMessage },
       ),
     onSuccess: () => {
       if (!storeId) return;

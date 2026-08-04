@@ -1,5 +1,16 @@
 # Typed API client ergonomics — follow-up to the OpenAPI codegen plan
 
+**Executed 2026-08-04** (same day as the doc below, later session) — Orval was
+picked over hey-api, `packages/types` regenerated with it, and
+`features/collections` redone against the result. See "Execution notes"
+at the bottom for what actually happened vs. this doc's spike plan; the short
+version is the spike plan below was followed closely and its "suggested next
+steps" all landed, but Orval needed more configuration than a default `npx`
+run to get there (grouped classes require a custom `nesting` function; a
+plain, un-nested, `Promise<T>`-returning signature needed the `fetch` client
++ a custom mutator, not `@hey-api/client-fetch`'s `{data,error}` shape even
+with grouping).
+
 Forward-looking proposal, not yet executed. Written for a future session to
 pick up — research only happened in the session that wrote this doc, no code
 changed. Follows on from
@@ -170,3 +181,200 @@ tool-choice gap, not a bug in what got built; this doc is about closing it.
    `openapi-typescript`'s current `generated/schema.d.ts`, does that change
    the "commit generated files" call from Phase 2/3 — e.g. would a build
    step become preferable at that point?
+
+## Execution notes (2026-08-04)
+
+Answering the three open questions above, in order: **Orval**, decided
+below; **kept hand-written**, decided below; **no** — Orval's `tags-split`
+output for one tag is ~230 lines across two files (`collections/
+collections.ts` + a shared `api.schemas.ts`), smaller and more readable than
+`openapi-typescript`'s old `schema.d.ts`, so the commit-generated-files call
+stands unchanged.
+
+### hey-api spike — what it actually produces
+
+Spiked `@hey-api/openapi-ts@0.99.0` against the committed `openapi.json`
+(a local copy, filtered to `Collections` via `input.filters.tags`). Findings,
+in the order they came up:
+
+- **It crashes outright under this repo's root `typescript@^7.0.2`**
+  (`TypeError: Cannot read properties of undefined (reading 'AnyKeyword')`
+  in its `ts.factory` usage) — the exact same TS7-vs-real-Compiler-API
+  problem the other plan doc's Phase 2/3 notes describe for
+  `openapi-typescript`. Fixed the same way: a scratch project with its own
+  pinned `typescript@5.9.3` devDependency. Would have needed the same fix in
+  `packages/types` had hey-api been chosen.
+- **Default output is flat, ungrouped functions** —
+  `collectionsControllerFindAll(options)`, not `sdk.collections.findAll()` —
+  exactly the DX the follow-up doc's "What we learned" section already
+  flagged `openapi-fetch` (Phase 2/3's actual pick) for. Getting grouped
+  output at all requires the `@hey-api/sdk` plugin's `operations.strategy:
+  "single"` **and** a hand-written `operations.nesting(operation)` function
+  (there is no built-in "group by tag" preset) that returns
+  `[operation.tags[0], methodName]` — the *last* array element becomes the
+  method name, so a `[tag]`-only nesting function produces working classes
+  but numbered, collision-avoidance method names (`collections`,
+  `collections2`, ... `collections7`); getting real method names
+  (`findAll`, `create`, ...) needs the second element derived from
+  `operation.operationId` (NestJS's own `CollectionsController_findAll`
+  shape, split on `_`) — undocumented by example, found by logging the
+  `operation` object's own keys from inside the config file.
+- **Even with grouped classes and clean names, calls still take a single
+  `options` bag** (`sdk.collections.findAll({ path: { storeId } } )`), not
+  positional args — hey-api models every operation's parameters as one
+  object because that's how OpenAPI naturally composes multiple param
+  locations (path/query/body). No config was found to change this.
+- **No clean way to make it throw by default.** The generated
+  `RequestResult<Responses, unknown, ThrowOnError>` return type only
+  narrows to the throwing/`Promise<T>`-like shape when a `<true>` type
+  argument is passed at the *call site* — a global runtime
+  `throwOnError: true` on the client doesn't change the TS-side default
+  (`ThrowOnError extends boolean = false`), so every single call site would
+  need `sdk.collections.findAll<true>(...)` to get non-union typing. That
+  reproduces exactly the class of footgun the other plan doc's Phase 2/3
+  notes already hit once (the `{ data, error }`-destructuring narrowing
+  bug) — a mismatch between the runtime behavior and what the type says by
+  default, easy to get wrong at any one of many call sites.
+
+None of this is a bug in hey-api — it's a general-purpose, plugin-based tool
+covering many client shapes (fetch/axios/Angular/etc.), and the above is all
+reachable with enough custom configuration. But "enough custom
+configuration" here meant a custom `nesting` function, a custom method-name
+derivation, and still no path to a plain throwing `Promise<T>` signature
+without either a type argument at every call site or a hand-written wrapper
+per method — which is the exact boilerplate this whole effort exists to
+delete. Orval, below, produces the target shape with far less configuration.
+
+### Orval spike — what won
+
+Same spike setup, `orval@8.23.0`, `client: "fetch"`, `mode: "tags-split"`.
+Findings:
+
+- **The plain `fetch` client already generates positional-arg,
+  `Promise<T>`-returning functions** — `create(storeId, dto, options?):
+  Promise<CollectionResponseDto>` — because Orval's fetch/axios clients
+  were never built around an `openapi-fetch`-style single-options-bag
+  design the way hey-api's client plugins are. This is the biggest reason
+  it won: it's the *default* shape, not something reached via custom
+  config.
+- **A custom `override.mutator`** (a plain function Orval's generated code
+  calls through instead of `fetch` directly) **centralizes exactly the
+  logic the old `collections.api.ts` repeated per method** — base URL,
+  `credentials: "include"`, and throwing on non-2xx. Because the mutator's
+  second parameter type is entirely ours to declare (Orval just types the
+  generated code's trailing `options` param as
+  `Parameters<typeof customFetch>[1]`), extending `RequestInit` with an
+  optional `fallbackErrorMessage` field was enough to keep the exact
+  per-call-site "custom message if the backend didn't send one" behavior
+  the old code had, fully typed, with zero per-method wrapper code — see
+  `packages/types/http.ts`.
+- **`override.operationName`** strips the NestJS `Controller_method` prefix
+  to clean method names, same idea as the hey-api nesting fix above, but
+  as a single documented config option rather than a custom nesting
+  function. One collision: `delete` is a reserved word, and Orval's
+  fallback name (`_delete`) works but reads worse than every sibling
+  method — mapped to `remove` in the same function.
+  `mode: "tags-split"` already produces one file (and, effectively, one
+  importable namespace) per tag, so there's no separate "grouping" step to
+  configure at all — the file *is* the group.
+- **Two real bugs found in the process, on the actual committed
+  `openapi.json`, not the tool:**
+  1. `CustomerAuthController_changePassword` and `_logout`
+     (`/stores/{slug}/account/change-password`, `.../logout`) are missing
+     their `slug` path parameter in the emitted spec — Orval's spec
+     validator hard-fails the *entire* generation over this (hey-api never
+     validates and silently ignored it). This is a real `apps/api`
+     Swagger-annotation gap, unrelated to collections, not fixed here (see
+     non-goals) — routed around via `input.unsafeDisableValidation: true`
+     plus excluding the whole `CustomerAuth` tag (Orval's `filters` only
+     supports tag/schema granularity, not per-operation exclusion, so the
+     other 4 `CustomerAuth` endpoints are collateral until either the spec
+     bug is fixed or that module gets migrated in Phase 4). Validation runs
+     on the *whole* spec before tag filtering — confirmed by testing
+     `filters.tags: ["Collections"]` alone without
+     `unsafeDisableValidation`; it still failed on the unrelated
+     `CustomerAuth` paths.
+  2. Generating **more than one tag at once** surfaced a second, subtler
+     bug: every controller without real response DTOs yet (i.e. everything
+     except `collections`) gets an anonymous `{ [key: string]: unknown }`
+     placeholder response schema from `@nestjs/swagger`, and Orval names
+     that placeholder after the (already-shortened) method name —
+     `orderControllerFindAll`, `productsControllerFindAll`, and a dozen
+     others all becoming `FindAll200Item` in the one shared
+     `api.schemas.ts` Orval emits for `tags-split` mode, a genuine
+     `TS2300: Duplicate identifier` across unrelated controllers. Fixed by
+     scoping `input.filters` to `mode: "include", tags: ["Collections"]` —
+     the only tag with real response DTOs today — rather than generating
+     everything up front the way `openapi-typescript`'s old
+     `schema.d.ts` did. This is the right scope anyway (untyped Prisma
+     passthrough isn't "real types"), but the collision is the concrete
+     reason to add a tag to `filters.tags` only once its controller has
+     real response DTOs, not preemptively — documented in
+     `orval.config.ts` and `apps/web/AGENTS.md` for whoever migrates the
+     next module in Phase 4.
+  Neither bug is Orval's fault; both were pre-existing gaps in what
+  `collections`'s neighbors emit that a stricter validator (bug 1) and a
+  larger generation scope (bug 2) simply surfaced.
+- **No `typescript` version pin needed**, unlike hey-api/
+  `openapi-typescript`: Orval's codegen doesn't touch the TS Compiler API at
+  all (confirmed by running it with no `typescript` devDependency pinned —
+  it pulled in `typescript@6.0.3` transitively via `typedoc`, and generation
+  worked identically). `packages/types` keeps its own `typescript@^5.9.3`
+  devDependency regardless, since the package's own `tsc`/`tsc --noEmit`
+  build/typecheck scripts still need it.
+- **No built-in `.js`-extension option for relative imports** — needed for
+  this package's NodeNext module resolution (root `CLAUDE.md`'s hard rule).
+  Checked `@orval/core`'s type defs for a `fileExtension`-style option;
+  none exists. Fixed with a ~30-line postprocess script
+  (`scripts/fix-esm-extensions.mjs`, run as part of the `generate` npm
+  script) that regex-appends `.js` to extensionless relative
+  import/export specifiers across the generated directory — same "wrap the
+  tool with a small script" shape as `apps/api`'s
+  swagger-metadata/openapi-spec generators already use.
+- **`@orval/query` (TanStack Query hook generation) was spiked, not
+  adopted** — see the decision below.
+
+### The `apiClient.collections.findAll(storeId)` result
+
+`packages/types/http.ts` holds the mutator (`customFetch`) and a
+`configureApiClient({ baseUrl })` setter — a runtime "configure once, call
+many" replacement for the old `createApiClient(baseUrl)` factory, needed
+because Orval emits plain top-level functions per operation, not methods on
+an instance you construct. `apps/web/lib/api-client.ts` calls
+`configureApiClient` once at module load (same `INTERNAL_API_URL`/
+`NEXT_PUBLIC_API_URL` resolution as before) and exports `apiClient =
+{ collections }` — a plain object, one key per migrated tag, so
+`apiClient.collections.findAll(storeId)` is the real, typed call site, matching
+the DX this doc's Context section asked for verbatim.
+`features/collections/api/collections.api.ts` (and its test) were deleted
+outright rather than kept as a thinner wrapper — nothing was left in that
+file that wasn't either generated-away (path templates, `{data,error}`
+handling) or trivially inlined at the one call site that needed it (the
+empty-string→`undefined` description normalization in `use-create-collection.ts`).
+
+### TanStack Query hook generation — decided against
+
+Spiked `@orval/query`'s `useQuery` generation as required by this doc's
+open question 2. Two concrete problems, both repo-specific rather than
+generic tool complaints:
+
+1. The react-query client wraps every response in a
+   `{ data, status, headers }` envelope (needed generically to support
+   multiple response-status branches), which is a **worse** shape than the
+   plain `Promise<T>` the plain `fetch` client + mutator already gives —
+   would have meant unwrapping `.data` at every call site, re-introducing
+   exactly the kind of per-call-site boilerplate this whole effort removed.
+2. Orval's query/mutation classification isn't fully automatic — with
+   `query.useQuery: true` set, it generated a `useQuery` hook for
+   `CollectionsController_create` (a `POST`), which is a mutation, not a
+   query, and would need per-operation override config to fix.
+
+More fundamentally: this repo's hand-written hooks aren't boilerplate that
+generation would delete, they carry real logic — `collectionsKeys`'
+per-store cache-key shape, each mutation's `invalidateQueries` call, and
+(in already-migrated features like `orders`) hook-level business logic like
+the optimistic-update/undo-timer wrapper — none of which a generic
+operation-to-hook mapping can produce. Decision: `queries/`/`mutations/`
+stay hand-written, calling the generated SDK client directly, for
+`collections` and (by default, absent a reason to reopen this) every future
+migrated module.

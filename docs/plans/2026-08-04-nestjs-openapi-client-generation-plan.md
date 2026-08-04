@@ -14,11 +14,18 @@ proposal, not yet executed — collections is the only migrated feature.
 
 **Before picking up Phase 4, read
 [`2026-08-04-typed-sdk-client-followups.md`](2026-08-04-typed-sdk-client-followups.md)
-first.** Phase 3's `openapi-fetch`-direct approach, reviewed after landing,
-doesn't reduce `features/<name>/api/*.ts` boilerplate the way this doc's
-Goal section promised — it was pushed back on and that follow-up doc scopes
-the redo (grouped SDK client, e.g. `apiClient.collections.findAll(...)`)
-before any further modules get migrated with today's pattern.
+first — it now also documents the redo (executed 2026-08-04, same day, a
+later session), not just the spike plan.** Phase 3's `openapi-fetch`-direct
+approach, reviewed after landing, didn't reduce `features/<name>/api/*.ts`
+boilerplate the way this doc's Goal section promised — it was pushed back
+on, and `packages/types`/`features/collections` now run on
+[Orval](https://orval.dev) instead: `apiClient.collections.findAll(storeId)`,
+no `{data,error}` tuple, no `api/` folder for `collections` at all anymore.
+Everything below describing `openapi-fetch`, `createApiClient`, and
+`collections.api.ts` (Phase 2/3's original shape) is superseded by the
+follow-up doc's execution notes — kept here only as the historical record of
+how Phases 0/1 (the swagger-metadata/spec-emission plumbing, still
+current) were built.
 
 ## Context
 

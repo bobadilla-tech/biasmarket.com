@@ -1,4 +1,3 @@
-export { collectionsApi } from "./api/collections.api";
 export { collectionsKeys, useCollections } from "./queries/use-collections";
 export { useCreateCollection } from "./mutations/use-create-collection";
 export { useDeleteCollection } from "./mutations/use-delete-collection";

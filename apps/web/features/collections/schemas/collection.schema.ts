@@ -1,5 +1,8 @@
 import { z } from "zod";
-import type { components } from "@biasmarket/types";
+import type {
+  CollectionProductWithProductResponseDto,
+  CollectionWithProductsResponseDto,
+} from "@biasmarket/types";
 
 // Response shapes come from the generated OpenAPI client now (see
 // lib/api-client.ts) — these are plain type aliases, not zod schemas.
@@ -7,9 +10,8 @@ import type { components } from "@biasmarket/types";
 // are the runtime guarantee for pass-through reads like this; zod stays only
 // for real client-side logic, e.g. the form schema below. See "OpenAPI note"
 // in apps/web/AGENTS.md.
-export type Collection = components["schemas"]["CollectionWithProductsResponseDto"];
-export type CollectionProduct =
-  components["schemas"]["CollectionProductWithProductResponseDto"];
+export type Collection = CollectionWithProductsResponseDto;
+export type CollectionProduct = CollectionProductWithProductResponseDto;
 
 export const createCollectionSchema = z.object({
   name: z.string().min(1, "name required"),

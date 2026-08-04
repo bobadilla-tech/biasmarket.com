@@ -6,15 +6,12 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "generate": "openapi-typescript ../../apps/api/openapi.json -o generated/schema.d.ts",
+    "generate": "orval --config orval.config.ts && node scripts/fix-esm-extensions.mjs",
     "build": "tsc",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "openapi-typescript": "^7.13.0",
+    "orval": "^8.23.0",
     "typescript": "^5.9.3"
-  },
-  "dependencies": {
-    "openapi-fetch": "^0.17.0"
   }
 }

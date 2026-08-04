@@ -15,9 +15,10 @@ build only what the feature actually uses:
 features/<name>/
   schemas/    zod schemas — the runtime contract, source of truth for types (z.infer)
   api/        thin wrappers, one object export per feature (e.g. accountApi.confirm(...));
-              over lib/api.ts's apiFetch + schema.parse(data) by default, or over
-              lib/api-client.ts's generated openapi-fetch client for a migrated
-              feature (see the OpenAPI note below) — collections is the only one so far
+              over lib/api.ts's apiFetch + schema.parse(data) by default. A migrated
+              feature (see the OpenAPI note below) has no api/ folder at all —
+              queries/mutations call the generated `apiClient.<tag>.*` client from
+              lib/api-client.ts directly. collections is the only one so far
   queries/    TanStack Query useQuery hooks, own the query key
   mutations/  TanStack Query useMutation hooks, invalidate on success
   components/ presentational components specific to this feature
@@ -65,36 +66,101 @@ optimistic updates after a mutation (e.g. settings saves) go through
 `useUpdateDashboardStoreCache()` (`queryClient.setQueryData`), not a `window`
 event — see `settings/page.tsx`'s `updateStoreCache` calls for the pattern.
 
-**`packages/types` (`@biasmarket/types`)**: holds `createApiClient`, an
-`openapi-fetch` client factory typed from `apps/api/openapi.json` (see the
-OpenAPI note below). Still not for hand-populated feature-local types —
-those belong in `features/<name>/schemas/`.
+**`packages/types` (`@biasmarket/types`)**: generates a real SDK client from
+`apps/api/openapi.json` via [Orval](https://orval.dev) (see the OpenAPI note
+below) — one grouped namespace per migrated tag (`collections`, ...), plus
+`configureApiClient` and the re-exported response/request DTO types. Still not
+for hand-populated feature-local types — those belong in
+`features/<name>/schemas/`.
 
-**OpenAPI-generated client**: landed 2026-08-04, `collections` is the pilot
-feature (see `docs/plans/2026-08-04-nestjs-openapi-client-generation-plan.md`).
-`apps/api` now emits `openapi.json` (`@nestjs/swagger` + a standalone
-`PluginMetadataGenerator` script, since the Nest build's SWC builder still
-doesn't run the swagger CLI plugin) and `packages/types/generated/schema.d.ts`
-is `openapi-typescript`'s output — `apps/web/lib/api-client.ts` wraps it with
-the same `credentials: "include"` + `INTERNAL_API_URL`/`NEXT_PUBLIC_API_URL`
-base-URL logic `lib/api.ts`'s `apiFetch` always used. **Both generated files
-are committed to git, not build-generated** — a deliberate choice to keep
-`web`'s build/typecheck independent of `apps/api` (no turbo cross-package
+**OpenAPI-generated client**: landed 2026-08-04, reworked the same day after
+review (see `docs/plans/2026-08-04-nestjs-openapi-client-generation-plan.md`
+and `docs/plans/2026-08-04-typed-sdk-client-followups.md` for the full
+history — a first pass generated a raw `openapi-fetch` client that turned out
+to need *more* hand-written wiring per call site than the `apiFetch` pattern
+it replaced; this section describes the redo, not that first pass).
+`collections` is the pilot feature, still the only one migrated.
+
+`apps/api` emits `openapi.json` (`@nestjs/swagger` + a standalone
+`PluginMetadataGenerator` script, since the Nest build's SWC builder doesn't
+run the swagger CLI plugin). `packages/types/orval.config.ts` runs
+[Orval](https://orval.dev) against it (`client: "fetch"`, `mode:
+"tags-split"`) with a custom `http.ts` mutator every generated method calls
+through — this is the one place that does what `apiFetch`/`collections.api.ts`
+used to repeat per call site: resolve `credentials: "include"`, and throw on
+a non-2xx response using the backend's `message` field (with an optional
+per-call `fallbackErrorMessage`, same string clients pass to `apiFetch`
+today). Net effect: a generated method's real signature is
+`(storeId, ..., options?) => Promise<T>` — no `{ data, error }` tuple, no
+per-call `if (error) throw`, no manually-templated path string, no explicit
+return-type annotation needed to dodge a narrowing bug (all three were real
+complaints about the first-pass `openapi-fetch` version — see the follow-up
+doc's "What we learned"). `apps/web/lib/api-client.ts` calls
+`configureApiClient({ baseUrl })` once (same `INTERNAL_API_URL`/
+`NEXT_PUBLIC_API_URL` resolution `lib/api.ts`'s `apiFetch` always used) and
+re-exports each migrated tag as a property of a single `apiClient` object —
+`queries/`/`mutations/` call `apiClient.collections.findAll(storeId)` etc.
+directly; there is no `features/collections/api/` folder at all anymore.
+
+Both `apps/api/openapi.json` and `packages/types/generated/**` are **committed
+to git, not build-generated** — unchanged from the original decision (kept
+`web`'s build/typecheck independent of `apps/api`, no turbo cross-package
 build step, no live app boot needed in CI). After changing a migrated
 feature's backend response DTOs, regenerate by hand and commit the diff:
 `pnpm --filter api generate:openapi && pnpm --filter @biasmarket/types generate`.
 
+**Orval config notes, for whoever adds the next tag in Phase 4:**
+`orval.config.ts`'s `input.filters` only includes tags whose controller
+already has real response DTOs — currently just `Collections`. Generating a
+tag whose responses are still untyped Prisma results produces anonymous
+`{ [key: string]: unknown }` placeholder schema types keyed by the
+(post-`operationName`-override) shortened method name, and those collide
+across unrelated controllers in the single shared `api.schemas.ts` file
+(every controller's `findAll` fighting over one `FindAll200Item` type) —
+add a tag here only once its controller has real response DTOs, not just
+because the tag exists in the spec. Two `CustomerAuthController` endpoints
+(`changePassword`, `logout`) are missing their `slug` path param in the
+emitted spec — a real, pre-existing `apps/api` Swagger-annotation gap,
+unrelated to collections and out of scope for this change — which is why
+`input.unsafeDisableValidation: true` is set (Orval's validator hard-fails
+the *entire* build over those two operations, even with `CustomerAuth`
+excluded from `filters.tags`, since validation runs before filtering).
+`scripts/fix-esm-extensions.mjs` postprocesses Orval's output because Orval
+has no option to emit `.js` extensions on relative imports, which this
+package's NodeNext module resolution requires — run automatically as part of
+`generate`, not a separate manual step.
+
+**TanStack Query hook generation: decided against, for now.** Orval (and
+hey-api, which was also spiked) can generate `useQuery`/`useMutation` hooks
+directly from operations, which would additionally shrink `queries/`/
+`mutations/`. Not adopted, because a spike of Orval's `@orval/query` output
+showed two real problems for this repo: it wraps responses in a
+`{ data, status, headers }` envelope (a worse, not better, shape than the
+plain `Promise<T>` the plain `fetch` client gives), and its `useQuery`/
+`useMutation` classification has to be told which operations are queries
+— naively applied, it generated a `useQuery` hook for a `POST` create
+endpoint. More fundamentally, this repo's hand-written hooks already carry
+real business logic a generic generator has no way to produce — per-store
+query keys (`collectionsKeys`), `invalidateQueries` call graphs, and
+feature-specific flows like `features/orders`'s optimistic-update/undo
+timer — so hand-written `queries/`/`mutations/` calling the generated SDK
+client directly (as described above) stays the convention. Revisit only if
+a future session finds a generator whose hook shape doesn't have these
+problems, not by default.
+
 Response-shape zod schemas are dropped for migrated features doing plain
 pass-through reads (see `features/collections/schemas/collection.schema.ts` —
-`Collection`/`CollectionProduct` are now type aliases onto
-`components["schemas"][...]`, not `z.object()` + `.parse()`): the backend's
-real response DTO classes are the runtime guarantee now, and re-validating
-with zod client-side would just be checking the same contract twice. zod
-stays for genuine client-side logic — request/form validation
-(`createCollectionSchema`, still `z.object()` + `zodResolver`) and any
-derived parsing/coercion a feature does on top of the raw response. Apply
-this same split to each feature as it migrates, not a blanket
-drop-all-response-zod change in one PR.
+`Collection`/`CollectionProduct` are now type aliases onto the generated
+`CollectionWithProductsResponseDto`/`CollectionProductWithProductResponseDto`,
+not `z.object()` + `.parse()`): the backend's real response DTO classes are
+the runtime guarantee now, and re-validating with zod client-side would just
+be checking the same contract twice. zod stays for genuine client-side logic
+— request/form validation (`createCollectionSchema`, still `z.object()` +
+`zodResolver`) and any derived parsing/coercion a feature does on top of the
+raw response (e.g. `useCreateCollection` turning an empty-string
+`description` into `undefined` before calling
+`apiClient.collections.create`). Apply this same split to each feature as it
+migrates, not a blanket drop-all-response-zod change in one PR.
 
 Not yet migrated: everything except `collections`. `apps/api`'s response DTOs
 only cover that one module so far — every other feature's `api/*.ts` stays on
@@ -102,8 +168,8 @@ only cover that one module so far — every other feature's `api/*.ts` stays on
 treatment (see the plan doc's Phase 1 gate: a money-bearing module and a
 multipart-upload module still need to prove the pattern before wider
 rollout). Error responses are also explicitly out of scope for the generated
-client (see the plan doc's Phase 3 note) — `apiFetch`-style defensive
-`res.json()` parsing and `fallbackErrorMessage` stay the pattern for error
+client (see the plan doc's Phase 3 note) — the mutator's defensive
+`message`-field parsing and `fallbackErrorMessage` stay the pattern for error
 paths even in migrated features.
 
 ## Migration roadmap (not all built yet)

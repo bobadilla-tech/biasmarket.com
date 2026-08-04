@@ -1,16 +1,14 @@
-import createClient from "openapi-fetch";
-import type { paths } from "./generated/schema.js";
+export { configureApiClient } from "./http.js";
+export type { RequestOptions } from "./http.js";
 
-export type { components, paths } from "./generated/schema.js";
+// Response/request DTO types, generated from apps/api's committed
+// openapi.json (see orval.config.ts). Feature schema files alias onto these
+// instead of hand-writing zod schemas for pass-through reads — see the
+// OpenAPI note in apps/web/AGENTS.md.
+export * from "./generated/api.schemas.js";
 
-// Preconfigured `openapi-fetch` client factory — every consumer gets the
-// same cookie-session behavior `apps/web/lib/api.ts` had (credentials:
-// "include"), instead of reimplementing it. `baseUrl` is passed in rather
-// than read from `process.env` here on purpose: the correct API origin
-// differs between server-side (INTERNAL_API_URL, container-to-container) and
-// client-side (NEXT_PUBLIC_API_URL, browser-reachable) contexts in Next.js,
-// and only the caller (apps/web) knows which one applies — see
-// apps/web/lib/api-client.ts.
-export function createApiClient(baseUrl: string) {
-  return createClient<paths>({ baseUrl, credentials: "include" });
-}
+// One namespace export per migrated tag/controller — collections is the
+// only one so far (see docs/plans/2026-08-04-typed-sdk-client-followups.md).
+// Add a line here as each further module migrates; apps/web/lib/api-client.ts
+// assembles these into a single `apiClient` object.
+export * as collections from "./generated/collections/collections.js";
