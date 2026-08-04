@@ -7,7 +7,7 @@ import type { useTranslations } from "next-intl";
 import { ordersKeys } from "../queries/use-orders";
 import { useReviewPayment } from "./use-review-payment";
 import { useAdvanceFulfillment } from "./use-advance-fulfillment";
-import { useCancelOrder} from "./use-cancel-order";
+import { useCancelOrder } from "./use-cancel-order";
 import type { Order } from "../schemas/order.schema";
 
 const UNDO_WINDOW_MS = 8000;

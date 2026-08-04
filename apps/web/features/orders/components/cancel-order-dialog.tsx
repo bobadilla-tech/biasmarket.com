@@ -37,8 +37,9 @@ export function CancelOrderDialog({
 }: CancelOrderDialogProps) {
   const t = useTranslations("dashboard.orders");
 
-  const [resolution, setResolution] =
-    useState<CancellationResolution>("REFUNDED");
+  const [resolution, setResolution] = useState<CancellationResolution>(
+    "REFUNDED",
+  );
 
   const [reason, setReason] = useState("");
 
