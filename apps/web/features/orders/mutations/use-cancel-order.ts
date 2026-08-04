@@ -16,6 +16,9 @@ export function useCancelOrder(
       orderId: string;
       values: {
         resolution: "REFUNDED" | "RETAINED" | "STORE_CREDIT";
+        retainMode?: "FULL" | "PARTIAL";
+        retainedAmount?: number;
+        releasedResolution?: "REFUNDED" | "STORE_CREDIT";
         reason?: string;
       };
     }) => {

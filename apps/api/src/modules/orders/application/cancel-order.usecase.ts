@@ -4,6 +4,7 @@ import {
   Injectable,
 } from "@nestjs/common";
 import type { CancellationResolution } from "@biasmarket/db";
+import { CancelOrderDto } from "../dto/cancel-order.dto.js";
 import { PrismaService } from "../../../prisma/prisma.service.js";
 import { OrderRepository } from "../infrastructure/order.repository.js";
 import { NotificationsService } from "../../notifications/notifications.service.js";
@@ -26,12 +27,41 @@ export class CancelOrderUseCase {
     orderId: string,
     storeId: string,
     userId: string,
-    resolution: CancellationResolution,
-    reason?: string,
+    dto: CancelOrderDto,
   ) {
     await this.orders.assertOwnership(storeId, userId);
 
     const row = await this.orders.findRowByIdForStore(orderId, storeId);
+    const paidAmount = row.paidAmount;
+
+    let retainedAmount = 0;
+    let releasedAmount = 0;
+    let releasedResolution: "REFUNDED" | "STORE_CREDIT" | null = null;
+
+    if (dto.resolution === "RETAINED") {
+      if (dto.retainMode === "FULL") {
+        retainedAmount = paidAmount;
+        releasedAmount = 0;
+      }
+
+      if (dto.retainMode === "PARTIAL") {
+        if (
+          dto.retainedAmount === undefined ||
+          dto.retainedAmount > paidAmount
+        ) {
+          throw new BadRequestException(
+            "Monto retenido inválido",
+          );
+        }
+
+        retainedAmount = dto.retainedAmount;
+        releasedAmount = paidAmount - dto.retainedAmount;
+        releasedResolution = dto.releasedResolution ?? null;
+      }
+    } else if (dto.resolution === "REFUNDED" || dto.resolution === "STORE_CREDIT") {
+      releasedAmount = paidAmount;
+      releasedResolution = dto.resolution;
+    }
 
     if (row.status === "CANCELLED") {
       throw new BadRequestException("Esta orden ya está cancelada");
@@ -53,8 +83,11 @@ export class CancelOrderUseCase {
         data: {
           status: "CANCELLED",
           paymentStatus: "CANCELLED",
-          cancellationResolution: resolution,
-          cancellationReason: reason ?? null,
+          cancellationResolution: dto.resolution,
+          cancellationReason: dto.reason ?? null,
+          retainedAmount,
+          releasedAmount,
+          releasedResolution,
         },
       });
       if (guard.count === 0) {
@@ -98,7 +131,14 @@ export class CancelOrderUseCase {
           action: "order.cancelled",
           entityType: "Order",
           entityId: orderId,
-          metadata: { resolution, reason: reason ?? null },
+          metadata: {
+            resolution: dto.resolution,
+            retainMode: dto.retainMode ?? null,
+            retainedAmount,
+            releasedAmount,
+            releasedResolution,
+            reason: dto.reason ?? null,
+          }
         },
       });
 

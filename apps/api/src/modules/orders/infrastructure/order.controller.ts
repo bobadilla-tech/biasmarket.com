@@ -227,8 +227,7 @@ export class OrderController {
       orderId,
       storeId,
       session.user.id,
-      dto.resolution,
-      dto.reason,
+      dto,
     );
   }
 }

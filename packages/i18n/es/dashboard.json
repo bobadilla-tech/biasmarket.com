@@ -523,7 +523,14 @@
     "refunded": "Reembolsado",
     "retained": "Retenido como penalidad de cancelación",
     "storeCredit": "Saldo a favor del comprador",
-    "cancelReasonPlaceholder": "Motivo de cancelación (opcional)"
+    "cancelReasonPlaceholder": "Motivo de cancelación (opcional)",
+    "retentionType": "Tipo de retención",
+    "fullRetention": "Retención total",
+    "partialRetention": "Retención parcial",
+    "amountToRetain": "Monto a retener",
+    "remaining": "Restante",
+    "refund": "Reembolso",
+    "retentionBalance": "Saldo"
   },
   "overview": {
     "title": "Resumen",

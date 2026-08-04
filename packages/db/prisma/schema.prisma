@@ -295,6 +295,10 @@ enum OrderStatus {
   ACTIVE
   CANCELLED
 }
+enum ReleaseResolution {
+  REFUNDED
+  STORE_CREDIT
+}
 
 enum CancellationResolution {
   REFUNDED

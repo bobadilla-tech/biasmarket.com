@@ -523,7 +523,14 @@
     "refunded": "Refunded",
     "retained": "Retained as cancellation fee",
     "storeCredit": "Store credit for buyer",
-    "cancelReasonPlaceholder": "Cancellation reason (optional)"
+    "cancelReasonPlaceholder": "Cancellation reason (optional)",
+    "retentionType": "Retention type",
+    "fullRetention": "Full retention",
+    "partialRetention": "Partial retention",
+    "amountToRetain": "Amount to retain",
+    "remaining": "Remaining",
+    "refund": "Refund",
+    "retentionBalance": "Balance"
   },
   "overview": {
     "title": "Overview",

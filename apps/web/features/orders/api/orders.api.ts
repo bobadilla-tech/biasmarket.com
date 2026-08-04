@@ -78,6 +78,9 @@ export const ordersApi = {
     orderId: string,
     data: {
       resolution: "REFUNDED" | "RETAINED" | "STORE_CREDIT";
+      retainMode?: "FULL" | "PARTIAL";
+      retainedAmount?: number;
+      releasedResolution?: "REFUNDED" | "STORE_CREDIT";
       reason?: string;
     },
     fallbackErrorMessage?: string,
