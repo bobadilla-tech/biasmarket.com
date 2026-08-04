@@ -58,7 +58,9 @@ export class CancelOrderUseCase {
         releasedAmount = paidAmount - dto.retainedAmount;
         releasedResolution = dto.releasedResolution ?? null;
       }
-    } else if (dto.resolution === "REFUNDED" || dto.resolution === "STORE_CREDIT") {
+    } else if (
+      dto.resolution === "REFUNDED" || dto.resolution === "STORE_CREDIT"
+    ) {
       releasedAmount = paidAmount;
       releasedResolution = dto.resolution;
     }
@@ -138,7 +140,7 @@ export class CancelOrderUseCase {
             releasedAmount,
             releasedResolution,
             reason: dto.reason ?? null,
-          }
+          },
         },
       });
 
