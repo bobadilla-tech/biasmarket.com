@@ -41,7 +41,20 @@ pnpm db:generate                          # prisma generate (packages/db)
 pnpm turbo run <task> --filter=api        # scope to one app, e.g. lint/build/test
 pnpm turbo run <task> --filter=web
 pnpm turbo run <task> --filter=@biasmarket/db
+
+pnpm --filter api generate:openapi        # emit apps/api/openapi.json from live route/DTO metadata
+pnpm --filter @biasmarket/types generate  # regen packages/types/generated/schema.d.ts from openapi.json
 ```
+
+`packages/types` holds a generated `openapi-fetch` client (`createApiClient`) typed
+from `apps/api/openapi.json` — `apps/web` uses it instead of hand-written fetch
+wrappers for migrated features (see `apps/web/AGENTS.md`). Both `apps/api/openapi.json`
+and `packages/types/generated/schema.d.ts` are **committed**, not
+build-generated — deliberately, to keep `web`'s build/typecheck independent of
+`apps/api` (no turbo cross-package dependency, no live app boot needed in CI).
+Regenerate both by hand after changing a migrated module's response DTOs:
+`pnpm --filter api generate:openapi && pnpm --filter @biasmarket/types generate`,
+then commit the diff.
 
 Inside `apps/api`:
 

@@ -14,8 +14,10 @@ build only what the feature actually uses:
 ```text
 features/<name>/
   schemas/    zod schemas — the runtime contract, source of truth for types (z.infer)
-  api/        thin wrappers over lib/api.ts's apiFetch, one object export per feature
-              (e.g. accountApi.confirm(...)), each call ends in schema.parse(data)
+  api/        thin wrappers, one object export per feature (e.g. accountApi.confirm(...));
+              over lib/api.ts's apiFetch + schema.parse(data) by default, or over
+              lib/api-client.ts's generated openapi-fetch client for a migrated
+              feature (see the OpenAPI note below) — collections is the only one so far
   queries/    TanStack Query useQuery hooks, own the query key
   mutations/  TanStack Query useMutation hooks, invalidate on success
   components/ presentational components specific to this feature
@@ -31,11 +33,13 @@ via a feature's `queries/`, not a raw `useEffect`+`useState` triad.
 underneath every feature `api/` layer, it's just no longer called directly from
 components.
 
-**Validation rule**: API responses are validated with zod at the `api/` boundary
-(`schema.parse(data)`, throwing — a schema mismatch is a real bug and should
-surface through the same error channel as a network failure, not be silently
-swallowed by `safeParse`). This stays the standing convention even if a
-generated OpenAPI client is introduced later — see the OpenAPI note below.
+**Validation rule**: for features still on `apiFetch`, API responses are
+validated with zod at the `api/` boundary (`schema.parse(data)`, throwing — a
+schema mismatch is a real bug and should surface through the same error
+channel as a network failure, not be silently swallowed by `safeParse`). A
+migrated feature (generated `openapi-fetch` client) drops response-shape zod
+for plain pass-through reads instead — see the OpenAPI note below for why and
+where the line is.
 
 **Forms rule**: new forms use `react-hook-form` + `@hookform/resolvers/zod`, not
 per-field `useState`. There is no shadcn `components/ui/form.tsx` — the `form`
@@ -61,19 +65,46 @@ optimistic updates after a mutation (e.g. settings saves) go through
 `useUpdateDashboardStoreCache()` (`queryClient.setQueryData`), not a `window`
 event — see `settings/page.tsx`'s `updateStoreCache` calls for the pattern.
 
-**`packages/types` (`@biasmarket/types`)**: currently unused/dead — do not
-hand-populate it with feature-local zod-inferred types. It's reserved as the
-eventual home for OpenAPI-generated types if/when that initiative happens (see
-below). Feature types belong in `features/<name>/schemas/`.
+**`packages/types` (`@biasmarket/types`)**: holds `createApiClient`, an
+`openapi-fetch` client factory typed from `apps/api/openapi.json` (see the
+OpenAPI note below). Still not for hand-populated feature-local types —
+those belong in `features/<name>/schemas/`.
 
-**OpenAPI-generated client**: investigated and deliberately deferred. `apps/api`
-has no `@nestjs/swagger`, and its Nest build uses the SWC builder
-(`typeCheck: false` in `nest-cli.json`), which the swagger CLI plugin doesn't
-support — adopting it needs either a builder change or hand-annotating every
-DTO, plus a separate effort to add response DTOs across controllers (most
-handlers currently return untyped/inferred data with no `@ApiResponse`). Until
-that lands, hand-written `api/*.ts` wrappers + zod schemas are the standing
-convention, not a stopgap to be ripped out later.
+**OpenAPI-generated client**: landed 2026-08-04, `collections` is the pilot
+feature (see `docs/plans/2026-08-04-nestjs-openapi-client-generation-plan.md`).
+`apps/api` now emits `openapi.json` (`@nestjs/swagger` + a standalone
+`PluginMetadataGenerator` script, since the Nest build's SWC builder still
+doesn't run the swagger CLI plugin) and `packages/types/generated/schema.d.ts`
+is `openapi-typescript`'s output — `apps/web/lib/api-client.ts` wraps it with
+the same `credentials: "include"` + `INTERNAL_API_URL`/`NEXT_PUBLIC_API_URL`
+base-URL logic `lib/api.ts`'s `apiFetch` always used. **Both generated files
+are committed to git, not build-generated** — a deliberate choice to keep
+`web`'s build/typecheck independent of `apps/api` (no turbo cross-package
+build step, no live app boot needed in CI). After changing a migrated
+feature's backend response DTOs, regenerate by hand and commit the diff:
+`pnpm --filter api generate:openapi && pnpm --filter @biasmarket/types generate`.
+
+Response-shape zod schemas are dropped for migrated features doing plain
+pass-through reads (see `features/collections/schemas/collection.schema.ts` —
+`Collection`/`CollectionProduct` are now type aliases onto
+`components["schemas"][...]`, not `z.object()` + `.parse()`): the backend's
+real response DTO classes are the runtime guarantee now, and re-validating
+with zod client-side would just be checking the same contract twice. zod
+stays for genuine client-side logic — request/form validation
+(`createCollectionSchema`, still `z.object()` + `zodResolver`) and any
+derived parsing/coercion a feature does on top of the raw response. Apply
+this same split to each feature as it migrates, not a blanket
+drop-all-response-zod change in one PR.
+
+Not yet migrated: everything except `collections`. `apps/api`'s response DTOs
+only cover that one module so far — every other feature's `api/*.ts` stays on
+`apiFetch` + zod until its backend controller gets the same response-DTO
+treatment (see the plan doc's Phase 1 gate: a money-bearing module and a
+multipart-upload module still need to prove the pattern before wider
+rollout). Error responses are also explicitly out of scope for the generated
+client (see the plan doc's Phase 3 note) — `apiFetch`-style defensive
+`res.json()` parsing and `fallbackErrorMessage` stay the pattern for error
+paths even in migrated features.
 
 ## Migration roadmap (not all built yet)
 

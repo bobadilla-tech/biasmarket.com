@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
-// Standalone OpenAPI spec emission: boots the real Nest app (needed so
-// SwaggerModule.createDocument can introspect actual registered routes/DI —
-// no `INestApplicationContext`-only shortcut exists for this) but never
-// calls `.listen()`, since this process only needs to write a file and exit.
+// Standalone OpenAPI spec emission: boots the real Nest app graph (needed so
+// SwaggerModule.createDocument can introspect actual registered routes/DI)
+// but never calls `.listen()`, since this process only needs to write a file
+// and exit.
 //
 // Imports from `../dist`, not `../src`, and therefore requires `nest build`
 // to have run first (the `generate:openapi` package.json script does this).
@@ -15,10 +15,17 @@
 // directly. `../dist/app.module.js` is SWC-compiled output where decorators
 // are already transformed to plain JS, so plain `node` runs it fine.
 //
-// Requires a reachable DATABASE_URL: AppModule's PrismaModule connects on
-// `onModuleInit`, which `NestFactory.create` runs as part of app
-// construction. Run `pnpm docker:dev` (or otherwise have the dev DB up)
-// before `pnpm --filter api generate:openapi`.
+// Boots via `Test.createTestingModule` + `.overrideProvider(PrismaService)`,
+// not `NestFactory.create` — spec generation only needs routes/DI wired up
+// for reflection, it never actually runs a query, so a real Postgres
+// connection is pure overhead. `PrismaService.onModuleInit` calls `$connect()`
+// unconditionally; overriding the whole class with a stub means Nest never
+// constructs the real one, so the `PrismaPg` adapter (which reads
+// DATABASE_URL) never gets built and no connection is attempted. This also
+// means `generate:openapi` needs no `pnpm docker:dev` / local Postgres at
+// all — only env vars other providers read eagerly at construction (not
+// connect to) still apply, e.g. `S3_*` (StorageService) and
+// `RESEND_API_KEY`/`RESEND_FROM_EMAIL` (MailerService) — see apps/api/.env.
 //
 // The `../dist/*` imports below are built via `join()` at runtime rather
 // than written as static specifiers on purpose: this file is itself part of
@@ -31,7 +38,7 @@
 // static resolution, so typecheck only ever validates this file's own code.
 import "dotenv/config";
 
-import { NestFactory } from "@nestjs/core";
+import { Test } from "@nestjs/testing";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -43,9 +50,17 @@ const outputPath = join(__dirname, "..", "openapi.json");
 
 async function main() {
   const { AppModule } = await import(join(distDir, "app.module.js"));
+  const { PrismaService } = await import(
+    join(distDir, "prisma", "prisma.service.js")
+  );
   const { default: metadata } = await import(join(distDir, "metadata.js"));
 
-  const app = await NestFactory.create(AppModule, { logger: false });
+  const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
+    .overrideProvider(PrismaService)
+    .useValue({})
+    .compile();
+  const app = moduleRef.createNestApplication();
+  await app.init();
 
   // Must run before createDocument — see the sequencing note in src/main.ts.
   await SwaggerModule.loadPluginMetadata(metadata);

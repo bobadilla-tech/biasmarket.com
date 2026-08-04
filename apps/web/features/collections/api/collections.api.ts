@@ -1,81 +1,112 @@
-import { apiFetch } from "@/lib/api";
-import {
-  collectionListSchema,
-  type CreateCollectionInput,
-} from "../schemas/collection.schema";
+import { apiClient } from "@/lib/api-client";
+import type { components } from "@biasmarket/types";
+import type { Collection, CreateCollectionInput } from "../schemas/collection.schema";
+
+type CollectionResponse = components["schemas"]["CollectionResponseDto"];
+type CollectionProductResponse =
+  components["schemas"]["CollectionProductResponseDto"];
+
+// Error responses aren't part of the OpenAPI generation pipeline (only 2xx
+// paths are typed — see the plan doc's Phase 3 scope note), so `error` here
+// is untyped. Same defensive shape apiFetch used: try the backend's
+// `message` field, fall back to a caller-supplied message.
+function errorMessage(error: unknown, fallback?: string): string {
+  if (
+    error && typeof error === "object" && "message" in error &&
+    typeof (error as { message: unknown }).message === "string"
+  ) {
+    return (error as { message: string }).message;
+  }
+  return fallback ?? "Network error";
+}
 
 export const collectionsApi = {
-  async list(storeId: string, fallbackErrorMessage?: string) {
-    const data = await apiFetch(
-      `/stores/${storeId}/collections`,
-      {},
-      fallbackErrorMessage,
+  async list(storeId: string, fallbackErrorMessage?: string): Promise<Collection[]> {
+    const { data, error } = await apiClient.GET(
+      "/stores/{storeId}/collections",
+      { params: { path: { storeId } } },
     );
-    return collectionListSchema.parse(data);
+    if (error) throw new Error(errorMessage(error, fallbackErrorMessage));
+    return data;
   },
 
-  create(
+  async create(
     storeId: string,
     values: CreateCollectionInput,
     fallbackErrorMessage?: string,
-  ) {
-    return apiFetch(
-      `/stores/${storeId}/collections`,
+  ): Promise<CollectionResponse> {
+    const { data, error } = await apiClient.POST(
+      "/stores/{storeId}/collections",
       {
-        method: "POST",
-        body: JSON.stringify({
+        params: { path: { storeId } },
+        body: {
           name: values.name,
           description: values.description || undefined,
-        }),
+        },
       },
-      fallbackErrorMessage,
     );
+    if (error) throw new Error(errorMessage(error, fallbackErrorMessage));
+    return data;
   },
 
-  remove(storeId: string, collectionId: string, fallbackErrorMessage?: string) {
-    return apiFetch(
-      `/stores/${storeId}/collections/${collectionId}`,
-      { method: "DELETE" },
-      fallbackErrorMessage,
+  async remove(
+    storeId: string,
+    collectionId: string,
+    fallbackErrorMessage?: string,
+  ): Promise<CollectionResponse> {
+    const { data, error } = await apiClient.DELETE(
+      "/stores/{storeId}/collections/{collectionId}",
+      { params: { path: { storeId, collectionId } } },
     );
+    if (error) throw new Error(errorMessage(error, fallbackErrorMessage));
+    return data;
   },
 
-  addProduct(
+  async addProduct(
     storeId: string,
     collectionId: string,
     productId: string,
     fallbackErrorMessage?: string,
-  ) {
-    return apiFetch(
-      `/stores/${storeId}/collections/${collectionId}/products`,
-      { method: "POST", body: JSON.stringify({ productId }) },
-      fallbackErrorMessage,
+  ): Promise<CollectionProductResponse> {
+    const { data, error } = await apiClient.POST(
+      "/stores/{storeId}/collections/{collectionId}/products",
+      {
+        params: { path: { storeId, collectionId } },
+        body: { productId },
+      },
     );
+    if (error) throw new Error(errorMessage(error, fallbackErrorMessage));
+    return data;
   },
 
-  removeProduct(
+  async removeProduct(
     storeId: string,
     collectionId: string,
     productId: string,
     fallbackErrorMessage?: string,
-  ) {
-    return apiFetch(
-      `/stores/${storeId}/collections/${collectionId}/products/${productId}`,
-      { method: "DELETE" },
-      fallbackErrorMessage,
+  ): Promise<CollectionProductResponse> {
+    const { data, error } = await apiClient.DELETE(
+      "/stores/{storeId}/collections/{collectionId}/products/{productId}",
+      { params: { path: { storeId, collectionId, productId } } },
     );
+    if (error) throw new Error(errorMessage(error, fallbackErrorMessage));
+    return data;
   },
 
-  reorderProducts(
+  async reorderProducts(
     storeId: string,
     collectionId: string,
     productIds: string[],
     fallbackErrorMessage?: string,
-  ) {
-    return apiFetch(
-      `/stores/${storeId}/collections/${collectionId}/products/reorder`,
-      { method: "PATCH", body: JSON.stringify({ productIds }) },
-      fallbackErrorMessage,
+  ): Promise<CollectionProductResponse[]> {
+    const { data, error } = await apiClient.PATCH(
+      "/stores/{storeId}/collections/{collectionId}/products/reorder",
+      {
+        params: { path: { storeId, collectionId } },
+        body: { productIds },
+      },
     );
+    if (error) throw new Error(errorMessage(error, fallbackErrorMessage));
+    return data;
   },
 };

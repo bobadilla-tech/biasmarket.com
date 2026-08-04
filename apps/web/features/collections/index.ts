@@ -9,10 +9,7 @@ export { CollectionForm } from "./components/collection-form";
 export { CollectionCard } from "./components/collection-card";
 export {
   type Collection,
-  collectionListSchema,
   type CollectionProduct,
-  collectionProductSchema,
-  collectionSchema,
   type CreateCollectionInput,
   createCollectionSchema,
 } from "./schemas/collection.schema";

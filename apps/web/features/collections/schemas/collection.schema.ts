@@ -1,25 +1,15 @@
 import { z } from "zod";
+import type { components } from "@biasmarket/types";
 
-// Scoped to the fields the UI actually uses — the API's findAllForStore
-// includes the full Product record under `product` (Prisma `include`, no
-// `select`), not just `{ id, name }`. zod strips unknown keys by default.
-export const collectionProductSchema = z.object({
-  productId: z.string(),
-  position: z.number(),
-  product: z.object({ id: z.string(), name: z.string() }),
-});
-
-export const collectionSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string(),
-  products: z.array(collectionProductSchema),
-});
-
-export const collectionListSchema = z.array(collectionSchema);
-
-export type CollectionProduct = z.infer<typeof collectionProductSchema>;
-export type Collection = z.infer<typeof collectionSchema>;
+// Response shapes come from the generated OpenAPI client now (see
+// lib/api-client.ts) — these are plain type aliases, not zod schemas.
+// apps/api's response DTOs (CollectionsController + response DTO classes)
+// are the runtime guarantee for pass-through reads like this; zod stays only
+// for real client-side logic, e.g. the form schema below. See "OpenAPI note"
+// in apps/web/AGENTS.md.
+export type Collection = components["schemas"]["CollectionWithProductsResponseDto"];
+export type CollectionProduct =
+  components["schemas"]["CollectionProductWithProductResponseDto"];
 
 export const createCollectionSchema = z.object({
   name: z.string().min(1, "name required"),
