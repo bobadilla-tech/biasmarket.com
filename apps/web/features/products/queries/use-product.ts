@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { productsApi } from "../api/products.api";
+import { apiClient } from "@/lib/api-client";
 import { productsKeys } from "./use-products";
 
 export function useProduct(
@@ -12,7 +12,9 @@ export function useProduct(
   return useQuery({
     queryKey: productsKeys.detail(storeId as string, productId),
     queryFn: () =>
-      productsApi.get(storeId as string, productId, fallbackErrorMessage),
+      apiClient.products.findOne(storeId as string, productId, {
+        fallbackErrorMessage,
+      }),
     enabled: !!storeId && !!productId,
   });
 }

@@ -29,14 +29,8 @@ export {
   type OptionTypeDraft,
   type Variant,
   type VariantDraft,
-  variantListSchema,
-  variantSchema,
 } from "./schemas/variant.schema";
-export {
-  type Product,
-  productListSchema,
-  productSchema,
-} from "./schemas/product.schema";
+export { type Product } from "./schemas/product.schema";
 export {
   type ProductFormInput,
   productFormSchema,

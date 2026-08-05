@@ -14,21 +14,21 @@ export default defineConfig({
       // fixing in this change.
       unsafeDisableValidation: true,
       // Scoped to controllers that actually have real response DTOs today —
-      // just `Collections` (see the plan doc's Phase 1). Every other
-      // controller still returns untyped Prisma results with no `@ApiOkResponse`
-      // shape, so `@nestjs/swagger` emits an anonymous inline
-      // `{ [key: string]: unknown }` placeholder per operation; Orval names
-      // those placeholders after the (post-`operationName`-override)
-      // shortened method name, e.g. `FindAll200Item`. Every controller's
-      // `findAll` collided into the same identifier in the shared
-      // `api.schemas.ts` once more than one tag was generated — a real
-      // problem, but only for modules that don't have real response DTOs
-      // yet, i.e. never for `Collections`. Add a tag here as each future
-      // module gets real response DTOs (Phase 4); don't add one just
-      // because a tag exists in the spec.
+      // `Collections` and `Products` (see the plan doc's Phase 1/rollout
+      // Batch 1). Every other controller still returns untyped Prisma
+      // results with no `@ApiOkResponse` shape, so `@nestjs/swagger` emits
+      // an anonymous inline `{ [key: string]: unknown }` placeholder per
+      // operation; Orval names those placeholders after the
+      // (post-`operationName`-override) shortened method name, e.g.
+      // `FindAll200Item`. Every controller's `findAll` collided into the
+      // same identifier in the shared `api.schemas.ts` once more than one
+      // tag was generated — a real problem, but only for modules that don't
+      // have real response DTOs yet. Add a tag here as each future module
+      // gets real response DTOs (rollout doc's Batch 2+); don't add one
+      // just because a tag exists in the spec.
       filters: {
         mode: "include",
-        tags: ["Collections"],
+        tags: ["Collections", "Products"],
       },
     },
     output: {

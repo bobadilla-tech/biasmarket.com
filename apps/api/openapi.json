@@ -337,7 +337,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/ProductWithVariantsResponseDto"
                 }
               }
             }
@@ -367,7 +367,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "object"
+                    "$ref": "#/components/schemas/ProductDetailResponseDto"
                   }
                 }
               }
@@ -402,7 +402,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductDetailResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -441,7 +448,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -470,7 +484,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -501,7 +522,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -542,7 +570,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VariantResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -571,7 +606,17 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VariantResponseDto"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -620,7 +665,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VariantResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -657,7 +709,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VariantResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -696,7 +755,14 @@
         ],
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -735,7 +801,14 @@
         ],
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VariantResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2673,6 +2746,253 @@
           "price"
         ]
       },
+      "VariantResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "stock": {
+            "type": "number",
+            "nullable": true
+          },
+          "reserved": {
+            "type": "number"
+          },
+          "priceOverride": {
+            "type": "string",
+            "nullable": true
+          },
+          "imageOverride": {
+            "type": "string",
+            "nullable": true
+          },
+          "attributes": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "productId",
+          "storeId",
+          "name",
+          "stock",
+          "reserved",
+          "priceOverride",
+          "imageOverride",
+          "attributes"
+        ]
+      },
+      "ProductWithVariantsResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "price": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "availableUntil": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "status": {
+            "enum": [
+              "DRAFT",
+              "PUBLISHED"
+            ],
+            "type": "string"
+          },
+          "soldOut": {
+            "type": "boolean"
+          },
+          "deletedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VariantResponseDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "name",
+          "description",
+          "price",
+          "currency",
+          "images",
+          "availableUntil",
+          "status",
+          "soldOut",
+          "deletedAt",
+          "createdAt",
+          "variants"
+        ]
+      },
+      "CategoryInProductResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "ProductCategoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string"
+          },
+          "categoryId": {
+            "type": "string"
+          },
+          "category": {
+            "$ref": "#/components/schemas/CategoryInProductResponseDto"
+          }
+        },
+        "required": [
+          "productId",
+          "categoryId",
+          "category"
+        ]
+      },
+      "ProductDetailResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "price": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "availableUntil": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "status": {
+            "enum": [
+              "DRAFT",
+              "PUBLISHED"
+            ],
+            "type": "string"
+          },
+          "soldOut": {
+            "type": "boolean"
+          },
+          "deletedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VariantResponseDto"
+            }
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductCategoryResponseDto"
+            }
+          },
+          "soldUnits": {
+            "type": "number"
+          },
+          "availableStock": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "name",
+          "description",
+          "price",
+          "currency",
+          "images",
+          "availableUntil",
+          "status",
+          "soldOut",
+          "deletedAt",
+          "createdAt",
+          "variants",
+          "categories",
+          "soldUnits",
+          "availableStock"
+        ]
+      },
       "UpdateProductDto": {
         "type": "object",
         "properties": {
@@ -2708,6 +3028,73 @@
             "type": "string"
           }
         }
+      },
+      "ProductResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "price": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "availableUntil": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "status": {
+            "enum": [
+              "DRAFT",
+              "PUBLISHED"
+            ],
+            "type": "string"
+          },
+          "soldOut": {
+            "type": "boolean"
+          },
+          "deletedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "name",
+          "description",
+          "price",
+          "currency",
+          "images",
+          "availableUntil",
+          "status",
+          "soldOut",
+          "deletedAt",
+          "createdAt"
+        ]
       },
       "UpdateVariantDto": {
         "type": "object",

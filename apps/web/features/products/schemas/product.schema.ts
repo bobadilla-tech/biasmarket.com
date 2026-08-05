@@ -1,23 +1,9 @@
-import { z } from "zod";
-import { categorySchema } from "./category.schema";
-import { variantSchema } from "./variant.schema";
+import type { ProductDetailResponseDto } from "@biasmarket/types";
 
-export const productSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string(),
-  price: z.string(),
-  currency: z.string(),
-  status: z.enum(["DRAFT", "PUBLISHED"]),
-  soldOut: z.boolean(),
-  images: z.array(z.string()),
-  availableUntil: z.string().nullable(),
-  categories: z.array(z.object({ category: categorySchema })).optional(),
-  variants: z.array(variantSchema).optional(),
-  availableStock: z.number().nullable().optional(),
-  soldUnits: z.number().optional(),
-});
-
-export const productListSchema = z.array(productSchema);
-
-export type Product = z.infer<typeof productSchema>;
+// Response shape comes from the generated OpenAPI client now (see
+// lib/api-client.ts) — a plain type alias, not a zod schema. `findAll`/
+// `findOne` both return `ProductDetailResponseDto` (product + variants +
+// category join + soldUnits/availableStock), the shape every component in
+// this feature consumes. apps/api's response DTO classes are the runtime
+// guarantee for pass-through reads. See "OpenAPI note" in apps/web/AGENTS.md.
+export type Product = ProductDetailResponseDto;

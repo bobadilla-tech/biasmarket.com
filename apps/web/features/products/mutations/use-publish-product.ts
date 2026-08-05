@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { productsApi } from "../api/products.api";
+import { apiClient } from "@/lib/api-client";
 import { productsKeys } from "../queries/use-products";
 import type { Product } from "../schemas/product.schema";
 
@@ -13,7 +13,9 @@ export function usePublishProduct(
 
   return useMutation({
     mutationFn: (productId: string) =>
-      productsApi.publish(storeId as string, productId, fallbackErrorMessage),
+      apiClient.products.publish(storeId as string, productId, {
+        fallbackErrorMessage,
+      }),
     onSuccess: (_data, productId) => {
       if (!storeId) return;
       queryClient.invalidateQueries({

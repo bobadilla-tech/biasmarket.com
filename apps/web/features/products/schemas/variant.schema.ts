@@ -1,18 +1,10 @@
-import { z } from "zod";
+import type { VariantResponseDto } from "@biasmarket/types";
 
-export const variantSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  stock: z.number().nullable(),
-  reserved: z.number(),
-  priceOverride: z.string().nullable(),
-  imageOverride: z.string().nullable(),
-  attributes: z.record(z.string(), z.string()),
-});
-
-export const variantListSchema = z.array(variantSchema);
-
-export type Variant = z.infer<typeof variantSchema>;
+// Response shape comes from the generated OpenAPI client now (see
+// lib/api-client.ts) — a plain type alias, not a zod schema. apps/api's
+// VariantResponseDto is the runtime guarantee for pass-through reads. See
+// "OpenAPI note" in apps/web/AGENTS.md.
+export type Variant = VariantResponseDto;
 
 export type VariantDraft = {
   name: string;

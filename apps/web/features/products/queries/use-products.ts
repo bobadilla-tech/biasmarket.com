@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { productsApi } from "../api/products.api";
+import { apiClient } from "@/lib/api-client";
 
 export const productsKeys = {
   byStore: (storeId: string) => ["products", storeId] as const,
@@ -15,7 +15,8 @@ export function useProducts(
 ) {
   return useQuery({
     queryKey: productsKeys.byStore(storeId as string),
-    queryFn: () => productsApi.list(storeId as string, fallbackErrorMessage),
+    queryFn: () =>
+      apiClient.products.findAll(storeId as string, { fallbackErrorMessage }),
     enabled: !!storeId,
   });
 }

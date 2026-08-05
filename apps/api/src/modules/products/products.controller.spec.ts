@@ -25,6 +25,36 @@ describe("ProductsController", () => {
   const productId = "product-1";
   const session = { user: { id: "user-1" } } as never;
 
+  // Real service methods return actual Prisma `Decimal`/`Date` instances —
+  // these fixtures only need to structurally match what the controller's
+  // `toProductDto`/`toVariantDto` mapping reads (`.toString()`/`.toISOString()`).
+  const productRow = {
+    id: productId,
+    storeId,
+    name: "Widget",
+    description: "",
+    price: { toString: () => "10.00" },
+    currency: "USD",
+    images: [],
+    availableUntil: null,
+    status: "DRAFT" as const,
+    soldOut: false,
+    deletedAt: null,
+    createdAt: new Date("2026-01-01T00:00:00.000Z"),
+  };
+
+  const variantRow = {
+    id: "variant-1",
+    productId,
+    storeId,
+    name: "Default",
+    stock: null,
+    reserved: 0,
+    priceOverride: null,
+    imageOverride: null,
+    attributes: {},
+  };
+
   beforeEach(async () => {
     service = {
       create: vi.fn(),
@@ -51,24 +81,36 @@ describe("ProductsController", () => {
     expect(controller).toBeDefined();
   });
 
-  it("create() delegates to service.create with storeId, userId, dto", () => {
+  it("create() delegates to service.create with storeId, userId, dto", async () => {
     const dto = { name: "Widget", price: 10 } as never;
+    service.create.mockResolvedValue({ ...productRow, variants: [variantRow] });
 
-    controller.create(storeId, session, dto);
+    await controller.create(storeId, session, dto);
 
     expect(service.create).toHaveBeenCalledWith(storeId, "user-1", dto);
   });
 
-  it("findAll() delegates to service.findAllForStore with storeId, userId", () => {
-    controller.findAll(storeId, session);
+  it("findAll() delegates to service.findAllForStore with storeId, userId", async () => {
+    service.findAllForStore.mockResolvedValue([
+      {
+        ...productRow,
+        variants: [variantRow],
+        categories: [],
+        soldUnits: 0,
+        availableStock: null,
+      },
+    ]);
+
+    await controller.findAll(storeId, session);
 
     expect(service.findAllForStore).toHaveBeenCalledWith(storeId, "user-1");
   });
 
-  it("update() delegates to service.update with productId, storeId, userId, dto", () => {
+  it("update() delegates to service.update with productId, storeId, userId, dto", async () => {
     const dto = { name: "Renamed" } as never;
+    service.update.mockResolvedValue(productRow);
 
-    controller.update(storeId, productId, session, dto);
+    await controller.update(storeId, productId, session, dto);
 
     expect(service.update).toHaveBeenCalledWith(
       productId,
@@ -78,14 +120,18 @@ describe("ProductsController", () => {
     );
   });
 
-  it("publish() delegates to service.publish with productId, storeId, userId", () => {
-    controller.publish(storeId, productId, session);
+  it("publish() delegates to service.publish with productId, storeId, userId", async () => {
+    service.publish.mockResolvedValue(productRow);
+
+    await controller.publish(storeId, productId, session);
 
     expect(service.publish).toHaveBeenCalledWith(productId, storeId, "user-1");
   });
 
-  it("softDelete() delegates to service.softDelete with productId, storeId, userId", () => {
-    controller.softDelete(storeId, productId, session);
+  it("softDelete() delegates to service.softDelete with productId, storeId, userId", async () => {
+    service.softDelete.mockResolvedValue(productRow);
+
+    await controller.softDelete(storeId, productId, session);
 
     expect(service.softDelete).toHaveBeenCalledWith(
       productId,
@@ -94,10 +140,11 @@ describe("ProductsController", () => {
     );
   });
 
-  it("addVariant() delegates to service.addVariant with productId, storeId, userId, dto", () => {
+  it("addVariant() delegates to service.addVariant with productId, storeId, userId, dto", async () => {
     const dto = { name: "Large" } as never;
+    service.addVariant.mockResolvedValue(variantRow);
 
-    controller.addVariant(storeId, productId, session, dto);
+    await controller.addVariant(storeId, productId, session, dto);
 
     expect(service.addVariant).toHaveBeenCalledWith(
       productId,
@@ -107,8 +154,10 @@ describe("ProductsController", () => {
     );
   });
 
-  it("listVariants() delegates to service.listVariants with productId, storeId, userId", () => {
-    controller.listVariants(storeId, productId, session);
+  it("listVariants() delegates to service.listVariants with productId, storeId, userId", async () => {
+    service.listVariants.mockResolvedValue([variantRow]);
+
+    await controller.listVariants(storeId, productId, session);
 
     expect(service.listVariants).toHaveBeenCalledWith(
       productId,

@@ -123,7 +123,7 @@ export class ProductsService {
       include: { variants: true, categories: { include: { category: true } } },
     });
 
-    if (products.length === 0) return products;
+    if (products.length === 0) return [];
 
     const sold = await this.prisma.orderItem.groupBy({
       by: ["productId"],

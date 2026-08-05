@@ -5,6 +5,167 @@
  * Bias Market — niche-first store builder API
  * OpenAPI spec version: 1.0
  */
+export type CreateVariantDtoAttributes = {[key: string]: string};
+
+export interface CreateVariantDto {
+  /** @minLength 1 */
+  name: string;
+  stock?: number;
+  priceOverride?: number;
+  imageOverride?: string;
+  attributes?: CreateVariantDtoAttributes;
+}
+
+export interface CreateProductDto {
+  /** @minLength 2 */
+  name: string;
+  categoryIds?: string[];
+  description?: string;
+  price: number;
+  soldOut?: boolean;
+  images?: string[];
+  availableUntil?: string;
+  currency?: string;
+  /** @minimum 0 */
+  stock?: number;
+  variants?: CreateVariantDto[];
+}
+
+export type ProductWithVariantsResponseDtoStatus = typeof ProductWithVariantsResponseDtoStatus[keyof typeof ProductWithVariantsResponseDtoStatus];
+
+
+export const ProductWithVariantsResponseDtoStatus = {
+  DRAFT: 'DRAFT',
+  PUBLISHED: 'PUBLISHED',
+} as const;
+
+export type VariantResponseDtoAttributes = {[key: string]: string};
+
+export interface VariantResponseDto {
+  id: string;
+  productId: string;
+  storeId: string;
+  name: string;
+  /** @nullable */
+  stock: number | null;
+  reserved: number;
+  /** @nullable */
+  priceOverride: string | null;
+  /** @nullable */
+  imageOverride: string | null;
+  attributes: VariantResponseDtoAttributes;
+}
+
+export interface ProductWithVariantsResponseDto {
+  id: string;
+  storeId: string;
+  name: string;
+  description: string;
+  price: string;
+  currency: string;
+  images: string[];
+  /** @nullable */
+  availableUntil: string | null;
+  status: ProductWithVariantsResponseDtoStatus;
+  soldOut: boolean;
+  /** @nullable */
+  deletedAt: string | null;
+  createdAt: string;
+  variants: VariantResponseDto[];
+}
+
+export type ProductDetailResponseDtoStatus = typeof ProductDetailResponseDtoStatus[keyof typeof ProductDetailResponseDtoStatus];
+
+
+export const ProductDetailResponseDtoStatus = {
+  DRAFT: 'DRAFT',
+  PUBLISHED: 'PUBLISHED',
+} as const;
+
+export interface CategoryInProductResponseDto {
+  id: string;
+  name: string;
+}
+
+export interface ProductCategoryResponseDto {
+  productId: string;
+  categoryId: string;
+  category: CategoryInProductResponseDto;
+}
+
+export interface ProductDetailResponseDto {
+  id: string;
+  storeId: string;
+  name: string;
+  description: string;
+  price: string;
+  currency: string;
+  images: string[];
+  /** @nullable */
+  availableUntil: string | null;
+  status: ProductDetailResponseDtoStatus;
+  soldOut: boolean;
+  /** @nullable */
+  deletedAt: string | null;
+  createdAt: string;
+  variants: VariantResponseDto[];
+  categories: ProductCategoryResponseDto[];
+  soldUnits: number;
+  /** @nullable */
+  availableStock: number | null;
+}
+
+export interface UpdateProductDto {
+  /** @minLength 2 */
+  name?: string;
+  categoryIds?: string[];
+  description?: string;
+  price?: number;
+  soldOut?: boolean;
+  images?: string[];
+  availableUntil?: string;
+  currency?: string;
+}
+
+export type ProductResponseDtoStatus = typeof ProductResponseDtoStatus[keyof typeof ProductResponseDtoStatus];
+
+
+export const ProductResponseDtoStatus = {
+  DRAFT: 'DRAFT',
+  PUBLISHED: 'PUBLISHED',
+} as const;
+
+export interface ProductResponseDto {
+  id: string;
+  storeId: string;
+  name: string;
+  description: string;
+  price: string;
+  currency: string;
+  images: string[];
+  /** @nullable */
+  availableUntil: string | null;
+  status: ProductResponseDtoStatus;
+  soldOut: boolean;
+  /** @nullable */
+  deletedAt: string | null;
+  createdAt: string;
+}
+
+export type UpdateVariantDtoAttributes = {[key: string]: string};
+
+export interface UpdateVariantDto {
+  /** @minLength 1 */
+  name?: string;
+  /** @nullable */
+  stock?: number | null;
+  /** @nullable */
+  priceOverride?: number | null;
+  /** @nullable */
+  imageOverride?: string | null;
+  attributes?: UpdateVariantDtoAttributes;
+}
+
 export interface CreateCollectionDto {
   /** @minLength 1 */
   name: string;
@@ -82,4 +243,8 @@ export interface CollectionProductResponseDto {
 export interface ReorderCollectionProductsDto {
   productIds: string[];
 }
+
+export type UploadImageParams = {
+replace: string;
+};
 

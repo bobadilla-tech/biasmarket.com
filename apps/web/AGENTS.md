@@ -18,7 +18,8 @@ features/<name>/
               over lib/api.ts's apiFetch + schema.parse(data) by default. A migrated
               feature (see the OpenAPI note below) has no api/ folder at all —
               queries/mutations call the generated `apiClient.<tag>.*` client from
-              lib/api-client.ts directly. collections is the only one so far
+              lib/api-client.ts directly, except multipart upload calls, which stay
+              on apiFetch/raw fetch. collections and products are migrated so far
   queries/    TanStack Query useQuery hooks, own the query key
   mutations/  TanStack Query useMutation hooks, invalidate on success
   components/ presentational components specific to this feature
@@ -68,9 +69,9 @@ event — see `settings/page.tsx`'s `updateStoreCache` calls for the pattern.
 
 **`packages/types` (`@biasmarket/types`)**: generates a real SDK client from
 `apps/api/openapi.json` via [Orval](https://orval.dev) (see the OpenAPI note
-below) — one grouped namespace per migrated tag (`collections`, ...), plus
-`configureApiClient` and the re-exported response/request DTO types. Still not
-for hand-populated feature-local types — those belong in
+below) — one grouped namespace per migrated tag (`collections`, `products`),
+plus `configureApiClient` and the re-exported response/request DTO types.
+Still not for hand-populated feature-local types — those belong in
 `features/<name>/schemas/`.
 
 **OpenAPI-generated client**: landed 2026-08-04, reworked the same day after
@@ -79,7 +80,12 @@ and `docs/plans/2026-08-04-typed-sdk-client-followups.md` for the full
 history — a first pass generated a raw `openapi-fetch` client that turned out
 to need *more* hand-written wiring per call site than the `apiFetch` pattern
 it replaced; this section describes the redo, not that first pass).
-`collections` is the pilot feature, still the only one migrated.
+`collections` was the pilot feature; `products` (money fields + 2 upload
+endpoints) migrated next per
+`docs/plans/2026-08-04-orval-client-rollout-plan.md`'s Batch 1, closing that
+plan's money/upload proof-of-pattern gate. See that doc's "Batch 1 execution
+notes" for what came up migrating a module with more than one response shape
+(`create()` vs. `findAll()`/`findOne()`) and multipart endpoints.
 
 `apps/api` emits `openapi.json` (`@nestjs/swagger` + a standalone
 `PluginMetadataGenerator` script, since the Nest build's SWC builder doesn't
@@ -111,7 +117,8 @@ feature's backend response DTOs, regenerate by hand and commit the diff:
 
 **Orval config notes, for whoever adds the next tag in Phase 4:**
 `orval.config.ts`'s `input.filters` only includes tags whose controller
-already has real response DTOs — currently just `Collections`. Generating a
+already has real response DTOs — currently `Collections` and `Products`.
+Generating a
 tag whose responses are still untyped Prisma results produces anonymous
 `{ [key: string]: unknown }` placeholder schema types keyed by the
 (post-`operationName`-override) shortened method name, and those collide
@@ -162,12 +169,13 @@ raw response (e.g. `useCreateCollection` turning an empty-string
 `apiClient.collections.create`). Apply this same split to each feature as it
 migrates, not a blanket drop-all-response-zod change in one PR.
 
-Not yet migrated: everything except `collections`. `apps/api`'s response DTOs
-only cover that one module so far — every other feature's `api/*.ts` stays on
-`apiFetch` + zod until its backend controller gets the same response-DTO
-treatment (see the plan doc's Phase 1 gate: a money-bearing module and a
-multipart-upload module still need to prove the pattern before wider
-rollout). Error responses are also explicitly out of scope for the generated
+Not yet migrated: everything except `collections` and `products`. `apps/api`'s
+response DTOs only cover those two modules so far — every other feature's
+`api/*.ts` stays on `apiFetch` + zod until its backend controller gets the
+same response-DTO treatment (see the rollout plan doc's "Suggested batches"
+for the order — `products` closed the original money/upload proof-of-pattern
+gate, Batch 2 onward is small CRUD modules). Error responses are also
+explicitly out of scope for the generated
 client (see the plan doc's Phase 3 note) — the mutator's defensive
 `message`-field parsing and `fallbackErrorMessage` stay the pattern for error
 paths even in migrated features.
@@ -217,7 +225,12 @@ paths even in migrated features.
      fail-fast-and-leave-it-half-migrated version (see the doc comment on
      `features/products/mutations/use-update-product.ts`). Not live-smoke-tested
      (no seeded DB access in this session) — only typecheck/test/build were
-     verified.
+     verified. Later, separately (2026-08-05): `features/products`' `api/`
+     layer (excluding `categories.api.ts`, a separate tag not yet migrated)
+     was itself migrated from this step's `apiFetch` + zod pattern onto the
+     generated Orval client — see the OpenAPI note above and
+     `docs/plans/2026-08-04-orval-client-rollout-plan.md`'s Batch 1 execution
+     notes.
    - ~~`orders/page.tsx`~~ — done. Split into `features/orders/`; the page is
      now composition only. `useOptimisticStatusChange` wraps the review/advance
      mutations with the delayed-commit/undo UX (apply the status change to the

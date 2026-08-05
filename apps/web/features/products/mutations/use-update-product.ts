@@ -1,6 +1,8 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { CreateVariantDto } from "@biasmarket/types";
+import { apiClient } from "@/lib/api-client";
 import { productsApi } from "../api/products.api";
 import { productsKeys } from "../queries/use-products";
 import { keyForAttributes } from "../lib/variant-key";
@@ -37,7 +39,7 @@ export function useUpdateProduct(storeId: string | undefined) {
     }) => {
       const sid = storeId as string;
 
-      await productsApi.update(
+      await apiClient.products.update(
         sid,
         input.productId,
         {
@@ -47,13 +49,13 @@ export function useUpdateProduct(storeId: string | undefined) {
           currency: input.currency,
           categoryIds: input.categoryId ? [input.categoryId] : [],
         },
-        input.fallbackErrorMessage,
+        { fallbackErrorMessage: input.fallbackErrorMessage },
       );
 
-      const current = await productsApi.get(
+      const current = await apiClient.products.findOne(
         sid,
         input.productId,
-        input.fallbackErrorMessage,
+        { fallbackErrorMessage: input.fallbackErrorMessage },
       );
       const currentVariants = current.variants ?? [];
 
@@ -72,7 +74,7 @@ export function useUpdateProduct(storeId: string | undefined) {
             const existing = existingByKey.get(key);
             let variantId: string;
             if (existing) {
-              await productsApi.updateVariant(
+              await apiClient.products.updateVariant(
                 sid,
                 input.productId,
                 existing.id,
@@ -84,11 +86,11 @@ export function useUpdateProduct(storeId: string | undefined) {
                     : draft.priceOverride,
                   attributes: draft.attributes ?? {},
                 },
-                input.fallbackErrorMessage,
+                { fallbackErrorMessage: input.fallbackErrorMessage },
               );
               variantId = existing.id;
             } else {
-              const payload: Record<string, unknown> = {
+              const payload: CreateVariantDto = {
                 name: draft.name,
                 attributes: draft.attributes ?? {},
               };
@@ -96,11 +98,11 @@ export function useUpdateProduct(storeId: string | undefined) {
               if (draft.priceOverride !== undefined) {
                 payload.priceOverride = draft.priceOverride;
               }
-              const createdVariant = await productsApi.createVariant(
+              const createdVariant = await apiClient.products.addVariant(
                 sid,
                 input.productId,
                 payload,
-                input.fallbackErrorMessage,
+                { fallbackErrorMessage: input.fallbackErrorMessage },
               );
               variantId = createdVariant.id;
             }
@@ -140,7 +142,11 @@ export function useUpdateProduct(storeId: string | undefined) {
               !desiredKeys.has(keyForAttributes(variant.attributes))
             )
             .map((variant) =>
-              productsApi.deleteVariant(sid, input.productId, variant.id)
+              apiClient.products.deleteVariant(
+                sid,
+                input.productId,
+                variant.id,
+              ).catch(() => undefined)
             ),
         );
       } else {
@@ -151,7 +157,7 @@ export function useUpdateProduct(storeId: string | undefined) {
           currentVariants[0];
 
         if (baseVariant) {
-          await productsApi.updateVariant(
+          await apiClient.products.updateVariant(
             sid,
             input.productId,
             baseVariant.id,
@@ -161,32 +167,34 @@ export function useUpdateProduct(storeId: string | undefined) {
               priceOverride: null,
               attributes: {},
             },
-            input.fallbackErrorMessage,
+            { fallbackErrorMessage: input.fallbackErrorMessage },
           );
         } else {
-          const payload: Record<string, unknown> = {
+          const payload: CreateVariantDto = {
             name: "Default",
             attributes: {},
           };
           if (desiredStock !== null) {
             payload.stock = desiredStock;
           }
-          await productsApi.createVariant(
+          await apiClient.products.addVariant(
             sid,
             input.productId,
             payload,
-            input.fallbackErrorMessage,
+            { fallbackErrorMessage: input.fallbackErrorMessage },
           );
         }
 
         const baseId = baseVariant?.id;
         await Promise.all(
           currentVariants
-            .filter((variant) =>
-              variant.id !== baseId
-            )
+            .filter((variant) => variant.id !== baseId)
             .map((variant) =>
-              productsApi.deleteVariant(sid, input.productId, variant.id)
+              apiClient.products.deleteVariant(
+                sid,
+                input.productId,
+                variant.id,
+              ).catch(() => undefined)
             ),
         );
       }
