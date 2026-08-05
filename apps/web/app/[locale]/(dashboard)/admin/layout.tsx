@@ -19,14 +19,17 @@ export default function AdminLayout({
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
   const isAdmin = session?.user.role === "admin";
+  const impersonatedBy = (
+    session?.session as { impersonatedBy?: string | null } | undefined
+  )?.impersonatedBy;
 
   useEffect(() => {
-    if (!isPending && !isAdmin) {
+    if (!isPending && !isAdmin && !impersonatedBy) {
       router.push("/dashboard");
     }
-  }, [isPending, isAdmin, router]);
+  }, [isPending, isAdmin, impersonatedBy, router]);
 
-  if (isPending || !isAdmin) {
+  if (isPending || (!isAdmin && !impersonatedBy)) {
     return null;
   }
 
