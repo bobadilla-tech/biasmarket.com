@@ -1,28 +1,24 @@
-import { apiFetch } from "@/lib/api";
-import { storeListSchema, storeSchema } from "../schemas/store.schema";
+import { apiClient } from "@/lib/api-client";
 import { dashboardStoreSchema } from "../schemas/dashboard-store.schema";
 import type { CreateStoreFormInput } from "../schemas/create-store.schema";
 
 export const storesApi = {
-  async listMine() {
-    const data = await apiFetch("/me/stores");
-    return storeListSchema.parse(data);
+  listMine() {
+    return apiClient.myStores.findMine();
   },
   async getBySlug(slug: string) {
-    const data = await apiFetch(`/stores/by-slug/${slug}`);
+    const data = await apiClient.stores.findBySlug(slug);
     return dashboardStoreSchema.parse(data);
   },
-  async create(
+  create(
     payload: CreateStoreFormInput & { themeConfig: Record<string, unknown> },
     fallbackErrorMessage?: string,
   ) {
-    const data = await apiFetch(
-      "/stores",
-      { method: "POST", body: JSON.stringify(payload) },
-      fallbackErrorMessage,
-    );
-    return storeSchema.parse(data);
+    return apiClient.stores.create(payload, { fallbackErrorMessage });
   },
+  // Multipart upload — stays on plain fetch + FormData, not the generated
+  // client (same carve-out as products' image uploads; Orval does generate
+  // a `stores.uploadLogo` function from the spec, it's just unused here).
   async uploadLogo(storeId: string, file: File, fallbackErrorMessage?: string) {
     const formData = new FormData();
     formData.append("file", file);
@@ -38,9 +34,9 @@ export const storesApi = {
     if (!res.ok) {
       throw new Error(data?.message ?? fallbackErrorMessage ?? "Network error");
     }
-    return storeSchema.parse(data);
+    return data as { id: string; slug: string; logoUrl: string | null };
   },
   remove(storeId: string) {
-    return apiFetch(`/stores/${storeId}`, { method: "DELETE" });
+    return apiClient.stores.remove(storeId);
   },
 };

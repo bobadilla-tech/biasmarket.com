@@ -146,7 +146,7 @@ export function useUpdateProduct(storeId: string | undefined) {
                 sid,
                 input.productId,
                 variant.id,
-              ).catch(() => undefined)
+              )
             ),
         );
       } else {
@@ -196,7 +196,7 @@ export function useUpdateProduct(storeId: string | undefined) {
                 sid,
                 input.productId,
                 variant.id,
-              ).catch(() => undefined)
+              )
             ),
         );
       }

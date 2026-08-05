@@ -4,10 +4,7 @@ export { useStoreDirectory } from "./queries/use-store-directory";
 export { useProductSearch } from "./queries/use-product-search";
 export {
   type StoreDirectoryResult,
-  storeDirectoryResultSchema,
   type StoreListing,
-  storeListingListSchema,
-  storeListingSchema,
 } from "./schemas/store-listing.schema";
 export {
   type ProductSearchResult,

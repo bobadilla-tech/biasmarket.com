@@ -33,15 +33,31 @@ describe("StoresController", () => {
     expect(controller).toBeDefined();
   });
 
-  it("create() delegates to service.create with userId and the dto", () => {
+  it("create() delegates to service.create with userId and the dto", async () => {
     const session = { user: { id: "user-1" } } as never;
     const dto = {
       name: "My Store",
       slug: "my-store",
       whatsappNumber: "+51999999999",
     };
+    service.create.mockResolvedValue({
+      id: "store-1",
+      name: "My Store",
+      slug: "my-store",
+      locale: "es",
+      ownerId: "user-1",
+      themeConfig: {},
+      logoUrl: null,
+      paymentInstructions: "",
+      whatsappNumber: "+51999999999",
+      defaultCurrency: "PEN",
+      holdWindowHours: 48,
+      lowStockThreshold: 5,
+      lowStockAlertsEnabled: true,
+      createdAt: new Date("2026-08-01T00:00:00.000Z"),
+    });
 
-    controller.create(session, dto);
+    await controller.create(session, dto);
 
     expect(service.create).toHaveBeenCalledWith("user-1", dto);
   });

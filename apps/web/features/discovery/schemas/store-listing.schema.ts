@@ -1,20 +1,12 @@
-import { z } from "zod";
+import type {
+  DirectoryStoreItemResponseDto,
+  StoreDirectoryResponseDto,
+} from "@biasmarket/types";
 
-export const storeListingSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  slug: z.string(),
-  logoUrl: z.string().nullable(),
-});
-
-export const storeListingListSchema = z.array(storeListingSchema);
-
-export const storeDirectoryResultSchema = z.object({
-  stores: storeListingListSchema,
-  total: z.number(),
-  page: z.number(),
-  limit: z.number(),
-});
-
-export type StoreListing = z.infer<typeof storeListingSchema>;
-export type StoreDirectoryResult = z.infer<typeof storeDirectoryResultSchema>;
+// Was zod schemas for pass-through reads of Stores' findFeatured/
+// findDirectory; now type aliases onto the generated response DTOs — see
+// the OpenAPI note in apps/web/AGENTS.md. `StoreCard` renders both a
+// featured-store row (extra revenue/orderCount fields) and a directory row
+// through this same narrower shape — structurally compatible either way.
+export type StoreListing = DirectoryStoreItemResponseDto;
+export type StoreDirectoryResult = StoreDirectoryResponseDto;

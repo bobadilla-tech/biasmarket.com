@@ -31,7 +31,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -49,7 +56,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "object"
+                    "$ref": "#/components/schemas/StoreWithOwnerResponseDto"
                   }
                 }
               }
@@ -76,7 +83,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -109,7 +123,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -130,7 +151,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -144,7 +172,17 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicStoreListingResponseDto"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -158,7 +196,17 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicCollectionListingResponseDto"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -169,10 +217,29 @@
     "/stores/featured": {
       "get": {
         "operationId": "StoresController_findFeatured",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FeaturedStoreResponseDto"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -183,10 +250,42 @@
     "/stores/directory": {
       "get": {
         "operationId": "StoresController_findDirectory",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreDirectoryResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -209,7 +308,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorePublicDetailResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -232,7 +338,17 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicCategoryResponseDto"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -263,7 +379,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicProductPageResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -286,7 +409,14 @@
         ],
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -300,7 +430,17 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StoreResponseDto"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -746,7 +886,7 @@
           },
           {
             "name": "replace",
-            "required": true,
+            "required": false,
             "in": "query",
             "schema": {
               "type": "string"
@@ -1400,7 +1540,17 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeliveryMethodConfigResponseDto"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1431,7 +1581,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryMethodConfigResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1462,7 +1619,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryMethodConfigResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1485,7 +1649,17 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeliveryMethodConfigResponseDto"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1508,7 +1682,17 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PickupPointResponseDto"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1539,7 +1723,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickupPointResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1580,7 +1771,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickupPointResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1609,7 +1807,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickupPointResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1632,7 +1837,17 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PickupPointResponseDto"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1654,7 +1869,7 @@
           },
           {
             "name": "enabled",
-            "required": true,
+            "required": false,
             "in": "query",
             "schema": {
               "type": "string"
@@ -1663,7 +1878,17 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentMethodConfigResponseDto"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1694,7 +1919,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethodConfigResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1717,7 +1949,17 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentMethodConfigResponseDto"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2777,6 +3019,164 @@
           "whatsappNumber"
         ]
       },
+      "StoreResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          },
+          "ownerId": {
+            "type": "string"
+          },
+          "themeConfig": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "logoUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentInstructions": {
+            "type": "string"
+          },
+          "whatsappNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultCurrency": {
+            "type": "string"
+          },
+          "holdWindowHours": {
+            "type": "number"
+          },
+          "lowStockThreshold": {
+            "type": "number"
+          },
+          "lowStockAlertsEnabled": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "locale",
+          "ownerId",
+          "themeConfig",
+          "logoUrl",
+          "paymentInstructions",
+          "whatsappNumber",
+          "defaultCurrency",
+          "holdWindowHours",
+          "lowStockThreshold",
+          "lowStockAlertsEnabled",
+          "createdAt"
+        ]
+      },
+      "StoreOwnerResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "name"
+        ]
+      },
+      "StoreWithOwnerResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          },
+          "ownerId": {
+            "type": "string"
+          },
+          "themeConfig": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "logoUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentInstructions": {
+            "type": "string"
+          },
+          "whatsappNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultCurrency": {
+            "type": "string"
+          },
+          "holdWindowHours": {
+            "type": "number"
+          },
+          "lowStockThreshold": {
+            "type": "number"
+          },
+          "lowStockAlertsEnabled": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "owner": {
+            "$ref": "#/components/schemas/StoreOwnerResponseDto"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "locale",
+          "ownerId",
+          "themeConfig",
+          "logoUrl",
+          "paymentInstructions",
+          "whatsappNumber",
+          "defaultCurrency",
+          "holdWindowHours",
+          "lowStockThreshold",
+          "lowStockAlertsEnabled",
+          "createdAt",
+          "owner"
+        ]
+      },
       "UpdateStoreDto": {
         "type": "object",
         "properties": {
@@ -2804,6 +3204,489 @@
             "minimum": 0
           }
         }
+      },
+      "PublicStoreListingResponseDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "slug",
+          "createdAt"
+        ]
+      },
+      "PublicCollectionListingResponseDto": {
+        "type": "object",
+        "properties": {
+          "storeSlug": {
+            "type": "string"
+          },
+          "collectionSlug": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "storeSlug",
+          "collectionSlug",
+          "createdAt"
+        ]
+      },
+      "FeaturedStoreResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "logoUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "revenue": {
+            "type": "number"
+          },
+          "orderCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "logoUrl",
+          "revenue",
+          "orderCount"
+        ]
+      },
+      "DirectoryStoreItemResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "logoUrl": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "logoUrl"
+        ]
+      },
+      "StoreDirectoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "stores": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DirectoryStoreItemResponseDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "stores",
+          "total",
+          "page",
+          "limit"
+        ]
+      },
+      "PublicProductVariantResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "stock": {
+            "type": "number",
+            "nullable": true
+          },
+          "reserved": {
+            "type": "number"
+          },
+          "priceOverride": {
+            "type": "string",
+            "nullable": true
+          },
+          "imageOverride": {
+            "type": "string",
+            "nullable": true
+          },
+          "attributes": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "id",
+          "productId",
+          "storeId",
+          "name",
+          "stock",
+          "reserved",
+          "priceOverride",
+          "imageOverride",
+          "attributes"
+        ]
+      },
+      "PublicProductWithVariantsResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "price": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "availableUntil": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "status": {
+            "enum": [
+              "DRAFT",
+              "PUBLISHED"
+            ],
+            "type": "string"
+          },
+          "soldOut": {
+            "type": "boolean"
+          },
+          "deletedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicProductVariantResponseDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "name",
+          "description",
+          "price",
+          "currency",
+          "images",
+          "availableUntil",
+          "status",
+          "soldOut",
+          "deletedAt",
+          "createdAt",
+          "variants"
+        ]
+      },
+      "SectionCollectionProductResponseDto": {
+        "type": "object",
+        "properties": {
+          "collectionId": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "position": {
+            "type": "number"
+          },
+          "product": {
+            "$ref": "#/components/schemas/PublicProductWithVariantsResponseDto"
+          }
+        },
+        "required": [
+          "collectionId",
+          "productId",
+          "position",
+          "product"
+        ]
+      },
+      "SectionCollectionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "products": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SectionCollectionProductResponseDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "name",
+          "slug",
+          "description",
+          "createdAt",
+          "products"
+        ]
+      },
+      "StoreSectionWithCollectionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "COLLECTION",
+              "BANNER",
+              "TEXT_BLOCK"
+            ],
+            "type": "string"
+          },
+          "collectionId": {
+            "type": "string",
+            "nullable": true
+          },
+          "content": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "position": {
+            "type": "number"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "collection": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SectionCollectionResponseDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "type",
+          "collectionId",
+          "content",
+          "position",
+          "createdAt",
+          "collection"
+        ]
+      },
+      "StorePublicDetailResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          },
+          "ownerId": {
+            "type": "string"
+          },
+          "themeConfig": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "logoUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentInstructions": {
+            "type": "string"
+          },
+          "whatsappNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultCurrency": {
+            "type": "string"
+          },
+          "holdWindowHours": {
+            "type": "number"
+          },
+          "lowStockThreshold": {
+            "type": "number"
+          },
+          "lowStockAlertsEnabled": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StoreSectionWithCollectionResponseDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "locale",
+          "ownerId",
+          "themeConfig",
+          "logoUrl",
+          "paymentInstructions",
+          "whatsappNumber",
+          "defaultCurrency",
+          "holdWindowHours",
+          "lowStockThreshold",
+          "lowStockAlertsEnabled",
+          "createdAt",
+          "sections"
+        ]
+      },
+      "PublicCategoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "parentId"
+        ]
+      },
+      "PublicProductStoreResponseDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "logoUrl": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "name",
+          "slug",
+          "logoUrl"
+        ]
+      },
+      "PublicProductPageResponseDto": {
+        "type": "object",
+        "properties": {
+          "store": {
+            "$ref": "#/components/schemas/PublicProductStoreResponseDto"
+          },
+          "product": {
+            "$ref": "#/components/schemas/PublicProductWithVariantsResponseDto"
+          }
+        },
+        "required": [
+          "store",
+          "product"
+        ]
       },
       "CreateVariantDto": {
         "type": "object",
@@ -3451,6 +4334,43 @@
           "items"
         ]
       },
+      "DeliveryMethodConfigResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "PICKUP",
+              "COURIER"
+            ],
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "type",
+          "enabled",
+          "details",
+          "createdAt"
+        ]
+      },
       "UpsertDeliveryMethodDto": {
         "type": "object",
         "properties": {
@@ -3471,6 +4391,38 @@
         },
         "required": [
           "type"
+        ]
+      },
+      "PickupPointResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "sortOrder": {
+            "type": "number"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "label",
+          "enabled",
+          "sortOrder",
+          "createdAt"
         ]
       },
       "CreatePickupPointDto": {
@@ -3505,6 +4457,53 @@
             "type": "number"
           }
         }
+      },
+      "PaymentMethodConfigResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "method": {
+            "enum": [
+              "YAPE",
+              "PLIN",
+              "TRANSFER",
+              "CASH"
+            ],
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "depositPercentPickup": {
+            "type": "number"
+          },
+          "depositPercentCourier": {
+            "type": "number"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "method",
+          "enabled",
+          "details",
+          "depositPercentPickup",
+          "depositPercentCourier",
+          "createdAt"
+        ]
       },
       "UpsertPaymentMethodDto": {
         "type": "object",

@@ -115,19 +115,24 @@ packages/
 
 ### API structure (apps/api/src)
 
-Flat NestJS `controller/service/dto` per module today:
-`modules/{stores,products,users,health}`. `docs/core/architecture.md` describes
-a DDD-lite layering (`domain/application/infrastructure`) intended for
-`orders`/`payments` once those modules exist — don't apply that layering to
-`users`/`uploads`/`themes`-style CRUD modules, and don't retrofit it onto
-existing flat modules unless asked.
+Flat NestJS `controller/service/dto` per module for most of
+`apps/api/src/modules/*` (`stores`, `products`, `categories`, `collections`,
+`store-sections`, `payment-config`, `delivery-config`, `pickup-points`,
+`notifications`, `contact`, `customer-auth`, `stats`, `users`, `health`).
+`orders` is the one module using the DDD-lite layering
+(`domain/application/infrastructure`) described in `docs/core/architecture.md` —
+it owns the payment/fulfillment state machine, which warranted the extra
+structure. Don't apply that layering to CRUD-style modules, and don't retrofit
+it onto existing flat modules unless asked.
 
 - `main.ts`: global
   `ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })`, global
   prefix `api`, CORS locked to `WEB_URL`.
 - Auth: `better-auth` via `@thallesp/nestjs-better-auth`, Prisma adapter,
   email+password, `role` field defaults to `seller`. Config in
-  `src/auth/auth.config.ts`.
+  `src/auth/auth.config.ts`. This is seller/dashboard auth only — storefront
+  buyers use a separate, throttled session-cookie flow in
+  `modules/customer-auth` (`Customer` model, not `User`).
 - No tenant-resolution middleware yet — the architecture doc's
   `TenantMiddleware`/`AsyncLocalStorage` design is aspirational; current code
   checks ownership per-request inside each service method instead.
@@ -144,19 +149,32 @@ stays routing + page composition, `components/ui` is shadcn primitives,
 `components/shared` holds cross-feature
 `LoadingState`/`ErrorState`/`EmptyState`. Stack: `@tanstack/react-query` for
 server state (provider wired in `app/[locale]/query-provider.tsx`), `zod` for
-runtime validation at the `api/` boundary. `react-hook-form` is planned but not
-yet installed. Large existing pages (`products`, `settings`, `orders`) haven't
-been migrated to this structure yet — see `apps/web/AGENTS.md` for the full
-convention and staged migration roadmap.
+runtime validation at the `api/` boundary, `react-hook-form` +
+`@hookform/resolvers/zod` for forms. All major dashboard pages (`products`,
+`settings`, `orders`) are migrated to this structure — see `apps/web/AGENTS.md`
+for the full convention, including the generated OpenAPI client used by migrated
+features.
 
 ### Database (packages/db/prisma/schema.prisma)
 
-Current models: `User`, `Store`, `Product`, `ProductVariant`, `Order`, plus
-better-auth's `Session`/`Account`/`Verification`. Money fields are `Decimal`,
-never `Float`. `Order` currently has a single `paymentStatus` +
-`fulfillmentStatus` pair (not yet the fuller state machine with soft-hold/
-expiration described in `docs/core/security-payments.md` §9 — that flow is
-spec'd but not implemented).
+Core models: `User`, `Store`, `Product`, `ProductVariant`, `Category`,
+`Collection`, `StoreSection`, `Order`, `OrderItem`, `OrderPayment`,
+`PaymentProof`, `PaymentMethodConfig`, `DeliveryMethodConfig`, `PickupPoint`,
+`Customer`, `ContactInquiry`, `Notification`, `AuditLog`, plus better-auth's
+`Session`/`Account`/`Verification`. Money fields are `Decimal`, never `Float`.
+
+`Order` implements the state machine from `docs/core/security-payments.md` §9:
+`paymentStatus`
+(`PENDING_PAYMENT → PARTIALLY_PAID/PAYMENT_SUBMITTED →
+VERIFIED/REJECTED`, plus
+`CANCELLED`) and `fulfillmentStatus`
+(`ORDERING → IN_TRANSIT → READY → COMPLETED`) are tracked separately, an order
+carries a soft-hold `expiresAt` that `expire-orders.usecase.ts` sweeps,
+`OrderPayment` rows record each partial payment toward `requiredAmount`, and
+`PaymentProof` holds the buyer-submitted proof image plus its own `ProofStatus`
+review state. See `apps/api/src/modules/orders/domain/order-status.vo.ts` and
+`order.entity.ts` for the transition rules, and `orders-cron.service.ts` for the
+expiration sweep's scheduling.
 
 ### Multi-tenancy
 
@@ -166,7 +184,9 @@ checks against `Store.ownerId`), not global middleware. Slug strategy is
 
 ### Deployment
 
-Single Oracle Cloud VM, three containers (`api`, `web`, `db`) behind Caddy
+Single Oracle Cloud VM, containers for `api`, `web`, `db`, `minio`
+(S3-compatible object storage — product/logo/payment-proof images, see
+`apps/api/src/storage/storage.service.ts`), and `caddy`
 (`infra/docker/docker-compose.yml`, `infra/caddy/Caddyfile`). Caddy does TLS
 termination for two subdomains: `biasmarket.com` (web) and `api.biasmarket.com`
 (api). `api` container runs `prisma migrate deploy` automatically on boot. Full
@@ -180,7 +200,8 @@ startup env-var validation.
 - `docs/core/architecture.md` — monorepo layout, DDD-lite plan, multi-tenant
   design, theming system, deployment/scaling path
 - `docs/core/security-payments.md` — validation rules, REST-over-tRPC rationale,
-  manual payment flow state machine (spec, not yet fully built)
+  manual payment flow state machine (implemented — see the Database section
+  above for where)
 - `docs/core/product.md`, `docs/core/roadmap.md`, `docs/core/i18n.md`
 - `docs/plans/` — dated implementation-plan records as work lands
 - `apps/web/AGENTS.md` — flags that the installed Next.js version has breaking

@@ -1,20 +1,7 @@
-import { z } from "zod";
+import type { StoreWithOwnerResponseDto } from "@biasmarket/types";
 
-// Scoped to the fields the UI actually uses — findAllForAdmin returns the
-// full Store record (Prisma `include`, no `select` on the store itself,
-// only `owner` is narrowed server-side).
-export const adminStoreSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  slug: z.string(),
-  createdAt: z.string(),
-  owner: z.object({
-    id: z.string(),
-    email: z.string(),
-    name: z.string().nullable(),
-  }),
-});
-
-export const adminStoreListSchema = z.array(adminStoreSchema);
-
-export type AdminStore = z.infer<typeof adminStoreSchema>;
+// Was a zod schema stripping the full Store record down to the fields the
+// UI uses; now a type alias onto the generated response DTO — the backend
+// response DTO is the runtime guarantee, see the OpenAPI note in
+// apps/web/AGENTS.md.
+export type AdminStore = StoreWithOwnerResponseDto;

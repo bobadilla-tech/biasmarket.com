@@ -1,8 +1,11 @@
 # Orval client rollout — migrate every feature off hand-written `api/*.ts`
 
-**Batch 1 (`Products`) landed 2026-08-05** — see "Batch 1 execution notes" near
-the bottom for what actually happened. Batches 2–6 below are still
-forward-looking proposal, not yet executed.
+**Batch 1 (`Products`) and Batch 2 (`Categories`, `Notifications`, `Contact`,
+`Suggestions`, `StoreSections`) landed 2026-08-05** — see their execution notes
+near the bottom for what actually happened. Batches 3–6 below are still
+forward-looking proposal, not yet executed; the "Context"/gate sections right
+below are historical (written before Batch 1 started) — see the execution notes
+for current status.
 
 ## Read these three docs first, in order
 
@@ -371,8 +374,9 @@ what diverged from a mechanical read of it.
   (Categories tag) was deliberately left untouched — it's Batch 2, a separate
   tag, not part of this batch.
 
-Batches 2–6 are unstarted; pick up at Batch 2 (`Categories`, `Notifications`,
-`Contact`, `Suggestions`, `StoreSections`) next.
+Batch 2 (`Categories`, `Notifications`, `Contact`, `Suggestions`,
+`StoreSections`) landed the same day — see its execution notes below. Batches
+3–6 remain unstarted.
 
 ## Batch 2 execution notes (2026-08-05)
 

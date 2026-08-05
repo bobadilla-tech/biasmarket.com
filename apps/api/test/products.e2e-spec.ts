@@ -28,18 +28,21 @@ try {
   );
 }
 const openapi = JSON.parse(openapiRaw);
-const productWithVariantsSchema = openapi.components.schemas.ProductWithVariantsResponseDto;
+const productWithVariantsSchema =
+  openapi.components.schemas.ProductWithVariantsResponseDto;
 const productDetailSchema = openapi.components.schemas.ProductDetailResponseDto;
 const variantSchema = openapi.components.schemas.VariantResponseDto;
 
 describe("products (e2e)", () => {
   let app: INestApplication;
   let prisma: PrismaService;
+  let storage: StorageService;
   let sessionCookie: string;
   let userId: string;
   let storeId: string;
   let productId: string;
   let variantId: string;
+  let uploadedImageUrl: string | undefined;
 
   const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const email = `products-e2e-${runId}@example.com`;
@@ -53,6 +56,7 @@ describe("products (e2e)", () => {
     app = moduleFixture.createNestApplication();
     await app.init();
     prisma = moduleFixture.get(PrismaService);
+    storage = moduleFixture.get(StorageService);
 
     const password = "correcthorsebatterystaple";
     const existingMailerFiles = new Set(readdirSync(mailerDevDir));
@@ -97,6 +101,7 @@ describe("products (e2e)", () => {
   });
 
   afterAll(async () => {
+    if (uploadedImageUrl) await storage.deleteImage(uploadedImageUrl);
     if (productId) {
       await prisma.productVariant.deleteMany({ where: { productId } });
       await prisma.productCategory.deleteMany({ where: { productId } });
@@ -130,6 +135,12 @@ describe("products (e2e)", () => {
   });
 
   it("GET /stores/:storeId/products matches ProductDetailResponseDto[], priceOverride is a string", async () => {
+    if (!productId || !variantId) {
+      throw new Error(
+        "productId/variantId not set — the product-creation test above must run first and succeed",
+      );
+    }
+
     const variantRes = await request(app.getHttpServer())
       .patch(`/stores/${storeId}/products/${productId}/variants/${variantId}`)
       .set("Cookie", sessionCookie)
@@ -154,6 +165,12 @@ describe("products (e2e)", () => {
   });
 
   it("POST .../images uploads and returns ProductResponseDto with the new image URL", async () => {
+    if (!productId) {
+      throw new Error(
+        "productId not set — the product-creation test above must run first and succeed",
+      );
+    }
+
     // 1x1 PNG, smallest valid file that passes the controller's magic-byte check.
     const pngBuffer = Buffer.from(
       "89504e470d0a1a0a0000000d4948445200000001000000010802000000907753de0000000c4944415478da6360606060000000050001a5f645400000000049454e44ae426082",
@@ -165,6 +182,8 @@ describe("products (e2e)", () => {
       .set("Cookie", sessionCookie)
       .attach("file", pngBuffer, "pixel.png")
       .expect(201);
+
+    uploadedImageUrl = res.body.images[res.body.images.length - 1];
 
     expect(Array.isArray(res.body.images)).toBe(true);
     expect(res.body.images.length).toBeGreaterThan(0);

@@ -10,10 +10,10 @@ import type {
   CreateVariantDto,
   ProductDetailResponseDto,
   ProductResponseDto,
+  ProductsControlleruploadImageParams,
   ProductWithVariantsResponseDto,
   UpdateProductDto,
   UpdateVariantDto,
-  UploadImageParams,
   VariantResponseDto,
 } from "../api.schemas.js";
 
@@ -204,7 +204,7 @@ export const deleteVariant = async (
 export const getUploadImageUrl = (
   storeId: string,
   productId: string,
-  params: UploadImageParams,
+  params?: ProductsControlleruploadImageParams,
 ) => {
   const normalizedParams = new URLSearchParams();
 
@@ -224,7 +224,7 @@ export const getUploadImageUrl = (
 export const uploadImage = async (
   storeId: string,
   productId: string,
-  params: UploadImageParams,
+  params?: ProductsControlleruploadImageParams,
   options?: Parameters<typeof customFetch>[1],
 ): Promise<ProductResponseDto> => {
   return customFetch<ProductResponseDto>(

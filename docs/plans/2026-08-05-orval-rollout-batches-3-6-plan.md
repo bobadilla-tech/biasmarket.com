@@ -292,3 +292,149 @@ Not doing all remaining tags in one session — batch-by-batch, stop wherever th
 session runs out of room and append execution notes to this doc (or to
 `2026-08-04-orval-client-rollout-plan.md`, matching where Batches 1/2's notes
 live) describing what landed and what diverged.
+
+## Batch 3 execution notes (2026-08-05)
+
+All of Batch 3 landed: `DeliveryConfig`/`PublicDeliveryConfig`,
+`PaymentConfig`/`PublicPaymentConfig`, `PickupPoints`/`PublicPickupPoints`, and
+`Stores`/`MyStores`. Matches the per-module recipe; notes below are what
+diverged or came up that prior batches hadn't hit.
+
+- **Pre-existing broken state found before any new code was written**: an
+  uncommitted, half-finished refactor was already sitting in the working tree (a
+  new `apps/api/test/schema-assert.ts` extracting the duplicated
+  `assertMatchesSchema`/`waitForNewMailerFile` helpers out of
+  `collections.e2e-spec.ts`/`products.e2e-spec.ts`, plus a broken
+  `products.e2e-spec.ts` edit calling a `StorageService.deleteImage` method that
+  didn't exist yet). The shared-helper extraction was legitimate and reused for
+  every new e2e spec this batch added; the broken `deleteImage` call was
+  resolved when the user added the real method to `StorageService` mid-session.
+  Worth checking `git status`/running `generate:openapi` once at the very start
+  of a session before assuming the tree is clean — this one would have silently
+  blocked the first `generate:openapi` run otherwise.
+- **The three config tags were as small as advertised** — flat CRUD, no Decimal
+  fields, one `@ApiQuery` needed (`PaymentConfig.findAll`'s `?enabled=1` branch,
+  second real example after `Notifications` in Batch 2).
+- **A real `FindAllParams` collision, predicted but not yet hit in Batch 2's
+  notes, actually happened this batch**: `PaymentConfig.findAll` and
+  `Notifications.findAll` (Batch 2) both derive a `FindAllParams` type in the
+  single shared `api.schemas.ts` — a genuine `TS2300: Duplicate identifier` the
+  moment both tags were generated together. Root-caused via `@orval/core`'s
+  source (`getQueryParams`/`buildVerbOption` in
+  `node_modules/.pnpm/@orval+core@.../dist/index.mjs`): Orval's `operationName`
+  override can return `[methodName, typeName]`, not just a bare string —
+  `typeName` drives every internally-generated type name (query-param types,
+  mainly), independent of the actual generated function's name. Fixed once, in
+  `orval.config.ts`, by returning `[methodName, String(operation.operationId)]`
+  — method names stay short and clean per tag (`findAll`), type names become the
+  already-unique raw operationId (`PaymentConfigController_findAll`). This is a
+  permanent fix, not a per-tag workaround — resolves the collision class for
+  every tag added from here on, including `Stores`' own
+  `findFeatured`/`findDirectory` query params in the same batch.
+- **`Stores` really was the bigger, riskier module the handoff doc said it'd
+  be**: 14 endpoints (13 in `StoresController`, 1 in `MyStoresController`), 9
+  new response DTO classes (`store-response.dto.ts`), a `stores.mapper.ts`
+  extracted for the `toStoreDto`/`StoreRow` pair shared between both controllers
+  (the first module in this rollout with more than one controller file needing
+  the same row-to-DTO mapping — collections/ products/etc. only ever had one
+  controller each). `findPublicBySlug` (the section→collection→products nested
+  join) took the recommended path from the handoff doc's Batch 3 section:
+  `content` stayed `Record<string, unknown>`, the live storefront page's `any`
+  typing was left untouched, one-line comment pointing at the new DTO.
+  `findFeatured`'s `revenue` field is a plain `number`, not the usual
+  Decimal-as-string convention — the service already reduces every payment's
+  Decimal through `Number(...)` into a summed JS float before the DTO ever sees
+  it (a display/ranking aggregate, not a stored money value), so typing it
+  `string` would have been a type lie, not adherence to the convention. Two more
+  `@ApiQuery`-needing endpoints turned up here too: `findFeatured`'s `limit` and
+  `findDirectory`'s `q`/`page`/`limit` — neither had ever been annotated before
+  this migration, another pair of Orval would've silently dropped.
+- **A real, pre-existing `apps/api` bug found while giving
+  `DELETE
+  /stores/:storeId` a response DTO, not fixed as part of this
+  migration**: every store — even a brand-new one with zero products — gets a
+  `DeliveryMethodConfig` row and 4 `PaymentMethodConfig` rows auto-created by
+  `StoresService.create`'s `$transaction`. Neither relation has
+  `onDelete:
+  Cascade` in `schema.prisma`, and `StoresService.delete` never
+  cleans them up before calling `prisma.store.delete` — so the raw FK constraint
+  always rejects the delete, and the service's catch block turns that into a 400
+  ("tiene productos u órdenes asociadas") for literally every store, not just
+  ones with real associated data. Nothing in this rollout had ever exercised a
+  real delete before (only mocked in unit tests). `test/stores.e2e-spec.ts`
+  documents the actual current behavior (asserts the 400, cleans up the
+  throwaway store's rows directly via Prisma since the API call never actually
+  deletes it) rather than asserting an aspirational 200 — flagged here and in
+  `apps/web/AGENTS.md`, left for a separate fix, per the DTO-authoring scope
+  this rollout is doing.
+- **`schema-assert.ts`'s `resolveSchema` needed a real fix, not a one-off
+  workaround**: a `nullable`, class-typed response field
+  (`@ApiProperty({ type: SomeDto, nullable: true })` —
+  `StoreSectionWithCollectionResponseDto.collection` in this batch) emits
+  `{ nullable: true, type: "object", allOf: [{ $ref }] }` instead of a bare
+  `$ref`, because OpenAPI 3.0 forbids sibling keywords next to `$ref` — first
+  time this rollout hit a nullable object-typed field. `resolveSchema` now
+  unwraps a single-entry `allOf` and carries `nullable` down onto the resolved
+  schema; fixed in the shared helper so every future spec with the same shape
+  doesn't have to rediscover it.
+- **`stores.api.ts`/`admin-stores.api.ts` migrated together**, per the handoff
+  doc's instruction — confirmed `use-upload-store-logo.ts` actually calls
+  `storesApi.uploadLogo` (not `settingsApi`, which the handoff doc's Batch 3
+  section flagged as needing confirmation one way or the other), so the
+  multipart carve-out landed in `stores.api.ts` unchanged, on plain `fetch` +
+  `FormData`.
+- **Two frontend call sites the "already covered" list didn't mention, found by
+  grepping every `apiFetch` call to a `/stores`-shaped path before declaring the
+  batch done**: `features/store-settings/api/settings.api.ts`'s
+  `updateProfile`/`updateAppearance`/`updateStockAlerts` all
+  `PATCH
+  /stores/:storeId` (the `Stores.update` endpoint) — migrated alongside
+  the delivery/payment/pickup-point functions already planned for this file, not
+  left half-migrated. `features/discovery/api/discovery.api.ts`'s
+  `getFeaturedStores`/`getStoreDirectory` call `Stores.findFeatured`/
+  `findDirectory` — migrated too; `searchProducts` in the same file
+  (`ProductSearch` tag) stayed on `apiFetch`, Batch 6. Two root `app/` route
+  files (`app/sitemap.ts`, the storefront product detail page) also call
+  `Stores` public endpoints via raw `fetch`, outside any `features/<name>/api/`
+  wrapper — left untouched, same as the storefront `store/[slug]/page.tsx` the
+  original handoff doc already called out as out of scope (these aren't
+  "migrated features" in the feature-sliced sense, and giving them the generated
+  client is a separate decision, not a byproduct of a tag's DTO work).
+- **A real, repo-wide test-isolation gap found via an unrelated test failure,
+  fixed once at the config level**: `apps/web/lib/api-client.ts` calls
+  `configureApiClient()` eagerly at module load, throwing if
+  `NEXT_PUBLIC_API_URL`/`INTERNAL_API_URL` is unset. `features/customers`'s test
+  files (untouched by this batch, mocking only `@/lib/api`) started failing once
+  `store-settings/api/settings.api.ts` began importing `@/lib/api-client` —
+  reached transitively through `customer.schema.ts` → `@/features/orders` barrel
+  → `use-enabled-payment-methods.ts` → `settingsApi`, three hops away, no direct
+  import of the client in the failing test file at all. Fixed by adding
+  `NEXT_PUBLIC_API_URL` to `apps/web/vitest.config.ts`'s `test.env` (matching
+  the real `.env.local` value dev/build already use), not by chasing down every
+  transitive import site — the per-test-file `vi.mock("@/lib/api-client", ...)`
+  pattern every migrated feature's own tests already use still takes precedence
+  over this fallback, so nothing about existing mocked tests changed.
+- **Verification performed**: `pnpm --filter api test` (283 tests, all green —
+  `stores.controller.spec.ts`'s one real test needed a realistic fixture, same
+  "async controller now dereferences the resolved value" reason as every prior
+  batch's controller-spec fixes). `pnpm --filter api
+  test:e2e` (13 spec files,
+  26 tests, all green, including new `delivery-config.e2e-spec.ts`,
+  `payment-config.e2e-spec.ts`, `pickup-points.e2e-spec.ts`,
+  `stores.e2e-spec.ts` — the last one builds a real
+  category/product/collection/section graph so `findPublicBySlug` exercises the
+  real nested-join path, not just the "no sections yet" orphan fallback).
+  `pnpm --filter @biasmarket/types typecheck`/`build`,
+  `pnpm --filter web typecheck`/`test` (49 files, 156 tests)/`build`, all green.
+  Standalone Node scripts against the real running `apps/api` dev server
+  exercised both groups of new endpoints end to end (signup → verify → sign-in →
+  create-store → every new tag's real methods, including
+  `stores.findPublicBySlug`'s nested shape and `stores.update`/
+  `findBySlug`/`findAllPublic`/`findDirectory`/`findFeatured`/
+  `findCategoriesPublic`), confirming runtime shapes match; smoke-test rows
+  cleaned up from the local dev database afterward. Not browser-verified, same
+  caveat as every prior batch.
+
+Batches 4–6 are unstarted; pick up at Batch 4 (`Order`, `Checkout`) next — see
+"What's left" above for the full scope and cautions (money + upload again for
+`Order`, the manual-payment state machine).

@@ -5,6 +5,252 @@
  * Bias Market — niche-first store builder API
  * OpenAPI spec version: 1.0
  */
+export type CreateStoreDtoThemeConfig = { [key: string]: unknown };
+
+export interface CreateStoreDto {
+  /** @minLength 2 */
+  name: string;
+  slug: string;
+  /** @minLength 6 */
+  whatsappNumber: string;
+  defaultCurrency?: string;
+  themeConfig?: CreateStoreDtoThemeConfig;
+}
+
+export type StoreResponseDtoThemeConfig = { [key: string]: unknown };
+
+export interface StoreResponseDto {
+  id: string;
+  name: string;
+  slug: string;
+  locale: string;
+  ownerId: string;
+  themeConfig: StoreResponseDtoThemeConfig;
+  /** @nullable */
+  logoUrl: string | null;
+  paymentInstructions: string;
+  /** @nullable */
+  whatsappNumber: string | null;
+  defaultCurrency: string;
+  holdWindowHours: number;
+  lowStockThreshold: number;
+  lowStockAlertsEnabled: boolean;
+  createdAt: string;
+}
+
+export type StoreWithOwnerResponseDtoThemeConfig = { [key: string]: unknown };
+
+export interface StoreOwnerResponseDto {
+  id: string;
+  email: string;
+  /** @nullable */
+  name: string | null;
+}
+
+export interface StoreWithOwnerResponseDto {
+  id: string;
+  name: string;
+  slug: string;
+  locale: string;
+  ownerId: string;
+  themeConfig: StoreWithOwnerResponseDtoThemeConfig;
+  /** @nullable */
+  logoUrl: string | null;
+  paymentInstructions: string;
+  /** @nullable */
+  whatsappNumber: string | null;
+  defaultCurrency: string;
+  holdWindowHours: number;
+  lowStockThreshold: number;
+  lowStockAlertsEnabled: boolean;
+  createdAt: string;
+  owner: StoreOwnerResponseDto;
+}
+
+export type UpdateStoreDtoThemeConfig = { [key: string]: unknown };
+
+export interface UpdateStoreDto {
+  name?: string;
+  whatsappNumber?: string;
+  paymentInstructions?: string;
+  defaultCurrency?: string;
+  themeConfig?: UpdateStoreDtoThemeConfig;
+  lowStockAlertsEnabled?: boolean;
+  /** @minimum 0 */
+  lowStockThreshold?: number;
+}
+
+export interface PublicStoreListingResponseDto {
+  slug: string;
+  createdAt: string;
+}
+
+export interface PublicCollectionListingResponseDto {
+  storeSlug: string;
+  collectionSlug: string;
+  createdAt: string;
+}
+
+export interface FeaturedStoreResponseDto {
+  id: string;
+  name: string;
+  slug: string;
+  /** @nullable */
+  logoUrl: string | null;
+  revenue: number;
+  orderCount: number;
+}
+
+export interface DirectoryStoreItemResponseDto {
+  id: string;
+  name: string;
+  slug: string;
+  /** @nullable */
+  logoUrl: string | null;
+}
+
+export interface StoreDirectoryResponseDto {
+  stores: DirectoryStoreItemResponseDto[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export type StorePublicDetailResponseDtoThemeConfig = {
+  [key: string]: unknown;
+};
+
+export type StoreSectionWithCollectionResponseDtoType =
+  typeof StoreSectionWithCollectionResponseDtoType[
+    keyof typeof StoreSectionWithCollectionResponseDtoType
+  ];
+
+export const StoreSectionWithCollectionResponseDtoType = {
+  COLLECTION: "COLLECTION",
+  BANNER: "BANNER",
+  TEXT_BLOCK: "TEXT_BLOCK",
+} as const;
+
+export type PublicProductWithVariantsResponseDtoStatus =
+  typeof PublicProductWithVariantsResponseDtoStatus[
+    keyof typeof PublicProductWithVariantsResponseDtoStatus
+  ];
+
+export const PublicProductWithVariantsResponseDtoStatus = {
+  DRAFT: "DRAFT",
+  PUBLISHED: "PUBLISHED",
+} as const;
+
+export type PublicProductVariantResponseDtoAttributes = {
+  [key: string]: unknown;
+};
+
+export interface PublicProductVariantResponseDto {
+  id: string;
+  productId: string;
+  storeId: string;
+  name: string;
+  /** @nullable */
+  stock: number | null;
+  reserved: number;
+  /** @nullable */
+  priceOverride: string | null;
+  /** @nullable */
+  imageOverride: string | null;
+  attributes: PublicProductVariantResponseDtoAttributes;
+}
+
+export interface PublicProductWithVariantsResponseDto {
+  id: string;
+  storeId: string;
+  name: string;
+  description: string;
+  price: string;
+  currency: string;
+  images: string[];
+  /** @nullable */
+  availableUntil: string | null;
+  status: PublicProductWithVariantsResponseDtoStatus;
+  soldOut: boolean;
+  /** @nullable */
+  deletedAt: string | null;
+  createdAt: string;
+  variants: PublicProductVariantResponseDto[];
+}
+
+export interface SectionCollectionProductResponseDto {
+  collectionId: string;
+  productId: string;
+  position: number;
+  product: PublicProductWithVariantsResponseDto;
+}
+
+export interface SectionCollectionResponseDto {
+  id: string;
+  storeId: string;
+  name: string;
+  slug: string;
+  description: string;
+  createdAt: string;
+  products: SectionCollectionProductResponseDto[];
+}
+
+export type StoreSectionWithCollectionResponseDtoContent = {
+  [key: string]: unknown;
+};
+
+export interface StoreSectionWithCollectionResponseDto {
+  id: string;
+  storeId: string;
+  type: StoreSectionWithCollectionResponseDtoType;
+  /** @nullable */
+  collectionId: string | null;
+  content: StoreSectionWithCollectionResponseDtoContent;
+  position: number;
+  createdAt: string;
+  /** @nullable */
+  collection: SectionCollectionResponseDto | null;
+}
+
+export interface StorePublicDetailResponseDto {
+  id: string;
+  name: string;
+  slug: string;
+  locale: string;
+  ownerId: string;
+  themeConfig: StorePublicDetailResponseDtoThemeConfig;
+  /** @nullable */
+  logoUrl: string | null;
+  paymentInstructions: string;
+  /** @nullable */
+  whatsappNumber: string | null;
+  defaultCurrency: string;
+  holdWindowHours: number;
+  lowStockThreshold: number;
+  lowStockAlertsEnabled: boolean;
+  createdAt: string;
+  sections: StoreSectionWithCollectionResponseDto[];
+}
+
+export interface PublicCategoryResponseDto {
+  id: string;
+  name: string;
+  /** @nullable */
+  parentId: string | null;
+}
+
+export interface PublicProductStoreResponseDto {
+  name: string;
+  slug: string;
+  /** @nullable */
+  logoUrl: string | null;
+}
+
+export interface PublicProductPageResponseDto {
+  store: PublicProductStoreResponseDto;
+  product: PublicProductWithVariantsResponseDto;
+}
+
 export type CreateVariantDtoAttributes = { [key: string]: string };
 
 export interface CreateVariantDto {
@@ -200,6 +446,107 @@ export interface NotificationResponseDto {
 
 export interface NotificationCountResponseDto {
   count: number;
+}
+
+export type DeliveryMethodConfigResponseDtoType =
+  typeof DeliveryMethodConfigResponseDtoType[
+    keyof typeof DeliveryMethodConfigResponseDtoType
+  ];
+
+export const DeliveryMethodConfigResponseDtoType = {
+  PICKUP: "PICKUP",
+  COURIER: "COURIER",
+} as const;
+
+export type DeliveryMethodConfigResponseDtoDetails = { [key: string]: unknown };
+
+export interface DeliveryMethodConfigResponseDto {
+  id: string;
+  storeId: string;
+  type: DeliveryMethodConfigResponseDtoType;
+  enabled: boolean;
+  details: DeliveryMethodConfigResponseDtoDetails;
+  createdAt: string;
+}
+
+export type UpsertDeliveryMethodDtoType =
+  typeof UpsertDeliveryMethodDtoType[keyof typeof UpsertDeliveryMethodDtoType];
+
+export const UpsertDeliveryMethodDtoType = {
+  PICKUP: "PICKUP",
+  COURIER: "COURIER",
+} as const;
+
+export type UpsertDeliveryMethodDtoDetails = { [key: string]: unknown };
+
+export interface UpsertDeliveryMethodDto {
+  type: UpsertDeliveryMethodDtoType;
+  enabled?: boolean;
+  details?: UpsertDeliveryMethodDtoDetails;
+}
+
+export interface PickupPointResponseDto {
+  id: string;
+  storeId: string;
+  label: string;
+  enabled: boolean;
+  sortOrder: number;
+  createdAt: string;
+}
+
+export interface CreatePickupPointDto {
+  /** @minLength 1 */
+  label: string;
+  enabled?: boolean;
+  sortOrder?: number;
+}
+
+export interface UpdatePickupPointDto {
+  /** @minLength 1 */
+  label?: string;
+  enabled?: boolean;
+  sortOrder?: number;
+}
+
+export type PaymentMethodConfigResponseDtoMethod =
+  typeof PaymentMethodConfigResponseDtoMethod[
+    keyof typeof PaymentMethodConfigResponseDtoMethod
+  ];
+
+export const PaymentMethodConfigResponseDtoMethod = {
+  YAPE: "YAPE",
+  PLIN: "PLIN",
+  TRANSFER: "TRANSFER",
+  CASH: "CASH",
+} as const;
+
+export type PaymentMethodConfigResponseDtoDetails = { [key: string]: unknown };
+
+export interface PaymentMethodConfigResponseDto {
+  id: string;
+  storeId: string;
+  method: PaymentMethodConfigResponseDtoMethod;
+  enabled: boolean;
+  details: PaymentMethodConfigResponseDtoDetails;
+  depositPercentPickup: number;
+  depositPercentCourier: number;
+  createdAt: string;
+}
+
+export type UpsertPaymentMethodDtoMethod = typeof UpsertPaymentMethodDtoMethod[
+  keyof typeof UpsertPaymentMethodDtoMethod
+];
+
+export const UpsertPaymentMethodDtoMethod = {
+  YAPE: "YAPE",
+  PLIN: "PLIN",
+  TRANSFER: "TRANSFER",
+  CASH: "CASH",
+} as const;
+
+export interface UpsertPaymentMethodDto {
+  method: UpsertPaymentMethodDtoMethod;
+  enabled?: boolean;
 }
 
 export interface CreateInquiryDto {
@@ -417,11 +764,25 @@ export interface SuggestionResponseDto {
   bodyParams: SuggestionResponseDtoBodyParams;
 }
 
-export type UploadImageParams = {
-  replace: string;
+export type StoresControllerfindFeaturedParams = {
+  limit?: string;
 };
 
-export type FindAllParams = {
+export type StoresControllerfindDirectoryParams = {
+  limit?: string;
+  page?: string;
+  q?: string;
+};
+
+export type ProductsControlleruploadImageParams = {
+  replace?: string;
+};
+
+export type NotificationsControllerfindAllParams = {
   read?: string;
   archived?: string;
+};
+
+export type PaymentConfigControllerfindAllParams = {
+  enabled?: string;
 };

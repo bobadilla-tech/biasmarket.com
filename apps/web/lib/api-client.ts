@@ -3,8 +3,16 @@ import {
   collections,
   configureApiClient,
   contact,
+  deliveryConfig,
+  myStores,
   notifications,
+  paymentConfig,
+  pickupPoints,
   products,
+  publicDeliveryConfig,
+  publicPaymentConfig,
+  publicPickupPoints,
+  stores,
   storeSections,
   suggestions,
 } from "@biasmarket/types";
@@ -17,6 +25,11 @@ import {
 // called — every consumer imports `apiClient` from here rather than the
 // generated modules directly, so module evaluation order guarantees it.
 const API_URL = process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
+if (!API_URL) {
+  throw new Error(
+    "Missing INTERNAL_API_URL/NEXT_PUBLIC_API_URL — set one in the environment before the app starts",
+  );
+}
 configureApiClient({ baseUrl: `${API_URL}/api` });
 
 // One key per migrated feature/tag. Add a key here as each further feature
@@ -29,4 +42,12 @@ export const apiClient = {
   contact,
   suggestions,
   storeSections,
+  deliveryConfig,
+  publicDeliveryConfig,
+  paymentConfig,
+  publicPaymentConfig,
+  pickupPoints,
+  publicPickupPoints,
+  stores,
+  myStores,
 };

@@ -1,22 +1,21 @@
 import { afterEach, expect, test, vi } from "vitest";
 
-const apiFetch = vi.fn();
-vi.mock(
-  "@/lib/api",
-  () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }),
-);
+const storesMock = { findAllForAdmin: vi.fn() };
+vi.mock("@/lib/api-client", () => ({ apiClient: { stores: storesMock } }));
 
 const { adminStoresApi } = await import("./admin-stores.api");
 
 afterEach(() => {
-  apiFetch.mockReset();
+  storesMock.findAllForAdmin.mockReset();
 });
 
-test("list validates the response against adminStoreListSchema", async () => {
-  apiFetch.mockResolvedValue([]);
+test("list delegates to the generated Stores.findAllForAdmin", async () => {
+  storesMock.findAllForAdmin.mockResolvedValue([]);
 
   const result = await adminStoresApi.list();
 
-  expect(apiFetch).toHaveBeenCalledWith("/stores", {}, undefined);
+  expect(storesMock.findAllForAdmin).toHaveBeenCalledWith({
+    fallbackErrorMessage: undefined,
+  });
   expect(result).toEqual([]);
 });

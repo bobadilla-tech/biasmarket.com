@@ -36,6 +36,14 @@ export default defineConfig({
           "Contact",
           "Suggestions",
           "StoreSections",
+          "DeliveryConfig",
+          "PublicDeliveryConfig",
+          "PaymentConfig",
+          "PublicPaymentConfig",
+          "PickupPoints",
+          "PublicPickupPoints",
+          "Stores",
+          "MyStores",
         ],
       },
     },
@@ -59,7 +67,20 @@ export default defineConfig({
           // which typechecks fine but reads worse than every other method
           // name here. "remove" avoids the collision without a special case
           // per module (`ControllerName_delete` is a common NestJS pattern).
-          return name === "delete" ? "remove" : name;
+          const methodName = name === "delete" ? "remove" : name;
+          // Returning [methodName, typeName]: the first element names the
+          // generated function (kept short/clean per tag, as above); the
+          // second names Orval's internally-derived types (e.g. a
+          // query-param'd `findAll`'s `FindAllParams`) — those land in the
+          // single shared api.schemas.ts unnamespaced by tag, so two
+          // different controllers both naming a method "findAll" collide
+          // there (`TS2300: Duplicate identifier`) even though their
+          // generated functions live in separate per-tag files and never
+          // collide themselves. Using the full, already-unique
+          // operationId for the type-name half avoids this — see
+          // apps/web/AGENTS.md's Orval config notes (hit for real between
+          // Notifications and PaymentConfig's findAll, Batch 3).
+          return [methodName, String(operation.operationId)];
         },
         mutator: {
           path: "./http.ts",

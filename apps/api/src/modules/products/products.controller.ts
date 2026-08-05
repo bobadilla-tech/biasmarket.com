@@ -12,7 +12,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from "@nestjs/common";
-import { ApiConsumes } from "@nestjs/swagger";
+import { ApiConsumes, ApiQuery } from "@nestjs/swagger";
 import { AuthGuard, Session } from "@thallesp/nestjs-better-auth";
 import type { UserSession } from "@thallesp/nestjs-better-auth";
 import { ProductsService } from "./products.service.js";
@@ -91,6 +91,36 @@ function toVariantDto(variant: VariantRow): VariantResponseDto {
   };
 }
 
+type ProductDetailRow = ProductRow & {
+  variants: VariantRow[];
+  categories: {
+    productId: string;
+    categoryId: string;
+    category: { id: string; name: string };
+  }[];
+  soldUnits: number;
+  availableStock: number | null;
+};
+
+function toProductDetailDto(
+  product: ProductDetailRow,
+): ProductDetailResponseDto {
+  return {
+    ...toProductDto(product),
+    variants: product.variants.map(toVariantDto),
+    categories: product.categories.map((productCategory) => ({
+      productId: productCategory.productId,
+      categoryId: productCategory.categoryId,
+      category: {
+        id: productCategory.category.id,
+        name: productCategory.category.name,
+      },
+    })),
+    soldUnits: product.soldUnits,
+    availableStock: product.availableStock,
+  };
+}
+
 @Controller("stores/:storeId/products")
 @UseGuards(AuthGuard)
 export class ProductsController {
@@ -121,20 +151,7 @@ export class ProductsController {
       storeId,
       session.user.id,
     );
-    return products.map((product) => ({
-      ...toProductDto(product),
-      variants: product.variants.map(toVariantDto),
-      categories: product.categories.map((productCategory) => ({
-        productId: productCategory.productId,
-        categoryId: productCategory.categoryId,
-        category: {
-          id: productCategory.category.id,
-          name: productCategory.category.name,
-        },
-      })),
-      soldUnits: product.soldUnits,
-      availableStock: product.availableStock,
-    }));
+    return products.map(toProductDetailDto);
   }
 
   @Get(":productId")
@@ -148,20 +165,7 @@ export class ProductsController {
       productId,
       session.user.id,
     );
-    return {
-      ...toProductDto(product),
-      variants: product.variants.map(toVariantDto),
-      categories: product.categories.map((productCategory) => ({
-        productId: productCategory.productId,
-        categoryId: productCategory.categoryId,
-        category: {
-          id: productCategory.category.id,
-          name: productCategory.category.name,
-        },
-      })),
-      soldUnits: product.soldUnits,
-      availableStock: product.availableStock,
-    };
+    return toProductDetailDto(product);
   }
 
   @Patch(":productId")
@@ -274,6 +278,7 @@ export class ProductsController {
 
   @Post(":productId/images")
   @ApiConsumes("multipart/form-data")
+  @ApiQuery({ name: "replace", required: false, type: String })
   @UseInterceptors(FileInterceptor("file"))
   async uploadImage(
     @Param("storeId") storeId: string,

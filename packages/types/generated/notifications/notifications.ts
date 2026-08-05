@@ -6,14 +6,17 @@
  * OpenAPI spec version: 1.0
  */
 import type {
-  FindAllParams,
   NotificationCountResponseDto,
   NotificationResponseDto,
+  NotificationsControllerfindAllParams,
 } from "../api.schemas.js";
 
 import { customFetch } from "../../http.js";
 
-export const getFindAllUrl = (storeId: string, params?: FindAllParams) => {
+export const getFindAllUrl = (
+  storeId: string,
+  params?: NotificationsControllerfindAllParams,
+) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -31,7 +34,7 @@ export const getFindAllUrl = (storeId: string, params?: FindAllParams) => {
 
 export const findAll = async (
   storeId: string,
-  params?: FindAllParams,
+  params?: NotificationsControllerfindAllParams,
   options?: Parameters<typeof customFetch>[1],
 ): Promise<NotificationResponseDto[]> => {
   return customFetch<NotificationResponseDto[]>(

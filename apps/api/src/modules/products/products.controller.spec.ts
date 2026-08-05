@@ -81,13 +81,40 @@ describe("ProductsController", () => {
     expect(controller).toBeDefined();
   });
 
-  it("create() delegates to service.create with storeId, userId, dto", async () => {
+  it("create() delegates to service.create and maps the response", async () => {
     const dto = { name: "Widget", price: 10 } as never;
     service.create.mockResolvedValue({ ...productRow, variants: [variantRow] });
 
-    await controller.create(storeId, session, dto);
+    const result = await controller.create(storeId, session, dto);
 
     expect(service.create).toHaveBeenCalledWith(storeId, "user-1", dto);
+    expect(result).toEqual({
+      id: productRow.id,
+      storeId: productRow.storeId,
+      name: productRow.name,
+      description: productRow.description,
+      price: "10.00",
+      currency: productRow.currency,
+      images: productRow.images,
+      availableUntil: null,
+      status: productRow.status,
+      soldOut: productRow.soldOut,
+      deletedAt: null,
+      createdAt: productRow.createdAt.toISOString(),
+      variants: [
+        {
+          id: variantRow.id,
+          productId: variantRow.productId,
+          storeId: variantRow.storeId,
+          name: variantRow.name,
+          stock: variantRow.stock,
+          reserved: variantRow.reserved,
+          priceOverride: null,
+          imageOverride: variantRow.imageOverride,
+          attributes: variantRow.attributes,
+        },
+      ],
+    });
   });
 
   it("findAll() delegates to service.findAllForStore with storeId, userId", async () => {

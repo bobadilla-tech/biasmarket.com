@@ -12,12 +12,13 @@ there (grouped classes require a custom `nesting` function; a plain, un-nested,
 - a custom mutator, not `@hey-api/client-fetch`'s `{data,error}` shape even with
   grouping).
 
-Forward-looking proposal, not yet executed. Written for a future session to pick
-up — research only happened in the session that wrote this doc, no code changed.
-Follows on from
+The spike plan below (Phases 0–3) was executed the same day, per the "Executed
+2026-08-04" note above — this section is kept as written (the original proposal)
+rather than rewritten after the fact; see "Execution notes" at the bottom for
+what actually happened vs. this plan. Follows on from
 [`2026-08-04-nestjs-openapi-client-generation-plan.md`](2026-08-04-nestjs-openapi-client-generation-plan.md)
-(Phases 0–3 landed same day) — read that doc first, especially its "Phase 2/3
-execution notes" section.
+(that doc's own Phases 0–3 landed the same day too) — read that doc first,
+especially its "Phase 2/3 execution notes" section.
 
 ## Context
 

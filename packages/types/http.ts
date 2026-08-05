@@ -60,10 +60,27 @@ export async function customFetch<T>(
   });
 
   const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  const data = body ? JSON.parse(body) : undefined;
+  let data: unknown;
+  let parseError = false;
+  if (body) {
+    try {
+      data = JSON.parse(body);
+    } catch {
+      parseError = true;
+    }
+  }
 
   if (!res.ok) {
-    throw new Error(errorMessage(data, fallbackErrorMessage, res.status));
+    throw new Error(
+      errorMessage(
+        parseError ? undefined : data,
+        fallbackErrorMessage,
+        res.status,
+      ),
+    );
+  }
+  if (parseError) {
+    throw new Error(fallbackErrorMessage ?? "Received invalid JSON response");
   }
 
   return data as T;

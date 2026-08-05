@@ -108,8 +108,23 @@ export function resolveSchema(
   components: Record<string, unknown>,
 ): Record<string, unknown> {
   const ref = schema["$ref"] as string | undefined;
-  if (!ref) return schema;
-  const name = ref.replace("#/components/schemas/", "");
-  const schemas = (components as { schemas: Record<string, unknown> }).schemas;
-  return schemas[name] as Record<string, unknown>;
+  if (ref) {
+    const name = ref.replace("#/components/schemas/", "");
+    const schemas =
+      (components as { schemas: Record<string, unknown> }).schemas;
+    return schemas[name] as Record<string, unknown>;
+  }
+  // A `nullable` class-typed property (`@ApiProperty({ type: SomeDto,
+  // nullable: true })`) emits `{ nullable: true, type: "object", allOf:
+  // [{ $ref }] }` instead of a bare `$ref` — @nestjs/swagger can't put
+  // `nullable` directly alongside a `$ref` sibling (OpenAPI 3.0 forbids
+  // extra keywords next to `$ref`), so it wraps the ref in `allOf` instead.
+  // Resolve through it and carry `nullable` down onto the referenced
+  // schema, since the ref target itself never declares it.
+  const allOf = schema["allOf"] as Record<string, unknown>[] | undefined;
+  if (allOf && allOf.length === 1) {
+    const resolved = resolveSchema(allOf[0]!, components);
+    return { ...resolved, nullable: schema["nullable"] ?? resolved.nullable };
+  }
+  return schema;
 }

@@ -8,11 +8,6 @@ export {
 export { useCreateStore } from "./mutations/use-create-store";
 export { useDeleteStore } from "./mutations/use-delete-store";
 export {
-  type Store,
-  storeListSchema,
-  storeSchema,
-} from "./schemas/store.schema";
-export {
   type CreateStoreFormInput,
   createStoreFormSchema,
 } from "./schemas/create-store.schema";

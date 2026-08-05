@@ -11,13 +11,4 @@ export {
   type CheckoutFormInput,
   type CheckoutResult,
   checkoutResultSchema,
-  type DeliveryMethod,
-  deliveryMethodListSchema,
-  deliveryMethodSchema,
-  type PaymentMethod,
-  paymentMethodListSchema,
-  paymentMethodSchema,
-  type PickupPoint,
-  pickupPointListSchema,
-  pickupPointSchema,
 } from "./schemas/checkout.schema";

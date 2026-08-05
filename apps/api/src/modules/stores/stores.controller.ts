@@ -19,12 +19,132 @@ import {
   Session,
 } from "@thallesp/nestjs-better-auth";
 import type { UserSession } from "@thallesp/nestjs-better-auth";
+import { ApiConsumes, ApiQuery } from "@nestjs/swagger";
 import { StoresService } from "./stores.service.js";
 import { UpdateStoreDto } from "./dto/update-store.dto.js";
 import { CreateStoreDto } from "./dto/create-store.dto.js";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { StorageService } from "../../storage/storage.service.js";
 import { parsePublicListQuery } from "../../common/public-list-query.js";
+import { type StoreRow, toStoreDto } from "./stores.mapper.js";
+import {
+  DirectoryStoreItemResponseDto,
+  FeaturedStoreResponseDto,
+  PublicCategoryResponseDto,
+  PublicCollectionListingResponseDto,
+  PublicProductPageResponseDto,
+  PublicProductVariantResponseDto,
+  PublicProductWithVariantsResponseDto,
+  PublicStoreListingResponseDto,
+  SectionCollectionProductResponseDto,
+  SectionCollectionResponseDto,
+  StoreDirectoryResponseDto,
+  StorePublicDetailResponseDto,
+  StoreResponseDto,
+  StoreSectionWithCollectionResponseDto,
+  StoreWithOwnerResponseDto,
+} from "./dto/store-response.dto.js";
+
+interface VariantRow {
+  id: string;
+  productId: string;
+  storeId: string;
+  name: string;
+  stock: number | null;
+  reserved: number;
+  priceOverride: { toString(): string } | null;
+  imageOverride: string | null;
+  attributes: unknown;
+}
+
+interface PublicProductRow {
+  id: string;
+  storeId: string;
+  name: string;
+  description: string;
+  price: { toString(): string };
+  currency: string;
+  images: string[];
+  availableUntil: Date | null;
+  status: "DRAFT" | "PUBLISHED";
+  soldOut: boolean;
+  deletedAt: Date | null;
+  createdAt: Date;
+  variants: VariantRow[];
+}
+
+interface SectionRow {
+  id: string;
+  storeId: string;
+  type: "COLLECTION" | "BANNER" | "TEXT_BLOCK";
+  collectionId: string | null;
+  content: unknown;
+  position: number;
+  createdAt: Date;
+  collection:
+    | {
+      id: string;
+      storeId: string;
+      name: string;
+      slug: string;
+      description: string;
+      createdAt: Date;
+      products: {
+        collectionId: string;
+        productId: string;
+        position: number;
+        product: PublicProductRow;
+      }[];
+    }
+    | null;
+}
+
+function toVariantDto(
+  variant: VariantRow,
+): PublicProductVariantResponseDto {
+  return {
+    ...variant,
+    priceOverride: variant.priceOverride?.toString() ?? null,
+    attributes: variant.attributes as Record<string, unknown>,
+  };
+}
+
+function toPublicProductDto(
+  product: PublicProductRow,
+): PublicProductWithVariantsResponseDto {
+  return {
+    ...product,
+    price: product.price.toString(),
+    availableUntil: product.availableUntil?.toISOString() ?? null,
+    deletedAt: product.deletedAt?.toISOString() ?? null,
+    createdAt: product.createdAt.toISOString(),
+    variants: product.variants.map(toVariantDto),
+  };
+}
+
+function toSectionDto(
+  section: SectionRow,
+): StoreSectionWithCollectionResponseDto {
+  const collection: SectionCollectionResponseDto | null = section.collection
+    ? {
+      ...section.collection,
+      createdAt: section.collection.createdAt.toISOString(),
+      products: section.collection.products.map(
+        (cp): SectionCollectionProductResponseDto => ({
+          ...cp,
+          product: toPublicProductDto(cp.product),
+        }),
+      ),
+    }
+    : null;
+
+  return {
+    ...section,
+    content: section.content as Record<string, unknown>,
+    createdAt: section.createdAt.toISOString(),
+    collection,
+  };
+}
 
 @Controller("stores")
 export class StoresController {
@@ -35,98 +155,141 @@ export class StoresController {
 
   @UseGuards(AuthGuard)
   @Post()
-  create(@Session() session: UserSession, @Body() dto: CreateStoreDto) {
-    return this.stores.create(session.user.id, dto);
+  async create(
+    @Session() session: UserSession,
+    @Body() dto: CreateStoreDto,
+  ): Promise<StoreResponseDto> {
+    const store = await this.stores.create(session.user.id, dto);
+    return toStoreDto(store);
   }
 
   @UseGuards(AuthGuard)
   @Roles(["admin"])
   @Get()
-  findAllForAdmin() {
-    return this.stores.findAllForAdmin();
+  async findAllForAdmin(): Promise<StoreWithOwnerResponseDto[]> {
+    const stores = await this.stores.findAllForAdmin();
+    return stores.map((store) => ({
+      ...toStoreDto(store),
+      owner: store.owner,
+    }));
   }
 
   @UseGuards(AuthGuard)
   @Get("by-slug/:slug")
-  findBySlug(@Param("slug") slug: string, @Session() session: UserSession) {
-    return this.stores.findBySlugForOwner(slug, session.user.id);
+  async findBySlug(
+    @Param("slug") slug: string,
+    @Session() session: UserSession,
+  ): Promise<StoreResponseDto> {
+    const store = await this.stores.findBySlugForOwner(slug, session.user.id);
+    return toStoreDto(store);
   }
 
   @UseGuards(AuthGuard)
   @Patch(":storeId")
-  update(
+  async update(
     @Param("storeId") storeId: string,
     @Session() session: UserSession,
     @Body() dto: UpdateStoreDto,
-  ) {
-    return this.stores.update(storeId, session.user.id, dto);
+  ): Promise<StoreResponseDto> {
+    const store = await this.stores.update(storeId, session.user.id, dto);
+    return toStoreDto(store);
   }
 
   @UseGuards(AuthGuard)
   @Delete(":storeId")
-  delete(@Param("storeId") storeId: string, @Session() session: UserSession) {
-    return this.stores.delete(storeId, session.user.id);
+  async delete(
+    @Param("storeId") storeId: string,
+    @Session() session: UserSession,
+  ): Promise<StoreResponseDto> {
+    const store = await this.stores.delete(storeId, session.user.id);
+    return toStoreDto(store);
   }
 
   @Public()
   @Get("public")
-  findAllPublic() {
-    return this.stores.findAllPublic();
+  async findAllPublic(): Promise<PublicStoreListingResponseDto[]> {
+    const rows = await this.stores.findAllPublic();
+    return rows.map((row) => ({
+      ...row,
+      createdAt: row.createdAt.toISOString(),
+    }));
   }
 
   @Public()
   @Get("collections/public")
-  findCollectionsPublic() {
-    return this.stores.findCollectionsPublic();
+  async findCollectionsPublic(): Promise<
+    PublicCollectionListingResponseDto[]
+  > {
+    const rows = await this.stores.findCollectionsPublic();
+    return rows.map((row) => ({
+      ...row,
+      createdAt: row.createdAt.toISOString(),
+    }));
   }
 
   @Public()
+  @ApiQuery({ name: "limit", required: false, type: String })
   @Get("featured")
-  findFeatured(@Query("limit") limit: string | undefined) {
+  findFeatured(
+    @Query("limit") limit: string | undefined,
+  ): Promise<FeaturedStoreResponseDto[]> {
     const parsed = parsePublicListQuery(limit, undefined, undefined);
     return this.stores.findFeatured(parsed.limit);
   }
 
   @Public()
+  @ApiQuery({ name: "q", required: false, type: String })
+  @ApiQuery({ name: "page", required: false, type: String })
+  @ApiQuery({ name: "limit", required: false, type: String })
   @Get("directory")
   findDirectory(
     @Query("q") q: string | undefined,
     @Query("page") page: string | undefined,
     @Query("limit") limit: string | undefined,
-  ) {
+  ): Promise<StoreDirectoryResponseDto> {
     const parsed = parsePublicListQuery(limit, page, q);
     return this.stores.findDirectory(parsed.page, parsed.limit, parsed.q);
   }
 
   @Public()
   @Get(":slug/public")
-  findPublic(@Param("slug") slug: string) {
-    return this.stores.findPublicBySlug(slug);
+  async findPublic(
+    @Param("slug") slug: string,
+  ): Promise<StorePublicDetailResponseDto> {
+    const { sections, ...store } = await this.stores.findPublicBySlug(slug);
+    return { ...toStoreDto(store), sections: sections.map(toSectionDto) };
   }
 
   @Public()
   @Get(":slug/categories/public")
-  findCategoriesPublic(@Param("slug") slug: string) {
+  findCategoriesPublic(
+    @Param("slug") slug: string,
+  ): Promise<PublicCategoryResponseDto[]> {
     return this.stores.findCategoriesPublic(slug);
   }
 
   @Public()
   @Get(":slug/products/:productId/public")
-  findPublicProduct(
+  async findPublicProduct(
     @Param("slug") slug: string,
     @Param("productId") productId: string,
-  ) {
-    return this.stores.findPublicProduct(slug, productId);
+  ): Promise<PublicProductPageResponseDto> {
+    const { store, product } = await this.stores.findPublicProduct(
+      slug,
+      productId,
+    );
+    return { store, product: toPublicProductDto(product) };
   }
 
   @UseGuards(AuthGuard)
   @Post(":storeId/logo")
+  @ApiConsumes("multipart/form-data")
   @UseInterceptors(FileInterceptor("file"))
   async uploadLogo(
     @Param("storeId") storeId: string,
     @Session() session: UserSession,
     @UploadedFile() file: Express.Multer.File,
-  ) {
+  ): Promise<StoreResponseDto> {
     if (!file) throw new BadRequestException("Falta el archivo");
     if (file.size > 5 * 1024 * 1024) {
       throw new BadRequestException("Máximo 5MB");
@@ -142,6 +305,7 @@ export class StoresController {
       file.buffer,
       isPng ? "image/png" : "image/jpeg",
     );
-    return this.stores.updateLogo(storeId, session.user.id, url);
+    const store = await this.stores.updateLogo(storeId, session.user.id, url);
+    return toStoreDto(store);
   }
 }
