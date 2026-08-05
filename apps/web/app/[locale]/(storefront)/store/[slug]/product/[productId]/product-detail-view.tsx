@@ -41,9 +41,9 @@ export function ProductDetailView(
     addToCart(slug, {
       productId: product.id,
       variantId: selectedVariant?.id,
-      name: selectedVariant
-        ? `${product.name} (${selectedVariant.name})`
-        : product.name,
+      name: product.name,
+      variantLabel: selectedVariant?.name,
+      image: selectedVariant?.imageOverride ?? product.images?.[0],
       price,
       currency: product.currency,
       quantity: 1,

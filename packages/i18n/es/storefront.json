@@ -12,8 +12,13 @@
     "title": "Tu carrito",
     "empty": "Tu carrito está vacío.",
     "continueShopping": "Seguir viendo productos",
+    "summary": "Resumen del pedido",
+    "subtotal": "Subtotal",
+    "shipping": "Envío",
+    "discount": "Descuento",
     "total": "Total",
-    "goToCheckout": "Ir a pagar",
+    "continueToCheckout": "Continuar al pago",
+    "remove": "Quitar",
     "mixedCurrencyWarning": "Tienes productos en distintas monedas — quita alguno del carrito para poder pagar."
   },
   "checkoutPage": {

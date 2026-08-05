@@ -12,8 +12,13 @@
     "title": "Your cart",
     "empty": "Your cart is empty.",
     "continueShopping": "Keep browsing",
+    "summary": "Order summary",
+    "subtotal": "Subtotal",
+    "shipping": "Shipping",
+    "discount": "Discount",
     "total": "Total",
-    "goToCheckout": "Go to checkout",
+    "continueToCheckout": "Continue to checkout",
+    "remove": "Remove",
     "mixedCurrencyWarning": "Your cart has products in different currencies — remove one to check out."
   },
   "checkoutPage": {
