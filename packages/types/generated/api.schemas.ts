@@ -5,7 +5,7 @@
  * Bias Market — niche-first store builder API
  * OpenAPI spec version: 1.0
  */
-export type CreateVariantDtoAttributes = {[key: string]: string};
+export type CreateVariantDtoAttributes = { [key: string]: string };
 
 export interface CreateVariantDto {
   /** @minLength 1 */
@@ -31,15 +31,17 @@ export interface CreateProductDto {
   variants?: CreateVariantDto[];
 }
 
-export type ProductWithVariantsResponseDtoStatus = typeof ProductWithVariantsResponseDtoStatus[keyof typeof ProductWithVariantsResponseDtoStatus];
-
+export type ProductWithVariantsResponseDtoStatus =
+  typeof ProductWithVariantsResponseDtoStatus[
+    keyof typeof ProductWithVariantsResponseDtoStatus
+  ];
 
 export const ProductWithVariantsResponseDtoStatus = {
-  DRAFT: 'DRAFT',
-  PUBLISHED: 'PUBLISHED',
+  DRAFT: "DRAFT",
+  PUBLISHED: "PUBLISHED",
 } as const;
 
-export type VariantResponseDtoAttributes = {[key: string]: string};
+export type VariantResponseDtoAttributes = { [key: string]: string };
 
 export interface VariantResponseDto {
   id: string;
@@ -74,12 +76,14 @@ export interface ProductWithVariantsResponseDto {
   variants: VariantResponseDto[];
 }
 
-export type ProductDetailResponseDtoStatus = typeof ProductDetailResponseDtoStatus[keyof typeof ProductDetailResponseDtoStatus];
-
+export type ProductDetailResponseDtoStatus =
+  typeof ProductDetailResponseDtoStatus[
+    keyof typeof ProductDetailResponseDtoStatus
+  ];
 
 export const ProductDetailResponseDtoStatus = {
-  DRAFT: 'DRAFT',
-  PUBLISHED: 'PUBLISHED',
+  DRAFT: "DRAFT",
+  PUBLISHED: "PUBLISHED",
 } as const;
 
 export interface CategoryInProductResponseDto {
@@ -127,12 +131,12 @@ export interface UpdateProductDto {
   currency?: string;
 }
 
-export type ProductResponseDtoStatus = typeof ProductResponseDtoStatus[keyof typeof ProductResponseDtoStatus];
-
+export type ProductResponseDtoStatus =
+  typeof ProductResponseDtoStatus[keyof typeof ProductResponseDtoStatus];
 
 export const ProductResponseDtoStatus = {
-  DRAFT: 'DRAFT',
-  PUBLISHED: 'PUBLISHED',
+  DRAFT: "DRAFT",
+  PUBLISHED: "PUBLISHED",
 } as const;
 
 export interface ProductResponseDto {
@@ -152,7 +156,7 @@ export interface ProductResponseDto {
   createdAt: string;
 }
 
-export type UpdateVariantDtoAttributes = {[key: string]: string};
+export type UpdateVariantDtoAttributes = { [key: string]: string };
 
 export interface UpdateVariantDto {
   /** @minLength 1 */
@@ -164,6 +168,91 @@ export interface UpdateVariantDto {
   /** @nullable */
   imageOverride?: string | null;
   attributes?: UpdateVariantDtoAttributes;
+}
+
+export type NotificationResponseDtoType =
+  typeof NotificationResponseDtoType[keyof typeof NotificationResponseDtoType];
+
+export const NotificationResponseDtoType = {
+  LOW_STOCK: "LOW_STOCK",
+  OUT_OF_STOCK: "OUT_OF_STOCK",
+} as const;
+
+export type NotificationResponseDtoMetadata = { [key: string]: unknown };
+
+export interface NotificationResponseDto {
+  id: string;
+  storeId: string;
+  type: NotificationResponseDtoType;
+  entityType: string;
+  entityId: string;
+  title: string;
+  body: string;
+  metadata: NotificationResponseDtoMetadata;
+  read: boolean;
+  /** @nullable */
+  readAt: string | null;
+  archived: boolean;
+  /** @nullable */
+  archivedAt: string | null;
+  createdAt: string;
+}
+
+export interface NotificationCountResponseDto {
+  count: number;
+}
+
+export interface CreateInquiryDto {
+  /** @minLength 1 */
+  name: string;
+  email: string;
+  company?: string;
+  inquiryType?: string;
+  /** @minLength 1 */
+  message: string;
+}
+
+export type InquiryResponseDtoStatus =
+  typeof InquiryResponseDtoStatus[keyof typeof InquiryResponseDtoStatus];
+
+export const InquiryResponseDtoStatus = {
+  NEW: "NEW",
+  REVIEWED: "REVIEWED",
+  ARCHIVED: "ARCHIVED",
+} as const;
+
+export interface InquiryResponseDto {
+  id: string;
+  name: string;
+  email: string;
+  /** @nullable */
+  company: string | null;
+  /** @nullable */
+  inquiryType: string | null;
+  message: string;
+  status: InquiryResponseDtoStatus;
+  createdAt: string;
+}
+
+export interface CreateCategoryDto {
+  /** @minLength 1 */
+  name: string;
+  parentId?: string;
+}
+
+export interface CategoryResponseDto {
+  id: string;
+  storeId: string;
+  /** @nullable */
+  parentId: string | null;
+  name: string;
+  createdAt: string;
+}
+
+export interface UpdateCategoryDto {
+  /** @minLength 1 */
+  name?: string;
+  parentId?: string;
 }
 
 export interface CreateCollectionDto {
@@ -181,12 +270,14 @@ export interface CollectionResponseDto {
   createdAt: string;
 }
 
-export type ProductInCollectionResponseDtoStatus = typeof ProductInCollectionResponseDtoStatus[keyof typeof ProductInCollectionResponseDtoStatus];
-
+export type ProductInCollectionResponseDtoStatus =
+  typeof ProductInCollectionResponseDtoStatus[
+    keyof typeof ProductInCollectionResponseDtoStatus
+  ];
 
 export const ProductInCollectionResponseDtoStatus = {
-  DRAFT: 'DRAFT',
-  PUBLISHED: 'PUBLISHED',
+  DRAFT: "DRAFT",
+  PUBLISHED: "PUBLISHED",
 } as const;
 
 export interface ProductInCollectionResponseDto {
@@ -244,7 +335,93 @@ export interface ReorderCollectionProductsDto {
   productIds: string[];
 }
 
+export type CreateStoreSectionDtoType =
+  typeof CreateStoreSectionDtoType[keyof typeof CreateStoreSectionDtoType];
+
+export const CreateStoreSectionDtoType = {
+  COLLECTION: "COLLECTION",
+  BANNER: "BANNER",
+  TEXT_BLOCK: "TEXT_BLOCK",
+} as const;
+
+export type CreateStoreSectionDtoContent = { [key: string]: unknown };
+
+export interface CreateStoreSectionDto {
+  type: CreateStoreSectionDtoType;
+  collectionId?: string;
+  content?: CreateStoreSectionDtoContent;
+  position?: number;
+}
+
+export type StoreSectionResponseDtoType =
+  typeof StoreSectionResponseDtoType[keyof typeof StoreSectionResponseDtoType];
+
+export const StoreSectionResponseDtoType = {
+  COLLECTION: "COLLECTION",
+  BANNER: "BANNER",
+  TEXT_BLOCK: "TEXT_BLOCK",
+} as const;
+
+export type StoreSectionResponseDtoContent = { [key: string]: unknown };
+
+export interface StoreSectionResponseDto {
+  id: string;
+  storeId: string;
+  type: StoreSectionResponseDtoType;
+  /** @nullable */
+  collectionId: string | null;
+  content: StoreSectionResponseDtoContent;
+  position: number;
+  createdAt: string;
+}
+
+export interface ReorderStoreSectionsDto {
+  sectionIds: string[];
+}
+
+export type UpdateStoreSectionDtoType =
+  typeof UpdateStoreSectionDtoType[keyof typeof UpdateStoreSectionDtoType];
+
+export const UpdateStoreSectionDtoType = {
+  COLLECTION: "COLLECTION",
+  BANNER: "BANNER",
+  TEXT_BLOCK: "TEXT_BLOCK",
+} as const;
+
+export type UpdateStoreSectionDtoContent = { [key: string]: unknown };
+
+export interface UpdateStoreSectionDto {
+  type?: UpdateStoreSectionDtoType;
+  collectionId?: string;
+  content?: UpdateStoreSectionDtoContent;
+  position?: number;
+}
+
+export type SuggestionResponseDtoSeverity =
+  typeof SuggestionResponseDtoSeverity[
+    keyof typeof SuggestionResponseDtoSeverity
+  ];
+
+export const SuggestionResponseDtoSeverity = {
+  info: "info",
+  warning: "warning",
+  critical: "critical",
+} as const;
+
+export type SuggestionResponseDtoBodyParams = { [key: string]: unknown };
+
+export interface SuggestionResponseDto {
+  id: string;
+  severity: SuggestionResponseDtoSeverity;
+  titleKey: string;
+  bodyParams: SuggestionResponseDtoBodyParams;
+}
+
 export type UploadImageParams = {
-replace: string;
+  replace: string;
 };
 
+export type FindAllParams = {
+  read?: string;
+  archived?: string;
+};

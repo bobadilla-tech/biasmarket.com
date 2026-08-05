@@ -13,6 +13,19 @@ import type { UserSession } from "@thallesp/nestjs-better-auth";
 import { CategoriesService } from "./categories.service.js";
 import { CreateCategoryDto } from "./dto/create-category.dto.js";
 import { UpdateCategoryDto } from "./dto/update-category.dto.js";
+import { CategoryResponseDto } from "./dto/category-response.dto.js";
+
+interface CategoryRow {
+  id: string;
+  storeId: string;
+  parentId: string | null;
+  name: string;
+  createdAt: Date;
+}
+
+function toCategoryDto(category: CategoryRow): CategoryResponseDto {
+  return { ...category, createdAt: category.createdAt.toISOString() };
+}
 
 @Controller("stores/:storeId/categories")
 @UseGuards(AuthGuard)
@@ -20,35 +33,58 @@ export class CategoriesController {
   constructor(private categories: CategoriesService) {}
 
   @Post()
-  create(
+  async create(
     @Param("storeId") storeId: string,
     @Session() session: UserSession,
     @Body() dto: CreateCategoryDto,
-  ) {
-    return this.categories.create(storeId, session.user.id, dto);
+  ): Promise<CategoryResponseDto> {
+    const category = await this.categories.create(
+      storeId,
+      session.user.id,
+      dto,
+    );
+    return toCategoryDto(category);
   }
 
   @Get()
-  findAll(@Param("storeId") storeId: string, @Session() session: UserSession) {
-    return this.categories.findAllForStore(storeId, session.user.id);
+  async findAll(
+    @Param("storeId") storeId: string,
+    @Session() session: UserSession,
+  ): Promise<CategoryResponseDto[]> {
+    const categories = await this.categories.findAllForStore(
+      storeId,
+      session.user.id,
+    );
+    return categories.map(toCategoryDto);
   }
 
   @Patch(":categoryId")
-  update(
+  async update(
     @Param("storeId") storeId: string,
     @Param("categoryId") categoryId: string,
     @Session() session: UserSession,
     @Body() dto: UpdateCategoryDto,
-  ) {
-    return this.categories.update(categoryId, storeId, session.user.id, dto);
+  ): Promise<CategoryResponseDto> {
+    const category = await this.categories.update(
+      categoryId,
+      storeId,
+      session.user.id,
+      dto,
+    );
+    return toCategoryDto(category);
   }
 
   @Delete(":categoryId")
-  delete(
+  async delete(
     @Param("storeId") storeId: string,
     @Param("categoryId") categoryId: string,
     @Session() session: UserSession,
-  ) {
-    return this.categories.delete(categoryId, storeId, session.user.id);
+  ): Promise<CategoryResponseDto> {
+    const category = await this.categories.delete(
+      categoryId,
+      storeId,
+      session.user.id,
+    );
+    return toCategoryDto(category);
   }
 }

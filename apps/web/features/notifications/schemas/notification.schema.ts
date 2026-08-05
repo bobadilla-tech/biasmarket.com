@@ -1,19 +1,11 @@
-import { z } from "zod";
+import type {
+  NotificationCountResponseDto,
+  NotificationResponseDto,
+} from "@biasmarket/types";
 
-export const notificationSchema = z.object({
-  id: z.string(),
-  type: z.enum(["LOW_STOCK", "OUT_OF_STOCK"]),
-  title: z.string(),
-  body: z.string(),
-  read: z.boolean(),
-  archived: z.boolean(),
-  createdAt: z.string(),
-});
-
-export const notificationListSchema = z.array(notificationSchema);
-
-export const unreadCountSchema = z.object({
-  count: z.number(),
-});
-
-export type NotificationItem = z.infer<typeof notificationSchema>;
+// Response shapes come from the generated OpenAPI client now (see
+// lib/api-client.ts) — plain type aliases, not zod schemas. apps/api's
+// NotificationsController + response DTOs are the runtime guarantee for
+// these pass-through reads. See "OpenAPI note" in apps/web/AGENTS.md.
+export type NotificationItem = NotificationResponseDto;
+export type UnreadCount = NotificationCountResponseDto;

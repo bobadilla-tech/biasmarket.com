@@ -50,13 +50,12 @@ pnpm --filter @biasmarket/types generate  # regen packages/types/generated/** fr
 grouped one namespace per migrated controller tag (`collections`, ...) —
 `apps/web` uses it via `apiClient.collections.findAll(storeId)`-style calls
 instead of hand-written fetch wrappers for migrated features (see
-`apps/web/AGENTS.md`'s OpenAPI note for the full shape, including why a
-plain generated `openapi-fetch` client was tried first and replaced). Both
-`apps/api/openapi.json` and `packages/types/generated/**` are **committed**,
-not build-generated — deliberately, to keep `web`'s build/typecheck
-independent of `apps/api` (no turbo cross-package dependency, no live app
-boot needed in CI). Regenerate both by hand after changing a migrated
-module's response DTOs:
+`apps/web/AGENTS.md`'s OpenAPI note for the full shape, including why a plain
+generated `openapi-fetch` client was tried first and replaced). Both
+`apps/api/openapi.json` and `packages/types/generated/**` are **committed**, not
+build-generated — deliberately, to keep `web`'s build/typecheck independent of
+`apps/api` (no turbo cross-package dependency, no live app boot needed in CI).
+Regenerate both by hand after changing a migrated module's response DTOs:
 `pnpm --filter api generate:openapi && pnpm --filter @biasmarket/types generate`,
 then commit the diff.
 

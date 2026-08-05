@@ -1,4 +1,3 @@
-export { inquiriesApi } from "./api/inquiries.api";
 export { adminStoresApi } from "./api/admin-stores.api";
 export { adminUsersApi } from "./api/admin-users.api";
 
@@ -14,11 +13,7 @@ export { InquiriesTable } from "./components/inquiries-table";
 export { AdminStoresTable } from "./components/admin-stores-table";
 export { AdminUsersTable } from "./components/admin-users-table";
 
-export {
-  type Inquiry,
-  inquiryListSchema,
-  inquirySchema,
-} from "./schemas/inquiry.schema";
+export { type Inquiry } from "./schemas/inquiry.schema";
 export {
   type AdminStore,
   adminStoreListSchema,

@@ -7,6 +7,16 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Suggestion } from "../schemas/suggestion.schema";
 
+// bodyParams comes off the generated client as `{ [key: string]: unknown }`
+// (the OpenAPI `additionalProperties: true` escape hatch, needed because
+// JSON Schema has no `string | number` value union) — the backend really
+// does only ever put strings/numbers in it (see suggestions.service.ts).
+function asI18nValues(
+  bodyParams: Suggestion["bodyParams"],
+): Record<string, string | number> {
+  return bodyParams as Record<string, string | number>;
+}
+
 const SEVERITY_STYLES: Record<
   Suggestion["severity"],
   { icon: typeof Info; className: string }
@@ -46,10 +56,16 @@ export function SuggestionCard({
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-[#2d1649]">
-            {t(`${suggestion.titleKey}.title`, suggestion.bodyParams)}
+            {t(
+              `${suggestion.titleKey}.title`,
+              asI18nValues(suggestion.bodyParams),
+            )}
           </p>
           <p className="mt-1 text-sm text-[#8f7da8]">
-            {t(`${suggestion.titleKey}.body`, suggestion.bodyParams)}
+            {t(
+              `${suggestion.titleKey}.body`,
+              asI18nValues(suggestion.bodyParams),
+            )}
           </p>
         </div>
         <Button

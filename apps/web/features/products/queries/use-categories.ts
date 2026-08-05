@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { categoriesApi } from "../api/categories.api";
+import { apiClient } from "@/lib/api-client";
 
 export const categoriesKeys = {
   byStore: (storeId: string) => ["categories", storeId] as const,
@@ -13,7 +13,10 @@ export function useCategories(
 ) {
   return useQuery({
     queryKey: categoriesKeys.byStore(storeId as string),
-    queryFn: () => categoriesApi.list(storeId as string, fallbackErrorMessage),
+    queryFn: () =>
+      apiClient.categories.findAll(storeId as string, {
+        fallbackErrorMessage,
+      }),
     enabled: !!storeId,
   });
 }

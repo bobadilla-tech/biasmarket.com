@@ -219,7 +219,11 @@ describe("products (e2e)", () => {
     variantId = res.body.variants[0].id;
 
     expect(typeof res.body.price).toBe("string");
-    assertMatchesSchema(res.body, productWithVariantsSchema, openapi.components);
+    assertMatchesSchema(
+      res.body,
+      productWithVariantsSchema,
+      openapi.components,
+    );
   });
 
   it("GET /stores/:storeId/products matches ProductDetailResponseDto[], priceOverride is a string", async () => {

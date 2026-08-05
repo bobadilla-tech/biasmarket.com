@@ -37,11 +37,11 @@ components.
 
 **Validation rule**: for features still on `apiFetch`, API responses are
 validated with zod at the `api/` boundary (`schema.parse(data)`, throwing — a
-schema mismatch is a real bug and should surface through the same error
-channel as a network failure, not be silently swallowed by `safeParse`). A
-migrated feature (generated `openapi-fetch` client) drops response-shape zod
-for plain pass-through reads instead — see the OpenAPI note below for why and
-where the line is.
+schema mismatch is a real bug and should surface through the same error channel
+as a network failure, not be silently swallowed by `safeParse`). A migrated
+feature (generated `openapi-fetch` client) drops response-shape zod for plain
+pass-through reads instead — see the OpenAPI note below for why and where the
+line is.
 
 **Forms rule**: new forms use `react-hook-form` + `@hookform/resolvers/zod`, not
 per-field `useState`. There is no shadcn `components/ui/form.tsx` — the `form`
@@ -70,33 +70,40 @@ event — see `settings/page.tsx`'s `updateStoreCache` calls for the pattern.
 **`packages/types` (`@biasmarket/types`)**: generates a real SDK client from
 `apps/api/openapi.json` via [Orval](https://orval.dev) (see the OpenAPI note
 below) — one grouped namespace per migrated tag (`collections`, `products`),
-plus `configureApiClient` and the re-exported response/request DTO types.
-Still not for hand-populated feature-local types — those belong in
+plus `configureApiClient` and the re-exported response/request DTO types. Still
+not for hand-populated feature-local types — those belong in
 `features/<name>/schemas/`.
 
 **OpenAPI-generated client**: landed 2026-08-04, reworked the same day after
-review (see `docs/plans/2026-08-04-nestjs-openapi-client-generation-plan.md`
-and `docs/plans/2026-08-04-typed-sdk-client-followups.md` for the full
-history — a first pass generated a raw `openapi-fetch` client that turned out
-to need *more* hand-written wiring per call site than the `apiFetch` pattern
-it replaced; this section describes the redo, not that first pass).
-`collections` was the pilot feature; `products` (money fields + 2 upload
-endpoints) migrated next per
+review (see `docs/plans/2026-08-04-nestjs-openapi-client-generation-plan.md` and
+`docs/plans/2026-08-04-typed-sdk-client-followups.md` for the full history — a
+first pass generated a raw `openapi-fetch` client that turned out to need _more_
+hand-written wiring per call site than the `apiFetch` pattern it replaced; this
+section describes the redo, not that first pass). `collections` was the pilot
+feature; `products` (money fields + 2 upload endpoints) migrated next per
 `docs/plans/2026-08-04-orval-client-rollout-plan.md`'s Batch 1, closing that
 plan's money/upload proof-of-pattern gate. See that doc's "Batch 1 execution
 notes" for what came up migrating a module with more than one response shape
-(`create()` vs. `findAll()`/`findOne()`) and multipart endpoints.
+(`create()` vs. `findAll()`/`findOne()`) and multipart endpoints. Batch 2
+(`categories`, `notifications`, `contact`, `suggestions`, `sections`) followed
+the same recipe — see that doc's "Batch 2 execution notes" for a new `@ApiQuery`
+pattern needed for `Notifications.findAll`'s query-string filters (no prior
+example in this repo) and an e2e-parallelism gotcha with better-auth's rate
+limiter (`vitest.config.e2e.ts` now sets `fileParallelism: false` because of it
+— every e2e spec signs up its own user, and running them in parallel trips
+better-auth's rate limiter).
 
 `apps/api` emits `openapi.json` (`@nestjs/swagger` + a standalone
-`PluginMetadataGenerator` script, since the Nest build's SWC builder doesn't
-run the swagger CLI plugin). `packages/types/orval.config.ts` runs
+`PluginMetadataGenerator` script, since the Nest build's SWC builder doesn't run
+the swagger CLI plugin). `packages/types/orval.config.ts` runs
 [Orval](https://orval.dev) against it (`client: "fetch"`, `mode:
-"tags-split"`) with a custom `http.ts` mutator every generated method calls
-through — this is the one place that does what `apiFetch`/`collections.api.ts`
-used to repeat per call site: resolve `credentials: "include"`, and throw on
-a non-2xx response using the backend's `message` field (with an optional
-per-call `fallbackErrorMessage`, same string clients pass to `apiFetch`
-today). Net effect: a generated method's real signature is
+"tags-split"`)
+with a custom `http.ts` mutator every generated method calls through — this is
+the one place that does what `apiFetch`/`collections.api.ts` used to repeat per
+call site: resolve `credentials: "include"`, and throw on a non-2xx response
+using the backend's `message` field (with an optional per-call
+`fallbackErrorMessage`, same string clients pass to `apiFetch` today). Net
+effect: a generated method's real signature is
 `(storeId, ..., options?) => Promise<T>` — no `{ data, error }` tuple, no
 per-call `if (error) throw`, no manually-templated path string, no explicit
 return-type annotation needed to dodge a narrowing bug (all three were real
@@ -110,75 +117,71 @@ directly; there is no `features/collections/api/` folder at all anymore.
 
 Both `apps/api/openapi.json` and `packages/types/generated/**` are **committed
 to git, not build-generated** — unchanged from the original decision (kept
-`web`'s build/typecheck independent of `apps/api`, no turbo cross-package
-build step, no live app boot needed in CI). After changing a migrated
-feature's backend response DTOs, regenerate by hand and commit the diff:
+`web`'s build/typecheck independent of `apps/api`, no turbo cross-package build
+step, no live app boot needed in CI). After changing a migrated feature's
+backend response DTOs, regenerate by hand and commit the diff:
 `pnpm --filter api generate:openapi && pnpm --filter @biasmarket/types generate`.
 
 **Orval config notes, for whoever adds the next tag in Phase 4:**
-`orval.config.ts`'s `input.filters` only includes tags whose controller
-already has real response DTOs — currently `Collections` and `Products`.
-Generating a
+`orval.config.ts`'s `input.filters` only includes tags whose controller already
+has real response DTOs — currently `Collections` and `Products`. Generating a
 tag whose responses are still untyped Prisma results produces anonymous
 `{ [key: string]: unknown }` placeholder schema types keyed by the
-(post-`operationName`-override) shortened method name, and those collide
-across unrelated controllers in the single shared `api.schemas.ts` file
-(every controller's `findAll` fighting over one `FindAll200Item` type) —
-add a tag here only once its controller has real response DTOs, not just
-because the tag exists in the spec. Two `CustomerAuthController` endpoints
-(`changePassword`, `logout`) are missing their `slug` path param in the
-emitted spec — a real, pre-existing `apps/api` Swagger-annotation gap,
-unrelated to collections and out of scope for this change — which is why
-`input.unsafeDisableValidation: true` is set (Orval's validator hard-fails
-the *entire* build over those two operations, even with `CustomerAuth`
-excluded from `filters.tags`, since validation runs before filtering).
-`scripts/fix-esm-extensions.mjs` postprocesses Orval's output because Orval
-has no option to emit `.js` extensions on relative imports, which this
-package's NodeNext module resolution requires — run automatically as part of
-`generate`, not a separate manual step.
+(post-`operationName`-override) shortened method name, and those collide across
+unrelated controllers in the single shared `api.schemas.ts` file (every
+controller's `findAll` fighting over one `FindAll200Item` type) — add a tag here
+only once its controller has real response DTOs, not just because the tag exists
+in the spec. Two `CustomerAuthController` endpoints (`changePassword`, `logout`)
+are missing their `slug` path param in the emitted spec — a real, pre-existing
+`apps/api` Swagger-annotation gap, unrelated to collections and out of scope for
+this change — which is why `input.unsafeDisableValidation: true` is set (Orval's
+validator hard-fails the _entire_ build over those two operations, even with
+`CustomerAuth` excluded from `filters.tags`, since validation runs before
+filtering). `scripts/fix-esm-extensions.mjs` postprocesses Orval's output
+because Orval has no option to emit `.js` extensions on relative imports, which
+this package's NodeNext module resolution requires — run automatically as part
+of `generate`, not a separate manual step.
 
 **TanStack Query hook generation: decided against, for now.** Orval (and
 hey-api, which was also spiked) can generate `useQuery`/`useMutation` hooks
 directly from operations, which would additionally shrink `queries/`/
 `mutations/`. Not adopted, because a spike of Orval's `@orval/query` output
 showed two real problems for this repo: it wraps responses in a
-`{ data, status, headers }` envelope (a worse, not better, shape than the
-plain `Promise<T>` the plain `fetch` client gives), and its `useQuery`/
-`useMutation` classification has to be told which operations are queries
-— naively applied, it generated a `useQuery` hook for a `POST` create
-endpoint. More fundamentally, this repo's hand-written hooks already carry
-real business logic a generic generator has no way to produce — per-store
-query keys (`collectionsKeys`), `invalidateQueries` call graphs, and
-feature-specific flows like `features/orders`'s optimistic-update/undo
-timer — so hand-written `queries/`/`mutations/` calling the generated SDK
-client directly (as described above) stays the convention. Revisit only if
-a future session finds a generator whose hook shape doesn't have these
-problems, not by default.
+`{ data, status, headers }` envelope (a worse, not better, shape than the plain
+`Promise<T>` the plain `fetch` client gives), and its `useQuery`/ `useMutation`
+classification has to be told which operations are queries — naively applied, it
+generated a `useQuery` hook for a `POST` create endpoint. More fundamentally,
+this repo's hand-written hooks already carry real business logic a generic
+generator has no way to produce — per-store query keys (`collectionsKeys`),
+`invalidateQueries` call graphs, and feature-specific flows like
+`features/orders`'s optimistic-update/undo timer — so hand-written
+`queries/`/`mutations/` calling the generated SDK client directly (as described
+above) stays the convention. Revisit only if a future session finds a generator
+whose hook shape doesn't have these problems, not by default.
 
 Response-shape zod schemas are dropped for migrated features doing plain
 pass-through reads (see `features/collections/schemas/collection.schema.ts` —
 `Collection`/`CollectionProduct` are now type aliases onto the generated
 `CollectionWithProductsResponseDto`/`CollectionProductWithProductResponseDto`,
-not `z.object()` + `.parse()`): the backend's real response DTO classes are
-the runtime guarantee now, and re-validating with zod client-side would just
-be checking the same contract twice. zod stays for genuine client-side logic
-— request/form validation (`createCollectionSchema`, still `z.object()` +
-`zodResolver`) and any derived parsing/coercion a feature does on top of the
-raw response (e.g. `useCreateCollection` turning an empty-string
-`description` into `undefined` before calling
-`apiClient.collections.create`). Apply this same split to each feature as it
-migrates, not a blanket drop-all-response-zod change in one PR.
+not `z.object()` + `.parse()`): the backend's real response DTO classes are the
+runtime guarantee now, and re-validating with zod client-side would just be
+checking the same contract twice. zod stays for genuine client-side logic —
+request/form validation (`createCollectionSchema`, still `z.object()` +
+`zodResolver`) and any derived parsing/coercion a feature does on top of the raw
+response (e.g. `useCreateCollection` turning an empty-string `description` into
+`undefined` before calling `apiClient.collections.create`). Apply this same
+split to each feature as it migrates, not a blanket drop-all-response-zod change
+in one PR.
 
 Not yet migrated: everything except `collections` and `products`. `apps/api`'s
 response DTOs only cover those two modules so far — every other feature's
-`api/*.ts` stays on `apiFetch` + zod until its backend controller gets the
-same response-DTO treatment (see the rollout plan doc's "Suggested batches"
-for the order — `products` closed the original money/upload proof-of-pattern
-gate, Batch 2 onward is small CRUD modules). Error responses are also
-explicitly out of scope for the generated
-client (see the plan doc's Phase 3 note) — the mutator's defensive
-`message`-field parsing and `fallbackErrorMessage` stay the pattern for error
-paths even in migrated features.
+`api/*.ts` stays on `apiFetch` + zod until its backend controller gets the same
+response-DTO treatment (see the rollout plan doc's "Suggested batches" for the
+order — `products` closed the original money/upload proof-of-pattern gate, Batch
+2 onward is small CRUD modules). Error responses are also explicitly out of
+scope for the generated client (see the plan doc's Phase 3 note) — the mutator's
+defensive `message`-field parsing and `fallbackErrorMessage` stay the pattern
+for error paths even in migrated features.
 
 ## Migration roadmap (not all built yet)
 
@@ -225,10 +228,10 @@ paths even in migrated features.
      fail-fast-and-leave-it-half-migrated version (see the doc comment on
      `features/products/mutations/use-update-product.ts`). Not live-smoke-tested
      (no seeded DB access in this session) — only typecheck/test/build were
-     verified. Later, separately (2026-08-05): `features/products`' `api/`
-     layer (excluding `categories.api.ts`, a separate tag not yet migrated)
-     was itself migrated from this step's `apiFetch` + zod pattern onto the
-     generated Orval client — see the OpenAPI note above and
+     verified. Later, separately (2026-08-05): `features/products`' `api/` layer
+     (excluding `categories.api.ts`, a separate tag not yet migrated) was itself
+     migrated from this step's `apiFetch` + zod pattern onto the generated Orval
+     client — see the OpenAPI note above and
      `docs/plans/2026-08-04-orval-client-rollout-plan.md`'s Batch 1 execution
      notes.
    - ~~`orders/page.tsx`~~ — done. Split into `features/orders/`; the page is

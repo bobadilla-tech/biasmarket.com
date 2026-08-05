@@ -14,15 +14,26 @@ vi.mock("@nestjs/throttler", async (importOriginal) => {
   return { ...actual, ThrottlerGuard: class ThrottlerGuard {} };
 });
 
+const inquiryRow = {
+  id: "inquiry-1",
+  name: "Jane",
+  email: "jane@example.com",
+  company: null,
+  inquiryType: null,
+  message: "Hi",
+  status: "NEW" as const,
+  createdAt: new Date("2026-01-01T00:00:00.000Z"),
+};
+
 describe("ContactController", () => {
   let controller: ContactController;
   let service: { create: Mock; findAll: Mock; markReviewed: Mock };
 
   beforeEach(async () => {
     service = {
-      create: vi.fn(),
-      findAll: vi.fn(),
-      markReviewed: vi.fn(),
+      create: vi.fn().mockResolvedValue(inquiryRow),
+      findAll: vi.fn().mockResolvedValue([inquiryRow]),
+      markReviewed: vi.fn().mockResolvedValue(inquiryRow),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -33,22 +44,22 @@ describe("ContactController", () => {
     controller = module.get<ContactController>(ContactController);
   });
 
-  it("create() delegates to service.create with the dto", () => {
+  it("create() delegates to service.create with the dto", async () => {
     const dto = { name: "Jane", email: "jane@example.com", message: "Hi" };
 
-    controller.create(dto);
+    await controller.create(dto);
 
     expect(service.create).toHaveBeenCalledWith(dto);
   });
 
-  it("findAll() delegates to service.findAll", () => {
-    controller.findAll();
+  it("findAll() delegates to service.findAll", async () => {
+    await controller.findAll();
 
     expect(service.findAll).toHaveBeenCalled();
   });
 
-  it("markReviewed() delegates to service.markReviewed with the id", () => {
-    controller.markReviewed("inquiry-1");
+  it("markReviewed() delegates to service.markReviewed with the id", async () => {
+    await controller.markReviewed("inquiry-1");
 
     expect(service.markReviewed).toHaveBeenCalledWith("inquiry-1");
   });

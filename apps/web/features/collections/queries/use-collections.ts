@@ -14,7 +14,9 @@ export function useCollections(
   return useQuery({
     queryKey: collectionsKeys.byStore(storeId as string),
     queryFn: () =>
-      apiClient.collections.findAll(storeId as string, { fallbackErrorMessage }),
+      apiClient.collections.findAll(storeId as string, {
+        fallbackErrorMessage,
+      }),
     enabled: !!storeId,
   });
 }

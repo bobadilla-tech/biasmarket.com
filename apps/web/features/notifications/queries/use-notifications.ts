@@ -1,5 +1,7 @@
+"use client";
+
 import { useQuery } from "@tanstack/react-query";
-import { notificationsApi } from "../api/notifications.api";
+import { apiClient } from "@/lib/api-client";
 
 export const notificationKeys = {
   all: (storeId: string) => ["notifications", storeId] as const,
@@ -16,7 +18,10 @@ export function useNotifications(
 ) {
   return useQuery({
     queryKey: notificationKeys.list(storeId ?? "", archived),
-    queryFn: () => notificationsApi.list(storeId as string, archived),
+    queryFn: () =>
+      apiClient.notifications.findAll(storeId as string, {
+        archived: String(archived),
+      }),
     enabled: !!storeId && (options?.enabled ?? true),
   });
 }
@@ -24,7 +29,7 @@ export function useNotifications(
 export function useUnreadCount(storeId: string | undefined) {
   return useQuery({
     queryKey: notificationKeys.unreadCount(storeId ?? ""),
-    queryFn: () => notificationsApi.unreadCount(storeId as string),
+    queryFn: () => apiClient.notifications.unreadCount(storeId as string),
     enabled: !!storeId,
   });
 }

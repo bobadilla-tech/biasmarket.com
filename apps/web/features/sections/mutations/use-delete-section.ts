@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { sectionsApi } from "../api/sections.api";
+import { apiClient } from "@/lib/api-client";
 import { sectionsKeys } from "../queries/use-sections";
 
 export function useDeleteSection(
@@ -12,7 +12,9 @@ export function useDeleteSection(
 
   return useMutation({
     mutationFn: (sectionId: string) =>
-      sectionsApi.remove(storeId as string, sectionId, fallbackErrorMessage),
+      apiClient.storeSections.remove(storeId as string, sectionId, {
+        fallbackErrorMessage,
+      }),
     onSuccess: () => {
       if (!storeId) return;
       queryClient.invalidateQueries({

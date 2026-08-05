@@ -30,16 +30,28 @@ export interface RequestOptions extends RequestInit {
 // Phase 3 scope note), so the parsed error body is untyped here. Same
 // defensive shape apiFetch always used: try the backend's `message` field,
 // fall back to a caller-supplied message.
-function errorMessage(data: unknown, fallback: string | undefined, status: number): string {
-  if (data && typeof data === "object" && "message" in data && typeof (data as { message: unknown }).message === "string") {
+function errorMessage(
+  data: unknown,
+  fallback: string | undefined,
+  status: number,
+): string {
+  if (
+    data && typeof data === "object" && "message" in data &&
+    typeof (data as { message: unknown }).message === "string"
+  ) {
     return (data as { message: string }).message;
   }
   return fallback ?? `Request failed with status ${status}`;
 }
 
-export async function customFetch<T>(url: string, options: RequestOptions = {}): Promise<T> {
+export async function customFetch<T>(
+  url: string,
+  options: RequestOptions = {},
+): Promise<T> {
   if (!config) {
-    throw new Error("configureApiClient() must be called before making API requests");
+    throw new Error(
+      "configureApiClient() must be called before making API requests",
+    );
   }
   const { fallbackErrorMessage, ...init } = options;
   const res = await fetch(`${config.baseUrl}${url}`, {

@@ -106,7 +106,10 @@ export class ProductsController {
     @Body() dto: CreateProductDto,
   ): Promise<ProductWithVariantsResponseDto> {
     const product = await this.products.create(storeId, session.user.id, dto);
-    return { ...toProductDto(product), variants: product.variants.map(toVariantDto) };
+    return {
+      ...toProductDto(product),
+      variants: product.variants.map(toVariantDto),
+    };
   }
 
   @Get()

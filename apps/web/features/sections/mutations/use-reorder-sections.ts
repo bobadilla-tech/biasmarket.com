@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { sectionsApi } from "../api/sections.api";
+import { apiClient } from "@/lib/api-client";
 import { sectionsKeys } from "../queries/use-sections";
 
 export function useReorderSections(
@@ -12,7 +12,11 @@ export function useReorderSections(
 
   return useMutation({
     mutationFn: (sectionIds: string[]) =>
-      sectionsApi.reorder(storeId as string, sectionIds, fallbackErrorMessage),
+      apiClient.storeSections.reorder(
+        storeId as string,
+        { sectionIds },
+        { fallbackErrorMessage },
+      ),
     onSuccess: () => {
       if (!storeId) return;
       queryClient.invalidateQueries({

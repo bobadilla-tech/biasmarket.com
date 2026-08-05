@@ -13,3 +13,8 @@ export * from "./generated/api.schemas.js";
 // into a single `apiClient` object.
 export * as collections from "./generated/collections/collections.js";
 export * as products from "./generated/products/products.js";
+export * as categories from "./generated/categories/categories.js";
+export * as notifications from "./generated/notifications/notifications.js";
+export * as contact from "./generated/contact/contact.js";
+export * as suggestions from "./generated/suggestions/suggestions.js";
+export * as storeSections from "./generated/store-sections/store-sections.js";

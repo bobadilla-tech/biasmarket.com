@@ -1,44 +1,13 @@
 import { z } from "zod";
+import type { StoreSectionResponseDto } from "@biasmarket/types";
 
-// The BANNER branch allows an optional `alt` — the live storefront renderer
-// (store/[slug]/page.tsx) already reads `section.content.alt` even though the
-// dashboard editor never sets it today. Included so this schema describes the
-// real content shape even though nothing here writes it yet.
-export const sectionCollectionContentSchema = z.object({});
-export const sectionBannerContentSchema = z.object({
-  imageUrl: z.string(),
-  linkUrl: z.string().optional(),
-  alt: z.string().optional(),
-});
-export const sectionTextBlockContentSchema = z.object({ body: z.string() });
-
-export const storeSectionSchema = z.discriminatedUnion("type", [
-  z.object({
-    id: z.string(),
-    type: z.literal("COLLECTION"),
-    collectionId: z.string().nullable(),
-    content: sectionCollectionContentSchema,
-    position: z.number(),
-  }),
-  z.object({
-    id: z.string(),
-    type: z.literal("BANNER"),
-    collectionId: z.string().nullable(),
-    content: sectionBannerContentSchema,
-    position: z.number(),
-  }),
-  z.object({
-    id: z.string(),
-    type: z.literal("TEXT_BLOCK"),
-    collectionId: z.string().nullable(),
-    content: sectionTextBlockContentSchema,
-    position: z.number(),
-  }),
-]);
-
-export const storeSectionListSchema = z.array(storeSectionSchema);
-
-export type StoreSection = z.infer<typeof storeSectionSchema>;
+// Response shape comes from the generated OpenAPI client now (see
+// lib/api-client.ts) — a plain type alias, not a zod schema. apps/api's
+// StoreSectionsController + response DTO are the runtime guarantee for this
+// pass-through read. `content` is untyped JSON on the DTO (it varies per
+// `type`) — narrow it at the read site if a specific shape is needed. See
+// "OpenAPI note" in apps/web/AGENTS.md.
+export type StoreSection = StoreSectionResponseDto;
 export type SectionType = StoreSection["type"];
 
 // Flat + refine (not a discriminated union) so the create form can hold all

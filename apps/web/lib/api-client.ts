@@ -1,4 +1,13 @@
-import { collections, configureApiClient, products } from "@biasmarket/types";
+import {
+  categories,
+  collections,
+  configureApiClient,
+  contact,
+  notifications,
+  products,
+  storeSections,
+  suggestions,
+} from "@biasmarket/types";
 
 // Same base-URL resolution as apiFetch (lib/api.ts): INTERNAL_API_URL for
 // server-side (SSR/Server Component) fetches, which run inside the "web"
@@ -12,4 +21,12 @@ configureApiClient({ baseUrl: `${API_URL}/api` });
 
 // One key per migrated feature/tag. Add a key here as each further feature
 // migrates (see apps/web/AGENTS.md's OpenAPI note).
-export const apiClient = { collections, products };
+export const apiClient = {
+  collections,
+  products,
+  categories,
+  notifications,
+  contact,
+  suggestions,
+  storeSections,
+};

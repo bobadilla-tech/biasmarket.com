@@ -1,16 +1,7 @@
-import { z } from "zod";
+import type { InquiryResponseDto } from "@biasmarket/types";
 
-export const inquirySchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  email: z.string(),
-  company: z.string().nullable(),
-  inquiryType: z.string().nullable(),
-  message: z.string(),
-  status: z.enum(["NEW", "REVIEWED", "ARCHIVED"]),
-  createdAt: z.string(),
-});
-
-export const inquiryListSchema = z.array(inquirySchema);
-
-export type Inquiry = z.infer<typeof inquirySchema>;
+// Response shape comes from the generated OpenAPI client now (see
+// lib/api-client.ts) — a plain type alias, not a zod schema. apps/api's
+// ContactController + response DTO are the runtime guarantee for this
+// pass-through read. See "OpenAPI note" in apps/web/AGENTS.md.
+export type Inquiry = InquiryResponseDto;

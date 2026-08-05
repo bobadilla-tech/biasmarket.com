@@ -188,7 +188,9 @@ export function useUpdateProduct(storeId: string | undefined) {
         const baseId = baseVariant?.id;
         await Promise.all(
           currentVariants
-            .filter((variant) => variant.id !== baseId)
+            .filter((variant) =>
+              variant.id !== baseId
+            )
             .map((variant) =>
               apiClient.products.deleteVariant(
                 sid,

@@ -20,10 +20,13 @@ const specifierPattern = /((?:from|import)\s+["'])(\.\.?\/[^"']+)(["'])/g;
 
 async function fixFile(filePath) {
   const original = await readFile(filePath, "utf8");
-  const fixed = original.replace(specifierPattern, (match, prefix, specifier, suffix) => {
-    if (/\.[a-zA-Z0-9]+$/.test(specifier)) return match;
-    return `${prefix}${specifier}.js${suffix}`;
-  });
+  const fixed = original.replace(
+    specifierPattern,
+    (match, prefix, specifier, suffix) => {
+      if (/\.[a-zA-Z0-9]+$/.test(specifier)) return match;
+      return `${prefix}${specifier}.js${suffix}`;
+    },
+  );
   if (fixed !== original) await writeFile(filePath, fixed, "utf8");
 }
 

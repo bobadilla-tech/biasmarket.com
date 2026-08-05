@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { sectionsApi } from "../api/sections.api";
+import { apiClient } from "@/lib/api-client";
 
 export const sectionsKeys = {
   byStore: (storeId: string) => ["sections", storeId] as const,
@@ -13,7 +13,10 @@ export function useSections(
 ) {
   return useQuery({
     queryKey: sectionsKeys.byStore(storeId as string),
-    queryFn: () => sectionsApi.list(storeId as string, fallbackErrorMessage),
+    queryFn: () =>
+      apiClient.storeSections.findAll(storeId as string, {
+        fallbackErrorMessage,
+      }),
     enabled: !!storeId,
   });
 }

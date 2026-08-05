@@ -1,10 +1,7 @@
-import { z } from "zod";
+import type { CategoryResponseDto } from "@biasmarket/types";
 
-export const categorySchema = z.object({
-  id: z.string(),
-  name: z.string(),
-});
-
-export const categoryListSchema = z.array(categorySchema);
-
-export type Category = z.infer<typeof categorySchema>;
+// Response shape comes from the generated OpenAPI client now (see
+// lib/api-client.ts) — a plain type alias, not a zod schema. apps/api's
+// CategoriesController + response DTO are the runtime guarantee for this
+// pass-through read. See "OpenAPI note" in apps/web/AGENTS.md.
+export type Category = CategoryResponseDto;

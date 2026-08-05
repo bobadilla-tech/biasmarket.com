@@ -28,7 +28,15 @@ export default defineConfig({
       // just because a tag exists in the spec.
       filters: {
         mode: "include",
-        tags: ["Collections", "Products"],
+        tags: [
+          "Collections",
+          "Products",
+          "Categories",
+          "Notifications",
+          "Contact",
+          "Suggestions",
+          "StoreSections",
+        ],
       },
     },
     output: {

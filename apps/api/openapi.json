@@ -841,11 +841,37 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "read",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "archived",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NotificationResponseDto"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -868,7 +894,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationCountResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -899,7 +932,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -926,7 +966,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/NotificationCountResponseDto"
                 }
               }
             }
@@ -960,7 +1000,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1694,7 +1741,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InquiryResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1710,7 +1764,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InquiryResponseDto"
+                  }
                 }
               }
             }
@@ -1736,7 +1793,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InquiryResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1769,7 +1833,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1790,7 +1861,17 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryResponseDto"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1831,7 +1912,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1860,7 +1948,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2193,7 +2288,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreSectionResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2214,7 +2316,17 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StoreSectionResponseDto"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2247,7 +2359,17 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StoreSectionResponseDto"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2288,7 +2410,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreSectionResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2317,7 +2446,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreSectionResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2399,7 +2535,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "object"
+                    "$ref": "#/components/schemas/SuggestionResponseDto"
                   }
                 }
               }
@@ -3123,6 +3259,86 @@
           }
         }
       },
+      "NotificationResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "LOW_STOCK",
+              "OUT_OF_STOCK"
+            ],
+            "type": "string"
+          },
+          "entityType": {
+            "type": "string"
+          },
+          "entityId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "read": {
+            "type": "boolean"
+          },
+          "readAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "archived": {
+            "type": "boolean"
+          },
+          "archivedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "type",
+          "entityType",
+          "entityId",
+          "title",
+          "body",
+          "metadata",
+          "read",
+          "readAt",
+          "archived",
+          "archivedAt",
+          "createdAt"
+        ]
+      },
+      "NotificationCountResponseDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "count"
+        ]
+      },
       "ReviewPaymentDto": {
         "type": "object",
         "properties": {
@@ -3338,6 +3554,53 @@
           "message"
         ]
       },
+      "InquiryResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "company": {
+            "type": "string",
+            "nullable": true
+          },
+          "inquiryType": {
+            "type": "string",
+            "nullable": true
+          },
+          "message": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "NEW",
+              "REVIEWED",
+              "ARCHIVED"
+            ],
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "company",
+          "inquiryType",
+          "message",
+          "status",
+          "createdAt"
+        ]
+      },
       "CreateCategoryDto": {
         "type": "object",
         "properties": {
@@ -3351,6 +3614,35 @@
         },
         "required": [
           "name"
+        ]
+      },
+      "CategoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "parentId",
+          "name",
+          "createdAt"
         ]
       },
       "UpdateCategoryDto": {
@@ -3626,6 +3918,49 @@
           "type"
         ]
       },
+      "StoreSectionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "COLLECTION",
+              "BANNER",
+              "TEXT_BLOCK"
+            ],
+            "type": "string"
+          },
+          "collectionId": {
+            "type": "string",
+            "nullable": true
+          },
+          "content": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "position": {
+            "type": "number"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "type",
+          "collectionId",
+          "content",
+          "position",
+          "createdAt"
+        ]
+      },
       "ReorderStoreSectionsDto": {
         "type": "object",
         "properties": {
@@ -3662,6 +3997,35 @@
             "type": "number"
           }
         }
+      },
+      "SuggestionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "severity": {
+            "enum": [
+              "info",
+              "warning",
+              "critical"
+            ],
+            "type": "string"
+          },
+          "titleKey": {
+            "type": "string"
+          },
+          "bodyParams": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "id",
+          "severity",
+          "titleKey",
+          "bodyParams"
+        ]
       },
       "RegisterCustomerDto": {
         "type": "object",

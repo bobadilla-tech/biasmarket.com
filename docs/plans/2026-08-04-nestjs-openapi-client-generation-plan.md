@@ -1,31 +1,31 @@
 # NestJS → OpenAPI → generated web client (proposal)
 
-**Phases 0 through 3 landed 2026-08-04** (across two sessions) — `@nestjs/swagger`
-wired under the SWC build, `collections` migrated to real response DTOs, spec
-emission working, one e2e contract test in place, a generated `openapi-fetch`
-client in `packages/types`, and `apps/web/features/collections/api` rewritten
-to use it instead of hand-written `apiFetch` + zod. See "Phase 0/1 execution
-notes" and "Phase 2/3 execution notes" below for what actually happened vs.
-what this doc assumed going in — several things (the `PluginMetadataGenerator`
-import path chief among them, and later the generated-client-vs-build-step
-question) turned out different from the plan as originally written. Phase 4
-(rollout to the remaining ~19 controllers) is still a forward-looking
-proposal, not yet executed — collections is the only migrated feature.
+**Phases 0 through 3 landed 2026-08-04** (across two sessions) —
+`@nestjs/swagger` wired under the SWC build, `collections` migrated to real
+response DTOs, spec emission working, one e2e contract test in place, a
+generated `openapi-fetch` client in `packages/types`, and
+`apps/web/features/collections/api` rewritten to use it instead of hand-written
+`apiFetch` + zod. See "Phase 0/1 execution notes" and "Phase 2/3 execution
+notes" below for what actually happened vs. what this doc assumed going in —
+several things (the `PluginMetadataGenerator` import path chief among them, and
+later the generated-client-vs-build-step question) turned out different from the
+plan as originally written. Phase 4 (rollout to the remaining ~19 controllers)
+is still a forward-looking proposal, not yet executed — collections is the only
+migrated feature.
 
 **Before picking up Phase 4, read
 [`2026-08-04-typed-sdk-client-followups.md`](2026-08-04-typed-sdk-client-followups.md)
-first — it now also documents the redo (executed 2026-08-04, same day, a
-later session), not just the spike plan.** Phase 3's `openapi-fetch`-direct
-approach, reviewed after landing, didn't reduce `features/<name>/api/*.ts`
-boilerplate the way this doc's Goal section promised — it was pushed back
-on, and `packages/types`/`features/collections` now run on
-[Orval](https://orval.dev) instead: `apiClient.collections.findAll(storeId)`,
-no `{data,error}` tuple, no `api/` folder for `collections` at all anymore.
-Everything below describing `openapi-fetch`, `createApiClient`, and
-`collections.api.ts` (Phase 2/3's original shape) is superseded by the
-follow-up doc's execution notes — kept here only as the historical record of
-how Phases 0/1 (the swagger-metadata/spec-emission plumbing, still
-current) were built.
+first — it now also documents the redo (executed 2026-08-04, same day, a later
+session), not just the spike plan.** Phase 3's `openapi-fetch`-direct approach,
+reviewed after landing, didn't reduce `features/<name>/api/*.ts` boilerplate the
+way this doc's Goal section promised — it was pushed back on, and
+`packages/types`/`features/collections` now run on [Orval](https://orval.dev)
+instead: `apiClient.collections.findAll(storeId)`, no `{data,error}` tuple, no
+`api/` folder for `collections` at all anymore. Everything below describing
+`openapi-fetch`, `createApiClient`, and `collections.api.ts` (Phase 2/3's
+original shape) is superseded by the follow-up doc's execution notes — kept here
+only as the historical record of how Phases 0/1 (the
+swagger-metadata/spec-emission plumbing, still current) were built.
 
 ## Context
 
@@ -391,82 +391,82 @@ What landed, matching Phase 3's scope: `packages/types` got `openapi-fetch`
 in `index.ts` replacing the two dead hand-written interfaces (confirmed zero
 import sites before deleting), and `apps/web/lib/api-client.ts` wraps it with
 the same `INTERNAL_API_URL`/`NEXT_PUBLIC_API_URL` + `credentials: "include"`
-logic `lib/api.ts`'s `apiFetch` always used. `collections.api.ts` was
-rewritten against the generated client; `queries/`, `mutations/`,
-`components/` were untouched, as planned. The money-convention / zod-drop
-decision (below) is written down in `apps/web/AGENTS.md`, as required.
+logic `lib/api.ts`'s `apiFetch` always used. `collections.api.ts` was rewritten
+against the generated client; `queries/`, `mutations/`, `components/` were
+untouched, as planned. The money-convention / zod-drop decision (below) is
+written down in `apps/web/AGENTS.md`, as required.
 
 **The one deliberate deviation from this doc, and why:** Phase 2 as written
 above specifies `openapi.json` and `generated/schema.d.ts` as **gitignored**,
 regenerated via turbo `dependsOn` (`api#generate:openapi` →
-`@biasmarket/types#generate`) with matching CI steps. Partway into
-implementing that — turbo tasks wired, CI jobs updated with dummy `S3_*`/
-`RESEND_*` env vars and `apps/api/**` added to the `web`/`types` path filters
-— **the user explicitly asked to commit both generated files instead**,
-specifically to avoid making the build pipeline more complicated than it
-already is (`web`'s typecheck/build no longer needing to transitively boot
-`apps/api` at all). That request was implemented in place of this doc's Phase
-2 design: `turbo.json` and `.github/workflows/ci.yml` were reverted to their
-pre-Phase-2 state (verified via `git diff` — zero diff on `ci.yml`), both
-`.gitignore` entries were removed, and both files are committed. Regenerating
-after a migrated feature's backend DTOs change is now a manual step
+`@biasmarket/types#generate`) with matching CI steps. Partway into implementing
+that — turbo tasks wired, CI jobs updated with dummy `S3_*`/ `RESEND_*` env vars
+and `apps/api/**` added to the `web`/`types` path filters — **the user
+explicitly asked to commit both generated files instead**, specifically to avoid
+making the build pipeline more complicated than it already is (`web`'s
+typecheck/build no longer needing to transitively boot `apps/api` at all). That
+request was implemented in place of this doc's Phase 2 design: `turbo.json` and
+`.github/workflows/ci.yml` were reverted to their pre-Phase-2 state (verified
+via `git diff` — zero diff on `ci.yml`), both `.gitignore` entries were removed,
+and both files are committed. Regenerating after a migrated feature's backend
+DTOs change is now a manual step
 (`pnpm --filter api generate:openapi && pnpm --filter @biasmarket/types generate`,
-documented in root `CLAUDE.md` and `apps/web/AGENTS.md`), not
-automatic — there's no CI check that catches a stale committed client if
-someone forgets. Treat this as the standing design now, not a stopgap; Phase
-4 planning should build on "committed, manually regenerated," not revisit the
-turbo/CI wiring described above.
+documented in root `CLAUDE.md` and `apps/web/AGENTS.md`), not automatic —
+there's no CI check that catches a stale committed client if someone forgets.
+Treat this as the standing design now, not a stopgap; Phase 4 planning should
+build on "committed, manually regenerated," not revisit the turbo/CI wiring
+described above.
 
 **Bugs/gotchas hit that this doc's Phase 2 text didn't anticipate:**
 
 - **`openapi-typescript` crashes under the repo's default `typescript@^7.0.2`**
   (`TypeError: Cannot read properties of undefined (reading
-  'createKeywordTypeNode')`, in its `ts.factory` usage) — this is exactly the
-  TS6/TS5-Compiler-API problem this doc's own Context section describes for
-  `apps/api`, resurfacing for `packages/types` because that package inherited
-  the root `^7.0.2` pin as its own `devDependency`. Fixed the same way
-  `apps/api` already does: gave `packages/types` its own real
-  `typescript@^5.9.3` devDependency, shadowing the root pin for just that
-  package via pnpm's per-package resolution. No root tooling touched.
+  'createKeywordTypeNode')`,
+  in its `ts.factory` usage) — this is exactly the TS6/TS5-Compiler-API problem
+  this doc's own Context section describes for `apps/api`, resurfacing for
+  `packages/types` because that package inherited the root `^7.0.2` pin as its
+  own `devDependency`. Fixed the same way `apps/api` already does: gave
+  `packages/types` its own real `typescript@^5.9.3` devDependency, shadowing the
+  root pin for just that package via pnpm's per-package resolution. No root
+  tooling touched.
 - **The response-DTO/money-convention interaction has a second failure mode**
-  beyond the one Phase 0/1's execution notes cover: in
-  `collections.api.ts`, `collectionsApi.list()` without an explicit
-  `Promise<Collection[]>` return type annotation let TypeScript infer the
-  return type as effectively `any` after the `if (error) throw; return data`
-  narrowing — the narrowing didn't propagate through the destructured
-  `{ data, error }` binding across the async function boundary the way a
-  direct `.data`/`.error` property access on the original `openapi-fetch`
-  result would have. This didn't surface as an error in `collections.api.ts`
-  itself; it surfaced three files downstream as `TS7006: implicit any` on
-  `.map((c) => ...)` in the two dashboard pages consuming
-  `useCollections()`. Every method on `collectionsApi` now has an explicit
-  return type for this reason — treat that as required for this
-  `{ data, error } = await client.METHOD(...)` pattern generally, not
-  optional style preference.
-- **Verification used a real HTTP client script, not a GUI browser.** The
-  `run` skill's browser-driving fallback (`chromium-cli`) turned out on this
-  machine to be a thin wrapper around AppleScript-driving the user's actual,
+  beyond the one Phase 0/1's execution notes cover: in `collections.api.ts`,
+  `collectionsApi.list()` without an explicit `Promise<Collection[]>` return
+  type annotation let TypeScript infer the return type as effectively `any`
+  after the `if (error) throw; return data` narrowing — the narrowing didn't
+  propagate through the destructured `{ data, error }` binding across the async
+  function boundary the way a direct `.data`/`.error` property access on the
+  original `openapi-fetch` result would have. This didn't surface as an error in
+  `collections.api.ts` itself; it surfaced three files downstream as
+  `TS7006: implicit any` on `.map((c) => ...)` in the two dashboard pages
+  consuming `useCollections()`. Every method on `collectionsApi` now has an
+  explicit return type for this reason — treat that as required for this
+  `{ data, error } = await client.METHOD(...)` pattern generally, not optional
+  style preference.
+- **Verification used a real HTTP client script, not a GUI browser.** The `run`
+  skill's browser-driving fallback (`chromium-cli`) turned out on this machine
+  to be a thin wrapper around AppleScript-driving the user's actual,
   already-running Google Chrome — not an isolated headless instance — so
   scripting it further was declined as inappropriate (it would have opened
-  tabs/run JS in the user's live browser session). Verification instead used
-  a standalone Node script importing the real `openapi-fetch` package +
-  generated schema, driving the actual running `apps/api` dev server through
-  the same signup → email-verify → sign-in → create-store → create/list
-  collection flow as the Phase 1 e2e test, confirming the generated client's
-  runtime behavior (auth cookie handling, request/response typing, JSON
-  parsing) end-to-end. `pnpm --filter web typecheck/test/build` all passed
-  separately. This is real-backend verification, not the same thing as
-  confirming the actual React components render correctly in a browser —
-  worth a manual click-through before this ships to production.
+  tabs/run JS in the user's live browser session). Verification instead used a
+  standalone Node script importing the real `openapi-fetch` package + generated
+  schema, driving the actual running `apps/api` dev server through the same
+  signup → email-verify → sign-in → create-store → create/list collection flow
+  as the Phase 1 e2e test, confirming the generated client's runtime behavior
+  (auth cookie handling, request/response typing, JSON parsing) end-to-end.
+  `pnpm --filter web typecheck/test/build` all passed separately. This is
+  real-backend verification, not the same thing as confirming the actual React
+  components render correctly in a browser — worth a manual click-through before
+  this ships to production.
 
 ### Phase 4 — rollout + docs
 
 - Update `apps/web/AGENTS.md`'s roadmap section: replace the old "revisit only
   if `@nestjs/swagger` + response DTOs land" deferred note with the real staged
   list — one controller module at a time, in the same order new features get
-  touched, not a dedicated migration sprint. (Partially done already — see
-  the OpenAPI note in `apps/web/AGENTS.md` — but the roadmap section itself,
-  the numbered list, hasn't been touched yet.)
+  touched, not a dedicated migration sprint. (Partially done already — see the
+  OpenAPI note in `apps/web/AGENTS.md` — but the roadmap section itself, the
+  numbered list, hasn't been touched yet.)
 - Update `docs/core/architecture.md` with the new generation pipeline (one
   paragraph). No turbo tasks to document — per the Phase 2/3 execution notes
   above, generation is a manual, committed-artifact step, not a build-graph

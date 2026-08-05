@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { categoriesApi } from "../api/categories.api";
+import { apiClient } from "@/lib/api-client";
 import { categoriesKeys } from "../queries/use-categories";
 import type { Category } from "../schemas/category.schema";
 
@@ -27,9 +27,15 @@ export function useEnsureCategory(
       if (existing) return existing;
 
       try {
-        return await categoriesApi.create(sid, trimmed, fallbackErrorMessage);
+        return await apiClient.categories.create(
+          sid,
+          { name: trimmed },
+          { fallbackErrorMessage },
+        );
       } catch {
-        const refreshed = await categoriesApi.list(sid, fallbackErrorMessage);
+        const refreshed = await apiClient.categories.findAll(sid, {
+          fallbackErrorMessage,
+        });
         queryClient.setQueryData(categoriesKeys.byStore(sid), refreshed);
         const resolved = refreshed.find((category) =>
           category.name.trim().toLowerCase() === normalized
