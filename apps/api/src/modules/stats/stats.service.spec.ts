@@ -8,7 +8,7 @@ describe("StatsService", () => {
   let service: StatsService;
   let prisma: {
     store: { findUnique: Mock };
-    orderPayment: { aggregate: Mock };
+    orderPayment: { aggregate: Mock; groupBy: Mock };
     order: { groupBy: Mock; findMany: Mock };
     notification: { count: Mock };
     orderItem: { groupBy: Mock };
@@ -21,7 +21,7 @@ describe("StatsService", () => {
   beforeEach(async () => {
     prisma = {
       store: { findUnique: vi.fn() },
-      orderPayment: { aggregate: vi.fn() },
+      orderPayment: { aggregate: vi.fn(), groupBy: vi.fn() },
       order: { groupBy: vi.fn(), findMany: vi.fn() },
       notification: { count: vi.fn() },
       orderItem: { groupBy: vi.fn() },
@@ -254,6 +254,85 @@ describe("StatsService", () => {
         name: "Widget",
         unitsSold: 12,
       }]);
+    });
+  });
+
+  describe("getPaymentMethodsBreakdown", () => {
+    const from = new Date("2026-08-01T00:00:00.000Z");
+    const to = new Date("2026-08-16T00:00:00.000Z");
+
+    beforeEach(() => {
+      stubOwnedStore();
+    });
+
+    it("aggregates active-order payments scoped to store and date range, zero-filling known methods", async () => {
+      prisma.orderPayment.groupBy.mockResolvedValue([
+        { method: "YAPE", _sum: { amount: 60 }, _count: 2 },
+        { method: "CASH", _sum: { amount: 40 }, _count: 1 },
+      ]);
+
+      const result = await service.getPaymentMethodsBreakdown(
+        storeId,
+        ownerId,
+        from,
+        to,
+      );
+
+      expect(prisma.orderPayment.groupBy).toHaveBeenCalledWith({
+        by: ["method"],
+        where: {
+          storeId,
+          createdAt: { gte: from, lt: to },
+          order: { status: "ACTIVE" },
+        },
+        _sum: { amount: true },
+        _count: true,
+      });
+
+      expect(result.totalAmount).toBe(100);
+      expect(result.totalCount).toBe(3);
+      expect(result.byMethod).toEqual([
+        { method: "YAPE", amount: 60, count: 2, percentage: 60 },
+        { method: "PLIN", amount: 0, count: 0, percentage: 0 },
+        { method: "TRANSFER", amount: 0, count: 0, percentage: 0 },
+        { method: "CASH", amount: 40, count: 1, percentage: 40 },
+      ]);
+    });
+
+    it("returns zero totals when there are no payments in the range", async () => {
+      prisma.orderPayment.groupBy.mockResolvedValue([]);
+
+      const result = await service.getPaymentMethodsBreakdown(
+        storeId,
+        ownerId,
+        from,
+        to,
+      );
+
+      expect(result.totalAmount).toBe(0);
+      expect(result.totalCount).toBe(0);
+      expect(result.byMethod.every((row) => row.amount === 0)).toBe(true);
+    });
+
+    it("keeps legacy rows whose method is outside the known set", async () => {
+      prisma.orderPayment.groupBy.mockResolvedValue([
+        { method: null, _sum: { amount: 25 }, _count: 1 },
+      ]);
+
+      const result = await service.getPaymentMethodsBreakdown(
+        storeId,
+        ownerId,
+        from,
+        to,
+      );
+
+      expect(result.byMethod).toEqual([
+        { method: "YAPE", amount: 0, count: 0, percentage: 0 },
+        { method: "PLIN", amount: 0, count: 0, percentage: 0 },
+        { method: "TRANSFER", amount: 0, count: 0, percentage: 0 },
+        { method: "CASH", amount: 0, count: 0, percentage: 0 },
+        { method: null, amount: 25, count: 1, percentage: 100 },
+      ]);
     });
   });
 });

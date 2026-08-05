@@ -14,6 +14,7 @@ import { LoadingState } from "@/components/shared/loading-state";
 import { ErrorState } from "@/components/shared/error-state";
 import { EmptyState } from "@/components/shared/empty-state";
 import { useDashboardStore } from "@/features/stores";
+import { PaymentMethodsBreakdown } from "@/features/stats";
 import {
   ConfirmTransitionDialog,
   formatOrderDate,
@@ -247,6 +248,11 @@ export function PaymentsPageClient() {
               )}
           </CardContent>
         </Card>
+
+        <PaymentMethodsBreakdown
+          storeId={storeId}
+          currency={store?.defaultCurrency ?? "PEN"}
+        />
       </div>
 
       <ConfirmTransitionDialog

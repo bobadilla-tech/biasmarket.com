@@ -406,7 +406,26 @@
       "pending": "Pending",
       "progress": "Paid %"
     },
-    "contactBuyer": "Contact buyer"
+    "contactBuyer": "Contact buyer",
+    "breakdownTitle": "Revenue by payment method",
+    "breakdownSubtitle": "Money received per payment method in the selected period",
+    "unknownMethod": "Other",
+    "loadError": "Couldn't load the payment breakdown.",
+    "range": {
+      "today": "Today",
+      "week": "This week",
+      "month": "This month",
+      "custom": "Custom"
+    },
+    "customFrom": "From",
+    "customTo": "To",
+    "summary": {
+      "totalReceived": "Total received",
+      "totalPayments": "Payments",
+      "period": "Period"
+    },
+    "transactions": "{count} payments",
+    "noData": "No payments in this period yet."
   },
   "shipping": {
     "title": "Shipping",

@@ -20,3 +20,18 @@ export interface AnalyticsResult {
   buckets: AnalyticsBucket[];
   topProducts: AnalyticsTopProduct[];
 }
+
+export interface PaymentMethodBreakdownRow {
+  method: "YAPE" | "PLIN" | "TRANSFER" | "CASH" | null;
+  amount: number;
+  count: number;
+  percentage: number;
+}
+
+export interface PaymentMethodsBreakdown {
+  from: string;
+  to: string;
+  totalAmount: number;
+  totalCount: number;
+  byMethod: PaymentMethodBreakdownRow[];
+}

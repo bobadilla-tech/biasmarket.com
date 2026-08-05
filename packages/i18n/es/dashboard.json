@@ -406,7 +406,26 @@
       "pending": "Pendiente",
       "progress": "% pagado"
     },
-    "contactBuyer": "Contactar comprador"
+    "contactBuyer": "Contactar comprador",
+    "breakdownTitle": "Ingresos por método de pago",
+    "breakdownSubtitle": "Dinero recibido por método de pago en el período seleccionado",
+    "unknownMethod": "Otro",
+    "loadError": "No se pudo cargar el desglose de pagos.",
+    "range": {
+      "today": "Hoy",
+      "week": "Esta semana",
+      "month": "Este mes",
+      "custom": "Personalizado"
+    },
+    "customFrom": "Desde",
+    "customTo": "Hasta",
+    "summary": {
+      "totalReceived": "Total recibido",
+      "totalPayments": "Pagos",
+      "period": "Período"
+    },
+    "transactions": "{count} pagos",
+    "noData": "No hay pagos en este período todavía."
   },
   "shipping": {
     "title": "Envíos",
