@@ -328,7 +328,13 @@ export class OrderController {
     if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
       throw new BadRequestException("Monto inválido");
     }
-    if (numericAmount > order.pendingAmount) {
+    // Belt-and-suspenders on top of the Decimal-space fix in
+    // `computePaymentSummary`: money boundary comparisons compare in cents,
+    // not raw floats, so a residual float-conversion artifact in
+    // `numericAmount`/`pendingAmount` can never reject (or accept) a payment
+    // that's actually exact to the cent.
+    const toCents = (n: number) => Math.round(n * 100);
+    if (toCents(numericAmount) > toCents(order.pendingAmount)) {
       throw new BadRequestException("El abono excede el saldo pendiente");
     }
     const PAYMENT_METHODS: PaymentMethodType[] = [
@@ -342,9 +348,10 @@ export class OrderController {
     }
 
     const nextPaid = order.paidAmount + numericAmount;
-    const nextStatus: PaymentStatus = nextPaid >= Number(order.requiredAmount)
-      ? "VERIFIED"
-      : "PARTIALLY_PAID";
+    const nextStatus: PaymentStatus =
+      toCents(nextPaid) >= toCents(Number(order.requiredAmount))
+        ? "VERIFIED"
+        : "PARTIALLY_PAID";
 
     let imageUrl: string | null = null;
     if (file) {

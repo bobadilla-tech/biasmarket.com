@@ -1,6 +1,7 @@
 import { Test, type TestingModule } from "@nestjs/testing";
 import { ForbiddenException, NotFoundException } from "@nestjs/common";
 import { type Mock, vi } from "vitest";
+import { Prisma } from "@biasmarket/db";
 import { StatsService } from "./stats.service.js";
 import { PrismaService } from "../../prisma/prisma.service.js";
 
@@ -124,8 +125,8 @@ describe("StatsService", () => {
       prisma.order.findMany.mockResolvedValue([
         {
           id: "order-1",
-          requiredAmount: 100,
-          payments: [{ amount: 40 }],
+          requiredAmount: new Prisma.Decimal(100),
+          payments: [{ amount: new Prisma.Decimal(40) }],
         },
       ]);
 

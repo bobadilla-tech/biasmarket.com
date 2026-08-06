@@ -3,10 +3,12 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import type { FulfillmentStatus, PaymentStatus, Prisma } from "@biasmarket/db";
+import { Prisma } from "@biasmarket/db";
+import type { FulfillmentStatus, PaymentStatus } from "@biasmarket/db";
 import { PrismaService } from "../../prisma/prisma.service.js";
 import { buildBuckets } from "./analytics-buckets.js";
 import type { AnalyticsRange, AnalyticsResult } from "./analytics.types.js";
+import { withPaymentSummary } from "../../common/payment-summary.js";
 
 const TOP_PRODUCTS_LIMIT = 5;
 
@@ -41,25 +43,6 @@ export class StatsService {
       throw new ForbiddenException("No sos dueño de esta store");
     }
     return store;
-  }
-
-  private withPaymentSummary<
-    T extends {
-      requiredAmount: Prisma.Decimal;
-      payments?: { amount: Prisma.Decimal }[];
-    },
-  >(order: T) {
-    const paid = (order.payments ?? []).reduce(
-      (sum, payment) => sum + Number(payment.amount),
-      0,
-    );
-    const required = Number(order.requiredAmount);
-    return {
-      ...order,
-      paidAmount: paid,
-      pendingAmount: Math.max(required - paid, 0),
-      paidPercentage: required > 0 ? Math.min((paid / required) * 100, 100) : 0,
-    };
   }
 
   async getOverview(storeId: string, userId: string) {
@@ -130,9 +113,7 @@ export class StatsService {
       paymentStatusCounts,
       fulfillmentStatusCounts,
       lowStockCount,
-      recentOrders: recentOrdersRaw.map((order) =>
-        this.withPaymentSummary(order)
-      ),
+      recentOrders: recentOrdersRaw.map((order) => withPaymentSummary(order)),
     };
   }
 
@@ -195,9 +176,15 @@ export class StatsService {
         .filter((order) => order.paymentStatus === "VERIFIED")
         .reduce(
           (sum, order) =>
-            sum + order.payments.reduce((s, p) => s + Number(p.amount), 0),
-          0,
-        );
+            sum.plus(
+              order.payments.reduce(
+                (s, p) => s.plus(p.amount),
+                new Prisma.Decimal(0),
+              ),
+            ),
+          new Prisma.Decimal(0),
+        )
+        .toNumber();
 
       const customersInBucket = new Set(
         ordersInBucket.map((order) => order.customerId).filter((

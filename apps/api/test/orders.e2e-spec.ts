@@ -273,4 +273,77 @@ describe("orders + checkout (e2e)", () => {
     expect(cancelRes.body.status).toBe("CANCELLED");
     expect(cancelRes.body.paymentStatus).toBe("CANCELLED");
   });
+
+  // Regression coverage for the float-precision bug in
+  // `OrderRepository.withPaymentSummary` (see
+  // docs/plans/2026-08-06-order-payment-precision-bug-fix-plan.md). Splits
+  // payment in two so it actually exercises the Decimal-subtraction path a
+  // single full payment never touches.
+  it("accepts a second partial payment for exactly the displayed pendingAmount on a 99.99 order and reaches VERIFIED", async () => {
+    const precisionProductRes = await request(app.getHttpServer())
+      .post(`/stores/${storeId}/products`)
+      .set("Cookie", sessionCookie)
+      .send({
+        name: "E2E Precision Product",
+        price: 33.33,
+        currency: "PEN",
+        stock: 100,
+      })
+      .expect(201);
+    const precisionProductId = precisionProductRes.body.id;
+    const precisionVariantId = precisionProductRes.body.variants[0].id;
+    await request(app.getHttpServer())
+      .patch(`/stores/${storeId}/products/${precisionProductId}/publish`)
+      .set("Cookie", sessionCookie)
+      .expect(200);
+
+    const checkoutRes = await request(app.getHttpServer())
+      .post(`/stores/${storeSlug}/checkout`)
+      .send({
+        deliveryMethodType: "PICKUP",
+        customerPhone: "+51955555555",
+        items: [
+          { productId: precisionProductId, variantId: precisionVariantId, quantity: 3 },
+        ],
+      })
+      .expect(201);
+    const orderId = checkoutRes.body.order.id as string;
+    orderIds.push(orderId);
+    expect(checkoutRes.body.order.requiredAmount).toBe("99.99");
+
+    const firstPaymentRes = await request(app.getHttpServer())
+      .post(`/stores/${storeId}/orders/${orderId}/payments`)
+      .set("Cookie", sessionCookie)
+      .field("amount", "40.00")
+      .field("method", "YAPE")
+      .expect(201);
+    expect(firstPaymentRes.body.paymentStatus).toBe("PARTIALLY_PAID");
+    // The exact regression value: under the old Number-subtraction bug this
+    // was `59.989999999999995`, not `59.99`.
+    expect(firstPaymentRes.body.pendingAmount).toBe(59.99);
+
+    const pendingAmount = firstPaymentRes.body.pendingAmount as number;
+    const secondPaymentRes = await request(app.getHttpServer())
+      .post(`/stores/${storeId}/orders/${orderId}/payments`)
+      .set("Cookie", sessionCookie)
+      .field("amount", String(pendingAmount))
+      .field("method", "TRANSFER")
+      .expect(201);
+
+    expect(secondPaymentRes.body.paymentStatus).toBe("VERIFIED");
+    expect(secondPaymentRes.body.pendingAmount).toBe(0);
+
+    // afterAll's cleanup only tracks the single beforeAll-created `productId`
+    // — this order's items reference `precisionProductId` instead, so they'd
+    // otherwise survive and block afterAll's `product.deleteMany` with a
+    // dangling `OrderItem_productId_fkey`.
+    await prisma.orderItem.deleteMany({ where: { orderId } });
+    await prisma.orderPayment.deleteMany({ where: { orderId } });
+    await prisma.order.deleteMany({ where: { id: orderId } });
+    orderIds.splice(orderIds.indexOf(orderId), 1);
+    await prisma.productVariant.deleteMany({
+      where: { productId: precisionProductId },
+    });
+    await prisma.product.deleteMany({ where: { id: precisionProductId } });
+  });
 });

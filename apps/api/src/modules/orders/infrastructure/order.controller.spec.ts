@@ -126,4 +126,24 @@ describe("OrderController.addPayment", () => {
       "approve",
     );
   });
+
+  it("accepts a payment for exactly the displayed pendingAmount even when it's a float-trap value like 59.99", async () => {
+    orders.findRowByIdForStore
+      .mockResolvedValueOnce({
+        currency: "PEN",
+        paidAmount: 40,
+        pendingAmount: 59.99,
+        requiredAmount: "99.99",
+      })
+      .mockResolvedValueOnce(fullOrderFixture);
+
+    await controller.addPayment(storeId, orderId, session, "59.99", "YAPE");
+
+    expect(reviewPayment.execute).toHaveBeenCalledWith(
+      orderId,
+      storeId,
+      userId,
+      "approve",
+    );
+  });
 });

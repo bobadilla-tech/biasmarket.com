@@ -1,6 +1,7 @@
 import { Test, type TestingModule } from "@nestjs/testing";
 import { BadRequestException, ForbiddenException } from "@nestjs/common";
 import { type Mock, vi } from "vitest";
+import { Prisma } from "@biasmarket/db";
 import { AdvanceFulfillmentUseCase } from "./advance-fulfillment.usecase.js";
 import { OrderRepository } from "../infrastructure/order.repository.js";
 import { InvalidOrderTransitionError } from "../domain/order-status.vo.js";
@@ -16,6 +17,7 @@ describe("AdvanceFulfillmentUseCase", () => {
   const ownerId = "user-1";
   const storeId = "store-1";
   const orderId = "order-1";
+  const requiredAmount = new Prisma.Decimal("100.00");
 
   beforeEach(async () => {
     prisma = {
@@ -52,6 +54,7 @@ describe("AdvanceFulfillmentUseCase", () => {
       storeId,
       paymentStatus: "PENDING_PAYMENT",
       fulfillmentStatus: "ORDERING",
+      requiredAmount,
       items: [],
     });
 
@@ -66,6 +69,7 @@ describe("AdvanceFulfillmentUseCase", () => {
       storeId,
       paymentStatus: "VERIFIED",
       fulfillmentStatus: "ORDERING",
+      requiredAmount,
       items: [],
     });
     prisma.order.update.mockResolvedValue({
@@ -87,6 +91,7 @@ describe("AdvanceFulfillmentUseCase", () => {
       storeId,
       paymentStatus: "VERIFIED",
       fulfillmentStatus: "ORDERING",
+      requiredAmount,
       items: [],
     });
 
