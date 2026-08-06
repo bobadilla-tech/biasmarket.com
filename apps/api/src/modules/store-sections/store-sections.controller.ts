@@ -11,9 +11,9 @@ import {
 import { AuthGuard, Session } from "@thallesp/nestjs-better-auth";
 import type { UserSession } from "@thallesp/nestjs-better-auth";
 import { StoreSectionsService } from "./store-sections.service.js";
-import type { CreateStoreSectionDto } from "./dto/create-store-section.dto.js";
-import type { UpdateStoreSectionDto } from "./dto/update-store-section.dto.js";
-import type { ReorderStoreSectionsDto } from "./dto/reorder-store-sections.dto.js";
+import { CreateStoreSectionDto } from "./dto/create-store-section.dto.js";
+import { UpdateStoreSectionDto } from "./dto/update-store-section.dto.js";
+import { ReorderStoreSectionsDto } from "./dto/reorder-store-sections.dto.js";
 import type { StoreSectionResponseDto } from "./dto/store-section-response.dto.js";
 
 interface StoreSectionRow {

@@ -11,7 +11,7 @@ import { AuthGuard, Public, Session } from "@thallesp/nestjs-better-auth";
 import type { UserSession } from "@thallesp/nestjs-better-auth";
 import { ApiQuery } from "@nestjs/swagger";
 import { PaymentConfigService } from "./payment-config.service.js";
-import type { UpsertPaymentMethodDto } from "./dto/upsert-payment-method.dto.js";
+import { UpsertPaymentMethodDto } from "./dto/upsert-payment-method.dto.js";
 import type { PaymentMethodConfigResponseDto } from "./dto/payment-method-response.dto.js";
 
 interface PaymentMethodConfigRow {

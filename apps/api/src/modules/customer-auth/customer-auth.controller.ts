@@ -16,11 +16,11 @@ import { CustomerAuthService } from "./customer-auth.service.js";
 import { CustomerSessionGuard } from "./customer-session.guard.js";
 import { OriginGuard } from "./origin.guard.js";
 import { CustomerSession } from "./customer-session.decorator.js";
-import type { RegisterCustomerDto } from "./dto/register-customer.dto.js";
-import type { LoginCustomerDto } from "./dto/login-customer.dto.js";
-import type { ChangeCustomerPasswordDto } from "./dto/change-password.dto.js";
-import type { UpdateCustomerProfileDto } from "./dto/update-customer-profile.dto.js";
-import type { ForgotPasswordDto } from "./dto/forgot-password.dto.js";
+import { RegisterCustomerDto } from "./dto/register-customer.dto.js";
+import { LoginCustomerDto } from "./dto/login-customer.dto.js";
+import { ChangeCustomerPasswordDto } from "./dto/change-password.dto.js";
+import { UpdateCustomerProfileDto } from "./dto/update-customer-profile.dto.js";
+import { ForgotPasswordDto } from "./dto/forgot-password.dto.js";
 import {
   CUSTOMER_SESSION_COOKIE,
   CUSTOMER_SESSION_TTL_MS,

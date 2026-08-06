@@ -10,7 +10,7 @@ import {
 import { AuthGuard, Public, Roles } from "@thallesp/nestjs-better-auth";
 import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
 import { ContactService } from "./contact.service.js";
-import type { CreateInquiryDto } from "./dto/create-inquiry.dto.js";
+import { CreateInquiryDto } from "./dto/create-inquiry.dto.js";
 import type { InquiryResponseDto } from "./dto/inquiry-response.dto.js";
 
 interface InquiryRow {
