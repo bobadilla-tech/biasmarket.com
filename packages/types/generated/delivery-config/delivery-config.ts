@@ -5,71 +5,55 @@
  * Bias Market — niche-first store builder API
  * OpenAPI spec version: 1.0
  */
-import type {
-  DeliveryMethodConfigResponseDto
-} from '../api.schemas.js';
+import type { DeliveryMethodConfigResponseDto } from "../api.schemas.js";
 
-import { customFetch } from '../../http.js';
+import { customFetch } from "../../http.js";
 
-export const getFindAllUrl = (storeId: string,) => {
+export const getFindAllUrl = (storeId: string) => {
+  return `/stores/${storeId}/delivery-methods`;
+};
 
+export const findAll = async (
+  storeId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DeliveryMethodConfigResponseDto[]> => {
+  return customFetch<DeliveryMethodConfigResponseDto[]>(
+    getFindAllUrl(storeId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
 
+export const getUpsertUrl = (storeId: string) => {
+  return `/stores/${storeId}/delivery-methods`;
+};
 
-
-  return `/stores/${storeId}/delivery-methods`
-}
-
-export const findAll = async (storeId: string, options?: Parameters<typeof customFetch>[1]): Promise<DeliveryMethodConfigResponseDto[]> => {
-
-  return customFetch<DeliveryMethodConfigResponseDto[]>(getFindAllUrl(storeId),
-  {
+export const upsert = async (
+  storeId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DeliveryMethodConfigResponseDto> => {
+  return customFetch<DeliveryMethodConfigResponseDto>(getUpsertUrl(storeId), {
     ...options,
-    method: 'GET'
+    method: "POST",
+  });
+};
 
+export const getRemoveUrl = (storeId: string, type: string) => {
+  return `/stores/${storeId}/delivery-methods/${type}`;
+};
 
-  }
-);}
-
-
-export const getUpsertUrl = (storeId: string,) => {
-
-
-
-
-  return `/stores/${storeId}/delivery-methods`
-}
-
-export const upsert = async (storeId: string, options?: Parameters<typeof customFetch>[1]): Promise<DeliveryMethodConfigResponseDto> => {
-
-  return customFetch<DeliveryMethodConfigResponseDto>(getUpsertUrl(storeId),
-  {
-    ...options,
-    method: 'POST'
-
-
-  }
-);}
-
-
-export const getRemoveUrl = (storeId: string,
-    type: string,) => {
-
-
-
-
-  return `/stores/${storeId}/delivery-methods/${type}`
-}
-
-export const remove = async (storeId: string,
-    type: string, options?: Parameters<typeof customFetch>[1]): Promise<DeliveryMethodConfigResponseDto> => {
-
-  return customFetch<DeliveryMethodConfigResponseDto>(getRemoveUrl(storeId,type),
-  {
-    ...options,
-    method: 'DELETE'
-
-
-  }
-);}
-
-
+export const remove = async (
+  storeId: string,
+  type: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DeliveryMethodConfigResponseDto> => {
+  return customFetch<DeliveryMethodConfigResponseDto>(
+    getRemoveUrl(storeId, type),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};

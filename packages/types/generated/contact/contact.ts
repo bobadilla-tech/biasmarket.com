@@ -5,69 +5,46 @@
  * Bias Market — niche-first store builder API
  * OpenAPI spec version: 1.0
  */
-import type {
-  InquiryResponseDto
-} from '../api.schemas.js';
+import type { InquiryResponseDto } from "../api.schemas.js";
 
-import { customFetch } from '../../http.js';
+import { customFetch } from "../../http.js";
 
 export const getCreateUrl = () => {
+  return `/contact`;
+};
 
-
-
-
-  return `/contact`
-}
-
-export const create = async ( options?: Parameters<typeof customFetch>[1]): Promise<InquiryResponseDto> => {
-
-  return customFetch<InquiryResponseDto>(getCreateUrl(),
-  {
+export const create = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<InquiryResponseDto> => {
+  return customFetch<InquiryResponseDto>(getCreateUrl(), {
     ...options,
-    method: 'POST'
-
-
-  }
-);}
-
+    method: "POST",
+  });
+};
 
 export const getFindAllUrl = () => {
+  return `/contact`;
+};
 
-
-
-
-  return `/contact`
-}
-
-export const findAll = async ( options?: Parameters<typeof customFetch>[1]): Promise<InquiryResponseDto[]> => {
-
-  return customFetch<InquiryResponseDto[]>(getFindAllUrl(),
-  {
+export const findAll = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<InquiryResponseDto[]> => {
+  return customFetch<InquiryResponseDto[]>(getFindAllUrl(), {
     ...options,
-    method: 'GET'
+    method: "GET",
+  });
+};
 
+export const getMarkReviewedUrl = (id: string) => {
+  return `/contact/${id}/review`;
+};
 
-  }
-);}
-
-
-export const getMarkReviewedUrl = (id: string,) => {
-
-
-
-
-  return `/contact/${id}/review`
-}
-
-export const markReviewed = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<InquiryResponseDto> => {
-
-  return customFetch<InquiryResponseDto>(getMarkReviewedUrl(id),
-  {
+export const markReviewed = async (
+  id: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<InquiryResponseDto> => {
+  return customFetch<InquiryResponseDto>(getMarkReviewedUrl(id), {
     ...options,
-    method: 'PATCH'
-
-
-  }
-);}
-
-
+    method: "PATCH",
+  });
+};

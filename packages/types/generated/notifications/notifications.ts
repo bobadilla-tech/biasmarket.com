@@ -8,121 +8,104 @@
 import type {
   NotificationCountResponseDto,
   NotificationResponseDto,
-  NotificationsControllerfindAllParams
-} from '../api.schemas.js';
+  NotificationsControllerfindAllParams,
+} from "../api.schemas.js";
 
-import { customFetch } from '../../http.js';
+import { customFetch } from "../../http.js";
 
-export const getFindAllUrl = (storeId: string,
-    params?: NotificationsControllerfindAllParams,) => {
+export const getFindAllUrl = (
+  storeId: string,
+  params?: NotificationsControllerfindAllParams,
+) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
+      normalizedParams.append(key, value === null ? "null" : String(value));
     }
   });
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/stores/${storeId}/notifications?${stringifiedParams}` : `/stores/${storeId}/notifications`
-}
+  return stringifiedParams.length > 0
+    ? `/stores/${storeId}/notifications?${stringifiedParams}`
+    : `/stores/${storeId}/notifications`;
+};
 
-export const findAll = async (storeId: string,
-    params?: NotificationsControllerfindAllParams, options?: Parameters<typeof customFetch>[1]): Promise<NotificationResponseDto[]> => {
+export const findAll = async (
+  storeId: string,
+  params?: NotificationsControllerfindAllParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<NotificationResponseDto[]> => {
+  return customFetch<NotificationResponseDto[]>(
+    getFindAllUrl(storeId, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
 
-  return customFetch<NotificationResponseDto[]>(getFindAllUrl(storeId,params),
-  {
+export const getUnreadCountUrl = (storeId: string) => {
+  return `/stores/${storeId}/notifications/unread-count`;
+};
+
+export const unreadCount = async (
+  storeId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<NotificationCountResponseDto> => {
+  return customFetch<NotificationCountResponseDto>(getUnreadCountUrl(storeId), {
     ...options,
-    method: 'GET'
+    method: "GET",
+  });
+};
 
+export const getMarkReadUrl = (storeId: string, notificationId: string) => {
+  return `/stores/${storeId}/notifications/${notificationId}/read`;
+};
 
-  }
-);}
+export const markRead = async (
+  storeId: string,
+  notificationId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<NotificationResponseDto> => {
+  return customFetch<NotificationResponseDto>(
+    getMarkReadUrl(storeId, notificationId),
+    {
+      ...options,
+      method: "PATCH",
+    },
+  );
+};
 
+export const getMarkAllReadUrl = (storeId: string) => {
+  return `/stores/${storeId}/notifications/read-all`;
+};
 
-export const getUnreadCountUrl = (storeId: string,) => {
-
-
-
-
-  return `/stores/${storeId}/notifications/unread-count`
-}
-
-export const unreadCount = async (storeId: string, options?: Parameters<typeof customFetch>[1]): Promise<NotificationCountResponseDto> => {
-
-  return customFetch<NotificationCountResponseDto>(getUnreadCountUrl(storeId),
-  {
+export const markAllRead = async (
+  storeId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<NotificationCountResponseDto> => {
+  return customFetch<NotificationCountResponseDto>(getMarkAllReadUrl(storeId), {
     ...options,
-    method: 'GET'
+    method: "POST",
+  });
+};
 
+export const getArchiveUrl = (storeId: string, notificationId: string) => {
+  return `/stores/${storeId}/notifications/${notificationId}/archive`;
+};
 
-  }
-);}
-
-
-export const getMarkReadUrl = (storeId: string,
-    notificationId: string,) => {
-
-
-
-
-  return `/stores/${storeId}/notifications/${notificationId}/read`
-}
-
-export const markRead = async (storeId: string,
-    notificationId: string, options?: Parameters<typeof customFetch>[1]): Promise<NotificationResponseDto> => {
-
-  return customFetch<NotificationResponseDto>(getMarkReadUrl(storeId,notificationId),
-  {
-    ...options,
-    method: 'PATCH'
-
-
-  }
-);}
-
-
-export const getMarkAllReadUrl = (storeId: string,) => {
-
-
-
-
-  return `/stores/${storeId}/notifications/read-all`
-}
-
-export const markAllRead = async (storeId: string, options?: Parameters<typeof customFetch>[1]): Promise<NotificationCountResponseDto> => {
-
-  return customFetch<NotificationCountResponseDto>(getMarkAllReadUrl(storeId),
-  {
-    ...options,
-    method: 'POST'
-
-
-  }
-);}
-
-
-export const getArchiveUrl = (storeId: string,
-    notificationId: string,) => {
-
-
-
-
-  return `/stores/${storeId}/notifications/${notificationId}/archive`
-}
-
-export const archive = async (storeId: string,
-    notificationId: string, options?: Parameters<typeof customFetch>[1]): Promise<NotificationResponseDto> => {
-
-  return customFetch<NotificationResponseDto>(getArchiveUrl(storeId,notificationId),
-  {
-    ...options,
-    method: 'PATCH'
-
-
-  }
-);}
-
-
+export const archive = async (
+  storeId: string,
+  notificationId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<NotificationResponseDto> => {
+  return customFetch<NotificationResponseDto>(
+    getArchiveUrl(storeId, notificationId),
+    {
+      ...options,
+      method: "PATCH",
+    },
+  );
+};

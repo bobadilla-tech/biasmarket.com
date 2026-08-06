@@ -5,93 +5,64 @@
  * Bias Market — niche-first store builder API
  * OpenAPI spec version: 1.0
  */
-import type {
-  PickupPointResponseDto
-} from '../api.schemas.js';
+import type { PickupPointResponseDto } from "../api.schemas.js";
 
-import { customFetch } from '../../http.js';
+import { customFetch } from "../../http.js";
 
-export const getFindAllUrl = (storeId: string,) => {
+export const getFindAllUrl = (storeId: string) => {
+  return `/stores/${storeId}/pickup-points`;
+};
 
-
-
-
-  return `/stores/${storeId}/pickup-points`
-}
-
-export const findAll = async (storeId: string, options?: Parameters<typeof customFetch>[1]): Promise<PickupPointResponseDto[]> => {
-
-  return customFetch<PickupPointResponseDto[]>(getFindAllUrl(storeId),
-  {
+export const findAll = async (
+  storeId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PickupPointResponseDto[]> => {
+  return customFetch<PickupPointResponseDto[]>(getFindAllUrl(storeId), {
     ...options,
-    method: 'GET'
+    method: "GET",
+  });
+};
 
+export const getCreateUrl = (storeId: string) => {
+  return `/stores/${storeId}/pickup-points`;
+};
 
-  }
-);}
-
-
-export const getCreateUrl = (storeId: string,) => {
-
-
-
-
-  return `/stores/${storeId}/pickup-points`
-}
-
-export const create = async (storeId: string, options?: Parameters<typeof customFetch>[1]): Promise<PickupPointResponseDto> => {
-
-  return customFetch<PickupPointResponseDto>(getCreateUrl(storeId),
-  {
+export const create = async (
+  storeId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PickupPointResponseDto> => {
+  return customFetch<PickupPointResponseDto>(getCreateUrl(storeId), {
     ...options,
-    method: 'POST'
+    method: "POST",
+  });
+};
 
+export const getUpdateUrl = (storeId: string, pointId: string) => {
+  return `/stores/${storeId}/pickup-points/${pointId}`;
+};
 
-  }
-);}
-
-
-export const getUpdateUrl = (storeId: string,
-    pointId: string,) => {
-
-
-
-
-  return `/stores/${storeId}/pickup-points/${pointId}`
-}
-
-export const update = async (storeId: string,
-    pointId: string, options?: Parameters<typeof customFetch>[1]): Promise<PickupPointResponseDto> => {
-
-  return customFetch<PickupPointResponseDto>(getUpdateUrl(storeId,pointId),
-  {
+export const update = async (
+  storeId: string,
+  pointId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PickupPointResponseDto> => {
+  return customFetch<PickupPointResponseDto>(getUpdateUrl(storeId, pointId), {
     ...options,
-    method: 'PATCH'
+    method: "PATCH",
+  });
+};
 
+export const getRemoveUrl = (storeId: string, pointId: string) => {
+  return `/stores/${storeId}/pickup-points/${pointId}`;
+};
 
-  }
-);}
-
-
-export const getRemoveUrl = (storeId: string,
-    pointId: string,) => {
-
-
-
-
-  return `/stores/${storeId}/pickup-points/${pointId}`
-}
-
-export const remove = async (storeId: string,
-    pointId: string, options?: Parameters<typeof customFetch>[1]): Promise<PickupPointResponseDto> => {
-
-  return customFetch<PickupPointResponseDto>(getRemoveUrl(storeId,pointId),
-  {
+export const remove = async (
+  storeId: string,
+  pointId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PickupPointResponseDto> => {
+  return customFetch<PickupPointResponseDto>(getRemoveUrl(storeId, pointId), {
     ...options,
-    method: 'DELETE'
-
-
-  }
-);}
-
-
+    method: "DELETE",
+  });
+};

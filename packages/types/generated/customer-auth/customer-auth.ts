@@ -8,148 +8,105 @@
 import type {
   CustomerProfileResponseDto,
   OkResponseDto,
-  UpdateCustomerProfileResponseDto
-} from '../api.schemas.js';
+  UpdateCustomerProfileResponseDto,
+} from "../api.schemas.js";
 
-import { customFetch } from '../../http.js';
+import { customFetch } from "../../http.js";
 
-export const getRegisterUrl = (slug: string,) => {
+export const getRegisterUrl = (slug: string) => {
+  return `/stores/${slug}/account/register`;
+};
 
-
-
-
-  return `/stores/${slug}/account/register`
-}
-
-export const register = async (slug: string, options?: Parameters<typeof customFetch>[1]): Promise<OkResponseDto> => {
-
-  return customFetch<OkResponseDto>(getRegisterUrl(slug),
-  {
+export const register = async (
+  slug: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OkResponseDto> => {
+  return customFetch<OkResponseDto>(getRegisterUrl(slug), {
     ...options,
-    method: 'POST'
+    method: "POST",
+  });
+};
 
+export const getLoginUrl = (slug: string) => {
+  return `/stores/${slug}/account/login`;
+};
 
-  }
-);}
-
-
-export const getLoginUrl = (slug: string,) => {
-
-
-
-
-  return `/stores/${slug}/account/login`
-}
-
-export const login = async (slug: string, options?: Parameters<typeof customFetch>[1]): Promise<OkResponseDto> => {
-
-  return customFetch<OkResponseDto>(getLoginUrl(slug),
-  {
+export const login = async (
+  slug: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OkResponseDto> => {
+  return customFetch<OkResponseDto>(getLoginUrl(slug), {
     ...options,
-    method: 'POST'
+    method: "POST",
+  });
+};
 
+export const getForgotPasswordUrl = (slug: string) => {
+  return `/stores/${slug}/account/forgot-password`;
+};
 
-  }
-);}
-
-
-export const getForgotPasswordUrl = (slug: string,) => {
-
-
-
-
-  return `/stores/${slug}/account/forgot-password`
-}
-
-export const forgotPassword = async (slug: string, options?: Parameters<typeof customFetch>[1]): Promise<OkResponseDto> => {
-
-  return customFetch<OkResponseDto>(getForgotPasswordUrl(slug),
-  {
+export const forgotPassword = async (
+  slug: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OkResponseDto> => {
+  return customFetch<OkResponseDto>(getForgotPasswordUrl(slug), {
     ...options,
-    method: 'POST'
+    method: "POST",
+  });
+};
 
+export const getChangePasswordUrl = (slug: string) => {
+  return `/stores/${slug}/account/change-password`;
+};
 
-  }
-);}
-
-
-export const getChangePasswordUrl = (slug: string,) => {
-
-
-
-
-  return `/stores/${slug}/account/change-password`
-}
-
-export const changePassword = async (slug: string, options?: Parameters<typeof customFetch>[1]): Promise<OkResponseDto> => {
-
-  return customFetch<OkResponseDto>(getChangePasswordUrl(slug),
-  {
+export const changePassword = async (
+  slug: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OkResponseDto> => {
+  return customFetch<OkResponseDto>(getChangePasswordUrl(slug), {
     ...options,
-    method: 'POST'
+    method: "POST",
+  });
+};
 
+export const getMeUrl = (slug: string) => {
+  return `/stores/${slug}/account/me`;
+};
 
-  }
-);}
-
-
-export const getMeUrl = (slug: string,) => {
-
-
-
-
-  return `/stores/${slug}/account/me`
-}
-
-export const me = async (slug: string, options?: Parameters<typeof customFetch>[1]): Promise<CustomerProfileResponseDto> => {
-
-  return customFetch<CustomerProfileResponseDto>(getMeUrl(slug),
-  {
+export const me = async (
+  slug: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CustomerProfileResponseDto> => {
+  return customFetch<CustomerProfileResponseDto>(getMeUrl(slug), {
     ...options,
-    method: 'GET'
+    method: "GET",
+  });
+};
 
+export const getUpdateMeUrl = (slug: string) => {
+  return `/stores/${slug}/account/me`;
+};
 
-  }
-);}
-
-
-export const getUpdateMeUrl = (slug: string,) => {
-
-
-
-
-  return `/stores/${slug}/account/me`
-}
-
-export const updateMe = async (slug: string, options?: Parameters<typeof customFetch>[1]): Promise<UpdateCustomerProfileResponseDto> => {
-
-  return customFetch<UpdateCustomerProfileResponseDto>(getUpdateMeUrl(slug),
-  {
+export const updateMe = async (
+  slug: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<UpdateCustomerProfileResponseDto> => {
+  return customFetch<UpdateCustomerProfileResponseDto>(getUpdateMeUrl(slug), {
     ...options,
-    method: 'PATCH'
+    method: "PATCH",
+  });
+};
 
+export const getLogoutUrl = (slug: string) => {
+  return `/stores/${slug}/account/logout`;
+};
 
-  }
-);}
-
-
-export const getLogoutUrl = (slug: string,) => {
-
-
-
-
-  return `/stores/${slug}/account/logout`
-}
-
-export const logout = async (slug: string, options?: Parameters<typeof customFetch>[1]): Promise<OkResponseDto> => {
-
-  return customFetch<OkResponseDto>(getLogoutUrl(slug),
-  {
+export const logout = async (
+  slug: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OkResponseDto> => {
+  return customFetch<OkResponseDto>(getLogoutUrl(slug), {
     ...options,
-    method: 'POST'
-
-
-  }
-);}
-
-
+    method: "POST",
+  });
+};

@@ -303,7 +303,11 @@ describe("orders + checkout (e2e)", () => {
         deliveryMethodType: "PICKUP",
         customerPhone: "+51955555555",
         items: [
-          { productId: precisionProductId, variantId: precisionVariantId, quantity: 3 },
+          {
+            productId: precisionProductId,
+            variantId: precisionVariantId,
+            quantity: 3,
+          },
         ],
       })
       .expect(201);

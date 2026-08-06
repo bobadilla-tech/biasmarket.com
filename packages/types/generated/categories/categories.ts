@@ -5,93 +5,64 @@
  * Bias Market — niche-first store builder API
  * OpenAPI spec version: 1.0
  */
-import type {
-  CategoryResponseDto
-} from '../api.schemas.js';
+import type { CategoryResponseDto } from "../api.schemas.js";
 
-import { customFetch } from '../../http.js';
+import { customFetch } from "../../http.js";
 
-export const getCreateUrl = (storeId: string,) => {
+export const getCreateUrl = (storeId: string) => {
+  return `/stores/${storeId}/categories`;
+};
 
-
-
-
-  return `/stores/${storeId}/categories`
-}
-
-export const create = async (storeId: string, options?: Parameters<typeof customFetch>[1]): Promise<CategoryResponseDto> => {
-
-  return customFetch<CategoryResponseDto>(getCreateUrl(storeId),
-  {
+export const create = async (
+  storeId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CategoryResponseDto> => {
+  return customFetch<CategoryResponseDto>(getCreateUrl(storeId), {
     ...options,
-    method: 'POST'
+    method: "POST",
+  });
+};
 
+export const getFindAllUrl = (storeId: string) => {
+  return `/stores/${storeId}/categories`;
+};
 
-  }
-);}
-
-
-export const getFindAllUrl = (storeId: string,) => {
-
-
-
-
-  return `/stores/${storeId}/categories`
-}
-
-export const findAll = async (storeId: string, options?: Parameters<typeof customFetch>[1]): Promise<CategoryResponseDto[]> => {
-
-  return customFetch<CategoryResponseDto[]>(getFindAllUrl(storeId),
-  {
+export const findAll = async (
+  storeId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CategoryResponseDto[]> => {
+  return customFetch<CategoryResponseDto[]>(getFindAllUrl(storeId), {
     ...options,
-    method: 'GET'
+    method: "GET",
+  });
+};
 
+export const getUpdateUrl = (storeId: string, categoryId: string) => {
+  return `/stores/${storeId}/categories/${categoryId}`;
+};
 
-  }
-);}
-
-
-export const getUpdateUrl = (storeId: string,
-    categoryId: string,) => {
-
-
-
-
-  return `/stores/${storeId}/categories/${categoryId}`
-}
-
-export const update = async (storeId: string,
-    categoryId: string, options?: Parameters<typeof customFetch>[1]): Promise<CategoryResponseDto> => {
-
-  return customFetch<CategoryResponseDto>(getUpdateUrl(storeId,categoryId),
-  {
+export const update = async (
+  storeId: string,
+  categoryId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CategoryResponseDto> => {
+  return customFetch<CategoryResponseDto>(getUpdateUrl(storeId, categoryId), {
     ...options,
-    method: 'PATCH'
+    method: "PATCH",
+  });
+};
 
+export const getRemoveUrl = (storeId: string, categoryId: string) => {
+  return `/stores/${storeId}/categories/${categoryId}`;
+};
 
-  }
-);}
-
-
-export const getRemoveUrl = (storeId: string,
-    categoryId: string,) => {
-
-
-
-
-  return `/stores/${storeId}/categories/${categoryId}`
-}
-
-export const remove = async (storeId: string,
-    categoryId: string, options?: Parameters<typeof customFetch>[1]): Promise<CategoryResponseDto> => {
-
-  return customFetch<CategoryResponseDto>(getRemoveUrl(storeId,categoryId),
-  {
+export const remove = async (
+  storeId: string,
+  categoryId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CategoryResponseDto> => {
+  return customFetch<CategoryResponseDto>(getRemoveUrl(storeId, categoryId), {
     ...options,
-    method: 'DELETE'
-
-
-  }
-);}
-
-
+    method: "DELETE",
+  });
+};

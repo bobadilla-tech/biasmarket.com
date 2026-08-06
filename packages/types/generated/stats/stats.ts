@@ -8,57 +8,54 @@
 import type {
   AnalyticsResultResponseDto,
   StatsControlleranalyticsParams,
-  StatsOverviewResponseDto
-} from '../api.schemas.js';
+  StatsOverviewResponseDto,
+} from "../api.schemas.js";
 
-import { customFetch } from '../../http.js';
+import { customFetch } from "../../http.js";
 
-export const getOverviewUrl = (storeId: string,) => {
+export const getOverviewUrl = (storeId: string) => {
+  return `/stores/${storeId}/stats/overview`;
+};
 
-
-
-
-  return `/stores/${storeId}/stats/overview`
-}
-
-export const overview = async (storeId: string, options?: Parameters<typeof customFetch>[1]): Promise<StatsOverviewResponseDto> => {
-
-  return customFetch<StatsOverviewResponseDto>(getOverviewUrl(storeId),
-  {
+export const overview = async (
+  storeId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<StatsOverviewResponseDto> => {
+  return customFetch<StatsOverviewResponseDto>(getOverviewUrl(storeId), {
     ...options,
-    method: 'GET'
+    method: "GET",
+  });
+};
 
-
-  }
-);}
-
-
-export const getAnalyticsUrl = (storeId: string,
-    params?: StatsControlleranalyticsParams,) => {
+export const getAnalyticsUrl = (
+  storeId: string,
+  params?: StatsControlleranalyticsParams,
+) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
+      normalizedParams.append(key, value === null ? "null" : String(value));
     }
   });
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/stores/${storeId}/stats/analytics?${stringifiedParams}` : `/stores/${storeId}/stats/analytics`
-}
+  return stringifiedParams.length > 0
+    ? `/stores/${storeId}/stats/analytics?${stringifiedParams}`
+    : `/stores/${storeId}/stats/analytics`;
+};
 
-export const analytics = async (storeId: string,
-    params?: StatsControlleranalyticsParams, options?: Parameters<typeof customFetch>[1]): Promise<AnalyticsResultResponseDto> => {
-
-  return customFetch<AnalyticsResultResponseDto>(getAnalyticsUrl(storeId,params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
+export const analytics = async (
+  storeId: string,
+  params?: StatsControlleranalyticsParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<AnalyticsResultResponseDto> => {
+  return customFetch<AnalyticsResultResponseDto>(
+    getAnalyticsUrl(storeId, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};

@@ -14,286 +14,225 @@ import type {
   StoreDirectoryResponseDto,
   StorePublicDetailResponseDto,
   StoreResponseDto,
-  StoreWithOwnerResponseDto,
   StoresControllerfindDirectoryParams,
-  StoresControllerfindFeaturedParams
-} from '../api.schemas.js';
+  StoresControllerfindFeaturedParams,
+  StoreWithOwnerResponseDto,
+} from "../api.schemas.js";
 
-import { customFetch } from '../../http.js';
+import { customFetch } from "../../http.js";
 
 export const getCreateUrl = () => {
+  return `/stores`;
+};
 
-
-
-
-  return `/stores`
-}
-
-export const create = async ( options?: Parameters<typeof customFetch>[1]): Promise<StoreResponseDto> => {
-
-  return customFetch<StoreResponseDto>(getCreateUrl(),
-  {
+export const create = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<StoreResponseDto> => {
+  return customFetch<StoreResponseDto>(getCreateUrl(), {
     ...options,
-    method: 'POST'
-
-
-  }
-);}
-
+    method: "POST",
+  });
+};
 
 export const getFindAllForAdminUrl = () => {
+  return `/stores`;
+};
 
-
-
-
-  return `/stores`
-}
-
-export const findAllForAdmin = async ( options?: Parameters<typeof customFetch>[1]): Promise<StoreWithOwnerResponseDto[]> => {
-
-  return customFetch<StoreWithOwnerResponseDto[]>(getFindAllForAdminUrl(),
-  {
+export const findAllForAdmin = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<StoreWithOwnerResponseDto[]> => {
+  return customFetch<StoreWithOwnerResponseDto[]>(getFindAllForAdminUrl(), {
     ...options,
-    method: 'GET'
+    method: "GET",
+  });
+};
 
+export const getFindBySlugUrl = (slug: string) => {
+  return `/stores/by-slug/${slug}`;
+};
 
-  }
-);}
-
-
-export const getFindBySlugUrl = (slug: string,) => {
-
-
-
-
-  return `/stores/by-slug/${slug}`
-}
-
-export const findBySlug = async (slug: string, options?: Parameters<typeof customFetch>[1]): Promise<StoreResponseDto> => {
-
-  return customFetch<StoreResponseDto>(getFindBySlugUrl(slug),
-  {
+export const findBySlug = async (
+  slug: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<StoreResponseDto> => {
+  return customFetch<StoreResponseDto>(getFindBySlugUrl(slug), {
     ...options,
-    method: 'GET'
+    method: "GET",
+  });
+};
 
+export const getUpdateUrl = (storeId: string) => {
+  return `/stores/${storeId}`;
+};
 
-  }
-);}
-
-
-export const getUpdateUrl = (storeId: string,) => {
-
-
-
-
-  return `/stores/${storeId}`
-}
-
-export const update = async (storeId: string, options?: Parameters<typeof customFetch>[1]): Promise<StoreResponseDto> => {
-
-  return customFetch<StoreResponseDto>(getUpdateUrl(storeId),
-  {
+export const update = async (
+  storeId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<StoreResponseDto> => {
+  return customFetch<StoreResponseDto>(getUpdateUrl(storeId), {
     ...options,
-    method: 'PATCH'
+    method: "PATCH",
+  });
+};
 
+export const getRemoveUrl = (storeId: string) => {
+  return `/stores/${storeId}`;
+};
 
-  }
-);}
-
-
-export const getRemoveUrl = (storeId: string,) => {
-
-
-
-
-  return `/stores/${storeId}`
-}
-
-export const remove = async (storeId: string, options?: Parameters<typeof customFetch>[1]): Promise<StoreResponseDto> => {
-
-  return customFetch<StoreResponseDto>(getRemoveUrl(storeId),
-  {
+export const remove = async (
+  storeId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<StoreResponseDto> => {
+  return customFetch<StoreResponseDto>(getRemoveUrl(storeId), {
     ...options,
-    method: 'DELETE'
-
-
-  }
-);}
-
+    method: "DELETE",
+  });
+};
 
 export const getFindAllPublicUrl = () => {
+  return `/stores/public`;
+};
 
-
-
-
-  return `/stores/public`
-}
-
-export const findAllPublic = async ( options?: Parameters<typeof customFetch>[1]): Promise<PublicStoreListingResponseDto[]> => {
-
-  return customFetch<PublicStoreListingResponseDto[]>(getFindAllPublicUrl(),
-  {
+export const findAllPublic = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PublicStoreListingResponseDto[]> => {
+  return customFetch<PublicStoreListingResponseDto[]>(getFindAllPublicUrl(), {
     ...options,
-    method: 'GET'
-
-
-  }
-);}
-
+    method: "GET",
+  });
+};
 
 export const getFindCollectionsPublicUrl = () => {
+  return `/stores/collections/public`;
+};
 
+export const findCollectionsPublic = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PublicCollectionListingResponseDto[]> => {
+  return customFetch<PublicCollectionListingResponseDto[]>(
+    getFindCollectionsPublicUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
 
-
-
-  return `/stores/collections/public`
-}
-
-export const findCollectionsPublic = async ( options?: Parameters<typeof customFetch>[1]): Promise<PublicCollectionListingResponseDto[]> => {
-
-  return customFetch<PublicCollectionListingResponseDto[]>(getFindCollectionsPublicUrl(),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-export const getFindFeaturedUrl = (params?: StoresControllerfindFeaturedParams,) => {
+export const getFindFeaturedUrl = (
+  params?: StoresControllerfindFeaturedParams,
+) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
+      normalizedParams.append(key, value === null ? "null" : String(value));
     }
   });
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/stores/featured?${stringifiedParams}` : `/stores/featured`
-}
+  return stringifiedParams.length > 0
+    ? `/stores/featured?${stringifiedParams}`
+    : `/stores/featured`;
+};
 
-export const findFeatured = async (params?: StoresControllerfindFeaturedParams, options?: Parameters<typeof customFetch>[1]): Promise<FeaturedStoreResponseDto[]> => {
-
-  return customFetch<FeaturedStoreResponseDto[]>(getFindFeaturedUrl(params),
-  {
+export const findFeatured = async (
+  params?: StoresControllerfindFeaturedParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<FeaturedStoreResponseDto[]> => {
+  return customFetch<FeaturedStoreResponseDto[]>(getFindFeaturedUrl(params), {
     ...options,
-    method: 'GET'
+    method: "GET",
+  });
+};
 
-
-  }
-);}
-
-
-export const getFindDirectoryUrl = (params?: StoresControllerfindDirectoryParams,) => {
+export const getFindDirectoryUrl = (
+  params?: StoresControllerfindDirectoryParams,
+) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
+      normalizedParams.append(key, value === null ? "null" : String(value));
     }
   });
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/stores/directory?${stringifiedParams}` : `/stores/directory`
-}
+  return stringifiedParams.length > 0
+    ? `/stores/directory?${stringifiedParams}`
+    : `/stores/directory`;
+};
 
-export const findDirectory = async (params?: StoresControllerfindDirectoryParams, options?: Parameters<typeof customFetch>[1]): Promise<StoreDirectoryResponseDto> => {
-
-  return customFetch<StoreDirectoryResponseDto>(getFindDirectoryUrl(params),
-  {
+export const findDirectory = async (
+  params?: StoresControllerfindDirectoryParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<StoreDirectoryResponseDto> => {
+  return customFetch<StoreDirectoryResponseDto>(getFindDirectoryUrl(params), {
     ...options,
-    method: 'GET'
+    method: "GET",
+  });
+};
 
+export const getFindPublicUrl = (slug: string) => {
+  return `/stores/${slug}/public`;
+};
 
-  }
-);}
-
-
-export const getFindPublicUrl = (slug: string,) => {
-
-
-
-
-  return `/stores/${slug}/public`
-}
-
-export const findPublic = async (slug: string, options?: Parameters<typeof customFetch>[1]): Promise<StorePublicDetailResponseDto> => {
-
-  return customFetch<StorePublicDetailResponseDto>(getFindPublicUrl(slug),
-  {
+export const findPublic = async (
+  slug: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<StorePublicDetailResponseDto> => {
+  return customFetch<StorePublicDetailResponseDto>(getFindPublicUrl(slug), {
     ...options,
-    method: 'GET'
+    method: "GET",
+  });
+};
 
+export const getFindCategoriesPublicUrl = (slug: string) => {
+  return `/stores/${slug}/categories/public`;
+};
 
-  }
-);}
+export const findCategoriesPublic = async (
+  slug: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PublicCategoryResponseDto[]> => {
+  return customFetch<PublicCategoryResponseDto[]>(
+    getFindCategoriesPublicUrl(slug),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
 
+export const getFindPublicProductUrl = (slug: string, productId: string) => {
+  return `/stores/${slug}/products/${productId}/public`;
+};
 
-export const getFindCategoriesPublicUrl = (slug: string,) => {
+export const findPublicProduct = async (
+  slug: string,
+  productId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PublicProductPageResponseDto> => {
+  return customFetch<PublicProductPageResponseDto>(
+    getFindPublicProductUrl(slug, productId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
 
+export const getUploadLogoUrl = (storeId: string) => {
+  return `/stores/${storeId}/logo`;
+};
 
-
-
-  return `/stores/${slug}/categories/public`
-}
-
-export const findCategoriesPublic = async (slug: string, options?: Parameters<typeof customFetch>[1]): Promise<PublicCategoryResponseDto[]> => {
-
-  return customFetch<PublicCategoryResponseDto[]>(getFindCategoriesPublicUrl(slug),
-  {
+export const uploadLogo = async (
+  storeId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<StoreResponseDto> => {
+  return customFetch<StoreResponseDto>(getUploadLogoUrl(storeId), {
     ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-export const getFindPublicProductUrl = (slug: string,
-    productId: string,) => {
-
-
-
-
-  return `/stores/${slug}/products/${productId}/public`
-}
-
-export const findPublicProduct = async (slug: string,
-    productId: string, options?: Parameters<typeof customFetch>[1]): Promise<PublicProductPageResponseDto> => {
-
-  return customFetch<PublicProductPageResponseDto>(getFindPublicProductUrl(slug,productId),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-export const getUploadLogoUrl = (storeId: string,) => {
-
-
-
-
-  return `/stores/${storeId}/logo`
-}
-
-export const uploadLogo = async (storeId: string, options?: Parameters<typeof customFetch>[1]): Promise<StoreResponseDto> => {
-
-  return customFetch<StoreResponseDto>(getUploadLogoUrl(storeId),
-  {
-    ...options,
-    method: 'POST'
-
-
-  }
-);}
-
-
+    method: "POST",
+  });
+};

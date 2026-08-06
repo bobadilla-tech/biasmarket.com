@@ -1,5 +1,8 @@
 import { Prisma } from "@biasmarket/db";
-import { computePaymentSummary, withPaymentSummary } from "./payment-summary.js";
+import {
+  computePaymentSummary,
+  withPaymentSummary,
+} from "./payment-summary.js";
 
 const d = (n: string) => new Prisma.Decimal(n);
 

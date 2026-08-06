@@ -1,8 +1,8 @@
 # Bias Market
 
-Niche-first store builder for creator-led commerce (K-pop/artist
-merch stores first). Manual payment-first (bank transfer, Wise, PayPal) with
-built-in proof-of-payment review, no Stripe required.
+Niche-first store builder for creator-led commerce (K-pop/artist merch stores
+first). Manual payment-first (bank transfer, Wise, PayPal) with built-in
+proof-of-payment review, no Stripe required.
 
 Turborepo monorepo: `apps/api` (NestJS), `apps/web` (Next.js), `packages/*`
 (shared db/types/ui/i18n/utils). pnpm workspaces.

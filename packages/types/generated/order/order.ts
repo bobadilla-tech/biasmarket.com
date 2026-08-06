@@ -9,147 +9,115 @@ import type {
   OrderControllerfindAllParams,
   OrderDetailResponseDto,
   OrderResponseDto,
-  OrderStatusResponseDto
-} from '../api.schemas.js';
+  OrderStatusResponseDto,
+} from "../api.schemas.js";
 
-import { customFetch } from '../../http.js';
+import { customFetch } from "../../http.js";
 
-export const getFindAllUrl = (storeId: string,
-    params?: OrderControllerfindAllParams,) => {
+export const getFindAllUrl = (
+  storeId: string,
+  params?: OrderControllerfindAllParams,
+) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
+      normalizedParams.append(key, value === null ? "null" : String(value));
     }
   });
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/stores/${storeId}/orders?${stringifiedParams}` : `/stores/${storeId}/orders`
-}
+  return stringifiedParams.length > 0
+    ? `/stores/${storeId}/orders?${stringifiedParams}`
+    : `/stores/${storeId}/orders`;
+};
 
-export const findAll = async (storeId: string,
-    params?: OrderControllerfindAllParams, options?: Parameters<typeof customFetch>[1]): Promise<OrderResponseDto[]> => {
-
-  return customFetch<OrderResponseDto[]>(getFindAllUrl(storeId,params),
-  {
+export const findAll = async (
+  storeId: string,
+  params?: OrderControllerfindAllParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OrderResponseDto[]> => {
+  return customFetch<OrderResponseDto[]>(getFindAllUrl(storeId, params), {
     ...options,
-    method: 'GET'
+    method: "GET",
+  });
+};
 
+export const getFindOneUrl = (storeId: string, orderId: string) => {
+  return `/stores/${storeId}/orders/${orderId}`;
+};
 
-  }
-);}
-
-
-export const getFindOneUrl = (storeId: string,
-    orderId: string,) => {
-
-
-
-
-  return `/stores/${storeId}/orders/${orderId}`
-}
-
-export const findOne = async (storeId: string,
-    orderId: string, options?: Parameters<typeof customFetch>[1]): Promise<OrderDetailResponseDto> => {
-
-  return customFetch<OrderDetailResponseDto>(getFindOneUrl(storeId,orderId),
-  {
+export const findOne = async (
+  storeId: string,
+  orderId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OrderDetailResponseDto> => {
+  return customFetch<OrderDetailResponseDto>(getFindOneUrl(storeId, orderId), {
     ...options,
-    method: 'GET'
+    method: "GET",
+  });
+};
 
+export const getAddPaymentUrl = (storeId: string, orderId: string) => {
+  return `/stores/${storeId}/orders/${orderId}/payments`;
+};
 
-  }
-);}
+export const addPayment = async (
+  storeId: string,
+  orderId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OrderDetailResponseDto> => {
+  return customFetch<OrderDetailResponseDto>(
+    getAddPaymentUrl(storeId, orderId),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
 
+export const getReviewUrl = (storeId: string, orderId: string) => {
+  return `/stores/${storeId}/orders/${orderId}/review`;
+};
 
-export const getAddPaymentUrl = (storeId: string,
-    orderId: string,) => {
-
-
-
-
-  return `/stores/${storeId}/orders/${orderId}/payments`
-}
-
-export const addPayment = async (storeId: string,
-    orderId: string, options?: Parameters<typeof customFetch>[1]): Promise<OrderDetailResponseDto> => {
-
-  return customFetch<OrderDetailResponseDto>(getAddPaymentUrl(storeId,orderId),
-  {
+export const review = async (
+  storeId: string,
+  orderId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OrderStatusResponseDto> => {
+  return customFetch<OrderStatusResponseDto>(getReviewUrl(storeId, orderId), {
     ...options,
-    method: 'POST'
+    method: "PATCH",
+  });
+};
 
+export const getAdvanceUrl = (storeId: string, orderId: string) => {
+  return `/stores/${storeId}/orders/${orderId}/fulfillment`;
+};
 
-  }
-);}
-
-
-export const getReviewUrl = (storeId: string,
-    orderId: string,) => {
-
-
-
-
-  return `/stores/${storeId}/orders/${orderId}/review`
-}
-
-export const review = async (storeId: string,
-    orderId: string, options?: Parameters<typeof customFetch>[1]): Promise<OrderStatusResponseDto> => {
-
-  return customFetch<OrderStatusResponseDto>(getReviewUrl(storeId,orderId),
-  {
+export const advance = async (
+  storeId: string,
+  orderId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OrderStatusResponseDto> => {
+  return customFetch<OrderStatusResponseDto>(getAdvanceUrl(storeId, orderId), {
     ...options,
-    method: 'PATCH'
+    method: "PATCH",
+  });
+};
 
+export const getCancelUrl = (storeId: string, orderId: string) => {
+  return `/stores/${storeId}/orders/${orderId}/cancel`;
+};
 
-  }
-);}
-
-
-export const getAdvanceUrl = (storeId: string,
-    orderId: string,) => {
-
-
-
-
-  return `/stores/${storeId}/orders/${orderId}/fulfillment`
-}
-
-export const advance = async (storeId: string,
-    orderId: string, options?: Parameters<typeof customFetch>[1]): Promise<OrderStatusResponseDto> => {
-
-  return customFetch<OrderStatusResponseDto>(getAdvanceUrl(storeId,orderId),
-  {
+export const cancel = async (
+  storeId: string,
+  orderId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OrderStatusResponseDto> => {
+  return customFetch<OrderStatusResponseDto>(getCancelUrl(storeId, orderId), {
     ...options,
-    method: 'PATCH'
-
-
-  }
-);}
-
-
-export const getCancelUrl = (storeId: string,
-    orderId: string,) => {
-
-
-
-
-  return `/stores/${storeId}/orders/${orderId}/cancel`
-}
-
-export const cancel = async (storeId: string,
-    orderId: string, options?: Parameters<typeof customFetch>[1]): Promise<OrderStatusResponseDto> => {
-
-  return customFetch<OrderStatusResponseDto>(getCancelUrl(storeId,orderId),
-  {
-    ...options,
-    method: 'PATCH'
-
-
-  }
-);}
-
-
+    method: "PATCH",
+  });
+};

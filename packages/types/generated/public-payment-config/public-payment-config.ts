@@ -5,29 +5,23 @@
  * Bias Market — niche-first store builder API
  * OpenAPI spec version: 1.0
  */
-import type {
-  PaymentMethodConfigResponseDto
-} from '../api.schemas.js';
+import type { PaymentMethodConfigResponseDto } from "../api.schemas.js";
 
-import { customFetch } from '../../http.js';
+import { customFetch } from "../../http.js";
 
-export const getFindEnabledUrl = (slug: string,) => {
+export const getFindEnabledUrl = (slug: string) => {
+  return `/stores/${slug}/public/payment-methods`;
+};
 
-
-
-
-  return `/stores/${slug}/public/payment-methods`
-}
-
-export const findEnabled = async (slug: string, options?: Parameters<typeof customFetch>[1]): Promise<PaymentMethodConfigResponseDto[]> => {
-
-  return customFetch<PaymentMethodConfigResponseDto[]>(getFindEnabledUrl(slug),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
+export const findEnabled = async (
+  slug: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PaymentMethodConfigResponseDto[]> => {
+  return customFetch<PaymentMethodConfigResponseDto[]>(
+    getFindEnabledUrl(slug),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};

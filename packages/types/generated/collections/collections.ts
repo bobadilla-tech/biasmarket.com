@@ -8,160 +8,136 @@
 import type {
   CollectionProductResponseDto,
   CollectionResponseDto,
-  CollectionWithProductsResponseDto
-} from '../api.schemas.js';
+  CollectionWithProductsResponseDto,
+} from "../api.schemas.js";
 
-import { customFetch } from '../../http.js';
+import { customFetch } from "../../http.js";
 
-export const getCreateUrl = (storeId: string,) => {
+export const getCreateUrl = (storeId: string) => {
+  return `/stores/${storeId}/collections`;
+};
 
-
-
-
-  return `/stores/${storeId}/collections`
-}
-
-export const create = async (storeId: string, options?: Parameters<typeof customFetch>[1]): Promise<CollectionResponseDto> => {
-
-  return customFetch<CollectionResponseDto>(getCreateUrl(storeId),
-  {
+export const create = async (
+  storeId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CollectionResponseDto> => {
+  return customFetch<CollectionResponseDto>(getCreateUrl(storeId), {
     ...options,
-    method: 'POST'
-
-
-  }
-);}
-
-
-export const getFindAllUrl = (storeId: string,) => {
-
-
-
-
-  return `/stores/${storeId}/collections`
-}
-
-export const findAll = async (storeId: string, options?: Parameters<typeof customFetch>[1]): Promise<CollectionWithProductsResponseDto[]> => {
-
-  return customFetch<CollectionWithProductsResponseDto[]>(getFindAllUrl(storeId),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-export const getUpdateUrl = (storeId: string,
-    collectionId: string,) => {
-
-
-
-
-  return `/stores/${storeId}/collections/${collectionId}`
-}
-
-export const update = async (storeId: string,
-    collectionId: string, options?: Parameters<typeof customFetch>[1]): Promise<CollectionResponseDto> => {
-
-  return customFetch<CollectionResponseDto>(getUpdateUrl(storeId,collectionId),
-  {
-    ...options,
-    method: 'PATCH'
-
-
-  }
-);}
-
-
-export const getRemoveUrl = (storeId: string,
-    collectionId: string,) => {
-
-
-
-
-  return `/stores/${storeId}/collections/${collectionId}`
-}
-
-export const remove = async (storeId: string,
-    collectionId: string, options?: Parameters<typeof customFetch>[1]): Promise<CollectionResponseDto> => {
-
-  return customFetch<CollectionResponseDto>(getRemoveUrl(storeId,collectionId),
-  {
-    ...options,
-    method: 'DELETE'
-
-
-  }
-);}
-
-
-export const getAddProductUrl = (storeId: string,
-    collectionId: string,) => {
-
-
-
-
-  return `/stores/${storeId}/collections/${collectionId}/products`
-}
-
-export const addProduct = async (storeId: string,
-    collectionId: string, options?: Parameters<typeof customFetch>[1]): Promise<CollectionProductResponseDto> => {
-
-  return customFetch<CollectionProductResponseDto>(getAddProductUrl(storeId,collectionId),
-  {
-    ...options,
-    method: 'POST'
-
-
-  }
-);}
-
-
-export const getRemoveProductUrl = (storeId: string,
-    collectionId: string,
-    productId: string,) => {
-
-
-
-
-  return `/stores/${storeId}/collections/${collectionId}/products/${productId}`
-}
-
-export const removeProduct = async (storeId: string,
-    collectionId: string,
-    productId: string, options?: Parameters<typeof customFetch>[1]): Promise<CollectionProductResponseDto> => {
-
-  return customFetch<CollectionProductResponseDto>(getRemoveProductUrl(storeId,collectionId,productId),
-  {
-    ...options,
-    method: 'DELETE'
-
-
-  }
-);}
-
-
-export const getReorderProductsUrl = (storeId: string,
-    collectionId: string,) => {
-
-
-
-
-  return `/stores/${storeId}/collections/${collectionId}/products/reorder`
-}
-
-export const reorderProducts = async (storeId: string,
-    collectionId: string, options?: Parameters<typeof customFetch>[1]): Promise<CollectionProductResponseDto[]> => {
-
-  return customFetch<CollectionProductResponseDto[]>(getReorderProductsUrl(storeId,collectionId),
-  {
-    ...options,
-    method: 'PATCH'
-
-
-  }
-);}
-
-
+    method: "POST",
+  });
+};
+
+export const getFindAllUrl = (storeId: string) => {
+  return `/stores/${storeId}/collections`;
+};
+
+export const findAll = async (
+  storeId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CollectionWithProductsResponseDto[]> => {
+  return customFetch<CollectionWithProductsResponseDto[]>(
+    getFindAllUrl(storeId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getUpdateUrl = (storeId: string, collectionId: string) => {
+  return `/stores/${storeId}/collections/${collectionId}`;
+};
+
+export const update = async (
+  storeId: string,
+  collectionId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CollectionResponseDto> => {
+  return customFetch<CollectionResponseDto>(
+    getUpdateUrl(storeId, collectionId),
+    {
+      ...options,
+      method: "PATCH",
+    },
+  );
+};
+
+export const getRemoveUrl = (storeId: string, collectionId: string) => {
+  return `/stores/${storeId}/collections/${collectionId}`;
+};
+
+export const remove = async (
+  storeId: string,
+  collectionId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CollectionResponseDto> => {
+  return customFetch<CollectionResponseDto>(
+    getRemoveUrl(storeId, collectionId),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getAddProductUrl = (storeId: string, collectionId: string) => {
+  return `/stores/${storeId}/collections/${collectionId}/products`;
+};
+
+export const addProduct = async (
+  storeId: string,
+  collectionId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CollectionProductResponseDto> => {
+  return customFetch<CollectionProductResponseDto>(
+    getAddProductUrl(storeId, collectionId),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getRemoveProductUrl = (
+  storeId: string,
+  collectionId: string,
+  productId: string,
+) => {
+  return `/stores/${storeId}/collections/${collectionId}/products/${productId}`;
+};
+
+export const removeProduct = async (
+  storeId: string,
+  collectionId: string,
+  productId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CollectionProductResponseDto> => {
+  return customFetch<CollectionProductResponseDto>(
+    getRemoveProductUrl(storeId, collectionId, productId),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getReorderProductsUrl = (
+  storeId: string,
+  collectionId: string,
+) => {
+  return `/stores/${storeId}/collections/${collectionId}/products/reorder`;
+};
+
+export const reorderProducts = async (
+  storeId: string,
+  collectionId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CollectionProductResponseDto[]> => {
+  return customFetch<CollectionProductResponseDto[]>(
+    getReorderProductsUrl(storeId, collectionId),
+    {
+      ...options,
+      method: "PATCH",
+    },
+  );
+};

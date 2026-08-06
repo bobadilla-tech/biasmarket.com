@@ -138,7 +138,9 @@ describe("product search (e2e)", () => {
 
   it("respects page/limit query params", async () => {
     const res = await request(app.getHttpServer())
-      .get(`/products/search?q=${encodeURIComponent(productName)}&page=1&limit=1`)
+      .get(
+        `/products/search?q=${encodeURIComponent(productName)}&page=1&limit=1`,
+      )
       .expect(200);
     assertMatchesSchema(res.body, resultSchema, openapi.components);
     expect(res.body.page).toBe(1);

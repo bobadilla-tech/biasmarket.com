@@ -5,113 +5,84 @@
  * Bias Market — niche-first store builder API
  * OpenAPI spec version: 1.0
  */
-import type {
-  StoreSectionResponseDto
-} from '../api.schemas.js';
+import type { StoreSectionResponseDto } from "../api.schemas.js";
 
-import { customFetch } from '../../http.js';
+import { customFetch } from "../../http.js";
 
-export const getCreateUrl = (storeId: string,) => {
+export const getCreateUrl = (storeId: string) => {
+  return `/stores/${storeId}/sections`;
+};
 
-
-
-
-  return `/stores/${storeId}/sections`
-}
-
-export const create = async (storeId: string, options?: Parameters<typeof customFetch>[1]): Promise<StoreSectionResponseDto> => {
-
-  return customFetch<StoreSectionResponseDto>(getCreateUrl(storeId),
-  {
+export const create = async (
+  storeId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<StoreSectionResponseDto> => {
+  return customFetch<StoreSectionResponseDto>(getCreateUrl(storeId), {
     ...options,
-    method: 'POST'
+    method: "POST",
+  });
+};
 
+export const getFindAllUrl = (storeId: string) => {
+  return `/stores/${storeId}/sections`;
+};
 
-  }
-);}
-
-
-export const getFindAllUrl = (storeId: string,) => {
-
-
-
-
-  return `/stores/${storeId}/sections`
-}
-
-export const findAll = async (storeId: string, options?: Parameters<typeof customFetch>[1]): Promise<StoreSectionResponseDto[]> => {
-
-  return customFetch<StoreSectionResponseDto[]>(getFindAllUrl(storeId),
-  {
+export const findAll = async (
+  storeId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<StoreSectionResponseDto[]> => {
+  return customFetch<StoreSectionResponseDto[]>(getFindAllUrl(storeId), {
     ...options,
-    method: 'GET'
+    method: "GET",
+  });
+};
 
+export const getReorderUrl = (storeId: string) => {
+  return `/stores/${storeId}/sections/reorder`;
+};
 
-  }
-);}
-
-
-export const getReorderUrl = (storeId: string,) => {
-
-
-
-
-  return `/stores/${storeId}/sections/reorder`
-}
-
-export const reorder = async (storeId: string, options?: Parameters<typeof customFetch>[1]): Promise<StoreSectionResponseDto[]> => {
-
-  return customFetch<StoreSectionResponseDto[]>(getReorderUrl(storeId),
-  {
+export const reorder = async (
+  storeId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<StoreSectionResponseDto[]> => {
+  return customFetch<StoreSectionResponseDto[]>(getReorderUrl(storeId), {
     ...options,
-    method: 'PATCH'
+    method: "PATCH",
+  });
+};
 
+export const getUpdateUrl = (storeId: string, sectionId: string) => {
+  return `/stores/${storeId}/sections/${sectionId}`;
+};
 
-  }
-);}
+export const update = async (
+  storeId: string,
+  sectionId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<StoreSectionResponseDto> => {
+  return customFetch<StoreSectionResponseDto>(
+    getUpdateUrl(storeId, sectionId),
+    {
+      ...options,
+      method: "PATCH",
+    },
+  );
+};
 
+export const getRemoveUrl = (storeId: string, sectionId: string) => {
+  return `/stores/${storeId}/sections/${sectionId}`;
+};
 
-export const getUpdateUrl = (storeId: string,
-    sectionId: string,) => {
-
-
-
-
-  return `/stores/${storeId}/sections/${sectionId}`
-}
-
-export const update = async (storeId: string,
-    sectionId: string, options?: Parameters<typeof customFetch>[1]): Promise<StoreSectionResponseDto> => {
-
-  return customFetch<StoreSectionResponseDto>(getUpdateUrl(storeId,sectionId),
-  {
-    ...options,
-    method: 'PATCH'
-
-
-  }
-);}
-
-
-export const getRemoveUrl = (storeId: string,
-    sectionId: string,) => {
-
-
-
-
-  return `/stores/${storeId}/sections/${sectionId}`
-}
-
-export const remove = async (storeId: string,
-    sectionId: string, options?: Parameters<typeof customFetch>[1]): Promise<StoreSectionResponseDto> => {
-
-  return customFetch<StoreSectionResponseDto>(getRemoveUrl(storeId,sectionId),
-  {
-    ...options,
-    method: 'DELETE'
-
-
-  }
-);}
-
-
+export const remove = async (
+  storeId: string,
+  sectionId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<StoreSectionResponseDto> => {
+  return customFetch<StoreSectionResponseDto>(
+    getRemoveUrl(storeId, sectionId),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
