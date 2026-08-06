@@ -6,107 +6,160 @@
  * OpenAPI spec version: 1.0
  */
 import type {
+  ChangeCustomerPasswordDto,
   CustomerProfileResponseDto,
+  ForgotPasswordDto,
+  LoginCustomerDto,
   OkResponseDto,
-  UpdateCustomerProfileResponseDto,
-} from "../api.schemas.js";
+  RegisterCustomerDto,
+  UpdateCustomerProfileDto,
+  UpdateCustomerProfileResponseDto
+} from '../api.schemas.js';
 
-import { customFetch } from "../../http.js";
+import { customFetch } from '../../http.js';
 
-export const getRegisterUrl = (slug: string) => {
-  return `/stores/${slug}/account/register`;
-};
+export const getRegisterUrl = (slug: string,) => {
 
-export const register = async (
-  slug: string,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<OkResponseDto> => {
-  return customFetch<OkResponseDto>(getRegisterUrl(slug), {
+
+
+
+  return `/stores/${slug}/account/register`
+}
+
+export const register = async (slug: string,
+    registerCustomerDto: RegisterCustomerDto, options?: Parameters<typeof customFetch>[1]): Promise<OkResponseDto> => {
+
+  return customFetch<OkResponseDto>(getRegisterUrl(slug),
+  {
     ...options,
-    method: "POST",
-  });
-};
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(registerCustomerDto)
+  }
+);}
 
-export const getLoginUrl = (slug: string) => {
-  return `/stores/${slug}/account/login`;
-};
 
-export const login = async (
-  slug: string,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<OkResponseDto> => {
-  return customFetch<OkResponseDto>(getLoginUrl(slug), {
+export const getLoginUrl = (slug: string,) => {
+
+
+
+
+  return `/stores/${slug}/account/login`
+}
+
+export const login = async (slug: string,
+    loginCustomerDto: LoginCustomerDto, options?: Parameters<typeof customFetch>[1]): Promise<OkResponseDto> => {
+
+  return customFetch<OkResponseDto>(getLoginUrl(slug),
+  {
     ...options,
-    method: "POST",
-  });
-};
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(loginCustomerDto)
+  }
+);}
 
-export const getForgotPasswordUrl = (slug: string) => {
-  return `/stores/${slug}/account/forgot-password`;
-};
 
-export const forgotPassword = async (
-  slug: string,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<OkResponseDto> => {
-  return customFetch<OkResponseDto>(getForgotPasswordUrl(slug), {
+export const getForgotPasswordUrl = (slug: string,) => {
+
+
+
+
+  return `/stores/${slug}/account/forgot-password`
+}
+
+export const forgotPassword = async (slug: string,
+    forgotPasswordDto: ForgotPasswordDto, options?: Parameters<typeof customFetch>[1]): Promise<OkResponseDto> => {
+
+  return customFetch<OkResponseDto>(getForgotPasswordUrl(slug),
+  {
     ...options,
-    method: "POST",
-  });
-};
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(forgotPasswordDto)
+  }
+);}
 
-export const getChangePasswordUrl = (slug: string) => {
-  return `/stores/${slug}/account/change-password`;
-};
 
-export const changePassword = async (
-  slug: string,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<OkResponseDto> => {
-  return customFetch<OkResponseDto>(getChangePasswordUrl(slug), {
+export const getChangePasswordUrl = (slug: string,) => {
+
+
+
+
+  return `/stores/${slug}/account/change-password`
+}
+
+export const changePassword = async (slug: string,
+    changeCustomerPasswordDto: ChangeCustomerPasswordDto, options?: Parameters<typeof customFetch>[1]): Promise<OkResponseDto> => {
+
+  return customFetch<OkResponseDto>(getChangePasswordUrl(slug),
+  {
     ...options,
-    method: "POST",
-  });
-};
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(changeCustomerPasswordDto)
+  }
+);}
 
-export const getMeUrl = (slug: string) => {
-  return `/stores/${slug}/account/me`;
-};
 
-export const me = async (
-  slug: string,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<CustomerProfileResponseDto> => {
-  return customFetch<CustomerProfileResponseDto>(getMeUrl(slug), {
+export const getMeUrl = (slug: string,) => {
+
+
+
+
+  return `/stores/${slug}/account/me`
+}
+
+export const me = async (slug: string, options?: Parameters<typeof customFetch>[1]): Promise<CustomerProfileResponseDto> => {
+
+  return customFetch<CustomerProfileResponseDto>(getMeUrl(slug),
+  {
     ...options,
-    method: "GET",
-  });
-};
+    method: 'GET'
 
-export const getUpdateMeUrl = (slug: string) => {
-  return `/stores/${slug}/account/me`;
-};
 
-export const updateMe = async (
-  slug: string,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<UpdateCustomerProfileResponseDto> => {
-  return customFetch<UpdateCustomerProfileResponseDto>(getUpdateMeUrl(slug), {
+  }
+);}
+
+
+export const getUpdateMeUrl = (slug: string,) => {
+
+
+
+
+  return `/stores/${slug}/account/me`
+}
+
+export const updateMe = async (slug: string,
+    updateCustomerProfileDto: UpdateCustomerProfileDto, options?: Parameters<typeof customFetch>[1]): Promise<UpdateCustomerProfileResponseDto> => {
+
+  return customFetch<UpdateCustomerProfileResponseDto>(getUpdateMeUrl(slug),
+  {
     ...options,
-    method: "PATCH",
-  });
-};
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateCustomerProfileDto)
+  }
+);}
 
-export const getLogoutUrl = (slug: string) => {
-  return `/stores/${slug}/account/logout`;
-};
 
-export const logout = async (
-  slug: string,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<OkResponseDto> => {
-  return customFetch<OkResponseDto>(getLogoutUrl(slug), {
+export const getLogoutUrl = (slug: string,) => {
+
+
+
+
+  return `/stores/${slug}/account/logout`
+}
+
+export const logout = async (slug: string, options?: Parameters<typeof customFetch>[1]): Promise<OkResponseDto> => {
+
+  return customFetch<OkResponseDto>(getLogoutUrl(slug),
+  {
     ...options,
-    method: "POST",
-  });
-};
+    method: 'POST'
+
+
+  }
+);}
+
+
