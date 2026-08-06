@@ -5,10 +5,10 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import type { Prisma } from "@biasmarket/db";
-import { PrismaService } from "../../prisma/prisma.service.js";
+import type { PrismaService } from "../../prisma/prisma.service.js";
 import { slugify } from "@biasmarket/utils/strings";
-import { UpdateStoreDto } from "./dto/update-store.dto.js";
-import { CreateStoreDto } from "./dto/create-store.dto.js";
+import type { UpdateStoreDto } from "./dto/update-store.dto.js";
+import type { CreateStoreDto } from "./dto/create-store.dto.js";
 
 const RESERVED_SLUGS = ["www", "api", "admin", "app"];
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Info, Lightbulb, X } from "lucide-react";
+import { AlertTriangle, type Info, Lightbulb, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

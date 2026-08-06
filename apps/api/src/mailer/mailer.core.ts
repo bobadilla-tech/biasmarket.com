@@ -57,7 +57,7 @@ export class MailerCore {
     });
     if (error) throw new Error(`Resend send failed: ${error.message}`);
     console.log(`[mailer] sent via Resend: ${data?.id} ("${params.subject}")`);
-    return { id: data!.id };
+    return { id: data?.id };
   }
 
   private async writeToFile(

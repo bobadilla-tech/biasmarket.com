@@ -113,7 +113,7 @@ export function resolveSchema(
   schema: Record<string, unknown>,
   components: Record<string, unknown>,
 ): Record<string, unknown> {
-  const ref = schema["$ref"] as string | undefined;
+  const ref = schema.$ref as string | undefined;
   if (ref) {
     const name = ref.replace("#/components/schemas/", "");
     const schemas =
@@ -127,10 +127,10 @@ export function resolveSchema(
   // extra keywords next to `$ref`), so it wraps the ref in `allOf` instead.
   // Resolve through it and carry `nullable` down onto the referenced
   // schema, since the ref target itself never declares it.
-  const allOf = schema["allOf"] as Record<string, unknown>[] | undefined;
+  const allOf = schema.allOf as Record<string, unknown>[] | undefined;
   if (allOf && allOf.length === 1) {
     const resolved = resolveSchema(allOf[0]!, components);
-    return { ...resolved, nullable: schema["nullable"] ?? resolved.nullable };
+    return { ...resolved, nullable: schema.nullable ?? resolved.nullable };
   }
   return schema;
 }

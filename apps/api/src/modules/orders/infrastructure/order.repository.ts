@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import type { FulfillmentStatus, PaymentStatus, Prisma } from "@biasmarket/db";
-import { PrismaService } from "../../../prisma/prisma.service.js";
+import type { PrismaService } from "../../../prisma/prisma.service.js";
 import { Order } from "../domain/order.entity.js";
 
 @Injectable()
@@ -40,7 +40,7 @@ export class OrderRepository {
         where: { id: orderId },
         include: includeWithPayments,
       });
-    } catch (e) {
+    } catch (_e) {
       order = await this.prisma.order.findUnique({
         where: { id: orderId },
         include: includeWithoutPayments,
@@ -85,7 +85,7 @@ export class OrderRepository {
         orderBy: { createdAt: "desc" },
       });
       return orders.map((order) => this.withPaymentSummary(order));
-    } catch (e) {
+    } catch (_e) {
       const orders = await this.prisma.order.findMany({
         where,
         include: includeWithoutPayments,

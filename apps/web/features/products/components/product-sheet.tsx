@@ -111,7 +111,7 @@ export function ProductSheet({
 
   const name = watch("name");
   const price = watch("price");
-  const stock = watch("stock");
+  const _stock = watch("stock");
   const categoryId = watch("categoryId");
 
   const defaultCategories = useMemo(() => {
@@ -191,7 +191,7 @@ export function ProductSheet({
       ),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [defaultValues, initialVariants]);
+  }, [defaultValues, initialVariants, reset]);
 
   useEffect(() => {
     if (!imageFile) {
@@ -267,7 +267,7 @@ export function ProductSheet({
       return next;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasVariants, options]);
+  }, [hasVariants, variantsPreview.forEach]);
 
   const handleAddOption = () => {
     const optName = newOptionName.trim();

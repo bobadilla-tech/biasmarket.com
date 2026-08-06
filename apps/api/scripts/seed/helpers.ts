@@ -8,7 +8,7 @@ import type {
   ProductStatus,
   StoreSectionType,
 } from "@biasmarket/db";
-import { Prisma } from "@biasmarket/db";
+import type { Prisma } from "@biasmarket/db";
 import { hashPassword } from "better-auth/crypto";
 
 function json(value: Record<string, unknown>): Prisma.InputJsonValue {

@@ -65,7 +65,13 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
           SUPPORTED_CURRENCIES[0],
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [store.id]);
+  }, [
+    store.whatsappNumber,
+    store.defaultCurrency,
+    store.paymentInstructions,
+    store.name,
+    reset,
+  ]);
 
   const storeName = watch("name");
   const whatsappNumber = watch("whatsappNumber");

@@ -4,7 +4,7 @@ import {
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
-import { randomUUID } from "crypto";
+import { randomUUID } from "node:crypto";
 
 function requiredEnv(name: string): string {
   const value = process.env[name];

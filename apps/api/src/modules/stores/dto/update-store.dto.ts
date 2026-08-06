@@ -6,7 +6,6 @@ import {
   IsOptional,
   IsString,
   Min,
-  MinLength,
 } from "class-validator";
 import { SUPPORTED_CURRENCIES } from "@biasmarket/utils/currency";
 

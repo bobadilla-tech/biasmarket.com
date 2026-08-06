@@ -9,9 +9,9 @@ import {
 } from "@nestjs/common";
 import { AuthGuard, Public, Session } from "@thallesp/nestjs-better-auth";
 import type { UserSession } from "@thallesp/nestjs-better-auth";
-import { DeliveryConfigService } from "./delivery-config.service.js";
-import { UpsertDeliveryMethodDto } from "./dto/upsert-delivery-method.dto.js";
-import { DeliveryMethodConfigResponseDto } from "./dto/delivery-method-response.dto.js";
+import type { DeliveryConfigService } from "./delivery-config.service.js";
+import type { UpsertDeliveryMethodDto } from "./dto/upsert-delivery-method.dto.js";
+import type { DeliveryMethodConfigResponseDto } from "./dto/delivery-method-response.dto.js";
 
 interface DeliveryMethodConfigRow {
   id: string;

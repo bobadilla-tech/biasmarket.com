@@ -47,7 +47,7 @@ export function CancelOrderDialog({
     if (!open) return;
     setResolution("REFUNDED");
     setReason("");
-  }, [open, order?.id]);
+  }, [open]);
 
   if (!order) return null;
 

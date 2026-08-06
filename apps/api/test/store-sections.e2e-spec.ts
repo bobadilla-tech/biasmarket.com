@@ -1,5 +1,5 @@
-import { Test, TestingModule } from "@nestjs/testing";
-import { INestApplication } from "@nestjs/common";
+import { Test, type TestingModule } from "@nestjs/testing";
+import type { INestApplication } from "@nestjs/common";
 import { PrismaService } from "../src/prisma/prisma.service.js";
 import request from "supertest";
 import { readdirSync, readFileSync } from "node:fs";
@@ -104,7 +104,7 @@ function resolveSchema(
   schema: Record<string, unknown>,
   components: Record<string, unknown>,
 ): Record<string, unknown> {
-  const ref = schema["$ref"] as string | undefined;
+  const ref = schema.$ref as string | undefined;
   if (!ref) return schema;
   const name = ref.replace("#/components/schemas/", "");
   const schemas = (components as { schemas: Record<string, unknown> }).schemas;

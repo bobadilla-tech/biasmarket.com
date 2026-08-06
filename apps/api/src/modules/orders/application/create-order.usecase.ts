@@ -8,10 +8,10 @@ import {
   buildWhatsAppOrderMessage,
   buildWhatsAppUrl,
 } from "@biasmarket/utils/whatsapp";
-import { PrismaService } from "../../../prisma/prisma.service.js";
-import { CreateOrderDto } from "../dto/create-order.dto.js";
-import { NotificationsService } from "../../notifications/notifications.service.js";
-import { CustomerAccountService } from "./customer-account.service.js";
+import type { PrismaService } from "../../../prisma/prisma.service.js";
+import type { CreateOrderDto } from "../dto/create-order.dto.js";
+import type { NotificationsService } from "../../notifications/notifications.service.js";
+import type { CustomerAccountService } from "./customer-account.service.js";
 
 @Injectable()
 export class CreateOrderUseCase {
@@ -30,7 +30,7 @@ export class CreateOrderUseCase {
         storeId_type: { storeId: store.id, type: dto.deliveryMethodType },
       },
     });
-    if (!deliveryConfig || !deliveryConfig.enabled) {
+    if (!deliveryConfig?.enabled) {
       throw new BadRequestException("Método de entrega no disponible");
     }
 
@@ -167,7 +167,7 @@ export class CreateOrderUseCase {
           | Record<string, unknown>
           | null;
         const deliveryCost = Number(details?.estimatedCost ?? 0);
-        const finalAmount = totalAmount!.plus(deliveryCost);
+        const finalAmount = totalAmount?.plus(deliveryCost);
 
         const expiresAt = new Date(
           Date.now() + store.holdWindowHours * 60 * 60 * 1000,

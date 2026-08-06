@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
-import { ExpireOrdersUseCase } from "./expire-orders.usecase.js";
+import type { ExpireOrdersUseCase } from "./expire-orders.usecase.js";
 
 @Injectable()
 export class OrdersCronService {

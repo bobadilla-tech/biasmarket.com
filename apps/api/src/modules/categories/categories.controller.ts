@@ -10,10 +10,10 @@ import {
 } from "@nestjs/common";
 import { AuthGuard, Session } from "@thallesp/nestjs-better-auth";
 import type { UserSession } from "@thallesp/nestjs-better-auth";
-import { CategoriesService } from "./categories.service.js";
-import { CreateCategoryDto } from "./dto/create-category.dto.js";
-import { UpdateCategoryDto } from "./dto/update-category.dto.js";
-import { CategoryResponseDto } from "./dto/category-response.dto.js";
+import type { CategoriesService } from "./categories.service.js";
+import type { CreateCategoryDto } from "./dto/create-category.dto.js";
+import type { UpdateCategoryDto } from "./dto/update-category.dto.js";
+import type { CategoryResponseDto } from "./dto/category-response.dto.js";
 
 interface CategoryRow {
   id: string;

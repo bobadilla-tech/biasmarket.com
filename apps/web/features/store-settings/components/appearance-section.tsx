@@ -48,7 +48,7 @@ export function AppearanceSection({ store }: { store: DashboardStore }) {
     setSelectedPaletteId(initialIsPreset ? initial.id : "custom");
     if (!initialIsPreset) setCustomColor(initial.colors.primary);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [store.id]);
+  }, [initialIsPreset, initial.id, initial.colors.primary]);
 
   useSavedFlash(saveAppearance.isSuccess, saveAppearance.reset);
 

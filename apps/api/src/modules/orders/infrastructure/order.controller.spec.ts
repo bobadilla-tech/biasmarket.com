@@ -1,4 +1,4 @@
-import { Test, TestingModule } from "@nestjs/testing";
+import { Test, type TestingModule } from "@nestjs/testing";
 import { type Mock, vi } from "vitest";
 
 vi.mock("@thallesp/nestjs-better-auth", () => ({

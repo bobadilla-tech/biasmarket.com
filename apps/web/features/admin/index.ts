@@ -13,8 +13,8 @@ export { InquiriesTable } from "./components/inquiries-table";
 export { AdminStoresTable } from "./components/admin-stores-table";
 export { AdminUsersTable } from "./components/admin-users-table";
 
-export { type Inquiry } from "./schemas/inquiry.schema";
-export { type AdminStore } from "./schemas/admin-store.schema";
+export type { Inquiry } from "./schemas/inquiry.schema";
+export type { AdminStore } from "./schemas/admin-store.schema";
 export {
   type AdminUser,
   type StoreCount,

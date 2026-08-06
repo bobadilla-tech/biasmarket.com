@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import type { Prisma } from "@biasmarket/db";
-import { PrismaService } from "../../prisma/prisma.service.js";
+import type { PrismaService } from "../../prisma/prisma.service.js";
 
 @Injectable()
 export class ProductSearchService {

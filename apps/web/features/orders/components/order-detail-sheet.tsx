@@ -56,9 +56,9 @@ export function OrderDetailSheet({
   const t = useTranslations("dashboard.orders");
   const { locale } = useParams<{ locale: string }>();
 
-  const next = order ? NEXT_FULFILLMENT[order.fulfillmentStatus] : undefined;
+  const _next = order ? NEXT_FULFILLMENT[order.fulfillmentStatus] : undefined;
 
-  const canCancel = !isPending &&
+  const _canCancel = !isPending &&
     order &&
     order.paymentStatus !== "CANCELLED" &&
     order.fulfillmentStatus !== "COMPLETED";

@@ -44,7 +44,7 @@ export function CheckoutForm(
       setPaymentMethodId(paymentMethods[0].method);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paymentMethods]);
+  }, [paymentMethods, paymentMethodId]);
 
   const form = useForm<CheckoutFormInput>({
     resolver: zodResolver(buildCheckoutFormSchema(points.length > 0)),
@@ -68,7 +68,7 @@ export function CheckoutForm(
       form.setValue("pickupPointId", deliveryOptions.data.points[0].id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [deliveryOptions.data]);
+  }, [deliveryOptions.data, form.setValue, form.getValues]);
 
   const customerPhone = form.watch("customerPhone");
   const deliveryMethodType = form.watch("deliveryMethodType");

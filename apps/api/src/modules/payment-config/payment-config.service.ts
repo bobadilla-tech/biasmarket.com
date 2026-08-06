@@ -3,8 +3,8 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { PrismaService } from "../../prisma/prisma.service.js";
-import { UpsertPaymentMethodDto } from "./dto/upsert-payment-method.dto.js";
+import type { PrismaService } from "../../prisma/prisma.service.js";
+import type { UpsertPaymentMethodDto } from "./dto/upsert-payment-method.dto.js";
 
 @Injectable()
 export class PaymentConfigService {

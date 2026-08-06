@@ -1,10 +1,10 @@
 import { ConflictException, Injectable, Logger } from "@nestjs/common";
 import { escapeHtml } from "@biasmarket/utils/strings";
-import { PrismaService } from "../../../prisma/prisma.service.js";
-import { OrderRepository } from "../infrastructure/order.repository.js";
+import type { PrismaService } from "../../../prisma/prisma.service.js";
+import type { OrderRepository } from "../infrastructure/order.repository.js";
 import { Order } from "../domain/order.entity.js";
-import { NotificationsService } from "../../notifications/notifications.service.js";
-import { MailerService } from "../../../mailer/mailer.service.js";
+import type { NotificationsService } from "../../notifications/notifications.service.js";
+import type { MailerService } from "../../../mailer/mailer.service.js";
 
 function buildPaymentStatusEmailHtml(
   decision: "approve" | "reject",

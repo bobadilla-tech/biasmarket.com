@@ -210,7 +210,7 @@ export async function applyStoreFixture(
       d.type === order.deliveryMethodType
     )?.details ?? {};
     const deliveryCost = Number(
-      (baseDeliveryDetails as Record<string, unknown>)["estimatedCost"] ?? 0,
+      (baseDeliveryDetails as Record<string, unknown>).estimatedCost ?? 0,
     );
     const finalAmount = (subtotal + deliveryCost).toFixed(2);
 

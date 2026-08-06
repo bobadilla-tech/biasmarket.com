@@ -1,4 +1,4 @@
-import { Test, TestingModule } from "@nestjs/testing";
+import { Test, type TestingModule } from "@nestjs/testing";
 import {
   BadRequestException,
   ForbiddenException,
@@ -269,7 +269,7 @@ describe("StoresService", () => {
         include: { variants: true },
       });
       expect(result.sections).toHaveLength(1);
-      const productIds = result.sections[0].collection!.products.map((
+      const productIds = result.sections[0].collection?.products.map((
         cp: { productId: string },
       ) => cp.productId);
       expect(productIds).toEqual([productA.id, productB.id]);
@@ -307,9 +307,9 @@ describe("StoresService", () => {
         include: { variants: true },
       });
       expect(result.sections).toHaveLength(2);
-      expect(result.sections[0].collection!.name).toBe("Destacados");
+      expect(result.sections[0].collection?.name).toBe("Destacados");
       expect(
-        result.sections[1].collection!.products.map((
+        result.sections[1].collection?.products.map((
           cp: { productId: string },
         ) => cp.productId),
       ).toEqual([
@@ -389,7 +389,7 @@ describe("StoresService", () => {
       const result = await service.findPublicBySlug("my-store");
 
       expect(
-        result.sections[0].collection!.products.map((
+        result.sections[0].collection?.products.map((
           cp: { productId: string },
         ) => cp.productId),
       ).toEqual([

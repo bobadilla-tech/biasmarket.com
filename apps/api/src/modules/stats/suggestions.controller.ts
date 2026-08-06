@@ -1,8 +1,8 @@
 import { Controller, Get, Param, UseGuards } from "@nestjs/common";
 import { AuthGuard, Session } from "@thallesp/nestjs-better-auth";
 import type { UserSession } from "@thallesp/nestjs-better-auth";
-import { SuggestionsService } from "./suggestions.service.js";
-import { SuggestionResponseDto } from "./dto/suggestion-response.dto.js";
+import type { SuggestionsService } from "./suggestions.service.js";
+import type { SuggestionResponseDto } from "./dto/suggestion-response.dto.js";
 
 @Controller("stores/:storeId/suggestions")
 @UseGuards(AuthGuard)

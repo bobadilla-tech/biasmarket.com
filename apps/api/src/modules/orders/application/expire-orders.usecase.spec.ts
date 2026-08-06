@@ -1,4 +1,4 @@
-import { Test, TestingModule } from "@nestjs/testing";
+import { Test, type TestingModule } from "@nestjs/testing";
 import { type Mock, vi } from "vitest";
 import { ExpireOrdersUseCase } from "./expire-orders.usecase.js";
 import { PrismaService } from "../../../prisma/prisma.service.js";

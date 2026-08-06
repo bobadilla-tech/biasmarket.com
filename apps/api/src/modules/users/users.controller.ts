@@ -1,6 +1,6 @@
 import { Controller, Get, UseGuards } from "@nestjs/common";
 import { AuthGuard, Roles } from "@thallesp/nestjs-better-auth";
-import { UsersService } from "./users.service.js";
+import type { UsersService } from "./users.service.js";
 
 @Controller("admin/users")
 export class UsersController {

@@ -1,4 +1,4 @@
-import { ExecutionContext, ForbiddenException } from "@nestjs/common";
+import { type ExecutionContext, ForbiddenException } from "@nestjs/common";
 import { OriginGuard } from "./origin.guard.js";
 
 function buildContext(headers: Record<string, string | undefined>) {

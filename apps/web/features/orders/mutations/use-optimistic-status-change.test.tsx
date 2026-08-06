@@ -91,7 +91,7 @@ test("scheduleReview patches the cache immediately and commits after the undo wi
     ordersKeys.byStore("store-1"),
   );
   expect(patched?.[0].paymentStatus).toBe("VERIFIED");
-  expect(result.current.pending["o1"]).toEqual({
+  expect(result.current.pending.o1).toEqual({
     field: "paymentStatus",
     previousValue: "PAYMENT_SUBMITTED",
   });
@@ -137,7 +137,7 @@ test("clicking undo reverts the patch and never commits", async () => {
     ordersKeys.byStore("store-1"),
   );
   expect(reverted?.[0].fulfillmentStatus).toBe("ORDERING");
-  expect(result.current.pending["o1"]).toBeUndefined();
+  expect(result.current.pending.o1).toBeUndefined();
 
   await act(async () => {
     vi.advanceTimersByTime(8000);

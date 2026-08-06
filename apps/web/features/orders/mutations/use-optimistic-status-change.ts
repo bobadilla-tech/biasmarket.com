@@ -36,7 +36,7 @@ export function useOptimisticStatusChange(
   const queryClient = useQueryClient();
   const reviewPayment = useReviewPayment(storeId);
   const advanceFulfillment = useAdvanceFulfillment(storeId);
-  const cancelOrder = useCancelOrder(storeId);
+  const _cancelOrder = useCancelOrder(storeId);
   const [pending, setPending] = useState<PendingMap>({});
 
   const patch = (orderId: string, field: StatusField, value: string) => {

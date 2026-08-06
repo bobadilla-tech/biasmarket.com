@@ -10,7 +10,7 @@ import type {
   ProductVariant,
   Store,
 } from "@biasmarket/db";
-import { PrismaService } from "../../prisma/prisma.service.js";
+import type { PrismaService } from "../../prisma/prisma.service.js";
 
 type Client = Prisma.TransactionClient | PrismaService;
 

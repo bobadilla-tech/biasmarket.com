@@ -19,13 +19,13 @@ export { ProductTile } from "./components/product-tile";
 export { ProductRow } from "./components/product-row";
 export { ProductSheet } from "./components/product-sheet";
 
-export { type Category } from "./schemas/category.schema";
-export {
-  type OptionTypeDraft,
-  type Variant,
-  type VariantDraft,
+export type { Category } from "./schemas/category.schema";
+export type {
+  OptionTypeDraft,
+  Variant,
+  VariantDraft,
 } from "./schemas/variant.schema";
-export { type Product } from "./schemas/product.schema";
+export type { Product } from "./schemas/product.schema";
 export {
   type ProductFormInput,
   productFormSchema,

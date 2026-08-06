@@ -10,8 +10,8 @@ import {
 import { ApiQuery } from "@nestjs/swagger";
 import { AuthGuard, Session } from "@thallesp/nestjs-better-auth";
 import type { UserSession } from "@thallesp/nestjs-better-auth";
-import { NotificationsService } from "./notifications.service.js";
-import {
+import type { NotificationsService } from "./notifications.service.js";
+import type {
   NotificationCountResponseDto,
   NotificationResponseDto,
 } from "./dto/notification-response.dto.js";

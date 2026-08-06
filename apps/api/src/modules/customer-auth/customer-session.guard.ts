@@ -1,6 +1,6 @@
 import {
-  CanActivate,
-  ExecutionContext,
+  type CanActivate,
+  type ExecutionContext,
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
@@ -9,7 +9,7 @@ import {
   createCustomerSessionToken,
   verifyCustomerSessionToken,
 } from "@biasmarket/utils/customer-account-token";
-import { PrismaService } from "../../prisma/prisma.service.js";
+import type { PrismaService } from "../../prisma/prisma.service.js";
 import { derivePasswordVersion } from "./customer-auth.service.js";
 import {
   CUSTOMER_SESSION_COOKIE,

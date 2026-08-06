@@ -10,12 +10,12 @@ import {
 } from "@nestjs/common";
 import { AuthGuard, Session } from "@thallesp/nestjs-better-auth";
 import type { UserSession } from "@thallesp/nestjs-better-auth";
-import { CollectionsService } from "./collections.service.js";
-import { CreateCollectionDto } from "./dto/create-collection.dto.js";
-import { UpdateCollectionDto } from "./dto/update-collection.dto.js";
-import { AddCollectionProductDto } from "./dto/add-collection-product.dto.js";
-import { ReorderCollectionProductsDto } from "./dto/reorder-collection-products.dto.js";
-import {
+import type { CollectionsService } from "./collections.service.js";
+import type { CreateCollectionDto } from "./dto/create-collection.dto.js";
+import type { UpdateCollectionDto } from "./dto/update-collection.dto.js";
+import type { AddCollectionProductDto } from "./dto/add-collection-product.dto.js";
+import type { ReorderCollectionProductsDto } from "./dto/reorder-collection-products.dto.js";
+import type {
   CollectionProductResponseDto,
   CollectionResponseDto,
   CollectionWithProductsResponseDto,

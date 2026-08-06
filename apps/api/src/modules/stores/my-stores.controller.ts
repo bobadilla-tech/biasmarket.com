@@ -1,8 +1,8 @@
 import { Controller, Get, UseGuards } from "@nestjs/common";
 import { AuthGuard, Session } from "@thallesp/nestjs-better-auth";
 import type { UserSession } from "@thallesp/nestjs-better-auth";
-import { StoresService } from "./stores.service.js";
-import { StoreResponseDto } from "./dto/store-response.dto.js";
+import type { StoresService } from "./stores.service.js";
+import type { StoreResponseDto } from "./dto/store-response.dto.js";
 import { toStoreDto } from "./stores.mapper.js";
 
 @Controller("me/stores")
