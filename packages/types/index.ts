@@ -26,3 +26,5 @@ export * as pickupPoints from "./generated/pickup-points/pickup-points.js";
 export * as publicPickupPoints from "./generated/public-pickup-points/public-pickup-points.js";
 export * as stores from "./generated/stores/stores.js";
 export * as myStores from "./generated/my-stores/my-stores.js";
+export * as orders from "./generated/order/order.js";
+export * as checkout from "./generated/checkout/checkout.js";

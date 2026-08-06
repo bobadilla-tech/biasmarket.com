@@ -1,5 +1,4 @@
-import { apiFetch } from "@/lib/api";
-import { orderListSchema } from "../schemas/order.schema";
+import { apiClient } from "@/lib/api-client";
 import type { RegisterPaymentInput } from "../schemas/register-payment.schema";
 
 function apiUrl() {
@@ -7,13 +6,10 @@ function apiUrl() {
 }
 
 export const ordersApi = {
-  async list(storeId: string, fallbackErrorMessage?: string) {
-    const data = await apiFetch(
-      `/stores/${storeId}/orders`,
-      {},
+  list(storeId: string, fallbackErrorMessage?: string) {
+    return apiClient.orders.findAll(storeId, undefined, {
       fallbackErrorMessage,
-    );
-    return orderListSchema.parse(data);
+    });
   },
 
   review(
@@ -23,13 +19,11 @@ export const ordersApi = {
     reason?: string,
     fallbackErrorMessage?: string,
   ) {
-    return apiFetch(
-      `/stores/${storeId}/orders/${orderId}/review`,
-      {
-        method: "PATCH",
-        body: JSON.stringify({ decision, ...(reason && { reason }) }),
-      },
-      fallbackErrorMessage,
+    return apiClient.orders.review(
+      storeId,
+      orderId,
+      { decision, ...(reason && { reason }) },
+      { fallbackErrorMessage },
     );
   },
 
@@ -39,10 +33,11 @@ export const ordersApi = {
     status: string,
     fallbackErrorMessage?: string,
   ) {
-    return apiFetch(
-      `/stores/${storeId}/orders/${orderId}/fulfillment`,
-      { method: "PATCH", body: JSON.stringify({ status }) },
-      fallbackErrorMessage,
+    return apiClient.orders.advance(
+      storeId,
+      orderId,
+      { status: status as "IN_TRANSIT" | "READY" | "COMPLETED" },
+      { fallbackErrorMessage },
     );
   },
 
@@ -82,13 +77,8 @@ export const ordersApi = {
     },
     fallbackErrorMessage?: string,
   ) {
-    return apiFetch(
-      `/stores/${storeId}/orders/${orderId}/cancel`,
-      {
-        method: "PATCH",
-        body: JSON.stringify(data),
-      },
+    return apiClient.orders.cancel(storeId, orderId, data, {
       fallbackErrorMessage,
-    );
+    });
   },
 };

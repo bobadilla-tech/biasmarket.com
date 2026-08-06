@@ -231,9 +231,127 @@ running standalone first (not the full dev stack).
   extension chain. If it turns out fixing it is trivial and clearly desired, ask
   first rather than silently changing what a live endpoint returns.
 
-## Execution notes
+## Execution notes (2026-08-05/06)
 
-Append here once Batch 4 lands — what matched this plan, what diverged, and
-update `docs/plans/2026-08-05-orval-rollout-batches-3-6-plan.md`'s "What's left"
-and `apps/web/AGENTS.md`'s migrated-tags list at the same time, same convention
-every prior batch used.
+Batch 4 landed: `Order` (findAll/findOne/addPayment/review/advance/cancel) and
+`Checkout` (create). Matches this plan closely — every risk called out above
+turned out real; notes below are what diverged or came up in more detail.
+
+- **All three predicted response shapes were real, confirmed by reading the
+  code**: `OrderResponseDto` (findAll, via `withPaymentSummary`, no `proofs`),
+  `OrderDetailResponseDto extends OrderResponseDto` (findOne/addPayment, adds
+  `proofs`), `OrderStatusResponseDto` (review/advance/cancel — the raw
+  `tx.order.update`/`findUniqueOrThrow` row, confirmed by reading
+  `review-payment.usecase.ts`/`advance-fulfillment.usecase.ts`/
+  `cancel-order.usecase.ts`: none of the three call `withPaymentSummary`, so
+  none have `paidAmount`/`pendingAmount`/`paidPercentage`/`items`/`payments`/
+  `proofs`). `Checkout.create` needed its own fourth shape
+  (`CheckoutResultResponseDto`/`CheckoutOrderResponseDto`/
+  `CheckoutOrderItemResponseDto`, in a separate `checkout-response.dto.ts`) —
+  `tx.order.create({ include: { items: true } })` has no product/variant
+  join on items at all, unlike every other shape.
+- **The frontend never had a `findOne`/detail query** — `features/orders`
+  only ever calls `list` (findAll). This meant `OrderDetailResponseDto`
+  (with `proofs`) needed zero frontend consumer changes; `Order` (the
+  frontend type alias) only ever needed to match `OrderResponseDto`.
+  `PaymentProofLightbox` (despite the name) renders a `payment.imageUrl`,
+  not a separate `PaymentProof` row — confirmed by grepping the components
+  for "proof" before assuming a gap existed.
+- **A real, general bug in the shared `test/schema-assert.ts` helper, not
+  specific to this module**: `assertMatchesSchema`'s nullable check
+  (`if (resolved.nullable && value === null) return;`) sat *after* the
+  `type === "object"`/`"array"` branches, which both throw immediately on a
+  `null` value before ever reaching it — so a nullable class-typed field
+  (`OrderItemResponseDto.variant`) whose real value actually was `null` was
+  the first case in this whole rollout to exercise it (Batch 3's nullable
+  `collection` field was, in every test, non-null). Moved the nullable check
+  to the top of the function, before any type-specific branch. Fixed once,
+  in the shared helper, not worked around in this module's spec.
+- **Money precision: a real, pre-existing bug found and confirmed live, not
+  introduced by this migration and not fixed here.**
+  `OrderRepository.withPaymentSummary` computes `pendingAmount` via plain
+  `Number` subtraction (`Number(order.requiredAmount) - paid`) and
+  `paidPercentage` via plain division — both real JS floating-point
+  arithmetic on money, not Decimal-safe. A dev-server smoke test (required
+  by this plan's step 8, "assert the arithmetic is actually correct at
+  runtime") caught it immediately: a `99.99` order with a `40` payment
+  produces `pendingAmount: 59.989999999999995`, not `59.99`. Worse, this
+  isn't just a display artifact — `OrderController.addPayment`'s own guard
+  (`if (numericAmount > order.pendingAmount) throw ...`) uses the same
+  imprecise value, so **a seller who enters exactly the amount the UI shows
+  as owed gets rejected** ("El abono excede el saldo pendiente") for an
+  order that isn't actually overpaid — confirmed live: `POST .../payments`
+  with `amount: 59.99` against that exact order 400s. This bug predates the
+  Orval migration entirely (`OrderRepository`/`OrderController` business
+  logic, untouched by DTO authoring) and reproduces on `main` today,
+  independent of this branch. Per this plan's own non-goals and the
+  established posture from Batch 3's `DELETE /stores/:storeId` bug: found,
+  confirmed, documented — not silently fixed as a side effect of a
+  DTO-authoring migration. **Flagged directly to the user in the session
+  that found it**, given the financial stakes; worth a dedicated follow-up
+  fix (Decimal-safe arithmetic, e.g. rounding to cents or using a real
+  decimal library) independent of this rollout.
+- **`vi.mock` hoisting**: `use-optimistic-status-change.test.tsx` (two
+  separate `vi.mock` calls, each preceded by its own `const xMock = {...}`)
+  hit a real `ReferenceError: Cannot access 'ordersMock' before
+  initialization` that none of the single-`vi.mock`-call test files in
+  prior batches ever hit. Fixed with `vi.hoisted()` around both mock
+  objects — the officially correct pattern for referencing a variable
+  inside a `vi.mock` factory, apparently only strictly required once a file
+  has more than one `vi.mock` call plus other top-level code between them.
+  Worth using `vi.hoisted()` by default in any future test file with
+  multiple `vi.mock` calls, rather than relying on the same
+  `const foo = ...; vi.mock(...)` ordering that happens to work with a
+  single mock.
+- **`features/customers/schemas/customer.schema.ts` broke** when `orders`
+  dropped its own `orderSchema`/`orderItemRowSchema`/`orderPaymentRowSchema`
+  zod exports — `Customers.getOne` (a separate, unmigrated tag, Batch 5)
+  returns the identical shape `Order.findAll` does (confirmed by reading
+  `CustomersService.findOneForStore`, which calls the same
+  `withPaymentSummary`) and was importing `orders`' zod schema to validate
+  it. Fixed by copying the schema bodies locally into `customer.schema.ts`
+  (not re-exporting from `orders`, which no longer owns runtime validation
+  for this shape) — grep every `@/features/orders` import
+  repo-wide before declaring a migrated feature's schema file trimmed, not
+  just its own directory's test suite.
+- **`OrderStatusBadge`/`getOrderStatus`/`matchesTab`/`paymentsLocked`
+  narrowed from `order: Order` to `order: Pick<Order, "paymentStatus" |
+  "fulfillmentStatus">`** — once `Order` became a direct alias onto the
+  full `OrderResponseDto` (many more required fields than the old
+  hand-picked zod schema), fixture objects in three call sites (`customer-
+  detail-sheet.tsx`'s locally-shaped order rows, two test files) stopped
+  structurally matching. Two test fixtures were completed with the full
+  field set (the honest fix); `OrderStatusBadge` and its three status-logic
+  functions were narrowed instead, since they provably only ever read those
+  two fields — a genuine improvement (decouples a presentational component
+  from the full response shape), not just a type-error workaround, and it
+  fixed the third call site (`customer-detail-sheet.tsx`, a different
+  feature's locally-shaped order rows) for free.
+- **`@ApiQuery` gap confirmed and fixed**: `OrderController.findAll`'s
+  `paymentStatus`/`fulfillmentStatus` query params had no `@ApiQuery`
+  decorator, same silent-drop risk as every prior batch's finding.
+- **e2e spec**: `test/orders.e2e-spec.ts`, four separate orders (one full
+  lifecycle via multipart `addPayment` + `advance`, one partial-payment +
+  explicit `review` approve, one `review` reject, one `cancel`) rather than
+  one order reused across everything, so each real HTTP path gets exercised
+  independently without earlier steps' transition guards blocking later
+  ones (e.g. `advance` requires `VERIFIED`, `cancel`'s stock-release branch
+  only applies to specific `paymentStatus` values).
+- **Verification performed**: `pnpm --filter api test` (283 tests, all
+  green — `order.controller.spec.ts`'s two `addPayment` tests needed a
+  second `findRowByIdForStore` mock resolution for the final re-fetch,
+  same "controller now dereferences the resolved value" pattern as every
+  prior batch). `pnpm --filter api test:e2e` (14 spec files, 30 tests, all
+  green, including the new 4-order `orders.e2e-spec.ts`).
+  `pnpm --filter @biasmarket/types typecheck`/`build`, `pnpm --filter web
+  typecheck`/`test` (46 files, 148 tests)/`build`, all green. A standalone
+  Node script against the real running `apps/api` dev server exercised the
+  full checkout → partial payment → (blocked) exact-payment → review-approve
+  → advance → findAll lifecycle end to end — this is the script that caught
+  the money-precision bug above; smoke-test rows cleaned up from the local
+  dev database afterward. Not browser-verified, same caveat as every prior
+  batch.
+
+Batches 5–6 are unstarted; Batch 5 (`CustomerAuth`/`CustomerAccount`/
+`Customers`) is blocked on a spec-bug fix the user must explicitly approve
+before it's touched (see `docs/plans/2026-08-05-orval-rollout-batches-3-6-plan.md`).

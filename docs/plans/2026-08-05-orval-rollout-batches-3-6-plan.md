@@ -201,15 +201,15 @@ type.
     but there may be no `queries`/`mutations` file to touch, only
     `checkout.api.ts`'s public read.
 
-- **Batch 4** — `Order` (`features/orders` — money + upload again, plus the
-  sensitive fulfillment-transition/optimistic-undo logic in
-  `use-optimistic-status-change.ts`; that hook's business logic doesn't change,
-  only its calls into `apiClient` do — read it before touching), `Checkout`
-  (`features/checkout` — the actual checkout-flow endpoints, as opposed to the
-  public delivery/payment/pickup reads Batch 3 already moved onto the generated
-  client). Do this carefully; it's the second money-bearing module after
-  `Products` and touches the manual-payment state machine
-  `docs/core/security-payments.md` describes.
+- ~~**Batch 4** — `Order`, `Checkout`~~ — done, see
+  `docs/plans/2026-08-05-orval-rollout-batch-4-order-checkout-plan.md`'s
+  execution notes for the full writeup, including a **real, pre-existing
+  money-precision bug found and confirmed live** (not fixed as part of this
+  migration — flagged to the user): `OrderRepository.withPaymentSummary`
+  computes `pendingAmount`/`paidPercentage` via plain JS float arithmetic,
+  not Decimal-safe, and the `addPayment` guard using that same imprecise
+  value means a seller entering the *exact* amount the UI shows as owed can
+  get rejected as "exceeds pending balance."
 - **Batch 5** — `CustomerAuth`, `CustomerAccount`, `Customers`
   (`features/customer-auth`, `features/customers`). **Blocked**: two
   `CustomerAuthController` endpoints (`changePassword`, `logout`) are missing
@@ -435,6 +435,7 @@ diverged or came up that prior batches hadn't hit.
   cleaned up from the local dev database afterward. Not browser-verified, same
   caveat as every prior batch.
 
-Batches 4–6 are unstarted; pick up at Batch 4 (`Order`, `Checkout`) next — see
-"What's left" above for the full scope and cautions (money + upload again for
-`Order`, the manual-payment state machine).
+Batch 4 (`Order`, `Checkout`) is also done now — see
+`2026-08-05-orval-rollout-batch-4-order-checkout-plan.md`'s own execution
+notes. Batches 5–6 are unstarted; Batch 5 is blocked on a spec-bug fix the
+user must approve first (below).

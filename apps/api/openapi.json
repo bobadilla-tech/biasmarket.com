@@ -1194,6 +1194,22 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "fulfillmentStatus",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "paymentStatus",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -1204,7 +1220,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "object"
+                    "$ref": "#/components/schemas/OrderResponseDto"
                   }
                 }
               }
@@ -1243,7 +1259,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/OrderDetailResponseDto"
                 }
               }
             }
@@ -1281,7 +1297,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/OrderDetailResponseDto"
                 }
               }
             }
@@ -1325,7 +1341,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderStatusResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1366,7 +1389,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderStatusResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1407,7 +1437,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderStatusResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1440,7 +1477,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckoutResultResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -4222,6 +4266,589 @@
           "count"
         ]
       },
+      "OrderProductResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "price": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "availableUntil": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "status": {
+            "enum": [
+              "DRAFT",
+              "PUBLISHED"
+            ],
+            "type": "string"
+          },
+          "soldOut": {
+            "type": "boolean"
+          },
+          "deletedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "name",
+          "description",
+          "price",
+          "currency",
+          "images",
+          "availableUntil",
+          "status",
+          "soldOut",
+          "deletedAt",
+          "createdAt"
+        ]
+      },
+      "OrderVariantResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "stock": {
+            "type": "number",
+            "nullable": true
+          },
+          "reserved": {
+            "type": "number"
+          },
+          "priceOverride": {
+            "type": "string",
+            "nullable": true
+          },
+          "imageOverride": {
+            "type": "string",
+            "nullable": true
+          },
+          "attributes": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "id",
+          "productId",
+          "storeId",
+          "name",
+          "stock",
+          "reserved",
+          "priceOverride",
+          "imageOverride",
+          "attributes"
+        ]
+      },
+      "OrderItemResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "orderId": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "variantId": {
+            "type": "string",
+            "nullable": true
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unitPriceAtPurchase": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "product": {
+            "$ref": "#/components/schemas/OrderProductResponseDto"
+          },
+          "variant": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrderVariantResponseDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "orderId",
+          "storeId",
+          "productId",
+          "variantId",
+          "quantity",
+          "unitPriceAtPurchase",
+          "currency",
+          "createdAt",
+          "product",
+          "variant"
+        ]
+      },
+      "OrderPaymentResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "orderId": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "method": {
+            "nullable": true,
+            "enum": [
+              "YAPE",
+              "PLIN",
+              "TRANSFER",
+              "CASH"
+            ],
+            "type": "string"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "imageUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "orderId",
+          "storeId",
+          "amount",
+          "currency",
+          "method",
+          "note",
+          "imageUrl",
+          "createdAt"
+        ]
+      },
+      "OrderResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "customerId": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerPhone": {
+            "type": "string"
+          },
+          "customerName": {
+            "type": "string",
+            "nullable": true
+          },
+          "deliveryMethodType": {
+            "enum": [
+              "PICKUP",
+              "COURIER"
+            ],
+            "type": "string"
+          },
+          "deliveryDetails": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true
+          },
+          "pickupPointId": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentStatus": {
+            "enum": [
+              "PENDING_PAYMENT",
+              "PARTIALLY_PAID",
+              "PAYMENT_SUBMITTED",
+              "VERIFIED",
+              "REJECTED",
+              "CANCELLED"
+            ],
+            "type": "string"
+          },
+          "paymentRejectionReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "fulfillmentStatus": {
+            "enum": [
+              "ORDERING",
+              "IN_TRANSIT",
+              "READY",
+              "COMPLETED"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "CANCELLED"
+            ],
+            "type": "string"
+          },
+          "cancellationResolution": {
+            "nullable": true,
+            "enum": [
+              "REFUNDED",
+              "RETAINED",
+              "STORE_CREDIT"
+            ],
+            "type": "string"
+          },
+          "cancellationReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalAmount": {
+            "type": "string"
+          },
+          "requiredAmount": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paidAmount": {
+            "type": "number"
+          },
+          "pendingAmount": {
+            "type": "number"
+          },
+          "paidPercentage": {
+            "type": "number"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderItemResponseDto"
+            }
+          },
+          "payments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderPaymentResponseDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "customerId",
+          "customerEmail",
+          "customerPhone",
+          "customerName",
+          "deliveryMethodType",
+          "deliveryDetails",
+          "pickupPointId",
+          "paymentStatus",
+          "paymentRejectionReason",
+          "fulfillmentStatus",
+          "status",
+          "cancellationResolution",
+          "cancellationReason",
+          "totalAmount",
+          "requiredAmount",
+          "currency",
+          "expiresAt",
+          "createdAt",
+          "paidAmount",
+          "pendingAmount",
+          "paidPercentage",
+          "items",
+          "payments"
+        ]
+      },
+      "PaymentProofResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "orderId": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "imageUrl": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "PENDING_REVIEW",
+              "APPROVED",
+              "REJECTED"
+            ],
+            "type": "string"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reviewedBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "reviewedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "orderId",
+          "storeId",
+          "imageUrl",
+          "status",
+          "submittedAt",
+          "reviewedBy",
+          "reviewedAt"
+        ]
+      },
+      "OrderDetailResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "customerId": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerPhone": {
+            "type": "string"
+          },
+          "customerName": {
+            "type": "string",
+            "nullable": true
+          },
+          "deliveryMethodType": {
+            "enum": [
+              "PICKUP",
+              "COURIER"
+            ],
+            "type": "string"
+          },
+          "deliveryDetails": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true
+          },
+          "pickupPointId": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentStatus": {
+            "enum": [
+              "PENDING_PAYMENT",
+              "PARTIALLY_PAID",
+              "PAYMENT_SUBMITTED",
+              "VERIFIED",
+              "REJECTED",
+              "CANCELLED"
+            ],
+            "type": "string"
+          },
+          "paymentRejectionReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "fulfillmentStatus": {
+            "enum": [
+              "ORDERING",
+              "IN_TRANSIT",
+              "READY",
+              "COMPLETED"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "CANCELLED"
+            ],
+            "type": "string"
+          },
+          "cancellationResolution": {
+            "nullable": true,
+            "enum": [
+              "REFUNDED",
+              "RETAINED",
+              "STORE_CREDIT"
+            ],
+            "type": "string"
+          },
+          "cancellationReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalAmount": {
+            "type": "string"
+          },
+          "requiredAmount": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paidAmount": {
+            "type": "number"
+          },
+          "pendingAmount": {
+            "type": "number"
+          },
+          "paidPercentage": {
+            "type": "number"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderItemResponseDto"
+            }
+          },
+          "payments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderPaymentResponseDto"
+            }
+          },
+          "proofs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentProofResponseDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "customerId",
+          "customerEmail",
+          "customerPhone",
+          "customerName",
+          "deliveryMethodType",
+          "deliveryDetails",
+          "pickupPointId",
+          "paymentStatus",
+          "paymentRejectionReason",
+          "fulfillmentStatus",
+          "status",
+          "cancellationResolution",
+          "cancellationReason",
+          "totalAmount",
+          "requiredAmount",
+          "currency",
+          "expiresAt",
+          "createdAt",
+          "paidAmount",
+          "pendingAmount",
+          "paidPercentage",
+          "items",
+          "payments",
+          "proofs"
+        ]
+      },
       "ReviewPaymentDto": {
         "type": "object",
         "properties": {
@@ -4239,6 +4866,131 @@
         },
         "required": [
           "decision"
+        ]
+      },
+      "OrderStatusResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "customerId": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerPhone": {
+            "type": "string"
+          },
+          "customerName": {
+            "type": "string",
+            "nullable": true
+          },
+          "deliveryMethodType": {
+            "enum": [
+              "PICKUP",
+              "COURIER"
+            ],
+            "type": "string"
+          },
+          "deliveryDetails": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true
+          },
+          "pickupPointId": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentStatus": {
+            "enum": [
+              "PENDING_PAYMENT",
+              "PARTIALLY_PAID",
+              "PAYMENT_SUBMITTED",
+              "VERIFIED",
+              "REJECTED",
+              "CANCELLED"
+            ],
+            "type": "string"
+          },
+          "paymentRejectionReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "fulfillmentStatus": {
+            "enum": [
+              "ORDERING",
+              "IN_TRANSIT",
+              "READY",
+              "COMPLETED"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "CANCELLED"
+            ],
+            "type": "string"
+          },
+          "cancellationResolution": {
+            "nullable": true,
+            "enum": [
+              "REFUNDED",
+              "RETAINED",
+              "STORE_CREDIT"
+            ],
+            "type": "string"
+          },
+          "cancellationReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalAmount": {
+            "type": "string"
+          },
+          "requiredAmount": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "customerId",
+          "customerEmail",
+          "customerPhone",
+          "customerName",
+          "deliveryMethodType",
+          "deliveryDetails",
+          "pickupPointId",
+          "paymentStatus",
+          "paymentRejectionReason",
+          "fulfillmentStatus",
+          "status",
+          "cancellationResolution",
+          "cancellationReason",
+          "totalAmount",
+          "requiredAmount",
+          "currency",
+          "expiresAt",
+          "createdAt"
         ]
       },
       "AdvanceFulfillmentDto": {
@@ -4332,6 +5084,199 @@
           "deliveryMethodType",
           "customerPhone",
           "items"
+        ]
+      },
+      "CheckoutOrderItemResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "orderId": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "variantId": {
+            "type": "string",
+            "nullable": true
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unitPriceAtPurchase": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "orderId",
+          "storeId",
+          "productId",
+          "variantId",
+          "quantity",
+          "unitPriceAtPurchase",
+          "currency",
+          "createdAt"
+        ]
+      },
+      "CheckoutOrderResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "customerId": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerPhone": {
+            "type": "string"
+          },
+          "customerName": {
+            "type": "string",
+            "nullable": true
+          },
+          "deliveryMethodType": {
+            "enum": [
+              "PICKUP",
+              "COURIER"
+            ],
+            "type": "string"
+          },
+          "deliveryDetails": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true
+          },
+          "pickupPointId": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentStatus": {
+            "enum": [
+              "PENDING_PAYMENT",
+              "PARTIALLY_PAID",
+              "PAYMENT_SUBMITTED",
+              "VERIFIED",
+              "REJECTED",
+              "CANCELLED"
+            ],
+            "type": "string"
+          },
+          "paymentRejectionReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "fulfillmentStatus": {
+            "enum": [
+              "ORDERING",
+              "IN_TRANSIT",
+              "READY",
+              "COMPLETED"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "CANCELLED"
+            ],
+            "type": "string"
+          },
+          "cancellationResolution": {
+            "nullable": true,
+            "enum": [
+              "REFUNDED",
+              "RETAINED",
+              "STORE_CREDIT"
+            ],
+            "type": "string"
+          },
+          "cancellationReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalAmount": {
+            "type": "string"
+          },
+          "requiredAmount": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CheckoutOrderItemResponseDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "customerId",
+          "customerEmail",
+          "customerPhone",
+          "customerName",
+          "deliveryMethodType",
+          "deliveryDetails",
+          "pickupPointId",
+          "paymentStatus",
+          "paymentRejectionReason",
+          "fulfillmentStatus",
+          "status",
+          "cancellationResolution",
+          "cancellationReason",
+          "totalAmount",
+          "requiredAmount",
+          "currency",
+          "expiresAt",
+          "createdAt",
+          "items"
+        ]
+      },
+      "CheckoutResultResponseDto": {
+        "type": "object",
+        "properties": {
+          "order": {
+            "$ref": "#/components/schemas/CheckoutOrderResponseDto"
+          },
+          "whatsappUrl": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "order",
+          "whatsappUrl"
         ]
       },
       "DeliveryMethodConfigResponseDto": {

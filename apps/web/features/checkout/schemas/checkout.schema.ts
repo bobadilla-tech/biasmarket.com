@@ -1,14 +1,12 @@
 import { z } from "zod";
+import type { CheckoutResultResponseDto } from "@biasmarket/types";
 
-// `whatsappUrl` is `null`, never `undefined`, when the store has no WhatsApp
-// number configured (create-order.usecase.ts) — `.nullable()`, not
-// `.optional()`, or a completed checkout without WhatsApp throws on parse.
-export const checkoutResultSchema = z.object({
-  order: z.object({ id: z.string() }),
-  whatsappUrl: z.string().nullable(),
-});
-
-export type CheckoutResult = z.infer<typeof checkoutResultSchema>;
+// Was a zod schema for the Checkout.create response; now a type alias onto
+// the generated response DTO — see the OpenAPI note in apps/web/AGENTS.md.
+// `whatsappUrl` is `null`, never `undefined`, when the store has no
+// WhatsApp number configured (create-order.usecase.ts) — the generated DTO
+// already models this correctly (`nullable`, not optional).
+export type CheckoutResult = CheckoutResultResponseDto;
 
 // Pickup point is only required when the store actually has pickup points
 // configured — built per-load since that depends on the fetched list, same

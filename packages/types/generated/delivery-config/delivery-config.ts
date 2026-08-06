@@ -7,59 +7,71 @@
  */
 import type {
   DeliveryMethodConfigResponseDto,
-  UpsertDeliveryMethodDto,
-} from "../api.schemas.js";
+  UpsertDeliveryMethodDto
+} from '../api.schemas.js';
 
-import { customFetch } from "../../http.js";
+import { customFetch } from '../../http.js';
 
-export const getFindAllUrl = (storeId: string) => {
-  return `/stores/${storeId}/delivery-methods`;
-};
+export const getFindAllUrl = (storeId: string,) => {
 
-export const findAll = async (
-  storeId: string,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<DeliveryMethodConfigResponseDto[]> => {
-  return customFetch<DeliveryMethodConfigResponseDto[]>(
-    getFindAllUrl(storeId),
-    {
-      ...options,
-      method: "GET",
-    },
-  );
-};
 
-export const getUpsertUrl = (storeId: string) => {
-  return `/stores/${storeId}/delivery-methods`;
-};
 
-export const upsert = async (
-  storeId: string,
-  upsertDeliveryMethodDto: UpsertDeliveryMethodDto,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<DeliveryMethodConfigResponseDto> => {
-  return customFetch<DeliveryMethodConfigResponseDto>(getUpsertUrl(storeId), {
+
+  return `/stores/${storeId}/delivery-methods`
+}
+
+export const findAll = async (storeId: string, options?: Parameters<typeof customFetch>[1]): Promise<DeliveryMethodConfigResponseDto[]> => {
+
+  return customFetch<DeliveryMethodConfigResponseDto[]>(getFindAllUrl(storeId),
+  {
     ...options,
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(upsertDeliveryMethodDto),
-  });
-};
+    method: 'GET'
 
-export const getRemoveUrl = (storeId: string, type: string) => {
-  return `/stores/${storeId}/delivery-methods/${type}`;
-};
 
-export const remove = async (
-  storeId: string,
-  type: string,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<DeliveryMethodConfigResponseDto> => {
-  return customFetch<DeliveryMethodConfigResponseDto>(
-    getRemoveUrl(storeId, type),
-    {
-      ...options,
-      method: "DELETE",
-    },
-  );
-};
+  }
+);}
+
+
+export const getUpsertUrl = (storeId: string,) => {
+
+
+
+
+  return `/stores/${storeId}/delivery-methods`
+}
+
+export const upsert = async (storeId: string,
+    upsertDeliveryMethodDto: UpsertDeliveryMethodDto, options?: Parameters<typeof customFetch>[1]): Promise<DeliveryMethodConfigResponseDto> => {
+
+  return customFetch<DeliveryMethodConfigResponseDto>(getUpsertUrl(storeId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(upsertDeliveryMethodDto)
+  }
+);}
+
+
+export const getRemoveUrl = (storeId: string,
+    type: string,) => {
+
+
+
+
+  return `/stores/${storeId}/delivery-methods/${type}`
+}
+
+export const remove = async (storeId: string,
+    type: string, options?: Parameters<typeof customFetch>[1]): Promise<DeliveryMethodConfigResponseDto> => {
+
+  return customFetch<DeliveryMethodConfigResponseDto>(getRemoveUrl(storeId,type),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+

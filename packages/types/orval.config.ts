@@ -44,6 +44,8 @@ export default defineConfig({
           "PublicPickupPoints",
           "Stores",
           "MyStores",
+          "Order",
+          "Checkout",
         ],
       },
     },

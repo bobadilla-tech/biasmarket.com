@@ -1,7 +1,5 @@
-import { apiFetch } from "@/lib/api";
 import { apiClient } from "@/lib/api-client";
 import type { CartItem } from "@/lib/cart";
-import { checkoutResultSchema } from "../schemas/checkout.schema";
 
 export const checkoutApi = {
   async getDeliveryOptions(slug: string) {
@@ -13,7 +11,7 @@ export const checkoutApi = {
     return { methods, points, paymentMethods };
   },
 
-  async submit(
+  submit(
     slug: string,
     values: {
       deliveryMethodType: string;
@@ -25,25 +23,21 @@ export const checkoutApi = {
     },
     fallbackErrorMessage?: string,
   ) {
-    const data = await apiFetch(
-      `/stores/${slug}/checkout`,
+    return apiClient.checkout.create(
+      slug,
       {
-        method: "POST",
-        body: JSON.stringify({
-          deliveryMethodType: values.deliveryMethodType,
-          pickupPointId: values.pickupPointId || undefined,
-          customerName: values.customerName || undefined,
-          customerPhone: values.customerPhone,
-          customerEmail: values.customerEmail || undefined,
-          items: values.items.map((item) => ({
-            productId: item.productId,
-            variantId: item.variantId,
-            quantity: item.quantity,
-          })),
-        }),
+        deliveryMethodType: values.deliveryMethodType as "PICKUP" | "COURIER",
+        pickupPointId: values.pickupPointId || undefined,
+        customerName: values.customerName || undefined,
+        customerPhone: values.customerPhone,
+        customerEmail: values.customerEmail || undefined,
+        items: values.items.map((item) => ({
+          productId: item.productId,
+          variantId: item.variantId,
+          quantity: item.quantity,
+        })),
       },
-      fallbackErrorMessage,
+      { fallbackErrorMessage },
     );
-    return checkoutResultSchema.parse(data);
   },
 };

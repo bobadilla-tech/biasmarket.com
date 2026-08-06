@@ -14,8 +14,15 @@ export const SENSITIVE_FULFILLMENT = new Set(["COMPLETED"]);
 
 export type OrdersTab = "all" | "pending" | "transit" | "delivered";
 
+// Every function here only reads these two fields — narrowed to a Pick
+// (not the full `Order`/`OrderResponseDto`) so callers with a smaller,
+// locally-shaped order object (e.g. features/customers' customer-detail
+// order rows) don't need to fabricate the full response shape just to get
+// a status badge or tab filter.
+type OrderStatusFields = Pick<Order, "paymentStatus" | "fulfillmentStatus">;
+
 export function getOrderStatus(
-  order: Order,
+  order: OrderStatusFields,
   t: ReturnType<typeof useTranslations>,
 ) {
   if (order.paymentStatus === "REJECTED") {
@@ -61,7 +68,7 @@ export function getOrderStatus(
   };
 }
 
-export function paymentsLocked(order: Order) {
+export function paymentsLocked(order: OrderStatusFields) {
   if (order.paymentStatus === "CANCELLED") return true;
   if (order.paymentStatus === "REJECTED") return true;
   if (order.paymentStatus === "VERIFIED") return true;
@@ -75,7 +82,7 @@ export function paymentsLocked(order: Order) {
  * "pending" here means "needs seller attention" (not yet VERIFIED, or
  * VERIFIED but still sitting at ORDERING) — not literally "payment pending".
  */
-export function matchesTab(order: Order, tab: OrdersTab) {
+export function matchesTab(order: OrderStatusFields, tab: OrdersTab) {
   if (tab === "all") return true;
   if (tab === "delivered") {
     return order.paymentStatus === "VERIFIED" &&

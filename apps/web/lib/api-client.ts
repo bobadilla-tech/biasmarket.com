@@ -1,11 +1,13 @@
 import {
   categories,
+  checkout,
   collections,
   configureApiClient,
   contact,
   deliveryConfig,
   myStores,
   notifications,
+  orders,
   paymentConfig,
   pickupPoints,
   products,
@@ -50,4 +52,6 @@ export const apiClient = {
   publicPickupPoints,
   stores,
   myStores,
+  orders,
+  checkout,
 };

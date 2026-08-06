@@ -10,5 +10,4 @@ export {
   buildCheckoutFormSchema,
   type CheckoutFormInput,
   type CheckoutResult,
-  checkoutResultSchema,
 } from "./schemas/checkout.schema";

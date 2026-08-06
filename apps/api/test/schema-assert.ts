@@ -49,6 +49,13 @@ export function assertMatchesSchema(
   path = "$",
 ): void {
   const resolved = resolveSchema(schema, components);
+  // Checked before any type-specific branch below, not just the primitive
+  // fallthrough at the bottom — a nullable object/array-typed field (e.g.
+  // OrderItemResponseDto.variant, `@ApiProperty({ type: X, nullable: true })`
+  // on a real `null` value) needs this too, or the `type === "object"`/
+  // `"array"` branches throw on `null` before ever reaching the nullable
+  // check that used to live only after them.
+  if (resolved.nullable && value === null) return;
   if (resolved.type === "object") {
     if (typeof value !== "object" || value === null || Array.isArray(value)) {
       throw new Error(`${path}: expected object, got ${JSON.stringify(value)}`);
@@ -91,7 +98,6 @@ export function assertMatchesSchema(
     );
     return;
   }
-  if (resolved.nullable && value === null) return;
   if (resolved.type === "string" && typeof value !== "string") {
     throw new Error(`${path}: expected string, got ${JSON.stringify(value)}`);
   }

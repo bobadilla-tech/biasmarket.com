@@ -1,29 +1,25 @@
 import { afterEach, expect, test, vi } from "vitest";
 
-const apiFetch = vi.fn();
-vi.mock(
-  "@/lib/api",
-  () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }),
-);
-
 const publicDeliveryConfigMock = { findEnabled: vi.fn() };
 const publicPickupPointsMock = { findEnabled: vi.fn() };
 const publicPaymentConfigMock = { findEnabled: vi.fn() };
+const checkoutMock = { create: vi.fn() };
 vi.mock("@/lib/api-client", () => ({
   apiClient: {
     publicDeliveryConfig: publicDeliveryConfigMock,
     publicPickupPoints: publicPickupPointsMock,
     publicPaymentConfig: publicPaymentConfigMock,
+    checkout: checkoutMock,
   },
 }));
 
 const { checkoutApi } = await import("./checkout.api");
 
 afterEach(() => {
-  apiFetch.mockReset();
   publicDeliveryConfigMock.findEnabled.mockReset();
   publicPickupPointsMock.findEnabled.mockReset();
   publicPaymentConfigMock.findEnabled.mockReset();
+  checkoutMock.create.mockReset();
 });
 
 test("getDeliveryOptions fetches all three public config endpoints for the slug", async () => {
@@ -49,8 +45,11 @@ test("getDeliveryOptions fetches all three public config endpoints for the slug"
   expect(result.paymentMethods).toHaveLength(1);
 });
 
-test("submit POSTs the checkout payload, omitting empty optional fields", async () => {
-  apiFetch.mockResolvedValue({ order: { id: "o1" }, whatsappUrl: null });
+test("submit delegates to the generated Checkout.create, omitting empty optional fields", async () => {
+  checkoutMock.create.mockResolvedValue({
+    order: { id: "o1" },
+    whatsappUrl: null,
+  });
 
   const result = await checkoutApi.submit("my-store", {
     deliveryMethodType: "COURIER",
@@ -65,33 +64,18 @@ test("submit POSTs the checkout payload, omitting empty optional fields", async 
     }],
   });
 
-  expect(apiFetch).toHaveBeenCalledWith(
-    "/stores/my-store/checkout",
+  expect(checkoutMock.create).toHaveBeenCalledWith(
+    "my-store",
     {
-      method: "POST",
-      body: JSON.stringify({
-        deliveryMethodType: "COURIER",
-        pickupPointId: undefined,
-        customerName: undefined,
-        customerPhone: "+51999999999",
-        customerEmail: undefined,
-        items: [{ productId: "p1", variantId: undefined, quantity: 2 }],
-      }),
+      deliveryMethodType: "COURIER",
+      pickupPointId: undefined,
+      customerName: undefined,
+      customerPhone: "+51999999999",
+      customerEmail: undefined,
+      items: [{ productId: "p1", variantId: undefined, quantity: 2 }],
     },
-    undefined,
+    { fallbackErrorMessage: undefined },
   );
   expect(result.order.id).toBe("o1");
   expect(result.whatsappUrl).toBeNull();
-});
-
-test("submit throws when the response fails schema validation", async () => {
-  apiFetch.mockResolvedValue({ order: { id: "o1" } });
-
-  await expect(
-    checkoutApi.submit("my-store", {
-      deliveryMethodType: "COURIER",
-      customerPhone: "+51999999999",
-      items: [],
-    }),
-  ).rejects.toThrow();
 });

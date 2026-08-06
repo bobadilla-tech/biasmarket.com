@@ -41,11 +41,7 @@ export { CancelOrderDialog } from "./components/cancel-order-dialog";
 export {
   type Order,
   type OrderItemRow,
-  orderItemRowSchema,
-  orderListSchema,
   type OrderPaymentRow,
-  orderPaymentRowSchema,
-  orderSchema,
 } from "./schemas/order.schema";
 export {
   buildRegisterPaymentSchema,

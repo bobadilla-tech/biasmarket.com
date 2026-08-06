@@ -6,7 +6,9 @@ import { cn } from "@/lib/utils";
 import { getOrderStatus } from "../lib/order-status";
 import type { Order } from "../schemas/order.schema";
 
-export function OrderStatusBadge({ order }: { order: Order }) {
+export function OrderStatusBadge(
+  { order }: { order: Pick<Order, "paymentStatus" | "fulfillmentStatus"> },
+) {
   const t = useTranslations("dashboard.orders");
   const status = getOrderStatus(order, t);
   return (
