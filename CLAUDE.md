@@ -1,6 +1,6 @@
-# What this is
+# Bias Market
 
-Bias Market — niche-first store builder for creator-led commerce (K-pop/artist
+Niche-first store builder for creator-led commerce (K-pop/artist
 merch stores first). Manual payment-first (bank transfer, Wise, PayPal) with
 built-in proof-of-payment review, no Stripe required.
 
@@ -10,7 +10,7 @@ Turborepo monorepo: `apps/api` (NestJS), `apps/web` (Next.js), `packages/*`
 ## Hard rules
 
 - **pnpm only.** Never `npm`/`yarn`. `packageManager` is pinned in root
-  `package.json` — don't touch that pin without being asked.
+  `package.json`, don't touch that pin without being asked.
 - **Latest TypeScript, ESM only** across the repo (`"type": "module"` in every
   package). No CommonJS, no `require`. Relative imports in `apps/api` use
   explicit `.js` extensions (NodeNext resolution) even though the source is
