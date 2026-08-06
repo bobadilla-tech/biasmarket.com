@@ -111,7 +111,6 @@ export function ProductSheet({
 
   const name = watch("name");
   const price = watch("price");
-  const stock = watch("stock");
   const categoryId = watch("categoryId");
 
   const defaultCategories = useMemo(() => {

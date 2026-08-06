@@ -20,9 +20,6 @@ function displayName(item: CartItem) {
   return item.variantLabel ? `${item.name} (${item.variantLabel})` : item.name;
 }
 
-function isAvailable(available: number) {
-  return available === Infinity || available > 0;
-}
 
 function CartSummary({
   slug,

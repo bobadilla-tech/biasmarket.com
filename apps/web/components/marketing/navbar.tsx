@@ -116,8 +116,6 @@ function MobileMenu() {
 }
 
 export function Navbar() {
-  const t = useTranslations("marketing.navbar");
-
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-background/80 backdrop-blur-sm">
       <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-6 sm:px-10">
