@@ -22,8 +22,12 @@ interface CancelOrderDialogProps {
   order: Order | null;
   pending?: boolean;
   onClose: () => void;
+
   onConfirm: (values: {
     resolution: CancellationResolution;
+    retainMode?: "FULL" | "PARTIAL";
+    retainedAmount?: number;
+    releasedResolution?: "REFUNDED" | "STORE_CREDIT";
     reason: string;
   }) => Promise<void> | void;
 }
@@ -41,13 +45,24 @@ export function CancelOrderDialog({
     "REFUNDED",
   );
 
+  const [retainMode, setRetainMode] = useState<"FULL" | "PARTIAL">("FULL");
+
+  const [retainedAmount, setRetainedAmount] = useState<number>(0);
+
+  const [releasedResolution, setReleasedResolution] = useState<
+    "REFUNDED" | "STORE_CREDIT"
+  >("REFUNDED");
+
   const [reason, setReason] = useState("");
 
   useEffect(() => {
     if (!open) return;
     setResolution("REFUNDED");
     setReason("");
-  }, [open]);
+    setRetainMode("FULL");
+    setRetainedAmount(0);
+    setReleasedResolution("REFUNDED");
+  }, [open, order?.id]);
 
   if (!order) return null;
 
@@ -113,6 +128,64 @@ export function CancelOrderDialog({
               {t("retained")}
             </label>
 
+            {resolution === "RETAINED" && (
+              <div className="ml-6 space-y-4 rounded-xl border p-4">
+                <p className="font-medium">{t("retentionType")}</p>
+
+                <label className="flex gap-2">
+                  <input
+                    type="radio"
+                    checked={retainMode === "FULL"}
+                    onChange={() => setRetainMode("FULL")}
+                  />
+                  {t("fullRetention")}
+                </label>
+
+                <label className="flex gap-2">
+                  <input
+                    type="radio"
+                    checked={retainMode === "PARTIAL"}
+                    onChange={() => setRetainMode("PARTIAL")}
+                  />
+                  {t("partialRetention")}
+                </label>
+
+                {retainMode === "PARTIAL" && (
+                  <div className="space-y-3">
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={retainedAmount || ""}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setRetainedAmount(value === "" ? 0 : Number(value));
+                      }}
+                      placeholder={t("amountToRetain")}
+                      className="w-full rounded-xl border p-2"
+                    />
+
+                    <p>
+                      {t("remaining")}: {order.currency}{" "}
+                      {(order.paidAmount - retainedAmount).toFixed(2)}
+                    </p>
+
+                    <select
+                      value={releasedResolution}
+                      onChange={(e) =>
+                        setReleasedResolution(
+                          e.target.value as "REFUNDED" | "STORE_CREDIT",
+                        )}
+                      className="border rounded p-2"
+                    >
+                      <option value="REFUNDED">{t("refund")}</option>
+                      <option value="STORE_CREDIT">{t("storeCredit")}</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+            )}
+
             <label className="flex cursor-pointer items-center gap-3 text-sm">
               <input
                 type="radio"
@@ -147,11 +220,21 @@ export function CancelOrderDialog({
             variant="destructive"
             disabled={pending}
             onClick={() => {
-              Promise.resolve(onConfirm({ resolution, reason })).catch(
-                () => {
-                  // Surfaced via the parent's mutation error state.
-                },
-              );
+              Promise.resolve(
+                onConfirm({
+                  resolution,
+                  reason,
+
+                  ...(resolution === "RETAINED" && {
+                    retainMode,
+
+                    ...(retainMode === "PARTIAL" && {
+                      retainedAmount,
+                      releasedResolution,
+                    }),
+                  }),
+                }),
+              ).catch(() => {});
             }}
             className="rounded-xl"
           >
