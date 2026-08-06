@@ -18,7 +18,7 @@ import {
   getDeliveryLabel,
   getOrderNumber,
 } from "../lib/order-format";
-import { NEXT_FULFILLMENT, paymentsLocked } from "../lib/order-status";
+import { paymentsLocked } from "../lib/order-status";
 import { RegisterPaymentForm } from "./register-payment-form";
 import { PaymentHistoryList } from "./payment-history-list";
 import type { Order } from "../schemas/order.schema";
@@ -29,14 +29,14 @@ export function OrderDetailSheet({
   onOpenChange,
   order,
   isPending,
-  fulfillmentLabels,
+  fulfillmentLabels: _fulfillmentLabels,
   enabledMethods,
   registerPaymentSubmitting,
   onRegisterPayment,
   onPreviewPayment,
   onApprove,
   onReject,
-  onAdvance,
+  onAdvance: _onAdvance,
   onCancel,
 }: {
   open: boolean;
@@ -55,13 +55,6 @@ export function OrderDetailSheet({
 }) {
   const t = useTranslations("dashboard.orders");
   const { locale } = useParams<{ locale: string }>();
-
-  const next = order ? NEXT_FULFILLMENT[order.fulfillmentStatus] : undefined;
-
-  const canCancel = !isPending &&
-    order &&
-    order.paymentStatus !== "CANCELLED" &&
-    order.fulfillmentStatus !== "COMPLETED";
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>

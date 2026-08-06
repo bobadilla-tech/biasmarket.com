@@ -3,7 +3,6 @@ import {
   ConflictException,
   Injectable,
 } from "@nestjs/common";
-import type { CancellationResolution } from "@biasmarket/db";
 import { CancelOrderDto } from "../dto/cancel-order.dto.js";
 import { PrismaService } from "../../../prisma/prisma.service.js";
 import { OrderRepository } from "../infrastructure/order.repository.js";
