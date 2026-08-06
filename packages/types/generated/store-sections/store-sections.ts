@@ -6,97 +6,112 @@
  * OpenAPI spec version: 1.0
  */
 import type {
-  CreateStoreSectionDto,
-  ReorderStoreSectionsDto,
-  StoreSectionResponseDto,
-  UpdateStoreSectionDto,
-} from "../api.schemas.js";
+  StoreSectionResponseDto
+} from '../api.schemas.js';
 
-import { customFetch } from "../../http.js";
+import { customFetch } from '../../http.js';
 
-export const getCreateUrl = (storeId: string) => {
-  return `/stores/${storeId}/sections`;
-};
+export const getCreateUrl = (storeId: string,) => {
 
-export const create = async (
-  storeId: string,
-  createStoreSectionDto: CreateStoreSectionDto,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<StoreSectionResponseDto> => {
-  return customFetch<StoreSectionResponseDto>(getCreateUrl(storeId), {
+
+
+
+  return `/stores/${storeId}/sections`
+}
+
+export const create = async (storeId: string, options?: Parameters<typeof customFetch>[1]): Promise<StoreSectionResponseDto> => {
+
+  return customFetch<StoreSectionResponseDto>(getCreateUrl(storeId),
+  {
     ...options,
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(createStoreSectionDto),
-  });
-};
+    method: 'POST'
 
-export const getFindAllUrl = (storeId: string) => {
-  return `/stores/${storeId}/sections`;
-};
 
-export const findAll = async (
-  storeId: string,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<StoreSectionResponseDto[]> => {
-  return customFetch<StoreSectionResponseDto[]>(getFindAllUrl(storeId), {
+  }
+);}
+
+
+export const getFindAllUrl = (storeId: string,) => {
+
+
+
+
+  return `/stores/${storeId}/sections`
+}
+
+export const findAll = async (storeId: string, options?: Parameters<typeof customFetch>[1]): Promise<StoreSectionResponseDto[]> => {
+
+  return customFetch<StoreSectionResponseDto[]>(getFindAllUrl(storeId),
+  {
     ...options,
-    method: "GET",
-  });
-};
+    method: 'GET'
 
-export const getReorderUrl = (storeId: string) => {
-  return `/stores/${storeId}/sections/reorder`;
-};
 
-export const reorder = async (
-  storeId: string,
-  reorderStoreSectionsDto: ReorderStoreSectionsDto,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<StoreSectionResponseDto[]> => {
-  return customFetch<StoreSectionResponseDto[]>(getReorderUrl(storeId), {
+  }
+);}
+
+
+export const getReorderUrl = (storeId: string,) => {
+
+
+
+
+  return `/stores/${storeId}/sections/reorder`
+}
+
+export const reorder = async (storeId: string, options?: Parameters<typeof customFetch>[1]): Promise<StoreSectionResponseDto[]> => {
+
+  return customFetch<StoreSectionResponseDto[]>(getReorderUrl(storeId),
+  {
     ...options,
-    method: "PATCH",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(reorderStoreSectionsDto),
-  });
-};
+    method: 'PATCH'
 
-export const getUpdateUrl = (storeId: string, sectionId: string) => {
-  return `/stores/${storeId}/sections/${sectionId}`;
-};
 
-export const update = async (
-  storeId: string,
-  sectionId: string,
-  updateStoreSectionDto: UpdateStoreSectionDto,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<StoreSectionResponseDto> => {
-  return customFetch<StoreSectionResponseDto>(
-    getUpdateUrl(storeId, sectionId),
-    {
-      ...options,
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...options?.headers },
-      body: JSON.stringify(updateStoreSectionDto),
-    },
-  );
-};
+  }
+);}
 
-export const getRemoveUrl = (storeId: string, sectionId: string) => {
-  return `/stores/${storeId}/sections/${sectionId}`;
-};
 
-export const remove = async (
-  storeId: string,
-  sectionId: string,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<StoreSectionResponseDto> => {
-  return customFetch<StoreSectionResponseDto>(
-    getRemoveUrl(storeId, sectionId),
-    {
-      ...options,
-      method: "DELETE",
-    },
-  );
-};
+export const getUpdateUrl = (storeId: string,
+    sectionId: string,) => {
+
+
+
+
+  return `/stores/${storeId}/sections/${sectionId}`
+}
+
+export const update = async (storeId: string,
+    sectionId: string, options?: Parameters<typeof customFetch>[1]): Promise<StoreSectionResponseDto> => {
+
+  return customFetch<StoreSectionResponseDto>(getUpdateUrl(storeId,sectionId),
+  {
+    ...options,
+    method: 'PATCH'
+
+
+  }
+);}
+
+
+export const getRemoveUrl = (storeId: string,
+    sectionId: string,) => {
+
+
+
+
+  return `/stores/${storeId}/sections/${sectionId}`
+}
+
+export const remove = async (storeId: string,
+    sectionId: string, options?: Parameters<typeof customFetch>[1]): Promise<StoreSectionResponseDto> => {
+
+  return customFetch<StoreSectionResponseDto>(getRemoveUrl(storeId,sectionId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+

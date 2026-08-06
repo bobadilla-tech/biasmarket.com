@@ -21,7 +21,7 @@ Turborepo monorepo: `apps/api` (NestJS), `apps/web` (Next.js), `packages/*`
   `@prisma/client` into `web` "just for types."
 - **Every query touching tenant data filters by `storeId`.** No exceptions.
   Ownership is checked via `assertOwnership`/`findOwnedProduct`-style helpers in
-  the service layer (see `apps/api/src/modules/products/products.service.ts`) —
+  the service layer (see `apps/api/src/modules/products/products.service.ts`),
   mutations must verify the authenticated user owns the store, not just that the
   tenant-scoped query ran.
 

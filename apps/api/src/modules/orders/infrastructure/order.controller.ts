@@ -55,7 +55,7 @@ type FulfillmentStatusLiteral =
 type DeliveryMethodTypeLiteral = "PICKUP" | "COURIER";
 type CancellationResolutionLiteral = "REFUNDED" | "RETAINED" | "STORE_CREDIT";
 
-interface OrderProductRow {
+export interface OrderProductRow {
   id: string;
   storeId: string;
   name: string;
@@ -70,7 +70,7 @@ interface OrderProductRow {
   createdAt: Date;
 }
 
-interface OrderVariantRow {
+export interface OrderVariantRow {
   id: string;
   productId: string;
   storeId: string;
@@ -82,7 +82,7 @@ interface OrderVariantRow {
   attributes: unknown;
 }
 
-interface OrderItemRow {
+export interface OrderItemRow {
   id: string;
   orderId: string;
   storeId: string;
@@ -96,7 +96,7 @@ interface OrderItemRow {
   variant: OrderVariantRow | null;
 }
 
-interface OrderPaymentRow {
+export interface OrderPaymentRow {
   id: string;
   orderId: string;
   storeId: string;
@@ -119,7 +119,7 @@ interface PaymentProofRow {
   reviewedAt: Date | null;
 }
 
-interface OrderRow {
+export interface OrderRow {
   id: string;
   storeId: string;
   customerId: string | null;
@@ -218,7 +218,7 @@ function toPaymentProofDto(proof: PaymentProofRow): PaymentProofResponseDto {
   };
 }
 
-function toOrderDto(row: OrderRow): OrderResponseDto {
+export function toOrderDto(row: OrderRow): OrderResponseDto {
   return {
     ...row,
     deliveryDetails: row.deliveryDetails as Record<string, unknown> | null,

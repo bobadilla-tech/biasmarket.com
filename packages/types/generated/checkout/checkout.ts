@@ -6,25 +6,28 @@
  * OpenAPI spec version: 1.0
  */
 import type {
-  CheckoutResultResponseDto,
-  CreateOrderDto,
-} from "../api.schemas.js";
+  CheckoutResultResponseDto
+} from '../api.schemas.js';
 
-import { customFetch } from "../../http.js";
+import { customFetch } from '../../http.js';
 
-export const getCreateUrl = (slug: string) => {
-  return `/stores/${slug}/checkout`;
-};
+export const getCreateUrl = (slug: string,) => {
 
-export const create = async (
-  slug: string,
-  createOrderDto: CreateOrderDto,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<CheckoutResultResponseDto> => {
-  return customFetch<CheckoutResultResponseDto>(getCreateUrl(slug), {
+
+
+
+  return `/stores/${slug}/checkout`
+}
+
+export const create = async (slug: string, options?: Parameters<typeof customFetch>[1]): Promise<CheckoutResultResponseDto> => {
+
+  return customFetch<CheckoutResultResponseDto>(getCreateUrl(slug),
+  {
     ...options,
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(createOrderDto),
-  });
-};
+    method: 'POST'
+
+
+  }
+);}
+
+

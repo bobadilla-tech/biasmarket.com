@@ -6,22 +6,22 @@
  * OpenAPI spec version: 1.0
  */
 import type {
-  StoreResponseDto
+  UserStoreCountResponseDto
 } from '../api.schemas.js';
 
 import { customFetch } from '../../http.js';
 
-export const getFindMineUrl = () => {
+export const getGetStoreCountsUrl = () => {
 
 
 
 
-  return `/me/stores`
+  return `/admin/users/store-counts`
 }
 
-export const findMine = async ( options?: Parameters<typeof customFetch>[1]): Promise<StoreResponseDto[]> => {
+export const getStoreCounts = async ( options?: Parameters<typeof customFetch>[1]): Promise<UserStoreCountResponseDto[]> => {
 
-  return customFetch<StoreResponseDto[]>(getFindMineUrl(),
+  return customFetch<UserStoreCountResponseDto[]>(getGetStoreCountsUrl(),
   {
     ...options,
     method: 'GET'

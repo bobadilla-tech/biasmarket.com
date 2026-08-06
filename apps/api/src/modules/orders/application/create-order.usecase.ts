@@ -167,7 +167,11 @@ export class CreateOrderUseCase {
           | Record<string, unknown>
           | null;
         const deliveryCost = Number(details?.estimatedCost ?? 0);
-        const finalAmount = totalAmount?.plus(deliveryCost);
+        // `items` has `@ArrayMinSize(1)` (create-order.dto.ts) — the loop
+        // above always runs at least once, so `totalAmount` is always set by
+        // this point; the `| undefined` in its declared type only exists to
+        // satisfy the loop's own incremental-accumulation pattern.
+        const finalAmount = totalAmount!.plus(deliveryCost);
 
         const expiresAt = new Date(
           Date.now() + store.holdWindowHours * 60 * 60 * 1000,

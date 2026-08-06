@@ -19,16 +19,6 @@
       "post": {
         "operationId": "StoresController_create",
         "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateStoreDto"
-              }
-            }
-          }
-        },
         "responses": {
           "201": {
             "description": "",
@@ -111,16 +101,6 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateStoreDto"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "",
@@ -461,16 +441,6 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateProductDto"
-              }
-            }
-          }
-        },
         "responses": {
           "201": {
             "description": "",
@@ -576,16 +546,6 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateProductDto"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "",
@@ -698,16 +658,6 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateVariantDto"
-              }
-            }
-          }
-        },
         "responses": {
           "201": {
             "description": "",
@@ -793,16 +743,6 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateVariantDto"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "",
@@ -959,10 +899,42 @@
     "/products/search": {
       "get": {
         "operationId": "ProductSearchController_search",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductSearchResultResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1161,7 +1133,17 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserStoreCountResponseDto"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1329,16 +1311,6 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ReviewPaymentDto"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "",
@@ -1377,16 +1349,6 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdvanceFulfillmentDto"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "",
@@ -1425,16 +1387,6 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CancelOrderDto"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "",
@@ -1465,16 +1417,6 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateOrderDto"
-              }
-            }
-          }
-        },
         "responses": {
           "201": {
             "description": "",
@@ -1503,11 +1445,26 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "token",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmAccountResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1530,7 +1487,17 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CustomerListItemResponseDto"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1561,7 +1528,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerDetailResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1613,16 +1587,6 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertDeliveryMethodDto"
-              }
-            }
-          }
-        },
         "responses": {
           "201": {
             "description": "",
@@ -1755,16 +1719,6 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreatePickupPointDto"
-              }
-            }
-          }
-        },
         "responses": {
           "201": {
             "description": "",
@@ -1803,16 +1757,6 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdatePickupPointDto"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "",
@@ -1951,16 +1895,6 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertPaymentMethodDto"
-              }
-            }
-          }
-        },
         "responses": {
           "201": {
             "description": "",
@@ -2015,16 +1949,6 @@
       "post": {
         "operationId": "ContactController_create",
         "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateInquiryDto"
-              }
-            }
-          }
-        },
         "responses": {
           "201": {
             "description": "",
@@ -2107,16 +2031,6 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateCategoryDto"
-              }
-            }
-          }
-        },
         "responses": {
           "201": {
             "description": "",
@@ -2186,16 +2100,6 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateCategoryDto"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "",
@@ -2262,16 +2166,6 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateCollectionDto"
-              }
-            }
-          }
-        },
         "responses": {
           "201": {
             "description": "",
@@ -2341,16 +2235,6 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateCollectionDto"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "",
@@ -2425,16 +2309,6 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AddCollectionProductDto"
-              }
-            }
-          }
-        },
         "responses": {
           "201": {
             "description": "",
@@ -2519,16 +2393,6 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ReorderCollectionProductsDto"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "",
@@ -2562,16 +2426,6 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateStoreSectionDto"
-              }
-            }
-          }
-        },
         "responses": {
           "201": {
             "description": "",
@@ -2633,16 +2487,6 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ReorderStoreSectionsDto"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "",
@@ -2684,16 +2528,6 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateStoreSectionDto"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "",
@@ -2762,7 +2596,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatsOverviewResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2781,6 +2622,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -2789,7 +2638,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/AnalyticsResultResponseDto"
                 }
               }
             }
@@ -2846,19 +2695,16 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RegisterCustomerDto"
-              }
-            }
-          }
-        },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2879,19 +2725,16 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LoginCustomerDto"
-              }
-            }
-          }
-        },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2912,19 +2755,16 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ForgotPasswordDto"
-              }
-            }
-          }
-        },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2935,20 +2775,26 @@
     "/stores/{slug}/account/change-password": {
       "post": {
         "operationId": "CustomerAuthController_changePassword",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ChangeCustomerPasswordDto"
-              }
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
             }
           }
-        },
+        ],
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2971,7 +2817,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerProfileResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2990,19 +2843,16 @@
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateCustomerProfileDto"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateCustomerProfileResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -3013,10 +2863,26 @@
     "/stores/{slug}/account/logout": {
       "post": {
         "operationId": "CustomerAuthController_logout",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -3035,34 +2901,6 @@
   "servers": [],
   "components": {
     "schemas": {
-      "CreateStoreDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 2
-          },
-          "slug": {
-            "type": "string"
-          },
-          "whatsappNumber": {
-            "type": "string",
-            "minLength": 6
-          },
-          "defaultCurrency": {
-            "type": "string"
-          },
-          "themeConfig": {
-            "type": "object",
-            "additionalProperties": true
-          }
-        },
-        "required": [
-          "name",
-          "slug",
-          "whatsappNumber"
-        ]
-      },
       "StoreResponseDto": {
         "type": "object",
         "properties": {
@@ -3220,34 +3058,6 @@
           "createdAt",
           "owner"
         ]
-      },
-      "UpdateStoreDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "whatsappNumber": {
-            "type": "string"
-          },
-          "paymentInstructions": {
-            "type": "string"
-          },
-          "defaultCurrency": {
-            "type": "string"
-          },
-          "themeConfig": {
-            "type": "object",
-            "additionalProperties": true
-          },
-          "lowStockAlertsEnabled": {
-            "type": "boolean"
-          },
-          "lowStockThreshold": {
-            "type": "number",
-            "minimum": 0
-          }
-        }
       },
       "PublicStoreListingResponseDto": {
         "type": "object",
@@ -3732,83 +3542,6 @@
           "product"
         ]
       },
-      "CreateVariantDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1
-          },
-          "stock": {
-            "type": "number"
-          },
-          "priceOverride": {
-            "type": "number"
-          },
-          "imageOverride": {
-            "type": "string"
-          },
-          "attributes": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "name"
-        ]
-      },
-      "CreateProductDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 2
-          },
-          "categoryIds": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "description": {
-            "type": "string"
-          },
-          "price": {
-            "type": "number"
-          },
-          "soldOut": {
-            "type": "boolean"
-          },
-          "images": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "availableUntil": {
-            "type": "string"
-          },
-          "currency": {
-            "type": "string"
-          },
-          "stock": {
-            "type": "number",
-            "minimum": 0
-          },
-          "variants": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CreateVariantDto"
-            }
-          }
-        },
-        "required": [
-          "name",
-          "price"
-        ]
-      },
       "VariantResponseDto": {
         "type": "object",
         "properties": {
@@ -4056,42 +3789,6 @@
           "availableStock"
         ]
       },
-      "UpdateProductDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 2
-          },
-          "categoryIds": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "description": {
-            "type": "string"
-          },
-          "price": {
-            "type": "number"
-          },
-          "soldOut": {
-            "type": "boolean"
-          },
-          "images": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "availableUntil": {
-            "type": "string"
-          },
-          "currency": {
-            "type": "string"
-          }
-        }
-      },
       "ProductResponseDto": {
         "type": "object",
         "properties": {
@@ -4159,32 +3856,80 @@
           "createdAt"
         ]
       },
-      "UpdateVariantDto": {
+      "SearchProductStoreResponseDto": {
         "type": "object",
         "properties": {
           "name": {
-            "type": "string",
-            "minLength": 1
+            "type": "string"
           },
-          "stock": {
-            "type": "number",
-            "nullable": true
+          "slug": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "slug"
+        ]
+      },
+      "SearchProductResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
           },
-          "priceOverride": {
-            "type": "number",
-            "nullable": true
+          "name": {
+            "type": "string"
           },
-          "imageOverride": {
-            "type": "string",
-            "nullable": true
+          "price": {
+            "type": "string"
           },
-          "attributes": {
-            "type": "object",
-            "additionalProperties": {
+          "currency": {
+            "type": "string"
+          },
+          "images": {
+            "type": "array",
+            "items": {
               "type": "string"
             }
+          },
+          "store": {
+            "$ref": "#/components/schemas/SearchProductStoreResponseDto"
           }
-        }
+        },
+        "required": [
+          "id",
+          "name",
+          "price",
+          "currency",
+          "images",
+          "store"
+        ]
+      },
+      "ProductSearchResultResponseDto": {
+        "type": "object",
+        "properties": {
+          "products": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchProductResponseDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "products",
+          "total",
+          "page",
+          "limit"
+        ]
       },
       "NotificationResponseDto": {
         "type": "object",
@@ -4264,6 +4009,21 @@
         },
         "required": [
           "count"
+        ]
+      },
+      "UserStoreCountResponseDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "storeCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "userId",
+          "storeCount"
         ]
       },
       "OrderProductResponseDto": {
@@ -4849,25 +4609,6 @@
           "proofs"
         ]
       },
-      "ReviewPaymentDto": {
-        "type": "object",
-        "properties": {
-          "decision": {
-            "type": "string",
-            "enum": [
-              "approve",
-              "reject"
-            ]
-          },
-          "reason": {
-            "type": "string",
-            "maxLength": 500
-          }
-        },
-        "required": [
-          "decision"
-        ]
-      },
       "OrderStatusResponseDto": {
         "type": "object",
         "properties": {
@@ -4991,99 +4732,6 @@
           "currency",
           "expiresAt",
           "createdAt"
-        ]
-      },
-      "AdvanceFulfillmentDto": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "IN_TRANSIT",
-              "READY",
-              "COMPLETED"
-            ]
-          }
-        },
-        "required": [
-          "status"
-        ]
-      },
-      "CancelOrderDto": {
-        "type": "object",
-        "properties": {
-          "resolution": {
-            "type": "string",
-            "enum": [
-              "REFUNDED",
-              "RETAINED",
-              "STORE_CREDIT"
-            ]
-          },
-          "reason": {
-            "type": "string",
-            "maxLength": 500
-          }
-        },
-        "required": [
-          "resolution"
-        ]
-      },
-      "CreateOrderItemDto": {
-        "type": "object",
-        "properties": {
-          "productId": {
-            "type": "string"
-          },
-          "variantId": {
-            "type": "string"
-          },
-          "quantity": {
-            "type": "number",
-            "minimum": 1
-          }
-        },
-        "required": [
-          "productId",
-          "quantity"
-        ]
-      },
-      "CreateOrderDto": {
-        "type": "object",
-        "properties": {
-          "deliveryMethodType": {
-            "type": "string",
-            "enum": [
-              "PICKUP",
-              "COURIER"
-            ]
-          },
-          "pickupPointId": {
-            "type": "string"
-          },
-          "customerPhone": {
-            "type": "string",
-            "minLength": 6
-          },
-          "customerName": {
-            "type": "string"
-          },
-          "customerEmail": {
-            "type": "string",
-            "format": "email"
-          },
-          "items": {
-            "minItems": 1,
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CreateOrderItemDto"
-            }
-          }
-        },
-        "required": [
-          "deliveryMethodType",
-          "customerPhone",
-          "items"
         ]
       },
       "CheckoutOrderItemResponseDto": {
@@ -5279,6 +4927,205 @@
           "whatsappUrl"
         ]
       },
+      "ConfirmAccountCustomerResponseDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string"
+          },
+          "hasPassword": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "email",
+          "phone",
+          "hasPassword"
+        ]
+      },
+      "AccountOrderResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "paymentStatus": {
+            "enum": [
+              "PENDING_PAYMENT",
+              "PARTIALLY_PAID",
+              "PAYMENT_SUBMITTED",
+              "VERIFIED",
+              "REJECTED",
+              "CANCELLED"
+            ],
+            "type": "string"
+          },
+          "fulfillmentStatus": {
+            "enum": [
+              "ORDERING",
+              "IN_TRANSIT",
+              "READY",
+              "COMPLETED"
+            ],
+            "type": "string"
+          },
+          "totalAmount": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "paymentStatus",
+          "fulfillmentStatus",
+          "totalAmount",
+          "currency",
+          "createdAt"
+        ]
+      },
+      "ConfirmAccountResponseDto": {
+        "type": "object",
+        "properties": {
+          "purpose": {
+            "enum": [
+              "confirm",
+              "reset",
+              "change-email",
+              "change-phone"
+            ],
+            "type": "string"
+          },
+          "customer": {
+            "$ref": "#/components/schemas/ConfirmAccountCustomerResponseDto"
+          },
+          "orders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccountOrderResponseDto"
+            }
+          }
+        },
+        "required": [
+          "purpose",
+          "customer",
+          "orders"
+        ]
+      },
+      "CustomerListItemResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "emailVerified": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "orderCount": {
+            "type": "number"
+          },
+          "lifetimeSpend": {
+            "type": "number"
+          },
+          "lastOrderAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "phone",
+          "email",
+          "emailVerified",
+          "createdAt",
+          "orderCount",
+          "lifetimeSpend",
+          "lastOrderAt"
+        ]
+      },
+      "CustomerDetailCustomerResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "emailVerified": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "phone",
+          "email",
+          "emailVerified",
+          "createdAt"
+        ]
+      },
+      "CustomerDetailResponseDto": {
+        "type": "object",
+        "properties": {
+          "customer": {
+            "$ref": "#/components/schemas/CustomerDetailCustomerResponseDto"
+          },
+          "orders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderResponseDto"
+            }
+          }
+        },
+        "required": [
+          "customer",
+          "orders"
+        ]
+      },
       "DeliveryMethodConfigResponseDto": {
         "type": "object",
         "properties": {
@@ -5316,28 +5163,6 @@
           "createdAt"
         ]
       },
-      "UpsertDeliveryMethodDto": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "PICKUP",
-              "COURIER"
-            ]
-          },
-          "enabled": {
-            "type": "boolean"
-          },
-          "details": {
-            "type": "object",
-            "additionalProperties": true
-          }
-        },
-        "required": [
-          "type"
-        ]
-      },
       "PickupPointResponseDto": {
         "type": "object",
         "properties": {
@@ -5369,39 +5194,6 @@
           "sortOrder",
           "createdAt"
         ]
-      },
-      "CreatePickupPointDto": {
-        "type": "object",
-        "properties": {
-          "label": {
-            "type": "string",
-            "minLength": 1
-          },
-          "enabled": {
-            "type": "boolean"
-          },
-          "sortOrder": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "label"
-        ]
-      },
-      "UpdatePickupPointDto": {
-        "type": "object",
-        "properties": {
-          "label": {
-            "type": "string",
-            "minLength": 1
-          },
-          "enabled": {
-            "type": "boolean"
-          },
-          "sortOrder": {
-            "type": "number"
-          }
-        }
       },
       "PaymentMethodConfigResponseDto": {
         "type": "object",
@@ -5448,54 +5240,6 @@
           "depositPercentPickup",
           "depositPercentCourier",
           "createdAt"
-        ]
-      },
-      "UpsertPaymentMethodDto": {
-        "type": "object",
-        "properties": {
-          "method": {
-            "type": "string",
-            "enum": [
-              "YAPE",
-              "PLIN",
-              "TRANSFER",
-              "CASH"
-            ]
-          },
-          "enabled": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "method"
-        ]
-      },
-      "CreateInquiryDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1
-          },
-          "email": {
-            "type": "string",
-            "format": "email"
-          },
-          "company": {
-            "type": "string"
-          },
-          "inquiryType": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string",
-            "minLength": 1
-          }
-        },
-        "required": [
-          "name",
-          "email",
-          "message"
         ]
       },
       "InquiryResponseDto": {
@@ -5545,21 +5289,6 @@
           "createdAt"
         ]
       },
-      "CreateCategoryDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1
-          },
-          "parentId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "name"
-        ]
-      },
       "CategoryResponseDto": {
         "type": "object",
         "properties": {
@@ -5587,33 +5316,6 @@
           "parentId",
           "name",
           "createdAt"
-        ]
-      },
-      "UpdateCategoryDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1
-          },
-          "parentId": {
-            "type": "string"
-          }
-        }
-      },
-      "CreateCollectionDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1
-          },
-          "description": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "name"
         ]
       },
       "CollectionResponseDto": {
@@ -5777,32 +5479,6 @@
           "products"
         ]
       },
-      "UpdateCollectionDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1
-          },
-          "description": {
-            "type": "string"
-          }
-        }
-      },
-      "AddCollectionProductDto": {
-        "type": "object",
-        "properties": {
-          "productId": {
-            "type": "string"
-          },
-          "position": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "productId"
-        ]
-      },
       "CollectionProductResponseDto": {
         "type": "object",
         "properties": {
@@ -5820,46 +5496,6 @@
           "collectionId",
           "productId",
           "position"
-        ]
-      },
-      "ReorderCollectionProductsDto": {
-        "type": "object",
-        "properties": {
-          "productIds": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "productIds"
-        ]
-      },
-      "CreateStoreSectionDto": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "COLLECTION",
-              "BANNER",
-              "TEXT_BLOCK"
-            ]
-          },
-          "collectionId": {
-            "type": "string"
-          },
-          "content": {
-            "type": "object",
-            "additionalProperties": true
-          },
-          "position": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "type"
         ]
       },
       "StoreSectionResponseDto": {
@@ -5905,42 +5541,175 @@
           "createdAt"
         ]
       },
-      "ReorderStoreSectionsDto": {
+      "PaymentStatusCountsResponseDto": {
         "type": "object",
         "properties": {
-          "sectionIds": {
+          "PENDING_PAYMENT": {
+            "type": "number"
+          },
+          "PARTIALLY_PAID": {
+            "type": "number"
+          },
+          "PAYMENT_SUBMITTED": {
+            "type": "number"
+          },
+          "VERIFIED": {
+            "type": "number"
+          },
+          "REJECTED": {
+            "type": "number"
+          },
+          "CANCELLED": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "PENDING_PAYMENT",
+          "PARTIALLY_PAID",
+          "PAYMENT_SUBMITTED",
+          "VERIFIED",
+          "REJECTED",
+          "CANCELLED"
+        ]
+      },
+      "FulfillmentStatusCountsResponseDto": {
+        "type": "object",
+        "properties": {
+          "ORDERING": {
+            "type": "number"
+          },
+          "IN_TRANSIT": {
+            "type": "number"
+          },
+          "READY": {
+            "type": "number"
+          },
+          "COMPLETED": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "ORDERING",
+          "IN_TRANSIT",
+          "READY",
+          "COMPLETED"
+        ]
+      },
+      "StatsOverviewResponseDto": {
+        "type": "object",
+        "properties": {
+          "revenue": {
+            "type": "number"
+          },
+          "totalOrders": {
+            "type": "number"
+          },
+          "paymentStatusCounts": {
+            "$ref": "#/components/schemas/PaymentStatusCountsResponseDto"
+          },
+          "fulfillmentStatusCounts": {
+            "$ref": "#/components/schemas/FulfillmentStatusCountsResponseDto"
+          },
+          "lowStockCount": {
+            "type": "number"
+          },
+          "recentOrders": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/OrderResponseDto"
             }
           }
         },
         "required": [
-          "sectionIds"
+          "revenue",
+          "totalOrders",
+          "paymentStatusCounts",
+          "fulfillmentStatusCounts",
+          "lowStockCount",
+          "recentOrders"
         ]
       },
-      "UpdateStoreSectionDto": {
+      "AnalyticsBucketResponseDto": {
         "type": "object",
         "properties": {
-          "type": {
+          "start": {
             "type": "string",
-            "enum": [
-              "COLLECTION",
-              "BANNER",
-              "TEXT_BLOCK"
-            ]
+            "format": "date-time"
           },
-          "collectionId": {
-            "type": "string"
+          "end": {
+            "type": "string",
+            "format": "date-time"
           },
-          "content": {
-            "type": "object",
-            "additionalProperties": true
+          "revenue": {
+            "type": "number"
           },
-          "position": {
+          "orderCount": {
+            "type": "number"
+          },
+          "newCustomers": {
+            "type": "number"
+          },
+          "returningCustomers": {
             "type": "number"
           }
-        }
+        },
+        "required": [
+          "start",
+          "end",
+          "revenue",
+          "orderCount",
+          "newCustomers",
+          "returningCustomers"
+        ]
+      },
+      "AnalyticsTopProductResponseDto": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "unitsSold": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "productId",
+          "name",
+          "unitsSold"
+        ]
+      },
+      "AnalyticsResultResponseDto": {
+        "type": "object",
+        "properties": {
+          "range": {
+            "enum": [
+              "30d",
+              "90d",
+              "12m"
+            ],
+            "type": "string"
+          },
+          "buckets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsBucketResponseDto"
+            }
+          },
+          "topProducts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsTopProductResponseDto"
+            }
+          }
+        },
+        "required": [
+          "range",
+          "buckets",
+          "topProducts"
+        ]
       },
       "SuggestionResponseDto": {
         "type": "object",
@@ -5971,87 +5740,90 @@
           "bodyParams"
         ]
       },
-      "RegisterCustomerDto": {
+      "OkResponseDto": {
         "type": "object",
         "properties": {
-          "token": {
-            "type": "string",
-            "minLength": 1
-          },
-          "password": {
-            "type": "string",
-            "minLength": 8
+          "ok": {
+            "type": "boolean"
           }
         },
         "required": [
-          "token",
-          "password"
+          "ok"
         ]
       },
-      "LoginCustomerDto": {
-        "type": "object",
-        "properties": {
-          "phone": {
-            "type": "string",
-            "minLength": 1
-          },
-          "password": {
-            "type": "string",
-            "minLength": 1
-          }
-        },
-        "required": [
-          "phone",
-          "password"
-        ]
-      },
-      "ForgotPasswordDto": {
-        "type": "object",
-        "properties": {
-          "phone": {
-            "type": "string",
-            "minLength": 1
-          }
-        },
-        "required": [
-          "phone"
-        ]
-      },
-      "ChangeCustomerPasswordDto": {
-        "type": "object",
-        "properties": {
-          "currentPassword": {
-            "type": "string",
-            "minLength": 1
-          },
-          "newPassword": {
-            "type": "string",
-            "minLength": 8
-          }
-        },
-        "required": [
-          "currentPassword",
-          "newPassword"
-        ]
-      },
-      "UpdateCustomerProfileDto": {
+      "CustomerProfileCustomerResponseDto": {
         "type": "object",
         "properties": {
           "name": {
             "type": "string",
-            "minLength": 1
+            "nullable": true
           },
           "email": {
             "type": "string",
-            "format": "email"
+            "nullable": true
           },
           "phone": {
+            "type": "string"
+          },
+          "emailVerified": {
+            "type": "boolean"
+          },
+          "pendingEmail": {
             "type": "string",
-            "minLength": 1
+            "nullable": true
+          },
+          "pendingPhone": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
-          "name"
+          "name",
+          "email",
+          "phone",
+          "emailVerified",
+          "pendingEmail",
+          "pendingPhone"
+        ]
+      },
+      "CustomerProfileResponseDto": {
+        "type": "object",
+        "properties": {
+          "customer": {
+            "$ref": "#/components/schemas/CustomerProfileCustomerResponseDto"
+          },
+          "orders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccountOrderResponseDto"
+            }
+          }
+        },
+        "required": [
+          "customer",
+          "orders"
+        ]
+      },
+      "UpdateCustomerProfileResponseDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "pendingEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "pendingPhone": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "name",
+          "pendingEmail",
+          "pendingPhone"
         ]
       }
     }

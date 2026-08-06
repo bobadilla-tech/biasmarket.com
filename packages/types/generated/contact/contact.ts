@@ -5,49 +5,69 @@
  * Bias Market — niche-first store builder API
  * OpenAPI spec version: 1.0
  */
-import type { CreateInquiryDto, InquiryResponseDto } from "../api.schemas.js";
+import type {
+  InquiryResponseDto
+} from '../api.schemas.js';
 
-import { customFetch } from "../../http.js";
+import { customFetch } from '../../http.js';
 
 export const getCreateUrl = () => {
-  return `/contact`;
-};
 
-export const create = async (
-  createInquiryDto: CreateInquiryDto,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<InquiryResponseDto> => {
-  return customFetch<InquiryResponseDto>(getCreateUrl(), {
+
+
+
+  return `/contact`
+}
+
+export const create = async ( options?: Parameters<typeof customFetch>[1]): Promise<InquiryResponseDto> => {
+
+  return customFetch<InquiryResponseDto>(getCreateUrl(),
+  {
     ...options,
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(createInquiryDto),
-  });
-};
+    method: 'POST'
+
+
+  }
+);}
+
 
 export const getFindAllUrl = () => {
-  return `/contact`;
-};
 
-export const findAll = async (
-  options?: Parameters<typeof customFetch>[1],
-): Promise<InquiryResponseDto[]> => {
-  return customFetch<InquiryResponseDto[]>(getFindAllUrl(), {
+
+
+
+  return `/contact`
+}
+
+export const findAll = async ( options?: Parameters<typeof customFetch>[1]): Promise<InquiryResponseDto[]> => {
+
+  return customFetch<InquiryResponseDto[]>(getFindAllUrl(),
+  {
     ...options,
-    method: "GET",
-  });
-};
+    method: 'GET'
 
-export const getMarkReviewedUrl = (id: string) => {
-  return `/contact/${id}/review`;
-};
 
-export const markReviewed = async (
-  id: string,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<InquiryResponseDto> => {
-  return customFetch<InquiryResponseDto>(getMarkReviewedUrl(id), {
+  }
+);}
+
+
+export const getMarkReviewedUrl = (id: string,) => {
+
+
+
+
+  return `/contact/${id}/review`
+}
+
+export const markReviewed = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<InquiryResponseDto> => {
+
+  return customFetch<InquiryResponseDto>(getMarkReviewedUrl(id),
+  {
     ...options,
-    method: "PATCH",
-  });
-};
+    method: 'PATCH'
+
+
+  }
+);}
+
+

@@ -4,15 +4,13 @@ export default defineConfig({
   api: {
     input: {
       target: "../../apps/api/openapi.json",
-      // Two CustomerAuth endpoints (`/stores/{slug}/account/change-password`,
-      // `/stores/{slug}/account/logout`) are missing their `slug` path
-      // parameter in the emitted spec — a pre-existing apps/api Swagger
-      // annotation gap, unrelated to collections and out of scope here (see
-      // the plan doc's execution notes). Orval's spec validator hard-fails
-      // generation over this; hey-api's ignored it silently. Disabling
-      // validation is the documented escape hatch for a spec bug we're not
-      // fixing in this change.
-      unsafeDisableValidation: true,
+      // The two CustomerAuth endpoints that were missing their `slug` path
+      // parameter (see git history / the Batch 5 plan doc for the full story)
+      // got a real `@ApiParam({ name: "slug" })` fix — `unsafeDisableValidation`
+      // is no longer needed and was removed; Orval's validator now passes on
+      // the whole spec. If a future module reintroduces a similar spec gap,
+      // re-add this flag with a comment naming the specific gap, not as a
+      // standing bypass.
       // Scoped to controllers that actually have real response DTOs today —
       // `Collections` and `Products` (see the plan doc's Phase 1/rollout
       // Batch 1). Every other controller still returns untyped Prisma
@@ -46,6 +44,12 @@ export default defineConfig({
           "MyStores",
           "Order",
           "Checkout",
+          "CustomerAuth",
+          "CustomerAccount",
+          "Customers",
+          "ProductSearch",
+          "Stats",
+          "Users",
         ],
       },
     },
