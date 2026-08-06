@@ -1,10 +1,10 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import type { StoreSection } from "../schemas/section.schema";
+import type { StoreSectionResponseDto } from "@biasmarket/types";
 
 interface SectionRowProps {
-  section: StoreSection;
+  section: StoreSectionResponseDto;
   collectionName: string | null;
   isFirst: boolean;
   isLast: boolean;

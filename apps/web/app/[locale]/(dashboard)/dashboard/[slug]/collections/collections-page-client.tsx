@@ -4,8 +4,8 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useDashboardStore } from "@/features/stores";
 import { useProducts } from "@/features/products";
+import type { CollectionWithProductsResponseDto } from "@biasmarket/types";
 import {
-  type Collection,
   CollectionCard,
   CollectionForm,
   type CreateCollectionInput,
@@ -88,7 +88,7 @@ export function CollectionsPageClient() {
   };
 
   const handleReorder = async (
-    collection: Collection,
+    collection: CollectionWithProductsResponseDto,
     index: number,
     direction: -1 | 1,
   ) => {

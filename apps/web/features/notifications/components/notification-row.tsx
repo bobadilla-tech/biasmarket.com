@@ -2,7 +2,7 @@ import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { NotificationItem } from "../schemas/notification.schema";
+import type { NotificationResponseDto } from "@biasmarket/types";
 
 export function NotificationRow({
   item,
@@ -11,7 +11,7 @@ export function NotificationRow({
   onMarkRead,
   onArchive,
 }: {
-  item: NotificationItem;
+  item: NotificationResponseDto;
   compact?: boolean;
   showArchive?: boolean;
   onMarkRead: (id: string) => void;

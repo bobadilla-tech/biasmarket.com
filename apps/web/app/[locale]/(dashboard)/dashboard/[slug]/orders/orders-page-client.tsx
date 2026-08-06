@@ -6,13 +6,13 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useDashboardStore } from "@/features/stores";
+import type { OrderResponseDto } from "@biasmarket/types";
 import { useCancelOrder } from "@/features/orders";
 import {
   CancelOrderDialog,
   ConfirmTransitionDialog,
   matchesTab,
   NEXT_FULFILLMENT,
-  type Order,
   OrderDetailSheet,
   type OrdersTab,
   OrdersTable,
@@ -94,7 +94,10 @@ export function OrdersPageClient() {
     delivered: t("tabs.delivered"),
   };
 
-  const handleReviewClick = (order: Order, decision: "approve" | "reject") => {
+  const handleReviewClick = (
+    order: OrderResponseDto,
+    decision: "approve" | "reject",
+  ) => {
     const label = paymentActionLabels[decision];
     if (decision === "reject") {
       setConfirmTarget({ orderId: order.id, kind: "review", decision, label });
@@ -103,7 +106,7 @@ export function OrdersPageClient() {
     scheduleReview(order, label);
   };
 
-  const handleAdvanceClick = (order: Order) => {
+  const handleAdvanceClick = (order: OrderResponseDto) => {
     const next = NEXT_FULFILLMENT[order.fulfillmentStatus];
     if (!next) return;
     const label = fulfillmentLabels[next] ?? next;

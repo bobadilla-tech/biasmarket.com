@@ -2,8 +2,8 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
+import type { CategoryResponseDto } from "@biasmarket/types";
 import { categoriesKeys } from "../queries/use-categories";
-import type { Category } from "../schemas/category.schema";
 
 /**
  * Preserves the old `ensureCategory` semantic: resolve an existing category by
@@ -22,7 +22,7 @@ export function useEnsureCategory(
       const trimmed = name.trim();
       const normalized = trimmed.toLowerCase();
       const existing = queryClient
-        .getQueryData<Category[]>(categoriesKeys.byStore(sid))
+        .getQueryData<CategoryResponseDto[]>(categoriesKeys.byStore(sid))
         ?.find((category) => category.name.trim().toLowerCase() === normalized);
       if (existing) return existing;
 
@@ -46,7 +46,7 @@ export function useEnsureCategory(
     },
     onSuccess: (created) => {
       if (!storeId) return;
-      queryClient.setQueryData<Category[]>(
+      queryClient.setQueryData<CategoryResponseDto[]>(
         categoriesKeys.byStore(storeId),
         (prev) => {
           if (!prev) return prev;

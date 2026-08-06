@@ -7,6 +7,4 @@ export { SectionRow } from "./components/section-row";
 export {
   type SectionFormInput,
   sectionFormSchema,
-  type SectionType,
-  type StoreSection,
 } from "./schemas/section.schema";

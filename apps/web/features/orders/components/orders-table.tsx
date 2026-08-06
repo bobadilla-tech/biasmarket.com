@@ -12,8 +12,8 @@ import {
   getProductSummary,
 } from "../lib/order-format";
 import { NEXT_FULFILLMENT } from "../lib/order-status";
+import type { OrderResponseDto } from "@biasmarket/types";
 import { OrderStatusBadge } from "./order-status-badge";
-import type { Order } from "../schemas/order.schema";
 
 export function OrdersTable({
   orders,
@@ -24,13 +24,13 @@ export function OrdersTable({
   onAdvance,
   onView,
 }: {
-  orders: Order[];
+  orders: OrderResponseDto[];
   pendingOrderIds: Set<string>;
   fulfillmentLabels: Record<string, string>;
-  onApprove: (order: Order) => void;
-  onReject: (order: Order) => void;
-  onAdvance: (order: Order) => void;
-  onView: (order: Order) => void;
+  onApprove: (order: OrderResponseDto) => void;
+  onReject: (order: OrderResponseDto) => void;
+  onAdvance: (order: OrderResponseDto) => void;
+  onView: (order: OrderResponseDto) => void;
 }) {
   const t = useTranslations("dashboard.orders");
   const { locale } = useParams<{ locale: string }>();

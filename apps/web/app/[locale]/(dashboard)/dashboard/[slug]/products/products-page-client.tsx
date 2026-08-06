@@ -10,9 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { useDashboardStore } from "@/features/stores";
+import type { ProductDetailResponseDto } from "@biasmarket/types";
 import {
   getCategoryLabel,
-  type Product,
   type ProductFormInput,
   ProductRow,
   ProductsHeader,
@@ -60,7 +60,9 @@ export function ProductsPageClient() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingProduct, setEditingProduct] = useState<
+    ProductDetailResponseDto | null
+  >(null);
 
   const defaultCurrency = asCurrency(store?.defaultCurrency);
 
@@ -84,7 +86,7 @@ export function ProductsPageClient() {
     return products.filter((p) => p.name.toLowerCase().includes(term));
   }, [products, search]);
 
-  const handleEditOpen = (product: Product) => {
+  const handleEditOpen = (product: ProductDetailResponseDto) => {
     setEditingProduct(product);
     setEditOpen(true);
   };

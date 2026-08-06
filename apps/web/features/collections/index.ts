@@ -7,8 +7,6 @@ export { useReorderCollectionProducts } from "./mutations/use-reorder-collection
 export { CollectionForm } from "./components/collection-form";
 export { CollectionCard } from "./components/collection-card";
 export {
-  type Collection,
-  type CollectionProduct,
   type CreateCollectionInput,
   createCollectionSchema,
 } from "./schemas/collection.schema";

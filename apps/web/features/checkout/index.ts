@@ -9,5 +9,4 @@ export { CheckoutForm } from "./components/checkout-form";
 export {
   buildCheckoutFormSchema,
   type CheckoutFormInput,
-  type CheckoutResult,
 } from "./schemas/checkout.schema";

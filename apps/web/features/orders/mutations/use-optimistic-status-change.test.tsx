@@ -4,7 +4,7 @@ import { act } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { ordersKeys } from "../queries/use-orders";
-import type { Order } from "../schemas/order.schema";
+import type { OrderResponseDto } from "@biasmarket/types";
 
 const ordersMock = vi.hoisted(() => ({ review: vi.fn(), advance: vi.fn() }));
 vi.mock("@/lib/api-client", () => ({ apiClient: { orders: ordersMock } }));
@@ -33,7 +33,7 @@ function createWrapper(queryClient: QueryClient) {
   };
 }
 
-const order: Order = {
+const order: OrderResponseDto = {
   id: "o1",
   storeId: "store-1",
   customerId: null,
@@ -87,7 +87,7 @@ test("scheduleReview patches the cache immediately and commits after the undo wi
     result.current.scheduleReview(order, "Verified");
   });
 
-  const patched = queryClient.getQueryData<Order[]>(
+  const patched = queryClient.getQueryData<OrderResponseDto[]>(
     ordersKeys.byStore("store-1"),
   );
   expect(patched?.[0].paymentStatus).toBe("VERIFIED");
@@ -133,7 +133,7 @@ test("clicking undo reverts the patch and never commits", async () => {
     options.action.onClick();
   });
 
-  const reverted = queryClient.getQueryData<Order[]>(
+  const reverted = queryClient.getQueryData<OrderResponseDto[]>(
     ordersKeys.byStore("store-1"),
   );
   expect(reverted?.[0].fulfillmentStatus).toBe("ORDERING");

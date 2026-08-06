@@ -1,5 +1,5 @@
 import type { useTranslations } from "next-intl";
-import type { Order } from "../schemas/order.schema";
+import type { OrderResponseDto } from "@biasmarket/types";
 
 export function getOrderNumber(orderId: string) {
   return `#${orderId.slice(-4).toUpperCase()}`;
@@ -45,7 +45,7 @@ export function formatOrderDate(
 }
 
 export function getDeliveryLabel(
-  order: Order,
+  order: OrderResponseDto,
   t: ReturnType<typeof useTranslations>,
 ) {
   const details = order.deliveryDetails ?? {};
@@ -73,7 +73,7 @@ export function getDeliveryLabel(
 }
 
 export function getProductSummary(
-  order: Order,
+  order: OrderResponseDto,
   t: ReturnType<typeof useTranslations>,
 ) {
   const first = order.items?.[0];

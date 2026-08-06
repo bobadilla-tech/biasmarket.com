@@ -1,7 +1,0 @@
-import type { InquiryResponseDto } from "@biasmarket/types";
-
-// Response shape comes from the generated OpenAPI client now (see
-// lib/api-client.ts) — a plain type alias, not a zod schema. apps/api's
-// ContactController + response DTO are the runtime guarantee for this
-// pass-through read. See "OpenAPI note" in apps/web/AGENTS.md.
-export type Inquiry = InquiryResponseDto;

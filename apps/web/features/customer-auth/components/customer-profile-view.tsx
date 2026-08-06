@@ -2,14 +2,16 @@
 
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
-import type { AccountOrder } from "@/features/account";
+import type {
+  AccountOrderResponseDto,
+  CustomerProfileResponseDto,
+} from "@biasmarket/types";
 import { useCustomerLogout } from "../mutations/use-customer-logout";
 import { CustomerChangePasswordForm } from "./customer-change-password-form";
 import { EditContactForm } from "./edit-contact-form";
-import type { CustomerProfile } from "../schemas/profile.schema";
 
 function statusLabel(
-  status: AccountOrder["paymentStatus"],
+  status: AccountOrderResponseDto["paymentStatus"],
   t: ReturnType<typeof useTranslations>,
 ) {
   if (status === "REJECTED") return t("status.rejected");
@@ -21,7 +23,7 @@ function statusLabel(
 }
 
 export function CustomerProfileView(
-  { slug, profile }: { slug: string; profile: CustomerProfile },
+  { slug, profile }: { slug: string; profile: CustomerProfileResponseDto },
 ) {
   const t = useTranslations("storefront.accountPage");
   const router = useRouter();

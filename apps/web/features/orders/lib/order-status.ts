@@ -1,5 +1,5 @@
 import type { useTranslations } from "next-intl";
-import type { Order } from "../schemas/order.schema";
+import type { OrderResponseDto } from "@biasmarket/types";
 
 export const NEXT_FULFILLMENT: Record<string, string | undefined> = {
   ORDERING: "IN_TRANSIT",
@@ -15,11 +15,14 @@ export const SENSITIVE_FULFILLMENT = new Set(["COMPLETED"]);
 export type OrdersTab = "all" | "pending" | "transit" | "delivered";
 
 // Every function here only reads these two fields — narrowed to a Pick
-// (not the full `Order`/`OrderResponseDto`) so callers with a smaller,
+// (not the full `OrderResponseDto`) so callers with a smaller,
 // locally-shaped order object (e.g. features/customers' customer-detail
 // order rows) don't need to fabricate the full response shape just to get
 // a status badge or tab filter.
-type OrderStatusFields = Pick<Order, "paymentStatus" | "fulfillmentStatus">;
+type OrderStatusFields = Pick<
+  OrderResponseDto,
+  "paymentStatus" | "fulfillmentStatus"
+>;
 
 export function getOrderStatus(
   order: OrderStatusFields,

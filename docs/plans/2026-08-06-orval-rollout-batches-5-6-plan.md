@@ -262,104 +262,107 @@ export S3_ENDPOINT=http://localhost:9000 S3_PUBLIC_URL=http://localhost:9000 \
 ## Execution notes (2026-08-06)
 
 Both batches landed in one session, matching this plan closely. **This is
-confirmed the last batch** — every `apps/web` feature with a real backend tag
-is now migrated; see `apps/web/AGENTS.md`'s OpenAPI note directly for the
-current state, not a "what's left" doc, since there's nothing left. Notes
-below are what diverged or came up in more detail than the plan anticipated.
+confirmed the last batch** — every `apps/web` feature with a real backend tag is
+now migrated; see `apps/web/AGENTS.md`'s OpenAPI note directly for the current
+state, not a "what's left" doc, since there's nothing left. Notes below are what
+diverged or came up in more detail than the plan anticipated.
 
-- **The money-precision fix (`2026-08-06-order-payment-precision-bug-fix-plan.md`)
-  had already landed by the time this session reached `Stats`/`Customers`** —
-  confirmed by grepping for `withPaymentSummary` and finding
-  `apps/api/src/common/payment-summary.ts` (the shared `computePaymentSummary`/
-  `withPaymentSummary` helper, Decimal-space arithmetic) already wired into
-  `order.repository.ts`, `customers.service.ts`, and `stats.service.ts`, with
-  a passing `payment-summary.spec.ts`. So `Stats`/`Customers`' new response
-  DTOs needed no "honest but buggy `number`" caveat — the arithmetic
-  underneath was already correct.
-- **`CustomerAuth` was unblocked, not deferred** — asked the user explicitly
-  per the standing instruction; they said yes. Fix matched the plan's
-  prediction exactly: `@ApiParam({ name: "slug", type: String })` on
-  `changePassword`/`logout` (the bare `@ApiParam({ name: "slug" })` form
-  wasn't enough on its own — Orval typed the generated `slug` parameter as
-  `unknown` instead of `string` until `type: String` was added explicitly;
-  confirmed by inspecting the generated function signature, not just that
-  generation succeeded). `input.unsafeDisableValidation: true` was removed
-  from `orval.config.ts` afterward, as the original plan said to revisit —
-  Orval's validator now passes on the whole spec with no other gap found.
+- **The money-precision fix
+  (`2026-08-06-order-payment-precision-bug-fix-plan.md`) had already landed by
+  the time this session reached `Stats`/`Customers`** — confirmed by grepping
+  for `withPaymentSummary` and finding `apps/api/src/common/payment-summary.ts`
+  (the shared `computePaymentSummary`/ `withPaymentSummary` helper,
+  Decimal-space arithmetic) already wired into `order.repository.ts`,
+  `customers.service.ts`, and `stats.service.ts`, with a passing
+  `payment-summary.spec.ts`. So `Stats`/`Customers`' new response DTOs needed no
+  "honest but buggy `number`" caveat — the arithmetic underneath was already
+  correct.
+- **`CustomerAuth` was unblocked, not deferred** — asked the user explicitly per
+  the standing instruction; they said yes. Fix matched the plan's prediction
+  exactly: `@ApiParam({ name: "slug", type: String })` on
+  `changePassword`/`logout` (the bare `@ApiParam({ name: "slug" })` form wasn't
+  enough on its own — Orval typed the generated `slug` parameter as `unknown`
+  instead of `string` until `type: String` was added explicitly; confirmed by
+  inspecting the generated function signature, not just that generation
+  succeeded). `input.unsafeDisableValidation: true` was removed from
+  `orval.config.ts` afterward, as the original plan said to revisit — Orval's
+  validator now passes on the whole spec with no other gap found.
 - **A second silently-dropped query param, same root cause as
   `Notifications.findAll` (Batch 2)**: `CustomerAccountController.confirm`'s
-  `@Query("token") token: string | undefined` had no `@ApiQuery` either —
-  Orval generated `confirm(slug, options?)` with no way to pass `token` at
-  all until `@ApiQuery({ name: "token", required: false, type: String })` was
-  added. Caught by inspecting the generated `confirm` function's real
-  signature before wiring the frontend to it, not by assuming query params
-  "just work" once a tag is added — worth treating as a standing checklist
-  item (inspect every generated function's actual signature) for any future
-  tag with `@Query()` params, not just trusting `@ApiQuery` was already there.
+  `@Query("token") token: string | undefined` had no `@ApiQuery` either — Orval
+  generated `confirm(slug, options?)` with no way to pass `token` at all until
+  `@ApiQuery({ name: "token", required: false, type: String })` was added.
+  Caught by inspecting the generated `confirm` function's real signature before
+  wiring the frontend to it, not by assuming query params "just work" once a tag
+  is added — worth treating as a standing checklist item (inspect every
+  generated function's actual signature) for any future tag with `@Query()`
+  params, not just trusting `@ApiQuery` was already there.
 - **`Customers.findOne` and `Stats.getOverview` both reuse `Order`'s own
   `OrderResponseDto`** for their nested order data, per the plan's suggested
   judgment call — confirmed structurally identical by reading
-  `CustomersService.findOneForStore` and `StatsService.getOverview` side by
-  side with `OrderRepository.findManyForStore` (same `{items: {product,
-  variant}, payments}` include, same `withPaymentSummary` call, no `proofs`
-  on any of the three). Implemented by exporting `OrderRow`/`toOrderDto` (and
-  the row types it depends on) from `order.controller.ts` rather than
-  duplicating the ~40-line mapper twice more — first time this rollout
-  shared a mapper function across controller files, not just a DTO class.
-  `apps/web`'s `features/customers/schemas/customer.schema.ts` and
-  `features/stats/schemas/stats-overview.schema.ts` both alias their order
+  `CustomersService.findOneForStore` and `StatsService.getOverview` side by side
+  with `OrderRepository.findManyForStore` (same
+  `{items: {product,
+  variant}, payments}` include, same `withPaymentSummary`
+  call, no `proofs` on any of the three). Implemented by exporting
+  `OrderRow`/`toOrderDto` (and the row types it depends on) from
+  `order.controller.ts` rather than duplicating the ~40-line mapper twice more —
+  first time this rollout shared a mapper function across controller files, not
+  just a DTO class. `apps/web`'s `features/customers/schemas/customer.schema.ts`
+  and `features/stats/schemas/stats-overview.schema.ts` both alias their order
   type directly onto `OrderResponseDto` (`stats-overview.schema.ts` via
-  `features/orders`' already-exported `Order` type in spirit, though written
-  as a direct `@biasmarket/types` import to avoid a cross-feature dependency)
-  — the local zod copy `customer.schema.ts` carried since Batch 4 is gone.
-- **A real, repo-wide, previously-undiscovered bug found while regenerating
-  for these batches — see `apps/web/AGENTS.md`'s OpenAPI note for the full
-  writeup.** Every controller's `@Body()` DTOs were imported via `import
+  `features/orders`' already-exported `Order` type in spirit, though written as
+  a direct `@biasmarket/types` import to avoid a cross-feature dependency) — the
+  local zod copy `customer.schema.ts` carried since Batch 4 is gone.
+- **A real, repo-wide, previously-undiscovered bug found while regenerating for
+  these batches — see `apps/web/AGENTS.md`'s OpenAPI note for the full
+  writeup.** Every controller's `@Body()` DTOs were imported via
+  `import
   type`, which — under this repo's SWC build — erases the type before
-  `emitDecoratorMetadata` runs, so `@nestjs/swagger` can't emit a
-  `requestBody` schema for any mutation endpoint. The committed
-  `openapi.json`/generated client were stale relative to source (drifted in
-  silently, since nothing had regenerated since some later change converted
-  these imports to type-only) and still showed working `requestBody`s;
-  regenerating for Batch 5/6 exposed the drift immediately —
-  `pnpm --filter web typecheck` broke across every already-migrated tag with
-  a mutation (`Collections`/`Products`/`Categories`/`Contact`/`StoreSections`/
-  `Stores`/`DeliveryConfig`/`PaymentConfig`/`PickupPoints`/`Order`/
-  `Checkout`), not just the six new ones. Confirmed the root cause
-  empirically (flipped one import, watched the schema reappear) before
-  asking the user for explicit sign-off to fix it repo-wide, given the blast
-  radius (12 controller files, none of them this batch's own scope) — approved,
-  fixed, verified zero business-logic change (same classes, same
-  class-validator decorators, just real imports instead of type-only ones).
-  `pnpm --filter web typecheck` went from ~25 errors back to clean with no
-  frontend code changes needed — every existing mutation call site
-  (`use-create-collection.ts`, `use-update-product.ts`, `checkout.api.ts`,
-  `orders.api.ts`, `settings.api.ts`, `stores.api.ts`, etc.) had already been
-  written correctly, anticipating the real, intended generated signature; the
-  bug had just made that signature wrong.
-- **A live, unrelated concurrent-edit incident mid-session**: partway
-  through, the working tree briefly showed an unresolved `git stash pop`
-  conflict (literal `<<<<<<<`/`>>>>>>>` markers) in three files, on a
-  different checked-out branch than this session started on — the user was
-  resolving the money-precision fix in another window at the same time. Per
-  the standing safety instructions, paused and asked rather than touching the
-  conflicted files or running any git command; the user resolved it and
-  confirmed before this session continued. Worth remembering as a reason to
-  re-check `git status`/`git symbolic-ref --short HEAD` mid-session if
-  anything looks inconsistent with earlier reads, not just at the start.
-- **Verification performed**: `pnpm --filter api test` (291 tests, all
-  green), `pnpm --filter api test:e2e` (19 spec files, 41 tests, all green,
-  including 6 new specs — `customer-account-auth.e2e-spec.ts` (combined,
-  matching `orders.e2e-spec.ts`'s Order+Checkout precedent, since both tags
-  share the same customer-lifecycle setup), `customers.e2e-spec.ts`,
+  `emitDecoratorMetadata` runs, so `@nestjs/swagger` can't emit a `requestBody`
+  schema for any mutation endpoint. The committed `openapi.json`/generated
+  client were stale relative to source (drifted in silently, since nothing had
+  regenerated since some later change converted these imports to type-only) and
+  still showed working `requestBody`s; regenerating for Batch 5/6 exposed the
+  drift immediately — `pnpm --filter web typecheck` broke across every
+  already-migrated tag with a mutation
+  (`Collections`/`Products`/`Categories`/`Contact`/`StoreSections`/
+  `Stores`/`DeliveryConfig`/`PaymentConfig`/`PickupPoints`/`Order`/ `Checkout`),
+  not just the six new ones. Confirmed the root cause empirically (flipped one
+  import, watched the schema reappear) before asking the user for explicit
+  sign-off to fix it repo-wide, given the blast radius (12 controller files,
+  none of them this batch's own scope) — approved, fixed, verified zero
+  business-logic change (same classes, same class-validator decorators, just
+  real imports instead of type-only ones). `pnpm --filter web typecheck` went
+  from ~25 errors back to clean with no frontend code changes needed — every
+  existing mutation call site (`use-create-collection.ts`,
+  `use-update-product.ts`, `checkout.api.ts`, `orders.api.ts`,
+  `settings.api.ts`, `stores.api.ts`, etc.) had already been written correctly,
+  anticipating the real, intended generated signature; the bug had just made
+  that signature wrong.
+- **A live, unrelated concurrent-edit incident mid-session**: partway through,
+  the working tree briefly showed an unresolved `git stash pop` conflict
+  (literal `<<<<<<<`/`>>>>>>>` markers) in three files, on a different
+  checked-out branch than this session started on — the user was resolving the
+  money-precision fix in another window at the same time. Per the standing
+  safety instructions, paused and asked rather than touching the conflicted
+  files or running any git command; the user resolved it and confirmed before
+  this session continued. Worth remembering as a reason to re-check
+  `git status`/`git symbolic-ref --short HEAD` mid-session if anything looks
+  inconsistent with earlier reads, not just at the start.
+- **Verification performed**: `pnpm --filter api test` (291 tests, all green),
+  `pnpm --filter api test:e2e` (19 spec files, 41 tests, all green, including 6
+  new specs — `customer-account-auth.e2e-spec.ts` (combined, matching
+  `orders.e2e-spec.ts`'s Order+Checkout precedent, since both tags share the
+  same customer-lifecycle setup), `customers.e2e-spec.ts`,
   `product-search.e2e-spec.ts`, `stats.e2e-spec.ts`, `users.e2e-spec.ts`, plus
   the `CustomerAuth` fix folded into the combined spec rather than a separate
   file). `pnpm --filter @biasmarket/types typecheck`/`build`,
-  `pnpm --filter web typecheck` (clean), `pnpm --filter web test` (35 files,
-  115 tests, all green — six `customer-auth` component test files updated to
-  mock `@/lib/api-client`'s `apiClient.customerAuth.*` instead of the deleted
-  `../api/customer-auth.api` module, two of them needing `vi.hoisted()` per
-  the established multi-`vi.mock`-call gotcha), `pnpm --filter web build`
-  (clean). Not browser-verified, same caveat as every prior batch — a manual
+  `pnpm --filter web typecheck` (clean), `pnpm --filter web test` (35 files, 115
+  tests, all green — six `customer-auth` component test files updated to mock
+  `@/lib/api-client`'s `apiClient.customerAuth.*` instead of the deleted
+  `../api/customer-auth.api` module, two of them needing `vi.hoisted()` per the
+  established multi-`vi.mock`-call gotcha), `pnpm --filter web build` (clean).
+  Not browser-verified, same caveat as every prior batch — a manual
   click-through of the buyer account pages and the seller stats/customers
   dashboard pages is still worth doing before this ships.

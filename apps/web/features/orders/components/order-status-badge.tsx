@@ -3,11 +3,13 @@
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import type { OrderResponseDto } from "@biasmarket/types";
 import { getOrderStatus } from "../lib/order-status";
-import type { Order } from "../schemas/order.schema";
 
 export function OrderStatusBadge(
-  { order }: { order: Pick<Order, "paymentStatus" | "fulfillmentStatus"> },
+  { order }: {
+    order: Pick<OrderResponseDto, "paymentStatus" | "fulfillmentStatus">;
+  },
 ) {
   const t = useTranslations("dashboard.orders");
   const status = getOrderStatus(order, t);

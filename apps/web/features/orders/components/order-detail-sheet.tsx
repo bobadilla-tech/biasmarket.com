@@ -21,7 +21,7 @@ import {
 import { NEXT_FULFILLMENT, paymentsLocked } from "../lib/order-status";
 import { RegisterPaymentForm } from "./register-payment-form";
 import { PaymentHistoryList } from "./payment-history-list";
-import type { Order } from "../schemas/order.schema";
+import type { OrderResponseDto } from "@biasmarket/types";
 import type { RegisterPaymentInput } from "../schemas/register-payment.schema";
 
 export function OrderDetailSheet({
@@ -41,7 +41,7 @@ export function OrderDetailSheet({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  order: Order | null;
+  order: OrderResponseDto | null;
   isPending: boolean;
   fulfillmentLabels: Record<string, string>;
   enabledMethods: string[];

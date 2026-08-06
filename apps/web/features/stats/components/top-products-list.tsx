@@ -3,10 +3,10 @@
 import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/shared/empty-state";
-import type { AnalyticsTopProduct } from "../schemas/analytics.schema";
+import type { AnalyticsTopProductResponseDto } from "@biasmarket/types";
 
 export function TopProductsList(
-  { products }: { products: AnalyticsTopProduct[] },
+  { products }: { products: AnalyticsTopProductResponseDto[] },
 ) {
   const t = useTranslations("dashboard.analytics");
   const maxUnits = Math.max(...products.map((p) => p.unitsSold), 1);

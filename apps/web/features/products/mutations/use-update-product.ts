@@ -1,12 +1,12 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { CreateVariantDto } from "@biasmarket/types";
+import type { CreateVariantDto, VariantResponseDto } from "@biasmarket/types";
 import { apiClient } from "@/lib/api-client";
 import { productsApi } from "../api/products.api";
 import { productsKeys } from "../queries/use-products";
 import { keyForAttributes } from "../lib/variant-key";
-import type { Variant, VariantDraft } from "../schemas/variant.schema";
+import type { VariantDraft } from "../schemas/variant.schema";
 
 /**
  * Variant diffing on edit: re-fetches the product fresh (doesn't trust local
@@ -60,7 +60,7 @@ export function useUpdateProduct(storeId: string | undefined) {
       const currentVariants = current.variants ?? [];
 
       if (input.variants.length > 0) {
-        const existingByKey = new Map<string, Variant>();
+        const existingByKey = new Map<string, VariantResponseDto>();
         currentVariants.forEach((variant) => {
           existingByKey.set(keyForAttributes(variant.attributes), variant);
         });

@@ -14,12 +14,12 @@ import { LoadingState } from "@/components/shared/loading-state";
 import { ErrorState } from "@/components/shared/error-state";
 import { EmptyState } from "@/components/shared/empty-state";
 import { useDashboardStore } from "@/features/stores";
+import type { OrderResponseDto } from "@biasmarket/types";
 import {
   ConfirmTransitionDialog,
   formatOrderDate,
   getInitials,
   getOrderNumber,
-  type Order,
   OrderStatusBadge,
   useOrders,
   useReviewPayment,
@@ -76,7 +76,7 @@ export function PaymentsPageClient() {
     setRejectReason("");
   };
 
-  const contactBuyerUrl = (order: Order) =>
+  const contactBuyerUrl = (order: OrderResponseDto) =>
     buildWhatsAppUrl(
       order.customerPhone,
       buildWhatsAppPaymentReminderMessage({

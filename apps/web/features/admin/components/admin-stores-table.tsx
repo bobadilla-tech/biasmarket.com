@@ -1,12 +1,12 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import type { AdminStore } from "../schemas/admin-store.schema";
+import type { StoreWithOwnerResponseDto } from "@biasmarket/types";
 
 interface AdminStoresTableProps {
-  stores: AdminStore[];
+  stores: StoreWithOwnerResponseDto[];
   impersonatingUserId: string | null;
-  onImpersonate: (store: AdminStore) => void;
+  onImpersonate: (store: StoreWithOwnerResponseDto) => void;
 }
 
 export function AdminStoresTable(

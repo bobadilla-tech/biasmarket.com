@@ -1,10 +1,10 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import type { Inquiry } from "../schemas/inquiry.schema";
+import type { InquiryResponseDto } from "@biasmarket/types";
 
 interface InquiriesTableProps {
-  inquiries: Inquiry[];
+  inquiries: InquiryResponseDto[];
   onMarkReviewed: (id: string) => void;
 }
 

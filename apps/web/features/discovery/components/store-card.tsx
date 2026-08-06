@@ -1,8 +1,8 @@
 import { Link } from "@/i18n/navigation";
 import { StoreLogo } from "@/components/store-logo";
-import type { StoreListing } from "../schemas/store-listing.schema";
+import type { DirectoryStoreItemResponseDto } from "@biasmarket/types";
 
-export function StoreCard({ store }: { store: StoreListing }) {
+export function StoreCard({ store }: { store: DirectoryStoreItemResponseDto }) {
   return (
     <Link
       href={`/store/${store.slug}`}

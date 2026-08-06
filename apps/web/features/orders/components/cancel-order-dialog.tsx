@@ -13,13 +13,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import type { Order } from "../schemas/order.schema";
+import type { OrderResponseDto } from "@biasmarket/types";
 
 type CancellationResolution = "REFUNDED" | "RETAINED" | "STORE_CREDIT";
 
 interface CancelOrderDialogProps {
   open: boolean;
-  order: Order | null;
+  order: OrderResponseDto | null;
   pending?: boolean;
   onClose: () => void;
 

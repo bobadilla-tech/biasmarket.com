@@ -16,13 +16,13 @@ import { Button } from "@/components/ui/button";
 import { LoadingState } from "@/components/shared/loading-state";
 import { ErrorState } from "@/components/shared/error-state";
 import { useDashboardStore } from "@/features/stores";
+import type { OrderResponseDto } from "@biasmarket/types";
 import {
   ConfirmTransitionDialog,
   formatOrderDate,
   getDeliveryLabel,
   getOrderNumber,
   NEXT_FULFILLMENT,
-  type Order,
   OrdersTable,
   OrderStatusBadge,
   SENSITIVE_FULFILLMENT,
@@ -83,7 +83,7 @@ export function ShippingPageClient() {
     [shippingOrders, selectedOrderId],
   );
 
-  const handleAdvance = (order: Order) => {
+  const handleAdvance = (order: OrderResponseDto) => {
     const next = NEXT_FULFILLMENT[order.fulfillmentStatus];
     if (!next) return;
     const label = fulfillmentLabels[next] ?? next;

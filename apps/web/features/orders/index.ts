@@ -38,11 +38,6 @@ export { PaymentProofLightbox } from "./components/payment-proof-lightbox";
 export { ConfirmTransitionDialog } from "./components/confirm-transition-dialog";
 export { CancelOrderDialog } from "./components/cancel-order-dialog";
 
-export type {
-  Order,
-  OrderItemRow,
-  OrderPaymentRow,
-} from "./schemas/order.schema";
 export {
   buildRegisterPaymentSchema,
   PAYMENT_METHOD_TYPES,

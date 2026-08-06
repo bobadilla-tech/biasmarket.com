@@ -5,20 +5,20 @@ import { useTranslations } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { Suggestion } from "../schemas/suggestion.schema";
+import type { SuggestionResponseDto } from "@biasmarket/types";
 
 // bodyParams comes off the generated client as `{ [key: string]: unknown }`
 // (the OpenAPI `additionalProperties: true` escape hatch, needed because
 // JSON Schema has no `string | number` value union) — the backend really
 // does only ever put strings/numbers in it (see suggestions.service.ts).
 function asI18nValues(
-  bodyParams: Suggestion["bodyParams"],
+  bodyParams: SuggestionResponseDto["bodyParams"],
 ): Record<string, string | number> {
   return bodyParams as Record<string, string | number>;
 }
 
 const SEVERITY_STYLES: Record<
-  Suggestion["severity"],
+  SuggestionResponseDto["severity"],
   { icon: typeof Info; className: string }
 > = {
   info: { icon: Lightbulb, className: "bg-violet-50 text-violet-700" },
@@ -30,7 +30,7 @@ export function SuggestionCard({
   suggestion,
   onDismiss,
 }: {
-  suggestion: Suggestion;
+  suggestion: SuggestionResponseDto;
   onDismiss: (id: string) => void;
 }) {
   // titleKey is driven by the backend's rule id (e.g. "lowStock"), not a

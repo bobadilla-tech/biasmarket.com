@@ -8,7 +8,7 @@ import { ordersKeys } from "../queries/use-orders";
 import { useReviewPayment } from "./use-review-payment";
 import { useAdvanceFulfillment } from "./use-advance-fulfillment";
 import { useCancelOrder } from "./use-cancel-order";
-import type { Order } from "../schemas/order.schema";
+import type { OrderResponseDto } from "@biasmarket/types";
 
 const UNDO_WINDOW_MS = 8000;
 
@@ -41,7 +41,7 @@ export function useOptimisticStatusChange(
 
   const patch = (orderId: string, field: StatusField, value: string) => {
     if (!storeId) return;
-    queryClient.setQueryData<Order[]>(
+    queryClient.setQueryData<OrderResponseDto[]>(
       ordersKeys.byStore(storeId),
       (orders) =>
         orders?.map((
@@ -86,7 +86,7 @@ export function useOptimisticStatusChange(
     });
   };
 
-  const scheduleReview = (order: Order, label: string) => {
+  const scheduleReview = (order: OrderResponseDto, label: string) => {
     schedule(
       order.id,
       "paymentStatus",
@@ -98,7 +98,11 @@ export function useOptimisticStatusChange(
     );
   };
 
-  const scheduleAdvance = (order: Order, nextStatus: string, label: string) => {
+  const scheduleAdvance = (
+    order: OrderResponseDto,
+    nextStatus: string,
+    label: string,
+  ) => {
     schedule(
       order.id,
       "fulfillmentStatus",

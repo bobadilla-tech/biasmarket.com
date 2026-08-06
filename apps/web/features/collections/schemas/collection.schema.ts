@@ -1,17 +1,4 @@
 import { z } from "zod";
-import type {
-  CollectionProductWithProductResponseDto,
-  CollectionWithProductsResponseDto,
-} from "@biasmarket/types";
-
-// Response shapes come from the generated OpenAPI client now (see
-// lib/api-client.ts) — these are plain type aliases, not zod schemas.
-// apps/api's response DTOs (CollectionsController + response DTO classes)
-// are the runtime guarantee for pass-through reads like this; zod stays only
-// for real client-side logic, e.g. the form schema below. See "OpenAPI note"
-// in apps/web/AGENTS.md.
-export type Collection = CollectionWithProductsResponseDto;
-export type CollectionProduct = CollectionProductWithProductResponseDto;
 
 export const createCollectionSchema = z.object({
   name: z.string().min(1, "name required"),

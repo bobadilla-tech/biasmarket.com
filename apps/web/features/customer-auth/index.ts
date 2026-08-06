@@ -31,4 +31,3 @@ export {
   type ForgotPasswordInput,
   forgotPasswordSchema,
 } from "./schemas/forgot-password.schema";
-export { type CustomerProfile } from "./schemas/profile.schema";
