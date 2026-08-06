@@ -1,6 +1,25 @@
 packages:
   - apps/*
   - packages/*
+packageExtensions:
+  # @nestjs/swagger's CLI plugin (used by apps/api's generate:swagger-metadata
+  # script) does `require("typescript")` at runtime without declaring it as a
+  # dependency or peerDependency anywhere in its own package.json. Under
+  # pnpm's isolated node_modules, that undeclared require has no pinned
+  # resolution target, so it falls through Node's directory walk-up to
+  # whatever `typescript` happens to be hoisted at the workspace root — which
+  # is `^7.0.2` (@typescript/native-preview) for root/web, not apps/api's
+  # `^5.9.3`. Native-preview's `ts` object has no `visitNode`, so the plugin
+  # crashes with "ts.visitNode is not a function" on a fresh install (a stale
+  # local node_modules can mask this by reusing an older resolution).
+  # Declaring it here as an optional peer lets pnpm resolve it against the
+  # consuming workspace package's own typescript (apps/api's 5.9.3) instead.
+  "@nestjs/swagger":
+    peerDependencies:
+      typescript: "*"
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 allowBuilds:
   "@prisma/engines": true
   "@swc/core": true
