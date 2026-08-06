@@ -14,9 +14,14 @@ import {
   removeItem,
   updateQuantity,
 } from "@/lib/cart";
+import { apiFetch } from "@/lib/api";
 
 function displayName(item: CartItem) {
   return item.variantLabel ? `${item.name} (${item.variantLabel})` : item.name;
+}
+
+function isAvailable(available: number) {
+  return available === Infinity || available > 0;
 }
 
 function CartSummary({
@@ -111,10 +116,59 @@ export function CartPageClient() {
   const t = useTranslations("storefront.cartPage");
   const { slug } = useParams<{ slug: string }>();
   const [items, setItems] = useState<CartItem[]>([]);
+  const [variantAvail, setVariantAvail] = useState<Map<string, number>>(
+    new Map(),
+  );
+  const [productAvail, setProductAvail] = useState<Map<string, number>>(
+    new Map(),
+  );
 
   useEffect(() => {
     setItems(getCart(slug));
   }, [slug]);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiFetch(`/stores/${slug}/public`, {}, "Store not found")
+      .then((data: any) => {
+        if (cancelled) return;
+        const vMap = new Map<string, number>();
+        const pMap = new Map<string, number>();
+        for (const section of data.sections ?? []) {
+          if (section.type !== "COLLECTION" || !section.collection) continue;
+          for (const cp of section.collection.products) {
+            const product = cp.product;
+            const variants = product.variants ?? [];
+            if (variants.length === 0) {
+              pMap.set(product.id, Infinity);
+              continue;
+            }
+            let sum = 0;
+            let unlimited = false;
+            for (const v of variants) {
+              const available = v.stock === null
+                ? Infinity
+                : v.stock - (v.reserved ?? 0);
+              vMap.set(v.id, available);
+              if (available === Infinity) unlimited = true;
+              else sum += available;
+            }
+            pMap.set(product.id, unlimited ? Infinity : sum);
+          }
+        }
+        setVariantAvail(vMap);
+        setProductAvail(pMap);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [slug]);
+
+  const availableFor = (item: CartItem) =>
+    item.variantId
+      ? variantAvail.get(item.variantId)
+      : productAvail.get(item.productId);
 
   const handleQuantityChange = (item: CartItem, quantity: number) => {
     setItems(updateQuantity(slug, item, quantity));
@@ -204,14 +258,24 @@ export function CartPageClient() {
                       <span className="w-6 text-center text-sm text-stone-900">
                         {item.quantity}
                       </span>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleQuantityChange(item, item.quantity + 1)}
-                        className="size-7 rounded-md text-stone-600 transition hover:bg-stone-100"
-                      >
-                        +
-                      </button>
+                      {(() => {
+                        const available = availableFor(item);
+                        const atCap = available !== undefined &&
+                          available !== Infinity &&
+                          item.quantity >= available;
+                        return (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleQuantityChange(item, item.quantity + 1)}
+                            disabled={atCap}
+                            aria-disabled={atCap}
+                            className="size-7 rounded-md text-stone-600 transition hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+                          >
+                            +
+                          </button>
+                        );
+                      })()}
                     </div>
                     <span className="w-16 text-right text-sm font-semibold text-stone-900">
                       {(item.price * item.quantity).toFixed(2)}

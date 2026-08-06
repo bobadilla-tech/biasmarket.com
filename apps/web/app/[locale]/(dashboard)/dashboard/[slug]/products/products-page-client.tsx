@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { useDashboardStore } from "@/features/stores";
+import { RestockRequestsPanel } from "@/features/restock";
 import {
   getCategoryLabel,
   type Product,
@@ -334,6 +335,11 @@ export function ProductsPageClient() {
               </CardContent>
             </Card>
           )}
+
+        <RestockRequestsPanel
+          storeId={storeId}
+          errorMessage={tCommon("networkError")}
+        />
 
         <ProductSheet
           open={createOpen}

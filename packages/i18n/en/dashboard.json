@@ -592,5 +592,14 @@
       "saved": "Password updated"
     },
     "signOut": "Sign out"
+  },
+  "restock": {
+    "title": "Restock interest",
+    "subtitle": "Customers waiting for an item to come back in stock.",
+    "empty": "No one has registered interest in a restock yet.",
+    "sortDate": "Most recent",
+    "sortCount": "Most requested",
+    "countLabel": "{count} interested",
+    "contact": "WhatsApp"
   }
 }

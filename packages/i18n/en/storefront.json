@@ -171,5 +171,20 @@
     "back": "Back to store",
     "notFound": "Product not found.",
     "soldOut": "Sold out"
+  },
+  "registerInterest": "Register my interest",
+  "restockDialog": {
+    "title": "Register my interest",
+    "subtitle": "Leave your name and phone number and we'll contact you on WhatsApp as soon as it's back in stock.",
+    "namePlaceholder": "Name",
+    "phonePlaceholder": "Phone (WhatsApp)",
+    "nameRequired": "Enter your name",
+    "phoneRequired": "Enter your phone number",
+    "submit": "Register",
+    "submitting": "Sending...",
+    "successTitle": "You're on the list!",
+    "successBody": "We'll reach out on WhatsApp as soon as this item is back in stock.",
+    "close": "Close",
+    "error": "Something went wrong. Try again."
   }
 }

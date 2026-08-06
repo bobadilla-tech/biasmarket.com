@@ -592,5 +592,14 @@
       "saved": "Contraseña actualizada"
     },
     "signOut": "Cerrar sesión"
+  },
+  "restock": {
+    "title": "Interesados en reposición",
+    "subtitle": "Clientes esperando que un producto vuelva a tener stock.",
+    "empty": "Todavía nadie registró interés en una reposición.",
+    "sortDate": "Más recientes",
+    "sortCount": "Más solicitados",
+    "countLabel": "{count} interesados",
+    "contact": "WhatsApp"
   }
 }

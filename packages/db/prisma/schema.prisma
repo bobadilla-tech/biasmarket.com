@@ -56,6 +56,7 @@ model Store {
   deliveryMethods DeliveryMethodConfig[]
   pickupPoints    PickupPoint[]
   notifications   Notification[]
+  restockRequests RestockRequest[]
 
   @@index([ownerId])
 }
@@ -79,6 +80,7 @@ model Product {
   orderItems  OrderItem[]
   categories  ProductCategory[]
   collections CollectionProduct[]
+  restockRequests RestockRequest[]
 
   @@index([storeId])
   @@index([storeId, status])
@@ -97,9 +99,28 @@ model ProductVariant {
 
   product    Product     @relation(fields: [productId], references: [id])
   orderItems OrderItem[]
+  restockRequests RestockRequest[]
 
   @@index([productId])
   @@index([storeId])
+}
+
+model RestockRequest {
+  id        String   @id @default(cuid())
+  storeId   String
+  productId String
+  variantId String?
+  name      String
+  phone     String
+  createdAt DateTime @default(now())
+
+  store   Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  product Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+
+  @@index([storeId, createdAt])
+  @@index([productId])
+  @@index([variantId])
 }
 
 enum ProductStatus {

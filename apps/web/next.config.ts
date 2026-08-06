@@ -11,7 +11,10 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "http", hostname: "localhost", port: "9000" },
       { protocol: "https", hostname: "cdn.biasmarket.com" },
+      { protocol: "https", hostname: "placehold.co" },
     ],
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   typescript: {
     // TypeScript 7 ships no compiler API, so Next's build-time type-check

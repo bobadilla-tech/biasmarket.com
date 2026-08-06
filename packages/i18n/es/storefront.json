@@ -171,5 +171,20 @@
     "back": "Volver a la tienda",
     "notFound": "Producto no encontrado.",
     "soldOut": "Agotado"
+  },
+  "registerInterest": "Avisarme cuando haya stock",
+  "restockDialog": {
+    "title": "Avisarme cuando haya stock",
+    "subtitle": "Déjanos tu nombre y número de teléfono y te contactaremos por WhatsApp en cuanto vuelva a haber stock.",
+    "namePlaceholder": "Nombre",
+    "phonePlaceholder": "Teléfono (WhatsApp)",
+    "nameRequired": "Ingresa tu nombre",
+    "phoneRequired": "Ingresa tu número de teléfono",
+    "submit": "Registrarme",
+    "submitting": "Enviando...",
+    "successTitle": "¡Estás en la lista!",
+    "successBody": "Te escribiremos por WhatsApp en cuanto este producto vuelva a estar disponible.",
+    "close": "Cerrar",
+    "error": "Algo salió mal. Inténtalo de nuevo."
   }
 }

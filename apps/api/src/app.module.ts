@@ -20,6 +20,7 @@ import { StoreSectionsModule } from "./modules/store-sections/store-sections.mod
 import { NotificationsModule } from "./modules/notifications/notifications.module.js";
 import { StatsModule } from "./modules/stats/stats.module.js";
 import { CustomerAuthModule } from "./modules/customer-auth/customer-auth.module.js";
+import { RestockModule } from "./modules/restock/restock.module.js";
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { CustomerAuthModule } from "./modules/customer-auth/customer-auth.module
     NotificationsModule,
     StatsModule,
     CustomerAuthModule,
+    RestockModule,
   ],
   controllers: [AppController],
 })

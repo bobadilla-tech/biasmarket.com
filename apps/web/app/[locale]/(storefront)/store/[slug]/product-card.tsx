@@ -4,12 +4,15 @@ import { useState } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Select } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import { addToCart } from "@/lib/cart";
+import { RestockInterestDialog } from "@/features/restock";
 
 interface Variant {
   id: string;
   name: string;
   stock: number | null;
+  reserved: number;
   priceOverride: string | null;
   imageOverride: string | null;
 }
@@ -29,8 +32,14 @@ export function ProductCard(
   { slug, product }: { slug: string; product: Product },
 ) {
   const t = useTranslations("storefront");
-  const [variantId, setVariantId] = useState("");
+  const availableStock = (v: Variant) =>
+    v.stock === null ? Infinity : v.stock - v.reserved;
+  const [variantId, setVariantId] = useState(
+    () => product.variants.find((v) => availableStock(v) > 0)?.id ??
+      product.variants[0]?.id ?? "",
+  );
   const [added, setAdded] = useState(false);
+  const [restockOpen, setRestockOpen] = useState(false);
 
   const selectedVariant = product.variants.find((v) => v.id === variantId);
   const effectivePrices = product.variants.map((v) =>
@@ -57,7 +66,13 @@ export function ProductCard(
     : minPrice;
 
   const showFromPrice = hasDifferentVariantPrices && !hasSelectedVariant;
-  const outOfStock = product.soldOut || selectedVariant?.stock === 0;
+  const allVariantsOutOfStock =
+    product.variants.length > 0 &&
+    product.variants.every((v) => availableStock(v) <= 0);
+  const outOfStock =
+    product.soldOut ||
+    allVariantsOutOfStock ||
+    (selectedVariant ? availableStock(selectedVariant) <= 0 : false);
 
   const handleAddToCart = () => {
     addToCart(slug, {
@@ -85,8 +100,18 @@ export function ProductCard(
                 src={imageUrl}
                 alt={product.name}
                 fill
-                className="object-cover"
+                className={cn(
+                  "object-cover",
+                  outOfStock && "opacity-70 grayscale",
+                )}
               />
+              {outOfStock && (
+                <div className="absolute inset-x-0 top-2 flex justify-center">
+                  <span className="rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white shadow">
+                    {t("soldOut")}
+                  </span>
+                </div>
+              )}
             </div>
           )
           : <div className="aspect-square bg-gray-100 rounded-lg mb-3" />;
@@ -112,9 +137,9 @@ export function ProductCard(
           selectClassName="rounded-lg border border-gray-200 py-1.5 pl-2 text-xs text-gray-600"
         >
           {product.variants.map((v) => (
-            <option key={v.id} value={v.id} disabled={v.stock === 0}>
+            <option key={v.id} value={v.id} disabled={availableStock(v) <= 0}>
               {v.name}
-              {v.stock === 0 ? ` ${t("variantSoldOut")}` : ""}
+              {availableStock(v) <= 0 ? ` ${t("variantSoldOut")}` : ""}
             </option>
           ))}
         </Select>
@@ -122,9 +147,22 @@ export function ProductCard(
 
       {outOfStock
         ? (
-          <span className="mt-2 block text-xs text-red-500 font-semibold">
-            {t("soldOut")}
-          </span>
+          <div className="mt-2 flex flex-col gap-2">
+            <button
+              type="button"
+              disabled
+              className="w-full cursor-not-allowed rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-400"
+            >
+              {t("soldOut")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setRestockOpen(true)}
+              className="store-theme-primary-button w-full rounded-lg px-3 py-1.5 text-xs font-semibold transition"
+            >
+              {t("registerInterest")}
+            </button>
+          </div>
         )
         : (
           <button
@@ -134,6 +172,16 @@ export function ProductCard(
             {added ? t("addedToCart") : t("addToCart")}
           </button>
         )}
+
+      <RestockInterestDialog
+        open={restockOpen}
+        onOpenChange={setRestockOpen}
+        slug={slug}
+        productId={product.id}
+        variantId={selectedVariant?.id}
+        productName={product.name}
+        variantLabel={selectedVariant?.name}
+      />
     </div>
   );
 }
