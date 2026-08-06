@@ -2889,6 +2889,36 @@
         ]
       }
     },
+    "/stores/{storeId}/stats/payment-methods": {
+      "get": {
+        "operationId": "StatsController_paymentMethods",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Stats"
+        ]
+      }
+    },
     "/stores/{storeId}/suggestions": {
       "get": {
         "operationId": "SuggestionsController_findAll",
@@ -3177,6 +3207,62 @@
         },
         "tags": [
           "CustomerAuth"
+        ]
+      }
+    },
+    "/stores/{slug}/restock-requests": {
+      "post": {
+        "operationId": "RestockController_create",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRestockRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Restock"
+        ]
+      }
+    },
+    "/stores/{storeId}/restock-requests": {
+      "get": {
+        "operationId": "RestockController_list",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Restock"
         ]
       }
     }
@@ -5266,6 +5352,24 @@
               "STORE_CREDIT"
             ]
           },
+          "retainMode": {
+            "type": "string",
+            "enum": [
+              "FULL",
+              "PARTIAL"
+            ]
+          },
+          "retainedAmount": {
+            "type": "number",
+            "minimum": 0
+          },
+          "releasedResolution": {
+            "type": "string",
+            "enum": [
+              "REFUNDED",
+              "STORE_CREDIT"
+            ]
+          },
           "reason": {
             "type": "string",
             "maxLength": 500
@@ -6753,6 +6857,31 @@
           "name",
           "pendingEmail",
           "pendingPhone"
+        ]
+      },
+      "CreateRestockRequestDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "phone": {
+            "type": "string",
+            "minLength": 6
+          },
+          "productId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "variantId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "phone",
+          "productId"
         ]
       }
     }

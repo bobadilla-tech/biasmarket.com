@@ -873,8 +873,28 @@ export const CancelOrderDtoResolution = {
   STORE_CREDIT: 'STORE_CREDIT',
 } as const;
 
+export type CancelOrderDtoRetainMode = typeof CancelOrderDtoRetainMode[keyof typeof CancelOrderDtoRetainMode];
+
+
+export const CancelOrderDtoRetainMode = {
+  FULL: 'FULL',
+  PARTIAL: 'PARTIAL',
+} as const;
+
+export type CancelOrderDtoReleasedResolution = typeof CancelOrderDtoReleasedResolution[keyof typeof CancelOrderDtoReleasedResolution];
+
+
+export const CancelOrderDtoReleasedResolution = {
+  REFUNDED: 'REFUNDED',
+  STORE_CREDIT: 'STORE_CREDIT',
+} as const;
+
 export interface CancelOrderDto {
   resolution: CancelOrderDtoResolution;
+  retainMode?: CancelOrderDtoRetainMode;
+  /** @minimum 0 */
+  retainedAmount?: number;
+  releasedResolution?: CancelOrderDtoReleasedResolution;
   /** @maxLength 500 */
   reason?: string;
 }
@@ -1566,4 +1586,6 @@ enabled?: string;
 export type StatsControlleranalyticsParams = {
 range?: string;
 };
+
+export type StatsControllerpaymentMethods200 = { [key: string]: unknown };
 

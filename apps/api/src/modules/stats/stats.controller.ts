@@ -49,4 +49,33 @@ export class StatsController {
     }
     return this.stats.getAnalytics(storeId, session.user.id, resolvedRange);
   }
+
+  @Get("payment-methods")
+  paymentMethods(
+    @Param("storeId") storeId: string,
+    @Session() session: UserSession,
+    @Query("from") from: string | undefined,
+    @Query("to") to: string | undefined,
+  ) {
+    const now = new Date();
+    const resolvedFrom = from
+      ? new Date(from)
+      : new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const resolvedTo = to ? new Date(to) : now;
+    if (
+      Number.isNaN(resolvedFrom.getTime()) ||
+      Number.isNaN(resolvedTo.getTime())
+    ) {
+      throw new BadRequestException("Fechas inválidas");
+    }
+    if (resolvedFrom >= resolvedTo) {
+      throw new BadRequestException("Rango inválido");
+    }
+    return this.stats.getPaymentMethodsBreakdown(
+      storeId,
+      session.user.id,
+      resolvedFrom,
+      resolvedTo,
+    );
+  }
 }

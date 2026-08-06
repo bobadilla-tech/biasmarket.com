@@ -90,6 +90,7 @@ export class CreateOrderUseCase {
         for (const item of dto.items) {
           const product = await tx.product.findUnique({
             where: { id: item.productId },
+            include: { variants: true },
           });
           if (
             !product ||
@@ -135,6 +136,10 @@ export class CreateOrderUseCase {
                 updatedVariant,
               );
             }
+          } else if (product.variants.length > 0) {
+            throw new BadRequestException(
+              `Debes seleccionar una variante para ${product.name}`,
+            );
           }
 
           if (currency && currency !== product.currency) {

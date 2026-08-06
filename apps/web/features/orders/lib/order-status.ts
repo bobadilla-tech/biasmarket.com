@@ -21,7 +21,7 @@ export type OrdersTab = "all" | "pending" | "transit" | "delivered";
 // a status badge or tab filter.
 type OrderStatusFields = Pick<
   OrderResponseDto,
-  "paymentStatus" | "fulfillmentStatus"
+  "paymentStatus" | "fulfillmentStatus" | "pendingAmount"
 >;
 
 export function getOrderStatus(
@@ -74,10 +74,14 @@ export function getOrderStatus(
 export function paymentsLocked(order: OrderStatusFields) {
   if (order.paymentStatus === "CANCELLED") return true;
   if (order.paymentStatus === "REJECTED") return true;
-  if (order.paymentStatus === "VERIFIED") return true;
-  if (order.fulfillmentStatus === "IN_TRANSIT") return true;
-  if (order.fulfillmentStatus === "READY") return true;
+  if (
+    order.paymentStatus === "VERIFIED" &&
+    Number(order.pendingAmount) <= 0
+  ) {
+    return true;
+  }
   if (order.fulfillmentStatus === "COMPLETED") return true;
+
   return false;
 }
 

@@ -8,6 +8,7 @@
 import type {
   AnalyticsResultResponseDto,
   StatsControlleranalyticsParams,
+  StatsControllerpaymentMethods200,
   StatsOverviewResponseDto
 } from '../api.schemas.js';
 
@@ -53,6 +54,26 @@ export const analytics = async (storeId: string,
     params?: StatsControlleranalyticsParams, options?: Parameters<typeof customFetch>[1]): Promise<AnalyticsResultResponseDto> => {
 
   return customFetch<AnalyticsResultResponseDto>(getAnalyticsUrl(storeId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getPaymentMethodsUrl = (storeId: string,) => {
+
+
+
+
+  return `/stores/${storeId}/stats/payment-methods`
+}
+
+export const paymentMethods = async (storeId: string, options?: Parameters<typeof customFetch>[1]): Promise<StatsControllerpaymentMethods200> => {
+
+  return customFetch<StatsControllerpaymentMethods200>(getPaymentMethodsUrl(storeId),
   {
     ...options,
     method: 'GET'

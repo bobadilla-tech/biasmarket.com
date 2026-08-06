@@ -131,6 +131,7 @@ describe("CreateOrderUseCase", () => {
       price: new FakeDecimal(10),
       currency: "PEN",
       name: "Widget",
+      variants: [],
     });
 
     await expect(useCase.execute(slug, dto)).rejects.toThrow(
@@ -163,6 +164,23 @@ describe("CreateOrderUseCase", () => {
         items: [{ ...dto.items[0], variantId: "variant-1" }],
       }),
     ).rejects.toThrow(BadRequestException);
+  });
+
+  it("throws BadRequestException for a multi-variant product when no variant was selected", async () => {
+    prisma.product.findUnique.mockResolvedValue({
+      id: "product-1",
+      storeId: store.id,
+      status: "PUBLISHED",
+      deletedAt: null,
+      price: new FakeDecimal(10),
+      currency: "PEN",
+      name: "Widget",
+      variants: [{ id: "variant-1", name: "Large", stock: 5, reserved: 0 }],
+    });
+
+    await expect(useCase.execute(slug, dto)).rejects.toThrow(
+      BadRequestException,
+    );
   });
 
   it("reserves stock, computes the total, and creates the order", async () => {
@@ -239,6 +257,7 @@ describe("CreateOrderUseCase", () => {
         price: new FakeDecimal(10),
         currency: "PEN",
         name: "Widget",
+        variants: [],
       })
       .mockResolvedValueOnce({
         id: "product-2",
@@ -248,6 +267,7 @@ describe("CreateOrderUseCase", () => {
         price: new FakeDecimal(10),
         currency: "USD",
         name: "Gadget",
+        variants: [],
       });
 
     await expect(
@@ -274,6 +294,7 @@ describe("CreateOrderUseCase", () => {
       price: new FakeDecimal(10),
       currency: "PEN",
       name: "Widget",
+      variants: [],
     });
     prisma.order.create.mockResolvedValue({
       id: "order-1",
@@ -299,6 +320,7 @@ describe("CreateOrderUseCase", () => {
         price: new FakeDecimal(10),
         currency: "PEN",
         name: "Widget",
+        variants: [],
       });
       prisma.order.create.mockResolvedValue({
         id: "order-1",
@@ -417,6 +439,7 @@ describe("CreateOrderUseCase", () => {
         price: new FakeDecimal(10),
         currency: "PEN",
         name: "Widget",
+        variants: [],
       });
       prisma.order.create.mockResolvedValue({
         id: "order-1",

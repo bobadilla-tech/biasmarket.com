@@ -41,7 +41,7 @@ export class OrderRepository {
         where: { id: orderId },
         include: includeWithPayments,
       });
-    } catch (_e) {
+    } catch {
       order = await this.prisma.order.findUnique({
         where: { id: orderId },
         include: includeWithoutPayments,
@@ -86,7 +86,7 @@ export class OrderRepository {
         orderBy: { createdAt: "desc" },
       });
       return orders.map((order) => withPaymentSummary(order));
-    } catch (_e) {
+    } catch {
       const orders = await this.prisma.order.findMany({
         where,
         include: includeWithoutPayments,

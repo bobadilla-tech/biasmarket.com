@@ -7,11 +7,9 @@ import type { useTranslations } from "next-intl";
 import { ordersKeys } from "../queries/use-orders";
 import { useReviewPayment } from "./use-review-payment";
 import { useAdvanceFulfillment } from "./use-advance-fulfillment";
-import { useCancelOrder } from "./use-cancel-order";
 import type { OrderResponseDto } from "@biasmarket/types";
 
 const UNDO_WINDOW_MS = 8000;
-
 type StatusField = "paymentStatus" | "fulfillmentStatus";
 type PendingMap = Record<string, { field: StatusField; previousValue: string }>;
 
@@ -36,7 +34,6 @@ export function useOptimisticStatusChange(
   const queryClient = useQueryClient();
   const reviewPayment = useReviewPayment(storeId);
   const advanceFulfillment = useAdvanceFulfillment(storeId);
-  const _cancelOrder = useCancelOrder(storeId);
   const [pending, setPending] = useState<PendingMap>({});
 
   const patch = (orderId: string, field: StatusField, value: string) => {

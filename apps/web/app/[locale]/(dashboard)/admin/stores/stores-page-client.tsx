@@ -8,6 +8,10 @@ import {
   useAdminStores,
   useImpersonateStore,
 } from "@/features/admin";
+import {
+  clearImpersonationHistory,
+  setImpersonationHistory,
+} from "@/lib/impersonation-history";
 
 export function AdminStoresPageClient() {
   const t = useTranslations("admin.stores");
@@ -24,10 +28,25 @@ export function AdminStoresPageClient() {
     : null;
 
   const handleImpersonate = async (store: StoreWithOwnerResponseDto) => {
+    const path = `/dashboard/${encodeURIComponent(store.slug)}/products`;
+    setImpersonationHistory({
+      userId: store.owner.id,
+      path,
+      // Mark the transition as pending. The shared history synchronizer must
+      // not interpret the still-current admin route as a browser back.
+      active: false,
+    });
+
     try {
       await impersonate.mutateAsync(store.owner.id);
-      router.push(`/dashboard/${store.slug}/products`);
+      setImpersonationHistory({
+        userId: store.owner.id,
+        path,
+        active: true,
+      });
+      router.push(path);
     } catch {
+      clearImpersonationHistory();
       // error surfaces via impersonate.error
     }
   };

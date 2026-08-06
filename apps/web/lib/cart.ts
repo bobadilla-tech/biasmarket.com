@@ -2,6 +2,8 @@ export interface CartItem {
   productId: string;
   variantId?: string;
   name: string;
+  variantLabel?: string;
+  image?: string;
   price: number;
   currency: string;
   quantity: number;
@@ -51,6 +53,15 @@ export function updateQuantity(
     : items.map((
       i,
     ) => (itemKey(i) === itemKey(target) ? { ...i, quantity } : i));
+  saveCart(slug, next);
+  return next;
+}
+
+export function removeItem(
+  slug: string,
+  target: Pick<CartItem, "productId" | "variantId">,
+): CartItem[] {
+  const next = getCart(slug).filter((i) => itemKey(i) !== itemKey(target));
   saveCart(slug, next);
   return next;
 }
