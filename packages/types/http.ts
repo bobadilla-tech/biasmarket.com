@@ -1,10 +1,3 @@
-// The fetch mutator every Orval-generated method calls through (see
-// orval.config.ts's `override.mutator`). Centralizes what `apps/web`'s
-// hand-written `apiFetch`/`collections.api.ts` used to repeat per call site:
-// base-URL resolution, `credentials: "include"` for the cookie-session auth,
-// and throwing on non-2xx. `configureApiClient` must run once before any
-// generated method is called — `apps/web/lib/api-client.ts` does this at
-// module load, same place `createApiClient(baseUrl)` used to be constructed.
 export interface ApiClientConfig {
   baseUrl: string;
 }

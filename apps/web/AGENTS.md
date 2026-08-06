@@ -116,8 +116,50 @@ by this migration and not fixed as part of it**:
 via plain JS float arithmetic on money (not Decimal-safe), and
 `OrderController.addPayment`'s "exceeds pending balance" guard uses that same
 imprecise value — a seller entering the _exact_ amount the UI shows as owed can
-get rejected. Flagged to the user directly; worth a dedicated follow-up fix
-independent of this rollout.
+get rejected. Flagged to the user directly; fixed independently in
+`apps/api/src/common/payment-summary.ts` (a shared `computePaymentSummary`/
+`withPaymentSummary` helper doing the arithmetic in `Prisma.Decimal` space) —
+landed before Batch 5/6 below, so those batches' DTOs didn't need to carry a
+"known-buggy" caveat.
+
+Batches 5 (`CustomerAuth`, `CustomerAccount`, `Customers`) and 6
+(`ProductSearch`, `Stats`, `Users`) landed together per
+`docs/plans/2026-08-06-orval-rollout-batches-5-6-plan.md` — **this was the last
+batch**; every `apps/web` feature with a real backend tag is now migrated (see
+"Migrated so far" below). `CustomerAuth`'s spec-bug blocker (missing `slug`
+`@ApiParam` on `changePassword`/`logout`) was fixed with the user's explicit
+go-ahead — `unsafeDisableValidation: true` is gone from `orval.config.ts` as a
+result. `Customers.findOne`'s `orders` and `Stats.getOverview`'s
+`recentOrders` both reuse `Order`'s own `OrderResponseDto` directly (a
+cross-module DTO import, confirmed structurally identical by reading the
+services — the first time this rollout had two tags share an entire response
+shape, not just a nested piece of one) rather than each re-declaring the same
+dozen fields.
+
+**A real, repo-wide bug found and fixed while regenerating for these
+batches, unrelated to any single tag:** every controller's `@Body()`-decorated
+request DTOs were imported via `import type` (e.g.
+`import type { CreateCollectionDto } from "./dto/create-collection.dto.js"`).
+Under this repo's SWC build, a type-only import is erased before
+`emitDecoratorMetadata` runs, so `design:paramtypes` degrades to `Object` for
+that parameter — `@nestjs/swagger` then has nothing to `$ref`, and silently
+emits no `requestBody` at all for that operation. This had drifted in
+unnoticed (the committed `openapi.json` was stale relative to source — nothing
+had re-run `generate:openapi` since some later change converted these to type
+imports) and affected every mutation across every already-migrated tag, not
+just the six new ones: regenerating the client for Batch 5/6 immediately broke
+`pnpm --filter web typecheck` in `Collections`/`Products`/`Categories`/
+`Contact`/`StoreSections`/`Stores`/`DeliveryConfig`/`PaymentConfig`/
+`PickupPoints`/`Order`/`Checkout`'s mutation call sites (`Expected 1-2
+arguments, but got 3`, since the generated functions had silently lost their
+`data` parameter). Confirmed the root cause empirically (switching one
+import from type-only to a value import made the missing `requestBody`
+reappear in the emitted spec) before fixing it repo-wide across all 12
+affected controller files — zero business-logic change, pure import style.
+**Rule for all future controllers**: any DTO used as a `@Body()` parameter
+type must be a real (value) import, never `import type` — only response DTOs
+that are exclusively used as return-type annotations are safe to import as
+types.
 
 `apps/api` emits `openapi.json` (`@nestjs/swagger` + a standalone
 `PluginMetadataGenerator` script, since the Nest build's SWC builder doesn't run
@@ -148,28 +190,30 @@ step, no live app boot needed in CI). After changing a migrated feature's
 backend response DTOs, regenerate by hand and commit the diff:
 `pnpm --filter api generate:openapi && pnpm --filter @biasmarket/types generate`.
 
-**Orval config notes, for whoever adds the next tag:** `orval.config.ts`'s
-`input.filters` only includes tags whose controller already has real response
-DTOs — currently `Collections`, `Products`, `Categories`, `Notifications`,
-`Contact`, `Suggestions`, `StoreSections`, `DeliveryConfig`,
-`PublicDeliveryConfig`, `PaymentConfig`, `PublicPaymentConfig`, `PickupPoints`,
-`PublicPickupPoints`, `Stores`, `MyStores`, `Order`, and `Checkout`. Generating
-a tag whose responses are still untyped Prisma results produces anonymous
-`{ [key: string]: unknown }` placeholder schema types keyed by the
-(post-`operationName`-override) shortened method name, and those collide across
-unrelated controllers in the single shared `api.schemas.ts` file (every
-controller's `findAll` fighting over one `FindAll200Item` type) — add a tag here
-only once its controller has real response DTOs, not just because the tag exists
-in the spec. Two `CustomerAuthController` endpoints (`changePassword`, `logout`)
-are missing their `slug` path param in the emitted spec — a real, pre-existing
-`apps/api` Swagger-annotation gap, unrelated to collections and out of scope for
-this change — which is why `input.unsafeDisableValidation: true` is set (Orval's
-validator hard-fails the _entire_ build over those two operations, even with
-`CustomerAuth` excluded from `filters.tags`, since validation runs before
-filtering). `scripts/fix-esm-extensions.mjs` postprocesses Orval's output
-because Orval has no option to emit `.js` extensions on relative imports, which
-this package's NodeNext module resolution requires — run automatically as part
-of `generate`, not a separate manual step.
+**Orval config notes:** `orval.config.ts`'s `input.filters` includes every tag
+now — `Collections`, `Products`, `Categories`, `Notifications`, `Contact`,
+`Suggestions`, `StoreSections`, `DeliveryConfig`, `PublicDeliveryConfig`,
+`PaymentConfig`, `PublicPaymentConfig`, `PickupPoints`, `PublicPickupPoints`,
+`Stores`, `MyStores`, `Order`, `Checkout`, `CustomerAuth`, `CustomerAccount`,
+`Customers`, `ProductSearch`, `Stats`, and `Users` — this was the last batch,
+so every tag with a corresponding `apps/web` feature has real response DTOs
+now (only `App`/`Health` are excluded, and neither has a frontend consumer).
+For historical context: generating a tag whose responses are still untyped
+Prisma results produces anonymous `{ [key: string]: unknown }` placeholder
+schema types keyed by the (post-`operationName`-override) shortened method
+name, and those collide across unrelated controllers in the single shared
+`api.schemas.ts` file (every controller's `findAll` fighting over one
+`FindAll200Item` type) — add a tag only once its controller has real response
+DTOs, not just because the tag exists in the spec, if this repo ever adds a
+23rd controller. `input.unsafeDisableValidation: true` — previously set
+because two `CustomerAuthController` endpoints were missing their `slug` path
+param — is gone: that gap was fixed (a real `@ApiParam({ name: "slug", type:
+String })` on `changePassword`/`logout`, zero behavior change) as part of
+Batch 5, with the user's explicit approval, and Orval's validator now passes
+on the whole spec. `scripts/fix-esm-extensions.mjs` postprocesses Orval's
+output because Orval has no option to emit `.js` extensions on relative
+imports, which this package's NodeNext module resolution requires — run
+automatically as part of `generate`, not a separate manual step.
 
 **`operationName`'s `[methodName, typeName]` array form (added in Batch 3):**
 Orval derives every internally-generated type name (a query-param'd method's
@@ -219,8 +263,9 @@ top of the raw response (e.g. `useCreateCollection` turning an empty-string
 Apply this same split to each feature as it migrates, not a blanket
 drop-all-response-zod change in one PR.
 
-Migrated so far: `collections`, `products`, `categories`, `notifications`,
-`contact`, `suggestions`, `sections` (`StoreSections` tag), `store-settings`'s
+**Migration complete.** Every `apps/web` feature with a real backend tag is
+migrated: `collections`, `products`, `categories`, `notifications`, `contact`,
+`suggestions`, `sections` (`StoreSections` tag), `store-settings`'s
 delivery/payment/pickup-point sections plus its profile/appearance/stock-alert
 saves (`DeliveryConfig`, `PaymentConfig`, `PickupPoints`, and the relevant slice
 of `Stores`), `checkout` in full — both the public delivery/payment/pickup-point
@@ -228,14 +273,24 @@ reads (`PublicDeliveryConfig`, `PublicPaymentConfig`, `PublicPickupPoints`) and
 `submit`/`create` itself (`Checkout` tag), `stores` + `admin-stores`
 (`Stores`/`MyStores`), `orders` (`Order` tag — `list`/`review`/`advance`/
 `cancelOrder`; `registerPayment` stays on `apiFetch`/`FormData`, the multipart
-carve-out), and `discovery`'s featured-stores/store-directory reads (the rest of
-`discovery.api.ts`, `ProductSearch`, is still on `apiFetch`, Batch 6).
-Everything else's `api/*.ts` stays on `apiFetch` + zod until its backend
-controller gets the same response-DTO treatment (see the rollout plan doc's
-"Suggested batches" for the order). Error responses are also explicitly out of
-scope for the generated client (see the plan doc's Phase 3 note) — the mutator's
-defensive `message`-field parsing and `fallbackErrorMessage` stay the pattern
-for error paths even in migrated features.
+carve-out), `discovery` in full (featured-stores/store-directory reads plus
+`searchProducts`, the `ProductSearch` tag), `customer-auth` (`CustomerAuth`
+tag — `register`/`login`/`forgotPassword`/`changePassword`/`me`/`updateMe`/
+`logout`), `account` (`CustomerAccount` tag — `confirm`), `customers`
+(`Customers` tag — `findAll`/`findOne`, the latter's `orders` reusing `Order`'s
+own `OrderResponseDto`), `stats` (`Stats` tag — `overview`/`analytics`,
+`overview`'s `recentOrders` likewise reusing `OrderResponseDto`), and
+`admin`'s `getStoreCounts` (`Users` tag — `listUsers`/`banUser`/`unbanUser`
+correctly stay on `authClient.admin.*`, not this tag). No feature's
+`api/*.ts` calls `apiFetch` for a JSON request/response anymore — the only
+remaining `fetch`/`FormData` call sites are the documented multipart
+carve-outs (`products`' image uploads, `orders`' `registerPayment`, `stores`'
+`uploadLogo`). Confirmed by grepping every `features/*/api/*.ts` for
+`apiFetch(` at the end of Batch 5/6 — zero matches outside those carve-outs.
+Error responses are still explicitly out of scope for the generated client
+(see the plan doc's Phase 3 note) — the mutator's defensive `message`-field
+parsing and `fallbackErrorMessage` stay the pattern for error paths even in
+migrated features.
 
 ## Feature-specific patterns worth knowing
 
