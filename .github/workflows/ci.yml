@@ -196,6 +196,8 @@ jobs:
         run: pnpm turbo run typecheck --filter=web
 
       - name: Build
+        env:
+          NEXT_PUBLIC_API_URL: "http://localhost:3000"
         run: pnpm turbo run build --filter=web
 
       - name: Test with coverage
