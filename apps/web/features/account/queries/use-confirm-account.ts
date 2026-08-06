@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { accountApi } from "../api/account.api";
+import { apiClient } from "@/lib/api-client";
 
 export const accountKeys = {
   confirm: (slug: string, token: string | null) =>
@@ -9,7 +9,8 @@ export const accountKeys = {
 export function useConfirmAccount(slug: string, token: string | null) {
   return useQuery({
     queryKey: accountKeys.confirm(slug, token),
-    queryFn: () => accountApi.confirm(slug, token as string),
+    queryFn: () =>
+      apiClient.customerAccount.confirm(slug, { token: token as string }),
     enabled: !!token,
   });
 }

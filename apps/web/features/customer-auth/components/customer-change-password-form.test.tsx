@@ -4,10 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "../../../test-utils/render-with-providers";
 
 const changePassword = vi.fn();
-vi.mock("../api/customer-auth.api", () => ({
-  customerAuthApi: {
-    changePassword: (...args: unknown[]) => changePassword(...args),
-  },
+vi.mock("@/lib/api-client", () => ({
+  apiClient: { customerAuth: { changePassword } },
 }));
 
 const { CustomerChangePasswordForm } = await import(
@@ -66,11 +64,10 @@ test("submits current and new password, then shows the success message", async (
   );
 
   await waitFor(() => {
-    expect(changePassword).toHaveBeenCalledWith(
-      "my-store",
-      "old-secret-1",
-      "new-secret-1",
-    );
+    expect(changePassword).toHaveBeenCalledWith("my-store", {
+      currentPassword: "old-secret-1",
+      newPassword: "new-secret-1",
+    });
     expect(screen.getByText("Contraseña actualizada.")).toBeDefined();
   });
 });

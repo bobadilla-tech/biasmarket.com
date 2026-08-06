@@ -11,9 +11,9 @@ vi.mock("next/navigation", () => ({
   permanentRedirect: vi.fn(),
 }));
 
-const login = vi.fn();
-vi.mock("../api/customer-auth.api", () => ({
-  customerAuthApi: { login: (...args: unknown[]) => login(...args) },
+const { login } = vi.hoisted(() => ({ login: vi.fn() }));
+vi.mock("@/lib/api-client", () => ({
+  apiClient: { customerAuth: { login } },
 }));
 
 const { CustomerLoginForm } = await import("./customer-login-form");
@@ -47,11 +47,10 @@ test("submits valid credentials and redirects to the profile page on success", a
   await user.click(screen.getByRole("button", { name: /ingresar/i }));
 
   await waitFor(() => {
-    expect(login).toHaveBeenCalledWith(
-      "my-store",
-      "+51988888888",
-      "super-secret-1",
-    );
+    expect(login).toHaveBeenCalledWith("my-store", {
+      phone: "+51988888888",
+      password: "super-secret-1",
+    });
     expect(push).toHaveBeenCalledWith("/es/store/my-store/account");
   });
 });

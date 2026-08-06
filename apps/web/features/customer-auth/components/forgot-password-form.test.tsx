@@ -4,10 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "../../../test-utils/render-with-providers";
 
 const forgotPassword = vi.fn();
-vi.mock("../api/customer-auth.api", () => ({
-  customerAuthApi: {
-    forgotPassword: (...args: unknown[]) => forgotPassword(...args),
-  },
+vi.mock("@/lib/api-client", () => ({
+  apiClient: { customerAuth: { forgotPassword } },
 }));
 
 const { ForgotPasswordForm } = await import("./forgot-password-form");
@@ -39,7 +37,9 @@ test("submits the phone and shows the generic success message", async () => {
   await user.click(screen.getByRole("button", { name: /enviar enlace/i }));
 
   await waitFor(() => {
-    expect(forgotPassword).toHaveBeenCalledWith("my-store", "+51988888888");
+    expect(forgotPassword).toHaveBeenCalledWith("my-store", {
+      phone: "+51988888888",
+    });
     expect(screen.getByText(/revisa tu correo para continuar/i)).toBeDefined();
   });
 });

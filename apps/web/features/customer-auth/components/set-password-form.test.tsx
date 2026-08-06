@@ -4,8 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "../../../test-utils/render-with-providers";
 
 const register = vi.fn();
-vi.mock("../api/customer-auth.api", () => ({
-  customerAuthApi: { register: (...args: unknown[]) => register(...args) },
+vi.mock("@/lib/api-client", () => ({
+  apiClient: { customerAuth: { register } },
 }));
 
 const { SetPasswordForm } = await import("./set-password-form");
@@ -73,7 +73,10 @@ test("submits the token and password, then shows the success state", async () =>
   );
 
   await waitFor(() => {
-    expect(register).toHaveBeenCalledWith("my-store", "tok", "super-secret-1");
+    expect(register).toHaveBeenCalledWith("my-store", {
+      token: "tok",
+      password: "super-secret-1",
+    });
     expect(screen.getByText(/ya puedes ingresar/i)).toBeDefined();
   });
 });

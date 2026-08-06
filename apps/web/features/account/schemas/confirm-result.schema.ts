@@ -1,36 +1,7 @@
-import { z } from "zod";
+import type {
+  AccountOrderResponseDto,
+  ConfirmAccountResponseDto,
+} from "@biasmarket/types";
 
-export const accountOrderSchema = z.object({
-  id: z.string(),
-  paymentStatus: z.enum([
-    "PENDING_PAYMENT",
-    "PARTIALLY_PAID",
-    "PAYMENT_SUBMITTED",
-    "VERIFIED",
-    "REJECTED",
-    "CANCELLED",
-  ]),
-  fulfillmentStatus: z.enum([
-    "ORDERING",
-    "IN_TRANSIT",
-    "READY",
-    "COMPLETED",
-  ]),
-  totalAmount: z.string(),
-  currency: z.string(),
-  createdAt: z.string(),
-});
-
-export const confirmResultSchema = z.object({
-  purpose: z.enum(["confirm", "reset", "change-email", "change-phone"]),
-  customer: z.object({
-    name: z.string().nullable(),
-    email: z.string().nullable(),
-    phone: z.string(),
-    hasPassword: z.boolean(),
-  }),
-  orders: z.array(accountOrderSchema),
-});
-
-export type AccountOrder = z.infer<typeof accountOrderSchema>;
-export type ConfirmResult = z.infer<typeof confirmResultSchema>;
+export type AccountOrder = AccountOrderResponseDto;
+export type ConfirmResult = ConfirmAccountResponseDto;
