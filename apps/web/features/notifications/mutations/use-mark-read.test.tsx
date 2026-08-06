@@ -3,10 +3,10 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 
-const apiFetch = vi.fn();
+const notificationsMock = { markRead: vi.fn() };
 vi.mock(
-  "@/lib/api",
-  () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }),
+  "@/lib/api-client",
+  () => ({ apiClient: { notifications: notificationsMock } }),
 );
 
 const { useMarkRead } = await import("./use-mark-read");
@@ -20,7 +20,7 @@ function createWrapper(queryClient: QueryClient) {
 }
 
 test("invalidates the store's notification queries on success", async () => {
-  apiFetch.mockResolvedValueOnce({});
+  notificationsMock.markRead.mockResolvedValueOnce({});
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -40,7 +40,7 @@ test("invalidates the store's notification queries on success", async () => {
 });
 
 test("does not invalidate when storeId is undefined", async () => {
-  apiFetch.mockResolvedValueOnce({});
+  notificationsMock.markRead.mockResolvedValueOnce({});
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });

@@ -2,12 +2,12 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { SetPasswordForm } from "@/features/customer-auth";
 import type {
-  AccountOrder,
-  ConfirmResult,
-} from "../schemas/confirm-result.schema";
+  AccountOrderResponseDto,
+  ConfirmAccountResponseDto,
+} from "@biasmarket/types";
 
 function statusLabel(
-  status: AccountOrder["paymentStatus"],
+  status: AccountOrderResponseDto["paymentStatus"],
   t: ReturnType<typeof useTranslations>,
 ) {
   if (status === "REJECTED") return t("status.rejected");
@@ -25,7 +25,7 @@ export function AccountConfirmView({
 }: {
   slug: string;
   token: string;
-  result: ConfirmResult;
+  result: ConfirmAccountResponseDto;
 }) {
   const t = useTranslations("storefront.accountConfirmPage");
 

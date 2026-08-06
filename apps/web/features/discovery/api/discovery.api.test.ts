@@ -1,42 +1,55 @@
 import { beforeEach, expect, test, vi } from "vitest";
 
-const apiFetch = vi.fn();
-vi.mock(
-  "@/lib/api",
-  () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }),
-);
+const storesMock = { findFeatured: vi.fn(), findDirectory: vi.fn() };
+const productSearchMock = { search: vi.fn() };
+vi.mock("@/lib/api-client", () => ({
+  apiClient: { stores: storesMock, productSearch: productSearchMock },
+}));
 
 const { discoveryApi } = await import("./discovery.api");
 
 beforeEach(() => {
-  apiFetch.mockReset();
+  storesMock.findFeatured.mockReset();
+  storesMock.findDirectory.mockReset();
+  productSearchMock.search.mockReset();
 });
 
-test("getFeaturedStores omits the limit query param when not provided", async () => {
-  apiFetch.mockResolvedValueOnce([]);
+test("getFeaturedStores omits the limit param when not provided", async () => {
+  storesMock.findFeatured.mockResolvedValue([]);
   await discoveryApi.getFeaturedStores();
-  expect(apiFetch).toHaveBeenCalledWith("/stores/featured");
+  expect(storesMock.findFeatured).toHaveBeenCalledWith({ limit: undefined });
 });
 
-test("getFeaturedStores includes the limit query param when provided", async () => {
-  apiFetch.mockResolvedValueOnce([]);
+test("getFeaturedStores stringifies the limit param when provided", async () => {
+  storesMock.findFeatured.mockResolvedValue([]);
   await discoveryApi.getFeaturedStores(6);
-  expect(apiFetch).toHaveBeenCalledWith("/stores/featured?limit=6");
+  expect(storesMock.findFeatured).toHaveBeenCalledWith({ limit: "6" });
 });
 
-test("getStoreDirectory builds q and page query params", async () => {
-  apiFetch.mockResolvedValueOnce({ stores: [], total: 0, page: 2, limit: 24 });
+test("getStoreDirectory passes q and stringifies page", async () => {
+  storesMock.findDirectory.mockResolvedValue({
+    stores: [],
+    total: 0,
+    page: 2,
+    limit: 24,
+  });
   await discoveryApi.getStoreDirectory({ q: "kpop", page: 2 });
-  expect(apiFetch).toHaveBeenCalledWith("/stores/directory?q=kpop&page=2");
+  expect(storesMock.findDirectory).toHaveBeenCalledWith({
+    q: "kpop",
+    page: "2",
+  });
 });
 
-test("searchProducts builds q query param only when provided", async () => {
-  apiFetch.mockResolvedValueOnce({
+test("searchProducts passes q and stringifies page", async () => {
+  productSearchMock.search.mockResolvedValue({
     products: [],
     total: 0,
     page: 1,
     limit: 24,
   });
-  await discoveryApi.searchProducts({ q: "album" });
-  expect(apiFetch).toHaveBeenCalledWith("/products/search?q=album");
+  await discoveryApi.searchProducts({ q: "album", page: 2 });
+  expect(productSearchMock.search).toHaveBeenCalledWith({
+    q: "album",
+    page: "2",
+  });
 });

@@ -11,14 +11,18 @@ vi.mock("next/navigation", () => ({
   permanentRedirect: vi.fn(),
 }));
 
-const logout = vi.fn();
-const changePassword = vi.fn();
-const updateProfile = vi.fn();
-vi.mock("../api/customer-auth.api", () => ({
-  customerAuthApi: {
-    logout: (...args: unknown[]) => logout(...args),
-    changePassword: (...args: unknown[]) => changePassword(...args),
-    updateProfile: (...args: unknown[]) => updateProfile(...args),
+const { logout, changePassword, updateProfile } = vi.hoisted(() => ({
+  logout: vi.fn(),
+  changePassword: vi.fn(),
+  updateProfile: vi.fn(),
+}));
+vi.mock("@/lib/api-client", () => ({
+  apiClient: {
+    customerAuth: {
+      logout,
+      changePassword,
+      updateMe: updateProfile,
+    },
   },
 }));
 

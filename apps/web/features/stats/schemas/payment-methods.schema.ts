@@ -1,6 +1,11 @@
 import { z } from "zod";
 
-export const paymentMethodValues = ["YAPE", "PLIN", "TRANSFER", "CASH"] as const;
+export const paymentMethodValues = [
+  "YAPE",
+  "PLIN",
+  "TRANSFER",
+  "CASH",
+] as const;
 export type PaymentMethodValue = (typeof paymentMethodValues)[number];
 
 export const paymentMethodBreakdownRowSchema = z.object({

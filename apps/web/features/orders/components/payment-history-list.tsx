@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { formatOrderDate } from "../lib/order-format";
-import type { OrderPaymentRow } from "../schemas/order.schema";
+import type { OrderPaymentResponseDto } from "@biasmarket/types";
 
 export function PaymentHistoryList({
   currency,
@@ -14,7 +14,7 @@ export function PaymentHistoryList({
   onPreview,
 }: {
   currency: string;
-  payments: OrderPaymentRow[];
+  payments: OrderPaymentResponseDto[];
   onPreview: (url: string) => void;
 }) {
   const t = useTranslations("dashboard.orders");

@@ -35,8 +35,9 @@ export function ProductDetailView(
   const availableStock = (v: Variant) =>
     v.stock === null ? Infinity : v.stock - v.reserved;
   const [variantId, setVariantId] = useState(
-    () => product.variants.find((v) => availableStock(v) > 0)?.id ??
-      product.variants[0]?.id ?? "",
+    () =>
+      product.variants.find((v) => availableStock(v) > 0)?.id ??
+        product.variants[0]?.id ?? "",
   );
   const [added, setAdded] = useState(false);
   const [restockOpen, setRestockOpen] = useState(false);
@@ -44,8 +45,7 @@ export function ProductDetailView(
   const selectedVariant = product.variants.find((v) => v.id === variantId);
   const price = Number(selectedVariant?.priceOverride ?? product.price);
   const imageUrl = selectedVariant?.imageOverride ?? product.images?.[0];
-  const outOfStock =
-    product.soldOut ||
+  const outOfStock = product.soldOut ||
     (selectedVariant ? availableStock(selectedVariant) <= 0 : false);
 
   const handleAddToCart = () => {

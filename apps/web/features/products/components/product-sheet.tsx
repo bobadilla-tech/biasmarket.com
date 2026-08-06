@@ -22,16 +22,15 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { keyForAttributes } from "../lib/variant-key";
+import type {
+  CategoryResponseDto,
+  VariantResponseDto,
+} from "@biasmarket/types";
 import {
   type ProductFormInput,
   productFormSchema,
 } from "../schemas/product-form.schema";
-import type { Category } from "../schemas/category.schema";
-import type {
-  OptionTypeDraft,
-  Variant,
-  VariantDraft,
-} from "../schemas/variant.schema";
+import type { OptionTypeDraft, VariantDraft } from "../schemas/variant.schema";
 
 export function ProductSheet({
   open,
@@ -52,9 +51,9 @@ export function ProductSheet({
   description: string;
   submitLabel: string;
   defaultValues: ProductFormInput;
-  initialVariants: Variant[];
-  categories: Category[];
-  onEnsureCategory: (name: string) => Promise<Category>;
+  initialVariants: VariantResponseDto[];
+  categories: CategoryResponseDto[];
+  onEnsureCategory: (name: string) => Promise<CategoryResponseDto>;
   onSubmit: (
     values: ProductFormInput & {
       imageFile: File | null;
@@ -190,7 +189,7 @@ export function ProductSheet({
       ),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [defaultValues, initialVariants]);
+  }, [defaultValues, initialVariants, reset]);
 
   useEffect(() => {
     if (!imageFile) {
@@ -266,7 +265,7 @@ export function ProductSheet({
       return next;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasVariants, options]);
+  }, [hasVariants, variantsPreview.forEach]);
 
   const handleAddOption = () => {
     const optName = newOptionName.trim();

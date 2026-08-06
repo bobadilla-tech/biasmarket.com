@@ -1,4 +1,4 @@
-import { Test, TestingModule } from "@nestjs/testing";
+import { Test, type TestingModule } from "@nestjs/testing";
 import { type Mock, vi } from "vitest";
 import { CustomerAuthController } from "./customer-auth.controller.js";
 import { CustomerAuthService } from "./customer-auth.service.js";

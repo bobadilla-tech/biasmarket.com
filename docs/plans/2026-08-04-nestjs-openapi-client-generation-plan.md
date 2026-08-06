@@ -1,9 +1,31 @@
 # NestJS → OpenAPI → generated web client (proposal)
 
-Forward-looking proposal, not yet executed. Written for review (subagent rounds)
-before any code lands. Once implemented, this file should be updated in place to
-read as a normal after-the-fact plan record per the
-[docs/plans convention](README.md), or superseded by a dated follow-up.
+**Phases 0 through 3 landed 2026-08-04** (across two sessions) —
+`@nestjs/swagger` wired under the SWC build, `collections` migrated to real
+response DTOs, spec emission working, one e2e contract test in place, a
+generated `openapi-fetch` client in `packages/types`, and
+`apps/web/features/collections/api` rewritten to use it instead of hand-written
+`apiFetch` + zod. See "Phase 0/1 execution notes" and "Phase 2/3 execution
+notes" below for what actually happened vs. what this doc assumed going in —
+several things (the `PluginMetadataGenerator` import path chief among them, and
+later the generated-client-vs-build-step question) turned out different from the
+plan as originally written. Phase 4 (rollout to the remaining ~19 controllers)
+is still a forward-looking proposal, not yet executed — collections is the only
+migrated feature.
+
+**Before picking up Phase 4, read
+[`2026-08-04-typed-sdk-client-followups.md`](2026-08-04-typed-sdk-client-followups.md)
+first — it now also documents the redo (executed 2026-08-04, same day, a later
+session), not just the spike plan.** Phase 3's `openapi-fetch`-direct approach,
+reviewed after landing, didn't reduce `features/<name>/api/*.ts` boilerplate the
+way this doc's Goal section promised — it was pushed back on, and
+`packages/types`/`features/collections` now run on [Orval](https://orval.dev)
+instead: `apiClient.collections.findAll(storeId)`, no `{data,error}` tuple, no
+`api/` folder for `collections` at all anymore. Everything below describing
+`openapi-fetch`, `createApiClient`, and `collections.api.ts` (Phase 2/3's
+original shape) is superseded by the follow-up doc's execution notes — kept here
+only as the historical record of how Phases 0/1 (the
+swagger-metadata/spec-emission plumbing, still current) were built.
 
 ## Context
 
@@ -183,6 +205,111 @@ validates the live response against the corresponding schema in the generated
 lands alongside each module's response DTOs (Phase 1 for `collections`, then
 per-module in Phase 4's rollout), not as a separate deferred effort.
 
+## Phase 0/1 execution notes (2026-08-04)
+
+What landed, matching the plan's scope exactly: `@nestjs/swagger` added to
+`apps/api`; `scripts/generate-swagger-metadata.ts` wired as `prebuild`/`predev`/
+`prestart`/`prestart:dev`/`pretypecheck`; `main.ts` calls `loadPluginMetadata`
+immediately before `createDocument`/`.setup()` (one edit, Phase 0's sequencing
+requirement); `SwaggerModule.setup()` gated behind `SWAGGER_ENABLED` (default on
+outside `production`, off in `production` unless set); `collections` migrated to
+real response DTOs (`dto/collection-response.dto.ts`) with explicit
+`Promise<...>` controller return types; `scripts/generate-openapi-spec.ts`
+writes `apps/api/openapi.json`, exposed as `pnpm --filter api generate:openapi`;
+one e2e contract test (`test/collections.e2e-spec.ts`) validates a real
+`GET /stores/:storeId/collections` response against the generated schema.
+`pnpm --filter api typecheck`, `test`, and `test:e2e` all pass; the generated
+`openapi.json`'s `collections` schemas were manually diffed against
+`CollectionsService`'s actual Prisma queries (Phase 1's stop-and-verify
+checkpoint) and matched once the DTOs below were corrected.
+
+Where reality diverged from the plan's guesses:
+
+- **`PluginMetadataGenerator` is not in `@nestjs/swagger` at all.** The
+  installed `@nestjs/swagger@11.4.6`'s `/plugin` subpath only exports the
+  `before` tsc-transformer hook and `ReadonlyVisitor` — no generator class,
+  confirmed by grepping `node_modules` and the package's own `exports` map. The
+  actual class lives at
+  `@nestjs/cli/lib/compiler/plugins/plugin-metadata-generator.js` (already a
+  devDependency here). `ReadonlyVisitor` does come from `@nestjs/swagger/plugin`
+  as the plan guessed — so the plan was right about needing the `/plugin`
+  subpath, just wrong about which package the generator itself ships from.
+- **`PluginMetadataGenerator.runOnce` (non-watch mode) type-checks the entire
+  tsconfig program — including its own previous output — before writing a new
+  `metadata.ts`, and calls `process.exit(1)` with zero output on any diagnostic,
+  skipping the write.** Two concrete failure modes fell out of this, both
+  handled in `generate-swagger-metadata.ts` now:
+  - **Bootstrap cycle:** `main.ts` imports `./metadata.js`; on a fresh clone
+    (file gitignored) that import doesn't resolve, which fails the whole-program
+    check before generation ever runs. Fixed by having the script write a
+    trivial `export default async () => ({});` stub first if `metadata.ts`
+    doesn't exist yet.
+  - **Self-poisoning:** a `metadata.ts` written while some other file had a type
+    error you haven't fixed yet becomes part of every future run's whole-program
+    check — if that file happens to itself be invalid (see the `Prisma.Decimal`
+    case below), regeneration silently stops updating, forever reproducing the
+    same stale error. Recovery is deleting `src/metadata.ts` and rerunning.
+- **Typing a response DTO field as `Prisma.Decimal` (or importing the
+  Prisma-generated `ProductStatus` enum type) breaks the metadata generator**,
+  independent of the bug above: the model visitor resolves the type through to
+  its physical declaration file inside the pnpm virtual store and embeds that
+  absolute path as a dynamic-import specifier in `metadata.ts`, which then fails
+  `tsc --noEmit`
+  (`Cannot find module '.pnpm/@prisma+client-runtime-utils@.../...'`). This is a
+  real, repo-specific gotcha the plan didn't anticipate — the money convention
+  below had to become stricter than "declare `type: string` on the DTO" to work
+  around it: the response DTO's field itself is typed `string` (not
+  `Prisma.Decimal`/`Date`), and `CollectionsController.findAll` does the
+  `Decimal`→`string`/`Date`→ISO-string mapping before returning, so the
+  controller's `Promise<...ResponseDto>` return type stays structurally honest
+  against what it actually returns. Every future module's response DTOs need to
+  follow this same pattern for `Decimal`/`Date`/Prisma-enum fields, not just
+  declare an `@ApiProperty({ type: String })` override on a
+  `Prisma.Decimal`-typed field — see the comment atop
+  `dto/collection-response.dto.ts`.
+- **`generate-openapi-spec.ts` can't boot `AppModule` via plain
+  `node
+  script.ts`** the way this repo's other `scripts/*.ts` do (per root
+  `CLAUDE.md`): `AppModule`'s whole module graph uses
+  `experimentalDecorators`/`emitDecoratorMetadata` (`@Module`, `@Injectable`,
+  etc.), and Node's native TypeScript support only strips types — it doesn't
+  transform legacy decorators. Resolved by having `generate:openapi` run
+  `nest build` first and importing from `../dist/*` (SWC-compiled, decorators
+  already transformed) instead of `../src/*`. Those `dist` imports are written
+  as runtime-computed `join()` paths rather than static specifiers, so
+  `tsc
+  --noEmit` doesn't try to resolve `dist/` (a build artifact, not
+  something that should gate `pnpm typecheck`) and doesn't get caught by the
+  same whole-program-check bootstrap problem described above.
+- **`collections` does exercise the money convention after all**, despite the
+  plan's claim (line ~131 above) that it "has no money field itself":
+  `findAllForStore`'s `include: { product: true }` join pulls in the full
+  `Product` row, which has `price: Decimal`. The nested
+  `ProductInCollectionResponseDto.price` field is the real, if incidental, first
+  exercise of the Decimal-as-string convention — not the dedicated money-module
+  pilot Phase 1's gate still requires, but worth knowing the convention wasn't
+  entirely untested before that gate.
+- **Local dev environment gaps, unrelated to this plan but blocking
+  verification:** `apps/api/.env` has no `S3_*` keys and `test:e2e` needs them
+  (`StorageService` requires them eagerly at construction, independent of
+  Swagger) — every `test:e2e`/`generate:openapi` run in this session needed them
+  exported manually from `infra/docker/.env.example`'s dev defaults. Also, this
+  machine has both a native Homebrew Postgres and Docker's `postgres:18` both
+  willing to answer on `:5432`; `apps/api/.env`'s `DATABASE_URL` (no password,
+  OS-user peer auth) matches the native one, not
+  `docker compose -f infra/docker/docker-compose.dev.yml up`. Neither is a code
+  defect, but worth knowing before assuming `pnpm docker:dev` is required for
+  `test:e2e` to pass locally on a machine like this one.
+- **e2e apps built via `Test.createTestingModule` + `createNestApplication()`
+  never run `main.ts`'s `bootstrap()`** — no `setGlobalPrefix("api")`, no CORS,
+  no filters. Regular Nest-routed controllers are reachable at their bare path
+  (`/stores/...`, not `/api/stores/...`) in this test harness; only
+  better-auth's own endpoints keep their hardcoded `/api/auth/...` base path,
+  since those mount directly via `httpAdapter.use()` independent of Nest's
+  global prefix. `test/collections.e2e-spec.ts` hits `/stores/...` accordingly —
+  worth knowing before copying `/api/...` paths from `lib/api.ts` (the `web`
+  fetch wrapper, which does need the real prefix) into a new e2e spec.
+
 ### Phase 2 — generated client in `packages/types`
 
 `packages/types` is already the documented destination for this — currently dead
@@ -257,15 +384,93 @@ initiative, not to be hand-populated"). Don't create a new package.
   hand-written wrappers" goal explicitly does not reach. Typed error responses
   are a real future initiative, not bundled in here.
 
+## Phase 2/3 execution notes (2026-08-04)
+
+What landed, matching Phase 3's scope: `packages/types` got `openapi-fetch`
+(runtime) and `openapi-typescript` (dev), a `createApiClient(baseUrl)` factory
+in `index.ts` replacing the two dead hand-written interfaces (confirmed zero
+import sites before deleting), and `apps/web/lib/api-client.ts` wraps it with
+the same `INTERNAL_API_URL`/`NEXT_PUBLIC_API_URL` + `credentials: "include"`
+logic `lib/api.ts`'s `apiFetch` always used. `collections.api.ts` was rewritten
+against the generated client; `queries/`, `mutations/`, `components/` were
+untouched, as planned. The money-convention / zod-drop decision (below) is
+written down in `apps/web/AGENTS.md`, as required.
+
+**The one deliberate deviation from this doc, and why:** Phase 2 as written
+above specifies `openapi.json` and `generated/schema.d.ts` as **gitignored**,
+regenerated via turbo `dependsOn` (`api#generate:openapi` →
+`@biasmarket/types#generate`) with matching CI steps. Partway into implementing
+that — turbo tasks wired, CI jobs updated with dummy `S3_*`/ `RESEND_*` env vars
+and `apps/api/**` added to the `web`/`types` path filters — **the user
+explicitly asked to commit both generated files instead**, specifically to avoid
+making the build pipeline more complicated than it already is (`web`'s
+typecheck/build no longer needing to transitively boot `apps/api` at all). That
+request was implemented in place of this doc's Phase 2 design: `turbo.json` and
+`.github/workflows/ci.yml` were reverted to their pre-Phase-2 state (verified
+via `git diff` — zero diff on `ci.yml`), both `.gitignore` entries were removed,
+and both files are committed. Regenerating after a migrated feature's backend
+DTOs change is now a manual step
+(`pnpm --filter api generate:openapi && pnpm --filter @biasmarket/types generate`,
+documented in root `CLAUDE.md` and `apps/web/AGENTS.md`), not automatic —
+there's no CI check that catches a stale committed client if someone forgets.
+Treat this as the standing design now, not a stopgap; Phase 4 planning should
+build on "committed, manually regenerated," not revisit the turbo/CI wiring
+described above.
+
+**Bugs/gotchas hit that this doc's Phase 2 text didn't anticipate:**
+
+- **`openapi-typescript` crashes under the repo's default `typescript@^7.0.2`**
+  (`TypeError: Cannot read properties of undefined (reading
+  'createKeywordTypeNode')`,
+  in its `ts.factory` usage) — this is exactly the TS6/TS5-Compiler-API problem
+  this doc's own Context section describes for `apps/api`, resurfacing for
+  `packages/types` because that package inherited the root `^7.0.2` pin as its
+  own `devDependency`. Fixed the same way `apps/api` already does: gave
+  `packages/types` its own real `typescript@^5.9.3` devDependency, shadowing the
+  root pin for just that package via pnpm's per-package resolution. No root
+  tooling touched.
+- **The response-DTO/money-convention interaction has a second failure mode**
+  beyond the one Phase 0/1's execution notes cover: in `collections.api.ts`,
+  `collectionsApi.list()` without an explicit `Promise<Collection[]>` return
+  type annotation let TypeScript infer the return type as effectively `any`
+  after the `if (error) throw; return data` narrowing — the narrowing didn't
+  propagate through the destructured `{ data, error }` binding across the async
+  function boundary the way a direct `.data`/`.error` property access on the
+  original `openapi-fetch` result would have. This didn't surface as an error in
+  `collections.api.ts` itself; it surfaced three files downstream as
+  `TS7006: implicit any` on `.map((c) => ...)` in the two dashboard pages
+  consuming `useCollections()`. Every method on `collectionsApi` now has an
+  explicit return type for this reason — treat that as required for this
+  `{ data, error } = await client.METHOD(...)` pattern generally, not optional
+  style preference.
+- **Verification used a real HTTP client script, not a GUI browser.** The `run`
+  skill's browser-driving fallback (`chromium-cli`) turned out on this machine
+  to be a thin wrapper around AppleScript-driving the user's actual,
+  already-running Google Chrome — not an isolated headless instance — so
+  scripting it further was declined as inappropriate (it would have opened
+  tabs/run JS in the user's live browser session). Verification instead used a
+  standalone Node script importing the real `openapi-fetch` package + generated
+  schema, driving the actual running `apps/api` dev server through the same
+  signup → email-verify → sign-in → create-store → create/list collection flow
+  as the Phase 1 e2e test, confirming the generated client's runtime behavior
+  (auth cookie handling, request/response typing, JSON parsing) end-to-end.
+  `pnpm --filter web typecheck/test/build` all passed separately. This is
+  real-backend verification, not the same thing as confirming the actual React
+  components render correctly in a browser — worth a manual click-through before
+  this ships to production.
+
 ### Phase 4 — rollout + docs
 
 - Update `apps/web/AGENTS.md`'s roadmap section: replace the old "revisit only
   if `@nestjs/swagger` + response DTOs land" deferred note with the real staged
   list — one controller module at a time, in the same order new features get
-  touched, not a dedicated migration sprint.
+  touched, not a dedicated migration sprint. (Partially done already — see the
+  OpenAPI note in `apps/web/AGENTS.md` — but the roadmap section itself, the
+  numbered list, hasn't been touched yet.)
 - Update `docs/core/architecture.md` with the new generation pipeline (one
-  paragraph + the two new turbo tasks). (CI wiring and the root `CLAUDE.md`
-  Commands-section update happen in Phase 2, not here — see above.)
+  paragraph). No turbo tasks to document — per the Phase 2/3 execution notes
+  above, generation is a manual, committed-artifact step, not a build-graph
+  dependency.
 
 ## Alternatives considered
 

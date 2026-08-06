@@ -20,7 +20,6 @@ function displayName(item: CartItem) {
   return item.variantLabel ? `${item.name} (${item.variantLabel})` : item.name;
 }
 
-
 function CartSummary({
   slug,
   items,
@@ -93,9 +92,7 @@ function CartSummary({
       </div>
 
       {mixedCurrencies
-        ? (
-          <p className="text-sm text-amber-600">{t("mixedCurrencyWarning")}</p>
-        )
+        ? <p className="text-sm text-amber-600">{t("mixedCurrencyWarning")}</p>
         : (
           <Link
             href={`/store/${slug}/checkout`}

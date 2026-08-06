@@ -2,9 +2,9 @@ import { ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "@/i18n/navigation";
 import { StoreLogo } from "@/components/store-logo";
-import type { Store } from "@/features/stores";
+import type { StoreResponseDto } from "@biasmarket/types";
 
-export function StoreLinkCard({ store }: { store: Store }) {
+export function StoreLinkCard({ store }: { store: StoreResponseDto }) {
   return (
     <Link href={`/dashboard/${store.slug}`}>
       <Card className="rounded-[26px] border-[#eadcf8] bg-white py-0 shadow-sm transition hover:shadow-md">

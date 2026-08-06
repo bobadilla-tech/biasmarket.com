@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { collectionsApi } from "../api/collections.api";
+import { apiClient } from "@/lib/api-client";
 import { collectionsKeys } from "../queries/use-collections";
 
 export function useAddCollectionProduct(
@@ -14,11 +14,11 @@ export function useAddCollectionProduct(
     mutationFn: (
       { collectionId, productId }: { collectionId: string; productId: string },
     ) =>
-      collectionsApi.addProduct(
+      apiClient.collections.addProduct(
         storeId as string,
         collectionId,
-        productId,
-        fallbackErrorMessage,
+        { productId },
+        { fallbackErrorMessage },
       ),
     onSuccess: () => {
       if (!storeId) return;

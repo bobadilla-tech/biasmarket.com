@@ -2,7 +2,7 @@ import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { Product } from "../schemas/product.schema";
+import type { ProductDetailResponseDto } from "@biasmarket/types";
 
 export function ProductRow({
   product,
@@ -19,7 +19,7 @@ export function ProductRow({
   onDelete,
   onPublish,
 }: {
-  product: Product;
+  product: ProductDetailResponseDto;
   category: string;
   stockLabel: string;
   stockClassName: string;

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { customerAuthApi } from "../api/customer-auth.api";
+import { apiClient } from "@/lib/api-client";
 
 export const customerAuthKeys = {
   profile: (slug: string) => ["customer-auth", "profile", slug] as const,
@@ -11,7 +11,7 @@ export const customerAuthKeys = {
 export function useCustomerProfile(slug: string) {
   return useQuery({
     queryKey: customerAuthKeys.profile(slug),
-    queryFn: () => customerAuthApi.me(slug),
+    queryFn: () => apiClient.customerAuth.me(slug),
     retry: false,
   });
 }

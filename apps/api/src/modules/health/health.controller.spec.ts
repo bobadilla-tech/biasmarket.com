@@ -1,4 +1,4 @@
-import { Test, TestingModule } from "@nestjs/testing";
+import { Test, type TestingModule } from "@nestjs/testing";
 import { ServiceUnavailableException } from "@nestjs/common";
 import { type Mock, vi } from "vitest";
 import { HealthController } from "./health.controller.js";

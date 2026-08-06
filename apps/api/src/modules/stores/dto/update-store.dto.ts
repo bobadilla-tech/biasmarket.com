@@ -1,8 +1,11 @@
 import {
+  IsBoolean,
   IsIn,
+  IsInt,
   IsObject,
   IsOptional,
   IsString,
+  Min,
 } from "class-validator";
 import { SUPPORTED_CURRENCIES } from "@biasmarket/utils/currency";
 

@@ -1,8 +1,5 @@
 import { expect, test } from "vitest";
-import {
-  buildCheckoutFormSchema,
-  checkoutResultSchema,
-} from "./checkout.schema";
+import { buildCheckoutFormSchema } from "./checkout.schema";
 
 const validValues = {
   customerName: "",
@@ -57,17 +54,4 @@ test("does not require a pickup point when the store has none configured", () =>
     pickupPointId: "",
   });
   expect(result.success).toBe(true);
-});
-
-test("checkoutResultSchema accepts a null whatsappUrl", () => {
-  const result = checkoutResultSchema.safeParse({
-    order: { id: "o1" },
-    whatsappUrl: null,
-  });
-  expect(result.success).toBe(true);
-});
-
-test("checkoutResultSchema rejects a missing whatsappUrl", () => {
-  const result = checkoutResultSchema.safeParse({ order: { id: "o1" } });
-  expect(result.success).toBe(false);
 });

@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { customerAuthApi } from "../api/customer-auth.api";
+import { apiClient } from "@/lib/api-client";
 import { customerAuthKeys } from "../queries/use-customer-profile";
 
 export function useCustomerUpdateProfile(slug: string) {
@@ -7,7 +7,7 @@ export function useCustomerUpdateProfile(slug: string) {
 
   return useMutation({
     mutationFn: (dto: { name: string; email?: string; phone?: string }) =>
-      customerAuthApi.updateProfile(slug, dto),
+      apiClient.customerAuth.updateMe(slug, dto),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: customerAuthKeys.profile(slug),

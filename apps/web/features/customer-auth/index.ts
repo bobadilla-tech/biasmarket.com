@@ -1,4 +1,3 @@
-export { customerAuthApi } from "./api/customer-auth.api";
 export {
   customerAuthKeys,
   useCustomerProfile,
@@ -32,7 +31,3 @@ export {
   type ForgotPasswordInput,
   forgotPasswordSchema,
 } from "./schemas/forgot-password.schema";
-export {
-  type CustomerProfile,
-  customerProfileSchema,
-} from "./schemas/profile.schema";

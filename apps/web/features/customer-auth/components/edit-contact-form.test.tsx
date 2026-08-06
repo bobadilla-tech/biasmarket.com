@@ -4,10 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "../../../test-utils/render-with-providers";
 
 const updateProfile = vi.fn();
-vi.mock("../api/customer-auth.api", () => ({
-  customerAuthApi: {
-    updateProfile: (...args: unknown[]) => updateProfile(...args),
-  },
+vi.mock("@/lib/api-client", () => ({
+  apiClient: { customerAuth: { updateMe: updateProfile } },
 }));
 
 const { EditContactForm } = await import("./edit-contact-form");

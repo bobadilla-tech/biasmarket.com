@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { buildWhatsAppUrl } from "@biasmarket/utils/whatsapp";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import type { CustomerListItem } from "../schemas/customer.schema";
+import type { CustomerListItemResponseDto } from "@biasmarket/types";
 
 function getInitials(name: string | null, phone: string) {
   const source = (name ?? "").trim();
@@ -24,9 +24,9 @@ export function CustomerCard({
   currency,
   onView,
 }: {
-  customer: CustomerListItem;
+  customer: CustomerListItemResponseDto;
   currency: string;
-  onView: (customer: CustomerListItem) => void;
+  onView: (customer: CustomerListItemResponseDto) => void;
 }) {
   const t = useTranslations("dashboard.customers");
   const initials = getInitials(customer.name, customer.phone);

@@ -3,12 +3,13 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import { Prisma } from "@biasmarket/db";
 import type {
   FulfillmentStatus,
   PaymentMethodType,
   PaymentStatus,
-  Prisma,
 } from "@biasmarket/db";
+import { withPaymentSummary } from "../../common/payment-summary.js";
 import { PrismaService } from "../../prisma/prisma.service.js";
 import { buildBuckets } from "./analytics-buckets.js";
 import type {
@@ -58,25 +59,6 @@ export class StatsService {
       throw new ForbiddenException("No sos dueño de esta store");
     }
     return store;
-  }
-
-  private withPaymentSummary<
-    T extends {
-      requiredAmount: Prisma.Decimal;
-      payments?: { amount: Prisma.Decimal }[];
-    },
-  >(order: T) {
-    const paid = (order.payments ?? []).reduce(
-      (sum, payment) => sum + Number(payment.amount),
-      0,
-    );
-    const required = Number(order.requiredAmount);
-    return {
-      ...order,
-      paidAmount: paid,
-      pendingAmount: Math.max(required - paid, 0),
-      paidPercentage: required > 0 ? Math.min((paid / required) * 100, 100) : 0,
-    };
   }
 
   async getOverview(storeId: string, userId: string) {
@@ -147,9 +129,7 @@ export class StatsService {
       paymentStatusCounts,
       fulfillmentStatusCounts,
       lowStockCount,
-      recentOrders: recentOrdersRaw.map((order) =>
-        this.withPaymentSummary(order)
-      ),
+      recentOrders: recentOrdersRaw.map((order) => withPaymentSummary(order)),
     };
   }
 
@@ -278,21 +258,27 @@ export class StatsService {
       _count: true,
     });
 
-    const totalAmount = rows.reduce(
-      (sum, row) => sum + Number(row._sum.amount ?? 0),
-      0,
+    const totalAmountDecimal = rows.reduce(
+      (sum, row) => sum.plus(row._sum.amount ?? 0),
+      new Prisma.Decimal(0),
     );
+    const totalAmount = totalAmountDecimal.toNumber();
     const totalCount = rows.reduce((sum, row) => sum + row._count, 0);
+
+    const percentageOf = (amount: Prisma.Decimal) =>
+      totalAmountDecimal.greaterThan(0)
+        ? amount.dividedBy(totalAmountDecimal).times(100).toNumber()
+        : 0;
 
     const byMethod: PaymentMethodBreakdownRow[] = KNOWN_PAYMENT_METHODS.map(
       (method) => {
         const row = rows.find((r) => r.method === method);
-        const amount = Number(row?._sum.amount ?? 0);
+        const amount = new Prisma.Decimal(row?._sum.amount ?? 0);
         return {
           method,
-          amount,
+          amount: amount.toNumber(),
           count: row?._count ?? 0,
-          percentage: totalAmount > 0 ? (amount / totalAmount) * 100 : 0,
+          percentage: percentageOf(amount),
         };
       },
     );
@@ -301,12 +287,12 @@ export class StatsService {
       if (row.method !== null && KNOWN_PAYMENT_METHODS.includes(row.method)) {
         continue;
       }
-      const amount = Number(row._sum.amount ?? 0);
+      const amount = new Prisma.Decimal(row._sum.amount ?? 0);
       byMethod.push({
         method: row.method,
-        amount,
+        amount: amount.toNumber(),
         count: row._count,
-        percentage: totalAmount > 0 ? (amount / totalAmount) * 100 : 0,
+        percentage: percentageOf(amount),
       });
     }
 

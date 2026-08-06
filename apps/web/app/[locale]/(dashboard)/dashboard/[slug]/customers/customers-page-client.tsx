@@ -6,10 +6,10 @@ import { LoadingState } from "@/components/shared/loading-state";
 import { ErrorState } from "@/components/shared/error-state";
 import { EmptyState } from "@/components/shared/empty-state";
 import { useDashboardStore } from "@/features/stores";
+import type { CustomerListItemResponseDto } from "@biasmarket/types";
 import {
   CustomerCard,
   CustomerDetailSheet,
-  type CustomerListItem,
   useCustomers,
 } from "@/features/customers";
 
@@ -27,7 +27,7 @@ export function CustomersPageClient() {
   );
   const [detailsOpen, setDetailsOpen] = useState(false);
 
-  const handleView = (customer: CustomerListItem) => {
+  const handleView = (customer: CustomerListItemResponseDto) => {
     setSelectedCustomerId(customer.id);
     setDetailsOpen(true);
   };

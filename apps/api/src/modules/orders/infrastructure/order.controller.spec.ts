@@ -1,4 +1,4 @@
-import { Test, TestingModule } from "@nestjs/testing";
+import { Test, type TestingModule } from "@nestjs/testing";
 import { type Mock, vi } from "vitest";
 
 vi.mock("@thallesp/nestjs-better-auth", () => ({
@@ -29,6 +29,35 @@ describe("OrderController.addPayment", () => {
   const userId = "user-1";
   const session = { user: { id: userId } } as any;
 
+  const fullOrderFixture = {
+    id: orderId,
+    storeId,
+    customerId: null,
+    customerEmail: null,
+    customerPhone: "+51999999999",
+    customerName: null,
+    deliveryMethodType: "COURIER",
+    deliveryDetails: {},
+    pickupPointId: null,
+    paymentStatus: "PARTIALLY_PAID",
+    paymentRejectionReason: null,
+    fulfillmentStatus: "ORDERING",
+    status: "ACTIVE",
+    cancellationResolution: null,
+    cancellationReason: null,
+    totalAmount: { toString: () => "100.00" },
+    requiredAmount: { toString: () => "100.00" },
+    currency: "PEN",
+    expiresAt: new Date("2026-08-10T00:00:00.000Z"),
+    createdAt: new Date("2026-08-05T00:00:00.000Z"),
+    paidAmount: 40,
+    pendingAmount: 60,
+    paidPercentage: 40,
+    items: [],
+    payments: [],
+    proofs: [],
+  };
+
   beforeEach(async () => {
     const tx = { orderPayment: { create: vi.fn() } };
     prisma = {
@@ -58,12 +87,14 @@ describe("OrderController.addPayment", () => {
   });
 
   it("a partial payment writes PARTIALLY_PAID directly and never calls ReviewPaymentUseCase", async () => {
-    orders.findRowByIdForStore.mockResolvedValue({
-      currency: "PEN",
-      paidAmount: 0,
-      pendingAmount: 100,
-      requiredAmount: "100.00",
-    });
+    orders.findRowByIdForStore
+      .mockResolvedValueOnce({
+        currency: "PEN",
+        paidAmount: 0,
+        pendingAmount: 100,
+        requiredAmount: "100.00",
+      })
+      .mockResolvedValueOnce(fullOrderFixture);
 
     await controller.addPayment(storeId, orderId, session, "40", "YAPE");
 
@@ -76,16 +107,38 @@ describe("OrderController.addPayment", () => {
   });
 
   it("a payment reaching the required amount routes through ReviewPaymentUseCase instead of writing VERIFIED directly", async () => {
-    orders.findRowByIdForStore.mockResolvedValue({
-      currency: "PEN",
-      paidAmount: 60,
-      pendingAmount: 40,
-      requiredAmount: "100.00",
-    });
+    orders.findRowByIdForStore
+      .mockResolvedValueOnce({
+        currency: "PEN",
+        paidAmount: 60,
+        pendingAmount: 40,
+        requiredAmount: "100.00",
+      })
+      .mockResolvedValueOnce(fullOrderFixture);
 
     await controller.addPayment(storeId, orderId, session, "40", "YAPE");
 
     expect(orders.saveStatus).not.toHaveBeenCalled();
+    expect(reviewPayment.execute).toHaveBeenCalledWith(
+      orderId,
+      storeId,
+      userId,
+      "approve",
+    );
+  });
+
+  it("accepts a payment for exactly the displayed pendingAmount even when it's a float-trap value like 59.99", async () => {
+    orders.findRowByIdForStore
+      .mockResolvedValueOnce({
+        currency: "PEN",
+        paidAmount: 40,
+        pendingAmount: 59.99,
+        requiredAmount: "99.99",
+      })
+      .mockResolvedValueOnce(fullOrderFixture);
+
+    await controller.addPayment(storeId, orderId, session, "59.99", "YAPE");
+
     expect(reviewPayment.execute).toHaveBeenCalledWith(
       orderId,
       storeId,

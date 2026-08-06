@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import type { Product } from "../schemas/product.schema";
+import type { ProductDetailResponseDto } from "@biasmarket/types";
 
 export function ProductTile({
   product,
@@ -20,7 +20,7 @@ export function ProductTile({
   onDelete,
   onPublish,
 }: {
-  product: Product;
+  product: ProductDetailResponseDto;
   category: string;
   stockLabel: string;
   stockClassName: string;

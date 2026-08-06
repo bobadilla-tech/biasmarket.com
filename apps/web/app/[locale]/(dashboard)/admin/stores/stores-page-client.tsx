@@ -2,8 +2,8 @@
 
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+import type { StoreWithOwnerResponseDto } from "@biasmarket/types";
 import {
-  type AdminStore,
   AdminStoresTable,
   useAdminStores,
   useImpersonateStore,
@@ -27,7 +27,7 @@ export function AdminStoresPageClient() {
     ? impersonate.error.message
     : null;
 
-  const handleImpersonate = async (store: AdminStore) => {
+  const handleImpersonate = async (store: StoreWithOwnerResponseDto) => {
     const path = `/dashboard/${encodeURIComponent(store.slug)}/products`;
     setImpersonationHistory({
       userId: store.owner.id,

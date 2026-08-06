@@ -5,7 +5,7 @@ import {
 } from "@nestjs/common";
 import type { Prisma } from "@biasmarket/db";
 import { PrismaService } from "../../prisma/prisma.service.js";
-import { UpsertDeliveryMethodDto } from "./dto/upsert-delivery-method.dto.js";
+import type { UpsertDeliveryMethodDto } from "./dto/upsert-delivery-method.dto.js";
 
 @Injectable()
 export class DeliveryConfigService {

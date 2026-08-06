@@ -1,10 +1,10 @@
 import { afterEach, expect, test, vi } from "vitest";
 
-const apiFetch = vi.fn();
-vi.mock(
-  "@/lib/api",
-  () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }),
-);
+const storesMock = { findBySlug: vi.fn(), create: vi.fn(), remove: vi.fn() };
+const myStoresMock = { findMine: vi.fn() };
+vi.mock("@/lib/api-client", () => ({
+  apiClient: { stores: storesMock, myStores: myStoresMock },
+}));
 
 const fetchMock = vi.fn();
 vi.stubGlobal("fetch", fetchMock);
@@ -12,18 +12,21 @@ vi.stubGlobal("fetch", fetchMock);
 const { storesApi } = await import("./stores.api");
 
 afterEach(() => {
-  apiFetch.mockReset();
+  storesMock.findBySlug.mockReset();
+  storesMock.create.mockReset();
+  storesMock.remove.mockReset();
+  myStoresMock.findMine.mockReset();
   fetchMock.mockReset();
 });
 
-test("listMine validates the response array", async () => {
-  apiFetch.mockResolvedValueOnce([
+test("listMine delegates to the generated MyStores.findMine", async () => {
+  myStoresMock.findMine.mockResolvedValue([
     { id: "1", name: "Demo", slug: "demo", logoUrl: null },
   ]);
 
   const result = await storesApi.listMine();
 
-  expect(apiFetch).toHaveBeenCalledWith("/me/stores");
+  expect(myStoresMock.findMine).toHaveBeenCalled();
   expect(result).toEqual([{
     id: "1",
     name: "Demo",
@@ -32,13 +35,24 @@ test("listMine validates the response array", async () => {
   }]);
 });
 
-test("create POSTs the payload and validates the response", async () => {
-  apiFetch.mockResolvedValueOnce({
+test("getBySlug validates the response against dashboardStoreSchema", async () => {
+  storesMock.findBySlug.mockResolvedValue({
     id: "1",
     name: "Demo",
     slug: "demo",
+    whatsappNumber: null,
+    defaultCurrency: "PEN",
     logoUrl: null,
   });
+
+  const result = await storesApi.getBySlug("demo");
+
+  expect(storesMock.findBySlug).toHaveBeenCalledWith("demo");
+  expect(result.slug).toBe("demo");
+});
+
+test("create delegates to the generated Stores.create", async () => {
+  storesMock.create.mockResolvedValue({ id: "1", name: "Demo", slug: "demo" });
 
   const result = await storesApi.create({
     name: "Demo",
@@ -48,19 +62,15 @@ test("create POSTs the payload and validates the response", async () => {
     themeConfig: {},
   });
 
-  expect(apiFetch).toHaveBeenCalledWith(
-    "/stores",
+  expect(storesMock.create).toHaveBeenCalledWith(
     {
-      method: "POST",
-      body: JSON.stringify({
-        name: "Demo",
-        slug: "demo",
-        whatsappNumber: "+51987654321",
-        defaultCurrency: "PEN",
-        themeConfig: {},
-      }),
+      name: "Demo",
+      slug: "demo",
+      whatsappNumber: "+51987654321",
+      defaultCurrency: "PEN",
+      themeConfig: {},
     },
-    undefined,
+    { fallbackErrorMessage: undefined },
   );
   expect(result.slug).toBe("demo");
 });
@@ -100,12 +110,10 @@ test("uploadLogo returns the parsed store on success", async () => {
   expect(result.logoUrl).toBe("https://x/logo.png");
 });
 
-test("remove DELETEs the store", async () => {
-  apiFetch.mockResolvedValueOnce({});
+test("remove delegates to the generated Stores.remove", async () => {
+  storesMock.remove.mockResolvedValue({});
 
   await storesApi.remove("store-1");
 
-  expect(apiFetch).toHaveBeenCalledWith("/stores/store-1", {
-    method: "DELETE",
-  });
+  expect(storesMock.remove).toHaveBeenCalledWith("store-1");
 });

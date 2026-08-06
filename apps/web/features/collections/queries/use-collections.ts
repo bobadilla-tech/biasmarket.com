@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { collectionsApi } from "../api/collections.api";
+import { apiClient } from "@/lib/api-client";
 
 export const collectionsKeys = {
   byStore: (storeId: string) => ["collections", storeId] as const,
@@ -13,7 +13,10 @@ export function useCollections(
 ) {
   return useQuery({
     queryKey: collectionsKeys.byStore(storeId as string),
-    queryFn: () => collectionsApi.list(storeId as string, fallbackErrorMessage),
+    queryFn: () =>
+      apiClient.collections.findAll(storeId as string, {
+        fallbackErrorMessage,
+      }),
     enabled: !!storeId,
   });
 }

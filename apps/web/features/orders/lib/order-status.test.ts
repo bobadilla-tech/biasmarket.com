@@ -1,13 +1,16 @@
 import { expect, test } from "vitest";
 import { getOrderStatus, matchesTab } from "./order-status";
-import type { Order } from "../schemas/order.schema";
+import type { OrderResponseDto } from "@biasmarket/types";
 
 const t = ((key: string) => key) as unknown as Parameters<
   typeof getOrderStatus
 >[1];
 
-const baseOrder: Order = {
+const baseOrder: OrderResponseDto = {
   id: "o1",
+  storeId: "store-1",
+  customerId: null,
+  customerEmail: null,
   customerName: "Jane",
   customerPhone: "+51987654321",
   totalAmount: "100.00",
@@ -18,9 +21,14 @@ const baseOrder: Order = {
   currency: "USD",
   status: "ACTIVE",
   paymentStatus: "PENDING_PAYMENT",
+  paymentRejectionReason: null,
   fulfillmentStatus: "ORDERING",
   deliveryMethodType: "PICKUP",
   deliveryDetails: null,
+  pickupPointId: null,
+  cancellationResolution: null,
+  cancellationReason: null,
+  expiresAt: "2026-01-08T00:00:00.000Z",
   createdAt: "2026-01-01T00:00:00.000Z",
   items: [],
   payments: [],
@@ -75,16 +83,16 @@ test("getOrderStatus: VERIFIED + COMPLETED is delivered", () => {
 });
 
 test("matchesTab: 'pending' means needs-attention, not literally payment-pending", () => {
-  const verifiedButOrdering: Order = {
+  const verifiedButOrdering: OrderResponseDto = {
     ...baseOrder,
     paymentStatus: "VERIFIED",
     fulfillmentStatus: "ORDERING",
   };
-  const notYetVerified: Order = {
+  const notYetVerified: OrderResponseDto = {
     ...baseOrder,
     paymentStatus: "PAYMENT_SUBMITTED",
   };
-  const verifiedAndShipping: Order = {
+  const verifiedAndShipping: OrderResponseDto = {
     ...baseOrder,
     paymentStatus: "VERIFIED",
     fulfillmentStatus: "IN_TRANSIT",

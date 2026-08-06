@@ -1,9 +1,9 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { productsApi } from "../api/products.api";
+import { apiClient } from "@/lib/api-client";
+import type { ProductDetailResponseDto } from "@biasmarket/types";
 import { productsKeys } from "../queries/use-products";
-import type { Product } from "../schemas/product.schema";
 
 export function usePublishProduct(
   storeId: string | undefined,
@@ -13,13 +13,15 @@ export function usePublishProduct(
 
   return useMutation({
     mutationFn: (productId: string) =>
-      productsApi.publish(storeId as string, productId, fallbackErrorMessage),
+      apiClient.products.publish(storeId as string, productId, {
+        fallbackErrorMessage,
+      }),
     onSuccess: (_data, productId) => {
       if (!storeId) return;
       queryClient.invalidateQueries({
         queryKey: productsKeys.byStore(storeId),
       });
-      queryClient.setQueryData<Product>(
+      queryClient.setQueryData<ProductDetailResponseDto>(
         productsKeys.detail(storeId, productId),
         (current) => current ? { ...current, status: "PUBLISHED" } : current,
       );

@@ -9,13 +9,13 @@ import {
   type EditContactInput,
   editContactSchema,
 } from "../schemas/edit-contact.schema";
-import type { CustomerProfile } from "../schemas/profile.schema";
+import type { CustomerProfileResponseDto } from "@biasmarket/types";
 
 const inputClassName =
   "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 placeholder:text-gray-600";
 
 export function EditContactForm(
-  { slug, profile }: { slug: string; profile: CustomerProfile },
+  { slug, profile }: { slug: string; profile: CustomerProfileResponseDto },
 ) {
   const t = useTranslations("storefront.accountPage.editContact");
   const updateProfile = useCustomerUpdateProfile(slug);

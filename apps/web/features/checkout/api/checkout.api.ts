@@ -1,27 +1,17 @@
-import { apiFetch } from "@/lib/api";
+import { apiClient } from "@/lib/api-client";
 import type { CartItem } from "@/lib/cart";
-import {
-  checkoutResultSchema,
-  deliveryMethodListSchema,
-  paymentMethodListSchema,
-  pickupPointListSchema,
-} from "../schemas/checkout.schema";
 
 export const checkoutApi = {
   async getDeliveryOptions(slug: string) {
     const [methods, points, paymentMethods] = await Promise.all([
-      apiFetch(`/stores/${slug}/public/delivery-methods`),
-      apiFetch(`/stores/${slug}/public/pickup-points`),
-      apiFetch(`/stores/${slug}/public/payment-methods`),
+      apiClient.publicDeliveryConfig.findEnabled(slug),
+      apiClient.publicPickupPoints.findEnabled(slug),
+      apiClient.publicPaymentConfig.findEnabled(slug),
     ]);
-    return {
-      methods: deliveryMethodListSchema.parse(methods),
-      points: pickupPointListSchema.parse(points),
-      paymentMethods: paymentMethodListSchema.parse(paymentMethods),
-    };
+    return { methods, points, paymentMethods };
   },
 
-  async submit(
+  submit(
     slug: string,
     values: {
       deliveryMethodType: string;
@@ -33,25 +23,21 @@ export const checkoutApi = {
     },
     fallbackErrorMessage?: string,
   ) {
-    const data = await apiFetch(
-      `/stores/${slug}/checkout`,
+    return apiClient.checkout.create(
+      slug,
       {
-        method: "POST",
-        body: JSON.stringify({
-          deliveryMethodType: values.deliveryMethodType,
-          pickupPointId: values.pickupPointId || undefined,
-          customerName: values.customerName || undefined,
-          customerPhone: values.customerPhone,
-          customerEmail: values.customerEmail || undefined,
-          items: values.items.map((item) => ({
-            productId: item.productId,
-            variantId: item.variantId,
-            quantity: item.quantity,
-          })),
-        }),
+        deliveryMethodType: values.deliveryMethodType as "PICKUP" | "COURIER",
+        pickupPointId: values.pickupPointId || undefined,
+        customerName: values.customerName || undefined,
+        customerPhone: values.customerPhone,
+        customerEmail: values.customerEmail || undefined,
+        items: values.items.map((item) => ({
+          productId: item.productId,
+          variantId: item.variantId,
+          quantity: item.quantity,
+        })),
       },
-      fallbackErrorMessage,
+      { fallbackErrorMessage },
     );
-    return checkoutResultSchema.parse(data);
   },
 };

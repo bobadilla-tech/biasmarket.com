@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { collectionsApi } from "../api/collections.api";
+import { apiClient } from "@/lib/api-client";
 import { collectionsKeys } from "../queries/use-collections";
 
 export function useDeleteCollection(
@@ -12,11 +12,9 @@ export function useDeleteCollection(
 
   return useMutation({
     mutationFn: (collectionId: string) =>
-      collectionsApi.remove(
-        storeId as string,
-        collectionId,
+      apiClient.collections.remove(storeId as string, collectionId, {
         fallbackErrorMessage,
-      ),
+      }),
     onSuccess: () => {
       if (!storeId) return;
       queryClient.invalidateQueries({

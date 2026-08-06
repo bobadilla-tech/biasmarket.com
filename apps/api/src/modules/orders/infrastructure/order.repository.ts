@@ -6,6 +6,7 @@ import {
 import type { FulfillmentStatus, PaymentStatus, Prisma } from "@biasmarket/db";
 import { PrismaService } from "../../../prisma/prisma.service.js";
 import { Order } from "../domain/order.entity.js";
+import { withPaymentSummary } from "../../../common/payment-summary.js";
 
 @Injectable()
 export class OrderRepository {
@@ -52,7 +53,7 @@ export class OrderRepository {
     if (!order || order.storeId !== storeId) {
       throw new NotFoundException("Orden no encontrada");
     }
-    return this.withPaymentSummary(order);
+    return withPaymentSummary(order);
   }
 
   async findManyForStore(
@@ -84,7 +85,7 @@ export class OrderRepository {
         include: includeWithPayments,
         orderBy: { createdAt: "desc" },
       });
-      return orders.map((order) => this.withPaymentSummary(order));
+      return orders.map((order) => withPaymentSummary(order));
     } catch {
       const orders = await this.prisma.order.findMany({
         where,
@@ -92,7 +93,7 @@ export class OrderRepository {
         orderBy: { createdAt: "desc" },
       });
       return orders.map((order) =>
-        this.withPaymentSummary({ ...order, payments: [] })
+        withPaymentSummary({ ...order, payments: [] })
       );
     }
   }
@@ -122,24 +123,5 @@ export class OrderRepository {
     tx: Prisma.TransactionClient | PrismaService = this.prisma,
   ) {
     return tx.order.update({ where: { id: orderId }, data });
-  }
-
-  private withPaymentSummary<
-    T extends {
-      requiredAmount: Prisma.Decimal;
-      payments?: { amount: Prisma.Decimal }[];
-    },
-  >(order: T) {
-    const paid = (order.payments ?? []).reduce(
-      (sum, payment) => sum + Number(payment.amount),
-      0,
-    );
-    const required = Number(order.requiredAmount);
-    return {
-      ...order,
-      paidAmount: paid,
-      pendingAmount: Math.max(required - paid, 0),
-      paidPercentage: required > 0 ? Math.min((paid / required) * 100, 100) : 0,
-    };
   }
 }

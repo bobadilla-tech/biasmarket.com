@@ -17,7 +17,7 @@ if (!email) {
   process.exit(1);
 }
 
-const adapter = new PrismaPg({ connectionString: process.env["DATABASE_URL"] });
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
 const user = await prisma.user.findUnique({ where: { email } });

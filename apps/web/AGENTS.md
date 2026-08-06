@@ -14,8 +14,13 @@ build only what the feature actually uses:
 ```text
 features/<name>/
   schemas/    zod schemas — the runtime contract, source of truth for types (z.infer)
-  api/        thin wrappers over lib/api.ts's apiFetch, one object export per feature
-              (e.g. accountApi.confirm(...)), each call ends in schema.parse(data)
+  api/        thin wrappers, one object export per feature (e.g. accountApi.confirm(...));
+              over lib/api.ts's apiFetch + schema.parse(data) by default. A migrated
+              feature (see the OpenAPI note below) has no api/ folder at all —
+              queries/mutations call the generated `apiClient.<tag>.*` client from
+              lib/api-client.ts directly, except multipart upload calls, which stay
+              on apiFetch/raw fetch. See the OpenAPI note below for the current
+              list of migrated features
   queries/    TanStack Query useQuery hooks, own the query key
   mutations/  TanStack Query useMutation hooks, invalidate on success
   components/ presentational components specific to this feature
@@ -31,11 +36,13 @@ via a feature's `queries/`, not a raw `useEffect`+`useState` triad.
 underneath every feature `api/` layer, it's just no longer called directly from
 components.
 
-**Validation rule**: API responses are validated with zod at the `api/` boundary
-(`schema.parse(data)`, throwing — a schema mismatch is a real bug and should
-surface through the same error channel as a network failure, not be silently
-swallowed by `safeParse`). This stays the standing convention even if a
-generated OpenAPI client is introduced later — see the OpenAPI note below.
+**Validation rule**: for features still on `apiFetch`, API responses are
+validated with zod at the `api/` boundary (`schema.parse(data)`, throwing — a
+schema mismatch is a real bug and should surface through the same error channel
+as a network failure, not be silently swallowed by `safeParse`). A migrated
+feature (generated Orval fetch client, exported as `apiClient` — see the OpenAPI
+note below) drops response-shape zod for plain pass-through reads instead — see
+that note for why and where the line is.
 
 **Forms rule**: new forms use `react-hook-form` + `@hookform/resolvers/zod`, not
 per-field `useState`. There is no shadcn `components/ui/form.tsx` — the `form`
@@ -61,93 +68,272 @@ optimistic updates after a mutation (e.g. settings saves) go through
 `useUpdateDashboardStoreCache()` (`queryClient.setQueryData`), not a `window`
 event — see `settings/page.tsx`'s `updateStoreCache` calls for the pattern.
 
-**`packages/types` (`@biasmarket/types`)**: currently unused/dead — do not
-hand-populate it with feature-local zod-inferred types. It's reserved as the
-eventual home for OpenAPI-generated types if/when that initiative happens (see
-below). Feature types belong in `features/<name>/schemas/`.
+**`packages/types` (`@biasmarket/types`)**: generates a real SDK client from
+`apps/api/openapi.json` via [Orval](https://orval.dev) (see the OpenAPI note
+below) — one grouped namespace per migrated tag, plus `configureApiClient` and
+the re-exported response/request DTO types. Still not for hand-populated
+feature-local types — those belong in `features/<name>/schemas/`.
 
-**OpenAPI-generated client**: investigated and deliberately deferred. `apps/api`
-has no `@nestjs/swagger`, and its Nest build uses the SWC builder
-(`typeCheck: false` in `nest-cli.json`), which the swagger CLI plugin doesn't
-support — adopting it needs either a builder change or hand-annotating every
-DTO, plus a separate effort to add response DTOs across controllers (most
-handlers currently return untyped/inferred data with no `@ApiResponse`). Until
-that lands, hand-written `api/*.ts` wrappers + zod schemas are the standing
-convention, not a stopgap to be ripped out later.
+**OpenAPI-generated client**: landed 2026-08-04, reworked the same day after
+review (see `docs/plans/2026-08-04-nestjs-openapi-client-generation-plan.md` and
+`docs/plans/2026-08-04-typed-sdk-client-followups.md` for the full history — a
+first pass generated a raw `openapi-fetch` client that turned out to need _more_
+hand-written wiring per call site than the `apiFetch` pattern it replaced; this
+section describes the redo, not that first pass). `collections` was the pilot
+feature; `products` (money fields + 2 upload endpoints) migrated next per
+`docs/plans/2026-08-04-orval-client-rollout-plan.md`'s Batch 1, closing that
+plan's money/upload proof-of-pattern gate. See that doc's "Batch 1 execution
+notes" for what came up migrating a module with more than one response shape
+(`create()` vs. `findAll()`/`findOne()`) and multipart endpoints. Batch 2
+(`categories`, `notifications`, `contact`, `suggestions`, `sections`) followed
+the same recipe — see that doc's "Batch 2 execution notes" for a new `@ApiQuery`
+pattern needed for `Notifications.findAll`'s query-string filters (no prior
+example in this repo) and an e2e-parallelism gotcha with better-auth's rate
+limiter (`vitest.config.e2e.ts` now sets `fileParallelism: false` because of it
+— every e2e spec signs up its own user, and running them in parallel trips
+better-auth's rate limiter). Batch 3 (`DeliveryConfig`/`PublicDeliveryConfig`,
+`PaymentConfig`/`PublicPaymentConfig`, `PickupPoints`/`PublicPickupPoints`,
+`Stores`/`MyStores`) followed next per
+`docs/plans/2026-08-05-orval-rollout-batches-3-6-plan.md` — see that doc's
+"Batch 3 execution notes" for what came up: a real `FindAllParams` naming
+collision between `Notifications` and `PaymentConfig` (fixed once, in
+`orval.config.ts`'s `operationName`, not per-tag), `Stores`' deeply-nested
+`findPublicBySlug` join DTO, and a genuine pre-existing app bug
+(`DELETE /stores/:storeId` 400s for every store, not just ones with real data)
+found and documented, not fixed, while giving that endpoint a real response DTO.
+Batch 4 (`Order`, `Checkout`) followed per
+`docs/plans/2026-08-05-orval-rollout-batch-4-order-checkout-plan.md` — see that
+doc's execution notes for `Order`'s three real response shapes
+(`OrderResponseDto`/`OrderDetailResponseDto`/`OrderStatusResponseDto`, depending
+on whether the endpoint runs the row through
+`OrderRepository.withPaymentSummary` and whether it includes `proofs`),
+`Checkout.create`'s own fourth, narrower shape, a real bug fixed in the shared
+`test/schema-assert.ts` e2e helper (nullable object/array-typed fields were only
+checked for `null` after already throwing on it), and — most importantly — **a
+real, pre-existing money-precision bug found and confirmed live, not introduced
+by this migration and not fixed as part of it**:
+`OrderRepository.withPaymentSummary` computes `pendingAmount`/ `paidPercentage`
+via plain JS float arithmetic on money (not Decimal-safe), and
+`OrderController.addPayment`'s "exceeds pending balance" guard uses that same
+imprecise value — a seller entering the _exact_ amount the UI shows as owed can
+get rejected. Flagged to the user directly; fixed independently in
+`apps/api/src/common/payment-summary.ts` (a shared `computePaymentSummary`/
+`withPaymentSummary` helper doing the arithmetic in `Prisma.Decimal` space) —
+landed before Batch 5/6 below, so those batches' DTOs didn't need to carry a
+"known-buggy" caveat.
 
-## Migration roadmap (not all built yet)
+Batches 5 (`CustomerAuth`, `CustomerAccount`, `Customers`) and 6
+(`ProductSearch`, `Stats`, `Users`) landed together per
+`docs/plans/2026-08-06-orval-rollout-batches-5-6-plan.md` — **this was the last
+batch**; every `apps/web` feature with a real backend tag is now migrated (see
+"Migrated so far" below). `CustomerAuth`'s spec-bug blocker (missing `slug`
+`@ApiParam` on `changePassword`/`logout`) was fixed with the user's explicit
+go-ahead — `unsafeDisableValidation: true` is gone from `orval.config.ts` as a
+result. `Customers.findOne`'s `orders` and `Stats.getOverview`'s `recentOrders`
+both reuse `Order`'s own `OrderResponseDto` directly (a cross-module DTO import,
+confirmed structurally identical by reading the services — the first time this
+rollout had two tags share an entire response shape, not just a nested piece of
+one) rather than each re-declaring the same dozen fields.
 
-1. ~~Infra (TanStack Query provider, zod, shared async-state components) +
-   `features/account` reference~~ — done.
-2. ~~`features/notifications` — dedup `notifications-bell.tsx` + the
-   notifications page onto a shared query, add mutations with
-   `invalidateQueries`~~ — done.
-3. ~~`features/auth` — first `react-hook-form` + `zodResolver` form~~ — done (no
-   shadcn `form.tsx`, see Forms rule above).
-4. ~~create-store form — same RHF+Zod pattern plus multipart file upload~~ —
-   done (`features/stores/components/create-store-form.tsx`; `MyStoresList`
-   split out as a separate component in the same feature).
-5. ~~`features/stores` — replace `lib/use-store.ts`'s hand-rolled cache +
-   `CustomEvent` broadcast with `useQuery`/`setQueryData`~~ — done.
-   `lib/use-store.ts` is now a thin re-export; `settings/page.tsx`'s four
-   `broadcastStoreUpdate` call sites were switched to
-   `useUpdateDashboardStoreCache()` (the only other consumer of the old
-   broadcast function) — that was the one small, surgical touch to
-   `settings/page.tsx` in this step, not a full migration of that page.
-6. products/settings/orders pages — largest, highest-risk; migrate only once the
-   pattern is proven across steps 2-5.
-   - ~~`settings/page.tsx`~~ — done. Split into `features/store-settings/` with
-     one section component per card (profile, appearance, payments, delivery,
-     defaults, notifications/stock-alerts), each with its own
-     schema/api/query-or-mutation; `settings/page.tsx` itself is now ~75 lines
-     of composition. `SectionCard`/`Field`/`ToggleRow`/`useSavedFlash` (the 1.8s
-     "Saved" flash, now per-mutation instead of one shared page enum) live in
-     `features/store-settings/components/section-primitives.tsx`. The 2
-     permanently-disabled notification toggles
-     (`orderDelivered`/`weeklySummary`) stay local-only state — they don't call
-     any API, same as before.
-   - ~~`products/page.tsx` + `products/[productId]/page.tsx`~~ — done. Split
-     into `features/products/` (schemas/lib/api/queries/mutations/components per
-     the usual shape); both pages are now composition only. Scalar product
-     fields (name/description/price/currency/stock/categoryId) use
-     `react-hook-form` + `zodResolver`; the option-builder and generated
-     variant-combination matrix stay local `useState`/`useMemo` (a derived read
-     model regenerated from options, not user-editable rows — not forced into
-     `useFieldArray`, per the migration plan). `useUpdateProduct`'s variant
-     diff/upsert loop was changed from sequential-await to `Promise.allSettled`
-     with aggregated error reporting, and the delete pass only runs once every
-     upsert has succeeded — a deliberate behavior change from the old
-     fail-fast-and-leave-it-half-migrated version (see the doc comment on
-     `features/products/mutations/use-update-product.ts`). Not live-smoke-tested
-     (no seeded DB access in this session) — only typecheck/test/build were
-     verified.
-   - ~~`orders/page.tsx`~~ — done. Split into `features/orders/`; the page is
-     now composition only. `useOptimisticStatusChange` wraps the review/advance
-     mutations with the delayed-commit/undo UX (apply the status change to the
-     orders query cache immediately via `queryClient.setQueryData`, hold the
-     real mutation behind an 8s `setTimeout` + sonner undo toast — TanStack
-     Query's `onMutate` optimistic pattern has no "delay the commit" primitive,
-     so this is a plain timer wrapper, same shape as the page-local version it
-     replaces). The sensitive-transition path (rejecting a payment, advancing to
-     `COMPLETED`) bypasses that hook entirely and calls the mutations directly
-     from a confirm dialog, same as before — including preserving the
-     pre-existing quirk that the detail sheet's footer "advance" button also
-     bypasses both the undo flow _and_ the sensitive-transition confirm dialog
-     (only the row-level button in the table goes through
-     `SENSITIVE_FULFILLMENT`). `RegisterPaymentForm` is a new
-     `react-hook-form` + `zodResolver` form with a schema built per-order
-     (`buildRegisterPaymentSchema(pendingAmount)`) so amount/method/file
-     validation mirrors the backend rather than only being caught after the
-     round-trip. The stray `Upload: any` field on the old `OrderItemRow` type
-     was dropped, and the dead `t("details.paymentHistory", { fallback: ... })`
-     param was removed after confirming the real i18n key exists in both
-     locales. The enabled-payment-methods lookup reuses
-     `features/store-settings`'s `settingsApi` (`getEnabledPaymentMethods`, new)
-     rather than a third independent wrapper around `GET .../payment-methods`.
-     Not live-smoke-tested (no seeded DB access in this session) — only
-     typecheck/test/build were verified.
+**A real, repo-wide bug found and fixed while regenerating for these batches,
+unrelated to any single tag:** every controller's `@Body()`-decorated request
+DTOs were imported via `import type` (e.g.
+`import type { CreateCollectionDto } from "./dto/create-collection.dto.js"`).
+Under this repo's SWC build, a type-only import is erased before
+`emitDecoratorMetadata` runs, so `design:paramtypes` degrades to `Object` for
+that parameter — `@nestjs/swagger` then has nothing to `$ref`, and silently
+emits no `requestBody` at all for that operation. This had drifted in unnoticed
+(the committed `openapi.json` was stale relative to source — nothing had re-run
+`generate:openapi` since some later change converted these to type imports) and
+affected every mutation across every already-migrated tag, not just the six new
+ones: regenerating the client for Batch 5/6 immediately broke
+`pnpm --filter web typecheck` in `Collections`/`Products`/`Categories`/
+`Contact`/`StoreSections`/`Stores`/`DeliveryConfig`/`PaymentConfig`/
+`PickupPoints`/`Order`/`Checkout`'s mutation call sites
+(`Expected 1-2
+arguments, but got 3`, since the generated functions had silently
+lost their `data` parameter). Confirmed the root cause empirically (switching
+one import from type-only to a value import made the missing `requestBody`
+reappear in the emitted spec) before fixing it repo-wide across all 12 affected
+controller files — zero business-logic change, pure import style. **Rule for all
+future controllers**: any DTO used as a `@Body()` parameter type must be a real
+(value) import, never `import type` — only response DTOs that are exclusively
+used as return-type annotations are safe to import as types.
 
-All three pages in this step are now migrated — the feature-sliced migration
-covers every major dashboard page. This roadmap section has served its purpose;
-treat future page work as "follow the `features/<name>/` shape already
-established" rather than expecting this list to keep growing.
+`apps/api` emits `openapi.json` (`@nestjs/swagger` + a standalone
+`PluginMetadataGenerator` script, since the Nest build's SWC builder doesn't run
+the swagger CLI plugin). `packages/types/orval.config.ts` runs
+[Orval](https://orval.dev) against it (`client: "fetch"`, `mode:
+"tags-split"`)
+with a custom `http.ts` mutator every generated method calls through — this is
+the one place that does what `apiFetch`/`collections.api.ts` used to repeat per
+call site: resolve `credentials: "include"`, and throw on a non-2xx response
+using the backend's `message` field (with an optional per-call
+`fallbackErrorMessage`, same string clients pass to `apiFetch` today). Net
+effect: a generated method's real signature is
+`(storeId, ..., options?) => Promise<T>` — no `{ data, error }` tuple, no
+per-call `if (error) throw`, no manually-templated path string, no explicit
+return-type annotation needed to dodge a narrowing bug (all three were real
+complaints about the first-pass `openapi-fetch` version — see the follow-up
+doc's "What we learned"). `apps/web/lib/api-client.ts` calls
+`configureApiClient({ baseUrl })` once (same `INTERNAL_API_URL`/
+`NEXT_PUBLIC_API_URL` resolution `lib/api.ts`'s `apiFetch` always used) and
+re-exports each migrated tag as a property of a single `apiClient` object —
+`queries/`/`mutations/` call `apiClient.collections.findAll(storeId)` etc.
+directly; there is no `features/collections/api/` folder at all anymore.
+
+Both `apps/api/openapi.json` and `packages/types/generated/**` are **committed
+to git, not build-generated** — unchanged from the original decision (kept
+`web`'s build/typecheck independent of `apps/api`, no turbo cross-package build
+step, no live app boot needed in CI). After changing a migrated feature's
+backend response DTOs, regenerate by hand and commit the diff:
+`pnpm --filter api generate:openapi && pnpm --filter @biasmarket/types generate`.
+
+**Orval config notes:** `orval.config.ts`'s `input.filters` includes every tag
+now — `Collections`, `Products`, `Categories`, `Notifications`, `Contact`,
+`Suggestions`, `StoreSections`, `DeliveryConfig`, `PublicDeliveryConfig`,
+`PaymentConfig`, `PublicPaymentConfig`, `PickupPoints`, `PublicPickupPoints`,
+`Stores`, `MyStores`, `Order`, `Checkout`, `CustomerAuth`, `CustomerAccount`,
+`Customers`, `ProductSearch`, `Stats`, and `Users` — this was the last batch, so
+every tag with a corresponding `apps/web` feature has real response DTOs now
+(only `App`/`Health` are excluded, and neither has a frontend consumer). For
+historical context: generating a tag whose responses are still untyped Prisma
+results produces anonymous `{ [key: string]: unknown }` placeholder schema types
+keyed by the (post-`operationName`-override) shortened method name, and those
+collide across unrelated controllers in the single shared `api.schemas.ts` file
+(every controller's `findAll` fighting over one `FindAll200Item` type) — add a
+tag only once its controller has real response DTOs, not just because the tag
+exists in the spec, if this repo ever adds a 23rd controller.
+`input.unsafeDisableValidation: true` — previously set because two
+`CustomerAuthController` endpoints were missing their `slug` path param — is
+gone: that gap was fixed (a real `@ApiParam({ name: "slug", type:
+String })` on
+`changePassword`/`logout`, zero behavior change) as part of Batch 5, with the
+user's explicit approval, and Orval's validator now passes on the whole spec.
+`scripts/fix-esm-extensions.mjs` postprocesses Orval's output because Orval has
+no option to emit `.js` extensions on relative imports, which this package's
+NodeNext module resolution requires — run automatically as part of `generate`,
+not a separate manual step.
+
+**`operationName`'s `[methodName, typeName]` array form (added in Batch 3):**
+Orval derives every internally-generated type name (a query-param'd method's
+`<Method>Params`, mainly) from the _second_ element of the tuple returned by
+`operationName`, independent of the first element (the actual generated
+function's name). Two different tags each naming a query-param'd method
+`findAll` (`Notifications`, `PaymentConfig`) collided on one shared
+`FindAllParams` type the moment both were generated together — a real
+`TS2300: Duplicate identifier`, not hypothetical. Fixed once, in
+`orval.config.ts`, by returning `[methodName, operation.operationId]` instead of
+a bare string — the method name stays short and clean per tag, the type name is
+the already-globally-unique raw operationId (`PaymentConfigController_findAll`).
+This resolved the collision for every existing and future tag at once; no
+per-tag workaround needed going forward.
+
+**TanStack Query hook generation: decided against, for now.** Orval (and
+hey-api, which was also spiked) can generate `useQuery`/`useMutation` hooks
+directly from operations, which would additionally shrink `queries/`/
+`mutations/`. Not adopted, because a spike of Orval's `@orval/query` output
+showed two real problems for this repo: it wraps responses in a
+`{ data, status, headers }` envelope (a worse, not better, shape than the plain
+`Promise<T>` the plain `fetch` client gives), and its `useQuery`/ `useMutation`
+classification has to be told which operations are queries — naively applied, it
+generated a `useQuery` hook for a `POST` create endpoint. More fundamentally,
+this repo's hand-written hooks already carry real business logic a generic
+generator has no way to produce — per-store query keys (`collectionsKeys`),
+`invalidateQueries` call graphs, and feature-specific flows like
+`features/orders`'s optimistic-update/undo timer — so hand-written
+`queries/`/`mutations/` calling the generated SDK client directly (as described
+above) stays the convention. Revisit only if a future session finds a generator
+whose hook shape doesn't have these problems, not by default.
+
+Response-shape zod schemas are dropped for migrated features doing plain
+pass-through reads (see `features/collections/schemas/collection.schema.ts` —
+`Collection`/`CollectionProduct` are now type aliases onto the generated
+`CollectionWithProductsResponseDto`/`CollectionProductWithProductResponseDto`,
+not `z.object()` + `.parse()`): for these plain pass-through reads, the fetch
+layer does no response validation at all (only 2xx paths are typed by the
+OpenAPI generation — see the plan doc's Phase 3 scope note), so the guarantee
+these types carry is the server's documented contract, not a runtime check —
+re-adding zod here would just re-check the same contract, still without catching
+a live mismatch the type system already assumes away. zod stays for genuine
+client-side logic — request/form validation (`createCollectionSchema`, still
+`z.object()` + `zodResolver`) and any derived parsing/coercion a feature does on
+top of the raw response (e.g. `useCreateCollection` turning an empty-string
+`description` into `undefined` before calling `apiClient.collections.create`).
+Apply this same split to each feature as it migrates, not a blanket
+drop-all-response-zod change in one PR.
+
+**Migration complete.** Every `apps/web` feature with a real backend tag is
+migrated: `collections`, `products`, `categories`, `notifications`, `contact`,
+`suggestions`, `sections` (`StoreSections` tag), `store-settings`'s
+delivery/payment/pickup-point sections plus its profile/appearance/stock-alert
+saves (`DeliveryConfig`, `PaymentConfig`, `PickupPoints`, and the relevant slice
+of `Stores`), `checkout` in full — both the public delivery/payment/pickup-point
+reads (`PublicDeliveryConfig`, `PublicPaymentConfig`, `PublicPickupPoints`) and
+`submit`/`create` itself (`Checkout` tag), `stores` + `admin-stores`
+(`Stores`/`MyStores`), `orders` (`Order` tag — `list`/`review`/`advance`/
+`cancelOrder`; `registerPayment` stays on `apiFetch`/`FormData`, the multipart
+carve-out), `discovery` in full (featured-stores/store-directory reads plus
+`searchProducts`, the `ProductSearch` tag), `customer-auth` (`CustomerAuth` tag
+— `register`/`login`/`forgotPassword`/`changePassword`/`me`/`updateMe`/
+`logout`), `account` (`CustomerAccount` tag — `confirm`), `customers`
+(`Customers` tag — `findAll`/`findOne`, the latter's `orders` reusing `Order`'s
+own `OrderResponseDto`), `stats` (`Stats` tag — `overview`/`analytics`,
+`overview`'s `recentOrders` likewise reusing `OrderResponseDto`), and `admin`'s
+`getStoreCounts` (`Users` tag — `listUsers`/`banUser`/`unbanUser` correctly stay
+on `authClient.admin.*`, not this tag). No feature's `api/*.ts` calls `apiFetch`
+for a JSON request/response anymore — the only remaining `fetch`/`FormData` call
+sites are the documented multipart carve-outs (`products`' image uploads,
+`orders`' `registerPayment`, `stores`' `uploadLogo`). Confirmed by grepping
+every `features/*/api/*.ts` for `apiFetch(` at the end of Batch 5/6 — zero
+matches outside those carve-outs. Error responses are still explicitly out of
+scope for the generated client (see the plan doc's Phase 3 note) — the mutator's
+defensive `message`-field parsing and `fallbackErrorMessage` stay the pattern
+for error paths even in migrated features.
+
+## Feature-specific patterns worth knowing
+
+Every major dashboard page (`products`, `settings`, `orders`, plus `account`,
+`notifications`, `auth`, `stores`) is migrated to the `features/<name>/` shape
+above; `app/**/page.tsx` files are composition only. A few features have
+non-obvious internal patterns worth knowing before touching them:
+
+**`features/store-settings`**: one section component per settings card (profile,
+appearance, payments, delivery, defaults, notifications/stock-alerts), each with
+its own schema/api/query-or-mutation.
+`SectionCard`/`Field`/`ToggleRow`/`useSavedFlash` (the 1.8s "Saved" flash,
+per-mutation) live in `components/section-primitives.tsx`. The 2 notification
+toggles `orderDelivered`/`weeklySummary` are permanently disabled and stay
+local-only state — they don't call any API.
+
+**`features/products`**: scalar fields
+(name/description/price/currency/stock/categoryId) use `react-hook-form` +
+`zodResolver`; the option-builder and generated variant-combination matrix stay
+local `useState`/`useMemo` — it's a derived read model regenerated from options,
+not user-editable rows, so it isn't forced into `useFieldArray`.
+`useUpdateProduct`'s variant diff/upsert loop runs via `Promise.allSettled` with
+aggregated error reporting, and the delete pass only runs once every upsert has
+succeeded (a deliberate choice over failing fast and leaving things
+half-migrated — see the doc comment on
+`features/products/mutations/use-update-product.ts`).
+
+**`features/orders`**: `useOptimisticStatusChange` wraps the review/advance
+mutations with a delayed-commit/undo UX — it applies the status change to the
+orders query cache immediately via `queryClient.setQueryData`, then holds the
+real mutation behind an 8s `setTimeout` + sonner undo toast (TanStack Query's
+`onMutate` optimistic pattern has no "delay the commit" primitive, so this is a
+plain timer wrapper). The sensitive-transition path (rejecting a payment,
+advancing to `COMPLETED`) bypasses that hook entirely and calls the mutations
+directly from a confirm dialog. Known quirk: the order detail sheet's footer
+"advance" button also bypasses both the undo flow _and_ the sensitive-transition
+confirm dialog — only the row-level button in the table goes through
+`SENSITIVE_FULFILLMENT`. `RegisterPaymentForm` builds its `zodResolver` schema
+per-order (`buildRegisterPaymentSchema(pendingAmount)`) so amount/method/file
+validation mirrors the backend instead of only being caught after the
+round-trip. Its enabled-payment-methods lookup reuses
+`features/store-settings`'s `settingsApi.getEnabledPaymentMethods` rather than a
+separate wrapper around `GET .../payment-methods`.
+
+New feature work should follow the `features/<name>/` shape already established
+(see `features/account/` as the reference implementation above), not add a new
+layout.

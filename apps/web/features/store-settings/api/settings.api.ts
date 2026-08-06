@@ -1,50 +1,28 @@
-import { apiFetch } from "@/lib/api";
+import { apiClient } from "@/lib/api-client";
 import type { ProfileFormInput } from "../schemas/profile.schema";
-import {
-  deliveryMethodListSchema,
-  isNewPickupPoint,
-  type PickupPoint,
-  pickupPointListSchema,
-} from "../schemas/delivery.schema";
-import {
-  enabledPaymentMethodListSchema,
-  paymentMethodConfigListSchema,
-} from "../schemas/payment-method.schema";
+import { isNewPickupPoint, type PickupPoint } from "../schemas/delivery.schema";
 import type { StoreThemeConfig } from "@/lib/store-theme";
 
 const PAYMENT_METHOD_TYPES = ["YAPE", "PLIN", "TRANSFER", "CASH"] as const;
 
 export const settingsApi = {
   updateProfile: (storeId: string, payload: ProfileFormInput) =>
-    apiFetch(`/stores/${storeId}`, {
-      method: "PATCH",
-      body: JSON.stringify(payload),
-    }),
+    apiClient.stores.update(storeId, payload),
 
   updateAppearance: (storeId: string, themeConfig: StoreThemeConfig) =>
-    apiFetch(`/stores/${storeId}`, {
-      method: "PATCH",
-      body: JSON.stringify({ themeConfig }),
-    }),
+    apiClient.stores.update(storeId, { themeConfig }),
 
   updateStockAlerts: (
     storeId: string,
     payload: { lowStockAlertsEnabled: boolean; lowStockThreshold: number },
-  ) =>
-    apiFetch(`/stores/${storeId}`, {
-      method: "PATCH",
-      body: JSON.stringify(payload),
-    }),
+  ) => apiClient.stores.update(storeId, payload),
 
   async getDeliverySettings(storeId: string) {
     const [methods, points] = await Promise.all([
-      apiFetch(`/stores/${storeId}/delivery-methods`),
-      apiFetch(`/stores/${storeId}/pickup-points`),
+      apiClient.deliveryConfig.findAll(storeId),
+      apiClient.pickupPoints.findAll(storeId),
     ]);
-    return {
-      methods: deliveryMethodListSchema.parse(methods),
-      points: pickupPointListSchema.parse(points),
-    };
+    return { methods, points };
   },
 
   saveDeliverySettings: (
@@ -58,54 +36,41 @@ export const settingsApi = {
     },
   ) =>
     Promise.all([
-      apiFetch(`/stores/${storeId}/delivery-methods`, {
-        method: "POST",
-        body: JSON.stringify({
-          type: "PICKUP",
-          enabled: input.pickupEnabled,
-          details: {},
-        }),
+      apiClient.deliveryConfig.upsert(storeId, {
+        type: "PICKUP",
+        enabled: input.pickupEnabled,
+        details: {},
       }),
-      apiFetch(`/stores/${storeId}/delivery-methods`, {
-        method: "POST",
-        body: JSON.stringify({
-          type: "COURIER",
-          enabled: input.courierEnabled,
-          details: { estimatedCost: input.courierCost },
-        }),
+      apiClient.deliveryConfig.upsert(storeId, {
+        type: "COURIER",
+        enabled: input.courierEnabled,
+        details: { estimatedCost: input.courierCost },
       }),
       ...input.points
         .filter((point) => isNewPickupPoint(point.id))
         .map((point) =>
-          apiFetch(`/stores/${storeId}/pickup-points`, {
-            method: "POST",
-            body: JSON.stringify({
-              label: point.label,
-              enabled: point.enabled,
-              sortOrder: point.sortOrder,
-            }),
+          apiClient.pickupPoints.create(storeId, {
+            label: point.label,
+            enabled: point.enabled,
+            sortOrder: point.sortOrder,
           })
         ),
       ...input.points
         .filter((point) => !isNewPickupPoint(point.id))
         .map((point) =>
-          apiFetch(`/stores/${storeId}/pickup-points/${point.id}`, {
-            method: "PATCH",
-            body: JSON.stringify({
-              label: point.label,
-              enabled: point.enabled,
-              sortOrder: point.sortOrder,
-            }),
+          apiClient.pickupPoints.update(storeId, point.id, {
+            label: point.label,
+            enabled: point.enabled,
+            sortOrder: point.sortOrder,
           })
         ),
       ...input.deletedPointIds.map((id) =>
-        apiFetch(`/stores/${storeId}/pickup-points/${id}`, { method: "DELETE" })
+        apiClient.pickupPoints.remove(storeId, id)
       ),
     ]),
 
   async getPaymentMethods(storeId: string) {
-    const data = await apiFetch(`/stores/${storeId}/payment-methods`);
-    return paymentMethodConfigListSchema.parse(data);
+    return apiClient.paymentConfig.findAll(storeId);
   },
 
   // Used by the orders "register payment" method picker — only the enabled
@@ -114,14 +79,12 @@ export const settingsApi = {
     storeId: string,
     fallbackErrorMessage?: string,
   ) {
-    const data = await apiFetch(
-      `/stores/${storeId}/payment-methods?enabled=1`,
-      {},
-      fallbackErrorMessage,
+    const rows = await apiClient.paymentConfig.findAll(
+      storeId,
+      { enabled: "1" },
+      { fallbackErrorMessage },
     );
-    return enabledPaymentMethodListSchema.parse(data).map((entry) =>
-      entry.method
-    );
+    return rows.map((entry) => entry.method);
   },
 
   savePaymentMethods: (
@@ -130,12 +93,9 @@ export const settingsApi = {
   ) =>
     Promise.all(
       PAYMENT_METHOD_TYPES.map((method) =>
-        apiFetch(`/stores/${storeId}/payment-methods`, {
-          method: "POST",
-          body: JSON.stringify({
-            method,
-            enabled: enabledByMethod[method] ?? true,
-          }),
+        apiClient.paymentConfig.upsert(storeId, {
+          method,
+          enabled: enabledByMethod[method] ?? true,
         })
       ),
     ),

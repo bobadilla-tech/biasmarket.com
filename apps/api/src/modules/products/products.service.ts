@@ -5,10 +5,10 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service.js";
-import { CreateProductDto } from "./dto/create-product.dto.js";
-import { UpdateProductDto } from "./dto/update-product.dto.js";
-import { CreateVariantDto } from "./dto/create-variant.dto.js";
-import { UpdateVariantDto } from "./dto/update-variant.dto.js";
+import type { CreateProductDto } from "./dto/create-product.dto.js";
+import type { UpdateProductDto } from "./dto/update-product.dto.js";
+import type { CreateVariantDto } from "./dto/create-variant.dto.js";
+import type { UpdateVariantDto } from "./dto/update-variant.dto.js";
 import { NotificationsService } from "../notifications/notifications.service.js";
 
 @Injectable()
@@ -123,7 +123,7 @@ export class ProductsService {
       include: { variants: true, categories: { include: { category: true } } },
     });
 
-    if (products.length === 0) return products;
+    if (products.length === 0) return [];
 
     const sold = await this.prisma.orderItem.groupBy({
       by: ["productId"],

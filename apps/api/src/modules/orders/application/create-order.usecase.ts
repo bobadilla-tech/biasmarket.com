@@ -9,7 +9,7 @@ import {
   buildWhatsAppUrl,
 } from "@biasmarket/utils/whatsapp";
 import { PrismaService } from "../../../prisma/prisma.service.js";
-import { CreateOrderDto } from "../dto/create-order.dto.js";
+import type { CreateOrderDto } from "../dto/create-order.dto.js";
 import { NotificationsService } from "../../notifications/notifications.service.js";
 import { CustomerAccountService } from "./customer-account.service.js";
 
@@ -30,7 +30,7 @@ export class CreateOrderUseCase {
         storeId_type: { storeId: store.id, type: dto.deliveryMethodType },
       },
     });
-    if (!deliveryConfig || !deliveryConfig.enabled) {
+    if (!deliveryConfig?.enabled) {
       throw new BadRequestException("Método de entrega no disponible");
     }
 
@@ -172,6 +172,10 @@ export class CreateOrderUseCase {
           | Record<string, unknown>
           | null;
         const deliveryCost = Number(details?.estimatedCost ?? 0);
+        // `items` has `@ArrayMinSize(1)` (create-order.dto.ts) — the loop
+        // above always runs at least once, so `totalAmount` is always set by
+        // this point; the `| undefined` in its declared type only exists to
+        // satisfy the loop's own incremental-accumulation pattern.
         const finalAmount = totalAmount!.plus(deliveryCost);
 
         const expiresAt = new Date(

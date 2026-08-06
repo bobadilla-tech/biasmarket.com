@@ -3,13 +3,17 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Select } from "@/components/ui/select";
-import type { Collection } from "../schemas/collection.schema";
+import type { CollectionWithProductsResponseDto } from "@biasmarket/types";
 
 interface CollectionCardProps {
-  collection: Collection;
+  collection: CollectionWithProductsResponseDto;
   products: { id: string; name: string }[];
   onDelete: (collectionId: string) => void;
-  onReorder: (collection: Collection, index: number, direction: -1 | 1) => void;
+  onReorder: (
+    collection: CollectionWithProductsResponseDto,
+    index: number,
+    direction: -1 | 1,
+  ) => void;
   onRemoveProduct: (collectionId: string, productId: string) => void;
   onAddProduct: (collectionId: string, productId: string) => void;
 }

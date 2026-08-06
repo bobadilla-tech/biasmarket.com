@@ -4,8 +4,8 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service.js";
-import { CreatePickupPointDto } from "./dto/create-pickup-point.dto.js";
-import { UpdatePickupPointDto } from "./dto/update-pickup-point.dto.js";
+import type { CreatePickupPointDto } from "./dto/create-pickup-point.dto.js";
+import type { UpdatePickupPointDto } from "./dto/update-pickup-point.dto.js";
 
 @Injectable()
 export class PickupPointsService {

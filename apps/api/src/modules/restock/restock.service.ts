@@ -52,7 +52,9 @@ export class RestockService {
   }
 
   async listForStore(storeId: string, userId: string) {
-    const store = await this.prisma.store.findUnique({ where: { id: storeId } });
+    const store = await this.prisma.store.findUnique({
+      where: { id: storeId },
+    });
     if (!store) throw new NotFoundException("Store no encontrada");
     if (store.ownerId !== userId) {
       throw new ForbiddenException("No sos dueño de esta store");

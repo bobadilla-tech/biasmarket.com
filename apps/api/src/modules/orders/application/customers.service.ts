@@ -3,7 +3,9 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import { Prisma } from "@biasmarket/db";
 import { PrismaService } from "../../../prisma/prisma.service.js";
+import { withPaymentSummary } from "../../../common/payment-summary.js";
 
 @Injectable()
 export class CustomersService {
@@ -18,25 +20,6 @@ export class CustomersService {
       throw new ForbiddenException("No sos dueño de esta store");
     }
     return store;
-  }
-
-  private withPaymentSummary<
-    T extends {
-      requiredAmount: { toString(): string };
-      payments?: { amount: { toString(): string } }[];
-    },
-  >(order: T) {
-    const paid = (order.payments ?? []).reduce(
-      (sum, payment) => sum + Number(payment.amount),
-      0,
-    );
-    const required = Number(order.requiredAmount);
-    return {
-      ...order,
-      paidAmount: paid,
-      pendingAmount: Math.max(required - paid, 0),
-      paidPercentage: required > 0 ? Math.min((paid / required) * 100, 100) : 0,
-    };
   }
 
   async findAllForStore(storeId: string, userId: string) {
@@ -70,14 +53,12 @@ export class CustomersService {
         group,
       ) => [group.customerId as string, group._max.createdAt]),
     );
-    const spendByCustomer = new Map<string, number>();
+    const spendByCustomer = new Map<string, Prisma.Decimal>();
     for (const payment of payments) {
       const customerId = payment.order.customerId;
       if (!customerId) continue;
-      spendByCustomer.set(
-        customerId,
-        (spendByCustomer.get(customerId) ?? 0) + Number(payment.amount),
-      );
+      const current = spendByCustomer.get(customerId) ?? new Prisma.Decimal(0);
+      spendByCustomer.set(customerId, current.plus(payment.amount));
     }
 
     return customers.map((customer) => ({
@@ -88,7 +69,8 @@ export class CustomersService {
       emailVerified: customer.emailVerified,
       createdAt: customer.createdAt,
       orderCount: orderCountByCustomer.get(customer.id) ?? 0,
-      lifetimeSpend: spendByCustomer.get(customer.id) ?? 0,
+      lifetimeSpend: (spendByCustomer.get(customer.id) ?? new Prisma.Decimal(0))
+        .toNumber(),
       lastOrderAt: lastOrderAtByCustomer.get(customer.id) ?? null,
     }));
   }
@@ -121,7 +103,7 @@ export class CustomersService {
         emailVerified: customer.emailVerified,
         createdAt: customer.createdAt,
       },
-      orders: orders.map((order) => this.withPaymentSummary(order)),
+      orders: orders.map((order) => withPaymentSummary(order)),
     };
   }
 }

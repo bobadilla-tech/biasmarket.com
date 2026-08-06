@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { suggestionsApi } from "../api/suggestions.api";
+import { apiClient } from "@/lib/api-client";
 
 export const suggestionsKeys = {
   byStore: (storeId: string) => ["suggestions", storeId] as const,
@@ -13,7 +13,10 @@ export function useSuggestions(
 ) {
   return useQuery({
     queryKey: suggestionsKeys.byStore(storeId as string),
-    queryFn: () => suggestionsApi.list(storeId as string, fallbackErrorMessage),
+    queryFn: () =>
+      apiClient.suggestions.findAll(storeId as string, {
+        fallbackErrorMessage,
+      }),
     enabled: !!storeId,
   });
 }

@@ -1,4 +1,4 @@
-import { ExecutionContext } from "@nestjs/common";
+import type { ExecutionContext } from "@nestjs/common";
 import { UnauthorizedException } from "@nestjs/common";
 import { type Mock, vi } from "vitest";
 import { hashPassword } from "better-auth/crypto";
@@ -8,7 +8,7 @@ import {
   type CustomerSessionRequest,
 } from "./customer-session.guard.js";
 import { derivePasswordVersion } from "./customer-auth.service.js";
-import { PrismaService } from "../../prisma/prisma.service.js";
+import type { PrismaService } from "../../prisma/prisma.service.js";
 import { CUSTOMER_SESSION_COOKIE } from "./customer-session.constants.js";
 
 function buildContext(cookieHeader: string | undefined) {

@@ -1,0 +1,6889 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/": {
+      "get": {
+        "operationId": "AppController_root",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "App"
+        ]
+      }
+    },
+    "/stores": {
+      "post": {
+        "operationId": "StoresController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateStoreDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Stores"
+        ]
+      },
+      "get": {
+        "operationId": "StoresController_findAllForAdmin",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StoreWithOwnerResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Stores"
+        ]
+      }
+    },
+    "/stores/by-slug/{slug}": {
+      "get": {
+        "operationId": "StoresController_findBySlug",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Stores"
+        ]
+      }
+    },
+    "/stores/{storeId}": {
+      "patch": {
+        "operationId": "StoresController_update",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStoreDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Stores"
+        ]
+      },
+      "delete": {
+        "operationId": "StoresController_delete",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Stores"
+        ]
+      }
+    },
+    "/stores/public": {
+      "get": {
+        "operationId": "StoresController_findAllPublic",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicStoreListingResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Stores"
+        ]
+      }
+    },
+    "/stores/collections/public": {
+      "get": {
+        "operationId": "StoresController_findCollectionsPublic",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicCollectionListingResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Stores"
+        ]
+      }
+    },
+    "/stores/featured": {
+      "get": {
+        "operationId": "StoresController_findFeatured",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FeaturedStoreResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Stores"
+        ]
+      }
+    },
+    "/stores/directory": {
+      "get": {
+        "operationId": "StoresController_findDirectory",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreDirectoryResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Stores"
+        ]
+      }
+    },
+    "/stores/{slug}/public": {
+      "get": {
+        "operationId": "StoresController_findPublic",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorePublicDetailResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Stores"
+        ]
+      }
+    },
+    "/stores/{slug}/categories/public": {
+      "get": {
+        "operationId": "StoresController_findCategoriesPublic",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicCategoryResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Stores"
+        ]
+      }
+    },
+    "/stores/{slug}/products/{productId}/public": {
+      "get": {
+        "operationId": "StoresController_findPublicProduct",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicProductPageResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Stores"
+        ]
+      }
+    },
+    "/stores/{storeId}/logo": {
+      "post": {
+        "operationId": "StoresController_uploadLogo",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Stores"
+        ]
+      }
+    },
+    "/me/stores": {
+      "get": {
+        "operationId": "MyStoresController_findMine",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StoreResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "MyStores"
+        ]
+      }
+    },
+    "/stores/{storeId}/products": {
+      "post": {
+        "operationId": "ProductsController_create",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductWithVariantsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Products"
+        ]
+      },
+      "get": {
+        "operationId": "ProductsController_findAll",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProductDetailResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Products"
+        ]
+      }
+    },
+    "/stores/{storeId}/products/{productId}": {
+      "get": {
+        "operationId": "ProductsController_findOne",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductDetailResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Products"
+        ]
+      },
+      "patch": {
+        "operationId": "ProductsController_update",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProductDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Products"
+        ]
+      },
+      "delete": {
+        "operationId": "ProductsController_softDelete",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Products"
+        ]
+      }
+    },
+    "/stores/{storeId}/products/{productId}/publish": {
+      "patch": {
+        "operationId": "ProductsController_publish",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Products"
+        ]
+      }
+    },
+    "/stores/{storeId}/products/{productId}/variants": {
+      "post": {
+        "operationId": "ProductsController_addVariant",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateVariantDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VariantResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Products"
+        ]
+      },
+      "get": {
+        "operationId": "ProductsController_listVariants",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VariantResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Products"
+        ]
+      }
+    },
+    "/stores/{storeId}/products/{productId}/variants/{variantId}": {
+      "patch": {
+        "operationId": "ProductsController_updateVariant",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "variantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateVariantDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VariantResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Products"
+        ]
+      },
+      "delete": {
+        "operationId": "ProductsController_deleteVariant",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "variantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VariantResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Products"
+        ]
+      }
+    },
+    "/stores/{storeId}/products/{productId}/images": {
+      "post": {
+        "operationId": "ProductsController_uploadImage",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "replace",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Products"
+        ]
+      }
+    },
+    "/stores/{storeId}/products/{productId}/variants/{variantId}/images": {
+      "post": {
+        "operationId": "ProductsController_uploadVariantImage",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "variantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VariantResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Products"
+        ]
+      }
+    },
+    "/products/search": {
+      "get": {
+        "operationId": "ProductSearchController_search",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductSearchResultResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ProductSearch"
+        ]
+      }
+    },
+    "/stores/{storeId}/notifications": {
+      "get": {
+        "operationId": "NotificationsController_findAll",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "read",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "archived",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NotificationResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/stores/{storeId}/notifications/unread-count": {
+      "get": {
+        "operationId": "NotificationsController_unreadCount",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationCountResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/stores/{storeId}/notifications/{notificationId}/read": {
+      "patch": {
+        "operationId": "NotificationsController_markRead",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "notificationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/stores/{storeId}/notifications/read-all": {
+      "post": {
+        "operationId": "NotificationsController_markAllRead",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationCountResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/stores/{storeId}/notifications/{notificationId}/archive": {
+      "patch": {
+        "operationId": "NotificationsController_archive",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "notificationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/admin/users/store-counts": {
+      "get": {
+        "operationId": "UsersController_getStoreCounts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserStoreCountResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "HealthController_check",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/stores/{storeId}/orders": {
+      "get": {
+        "operationId": "OrderController_findAll",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fulfillmentStatus",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "paymentStatus",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrderResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Order"
+        ]
+      }
+    },
+    "/stores/{storeId}/orders/{orderId}": {
+      "get": {
+        "operationId": "OrderController_findOne",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDetailResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Order"
+        ]
+      }
+    },
+    "/stores/{storeId}/orders/{orderId}/payments": {
+      "post": {
+        "operationId": "OrderController_addPayment",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDetailResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Order"
+        ]
+      }
+    },
+    "/stores/{storeId}/orders/{orderId}/review": {
+      "patch": {
+        "operationId": "OrderController_review",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewPaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderStatusResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Order"
+        ]
+      }
+    },
+    "/stores/{storeId}/orders/{orderId}/fulfillment": {
+      "patch": {
+        "operationId": "OrderController_advance",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvanceFulfillmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderStatusResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Order"
+        ]
+      }
+    },
+    "/stores/{storeId}/orders/{orderId}/cancel": {
+      "patch": {
+        "operationId": "OrderController_cancel",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderStatusResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Order"
+        ]
+      }
+    },
+    "/stores/{slug}/checkout": {
+      "post": {
+        "operationId": "CheckoutController_create",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckoutResultResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Checkout"
+        ]
+      }
+    },
+    "/stores/{slug}/account/confirm": {
+      "get": {
+        "operationId": "CustomerAccountController_confirm",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "token",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmAccountResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "CustomerAccount"
+        ]
+      }
+    },
+    "/stores/{storeId}/customers": {
+      "get": {
+        "operationId": "CustomersController_findAll",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CustomerListItemResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Customers"
+        ]
+      }
+    },
+    "/stores/{storeId}/customers/{customerId}": {
+      "get": {
+        "operationId": "CustomersController_findOne",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerDetailResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Customers"
+        ]
+      }
+    },
+    "/stores/{storeId}/delivery-methods": {
+      "get": {
+        "operationId": "DeliveryConfigController_findAll",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeliveryMethodConfigResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "DeliveryConfig"
+        ]
+      },
+      "post": {
+        "operationId": "DeliveryConfigController_upsert",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertDeliveryMethodDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryMethodConfigResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "DeliveryConfig"
+        ]
+      }
+    },
+    "/stores/{storeId}/delivery-methods/{type}": {
+      "delete": {
+        "operationId": "DeliveryConfigController_remove",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryMethodConfigResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "DeliveryConfig"
+        ]
+      }
+    },
+    "/stores/{slug}/public/delivery-methods": {
+      "get": {
+        "operationId": "PublicDeliveryConfigController_findEnabled",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeliveryMethodConfigResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "PublicDeliveryConfig"
+        ]
+      }
+    },
+    "/stores/{storeId}/pickup-points": {
+      "get": {
+        "operationId": "PickupPointsController_findAll",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PickupPointResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "PickupPoints"
+        ]
+      },
+      "post": {
+        "operationId": "PickupPointsController_create",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePickupPointDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickupPointResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "PickupPoints"
+        ]
+      }
+    },
+    "/stores/{storeId}/pickup-points/{pointId}": {
+      "patch": {
+        "operationId": "PickupPointsController_update",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pointId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePickupPointDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickupPointResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "PickupPoints"
+        ]
+      },
+      "delete": {
+        "operationId": "PickupPointsController_remove",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pointId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickupPointResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "PickupPoints"
+        ]
+      }
+    },
+    "/stores/{slug}/public/pickup-points": {
+      "get": {
+        "operationId": "PublicPickupPointsController_findEnabled",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PickupPointResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "PublicPickupPoints"
+        ]
+      }
+    },
+    "/stores/{storeId}/payment-methods": {
+      "get": {
+        "operationId": "PaymentConfigController_findAll",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "enabled",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentMethodConfigResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "PaymentConfig"
+        ]
+      },
+      "post": {
+        "operationId": "PaymentConfigController_upsert",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertPaymentMethodDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethodConfigResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "PaymentConfig"
+        ]
+      }
+    },
+    "/stores/{slug}/public/payment-methods": {
+      "get": {
+        "operationId": "PublicPaymentConfigController_findEnabled",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentMethodConfigResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "PublicPaymentConfig"
+        ]
+      }
+    },
+    "/contact": {
+      "post": {
+        "operationId": "ContactController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateInquiryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InquiryResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Contact"
+        ]
+      },
+      "get": {
+        "operationId": "ContactController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InquiryResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Contact"
+        ]
+      }
+    },
+    "/contact/{id}/review": {
+      "patch": {
+        "operationId": "ContactController_markReviewed",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InquiryResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Contact"
+        ]
+      }
+    },
+    "/stores/{storeId}/categories": {
+      "post": {
+        "operationId": "CategoriesController_create",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Categories"
+        ]
+      },
+      "get": {
+        "operationId": "CategoriesController_findAll",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Categories"
+        ]
+      }
+    },
+    "/stores/{storeId}/categories/{categoryId}": {
+      "patch": {
+        "operationId": "CategoriesController_update",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "categoryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Categories"
+        ]
+      },
+      "delete": {
+        "operationId": "CategoriesController_delete",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "categoryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Categories"
+        ]
+      }
+    },
+    "/stores/{storeId}/collections": {
+      "post": {
+        "operationId": "CollectionsController_create",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCollectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Collections"
+        ]
+      },
+      "get": {
+        "operationId": "CollectionsController_findAll",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CollectionWithProductsResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Collections"
+        ]
+      }
+    },
+    "/stores/{storeId}/collections/{collectionId}": {
+      "patch": {
+        "operationId": "CollectionsController_update",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "collectionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCollectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Collections"
+        ]
+      },
+      "delete": {
+        "operationId": "CollectionsController_delete",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "collectionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Collections"
+        ]
+      }
+    },
+    "/stores/{storeId}/collections/{collectionId}/products": {
+      "post": {
+        "operationId": "CollectionsController_addProduct",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "collectionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddCollectionProductDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionProductResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Collections"
+        ]
+      }
+    },
+    "/stores/{storeId}/collections/{collectionId}/products/{productId}": {
+      "delete": {
+        "operationId": "CollectionsController_removeProduct",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "collectionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionProductResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Collections"
+        ]
+      }
+    },
+    "/stores/{storeId}/collections/{collectionId}/products/reorder": {
+      "patch": {
+        "operationId": "CollectionsController_reorderProducts",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "collectionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderCollectionProductsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CollectionProductResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Collections"
+        ]
+      }
+    },
+    "/stores/{storeId}/sections": {
+      "post": {
+        "operationId": "StoreSectionsController_create",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateStoreSectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreSectionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "StoreSections"
+        ]
+      },
+      "get": {
+        "operationId": "StoreSectionsController_findAll",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StoreSectionResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "StoreSections"
+        ]
+      }
+    },
+    "/stores/{storeId}/sections/reorder": {
+      "patch": {
+        "operationId": "StoreSectionsController_reorder",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderStoreSectionsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StoreSectionResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "StoreSections"
+        ]
+      }
+    },
+    "/stores/{storeId}/sections/{sectionId}": {
+      "patch": {
+        "operationId": "StoreSectionsController_update",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sectionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStoreSectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreSectionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "StoreSections"
+        ]
+      },
+      "delete": {
+        "operationId": "StoreSectionsController_delete",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sectionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreSectionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "StoreSections"
+        ]
+      }
+    },
+    "/stores/{storeId}/stats/overview": {
+      "get": {
+        "operationId": "StatsController_overview",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatsOverviewResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Stats"
+        ]
+      }
+    },
+    "/stores/{storeId}/stats/analytics": {
+      "get": {
+        "operationId": "StatsController_analytics",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsResultResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Stats"
+        ]
+      }
+    },
+    "/stores/{storeId}/stats/payment-methods": {
+      "get": {
+        "operationId": "StatsController_paymentMethods",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Stats"
+        ]
+      }
+    },
+    "/stores/{storeId}/suggestions": {
+      "get": {
+        "operationId": "SuggestionsController_findAll",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SuggestionResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Suggestions"
+        ]
+      }
+    },
+    "/stores/{slug}/account/register": {
+      "post": {
+        "operationId": "CustomerAuthController_register",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterCustomerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "CustomerAuth"
+        ]
+      }
+    },
+    "/stores/{slug}/account/login": {
+      "post": {
+        "operationId": "CustomerAuthController_login",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginCustomerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "CustomerAuth"
+        ]
+      }
+    },
+    "/stores/{slug}/account/forgot-password": {
+      "post": {
+        "operationId": "CustomerAuthController_forgotPassword",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "CustomerAuth"
+        ]
+      }
+    },
+    "/stores/{slug}/account/change-password": {
+      "post": {
+        "operationId": "CustomerAuthController_changePassword",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeCustomerPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "CustomerAuth"
+        ]
+      }
+    },
+    "/stores/{slug}/account/me": {
+      "get": {
+        "operationId": "CustomerAuthController_me",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerProfileResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "CustomerAuth"
+        ]
+      },
+      "patch": {
+        "operationId": "CustomerAuthController_updateMe",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCustomerProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateCustomerProfileResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "CustomerAuth"
+        ]
+      }
+    },
+    "/stores/{slug}/account/logout": {
+      "post": {
+        "operationId": "CustomerAuthController_logout",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "CustomerAuth"
+        ]
+      }
+    },
+    "/stores/{slug}/restock-requests": {
+      "post": {
+        "operationId": "RestockController_create",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRestockRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Restock"
+        ]
+      }
+    },
+    "/stores/{storeId}/restock-requests": {
+      "get": {
+        "operationId": "RestockController_list",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Restock"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Bias Market API",
+    "description": "Bias Market — niche-first store builder API",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "schemas": {
+      "CreateStoreDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2
+          },
+          "slug": {
+            "type": "string"
+          },
+          "whatsappNumber": {
+            "type": "string",
+            "minLength": 6
+          },
+          "defaultCurrency": {
+            "type": "string"
+          },
+          "themeConfig": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "name",
+          "slug",
+          "whatsappNumber"
+        ]
+      },
+      "StoreResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          },
+          "ownerId": {
+            "type": "string"
+          },
+          "themeConfig": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "logoUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentInstructions": {
+            "type": "string"
+          },
+          "whatsappNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultCurrency": {
+            "type": "string"
+          },
+          "holdWindowHours": {
+            "type": "number"
+          },
+          "lowStockThreshold": {
+            "type": "number"
+          },
+          "lowStockAlertsEnabled": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "locale",
+          "ownerId",
+          "themeConfig",
+          "logoUrl",
+          "paymentInstructions",
+          "whatsappNumber",
+          "defaultCurrency",
+          "holdWindowHours",
+          "lowStockThreshold",
+          "lowStockAlertsEnabled",
+          "createdAt"
+        ]
+      },
+      "StoreOwnerResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "name"
+        ]
+      },
+      "StoreWithOwnerResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          },
+          "ownerId": {
+            "type": "string"
+          },
+          "themeConfig": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "logoUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentInstructions": {
+            "type": "string"
+          },
+          "whatsappNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultCurrency": {
+            "type": "string"
+          },
+          "holdWindowHours": {
+            "type": "number"
+          },
+          "lowStockThreshold": {
+            "type": "number"
+          },
+          "lowStockAlertsEnabled": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "owner": {
+            "$ref": "#/components/schemas/StoreOwnerResponseDto"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "locale",
+          "ownerId",
+          "themeConfig",
+          "logoUrl",
+          "paymentInstructions",
+          "whatsappNumber",
+          "defaultCurrency",
+          "holdWindowHours",
+          "lowStockThreshold",
+          "lowStockAlertsEnabled",
+          "createdAt",
+          "owner"
+        ]
+      },
+      "UpdateStoreDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "whatsappNumber": {
+            "type": "string"
+          },
+          "paymentInstructions": {
+            "type": "string"
+          },
+          "defaultCurrency": {
+            "type": "string"
+          },
+          "themeConfig": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "lowStockAlertsEnabled": {
+            "type": "boolean"
+          },
+          "lowStockThreshold": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      },
+      "PublicStoreListingResponseDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "slug",
+          "createdAt"
+        ]
+      },
+      "PublicCollectionListingResponseDto": {
+        "type": "object",
+        "properties": {
+          "storeSlug": {
+            "type": "string"
+          },
+          "collectionSlug": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "storeSlug",
+          "collectionSlug",
+          "createdAt"
+        ]
+      },
+      "FeaturedStoreResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "logoUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "revenue": {
+            "type": "number"
+          },
+          "orderCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "logoUrl",
+          "revenue",
+          "orderCount"
+        ]
+      },
+      "DirectoryStoreItemResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "logoUrl": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "logoUrl"
+        ]
+      },
+      "StoreDirectoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "stores": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DirectoryStoreItemResponseDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "stores",
+          "total",
+          "page",
+          "limit"
+        ]
+      },
+      "PublicProductVariantResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "stock": {
+            "type": "number",
+            "nullable": true
+          },
+          "reserved": {
+            "type": "number"
+          },
+          "priceOverride": {
+            "type": "string",
+            "nullable": true
+          },
+          "imageOverride": {
+            "type": "string",
+            "nullable": true
+          },
+          "attributes": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "id",
+          "productId",
+          "storeId",
+          "name",
+          "stock",
+          "reserved",
+          "priceOverride",
+          "imageOverride",
+          "attributes"
+        ]
+      },
+      "PublicProductWithVariantsResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "price": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "availableUntil": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "status": {
+            "enum": [
+              "DRAFT",
+              "PUBLISHED"
+            ],
+            "type": "string"
+          },
+          "soldOut": {
+            "type": "boolean"
+          },
+          "deletedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicProductVariantResponseDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "name",
+          "description",
+          "price",
+          "currency",
+          "images",
+          "availableUntil",
+          "status",
+          "soldOut",
+          "deletedAt",
+          "createdAt",
+          "variants"
+        ]
+      },
+      "SectionCollectionProductResponseDto": {
+        "type": "object",
+        "properties": {
+          "collectionId": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "position": {
+            "type": "number"
+          },
+          "product": {
+            "$ref": "#/components/schemas/PublicProductWithVariantsResponseDto"
+          }
+        },
+        "required": [
+          "collectionId",
+          "productId",
+          "position",
+          "product"
+        ]
+      },
+      "SectionCollectionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "products": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SectionCollectionProductResponseDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "name",
+          "slug",
+          "description",
+          "createdAt",
+          "products"
+        ]
+      },
+      "StoreSectionWithCollectionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "COLLECTION",
+              "BANNER",
+              "TEXT_BLOCK"
+            ],
+            "type": "string"
+          },
+          "collectionId": {
+            "type": "string",
+            "nullable": true
+          },
+          "content": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "position": {
+            "type": "number"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "collection": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SectionCollectionResponseDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "type",
+          "collectionId",
+          "content",
+          "position",
+          "createdAt",
+          "collection"
+        ]
+      },
+      "StorePublicDetailResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          },
+          "ownerId": {
+            "type": "string"
+          },
+          "themeConfig": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "logoUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentInstructions": {
+            "type": "string"
+          },
+          "whatsappNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "defaultCurrency": {
+            "type": "string"
+          },
+          "holdWindowHours": {
+            "type": "number"
+          },
+          "lowStockThreshold": {
+            "type": "number"
+          },
+          "lowStockAlertsEnabled": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StoreSectionWithCollectionResponseDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "locale",
+          "ownerId",
+          "themeConfig",
+          "logoUrl",
+          "paymentInstructions",
+          "whatsappNumber",
+          "defaultCurrency",
+          "holdWindowHours",
+          "lowStockThreshold",
+          "lowStockAlertsEnabled",
+          "createdAt",
+          "sections"
+        ]
+      },
+      "PublicCategoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "parentId"
+        ]
+      },
+      "PublicProductStoreResponseDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "logoUrl": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "name",
+          "slug",
+          "logoUrl"
+        ]
+      },
+      "PublicProductPageResponseDto": {
+        "type": "object",
+        "properties": {
+          "store": {
+            "$ref": "#/components/schemas/PublicProductStoreResponseDto"
+          },
+          "product": {
+            "$ref": "#/components/schemas/PublicProductWithVariantsResponseDto"
+          }
+        },
+        "required": [
+          "store",
+          "product"
+        ]
+      },
+      "CreateVariantDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "stock": {
+            "type": "number"
+          },
+          "priceOverride": {
+            "type": "number"
+          },
+          "imageOverride": {
+            "type": "string"
+          },
+          "attributes": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "CreateProductDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2
+          },
+          "categoryIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "description": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "soldOut": {
+            "type": "boolean"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "availableUntil": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "stock": {
+            "type": "number",
+            "minimum": 0
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateVariantDto"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "price"
+        ]
+      },
+      "VariantResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "stock": {
+            "type": "number",
+            "nullable": true
+          },
+          "reserved": {
+            "type": "number"
+          },
+          "priceOverride": {
+            "type": "string",
+            "nullable": true
+          },
+          "imageOverride": {
+            "type": "string",
+            "nullable": true
+          },
+          "attributes": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "productId",
+          "storeId",
+          "name",
+          "stock",
+          "reserved",
+          "priceOverride",
+          "imageOverride",
+          "attributes"
+        ]
+      },
+      "ProductWithVariantsResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "price": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "availableUntil": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "status": {
+            "enum": [
+              "DRAFT",
+              "PUBLISHED"
+            ],
+            "type": "string"
+          },
+          "soldOut": {
+            "type": "boolean"
+          },
+          "deletedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VariantResponseDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "name",
+          "description",
+          "price",
+          "currency",
+          "images",
+          "availableUntil",
+          "status",
+          "soldOut",
+          "deletedAt",
+          "createdAt",
+          "variants"
+        ]
+      },
+      "CategoryInProductResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "ProductCategoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string"
+          },
+          "categoryId": {
+            "type": "string"
+          },
+          "category": {
+            "$ref": "#/components/schemas/CategoryInProductResponseDto"
+          }
+        },
+        "required": [
+          "productId",
+          "categoryId",
+          "category"
+        ]
+      },
+      "ProductDetailResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "price": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "availableUntil": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "status": {
+            "enum": [
+              "DRAFT",
+              "PUBLISHED"
+            ],
+            "type": "string"
+          },
+          "soldOut": {
+            "type": "boolean"
+          },
+          "deletedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VariantResponseDto"
+            }
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductCategoryResponseDto"
+            }
+          },
+          "soldUnits": {
+            "type": "number"
+          },
+          "availableStock": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "name",
+          "description",
+          "price",
+          "currency",
+          "images",
+          "availableUntil",
+          "status",
+          "soldOut",
+          "deletedAt",
+          "createdAt",
+          "variants",
+          "categories",
+          "soldUnits",
+          "availableStock"
+        ]
+      },
+      "UpdateProductDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2
+          },
+          "categoryIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "description": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "soldOut": {
+            "type": "boolean"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "availableUntil": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          }
+        }
+      },
+      "ProductResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "price": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "availableUntil": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "status": {
+            "enum": [
+              "DRAFT",
+              "PUBLISHED"
+            ],
+            "type": "string"
+          },
+          "soldOut": {
+            "type": "boolean"
+          },
+          "deletedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "name",
+          "description",
+          "price",
+          "currency",
+          "images",
+          "availableUntil",
+          "status",
+          "soldOut",
+          "deletedAt",
+          "createdAt"
+        ]
+      },
+      "UpdateVariantDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "stock": {
+            "type": "number",
+            "nullable": true
+          },
+          "priceOverride": {
+            "type": "number",
+            "nullable": true
+          },
+          "imageOverride": {
+            "type": "string",
+            "nullable": true
+          },
+          "attributes": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "SearchProductStoreResponseDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "slug"
+        ]
+      },
+      "SearchProductResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "price": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "store": {
+            "$ref": "#/components/schemas/SearchProductStoreResponseDto"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "price",
+          "currency",
+          "images",
+          "store"
+        ]
+      },
+      "ProductSearchResultResponseDto": {
+        "type": "object",
+        "properties": {
+          "products": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchProductResponseDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "products",
+          "total",
+          "page",
+          "limit"
+        ]
+      },
+      "NotificationResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "LOW_STOCK",
+              "OUT_OF_STOCK"
+            ],
+            "type": "string"
+          },
+          "entityType": {
+            "type": "string"
+          },
+          "entityId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "read": {
+            "type": "boolean"
+          },
+          "readAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "archived": {
+            "type": "boolean"
+          },
+          "archivedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "type",
+          "entityType",
+          "entityId",
+          "title",
+          "body",
+          "metadata",
+          "read",
+          "readAt",
+          "archived",
+          "archivedAt",
+          "createdAt"
+        ]
+      },
+      "NotificationCountResponseDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "count"
+        ]
+      },
+      "UserStoreCountResponseDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "storeCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "userId",
+          "storeCount"
+        ]
+      },
+      "OrderProductResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "price": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "availableUntil": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "status": {
+            "enum": [
+              "DRAFT",
+              "PUBLISHED"
+            ],
+            "type": "string"
+          },
+          "soldOut": {
+            "type": "boolean"
+          },
+          "deletedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "name",
+          "description",
+          "price",
+          "currency",
+          "images",
+          "availableUntil",
+          "status",
+          "soldOut",
+          "deletedAt",
+          "createdAt"
+        ]
+      },
+      "OrderVariantResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "stock": {
+            "type": "number",
+            "nullable": true
+          },
+          "reserved": {
+            "type": "number"
+          },
+          "priceOverride": {
+            "type": "string",
+            "nullable": true
+          },
+          "imageOverride": {
+            "type": "string",
+            "nullable": true
+          },
+          "attributes": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "id",
+          "productId",
+          "storeId",
+          "name",
+          "stock",
+          "reserved",
+          "priceOverride",
+          "imageOverride",
+          "attributes"
+        ]
+      },
+      "OrderItemResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "orderId": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "variantId": {
+            "type": "string",
+            "nullable": true
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unitPriceAtPurchase": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "product": {
+            "$ref": "#/components/schemas/OrderProductResponseDto"
+          },
+          "variant": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrderVariantResponseDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "orderId",
+          "storeId",
+          "productId",
+          "variantId",
+          "quantity",
+          "unitPriceAtPurchase",
+          "currency",
+          "createdAt",
+          "product",
+          "variant"
+        ]
+      },
+      "OrderPaymentResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "orderId": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "method": {
+            "nullable": true,
+            "enum": [
+              "YAPE",
+              "PLIN",
+              "TRANSFER",
+              "CASH"
+            ],
+            "type": "string"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "imageUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "orderId",
+          "storeId",
+          "amount",
+          "currency",
+          "method",
+          "note",
+          "imageUrl",
+          "createdAt"
+        ]
+      },
+      "OrderResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "customerId": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerPhone": {
+            "type": "string"
+          },
+          "customerName": {
+            "type": "string",
+            "nullable": true
+          },
+          "deliveryMethodType": {
+            "enum": [
+              "PICKUP",
+              "COURIER"
+            ],
+            "type": "string"
+          },
+          "deliveryDetails": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true
+          },
+          "pickupPointId": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentStatus": {
+            "enum": [
+              "PENDING_PAYMENT",
+              "PARTIALLY_PAID",
+              "PAYMENT_SUBMITTED",
+              "VERIFIED",
+              "REJECTED",
+              "CANCELLED"
+            ],
+            "type": "string"
+          },
+          "paymentRejectionReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "fulfillmentStatus": {
+            "enum": [
+              "ORDERING",
+              "IN_TRANSIT",
+              "READY",
+              "COMPLETED"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "CANCELLED"
+            ],
+            "type": "string"
+          },
+          "cancellationResolution": {
+            "nullable": true,
+            "enum": [
+              "REFUNDED",
+              "RETAINED",
+              "STORE_CREDIT"
+            ],
+            "type": "string"
+          },
+          "cancellationReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalAmount": {
+            "type": "string"
+          },
+          "requiredAmount": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paidAmount": {
+            "type": "number"
+          },
+          "pendingAmount": {
+            "type": "number"
+          },
+          "paidPercentage": {
+            "type": "number"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderItemResponseDto"
+            }
+          },
+          "payments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderPaymentResponseDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "customerId",
+          "customerEmail",
+          "customerPhone",
+          "customerName",
+          "deliveryMethodType",
+          "deliveryDetails",
+          "pickupPointId",
+          "paymentStatus",
+          "paymentRejectionReason",
+          "fulfillmentStatus",
+          "status",
+          "cancellationResolution",
+          "cancellationReason",
+          "totalAmount",
+          "requiredAmount",
+          "currency",
+          "expiresAt",
+          "createdAt",
+          "paidAmount",
+          "pendingAmount",
+          "paidPercentage",
+          "items",
+          "payments"
+        ]
+      },
+      "PaymentProofResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "orderId": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "imageUrl": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "PENDING_REVIEW",
+              "APPROVED",
+              "REJECTED"
+            ],
+            "type": "string"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reviewedBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "reviewedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "orderId",
+          "storeId",
+          "imageUrl",
+          "status",
+          "submittedAt",
+          "reviewedBy",
+          "reviewedAt"
+        ]
+      },
+      "OrderDetailResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "customerId": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerPhone": {
+            "type": "string"
+          },
+          "customerName": {
+            "type": "string",
+            "nullable": true
+          },
+          "deliveryMethodType": {
+            "enum": [
+              "PICKUP",
+              "COURIER"
+            ],
+            "type": "string"
+          },
+          "deliveryDetails": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true
+          },
+          "pickupPointId": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentStatus": {
+            "enum": [
+              "PENDING_PAYMENT",
+              "PARTIALLY_PAID",
+              "PAYMENT_SUBMITTED",
+              "VERIFIED",
+              "REJECTED",
+              "CANCELLED"
+            ],
+            "type": "string"
+          },
+          "paymentRejectionReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "fulfillmentStatus": {
+            "enum": [
+              "ORDERING",
+              "IN_TRANSIT",
+              "READY",
+              "COMPLETED"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "CANCELLED"
+            ],
+            "type": "string"
+          },
+          "cancellationResolution": {
+            "nullable": true,
+            "enum": [
+              "REFUNDED",
+              "RETAINED",
+              "STORE_CREDIT"
+            ],
+            "type": "string"
+          },
+          "cancellationReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalAmount": {
+            "type": "string"
+          },
+          "requiredAmount": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paidAmount": {
+            "type": "number"
+          },
+          "pendingAmount": {
+            "type": "number"
+          },
+          "paidPercentage": {
+            "type": "number"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderItemResponseDto"
+            }
+          },
+          "payments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderPaymentResponseDto"
+            }
+          },
+          "proofs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentProofResponseDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "customerId",
+          "customerEmail",
+          "customerPhone",
+          "customerName",
+          "deliveryMethodType",
+          "deliveryDetails",
+          "pickupPointId",
+          "paymentStatus",
+          "paymentRejectionReason",
+          "fulfillmentStatus",
+          "status",
+          "cancellationResolution",
+          "cancellationReason",
+          "totalAmount",
+          "requiredAmount",
+          "currency",
+          "expiresAt",
+          "createdAt",
+          "paidAmount",
+          "pendingAmount",
+          "paidPercentage",
+          "items",
+          "payments",
+          "proofs"
+        ]
+      },
+      "ReviewPaymentDto": {
+        "type": "object",
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "approve",
+              "reject"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "decision"
+        ]
+      },
+      "OrderStatusResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "customerId": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerPhone": {
+            "type": "string"
+          },
+          "customerName": {
+            "type": "string",
+            "nullable": true
+          },
+          "deliveryMethodType": {
+            "enum": [
+              "PICKUP",
+              "COURIER"
+            ],
+            "type": "string"
+          },
+          "deliveryDetails": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true
+          },
+          "pickupPointId": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentStatus": {
+            "enum": [
+              "PENDING_PAYMENT",
+              "PARTIALLY_PAID",
+              "PAYMENT_SUBMITTED",
+              "VERIFIED",
+              "REJECTED",
+              "CANCELLED"
+            ],
+            "type": "string"
+          },
+          "paymentRejectionReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "fulfillmentStatus": {
+            "enum": [
+              "ORDERING",
+              "IN_TRANSIT",
+              "READY",
+              "COMPLETED"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "CANCELLED"
+            ],
+            "type": "string"
+          },
+          "cancellationResolution": {
+            "nullable": true,
+            "enum": [
+              "REFUNDED",
+              "RETAINED",
+              "STORE_CREDIT"
+            ],
+            "type": "string"
+          },
+          "cancellationReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalAmount": {
+            "type": "string"
+          },
+          "requiredAmount": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "customerId",
+          "customerEmail",
+          "customerPhone",
+          "customerName",
+          "deliveryMethodType",
+          "deliveryDetails",
+          "pickupPointId",
+          "paymentStatus",
+          "paymentRejectionReason",
+          "fulfillmentStatus",
+          "status",
+          "cancellationResolution",
+          "cancellationReason",
+          "totalAmount",
+          "requiredAmount",
+          "currency",
+          "expiresAt",
+          "createdAt"
+        ]
+      },
+      "AdvanceFulfillmentDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "IN_TRANSIT",
+              "READY",
+              "COMPLETED"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "CancelOrderDto": {
+        "type": "object",
+        "properties": {
+          "resolution": {
+            "type": "string",
+            "enum": [
+              "REFUNDED",
+              "RETAINED",
+              "STORE_CREDIT"
+            ]
+          },
+          "retainMode": {
+            "type": "string",
+            "enum": [
+              "FULL",
+              "PARTIAL"
+            ]
+          },
+          "retainedAmount": {
+            "type": "number",
+            "minimum": 0
+          },
+          "releasedResolution": {
+            "type": "string",
+            "enum": [
+              "REFUNDED",
+              "STORE_CREDIT"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "resolution"
+        ]
+      },
+      "CreateOrderItemDto": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string"
+          },
+          "variantId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "productId",
+          "quantity"
+        ]
+      },
+      "CreateOrderDto": {
+        "type": "object",
+        "properties": {
+          "deliveryMethodType": {
+            "type": "string",
+            "enum": [
+              "PICKUP",
+              "COURIER"
+            ]
+          },
+          "pickupPointId": {
+            "type": "string"
+          },
+          "customerPhone": {
+            "type": "string",
+            "minLength": 6
+          },
+          "customerName": {
+            "type": "string"
+          },
+          "customerEmail": {
+            "type": "string",
+            "format": "email"
+          },
+          "items": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateOrderItemDto"
+            }
+          }
+        },
+        "required": [
+          "deliveryMethodType",
+          "customerPhone",
+          "items"
+        ]
+      },
+      "CheckoutOrderItemResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "orderId": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "variantId": {
+            "type": "string",
+            "nullable": true
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unitPriceAtPurchase": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "orderId",
+          "storeId",
+          "productId",
+          "variantId",
+          "quantity",
+          "unitPriceAtPurchase",
+          "currency",
+          "createdAt"
+        ]
+      },
+      "CheckoutOrderResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "customerId": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerPhone": {
+            "type": "string"
+          },
+          "customerName": {
+            "type": "string",
+            "nullable": true
+          },
+          "deliveryMethodType": {
+            "enum": [
+              "PICKUP",
+              "COURIER"
+            ],
+            "type": "string"
+          },
+          "deliveryDetails": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true
+          },
+          "pickupPointId": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentStatus": {
+            "enum": [
+              "PENDING_PAYMENT",
+              "PARTIALLY_PAID",
+              "PAYMENT_SUBMITTED",
+              "VERIFIED",
+              "REJECTED",
+              "CANCELLED"
+            ],
+            "type": "string"
+          },
+          "paymentRejectionReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "fulfillmentStatus": {
+            "enum": [
+              "ORDERING",
+              "IN_TRANSIT",
+              "READY",
+              "COMPLETED"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "CANCELLED"
+            ],
+            "type": "string"
+          },
+          "cancellationResolution": {
+            "nullable": true,
+            "enum": [
+              "REFUNDED",
+              "RETAINED",
+              "STORE_CREDIT"
+            ],
+            "type": "string"
+          },
+          "cancellationReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalAmount": {
+            "type": "string"
+          },
+          "requiredAmount": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CheckoutOrderItemResponseDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "customerId",
+          "customerEmail",
+          "customerPhone",
+          "customerName",
+          "deliveryMethodType",
+          "deliveryDetails",
+          "pickupPointId",
+          "paymentStatus",
+          "paymentRejectionReason",
+          "fulfillmentStatus",
+          "status",
+          "cancellationResolution",
+          "cancellationReason",
+          "totalAmount",
+          "requiredAmount",
+          "currency",
+          "expiresAt",
+          "createdAt",
+          "items"
+        ]
+      },
+      "CheckoutResultResponseDto": {
+        "type": "object",
+        "properties": {
+          "order": {
+            "$ref": "#/components/schemas/CheckoutOrderResponseDto"
+          },
+          "whatsappUrl": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "order",
+          "whatsappUrl"
+        ]
+      },
+      "ConfirmAccountCustomerResponseDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string"
+          },
+          "hasPassword": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "email",
+          "phone",
+          "hasPassword"
+        ]
+      },
+      "AccountOrderResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "paymentStatus": {
+            "enum": [
+              "PENDING_PAYMENT",
+              "PARTIALLY_PAID",
+              "PAYMENT_SUBMITTED",
+              "VERIFIED",
+              "REJECTED",
+              "CANCELLED"
+            ],
+            "type": "string"
+          },
+          "fulfillmentStatus": {
+            "enum": [
+              "ORDERING",
+              "IN_TRANSIT",
+              "READY",
+              "COMPLETED"
+            ],
+            "type": "string"
+          },
+          "totalAmount": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "paymentStatus",
+          "fulfillmentStatus",
+          "totalAmount",
+          "currency",
+          "createdAt"
+        ]
+      },
+      "ConfirmAccountResponseDto": {
+        "type": "object",
+        "properties": {
+          "purpose": {
+            "enum": [
+              "confirm",
+              "reset",
+              "change-email",
+              "change-phone"
+            ],
+            "type": "string"
+          },
+          "customer": {
+            "$ref": "#/components/schemas/ConfirmAccountCustomerResponseDto"
+          },
+          "orders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccountOrderResponseDto"
+            }
+          }
+        },
+        "required": [
+          "purpose",
+          "customer",
+          "orders"
+        ]
+      },
+      "CustomerListItemResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "emailVerified": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "orderCount": {
+            "type": "number"
+          },
+          "lifetimeSpend": {
+            "type": "number"
+          },
+          "lastOrderAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "phone",
+          "email",
+          "emailVerified",
+          "createdAt",
+          "orderCount",
+          "lifetimeSpend",
+          "lastOrderAt"
+        ]
+      },
+      "CustomerDetailCustomerResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "emailVerified": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "phone",
+          "email",
+          "emailVerified",
+          "createdAt"
+        ]
+      },
+      "CustomerDetailResponseDto": {
+        "type": "object",
+        "properties": {
+          "customer": {
+            "$ref": "#/components/schemas/CustomerDetailCustomerResponseDto"
+          },
+          "orders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderResponseDto"
+            }
+          }
+        },
+        "required": [
+          "customer",
+          "orders"
+        ]
+      },
+      "DeliveryMethodConfigResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "PICKUP",
+              "COURIER"
+            ],
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "type",
+          "enabled",
+          "details",
+          "createdAt"
+        ]
+      },
+      "UpsertDeliveryMethodDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "PICKUP",
+              "COURIER"
+            ]
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "PickupPointResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "sortOrder": {
+            "type": "number"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "label",
+          "enabled",
+          "sortOrder",
+          "createdAt"
+        ]
+      },
+      "CreatePickupPointDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "sortOrder": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "label"
+        ]
+      },
+      "UpdatePickupPointDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "sortOrder": {
+            "type": "number"
+          }
+        }
+      },
+      "PaymentMethodConfigResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "method": {
+            "enum": [
+              "YAPE",
+              "PLIN",
+              "TRANSFER",
+              "CASH"
+            ],
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "depositPercentPickup": {
+            "type": "number"
+          },
+          "depositPercentCourier": {
+            "type": "number"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "method",
+          "enabled",
+          "details",
+          "depositPercentPickup",
+          "depositPercentCourier",
+          "createdAt"
+        ]
+      },
+      "UpsertPaymentMethodDto": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "type": "string",
+            "enum": [
+              "YAPE",
+              "PLIN",
+              "TRANSFER",
+              "CASH"
+            ]
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "method"
+        ]
+      },
+      "CreateInquiryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "company": {
+            "type": "string"
+          },
+          "inquiryType": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "name",
+          "email",
+          "message"
+        ]
+      },
+      "InquiryResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "company": {
+            "type": "string",
+            "nullable": true
+          },
+          "inquiryType": {
+            "type": "string",
+            "nullable": true
+          },
+          "message": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "NEW",
+              "REVIEWED",
+              "ARCHIVED"
+            ],
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "company",
+          "inquiryType",
+          "message",
+          "status",
+          "createdAt"
+        ]
+      },
+      "CreateCategoryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "parentId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "CategoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "parentId",
+          "name",
+          "createdAt"
+        ]
+      },
+      "UpdateCategoryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "parentId": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateCollectionDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "CollectionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "name",
+          "slug",
+          "description",
+          "createdAt"
+        ]
+      },
+      "ProductInCollectionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "price": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "availableUntil": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "status": {
+            "enum": [
+              "DRAFT",
+              "PUBLISHED"
+            ],
+            "type": "string"
+          },
+          "soldOut": {
+            "type": "boolean"
+          },
+          "deletedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "name",
+          "description",
+          "price",
+          "currency",
+          "images",
+          "availableUntil",
+          "status",
+          "soldOut",
+          "deletedAt",
+          "createdAt"
+        ]
+      },
+      "CollectionProductWithProductResponseDto": {
+        "type": "object",
+        "properties": {
+          "collectionId": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "position": {
+            "type": "number"
+          },
+          "product": {
+            "$ref": "#/components/schemas/ProductInCollectionResponseDto"
+          }
+        },
+        "required": [
+          "collectionId",
+          "productId",
+          "position",
+          "product"
+        ]
+      },
+      "CollectionWithProductsResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "products": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CollectionProductWithProductResponseDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "name",
+          "slug",
+          "description",
+          "createdAt",
+          "products"
+        ]
+      },
+      "UpdateCollectionDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "AddCollectionProductDto": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string"
+          },
+          "position": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "productId"
+        ]
+      },
+      "CollectionProductResponseDto": {
+        "type": "object",
+        "properties": {
+          "collectionId": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "position": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "collectionId",
+          "productId",
+          "position"
+        ]
+      },
+      "ReorderCollectionProductsDto": {
+        "type": "object",
+        "properties": {
+          "productIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "productIds"
+        ]
+      },
+      "CreateStoreSectionDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "COLLECTION",
+              "BANNER",
+              "TEXT_BLOCK"
+            ]
+          },
+          "collectionId": {
+            "type": "string"
+          },
+          "content": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "position": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "StoreSectionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "COLLECTION",
+              "BANNER",
+              "TEXT_BLOCK"
+            ],
+            "type": "string"
+          },
+          "collectionId": {
+            "type": "string",
+            "nullable": true
+          },
+          "content": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "position": {
+            "type": "number"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "type",
+          "collectionId",
+          "content",
+          "position",
+          "createdAt"
+        ]
+      },
+      "ReorderStoreSectionsDto": {
+        "type": "object",
+        "properties": {
+          "sectionIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "sectionIds"
+        ]
+      },
+      "UpdateStoreSectionDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "COLLECTION",
+              "BANNER",
+              "TEXT_BLOCK"
+            ]
+          },
+          "collectionId": {
+            "type": "string"
+          },
+          "content": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "position": {
+            "type": "number"
+          }
+        }
+      },
+      "PaymentStatusCountsResponseDto": {
+        "type": "object",
+        "properties": {
+          "PENDING_PAYMENT": {
+            "type": "number"
+          },
+          "PARTIALLY_PAID": {
+            "type": "number"
+          },
+          "PAYMENT_SUBMITTED": {
+            "type": "number"
+          },
+          "VERIFIED": {
+            "type": "number"
+          },
+          "REJECTED": {
+            "type": "number"
+          },
+          "CANCELLED": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "PENDING_PAYMENT",
+          "PARTIALLY_PAID",
+          "PAYMENT_SUBMITTED",
+          "VERIFIED",
+          "REJECTED",
+          "CANCELLED"
+        ]
+      },
+      "FulfillmentStatusCountsResponseDto": {
+        "type": "object",
+        "properties": {
+          "ORDERING": {
+            "type": "number"
+          },
+          "IN_TRANSIT": {
+            "type": "number"
+          },
+          "READY": {
+            "type": "number"
+          },
+          "COMPLETED": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "ORDERING",
+          "IN_TRANSIT",
+          "READY",
+          "COMPLETED"
+        ]
+      },
+      "StatsOverviewResponseDto": {
+        "type": "object",
+        "properties": {
+          "revenue": {
+            "type": "number"
+          },
+          "totalOrders": {
+            "type": "number"
+          },
+          "paymentStatusCounts": {
+            "$ref": "#/components/schemas/PaymentStatusCountsResponseDto"
+          },
+          "fulfillmentStatusCounts": {
+            "$ref": "#/components/schemas/FulfillmentStatusCountsResponseDto"
+          },
+          "lowStockCount": {
+            "type": "number"
+          },
+          "recentOrders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderResponseDto"
+            }
+          }
+        },
+        "required": [
+          "revenue",
+          "totalOrders",
+          "paymentStatusCounts",
+          "fulfillmentStatusCounts",
+          "lowStockCount",
+          "recentOrders"
+        ]
+      },
+      "AnalyticsBucketResponseDto": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "revenue": {
+            "type": "number"
+          },
+          "orderCount": {
+            "type": "number"
+          },
+          "newCustomers": {
+            "type": "number"
+          },
+          "returningCustomers": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "revenue",
+          "orderCount",
+          "newCustomers",
+          "returningCustomers"
+        ]
+      },
+      "AnalyticsTopProductResponseDto": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "unitsSold": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "productId",
+          "name",
+          "unitsSold"
+        ]
+      },
+      "AnalyticsResultResponseDto": {
+        "type": "object",
+        "properties": {
+          "range": {
+            "enum": [
+              "30d",
+              "90d",
+              "12m"
+            ],
+            "type": "string"
+          },
+          "buckets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsBucketResponseDto"
+            }
+          },
+          "topProducts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsTopProductResponseDto"
+            }
+          }
+        },
+        "required": [
+          "range",
+          "buckets",
+          "topProducts"
+        ]
+      },
+      "SuggestionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "severity": {
+            "enum": [
+              "info",
+              "warning",
+              "critical"
+            ],
+            "type": "string"
+          },
+          "titleKey": {
+            "type": "string"
+          },
+          "bodyParams": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "id",
+          "severity",
+          "titleKey",
+          "bodyParams"
+        ]
+      },
+      "RegisterCustomerDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 1
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8
+          }
+        },
+        "required": [
+          "token",
+          "password"
+        ]
+      },
+      "OkResponseDto": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ok"
+        ]
+      },
+      "LoginCustomerDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "minLength": 1
+          },
+          "password": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "phone",
+          "password"
+        ]
+      },
+      "ForgotPasswordDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "phone"
+        ]
+      },
+      "ChangeCustomerPasswordDto": {
+        "type": "object",
+        "properties": {
+          "currentPassword": {
+            "type": "string",
+            "minLength": 1
+          },
+          "newPassword": {
+            "type": "string",
+            "minLength": 8
+          }
+        },
+        "required": [
+          "currentPassword",
+          "newPassword"
+        ]
+      },
+      "CustomerProfileCustomerResponseDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string"
+          },
+          "emailVerified": {
+            "type": "boolean"
+          },
+          "pendingEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "pendingPhone": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "name",
+          "email",
+          "phone",
+          "emailVerified",
+          "pendingEmail",
+          "pendingPhone"
+        ]
+      },
+      "CustomerProfileResponseDto": {
+        "type": "object",
+        "properties": {
+          "customer": {
+            "$ref": "#/components/schemas/CustomerProfileCustomerResponseDto"
+          },
+          "orders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccountOrderResponseDto"
+            }
+          }
+        },
+        "required": [
+          "customer",
+          "orders"
+        ]
+      },
+      "UpdateCustomerProfileDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "phone": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdateCustomerProfileResponseDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "pendingEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "pendingPhone": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "name",
+          "pendingEmail",
+          "pendingPhone"
+        ]
+      },
+      "CreateRestockRequestDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "phone": {
+            "type": "string",
+            "minLength": 6
+          },
+          "productId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "variantId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "phone",
+          "productId"
+        ]
+      }
+    }
+  }
+}

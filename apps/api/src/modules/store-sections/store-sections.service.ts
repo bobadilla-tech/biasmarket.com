@@ -7,11 +7,11 @@ import {
 import type { Prisma } from "@biasmarket/db";
 import { PrismaService } from "../../prisma/prisma.service.js";
 import {
-  CreateStoreSectionDto,
+  type CreateStoreSectionDto,
   StoreSectionTypeDto,
 } from "./dto/create-store-section.dto.js";
-import { UpdateStoreSectionDto } from "./dto/update-store-section.dto.js";
-import { ReorderStoreSectionsDto } from "./dto/reorder-store-sections.dto.js";
+import type { UpdateStoreSectionDto } from "./dto/update-store-section.dto.js";
+import type { ReorderStoreSectionsDto } from "./dto/reorder-store-sections.dto.js";
 
 @Injectable()
 export class StoreSectionsService {

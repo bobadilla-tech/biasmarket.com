@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { customerAuthApi } from "../api/customer-auth.api";
+import { apiClient } from "@/lib/api-client";
 
 export function useCustomerChangePassword(slug: string) {
   return useMutation({
@@ -8,6 +8,10 @@ export function useCustomerChangePassword(slug: string) {
         currentPassword: string;
         newPassword: string;
       },
-    ) => customerAuthApi.changePassword(slug, currentPassword, newPassword),
+    ) =>
+      apiClient.customerAuth.changePassword(slug, {
+        currentPassword,
+        newPassword,
+      }),
   });
 }

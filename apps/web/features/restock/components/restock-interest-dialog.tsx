@@ -8,8 +8,8 @@ import { X } from "lucide-react";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { useRequestRestock } from "../mutations/use-request-restock";
 import {
-  restockRequestFormSchema,
   type RestockRequestFormInput,
+  restockRequestFormSchema,
 } from "../schemas/restock-request.schema";
 
 const inputClassName =

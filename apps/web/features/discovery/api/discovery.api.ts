@@ -1,32 +1,21 @@
-import { apiFetch } from "@/lib/api";
-import {
-  storeDirectoryResultSchema,
-  storeListingListSchema,
-} from "../schemas/store-listing.schema";
-import { productSearchResultSchema } from "../schemas/product-search.schema";
-
-function buildQuery(params: Record<string, string | number | undefined>) {
-  const searchParams = new URLSearchParams();
-  for (const [key, value] of Object.entries(params)) {
-    if (value !== undefined && value !== "") {
-      searchParams.set(key, String(value));
-    }
-  }
-  const qs = searchParams.toString();
-  return qs ? `?${qs}` : "";
-}
+import { apiClient } from "@/lib/api-client";
 
 export const discoveryApi = {
-  async getFeaturedStores(limit?: number) {
-    const data = await apiFetch(`/stores/featured${buildQuery({ limit })}`);
-    return storeListingListSchema.parse(data);
+  getFeaturedStores(limit?: number) {
+    return apiClient.stores.findFeatured({
+      limit: limit === undefined ? undefined : String(limit),
+    });
   },
-  async getStoreDirectory(params: { q?: string; page?: number } = {}) {
-    const data = await apiFetch(`/stores/directory${buildQuery(params)}`);
-    return storeDirectoryResultSchema.parse(data);
+  getStoreDirectory(params: { q?: string; page?: number } = {}) {
+    return apiClient.stores.findDirectory({
+      q: params.q,
+      page: params.page === undefined ? undefined : String(params.page),
+    });
   },
-  async searchProducts(params: { q?: string; page?: number } = {}) {
-    const data = await apiFetch(`/products/search${buildQuery(params)}`);
-    return productSearchResultSchema.parse(data);
+  searchProducts(params: { q?: string; page?: number } = {}) {
+    return apiClient.productSearch.search({
+      q: params.q,
+      page: params.page === undefined ? undefined : String(params.page),
+    });
   },
 };

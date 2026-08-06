@@ -47,7 +47,7 @@ export function NotificationsSection({ store }: { store: DashboardStore }) {
   useEffect(() => {
     setLowStockAlertsEnabled(store.lowStockAlertsEnabled ?? true);
     setLowStockThreshold(String(store.lowStockThreshold ?? 5));
-  }, [store.id, store.lowStockAlertsEnabled, store.lowStockThreshold]);
+  }, [store.lowStockAlertsEnabled, store.lowStockThreshold]);
 
   useSavedFlash(saveStockAlerts.isSuccess, saveStockAlerts.reset);
 

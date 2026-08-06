@@ -15,7 +15,8 @@ export function usePaymentMethodsBreakdown(
 ) {
   const { data, isPending, error } = useQuery({
     queryKey: paymentMethodsKeys.byStore(storeId ?? "", range),
-    queryFn: () => statsApi.getPaymentMethodsBreakdown(storeId as string, range),
+    queryFn: () =>
+      statsApi.getPaymentMethodsBreakdown(storeId as string, range),
     enabled: !!storeId,
   });
 

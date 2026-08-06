@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/shared/empty-state";
 import { cn } from "@/lib/utils";
-import type { RecentOrder } from "../schemas/stats-overview.schema";
+import type { OrderResponseDto } from "@biasmarket/types";
 
 function formatOrderDate(
   createdAt: string,
@@ -35,7 +35,7 @@ function formatOrderDate(
 }
 
 function getOrderStatus(
-  order: RecentOrder,
+  order: OrderResponseDto,
   t: ReturnType<typeof useTranslations>,
 ) {
   if (order.paymentStatus === "REJECTED") {
@@ -82,7 +82,7 @@ function getOrderStatus(
 }
 
 export function RecentOrdersList(
-  { orders, locale }: { orders: RecentOrder[]; locale: string },
+  { orders, locale }: { orders: OrderResponseDto[]; locale: string },
 ) {
   const t = useTranslations("dashboard.overview");
   const tOrders = useTranslations("dashboard.orders");

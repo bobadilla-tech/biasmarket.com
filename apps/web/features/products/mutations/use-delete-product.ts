@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { productsApi } from "../api/products.api";
+import { apiClient } from "@/lib/api-client";
 import { productsKeys } from "../queries/use-products";
 
 export function useDeleteProduct(
@@ -12,7 +12,9 @@ export function useDeleteProduct(
 
   return useMutation({
     mutationFn: (productId: string) =>
-      productsApi.remove(storeId as string, productId, fallbackErrorMessage),
+      apiClient.products.softDelete(storeId as string, productId, {
+        fallbackErrorMessage,
+      }),
     onSuccess: () => {
       if (!storeId) return;
       queryClient.invalidateQueries({

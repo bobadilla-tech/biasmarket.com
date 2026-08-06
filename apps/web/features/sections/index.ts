@@ -1,4 +1,3 @@
-export { sectionsApi } from "./api/sections.api";
 export { sectionsKeys, useSections } from "./queries/use-sections";
 export { useCreateSection } from "./mutations/use-create-section";
 export { useDeleteSection } from "./mutations/use-delete-section";
@@ -8,8 +7,4 @@ export { SectionRow } from "./components/section-row";
 export {
   type SectionFormInput,
   sectionFormSchema,
-  type SectionType,
-  type StoreSection,
-  storeSectionListSchema,
-  storeSectionSchema,
 } from "./schemas/section.schema";

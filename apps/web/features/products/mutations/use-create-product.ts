@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api-client";
 import { productsApi } from "../api/products.api";
 import { productsKeys } from "../queries/use-products";
 import { keyForAttributes } from "../lib/variant-key";
@@ -23,7 +24,7 @@ export function useCreateProduct(storeId: string | undefined) {
       fallbackErrorMessage?: string;
     }) => {
       const sid = storeId as string;
-      const created = await productsApi.create(
+      const created = await apiClient.products.create(
         sid,
         {
           name: input.name,
@@ -36,7 +37,7 @@ export function useCreateProduct(storeId: string | undefined) {
           variants: input.variants.length > 0 ? input.variants : undefined,
           categoryIds: input.categoryId ? [input.categoryId] : undefined,
         },
-        input.fallbackErrorMessage,
+        { fallbackErrorMessage: input.fallbackErrorMessage },
       );
 
       if (input.imageFile) {

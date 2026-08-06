@@ -1,6 +1,10 @@
 import { Injectable } from "@nestjs/common";
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { randomUUID } from "crypto";
+import {
+  DeleteObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
+import { randomUUID } from "node:crypto";
 
 function requiredEnv(name: string): string {
   const value = process.env[name];
@@ -34,6 +38,14 @@ export class StorageService {
 
   async uploadPaymentImage(buffer: Buffer, mimeType: string): Promise<string> {
     return this.upload(this.bucket, "payments", buffer, mimeType);
+  }
+
+  // Inverse of `upload`'s `${publicUrl}/${bucket}/${key}` URL shape.
+  async deleteImage(url: string): Promise<void> {
+    const key = url.slice(`${this.publicUrl}/${this.bucket}/`.length);
+    await this.client.send(
+      new DeleteObjectCommand({ Bucket: this.bucket, Key: key }),
+    );
   }
 
   private async upload(

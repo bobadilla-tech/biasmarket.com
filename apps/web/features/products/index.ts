@@ -1,5 +1,4 @@
 export { productsApi } from "./api/products.api";
-export { categoriesApi } from "./api/categories.api";
 
 export { productsKeys, useProducts } from "./queries/use-products";
 export { categoriesKeys, useCategories } from "./queries/use-categories";
@@ -20,23 +19,7 @@ export { ProductTile } from "./components/product-tile";
 export { ProductRow } from "./components/product-row";
 export { ProductSheet } from "./components/product-sheet";
 
-export {
-  type Category,
-  categoryListSchema,
-  categorySchema,
-} from "./schemas/category.schema";
-export {
-  type OptionTypeDraft,
-  type Variant,
-  type VariantDraft,
-  variantListSchema,
-  variantSchema,
-} from "./schemas/variant.schema";
-export {
-  type Product,
-  productListSchema,
-  productSchema,
-} from "./schemas/product.schema";
+export type { OptionTypeDraft, VariantDraft } from "./schemas/variant.schema";
 export {
   type ProductFormInput,
   productFormSchema,

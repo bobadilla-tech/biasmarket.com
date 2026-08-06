@@ -6,10 +6,10 @@ import {
 } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service.js";
 import { slugify } from "@biasmarket/utils/strings";
-import { CreateCollectionDto } from "./dto/create-collection.dto.js";
-import { UpdateCollectionDto } from "./dto/update-collection.dto.js";
-import { AddCollectionProductDto } from "./dto/add-collection-product.dto.js";
-import { ReorderCollectionProductsDto } from "./dto/reorder-collection-products.dto.js";
+import type { CreateCollectionDto } from "./dto/create-collection.dto.js";
+import type { UpdateCollectionDto } from "./dto/update-collection.dto.js";
+import type { AddCollectionProductDto } from "./dto/add-collection-product.dto.js";
+import type { ReorderCollectionProductsDto } from "./dto/reorder-collection-products.dto.js";
 
 @Injectable()
 export class CollectionsService {
