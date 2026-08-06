@@ -1,17 +1,4 @@
-import { apiFetch } from "@/lib/api";
 import { apiClient } from "@/lib/api-client";
-import { productSearchResultSchema } from "../schemas/product-search.schema";
-
-function buildQuery(params: Record<string, string | number | undefined>) {
-  const searchParams = new URLSearchParams();
-  for (const [key, value] of Object.entries(params)) {
-    if (value !== undefined && value !== "") {
-      searchParams.set(key, String(value));
-    }
-  }
-  const qs = searchParams.toString();
-  return qs ? `?${qs}` : "";
-}
 
 export const discoveryApi = {
   getFeaturedStores(limit?: number) {
@@ -25,10 +12,10 @@ export const discoveryApi = {
       page: params.page === undefined ? undefined : String(params.page),
     });
   },
-  // ProductSearch tag — not migrated yet (Batch 6, see
-  // docs/plans/2026-08-05-orval-rollout-batches-3-6-plan.md).
-  async searchProducts(params: { q?: string; page?: number } = {}) {
-    const data = await apiFetch(`/products/search${buildQuery(params)}`);
-    return productSearchResultSchema.parse(data);
+  searchProducts(params: { q?: string; page?: number } = {}) {
+    return apiClient.productSearch.search({
+      q: params.q,
+      page: params.page === undefined ? undefined : String(params.page),
+    });
   },
 };

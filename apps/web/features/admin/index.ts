@@ -15,9 +15,4 @@ export { AdminUsersTable } from "./components/admin-users-table";
 
 export type { Inquiry } from "./schemas/inquiry.schema";
 export type { AdminStore } from "./schemas/admin-store.schema";
-export {
-  type AdminUser,
-  type StoreCount,
-  storeCountListSchema,
-  storeCountSchema,
-} from "./schemas/admin-user.schema";
+export { type AdminUser, type StoreCount } from "./schemas/admin-user.schema";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { statsApi } from "../api/stats.api";
+import { apiClient } from "@/lib/api-client";
 import type { AnalyticsRange } from "../schemas/analytics.schema";
 
 export const analyticsKeys = {
@@ -15,7 +15,7 @@ export function useAnalytics(
 ) {
   const { data, isPending, error } = useQuery({
     queryKey: analyticsKeys.byStore(storeId ?? "", range),
-    queryFn: () => statsApi.getAnalytics(storeId as string, range),
+    queryFn: () => apiClient.stats.analytics(storeId as string, { range }),
     enabled: !!storeId,
   });
 

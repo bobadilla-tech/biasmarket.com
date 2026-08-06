@@ -8,9 +8,7 @@ export type {
 } from "./schemas/store-listing.schema";
 export {
   type ProductSearchResult,
-  productSearchResultSchema,
   type SearchProduct,
-  searchProductSchema,
 } from "./schemas/product-search.schema";
 export { StoreCard } from "./components/store-card";
 export { FeaturedStoresSection } from "./components/featured-stores-section";

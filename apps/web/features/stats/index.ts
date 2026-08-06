@@ -1,4 +1,3 @@
-export { statsApi } from "./api/stats.api";
 export { statsKeys, useStatsOverview } from "./queries/use-stats-overview";
 export { analyticsKeys, useAnalytics } from "./queries/use-analytics";
 export {
@@ -8,14 +7,12 @@ export {
   paymentStatusValues,
   type RecentOrder,
   type StatsOverview,
-  statsOverviewSchema,
 } from "./schemas/stats-overview.schema";
 export {
   type AnalyticsBucket,
   type AnalyticsRange,
   analyticsRangeValues,
   type AnalyticsResult,
-  analyticsResultSchema,
   type AnalyticsTopProduct,
 } from "./schemas/analytics.schema";
 export { StatTile } from "./components/stat-tile";

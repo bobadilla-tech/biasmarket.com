@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { statsApi } from "../api/stats.api";
+import { apiClient } from "@/lib/api-client";
 
 export const statsKeys = {
   overview: (storeId: string) => ["stats", "overview", storeId] as const,
@@ -10,7 +10,7 @@ export const statsKeys = {
 export function useStatsOverview(storeId: string | undefined) {
   const { data, isPending, error } = useQuery({
     queryKey: statsKeys.overview(storeId ?? ""),
-    queryFn: () => statsApi.getOverview(storeId as string),
+    queryFn: () => apiClient.stats.overview(storeId as string),
     enabled: !!storeId,
   });
 
