@@ -102,22 +102,22 @@ collision between `Notifications` and `PaymentConfig` (fixed once, in
 (`DELETE /stores/:storeId` 400s for every store, not just ones with real data)
 found and documented, not fixed, while giving that endpoint a real response DTO.
 Batch 4 (`Order`, `Checkout`) followed per
-`docs/plans/2026-08-05-orval-rollout-batch-4-order-checkout-plan.md` — see
-that doc's execution notes for `Order`'s three real response shapes
-(`OrderResponseDto`/`OrderDetailResponseDto`/`OrderStatusResponseDto`,
-depending on whether the endpoint runs the row through
+`docs/plans/2026-08-05-orval-rollout-batch-4-order-checkout-plan.md` — see that
+doc's execution notes for `Order`'s three real response shapes
+(`OrderResponseDto`/`OrderDetailResponseDto`/`OrderStatusResponseDto`, depending
+on whether the endpoint runs the row through
 `OrderRepository.withPaymentSummary` and whether it includes `proofs`),
-`Checkout.create`'s own fourth, narrower shape, a real bug fixed in the
-shared `test/schema-assert.ts` e2e helper (nullable object/array-typed
-fields were only checked for `null` after already throwing on it), and —
-most importantly — **a real, pre-existing money-precision bug found and
-confirmed live, not introduced by this migration and not fixed as part of
-it**: `OrderRepository.withPaymentSummary` computes `pendingAmount`/
-`paidPercentage` via plain JS float arithmetic on money (not Decimal-safe),
-and `OrderController.addPayment`'s "exceeds pending balance" guard uses
-that same imprecise value — a seller entering the *exact* amount the UI
-shows as owed can get rejected. Flagged to the user directly; worth a
-dedicated follow-up fix independent of this rollout.
+`Checkout.create`'s own fourth, narrower shape, a real bug fixed in the shared
+`test/schema-assert.ts` e2e helper (nullable object/array-typed fields were only
+checked for `null` after already throwing on it), and — most importantly — **a
+real, pre-existing money-precision bug found and confirmed live, not introduced
+by this migration and not fixed as part of it**:
+`OrderRepository.withPaymentSummary` computes `pendingAmount`/ `paidPercentage`
+via plain JS float arithmetic on money (not Decimal-safe), and
+`OrderController.addPayment`'s "exceeds pending balance" guard uses that same
+imprecise value — a seller entering the _exact_ amount the UI shows as owed can
+get rejected. Flagged to the user directly; worth a dedicated follow-up fix
+independent of this rollout.
 
 `apps/api` emits `openapi.json` (`@nestjs/swagger` + a standalone
 `PluginMetadataGenerator` script, since the Nest build's SWC builder doesn't run
@@ -154,17 +154,16 @@ DTOs — currently `Collections`, `Products`, `Categories`, `Notifications`,
 `Contact`, `Suggestions`, `StoreSections`, `DeliveryConfig`,
 `PublicDeliveryConfig`, `PaymentConfig`, `PublicPaymentConfig`, `PickupPoints`,
 `PublicPickupPoints`, `Stores`, `MyStores`, `Order`, and `Checkout`. Generating
-a tag whose responses
-are still untyped Prisma results produces anonymous `{ [key: string]: unknown }`
-placeholder schema types keyed by the (post-`operationName`-override) shortened
-method name, and those collide across unrelated controllers in the single shared
-`api.schemas.ts` file (every controller's `findAll` fighting over one
-`FindAll200Item` type) — add a tag here only once its controller has real
-response DTOs, not just because the tag exists in the spec. Two
-`CustomerAuthController` endpoints (`changePassword`, `logout`) are missing
-their `slug` path param in the emitted spec — a real, pre-existing `apps/api`
-Swagger-annotation gap, unrelated to collections and out of scope for this
-change — which is why `input.unsafeDisableValidation: true` is set (Orval's
+a tag whose responses are still untyped Prisma results produces anonymous
+`{ [key: string]: unknown }` placeholder schema types keyed by the
+(post-`operationName`-override) shortened method name, and those collide across
+unrelated controllers in the single shared `api.schemas.ts` file (every
+controller's `findAll` fighting over one `FindAll200Item` type) — add a tag here
+only once its controller has real response DTOs, not just because the tag exists
+in the spec. Two `CustomerAuthController` endpoints (`changePassword`, `logout`)
+are missing their `slug` path param in the emitted spec — a real, pre-existing
+`apps/api` Swagger-annotation gap, unrelated to collections and out of scope for
+this change — which is why `input.unsafeDisableValidation: true` is set (Orval's
 validator hard-fails the _entire_ build over those two operations, even with
 `CustomerAuth` excluded from `filters.tags`, since validation runs before
 filtering). `scripts/fix-esm-extensions.mjs` postprocesses Orval's output
@@ -229,15 +228,14 @@ reads (`PublicDeliveryConfig`, `PublicPaymentConfig`, `PublicPickupPoints`) and
 `submit`/`create` itself (`Checkout` tag), `stores` + `admin-stores`
 (`Stores`/`MyStores`), `orders` (`Order` tag — `list`/`review`/`advance`/
 `cancelOrder`; `registerPayment` stays on `apiFetch`/`FormData`, the multipart
-carve-out), and `discovery`'s featured-stores/store-directory reads (the rest
-of `discovery.api.ts`, `ProductSearch`, is still on `apiFetch`, Batch 6).
+carve-out), and `discovery`'s featured-stores/store-directory reads (the rest of
+`discovery.api.ts`, `ProductSearch`, is still on `apiFetch`, Batch 6).
 Everything else's `api/*.ts` stays on `apiFetch` + zod until its backend
 controller gets the same response-DTO treatment (see the rollout plan doc's
 "Suggested batches" for the order). Error responses are also explicitly out of
-scope for the generated
-client (see the plan doc's Phase 3 note) — the mutator's defensive
-`message`-field parsing and `fallbackErrorMessage` stay the pattern for error
-paths even in migrated features.
+scope for the generated client (see the plan doc's Phase 3 note) — the mutator's
+defensive `message`-field parsing and `fallbackErrorMessage` stay the pattern
+for error paths even in migrated features.
 
 ## Feature-specific patterns worth knowing
 

@@ -8,94 +8,71 @@
 import type {
   CategoryResponseDto,
   CreateCategoryDto,
-  UpdateCategoryDto
-} from '../api.schemas.js';
+  UpdateCategoryDto,
+} from "../api.schemas.js";
 
-import { customFetch } from '../../http.js';
+import { customFetch } from "../../http.js";
 
-export const getCreateUrl = (storeId: string,) => {
+export const getCreateUrl = (storeId: string) => {
+  return `/stores/${storeId}/categories`;
+};
 
-
-
-
-  return `/stores/${storeId}/categories`
-}
-
-export const create = async (storeId: string,
-    createCategoryDto: CreateCategoryDto, options?: Parameters<typeof customFetch>[1]): Promise<CategoryResponseDto> => {
-
-  return customFetch<CategoryResponseDto>(getCreateUrl(storeId),
-  {
+export const create = async (
+  storeId: string,
+  createCategoryDto: CreateCategoryDto,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CategoryResponseDto> => {
+  return customFetch<CategoryResponseDto>(getCreateUrl(storeId), {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(createCategoryDto)
-  }
-);}
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createCategoryDto),
+  });
+};
 
+export const getFindAllUrl = (storeId: string) => {
+  return `/stores/${storeId}/categories`;
+};
 
-export const getFindAllUrl = (storeId: string,) => {
-
-
-
-
-  return `/stores/${storeId}/categories`
-}
-
-export const findAll = async (storeId: string, options?: Parameters<typeof customFetch>[1]): Promise<CategoryResponseDto[]> => {
-
-  return customFetch<CategoryResponseDto[]>(getFindAllUrl(storeId),
-  {
+export const findAll = async (
+  storeId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CategoryResponseDto[]> => {
+  return customFetch<CategoryResponseDto[]>(getFindAllUrl(storeId), {
     ...options,
-    method: 'GET'
+    method: "GET",
+  });
+};
 
+export const getUpdateUrl = (storeId: string, categoryId: string) => {
+  return `/stores/${storeId}/categories/${categoryId}`;
+};
 
-  }
-);}
-
-
-export const getUpdateUrl = (storeId: string,
-    categoryId: string,) => {
-
-
-
-
-  return `/stores/${storeId}/categories/${categoryId}`
-}
-
-export const update = async (storeId: string,
-    categoryId: string,
-    updateCategoryDto: UpdateCategoryDto, options?: Parameters<typeof customFetch>[1]): Promise<CategoryResponseDto> => {
-
-  return customFetch<CategoryResponseDto>(getUpdateUrl(storeId,categoryId),
-  {
+export const update = async (
+  storeId: string,
+  categoryId: string,
+  updateCategoryDto: UpdateCategoryDto,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CategoryResponseDto> => {
+  return customFetch<CategoryResponseDto>(getUpdateUrl(storeId, categoryId), {
     ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(updateCategoryDto)
-  }
-);}
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateCategoryDto),
+  });
+};
 
+export const getRemoveUrl = (storeId: string, categoryId: string) => {
+  return `/stores/${storeId}/categories/${categoryId}`;
+};
 
-export const getRemoveUrl = (storeId: string,
-    categoryId: string,) => {
-
-
-
-
-  return `/stores/${storeId}/categories/${categoryId}`
-}
-
-export const remove = async (storeId: string,
-    categoryId: string, options?: Parameters<typeof customFetch>[1]): Promise<CategoryResponseDto> => {
-
-  return customFetch<CategoryResponseDto>(getRemoveUrl(storeId,categoryId),
-  {
+export const remove = async (
+  storeId: string,
+  categoryId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CategoryResponseDto> => {
+  return customFetch<CategoryResponseDto>(getRemoveUrl(storeId, categoryId), {
     ...options,
-    method: 'DELETE'
-
-
-  }
-);}
-
-
+    method: "DELETE",
+  });
+};

@@ -206,10 +206,10 @@ type.
   execution notes for the full writeup, including a **real, pre-existing
   money-precision bug found and confirmed live** (not fixed as part of this
   migration — flagged to the user): `OrderRepository.withPaymentSummary`
-  computes `pendingAmount`/`paidPercentage` via plain JS float arithmetic,
-  not Decimal-safe, and the `addPayment` guard using that same imprecise
-  value means a seller entering the *exact* amount the UI shows as owed can
-  get rejected as "exceeds pending balance."
+  computes `pendingAmount`/`paidPercentage` via plain JS float arithmetic, not
+  Decimal-safe, and the `addPayment` guard using that same imprecise value means
+  a seller entering the _exact_ amount the UI shows as owed can get rejected as
+  "exceeds pending balance."
 - **Batch 5** — `CustomerAuth`, `CustomerAccount`, `Customers`
   (`features/customer-auth`, `features/customers`). **Blocked**: two
   `CustomerAuthController` endpoints (`changePassword`, `logout`) are missing
@@ -436,6 +436,6 @@ diverged or came up that prior batches hadn't hit.
   caveat as every prior batch.
 
 Batch 4 (`Order`, `Checkout`) is also done now — see
-`2026-08-05-orval-rollout-batch-4-order-checkout-plan.md`'s own execution
-notes. Batches 5–6 are unstarted; Batch 5 is blocked on a spec-bug fix the
-user must approve first (below).
+`2026-08-05-orval-rollout-batch-4-order-checkout-plan.md`'s own execution notes.
+Batches 5–6 are unstarted; Batch 5 is blocked on a spec-bug fix the user must
+approve first (below).
