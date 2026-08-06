@@ -1,6 +1,6 @@
 import { Body, Controller, Param, Post } from "@nestjs/common";
 import { Public } from "@thallesp/nestjs-better-auth";
-import type { CreateOrderUseCase } from "../application/create-order.usecase.js";
+import { CreateOrderUseCase } from "../application/create-order.usecase.js";
 import type { CreateOrderDto } from "../dto/create-order.dto.js";
 import type {
   CheckoutOrderItemResponseDto,

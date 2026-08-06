@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import type { Prisma } from "@biasmarket/db";
-import type { PrismaService } from "../../prisma/prisma.service.js";
+import { PrismaService } from "../../prisma/prisma.service.js";
 import type { UpsertDeliveryMethodDto } from "./dto/upsert-delivery-method.dto.js";
 
 @Injectable()

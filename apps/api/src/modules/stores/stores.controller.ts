@@ -20,11 +20,11 @@ import {
 } from "@thallesp/nestjs-better-auth";
 import type { UserSession } from "@thallesp/nestjs-better-auth";
 import { ApiConsumes, ApiQuery } from "@nestjs/swagger";
-import type { StoresService } from "./stores.service.js";
+import { StoresService } from "./stores.service.js";
 import type { UpdateStoreDto } from "./dto/update-store.dto.js";
 import type { CreateStoreDto } from "./dto/create-store.dto.js";
 import { FileInterceptor } from "@nestjs/platform-express";
-import type { StorageService } from "../../storage/storage.service.js";
+import { StorageService } from "../../storage/storage.service.js";
 import { parsePublicListQuery } from "../../common/public-list-query.js";
 import { toStoreDto } from "./stores.mapper.js";
 import type {

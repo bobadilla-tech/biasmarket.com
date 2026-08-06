@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
-import type { PrismaService } from "../../../prisma/prisma.service.js";
-import type { NotificationsService } from "../../notifications/notifications.service.js";
+import { PrismaService } from "../../../prisma/prisma.service.js";
+import { NotificationsService } from "../../notifications/notifications.service.js";
 
 @Injectable()
 export class ExpireOrdersUseCase {

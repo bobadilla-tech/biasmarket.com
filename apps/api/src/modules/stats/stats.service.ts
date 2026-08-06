@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import type { FulfillmentStatus, PaymentStatus, Prisma } from "@biasmarket/db";
-import type { PrismaService } from "../../prisma/prisma.service.js";
+import { PrismaService } from "../../prisma/prisma.service.js";
 import { buildBuckets } from "./analytics-buckets.js";
 import type { AnalyticsRange, AnalyticsResult } from "./analytics.types.js";
 

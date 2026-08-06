@@ -4,7 +4,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { Logger } from "@nestjs/common";
 import type { Auth } from "@thallesp/nestjs-better-auth";
 import { escapeHtml } from "@biasmarket/utils/strings";
-import type { PrismaService } from "../prisma/prisma.service.js";
+import { PrismaService } from "../prisma/prisma.service.js";
 import type { MailerService } from "../mailer/mailer.service.js";
 
 const logger = new Logger("auth");

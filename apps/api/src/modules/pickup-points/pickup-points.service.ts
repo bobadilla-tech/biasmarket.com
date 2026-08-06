@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import type { PrismaService } from "../../prisma/prisma.service.js";
+import { PrismaService } from "../../prisma/prisma.service.js";
 import type { CreatePickupPointDto } from "./dto/create-pickup-point.dto.js";
 import type { UpdatePickupPointDto } from "./dto/update-pickup-point.dto.js";
 

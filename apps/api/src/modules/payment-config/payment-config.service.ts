@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import type { PrismaService } from "../../prisma/prisma.service.js";
+import { PrismaService } from "../../prisma/prisma.service.js";
 import type { UpsertPaymentMethodDto } from "./dto/upsert-payment-method.dto.js";
 
 @Injectable()

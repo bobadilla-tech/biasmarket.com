@@ -11,7 +11,7 @@ import {
 import { Public } from "@thallesp/nestjs-better-auth";
 import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
 import type { Response } from "express";
-import type { CustomerAuthService } from "./customer-auth.service.js";
+import { CustomerAuthService } from "./customer-auth.service.js";
 import { CustomerSessionGuard } from "./customer-session.guard.js";
 import { OriginGuard } from "./origin.guard.js";
 import { CustomerSession } from "./customer-session.decorator.js";

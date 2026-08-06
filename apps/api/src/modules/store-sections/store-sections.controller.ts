@@ -10,7 +10,7 @@ import {
 } from "@nestjs/common";
 import { AuthGuard, Session } from "@thallesp/nestjs-better-auth";
 import type { UserSession } from "@thallesp/nestjs-better-auth";
-import type { StoreSectionsService } from "./store-sections.service.js";
+import { StoreSectionsService } from "./store-sections.service.js";
 import type { CreateStoreSectionDto } from "./dto/create-store-section.dto.js";
 import type { UpdateStoreSectionDto } from "./dto/update-store-section.dto.js";
 import type { ReorderStoreSectionsDto } from "./dto/reorder-store-sections.dto.js";

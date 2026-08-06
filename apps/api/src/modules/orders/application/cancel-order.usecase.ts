@@ -4,9 +4,9 @@ import {
   Injectable,
 } from "@nestjs/common";
 import type { CancellationResolution } from "@biasmarket/db";
-import type { PrismaService } from "../../../prisma/prisma.service.js";
-import type { OrderRepository } from "../infrastructure/order.repository.js";
-import type { NotificationsService } from "../../notifications/notifications.service.js";
+import { PrismaService } from "../../../prisma/prisma.service.js";
+import { OrderRepository } from "../infrastructure/order.repository.js";
+import { NotificationsService } from "../../notifications/notifications.service.js";
 
 const RESERVED_HOLD_STATUSES = new Set([
   "PENDING_PAYMENT",

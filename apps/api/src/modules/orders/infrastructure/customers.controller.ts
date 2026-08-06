@@ -1,7 +1,7 @@
 import { Controller, Get, Param, UseGuards } from "@nestjs/common";
 import { AuthGuard, Session } from "@thallesp/nestjs-better-auth";
 import type { UserSession } from "@thallesp/nestjs-better-auth";
-import type { CustomersService } from "../application/customers.service.js";
+import { CustomersService } from "../application/customers.service.js";
 
 @Controller("stores/:storeId/customers")
 @UseGuards(AuthGuard)

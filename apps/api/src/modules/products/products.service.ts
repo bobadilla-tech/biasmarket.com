@@ -4,12 +4,12 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import type { PrismaService } from "../../prisma/prisma.service.js";
+import { PrismaService } from "../../prisma/prisma.service.js";
 import type { CreateProductDto } from "./dto/create-product.dto.js";
 import type { UpdateProductDto } from "./dto/update-product.dto.js";
 import type { CreateVariantDto } from "./dto/create-variant.dto.js";
 import type { UpdateVariantDto } from "./dto/update-variant.dto.js";
-import type { NotificationsService } from "../notifications/notifications.service.js";
+import { NotificationsService } from "../notifications/notifications.service.js";
 
 @Injectable()
 export class ProductsService {

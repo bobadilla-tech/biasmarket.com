@@ -1,6 +1,6 @@
 import { Controller, Get, Query } from "@nestjs/common";
 import { Public } from "@thallesp/nestjs-better-auth";
-import type { ProductSearchService } from "./product-search.service.js";
+import { ProductSearchService } from "./product-search.service.js";
 import { parsePublicListQuery } from "../../common/public-list-query.js";
 
 @Controller("products")

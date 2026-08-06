@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import type { Prisma } from "@biasmarket/db";
-import type { PrismaService } from "../../prisma/prisma.service.js";
+import { PrismaService } from "../../prisma/prisma.service.js";
 import { slugify } from "@biasmarket/utils/strings";
 import type { UpdateStoreDto } from "./dto/update-store.dto.js";
 import type { CreateStoreDto } from "./dto/create-store.dto.js";

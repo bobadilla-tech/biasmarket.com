@@ -1,6 +1,6 @@
 import { Controller, Get, Param, Query } from "@nestjs/common";
 import { Public } from "@thallesp/nestjs-better-auth";
-import type { CustomerAccountService } from "../application/customer-account.service.js";
+import { CustomerAccountService } from "../application/customer-account.service.js";
 
 @Controller("stores/:slug/account")
 export class CustomerAccountController {

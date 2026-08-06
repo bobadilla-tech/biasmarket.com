@@ -9,7 +9,7 @@ import {
 } from "@nestjs/common";
 import { AuthGuard, Public, Roles } from "@thallesp/nestjs-better-auth";
 import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
-import type { ContactService } from "./contact.service.js";
+import { ContactService } from "./contact.service.js";
 import type { CreateInquiryDto } from "./dto/create-inquiry.dto.js";
 import type { InquiryResponseDto } from "./dto/inquiry-response.dto.js";
 

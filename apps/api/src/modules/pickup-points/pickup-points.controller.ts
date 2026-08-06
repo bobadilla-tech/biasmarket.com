@@ -10,7 +10,7 @@ import {
 } from "@nestjs/common";
 import { AuthGuard, Public, Session } from "@thallesp/nestjs-better-auth";
 import type { UserSession } from "@thallesp/nestjs-better-auth";
-import type { PickupPointsService } from "./pickup-points.service.js";
+import { PickupPointsService } from "./pickup-points.service.js";
 import type { CreatePickupPointDto } from "./dto/create-pickup-point.dto.js";
 import type { UpdatePickupPointDto } from "./dto/update-pickup-point.dto.js";
 import type { PickupPointResponseDto } from "./dto/pickup-point-response.dto.js";

@@ -15,13 +15,13 @@ import {
 import { ApiConsumes, ApiQuery } from "@nestjs/swagger";
 import { AuthGuard, Session } from "@thallesp/nestjs-better-auth";
 import type { UserSession } from "@thallesp/nestjs-better-auth";
-import type { ProductsService } from "./products.service.js";
+import { ProductsService } from "./products.service.js";
 import type { CreateProductDto } from "./dto/create-product.dto.js";
 import type { UpdateProductDto } from "./dto/update-product.dto.js";
 import type { CreateVariantDto } from "./dto/create-variant.dto.js";
 import type { UpdateVariantDto } from "./dto/update-variant.dto.js";
 import { FileInterceptor } from "@nestjs/platform-express";
-import type { StorageService } from "../../storage/storage.service.js";
+import { StorageService } from "../../storage/storage.service.js";
 import type {
   ProductDetailResponseDto,
   ProductResponseDto,

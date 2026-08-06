@@ -12,8 +12,8 @@ import {
   createCustomerSessionToken,
   verifyCustomerAccountToken,
 } from "@biasmarket/utils/customer-account-token";
-import type { PrismaService } from "../../prisma/prisma.service.js";
-import type { CustomerAccountService } from "../orders/application/customer-account.service.js";
+import { PrismaService } from "../../prisma/prisma.service.js";
+import { CustomerAccountService } from "../orders/application/customer-account.service.js";
 
 function requiredEnv(name: string): string {
   const value = process.env[name];

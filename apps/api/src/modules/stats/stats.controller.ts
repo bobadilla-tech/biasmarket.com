@@ -8,7 +8,7 @@ import {
 } from "@nestjs/common";
 import { AuthGuard, Session } from "@thallesp/nestjs-better-auth";
 import type { UserSession } from "@thallesp/nestjs-better-auth";
-import type { StatsService } from "./stats.service.js";
+import { StatsService } from "./stats.service.js";
 import type { AnalyticsRange } from "./analytics.types.js";
 
 const ANALYTICS_RANGES: AnalyticsRange[] = ["30d", "90d", "12m"];

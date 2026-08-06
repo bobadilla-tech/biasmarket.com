@@ -9,7 +9,7 @@ import {
   createCustomerSessionToken,
   verifyCustomerSessionToken,
 } from "@biasmarket/utils/customer-account-token";
-import type { PrismaService } from "../../prisma/prisma.service.js";
+import { PrismaService } from "../../prisma/prisma.service.js";
 import { derivePasswordVersion } from "./customer-auth.service.js";
 import {
   CUSTOMER_SESSION_COOKIE,

@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import type { FulfillmentStatus } from "@biasmarket/db";
-import type { OrderRepository } from "../infrastructure/order.repository.js";
+import { OrderRepository } from "../infrastructure/order.repository.js";
 import { Order } from "../domain/order.entity.js";
 
 @Injectable()

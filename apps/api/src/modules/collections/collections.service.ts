@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import type { PrismaService } from "../../prisma/prisma.service.js";
+import { PrismaService } from "../../prisma/prisma.service.js";
 import { slugify } from "@biasmarket/utils/strings";
 import type { CreateCollectionDto } from "./dto/create-collection.dto.js";
 import type { UpdateCollectionDto } from "./dto/update-collection.dto.js";

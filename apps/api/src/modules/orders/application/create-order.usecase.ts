@@ -8,10 +8,10 @@ import {
   buildWhatsAppOrderMessage,
   buildWhatsAppUrl,
 } from "@biasmarket/utils/whatsapp";
-import type { PrismaService } from "../../../prisma/prisma.service.js";
+import { PrismaService } from "../../../prisma/prisma.service.js";
 import type { CreateOrderDto } from "../dto/create-order.dto.js";
-import type { NotificationsService } from "../../notifications/notifications.service.js";
-import type { CustomerAccountService } from "./customer-account.service.js";
+import { NotificationsService } from "../../notifications/notifications.service.js";
+import { CustomerAccountService } from "./customer-account.service.js";
 
 @Injectable()
 export class CreateOrderUseCase {
