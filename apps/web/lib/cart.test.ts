@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { type CartItem, addToCart, getCart, removeItem } from "./cart";
+import { addToCart, type CartItem, getCart, removeItem } from "./cart";
 
 const slug = "test-store";
 

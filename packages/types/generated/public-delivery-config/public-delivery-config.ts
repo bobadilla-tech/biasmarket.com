@@ -5,29 +5,23 @@
  * Bias Market — niche-first store builder API
  * OpenAPI spec version: 1.0
  */
-import type {
-  DeliveryMethodConfigResponseDto
-} from '../api.schemas.js';
+import type { DeliveryMethodConfigResponseDto } from "../api.schemas.js";
 
-import { customFetch } from '../../http.js';
+import { customFetch } from "../../http.js";
 
-export const getFindEnabledUrl = (slug: string,) => {
+export const getFindEnabledUrl = (slug: string) => {
+  return `/stores/${slug}/public/delivery-methods`;
+};
 
-
-
-
-  return `/stores/${slug}/public/delivery-methods`
-}
-
-export const findEnabled = async (slug: string, options?: Parameters<typeof customFetch>[1]): Promise<DeliveryMethodConfigResponseDto[]> => {
-
-  return customFetch<DeliveryMethodConfigResponseDto[]>(getFindEnabledUrl(slug),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
+export const findEnabled = async (
+  slug: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DeliveryMethodConfigResponseDto[]> => {
+  return customFetch<DeliveryMethodConfigResponseDto[]>(
+    getFindEnabledUrl(slug),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};

@@ -22,7 +22,12 @@ test("parses a legacy row with a null method", () => {
   expect(
     paymentMethodsBreakdownSchema.safeParse({
       ...valid,
-      byMethod: [...valid.byMethod, { method: null, amount: 5, count: 1, percentage: 5 }],
+      byMethod: [...valid.byMethod, {
+        method: null,
+        amount: 5,
+        count: 1,
+        percentage: 5,
+      }],
     }).success,
   ).toBe(true);
 });

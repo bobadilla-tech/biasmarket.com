@@ -18,8 +18,9 @@ export function CheckoutSummary({ items }: CheckoutSummaryProps) {
           className="flex justify-between text-sm text-gray-600"
         >
           <span>
-            {item.quantity}x{" "}
-            {item.variantLabel ? `${item.name} (${item.variantLabel})` : item.name}
+            {item.quantity}x {item.variantLabel
+              ? `${item.name} (${item.variantLabel})`
+              : item.name}
           </span>
           <span>
             {(item.price * item.quantity).toFixed(2)} {item.currency}

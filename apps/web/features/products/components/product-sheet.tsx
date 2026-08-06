@@ -22,15 +22,15 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { keyForAttributes } from "../lib/variant-key";
-import type { CategoryResponseDto, VariantResponseDto } from "@biasmarket/types";
+import type {
+  CategoryResponseDto,
+  VariantResponseDto,
+} from "@biasmarket/types";
 import {
   type ProductFormInput,
   productFormSchema,
 } from "../schemas/product-form.schema";
-import type {
-  OptionTypeDraft,
-  VariantDraft,
-} from "../schemas/variant.schema";
+import type { OptionTypeDraft, VariantDraft } from "../schemas/variant.schema";
 
 export function ProductSheet({
   open,

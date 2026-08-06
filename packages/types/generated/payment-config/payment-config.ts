@@ -8,58 +8,57 @@
 import type {
   PaymentConfigControllerfindAllParams,
   PaymentMethodConfigResponseDto,
-  UpsertPaymentMethodDto
-} from '../api.schemas.js';
+  UpsertPaymentMethodDto,
+} from "../api.schemas.js";
 
-import { customFetch } from '../../http.js';
+import { customFetch } from "../../http.js";
 
-export const getFindAllUrl = (storeId: string,
-    params?: PaymentConfigControllerfindAllParams,) => {
+export const getFindAllUrl = (
+  storeId: string,
+  params?: PaymentConfigControllerfindAllParams,
+) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
+      normalizedParams.append(key, value === null ? "null" : String(value));
     }
   });
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/stores/${storeId}/payment-methods?${stringifiedParams}` : `/stores/${storeId}/payment-methods`
-}
+  return stringifiedParams.length > 0
+    ? `/stores/${storeId}/payment-methods?${stringifiedParams}`
+    : `/stores/${storeId}/payment-methods`;
+};
 
-export const findAll = async (storeId: string,
-    params?: PaymentConfigControllerfindAllParams, options?: Parameters<typeof customFetch>[1]): Promise<PaymentMethodConfigResponseDto[]> => {
+export const findAll = async (
+  storeId: string,
+  params?: PaymentConfigControllerfindAllParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PaymentMethodConfigResponseDto[]> => {
+  return customFetch<PaymentMethodConfigResponseDto[]>(
+    getFindAllUrl(storeId, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
 
-  return customFetch<PaymentMethodConfigResponseDto[]>(getFindAllUrl(storeId,params),
-  {
+export const getUpsertUrl = (storeId: string) => {
+  return `/stores/${storeId}/payment-methods`;
+};
+
+export const upsert = async (
+  storeId: string,
+  upsertPaymentMethodDto: UpsertPaymentMethodDto,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PaymentMethodConfigResponseDto> => {
+  return customFetch<PaymentMethodConfigResponseDto>(getUpsertUrl(storeId), {
     ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-export const getUpsertUrl = (storeId: string,) => {
-
-
-
-
-  return `/stores/${storeId}/payment-methods`
-}
-
-export const upsert = async (storeId: string,
-    upsertPaymentMethodDto: UpsertPaymentMethodDto, options?: Parameters<typeof customFetch>[1]): Promise<PaymentMethodConfigResponseDto> => {
-
-  return customFetch<PaymentMethodConfigResponseDto>(getUpsertUrl(storeId),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(upsertPaymentMethodDto)
-  }
-);}
-
-
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(upsertPaymentMethodDto),
+  });
+};

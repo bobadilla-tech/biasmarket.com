@@ -41,9 +41,7 @@ function groupRequests(requests: RestockRequest[]): Group[] {
 
 function latestRequestDate(group: Group): number {
   return Math.max(
-    ...group.requests.map((request) =>
-      new Date(request.createdAt).getTime()
-    ),
+    ...group.requests.map((request) => new Date(request.createdAt).getTime()),
   );
 }
 
@@ -122,7 +120,11 @@ export function RestockRequestsPanel({
         {isLoading
           ? <LoadingState variant="inline" rows={3} />
           : error
-          ? <ErrorState message={error instanceof Error ? error.message : errorMessage} />
+          ? (
+            <ErrorState
+              message={error instanceof Error ? error.message : errorMessage}
+            />
+          )
           : requests.length === 0
           ? <EmptyState icon={PackageX} message={t("empty")} />
           : groups.map((group) => (

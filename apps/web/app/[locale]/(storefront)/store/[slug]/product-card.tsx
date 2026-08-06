@@ -35,29 +35,28 @@ export function ProductCard(
   const availableStock = (v: Variant) =>
     v.stock === null ? Infinity : v.stock - v.reserved;
   const [variantId, setVariantId] = useState(
-    () => product.variants.find((v) => availableStock(v) > 0)?.id ??
-      product.variants[0]?.id ?? "",
+    () =>
+      product.variants.find((v) => availableStock(v) > 0)?.id ??
+        product.variants[0]?.id ?? "",
   );
   const [added, setAdded] = useState(false);
   const [restockOpen, setRestockOpen] = useState(false);
 
   const selectedVariant = product.variants.find((v) => v.id === variantId);
   const effectivePrices = product.variants.map((v) =>
-    Number(v.priceOverride ?? product.price),
+    Number(v.priceOverride ?? product.price)
   );
 
-  const minPrice =
-    effectivePrices.length > 0
-      ? Math.min(...effectivePrices)
-      : Number(product.price);
+  const minPrice = effectivePrices.length > 0
+    ? Math.min(...effectivePrices)
+    : Number(product.price);
 
-  const maxPrice =
-    effectivePrices.length > 0
-      ? Math.max(...effectivePrices)
-      : Number(product.price);
+  const maxPrice = effectivePrices.length > 0
+    ? Math.max(...effectivePrices)
+    : Number(product.price);
 
-  const hasDifferentVariantPrices =
-    product.variants.length > 1 && minPrice !== maxPrice;
+  const hasDifferentVariantPrices = product.variants.length > 1 &&
+    minPrice !== maxPrice;
 
   const hasSelectedVariant = Boolean(selectedVariant);
 
@@ -66,11 +65,9 @@ export function ProductCard(
     : minPrice;
 
   const showFromPrice = hasDifferentVariantPrices && !hasSelectedVariant;
-  const allVariantsOutOfStock =
-    product.variants.length > 0 &&
+  const allVariantsOutOfStock = product.variants.length > 0 &&
     product.variants.every((v) => availableStock(v) <= 0);
-  const outOfStock =
-    product.soldOut ||
+  const outOfStock = product.soldOut ||
     allVariantsOutOfStock ||
     (selectedVariant ? availableStock(selectedVariant) <= 0 : false);
 

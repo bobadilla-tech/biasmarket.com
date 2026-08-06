@@ -19,10 +19,7 @@ export { ProductTile } from "./components/product-tile";
 export { ProductRow } from "./components/product-row";
 export { ProductSheet } from "./components/product-sheet";
 
-export type {
-  OptionTypeDraft,
-  VariantDraft,
-} from "./schemas/variant.schema";
+export type { OptionTypeDraft, VariantDraft } from "./schemas/variant.schema";
 export {
   type ProductFormInput,
   productFormSchema,

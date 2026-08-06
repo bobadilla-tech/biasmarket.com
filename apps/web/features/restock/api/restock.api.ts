@@ -1,8 +1,8 @@
 import { apiFetch } from "@/lib/api";
 import {
   restockRequestListSchema,
-  restockRequestResultSchema,
   type RestockRequestPayload,
+  restockRequestResultSchema,
 } from "../schemas/restock-request.schema";
 
 export const restockApi = {

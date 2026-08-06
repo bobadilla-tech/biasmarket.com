@@ -20,7 +20,11 @@ describe("RestockService", () => {
     status: "PUBLISHED",
     deletedAt: null,
   };
-  const variant = { id: "variant-1", productId: "product-1", storeId: "store-1" };
+  const variant = {
+    id: "variant-1",
+    productId: "product-1",
+    storeId: "store-1",
+  };
 
   beforeEach(async () => {
     prisma = {
@@ -38,7 +42,12 @@ describe("RestockService", () => {
   });
 
   describe("create()", () => {
-    const dto = { name: "Jane", phone: "+51999000111", productId: "product-1", variantId: "variant-1" };
+    const dto = {
+      name: "Jane",
+      phone: "+51999000111",
+      productId: "product-1",
+      variantId: "variant-1",
+    };
 
     it("persists a request scoped to the resolved store", async () => {
       prisma.store.findUnique.mockResolvedValue(store);
@@ -74,7 +83,10 @@ describe("RestockService", () => {
 
     it("throws NotFoundException when the product is not published or not in the store", async () => {
       prisma.store.findUnique.mockResolvedValue(store);
-      prisma.product.findUnique.mockResolvedValue({ ...product, status: "DRAFT" });
+      prisma.product.findUnique.mockResolvedValue({
+        ...product,
+        status: "DRAFT",
+      });
 
       await expect(service.create("myshop", dto)).rejects.toThrow(
         NotFoundException,
