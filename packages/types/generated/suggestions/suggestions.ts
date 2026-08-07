@@ -5,20 +5,29 @@
  * Bias Market — niche-first store builder API
  * OpenAPI spec version: 1.0
  */
-import type { SuggestionResponseDto } from "../api.schemas.js";
+import type {
+  SuggestionResponseDto
+} from '../api.schemas.js';
 
-import { customFetch } from "../../http.js";
+import { customFetch } from '../../http.js';
 
-export const getFindAllUrl = (storeId: string) => {
-  return `/stores/${storeId}/suggestions`;
-};
+export const getFindAllUrl = (storeId: string,) => {
 
-export const findAll = async (
-  storeId: string,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<SuggestionResponseDto[]> => {
-  return customFetch<SuggestionResponseDto[]>(getFindAllUrl(storeId), {
+
+
+
+  return `/stores/${storeId}/suggestions`
+}
+
+export const findAll = async (storeId: string, options?: Parameters<typeof customFetch>[1]): Promise<SuggestionResponseDto[]> => {
+
+  return customFetch<SuggestionResponseDto[]>(getFindAllUrl(storeId),
+  {
     ...options,
-    method: "GET",
-  });
-};
+    method: 'GET'
+
+
+  }
+);}
+
+

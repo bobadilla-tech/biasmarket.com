@@ -24,6 +24,10 @@ describe("CustomersService", () => {
       order: { groupBy: vi.fn(), findMany: vi.fn() },
       orderPayment: { findMany: vi.fn() },
     };
+    // Guest orders are fetched in `findAllForStore` and have their own
+    // aggregation; tests that don't care about them still need a default so
+    // the iteration over them doesn't blow up on `undefined`.
+    prisma.order.findMany.mockResolvedValue([]);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [CustomersService, {
@@ -69,7 +73,7 @@ describe("CustomersService", () => {
           phone: "+51987654321",
           email: "ana@example.com",
           emailVerified: true,
-          createdAt: new Date("2026-01-01"),
+          createdAt: new Date("2026-01-02"),
         },
         {
           id: "customer-2",
@@ -77,7 +81,7 @@ describe("CustomersService", () => {
           phone: "+51999999999",
           email: null,
           emailVerified: false,
-          createdAt: new Date("2026-01-02"),
+          createdAt: new Date("2026-01-01"),
         },
       ]);
       prisma.order.groupBy.mockResolvedValue([
@@ -140,6 +144,115 @@ describe("CustomersService", () => {
       });
       expect(result[0].lifetimeSpend).toBe(0);
     });
+
+    it("includes guest orders (no linked customer) as synthetic customers grouped by normalized phone", async () => {
+      prisma.customer.findMany.mockResolvedValue([]);
+      prisma.order.groupBy.mockResolvedValue([]);
+      prisma.orderPayment.findMany.mockResolvedValue([]);
+      // Two differently-formatted-but-equivalent phones plus a second guest.
+      prisma.order.findMany.mockResolvedValue([
+        {
+          customerPhone: "+51 987 654 321",
+          customerName: "Ana",
+          customerEmail: null,
+          paymentStatus: "VERIFIED",
+          createdAt: new Date("2026-03-01"),
+          payments: [{ amount: new Prisma.Decimal(40) }],
+        },
+        {
+          customerPhone: "51987654321",
+          customerName: null,
+          customerEmail: "ana@example.com",
+          paymentStatus: "PENDING_PAYMENT",
+          createdAt: new Date("2026-03-10"),
+          payments: [],
+        },
+        {
+          customerPhone: "+51999999999",
+          customerName: "Beto",
+          customerEmail: null,
+          paymentStatus: "VERIFIED",
+          createdAt: new Date("2026-02-01"),
+          payments: [{ amount: new Prisma.Decimal(10) }],
+        },
+      ]);
+
+      const result = await service.findAllForStore(storeId, ownerId);
+
+      expect(result).toHaveLength(2);
+      const ana = result.find((r) => r.id === "guest_51987654321");
+      const beto = result.find((r) => r.id === "guest_51999999999");
+      expect(ana).toEqual({
+        id: "guest_51987654321",
+        name: "Ana",
+        phone: "+51987654321",
+        email: "ana@example.com",
+        emailVerified: false,
+        createdAt: new Date("2026-03-01"),
+        orderCount: 2,
+        lifetimeSpend: 40,
+        lastOrderAt: new Date("2026-03-10"),
+      });
+      expect(beto).toEqual({
+        id: "guest_51999999999",
+        name: "Beto",
+        phone: "+51999999999",
+        email: null,
+        emailVerified: false,
+        createdAt: new Date("2026-02-01"),
+        orderCount: 1,
+        lifetimeSpend: 10,
+        lastOrderAt: new Date("2026-02-01"),
+      });
+      // Sorted by (synthetic) createdAt desc, newest first.
+      expect(result.map((r) => r.id)).toEqual([
+        "guest_51987654321",
+        "guest_51999999999",
+      ]);
+    });
+
+    it("folds guest orders into an existing customer row with the same phone", async () => {
+      prisma.customer.findMany.mockResolvedValue([
+        {
+          id: "customer-1",
+          name: "Ana",
+          phone: "+51987654321",
+          email: "ana@example.com",
+          emailVerified: true,
+          createdAt: new Date("2026-01-01"),
+        },
+      ]);
+      prisma.order.groupBy.mockResolvedValue([
+        {
+          customerId: "customer-1",
+          _count: 1,
+          _max: { createdAt: new Date("2026-01-05") },
+        },
+      ]);
+      prisma.orderPayment.findMany.mockResolvedValue([
+        { amount: 30, order: { customerId: "customer-1" } },
+      ]);
+      prisma.order.findMany.mockResolvedValue([
+        {
+          customerPhone: "51987654321",
+          customerName: null,
+          customerEmail: null,
+          paymentStatus: "VERIFIED",
+          createdAt: new Date("2026-06-01"),
+          payments: [{ amount: new Prisma.Decimal(20) }],
+        },
+      ]);
+
+      const result = await service.findAllForStore(storeId, ownerId);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual(expect.objectContaining({
+        id: "customer-1",
+        orderCount: 2,
+        lifetimeSpend: 50,
+        lastOrderAt: new Date("2026-06-01"),
+      }));
+    });
   });
 
   describe("findOneForStore", () => {
@@ -192,6 +305,112 @@ describe("CustomersService", () => {
           pendingAmount: 60,
           paidPercentage: 40,
         }),
+      ]);
+    });
+
+    it("resolves a guest synthetic id to its orders by normalized phone", async () => {
+      prisma.customer.findUnique.mockResolvedValue(null);
+      prisma.order.findMany.mockResolvedValue([
+        {
+          id: "order-g1",
+          customerPhone: "+51 987 654 321",
+          customerName: "Ana",
+          customerEmail: "ana@example.com",
+          requiredAmount: new Prisma.Decimal(100),
+          createdAt: new Date("2026-03-01"),
+          payments: [{ amount: new Prisma.Decimal(40) }],
+        },
+        {
+          id: "order-g2",
+          customerPhone: "51999999999",
+          customerName: "Beto",
+          customerEmail: null,
+          requiredAmount: new Prisma.Decimal(50),
+          createdAt: new Date("2026-02-01"),
+          payments: [],
+        },
+      ]);
+
+      const result = await service.findOneForStore(
+        "guest_51987654321",
+        storeId,
+        ownerId,
+      );
+
+      expect(prisma.customer.findUnique).toHaveBeenCalledWith({
+        where: { storeId_phone: { storeId, phone: "+51987654321" } },
+      });
+      expect(prisma.order.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { storeId, customerId: null },
+        }),
+      );
+      expect(result.customer).toEqual({
+        id: "guest_51987654321",
+        name: "Ana",
+        phone: "+51987654321",
+        email: "ana@example.com",
+        emailVerified: false,
+        createdAt: new Date("2026-03-01"),
+      });
+      expect(result.orders).toEqual([
+        expect.objectContaining({
+          id: "order-g1",
+          paidAmount: 40,
+          pendingAmount: 60,
+          paidPercentage: 40,
+        }),
+      ]);
+    });
+
+    it("throws NotFoundException when a guest id has no matching orders", async () => {
+      prisma.customer.findUnique.mockResolvedValue(null);
+      prisma.order.findMany.mockResolvedValue([
+        {
+          id: "order-g1",
+          customerPhone: "+51999999999",
+          customerName: "Beto",
+          customerEmail: null,
+          requiredAmount: new Prisma.Decimal(50),
+          createdAt: new Date("2026-02-01"),
+          payments: [],
+        },
+      ]);
+
+      await expect(service.findOneForStore("guest_51987654321", storeId, ownerId))
+        .rejects.toThrow(NotFoundException);
+    });
+
+    it("falls through to the real customer when an account now exists for the guest phone", async () => {
+      prisma.customer.findUnique.mockResolvedValue({
+        id: "customer-1",
+        storeId,
+        name: "Ana",
+        phone: "+51987654321",
+        email: "ana@example.com",
+        emailVerified: true,
+        createdAt: new Date("2026-01-01"),
+      });
+      prisma.order.findMany.mockResolvedValue([
+        {
+          id: "order-1",
+          requiredAmount: new Prisma.Decimal(100),
+          payments: [{ amount: new Prisma.Decimal(40) }],
+        },
+      ]);
+
+      const result = await service.findOneForStore(
+        "guest_51987654321",
+        storeId,
+        ownerId,
+      );
+
+      expect(prisma.customer.findUnique).toHaveBeenLastCalledWith({
+        where: { id: "customer-1" },
+      });
+      expect(result.customer.id).toBe("customer-1");
+      expect(result.orders).toEqual([
+        expect.objectContaining({ id: "order-1" }),
       ]);
     });
   });

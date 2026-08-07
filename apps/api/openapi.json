@@ -4930,6 +4930,14 @@
             "type": "string",
             "nullable": true
           },
+          "retainedAmount": {
+            "type": "string",
+            "nullable": true
+          },
+          "releasedAmount": {
+            "type": "string",
+            "nullable": true
+          },
           "totalAmount": {
             "type": "string"
           },
@@ -4986,6 +4994,8 @@
           "status",
           "cancellationResolution",
           "cancellationReason",
+          "retainedAmount",
+          "releasedAmount",
           "totalAmount",
           "requiredAmount",
           "currency",
@@ -5140,6 +5150,14 @@
             "type": "string",
             "nullable": true
           },
+          "retainedAmount": {
+            "type": "string",
+            "nullable": true
+          },
+          "releasedAmount": {
+            "type": "string",
+            "nullable": true
+          },
           "totalAmount": {
             "type": "string"
           },
@@ -5202,6 +5220,8 @@
           "status",
           "cancellationResolution",
           "cancellationReason",
+          "retainedAmount",
+          "releasedAmount",
           "totalAmount",
           "requiredAmount",
           "currency",
@@ -5328,6 +5348,14 @@
             "type": "string",
             "nullable": true
           },
+          "retainedAmount": {
+            "type": "string",
+            "nullable": true
+          },
+          "releasedAmount": {
+            "type": "string",
+            "nullable": true
+          },
           "totalAmount": {
             "type": "string"
           },
@@ -5363,6 +5391,8 @@
           "status",
           "cancellationResolution",
           "cancellationReason",
+          "retainedAmount",
+          "releasedAmount",
           "totalAmount",
           "requiredAmount",
           "currency",
