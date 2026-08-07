@@ -7,39 +7,50 @@
  */
 import type {
   CustomerDetailResponseDto,
-  CustomerListItemResponseDto,
-} from "../api.schemas.js";
+  CustomerListItemResponseDto
+} from '../api.schemas.js';
 
-import { customFetch } from "../../http.js";
+import { customFetch } from '../../http.js';
 
-export const getFindAllUrl = (storeId: string) => {
-  return `/stores/${storeId}/customers`;
-};
+export const getFindAllUrl = (storeId: string,) => {
 
-export const findAll = async (
-  storeId: string,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<CustomerListItemResponseDto[]> => {
-  return customFetch<CustomerListItemResponseDto[]>(getFindAllUrl(storeId), {
+
+
+
+  return `/stores/${storeId}/customers`
+}
+
+export const findAll = async (storeId: string, options?: Parameters<typeof customFetch>[1]): Promise<CustomerListItemResponseDto[]> => {
+
+  return customFetch<CustomerListItemResponseDto[]>(getFindAllUrl(storeId),
+  {
     ...options,
-    method: "GET",
-  });
-};
+    method: 'GET'
 
-export const getFindOneUrl = (storeId: string, customerId: string) => {
-  return `/stores/${storeId}/customers/${customerId}`;
-};
 
-export const findOne = async (
-  storeId: string,
-  customerId: string,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<CustomerDetailResponseDto> => {
-  return customFetch<CustomerDetailResponseDto>(
-    getFindOneUrl(storeId, customerId),
-    {
-      ...options,
-      method: "GET",
-    },
-  );
-};
+  }
+);}
+
+
+export const getFindOneUrl = (storeId: string,
+    customerId: string,) => {
+
+
+
+
+  return `/stores/${storeId}/customers/${customerId}`
+}
+
+export const findOne = async (storeId: string,
+    customerId: string, options?: Parameters<typeof customFetch>[1]): Promise<CustomerDetailResponseDto> => {
+
+  return customFetch<CustomerDetailResponseDto>(getFindOneUrl(storeId,customerId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+

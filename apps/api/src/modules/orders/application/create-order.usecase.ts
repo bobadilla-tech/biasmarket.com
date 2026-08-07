@@ -49,6 +49,18 @@ export class CreateOrderUseCase {
         if (!point || point.storeId !== store.id || !point.enabled) {
           throw new BadRequestException("Punto de recojo no disponible");
         }
+        // Defense-in-depth against a stale client cache or a direct API
+        // call bypassing whatever the storefront shows — mirrors the
+        // zero-payment guard's placement in ReviewPaymentUseCase.
+        const today = new Date().getDay();
+        if (
+          point.closedOverride ||
+          (point.openDays.length > 0 && !point.openDays.includes(today))
+        ) {
+          throw new BadRequestException(
+            "Punto de recojo no disponible hoy",
+          );
+        }
         pickupPoint = point;
       }
     }

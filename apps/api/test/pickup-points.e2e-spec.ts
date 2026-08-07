@@ -107,11 +107,18 @@ describe("pickup-points (e2e)", () => {
     const createRes = await request(app.getHttpServer())
       .post(`/stores/${storeId}/pickup-points`)
       .set("Cookie", sessionCookie)
-      .send({ label: "E2E Pickup Point", sortOrder: 1 })
+      .send({
+        label: "E2E Pickup Point",
+        sortOrder: 1,
+        openDays: [1, 2, 3, 4, 5],
+        closedOverride: false,
+      })
       .expect(201);
     pointId = createRes.body.id;
     assertMatchesSchema(createRes.body, pickupPointSchema, openapi.components);
     expect(createRes.body.label).toBe("E2E Pickup Point");
+    expect(createRes.body.openDays).toEqual([1, 2, 3, 4, 5]);
+    expect(createRes.body.closedOverride).toBe(false);
 
     const listRes = await request(app.getHttpServer())
       .get(`/stores/${storeId}/pickup-points`)
@@ -135,10 +142,16 @@ describe("pickup-points (e2e)", () => {
     const updateRes = await request(app.getHttpServer())
       .patch(`/stores/${storeId}/pickup-points/${pointId}`)
       .set("Cookie", sessionCookie)
-      .send({ label: "Updated E2E Pickup Point" })
+      .send({
+        label: "Updated E2E Pickup Point",
+        openDays: [0, 6],
+        closedOverride: true,
+      })
       .expect(200);
     assertMatchesSchema(updateRes.body, pickupPointSchema, openapi.components);
     expect(updateRes.body.label).toBe("Updated E2E Pickup Point");
+    expect(updateRes.body.openDays).toEqual([0, 6]);
+    expect(updateRes.body.closedOverride).toBe(true);
 
     const removeRes = await request(app.getHttpServer())
       .delete(`/stores/${storeId}/pickup-points/${pointId}`)
@@ -146,5 +159,43 @@ describe("pickup-points (e2e)", () => {
       .expect(200);
     assertMatchesSchema(removeRes.body, pickupPointSchema, openapi.components);
     pointId = "";
+  });
+
+  // Regression coverage for CreateOrderUseCase's defense-in-depth check (see
+  // docs/plans/2026-08-06-pickup-point-availability-schema-and-api.md): a
+  // direct API call selecting a closedOverride'd point must 400, not create
+  // an order against a point the storefront wouldn't have shown as
+  // selectable.
+  it("rejects checkout against a closedOverride'd pickup point", async () => {
+    const closedPointRes = await request(app.getHttpServer())
+      .post(`/stores/${storeId}/pickup-points`)
+      .set("Cookie", sessionCookie)
+      .send({ label: "Closed Today", closedOverride: true })
+      .expect(201);
+    const closedPointId = closedPointRes.body.id as string;
+
+    const productRes = await request(app.getHttpServer())
+      .post(`/stores/${storeId}/products`)
+      .set("Cookie", sessionCookie)
+      .send({ name: "E2E Pickup Product", price: 10, currency: "PEN" })
+      .expect(201);
+    const productId = productRes.body.id as string;
+    await request(app.getHttpServer())
+      .patch(`/stores/${storeId}/products/${productId}/publish`)
+      .set("Cookie", sessionCookie)
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .post(`/stores/${storeSlug}/checkout`)
+      .send({
+        deliveryMethodType: "PICKUP",
+        customerPhone: "+51977777777",
+        pickupPointId: closedPointId,
+        items: [{ productId, quantity: 1 }],
+      })
+      .expect(400);
+
+    await prisma.product.deleteMany({ where: { id: productId } });
+    await prisma.pickupPoint.deleteMany({ where: { id: closedPointId } });
   });
 });

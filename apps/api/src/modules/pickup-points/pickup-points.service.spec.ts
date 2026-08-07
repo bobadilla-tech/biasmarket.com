@@ -87,7 +87,50 @@ describe("PickupPointsService", () => {
       await service.create(storeId, ownerId, { label: "Plaza Norte" });
 
       expect(prisma.pickupPoint.create).toHaveBeenCalledWith({
-        data: { storeId, label: "Plaza Norte", enabled: true, sortOrder: 0 },
+        data: {
+          storeId,
+          label: "Plaza Norte",
+          enabled: true,
+          sortOrder: 0,
+          openDays: [],
+          closedOverride: false,
+        },
+      });
+    });
+
+    it("creates a pickup point with explicit openDays and closedOverride", async () => {
+      prisma.pickupPoint.create.mockResolvedValue({ id: pointId });
+
+      await service.create(storeId, ownerId, {
+        label: "Plaza Norte",
+        openDays: [1, 2, 3, 4, 5],
+        closedOverride: true,
+      });
+
+      expect(prisma.pickupPoint.create).toHaveBeenCalledWith({
+        data: {
+          storeId,
+          label: "Plaza Norte",
+          enabled: true,
+          sortOrder: 0,
+          openDays: [1, 2, 3, 4, 5],
+          closedOverride: true,
+        },
+      });
+    });
+
+    it("updates a point's openDays and closedOverride", async () => {
+      prisma.pickupPoint.findUnique.mockResolvedValue({ id: pointId, storeId });
+      prisma.pickupPoint.update.mockResolvedValue({ id: pointId });
+
+      await service.update(pointId, storeId, ownerId, {
+        openDays: [0, 6],
+        closedOverride: true,
+      });
+
+      expect(prisma.pickupPoint.update).toHaveBeenCalledWith({
+        where: { id: pointId },
+        data: { openDays: [0, 6], closedOverride: true },
       });
     });
 

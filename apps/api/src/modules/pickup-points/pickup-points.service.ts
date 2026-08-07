@@ -53,6 +53,8 @@ export class PickupPointsService {
         label: dto.label,
         enabled: dto.enabled ?? true,
         sortOrder: dto.sortOrder ?? 0,
+        openDays: dto.openDays ?? [],
+        closedOverride: dto.closedOverride ?? false,
       },
     });
   }

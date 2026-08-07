@@ -376,12 +376,18 @@ model DeliveryMethodConfig {
 }
 
 model PickupPoint {
-  id        String   @id @default(cuid())
-  storeId   String
-  label     String
-  enabled   Boolean  @default(true)
-  sortOrder Int      @default(0)
-  createdAt DateTime @default(now())
+  id             String   @id @default(cuid())
+  storeId        String
+  label          String
+  enabled        Boolean  @default(true)
+  sortOrder      Int      @default(0)
+  // JS Date.getDay() convention: 0=Sunday..6=Saturday. Empty = no
+  // restriction / open every day.
+  openDays       Int[]    @default([])
+  // Manual "not available today/this week" toggle, independent of the
+  // weekly openDays schedule and of the permanent `enabled` kill switch.
+  closedOverride Boolean  @default(false)
+  createdAt      DateTime @default(now())
 
   store  Store   @relation(fields: [storeId], references: [id])
   orders Order[]

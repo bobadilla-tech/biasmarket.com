@@ -7,33 +7,35 @@
  */
 import type {
   ProductSearchControllersearchParams,
-  ProductSearchResultResponseDto,
-} from "../api.schemas.js";
+  ProductSearchResultResponseDto
+} from '../api.schemas.js';
 
-import { customFetch } from "../../http.js";
+import { customFetch } from '../../http.js';
 
-export const getSearchUrl = (params?: ProductSearchControllersearchParams) => {
+export const getSearchUrl = (params?: ProductSearchControllersearchParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
+
     if (value !== undefined) {
-      normalizedParams.append(key, value === null ? "null" : String(value));
+      normalizedParams.append(key, value === null ? 'null' : String(value))
     }
   });
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0
-    ? `/products/search?${stringifiedParams}`
-    : `/products/search`;
-};
+  return stringifiedParams.length > 0 ? `/products/search?${stringifiedParams}` : `/products/search`
+}
 
-export const search = async (
-  params?: ProductSearchControllersearchParams,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<ProductSearchResultResponseDto> => {
-  return customFetch<ProductSearchResultResponseDto>(getSearchUrl(params), {
+export const search = async (params?: ProductSearchControllersearchParams, options?: Parameters<typeof customFetch>[1]): Promise<ProductSearchResultResponseDto> => {
+
+  return customFetch<ProductSearchResultResponseDto>(getSearchUrl(params),
+  {
     ...options,
-    method: "GET",
-  });
-};
+    method: 'GET'
+
+
+  }
+);}
+
+

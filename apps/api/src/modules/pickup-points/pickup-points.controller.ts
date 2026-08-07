@@ -21,6 +21,8 @@ interface PickupPointRow {
   label: string;
   enabled: boolean;
   sortOrder: number;
+  openDays: number[];
+  closedOverride: boolean;
   createdAt: Date;
 }
 

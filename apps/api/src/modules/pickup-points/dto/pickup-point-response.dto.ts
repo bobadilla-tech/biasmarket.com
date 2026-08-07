@@ -16,6 +16,12 @@ export class PickupPointResponseDto {
   @ApiProperty()
   sortOrder: number;
 
+  @ApiProperty({ type: [Number] })
+  openDays: number[];
+
+  @ApiProperty()
+  closedOverride: boolean;
+
   @ApiProperty({ type: String, format: "date-time" })
   createdAt: string;
 }

@@ -33,7 +33,17 @@ export function CheckoutForm(
   const submitCheckout = useSubmitCheckout(slug);
 
   const methods = deliveryOptions.data?.methods ?? [];
-  const points = deliveryOptions.data?.points ?? [];
+  // Defense-in-depth against a stale client cache: `CreateOrderUseCase`
+  // already rejects a closedOverride'd/not-open-today point server-side —
+  // this just stops the dropdown from offering it as selectable in the
+  // first place. The card-selector redesign (with day-availability badges)
+  // is the real storefront consumer of this data; this is the minimum
+  // until that lands.
+  const today = new Date().getDay();
+  const points = (deliveryOptions.data?.points ?? []).filter((point) =>
+    !point.closedOverride &&
+    (point.openDays.length === 0 || point.openDays.includes(today))
+  );
   const paymentMethods = deliveryOptions.data?.paymentMethods ?? [];
   const deliveryMethodsLoaded = !deliveryOptions.isPending;
   const mixedCurrencies = hasMixedCurrencies(items);
@@ -64,11 +74,11 @@ export function CheckoutForm(
     ) {
       form.setValue("deliveryMethodType", deliveryOptions.data.methods[0].type);
     }
-    if (deliveryOptions.data.points[0] && !form.getValues("pickupPointId")) {
-      form.setValue("pickupPointId", deliveryOptions.data.points[0].id);
+    if (points[0] && !form.getValues("pickupPointId")) {
+      form.setValue("pickupPointId", points[0].id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [deliveryOptions.data, form.setValue, form.getValues]);
+  }, [deliveryOptions.data, points, form.setValue, form.getValues]);
 
   const customerPhone = form.watch("customerPhone");
   const deliveryMethodType = form.watch("deliveryMethodType");

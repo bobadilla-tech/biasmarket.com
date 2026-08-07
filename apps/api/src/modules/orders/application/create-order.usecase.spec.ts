@@ -428,6 +428,8 @@ describe("CreateOrderUseCase", () => {
       storeId: store.id,
       label: "Alameda 28 de Julio",
       enabled: true,
+      openDays: [] as number[],
+      closedOverride: false,
     };
 
     beforeEach(() => {
@@ -481,6 +483,45 @@ describe("CreateOrderUseCase", () => {
       await expect(
         useCase.execute(slug, { ...dto, pickupPointId: point.id }),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it("throws BadRequestException when the selected point has closedOverride set", async () => {
+      prisma.pickupPoint.count.mockResolvedValue(1);
+      prisma.pickupPoint.findUnique.mockResolvedValue({
+        ...point,
+        closedOverride: true,
+      });
+
+      await expect(
+        useCase.execute(slug, { ...dto, pickupPointId: point.id }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it("throws BadRequestException when today is not in the point's openDays", async () => {
+      prisma.pickupPoint.count.mockResolvedValue(1);
+      const closedToday = [0, 1, 2, 3, 4, 5, 6].filter(
+        (day) => day !== new Date().getDay(),
+      );
+      prisma.pickupPoint.findUnique.mockResolvedValue({
+        ...point,
+        openDays: closedToday,
+      });
+
+      await expect(
+        useCase.execute(slug, { ...dto, pickupPointId: point.id }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it("succeeds when today is in the point's openDays", async () => {
+      prisma.pickupPoint.count.mockResolvedValue(1);
+      prisma.pickupPoint.findUnique.mockResolvedValue({
+        ...point,
+        openDays: [new Date().getDay()],
+      });
+
+      await expect(
+        useCase.execute(slug, { ...dto, pickupPointId: point.id }),
+      ).resolves.toBeDefined();
     });
 
     it("succeeds with pickupPointId null when the store has zero configured points", async () => {

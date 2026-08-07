@@ -5905,6 +5905,15 @@
           "sortOrder": {
             "type": "number"
           },
+          "openDays": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "closedOverride": {
+            "type": "boolean"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -5916,6 +5925,8 @@
           "label",
           "enabled",
           "sortOrder",
+          "openDays",
+          "closedOverride",
           "createdAt"
         ]
       },
@@ -5931,6 +5942,18 @@
           },
           "sortOrder": {
             "type": "number"
+          },
+          "openDays": {
+            "maxItems": 7,
+            "type": "array",
+            "items": {
+              "type": "number",
+              "maximum": 6,
+              "minimum": 0
+            }
+          },
+          "closedOverride": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -5949,6 +5972,18 @@
           },
           "sortOrder": {
             "type": "number"
+          },
+          "openDays": {
+            "maxItems": 7,
+            "type": "array",
+            "items": {
+              "type": "number",
+              "maximum": 6,
+              "minimum": 0
+            }
+          },
+          "closedOverride": {
+            "type": "boolean"
           }
         }
       },
