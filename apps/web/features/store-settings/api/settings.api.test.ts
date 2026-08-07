@@ -40,12 +40,21 @@ test("saveDeliverySettings creates new points, updates existing ones, and delete
     courierEnabled: false,
     courierCost: 15,
     points: [
-      { id: "new:123", label: "New spot", enabled: true, sortOrder: 1 },
+      {
+        id: "new:123",
+        label: "New spot",
+        enabled: true,
+        sortOrder: 1,
+        openDays: [1, 2, 3],
+        closedOverride: false,
+      },
       {
         id: "existing-1",
         label: "Existing spot",
         enabled: false,
         sortOrder: 0,
+        openDays: [],
+        closedOverride: true,
       },
     ],
     deletedPointIds: ["deleted-1"],
@@ -65,6 +74,8 @@ test("saveDeliverySettings creates new points, updates existing ones, and delete
     label: "New spot",
     enabled: true,
     sortOrder: 1,
+    openDays: [1, 2, 3],
+    closedOverride: false,
   });
   expect(pickupPointsMock.update).toHaveBeenCalledWith(
     "store-1",
@@ -73,6 +84,8 @@ test("saveDeliverySettings creates new points, updates existing ones, and delete
       label: "Existing spot",
       enabled: false,
       sortOrder: 0,
+      openDays: [],
+      closedOverride: true,
     },
   );
   expect(pickupPointsMock.remove).toHaveBeenCalledWith("store-1", "deleted-1");

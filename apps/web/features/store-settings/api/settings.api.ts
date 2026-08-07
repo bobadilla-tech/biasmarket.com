@@ -53,6 +53,8 @@ export const settingsApi = {
             label: point.label,
             enabled: point.enabled,
             sortOrder: point.sortOrder,
+            openDays: point.openDays,
+            closedOverride: point.closedOverride,
           })
         ),
       ...input.points
@@ -62,6 +64,8 @@ export const settingsApi = {
             label: point.label,
             enabled: point.enabled,
             sortOrder: point.sortOrder,
+            openDays: point.openDays,
+            closedOverride: point.closedOverride,
           })
         ),
       ...input.deletedPointIds.map((id) =>

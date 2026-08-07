@@ -1,12 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Truck } from "lucide-react";
+import { CalendarClock, Plus, Truck } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { useDeliverySettings } from "../queries/use-delivery-settings";
 import { useSaveDelivery } from "../mutations/use-save-delivery";
 import { isNewPickupPoint, type PickupPoint } from "../schemas/delivery.schema";
@@ -16,6 +24,37 @@ import {
   ToggleRow,
   useSavedFlash,
 } from "./section-primitives";
+
+// Mon..Sun display order, mapped to JS Date.getDay() values (0=Sunday).
+const WEEKDAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
+
+// next-intl's typed t() rejects a template-literal key, so this builds a
+// day -> label lookup from static literal calls instead of `t(\`...${day}\`)`.
+function weekdayLabels(
+  t: ReturnType<typeof useTranslations>,
+): Record<number, string> {
+  return {
+    0: t("delivery.weekdays.0"),
+    1: t("delivery.weekdays.1"),
+    2: t("delivery.weekdays.2"),
+    3: t("delivery.weekdays.3"),
+    4: t("delivery.weekdays.4"),
+    5: t("delivery.weekdays.5"),
+    6: t("delivery.weekdays.6"),
+  };
+}
+
+function availabilitySummary(
+  point: PickupPoint,
+  t: ReturnType<typeof useTranslations>,
+): string {
+  if (point.closedOverride) return t("delivery.closedNowBadge");
+  if (point.openDays.length === 0) return t("delivery.everyDayBadge");
+  const labels = weekdayLabels(t);
+  return WEEKDAY_ORDER.filter((day) => point.openDays.includes(day))
+    .map((day) => labels[day])
+    .join(", ");
+}
 
 export function DeliverySection({ storeId }: { storeId: string }) {
   const t = useTranslations("dashboard.settings");
@@ -28,6 +67,7 @@ export function DeliverySection({ storeId }: { storeId: string }) {
   const [deletedPointIds, setDeletedPointIds] = useState<string[]>([]);
   const [courierEnabled, setCourierEnabled] = useState(false);
   const [courierCost, setCourierCost] = useState("");
+  const [editingPointId, setEditingPointId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!data) return;
@@ -53,6 +93,8 @@ export function DeliverySection({ storeId }: { storeId: string }) {
         label: newPointLabel.trim(),
         enabled: true,
         sortOrder: prev.length,
+        openDays: [],
+        closedOverride: false,
       },
     ]);
     setNewPointLabel("");
@@ -76,6 +118,30 @@ export function DeliverySection({ storeId }: { storeId: string }) {
       prev.map((point) => (point.id === id ? { ...point, label } : point))
     );
   };
+
+  const handleToggleDay = (id: string, day: number) => {
+    setPickupPoints((prev) =>
+      prev.map((point) =>
+        point.id === id
+          ? {
+            ...point,
+            openDays: point.openDays.includes(day)
+              ? point.openDays.filter((d) => d !== day)
+              : [...point.openDays, day].sort(),
+          }
+          : point
+      )
+    );
+  };
+
+  const handleToggleClosedOverride = (id: string, closedOverride: boolean) => {
+    setPickupPoints((prev) =>
+      prev.map((point) => (point.id === id ? { ...point, closedOverride } : point))
+    );
+  };
+
+  const editingPoint = pickupPoints.find((point) => point.id === editingPointId) ??
+    null;
 
   const handleSave = () => {
     saveDelivery.mutate({
@@ -116,27 +182,42 @@ export function DeliverySection({ storeId }: { storeId: string }) {
                 pickupPoints.map((point) => (
                   <div
                     key={point.id}
-                    className="flex items-center gap-3 rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3"
+                    className="space-y-2 rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3"
                   >
-                    <Switch
-                      checked={point.enabled}
-                      onCheckedChange={(enabled) =>
-                        handleTogglePoint(point.id, enabled)}
-                    />
-                    <Input
-                      value={point.label}
-                      onChange={(event) =>
-                        handleUpdatePointLabel(point.id, event.target.value)}
-                      className="store-theme-input h-10 rounded-xl border-[#e7dcf3] bg-white text-[#341b55] shadow-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleRemovePoint(point.id)}
-                      className="text-lg leading-none text-(--store-primary)"
-                      aria-label={t("delivery.removePickupPoint")}
-                    >
-                      ×
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <Switch
+                        checked={point.enabled}
+                        onCheckedChange={(enabled) =>
+                          handleTogglePoint(point.id, enabled)}
+                      />
+                      <Input
+                        value={point.label}
+                        onChange={(event) =>
+                          handleUpdatePointLabel(point.id, event.target.value)}
+                        className="store-theme-input h-10 rounded-xl border-[#e7dcf3] bg-white text-[#341b55] shadow-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePoint(point.id)}
+                        className="text-lg leading-none text-(--store-primary)"
+                        aria-label={t("delivery.removePickupPoint")}
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 pl-11">
+                      <span className="text-xs text-[#9582ad]">
+                        {availabilitySummary(point, t)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setEditingPointId(point.id)}
+                        className="flex items-center gap-1 text-xs font-semibold text-(--store-primary)"
+                      >
+                        <CalendarClock className="size-3.5" />
+                        {t("delivery.editAvailability")}
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
@@ -204,6 +285,84 @@ export function DeliverySection({ storeId }: { storeId: string }) {
             : t("save")}
         </Button>
       </div>
+
+      <Sheet
+        open={!!editingPointId}
+        onOpenChange={(open) => {
+          if (!open) setEditingPointId(null);
+        }}
+      >
+        <SheetContent>
+          {editingPoint
+            ? (
+              <>
+                <SheetHeader>
+                  <SheetTitle>
+                    {t("delivery.availabilitySheetTitle", {
+                      label: editingPoint.label,
+                    })}
+                  </SheetTitle>
+                  <SheetDescription>
+                    {t("delivery.availabilitySheetDescription")}
+                  </SheetDescription>
+                </SheetHeader>
+
+                <div className="space-y-4 px-4">
+                  <div className="space-y-2">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#927fac]">
+                      {t("delivery.weekdaysLabel")}
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {WEEKDAY_ORDER.map((day) => {
+                        const checked = editingPoint.openDays.includes(day);
+                        return (
+                          <button
+                            key={day}
+                            type="button"
+                            onClick={() =>
+                              handleToggleDay(editingPoint.id, day)}
+                            className={`h-9 min-w-9 rounded-xl border px-2 text-xs font-semibold ${
+                              checked
+                                ? "store-theme-primary-button border-transparent"
+                                : "border-[#e7dcf3] bg-white text-[#8f7da8]"
+                            }`}
+                          >
+                            {weekdayLabels(t)[day]}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="text-xs text-[#9582ad]">
+                      {t("delivery.everyDayHint")}
+                    </p>
+                  </div>
+
+                  <ToggleRow
+                    label={t("delivery.closedOverrideLabel")}
+                    description={t("delivery.closedOverrideHelp")}
+                    enabled={editingPoint.closedOverride}
+                    onChange={(closedOverride) =>
+                      handleToggleClosedOverride(
+                        editingPoint.id,
+                        closedOverride,
+                      )}
+                  />
+                </div>
+
+                <SheetFooter>
+                  <Button
+                    type="button"
+                    onClick={() => setEditingPointId(null)}
+                    className="store-theme-primary-button h-11 rounded-2xl text-sm font-semibold hover:opacity-100"
+                  >
+                    {t("delivery.doneEditingAvailability")}
+                  </Button>
+                </SheetFooter>
+              </>
+            )
+            : null}
+        </SheetContent>
+      </Sheet>
     </SectionCard>
   );
 }

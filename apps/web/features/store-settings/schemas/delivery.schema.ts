@@ -9,6 +9,10 @@ export interface PickupPoint {
   label: string;
   enabled: boolean;
   sortOrder: number;
+  // JS Date.getDay() convention: 0=Sunday..6=Saturday. Empty = no
+  // restriction / open every day — mirrors PickupPointResponseDto.
+  openDays: number[];
+  closedOverride: boolean;
 }
 
 export const isNewPickupPoint = (id: string) => id.startsWith("new:");
