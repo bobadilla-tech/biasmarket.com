@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { statsKeys } from "@/features/stats";
 import { ordersApi } from "../api/orders.api";
 import { ordersKeys } from "../queries/use-orders";
 
@@ -21,6 +22,7 @@ export function useAdvanceFulfillment(
     onSuccess: () => {
       if (!storeId) return;
       queryClient.invalidateQueries({ queryKey: ordersKeys.byStore(storeId) });
+      queryClient.invalidateQueries({ queryKey: statsKeys.overview(storeId) });
     },
   });
 }
