@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "@biasmarket/i18n";
@@ -24,7 +24,7 @@ vi.mock(
   () => ({ apiClient: { notifications: notificationsMock } }),
 );
 
-const { MobileSidebar } = await import("./mobile-sidebar");
+const { StoreSidebar } = await import("./store-sidebar");
 
 function createMemoryStorage(): Storage {
   const store = new Map<string, string>();
@@ -40,34 +40,43 @@ function createMemoryStorage(): Storage {
   };
 }
 
+function renderSidebar() {
+  vi.stubGlobal("localStorage", createMemoryStorage());
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return render(
+    <NextIntlClientProvider locale="es" messages={getMessages("es")}>
+      <QueryClientProvider client={queryClient}>
+        <StoreSidebar slug="demo" store={{ id: "store-1" } as never} />
+      </QueryClientProvider>
+    </NextIntlClientProvider>,
+  );
+}
+
 afterEach(() => {
   cleanup();
   notificationsMock.unreadCount.mockReset();
 });
 
-test("mobile sheet renders StoreSidebar fully expanded even when the desktop collapse state is stored as collapsed", () => {
+test("hides the badge when unread count is 0", async () => {
   notificationsMock.unreadCount.mockResolvedValue({ count: 0 });
-  vi.stubGlobal("localStorage", createMemoryStorage());
-  globalThis.localStorage.setItem("store-sidebar-collapsed", "true");
+  renderSidebar();
 
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  });
+  await screen.findByText("Notificaciones");
+  expect(screen.queryByText("0")).toBeNull();
+});
 
-  render(
-    <NextIntlClientProvider locale="es" messages={getMessages("es")}>
-      <QueryClientProvider client={queryClient}>
-        <MobileSidebar slug="demo" store={null} />
-      </QueryClientProvider>
-    </NextIntlClientProvider>,
-  );
+test("renders the unread count on the notifications nav badge", async () => {
+  notificationsMock.unreadCount.mockResolvedValue({ count: 4 });
+  renderSidebar();
 
-  fireEvent.click(screen.getByRole("button", { name: "Abrir menú" }));
+  expect(await screen.findByText("4")).toBeDefined();
+});
 
-  // Nav labels only render in expanded mode — a collapsed rail hides them
-  // and shows icons only. Finding them proves collapse state didn't leak
-  // from localStorage into the mobile sheet.
-  expect(screen.getByText("Pedidos")).toBeDefined();
-  expect(screen.getByText("Productos")).toBeDefined();
-  expect(screen.getByText("Cerrar sesión")).toBeDefined();
+test("truncates counts above 9 to '9+'", async () => {
+  notificationsMock.unreadCount.mockResolvedValue({ count: 25 });
+  renderSidebar();
+
+  expect(await screen.findByText("9+")).toBeDefined();
 });
