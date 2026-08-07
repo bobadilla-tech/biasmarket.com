@@ -9,6 +9,7 @@ test("accepts a valid product form payload", () => {
     currency: "USD",
     stock: "5",
     categoryId: "c1",
+    availability: "AVAILABLE",
   });
   expect(result.success).toBe(true);
 });

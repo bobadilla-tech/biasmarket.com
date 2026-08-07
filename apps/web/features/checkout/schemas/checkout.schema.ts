@@ -15,7 +15,7 @@ export function buildCheckoutFormSchema(
     .object({
       customerName: z.string(),
       customerPhone: z.string().min(1, "phone required"),
-      customerEmail: z.union([z.literal(""), z.string().email()]),
+      customerEmail: z.string().email("invalid email"),
       deliveryMethodType: z.string().min(1, "delivery method required"),
       pickupPointId: z.string(),
       pickupDate: z.string(),

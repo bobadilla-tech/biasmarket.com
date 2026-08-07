@@ -2,6 +2,10 @@
   "notFound": "Store not found.",
   "noProducts": "No products published yet.",
   "soldOut": "Sold out",
+  "comingSoonSection": {
+    "title": "Coming soon",
+    "subtitle": "These items are sold out for now. Leave your number and we'll let you know when they're back."
+  },
   "fromPrice": "From",
   "availableUntil": "Available until {date}",
   "variantSoldOut": "(sold out)",
@@ -59,7 +63,7 @@
     },
     "namePlaceholder": "Name",
     "phonePlaceholder": "Phone (WhatsApp)",
-    "emailPlaceholder": "Email (optional)",
+    "emailPlaceholder": "Email",
     "invalidEmail": "Enter a valid email",
     "submit": "Confirm and continue on WhatsApp",
     "submitSubtext": "We'll take you to WhatsApp to coordinate payment with the store.",

@@ -31,6 +31,7 @@ describe("ProductSearchService", () => {
         where: {
           status: "PUBLISHED",
           deletedAt: null,
+          discontinued: false,
           store: { owner: { banned: { not: true } } },
         },
       }),

@@ -211,7 +211,7 @@ export class ProductsService {
     await this.findOwnedProduct(productId, storeId, userId);
     return this.prisma.product.update({
       where: { id: productId },
-      data: { deletedAt: new Date(), status: "DRAFT" },
+      data: { deletedAt: new Date(), status: "DRAFT", discontinued: false },
     });
   }
 

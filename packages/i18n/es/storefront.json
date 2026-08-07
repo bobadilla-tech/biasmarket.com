@@ -59,7 +59,7 @@
     },
     "namePlaceholder": "Nombre",
     "phonePlaceholder": "Teléfono (WhatsApp)",
-    "emailPlaceholder": "Email (opcional)",
+    "emailPlaceholder": "Email",
     "invalidEmail": "Ingresa un email válido",
     "submit": "Confirmar y continuar por WhatsApp",
     "submitSubtext": "Te llevaremos a WhatsApp para coordinar el pago con la tienda.",
@@ -218,5 +218,9 @@
     "successBody": "Te escribiremos por WhatsApp en cuanto este producto vuelva a estar disponible.",
     "close": "Cerrar",
     "error": "Algo salió mal. Inténtalo de nuevo."
+  },
+  "comingSoonSection": {
+    "title": "Próximamente disponibles",
+    "subtitle": "Estos productos están agotados por ahora. Deja tu número y te avisamos cuando vuelvan."
   }
 }

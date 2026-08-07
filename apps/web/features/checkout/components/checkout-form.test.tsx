@@ -86,6 +86,10 @@ test("submits with the delivery type, pickup point, and payment method the buyer
     screen.getByPlaceholderText("Teléfono (WhatsApp)"),
     "988888888",
   );
+  await user.type(
+    screen.getByPlaceholderText("Email"),
+    "jane@example.com",
+  );
   await user.click(
     screen.getByRole("button", { name: /Confirmar y continuar/i }),
   );
@@ -103,7 +107,7 @@ test("submits with the delivery type, pickup point, and payment method the buyer
     );
     expect(onOrderCreated).toHaveBeenCalledWith({
       orderId: "order-1",
-      customerEmail: "",
+      customerEmail: "jane@example.com",
     });
   });
 });
@@ -230,6 +234,10 @@ test("submits with the chosen pickupDate when a closed-today point was selected"
   await user.type(
     screen.getByPlaceholderText("Teléfono (WhatsApp)"),
     "988888888",
+  );
+  await user.type(
+    screen.getByPlaceholderText("Email"),
+    "jane@example.com",
   );
   await user.click(
     screen.getByRole("button", { name: /Confirmar y continuar/i }),

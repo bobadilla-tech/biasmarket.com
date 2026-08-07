@@ -136,7 +136,9 @@ export class StoresService {
     const candidates = await this.prisma.store.findMany({
       where: {
         isPublic: true,
-        products: { some: { status: "PUBLISHED", deletedAt: null } },
+        products: {
+          some: { status: "PUBLISHED", deletedAt: null, discontinued: false },
+        },
         owner: { banned: { not: true } },
       },
       select: { id: true, name: true, slug: true, logoUrl: true },
@@ -183,7 +185,9 @@ export class StoresService {
   async findDirectory(page: number, limit: number, q: string | undefined) {
     const where: Prisma.StoreWhereInput = {
       isPublic: true,
-      products: { some: { status: "PUBLISHED", deletedAt: null } },
+      products: {
+        some: { status: "PUBLISHED", deletedAt: null, discontinued: false },
+      },
       owner: { banned: { not: true } },
       ...(q && { name: { contains: q, mode: "insensitive" as const } }),
     };
@@ -230,7 +234,9 @@ export class StoresService {
         ...section.collection,
         products: section.collection.products.filter(
           (cp) =>
-            cp.product.status === "PUBLISHED" && cp.product.deletedAt === null,
+            cp.product.status === "PUBLISHED" &&
+            cp.product.deletedAt === null &&
+            cp.product.discontinued === false,
         ),
       },
     }));
@@ -250,6 +256,7 @@ export class StoresService {
         storeId: store.id,
         status: "PUBLISHED",
         deletedAt: null,
+        discontinued: false,
         id: { notIn: coveredProductIds },
       },
       include: { variants: true },
@@ -290,7 +297,11 @@ export class StoresService {
       include: {
         store: { select: { slug: true } },
         products: {
-          include: { product: { select: { status: true, deletedAt: true } } },
+          include: {
+            product: {
+              select: { status: true, deletedAt: true, discontinued: true },
+            },
+          },
         },
       },
     });
@@ -298,7 +309,9 @@ export class StoresService {
       .filter((c) =>
         c.products.some(
           (cp) =>
-            cp.product.status === "PUBLISHED" && cp.product.deletedAt === null,
+            cp.product.status === "PUBLISHED" &&
+            cp.product.deletedAt === null &&
+            cp.product.discontinued === false,
         )
       )
       .map((c) => ({
@@ -329,7 +342,8 @@ export class StoresService {
       !product ||
       product.storeId !== store.id ||
       product.status !== "PUBLISHED" ||
-      product.deletedAt !== null
+      product.deletedAt !== null ||
+      product.discontinued
     ) {
       throw new NotFoundException("Producto no encontrado");
     }

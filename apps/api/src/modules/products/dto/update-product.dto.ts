@@ -34,6 +34,10 @@ export class UpdateProductDto {
   soldOut?: boolean;
 
   @IsOptional()
+  @IsBoolean()
+  discontinued?: boolean;
+
+  @IsOptional()
   @IsArray()
   @IsString({ each: true })
   images?: string[];

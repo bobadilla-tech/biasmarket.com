@@ -10,6 +10,7 @@ export class ProductSearchService {
     const where: Prisma.ProductWhereInput = {
       status: "PUBLISHED",
       deletedAt: null,
+      discontinued: false,
       store: { owner: { banned: { not: true } } },
       ...(q && { name: { contains: q, mode: "insensitive" as const } }),
     };

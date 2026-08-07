@@ -132,6 +132,7 @@ export function CartPageClient() {
           if (section.type !== "COLLECTION" || !section.collection) continue;
           for (const cp of section.collection.products) {
             const product = cp.product;
+            if (product?.discontinued) continue;
             const variants = product.variants ?? [];
             if (variants.length === 0) {
               pMap.set(product.id, Infinity);

@@ -6,6 +6,7 @@ import { apiClient } from "@/lib/api-client";
 import { productsApi } from "../api/products.api";
 import { productsKeys } from "../queries/use-products";
 import { keyForAttributes } from "../lib/variant-key";
+import { availabilityFlags } from "../lib/availability-state";
 import type { VariantDraft } from "../schemas/variant.schema";
 
 /**
@@ -32,12 +33,14 @@ export function useUpdateProduct(storeId: string | undefined) {
       currency: string;
       stock: string;
       categoryId: string;
+        availability: "AVAILABLE" | "OUT_OF_STOCK" | "DISCONTINUED";
       imageFile: File | null;
       variants: VariantDraft[];
       variantImages: Record<string, File | null>;
       fallbackErrorMessage?: string;
     }) => {
       const sid = storeId as string;
+      const { soldOut, discontinued } = availabilityFlags(input.availability);
 
       await apiClient.products.update(
         sid,
@@ -47,6 +50,8 @@ export function useUpdateProduct(storeId: string | undefined) {
           description: input.description || undefined,
           price: Number(input.price),
           currency: input.currency,
+          soldOut,
+          discontinued,
           categoryIds: input.categoryId ? [input.categoryId] : [],
         },
         { fallbackErrorMessage: input.fallbackErrorMessage },

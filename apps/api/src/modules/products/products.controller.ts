@@ -44,6 +44,7 @@ type ProductRow = {
   availableUntil: Date | null;
   status: "DRAFT" | "PUBLISHED";
   soldOut: boolean;
+  discontinued: boolean;
   deletedAt: Date | null;
   createdAt: Date;
 };
@@ -72,6 +73,7 @@ function toProductDto(product: ProductRow): ProductResponseDto {
     availableUntil: product.availableUntil?.toISOString() ?? null,
     status: product.status,
     soldOut: product.soldOut,
+    discontinued: product.discontinued,
     deletedAt: product.deletedAt?.toISOString() ?? null,
     createdAt: product.createdAt.toISOString(),
   };

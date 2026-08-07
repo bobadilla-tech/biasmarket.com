@@ -92,6 +92,7 @@ test("upserts matched and new variants against a fresh baseline, then deletes st
     currency: "USD",
     stock: "",
     categoryId: "",
+    availability: "AVAILABLE",
     imageFile: null,
     variants: [
       { name: "Small", attributes: { size: "S" } },
@@ -133,6 +134,7 @@ test("aggregates a failed upsert into one error and skips the delete pass", asyn
     currency: "USD",
     stock: "",
     categoryId: "",
+    availability: "AVAILABLE",
     imageFile: null,
     variants: [{ name: "Small", attributes: { size: "S" } }],
     variantImages: {},

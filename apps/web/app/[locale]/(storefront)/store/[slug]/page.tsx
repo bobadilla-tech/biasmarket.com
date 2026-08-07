@@ -8,14 +8,33 @@ import { StoreLogo } from "@/components/store-logo";
 
 async function getStore(slug: string) {
   const apiUrl = process.env.INTERNAL_API_URL ??
-    process.env.NEXT_PUBLIC_API_URL;
+    process.env.NEXT_PUBLIC_API_URL ??
+    (process.env.NODE_ENV === "development" ? "http://localhost:3000" : undefined);
+  console.log(`[store page] getStore() apiUrl=${apiUrl} slug=${slug}`);
   const res = await fetch(`${apiUrl}/api/stores/${slug}/public`, {
     cache: "no-store",
   });
 
-  if (!res.ok) return null;
+  console.log(`[store page] fetch -> ${apiUrl}/api/stores/${slug}/public status=${res.status}`);
 
-  return res.json();
+  if (!res.ok) {
+    try {
+      const text = await res.text();
+      console.log(`[store page] fetch body (truncated): ${text.slice(0, 1000)}`);
+    } catch (e) {
+      console.log(`[store page] failed to read error body: ${String(e)}`);
+    }
+    return null;
+  }
+
+  try {
+    const json = await res.json();
+    console.log(`[store page] fetched store keys: ${Object.keys(json || {}).join(",")}`);
+    return json;
+  } catch (e) {
+    console.log(`[store page] failed to parse JSON: ${String(e)}`);
+    return null;
+  }
 }
 
 function collectProducts(store: any): any[] {
@@ -23,7 +42,28 @@ function collectProducts(store: any): any[] {
   for (const section of store.sections ?? []) {
     if (section.type !== "COLLECTION" || !section.collection) continue;
     for (const cp of section.collection.products) {
+      // Skip discontinued products so they don't appear in the public catalog
+      if (cp.product?.discontinued) continue;
+      // Skip sold-out products from the main catalog; they will be grouped
+      // in a dedicated "Coming soon" section rendered at the end of the page.
+      if (isProductOutOfStock(cp.product)) continue;
       seen.set(cp.product.id, cp.product);
+    }
+  }
+  return Array.from(seen.values());
+}
+
+function collectSoldOutProducts(store: any): any[] {
+  const seen = new Map<string, any>();
+  for (const section of store.sections ?? []) {
+    if (section.type !== "COLLECTION" || !section.collection) continue;
+    for (const cp of section.collection.products) {
+      const p = cp.product;
+      if (!p) continue;
+      // Discontinued products remain hidden entirely
+      if (p.discontinued) continue;
+      if (!isProductOutOfStock(p)) continue;
+      seen.set(p.id, p);
     }
   }
   return Array.from(seen.values());
@@ -106,6 +146,44 @@ export default async function StorePage({
     );
   }
 
+  // Build visible sections by excluding discontinued and sold-out products so
+  // the UI can show a friendly empty state when nothing is visible.
+  const visibleSections = (store.sections ?? [])
+    .map((section: any) => {
+      if (section.type !== "COLLECTION" || !section.collection) return null;
+      const visible = (section.collection.products ?? []).filter(
+        (cp: any) =>
+          !cp.product?.discontinued && !isProductOutOfStock(cp.product),
+      );
+      if (visible.length === 0) return null;
+      return { ...section, collection: { ...section.collection, products: visible } };
+    })
+    .filter(Boolean);
+
+  const soldOutProducts = collectSoldOutProducts(store);
+
+  if (visibleSections.length === 0 && soldOutProducts.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <header className="border-b border-gray-100 bg-white px-6 py-8">
+          <div className="mx-auto flex max-w-5xl items-center justify-center gap-3">
+            <StoreLogo
+              name={store.name}
+              logoUrl={store.logoUrl}
+              size={48}
+              className="text-sm"
+            />
+            <h1 className="text-2xl font-bold text-gray-900">{store.name}</h1>
+          </div>
+        </header>
+        <main className="max-w-5xl mx-auto px-4 py-8">
+          <p className="text-gray-500 text-center">{t("noProducts")}</p>
+        </main>
+        <CartLink slug={slug} />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <script
@@ -129,10 +207,12 @@ export default async function StorePage({
         </div>
       </header>
       <main className="max-w-5xl mx-auto px-4 py-8 space-y-10">
-        {store.sections.length === 0
-          ? <p className="text-gray-500 text-center">{t("noProducts")}</p>
+        {visibleSections.length === 0
+          ? soldOutProducts.length > 0
+            ? null
+            : <p className="text-gray-500 text-center">{t("noProducts")}</p>
           : (
-            store.sections.map((section: any) => {
+            visibleSections.map((section: any) => {
               if (section.type === "COLLECTION") {
                 const products = [...(section.collection?.products ?? [])]
                   .sort((a, b) =>
@@ -142,6 +222,12 @@ export default async function StorePage({
 
                 if (products.length === 0) return null;
 
+                const visible = products.filter(
+                  (cp: any) =>
+                    !cp.product?.discontinued &&
+                    !isProductOutOfStock(cp.product),
+                );
+                if (visible.length === 0) return null;
                 return (
                   <section key={section.id}>
                     {section.collection?.name && (
@@ -150,7 +236,7 @@ export default async function StorePage({
                       </h2>
                     )}
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                      {products.map((cp: any) => (
+                      {visible.map((cp: any) => (
                         <ProductCard
                           key={cp.product.id}
                           slug={slug}
@@ -183,6 +269,25 @@ export default async function StorePage({
               );
             })
           )}
+        {/* Sold-out section rendered after visible sections */}
+        {soldOutProducts.length > 0 && (
+          <section
+            aria-label={t("comingSoonSection.title")}
+            className="mt-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm"
+          >
+            <h2 className="text-base font-semibold text-gray-400">
+              {t("comingSoonSection.title")}
+            </h2>
+            <p className="mt-1 text-sm text-gray-400">
+              {t("comingSoonSection.subtitle")}
+            </p>
+            <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {soldOutProducts.map((p: any) => (
+                <ProductCard key={p.id} slug={slug} product={p} />
+              ))}
+            </div>
+          </section>
+        )}
       </main>
       <CartLink slug={slug} />
     </div>

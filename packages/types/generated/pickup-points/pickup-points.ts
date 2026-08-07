@@ -8,71 +8,94 @@
 import type {
   CreatePickupPointDto,
   PickupPointResponseDto,
-  UpdatePickupPointDto,
-} from "../api.schemas.js";
+  UpdatePickupPointDto
+} from '../api.schemas.js';
 
-import { customFetch } from "../../http.js";
+import { customFetch } from '../../http.js';
 
-export const getFindAllUrl = (storeId: string) => {
-  return `/stores/${storeId}/pickup-points`;
-};
+export const getFindAllUrl = (storeId: string,) => {
 
-export const findAll = async (
-  storeId: string,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<PickupPointResponseDto[]> => {
-  return customFetch<PickupPointResponseDto[]>(getFindAllUrl(storeId), {
+
+
+
+  return `/stores/${storeId}/pickup-points`
+}
+
+export const findAll = async (storeId: string, options?: Parameters<typeof customFetch>[1]): Promise<PickupPointResponseDto[]> => {
+
+  return customFetch<PickupPointResponseDto[]>(getFindAllUrl(storeId),
+  {
     ...options,
-    method: "GET",
-  });
-};
+    method: 'GET'
 
-export const getCreateUrl = (storeId: string) => {
-  return `/stores/${storeId}/pickup-points`;
-};
 
-export const create = async (
-  storeId: string,
-  createPickupPointDto: CreatePickupPointDto,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<PickupPointResponseDto> => {
-  return customFetch<PickupPointResponseDto>(getCreateUrl(storeId), {
+  }
+);}
+
+
+export const getCreateUrl = (storeId: string,) => {
+
+
+
+
+  return `/stores/${storeId}/pickup-points`
+}
+
+export const create = async (storeId: string,
+    createPickupPointDto: CreatePickupPointDto, options?: Parameters<typeof customFetch>[1]): Promise<PickupPointResponseDto> => {
+
+  return customFetch<PickupPointResponseDto>(getCreateUrl(storeId),
+  {
     ...options,
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(createPickupPointDto),
-  });
-};
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createPickupPointDto)
+  }
+);}
 
-export const getUpdateUrl = (storeId: string, pointId: string) => {
-  return `/stores/${storeId}/pickup-points/${pointId}`;
-};
 
-export const update = async (
-  storeId: string,
-  pointId: string,
-  updatePickupPointDto: UpdatePickupPointDto,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<PickupPointResponseDto> => {
-  return customFetch<PickupPointResponseDto>(getUpdateUrl(storeId, pointId), {
+export const getUpdateUrl = (storeId: string,
+    pointId: string,) => {
+
+
+
+
+  return `/stores/${storeId}/pickup-points/${pointId}`
+}
+
+export const update = async (storeId: string,
+    pointId: string,
+    updatePickupPointDto: UpdatePickupPointDto, options?: Parameters<typeof customFetch>[1]): Promise<PickupPointResponseDto> => {
+
+  return customFetch<PickupPointResponseDto>(getUpdateUrl(storeId,pointId),
+  {
     ...options,
-    method: "PATCH",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(updatePickupPointDto),
-  });
-};
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updatePickupPointDto)
+  }
+);}
 
-export const getRemoveUrl = (storeId: string, pointId: string) => {
-  return `/stores/${storeId}/pickup-points/${pointId}`;
-};
 
-export const remove = async (
-  storeId: string,
-  pointId: string,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<PickupPointResponseDto> => {
-  return customFetch<PickupPointResponseDto>(getRemoveUrl(storeId, pointId), {
+export const getRemoveUrl = (storeId: string,
+    pointId: string,) => {
+
+
+
+
+  return `/stores/${storeId}/pickup-points/${pointId}`
+}
+
+export const remove = async (storeId: string,
+    pointId: string, options?: Parameters<typeof customFetch>[1]): Promise<PickupPointResponseDto> => {
+
+  return customFetch<PickupPointResponseDto>(getRemoveUrl(storeId,pointId),
+  {
     ...options,
-    method: "DELETE",
-  });
-};
+    method: 'DELETE'
+
+
+  }
+);}
+
+

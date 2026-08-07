@@ -67,6 +67,7 @@ export interface OrderProductRow {
   availableUntil: Date | null;
   status: "DRAFT" | "PUBLISHED";
   soldOut: boolean;
+  discontinued: boolean;
   deletedAt: Date | null;
   createdAt: Date;
 }
@@ -190,6 +191,7 @@ function toOrderProductDto(product: OrderProductRow): OrderProductResponseDto {
     ...product,
     price: product.price.toString(),
     availableUntil: product.availableUntil?.toISOString() ?? null,
+    discontinued: product.discontinued,
     deletedAt: product.deletedAt?.toISOString() ?? null,
     createdAt: product.createdAt.toISOString(),
   };

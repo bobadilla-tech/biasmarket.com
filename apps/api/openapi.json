@@ -3706,6 +3706,9 @@
           "soldOut": {
             "type": "boolean"
           },
+          "discontinued": {
+            "type": "boolean"
+          },
           "deletedAt": {
             "type": "string",
             "nullable": true,
@@ -3733,6 +3736,7 @@
           "availableUntil",
           "status",
           "soldOut",
+          "discontinued",
           "deletedAt",
           "createdAt",
           "variants"
@@ -4035,6 +4039,9 @@
           "soldOut": {
             "type": "boolean"
           },
+          "discontinued": {
+            "type": "boolean"
+          },
           "images": {
             "type": "array",
             "items": {
@@ -4154,6 +4161,9 @@
           "soldOut": {
             "type": "boolean"
           },
+          "discontinued": {
+            "type": "boolean"
+          },
           "deletedAt": {
             "type": "string",
             "nullable": true,
@@ -4181,6 +4191,7 @@
           "availableUntil",
           "status",
           "soldOut",
+          "discontinued",
           "deletedAt",
           "createdAt",
           "variants"
@@ -4262,6 +4273,9 @@
           "soldOut": {
             "type": "boolean"
           },
+          "discontinued": {
+            "type": "boolean"
+          },
           "deletedAt": {
             "type": "string",
             "nullable": true,
@@ -4302,6 +4316,7 @@
           "availableUntil",
           "status",
           "soldOut",
+          "discontinued",
           "deletedAt",
           "createdAt",
           "variants",
@@ -4330,6 +4345,9 @@
             "type": "number"
           },
           "soldOut": {
+            "type": "boolean"
+          },
+          "discontinued": {
             "type": "boolean"
           },
           "images": {
@@ -4388,6 +4406,9 @@
           "soldOut": {
             "type": "boolean"
           },
+          "discontinued": {
+            "type": "boolean"
+          },
           "deletedAt": {
             "type": "string",
             "nullable": true,
@@ -4409,6 +4430,7 @@
           "availableUntil",
           "status",
           "soldOut",
+          "discontinued",
           "deletedAt",
           "createdAt"
         ]
@@ -4652,6 +4674,9 @@
           "soldOut": {
             "type": "boolean"
           },
+          "discontinued": {
+            "type": "boolean"
+          },
           "deletedAt": {
             "type": "string",
             "nullable": true,
@@ -4673,6 +4698,7 @@
           "availableUntil",
           "status",
           "soldOut",
+          "discontinued",
           "deletedAt",
           "createdAt"
         ]
@@ -6467,6 +6493,9 @@
           "soldOut": {
             "type": "boolean"
           },
+          "discontinued": {
+            "type": "boolean"
+          },
           "deletedAt": {
             "type": "string",
             "nullable": true,
@@ -6488,6 +6517,7 @@
           "availableUntil",
           "status",
           "soldOut",
+          "discontinued",
           "deletedAt",
           "createdAt"
         ]

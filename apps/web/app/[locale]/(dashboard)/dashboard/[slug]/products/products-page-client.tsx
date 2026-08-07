@@ -14,6 +14,7 @@ import type { ProductDetailResponseDto } from "@biasmarket/types";
 import { RestockRequestsPanel } from "@/features/restock";
 import {
   getCategoryLabel,
+  getProductAvailabilityState,
   type ProductFormInput,
   ProductRow,
   ProductsHeader,
@@ -158,6 +159,13 @@ export function ProductsPageClient() {
   const editingStock = editingBaseVariant
     ? editingBaseVariant.stock === null ? "" : String(editingBaseVariant.stock)
     : "";
+  const editingAvailability = editingProduct
+    ? getProductAvailabilityState({
+      discontinued: editingProduct.discontinued,
+      soldOut: editingProduct.soldOut,
+      availableStock: editingProduct.availableStock,
+    })
+    : "AVAILABLE";
 
   return (
     <div className="min-h-screen px-5 py-6 lg:px-8 lg:py-8">
@@ -269,7 +277,7 @@ export function ProductsPageClient() {
               </CardHeader>
               <CardContent className="px-0 pb-0">
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[820px] text-left text-sm">
+                  <table className="w-full min-w-205 text-left text-sm">
                     <thead>
                       <tr className="border-b border-[#f3ebff] text-xs font-semibold uppercase tracking-[0.18em] text-[#8f7da8]">
                         <th className="px-6 py-3">
@@ -361,6 +369,7 @@ export function ProductsPageClient() {
             currency: defaultCurrency,
             stock: "",
             categoryId: "",
+            availability: "AVAILABLE",
           }}
           initialVariants={[]}
           onSubmit={handleCreate}
@@ -387,6 +396,7 @@ export function ProductsPageClient() {
             currency: asCurrency(editingProduct?.currency ?? defaultCurrency),
             stock: editingStock,
             categoryId: editingProduct?.categories?.[0]?.category?.id ?? "",
+            availability: editingAvailability,
           }}
           initialVariants={editingProduct?.variants ?? []}
           onSubmit={handleEdit}

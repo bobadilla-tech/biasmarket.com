@@ -8,6 +8,7 @@ export const productFormSchema = z.object({
   currency: z.enum(SUPPORTED_CURRENCIES),
   stock: z.string(),
   categoryId: z.string(),
+  availability: z.enum(["AVAILABLE", "OUT_OF_STOCK", "DISCONTINUED"]),
 });
 
 export type ProductFormInput = z.infer<typeof productFormSchema>;

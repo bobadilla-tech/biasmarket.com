@@ -39,6 +39,10 @@ export class CreateProductDto {
   soldOut?: boolean;
 
   @IsOptional()
+  @IsBoolean()
+  discontinued?: boolean;
+
+  @IsOptional()
   @IsArray()
   @IsString({ each: true })
   images?: string[];

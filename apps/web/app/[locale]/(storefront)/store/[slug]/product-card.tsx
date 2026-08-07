@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
+import { Clock, Bell } from "lucide-react";
 import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { addToCart } from "@/lib/cart";
@@ -102,7 +103,8 @@ export function ProductCard(
               />
               {outOfStock && (
                 <div className="absolute inset-x-0 top-2 flex justify-center">
-                  <span className="rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white shadow">
+                  <span className="flex items-center gap-1 rounded-full border border-gray-300 bg-white/90 px-3 py-1 text-xs font-semibold text-gray-500">
+                    <Clock className="size-3.5" />
                     {t("soldOut")}
                   </span>
                 </div>
@@ -142,22 +144,14 @@ export function ProductCard(
 
       {outOfStock
         ? (
-          <div className="mt-2 flex flex-col gap-2">
-            <button
-              type="button"
-              disabled
-              className="w-full cursor-not-allowed rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-400"
-            >
-              {t("soldOut")}
-            </button>
-            <button
-              type="button"
-              onClick={() => setRestockOpen(true)}
-              className="store-theme-primary-button w-full rounded-lg px-3 py-1.5 text-xs font-semibold transition"
-            >
-              {t("registerInterest")}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setRestockOpen(true)}
+            className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-50"
+          >
+            <Bell className="size-3.5" />
+            {t("registerInterest")}
+          </button>
         )
         : (
           <button

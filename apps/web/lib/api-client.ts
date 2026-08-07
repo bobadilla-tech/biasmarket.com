@@ -25,14 +25,12 @@ import {
   users,
 } from "@biasmarket/types";
 
-// INTERNAL_API_URL for
-// server-side (SSR/Server Component) fetches, which run inside the "web"
-// container where "localhost" would resolve to that container rather than
-// "api" — see infra/docker/.env.example. NEXT_PUBLIC_API_URL is the
-// browser-reachable fallback. This must run before any generated method is
-// called — every consumer imports `apiClient` from here rather than the
-// generated modules directly, so module evaluation order guarantees it.
-const API_URL = process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
+// INTERNAL_API_URL for server-side fetches and NEXT_PUBLIC_API_URL for the
+// browser-reachable fallback. During local development we default to
+// http://localhost:3000 so the `api` app can be run separately without
+// setting env vars.
+const API_URL = process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL ??
+  (process.env.NODE_ENV === "development" ? "http://localhost:3000" : undefined);
 if (!API_URL) {
   throw new Error(
     "Missing INTERNAL_API_URL/NEXT_PUBLIC_API_URL — set one in the environment before the app starts",

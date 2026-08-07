@@ -67,6 +67,7 @@ interface PublicProductRow {
   availableUntil: Date | null;
   status: "DRAFT" | "PUBLISHED";
   soldOut: boolean;
+  discontinued: boolean;
   deletedAt: Date | null;
   createdAt: Date;
   variants: VariantRow[];
@@ -115,6 +116,7 @@ function toPublicProductDto(
     ...product,
     price: product.price.toString(),
     availableUntil: product.availableUntil?.toISOString() ?? null,
+    discontinued: product.discontinued,
     deletedAt: product.deletedAt?.toISOString() ?? null,
     createdAt: product.createdAt.toISOString(),
     variants: product.variants.map(toVariantDto),

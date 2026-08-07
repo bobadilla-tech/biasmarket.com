@@ -14,247 +14,287 @@ import type {
   ProductsControlleruploadImageParams,
   UpdateProductDto,
   UpdateVariantDto,
-  VariantResponseDto,
-} from "../api.schemas.js";
+  VariantResponseDto
+} from '../api.schemas.js';
 
-import { customFetch } from "../../http.js";
+import { customFetch } from '../../http.js';
 
-export const getCreateUrl = (storeId: string) => {
-  return `/stores/${storeId}/products`;
-};
+export const getCreateUrl = (storeId: string,) => {
 
-export const create = async (
-  storeId: string,
-  createProductDto: CreateProductDto,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<ProductWithVariantsResponseDto> => {
-  return customFetch<ProductWithVariantsResponseDto>(getCreateUrl(storeId), {
+
+
+
+  return `/stores/${storeId}/products`
+}
+
+export const create = async (storeId: string,
+    createProductDto: CreateProductDto, options?: Parameters<typeof customFetch>[1]): Promise<ProductWithVariantsResponseDto> => {
+
+  return customFetch<ProductWithVariantsResponseDto>(getCreateUrl(storeId),
+  {
     ...options,
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(createProductDto),
-  });
-};
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createProductDto)
+  }
+);}
 
-export const getFindAllUrl = (storeId: string) => {
-  return `/stores/${storeId}/products`;
-};
 
-export const findAll = async (
-  storeId: string,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<ProductDetailResponseDto[]> => {
-  return customFetch<ProductDetailResponseDto[]>(getFindAllUrl(storeId), {
+export const getFindAllUrl = (storeId: string,) => {
+
+
+
+
+  return `/stores/${storeId}/products`
+}
+
+export const findAll = async (storeId: string, options?: Parameters<typeof customFetch>[1]): Promise<ProductDetailResponseDto[]> => {
+
+  return customFetch<ProductDetailResponseDto[]>(getFindAllUrl(storeId),
+  {
     ...options,
-    method: "GET",
-  });
-};
+    method: 'GET'
 
-export const getFindOneUrl = (storeId: string, productId: string) => {
-  return `/stores/${storeId}/products/${productId}`;
-};
 
-export const findOne = async (
-  storeId: string,
-  productId: string,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<ProductDetailResponseDto> => {
-  return customFetch<ProductDetailResponseDto>(
-    getFindOneUrl(storeId, productId),
-    {
-      ...options,
-      method: "GET",
-    },
-  );
-};
+  }
+);}
 
-export const getUpdateUrl = (storeId: string, productId: string) => {
-  return `/stores/${storeId}/products/${productId}`;
-};
 
-export const update = async (
-  storeId: string,
-  productId: string,
-  updateProductDto: UpdateProductDto,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<ProductResponseDto> => {
-  return customFetch<ProductResponseDto>(getUpdateUrl(storeId, productId), {
+export const getFindOneUrl = (storeId: string,
+    productId: string,) => {
+
+
+
+
+  return `/stores/${storeId}/products/${productId}`
+}
+
+export const findOne = async (storeId: string,
+    productId: string, options?: Parameters<typeof customFetch>[1]): Promise<ProductDetailResponseDto> => {
+
+  return customFetch<ProductDetailResponseDto>(getFindOneUrl(storeId,productId),
+  {
     ...options,
-    method: "PATCH",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(updateProductDto),
-  });
-};
+    method: 'GET'
 
-export const getSoftDeleteUrl = (storeId: string, productId: string) => {
-  return `/stores/${storeId}/products/${productId}`;
-};
 
-export const softDelete = async (
-  storeId: string,
-  productId: string,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<ProductResponseDto> => {
-  return customFetch<ProductResponseDto>(getSoftDeleteUrl(storeId, productId), {
+  }
+);}
+
+
+export const getUpdateUrl = (storeId: string,
+    productId: string,) => {
+
+
+
+
+  return `/stores/${storeId}/products/${productId}`
+}
+
+export const update = async (storeId: string,
+    productId: string,
+    updateProductDto: UpdateProductDto, options?: Parameters<typeof customFetch>[1]): Promise<ProductResponseDto> => {
+
+  return customFetch<ProductResponseDto>(getUpdateUrl(storeId,productId),
+  {
     ...options,
-    method: "DELETE",
-  });
-};
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateProductDto)
+  }
+);}
 
-export const getPublishUrl = (storeId: string, productId: string) => {
-  return `/stores/${storeId}/products/${productId}/publish`;
-};
 
-export const publish = async (
-  storeId: string,
-  productId: string,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<ProductResponseDto> => {
-  return customFetch<ProductResponseDto>(getPublishUrl(storeId, productId), {
+export const getSoftDeleteUrl = (storeId: string,
+    productId: string,) => {
+
+
+
+
+  return `/stores/${storeId}/products/${productId}`
+}
+
+export const softDelete = async (storeId: string,
+    productId: string, options?: Parameters<typeof customFetch>[1]): Promise<ProductResponseDto> => {
+
+  return customFetch<ProductResponseDto>(getSoftDeleteUrl(storeId,productId),
+  {
     ...options,
-    method: "PATCH",
-  });
-};
+    method: 'DELETE'
 
-export const getAddVariantUrl = (storeId: string, productId: string) => {
-  return `/stores/${storeId}/products/${productId}/variants`;
-};
 
-export const addVariant = async (
-  storeId: string,
-  productId: string,
-  createVariantDto: CreateVariantDto,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<VariantResponseDto> => {
-  return customFetch<VariantResponseDto>(getAddVariantUrl(storeId, productId), {
+  }
+);}
+
+
+export const getPublishUrl = (storeId: string,
+    productId: string,) => {
+
+
+
+
+  return `/stores/${storeId}/products/${productId}/publish`
+}
+
+export const publish = async (storeId: string,
+    productId: string, options?: Parameters<typeof customFetch>[1]): Promise<ProductResponseDto> => {
+
+  return customFetch<ProductResponseDto>(getPublishUrl(storeId,productId),
+  {
     ...options,
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(createVariantDto),
-  });
-};
+    method: 'PATCH'
 
-export const getListVariantsUrl = (storeId: string, productId: string) => {
-  return `/stores/${storeId}/products/${productId}/variants`;
-};
 
-export const listVariants = async (
-  storeId: string,
-  productId: string,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<VariantResponseDto[]> => {
-  return customFetch<VariantResponseDto[]>(
-    getListVariantsUrl(storeId, productId),
-    {
-      ...options,
-      method: "GET",
-    },
-  );
-};
+  }
+);}
 
-export const getUpdateVariantUrl = (
-  storeId: string,
-  productId: string,
-  variantId: string,
-) => {
-  return `/stores/${storeId}/products/${productId}/variants/${variantId}`;
-};
 
-export const updateVariant = async (
-  storeId: string,
-  productId: string,
-  variantId: string,
-  updateVariantDto: UpdateVariantDto,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<VariantResponseDto> => {
-  return customFetch<VariantResponseDto>(
-    getUpdateVariantUrl(storeId, productId, variantId),
-    {
-      ...options,
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...options?.headers },
-      body: JSON.stringify(updateVariantDto),
-    },
-  );
-};
+export const getAddVariantUrl = (storeId: string,
+    productId: string,) => {
 
-export const getDeleteVariantUrl = (
-  storeId: string,
-  productId: string,
-  variantId: string,
-) => {
-  return `/stores/${storeId}/products/${productId}/variants/${variantId}`;
-};
 
-export const deleteVariant = async (
-  storeId: string,
-  productId: string,
-  variantId: string,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<VariantResponseDto> => {
-  return customFetch<VariantResponseDto>(
-    getDeleteVariantUrl(storeId, productId, variantId),
-    {
-      ...options,
-      method: "DELETE",
-    },
-  );
-};
 
-export const getUploadImageUrl = (
-  storeId: string,
-  productId: string,
-  params?: ProductsControlleruploadImageParams,
-) => {
+
+  return `/stores/${storeId}/products/${productId}/variants`
+}
+
+export const addVariant = async (storeId: string,
+    productId: string,
+    createVariantDto: CreateVariantDto, options?: Parameters<typeof customFetch>[1]): Promise<VariantResponseDto> => {
+
+  return customFetch<VariantResponseDto>(getAddVariantUrl(storeId,productId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createVariantDto)
+  }
+);}
+
+
+export const getListVariantsUrl = (storeId: string,
+    productId: string,) => {
+
+
+
+
+  return `/stores/${storeId}/products/${productId}/variants`
+}
+
+export const listVariants = async (storeId: string,
+    productId: string, options?: Parameters<typeof customFetch>[1]): Promise<VariantResponseDto[]> => {
+
+  return customFetch<VariantResponseDto[]>(getListVariantsUrl(storeId,productId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getUpdateVariantUrl = (storeId: string,
+    productId: string,
+    variantId: string,) => {
+
+
+
+
+  return `/stores/${storeId}/products/${productId}/variants/${variantId}`
+}
+
+export const updateVariant = async (storeId: string,
+    productId: string,
+    variantId: string,
+    updateVariantDto: UpdateVariantDto, options?: Parameters<typeof customFetch>[1]): Promise<VariantResponseDto> => {
+
+  return customFetch<VariantResponseDto>(getUpdateVariantUrl(storeId,productId,variantId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateVariantDto)
+  }
+);}
+
+
+export const getDeleteVariantUrl = (storeId: string,
+    productId: string,
+    variantId: string,) => {
+
+
+
+
+  return `/stores/${storeId}/products/${productId}/variants/${variantId}`
+}
+
+export const deleteVariant = async (storeId: string,
+    productId: string,
+    variantId: string, options?: Parameters<typeof customFetch>[1]): Promise<VariantResponseDto> => {
+
+  return customFetch<VariantResponseDto>(getDeleteVariantUrl(storeId,productId,variantId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+export const getUploadImageUrl = (storeId: string,
+    productId: string,
+    params?: ProductsControlleruploadImageParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
+
     if (value !== undefined) {
-      normalizedParams.append(key, value === null ? "null" : String(value));
+      normalizedParams.append(key, value === null ? 'null' : String(value))
     }
   });
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0
-    ? `/stores/${storeId}/products/${productId}/images?${stringifiedParams}`
-    : `/stores/${storeId}/products/${productId}/images`;
-};
+  return stringifiedParams.length > 0 ? `/stores/${storeId}/products/${productId}/images?${stringifiedParams}` : `/stores/${storeId}/products/${productId}/images`
+}
 
-export const uploadImage = async (
-  storeId: string,
-  productId: string,
-  params?: ProductsControlleruploadImageParams,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<ProductResponseDto> => {
-  return customFetch<ProductResponseDto>(
-    getUploadImageUrl(storeId, productId, params),
-    {
-      ...options,
-      method: "POST",
-    },
-  );
-};
+export const uploadImage = async (storeId: string,
+    productId: string,
+    params?: ProductsControlleruploadImageParams, options?: Parameters<typeof customFetch>[1]): Promise<ProductResponseDto> => {
 
-export const getUploadVariantImageUrl = (
-  storeId: string,
-  productId: string,
-  variantId: string,
-) => {
-  return `/stores/${storeId}/products/${productId}/variants/${variantId}/images`;
-};
+  return customFetch<ProductResponseDto>(getUploadImageUrl(storeId,productId,params),
+  {
+    ...options,
+    method: 'POST'
 
-export const uploadVariantImage = async (
-  storeId: string,
-  productId: string,
-  variantId: string,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<VariantResponseDto> => {
-  return customFetch<VariantResponseDto>(
-    getUploadVariantImageUrl(storeId, productId, variantId),
-    {
-      ...options,
-      method: "POST",
-    },
-  );
-};
+
+  }
+);}
+
+
+export const getUploadVariantImageUrl = (storeId: string,
+    productId: string,
+    variantId: string,) => {
+
+
+
+
+  return `/stores/${storeId}/products/${productId}/variants/${variantId}/images`
+}
+
+export const uploadVariantImage = async (storeId: string,
+    productId: string,
+    variantId: string, options?: Parameters<typeof customFetch>[1]): Promise<VariantResponseDto> => {
+
+  return customFetch<VariantResponseDto>(getUploadVariantImageUrl(storeId,productId,variantId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+

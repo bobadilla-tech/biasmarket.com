@@ -1,9 +1,11 @@
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { ProductDetailResponseDto } from "@biasmarket/types";
+import { getProductAvailabilityState } from "../lib/availability-state";
 
 export function ProductTile({
   product,
@@ -34,6 +36,7 @@ export function ProductTile({
   onDelete: () => void;
   onPublish: () => void;
 }) {
+  const t = useTranslations("dashboard");
   const image = product.images?.[0];
   const statusBadge = product.status === "PUBLISHED"
     ? (
@@ -47,6 +50,28 @@ export function ProductTile({
         className="rounded-full border-[#eadcf7] px-3 py-1 text-[11px] font-semibold text-[#8f7da8]"
       >
         {statusDraftLabel}
+      </Badge>
+    );
+  const availabilityState = getProductAvailabilityState({
+    discontinued: product.discontinued,
+    soldOut: product.soldOut || (product.availableStock ?? 0) <= 0,
+    availableStock: product.availableStock,
+  });
+  const availabilityBadge = availabilityState === "AVAILABLE"
+    ? (
+      <Badge className="rounded-full bg-[#e8fff2] px-3 py-1 text-[11px] font-semibold text-[#159a63]">
+        {t("products.details.available")}
+      </Badge>
+    )
+    : availabilityState === "OUT_OF_STOCK"
+    ? (
+      <Badge className="rounded-full bg-[#fff6e8] px-3 py-1 text-[11px] font-semibold text-[#d97706]">
+        {t("products.details.soldOut")}
+      </Badge>
+    )
+    : (
+      <Badge className="rounded-full bg-[#f1f5f9] px-3 py-1 text-[11px] font-semibold text-[#475569]">
+        {t("products.details.discontinued")}
       </Badge>
     );
   return (
@@ -67,6 +92,7 @@ export function ProductTile({
                 {category}
               </Badge>
               {statusBadge}
+              {availabilityBadge}
             </div>
             <div className="flex gap-2">
               {product.status === "DRAFT"
