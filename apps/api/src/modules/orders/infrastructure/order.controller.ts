@@ -130,6 +130,7 @@ export interface OrderRow {
   deliveryMethodType: DeliveryMethodTypeLiteral;
   deliveryDetails: unknown;
   pickupPointId: string | null;
+  pickupDate: Date | null;
   paymentMethod: PaymentMethodLiteral | null;
   paymentStatus: PaymentStatusLiteral;
   paymentRejectionReason: string | null;
@@ -163,6 +164,7 @@ interface OrderStatusRow {
   deliveryMethodType: DeliveryMethodTypeLiteral;
   deliveryDetails: unknown;
   pickupPointId: string | null;
+  pickupDate: Date | null;
   paymentMethod: PaymentMethodLiteral | null;
   paymentStatus: PaymentStatusLiteral;
   paymentRejectionReason: string | null;
@@ -225,6 +227,7 @@ export function toOrderDto(row: OrderRow): OrderResponseDto {
   return {
     ...row,
     deliveryDetails: row.deliveryDetails as Record<string, unknown> | null,
+    pickupDate: row.pickupDate?.toISOString() ?? null,
     totalAmount: row.totalAmount.toString(),
     requiredAmount: row.requiredAmount.toString(),
     expiresAt: row.expiresAt.toISOString(),
@@ -242,6 +245,7 @@ function toOrderStatusDto(row: OrderStatusRow): OrderStatusResponseDto {
   return {
     ...row,
     deliveryDetails: row.deliveryDetails as Record<string, unknown> | null,
+    pickupDate: row.pickupDate?.toISOString() ?? null,
     totalAmount: row.totalAmount.toString(),
     requiredAmount: row.requiredAmount.toString(),
     expiresAt: row.expiresAt.toISOString(),

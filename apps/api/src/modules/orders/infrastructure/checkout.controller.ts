@@ -30,6 +30,7 @@ interface CheckoutOrderRow {
   deliveryMethodType: "PICKUP" | "COURIER";
   deliveryDetails: unknown;
   pickupPointId: string | null;
+  pickupDate: Date | null;
   paymentMethod: "YAPE" | "PLIN" | "TRANSFER" | "CASH" | null;
   paymentStatus:
     | "PENDING_PAYMENT"
@@ -67,6 +68,7 @@ function toCheckoutOrderDto(
   return {
     ...order,
     deliveryDetails: order.deliveryDetails as Record<string, unknown> | null,
+    pickupDate: order.pickupDate?.toISOString() ?? null,
     totalAmount: order.totalAmount.toString(),
     requiredAmount: order.requiredAmount.toString(),
     expiresAt: order.expiresAt.toISOString(),

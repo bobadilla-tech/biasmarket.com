@@ -35,7 +35,10 @@ test("invalidates both orders and stats overview queries on success", async () =
   });
 
   act(() => {
-    result.current.mutate({ orderId: "o1", values: { resolution: "REFUNDED" } });
+    result.current.mutate({
+      orderId: "o1",
+      values: { resolution: "REFUNDED" },
+    });
   });
 
   await waitFor(() => expect(result.current.isSuccess).toBe(true));

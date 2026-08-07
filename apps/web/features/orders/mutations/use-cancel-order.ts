@@ -41,7 +41,7 @@ export function useCancelOrder(
       queryClient.invalidateQueries({
         queryKey: ordersKeys.byStore(storeId),
       });
-      
+
       queryClient.invalidateQueries({
         queryKey: statsKeys.overview(storeId),
       });

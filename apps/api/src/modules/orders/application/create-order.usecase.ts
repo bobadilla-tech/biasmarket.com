@@ -59,6 +59,7 @@ export class CreateOrderUseCase {
     }[] = [];
 
     let pickupPoint: { id: string; label: string } | null = null;
+    let pickupDate: Date | null = null;
 
     const { order, pendingVerificationCustomer, pickupPointLabel } = await this
       .prisma.$transaction(async (tx) => {
@@ -77,14 +78,32 @@ export class CreateOrderUseCase {
           if (!point || point.storeId !== store.id || !point.enabled) {
             throw new BadRequestException("Punto de recojo no disponible");
           }
-          const today = new Date().getDay();
-          if (
-            point.closedOverride ||
-            (point.openDays.length > 0 && !point.openDays.includes(today))
-          ) {
+          if (point.closedOverride) {
+            // A manually closed point has no future date to offer either —
+            // matches getPickupAvailability()'s nextAvailableDay: null case.
             throw new BadRequestException(
-              "Punto de recojo no disponible hoy",
+              "Punto de recojo no disponible",
             );
+          }
+          const today = new Date().getDay();
+          if (point.openDays.length > 0 && !point.openDays.includes(today)) {
+            // Not open today — the buyer must have committed to a future
+            // date whose weekday is actually in openDays. Parsed and read
+            // as UTC consistently (not `new Date(str).getDay()`, which would
+            // mix a UTC-parsed instant with a local-timezone getter and can
+            // shift the resulting weekday by a day depending on server TZ).
+            if (!dto.pickupDate) {
+              throw new BadRequestException(
+                "Debes seleccionar una fecha de recojo para este punto",
+              );
+            }
+            const candidate = new Date(`${dto.pickupDate}T00:00:00Z`);
+            if (!point.openDays.includes(candidate.getUTCDay())) {
+              throw new BadRequestException(
+                "La fecha de recojo seleccionada no está disponible para este punto",
+              );
+            }
+            pickupDate = candidate;
           }
           pickupPoint = { id: point.id, label: point.label };
         }
@@ -226,6 +245,7 @@ export class CreateOrderUseCase {
               }
               : deliveryConfig.details ?? {},
             pickupPointId: pickupPoint?.id ?? null,
+            pickupDate,
             totalAmount: finalAmount,
             requiredAmount: finalAmount,
             currency: currency!,
@@ -253,6 +273,7 @@ export class CreateOrderUseCase {
           currency: order.currency,
           deliveryMethodType: order.deliveryMethodType,
           pickupPointLabel,
+          pickupDate: order.pickupDate,
           paymentMethod: order.paymentMethod,
           customerName: order.customerName,
           customerPhone: order.customerPhone,

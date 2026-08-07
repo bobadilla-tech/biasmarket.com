@@ -4876,6 +4876,11 @@
             "type": "string",
             "nullable": true
           },
+          "pickupDate": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
           "paymentMethod": {
             "nullable": true,
             "enum": [
@@ -4979,6 +4984,7 @@
           "deliveryMethodType",
           "deliveryDetails",
           "pickupPointId",
+          "pickupDate",
           "paymentMethod",
           "paymentStatus",
           "paymentRejectionReason",
@@ -5085,6 +5091,11 @@
           "pickupPointId": {
             "type": "string",
             "nullable": true
+          },
+          "pickupDate": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
           },
           "paymentMethod": {
             "nullable": true,
@@ -5195,6 +5206,7 @@
           "deliveryMethodType",
           "deliveryDetails",
           "pickupPointId",
+          "pickupDate",
           "paymentMethod",
           "paymentStatus",
           "paymentRejectionReason",
@@ -5273,6 +5285,11 @@
           "pickupPointId": {
             "type": "string",
             "nullable": true
+          },
+          "pickupDate": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
           },
           "paymentMethod": {
             "nullable": true,
@@ -5356,6 +5373,7 @@
           "deliveryMethodType",
           "deliveryDetails",
           "pickupPointId",
+          "pickupDate",
           "paymentMethod",
           "paymentStatus",
           "paymentRejectionReason",
@@ -5455,6 +5473,10 @@
           },
           "pickupPointId": {
             "type": "string"
+          },
+          "pickupDate": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
           },
           "paymentMethod": {
             "type": "string",
@@ -5575,6 +5597,11 @@
             "type": "string",
             "nullable": true
           },
+          "pickupDate": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
           "paymentMethod": {
             "nullable": true,
             "enum": [
@@ -5663,6 +5690,7 @@
           "deliveryMethodType",
           "deliveryDetails",
           "pickupPointId",
+          "pickupDate",
           "paymentMethod",
           "paymentStatus",
           "paymentRejectionReason",

@@ -70,6 +70,19 @@ describe("buildWhatsAppOrderMessage", () => {
     const message = buildWhatsAppOrderMessage(base);
     expect(message).not.toContain("Método de pago");
   });
+
+  it("includes the pickup date, formatted DD/MM/YYYY from UTC, when provided", () => {
+    const message = buildWhatsAppOrderMessage({
+      ...base,
+      pickupDate: new Date("2026-08-10T00:00:00Z"),
+    });
+    expect(message).toContain("Fecha de recojo: 10/08/2026");
+  });
+
+  it("omits the pickup date line entirely when none is provided", () => {
+    const message = buildWhatsAppOrderMessage(base);
+    expect(message).not.toContain("Fecha de recojo");
+  });
 });
 
 describe("buildWhatsAppPaymentReminderMessage", () => {

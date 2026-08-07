@@ -539,6 +539,97 @@ describe("CreateOrderUseCase", () => {
       );
     });
 
+    it("throws BadRequestException when no pickupDate is submitted for a point closed today with a schedule", async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-08-05T12:00:00Z"));
+      prisma.pickupPoint.count.mockResolvedValue(1);
+      const closedToday = [0, 1, 2, 3, 4, 5, 6].filter(
+        (day) => day !== new Date().getDay(),
+      );
+      prisma.$queryRaw.mockResolvedValue([
+        { ...point, openDays: closedToday },
+      ]);
+
+      await expect(
+        useCase.execute(slug, { ...dto, pickupPointId: point.id }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it("throws BadRequestException when the submitted pickupDate's weekday isn't in openDays", async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-08-05T12:00:00Z")); // Wednesday
+      prisma.pickupPoint.count.mockResolvedValue(1);
+      prisma.$queryRaw.mockResolvedValue([
+        { ...point, openDays: [5] }, // only open Fridays
+      ]);
+
+      await expect(
+        useCase.execute(slug, {
+          ...dto,
+          pickupPointId: point.id,
+          pickupDate: "2026-08-06", // Thursday, not Friday
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it("throws BadRequestException for any pickupDate against a closedOverride'd point", async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-08-05T12:00:00Z"));
+      prisma.pickupPoint.count.mockResolvedValue(1);
+      prisma.$queryRaw.mockResolvedValue([
+        { ...point, closedOverride: true, openDays: [3] },
+      ]);
+
+      await expect(
+        useCase.execute(slug, {
+          ...dto,
+          pickupPointId: point.id,
+          pickupDate: "2026-08-05",
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it("accepts a valid future pickupDate whose weekday is in openDays", async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-08-05T12:00:00Z")); // Wednesday
+      prisma.pickupPoint.count.mockResolvedValue(1);
+      prisma.$queryRaw.mockResolvedValue([
+        { ...point, openDays: [5] }, // Friday
+      ]);
+
+      const result = await useCase.execute(slug, {
+        ...dto,
+        pickupPointId: point.id,
+        pickupDate: "2026-08-07", // Friday
+      });
+
+      expect(prisma.order.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            pickupDate: new Date("2026-08-07T00:00:00Z"),
+          }),
+        }),
+      );
+      expect(result).toBeDefined();
+    });
+
+    it("regression: a same-day-open point still works with no pickupDate at all", async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-08-05T12:00:00Z"));
+      prisma.pickupPoint.count.mockResolvedValue(1);
+      prisma.$queryRaw.mockResolvedValue([
+        { ...point, openDays: [new Date().getDay()] },
+      ]);
+
+      await useCase.execute(slug, { ...dto, pickupPointId: point.id });
+
+      expect(prisma.order.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ pickupDate: null }),
+        }),
+      );
+    });
+
     it("snapshots the pickup point label into deliveryDetails and the whatsapp message", async () => {
       prisma.pickupPoint.count.mockResolvedValue(1);
       prisma.$queryRaw.mockResolvedValue([point]);

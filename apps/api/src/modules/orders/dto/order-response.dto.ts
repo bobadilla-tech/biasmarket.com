@@ -209,6 +209,9 @@ export class OrderResponseDto {
   @ApiProperty({ type: String, nullable: true })
   pickupPointId: string | null;
 
+  @ApiProperty({ type: String, format: "date-time", nullable: true })
+  pickupDate: string | null;
+
   @ApiProperty({
     enum: ["YAPE", "PLIN", "TRANSFER", "CASH"],
     nullable: true,
@@ -317,6 +320,9 @@ export class OrderStatusResponseDto {
 
   @ApiProperty({ type: String, nullable: true })
   pickupPointId: string | null;
+
+  @ApiProperty({ type: String, format: "date-time", nullable: true })
+  pickupDate: string | null;
 
   @ApiProperty({
     enum: ["YAPE", "PLIN", "TRANSFER", "CASH"],

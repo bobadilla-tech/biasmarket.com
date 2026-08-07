@@ -665,6 +665,8 @@ export interface OrderResponseDto {
   /** @nullable */
   pickupPointId: string | null;
   /** @nullable */
+  pickupDate: string | null;
+  /** @nullable */
   paymentMethod: OrderResponseDtoPaymentMethod;
   paymentStatus: OrderResponseDtoPaymentStatus;
   /** @nullable */
@@ -810,6 +812,8 @@ export interface OrderDetailResponseDto {
   /** @nullable */
   pickupPointId: string | null;
   /** @nullable */
+  pickupDate: string | null;
+  /** @nullable */
   paymentMethod: OrderDetailResponseDtoPaymentMethod;
   paymentStatus: OrderDetailResponseDtoPaymentStatus;
   /** @nullable */
@@ -946,6 +950,8 @@ export interface OrderStatusResponseDto {
   /** @nullable */
   pickupPointId: string | null;
   /** @nullable */
+  pickupDate: string | null;
+  /** @nullable */
   paymentMethod: OrderStatusResponseDtoPaymentMethod;
   paymentStatus: OrderStatusResponseDtoPaymentStatus;
   /** @nullable */
@@ -1043,6 +1049,8 @@ export interface CreateOrderItemDto {
 export interface CreateOrderDto {
   deliveryMethodType: CreateOrderDtoDeliveryMethodType;
   pickupPointId?: string;
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
+  pickupDate?: string;
   paymentMethod?: CreateOrderDtoPaymentMethod;
   /** @minLength 6 */
   customerPhone: string;
@@ -1164,6 +1172,8 @@ export interface CheckoutOrderResponseDto {
   deliveryDetails: CheckoutOrderResponseDtoDeliveryDetails;
   /** @nullable */
   pickupPointId: string | null;
+  /** @nullable */
+  pickupDate: string | null;
   /** @nullable */
   paymentMethod: CheckoutOrderResponseDtoPaymentMethod;
   paymentStatus: CheckoutOrderResponseDtoPaymentStatus;
