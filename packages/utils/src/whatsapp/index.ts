@@ -12,6 +12,7 @@ export interface WhatsAppOrderInput {
   currency: string;
   deliveryMethodType: string;
   pickupPointLabel?: string | null;
+  paymentMethod?: string | null;
   customerName?: string | null;
   customerPhone: string;
 }
@@ -19,6 +20,13 @@ export interface WhatsAppOrderInput {
 const DELIVERY_METHOD_LABELS: Record<string, string> = {
   PICKUP: "Retiro presencial",
   COURIER: "Envío a domicilio",
+};
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  YAPE: "Yape",
+  PLIN: "Plin",
+  TRANSFER: "Transferencia bancaria",
+  CASH: "Efectivo",
 };
 
 const shortOrderRef = (orderId: string): string =>
@@ -48,12 +56,17 @@ export const buildWhatsAppOrderMessage = (
           input.deliveryMethodType
       }`,
     `*Total: ${input.totalAmount.toFixed(2)} ${input.currency}*`,
+    input.paymentMethod
+      ? `Método de pago: ${
+        PAYMENT_METHOD_LABELS[input.paymentMethod] ?? input.paymentMethod
+      }`
+      : null,
     "",
     input.customerName
       ? `Cliente: ${input.customerName}`
       : `Contacto: ${input.customerPhone}`,
   ];
-  return lines.join("\n");
+  return lines.filter((line): line is string => line !== null).join("\n");
 };
 
 export interface WhatsAppPaymentReminderInput {

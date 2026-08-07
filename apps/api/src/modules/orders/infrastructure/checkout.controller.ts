@@ -30,6 +30,7 @@ interface CheckoutOrderRow {
   deliveryMethodType: "PICKUP" | "COURIER";
   deliveryDetails: unknown;
   pickupPointId: string | null;
+  paymentMethod: "YAPE" | "PLIN" | "TRANSFER" | "CASH" | null;
   paymentStatus:
     | "PENDING_PAYMENT"
     | "PARTIALLY_PAID"

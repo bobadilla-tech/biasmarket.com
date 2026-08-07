@@ -473,6 +473,19 @@ export const OrderResponseDtoDeliveryMethodType = {
  */
 export type OrderResponseDtoDeliveryDetails = { [key: string]: unknown } | null;
 
+/**
+ * @nullable
+ */
+export type OrderResponseDtoPaymentMethod = typeof OrderResponseDtoPaymentMethod[keyof typeof OrderResponseDtoPaymentMethod] | null;
+
+
+export const OrderResponseDtoPaymentMethod = {
+  YAPE: 'YAPE',
+  PLIN: 'PLIN',
+  TRANSFER: 'TRANSFER',
+  CASH: 'CASH',
+} as const;
+
 export type OrderResponseDtoPaymentStatus = typeof OrderResponseDtoPaymentStatus[keyof typeof OrderResponseDtoPaymentStatus];
 
 
@@ -616,6 +629,8 @@ export interface OrderResponseDto {
   deliveryDetails: OrderResponseDtoDeliveryDetails;
   /** @nullable */
   pickupPointId: string | null;
+  /** @nullable */
+  paymentMethod: OrderResponseDtoPaymentMethod;
   paymentStatus: OrderResponseDtoPaymentStatus;
   /** @nullable */
   paymentRejectionReason: string | null;
@@ -649,6 +664,19 @@ export const OrderDetailResponseDtoDeliveryMethodType = {
  * @nullable
  */
 export type OrderDetailResponseDtoDeliveryDetails = { [key: string]: unknown } | null;
+
+/**
+ * @nullable
+ */
+export type OrderDetailResponseDtoPaymentMethod = typeof OrderDetailResponseDtoPaymentMethod[keyof typeof OrderDetailResponseDtoPaymentMethod] | null;
+
+
+export const OrderDetailResponseDtoPaymentMethod = {
+  YAPE: 'YAPE',
+  PLIN: 'PLIN',
+  TRANSFER: 'TRANSFER',
+  CASH: 'CASH',
+} as const;
 
 export type OrderDetailResponseDtoPaymentStatus = typeof OrderDetailResponseDtoPaymentStatus[keyof typeof OrderDetailResponseDtoPaymentStatus];
 
@@ -729,6 +757,8 @@ export interface OrderDetailResponseDto {
   deliveryDetails: OrderDetailResponseDtoDeliveryDetails;
   /** @nullable */
   pickupPointId: string | null;
+  /** @nullable */
+  paymentMethod: OrderDetailResponseDtoPaymentMethod;
   paymentStatus: OrderDetailResponseDtoPaymentStatus;
   /** @nullable */
   paymentRejectionReason: string | null;
@@ -777,6 +807,19 @@ export const OrderStatusResponseDtoDeliveryMethodType = {
  * @nullable
  */
 export type OrderStatusResponseDtoDeliveryDetails = { [key: string]: unknown } | null;
+
+/**
+ * @nullable
+ */
+export type OrderStatusResponseDtoPaymentMethod = typeof OrderStatusResponseDtoPaymentMethod[keyof typeof OrderStatusResponseDtoPaymentMethod] | null;
+
+
+export const OrderStatusResponseDtoPaymentMethod = {
+  YAPE: 'YAPE',
+  PLIN: 'PLIN',
+  TRANSFER: 'TRANSFER',
+  CASH: 'CASH',
+} as const;
 
 export type OrderStatusResponseDtoPaymentStatus = typeof OrderStatusResponseDtoPaymentStatus[keyof typeof OrderStatusResponseDtoPaymentStatus];
 
@@ -835,6 +878,8 @@ export interface OrderStatusResponseDto {
   deliveryDetails: OrderStatusResponseDtoDeliveryDetails;
   /** @nullable */
   pickupPointId: string | null;
+  /** @nullable */
+  paymentMethod: OrderStatusResponseDtoPaymentMethod;
   paymentStatus: OrderStatusResponseDtoPaymentStatus;
   /** @nullable */
   paymentRejectionReason: string | null;
@@ -907,6 +952,16 @@ export const CreateOrderDtoDeliveryMethodType = {
   COURIER: 'COURIER',
 } as const;
 
+export type CreateOrderDtoPaymentMethod = typeof CreateOrderDtoPaymentMethod[keyof typeof CreateOrderDtoPaymentMethod];
+
+
+export const CreateOrderDtoPaymentMethod = {
+  YAPE: 'YAPE',
+  PLIN: 'PLIN',
+  TRANSFER: 'TRANSFER',
+  CASH: 'CASH',
+} as const;
+
 export interface CreateOrderItemDto {
   productId: string;
   variantId?: string;
@@ -917,6 +972,7 @@ export interface CreateOrderItemDto {
 export interface CreateOrderDto {
   deliveryMethodType: CreateOrderDtoDeliveryMethodType;
   pickupPointId?: string;
+  paymentMethod?: CreateOrderDtoPaymentMethod;
   /** @minLength 6 */
   customerPhone: string;
   customerName?: string;
@@ -931,6 +987,19 @@ export type CheckoutOrderResponseDtoDeliveryMethodType = typeof CheckoutOrderRes
 export const CheckoutOrderResponseDtoDeliveryMethodType = {
   PICKUP: 'PICKUP',
   COURIER: 'COURIER',
+} as const;
+
+/**
+ * @nullable
+ */
+export type CheckoutOrderResponseDtoPaymentMethod = typeof CheckoutOrderResponseDtoPaymentMethod[keyof typeof CheckoutOrderResponseDtoPaymentMethod] | null;
+
+
+export const CheckoutOrderResponseDtoPaymentMethod = {
+  YAPE: 'YAPE',
+  PLIN: 'PLIN',
+  TRANSFER: 'TRANSFER',
+  CASH: 'CASH',
 } as const;
 
 export type CheckoutOrderResponseDtoPaymentStatus = typeof CheckoutOrderResponseDtoPaymentStatus[keyof typeof CheckoutOrderResponseDtoPaymentStatus];
@@ -1008,6 +1077,8 @@ export interface CheckoutOrderResponseDto {
   deliveryDetails: CheckoutOrderResponseDtoDeliveryDetails;
   /** @nullable */
   pickupPointId: string | null;
+  /** @nullable */
+  paymentMethod: CheckoutOrderResponseDtoPaymentMethod;
   paymentStatus: CheckoutOrderResponseDtoPaymentStatus;
   /** @nullable */
   paymentRejectionReason: string | null;

@@ -32,6 +32,10 @@ export class CreateOrderDto {
   @IsString()
   pickupPointId?: string;
 
+  @IsOptional()
+  @IsIn(["YAPE", "PLIN", "TRANSFER", "CASH"])
+  paymentMethod?: "YAPE" | "PLIN" | "TRANSFER" | "CASH";
+
   @IsString()
   @MinLength(6)
   customerPhone: string;

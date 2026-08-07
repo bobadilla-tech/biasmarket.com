@@ -53,6 +53,7 @@ const order: OrderResponseDto = {
   deliveryMethodType: "PICKUP",
   deliveryDetails: null,
   pickupPointId: null,
+  paymentMethod: null,
   cancellationResolution: null,
   cancellationReason: null,
   expiresAt: "2026-01-08T00:00:00.000Z",

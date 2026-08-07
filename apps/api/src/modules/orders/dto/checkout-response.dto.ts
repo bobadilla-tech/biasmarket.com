@@ -65,6 +65,12 @@ export class CheckoutOrderResponseDto {
   pickupPointId: string | null;
 
   @ApiProperty({
+    enum: ["YAPE", "PLIN", "TRANSFER", "CASH"],
+    nullable: true,
+  })
+  paymentMethod: "YAPE" | "PLIN" | "TRANSFER" | "CASH" | null;
+
+  @ApiProperty({
     enum: [
       "PENDING_PAYMENT",
       "PARTIALLY_PAID",

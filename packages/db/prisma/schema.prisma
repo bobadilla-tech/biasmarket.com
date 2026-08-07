@@ -216,6 +216,9 @@ model Order {
   deliveryMethodType DeliveryMethodType
   deliveryDetails    Json
   pickupPointId      String?
+  // Buyer's chosen payment method at checkout — optional since older
+  // orders (created before this field existed) never captured one.
+  paymentMethod      PaymentMethodType?
   paymentStatus      PaymentStatus      @default(PENDING_PAYMENT)
   paymentRejectionReason String?
   fulfillmentStatus  FulfillmentStatus  @default(ORDERING)

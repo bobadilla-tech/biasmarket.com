@@ -49,6 +49,27 @@ describe("buildWhatsAppOrderMessage", () => {
     const message = buildWhatsAppOrderMessage(base);
     expect(message).toContain("Contacto: +51999999999");
   });
+
+  it("includes the payment method label when provided", () => {
+    const message = buildWhatsAppOrderMessage({
+      ...base,
+      paymentMethod: "YAPE",
+    });
+    expect(message).toContain("Método de pago: Yape");
+  });
+
+  it("falls back to the raw payment method when there's no label for it", () => {
+    const message = buildWhatsAppOrderMessage({
+      ...base,
+      paymentMethod: "CRYPTO",
+    });
+    expect(message).toContain("Método de pago: CRYPTO");
+  });
+
+  it("omits the payment method line entirely when none is provided", () => {
+    const message = buildWhatsAppOrderMessage(base);
+    expect(message).not.toContain("Método de pago");
+  });
 });
 
 describe("buildWhatsAppPaymentReminderMessage", () => {

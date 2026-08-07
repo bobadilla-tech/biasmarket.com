@@ -1,14 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
+import {
+  Banknote,
+  Check,
+  Landmark,
+  MessageCircle,
+  Smartphone,
+  Store,
+  Truck,
+} from "lucide-react";
 import { PhoneInput } from "@/components/ui/phone-input";
-import { Select } from "@/components/ui/select";
 import { type CartItem, hasMixedCurrencies } from "@/lib/cart";
 import { useDeliveryOptions } from "../queries/use-delivery-options";
 import { useSubmitCheckout } from "../mutations/use-submit-checkout";
+import { getPickupAvailability } from "../lib/pickup-availability";
+import { SelectableCard } from "./selectable-card";
 import {
   buildCheckoutFormSchema,
   type CheckoutFormInput,
@@ -16,13 +26,46 @@ import {
 
 const inputClassName =
   "store-theme-input rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none";
-const selectClassName =
-  "rounded-xl border border-gray-200 py-2.5 text-sm text-gray-600";
+
+const PAYMENT_METHOD_ICONS: Record<string, React.ReactNode> = {
+  YAPE: <Smartphone className="size-5" />,
+  PLIN: <Smartphone className="size-5" />,
+  TRANSFER: <Landmark className="size-5" />,
+  CASH: <Banknote className="size-5" />,
+};
 
 interface CheckoutFormProps {
   slug: string;
   items: CartItem[];
   onOrderCreated: (result: { orderId: string; customerEmail: string }) => void;
+}
+
+// next-intl's typed t() rejects a template-literal key — these two build a
+// lookup from static literal calls instead of `t(\`...${key}\`)`, same
+// pattern as store-settings/delivery-section.tsx's weekdayLabels().
+function weekdayLabels(
+  t: ReturnType<typeof useTranslations>,
+): Record<number, string> {
+  return {
+    0: t("weekdays.0"),
+    1: t("weekdays.1"),
+    2: t("weekdays.2"),
+    3: t("weekdays.3"),
+    4: t("weekdays.4"),
+    5: t("weekdays.5"),
+    6: t("weekdays.6"),
+  };
+}
+
+function paymentMethodLabels(
+  t: ReturnType<typeof useTranslations>,
+): Record<string, string> {
+  return {
+    YAPE: t("paymentMethodLabels.YAPE"),
+    PLIN: t("paymentMethodLabels.PLIN"),
+    TRANSFER: t("paymentMethodLabels.TRANSFER"),
+    CASH: t("paymentMethodLabels.CASH"),
+  };
 }
 
 export function CheckoutForm(
@@ -33,37 +76,35 @@ export function CheckoutForm(
   const submitCheckout = useSubmitCheckout(slug);
 
   const methods = deliveryOptions.data?.methods ?? [];
-  // Defense-in-depth against a stale client cache: `CreateOrderUseCase`
-  // already rejects a closedOverride'd/not-open-today point server-side —
-  // this just stops the dropdown from offering it as selectable in the
-  // first place. The card-selector redesign (with day-availability badges)
-  // is the real storefront consumer of this data; this is the minimum
-  // until that lands.
-  const today = new Date().getDay();
-  const points = (deliveryOptions.data?.points ?? []).filter((point) =>
-    !point.closedOverride &&
-    (point.openDays.length === 0 || point.openDays.includes(today))
-  );
+  const points = deliveryOptions.data?.points ?? [];
   const paymentMethods = deliveryOptions.data?.paymentMethods ?? [];
   const deliveryMethodsLoaded = !deliveryOptions.isPending;
   const mixedCurrencies = hasMixedCurrencies(items);
 
-  const [paymentMethodId, setPaymentMethodId] = useState("");
-  useEffect(() => {
-    if (paymentMethods[0] && !paymentMethodId) {
-      setPaymentMethodId(paymentMethods[0].method);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paymentMethods, paymentMethodId]);
+  const today = new Date().getDay();
+  // Cards for closed-today points still render (with a "not available
+  // today" badge) so the buyer can see the full list and when it reopens —
+  // only the *selectable*/required-for-validation subset excludes them.
+  // `CreateOrderUseCase` still rejects a closed point server-side as
+  // defense-in-depth regardless of what the form allows selecting.
+  const selectablePoints = points.filter((point) =>
+    getPickupAvailability(point, today).availableToday
+  );
 
   const form = useForm<CheckoutFormInput>({
-    resolver: zodResolver(buildCheckoutFormSchema(points.length > 0)),
+    resolver: zodResolver(
+      buildCheckoutFormSchema(
+        selectablePoints.length > 0,
+        paymentMethods.length > 0,
+      ),
+    ),
     defaultValues: {
       customerName: "",
       customerPhone: "",
       customerEmail: "",
       deliveryMethodType: "",
       pickupPointId: "",
+      paymentMethod: "",
     },
   });
 
@@ -74,15 +115,25 @@ export function CheckoutForm(
     ) {
       form.setValue("deliveryMethodType", deliveryOptions.data.methods[0].type);
     }
-    if (points[0] && !form.getValues("pickupPointId")) {
-      form.setValue("pickupPointId", points[0].id);
+    if (selectablePoints[0] && !form.getValues("pickupPointId")) {
+      form.setValue("pickupPointId", selectablePoints[0].id);
+    }
+    if (paymentMethods[0] && !form.getValues("paymentMethod")) {
+      form.setValue("paymentMethod", paymentMethods[0].method);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [deliveryOptions.data, points, form.setValue, form.getValues]);
+  }, [
+    deliveryOptions.data,
+    selectablePoints,
+    paymentMethods,
+    form.setValue,
+    form.getValues,
+  ]);
 
   const customerPhone = form.watch("customerPhone");
   const deliveryMethodType = form.watch("deliveryMethodType");
   const pickupPointId = form.watch("pickupPointId");
+  const paymentMethod = form.watch("paymentMethod");
 
   const onSubmit = form.handleSubmit(async (values) => {
     const result = await submitCheckout.mutateAsync({
@@ -90,6 +141,7 @@ export function CheckoutForm(
       pickupPointId: values.deliveryMethodType === "PICKUP"
         ? values.pickupPointId
         : undefined,
+      paymentMethod: values.paymentMethod || undefined,
       customerName: values.customerName,
       customerPhone: values.customerPhone,
       customerEmail: values.customerEmail,
@@ -104,49 +156,115 @@ export function CheckoutForm(
     }
   });
 
+  const weekdays = weekdayLabels(t);
+  const paymentLabels = paymentMethodLabels(t);
+
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col gap-3">
+      <nav
+        aria-label="breadcrumb"
+        className="flex items-center gap-2 text-xs font-medium text-gray-400"
+      >
+        <span>{t("breadcrumb.store")}</span>
+        <span aria-hidden="true">›</span>
+        <span className="store-theme-active-text flex items-center gap-1">
+          {t("breadcrumb.cart")}
+          <Check className="size-3" strokeWidth={3} />
+        </span>
+        <span aria-hidden="true">›</span>
+        <span className="font-semibold text-gray-900">
+          {t("breadcrumb.confirm")}
+        </span>
+      </nav>
+
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col gap-5">
         {methods.length > 0 && (
-          <Select
-            {...form.register("deliveryMethodType")}
-            selectClassName={selectClassName}
-          >
-            {methods.map((m) => (
-              <option key={m.type} value={m.type}>
-                {m.type === "PICKUP"
-                  ? t("deliveryPickup")
-                  : t("deliveryCourier")}
-              </option>
-            ))}
-          </Select>
+          <div className="flex flex-col gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+              {t("deliveryTypeLabel")}
+            </span>
+            <div className="grid grid-cols-2 gap-3">
+              {methods.map((m) => (
+                <SelectableCard
+                  key={m.type}
+                  selected={deliveryMethodType === m.type}
+                  onSelect={() =>
+                    form.setValue("deliveryMethodType", m.type, {
+                      shouldValidate: true,
+                    })}
+                  icon={m.type === "PICKUP"
+                    ? <Store className="size-5" />
+                    : <Truck className="size-5" />}
+                  title={m.type === "PICKUP"
+                    ? t("deliveryPickup")
+                    : t("deliveryCourier")}
+                />
+              ))}
+            </div>
+          </div>
         )}
 
         {deliveryMethodType === "PICKUP" && points.length > 0 && (
-          <Select
-            {...form.register("pickupPointId")}
-            selectClassName={selectClassName}
-          >
-            {points.map((point) => (
-              <option key={point.id} value={point.id}>
-                {point.label}
-              </option>
-            ))}
-          </Select>
+          <div className="flex flex-col gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+              {t("pickupPointsLabel")}
+            </span>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {points.map((point) => {
+                const availability = getPickupAvailability(point, today);
+                return (
+                  <SelectableCard
+                    key={point.id}
+                    selected={pickupPointId === point.id}
+                    onSelect={() =>
+                      form.setValue("pickupPointId", point.id, {
+                        shouldValidate: true,
+                      })}
+                    disabled={!availability.availableToday}
+                    title={point.label}
+                    subtitle={availability.availableToday
+                      ? t("availableToday")
+                      : availability.nextAvailableDay !== null
+                      ? `${t("notAvailableToday")} — ${
+                        t("nextAvailable", {
+                          day: weekdays[availability.nextAvailableDay],
+                        })
+                      }`
+                      : t("notAvailableToday")}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {deliveryMethodType === "COURIER" && (
+          <div className="flex items-start gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
+            <Truck className="store-theme-active-text size-5 shrink-0" />
+            <p>{t("courierNote")}</p>
+          </div>
         )}
 
         {paymentMethods.length > 0 && (
-          <Select
-            value={paymentMethodId}
-            onChange={(e) => setPaymentMethodId(e.target.value)}
-            selectClassName={selectClassName}
-          >
-            {paymentMethods.map((method) => (
-              <option key={method.method} value={method.method}>
-                {method.method}
-              </option>
-            ))}
-          </Select>
+          <div className="flex flex-col gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+              {t("paymentMethodLabel")}
+            </span>
+            <div className="grid grid-cols-2 gap-3">
+              {paymentMethods.map((method) => (
+                <SelectableCard
+                  key={method.method}
+                  selected={paymentMethod === method.method}
+                  onSelect={() =>
+                    form.setValue("paymentMethod", method.method, {
+                      shouldValidate: true,
+                    })}
+                  icon={PAYMENT_METHOD_ICONS[method.method]}
+                  title={paymentLabels[method.method] ?? method.method}
+                />
+              ))}
+            </div>
+          </div>
         )}
 
         <input
@@ -201,11 +319,18 @@ export function CheckoutForm(
           !customerPhone ||
           !deliveryMethodType ||
           mixedCurrencies ||
-          (deliveryMethodType === "PICKUP" && points.length > 0 &&
-            !pickupPointId)}
-        className="store-theme-primary-button rounded-xl px-5 py-3 text-sm font-semibold transition disabled:opacity-60"
+          (deliveryMethodType === "PICKUP" && selectablePoints.length > 0 &&
+            !pickupPointId) ||
+          (paymentMethods.length > 0 && !paymentMethod)}
+        className="store-theme-primary-button flex flex-col items-center gap-1 rounded-xl px-5 py-4 transition disabled:opacity-60"
       >
-        {submitCheckout.isPending ? t("submitting") : t("submit")}
+        <span className="flex items-center gap-2 text-sm font-semibold">
+          <MessageCircle className="size-4" />
+          {submitCheckout.isPending ? t("submitting") : t("submit")}
+        </span>
+        <span className="text-xs font-normal opacity-80">
+          {t("submitSubtext")}
+        </span>
       </button>
     </form>
   );

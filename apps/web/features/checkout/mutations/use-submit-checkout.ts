@@ -9,6 +9,7 @@ export function useSubmitCheckout(slug: string, fallbackErrorMessage?: string) {
     mutationFn: (values: {
       deliveryMethodType: string;
       pickupPointId?: string;
+      paymentMethod?: string;
       customerName?: string;
       customerPhone: string;
       customerEmail?: string;

@@ -24,13 +24,41 @@
   "checkoutPage": {
     "title": "Confirm order",
     "total": "Total",
+    "breadcrumb": {
+      "store": "Store",
+      "cart": "Cart",
+      "confirm": "Confirm"
+    },
+    "deliveryTypeLabel": "Delivery type",
     "deliveryPickup": "In-person pickup",
     "deliveryCourier": "Courier shipping",
+    "pickupPointsLabel": "Pickup point",
+    "courierNote": "Shipping cost is coordinated via WhatsApp with the store.",
+    "availableToday": "Available today",
+    "notAvailableToday": "Not available today",
+    "nextAvailable": "Next available day: {day}",
+    "weekdays": {
+      "0": "Sun",
+      "1": "Mon",
+      "2": "Tue",
+      "3": "Wed",
+      "4": "Thu",
+      "5": "Fri",
+      "6": "Sat"
+    },
+    "paymentMethodLabel": "Payment method",
+    "paymentMethodLabels": {
+      "YAPE": "Yape",
+      "PLIN": "Plin",
+      "TRANSFER": "Bank transfer",
+      "CASH": "Cash"
+    },
     "namePlaceholder": "Name",
     "phonePlaceholder": "Phone (WhatsApp)",
     "emailPlaceholder": "Email (optional)",
     "invalidEmail": "Enter a valid email",
     "submit": "Confirm and continue on WhatsApp",
+    "submitSubtext": "We'll take you to WhatsApp to coordinate payment with the store.",
     "submitting": "Sending...",
     "noDeliveryMethod": "The store hasn't set up a delivery method yet — contact the seller.",
     "mixedCurrencyWarning": "You can't check out products in different currencies in the same order. Remove one from your cart.",

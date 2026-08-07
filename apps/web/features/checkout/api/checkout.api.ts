@@ -16,6 +16,7 @@ export const checkoutApi = {
     values: {
       deliveryMethodType: string;
       pickupPointId?: string;
+      paymentMethod?: string;
       customerName?: string;
       customerPhone: string;
       customerEmail?: string;
@@ -28,6 +29,9 @@ export const checkoutApi = {
       {
         deliveryMethodType: values.deliveryMethodType as "PICKUP" | "COURIER",
         pickupPointId: values.pickupPointId || undefined,
+        paymentMethod: values.paymentMethod
+          ? (values.paymentMethod as "YAPE" | "PLIN" | "TRANSFER" | "CASH")
+          : undefined,
         customerName: values.customerName || undefined,
         customerPhone: values.customerPhone,
         customerEmail: values.customerEmail || undefined,

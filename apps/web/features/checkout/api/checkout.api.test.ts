@@ -69,6 +69,7 @@ test("submit delegates to the generated Checkout.create, omitting empty optional
     {
       deliveryMethodType: "COURIER",
       pickupPointId: undefined,
+      paymentMethod: undefined,
       customerName: undefined,
       customerPhone: "+51999999999",
       customerEmail: undefined,
@@ -78,4 +79,31 @@ test("submit delegates to the generated Checkout.create, omitting empty optional
   );
   expect(result.order.id).toBe("o1");
   expect(result.whatsappUrl).toBeNull();
+});
+
+test("submit forwards a selected payment method", async () => {
+  checkoutMock.create.mockResolvedValue({
+    order: { id: "o1" },
+    whatsappUrl: null,
+  });
+
+  await checkoutApi.submit("my-store", {
+    deliveryMethodType: "COURIER",
+    paymentMethod: "YAPE",
+    customerPhone: "+51999999999",
+    items: [{
+      productId: "p1",
+      variantId: undefined,
+      quantity: 2,
+      name: "T",
+      price: 10,
+      currency: "PEN",
+    }],
+  });
+
+  expect(checkoutMock.create).toHaveBeenCalledWith(
+    "my-store",
+    expect.objectContaining({ paymentMethod: "YAPE" }),
+    { fallbackErrorMessage: undefined },
+  );
 });

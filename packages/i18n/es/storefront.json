@@ -24,13 +24,41 @@
   "checkoutPage": {
     "title": "Confirmar pedido",
     "total": "Total",
+    "breadcrumb": {
+      "store": "Tienda",
+      "cart": "Carrito",
+      "confirm": "Confirmar"
+    },
+    "deliveryTypeLabel": "Tipo de entrega",
     "deliveryPickup": "Retiro presencial",
     "deliveryCourier": "Envío por courier",
+    "pickupPointsLabel": "Punto de recojo",
+    "courierNote": "El costo de envío se coordina por WhatsApp con la tienda.",
+    "availableToday": "Disponible hoy",
+    "notAvailableToday": "No disponible hoy",
+    "nextAvailable": "Próximo día disponible: {day}",
+    "weekdays": {
+      "0": "Dom",
+      "1": "Lun",
+      "2": "Mar",
+      "3": "Mié",
+      "4": "Jue",
+      "5": "Vie",
+      "6": "Sáb"
+    },
+    "paymentMethodLabel": "Método de pago",
+    "paymentMethodLabels": {
+      "YAPE": "Yape",
+      "PLIN": "Plin",
+      "TRANSFER": "Transferencia bancaria",
+      "CASH": "Efectivo"
+    },
     "namePlaceholder": "Nombre",
     "phonePlaceholder": "Teléfono (WhatsApp)",
     "emailPlaceholder": "Email (opcional)",
     "invalidEmail": "Ingresa un email válido",
     "submit": "Confirmar y continuar por WhatsApp",
+    "submitSubtext": "Te llevaremos a WhatsApp para coordinar el pago con la tienda.",
     "submitting": "Enviando...",
     "noDeliveryMethod": "La tienda todavía no configuró un método de entrega — contacta al vendedor.",
     "mixedCurrencyWarning": "No puedes pagar productos en distintas monedas en el mismo pedido. Quita alguno del carrito.",

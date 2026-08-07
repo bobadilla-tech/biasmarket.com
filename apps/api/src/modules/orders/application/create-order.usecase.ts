@@ -202,6 +202,7 @@ export class CreateOrderUseCase {
             customerPhone: dto.customerPhone,
             customerName: dto.customerName,
             deliveryMethodType: dto.deliveryMethodType,
+            paymentMethod: dto.paymentMethod,
             deliveryDetails: pickupPoint
               ? {
                 ...((deliveryConfig.details as Record<string, unknown>) ?? {}),
@@ -232,6 +233,7 @@ export class CreateOrderUseCase {
           currency: order.currency,
           deliveryMethodType: order.deliveryMethodType,
           pickupPointLabel: pickupPoint?.label ?? null,
+          paymentMethod: order.paymentMethod,
           customerName: order.customerName,
           customerPhone: order.customerPhone,
         }),

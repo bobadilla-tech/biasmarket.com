@@ -54,6 +54,7 @@ type FulfillmentStatusLiteral =
   | "COMPLETED";
 type DeliveryMethodTypeLiteral = "PICKUP" | "COURIER";
 type CancellationResolutionLiteral = "REFUNDED" | "RETAINED" | "STORE_CREDIT";
+type PaymentMethodLiteral = "YAPE" | "PLIN" | "TRANSFER" | "CASH";
 
 export interface OrderProductRow {
   id: string;
@@ -129,6 +130,7 @@ export interface OrderRow {
   deliveryMethodType: DeliveryMethodTypeLiteral;
   deliveryDetails: unknown;
   pickupPointId: string | null;
+  paymentMethod: PaymentMethodLiteral | null;
   paymentStatus: PaymentStatusLiteral;
   paymentRejectionReason: string | null;
   fulfillmentStatus: FulfillmentStatusLiteral;
@@ -161,6 +163,7 @@ interface OrderStatusRow {
   deliveryMethodType: DeliveryMethodTypeLiteral;
   deliveryDetails: unknown;
   pickupPointId: string | null;
+  paymentMethod: PaymentMethodLiteral | null;
   paymentStatus: PaymentStatusLiteral;
   paymentRejectionReason: string | null;
   fulfillmentStatus: FulfillmentStatusLiteral;

@@ -4864,6 +4864,16 @@
             "type": "string",
             "nullable": true
           },
+          "paymentMethod": {
+            "nullable": true,
+            "enum": [
+              "YAPE",
+              "PLIN",
+              "TRANSFER",
+              "CASH"
+            ],
+            "type": "string"
+          },
           "paymentStatus": {
             "enum": [
               "PENDING_PAYMENT",
@@ -4957,6 +4967,7 @@
           "deliveryMethodType",
           "deliveryDetails",
           "pickupPointId",
+          "paymentMethod",
           "paymentStatus",
           "paymentRejectionReason",
           "fulfillmentStatus",
@@ -5063,6 +5074,16 @@
             "type": "string",
             "nullable": true
           },
+          "paymentMethod": {
+            "nullable": true,
+            "enum": [
+              "YAPE",
+              "PLIN",
+              "TRANSFER",
+              "CASH"
+            ],
+            "type": "string"
+          },
           "paymentStatus": {
             "enum": [
               "PENDING_PAYMENT",
@@ -5162,6 +5183,7 @@
           "deliveryMethodType",
           "deliveryDetails",
           "pickupPointId",
+          "paymentMethod",
           "paymentStatus",
           "paymentRejectionReason",
           "fulfillmentStatus",
@@ -5240,6 +5262,16 @@
             "type": "string",
             "nullable": true
           },
+          "paymentMethod": {
+            "nullable": true,
+            "enum": [
+              "YAPE",
+              "PLIN",
+              "TRANSFER",
+              "CASH"
+            ],
+            "type": "string"
+          },
           "paymentStatus": {
             "enum": [
               "PENDING_PAYMENT",
@@ -5312,6 +5344,7 @@
           "deliveryMethodType",
           "deliveryDetails",
           "pickupPointId",
+          "paymentMethod",
           "paymentStatus",
           "paymentRejectionReason",
           "fulfillmentStatus",
@@ -5410,6 +5443,15 @@
           },
           "pickupPointId": {
             "type": "string"
+          },
+          "paymentMethod": {
+            "type": "string",
+            "enum": [
+              "YAPE",
+              "PLIN",
+              "TRANSFER",
+              "CASH"
+            ]
           },
           "customerPhone": {
             "type": "string",
@@ -5521,6 +5563,16 @@
             "type": "string",
             "nullable": true
           },
+          "paymentMethod": {
+            "nullable": true,
+            "enum": [
+              "YAPE",
+              "PLIN",
+              "TRANSFER",
+              "CASH"
+            ],
+            "type": "string"
+          },
           "paymentStatus": {
             "enum": [
               "PENDING_PAYMENT",
@@ -5599,6 +5651,7 @@
           "deliveryMethodType",
           "deliveryDetails",
           "pickupPointId",
+          "paymentMethod",
           "paymentStatus",
           "paymentRejectionReason",
           "fulfillmentStatus",
