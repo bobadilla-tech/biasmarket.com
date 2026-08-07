@@ -35,6 +35,7 @@ export interface StoreResponseDto {
   holdWindowHours: number;
   lowStockThreshold: number;
   lowStockAlertsEnabled: boolean;
+  isPublic: boolean;
   createdAt: string;
 }
 
@@ -63,6 +64,7 @@ export interface StoreWithOwnerResponseDto {
   holdWindowHours: number;
   lowStockThreshold: number;
   lowStockAlertsEnabled: boolean;
+  isPublic: boolean;
   createdAt: string;
   owner: StoreOwnerResponseDto;
 }
@@ -78,6 +80,7 @@ export interface UpdateStoreDto {
   lowStockAlertsEnabled?: boolean;
   /** @minimum 0 */
   lowStockThreshold?: number;
+  isPublic?: boolean;
 }
 
 export interface PublicStoreListingResponseDto {
@@ -228,6 +231,7 @@ export interface StorePublicDetailResponseDto {
   holdWindowHours: number;
   lowStockThreshold: number;
   lowStockAlertsEnabled: boolean;
+  isPublic: boolean;
   createdAt: string;
   sections: StoreSectionWithCollectionResponseDto[];
 }
@@ -1352,6 +1356,12 @@ export interface UpdatePickupPointDto {
    */
   openDays?: number[];
   closedOverride?: boolean;
+}
+
+export interface PublicPickupPointsResponseDto {
+  /** Server-computed weekday (0=Sunday..6=Saturday) used for openDays validation — storefronts must use this, not their own local date. */
+  weekday: number;
+  points: PickupPointResponseDto[];
 }
 
 export type PaymentMethodConfigResponseDtoMethod =

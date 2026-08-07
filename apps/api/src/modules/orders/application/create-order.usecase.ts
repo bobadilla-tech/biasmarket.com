@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import type { Prisma } from "@biasmarket/db";
+import type { PickupPoint, Prisma } from "@biasmarket/db";
 import {
   buildWhatsAppOrderMessage,
   buildWhatsAppUrl,
@@ -34,7 +34,12 @@ export class CreateOrderUseCase {
       throw new BadRequestException("Método de entrega no disponible");
     }
 
-    let pickupPoint: { id: string; label: string } | null = null;
+    // Whether this store even has enabled pickup points decides if a
+    // pickupPointId is required — the actual lookup, availability check, and
+    // label snapshot happen inside the transaction below, locked, so a
+    // concurrent seller edit (disable / closedOverride) can't land between
+    // validation and order persistence.
+    let pickupPointId: string | undefined;
     if (dto.deliveryMethodType === "PICKUP") {
       const hasPoints = await this.prisma.pickupPoint.count({
         where: { storeId: store.id, enabled: true },
@@ -43,25 +48,7 @@ export class CreateOrderUseCase {
         if (!dto.pickupPointId) {
           throw new BadRequestException("Debes seleccionar un punto de recojo");
         }
-        const point = await this.prisma.pickupPoint.findUnique({
-          where: { id: dto.pickupPointId },
-        });
-        if (!point || point.storeId !== store.id || !point.enabled) {
-          throw new BadRequestException("Punto de recojo no disponible");
-        }
-        // Defense-in-depth against a stale client cache or a direct API
-        // call bypassing whatever the storefront shows — mirrors the
-        // zero-payment guard's placement in ReviewPaymentUseCase.
-        const today = new Date().getDay();
-        if (
-          point.closedOverride ||
-          (point.openDays.length > 0 && !point.openDays.includes(today))
-        ) {
-          throw new BadRequestException(
-            "Punto de recojo no disponible hoy",
-          );
-        }
-        pickupPoint = point;
+        pickupPointId = dto.pickupPointId;
       }
     }
 
@@ -71,8 +58,37 @@ export class CreateOrderUseCase {
       unitPrice: number;
     }[] = [];
 
-    const { order, pendingVerificationCustomer } = await this.prisma
-      .$transaction(async (tx) => {
+    let pickupPoint: { id: string; label: string } | null = null;
+
+    const { order, pendingVerificationCustomer, pickupPointLabel } = await this
+      .prisma.$transaction(async (tx) => {
+        // Defense-in-depth against a stale client cache or a direct API call
+        // bypassing whatever the storefront shows — mirrors the zero-payment
+        // guard's placement in ReviewPaymentUseCase. Runs inside the
+        // order-creation transaction and locks the row (SELECT ... FOR
+        // UPDATE) so validation reflects the latest committed state; the
+        // weekday comes from the same `new Date().getDay()` source the
+        // storefront's delivery-options payload is built from, so the two
+        // sides can't diverge across a calendar-day boundary.
+        if (pickupPointId) {
+          const [point] = await tx.$queryRaw<
+            PickupPoint[]
+          >`SELECT * FROM "PickupPoint" WHERE id = ${pickupPointId} FOR UPDATE`;
+          if (!point || point.storeId !== store.id || !point.enabled) {
+            throw new BadRequestException("Punto de recojo no disponible");
+          }
+          const today = new Date().getDay();
+          if (
+            point.closedOverride ||
+            (point.openDays.length > 0 && !point.openDays.includes(today))
+          ) {
+            throw new BadRequestException(
+              "Punto de recojo no disponible hoy",
+            );
+          }
+          pickupPoint = { id: point.id, label: point.label };
+        }
+
         let customerId: string | undefined;
         let pendingVerificationCustomer:
           | Awaited<
@@ -219,7 +235,11 @@ export class CreateOrderUseCase {
           include: { items: true },
         });
 
-        return { order, pendingVerificationCustomer };
+        return {
+          order,
+          pendingVerificationCustomer,
+          pickupPointLabel: pickupPoint?.label ?? null,
+        };
       });
 
     const whatsappUrl = store.whatsappNumber
@@ -232,7 +252,7 @@ export class CreateOrderUseCase {
           totalAmount: order.totalAmount.toNumber(),
           currency: order.currency,
           deliveryMethodType: order.deliveryMethodType,
-          pickupPointLabel: pickupPoint?.label ?? null,
+          pickupPointLabel,
           paymentMethod: order.paymentMethod,
           customerName: order.customerName,
           customerPhone: order.customerPhone,

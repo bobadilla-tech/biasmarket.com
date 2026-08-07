@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type {
   DeliveryMethodType,
   FulfillmentStatus,
+  NotificationType,
   PaymentMethodType,
   PaymentStatus,
   PrismaClient,
@@ -67,6 +68,10 @@ export async function ensureStore(
     slug: string;
     whatsappNumber: string;
     defaultCurrency: string;
+    logoUrl?: string;
+    paymentInstructions?: string;
+    isPublic?: boolean;
+    lowStockThreshold?: number;
   },
 ) {
   return prisma.store.upsert({
@@ -76,15 +81,26 @@ export async function ensureStore(
       ownerId: input.ownerId,
       whatsappNumber: input.whatsappNumber,
       defaultCurrency: input.defaultCurrency,
+      logoUrl: input.logoUrl ?? null,
+      paymentInstructions: input.paymentInstructions ?? "",
+      isPublic: input.isPublic ?? true,
+      ...(input.lowStockThreshold !== undefined && {
+        lowStockThreshold: input.lowStockThreshold,
+      }),
     },
     create: {
       name: input.name,
       slug: input.slug,
       ownerId: input.ownerId,
       themeConfig: {},
-      paymentInstructions: "",
+      logoUrl: input.logoUrl ?? null,
+      paymentInstructions: input.paymentInstructions ?? "",
       whatsappNumber: input.whatsappNumber,
       defaultCurrency: input.defaultCurrency,
+      isPublic: input.isPublic ?? true,
+      ...(input.lowStockThreshold !== undefined && {
+        lowStockThreshold: input.lowStockThreshold,
+      }),
     },
   });
 }
@@ -134,16 +150,22 @@ export async function ensurePickupPoint(
 
 export async function ensurePaymentMethod(
   prisma: PrismaClient,
-  input: { storeId: string; method: PaymentMethodType; enabled?: boolean },
+  input: {
+    storeId: string;
+    method: PaymentMethodType;
+    enabled?: boolean;
+    details?: Record<string, unknown>;
+  },
 ) {
+  const details = json(input.details ?? {});
   return prisma.paymentMethodConfig.upsert({
     where: { storeId_method: { storeId: input.storeId, method: input.method } },
-    update: { enabled: input.enabled ?? true },
+    update: { enabled: input.enabled ?? true, details },
     create: {
       storeId: input.storeId,
       method: input.method,
       enabled: input.enabled ?? true,
-      details: {},
+      details,
     },
   });
 }
@@ -243,6 +265,7 @@ export async function ensureProduct(
     status: ProductStatus;
     soldOut?: boolean;
     availableUntil?: Date | null;
+    images?: string[];
   },
 ) {
   const data = {
@@ -254,6 +277,7 @@ export async function ensureProduct(
     status: input.status,
     soldOut: input.soldOut ?? false,
     availableUntil: input.availableUntil ?? null,
+    images: input.images ?? [],
   };
   return prisma.product.upsert({
     where: { id: input.id },
@@ -330,8 +354,16 @@ export async function ensureOrder(
     deliveryMethodType: DeliveryMethodType;
     deliveryDetails: Record<string, unknown>;
     pickupPointId?: string | null;
+    paymentMethod?: PaymentMethodType | null;
     paymentStatus: PaymentStatus;
+    paymentRejectionReason?: string | null;
     fulfillmentStatus: FulfillmentStatus;
+    status?: "ACTIVE" | "CANCELLED";
+    cancellationResolution?: "REFUNDED" | "RETAINED" | "STORE_CREDIT" | null;
+    cancellationReason?: string | null;
+    retainedAmount?: string | null;
+    releasedAmount?: string | null;
+    releasedResolution?: "REFUNDED" | "STORE_CREDIT" | null;
     totalAmount: string;
     requiredAmount: string;
     currency: string;
@@ -348,8 +380,16 @@ export async function ensureOrder(
     deliveryMethodType: input.deliveryMethodType,
     deliveryDetails: json(input.deliveryDetails),
     pickupPointId: input.pickupPointId ?? null,
+    paymentMethod: input.paymentMethod ?? null,
     paymentStatus: input.paymentStatus,
+    paymentRejectionReason: input.paymentRejectionReason ?? null,
     fulfillmentStatus: input.fulfillmentStatus,
+    status: input.status ?? "ACTIVE",
+    cancellationResolution: input.cancellationResolution ?? null,
+    cancellationReason: input.cancellationReason ?? null,
+    retainedAmount: input.retainedAmount ?? null,
+    releasedAmount: input.releasedAmount ?? null,
+    releasedResolution: input.releasedResolution ?? null,
     totalAmount: input.totalAmount,
     requiredAmount: input.requiredAmount,
     currency: input.currency,
@@ -394,6 +434,7 @@ export async function ensureOrderPayment(
     currency: string;
     method?: PaymentMethodType | null;
     note?: string | null;
+    imageUrl?: string | null;
     createdAt?: Date;
   },
 ) {
@@ -404,6 +445,7 @@ export async function ensureOrderPayment(
     currency: input.currency,
     method: input.method ?? null,
     note: input.note ?? null,
+    imageUrl: input.imageUrl ?? null,
   };
   return prisma.orderPayment.upsert({
     where: { id: input.id },
@@ -435,6 +477,89 @@ export async function ensureOrderItem(
     currency: input.currency,
   };
   return prisma.orderItem.upsert({
+    where: { id: input.id },
+    update: data,
+    create: { id: input.id, ...data },
+  });
+}
+
+export async function ensureNotification(
+  prisma: PrismaClient,
+  input: {
+    id: string;
+    storeId: string;
+    type: NotificationType;
+    entityType: string;
+    entityId: string;
+    title: string;
+    body: string;
+    read?: boolean;
+    archived?: boolean;
+  },
+) {
+  const data = {
+    storeId: input.storeId,
+    type: input.type,
+    entityType: input.entityType,
+    entityId: input.entityId,
+    title: input.title,
+    body: input.body,
+    read: input.read ?? false,
+    archived: input.archived ?? false,
+  };
+  return prisma.notification.upsert({
+    where: { id: input.id },
+    update: data,
+    create: { id: input.id, ...data },
+  });
+}
+
+export async function ensureRestockRequest(
+  prisma: PrismaClient,
+  input: {
+    id: string;
+    storeId: string;
+    productId: string;
+    variantId?: string | null;
+    name: string;
+    phone: string;
+  },
+) {
+  const data = {
+    storeId: input.storeId,
+    productId: input.productId,
+    variantId: input.variantId ?? null,
+    name: input.name,
+    phone: input.phone,
+  };
+  return prisma.restockRequest.upsert({
+    where: { id: input.id },
+    update: data,
+    create: { id: input.id, ...data },
+  });
+}
+
+export async function ensureAuditLog(
+  prisma: PrismaClient,
+  input: {
+    id: string;
+    actorId: string;
+    storeId: string;
+    action: string;
+    entityType: string;
+    entityId: string;
+    metadata?: Record<string, unknown>;
+  },
+) {
+  const data = {
+    actorId: input.actorId,
+    storeId: input.storeId,
+    action: input.action,
+    entityType: input.entityType,
+    entityId: input.entityId,
+    metadata: json(input.metadata ?? {}),
+  };
+  return prisma.auditLog.upsert({
     where: { id: input.id },
     update: data,
     create: { id: input.id, ...data },

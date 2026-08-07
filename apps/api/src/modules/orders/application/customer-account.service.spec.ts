@@ -1,5 +1,9 @@
 import { Test, type TestingModule } from "@nestjs/testing";
-import { BadRequestException, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from "@nestjs/common";
 import { type Mock, vi } from "vitest";
 import { CustomerAccountService } from "./customer-account.service.js";
 import { PrismaService } from "../../../prisma/prisma.service.js";
@@ -409,6 +413,40 @@ describe("CustomerAccountService", () => {
       expect(prisma.customer.update).toHaveBeenCalledWith({
         where: { id: "customer-1" },
         data: { phone: "+51900000001", pendingPhone: null },
+      });
+    });
+
+    it("rejects a 'change-phone' token when another customer already has that phone", async () => {
+      const token = createCustomerAccountToken(
+        "customer-1",
+        "test-secret",
+        "change-phone",
+      );
+      const customer = {
+        id: "customer-1",
+        storeId: store.id,
+        name: "Jane",
+        email: "jane@example.com",
+        phone: "+51900000000",
+        pendingPhone: "+51900000001",
+        emailVerified: true,
+        passwordHash: "already-set",
+      };
+      const rival = { ...customer, id: "customer-2" };
+      prisma.customer.findUnique
+        .mockResolvedValueOnce(customer)
+        .mockResolvedValueOnce(rival);
+      prisma.order.findMany.mockResolvedValue([]);
+
+      await expect(service.confirmAccount(store.slug, token)).rejects.toThrow(
+        ConflictException,
+      );
+
+      expect(prisma.customer.update).not.toHaveBeenCalled();
+      expect(prisma.customer.findUnique).toHaveBeenCalledWith({
+        where: {
+          storeId_phone: { storeId: store.id, phone: "+51900000001" },
+        },
       });
     });
 

@@ -212,6 +212,11 @@ export function PaymentsPageClient() {
                                   >
                                     {tOrders("approve")}
                                   </Button>
+                                  {order.paidAmount <= 0 && (
+                                    <span className="sr-only">
+                                      {tOrders("approveDisabledNoPayment")}
+                                    </span>
+                                  )}
                                   <Button
                                     type="button"
                                     variant="outline"

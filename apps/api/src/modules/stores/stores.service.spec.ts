@@ -442,6 +442,7 @@ describe("StoresService", () => {
 
       expect(prisma.store.findMany).toHaveBeenCalledWith({
         where: {
+          isPublic: true,
           products: { some: { status: "PUBLISHED", deletedAt: null } },
           owner: { banned: { not: true } },
         },
@@ -493,6 +494,7 @@ describe("StoresService", () => {
       expect(prisma.store.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: {
+            isPublic: true,
             products: { some: { status: "PUBLISHED", deletedAt: null } },
             owner: { banned: { not: true } },
           },

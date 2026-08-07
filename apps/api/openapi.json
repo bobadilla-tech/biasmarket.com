@@ -1959,10 +1959,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PickupPointResponseDto"
-                  }
+                  "$ref": "#/components/schemas/PublicPickupPointsResponseDto"
                 }
               }
             }
@@ -3350,6 +3347,9 @@
           "lowStockAlertsEnabled": {
             "type": "boolean"
           },
+          "isPublic": {
+            "type": "boolean"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -3369,6 +3369,7 @@
           "holdWindowHours",
           "lowStockThreshold",
           "lowStockAlertsEnabled",
+          "isPublic",
           "createdAt"
         ]
       },
@@ -3437,6 +3438,9 @@
           "lowStockAlertsEnabled": {
             "type": "boolean"
           },
+          "isPublic": {
+            "type": "boolean"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -3459,6 +3463,7 @@
           "holdWindowHours",
           "lowStockThreshold",
           "lowStockAlertsEnabled",
+          "isPublic",
           "createdAt",
           "owner"
         ]
@@ -3488,6 +3493,9 @@
           "lowStockThreshold": {
             "type": "number",
             "minimum": 0
+          },
+          "isPublic": {
+            "type": "boolean"
           }
         }
       },
@@ -3890,6 +3898,9 @@
           "lowStockAlertsEnabled": {
             "type": "boolean"
           },
+          "isPublic": {
+            "type": "boolean"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -3915,6 +3926,7 @@
           "holdWindowHours",
           "lowStockThreshold",
           "lowStockAlertsEnabled",
+          "isPublic",
           "createdAt",
           "sections"
         ]
@@ -6039,6 +6051,26 @@
             "type": "boolean"
           }
         }
+      },
+      "PublicPickupPointsResponseDto": {
+        "type": "object",
+        "properties": {
+          "weekday": {
+            "type": "number",
+            "description": "Server-computed weekday (0=Sunday..6=Saturday) used for openDays validation — storefronts must use this, not their own local date.",
+            "example": 3
+          },
+          "points": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PickupPointResponseDto"
+            }
+          }
+        },
+        "required": [
+          "weekday",
+          "points"
+        ]
       },
       "PaymentMethodConfigResponseDto": {
         "type": "object",

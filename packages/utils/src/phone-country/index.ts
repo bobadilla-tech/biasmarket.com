@@ -50,16 +50,14 @@ export function parsePhoneValue(value: string): {
 // "987654321", "51987654321", "+51 987 654 321" all mean the same phone.
 // Storage/lookups (Customer.storeId_phone) must key on one canonical shape.
 // Reuses parsePhoneValue's dial-code detection rather than reimplementing
-// it: prepending "+" when missing lets a bare "51987654321" resolve to the
-// same PE + "987654321" split a "+51987654321" input already gets, and a
-// bare national number with no recognizable dial-code prefix (e.g.
+// it: strips every non-digit character (embedded or repeated "+" included)
+// and prepends exactly one leading "+", so a bare "51987654321" resolves to
+// the same PE + "987654321" split a "+51987654321" input already gets, and
+// a bare national number with no recognizable dial-code prefix (e.g.
 // "987654321") falls back to DEFAULT_PHONE_COUNTRY exactly like
 // parsePhoneValue already does for a "+"-prefixed unmatched value.
 export function normalizePhone(value: string): string {
-  const digitsAndPlus = value.trim().replace(/[^\d+]/g, "");
-  const withLeadingPlus = digitsAndPlus.startsWith("+")
-    ? digitsAndPlus
-    : `+${digitsAndPlus}`;
-  const { country, nationalNumber } = parsePhoneValue(withLeadingPlus);
+  const digitsOnly = value.replace(/\D/g, "");
+  const { country, nationalNumber } = parsePhoneValue(`+${digitsOnly}`);
   return `${country.dialCode}${nationalNumber}`;
 }

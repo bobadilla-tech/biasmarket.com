@@ -8,6 +8,7 @@ import {
   Max,
   Min,
   MinLength,
+  ValidateIf,
 } from "class-validator";
 
 export class UpdatePickupPointDto {
@@ -24,7 +25,13 @@ export class UpdatePickupPointDto {
   @IsInt()
   sortOrder?: number;
 
-  @IsOptional()
+  // `@ValidateIf` instead of `@IsOptional` for these two: `@IsOptional`
+  // skips validation for `null` too, letting a `null` openDays/closedOverride
+  // slip through to `PickupPoint.update()` and violate the column's NOT NULL
+  // constraint as a 500 instead of a 400. `undefined` still means "don't
+  // touch this field on PATCH"; `null` is rejected by the type validators
+  // below.
+  @ValidateIf((_, value) => value !== undefined)
   @IsArray()
   @ArrayMaxSize(7)
   @IsInt({ each: true })
@@ -32,7 +39,7 @@ export class UpdatePickupPointDto {
   @Max(6, { each: true })
   openDays?: number[];
 
-  @IsOptional()
+  @ValidateIf((_, value) => value !== undefined)
   @IsBoolean()
   closedOverride?: boolean;
 }

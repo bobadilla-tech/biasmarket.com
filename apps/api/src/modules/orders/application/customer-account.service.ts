@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   Logger,
   NotFoundException,
@@ -287,10 +288,21 @@ export class CustomerAccountService {
         },
       });
     } else if (verified.purpose === "change-phone" && customer.pendingPhone) {
+      const normalizedPhone = normalizePhone(customer.pendingPhone);
+      const existing = await this.prisma.customer.findUnique({
+        where: {
+          storeId_phone: { storeId: customer.storeId, phone: normalizedPhone },
+        },
+      });
+      if (existing && existing.id !== customer.id) {
+        throw new ConflictException(
+          "Ya existe un comprador con ese número de teléfono",
+        );
+      }
       customer = await this.prisma.customer.update({
         where: { id: customer.id },
         data: {
-          phone: normalizePhone(customer.pendingPhone),
+          phone: normalizedPhone,
           pendingPhone: null,
         },
       });

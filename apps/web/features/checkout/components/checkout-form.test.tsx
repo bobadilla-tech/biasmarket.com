@@ -48,15 +48,18 @@ test("submits with the delivery type, pickup point, and payment method the buyer
   findEnabledDeliveryConfig.mockResolvedValue([
     { type: "PICKUP", enabled: true, details: {} },
   ]);
-  findEnabledPickupPoints.mockResolvedValue([
-    {
-      id: "point-1",
-      label: "Alameda 28 de Julio",
-      enabled: true,
-      openDays: [],
-      closedOverride: false,
-    },
-  ]);
+  findEnabledPickupPoints.mockResolvedValue({
+    weekday: today,
+    points: [
+      {
+        id: "point-1",
+        label: "Alameda 28 de Julio",
+        enabled: true,
+        openDays: [],
+        closedOverride: false,
+      },
+    ],
+  });
   findEnabledPaymentConfig.mockResolvedValue([
     { method: "YAPE", enabled: true, details: {} },
     { method: "TRANSFER", enabled: true, details: {} },
@@ -109,15 +112,18 @@ test("renders a closed-today pickup point as disabled and does not preselect it"
   findEnabledDeliveryConfig.mockResolvedValue([
     { type: "PICKUP", enabled: true, details: {} },
   ]);
-  findEnabledPickupPoints.mockResolvedValue([
-    {
-      id: "closed-point",
-      label: "Estación Central",
-      enabled: true,
-      openDays: closedTodayDays,
-      closedOverride: false,
-    },
-  ]);
+  findEnabledPickupPoints.mockResolvedValue({
+    weekday: today,
+    points: [
+      {
+        id: "closed-point",
+        label: "Estación Central",
+        enabled: true,
+        openDays: closedTodayDays,
+        closedOverride: false,
+      },
+    ],
+  });
   findEnabledPaymentConfig.mockResolvedValue([]);
 
   const user = userEvent.setup();
@@ -143,15 +149,18 @@ test("switching to courier shows the WhatsApp coordination note instead of picku
     { type: "PICKUP", enabled: true, details: {} },
     { type: "COURIER", enabled: true, details: {} },
   ]);
-  findEnabledPickupPoints.mockResolvedValue([
-    {
-      id: "point-1",
-      label: "Alameda 28 de Julio",
-      enabled: true,
-      openDays: [],
-      closedOverride: false,
-    },
-  ]);
+  findEnabledPickupPoints.mockResolvedValue({
+    weekday: today,
+    points: [
+      {
+        id: "point-1",
+        label: "Alameda 28 de Julio",
+        enabled: true,
+        openDays: [],
+        closedOverride: false,
+      },
+    ],
+  });
   findEnabledPaymentConfig.mockResolvedValue([]);
 
   const user = userEvent.setup();

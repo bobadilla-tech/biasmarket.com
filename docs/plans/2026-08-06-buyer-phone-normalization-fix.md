@@ -46,15 +46,15 @@ This was issue 2 of the same four-issue batch plan as the order-approval guard
   that form also used a bare `<input>`. Each swap follows `checkout-form.tsx`'s
   existing `Controller`-wrapped pattern (`PhoneInput` needs a controlled
   `value`/`onChange`, not `register()`).
-- **No prod backfill needed**: the prod database has no real data yet, so
-  rather than write a migration script for existing rows, the plan was to
-  reset the database from the current (post-fix) schema/migrations and reseed
-  — no `Customer.phone` values ever existed in the old, un-normalized shape.
-  A backfill script was drafted at one point during this work but deleted
-  once that became clear; if this ever matters again (e.g. a future
-  normalization-affecting change after real customer data exists), write a
-  fresh one rather than resurrecting this — the shape of a "safe" backfill
-  depends on what's actually inconsistent at the time.
+- **No prod backfill needed**: the prod database has no real data yet, so rather
+  than write a migration script for existing rows, the plan was to reset the
+  database from the current (post-fix) schema/migrations and reseed — no
+  `Customer.phone` values ever existed in the old, un-normalized shape. A
+  backfill script was drafted at one point during this work but deleted once
+  that became clear; if this ever matters again (e.g. a future
+  normalization-affecting change after real customer data exists), write a fresh
+  one rather than resurrecting this — the shape of a "safe" backfill depends on
+  what's actually inconsistent at the time.
 
 ## What else came up
 

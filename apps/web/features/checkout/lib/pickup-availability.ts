@@ -3,6 +3,10 @@
 export interface PickupAvailabilityInput {
   openDays: number[];
   closedOverride: boolean;
+  // The public endpoint already filters to enabled points, but the form
+  // also carries the field — a disabled point must never be selectable even
+  // if its openDays/closedOverride say it's open today (defense in depth).
+  enabled?: boolean;
 }
 
 export interface PickupAvailability {
@@ -17,6 +21,9 @@ export function getPickupAvailability(
   point: PickupAvailabilityInput,
   today: number = new Date().getDay(),
 ): PickupAvailability {
+  if (point.enabled === false) {
+    return { availableToday: false, nextAvailableDay: null };
+  }
   if (point.closedOverride) {
     return { availableToday: false, nextAvailableDay: null };
   }

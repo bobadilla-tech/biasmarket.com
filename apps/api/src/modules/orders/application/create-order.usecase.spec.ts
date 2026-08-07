@@ -1,6 +1,6 @@
 import { Test, type TestingModule } from "@nestjs/testing";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
-import { type Mock, vi } from "vitest";
+import { afterEach, type Mock, vi } from "vitest";
 import { CreateOrderUseCase } from "./create-order.usecase.js";
 import { PrismaService } from "../../../prisma/prisma.service.js";
 import { NotificationsService } from "../../notifications/notifications.service.js";
@@ -31,8 +31,9 @@ describe("CreateOrderUseCase", () => {
   let prisma: {
     store: { findUnique: Mock };
     deliveryMethodConfig: { findUnique: Mock };
-    pickupPoint: { count: Mock; findUnique: Mock };
+    pickupPoint: { count: Mock };
     $transaction: Mock;
+    $queryRaw: Mock;
     product: { findUnique: Mock };
     productVariant: { findUnique: Mock; update: Mock };
     order: { create: Mock };
@@ -69,8 +70,9 @@ describe("CreateOrderUseCase", () => {
     prisma = {
       store: { findUnique: vi.fn() },
       deliveryMethodConfig: { findUnique: vi.fn() },
-      pickupPoint: { count: vi.fn(), findUnique: vi.fn() },
+      pickupPoint: { count: vi.fn() },
       $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(prisma)),
+      $queryRaw: vi.fn(),
       product: { findUnique: vi.fn() },
       productVariant: { findUnique: vi.fn(), update: vi.fn() },
       order: { create: vi.fn() },
@@ -95,6 +97,10 @@ describe("CreateOrderUseCase", () => {
     prisma.store.findUnique.mockResolvedValue(store);
     prisma.deliveryMethodConfig.findUnique.mockResolvedValue(deliveryConfig);
     prisma.pickupPoint.count.mockResolvedValue(0);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("throws NotFoundException when the store does not exist", async () => {
@@ -463,10 +469,9 @@ describe("CreateOrderUseCase", () => {
 
     it("throws BadRequestException when the selected point belongs to a different store", async () => {
       prisma.pickupPoint.count.mockResolvedValue(1);
-      prisma.pickupPoint.findUnique.mockResolvedValue({
-        ...point,
-        storeId: "other-store",
-      });
+      prisma.$queryRaw.mockResolvedValue([
+        { ...point, storeId: "other-store" },
+      ]);
 
       await expect(
         useCase.execute(slug, { ...dto, pickupPointId: point.id }),
@@ -475,10 +480,7 @@ describe("CreateOrderUseCase", () => {
 
     it("throws BadRequestException when the selected point is disabled", async () => {
       prisma.pickupPoint.count.mockResolvedValue(1);
-      prisma.pickupPoint.findUnique.mockResolvedValue({
-        ...point,
-        enabled: false,
-      });
+      prisma.$queryRaw.mockResolvedValue([{ ...point, enabled: false }]);
 
       await expect(
         useCase.execute(slug, { ...dto, pickupPointId: point.id }),
@@ -487,10 +489,9 @@ describe("CreateOrderUseCase", () => {
 
     it("throws BadRequestException when the selected point has closedOverride set", async () => {
       prisma.pickupPoint.count.mockResolvedValue(1);
-      prisma.pickupPoint.findUnique.mockResolvedValue({
-        ...point,
-        closedOverride: true,
-      });
+      prisma.$queryRaw.mockResolvedValue([
+        { ...point, closedOverride: true },
+      ]);
 
       await expect(
         useCase.execute(slug, { ...dto, pickupPointId: point.id }),
@@ -498,14 +499,15 @@ describe("CreateOrderUseCase", () => {
     });
 
     it("throws BadRequestException when today is not in the point's openDays", async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-08-05T12:00:00Z"));
       prisma.pickupPoint.count.mockResolvedValue(1);
       const closedToday = [0, 1, 2, 3, 4, 5, 6].filter(
         (day) => day !== new Date().getDay(),
       );
-      prisma.pickupPoint.findUnique.mockResolvedValue({
-        ...point,
-        openDays: closedToday,
-      });
+      prisma.$queryRaw.mockResolvedValue([
+        { ...point, openDays: closedToday },
+      ]);
 
       await expect(
         useCase.execute(slug, { ...dto, pickupPointId: point.id }),
@@ -513,11 +515,12 @@ describe("CreateOrderUseCase", () => {
     });
 
     it("succeeds when today is in the point's openDays", async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-08-05T12:00:00Z"));
       prisma.pickupPoint.count.mockResolvedValue(1);
-      prisma.pickupPoint.findUnique.mockResolvedValue({
-        ...point,
-        openDays: [new Date().getDay()],
-      });
+      prisma.$queryRaw.mockResolvedValue([
+        { ...point, openDays: [new Date().getDay()] },
+      ]);
 
       await expect(
         useCase.execute(slug, { ...dto, pickupPointId: point.id }),
@@ -538,13 +541,19 @@ describe("CreateOrderUseCase", () => {
 
     it("snapshots the pickup point label into deliveryDetails and the whatsapp message", async () => {
       prisma.pickupPoint.count.mockResolvedValue(1);
-      prisma.pickupPoint.findUnique.mockResolvedValue(point);
+      prisma.$queryRaw.mockResolvedValue([point]);
 
       const result = await useCase.execute(slug, {
         ...dto,
         pickupPointId: point.id,
       });
 
+      // Validates the locked lookup (SELECT ... FOR UPDATE) inside the
+      // order-creation transaction, not a pre-transaction read.
+      expect(prisma.$queryRaw).toHaveBeenCalledWith(
+        expect.arrayContaining([expect.stringContaining("FOR UPDATE")]),
+        point.id,
+      );
       expect(prisma.order.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({

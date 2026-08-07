@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
@@ -81,14 +81,25 @@ export function CheckoutForm(
   const deliveryMethodsLoaded = !deliveryOptions.isPending;
   const mixedCurrencies = hasMixedCurrencies(items);
 
-  const today = new Date().getDay();
+  // The server computes the weekday it validates openDays against and ships
+  // it in the delivery-options payload — the form must use that value, not
+  // `new Date().getDay()`. If buyer and API server are on different calendar
+  // days, browser-local and server-local weekdays diverge and a point the
+  // storefront shows as available gets rejected by CreateOrderUseCase (or
+  // vice versa). One value, served and consumed, keeps them aligned.
+  const weekday = deliveryOptions.data?.weekday;
   // Cards for closed-today points still render (with a "not available
   // today" badge) so the buyer can see the full list and when it reopens —
   // only the *selectable*/required-for-validation subset excludes them.
   // `CreateOrderUseCase` still rejects a closed point server-side as
   // defense-in-depth regardless of what the form allows selecting.
-  const selectablePoints = points.filter((point) =>
-    getPickupAvailability(point, today).availableToday
+  const selectablePoints = useMemo(
+    () =>
+      points.filter((point) =>
+        weekday !== undefined &&
+        getPickupAvailability(point, weekday).availableToday
+      ),
+    [points, weekday],
   );
 
   const form = useForm<CheckoutFormInput>({
@@ -115,7 +126,16 @@ export function CheckoutForm(
     ) {
       form.setValue("deliveryMethodType", deliveryOptions.data.methods[0].type);
     }
-    if (selectablePoints[0] && !form.getValues("pickupPointId")) {
+    // Keep the selected point valid whenever the selectable set changes
+    // (points list or server weekday refreshed): drop a stale id, fall back
+    // to the first available point, clear it entirely when none are left.
+    const currentPointId = form.getValues("pickupPointId");
+    if (selectablePoints.length === 0) {
+      if (currentPointId) form.setValue("pickupPointId", "");
+    } else if (
+      !currentPointId ||
+      !selectablePoints.some((point) => point.id === currentPointId)
+    ) {
       form.setValue("pickupPointId", selectablePoints[0].id);
     }
     if (paymentMethods[0] && !form.getValues("paymentMethod")) {
@@ -211,7 +231,10 @@ export function CheckoutForm(
             </span>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {points.map((point) => {
-                const availability = getPickupAvailability(point, today);
+                // `points` is only non-empty once deliveryOptions.data has
+                // loaded, so `weekday` (sourced from that same payload) is
+                // defined here.
+                const availability = getPickupAvailability(point, weekday);
                 return (
                   <SelectableCard
                     key={point.id}

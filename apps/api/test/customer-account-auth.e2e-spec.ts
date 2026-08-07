@@ -295,6 +295,12 @@ describe("customer account + customer auth (e2e)", () => {
         openapi.components,
       );
 
+      // Snapshot the mailer dir here so the reset-email assertion below only
+      // sees the email written by this specific forgotPassword call — the
+      // earlier confirm/register emails to the same customer address are
+      // excluded.
+      const mailerFilesBeforeForgot = new Set(readdirSync(mailerDevDir));
+
       const forgotWithDifferentFormatRes = await request(app.getHttpServer())
         .post(`/stores/${storeSlug}/account/forgot-password`)
         .set("Origin", "http://localhost:3001")
@@ -305,6 +311,16 @@ describe("customer account + customer auth (e2e)", () => {
         okSchema,
         openapi.components,
       );
+
+      // Asserting the reset *side effect*, not just the 201: the
+      // differently-formatted phone must still resolve to the same Customer
+      // and produce a reset email addressed to them.
+      const resetMailerFile = await waitForNewMailerFile(
+        mailerFilesBeforeForgot,
+        customerEmail,
+      );
+      const resetHtml = readFileSync(resetMailerFile, "utf-8");
+      expect(resetHtml).toMatch(/account\/confirm\?token=/);
     },
   );
 });

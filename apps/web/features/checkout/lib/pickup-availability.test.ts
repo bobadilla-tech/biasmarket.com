@@ -51,3 +51,11 @@ test("closedOverride wins even when today is a normally-open day", () => {
   );
   expect(result).toEqual({ availableToday: false, nextAvailableDay: null });
 });
+
+test("disabled point is never available, even when openDays says it's open today", () => {
+  const result = getPickupAvailability(
+    { openDays: [3], closedOverride: false, enabled: false },
+    3,
+  );
+  expect(result).toEqual({ availableToday: false, nextAvailableDay: null });
+});

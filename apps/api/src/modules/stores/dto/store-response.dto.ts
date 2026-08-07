@@ -45,6 +45,9 @@ export class StoreResponseDto {
   @ApiProperty()
   lowStockAlertsEnabled: boolean;
 
+  @ApiProperty()
+  isPublic: boolean;
+
   @ApiProperty({ type: String, format: "date-time" })
   createdAt: string;
 }

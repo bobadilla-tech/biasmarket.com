@@ -55,4 +55,15 @@ describe("normalizePhone", () => {
   it("normalizes a non-default country's dial code without a leading +", () => {
     expect(normalizePhone("52987654321")).toBe("+52987654321");
   });
+
+  it("strips embedded and repeated plus characters", () => {
+    expect(normalizePhone("+51+987654321")).toBe("+51987654321");
+    expect(normalizePhone("++51 987 654 321")).toBe("+51987654321");
+  });
+
+  it("normalizes messy inputs to the same digits-only phone key", () => {
+    expect(normalizePhone("+51+987-65-4-3-21")).toBe(
+      normalizePhone("51987654321"),
+    );
+  });
 });

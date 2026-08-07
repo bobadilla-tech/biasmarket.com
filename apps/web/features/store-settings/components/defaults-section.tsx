@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Building2, Copy } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -8,12 +8,23 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import type { DashboardStore } from "@/features/stores";
-import { SectionCard } from "./section-primitives";
+import { useSaveVisibility } from "../mutations/use-save-visibility";
+import { SectionCard, ToggleRow, useSavedFlash } from "./section-primitives";
 
 export function DefaultsSection({ store }: { store: DashboardStore }) {
   const t = useTranslations("dashboard.settings");
   const { locale, slug } = useParams<{ locale: string; slug: string }>();
+  const saveVisibility = useSaveVisibility(store.id, slug);
+
+  const [isPublic, setIsPublic] = useState(store.isPublic ?? true);
+
+  useEffect(() => {
+    setIsPublic(store.isPublic ?? true);
+  }, [store.isPublic]);
+
+  useSavedFlash(saveVisibility.isSuccess, saveVisibility.reset);
 
   const storefrontUrl = useMemo(() => {
     if (typeof window === "undefined") return `/${locale}/store/${slug}`;
@@ -67,6 +78,41 @@ export function DefaultsSection({ store }: { store: DashboardStore }) {
             </div>
           </CardContent>
         </Card>
+
+        <ToggleRow
+          label={t("defaults.visibilityToggleLabel")}
+          description={isPublic
+            ? t("defaults.visibilityToggleDescriptionPublic")
+            : t("defaults.visibilityToggleDescriptionPrivate")}
+          enabled={isPublic}
+          onChange={setIsPublic}
+        />
+      </div>
+
+      {saveVisibility.isError
+        ? (
+          <p className="mt-4 text-sm text-[#b24368]">
+            {saveVisibility.error instanceof Error
+              ? saveVisibility.error.message
+              : String(saveVisibility.error)}
+          </p>
+        )
+        : null}
+
+      <Separator className="my-5 bg-[#f0e7f8]" />
+
+      <div className="flex items-center justify-end gap-4">
+        <Button
+          onClick={() => saveVisibility.mutate({ isPublic })}
+          disabled={saveVisibility.isPending}
+          className="store-theme-primary-button h-11 rounded-2xl px-5 text-sm font-semibold hover:scale-[1.01] hover:opacity-100"
+        >
+          {saveVisibility.isSuccess
+            ? t("saved")
+            : saveVisibility.isPending
+            ? t("saving")
+            : t("save")}
+        </Button>
       </div>
     </SectionCard>
   );

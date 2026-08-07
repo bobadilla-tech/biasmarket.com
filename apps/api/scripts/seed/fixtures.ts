@@ -23,7 +23,22 @@ export interface ProductSpec {
   soldOut?: boolean;
   availableUntil?: Date;
   categoryKeys?: string[];
+  images?: string[];
   variants?: VariantSpec[];
+}
+
+export interface PaymentMethodSpec {
+  method: "YAPE" | "PLIN" | "TRANSFER" | "CASH";
+  enabled?: boolean;
+  details?: Record<string, unknown>;
+}
+
+export interface RestockRequestSpec {
+  key: string;
+  productKey: string;
+  variantKey?: string;
+  name: string;
+  phone: string;
 }
 
 export interface CategorySpec {
@@ -59,7 +74,16 @@ export interface OrderPaymentSpec {
   amount: string;
   method?: "YAPE" | "PLIN" | "TRANSFER" | "CASH";
   note?: string;
+  imageUrl?: string;
   createdDaysAgo?: number;
+}
+
+export interface OrderCancellationSpec {
+  resolution: "REFUNDED" | "RETAINED" | "STORE_CREDIT";
+  reason?: string;
+  retainedAmount?: string;
+  releasedAmount?: string;
+  releasedResolution?: "REFUNDED" | "STORE_CREDIT";
 }
 
 export interface OrderSpec {
@@ -70,6 +94,7 @@ export interface OrderSpec {
   customerKey?: string;
   deliveryMethodType: "PICKUP" | "COURIER";
   pickupPointKey?: string;
+  paymentMethod?: "YAPE" | "PLIN" | "TRANSFER" | "CASH";
   paymentStatus:
     | "PENDING_PAYMENT"
     | "PARTIALLY_PAID"
@@ -77,9 +102,11 @@ export interface OrderSpec {
     | "VERIFIED"
     | "REJECTED"
     | "CANCELLED";
+  rejectionReason?: string;
   fulfillmentStatus: "ORDERING" | "IN_TRANSIT" | "READY" | "COMPLETED";
   items: OrderItemSpec[];
   payments?: OrderPaymentSpec[];
+  cancellation?: OrderCancellationSpec;
   createdDaysAgo?: number;
 }
 
@@ -113,11 +140,16 @@ export interface StoreFixtureSpec {
     slug: string;
     whatsappNumber: string;
     defaultCurrency: string;
+    logoUrl?: string;
+    paymentInstructions?: string;
+    isPublic?: boolean;
+    lowStockThreshold?: number;
   };
   deliveryMethods: {
     type: "PICKUP" | "COURIER";
     details: Record<string, unknown>;
   }[];
+  paymentMethods?: PaymentMethodSpec[];
   pickupPoints: PickupPointSpec[];
   categories: CategorySpec[];
   products: ProductSpec[];
@@ -125,6 +157,7 @@ export interface StoreFixtureSpec {
   sections: SectionSpec[];
   customers: CustomerSpec[];
   orders: OrderSpec[];
+  restockRequests?: RestockRequestSpec[];
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -139,6 +172,14 @@ function camilaStore(): StoreFixtureSpec {
       slug: "demo-tienda-de-camila",
       whatsappNumber: "+51987654321",
       defaultCurrency: "PEN",
+      logoUrl: "https://placehold.co/200x200?text=Camila",
+      paymentInstructions:
+        "Yape/Plin al +51 987 654 321 (Camila Seller) o transferencia BCP " +
+        "cuenta 193-1234567-0-89, CCI 00219300123456789012. Envía tu " +
+        "comprobante por WhatsApp para confirmar tu pedido.",
+      // Demo store — reachable via direct link for QA/testing, but kept out
+      // of the homepage/directory search (see Store.isPublic).
+      isPublic: false,
     },
     deliveryMethods: [
       { type: "PICKUP", details: {} },
@@ -170,6 +211,10 @@ function camilaStore(): StoreFixtureSpec {
         price: "45.00",
         status: "PUBLISHED",
         categoryKeys: ["albumes-photobook"],
+        images: [
+          "https://placehold.co/600x600?text=Photobook",
+          "https://placehold.co/600x600?text=Photobook+2",
+        ],
         variants: [
           {
             key: "a",
@@ -192,6 +237,7 @@ function camilaStore(): StoreFixtureSpec {
         price: "15.00",
         status: "PUBLISHED",
         categoryKeys: ["merch"],
+        images: ["https://placehold.co/600x600?text=Photocards"],
         // no variants = unlimited stock
       },
       {
@@ -201,6 +247,7 @@ function camilaStore(): StoreFixtureSpec {
         price: "60.00",
         status: "PUBLISHED",
         categoryKeys: ["merch"],
+        images: ["https://placehold.co/600x600?text=Lightstick"],
         variants: [{ key: "default", name: "Estándar", stock: 1 }], // low stock
       },
       {
@@ -210,6 +257,7 @@ function camilaStore(): StoreFixtureSpec {
           "Todavía en preview, no debería verse en la tienda pública.",
         price: "8.00",
         status: "DRAFT",
+        images: ["https://placehold.co/600x600?text=Llavero"],
       },
       {
         key: "poster-expired",
@@ -218,6 +266,7 @@ function camilaStore(): StoreFixtureSpec {
         price: "18.00",
         status: "PUBLISHED",
         availableUntil: pastDate(),
+        images: ["https://placehold.co/600x600?text=Poster"],
       },
       {
         key: "lightstick-v2",
@@ -226,6 +275,7 @@ function camilaStore(): StoreFixtureSpec {
         price: "65.00",
         status: "PUBLISHED",
         availableUntil: futureDate(),
+        images: ["https://placehold.co/600x600?text=Lightstick+v2"],
         variants: [{ key: "std", name: "Estándar", stock: null }], // unlimited
       },
       {
@@ -235,6 +285,7 @@ function camilaStore(): StoreFixtureSpec {
           "Bundle con una unidad ya reservada por un pedido pendiente.",
         price: "30.00",
         status: "PUBLISHED",
+        images: ["https://placehold.co/600x600?text=Bundle"],
         variants: [{ key: "only", name: "Único", stock: 3, reserved: 2 }], // available = 1
       },
       {
@@ -243,6 +294,7 @@ function camilaStore(): StoreFixtureSpec {
         description: "Edición gold con precio e imagen propios.",
         price: "10.00",
         status: "PUBLISHED",
+        images: ["https://placehold.co/600x600?text=Photocard+Premium"],
         variants: [
           {
             key: "gold",
@@ -320,6 +372,7 @@ function camilaStore(): StoreFixtureSpec {
         customerName: "Ana Test",
         deliveryMethodType: "PICKUP",
         pickupPointKey: "alameda",
+        paymentMethod: "YAPE",
         paymentStatus: "PENDING_PAYMENT",
         fulfillmentStatus: "ORDERING",
         items: [{ productKey: "photocards", quantity: 2 }],
@@ -330,6 +383,7 @@ function camilaStore(): StoreFixtureSpec {
         customerEmail: "seed-bruno@example.com",
         customerKey: "bruno",
         deliveryMethodType: "COURIER",
+        paymentMethod: "TRANSFER",
         paymentStatus: "PAYMENT_SUBMITTED",
         fulfillmentStatus: "ORDERING",
         items: [{ productKey: "photobook", variantKey: "a", quantity: 1 }],
@@ -341,6 +395,7 @@ function camilaStore(): StoreFixtureSpec {
         customerEmail: "seed-ana@example.com",
         customerKey: "ana",
         deliveryMethodType: "COURIER",
+        paymentMethod: "TRANSFER",
         paymentStatus: "VERIFIED",
         fulfillmentStatus: "COMPLETED",
         items: [{ productKey: "photocards", quantity: 1 }],
@@ -349,6 +404,7 @@ function camilaStore(): StoreFixtureSpec {
           amount: "23.00",
           method: "TRANSFER",
           note: "Pago completo",
+          imageUrl: "https://placehold.co/500x700?text=Comprobante",
         }],
         createdDaysAgo: 6,
       },
@@ -359,6 +415,7 @@ function camilaStore(): StoreFixtureSpec {
         customerKey: "ana",
         deliveryMethodType: "PICKUP",
         pickupPointKey: "plaza-norte",
+        paymentMethod: "CASH",
         paymentStatus: "PENDING_PAYMENT",
         fulfillmentStatus: "ORDERING",
         items: [{
@@ -373,6 +430,7 @@ function camilaStore(): StoreFixtureSpec {
         customerName: "Diego Partial",
         deliveryMethodType: "PICKUP",
         pickupPointKey: "alameda",
+        paymentMethod: "YAPE",
         paymentStatus: "PARTIALLY_PAID",
         fulfillmentStatus: "ORDERING",
         items: [{ productKey: "photobook", variantKey: "a", quantity: 1 }],
@@ -381,6 +439,7 @@ function camilaStore(): StoreFixtureSpec {
           amount: "15.00",
           method: "YAPE",
           note: "Adelanto",
+          imageUrl: "https://placehold.co/500x700?text=Yape+Adelanto",
         }],
         createdDaysAgo: 1,
       },
@@ -388,6 +447,7 @@ function camilaStore(): StoreFixtureSpec {
         key: "verified-transit",
         customerPhone: "+51900000003",
         deliveryMethodType: "COURIER",
+        paymentMethod: "TRANSFER",
         paymentStatus: "VERIFIED",
         fulfillmentStatus: "IN_TRANSIT",
         items: [{
@@ -408,6 +468,7 @@ function camilaStore(): StoreFixtureSpec {
         customerPhone: "+51900000004",
         deliveryMethodType: "PICKUP",
         pickupPointKey: "plaza-norte",
+        paymentMethod: "TRANSFER",
         paymentStatus: "VERIFIED",
         fulfillmentStatus: "COMPLETED",
         items: [{
@@ -428,7 +489,9 @@ function camilaStore(): StoreFixtureSpec {
         customerPhone: "+51900000005",
         deliveryMethodType: "PICKUP",
         pickupPointKey: "alameda",
+        paymentMethod: "PLIN",
         paymentStatus: "REJECTED",
+        rejectionReason: "El comprobante no corresponde al monto del pedido.",
         fulfillmentStatus: "ORDERING",
         items: [{
           productKey: "photocard-override",
@@ -441,6 +504,7 @@ function camilaStore(): StoreFixtureSpec {
         key: "cancelled",
         customerPhone: "+51900000006",
         deliveryMethodType: "COURIER",
+        paymentMethod: "YAPE",
         paymentStatus: "CANCELLED",
         fulfillmentStatus: "ORDERING",
         items: [{
@@ -448,7 +512,33 @@ function camilaStore(): StoreFixtureSpec {
           variantKey: "only",
           quantity: 1,
         }],
+        payments: [{
+          key: "advance",
+          amount: "20.00",
+          method: "YAPE",
+          note: "Adelanto antes de cancelar",
+        }],
+        // Partial retain: keeps a cancellation fee, releases the rest as
+        // store credit — exercises the RETAINED/PARTIAL branch of
+        // CancelOrderUseCase (see cancel-order.usecase.ts) alongside the
+        // simpler REFUNDED case seeded on K-Pop Corner below.
+        cancellation: {
+          resolution: "RETAINED",
+          reason: "Cliente canceló fuera de plazo, se retiene fee de gestión.",
+          retainedAmount: "10.00",
+          releasedAmount: "10.00",
+          releasedResolution: "STORE_CREDIT",
+        },
         createdDaysAgo: 4,
+      },
+    ],
+    restockRequests: [
+      {
+        key: "photobook-b",
+        productKey: "photobook",
+        variantKey: "b",
+        name: "Fiorella Restock",
+        phone: "+51955555555",
       },
     ],
   };
@@ -462,18 +552,33 @@ function kpopCornerStore(): StoreFixtureSpec {
       slug: "demo-kpop-corner",
       whatsappNumber: "+51912345678",
       defaultCurrency: "PEN",
+      logoUrl: "https://placehold.co/200x200?text=KPC",
+      paymentInstructions:
+        "Yape/Plin al +51 912 345 678 (K-Pop Corner) o transferencia " +
+        "Interbank cuenta 898-3001234567, CCI 00389800300123456712. " +
+        "Envía tu comprobante por WhatsApp para confirmar tu pedido.",
+      isPublic: false,
     },
     deliveryMethods: [
       { type: "PICKUP", details: {} },
       { type: "COURIER", details: { estimatedCost: "10.00" } },
     ],
-    pickupPoints: [{
-      key: "estacion-central",
-      label: "Estación Central - Metropolitano",
-    }],
+    pickupPoints: [
+      { key: "estacion-central", label: "Estación Central - Metropolitano" },
+      {
+        key: "cc-jockey",
+        label: "Jockey Plaza - Patio de comidas",
+        enabled: false,
+      },
+    ],
     categories: [
       { key: "posters", name: "Posters" },
       { key: "photocards", name: "Photocards" },
+      {
+        key: "photocards-signed",
+        name: "Firmados",
+        parentKey: "photocards",
+      },
     ],
     products: [
       {
@@ -483,6 +588,7 @@ function kpopCornerStore(): StoreFixtureSpec {
         price: "20.00",
         status: "PUBLISHED",
         categoryKeys: ["posters"],
+        images: ["https://placehold.co/600x600?text=Poster"],
       },
       {
         key: "member-set",
@@ -491,6 +597,7 @@ function kpopCornerStore(): StoreFixtureSpec {
         price: "12.00",
         status: "PUBLISHED",
         categoryKeys: ["photocards"],
+        images: ["https://placehold.co/600x600?text=Member+Set"],
         variants: [
           {
             key: "jk",
@@ -507,7 +614,44 @@ function kpopCornerStore(): StoreFixtureSpec {
         description: "Bundle con llavero + sticker pack.",
         price: "25.00",
         status: "PUBLISHED",
+        images: ["https://placehold.co/600x600?text=Bundle"],
         variants: [{ key: "only", name: "Único", stock: null }],
+      },
+      {
+        key: "album-draft",
+        name: "Álbum Repackage (Preview)",
+        description: "Todavía en preview, no debería verse en la tienda.",
+        price: "42.00",
+        status: "DRAFT",
+        images: ["https://placehold.co/600x600?text=Repackage"],
+      },
+      {
+        key: "poster-expired",
+        name: "Poster Concierto 2025",
+        description: "Edición de concierto, disponibilidad ya vencida.",
+        price: "22.00",
+        status: "PUBLISHED",
+        availableUntil: pastDate(),
+        images: ["https://placehold.co/600x600?text=Poster+Concierto"],
+      },
+      {
+        key: "photocard-signed",
+        name: "Photocard Firmado",
+        description: "Edición firmada, unidad limitada ya reservada.",
+        price: "35.00",
+        status: "PUBLISHED",
+        categoryKeys: ["photocards-signed"],
+        images: ["https://placehold.co/600x600?text=Firmado"],
+        variants: [
+          {
+            key: "only",
+            name: "Único",
+            stock: 2,
+            reserved: 1,
+            priceOverride: "40.00",
+            imageOverride: "https://placehold.co/400x400?text=Firmado+Gold",
+          }, // available = 1
+        ],
       },
     ],
     collections: [
@@ -536,6 +680,16 @@ function kpopCornerStore(): StoreFixtureSpec {
         },
         position: 1,
       },
+      {
+        key: "about",
+        type: "TEXT_BLOCK",
+        content: {
+          title: "Sobre la tienda",
+          body:
+            "Importamos directo de Corea. Pagos por Yape, Plin o transferencia.",
+        },
+        position: 2,
+      },
     ],
     customers: [
       {
@@ -545,6 +699,13 @@ function kpopCornerStore(): StoreFixtureSpec {
         name: "Sofia Test",
         emailVerified: true,
       },
+      {
+        key: "renzo",
+        phone: "+51933333333",
+        email: "seed-renzo@example.com",
+        name: "Renzo Unverified",
+        emailVerified: false,
+      },
     ],
     orders: [
       {
@@ -552,9 +713,61 @@ function kpopCornerStore(): StoreFixtureSpec {
         customerPhone: "+51911111111",
         deliveryMethodType: "PICKUP",
         pickupPointKey: "estacion-central",
+        paymentMethod: "PLIN",
         paymentStatus: "PENDING_PAYMENT",
         fulfillmentStatus: "ORDERING",
         items: [{ productKey: "poster", quantity: 1 }],
+      },
+      {
+        key: "submitted",
+        customerPhone: "+51933333333",
+        customerEmail: "seed-renzo@example.com",
+        customerKey: "renzo",
+        deliveryMethodType: "COURIER",
+        paymentMethod: "YAPE",
+        paymentStatus: "PAYMENT_SUBMITTED",
+        fulfillmentStatus: "ORDERING",
+        items: [{ productKey: "bundle", variantKey: "only", quantity: 1 }],
+        createdDaysAgo: 1,
+      },
+      {
+        key: "partial",
+        customerPhone: "+51944444444",
+        customerName: "Kevin Partial",
+        deliveryMethodType: "PICKUP",
+        pickupPointKey: "estacion-central",
+        paymentMethod: "TRANSFER",
+        paymentStatus: "PARTIALLY_PAID",
+        fulfillmentStatus: "ORDERING",
+        items: [{
+          productKey: "photocard-signed",
+          variantKey: "only",
+          quantity: 1,
+        }],
+        payments: [{
+          key: "first",
+          amount: "20.00",
+          method: "TRANSFER",
+          note: "Adelanto",
+          imageUrl: "https://placehold.co/500x700?text=Comprobante",
+        }],
+        createdDaysAgo: 1,
+      },
+      {
+        key: "verified-transit",
+        customerPhone: "+51955555555",
+        deliveryMethodType: "COURIER",
+        paymentMethod: "TRANSFER",
+        paymentStatus: "VERIFIED",
+        fulfillmentStatus: "IN_TRANSIT",
+        items: [{ productKey: "poster", quantity: 2 }],
+        payments: [{
+          key: "full",
+          amount: "50.00",
+          method: "TRANSFER",
+          note: "Pago completo",
+        }],
+        createdDaysAgo: 3,
       },
       {
         key: "verified-completed",
@@ -563,6 +776,7 @@ function kpopCornerStore(): StoreFixtureSpec {
         customerEmail: "seed-sofia@example.com",
         customerKey: "sofia",
         deliveryMethodType: "COURIER",
+        paymentMethod: "TRANSFER",
         paymentStatus: "VERIFIED",
         fulfillmentStatus: "COMPLETED",
         items: [{ productKey: "member-set", variantKey: "jk", quantity: 1 }],
@@ -573,6 +787,43 @@ function kpopCornerStore(): StoreFixtureSpec {
           note: "Pago completo",
         }],
         createdDaysAgo: 5,
+      },
+      {
+        key: "rejected",
+        customerPhone: "+51966666666",
+        deliveryMethodType: "PICKUP",
+        pickupPointKey: "estacion-central",
+        paymentMethod: "YAPE",
+        paymentStatus: "REJECTED",
+        rejectionReason: "No se encontró el pago con el número indicado.",
+        fulfillmentStatus: "ORDERING",
+        items: [{ productKey: "member-set", variantKey: "jk", quantity: 1 }],
+        createdDaysAgo: 2,
+      },
+      {
+        key: "cancelled",
+        customerPhone: "+51977777777",
+        deliveryMethodType: "COURIER",
+        paymentMethod: "PLIN",
+        paymentStatus: "CANCELLED",
+        fulfillmentStatus: "ORDERING",
+        items: [{ productKey: "bundle", variantKey: "only", quantity: 1 }],
+        // Full refund, no cancellation fee — the simpler counterpart to
+        // Camila's RETAINED/PARTIAL case above.
+        cancellation: {
+          resolution: "REFUNDED",
+          reason: "Producto ya no disponible en el color solicitado.",
+        },
+        createdDaysAgo: 4,
+      },
+    ],
+    restockRequests: [
+      {
+        key: "member-set-v",
+        productKey: "member-set",
+        variantKey: "v",
+        name: "Camila Restock",
+        phone: "+51988888888",
       },
     ],
   };

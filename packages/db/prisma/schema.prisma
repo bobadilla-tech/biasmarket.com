@@ -43,6 +43,9 @@ model Store {
   holdWindowHours     Int      @default(48)
   lowStockThreshold     Int      @default(5)
   lowStockAlertsEnabled Boolean  @default(true)
+  // Showcased on the public homepage/directory search vs. reachable only by
+  // direct link (/store/:slug). Doesn't gate the storefront itself.
+  isPublic            Boolean  @default(true)
   createdAt           DateTime @default(now())
 
   owner           User                   @relation(fields: [ownerId], references: [id])

@@ -132,10 +132,13 @@ describe("pickup-points (e2e)", () => {
     const publicRes = await request(app.getHttpServer())
       .get(`/stores/${storeSlug}/public/pickup-points`)
       .expect(200);
-    expect(Array.isArray(publicRes.body)).toBe(true);
-    expect(publicRes.body.some((p: { id: string }) => p.id === pointId))
+    expect(Array.isArray(publicRes.body.points)).toBe(true);
+    expect(typeof publicRes.body.weekday).toBe("number");
+    expect(publicRes.body.weekday).toBeGreaterThanOrEqual(0);
+    expect(publicRes.body.weekday).toBeLessThanOrEqual(6);
+    expect(publicRes.body.points.some((p: { id: string }) => p.id === pointId))
       .toBe(true);
-    for (const point of publicRes.body) {
+    for (const point of publicRes.body.points) {
       assertMatchesSchema(point, pickupPointSchema, openapi.components);
     }
 

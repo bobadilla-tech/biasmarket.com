@@ -17,6 +17,9 @@ export const settingsApi = {
     payload: { lowStockAlertsEnabled: boolean; lowStockThreshold: number },
   ) => apiClient.stores.update(storeId, payload),
 
+  updateVisibility: (storeId: string, payload: { isPublic: boolean }) =>
+    apiClient.stores.update(storeId, payload),
+
   async getDeliverySettings(storeId: string) {
     const [methods, points] = await Promise.all([
       apiClient.deliveryConfig.findAll(storeId),

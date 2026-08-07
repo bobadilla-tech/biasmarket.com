@@ -23,6 +23,7 @@ export const dashboardStoreSchema = z.object({
   themeConfig: storeThemeConfigSchema.nullable().optional(),
   lowStockThreshold: z.number().optional(),
   lowStockAlertsEnabled: z.boolean().optional(),
+  isPublic: z.boolean().optional(),
 });
 
 export type DashboardStore = z.infer<typeof dashboardStoreSchema>;

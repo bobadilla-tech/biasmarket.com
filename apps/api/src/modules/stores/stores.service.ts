@@ -117,6 +117,7 @@ export class StoresService {
 
   async findAllPublic() {
     return this.prisma.store.findMany({
+      where: { isPublic: true },
       select: { slug: true, createdAt: true },
     });
   }
@@ -134,6 +135,7 @@ export class StoresService {
 
     const candidates = await this.prisma.store.findMany({
       where: {
+        isPublic: true,
         products: { some: { status: "PUBLISHED", deletedAt: null } },
         owner: { banned: { not: true } },
       },
@@ -180,6 +182,7 @@ export class StoresService {
 
   async findDirectory(page: number, limit: number, q: string | undefined) {
     const where: Prisma.StoreWhereInput = {
+      isPublic: true,
       products: { some: { status: "PUBLISHED", deletedAt: null } },
       owner: { banned: { not: true } },
       ...(q && { name: { contains: q, mode: "insensitive" as const } }),
@@ -283,6 +286,7 @@ export class StoresService {
 
   async findCollectionsPublic() {
     const collections = await this.prisma.collection.findMany({
+      where: { store: { isPublic: true } },
       include: {
         store: { select: { slug: true } },
         products: {

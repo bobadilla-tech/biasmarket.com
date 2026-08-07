@@ -17,6 +17,7 @@ export interface StoreRow {
   holdWindowHours: number;
   lowStockThreshold: number;
   lowStockAlertsEnabled: boolean;
+  isPublic: boolean;
   createdAt: Date;
 }
 

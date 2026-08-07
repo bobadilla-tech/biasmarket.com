@@ -1,7 +1,7 @@
 import type { PrismaClient } from "@biasmarket/db";
 import { seedId } from "./ids.ts";
 import * as db from "./helpers.ts";
-import type { StoreFixtureSpec } from "./fixtures.ts";
+import type { PaymentMethodSpec, StoreFixtureSpec } from "./fixtures.ts";
 import { createCustomerAccountToken } from "@biasmarket/utils/customer-account-token";
 
 function requiredEnv(name: string): string {
@@ -62,11 +62,17 @@ export async function applyStoreFixture(
     });
   }
 
-  for (const method of ["YAPE", "PLIN", "TRANSFER", "CASH"] as const) {
-    await db.ensurePaymentMethod(prisma, {
-      storeId: store.id,
+  const paymentMethods: PaymentMethodSpec[] = spec.paymentMethods ??
+    (["YAPE", "PLIN", "TRANSFER", "CASH"] as const).map((method) => ({
       method,
       enabled: true,
+    }));
+  for (const pm of paymentMethods) {
+    await db.ensurePaymentMethod(prisma, {
+      storeId: store.id,
+      method: pm.method,
+      enabled: pm.enabled ?? true,
+      details: pm.details,
     });
   }
 
@@ -117,6 +123,7 @@ export async function applyStoreFixture(
       status: product.status,
       soldOut: product.soldOut,
       availableUntil: product.availableUntil ?? null,
+      images: product.images,
     });
     productIds.set(product.key, productId);
 
@@ -148,6 +155,101 @@ export async function applyStoreFixture(
       });
       variantIds.set(`${product.key}:${variant.key}`, variantId);
     }
+  }
+
+  // Mirrors NotificationsService.syncStockAlerts's classification (same
+  // title/body templates) so seeded low/out-of-stock variants show up in the
+  // dashboard notification bell exactly like a real approve/reject/cancel
+  // would produce — computed from the spec's own stock numbers rather than
+  // read back from the db, since apply.ts already has them in hand.
+  if (store.lowStockAlertsEnabled) {
+    for (const product of spec.products) {
+      const variants = product.variants ?? [];
+      if (variants.length === 0) continue;
+      const productId = productIds.get(product.key)!;
+
+      for (const variant of variants) {
+        if (variant.stock === null) continue;
+        const available = variant.stock - (variant.reserved ?? 0);
+        const variantId = variantIds.get(`${product.key}:${variant.key}`)!;
+        const alert = available <= 0
+          ? {
+            type: "OUT_OF_STOCK" as const,
+            title: `Sin stock: ${variant.name}`,
+            body: `${variant.name} se quedó sin unidades disponibles.`,
+          }
+          : available <= store.lowStockThreshold
+          ? {
+            type: "LOW_STOCK" as const,
+            title: `Stock bajo: ${variant.name}`,
+            body: `${variant.name} tiene ${available} unidades disponibles.`,
+          }
+          : null;
+        if (!alert) continue;
+        await db.ensureNotification(prisma, {
+          id: seedId(
+            batch,
+            "notification",
+            store.slug,
+            "variant",
+            variant.key,
+            product.key,
+          ),
+          storeId: store.id,
+          type: alert.type,
+          entityType: "ProductVariant",
+          entityId: variantId,
+          title: alert.title,
+          body: alert.body,
+        });
+      }
+
+      const hasUnlimited = variants.some((v) => v.stock === null);
+      if (hasUnlimited) continue;
+      const productAvailable = variants.reduce(
+        (sum, v) => sum + (v.stock ?? 0) - (v.reserved ?? 0),
+        0,
+      );
+      const productAlert = productAvailable <= 0
+        ? {
+          type: "OUT_OF_STOCK" as const,
+          title: `Sin stock: ${product.name}`,
+          body: `${product.name} se quedó sin unidades disponibles.`,
+        }
+        : productAvailable <= store.lowStockThreshold
+        ? {
+          type: "LOW_STOCK" as const,
+          title: `Stock bajo: ${product.name}`,
+          body:
+            `${product.name} tiene ${productAvailable} unidades disponibles.`,
+        }
+        : null;
+      if (!productAlert) continue;
+      await db.ensureNotification(prisma, {
+        id: seedId(batch, "notification", store.slug, "product", product.key),
+        storeId: store.id,
+        type: productAlert.type,
+        entityType: "Product",
+        entityId: productId,
+        title: productAlert.title,
+        body: productAlert.body,
+      });
+    }
+  }
+
+  for (const request of spec.restockRequests ?? []) {
+    const productId = productIds.get(request.productKey);
+    if (!productId) continue;
+    await db.ensureRestockRequest(prisma, {
+      id: seedId(batch, "restock-request", store.slug, request.key),
+      storeId: store.id,
+      productId,
+      variantId: request.variantKey
+        ? variantIds.get(`${request.productKey}:${request.variantKey}`)
+        : null,
+      name: request.name,
+      phone: request.phone,
+    });
   }
 
   const collectionIds = new Map<string, string>();
@@ -245,8 +347,16 @@ export async function applyStoreFixture(
       deliveryMethodType: order.deliveryMethodType,
       deliveryDetails,
       pickupPointId,
+      paymentMethod: order.paymentMethod,
       paymentStatus: order.paymentStatus,
+      paymentRejectionReason: order.rejectionReason,
       fulfillmentStatus: order.fulfillmentStatus,
+      status: order.cancellation ? "CANCELLED" : "ACTIVE",
+      cancellationResolution: order.cancellation?.resolution,
+      cancellationReason: order.cancellation?.reason,
+      retainedAmount: order.cancellation?.retainedAmount,
+      releasedAmount: order.cancellation?.releasedAmount,
+      releasedResolution: order.cancellation?.releasedResolution,
       totalAmount: finalAmount,
       requiredAmount: finalAmount,
       currency: spec.store.defaultCurrency,
@@ -281,7 +391,44 @@ export async function applyStoreFixture(
         currency: spec.store.defaultCurrency,
         method: payment.method,
         note: payment.note,
+        imageUrl: payment.imageUrl,
         createdAt: paymentCreatedAt,
+      });
+    }
+
+    // Mirrors the AuditLog rows ReviewPaymentUseCase/CancelOrderUseCase write
+    // on a real approve/reject/cancel — seeded orders skip those usecases
+    // (direct db upserts), so without this the seller's activity log would
+    // never show entries for demo orders already sitting in a reviewed or
+    // cancelled state.
+    if (order.cancellation) {
+      await db.ensureAuditLog(prisma, {
+        id: seedId(batch, "audit-log", store.slug, order.key),
+        actorId: ownerId,
+        storeId: store.id,
+        action: "order.cancelled",
+        entityType: "Order",
+        entityId: orderId,
+        metadata: {
+          resolution: order.cancellation.resolution,
+          retainedAmount: order.cancellation.retainedAmount ?? null,
+          releasedAmount: order.cancellation.releasedAmount ?? null,
+          releasedResolution: order.cancellation.releasedResolution ?? null,
+          reason: order.cancellation.reason ?? null,
+        },
+      });
+    } else if (
+      order.paymentStatus === "VERIFIED" || order.paymentStatus === "REJECTED"
+    ) {
+      await db.ensureAuditLog(prisma, {
+        id: seedId(batch, "audit-log", store.slug, order.key),
+        actorId: ownerId,
+        storeId: store.id,
+        action: order.paymentStatus === "VERIFIED"
+          ? "payment.approved"
+          : "payment.rejected",
+        entityType: "Order",
+        entityId: orderId,
       });
     }
   }

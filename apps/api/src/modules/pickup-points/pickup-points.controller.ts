@@ -14,6 +14,7 @@ import { PickupPointsService } from "./pickup-points.service.js";
 import { CreatePickupPointDto } from "./dto/create-pickup-point.dto.js";
 import { UpdatePickupPointDto } from "./dto/update-pickup-point.dto.js";
 import type { PickupPointResponseDto } from "./dto/pickup-point-response.dto.js";
+import { PublicPickupPointsResponseDto } from "./dto/public-pickup-points-response.dto.js";
 
 interface PickupPointRow {
   id: string;
@@ -96,8 +97,11 @@ export class PublicPickupPointsController {
   @Get()
   async findEnabled(
     @Param("slug") slug: string,
-  ): Promise<PickupPointResponseDto[]> {
+  ): Promise<PublicPickupPointsResponseDto> {
     const rows = await this.pickupPoints.findEnabledForSlug(slug);
-    return rows.map(toPickupPointDto);
+    return {
+      weekday: new Date().getDay(),
+      points: rows.map(toPickupPointDto),
+    };
   }
 }

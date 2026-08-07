@@ -315,7 +315,10 @@
       "currencyCardDescription": "Used as the initial currency for new catalog items.",
       "copyMessage": "URL copied to clipboard",
       "urlCardTitle": "Public storefront URL",
-      "urlCardDescription": "Share this link so buyers can browse your catalog."
+      "urlCardDescription": "Share this link so buyers can browse your catalog.",
+      "visibilityToggleLabel": "Show in homepage & search",
+      "visibilityToggleDescriptionPublic": "Your store can be featured and found in Bias Market's homepage and directory search.",
+      "visibilityToggleDescriptionPrivate": "Your store is hidden from the homepage and directory search — buyers can still reach it via its direct link."
     },
     "notifications": {
       "title": "Notifications",

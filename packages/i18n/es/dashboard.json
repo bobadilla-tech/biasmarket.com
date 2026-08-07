@@ -315,7 +315,10 @@
       "currencyCardDescription": "Se usa como moneda inicial para productos nuevos.",
       "copyMessage": "URL copiada",
       "urlCardTitle": "URL pública de la tienda",
-      "urlCardDescription": "Comparte este enlace para que los compradores vean tu catálogo."
+      "urlCardDescription": "Comparte este enlace para que los compradores vean tu catálogo.",
+      "visibilityToggleLabel": "Mostrar en inicio y búsqueda",
+      "visibilityToggleDescriptionPublic": "Tu tienda puede aparecer destacada y ser encontrada en el inicio y el directorio de búsqueda de Bias Market.",
+      "visibilityToggleDescriptionPrivate": "Tu tienda está oculta del inicio y del directorio de búsqueda — los compradores igual pueden acceder por su link directo."
     },
     "notifications": {
       "title": "Notificaciones",

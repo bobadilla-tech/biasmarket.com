@@ -26,9 +26,10 @@ test("getDeliveryOptions fetches all three public config endpoints for the slug"
   publicDeliveryConfigMock.findEnabled.mockResolvedValue([
     { type: "PICKUP", enabled: true, details: {} },
   ]);
-  publicPickupPointsMock.findEnabled.mockResolvedValue([
-    { id: "p1", label: "Main", enabled: true },
-  ]);
+  publicPickupPointsMock.findEnabled.mockResolvedValue({
+    weekday: 3,
+    points: [{ id: "p1", label: "Main", enabled: true }],
+  });
   publicPaymentConfigMock.findEnabled.mockResolvedValue([
     { method: "YAPE", enabled: true, details: {} },
   ]);
@@ -42,6 +43,7 @@ test("getDeliveryOptions fetches all three public config endpoints for the slug"
   expect(publicPaymentConfigMock.findEnabled).toHaveBeenCalledWith("my-store");
   expect(result.methods).toHaveLength(1);
   expect(result.points).toHaveLength(1);
+  expect(result.weekday).toBe(3);
   expect(result.paymentMethods).toHaveLength(1);
 });
 

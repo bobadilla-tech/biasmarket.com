@@ -3,12 +3,20 @@ import type { CartItem } from "@/lib/cart";
 
 export const checkoutApi = {
   async getDeliveryOptions(slug: string) {
-    const [methods, points, paymentMethods] = await Promise.all([
+    const [methods, pickupPoints, paymentMethods] = await Promise.all([
       apiClient.publicDeliveryConfig.findEnabled(slug),
       apiClient.publicPickupPoints.findEnabled(slug),
       apiClient.publicPaymentConfig.findEnabled(slug),
     ]);
-    return { methods, points, paymentMethods };
+    return {
+      methods,
+      points: pickupPoints.points,
+      // Server-computed weekday for openDays validation — the checkout form
+      // must use this instead of `new Date().getDay()` so pickup availability
+      // never diverges between browser and API.
+      weekday: pickupPoints.weekday,
+      paymentMethods,
+    };
   },
 
   submit(

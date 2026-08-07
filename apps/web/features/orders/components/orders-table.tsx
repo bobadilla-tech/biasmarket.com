@@ -134,6 +134,11 @@ export function OrdersTable({
                           >
                             {t("approve")}
                           </Button>
+                          {order.paidAmount <= 0 && (
+                            <span className="sr-only">
+                              {t("approveDisabledNoPayment")}
+                            </span>
+                          )}
                           <Button
                             type="button"
                             variant="outline"

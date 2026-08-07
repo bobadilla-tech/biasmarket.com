@@ -38,4 +38,8 @@ export class UpdateStoreDto {
   @IsInt()
   @Min(0)
   lowStockThreshold?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  isPublic?: boolean;
 }
