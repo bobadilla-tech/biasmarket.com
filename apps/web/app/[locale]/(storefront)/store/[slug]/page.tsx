@@ -139,7 +139,9 @@ export default async function StorePage({
                     Number(isProductOutOfStock(a.product)) -
                     Number(isProductOutOfStock(b.product))
                   );
+
                 if (products.length === 0) return null;
+
                 return (
                   <section key={section.id}>
                     {section.collection?.name && (

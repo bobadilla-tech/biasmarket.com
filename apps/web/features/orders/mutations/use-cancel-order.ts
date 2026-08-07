@@ -35,7 +35,7 @@ export function useCancelOrder(
       );
     },
 
-    onSuccess: () => {
+    onSuccess() {
       if (!storeId) return;
 
       queryClient.invalidateQueries({
