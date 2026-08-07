@@ -7,6 +7,7 @@ import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { addToCart } from "@/lib/cart";
 import { RestockInterestDialog } from "@/features/restock";
+import { isProductOutOfStock } from "./product-stock";
 
 interface Variant {
   id: string;
@@ -65,10 +66,7 @@ export function ProductCard(
     : minPrice;
 
   const showFromPrice = hasDifferentVariantPrices && !hasSelectedVariant;
-  const allVariantsOutOfStock = product.variants.length > 0 &&
-    product.variants.every((v) => availableStock(v) <= 0);
-  const outOfStock = product.soldOut ||
-    allVariantsOutOfStock ||
+  const outOfStock = isProductOutOfStock(product) ||
     (selectedVariant ? availableStock(selectedVariant) <= 0 : false);
 
   const handleAddToCart = () => {

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { ProductCard } from "./product-card";
 import { CartLink } from "./cart-link";
+import { isProductOutOfStock } from "./product-stock";
 import { SITE_URL } from "@/lib/site-config";
 import { StoreLogo } from "@/components/store-logo";
 
@@ -76,7 +77,7 @@ function buildJsonLd(locale: string, slug: string, store: any) {
           "@type": "Offer",
           price: String(product.price),
           priceCurrency: product.currency,
-          availability: product.soldOut
+          availability: isProductOutOfStock(product)
             ? "https://schema.org/OutOfStock"
             : "https://schema.org/InStock",
           url: pageUrl,
@@ -133,7 +134,11 @@ export default async function StorePage({
           : (
             store.sections.map((section: any) => {
               if (section.type === "COLLECTION") {
-                const products = section.collection?.products ?? [];
+                const products = [...(section.collection?.products ?? [])]
+                  .sort((a, b) =>
+                    Number(isProductOutOfStock(a.product)) -
+                    Number(isProductOutOfStock(b.product))
+                  );
                 if (products.length === 0) return null;
                 return (
                   <section key={section.id}>
