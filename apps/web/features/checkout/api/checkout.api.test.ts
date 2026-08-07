@@ -109,3 +109,31 @@ test("submit forwards a selected payment method", async () => {
     { fallbackErrorMessage: undefined },
   );
 });
+
+test("submit forwards a selected pickup date", async () => {
+  checkoutMock.create.mockResolvedValue({
+    order: { id: "o1" },
+    whatsappUrl: null,
+  });
+
+  await checkoutApi.submit("my-store", {
+    deliveryMethodType: "PICKUP",
+    pickupPointId: "point-1",
+    pickupDate: "2026-08-10",
+    customerPhone: "+51999999999",
+    items: [{
+      productId: "p1",
+      variantId: undefined,
+      quantity: 2,
+      name: "T",
+      price: 10,
+      currency: "PEN",
+    }],
+  });
+
+  expect(checkoutMock.create).toHaveBeenCalledWith(
+    "my-store",
+    expect.objectContaining({ pickupDate: "2026-08-10" }),
+    { fallbackErrorMessage: undefined },
+  );
+});

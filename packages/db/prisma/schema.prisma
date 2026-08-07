@@ -220,6 +220,10 @@ model Order {
   deliveryMethodType DeliveryMethodType
   deliveryDetails    Json
   pickupPointId      String?
+  // Set only when the buyer chose a pickup point that isn't open today —
+  // the future date they committed to, validated against that point's
+  // openDays at checkout. Null for same-day pickup (today is implied).
+  pickupDate         DateTime?
   // Buyer's chosen payment method at checkout — optional since older
   // orders (created before this field existed) never captured one.
   paymentMethod      PaymentMethodType?

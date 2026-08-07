@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { statsKeys } from "@/features/stats";
 import { ordersApi } from "../api/orders.api";
 import { ordersKeys } from "../queries/use-orders";
 import type { RegisterPaymentInput } from "../schemas/register-payment.schema";
@@ -24,6 +25,9 @@ export function useRegisterPayment(
     onSuccess: () => {
       if (!storeId) return;
       queryClient.invalidateQueries({ queryKey: ordersKeys.byStore(storeId) });
+      void queryClient.invalidateQueries({
+        queryKey: statsKeys.overview(storeId),
+      });
     },
   });
 }

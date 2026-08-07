@@ -192,9 +192,15 @@ export class StatsService {
         .filter((order) => order.paymentStatus === "VERIFIED")
         .reduce(
           (sum, order) =>
-            sum + order.payments.reduce((s, p) => s + Number(p.amount), 0),
-          0,
-        );
+            sum.plus(
+              order.payments.reduce(
+                (s, p) => s.plus(p.amount),
+                new Prisma.Decimal(0),
+              ),
+            ),
+          new Prisma.Decimal(0),
+        )
+        .toNumber();
 
       const customersInBucket = new Set(
         ordersInBucket.map((order) => order.customerId).filter((

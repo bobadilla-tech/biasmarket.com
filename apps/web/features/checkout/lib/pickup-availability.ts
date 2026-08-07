@@ -43,3 +43,16 @@ export function getPickupAvailability(
   // kept only so the return type stays non-optional.
   return { availableToday: false, nextAvailableDay: null };
 }
+
+// `PickupAvailability.nextAvailableDay` is a bare weekday index (0-6), not a
+// calendar date — converts it into the next real calendar date on/after
+// `today`, for defaulting a date-input's value. Always returns a date
+// strictly after `today` (smallest positive offset, 1-7), matching
+// `getPickupAvailability`'s own "next" semantics — it never returns today's
+// own weekday as "next" since a today-open point never reaches this helper.
+export function nextDateForWeekday(weekday: number, today: Date): Date {
+  const offset = ((weekday - today.getDay() + 7) % 7) || 7;
+  const result = new Date(today);
+  result.setDate(result.getDate() + offset);
+  return result;
+}

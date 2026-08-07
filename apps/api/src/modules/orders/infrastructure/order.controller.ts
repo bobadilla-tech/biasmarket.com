@@ -131,6 +131,7 @@ export interface OrderRow {
   deliveryMethodType: DeliveryMethodTypeLiteral;
   deliveryDetails: unknown;
   pickupPointId: string | null;
+  pickupDate: Date | null;
   paymentMethod: PaymentMethodLiteral | null;
   paymentStatus: PaymentStatusLiteral;
   paymentRejectionReason: string | null;
@@ -140,6 +141,7 @@ export interface OrderRow {
   cancellationReason: string | null;
   retainedAmount: { toString(): string } | null;
   releasedAmount: { toString(): string } | null;
+  releasedResolution: CancellationResolutionLiteral | null;
   totalAmount: { toString(): string };
   requiredAmount: { toString(): string };
   currency: string;
@@ -166,6 +168,7 @@ interface OrderStatusRow {
   deliveryMethodType: DeliveryMethodTypeLiteral;
   deliveryDetails: unknown;
   pickupPointId: string | null;
+  pickupDate: Date | null;
   paymentMethod: PaymentMethodLiteral | null;
   paymentStatus: PaymentStatusLiteral;
   paymentRejectionReason: string | null;
@@ -175,6 +178,7 @@ interface OrderStatusRow {
   cancellationReason: string | null;
   retainedAmount: { toString(): string } | null;
   releasedAmount: { toString(): string } | null;
+  releasedResolution: CancellationResolutionLiteral | null;
   totalAmount: { toString(): string };
   requiredAmount: { toString(): string };
   currency: string;
@@ -231,8 +235,10 @@ export function toOrderDto(row: OrderRow): OrderResponseDto {
   return {
     ...row,
     deliveryDetails: row.deliveryDetails as Record<string, unknown> | null,
+    pickupDate: row.pickupDate?.toISOString() ?? null,
     retainedAmount: row.retainedAmount?.toString() ?? null,
     releasedAmount: row.releasedAmount?.toString() ?? null,
+    releasedResolution: row.releasedResolution ?? null,
     totalAmount: row.totalAmount.toString(),
     requiredAmount: row.requiredAmount.toString(),
     expiresAt: row.expiresAt.toISOString(),
@@ -250,8 +256,10 @@ function toOrderStatusDto(row: OrderStatusRow): OrderStatusResponseDto {
   return {
     ...row,
     deliveryDetails: row.deliveryDetails as Record<string, unknown> | null,
+    pickupDate: row.pickupDate?.toISOString() ?? null,
     retainedAmount: row.retainedAmount?.toString() ?? null,
     releasedAmount: row.releasedAmount?.toString() ?? null,
+    releasedResolution: row.releasedResolution ?? null,
     totalAmount: row.totalAmount.toString(),
     requiredAmount: row.requiredAmount.toString(),
     expiresAt: row.expiresAt.toISOString(),

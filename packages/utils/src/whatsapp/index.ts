@@ -12,6 +12,7 @@ export interface WhatsAppOrderInput {
   currency: string;
   deliveryMethodType: string;
   pickupPointLabel?: string | null;
+  pickupDate?: Date | null;
   paymentMethod?: string | null;
   customerName?: string | null;
   customerPhone: string;
@@ -31,6 +32,16 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
 
 const shortOrderRef = (orderId: string): string =>
   orderId.slice(-6).toUpperCase();
+
+// UTC getters deliberately, not local — the date is stored/parsed as a
+// UTC-anchored midnight (see CreateOrderUseCase), so reading it back with
+// local getters could shift the displayed day depending on server TZ.
+const formatPickupDate = (date: Date): string => {
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const year = date.getUTCFullYear();
+  return `${day}/${month}/${year}`;
+};
 
 export const buildWhatsAppOrderMessage = (
   input: WhatsAppOrderInput,
@@ -55,6 +66,9 @@ export const buildWhatsAppOrderMessage = (
         DELIVERY_METHOD_LABELS[input.deliveryMethodType] ??
           input.deliveryMethodType
       }`,
+    input.pickupDate
+      ? `Fecha de recojo: ${formatPickupDate(input.pickupDate)}`
+      : null,
     `*Total: ${input.totalAmount.toFixed(2)} ${input.currency}*`,
     input.paymentMethod
       ? `Método de pago: ${

@@ -337,10 +337,11 @@ describe("ProductsService", () => {
 
     await service.softDelete(productId, storeId, ownerId);
 
-    const expectedData: { deletedAt: Date; status: string } = {
+    const expectedData: { deletedAt: Date; status: string; discontinued: boolean } = {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.any() is untyped in Jest's matcher API
       deletedAt: expect.any(Date),
       status: "DRAFT",
+      discontinued: false,
     };
     expect(prisma.product.update).toHaveBeenCalledWith({
       where: { id: productId },

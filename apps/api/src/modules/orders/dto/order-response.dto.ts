@@ -212,6 +212,9 @@ export class OrderResponseDto {
   @ApiProperty({ type: String, nullable: true })
   pickupPointId: string | null;
 
+  @ApiProperty({ type: String, format: "date-time", nullable: true })
+  pickupDate: string | null;
+
   @ApiProperty({
     enum: ["YAPE", "PLIN", "TRANSFER", "CASH"],
     nullable: true,
@@ -259,6 +262,12 @@ export class OrderResponseDto {
 
   @ApiProperty({ type: String, nullable: true })
   releasedAmount: string | null;
+
+  @ApiProperty({
+    enum: ["REFUNDED", "RETAINED", "STORE_CREDIT"],
+    nullable: true,
+  })
+  releasedResolution: "REFUNDED" | "RETAINED" | "STORE_CREDIT" | null;
 
   @ApiProperty({ type: String })
   totalAmount: string;
@@ -327,6 +336,9 @@ export class OrderStatusResponseDto {
   @ApiProperty({ type: String, nullable: true })
   pickupPointId: string | null;
 
+  @ApiProperty({ type: String, format: "date-time", nullable: true })
+  pickupDate: string | null;
+
   @ApiProperty({
     enum: ["YAPE", "PLIN", "TRANSFER", "CASH"],
     nullable: true,
@@ -374,6 +386,12 @@ export class OrderStatusResponseDto {
 
   @ApiProperty({ type: String, nullable: true })
   releasedAmount: string | null;
+
+  @ApiProperty({
+    enum: ["REFUNDED", "RETAINED", "STORE_CREDIT"],
+    nullable: true,
+  })
+  releasedResolution: "REFUNDED" | "RETAINED" | "STORE_CREDIT" | null;
 
   @ApiProperty({ type: String })
   totalAmount: string;

@@ -5,7 +5,7 @@ import { cleanup } from "@testing-library/react";
 // primitives using pointer capture) read `ownerWindow(...).PointerEvent`
 // directly on click, which throws without this. A plain MouseEvent subclass
 // is enough for the properties these components actually read in tests.
-if (typeof window !== "undefined" && !window.PointerEvent) {
+if (typeof window !== "undefined" && !globalThis.PointerEvent) {
   class PointerEventPolyfill extends MouseEvent {
     pointerId = 1;
     pointerType = "mouse";
@@ -15,7 +15,7 @@ if (typeof window !== "undefined" && !window.PointerEvent) {
     }
   }
   // @ts-expect-error jsdom's lib.dom types don't include PointerEvent
-  window.PointerEvent = PointerEventPolyfill;
+  globalThis.PointerEvent = PointerEventPolyfill;
 }
 
 afterEach(() => {

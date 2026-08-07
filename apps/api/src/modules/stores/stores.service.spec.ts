@@ -235,8 +235,18 @@ describe("StoresService", () => {
 
   describe("findPublicBySlug()", () => {
     const storeId = "store-1";
-    const productA = { id: "product-a", status: "PUBLISHED", deletedAt: null };
-    const productB = { id: "product-b", status: "PUBLISHED", deletedAt: null };
+    const productA = {
+      id: "product-a",
+      status: "PUBLISHED",
+      deletedAt: null,
+      discontinued: false,
+    };
+    const productB = {
+      id: "product-b",
+      status: "PUBLISHED",
+      deletedAt: null,
+      discontinued: false,
+    };
 
     beforeEach(() => {
       prisma.store.findUnique.mockResolvedValue({
@@ -264,6 +274,7 @@ describe("StoresService", () => {
           storeId,
           status: "PUBLISHED",
           deletedAt: null,
+          discontinued: false,
           id: { notIn: [] },
         },
         include: { variants: true },
@@ -302,6 +313,7 @@ describe("StoresService", () => {
           storeId,
           status: "PUBLISHED",
           deletedAt: null,
+          discontinued: false,
           id: { notIn: [productA.id] },
         },
         include: { variants: true },
@@ -443,7 +455,9 @@ describe("StoresService", () => {
       expect(prisma.store.findMany).toHaveBeenCalledWith({
         where: {
           isPublic: true,
-          products: { some: { status: "PUBLISHED", deletedAt: null } },
+          products: {
+            some: { status: "PUBLISHED", deletedAt: null, discontinued: false },
+          },
           owner: { banned: { not: true } },
         },
         select: { id: true, name: true, slug: true, logoUrl: true },
@@ -495,7 +509,9 @@ describe("StoresService", () => {
         expect.objectContaining({
           where: {
             isPublic: true,
-            products: { some: { status: "PUBLISHED", deletedAt: null } },
+            products: {
+              some: { status: "PUBLISHED", deletedAt: null, discontinued: false },
+            },
             owner: { banned: { not: true } },
           },
         }),

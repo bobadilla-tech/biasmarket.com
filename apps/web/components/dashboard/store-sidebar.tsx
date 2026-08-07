@@ -26,6 +26,7 @@ import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { StoreLogo } from "@/components/store-logo";
 import type { DashboardStore } from "@/features/stores";
+import { useUnreadCount } from "@/features/notifications";
 
 const COLLAPSE_STORAGE_KEY = "store-sidebar-collapsed";
 
@@ -64,6 +65,7 @@ function SidebarSection({
   pathname,
   t,
   collapsed,
+  unreadCount = 0,
 }: {
   title: string;
   items: NavItem[];
@@ -71,6 +73,7 @@ function SidebarSection({
   pathname: string;
   t: any;
   collapsed: boolean;
+  unreadCount?: number;
 }) {
   return (
     <div className="space-y-2">
@@ -89,6 +92,7 @@ function SidebarSection({
             : `/dashboard/${slug}/${item.href}`;
           const isActive = href ? pathname === href : false;
           const label = t(`nav.${item.key}`);
+          const badgeCount = item.key === "notifications" ? unreadCount : 0;
 
           if (!href) {
             return (
@@ -126,7 +130,14 @@ function SidebarSection({
                   : "text-white/72 hover:bg-white/8 hover:text-white",
               )}
             >
-              <Icon className="size-4 shrink-0" />
+              <span className="relative inline-flex shrink-0">
+                <Icon className="size-4 shrink-0" />
+                {badgeCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 flex size-3.5 items-center justify-center rounded-full bg-[#d11d52] text-[8px] font-semibold leading-none text-white">
+                    {badgeCount > 9 ? "9+" : badgeCount}
+                  </span>
+                )}
+              </span>
               {!collapsed && <span className="flex-1">{label}</span>}
             </Link>
           );
@@ -153,6 +164,7 @@ export function StoreSidebar({
   const router = useRouter();
   const { data: session } = authClient.useSession();
   const [collapsed, setCollapsed] = useState(false);
+  const { data: unreadCountData } = useUnreadCount(store?.id);
 
   useEffect(() => {
     const stored = globalThis.localStorage.getItem(COLLAPSE_STORAGE_KEY);
@@ -248,6 +260,7 @@ export function StoreSidebar({
           pathname={pathname}
           t={t}
           collapsed={effectiveCollapsed}
+          unreadCount={unreadCountData?.count ?? 0}
         />
         <SidebarSection
           title={t("sections.settings")}

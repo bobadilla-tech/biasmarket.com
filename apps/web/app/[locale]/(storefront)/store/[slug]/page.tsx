@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { ProductCard } from "./product-card";
 import { CartLink } from "./cart-link";
+import { isProductOutOfStock } from "@/features/discovery/lib/product-stock";
 import { SITE_URL } from "@/lib/site-config";
 import { StoreLogo } from "@/components/store-logo";
 
@@ -36,23 +37,6 @@ async function getStore(slug: string) {
   }
 }
 
-function availableStock(variant: any): number {
-  return variant.stock === null
-    ? Infinity
-    : Number(variant.stock) - Number(variant.reserved ?? 0);
-}
-
-// A product is treated as sold out when the seller flagged it (`soldOut`) or
-// every variant is exhausted. Mirrors ProductCard's `allVariantsOutOfStock`
-// so cards and the grouping below agree.
-function isEffectivelySoldOut(p: any): boolean {
-  if (!p) return false;
-  if (p.soldOut) return true;
-  const variants = p.variants ?? [];
-  if (variants.length === 0) return false;
-  return variants.every((v: any) => availableStock(v) <= 0);
-}
-
 function collectProducts(store: any): any[] {
   const seen = new Map<string, any>();
   for (const section of store.sections ?? []) {
@@ -62,7 +46,7 @@ function collectProducts(store: any): any[] {
       if (cp.product?.discontinued) continue;
       // Skip sold-out products from the main catalog; they will be grouped
       // in a dedicated "Coming soon" section rendered at the end of the page.
-      if (isEffectivelySoldOut(cp.product)) continue;
+      if (isProductOutOfStock(cp.product)) continue;
       seen.set(cp.product.id, cp.product);
     }
   }
@@ -78,7 +62,7 @@ function collectSoldOutProducts(store: any): any[] {
       if (!p) continue;
       // Discontinued products remain hidden entirely
       if (p.discontinued) continue;
-      if (!isEffectivelySoldOut(p)) continue;
+      if (!isProductOutOfStock(p)) continue;
       seen.set(p.id, p);
     }
   }
@@ -133,7 +117,7 @@ function buildJsonLd(locale: string, slug: string, store: any) {
           "@type": "Offer",
           price: String(product.price),
           priceCurrency: product.currency,
-          availability: isEffectivelySoldOut(product)
+          availability: isProductOutOfStock(product)
             ? "https://schema.org/OutOfStock"
             : "https://schema.org/InStock",
           url: pageUrl,
@@ -169,7 +153,7 @@ export default async function StorePage({
       if (section.type !== "COLLECTION" || !section.collection) return null;
       const visible = (section.collection.products ?? []).filter(
         (cp: any) =>
-          !cp.product?.discontinued && !isEffectivelySoldOut(cp.product),
+          !cp.product?.discontinued && !isProductOutOfStock(cp.product),
       );
       if (visible.length === 0) return null;
       return { ...section, collection: { ...section.collection, products: visible } };
@@ -230,12 +214,18 @@ export default async function StorePage({
           : (
             visibleSections.map((section: any) => {
               if (section.type === "COLLECTION") {
-                const products = section.collection?.products ?? [];
+                const products = [...(section.collection?.products ?? [])]
+                  .sort((a, b) =>
+                    Number(isProductOutOfStock(a.product)) -
+                    Number(isProductOutOfStock(b.product))
+                  );
+
                 if (products.length === 0) return null;
+
                 const visible = products.filter(
                   (cp: any) =>
                     !cp.product?.discontinued &&
-                    !isEffectivelySoldOut(cp.product),
+                    !isProductOutOfStock(cp.product),
                 );
                 if (visible.length === 0) return null;
                 return (

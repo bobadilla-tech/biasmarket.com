@@ -6,6 +6,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  Matches,
   Min,
   MinLength,
   ValidateNested,
@@ -31,6 +32,14 @@ export class CreateOrderDto {
   @IsOptional()
   @IsString()
   pickupPointId?: string;
+
+  // Date-only, buyer's chosen future pickup date — only required when the
+  // selected point isn't open today (see CreateOrderUseCase).
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    message: "pickupDate debe tener el formato YYYY-MM-DD",
+  })
+  pickupDate?: string;
 
   @IsOptional()
   @IsIn(["YAPE", "PLIN", "TRANSFER", "CASH"])

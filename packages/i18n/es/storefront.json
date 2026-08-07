@@ -36,7 +36,11 @@
     "courierNote": "El costo de envío se coordina por WhatsApp con la tienda.",
     "availableToday": "Disponible hoy",
     "notAvailableToday": "No disponible hoy",
-    "nextAvailable": "Próximo día disponible: {day}",
+    "nextAvailable": "Próximo día disponible: {day} — elegir fecha",
+    "pickupNoAvailability": "Este punto no tiene fechas disponibles por el momento.",
+    "pickupDateLabel": "Fecha de recojo",
+    "pickupDateRequired": "Selecciona una fecha de recojo",
+    "pickupDateInvalidWeekday": "Este punto no abre ese día",
     "weekdays": {
       "0": "Dom",
       "1": "Lun",
