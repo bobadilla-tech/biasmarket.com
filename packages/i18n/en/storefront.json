@@ -36,7 +36,11 @@
     "courierNote": "Shipping cost is coordinated via WhatsApp with the store.",
     "availableToday": "Available today",
     "notAvailableToday": "Not available today",
-    "nextAvailable": "Next available day: {day}",
+    "nextAvailable": "Next available day: {day} — pick a date",
+    "pickupNoAvailability": "This point has no available dates right now.",
+    "pickupDateLabel": "Pickup date",
+    "pickupDateRequired": "Pick a pickup date",
+    "pickupDateInvalidWeekday": "This point isn't open that day",
     "weekdays": {
       "0": "Sun",
       "1": "Mon",

@@ -108,7 +108,44 @@ test("submits with the delivery type, pickup point, and payment method the buyer
   });
 });
 
-test("renders a closed-today pickup point as disabled and does not preselect it", async () => {
+test("renders a closed-today pickup point as selectable (not disabled) and does not preselect it", async () => {
+  findEnabledDeliveryConfig.mockResolvedValue([
+    { type: "PICKUP", enabled: true, details: {} },
+  ]);
+  findEnabledPickupPoints.mockResolvedValue({
+    weekday: today,
+    points: [
+      {
+        id: "closed-point",
+        label: "Estación Central",
+        enabled: true,
+        openDays: closedTodayDays,
+        closedOverride: false,
+      },
+    ],
+  });
+  findEnabledPaymentConfig.mockResolvedValue([]);
+
+  renderWithProviders(
+    <CheckoutForm slug="my-store" items={cartItems} onOrderCreated={vi.fn()} />,
+  );
+
+  const card = await screen.findByText("Estación Central");
+  const cardButton = card.closest("button") as HTMLButtonElement;
+  // The report's whole ask: a closed-today card must be clickable, not
+  // greyed out — this is the behavior the old disabled prop broke.
+  expect(cardButton.disabled).toBe(false);
+  expect(card.parentElement?.textContent).toContain("Próximo día disponible");
+
+  // With no available-today point to auto-default to, the field stays
+  // unset until the buyer explicitly picks a point + date.
+  const submitButton = screen.getByRole("button", {
+    name: /Confirmar y continuar/i,
+  }) as HTMLButtonElement;
+  expect(submitButton.disabled).toBe(true);
+});
+
+test("selecting a closed-today point reveals a date picker defaulted to the next open day", async () => {
   findEnabledDeliveryConfig.mockResolvedValue([
     { type: "PICKUP", enabled: true, details: {} },
   ]);
@@ -132,16 +169,83 @@ test("renders a closed-today pickup point as disabled and does not preselect it"
   );
 
   const card = await screen.findByText("Estación Central");
-  const cardButton = card.closest("button") as HTMLButtonElement;
-  expect(cardButton.disabled).toBe(true);
-  expect(card.parentElement?.textContent).toContain("No disponible hoy");
+  await user.click(card.closest("button") as HTMLButtonElement);
 
-  // Clicking a disabled card must not select it.
-  await user.click(cardButton);
+  // closedTodayDays excludes only today, so the next open day is tomorrow.
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const expected = `${tomorrow.getFullYear()}-${
+    String(tomorrow.getMonth() + 1).padStart(2, "0")
+  }-${String(tomorrow.getDate()).padStart(2, "0")}`;
+
+  const dateInput = await screen.findByLabelText("Fecha de recojo");
+  expect((dateInput as HTMLInputElement).value).toBe(expected);
+
+  await user.type(
+    screen.getByPlaceholderText("Teléfono (WhatsApp)"),
+    "988888888",
+  );
   const submitButton = screen.getByRole("button", {
     name: /Confirmar y continuar/i,
   }) as HTMLButtonElement;
-  expect(submitButton.disabled).toBe(true);
+  expect(submitButton.disabled).toBe(false);
+});
+
+test("submits with the chosen pickupDate when a closed-today point was selected", async () => {
+  findEnabledDeliveryConfig.mockResolvedValue([
+    { type: "PICKUP", enabled: true, details: {} },
+  ]);
+  findEnabledPickupPoints.mockResolvedValue({
+    weekday: today,
+    points: [
+      {
+        id: "closed-point",
+        label: "Estación Central",
+        enabled: true,
+        openDays: closedTodayDays,
+        closedOverride: false,
+      },
+    ],
+  });
+  findEnabledPaymentConfig.mockResolvedValue([]);
+  createCheckout.mockResolvedValue({
+    order: { id: "order-1" },
+    whatsappUrl: null,
+  });
+
+  const user = userEvent.setup();
+  const onOrderCreated = vi.fn();
+  renderWithProviders(
+    <CheckoutForm
+      slug="my-store"
+      items={cartItems}
+      onOrderCreated={onOrderCreated}
+    />,
+  );
+
+  const card = await screen.findByText("Estación Central");
+  await user.click(card.closest("button") as HTMLButtonElement);
+  await screen.findByLabelText("Fecha de recojo");
+
+  await user.type(
+    screen.getByPlaceholderText("Teléfono (WhatsApp)"),
+    "988888888",
+  );
+  await user.click(
+    screen.getByRole("button", { name: /Confirmar y continuar/i }),
+  );
+
+  await waitFor(() => {
+    expect(createCheckout).toHaveBeenCalledWith(
+      "my-store",
+      expect.objectContaining({
+        deliveryMethodType: "PICKUP",
+        pickupPointId: "closed-point",
+        pickupDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+      }),
+      expect.anything(),
+    );
+  });
 });
 
 test("switching to courier shows the WhatsApp coordination note instead of pickup cards", async () => {

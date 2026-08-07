@@ -17,7 +17,10 @@ import { PhoneInput } from "@/components/ui/phone-input";
 import { type CartItem, hasMixedCurrencies } from "@/lib/cart";
 import { useDeliveryOptions } from "../queries/use-delivery-options";
 import { useSubmitCheckout } from "../mutations/use-submit-checkout";
-import { getPickupAvailability } from "../lib/pickup-availability";
+import {
+  getPickupAvailability,
+  nextDateForWeekday,
+} from "../lib/pickup-availability";
 import { SelectableCard } from "./selectable-card";
 import {
   buildCheckoutFormSchema,
@@ -57,6 +60,13 @@ function weekdayLabels(
   };
 }
 
+function toDateInputValue(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function paymentMethodLabels(
   t: ReturnType<typeof useTranslations>,
 ): Record<string, string> {
@@ -88,12 +98,14 @@ export function CheckoutForm(
   // storefront shows as available gets rejected by CreateOrderUseCase (or
   // vice versa). One value, served and consumed, keeps them aligned.
   const weekday = deliveryOptions.data?.weekday;
-  // Cards for closed-today points still render (with a "not available
-  // today" badge) so the buyer can see the full list and when it reopens —
-  // only the *selectable*/required-for-validation subset excludes them.
-  // `CreateOrderUseCase` still rejects a closed point server-side as
-  // defense-in-depth regardless of what the form allows selecting.
-  const selectablePoints = useMemo(
+  // A closed-today point is still a selectable, completable choice now (it
+  // just needs a future pickupDate) — `points.length > 0` is what decides
+  // whether a pickup point is required *at all* and whether the submit
+  // button's pickup gate applies, not "available today" anymore.
+  // `pointsAvailableToday` is kept separately, only for the auto-select
+  // default below (preserving today's good-case UX of not making the buyer
+  // pick anything when a same-day point exists).
+  const pointsAvailableToday = useMemo(
     () =>
       points.filter((point) =>
         weekday !== undefined &&
@@ -101,12 +113,25 @@ export function CheckoutForm(
       ),
     [points, weekday],
   );
+  const pointsRequiringDate = useMemo(
+    () =>
+      new Set(
+        points
+          .filter((point) =>
+            weekday !== undefined &&
+            !getPickupAvailability(point, weekday).availableToday
+          )
+          .map((point) => point.id),
+      ),
+    [points, weekday],
+  );
 
   const form = useForm<CheckoutFormInput>({
     resolver: zodResolver(
       buildCheckoutFormSchema(
-        selectablePoints.length > 0,
+        points.length > 0,
         paymentMethods.length > 0,
+        pointsRequiringDate,
       ),
     ),
     defaultValues: {
@@ -115,6 +140,7 @@ export function CheckoutForm(
       customerEmail: "",
       deliveryMethodType: "",
       pickupPointId: "",
+      pickupDate: "",
       paymentMethod: "",
     },
   });
@@ -126,17 +152,17 @@ export function CheckoutForm(
     ) {
       form.setValue("deliveryMethodType", deliveryOptions.data.methods[0].type);
     }
-    // Keep the selected point valid whenever the selectable set changes
-    // (points list or server weekday refreshed): drop a stale id, fall back
-    // to the first available point, clear it entirely when none are left.
+    // Keep the selected point valid whenever the points list changes: drop
+    // a stale id. Default to the first available-today point when one
+    // exists (preserves the no-thinking-required good-case UX); otherwise
+    // leave the field unset so the buyer must explicitly choose a point and
+    // pick a date — never auto-select a closed-today point with no date
+    // attached.
     const currentPointId = form.getValues("pickupPointId");
-    if (selectablePoints.length === 0) {
+    if (points.length === 0) {
       if (currentPointId) form.setValue("pickupPointId", "");
-    } else if (
-      !currentPointId ||
-      !selectablePoints.some((point) => point.id === currentPointId)
-    ) {
-      form.setValue("pickupPointId", selectablePoints[0].id);
+    } else if (!points.some((point) => point.id === currentPointId)) {
+      form.setValue("pickupPointId", pointsAvailableToday[0]?.id ?? "");
     }
     if (paymentMethods[0] && !form.getValues("paymentMethod")) {
       form.setValue("paymentMethod", paymentMethods[0].method);
@@ -144,7 +170,8 @@ export function CheckoutForm(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     deliveryOptions.data,
-    selectablePoints,
+    points,
+    pointsAvailableToday,
     paymentMethods,
     form.setValue,
     form.getValues,
@@ -153,13 +180,50 @@ export function CheckoutForm(
   const customerPhone = form.watch("customerPhone");
   const deliveryMethodType = form.watch("deliveryMethodType");
   const pickupPointId = form.watch("pickupPointId");
+  const pickupDate = form.watch("pickupDate");
   const paymentMethod = form.watch("paymentMethod");
+
+  // Defaults the date field to the point's next open day the moment a
+  // date-requiring point becomes selected (or the pickupDate was cleared by
+  // switching away and back) — matches `nextDateForWeekday`'s "next real
+  // calendar date for a bare weekday index" role described on that helper.
+  useEffect(() => {
+    if (!pickupPointId || !pointsRequiringDate.has(pickupPointId)) return;
+    if (form.getValues("pickupDate")) return;
+    const point = points.find((p) => p.id === pickupPointId);
+    if (!point || weekday === undefined) return;
+    const availability = getPickupAvailability(point, weekday);
+    if (availability.nextAvailableDay === null) return;
+    const date = nextDateForWeekday(availability.nextAvailableDay, new Date());
+    form.setValue("pickupDate", toDateInputValue(date));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pickupPointId, pointsRequiringDate, points, weekday]);
+
+  // Blocks submit whenever the selected point needs a pickupDate that's
+  // either missing or whose weekday isn't in that point's openDays — the
+  // inline "pickupDateInvalidWeekday" error above is the same check.
+  const pickupDateBlocking = deliveryMethodType === "PICKUP" &&
+    pickupPointId !== "" &&
+    pointsRequiringDate.has(pickupPointId) &&
+    (() => {
+      if (!pickupDate) return true;
+      const point = points.find((p) => p.id === pickupPointId);
+      if (!point) return true;
+      const selectedWeekday = new Date(`${pickupDate}T00:00:00Z`)
+        .getUTCDay();
+      return point.openDays.length > 0 &&
+        !point.openDays.includes(selectedWeekday);
+    })();
 
   const onSubmit = form.handleSubmit(async (values) => {
     const result = await submitCheckout.mutateAsync({
       deliveryMethodType: values.deliveryMethodType,
       pickupPointId: values.deliveryMethodType === "PICKUP"
         ? values.pickupPointId
+        : undefined,
+      pickupDate: values.deliveryMethodType === "PICKUP" &&
+          pointsRequiringDate.has(values.pickupPointId)
+        ? values.pickupDate
         : undefined,
       paymentMethod: values.paymentMethod || undefined,
       customerName: values.customerName,
@@ -233,7 +297,9 @@ export function CheckoutForm(
               {points.map((point) => {
                 // `points` is only non-empty once deliveryOptions.data has
                 // loaded, so `weekday` (sourced from that same payload) is
-                // defined here.
+                // defined here. Cards are always clickable now — a
+                // closed-today point is a valid, completable selection once
+                // it has a pickupDate, so it's no longer `disabled`.
                 const availability = getPickupAvailability(point, weekday);
                 return (
                   <SelectableCard
@@ -243,21 +309,78 @@ export function CheckoutForm(
                       form.setValue("pickupPointId", point.id, {
                         shouldValidate: true,
                       })}
-                    disabled={!availability.availableToday}
                     title={point.label}
                     subtitle={availability.availableToday
                       ? t("availableToday")
                       : availability.nextAvailableDay !== null
-                      ? `${t("notAvailableToday")} — ${
-                        t("nextAvailable", {
-                          day: weekdays[availability.nextAvailableDay],
-                        })
-                      }`
-                      : t("notAvailableToday")}
+                      ? t("nextAvailable", {
+                        day: weekdays[availability.nextAvailableDay],
+                      })
+                      : t("pickupNoAvailability")}
                   />
                 );
               })}
             </div>
+
+            {pickupPointId && pointsRequiringDate.has(pickupPointId) &&
+              (() => {
+                const selectedPoint = points.find((p) =>
+                  p.id === pickupPointId
+                );
+                if (!selectedPoint || weekday === undefined) return null;
+                const availability = getPickupAvailability(
+                  selectedPoint,
+                  weekday,
+                );
+                if (availability.nextAvailableDay === null) {
+                  return (
+                    <p className="text-sm text-amber-600">
+                      {t("pickupNoAvailability")}
+                    </p>
+                  );
+                }
+                const selectedWeekday = pickupDate
+                  ? new Date(`${pickupDate}T00:00:00Z`).getUTCDay()
+                  : undefined;
+                const invalidWeekday = selectedWeekday !== undefined &&
+                  selectedPoint.openDays.length > 0 &&
+                  !selectedPoint.openDays.includes(selectedWeekday);
+                return (
+                  <div className="flex flex-col gap-1">
+                    <label
+                      htmlFor="pickup-date-input"
+                      className="text-xs font-semibold uppercase tracking-wide text-gray-400"
+                    >
+                      {t("pickupDateLabel")}
+                    </label>
+                    <Controller
+                      control={form.control}
+                      name="pickupDate"
+                      render={({ field }) => (
+                        <input
+                          id="pickup-date-input"
+                          type="date"
+                          min={toDateInputValue(new Date())}
+                          className={inputClassName}
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      )}
+                    />
+                    {invalidWeekday
+                      ? (
+                        <p className="text-sm text-red-500">
+                          {t("pickupDateInvalidWeekday")}
+                        </p>
+                      )
+                      : form.formState.errors.pickupDate && (
+                        <p className="text-sm text-red-500">
+                          {t("pickupDateRequired")}
+                        </p>
+                      )}
+                  </div>
+                );
+              })()}
           </div>
         )}
 
@@ -342,8 +465,9 @@ export function CheckoutForm(
           !customerPhone ||
           !deliveryMethodType ||
           mixedCurrencies ||
-          (deliveryMethodType === "PICKUP" && selectablePoints.length > 0 &&
+          (deliveryMethodType === "PICKUP" && points.length > 0 &&
             !pickupPointId) ||
+          pickupDateBlocking ||
           (paymentMethods.length > 0 && !paymentMethod)}
         className="store-theme-primary-button flex flex-col items-center gap-1 rounded-xl px-5 py-4 transition disabled:opacity-60"
       >

@@ -29,6 +29,7 @@ const baseOrder: OrderResponseDto = {
   deliveryMethodType: "PICKUP",
   deliveryDetails: null,
   pickupPointId: null,
+  pickupDate: null,
   paymentMethod: null,
   cancellationResolution: null,
   cancellationReason: null,
