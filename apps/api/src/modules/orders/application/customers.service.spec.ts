@@ -377,7 +377,9 @@ describe("CustomersService", () => {
         },
       ]);
 
-      await expect(service.findOneForStore("guest_51987654321", storeId, ownerId))
+      await expect(
+        service.findOneForStore("guest_51987654321", storeId, ownerId),
+      )
         .rejects.toThrow(NotFoundException);
     });
 

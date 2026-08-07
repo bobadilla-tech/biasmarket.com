@@ -170,8 +170,12 @@ describe("customers (e2e)", () => {
   afterAll(async () => {
     for (const orderIdToDelete of [orderId, guestOrderId]) {
       if (orderIdToDelete) {
-        await prisma.orderPayment.deleteMany({ where: { orderId: orderIdToDelete } });
-        await prisma.orderItem.deleteMany({ where: { orderId: orderIdToDelete } });
+        await prisma.orderPayment.deleteMany({
+          where: { orderId: orderIdToDelete },
+        });
+        await prisma.orderItem.deleteMany({
+          where: { orderId: orderIdToDelete },
+        });
         await prisma.order.deleteMany({ where: { id: orderIdToDelete } });
       }
     }
