@@ -30,8 +30,7 @@
     "admin:create": "node scripts/create-admin.ts",
     "seed:base": "node scripts/seed/run.ts",
     "seed:append": "node scripts/seed/run.ts --append",
-    "mail:test": "node scripts/send-test-email.ts",
-    "backfill:normalize-phones": "node scripts/backfill-normalize-customer-phones.ts"
+    "mail:test": "node scripts/send-test-email.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1091.0",

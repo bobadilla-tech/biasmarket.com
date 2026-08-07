@@ -46,15 +46,15 @@ This was issue 2 of the same four-issue batch plan as the order-approval guard
   that form also used a bare `<input>`. Each swap follows `checkout-form.tsx`'s
   existing `Controller`-wrapped pattern (`PhoneInput` needs a controlled
   `value`/`onChange`, not `register()`).
-- **Prod backfill**: wrote, did not run,
-  `apps/api/scripts/backfill-normalize-customer-phones.ts`. Dry-run by default
-  (prints what it would change), requires `--execute` to write. Colliding rows
-  (two `Customer` rows in one store that normalize to the same phone) are
-  skipped and logged for manual review rather than merged — each carries its own
-  `Order`s, `passwordHash`/session state, and `pendingEmail`/`pendingPhone`, so
-  merging is a real-identity call this script must not make on its own. Not run
-  against prod as part of this work; flagged to the user for explicit sign-off
-  before anyone runs it.
+- **No prod backfill needed**: the prod database has no real data yet, so
+  rather than write a migration script for existing rows, the plan was to
+  reset the database from the current (post-fix) schema/migrations and reseed
+  — no `Customer.phone` values ever existed in the old, un-normalized shape.
+  A backfill script was drafted at one point during this work but deleted
+  once that became clear; if this ever matters again (e.g. a future
+  normalization-affecting change after real customer data exists), write a
+  fresh one rather than resurrecting this — the shape of a "safe" backfill
+  depends on what's actually inconsistent at the time.
 
 ## What else came up
 
