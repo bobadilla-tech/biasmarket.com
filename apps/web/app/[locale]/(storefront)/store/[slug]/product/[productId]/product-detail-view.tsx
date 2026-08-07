@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
+import { Clock, Bell } from "lucide-react";
 import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { addToCart } from "@/lib/cart";
@@ -79,7 +80,8 @@ export function ProductDetailView(
             />
             {outOfStock && (
               <div className="absolute inset-x-0 top-3 flex justify-center">
-                <span className="rounded-full bg-red-500 px-4 py-1.5 text-sm font-bold text-white shadow">
+                <span className="flex items-center gap-1.5 rounded-full border border-gray-300 bg-white/90 px-4 py-1.5 text-sm font-semibold text-gray-500">
+                  <Clock className="size-4" />
                   {t("soldOut")}
                 </span>
               </div>
@@ -119,18 +121,14 @@ export function ProductDetailView(
 
         {outOfStock
           ? (
-            <div className="mt-4 flex max-w-xs flex-col gap-3">
-              <span className="text-sm font-semibold text-red-500">
-                {t("productDetail.soldOut")}
-              </span>
-              <button
-                type="button"
-                onClick={() => setRestockOpen(true)}
-                className="store-theme-primary-button w-full rounded-xl px-4 py-2.5 text-sm font-semibold transition sm:w-auto"
-              >
-                {t("registerInterest")}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setRestockOpen(true)}
+              className="mt-4 flex w-full max-w-xs items-center justify-center gap-1.5 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 sm:w-auto"
+            >
+              <Bell className="size-4" />
+              {t("registerInterest")}
+            </button>
           )
           : (
             <button

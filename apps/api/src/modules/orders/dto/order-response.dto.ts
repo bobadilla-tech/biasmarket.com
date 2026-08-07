@@ -54,6 +54,9 @@ export class OrderProductResponseDto {
   @ApiProperty()
   soldOut: boolean;
 
+  @ApiProperty()
+  discontinued: boolean;
+
   @ApiProperty({ type: String, format: "date-time", nullable: true })
   deletedAt: string | null;
 

@@ -31,10 +31,10 @@ test("rejects an invalid email when one is provided", () => {
   expect(result.success).toBe(false);
 });
 
-test("accepts an empty email (optional)", () => {
+test("rejects an empty email (required)", () => {
   const schema = buildCheckoutFormSchema(false, false);
-  const result = schema.safeParse({ ...validValues, customerEmail: "" });
-  expect(result.success).toBe(true);
+  const result = schema.safeParse({ ...validValues,customerEmail: "",});
+  expect(result.success).toBe(false);
 });
 
 test("requires a pickup point when the store has pickup points and PICKUP is selected", () => {

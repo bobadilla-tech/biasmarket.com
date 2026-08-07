@@ -11,6 +11,11 @@ export { usePublishProduct } from "./mutations/use-publish-product";
 export { useEnsureCategory } from "./mutations/use-ensure-category";
 
 export { stockTone } from "./lib/stock-tone";
+export {
+  availabilityFlags,
+  getProductAvailabilityState,
+  type ProductAvailabilityState,
+} from "./lib/availability-state";
 export { getCategoryLabel } from "./lib/category-label";
 export { keyForAttributes } from "./lib/variant-key";
 

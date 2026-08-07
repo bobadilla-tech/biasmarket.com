@@ -124,7 +124,8 @@ export class CreateOrderUseCase {
             !product ||
             product.storeId !== store.id ||
             product.status !== "PUBLISHED" ||
-            product.deletedAt
+            product.deletedAt ||
+            product.discontinued
           ) {
             throw new BadRequestException(
               `Producto no disponible: ${item.productId}`,

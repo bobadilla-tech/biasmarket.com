@@ -6,7 +6,8 @@ import { ProductDetailView } from "./product-detail-view";
 
 async function getPublicProduct(slug: string, productId: string) {
   const apiUrl = process.env.INTERNAL_API_URL ??
-    process.env.NEXT_PUBLIC_API_URL;
+    process.env.NEXT_PUBLIC_API_URL ??
+    (process.env.NODE_ENV === "development" ? "http://localhost:3000" : undefined);
   const res = await fetch(
     `${apiUrl}/api/stores/${slug}/products/${productId}/public`,
     {
@@ -26,7 +27,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug, productId } = await params;
   const data = await getPublicProduct(slug, productId);
-  if (!data) return {};
+  if (!data || data.product?.discontinued) return {};
   return { title: data.product.name };
 }
 
@@ -41,7 +42,7 @@ export default async function ProductDetailPage({
     getTranslations("storefront"),
   ]);
 
-  if (!data) {
+  if (!data || data.product?.discontinued) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <p className="text-gray-500">{t("productDetail.notFound")}</p>

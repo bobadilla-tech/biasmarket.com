@@ -19,7 +19,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { useDashboardStore } from "@/features/stores";
-import { stockTone, useProduct, usePublishProduct } from "@/features/products";
+import {
+  getProductAvailabilityState,
+  stockTone,
+  useProduct,
+  usePublishProduct,
+} from "@/features/products";
 
 export function ProductDetailsPageClient() {
   const t = useTranslations("dashboard");
@@ -77,6 +82,46 @@ export function ProductDetailsPageClient() {
         {t("products.details.draft")}
       </Badge>
     );
+  }, [product, t]);
+
+  const availabilityBadge = useMemo(() => {
+    if (!product) return null;
+    const state = getProductAvailabilityState({
+      discontinued: product.discontinued,
+      soldOut: product.soldOut || (product.availableStock ?? 0) <= 0,
+      availableStock: product.availableStock,
+    });
+    if (state === "AVAILABLE") {
+      return (
+        <Badge className="rounded-full bg-[#e8fff2] px-3 py-1 text-xs font-semibold text-[#159a63]">
+          {t("products.details.available")}
+        </Badge>
+      );
+    }
+    if (state === "OUT_OF_STOCK") {
+      return (
+        <Badge className="rounded-full bg-[#fff6e8] px-3 py-1 text-xs font-semibold text-[#d97706]">
+          {t("products.details.soldOut")}
+        </Badge>
+      );
+    }
+    return (
+      <Badge className="rounded-full bg-[#f1f5f9] px-3 py-1 text-xs font-semibold text-[#475569]">
+        {t("products.details.discontinued")}
+      </Badge>
+    );
+  }, [product, t]);
+
+  const availabilityLabel = useMemo(() => {
+    if (!product) return "—";
+    const state = getProductAvailabilityState({
+      discontinued: product.discontinued,
+      soldOut: product.soldOut || (product.availableStock ?? 0) <= 0,
+      availableStock: product.availableStock,
+    });
+    if (state === "AVAILABLE") return t("products.details.available");
+    if (state === "OUT_OF_STOCK") return t("products.details.soldOut");
+    return t("products.details.discontinued");
   }, [product, t]);
 
   const handlePublish = () => {
@@ -141,6 +186,22 @@ export function ProductDetailsPageClient() {
     product.availableStock,
     store?.lowStockThreshold,
   );
+  const imageContent = image
+    ? (
+      <div className="relative mx-auto aspect-square w-full overflow-hidden rounded-[22px] shadow-sm">
+        <Image
+          src={image}
+          alt={product.name}
+          fill
+          className="object-cover"
+        />
+      </div>
+    )
+    : (
+      <div className="mx-auto flex aspect-square w-full items-center justify-center rounded-[22px] bg-white/70 text-2xl font-semibold text-[#2d1649]">
+        {product.name.slice(0, 1).toUpperCase()}
+      </div>
+    );
 
   return (
     <div className="min-h-screen px-5 py-6 lg:px-8 lg:py-8">
@@ -179,6 +240,7 @@ export function ProductDetailsPageClient() {
               )
               : null}
             {statusBadge}
+            {availabilityBadge}
             <Badge
               variant="outline"
               className={cn(
@@ -191,7 +253,7 @@ export function ProductDetailsPageClient() {
             </Badge>
             <Badge
               variant="outline"
-              className="rounded-full border-[#eadcf7] px-3 py-1 text-xs text-[var(--store-primary)]"
+              className="rounded-full border-[#eadcf7] px-3 py-1 text-xs text-[#d11d52]"
             >
               <Layers className="size-3.5" />
               {t("products.details.sold", { count: product.soldUnits ?? 0 })}
@@ -203,22 +265,7 @@ export function ProductDetailsPageClient() {
           <Card className="rounded-[28px] border-[#eadcf8] bg-white py-0 shadow-sm">
             <CardContent className="px-6 py-6">
               <div className="rounded-[24px] bg-[#fff2f7] p-6">
-                {image
-                  ? (
-                    <div className="relative mx-auto aspect-square w-full overflow-hidden rounded-[22px] shadow-sm">
-                      <Image
-                        src={image}
-                        alt={product.name}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                  )
-                  : (
-                    <div className="mx-auto flex aspect-square w-full items-center justify-center rounded-[22px] bg-white/70 text-2xl font-semibold text-[#2d1649]">
-                      {product.name.slice(0, 1).toUpperCase()}
-                    </div>
-                  )}
+                {imageContent}
               </div>
 
               <div className="mt-5 space-y-3">
@@ -287,10 +334,10 @@ export function ProductDetailsPageClient() {
                 </div>
                 <div className="rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#927fac]">
-                    {t("products.details.status")}
+                    {t("products.details.availability")}
                   </p>
                   <p className="mt-1 text-sm font-semibold text-[#2d1649]">
-                    {product.status}
+                    {availabilityLabel}
                   </p>
                 </div>
                 <div className="rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3">
@@ -361,7 +408,7 @@ export function ProductDetailsPageClient() {
                               ? (
                                 <Badge
                                   variant="outline"
-                                  className="rounded-full border-[#eadcf7] px-3 py-1 text-xs text-[var(--store-primary)]"
+                                  className="rounded-full border-[#eadcf7] px-3 py-1 text-xs text-[#d11d52]"
                                 >
                                   {t("products.details.priceOverride", {
                                     value: variant.priceOverride,

@@ -111,6 +111,7 @@ export function ProductSheet({
   const name = watch("name");
   const price = watch("price");
   const categoryId = watch("categoryId");
+  const availability = watch("availability");
 
   const defaultCategories = useMemo(() => {
     const isSpanish = (locale ?? "").startsWith("es");
@@ -335,7 +336,7 @@ export function ProductSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="h-dvh w-[420px] gap-0 overflow-y-auto sm:max-w-[420px]">
+      <SheetContent className="h-dvh w-105 gap-0 overflow-y-auto sm:max-w-105">
         <SheetHeader>
           <SheetTitle>{title}</SheetTitle>
           <SheetDescription>{description}</SheetDescription>
@@ -397,6 +398,32 @@ export function ProductSheet({
                 ))}
               </Select>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#927fac]">
+              {t("products.form.availabilityLabel")}
+            </p>
+            <Select
+              {...register("availability")}
+              className="h-11"
+              selectClassName="store-theme-input h-full rounded-2xl border border-[#e7dcf3] bg-[#fbf8fe] text-sm text-[#341b55] outline-none"
+            >
+              <option value="AVAILABLE">
+                {t("products.details.available")}
+              </option>
+              <option value="OUT_OF_STOCK">
+                {t("products.details.soldOut")}
+              </option>
+              <option value="DISCONTINUED">
+                {t("products.details.discontinued")}
+              </option>
+            </Select>
+            <p className="text-xs text-[#8f7da8]">
+              {availability === "DISCONTINUED"
+                ? t("products.form.availabilityHelpDiscontinued")
+                : t("products.form.availabilityHelp")}
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -481,7 +508,7 @@ export function ProductSheet({
                             {option.name}: {option.values.join(", ")}
                             <button
                               type="button"
-                              className="ml-2 text-[var(--store-primary)]"
+                              className="ml-2 text-[#d11d52]"
                               onClick={() =>
                                 setOptions((prev) =>
                                   prev.filter((o) => o.id !== option.id)

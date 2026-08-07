@@ -75,6 +75,7 @@ model Product {
   availableUntil DateTime?
   status      ProductStatus @default(DRAFT)
   soldOut     Boolean       @default(false)
+  discontinued Boolean       @default(false)
   deletedAt   DateTime?
   createdAt   DateTime      @default(now())
 

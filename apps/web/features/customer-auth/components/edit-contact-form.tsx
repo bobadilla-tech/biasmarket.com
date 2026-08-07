@@ -62,7 +62,7 @@ export function EditContactForm(
         <p className="text-xs text-amber-600">
           {t("pendingPhone", { phone: profile.customer.pendingPhone })}
         </p>
-      )}
+      )}const schema 
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
