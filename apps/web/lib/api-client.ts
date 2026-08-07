@@ -29,8 +29,11 @@ import {
 // browser-reachable fallback. During local development we default to
 // http://localhost:3000 so the `api` app can be run separately without
 // setting env vars.
-const API_URL = process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL ??
-  (process.env.NODE_ENV === "development" ? "http://localhost:3000" : undefined);
+const API_URL = process.env.INTERNAL_API_URL ??
+  process.env.NEXT_PUBLIC_API_URL ??
+  (process.env.NODE_ENV === "development"
+    ? "http://localhost:3000"
+    : undefined);
 if (!API_URL) {
   throw new Error(
     "Missing INTERNAL_API_URL/NEXT_PUBLIC_API_URL — set one in the environment before the app starts",

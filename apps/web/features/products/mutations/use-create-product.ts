@@ -19,7 +19,7 @@ export function useCreateProduct(storeId: string | undefined) {
       currency: string;
       stock: string;
       categoryId: string;
-        availability: "AVAILABLE" | "OUT_OF_STOCK" | "DISCONTINUED";
+      availability: "AVAILABLE" | "OUT_OF_STOCK" | "DISCONTINUED";
       imageFile: File | null;
       variants: VariantDraft[];
       variantImages: Record<string, File | null>;

@@ -7,29 +7,24 @@
  */
 import type {
   CheckoutResultResponseDto,
-  CreateOrderDto
-} from '../api.schemas.js';
+  CreateOrderDto,
+} from "../api.schemas.js";
 
-import { customFetch } from '../../http.js';
+import { customFetch } from "../../http.js";
 
-export const getCreateUrl = (slug: string,) => {
+export const getCreateUrl = (slug: string) => {
+  return `/stores/${slug}/checkout`;
+};
 
-
-
-
-  return `/stores/${slug}/checkout`
-}
-
-export const create = async (slug: string,
-    createOrderDto: CreateOrderDto, options?: Parameters<typeof customFetch>[1]): Promise<CheckoutResultResponseDto> => {
-
-  return customFetch<CheckoutResultResponseDto>(getCreateUrl(slug),
-  {
+export const create = async (
+  slug: string,
+  createOrderDto: CreateOrderDto,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CheckoutResultResponseDto> => {
+  return customFetch<CheckoutResultResponseDto>(getCreateUrl(slug), {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(createOrderDto)
-  }
-);}
-
-
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createOrderDto),
+  });
+};

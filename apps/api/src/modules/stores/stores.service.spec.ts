@@ -510,7 +510,11 @@ describe("StoresService", () => {
           where: {
             isPublic: true,
             products: {
-              some: { status: "PUBLISHED", deletedAt: null, discontinued: false },
+              some: {
+                status: "PUBLISHED",
+                deletedAt: null,
+                discontinued: false,
+              },
             },
             owner: { banned: { not: true } },
           },

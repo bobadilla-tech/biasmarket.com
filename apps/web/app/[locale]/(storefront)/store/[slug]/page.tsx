@@ -9,18 +9,24 @@ import { StoreLogo } from "@/components/store-logo";
 async function getStore(slug: string) {
   const apiUrl = process.env.INTERNAL_API_URL ??
     process.env.NEXT_PUBLIC_API_URL ??
-    (process.env.NODE_ENV === "development" ? "http://localhost:3000" : undefined);
+    (process.env.NODE_ENV === "development"
+      ? "http://localhost:3000"
+      : undefined);
   console.log(`[store page] getStore() apiUrl=${apiUrl} slug=${slug}`);
   const res = await fetch(`${apiUrl}/api/stores/${slug}/public`, {
     cache: "no-store",
   });
 
-  console.log(`[store page] fetch -> ${apiUrl}/api/stores/${slug}/public status=${res.status}`);
+  console.log(
+    `[store page] fetch -> ${apiUrl}/api/stores/${slug}/public status=${res.status}`,
+  );
 
   if (!res.ok) {
     try {
       const text = await res.text();
-      console.log(`[store page] fetch body (truncated): ${text.slice(0, 1000)}`);
+      console.log(
+        `[store page] fetch body (truncated): ${text.slice(0, 1000)}`,
+      );
     } catch (e) {
       console.log(`[store page] failed to read error body: ${String(e)}`);
     }
@@ -29,7 +35,9 @@ async function getStore(slug: string) {
 
   try {
     const json = await res.json();
-    console.log(`[store page] fetched store keys: ${Object.keys(json || {}).join(",")}`);
+    console.log(
+      `[store page] fetched store keys: ${Object.keys(json || {}).join(",")}`,
+    );
     return json;
   } catch (e) {
     console.log(`[store page] failed to parse JSON: ${String(e)}`);
@@ -156,7 +164,10 @@ export default async function StorePage({
           !cp.product?.discontinued && !isProductOutOfStock(cp.product),
       );
       if (visible.length === 0) return null;
-      return { ...section, collection: { ...section.collection, products: visible } };
+      return {
+        ...section,
+        collection: { ...section.collection, products: visible },
+      };
     })
     .filter(Boolean);
 

@@ -4,7 +4,9 @@ import { AccountNavLink } from "@/features/customer-auth";
 async function getStoreThemeConfig(slug: string) {
   const apiUrl = process.env.INTERNAL_API_URL ??
     process.env.NEXT_PUBLIC_API_URL ??
-    (process.env.NODE_ENV === "development" ? "http://localhost:3000" : undefined);
+    (process.env.NODE_ENV === "development"
+      ? "http://localhost:3000"
+      : undefined);
   const res = await fetch(`${apiUrl}/api/stores/${slug}/public`, {
     cache: "no-store",
   });

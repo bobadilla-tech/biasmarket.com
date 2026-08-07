@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { Clock, Bell } from "lucide-react";
+import { Bell, Clock } from "lucide-react";
 import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { addToCart } from "@/lib/cart";

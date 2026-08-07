@@ -34,7 +34,7 @@ test("rejects an invalid email when one is provided", () => {
 
 test("rejects an empty email (required)", () => {
   const schema = buildCheckoutFormSchema(false, false);
-  const result = schema.safeParse({ ...validValues,customerEmail: "",});
+  const result = schema.safeParse({ ...validValues, customerEmail: "" });
   expect(result.success).toBe(false);
 });
 
