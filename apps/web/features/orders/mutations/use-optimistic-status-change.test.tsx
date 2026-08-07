@@ -57,6 +57,8 @@ const order: OrderResponseDto = {
   paymentMethod: null,
   cancellationResolution: null,
   cancellationReason: null,
+  retainedAmount: null,
+  releasedAmount: null,
   expiresAt: "2026-01-08T00:00:00.000Z",
   createdAt: "2026-01-01T00:00:00.000Z",
   items: [],
