@@ -38,13 +38,18 @@ describe("customers (e2e)", () => {
   let storeId: string;
   let storeSlug: string;
   let productId: string;
+  let variantId: string;
   let customerId: string;
   let orderId: string;
+  let guestOrderId: string;
 
   const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const sellerEmail = `customers-e2e-seller-${runId}@example.com`;
   const customerEmail = `customers-e2e-customer-${runId}@example.com`;
   const customerPhone = "+51977777777";
+  // Bare national number, no dial code — exercises guest phone normalization
+  // (normalizes to +51987654322, distinct from the registered customer).
+  const guestPhone = "987654322";
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -111,6 +116,13 @@ describe("customers (e2e)", () => {
       .set("Cookie", sellerSessionCookie)
       .expect(200);
 
+    // `stock` on creation auto-creates a "Default" ProductVariant, so checkout
+    // needs an explicit variantId (see apps/web/AGENTS.md's e2e note).
+    const variant = await prisma.productVariant.findFirstOrThrow({
+      where: { productId },
+    });
+    variantId = variant.id;
+
     const checkoutRes = await request(app.getHttpServer())
       .post(`/stores/${storeSlug}/checkout`)
       .send({
@@ -118,7 +130,7 @@ describe("customers (e2e)", () => {
         customerPhone,
         customerEmail,
         customerName: "E2E Customer",
-        items: [{ productId, quantity: 1 }],
+        items: [{ productId, variantId, quantity: 1 }],
       })
       .expect(201);
     orderId = checkoutRes.body.order.id as string;
@@ -134,13 +146,34 @@ describe("customers (e2e)", () => {
       .field("amount", "20")
       .field("method", "YAPE")
       .expect(201);
+
+    // Second checkout, no email → guest order with no linked `Customer` row.
+    const guestCheckoutRes = await request(app.getHttpServer())
+      .post(`/stores/${storeSlug}/checkout`)
+      .send({
+        deliveryMethodType: "PICKUP",
+        customerPhone: guestPhone,
+        customerName: "Guest Buyer",
+        items: [{ productId, variantId, quantity: 2 }],
+      })
+      .expect(201);
+    guestOrderId = guestCheckoutRes.body.order.id as string;
+
+    await request(app.getHttpServer())
+      .post(`/stores/${storeId}/orders/${guestOrderId}/payments`)
+      .set("Cookie", sellerSessionCookie)
+      .field("amount", "40")
+      .field("method", "YAPE")
+      .expect(201);
   });
 
   afterAll(async () => {
-    if (orderId) {
-      await prisma.orderPayment.deleteMany({ where: { orderId } });
-      await prisma.orderItem.deleteMany({ where: { orderId } });
-      await prisma.order.deleteMany({ where: { id: orderId } });
+    for (const orderIdToDelete of [orderId, guestOrderId]) {
+      if (orderIdToDelete) {
+        await prisma.orderPayment.deleteMany({ where: { orderId: orderIdToDelete } });
+        await prisma.orderItem.deleteMany({ where: { orderId: orderIdToDelete } });
+        await prisma.order.deleteMany({ where: { id: orderIdToDelete } });
+      }
     }
     if (customerId) {
       await prisma.customer.deleteMany({ where: { id: customerId } });
@@ -200,5 +233,42 @@ describe("customers (e2e)", () => {
       .expect(200);
     expect(order.paidAmount).toBe(orderFindOneRes.body.paidAmount);
     expect(order.pendingAmount).toBe(orderFindOneRes.body.pendingAmount);
+  });
+
+  it("GET /customers lists guest orders (no linked account) as synthetic customers", async () => {
+    const res = await request(app.getHttpServer())
+      .get(`/stores/${storeId}/customers`)
+      .set("Cookie", sellerSessionCookie)
+      .expect(200);
+    expect(Array.isArray(res.body)).toBe(true);
+    const guest = res.body.find(
+      (c: { id: string }) => c.id === "guest_51987654322",
+    );
+    expect(guest).toBeDefined();
+    expect(guest.name).toBe("Guest Buyer");
+    expect(guest.phone).toBe("+51987654322");
+    expect(guest.email).toBeNull();
+    expect(guest.emailVerified).toBe(false);
+    expect(guest.orderCount).toBe(1);
+    expect(guest.lifetimeSpend).toBe(40);
+    for (const item of res.body) {
+      assertMatchesSchema(item, listItemSchema, openapi.components);
+    }
+  });
+
+  it("GET /customers/:customerId resolves a guest synthetic id", async () => {
+    const res = await request(app.getHttpServer())
+      .get(`/stores/${storeId}/customers/guest_51987654322`)
+      .set("Cookie", sellerSessionCookie)
+      .expect(200);
+    assertMatchesSchema(res.body, detailSchema, openapi.components);
+    expect(res.body.customer.id).toBe("guest_51987654322");
+    expect(res.body.customer.name).toBe("Guest Buyer");
+    expect(res.body.customer.phone).toBe("+51987654322");
+    expect(res.body.customer.emailVerified).toBe(false);
+    expect(res.body.orders).toHaveLength(1);
+    expect(res.body.orders[0].id).toBe(guestOrderId);
+    expect(res.body.orders[0].paidAmount).toBe(40);
+    expect(res.body.orders[0].pendingAmount).toBe(0);
   });
 });

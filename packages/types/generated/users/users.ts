@@ -5,19 +5,29 @@
  * Bias Market — niche-first store builder API
  * OpenAPI spec version: 1.0
  */
-import type { UserStoreCountResponseDto } from "../api.schemas.js";
+import type {
+  UserStoreCountResponseDto
+} from '../api.schemas.js';
 
-import { customFetch } from "../../http.js";
+import { customFetch } from '../../http.js';
 
 export const getGetStoreCountsUrl = () => {
-  return `/admin/users/store-counts`;
-};
 
-export const getStoreCounts = async (
-  options?: Parameters<typeof customFetch>[1],
-): Promise<UserStoreCountResponseDto[]> => {
-  return customFetch<UserStoreCountResponseDto[]>(getGetStoreCountsUrl(), {
+
+
+
+  return `/admin/users/store-counts`
+}
+
+export const getStoreCounts = async ( options?: Parameters<typeof customFetch>[1]): Promise<UserStoreCountResponseDto[]> => {
+
+  return customFetch<UserStoreCountResponseDto[]>(getGetStoreCountsUrl(),
+  {
     ...options,
-    method: "GET",
-  });
-};
+    method: 'GET'
+
+
+  }
+);}
+
+

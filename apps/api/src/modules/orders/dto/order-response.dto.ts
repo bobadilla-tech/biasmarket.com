@@ -254,6 +254,12 @@ export class OrderResponseDto {
   @ApiProperty({ type: String, nullable: true })
   cancellationReason: string | null;
 
+  @ApiProperty({ type: String, nullable: true })
+  retainedAmount: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  releasedAmount: string | null;
+
   @ApiProperty({ type: String })
   totalAmount: string;
 
@@ -365,6 +371,12 @@ export class OrderStatusResponseDto {
 
   @ApiProperty({ type: String, nullable: true })
   cancellationReason: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  retainedAmount: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  releasedAmount: string | null;
 
   @ApiProperty({ type: String })
   totalAmount: string;
