@@ -173,39 +173,47 @@ the disabled-prop.
    - `CreateOrderDto` gains an optional `pickupDate` (date-only string,
      `YYYY-MM-DD`, validated).
    - `CreateOrderUseCase`'s current hard-reject
-     (`create-order.usecase.ts:73-88`) needs to become: if `pickupPointId` is
-     set and the point isn't open today, **require** `pickupDate` and validate
-     it against that point's `openDays` (weekday of the given date must be in
-     `openDays`, and reject a date if `closedOverride` is true — a manually
-     closed point has no future date to offer either, matching
-     `getPickupAvailability()`'s existing `nextAvailableDay: null` case for
-     `closedOverride`; the frontend's `enabled === false` branch yields the same
-     `null` without `closedOverride`, but that's moot server-side since
-     `findEnabledForSlug` already filters to `enabled: true` points before the
-     storefront sees them — mention this only for defense-in-depth parity with
-     the frontend helper's shape, no separate backend check needed). If the
-     point _is_ open today, `pickupDate` should be optional/ignored (today is
-     implied) — don't force every pickup order through the new field.
-   - **Timezone correctness, confirmed as a real risk via review, not
-     theoretical**: the existing "today" check derives from
-     `new Date().getDay()` (`create-order.usecase.ts:80`, and mirrored in
+     (`create-order.usecase.ts:73-88`) becomes: if `pickupPointId` is set and
+     the point isn't open today, **require** `pickupDate`; reject a date if
+     `closedOverride` is true (a manually closed point has no future date to
+     offer either, matching `getPickupAvailability()`'s existing
+     `nextAvailableDay: null` case for `closedOverride`; the frontend's
+     `enabled === false` branch yields the same `null` without `closedOverride`,
+     but that's moot server-side since `findEnabledForSlug` already filters to
+     `enabled: true` points before the storefront sees them — mention this only
+     for defense-in-depth parity with the frontend helper's shape, no separate
+     backend check needed). If the point _is_ open today, `pickupDate` is
+     optional (today implied) — but a **supplied** date is validated, not
+     silently ignored, so buyers may schedule ahead; invalid/past/wrong-weekday
+     values are rejected either way. Additional rules landed per review:
+     - The date must be **strictly after the current business date** (today and
+       any past date are rejected, even when the weekday is in `openDays`).
+     - Calendar-invalid values JS would silently normalize (e.g. `2026-02-30` →
+       `2026-03-02`) are rejected by comparing the parsed `YYYY-MM-DD` against
+       the round-tripped UTC calendar date.
+     - `pickupDate` on a non-`PICKUP` order, or a `PICKUP` order with no
+       `pickupPointId`/no enabled points, is rejected rather than dropped.
+     - Tests cover: past dates (including one whose weekday is in `openDays`),
+       today, overflow dates, non-pickup/no-point orders, and open-today points
+       with both valid and invalid `pickupDate`s.
+   - **Timezone correctness, confirmed as a real risk via review**: the existing
+     "today" check derived from `new Date().getDay()`
+     (`create-order.usecase.ts:80`, mirrored in
      `PublicPickupPointsController.findEnabled`'s `weekday` field) — an instant
-     converted to whatever timezone the Node process runs in. No `TZ` env var is
-     set anywhere under `infra/docker/`, so the container's effective timezone
-     is environment-dependent (defaults to UTC in most container base images),
-     while the business operates in Peru (PEN currency throughout this
-     codebase). This is **pre-existing behavior, not a regression to fix as part
-     of this plan** — but the _new_ `pickupDate` parsing must not introduce a
-     second, differently-computed weekday: parse the submitted `YYYY-MM-DD`
-     string as UTC explicitly
-     (`new Date(dto.pickupDate + "T00:00:00Z").getUTCDay()`) and compare against
-     `openDays` using the same convention the existing `weekday` field already
-     uses, whatever that turns out to be once checked — don't let the two
-     computations silently diverge by using plain `new Date(dateString)` + local
-     `.getDay()` for one and UTC for the other. If this surfaces a preexisting
-     TZ bug in the "today" check while implementing, flag it back rather than
-     silently fixing (or silently ignoring) it — it's adjacent but independent
-     of this plan's scope.
+     converted to whatever timezone the Node process runs in, with no `TZ` env
+     var set under `infra/docker/`, while the business operates in Peru (PEN
+     currency throughout this codebase). **Resolved by picking the established
+     Peru business timezone (`America/Lima`) as the single source of truth**,
+     extracted into `apps/api/src/common/business-time.ts` (`getBusinessDate()`
+     — calendar y/m/d + weekday in that timezone). Both `CreateOrderUseCase`'s
+     "is the point open today" check and
+     `PublicPickupPointsController
+     .findEnabled`'s served `weekday` now
+     read from it, and the submitted `pickupDate`'s weekday is computed on the
+     same calendar day — no more server-local `getDay()` vs UTC-parsed
+     `getUTCDay()` divergence. Boundary tests cover instants just before/after
+     Lima midnight and a year boundary, and `openDays` comparisons stay
+     consistent with the frontend's served `weekday`.
    - Response DTOs (`OrderResponseDto`/`OrderDetailResponseDto`/
      `OrderStatusResponseDto`/`CheckoutOrderResponseDto` and their
      hand-maintained `*Row` shadow interfaces — same set the 2026-08-07 PR had

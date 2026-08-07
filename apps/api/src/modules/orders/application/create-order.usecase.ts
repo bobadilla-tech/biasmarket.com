@@ -9,9 +9,50 @@ import {
   buildWhatsAppUrl,
 } from "@biasmarket/utils/whatsapp";
 import { PrismaService } from "../../../prisma/prisma.service.js";
+import { getBusinessDate } from "../../../common/business-time.js";
 import type { CreateOrderDto } from "../dto/create-order.dto.js";
 import { NotificationsService } from "../../notifications/notifications.service.js";
 import { CustomerAccountService } from "./customer-account.service.js";
+
+// Parses a `YYYY-MM-DD` date-only string into UTC components, rejecting
+// calendar-invalid values that JS's Date would otherwise silently normalize
+// (e.g. `2026-02-30` -> `2026-03-02`): the round-tripped UTC calendar date
+// must equal the requested one. Returns null for anything not strictly
+// valid; the caller decides which message to surface.
+function parsePickupDate(
+  value: string,
+): { year: number; month: number; day: number; weekday: number } | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  const candidate = new Date(Date.UTC(year, month - 1, day));
+  if (
+    candidate.getUTCFullYear() !== year ||
+    candidate.getUTCMonth() + 1 !== month ||
+    candidate.getUTCDate() !== day
+  ) {
+    return null;
+  }
+  return { year, month, day, weekday: candidate.getUTCDay() };
+}
+
+// True when `candidate` (already parsed/validated) falls strictly after
+// today's business calendar date, i.e. not today and not the past.
+function isAfterBusinessDate(
+  candidate: { year: number; month: number; day: number },
+  businessDate: { year: number; month: number; day: number },
+): boolean {
+  if (candidate.year !== businessDate.year) {
+    return candidate.year > businessDate.year;
+  }
+  if (candidate.month !== businessDate.month) {
+    return candidate.month > businessDate.month;
+  }
+  return candidate.day > businessDate.day;
+}
 
 @Injectable()
 export class CreateOrderUseCase {
@@ -52,6 +93,16 @@ export class CreateOrderUseCase {
       }
     }
 
+    // A pickupDate is only meaningful attached to an actual pickup point —
+    // on a COURIER order, or a PICKUP order for a store with no enabled
+    // points, there's nothing to schedule against. Reject it rather than
+    // silently dropping a field the client believed it committed to.
+    if (dto.pickupDate && !pickupPointId) {
+      throw new BadRequestException(
+        "La fecha de recojo solo aplica a pedidos con punto de recojo",
+      );
+    }
+
     const messageItems: {
       name: string;
       quantity: number;
@@ -85,25 +136,48 @@ export class CreateOrderUseCase {
               "Punto de recojo no disponible",
             );
           }
-          const today = new Date().getDay();
-          if (point.openDays.length > 0 && !point.openDays.includes(today)) {
-            // Not open today — the buyer must have committed to a future
-            // date whose weekday is actually in openDays. Parsed and read
-            // as UTC consistently (not `new Date(str).getDay()`, which would
-            // mix a UTC-parsed instant with a local-timezone getter and can
-            // shift the resulting weekday by a day depending on server TZ).
-            if (!dto.pickupDate) {
+
+          // "Today" means the calendar date in the business timezone
+          // (America/Lima) — the same source PublicPickupPointsController
+          // serves as the storefront's `weekday`. Mixing server-local
+          // `new Date().getDay()` here with the UTC-parsed pickupDate's
+          // `getUTCDay()` can shift the weekday by a day depending on the
+          // container's TZ and reject/accept the wrong dates.
+          const businessDate = getBusinessDate();
+          const openToday = point.openDays.length === 0 ||
+            point.openDays.includes(businessDate.weekday);
+
+          // A closed-today point forces a future pickupDate. When the point
+          // IS open today, a supplied pickupDate is validated too (buyers
+          // may schedule ahead) instead of being silently ignored — but it's
+          // optional, with today implied when absent.
+          if (dto.pickupDate) {
+            const candidate = parsePickupDate(dto.pickupDate);
+            if (!candidate) {
               throw new BadRequestException(
-                "Debes seleccionar una fecha de recojo para este punto",
+                "La fecha de recojo seleccionada no es válida",
               );
             }
-            const candidate = new Date(`${dto.pickupDate}T00:00:00Z`);
-            if (!point.openDays.includes(candidate.getUTCDay())) {
+            if (!isAfterBusinessDate(candidate, businessDate)) {
+              throw new BadRequestException(
+                "La fecha de recojo debe ser posterior a la fecha actual",
+              );
+            }
+            if (
+              point.openDays.length > 0 &&
+              !point.openDays.includes(candidate.weekday)
+            ) {
               throw new BadRequestException(
                 "La fecha de recojo seleccionada no está disponible para este punto",
               );
             }
-            pickupDate = candidate;
+            pickupDate = new Date(
+              Date.UTC(candidate.year, candidate.month - 1, candidate.day),
+            );
+          } else if (!openToday) {
+            throw new BadRequestException(
+              "Debes seleccionar una fecha de recojo para este punto",
+            );
           }
           pickupPoint = { id: point.id, label: point.label };
         }

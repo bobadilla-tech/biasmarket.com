@@ -3,7 +3,6 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "@biasmarket/i18n";
-import type { ReactNode } from "react";
 
 const notificationsMock = vi.hoisted(() => ({
   findAll: vi.fn(),

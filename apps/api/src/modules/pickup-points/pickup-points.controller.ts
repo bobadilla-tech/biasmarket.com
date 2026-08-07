@@ -11,6 +11,7 @@ import {
 import { AuthGuard, Public, Session } from "@thallesp/nestjs-better-auth";
 import type { UserSession } from "@thallesp/nestjs-better-auth";
 import { PickupPointsService } from "./pickup-points.service.js";
+import { getBusinessDate } from "../../common/business-time.js";
 import { CreatePickupPointDto } from "./dto/create-pickup-point.dto.js";
 import { UpdatePickupPointDto } from "./dto/update-pickup-point.dto.js";
 import type { PickupPointResponseDto } from "./dto/pickup-point-response.dto.js";
@@ -100,7 +101,7 @@ export class PublicPickupPointsController {
   ): Promise<PublicPickupPointsResponseDto> {
     const rows = await this.pickupPoints.findEnabledForSlug(slug);
     return {
-      weekday: new Date().getDay(),
+      weekday: getBusinessDate().weekday,
       points: rows.map(toPickupPointDto),
     };
   }

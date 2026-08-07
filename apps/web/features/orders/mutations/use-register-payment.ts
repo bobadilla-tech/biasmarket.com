@@ -25,7 +25,9 @@ export function useRegisterPayment(
     onSuccess: () => {
       if (!storeId) return;
       queryClient.invalidateQueries({ queryKey: ordersKeys.byStore(storeId) });
-      queryClient.invalidateQueries({ queryKey: statsKeys.overview(storeId) });
+      void queryClient.invalidateQueries({
+        queryKey: statsKeys.overview(storeId),
+      });
     },
   });
 }

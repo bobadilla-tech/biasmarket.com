@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { ProductCard } from "./product-card";
 import { CartLink } from "./cart-link";
-import { isProductOutOfStock } from "./product-stock";
+import { isProductOutOfStock } from "@/features/discovery/lib/product-stock";
 import { SITE_URL } from "@/lib/site-config";
 import { StoreLogo } from "@/components/store-logo";
 

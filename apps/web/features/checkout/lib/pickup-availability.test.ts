@@ -71,14 +71,14 @@ test("nextDateForWeekday: later this week returns the smallest positive offset",
   // 2026-08-05 is a Wednesday (3); next Friday (5) is 2 days later.
   const today = new Date(2026, 7, 5, 12);
   const result = nextDateForWeekday(5, today);
-  expect(result.getDate()).toBe(7);
+  expect(result).toEqual(new Date(2026, 7, 7, 12));
 });
 
 test("nextDateForWeekday: wraps to next week when the weekday already passed", () => {
   // 2026-08-07 is a Friday (5); target Monday (1) is 3 days later, not -4.
   const today = new Date(2026, 7, 7, 12);
   const result = nextDateForWeekday(1, today);
-  expect(result.getDate()).toBe(10);
+  expect(result).toEqual(new Date(2026, 7, 10, 12));
 });
 
 test("nextDateForWeekday: same weekday as today rolls to next week, never today itself", () => {
@@ -86,5 +86,5 @@ test("nextDateForWeekday: same weekday as today rolls to next week, never today 
   // the following Wednesday (7 days later), not today.
   const today = new Date(2026, 7, 5, 12);
   const result = nextDateForWeekday(3, today);
-  expect(result.getDate()).toBe(12);
+  expect(result).toEqual(new Date(2026, 7, 12, 12));
 });

@@ -42,7 +42,7 @@ export function useCancelOrder(
         queryKey: ordersKeys.byStore(storeId),
       });
 
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: statsKeys.overview(storeId),
       });
     },

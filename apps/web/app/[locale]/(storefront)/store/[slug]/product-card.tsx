@@ -7,7 +7,7 @@ import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { addToCart } from "@/lib/cart";
 import { RestockInterestDialog } from "@/features/restock";
-import { isProductOutOfStock } from "./product-stock";
+import { isProductOutOfStock } from "@/features/discovery/lib/product-stock";
 
 interface Variant {
   id: string;
