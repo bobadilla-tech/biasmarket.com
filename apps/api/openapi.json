@@ -4943,6 +4943,15 @@
             "type": "string",
             "nullable": true
           },
+          "releasedResolution": {
+            "nullable": true,
+            "enum": [
+              "REFUNDED",
+              "RETAINED",
+              "STORE_CREDIT"
+            ],
+            "type": "string"
+          },
           "totalAmount": {
             "type": "string"
           },
@@ -5002,6 +5011,7 @@
           "cancellationReason",
           "retainedAmount",
           "releasedAmount",
+          "releasedResolution",
           "totalAmount",
           "requiredAmount",
           "currency",
@@ -5169,6 +5179,15 @@
             "type": "string",
             "nullable": true
           },
+          "releasedResolution": {
+            "nullable": true,
+            "enum": [
+              "REFUNDED",
+              "RETAINED",
+              "STORE_CREDIT"
+            ],
+            "type": "string"
+          },
           "totalAmount": {
             "type": "string"
           },
@@ -5234,6 +5253,7 @@
           "cancellationReason",
           "retainedAmount",
           "releasedAmount",
+          "releasedResolution",
           "totalAmount",
           "requiredAmount",
           "currency",
@@ -5373,6 +5393,15 @@
             "type": "string",
             "nullable": true
           },
+          "releasedResolution": {
+            "nullable": true,
+            "enum": [
+              "REFUNDED",
+              "RETAINED",
+              "STORE_CREDIT"
+            ],
+            "type": "string"
+          },
           "totalAmount": {
             "type": "string"
           },
@@ -5411,6 +5440,7 @@
           "cancellationReason",
           "retainedAmount",
           "releasedAmount",
+          "releasedResolution",
           "totalAmount",
           "requiredAmount",
           "currency",
@@ -5686,6 +5716,23 @@
             "type": "string",
             "nullable": true
           },
+          "retainedAmount": {
+            "type": "string",
+            "nullable": true
+          },
+          "releasedAmount": {
+            "type": "string",
+            "nullable": true
+          },
+          "releasedResolution": {
+            "nullable": true,
+            "enum": [
+              "REFUNDED",
+              "RETAINED",
+              "STORE_CREDIT"
+            ],
+            "type": "string"
+          },
           "totalAmount": {
             "type": "string"
           },
@@ -5728,6 +5775,9 @@
           "status",
           "cancellationResolution",
           "cancellationReason",
+          "retainedAmount",
+          "releasedAmount",
+          "releasedResolution",
           "totalAmount",
           "requiredAmount",
           "currency",

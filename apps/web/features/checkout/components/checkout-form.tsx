@@ -201,14 +201,19 @@ export function CheckoutForm(
 
   // Blocks submit whenever the selected point needs a pickupDate that's
   // either missing or whose weekday isn't in that point's openDays — the
-  // inline "pickupDateInvalidWeekday" error above is the same check.
+  // inline "pickupDateInvalidWeekday" error above is the same check. A
+  // manually closed point (closedOverride, no future date to offer) always
+  // blocks: the API rejects any pickupDate against it, so it must never be
+  // submittable even when a stale pickupDate happens to match its openDays.
   const pickupDateBlocking = deliveryMethodType === "PICKUP" &&
     pickupPointId !== "" &&
     pointsRequiringDate.has(pickupPointId) &&
     (() => {
       if (!pickupDate) return true;
       const point = points.find((p) => p.id === pickupPointId);
-      if (!point) return true;
+      if (!point || weekday === undefined) return true;
+      const availability = getPickupAvailability(point, weekday);
+      if (availability.nextAvailableDay === null) return true;
       const selectedWeekday = new Date(`${pickupDate}T00:00:00Z`)
         .getUTCDay();
       return point.openDays.length > 0 &&

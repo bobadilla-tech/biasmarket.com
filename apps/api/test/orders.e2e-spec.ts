@@ -271,11 +271,9 @@ describe("orders + checkout (e2e)", () => {
   // docs/plans/2026-08-06-order-status-buyer-login-pickup-checkout-fixes-plan.md
   // §1): approving straight from PENDING_PAYMENT with zero payments registered
   // must 400, not silently produce a VERIFIED order with paidAmount 0.
-  // Skips the shared `checkout()` helper's assertMatchesSchema check — the
-  // real (pre-existing, unrelated to this fix) `retainedAmount`/
-  // `releasedAmount` columns added by the cancelretain migration leak past
-  // OrderResponseDto's documented shape on every order-returning endpoint,
-  // which isn't this PR's concern to fix.
+  // Does its own checkout POST (rather than the shared `checkout()` helper)
+  // because it needs the raw order id to assert the 400 on the follow-up
+  // review call.
   it("checkout -> review approve with zero payments registered 400s", async () => {
     const checkoutRes = await request(app.getHttpServer())
       .post(`/stores/${storeSlug}/checkout`)

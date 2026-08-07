@@ -109,6 +109,18 @@ export class CheckoutOrderResponseDto {
   @ApiProperty({ type: String, nullable: true })
   cancellationReason: string | null;
 
+  @ApiProperty({ type: String, nullable: true })
+  retainedAmount: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  releasedAmount: string | null;
+
+  @ApiProperty({
+    enum: ["REFUNDED", "RETAINED", "STORE_CREDIT"],
+    nullable: true,
+  })
+  releasedResolution: "REFUNDED" | "RETAINED" | "STORE_CREDIT" | null;
+
   @ApiProperty({ type: String })
   totalAmount: string;
 

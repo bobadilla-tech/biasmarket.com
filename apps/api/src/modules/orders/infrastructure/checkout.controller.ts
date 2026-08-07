@@ -44,6 +44,9 @@ interface CheckoutOrderRow {
   status: "ACTIVE" | "CANCELLED";
   cancellationResolution: "REFUNDED" | "RETAINED" | "STORE_CREDIT" | null;
   cancellationReason: string | null;
+  retainedAmount: { toString(): string } | null;
+  releasedAmount: { toString(): string } | null;
+  releasedResolution: "REFUNDED" | "RETAINED" | "STORE_CREDIT" | null;
   totalAmount: { toString(): string };
   requiredAmount: { toString(): string };
   currency: string;
@@ -69,6 +72,9 @@ function toCheckoutOrderDto(
     ...order,
     deliveryDetails: order.deliveryDetails as Record<string, unknown> | null,
     pickupDate: order.pickupDate?.toISOString() ?? null,
+    retainedAmount: order.retainedAmount?.toString() ?? null,
+    releasedAmount: order.releasedAmount?.toString() ?? null,
+    releasedResolution: order.releasedResolution ?? null,
     totalAmount: order.totalAmount.toString(),
     requiredAmount: order.requiredAmount.toString(),
     expiresAt: order.expiresAt.toISOString(),
