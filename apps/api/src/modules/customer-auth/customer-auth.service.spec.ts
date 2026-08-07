@@ -215,6 +215,28 @@ describe("CustomerAuthService", () => {
 
       expect(customerAccount.sendPasswordResetEmail).not.toHaveBeenCalled();
     });
+
+    it("normalizes a differently-formatted but equivalent phone before the lookup", async () => {
+      const customer = {
+        id: "customer-1",
+        storeId: store.id,
+        email: "jane@example.com",
+        passwordHash: "already-set",
+      };
+      prisma.customer.findUnique.mockResolvedValue(customer);
+
+      await service.forgotPassword("my-store", "988888888");
+
+      expect(prisma.customer.findUnique).toHaveBeenCalledWith({
+        where: {
+          storeId_phone: { storeId: store.id, phone: "+51988888888" },
+        },
+      });
+      expect(customerAccount.sendPasswordResetEmail).toHaveBeenCalledWith(
+        customer,
+        store,
+      );
+    });
   });
 
   describe("login", () => {
@@ -274,6 +296,23 @@ describe("CustomerAuthService", () => {
         .rejects.toBeInstanceOf(
           UnauthorizedException,
         );
+    });
+
+    it("logs in with a differently-formatted but equivalent phone (no leading +, no dial code)", async () => {
+      const passwordHash = await hashPassword("super-secret-1");
+      prisma.customer.findUnique.mockResolvedValue({
+        id: "customer-1",
+        storeId: store.id,
+        passwordHash,
+      });
+
+      await service.login("my-store", "988888888", "super-secret-1");
+
+      expect(prisma.customer.findUnique).toHaveBeenCalledWith({
+        where: {
+          storeId_phone: { storeId: store.id, phone: "+51988888888" },
+        },
+      });
     });
   });
 
@@ -533,6 +572,29 @@ describe("CustomerAuthService", () => {
         }),
       ).rejects.toBeInstanceOf(ConflictException);
       expect(prisma.customer.update).not.toHaveBeenCalled();
+    });
+
+    it("normalizes a differently-formatted phone before the duplicate check and the write", async () => {
+      prisma.customer.findUnique.mockResolvedValue(null);
+      prisma.customer.update.mockResolvedValue({
+        ...currentCustomer,
+        pendingPhone: "+51900000001",
+      });
+
+      await service.updateProfile("my-store", session, {
+        name: "Old Name",
+        phone: "900000001",
+      });
+
+      expect(prisma.customer.findUnique).toHaveBeenCalledWith({
+        where: {
+          storeId_phone: { storeId: store.id, phone: "+51900000001" },
+        },
+      });
+      expect(prisma.customer.update).toHaveBeenCalledWith({
+        where: { id: "customer-1" },
+        data: { name: "Old Name", pendingPhone: "+51900000001" },
+      });
     });
   });
 });

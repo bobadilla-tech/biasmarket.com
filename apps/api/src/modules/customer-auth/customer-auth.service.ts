@@ -12,6 +12,7 @@ import {
   createCustomerSessionToken,
   verifyCustomerAccountToken,
 } from "@biasmarket/utils/customer-account-token";
+import { normalizePhone } from "@biasmarket/utils/phone-country";
 import { PrismaService } from "../../prisma/prisma.service.js";
 import { CustomerAccountService } from "../orders/application/customer-account.service.js";
 
@@ -113,7 +114,9 @@ export class CustomerAuthService {
   async forgotPassword(slug: string, phone: string): Promise<void> {
     const store = await this.findStoreBySlug(slug);
     const customer = await this.prisma.customer.findUnique({
-      where: { storeId_phone: { storeId: store.id, phone } },
+      where: {
+        storeId_phone: { storeId: store.id, phone: normalizePhone(phone) },
+      },
     });
 
     // Always resolve — never confirm or deny whether an account exists for
@@ -126,7 +129,9 @@ export class CustomerAuthService {
   async login(slug: string, phone: string, password: string): Promise<string> {
     const store = await this.findStoreBySlug(slug);
     const customer = await this.prisma.customer.findUnique({
-      where: { storeId_phone: { storeId: store.id, phone } },
+      where: {
+        storeId_phone: { storeId: store.id, phone: normalizePhone(phone) },
+      },
     });
 
     // Same generic error whether the phone doesn't exist or the password is
@@ -253,18 +258,21 @@ export class CustomerAuthService {
       sendEmailChangeTo = dto.email;
     }
 
-    if (dto.phone && dto.phone !== customer.phone) {
+    const normalizedPhone = dto.phone ? normalizePhone(dto.phone) : undefined;
+    if (normalizedPhone && normalizedPhone !== customer.phone) {
       if (!customer.emailVerified) {
         throw new BadRequestException(
           "Verifica tu correo antes de cambiar tu teléfono",
         );
       }
       const clash = await this.prisma.customer.findUnique({
-        where: { storeId_phone: { storeId: store.id, phone: dto.phone } },
+        where: {
+          storeId_phone: { storeId: store.id, phone: normalizedPhone },
+        },
       });
       if (clash) throw new ConflictException("Este teléfono ya está en uso");
 
-      data.pendingPhone = dto.phone;
+      data.pendingPhone = normalizedPhone;
       sendPhoneChange = true;
     }
 

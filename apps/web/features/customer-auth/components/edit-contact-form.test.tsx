@@ -55,6 +55,33 @@ test("prefills the form with the current profile values and submits changes", as
   });
 });
 
+test("changing the phone via PhoneInput submits the new national number under the existing dial code", async () => {
+  updateProfile.mockResolvedValueOnce({
+    name: "Jane Doe",
+    pendingEmail: null,
+    pendingPhone: "+51900000001",
+  });
+  const user = userEvent.setup();
+  renderWithProviders(<EditContactForm slug="my-store" profile={profile} />);
+
+  const phoneInput = screen.getByPlaceholderText(
+    "Teléfono (WhatsApp)",
+  ) as HTMLInputElement;
+  expect(phoneInput.value).toBe("988888888");
+
+  await user.clear(phoneInput);
+  await user.type(phoneInput, "900000001");
+  await user.click(screen.getByRole("button", { name: /guardar cambios/i }));
+
+  await waitFor(() => {
+    expect(updateProfile).toHaveBeenCalledWith("my-store", {
+      name: "Jane Doe",
+      email: "jane@example.com",
+      phone: "+51900000001",
+    });
+  });
+});
+
 test("shows a pending-confirmation notice when a change is already staged", () => {
   renderWithProviders(
     <EditContactForm

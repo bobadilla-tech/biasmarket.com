@@ -32,7 +32,7 @@ test("submits the phone and shows the generic success message", async () => {
 
   await user.type(
     screen.getByPlaceholderText("Teléfono (WhatsApp)"),
-    "+51988888888",
+    "988888888",
   );
   await user.click(screen.getByRole("button", { name: /enviar enlace/i }));
 

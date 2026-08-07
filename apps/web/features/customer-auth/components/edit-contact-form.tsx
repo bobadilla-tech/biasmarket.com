@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { useCustomerUpdateProfile } from "../mutations/use-customer-update-profile";
 import {
   type EditContactInput,
@@ -23,6 +24,7 @@ export function EditContactForm(
 
   const {
     register,
+    control,
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
@@ -83,10 +85,18 @@ export function EditContactForm(
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <input
-            placeholder={t("phonePlaceholder")}
-            className={inputClassName}
-            {...register("phone")}
+          <Controller
+            control={control}
+            name="phone"
+            render={({ field }) => (
+              <PhoneInput
+                value={field.value}
+                onChange={field.onChange}
+                placeholder={t("phonePlaceholder")}
+                selectClassName={inputClassName}
+                inputClassName={inputClassName}
+              />
+            )}
           />
           {errors.phone
             ? <p className="text-sm text-red-500">{t("phoneRequired")}</p>

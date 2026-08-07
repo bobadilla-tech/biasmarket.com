@@ -41,7 +41,7 @@ test("submits valid credentials and redirects to the profile page on success", a
 
   await user.type(
     screen.getByPlaceholderText("Teléfono (WhatsApp)"),
-    "+51988888888",
+    "988888888",
   );
   await user.type(screen.getByPlaceholderText("Contraseña"), "super-secret-1");
   await user.click(screen.getByRole("button", { name: /ingresar/i }));
@@ -62,7 +62,7 @@ test("surfaces a root error on invalid credentials without redirecting", async (
 
   await user.type(
     screen.getByPlaceholderText("Teléfono (WhatsApp)"),
-    "+51988888888",
+    "988888888",
   );
   await user.type(screen.getByPlaceholderText("Contraseña"), "wrong-password");
   await user.click(screen.getByRole("button", { name: /ingresar/i }));

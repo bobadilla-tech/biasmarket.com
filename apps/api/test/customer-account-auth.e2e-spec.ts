@@ -42,6 +42,7 @@ describe("customer account + customer auth (e2e)", () => {
   let storeId: string;
   let storeSlug: string;
   let productId: string;
+  let productVariantId: string;
   let customerId: string | undefined;
   let orderId: string | undefined;
   let customerSessionCookie: string;
@@ -111,6 +112,10 @@ describe("customer account + customer auth (e2e)", () => {
       .send({ name: "E2E Product", price: 10, currency: "PEN", stock: 100 })
       .expect(201);
     productId = productRes.body.id;
+    // `stock` at the top level auto-creates a "Default" ProductVariant —
+    // checkout must name it explicitly (see orders.e2e-spec.ts's identical
+    // comment on the same pattern).
+    productVariantId = productRes.body.variants[0].id;
     await request(app.getHttpServer())
       .patch(`/stores/${storeId}/products/${productId}/publish`)
       .set("Cookie", sellerSessionCookie)
@@ -154,7 +159,7 @@ describe("customer account + customer auth (e2e)", () => {
           customerPhone,
           customerEmail,
           customerName: "E2E Customer",
-          items: [{ productId, quantity: 1 }],
+          items: [{ productId, variantId: productVariantId, quantity: 1 }],
         })
         .expect(201);
       orderId = checkoutRes.body.order.id as string;
@@ -270,6 +275,36 @@ describe("customer account + customer auth (e2e)", () => {
         .send({ phone: customerPhone })
         .expect(201);
       assertMatchesSchema(forgotRes.body, okSchema, openapi.components);
+
+      // Regression coverage for the phone-normalization bug (see
+      // docs/plans/2026-08-06-buyer-phone-normalization-fix.md): a buyer
+      // types their phone one way at checkout ("+51966666666", the constant
+      // above) and a different-but-equivalent way at login/forgot-password
+      // ("966666666", no dial code) — both must resolve to the same
+      // Customer row. Uses `newPassword` since changePassword ran above.
+      const differentlyFormattedPhone = customerPhone.replace(/^\+51/, "");
+
+      const loginWithDifferentFormatRes = await request(app.getHttpServer())
+        .post(`/stores/${storeSlug}/account/login`)
+        .set("Origin", "http://localhost:3001")
+        .send({ phone: differentlyFormattedPhone, password: newPassword })
+        .expect(201);
+      assertMatchesSchema(
+        loginWithDifferentFormatRes.body,
+        okSchema,
+        openapi.components,
+      );
+
+      const forgotWithDifferentFormatRes = await request(app.getHttpServer())
+        .post(`/stores/${storeSlug}/account/forgot-password`)
+        .set("Origin", "http://localhost:3001")
+        .send({ phone: differentlyFormattedPhone })
+        .expect(201);
+      assertMatchesSchema(
+        forgotWithDifferentFormatRes.body,
+        okSchema,
+        openapi.components,
+      );
     },
   );
 });

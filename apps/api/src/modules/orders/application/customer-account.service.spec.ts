@@ -72,6 +72,38 @@ describe("CustomerAccountService", () => {
       });
     });
 
+    it("normalizes a differently-formatted phone before the lookup and the create", async () => {
+      prisma.customer.findUnique.mockResolvedValue(null);
+      prisma.customer.create.mockResolvedValue({
+        id: "customer-1",
+        email: "jane@example.com",
+        emailVerified: false,
+      });
+
+      await service.findOrCreateCustomer(
+        prisma as never,
+        store.id,
+        "988888888",
+        "jane@example.com",
+        "Jane",
+      );
+
+      expect(prisma.customer.findUnique).toHaveBeenCalledWith({
+        where: {
+          storeId_phone: { storeId: store.id, phone: "+51988888888" },
+        },
+      });
+      expect(prisma.customer.create).toHaveBeenCalledWith({
+        data: {
+          storeId: store.id,
+          phone: "+51988888888",
+          email: "jane@example.com",
+          name: "Jane",
+          emailVerified: false,
+        },
+      });
+    });
+
     it("returns the existing customer without an update when email matches and is verified", async () => {
       const existing = {
         id: "customer-1",
@@ -346,6 +378,38 @@ describe("CustomerAccountService", () => {
       });
       expect(result.purpose).toBe("change-phone");
       expect(result.customer.phone).toBe("+51900000001");
+    });
+
+    it("normalizes an already-unnormalized pendingPhone when applying it (defense in depth)", async () => {
+      const token = createCustomerAccountToken(
+        "customer-1",
+        "test-secret",
+        "change-phone",
+      );
+      const customer = {
+        id: "customer-1",
+        storeId: store.id,
+        name: "Jane",
+        email: "jane@example.com",
+        phone: "+51900000000",
+        pendingPhone: "900000001",
+        emailVerified: true,
+        passwordHash: "already-set",
+      };
+      prisma.customer.findUnique.mockResolvedValue(customer);
+      prisma.customer.update.mockResolvedValue({
+        ...customer,
+        phone: "+51900000001",
+        pendingPhone: null,
+      });
+      prisma.order.findMany.mockResolvedValue([]);
+
+      await service.confirmAccount(store.slug, token);
+
+      expect(prisma.customer.update).toHaveBeenCalledWith({
+        where: { id: "customer-1" },
+        data: { phone: "+51900000001", pendingPhone: null },
+      });
     });
 
     it("does not mutate the customer for a 'reset' token", async () => {

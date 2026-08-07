@@ -6,6 +6,7 @@ import {
 } from "@nestjs/common";
 import type { Customer, Prisma, Store } from "@biasmarket/db";
 import { escapeHtml } from "@biasmarket/utils/strings";
+import { normalizePhone } from "@biasmarket/utils/phone-country";
 import {
   createCustomerAccountToken,
   verifyCustomerAccountToken,
@@ -102,13 +103,20 @@ export class CustomerAccountService {
     email: string,
     name: string | undefined,
   ): Promise<{ customer: Customer | null; needsVerificationEmail: boolean }> {
+    const normalizedPhone = normalizePhone(phone);
     const existing = await tx.customer.findUnique({
-      where: { storeId_phone: { storeId, phone } },
+      where: { storeId_phone: { storeId, phone: normalizedPhone } },
     });
 
     if (!existing) {
       const customer = await tx.customer.create({
-        data: { storeId, phone, email, name, emailVerified: false },
+        data: {
+          storeId,
+          phone: normalizedPhone,
+          email,
+          name,
+          emailVerified: false,
+        },
       });
       return { customer, needsVerificationEmail: true };
     }
@@ -281,7 +289,10 @@ export class CustomerAccountService {
     } else if (verified.purpose === "change-phone" && customer.pendingPhone) {
       customer = await this.prisma.customer.update({
         where: { id: customer.id },
-        data: { phone: customer.pendingPhone, pendingPhone: null },
+        data: {
+          phone: normalizePhone(customer.pendingPhone),
+          pendingPhone: null,
+        },
       });
     }
 

@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { useCustomerForgotPassword } from "../mutations/use-customer-forgot-password";
 import {
   type ForgotPasswordInput,
@@ -20,11 +21,12 @@ export function ForgotPasswordForm({ slug }: { slug: string }) {
   const [success, setSuccess] = useState(false);
 
   const {
-    register,
+    control,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<ForgotPasswordInput>({
     resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: { phone: "" },
   });
 
   const onSubmit = async (values: ForgotPasswordInput) => {
@@ -57,10 +59,18 @@ export function ForgotPasswordForm({ slug }: { slug: string }) {
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">
-          <input
-            placeholder={t("phonePlaceholder")}
-            className={inputClassName}
-            {...register("phone")}
+          <Controller
+            control={control}
+            name="phone"
+            render={({ field }) => (
+              <PhoneInput
+                value={field.value}
+                onChange={field.onChange}
+                placeholder={t("phonePlaceholder")}
+                selectClassName={inputClassName}
+                inputClassName={inputClassName}
+              />
+            )}
           />
           {errors.phone
             ? <p className="text-sm text-red-500">{t("phoneRequired")}</p>
