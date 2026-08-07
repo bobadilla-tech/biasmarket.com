@@ -540,6 +540,19 @@ export const OrderResponseDtoCancellationResolution = {
   STORE_CREDIT: "STORE_CREDIT",
 } as const;
 
+/**
+ * @nullable
+ */
+export type OrderResponseDtoReleasedResolution =
+  | (typeof OrderResponseDtoReleasedResolution)[keyof typeof OrderResponseDtoReleasedResolution]
+  | null;
+
+export const OrderResponseDtoReleasedResolution = {
+  REFUNDED: "REFUNDED",
+  RETAINED: "RETAINED",
+  STORE_CREDIT: "STORE_CREDIT",
+} as const;
+
 export type OrderProductResponseDtoStatus =
   (typeof OrderProductResponseDtoStatus)[keyof typeof OrderProductResponseDtoStatus];
 
@@ -659,6 +672,8 @@ export interface OrderResponseDto {
   retainedAmount: string | null;
   /** @nullable */
   releasedAmount: string | null;
+  /** @nullable */
+  releasedResolution: OrderResponseDtoReleasedResolution;
   totalAmount: string;
   requiredAmount: string;
   currency: string;
@@ -743,6 +758,19 @@ export const OrderDetailResponseDtoCancellationResolution = {
   STORE_CREDIT: "STORE_CREDIT",
 } as const;
 
+/**
+ * @nullable
+ */
+export type OrderDetailResponseDtoReleasedResolution =
+  | (typeof OrderDetailResponseDtoReleasedResolution)[keyof typeof OrderDetailResponseDtoReleasedResolution]
+  | null;
+
+export const OrderDetailResponseDtoReleasedResolution = {
+  REFUNDED: "REFUNDED",
+  RETAINED: "RETAINED",
+  STORE_CREDIT: "STORE_CREDIT",
+} as const;
+
 export type PaymentProofResponseDtoStatus =
   (typeof PaymentProofResponseDtoStatus)[keyof typeof PaymentProofResponseDtoStatus];
 
@@ -797,6 +825,8 @@ export interface OrderDetailResponseDto {
   retainedAmount: string | null;
   /** @nullable */
   releasedAmount: string | null;
+  /** @nullable */
+  releasedResolution: OrderDetailResponseDtoReleasedResolution;
   totalAmount: string;
   requiredAmount: string;
   currency: string;
@@ -896,6 +926,19 @@ export const OrderStatusResponseDtoCancellationResolution = {
   STORE_CREDIT: "STORE_CREDIT",
 } as const;
 
+/**
+ * @nullable
+ */
+export type OrderStatusResponseDtoReleasedResolution =
+  | (typeof OrderStatusResponseDtoReleasedResolution)[keyof typeof OrderStatusResponseDtoReleasedResolution]
+  | null;
+
+export const OrderStatusResponseDtoReleasedResolution = {
+  REFUNDED: "REFUNDED",
+  RETAINED: "RETAINED",
+  STORE_CREDIT: "STORE_CREDIT",
+} as const;
+
 export interface OrderStatusResponseDto {
   id: string;
   storeId: string;
@@ -928,6 +971,8 @@ export interface OrderStatusResponseDto {
   retainedAmount: string | null;
   /** @nullable */
   releasedAmount: string | null;
+  /** @nullable */
+  releasedResolution: OrderStatusResponseDtoReleasedResolution;
   totalAmount: string;
   requiredAmount: string;
   currency: string;
@@ -1087,6 +1132,19 @@ export const CheckoutOrderResponseDtoCancellationResolution = {
   STORE_CREDIT: "STORE_CREDIT",
 } as const;
 
+/**
+ * @nullable
+ */
+export type CheckoutOrderResponseDtoReleasedResolution =
+  | (typeof CheckoutOrderResponseDtoReleasedResolution)[keyof typeof CheckoutOrderResponseDtoReleasedResolution]
+  | null;
+
+export const CheckoutOrderResponseDtoReleasedResolution = {
+  REFUNDED: "REFUNDED",
+  RETAINED: "RETAINED",
+  STORE_CREDIT: "STORE_CREDIT",
+} as const;
+
 export interface CheckoutOrderItemResponseDto {
   id: string;
   orderId: string;
@@ -1135,6 +1193,12 @@ export interface CheckoutOrderResponseDto {
   cancellationResolution: CheckoutOrderResponseDtoCancellationResolution;
   /** @nullable */
   cancellationReason: string | null;
+  /** @nullable */
+  retainedAmount: string | null;
+  /** @nullable */
+  releasedAmount: string | null;
+  /** @nullable */
+  releasedResolution: CheckoutOrderResponseDtoReleasedResolution;
   totalAmount: string;
   requiredAmount: string;
   currency: string;

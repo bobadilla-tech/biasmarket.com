@@ -38,6 +38,7 @@ describe("stats (e2e)", () => {
   let storeId: string;
   let storeSlug: string;
   let productId: string;
+  let variantId: string;
   let orderId: string;
 
   const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -108,12 +109,18 @@ describe("stats (e2e)", () => {
       .set("Cookie", sellerSessionCookie)
       .expect(200);
 
+    // `stock` on creation auto-creates a "Default" ProductVariant, so checkout
+    // needs an explicit variantId (see apps/web/AGENTS.md's e2e note).
+    variantId = (
+      await prisma.productVariant.findFirstOrThrow({ where: { productId } })
+    ).id;
+
     const checkoutRes = await request(app.getHttpServer())
       .post(`/stores/${storeSlug}/checkout`)
       .send({
         deliveryMethodType: "PICKUP",
         customerPhone: "+51988888888",
-        items: [{ productId, quantity: 1 }],
+        items: [{ productId, variantId, quantity: 1 }],
       })
       .expect(201);
     orderId = checkoutRes.body.order.id as string;
