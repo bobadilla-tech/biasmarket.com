@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import { useEffect, useState } from "react";
 
 const MOBILE_BREAKPOINT = 768;
 
@@ -15,9 +15,9 @@ export function useIsMobile(): boolean {
     const onChange = (e: MediaQueryListEvent) => {
       setIsMobile(e.matches);
     };
-    
+
     mql.addEventListener("change", onChange);
-    
+
     setIsMobile(mql.matches);
 
     return () => mql.removeEventListener("change", onChange);

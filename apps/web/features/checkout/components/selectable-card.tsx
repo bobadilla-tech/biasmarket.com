@@ -52,9 +52,7 @@ export function SelectableCard({
       )}
       {icon}
       <span className="pr-6 text-sm font-semibold">{title}</span>
-      {subtitle && (
-        <span className="text-xs text-gray-500">{subtitle}</span>
-      )}
+      {subtitle && <span className="text-xs text-gray-500">{subtitle}</span>}
     </button>
   );
 }

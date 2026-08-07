@@ -76,7 +76,9 @@ for (const customer of customers) {
 
   toUpdate++;
   console.log(
-    `[${execute ? "UPDATE" : "DRY-RUN"}] customer ${customer.id} (store ${customer.storeId}): ` +
+    `[${
+      execute ? "UPDATE" : "DRY-RUN"
+    }] customer ${customer.id} (store ${customer.storeId}): ` +
       `"${customer.phone}" -> "${normalized}"`,
   );
 

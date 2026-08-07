@@ -5,29 +5,20 @@
  * Bias Market — niche-first store builder API
  * OpenAPI spec version: 1.0
  */
-import type {
-  PickupPointResponseDto
-} from '../api.schemas.js';
+import type { PickupPointResponseDto } from "../api.schemas.js";
 
-import { customFetch } from '../../http.js';
+import { customFetch } from "../../http.js";
 
-export const getFindEnabledUrl = (slug: string,) => {
+export const getFindEnabledUrl = (slug: string) => {
+  return `/stores/${slug}/public/pickup-points`;
+};
 
-
-
-
-  return `/stores/${slug}/public/pickup-points`
-}
-
-export const findEnabled = async (slug: string, options?: Parameters<typeof customFetch>[1]): Promise<PickupPointResponseDto[]> => {
-
-  return customFetch<PickupPointResponseDto[]>(getFindEnabledUrl(slug),
-  {
+export const findEnabled = async (
+  slug: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PickupPointResponseDto[]> => {
+  return customFetch<PickupPointResponseDto[]>(getFindEnabledUrl(slug), {
     ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
+    method: "GET",
+  });
+};

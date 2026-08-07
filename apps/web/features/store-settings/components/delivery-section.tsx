@@ -136,12 +136,15 @@ export function DeliverySection({ storeId }: { storeId: string }) {
 
   const handleToggleClosedOverride = (id: string, closedOverride: boolean) => {
     setPickupPoints((prev) =>
-      prev.map((point) => (point.id === id ? { ...point, closedOverride } : point))
+      prev.map((
+        point,
+      ) => (point.id === id ? { ...point, closedOverride } : point))
     );
   };
 
-  const editingPoint = pickupPoints.find((point) => point.id === editingPointId) ??
-    null;
+  const editingPoint =
+    pickupPoints.find((point) => point.id === editingPointId) ??
+      null;
 
   const handleSave = () => {
     saveDelivery.mutate({

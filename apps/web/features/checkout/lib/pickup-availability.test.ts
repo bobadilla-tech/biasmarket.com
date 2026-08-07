@@ -2,7 +2,10 @@ import { expect, test } from "vitest";
 import { getPickupAvailability } from "./pickup-availability";
 
 test("open every day when openDays is empty", () => {
-  const result = getPickupAvailability({ openDays: [], closedOverride: false }, 3);
+  const result = getPickupAvailability(
+    { openDays: [], closedOverride: false },
+    3,
+  );
   expect(result).toEqual({ availableToday: true, nextAvailableDay: null });
 });
 

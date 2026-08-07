@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_PHONE_COUNTRY, normalizePhone, parsePhoneValue } from "./index";
+import {
+  DEFAULT_PHONE_COUNTRY,
+  normalizePhone,
+  parsePhoneValue,
+} from "./index";
 
 describe("parsePhoneValue", () => {
   it("matches the country by dial code and returns the remaining national number", () => {
