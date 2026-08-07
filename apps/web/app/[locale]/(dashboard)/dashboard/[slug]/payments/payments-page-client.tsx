@@ -204,7 +204,11 @@ export function PaymentsPageClient() {
                                         orderId: order.id,
                                         decision: "approve",
                                       })}
-                                    className="store-theme-primary-button h-8 rounded-full px-3 text-xs font-semibold hover:opacity-100"
+                                    disabled={order.paidAmount <= 0}
+                                    title={order.paidAmount <= 0
+                                      ? tOrders("approveDisabledNoPayment")
+                                      : undefined}
+                                    className="store-theme-primary-button h-8 rounded-full px-3 text-xs font-semibold hover:opacity-100 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-50"
                                   >
                                     {tOrders("approve")}
                                   </Button>

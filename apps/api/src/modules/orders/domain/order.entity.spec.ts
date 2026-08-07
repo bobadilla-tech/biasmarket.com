@@ -4,6 +4,8 @@ import { Order } from "./order.entity.js";
 import { InvalidOrderTransitionError } from "./order-status.vo.js";
 
 describe("Order entity", () => {
+  // Zero-payment approval is blocked at the usecase layer (ReviewPaymentUseCase),
+  // not here — the entity has no concept of paidAmount, so this stays unconditional.
   it("approvePayment() moves PENDING_PAYMENT to VERIFIED", () => {
     const order = new Order(
       "order-1",

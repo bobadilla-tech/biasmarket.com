@@ -504,6 +504,7 @@
       "removeImage": "Eliminar imagen"
     },
     "approve": "Aprobar",
+    "approveDisabledNoPayment": "No se puede aprobar sin ningún pago registrado.",
     "reject": "Rechazar",
     "markAs": "Marcar {status}",
     "fulfillmentLabels": {

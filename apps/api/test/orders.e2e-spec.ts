@@ -48,6 +48,7 @@ describe("orders + checkout (e2e)", () => {
   let storeId: string;
   let storeSlug: string;
   let productId: string;
+  let productVariantId: string;
   const orderIds: string[] = [];
   let uploadedPaymentImageUrl: string | undefined;
 
@@ -112,6 +113,11 @@ describe("orders + checkout (e2e)", () => {
       .send({ name: "E2E Product", price: 25, currency: "PEN", stock: 100 })
       .expect(201);
     productId = productRes.body.id;
+    // `stock` at the top level makes products.service auto-create a single
+    // "Default" ProductVariant — CreateOrderUseCase then requires items for
+    // this product to name it explicitly (see
+    // create-order.usecase.ts's "Debes seleccionar una variante" guard).
+    productVariantId = productRes.body.variants[0].id;
     await request(app.getHttpServer())
       .patch(`/stores/${storeId}/products/${productId}/publish`)
       .set("Cookie", sessionCookie)
@@ -154,7 +160,7 @@ describe("orders + checkout (e2e)", () => {
       .send({
         deliveryMethodType: "PICKUP",
         customerPhone,
-        items: [{ productId, quantity: 1 }],
+        items: [{ productId, variantId: productVariantId, quantity: 1 }],
       })
       .expect(201);
     assertMatchesSchema(res.body, checkoutResultSchema, openapi.components);
@@ -259,6 +265,40 @@ describe("orders + checkout (e2e)", () => {
       .expect(200);
     assertMatchesSchema(reviewRes.body, orderStatusSchema, openapi.components);
     expect(reviewRes.body.paymentStatus).toBe("REJECTED");
+  });
+
+  // Regression coverage for the order-status-without-payment bug (see
+  // docs/plans/2026-08-06-order-status-buyer-login-pickup-checkout-fixes-plan.md
+  // §1): approving straight from PENDING_PAYMENT with zero payments registered
+  // must 400, not silently produce a VERIFIED order with paidAmount 0.
+  // Skips the shared `checkout()` helper's assertMatchesSchema check — the
+  // real (pre-existing, unrelated to this fix) `retainedAmount`/
+  // `releasedAmount` columns added by the cancelretain migration leak past
+  // OrderResponseDto's documented shape on every order-returning endpoint,
+  // which isn't this PR's concern to fix.
+  it("checkout -> review approve with zero payments registered 400s", async () => {
+    const checkoutRes = await request(app.getHttpServer())
+      .post(`/stores/${storeSlug}/checkout`)
+      .send({
+        deliveryMethodType: "PICKUP",
+        customerPhone: "+51966666666",
+        items: [{ productId, variantId: productVariantId, quantity: 1 }],
+      })
+      .expect(201);
+    const orderId = checkoutRes.body.order.id as string;
+    orderIds.push(orderId);
+
+    await request(app.getHttpServer())
+      .patch(`/stores/${storeId}/orders/${orderId}/review`)
+      .set("Cookie", sessionCookie)
+      .send({ decision: "approve" })
+      .expect(400);
+
+    const findOneRes = await request(app.getHttpServer())
+      .get(`/stores/${storeId}/orders/${orderId}`)
+      .set("Cookie", sessionCookie)
+      .expect(200);
+    expect(findOneRes.body.paymentStatus).toBe("PENDING_PAYMENT");
   });
 
   it("checkout -> cancel matches OrderStatusResponseDto", async () => {

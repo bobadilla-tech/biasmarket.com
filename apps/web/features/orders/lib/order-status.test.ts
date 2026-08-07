@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { getOrderStatus, matchesTab } from "./order-status";
+import { getOrderStatus, matchesTab, paymentsLocked } from "./order-status";
 import type { OrderResponseDto } from "@biasmarket/types";
 
 const t = ((key: string) => key) as unknown as Parameters<
@@ -129,6 +129,52 @@ test("matchesTab: 'transit' requires VERIFIED and IN_TRANSIT or READY", () => {
   ).toBe(
     false,
   );
+});
+
+test("paymentsLocked: locked for CANCELLED", () => {
+  expect(paymentsLocked({ ...baseOrder, paymentStatus: "CANCELLED" })).toBe(
+    true,
+  );
+});
+
+test("paymentsLocked: locked for REJECTED", () => {
+  expect(paymentsLocked({ ...baseOrder, paymentStatus: "REJECTED" })).toBe(
+    true,
+  );
+});
+
+test("paymentsLocked: locked when VERIFIED with nothing pending", () => {
+  expect(
+    paymentsLocked({
+      ...baseOrder,
+      paymentStatus: "VERIFIED",
+      pendingAmount: 0,
+    }),
+  ).toBe(true);
+});
+
+test("paymentsLocked: not locked when VERIFIED but still has a pending balance", () => {
+  expect(
+    paymentsLocked({
+      ...baseOrder,
+      paymentStatus: "VERIFIED",
+      pendingAmount: 20,
+    }),
+  ).toBe(false);
+});
+
+test("paymentsLocked: locked once fulfillment is COMPLETED", () => {
+  expect(
+    paymentsLocked({
+      ...baseOrder,
+      paymentStatus: "PENDING_PAYMENT",
+      fulfillmentStatus: "COMPLETED",
+    }),
+  ).toBe(true);
+});
+
+test("paymentsLocked: not locked for a plain PENDING_PAYMENT order", () => {
+  expect(paymentsLocked(baseOrder)).toBe(false);
 });
 
 test("matchesTab: 'delivered' requires VERIFIED and COMPLETED", () => {

@@ -1,4 +1,9 @@
-import { ConflictException, Injectable, Logger } from "@nestjs/common";
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  Logger,
+} from "@nestjs/common";
 import { escapeHtml } from "@biasmarket/utils/strings";
 import { PrismaService } from "../../../prisma/prisma.service.js";
 import { OrderRepository } from "../infrastructure/order.repository.js";
@@ -59,6 +64,16 @@ export class ReviewPaymentUseCase {
 
     if (decision === "approve") {
       entity.approvePayment();
+      // Placed after the transition check so a terminal-state order (e.g.
+      // already VERIFIED) still fails with InvalidOrderTransitionError, not
+      // this. Only blocks zero payment — a seller may approve on a partial
+      // deposit per the store's own deposit rules (security-payments.md §9
+      // doesn't gate VERIFIED on paidAmount reaching requiredAmount).
+      if (row.paidAmount <= 0) {
+        throw new BadRequestException(
+          "No se puede aprobar un pedido sin ningún pago registrado.",
+        );
+      }
     } else {
       entity.rejectPayment();
     }

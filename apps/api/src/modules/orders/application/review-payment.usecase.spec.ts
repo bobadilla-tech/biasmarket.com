@@ -1,5 +1,6 @@
 import { Test, type TestingModule } from "@nestjs/testing";
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   NotFoundException,
@@ -104,6 +105,7 @@ describe("ReviewPaymentUseCase", () => {
       paymentStatus: "PENDING_PAYMENT",
       fulfillmentStatus: "ORDERING",
       requiredAmount,
+      payments: [{ amount: requiredAmount }],
       items: [{ variantId: "variant-1", productId: "product-1", quantity: 2 }],
     });
     prisma.productVariant.findUnique.mockResolvedValue({
@@ -192,6 +194,7 @@ describe("ReviewPaymentUseCase", () => {
       paymentStatus: "PENDING_PAYMENT",
       fulfillmentStatus: "ORDERING",
       requiredAmount,
+      payments: [{ amount: requiredAmount }],
       items: [{ variantId: "variant-1", quantity: 1 }],
     });
     prisma.productVariant.findUnique.mockResolvedValue({
@@ -217,6 +220,7 @@ describe("ReviewPaymentUseCase", () => {
       fulfillmentStatus: "ORDERING",
       customerEmail: "buyer@example.com",
       requiredAmount,
+      payments: [{ amount: requiredAmount }],
       items: [{ variantId: "variant-1", productId: "product-1", quantity: 1 }],
     });
     prisma.order.updateMany.mockResolvedValue({ count: 0 });
@@ -238,6 +242,7 @@ describe("ReviewPaymentUseCase", () => {
       fulfillmentStatus: "ORDERING",
       customerEmail: "buyer@example.com",
       requiredAmount,
+      payments: [{ amount: requiredAmount }],
       items: [],
     });
     prisma.order.findUniqueOrThrow.mockResolvedValue({
@@ -358,5 +363,44 @@ describe("ReviewPaymentUseCase", () => {
       .toThrow(
         InvalidOrderTransitionError,
       );
+  });
+
+  it("rejects approving an order with zero payment registered", async () => {
+    prisma.order.findUnique.mockResolvedValue({
+      id: orderId,
+      storeId,
+      paymentStatus: "PENDING_PAYMENT",
+      fulfillmentStatus: "ORDERING",
+      requiredAmount,
+      payments: [],
+      items: [],
+    });
+
+    await expect(useCase.execute(orderId, storeId, ownerId, "approve")).rejects
+      .toThrow(
+        BadRequestException,
+      );
+
+    expect(prisma.order.updateMany).not.toHaveBeenCalled();
+    expect(prisma.productVariant.update).not.toHaveBeenCalled();
+  });
+
+  it("allows approving an order with a partial payment below requiredAmount", async () => {
+    prisma.order.findUnique.mockResolvedValue({
+      id: orderId,
+      storeId,
+      paymentStatus: "PENDING_PAYMENT",
+      fulfillmentStatus: "ORDERING",
+      requiredAmount,
+      payments: [{ amount: new Prisma.Decimal("30.00") }],
+      items: [],
+    });
+    prisma.order.findUniqueOrThrow.mockResolvedValue({
+      id: orderId,
+      paymentStatus: "VERIFIED",
+    });
+
+    await expect(useCase.execute(orderId, storeId, ownerId, "approve"))
+      .resolves.toBeDefined();
   });
 });

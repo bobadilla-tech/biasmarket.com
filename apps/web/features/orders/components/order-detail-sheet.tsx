@@ -213,7 +213,11 @@ export function OrderDetailSheet({
                         <Button
                           type="button"
                           onClick={onApprove}
-                          className="store-theme-primary-button h-11 flex-1 rounded-2xl text-sm font-semibold hover:opacity-100"
+                          disabled={order.paidAmount <= 0}
+                          title={order.paidAmount <= 0
+                            ? t("approveDisabledNoPayment")
+                            : undefined}
+                          className="store-theme-primary-button h-11 flex-1 rounded-2xl text-sm font-semibold hover:opacity-100 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {t("approve")}
                         </Button>

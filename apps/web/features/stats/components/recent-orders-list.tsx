@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/shared/empty-state";
 import { cn } from "@/lib/utils";
+import { getOrderStatus } from "@/features/orders";
 import type { OrderResponseDto } from "@biasmarket/types";
 
 function formatOrderDate(
@@ -32,53 +33,6 @@ function formatOrderDate(
     month: "short",
   }).format(date);
   return `${day} ${time}`;
-}
-
-function getOrderStatus(
-  order: OrderResponseDto,
-  t: ReturnType<typeof useTranslations>,
-) {
-  if (order.paymentStatus === "REJECTED") {
-    return { label: t("status.rejected"), className: "bg-red-50 text-red-700" };
-  }
-  if (order.paymentStatus === "CANCELLED") {
-    return {
-      label: t("status.cancelled"),
-      className: "bg-slate-100 text-slate-700",
-    };
-  }
-  if (order.paymentStatus === "PARTIALLY_PAID") {
-    return {
-      label: t("status.partial"),
-      className:
-        "border border-sky-200 bg-gradient-to-r from-sky-50 to-blue-50 text-sky-800 shadow-sm",
-    };
-  }
-  if (order.paymentStatus !== "VERIFIED") {
-    return {
-      label: t("status.toConfirm"),
-      className: "bg-violet-50 text-violet-700",
-    };
-  }
-  if (order.fulfillmentStatus === "COMPLETED") {
-    return {
-      label: t("status.delivered"),
-      className: "bg-emerald-50 text-emerald-700",
-    };
-  }
-  if (
-    order.fulfillmentStatus === "IN_TRANSIT" ||
-    order.fulfillmentStatus === "READY"
-  ) {
-    return {
-      label: t("status.inTransit"),
-      className: "bg-pink-50 text-pink-700",
-    };
-  }
-  return {
-    label: t("status.pending"),
-    className: "bg-amber-50 text-amber-700",
-  };
 }
 
 export function RecentOrdersList(
