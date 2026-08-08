@@ -107,3 +107,41 @@ export class AnalyticsResultResponseDto {
   @ApiProperty({ type: [AnalyticsTopProductResponseDto] })
   topProducts: AnalyticsTopProductResponseDto[];
 }
+
+// `getPaymentMethodsBreakdown`'s row shape (`StatsService.getPaymentMethodsBreakdown`).
+export class PaymentMethodBreakdownRowResponseDto {
+  // Unknown/legacy methods surface as `null` (kept in the breakdown rather than
+  // dropped) — see `KNOWN_PAYMENT_METHODS` handling in the service.
+  @ApiProperty({
+    enum: ["YAPE", "PLIN", "TRANSFER", "CASH", null],
+    nullable: true,
+  })
+  method: "YAPE" | "PLIN" | "TRANSFER" | "CASH" | null;
+
+  @ApiProperty()
+  amount: number;
+
+  @ApiProperty()
+  count: number;
+
+  @ApiProperty()
+  percentage: number;
+}
+
+// `getPaymentMethodsBreakdown`'s shape (`StatsService.getPaymentMethodsBreakdown`).
+export class PaymentMethodsBreakdownResponseDto {
+  @ApiProperty({ type: String, format: "date-time" })
+  from: string;
+
+  @ApiProperty({ type: String, format: "date-time" })
+  to: string;
+
+  @ApiProperty()
+  totalAmount: number;
+
+  @ApiProperty()
+  totalCount: number;
+
+  @ApiProperty({ type: [PaymentMethodBreakdownRowResponseDto] })
+  byMethod: PaymentMethodBreakdownRowResponseDto[];
+}

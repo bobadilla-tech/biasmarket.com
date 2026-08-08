@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { RestockRequestResponseDto } from "@biasmarket/types";
 
 export const restockRequestFormSchema = z.object({
   name: z.string().min(1, "name required"),
@@ -14,27 +15,9 @@ export type RestockRequestPayload = {
   variantId?: string;
 };
 
-export const restockRequestResultSchema = z.object({
-  id: z.string(),
-  createdAt: z.string(),
-});
-
-export const restockRequestSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  phone: z.string(),
-  createdAt: z.string(),
-  product: z.object({
-    id: z.string(),
-    name: z.string(),
-    images: z.array(z.string()),
-  }),
-  variant: z.object({
-    id: z.string(),
-    name: z.string(),
-  }).nullable(),
-});
-
-export const restockRequestListSchema = z.array(restockRequestSchema);
-
-export type RestockRequest = z.infer<typeof restockRequestSchema>;
+// Response shape for the restock-requests list — aliased onto the generated
+// OpenAPI DTO instead of a hand-written zod schema (the fetch layer is the
+// generated `apiClient.restock.*`, so response validation is the server's
+// documented contract, not a runtime check). See apps/web/AGENTS.md's
+// OpenAPI note on the pass-through-read split.
+export type RestockRequest = RestockRequestResponseDto;

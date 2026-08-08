@@ -13,7 +13,6 @@ export {
 export {
   type PaymentMethodBreakdown,
   type PaymentMethodBreakdownRow,
-  paymentMethodsBreakdownSchema,
   type PaymentMethodValue,
   paymentMethodValues,
 } from "./schemas/payment-methods.schema";

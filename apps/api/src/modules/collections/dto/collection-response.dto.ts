@@ -16,6 +16,26 @@ import { ApiProperty } from "@nestjs/swagger";
 // controller does the `Decimal`→`string`/`Date`→ISO-string mapping before
 // returning — see `CollectionsController.findAll`.)
 
+export class ProductVariantInCollectionResponseDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  name: string;
+
+  @ApiProperty({ type: Number, nullable: true })
+  stock: number | null;
+
+  @ApiProperty()
+  reserved: number;
+
+  @ApiProperty({ type: String, nullable: true })
+  priceOverride: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  imageOverride: string | null;
+}
+
 export class ProductInCollectionResponseDto {
   @ApiProperty()
   id: string;
@@ -56,6 +76,9 @@ export class ProductInCollectionResponseDto {
 
   @ApiProperty()
   discontinued: boolean;
+
+  @ApiProperty({ type: [ProductVariantInCollectionResponseDto] })
+  variants: ProductVariantInCollectionResponseDto[];
 
   @ApiProperty({ type: String, format: "date-time", nullable: true })
   deletedAt: string | null;

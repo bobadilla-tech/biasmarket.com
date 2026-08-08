@@ -144,6 +144,10 @@
     "loggedOutTitle": "No has iniciado sesión",
     "loggedOutBody": "Ingresa para ver tu cuenta y el historial de pedidos.",
     "goToLogin": "Ingresar",
+    "nav": {
+      "orders": "Pedidos",
+      "profile": "Perfil"
+    },
     "status": {
       "toConfirm": "Por confirmar",
       "partial": "Pago parcial",

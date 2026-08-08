@@ -16,6 +16,13 @@ export { ForgotPasswordForm } from "./components/forgot-password-form";
 export { EditContactForm } from "./components/edit-contact-form";
 export { AccountNavLink } from "./components/account-nav-link";
 export {
+  type AccountSection,
+  AccountSidebar,
+} from "./components/account-sidebar";
+export { AccountOrdersSection } from "./components/account-orders-section";
+export { AccountOrderCard } from "./components/account-order-card";
+export { AccountProfileSection } from "./components/account-profile-section";
+export {
   type CustomerLoginInput,
   customerLoginSchema,
 } from "./schemas/login.schema";

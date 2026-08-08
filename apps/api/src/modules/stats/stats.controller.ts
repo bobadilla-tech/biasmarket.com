@@ -13,6 +13,7 @@ import { StatsService } from "./stats.service.js";
 import type { AnalyticsRange } from "./analytics.types.js";
 import {
   AnalyticsResultResponseDto,
+  PaymentMethodsBreakdownResponseDto,
   StatsOverviewResponseDto,
 } from "./dto/stats-response.dto.js";
 import { toOrderDto } from "../orders/infrastructure/order.controller.js";
@@ -50,13 +51,15 @@ export class StatsController {
     return this.stats.getAnalytics(storeId, session.user.id, resolvedRange);
   }
 
+  @ApiQuery({ name: "from", required: false, type: String })
+  @ApiQuery({ name: "to", required: false, type: String })
   @Get("payment-methods")
   paymentMethods(
     @Param("storeId") storeId: string,
     @Session() session: UserSession,
     @Query("from") from: string | undefined,
     @Query("to") to: string | undefined,
-  ) {
+  ): Promise<PaymentMethodsBreakdownResponseDto> {
     const now = new Date();
     const resolvedFrom = from
       ? new Date(from)

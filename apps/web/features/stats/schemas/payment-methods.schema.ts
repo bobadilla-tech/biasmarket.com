@@ -1,5 +1,13 @@
-import { z } from "zod";
+import type {
+  PaymentMethodBreakdownRowResponseDto,
+  PaymentMethodsBreakdownResponseDto,
+} from "@biasmarket/types";
 
+// Client-side concern only: the payment methods this UI knows colors/labels for
+// (see METHOD_COLORS in payment-methods-breakdown.tsx). The server's contract
+// for the breakdown shape is the generated OpenAPI DTOs below — response
+// validation is dropped for this pass-through read (see apps/web/AGENTS.md's
+// OpenAPI note).
 export const paymentMethodValues = [
   "YAPE",
   "PLIN",
@@ -8,24 +16,5 @@ export const paymentMethodValues = [
 ] as const;
 export type PaymentMethodValue = (typeof paymentMethodValues)[number];
 
-export const paymentMethodBreakdownRowSchema = z.object({
-  method: z.enum(paymentMethodValues).nullable(),
-  amount: z.number(),
-  count: z.number(),
-  percentage: z.number(),
-});
-
-export const paymentMethodsBreakdownSchema = z.object({
-  from: z.string(),
-  to: z.string(),
-  totalAmount: z.number(),
-  totalCount: z.number(),
-  byMethod: z.array(paymentMethodBreakdownRowSchema),
-});
-
-export type PaymentMethodBreakdownRow = z.infer<
-  typeof paymentMethodBreakdownRowSchema
->;
-export type PaymentMethodBreakdown = z.infer<
-  typeof paymentMethodsBreakdownSchema
->;
+export type PaymentMethodBreakdownRow = PaymentMethodBreakdownRowResponseDto;
+export type PaymentMethodBreakdown = PaymentMethodsBreakdownResponseDto;

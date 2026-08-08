@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { statsApi } from "../api/stats.api";
+import { apiClient } from "@/lib/api-client";
 import type { PaymentRange } from "../lib/payment-date-ranges";
 
 export const paymentMethodsKeys = {
@@ -16,7 +16,10 @@ export function usePaymentMethodsBreakdown(
   const { data, isPending, error } = useQuery({
     queryKey: paymentMethodsKeys.byStore(storeId ?? "", range),
     queryFn: () =>
-      statsApi.getPaymentMethodsBreakdown(storeId as string, range),
+      apiClient.stats.paymentMethods(storeId as string, {
+        from: range.from,
+        to: range.to,
+      }),
     enabled: !!storeId,
   });
 

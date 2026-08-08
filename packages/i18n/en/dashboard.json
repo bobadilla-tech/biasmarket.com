@@ -168,8 +168,15 @@
     "bodyPlaceholder": "Text content",
     "add": "Add section",
     "delete": "Delete",
-    "moveUp": "Move up",
-    "moveDown": "Move down"
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "hide": "Hide",
+    "show": "Show",
+    "hiddenBadge": "Hidden",
+    "dragHandle": "Drag to reorder",
+    "preview": "Preview",
+    "emptyPreview": "Add sections to see the preview."
   },
   "table": {
     "name": "Name",
@@ -203,6 +210,7 @@
       "payments": "Payments",
       "customers": "Customers",
       "analytics": "Analytics",
+      "restock": "Restock",
       "settings": "Configuration",
       "preferences": "Preferences",
       "notifications": "Notifications"

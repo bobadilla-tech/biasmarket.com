@@ -18,6 +18,7 @@ describe("StoreSectionsService", () => {
       findMany: Mock;
       create: Mock;
       update: Mock;
+      updateMany: Mock;
       delete: Mock;
       count: Mock;
     };
@@ -38,10 +39,11 @@ describe("StoreSectionsService", () => {
         findMany: vi.fn(),
         create: vi.fn(),
         update: vi.fn(),
+        updateMany: vi.fn(),
         delete: vi.fn(),
         count: vi.fn(),
       },
-      $transaction: vi.fn((ops) => Promise.all(ops)),
+      $transaction: vi.fn((fn) => fn(prisma)),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -116,7 +118,50 @@ describe("StoreSectionsService", () => {
           collectionId: null,
           content: { imageUrl: "https://example.com/banner.png" },
           position: 0,
+          hidden: false,
         },
+      });
+    });
+
+    it("passes an explicit hidden flag through to the create payload", async () => {
+      prisma.storeSection.count.mockResolvedValue(0);
+      prisma.storeSection.create.mockResolvedValue({ id: sectionId });
+
+      await service.create(storeId, ownerId, {
+        type: "BANNER" as any,
+        content: { imageUrl: "https://example.com/banner.png" },
+        hidden: true,
+      });
+
+      expect(prisma.storeSection.create).toHaveBeenCalledWith({
+        data: {
+          storeId,
+          type: "BANNER",
+          collectionId: null,
+          content: { imageUrl: "https://example.com/banner.png" },
+          position: 0,
+          hidden: true,
+        },
+      });
+    });
+  });
+
+  describe("update()", () => {
+    it("updates the hidden flag without requiring other fields", async () => {
+      prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
+      prisma.storeSection.findUnique.mockResolvedValue({
+        id: sectionId,
+        storeId,
+        type: "BANNER",
+        collectionId: null,
+      });
+      prisma.storeSection.update.mockResolvedValue({});
+
+      await service.update(sectionId, storeId, ownerId, { hidden: true });
+
+      expect(prisma.storeSection.update).toHaveBeenCalledWith({
+        where: { id: sectionId },
+        data: { hidden: true },
       });
     });
   });
@@ -124,18 +169,73 @@ describe("StoreSectionsService", () => {
   describe("reorder()", () => {
     it("rewrites the position of every section in the given order", async () => {
       prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
-      prisma.storeSection.update.mockResolvedValue({});
+      prisma.storeSection.findMany.mockResolvedValueOnce([
+        { id: "s-2" },
+        { id: "s-1" },
+      ]);
+      prisma.storeSection.updateMany.mockResolvedValue({ count: 1 });
+      prisma.storeSection.findMany.mockResolvedValueOnce([
+        {
+          id: "s-2",
+          storeId,
+          type: "BANNER",
+          collectionId: null,
+          content: {},
+          position: 0,
+          hidden: false,
+          createdAt: new Date(),
+        },
+        {
+          id: "s-1",
+          storeId,
+          type: "BANNER",
+          collectionId: null,
+          content: {},
+          position: 1,
+          hidden: false,
+          createdAt: new Date(),
+        },
+      ]);
 
-      await service.reorder(storeId, ownerId, { sectionIds: ["s-2", "s-1"] });
+      const sections = await service.reorder(storeId, ownerId, {
+        sectionIds: ["s-2", "s-1"],
+      });
 
-      expect(prisma.storeSection.update).toHaveBeenNthCalledWith(1, {
-        where: { id: "s-2" },
+      expect(prisma.storeSection.findMany).toHaveBeenNthCalledWith(1, {
+        where: { id: { in: ["s-2", "s-1"] }, storeId },
+        select: { id: true },
+      });
+      expect(prisma.storeSection.updateMany).toHaveBeenNthCalledWith(1, {
+        where: { id: "s-2", storeId },
         data: { position: 0 },
       });
-      expect(prisma.storeSection.update).toHaveBeenNthCalledWith(2, {
-        where: { id: "s-1" },
+      expect(prisma.storeSection.updateMany).toHaveBeenNthCalledWith(2, {
+        where: { id: "s-1", storeId },
         data: { position: 1 },
       });
+      expect(sections.map((s) => s.id)).toEqual(["s-2", "s-1"]);
+    });
+
+    it("throws BadRequestException when a sectionId does not belong to the store", async () => {
+      prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
+      prisma.storeSection.findMany.mockResolvedValue([{ id: "s-1" }]);
+
+      await expect(
+        service.reorder(storeId, ownerId, {
+          sectionIds: ["s-1", "other-stores-section"],
+        }),
+      ).rejects.toThrow(BadRequestException);
+      expect(prisma.storeSection.updateMany).not.toHaveBeenCalled();
+    });
+
+    it("throws BadRequestException when a tenant-scoped update affects no rows", async () => {
+      prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
+      prisma.storeSection.findMany.mockResolvedValue([{ id: "s-1" }]);
+      prisma.storeSection.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(
+        service.reorder(storeId, ownerId, { sectionIds: ["s-1"] }),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });

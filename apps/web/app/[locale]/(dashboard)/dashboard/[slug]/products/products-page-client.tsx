@@ -11,7 +11,6 @@ import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { useDashboardStore } from "@/features/stores";
 import type { ProductDetailResponseDto } from "@biasmarket/types";
-import { RestockRequestsPanel } from "@/features/restock";
 import {
   getCategoryLabel,
   getProductAvailabilityState,
@@ -345,11 +344,6 @@ export function ProductsPageClient() {
               </CardContent>
             </Card>
           )}
-
-        <RestockRequestsPanel
-          storeId={storeId}
-          errorMessage={tCommon("networkError")}
-        />
 
         <ProductSheet
           open={createOpen}

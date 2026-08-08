@@ -7,8 +7,9 @@
  */
 import type {
   AnalyticsResultResponseDto,
+  PaymentMethodsBreakdownResponseDto,
   StatsControlleranalyticsParams,
-  StatsControllerpaymentMethods200,
+  StatsControllerpaymentMethodsParams,
   StatsOverviewResponseDto,
 } from "../api.schemas.js";
 
@@ -61,16 +62,32 @@ export const analytics = async (
   );
 };
 
-export const getPaymentMethodsUrl = (storeId: string) => {
-  return `/stores/${storeId}/stats/payment-methods`;
+export const getPaymentMethodsUrl = (
+  storeId: string,
+  params?: StatsControllerpaymentMethodsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/stores/${storeId}/stats/payment-methods?${stringifiedParams}`
+    : `/stores/${storeId}/stats/payment-methods`;
 };
 
 export const paymentMethods = async (
   storeId: string,
+  params?: StatsControllerpaymentMethodsParams,
   options?: Parameters<typeof customFetch>[1],
-): Promise<StatsControllerpaymentMethods200> => {
-  return customFetch<StatsControllerpaymentMethods200>(
-    getPaymentMethodsUrl(storeId),
+): Promise<PaymentMethodsBreakdownResponseDto> => {
+  return customFetch<PaymentMethodsBreakdownResponseDto>(
+    getPaymentMethodsUrl(storeId, params),
     {
       ...options,
       method: "GET",

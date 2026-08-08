@@ -2897,6 +2897,22 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -2905,7 +2921,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/PaymentMethodsBreakdownResponseDto"
                 }
               }
             }
@@ -3232,7 +3248,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestockRequestResultResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -3255,7 +3278,47 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RestockRequestResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Restock"
+        ]
+      }
+    },
+    "/stores/{storeId}/restock-requests/count": {
+      "get": {
+        "operationId": "RestockController_count",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestockCountResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -6451,6 +6514,40 @@
           "createdAt"
         ]
       },
+      "ProductVariantInCollectionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "stock": {
+            "type": "number",
+            "nullable": true
+          },
+          "reserved": {
+            "type": "number"
+          },
+          "priceOverride": {
+            "type": "string",
+            "nullable": true
+          },
+          "imageOverride": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "stock",
+          "reserved",
+          "priceOverride",
+          "imageOverride"
+        ]
+      },
       "ProductInCollectionResponseDto": {
         "type": "object",
         "properties": {
@@ -6496,6 +6593,12 @@
           "discontinued": {
             "type": "boolean"
           },
+          "variants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductVariantInCollectionResponseDto"
+            }
+          },
           "deletedAt": {
             "type": "string",
             "nullable": true,
@@ -6518,6 +6621,7 @@
           "status",
           "soldOut",
           "discontinued",
+          "variants",
           "deletedAt",
           "createdAt"
         ]
@@ -6663,6 +6767,9 @@
           },
           "position": {
             "type": "number"
+          },
+          "hidden": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -6697,6 +6804,9 @@
           "position": {
             "type": "number"
           },
+          "hidden": {
+            "type": "boolean"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -6709,6 +6819,7 @@
           "collectionId",
           "content",
           "position",
+          "hidden",
           "createdAt"
         ]
       },
@@ -6746,6 +6857,9 @@
           },
           "position": {
             "type": "number"
+          },
+          "hidden": {
+            "type": "boolean"
           }
         }
       },
@@ -6917,6 +7031,69 @@
           "range",
           "buckets",
           "topProducts"
+        ]
+      },
+      "PaymentMethodBreakdownRowResponseDto": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "nullable": true,
+            "enum": [
+              "YAPE",
+              "PLIN",
+              "TRANSFER",
+              "CASH",
+              null
+            ],
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "count": {
+            "type": "number"
+          },
+          "percentage": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "method",
+          "amount",
+          "count",
+          "percentage"
+        ]
+      },
+      "PaymentMethodsBreakdownResponseDto": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "totalAmount": {
+            "type": "number"
+          },
+          "totalCount": {
+            "type": "number"
+          },
+          "byMethod": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentMethodBreakdownRowResponseDto"
+            }
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "totalAmount",
+          "totalCount",
+          "byMethod"
         ]
       },
       "SuggestionResponseDto": {
@@ -7140,6 +7317,108 @@
           "name",
           "phone",
           "productId"
+        ]
+      },
+      "RestockRequestResultResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt"
+        ]
+      },
+      "RestockRequestProductDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "images"
+        ]
+      },
+      "RestockRequestVariantDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "RestockRequestResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "product": {
+            "$ref": "#/components/schemas/RestockRequestProductDto"
+          },
+          "variant": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RestockRequestVariantDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "phone",
+          "createdAt",
+          "product",
+          "variant"
+        ]
+      },
+      "RestockCountResponseDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "count"
         ]
       }
     }

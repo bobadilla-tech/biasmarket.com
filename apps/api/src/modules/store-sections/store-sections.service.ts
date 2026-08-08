@@ -21,10 +21,12 @@ export class StoreSectionsService {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
+
     if (!store) throw new NotFoundException("Store no encontrada");
     if (store.ownerId !== userId) {
       throw new ForbiddenException("No sos dueño de esta store");
     }
+
     return store;
   }
 
@@ -73,6 +75,7 @@ export class StoreSectionsService {
           : null,
         content: (dto.content ?? {}) as Prisma.InputJsonValue,
         position,
+        hidden: dto.hidden ?? false,
       },
     });
   }
@@ -111,6 +114,7 @@ export class StoreSectionsService {
         ...(dto.content !== undefined &&
           { content: dto.content as Prisma.InputJsonValue }),
         ...(dto.position !== undefined && { position: dto.position }),
+        ...(dto.hidden !== undefined && { hidden: dto.hidden }),
       },
     });
   }
@@ -122,13 +126,35 @@ export class StoreSectionsService {
 
   async reorder(storeId: string, userId: string, dto: ReorderStoreSectionsDto) {
     await this.assertOwnership(storeId, userId);
-    return this.prisma.$transaction(
-      dto.sectionIds.map((sectionId, position) =>
-        this.prisma.storeSection.update({
-          where: { id: sectionId },
+
+    const owned = await this.prisma.storeSection.findMany({
+      where: { id: { in: dto.sectionIds }, storeId },
+      select: { id: true },
+    });
+
+    if (owned.length !== dto.sectionIds.length) {
+      throw new BadRequestException(
+        "Una o más secciones no pertenecen a esta store",
+      );
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      for (const [position, sectionId] of dto.sectionIds.entries()) {
+        const result = await tx.storeSection.updateMany({
+          where: { id: sectionId, storeId },
           data: { position },
-        })
-      ),
-    );
+        });
+        if (result.count !== 1) {
+          throw new BadRequestException(
+            "Una o más secciones no pertenecen a esta store",
+          );
+        }
+      }
+
+      return tx.storeSection.findMany({
+        where: { id: { in: dto.sectionIds }, storeId },
+        orderBy: { position: "asc" },
+      });
+    });
   }
 }

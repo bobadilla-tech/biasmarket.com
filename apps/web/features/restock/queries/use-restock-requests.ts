@@ -1,10 +1,12 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { restockApi } from "../api/restock.api";
+import { apiClient } from "@/lib/api-client";
 
 export const restockKeys = {
   byStore: (storeId: string) => ["restock", storeId] as const,
+  count: (storeId: string) =>
+    [...restockKeys.byStore(storeId), "count"] as const,
 };
 
 export function useRestockRequests(
@@ -13,7 +15,8 @@ export function useRestockRequests(
 ) {
   return useQuery({
     queryKey: restockKeys.byStore(storeId as string),
-    queryFn: () => restockApi.list(storeId as string, fallbackErrorMessage),
+    queryFn: () =>
+      apiClient.restock.list(storeId as string, { fallbackErrorMessage }),
     enabled: !!storeId,
   });
 }

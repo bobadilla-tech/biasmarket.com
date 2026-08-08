@@ -15,12 +15,12 @@ build only what the feature actually uses:
 features/<name>/
   schemas/    zod schemas — the runtime contract, source of truth for types (z.infer)
   api/        thin wrappers, one object export per feature (e.g. accountApi.confirm(...));
-              over lib/api.ts's apiFetch + schema.parse(data) by default. A migrated
-              feature (see the OpenAPI note below) has no api/ folder at all —
-              queries/mutations call the generated `apiClient.<tag>.*` client from
-              lib/api-client.ts directly, except multipart upload calls, which stay
-              on apiFetch/raw fetch. See the OpenAPI note below for the current
-              list of migrated features
+              only kept where a feature composes multiple client calls or stores
+              composite flows (e.g. checkout, stores, admin); otherwise there is
+              no api/ folder at all — queries/mutations call the generated
+              `apiClient.<tag>.*` client from lib/api-client.ts directly. Multipart
+              upload calls stay on raw fetch/FormData. See the OpenAPI note below
+              for the current list of migrated features
   queries/    TanStack Query useQuery hooks, own the query key
   mutations/  TanStack Query useMutation hooks, invalidate on success
   components/ presentational components specific to this feature
@@ -31,18 +31,14 @@ features/<name>/
 api → query → component) for new features rather than inventing a new layout.
 
 **Data fetching rule**: new pages/components that fetch data use TanStack Query
-via a feature's `queries/`, not a raw `useEffect`+`useState` triad.
-`lib/api.ts`'s `apiFetch` is not being replaced — it's still the transport
-underneath every feature `api/` layer, it's just no longer called directly from
-components.
+via a feature's `queries/`, not a raw `useEffect`+`useState` triad. All data
+access goes through the generated `apiClient` (see the OpenAPI note below) —
+there is no hand-written `apiFetch` wrapper anymore; `lib/api.ts` is gone.
 
-**Validation rule**: for features still on `apiFetch`, API responses are
-validated with zod at the `api/` boundary (`schema.parse(data)`, throwing — a
-schema mismatch is a real bug and should surface through the same error channel
-as a network failure, not be silently swallowed by `safeParse`). A migrated
-feature (generated Orval fetch client, exported as `apiClient` — see the OpenAPI
-note below) drops response-shape zod for plain pass-through reads instead — see
-that note for why and where the line is.
+**Validation rule**: request/form shapes are validated with zod at the schema
+boundary (`schema.parse` / `zodResolver`). API responses are typed by the
+generated Orval client and are not runtime-validated for plain pass-through
+reads — see the OpenAPI note below for why and where the line is.
 
 **Forms rule**: new forms use `react-hook-form` + `@hookform/resolvers/zod`, not
 per-field `useState`. There is no shadcn `components/ui/form.tsx` — the `form`
@@ -78,9 +74,9 @@ feature-local types — those belong in `features/<name>/schemas/`.
 review (see `docs/plans/2026-08-04-nestjs-openapi-client-generation-plan.md` and
 `docs/plans/2026-08-04-typed-sdk-client-followups.md` for the full history — a
 first pass generated a raw `openapi-fetch` client that turned out to need _more_
-hand-written wiring per call site than the `apiFetch` pattern it replaced; this
-section describes the redo, not that first pass). `collections` was the pilot
-feature; `products` (money fields + 2 upload endpoints) migrated next per
+hand-written wiring per call site than the hand-written wrapper it replaced;
+this section describes the redo, not that first pass). `collections` was the
+pilot feature; `products` (money fields + 2 upload endpoints) migrated next per
 `docs/plans/2026-08-04-orval-client-rollout-plan.md`'s Batch 1, closing that
 plan's money/upload proof-of-pattern gate. See that doc's "Batch 1 execution
 notes" for what came up migrating a module with more than one response shape
@@ -166,19 +162,17 @@ the swagger CLI plugin). `packages/types/orval.config.ts` runs
 [Orval](https://orval.dev) against it (`client: "fetch"`, `mode:
 "tags-split"`)
 with a custom `http.ts` mutator every generated method calls through — this is
-the one place that does what `apiFetch`/`collections.api.ts` used to repeat per
-call site: resolve `credentials: "include"`, and throw on a non-2xx response
-using the backend's `message` field (with an optional per-call
-`fallbackErrorMessage`, same string clients pass to `apiFetch` today). Net
-effect: a generated method's real signature is
+the one place that resolves `credentials: "include"` and throws on a non-2xx
+response using the backend's `message` field (with an optional per-call
+`fallbackErrorMessage`). Net effect: a generated method's real signature is
 `(storeId, ..., options?) => Promise<T>` — no `{ data, error }` tuple, no
 per-call `if (error) throw`, no manually-templated path string, no explicit
 return-type annotation needed to dodge a narrowing bug (all three were real
 complaints about the first-pass `openapi-fetch` version — see the follow-up
 doc's "What we learned"). `apps/web/lib/api-client.ts` calls
 `configureApiClient({ baseUrl })` once (same `INTERNAL_API_URL`/
-`NEXT_PUBLIC_API_URL` resolution `lib/api.ts`'s `apiFetch` always used) and
-re-exports each migrated tag as a property of a single `apiClient` object —
+`NEXT_PUBLIC_API_URL` resolution `apiFetch` always used, before it was removed)
+and re-exports each migrated tag as a property of a single `apiClient` object —
 `queries/`/`mutations/` call `apiClient.collections.findAll(storeId)` etc.
 directly; there is no `features/collections/api/` folder at all anymore.
 
@@ -194,17 +188,17 @@ now — `Collections`, `Products`, `Categories`, `Notifications`, `Contact`,
 `Suggestions`, `StoreSections`, `DeliveryConfig`, `PublicDeliveryConfig`,
 `PaymentConfig`, `PublicPaymentConfig`, `PickupPoints`, `PublicPickupPoints`,
 `Stores`, `MyStores`, `Order`, `Checkout`, `CustomerAuth`, `CustomerAccount`,
-`Customers`, `ProductSearch`, `Stats`, and `Users` — this was the last batch, so
-every tag with a corresponding `apps/web` feature has real response DTOs now
-(only `App`/`Health` are excluded, and neither has a frontend consumer). For
-historical context: generating a tag whose responses are still untyped Prisma
-results produces anonymous `{ [key: string]: unknown }` placeholder schema types
-keyed by the (post-`operationName`-override) shortened method name, and those
-collide across unrelated controllers in the single shared `api.schemas.ts` file
-(every controller's `findAll` fighting over one `FindAll200Item` type) — add a
-tag only once its controller has real response DTOs, not just because the tag
-exists in the spec, if this repo ever adds a 23rd controller.
-`input.unsafeDisableValidation: true` — previously set because two
+`Customers`, `ProductSearch`, `Stats`, `Restock`, and `Users` — this was the
+last batch, so every tag with a corresponding `apps/web` feature has real
+response DTOs now (only `App`/`Health` are excluded, and neither has a frontend
+consumer). For historical context: generating a tag whose responses are still
+untyped Prisma results produces anonymous `{ [key: string]: unknown }`
+placeholder schema types keyed by the (post-`operationName`-override) shortened
+method name, and those collide across unrelated controllers in the single shared
+`api.schemas.ts` file (every controller's `findAll` fighting over one
+`FindAll200Item` type) — add a tag only once its controller has real response
+DTOs, not just because the tag exists in the spec, if this repo ever adds a 23rd
+controller. `input.unsafeDisableValidation: true` — previously set because two
 `CustomerAuthController` endpoints were missing their `slug` path param — is
 gone: that gap was fixed (a real `@ApiParam({ name: "slug", type:
 String })` on
@@ -272,24 +266,24 @@ of `Stores`), `checkout` in full — both the public delivery/payment/pickup-poi
 reads (`PublicDeliveryConfig`, `PublicPaymentConfig`, `PublicPickupPoints`) and
 `submit`/`create` itself (`Checkout` tag), `stores` + `admin-stores`
 (`Stores`/`MyStores`), `orders` (`Order` tag — `list`/`review`/`advance`/
-`cancelOrder`; `registerPayment` stays on `apiFetch`/`FormData`, the multipart
+`cancelOrder`; `registerPayment` stays on raw `FormData`, the multipart
 carve-out), `discovery` in full (featured-stores/store-directory reads plus
 `searchProducts`, the `ProductSearch` tag), `customer-auth` (`CustomerAuth` tag
 — `register`/`login`/`forgotPassword`/`changePassword`/`me`/`updateMe`/
 `logout`), `account` (`CustomerAccount` tag — `confirm`), `customers`
 (`Customers` tag — `findAll`/`findOne`, the latter's `orders` reusing `Order`'s
-own `OrderResponseDto`), `stats` (`Stats` tag — `overview`/`analytics`,
-`overview`'s `recentOrders` likewise reusing `OrderResponseDto`), and `admin`'s
-`getStoreCounts` (`Users` tag — `listUsers`/`banUser`/`unbanUser` correctly stay
-on `authClient.admin.*`, not this tag). No feature's `api/*.ts` calls `apiFetch`
-for a JSON request/response anymore — the only remaining `fetch`/`FormData` call
-sites are the documented multipart carve-outs (`products`' image uploads,
-`orders`' `registerPayment`, `stores`' `uploadLogo`). Confirmed by grepping
-every `features/*/api/*.ts` for `apiFetch(` at the end of Batch 5/6 — zero
-matches outside those carve-outs. Error responses are still explicitly out of
-scope for the generated client (see the plan doc's Phase 3 note) — the mutator's
-defensive `message`-field parsing and `fallbackErrorMessage` stay the pattern
-for error paths even in migrated features.
+own `OrderResponseDto`), `stats` (`Stats` tag — `overview`/`analytics`/
+`payment-methods`, `overview`'s `recentOrders` likewise reusing
+`OrderResponseDto`), and `admin`'s `getStoreCounts` (`Users` tag —
+`listUsers`/`banUser`/`unbanUser` correctly stay on `authClient.admin.*`, not
+this tag). The hand-written `apiFetch` wrapper is gone entirely — the only
+remaining raw `fetch`/`FormData` call sites are the documented multipart
+carve-outs (`products`' image uploads, `orders`' `registerPayment`, `stores`'
+`uploadLogo`) and server-component fetches in storefront `page`/`layout` files.
+Error responses are still explicitly out of scope for the generated client (see
+the plan doc's Phase 3 note) — the mutator's defensive `message`-field parsing
+and `fallbackErrorMessage` stay the pattern for error paths even in migrated
+features.
 
 ## Feature-specific patterns worth knowing
 

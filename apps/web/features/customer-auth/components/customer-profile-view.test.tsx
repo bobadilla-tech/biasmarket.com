@@ -58,7 +58,7 @@ test("renders the customer's details and order history", () => {
     <CustomerProfileView slug="my-store" profile={profile} />,
   );
 
-  expect(screen.getByText("Jane Doe")).toBeDefined();
+  expect(screen.getAllByText("Jane Doe").length).toBeGreaterThan(0);
   expect(screen.getByText("jane@example.com")).toBeDefined();
   expect(screen.getByText("PEN 100.00")).toBeDefined();
 });
@@ -70,10 +70,44 @@ test("logs out and redirects to the store page", async () => {
     <CustomerProfileView slug="my-store" profile={profile} />,
   );
 
-  await user.click(screen.getByRole("button", { name: "Cerrar sesión" }));
+  const [logoutButton] = screen.getAllByRole("button", {
+    name: "Cerrar sesión",
+  });
+  await user.click(logoutButton);
 
   await waitFor(() => {
     expect(logout).toHaveBeenCalledWith("my-store");
     expect(push).toHaveBeenCalledWith("/es/store/my-store");
   });
+});
+
+test("keeps logout and back-to-store reachable at the mobile breakpoint", () => {
+  renderWithProviders(
+    <CustomerProfileView slug="my-store" profile={profile} />,
+  );
+
+  // `AccountSidebar` renders both the mobile top bar and the desktop aside
+  // unconditionally (hidden via CSS), so both actions appear twice.
+  expect(screen.getAllByRole("button", { name: "Cerrar sesión" })).toHaveLength(
+    2,
+  );
+  const backLinks = screen.getAllByRole("link", { name: "Volver a la tienda" });
+  expect(backLinks).toHaveLength(2);
+  expect(
+    backLinks.every((link) =>
+      link.getAttribute("href")?.includes("/store/my-store")
+    ),
+  ).toBe(true);
+});
+
+test("switches to the profile section", async () => {
+  const user = userEvent.setup();
+  renderWithProviders(
+    <CustomerProfileView slug="my-store" profile={profile} />,
+  );
+
+  const [profileTab] = screen.getAllByRole("button", { name: "Perfil" });
+  await user.click(profileTab);
+
+  expect(screen.getByText("Correo y teléfono")).toBeDefined();
 });
