@@ -2897,6 +2897,22 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -2905,7 +2921,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/PaymentMethodsBreakdownResponseDto"
                 }
               }
             }
@@ -7015,6 +7031,69 @@
           "range",
           "buckets",
           "topProducts"
+        ]
+      },
+      "PaymentMethodBreakdownRowResponseDto": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "nullable": true,
+            "enum": [
+              "YAPE",
+              "PLIN",
+              "TRANSFER",
+              "CASH",
+              null
+            ],
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "count": {
+            "type": "number"
+          },
+          "percentage": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "method",
+          "amount",
+          "count",
+          "percentage"
+        ]
+      },
+      "PaymentMethodsBreakdownResponseDto": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "totalAmount": {
+            "type": "number"
+          },
+          "totalCount": {
+            "type": "number"
+          },
+          "byMethod": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentMethodBreakdownRowResponseDto"
+            }
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "totalAmount",
+          "totalCount",
+          "byMethod"
         ]
       },
       "SuggestionResponseDto": {

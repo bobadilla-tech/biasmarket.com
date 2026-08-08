@@ -160,16 +160,76 @@ Confirmed by direct investigation:
   than one secondary banner" without a schema change — confirm this reading is
   correct before assuming a `content: Json` array is needed instead.
 
-## Status: partially implemented
+## Status: implemented
 
-- The `reorder()` tenant-isolation gap described above (backend section) has
-  already been fixed and tested independently of the rest of this plan — see
+- The `reorder()` tenant-isolation gap described above (backend section) was
+  fixed and tested independently of the rest of this plan, before the rest of
+  the implementation started — see
   `apps/api/src/modules/store-sections/store-sections.service.ts`'s `reorder()`
-  and its `.spec.ts` — since it was a real security-relevant bug found during
+  and its `.spec.ts`, since it was a real security-relevant bug found during
   review, not speculative.
-  `pnpm exec vitest run
-  src/modules/store-sections/store-sections.service.spec.ts`
-  passes (7/7).
-- Everything else in this plan (dnd-kit builder UI, shared preview renderer +
-  hydration, `hidden` column) is unimplemented — this plan is written for a
-  fresh implementer to pick up.
+- `hidden` column landed as planned:
+  `StoreSection.hidden Boolean @default(false)` (migration
+  `20260808123349_add_store_section_hidden`), threaded through
+  `Create/Update/StoreSectionResponseDto`, `store-sections.service.ts`'s
+  `create()`/`update()`, and `stores.service.ts`'s `findPublicBySlug()` (now
+  `where: { storeId, hidden: false }`) — the seller-facing `findAllForStore()`
+  stays unfiltered so the builder can show and re-toggle hidden sections.
+  `apps/api/openapi.json` and `packages/types/generated/**` regenerated and
+  committed per the CLAUDE.md checklist.
+- Preview hydration: rather than a new endpoint, extended the existing
+  `collections.findAll` response (`ProductInCollectionResponseDto`) with a
+  `variants` field (`collections.controller.ts`/`.service.ts` now include
+  `product.variants`) — the dashboard's Collections page already fetches this
+  endpoint, so the builder reuses it directly instead of adding a parallel
+  query. `apps/web/features/sections/lib/hydrate-sections.ts` joins the
+  builder's local section list to this collections response by `collectionId`,
+  filters out `hidden` sections, and sorts by `position` before handing the
+  result to the shared renderer.
+- Shared renderer: `apps/web/components/storefront/section-renderer.tsx`
+  (`StoreSectionRenderer`) holds the exact COLLECTION/BANNER/TEXT_BLOCK switch
+  that used to be inline in `store/[slug]/page.tsx` — that page now imports it
+  instead of duplicating the JSX. `ProductCard` moved alongside it
+  (`components/storefront/product-card.tsx`, was route-local before) since both
+  the real page and the builder preview need it. The builder wraps the preview
+  in `pointer-events-none` — reusing the real interactive `ProductCard`
+  (add-to-cart, variant select) means without this a click in the preview would
+  write to that store's real cart in the seller's browser.
+- Builder UI: `sections-page-client.tsx` rewritten as the two-pane
+  `@dnd-kit/core` + `@dnd-kit/sortable` builder described in the plan —
+  `SectionTile` (drag handle, hidden toggle, inline edit for BANNER/TEXT_BLOCK
+  via `SectionEditForm`) on the left, live `StoreSectionRenderer` on the right.
+  Reorder commits on `onDragEnd` (index change), not per-pointer-move, per the
+  plan's guidance. Mobile: a two-tab switcher (Secciones/Vista previa) rather
+  than true side-by-side, since dnd-kit's `md:grid md:grid-cols-2` collapses
+  awkwardly on narrow screens otherwise.
+- Catch-all synthetic section: confirmed out of scope as documented — it has no
+  `StoreSection` row, so it's structurally absent from both the builder's drag
+  list and `hydrateSections()`'s output. Not revisited.
+- Deviation from the plan's literal wording: local optimistic state
+  (`localSections`) didn't originally roll back on a failed mutation (drag
+  reorder or hidden toggle) — a real bug caught by hand while reviewing the
+  diff, not by a test. Fixed with a `resyncLocalSections()` helper called from
+  both `catch` blocks.
+- Real bug found via testing, not inspection: the first version computed
+  `serverSections = sectionsQuery.data ?? []` inline and used it as a
+  `useEffect` dependency. While the query is still loading, `?? []` produces a
+  new array reference every render, so the effect (and its `setState`) fired on
+  every commit — an infinite render loop that pegged the CPU. It only surfaced
+  because a new component test (`sections-page-client.test.tsx`) hung for real
+  instead of timing out cleanly. Fixed with
+  `useMemo(() => sectionsQuery.data ?? [], [sectionsQuery.data])`.
+- Process note, unrelated to this feature's logic: regenerating
+  `packages/types/generated/**` mid-session raced with another agent doing the
+  same for an unrelated feature (restock) — a live example of the
+  multi-agent-on-one-repo situation this repo now works under. Handled by
+  hand-patching the generated files with just this plan's new fields instead of
+  taking a full regenerated+reformatted file, to keep the diff reviewable and
+  avoid clobbering their in-flight work.
+- Tests: `store-sections.service.spec.ts` and `stores.service.spec.ts` cover the
+  `hidden` column (create/update/public-filter); `hydrate-sections.test.ts`
+  covers the join/sort/filter logic; `sections-page-client.test.tsx` covers the
+  builder rendering sections into the preview and the hide toggle persisting.
+  Full suites pass: 349/349 API, 197/198 web (the one web failure is
+  `store-sidebar.test.tsx`, unrelated — the other agent's in-progress restock
+  feature).

@@ -1775,6 +1775,38 @@ export interface AnalyticsResultResponseDto {
   topProducts: AnalyticsTopProductResponseDto[];
 }
 
+/**
+ * @nullable
+ */
+export type PaymentMethodBreakdownRowResponseDtoMethod =
+  | typeof PaymentMethodBreakdownRowResponseDtoMethod[
+    keyof typeof PaymentMethodBreakdownRowResponseDtoMethod
+  ]
+  | null;
+
+export const PaymentMethodBreakdownRowResponseDtoMethod = {
+  YAPE: "YAPE",
+  PLIN: "PLIN",
+  TRANSFER: "TRANSFER",
+  CASH: "CASH",
+} as const;
+
+export interface PaymentMethodBreakdownRowResponseDto {
+  /** @nullable */
+  method: PaymentMethodBreakdownRowResponseDtoMethod;
+  amount: number;
+  count: number;
+  percentage: number;
+}
+
+export interface PaymentMethodsBreakdownResponseDto {
+  from: string;
+  to: string;
+  totalAmount: number;
+  totalCount: number;
+  byMethod: PaymentMethodBreakdownRowResponseDto[];
+}
+
 export type SuggestionResponseDtoSeverity =
   typeof SuggestionResponseDtoSeverity[
     keyof typeof SuggestionResponseDtoSeverity
@@ -1942,4 +1974,7 @@ export type StatsControlleranalyticsParams = {
   range?: string;
 };
 
-export type StatsControllerpaymentMethods200 = { [key: string]: unknown };
+export type StatsControllerpaymentMethodsParams = {
+  to?: string;
+  from?: string;
+};
