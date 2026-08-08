@@ -1,7 +1,9 @@
 # Collections reorder TOCTOU fix + delivery-config test coverage
 
-**Status:** Pre-implementation plan (written ahead of the work, per audit
-follow-up request).
+**Status:** Implemented 2026-08-08. The pre-implementation content below
+(problem analysis, revised fix scope, severity classification) is historical and
+stands as written; see the "Post-implementation notes" section at the bottom for
+what actually landed, the divergences, and the learnings.
 
 **Source:** `docs/audits/audit-2026-08-08.md` §12 (important findings #8, #10),
 §16 (#9).
@@ -197,3 +199,111 @@ does perform real tenant-boundary enforcement (`assertOwnership` gates
 asserts its `enabled: true` filter or its slug-not-found handling. It's MEDIUM
 rather than HIGH because there's no evidence of a live bug — this is preventive
 coverage closing a gap, not a fix for something currently broken.
+
+## Post-implementation notes
+
+### What landed
+
+**Problem 1 — `reorderProducts` (`collections.service.ts`).** Implemented
+exactly as the revised fix scope describes: the reorder now runs inside
+`this.prisma.$transaction(async (tx) => { ... })`, iterating
+`dto.productIds.entries()`, issuing
+`tx.collectionProduct.updateMany({ where: { collectionId, productId },
+data: { position } })`
+per item, asserting `result.count === 1`, and throwing
+`BadRequestException("Uno o más productos no pertenecen a esta colección")` on a
+mismatch. The opaque P2025/unhandled-500 path is gone — a non-member `productId`
+now surfaces as a clean 400. `storeId` scoping is reached transitively through
+the already-ownership-verified `collectionId`, as the plan's revised scope noted
+(there's no `storeId` column on `CollectionProduct`).
+
+`collections.service.spec.ts` updated to match the new shape:
+
+- Mock surface: `collectionProduct.update` replaced by
+  `collectionProduct.updateMany`, `collectionProduct.findMany` added; the
+  `$transaction` mock switched from the array form
+  (`vi.fn((ops) => Promise.all(ops))`) to the interactive form
+  (`vi.fn((fn) => fn(prisma))`) — same as `store-sections.service.spec.ts`.
+- The existing happy-path test now asserts the two `updateMany` calls
+  (`{ collectionId, productId: "p-2" }`/`{ position: 0 }`, then
+  `{ collectionId, productId: "p-1" }`/`{ position: 1 }`) and the re-read
+  `findMany`, and checks the resolved return value.
+- New regression test: `updateMany` resolving `{ count: 0 }` →
+  `BadRequestException`. This is the error-contract test the plan's Verification
+  section called for.
+
+**Problem 2 — `delivery-config.service.spec.ts` (new file, 11 tests).** Coverage
+matches the payment-config template plus the plan's two additions:
+
+- ownership checks — 404 on missing store, 403 on non-owner (via
+  `findAllForStore`).
+- `findAllForStore` happy path (asserts the `{ where: { storeId } }` call).
+- `upsert` — create with both defaults (`enabled: true`, `details: {}`),
+  explicit `enabled`/`details` create, `enabled`-only update merge, and
+  `details`-only update merge.
+- `remove` — 404 on missing store (no direct payment-config template; written
+  from `assertOwnership` + `deliveryMethodConfig.delete`), happy path asserting
+  `{ where: { storeId_type: { storeId, type: "PICKUP" } } }`.
+- `findEnabledForSlug` — slug-not-found → 404 (and asserts `findMany` is never
+  reached), and the happy path asserting the lookup goes by `slug` (not
+  `storeId`) and that only `enabled: true` rows are returned for the resolved
+  store. The untenanted path the plan flagged as easy to skip was covered.
+
+Neither module's DTOs, controllers, nor `delivery-config.service.ts` logic
+changed — the delivery-config work was purely additive test coverage.
+
+### Divergences from the plan
+
+- **Return-value re-read (Problem 1).** The revised fix scope says only "swap
+  the per-item `collectionProduct.update()` for `collectionProduct.updateMany()`
+  - count assertion". `updateMany` resolves to `{ count }`, not rows, while
+    `collections.controller.ts`'s `reorderProducts` endpoint is typed
+    `Promise<CollectionProductResponseDto[]>` — so a bare swap would have broken
+    the response contract. Following the store-sections pattern in full, the
+    transaction re-reads the rows tenant-scoped
+    (`tx.collectionProduct.findMany({ where: { collectionId, productId: { in:
+  dto.productIds } }, orderBy: { position: "asc" } })`)
+    and returns them. The plan underspecified this; "same shape as
+    store-sections" implied it.
+- **`upsert` details-only branch (Problem 2).** payment-config's `upsert`
+  conditionally spreads only `enabled`; delivery-config's also conditionally
+  spreads `details`. A literal copy of the payment-config spec would have left
+  that branch untested, so an extra details-only merge test was added.
+
+### Learnings
+
+- **A "swap to `updateMany`" plan note hides a return-contract decision.** The
+  load-bearing part of the store-sections pattern is the whole shape — scoped
+  write, `count === 1` assertion, and a tenant-scoped re-read to preserve the
+  response type — not just the `updateMany` call. When mirroring it, check what
+  the endpoint promises to return.
+- **The `$transaction` mock in specs is form-coupled to the service.** Moving a
+  method from `$transaction(opsArray)` to `$transaction(async (tx) => ...)`
+  breaks the `vi.fn((ops) => Promise.all(ops))` mock shape; it must become
+  `vi.fn((fn) => fn(prisma))`. The spec caught this immediately, but it's the
+  kind of coupling worth knowing before editing either side.
+- **Full-suite green is not a safe signal in a shared working tree.** This plan
+  touched no orders code, yet `pnpm --filter api test` reported 4 failures in
+  `order.controller.spec.ts` / `create-order.usecase.spec.ts`. They trace to
+  mid-flight changes from the concurrent `orders-module-hardening` work in the
+  same tree: `git stash` back to HEAD baseline makes those specs pass 37/37.
+  When the tree hosts concurrent plans, scope verification to the touched
+  modules and attribute out-of-module failures to the shared state before
+  treating them as regressions.
+- **`pnpm --filter api typecheck` regenerates `apps/api/src/metadata.ts`** (its
+  `pretypecheck` runs `generate:swagger-metadata`). In a shared tree where other
+  plans are changing DTOs/controllers, this can surface a `metadata.ts` diff
+  that isn't yours — leave it alone unless the plan says to regenerate.
+- **No `lint` script exists in any package yet** (turbo's `lint` task is an
+  empty passthrough), matching the note in
+  `2026-08-08-codacy-review-cleanup.md`. `tsc --noEmit` + vitest are the
+  effective checks for this change set.
+
+### Verification (as run)
+
+- Targeted: `collections.service.spec.ts` (8), `delivery-config.service.spec.ts`
+  (11), plus the `payment-config.service.spec.ts` template (6) → 25/25 pass.
+- `pnpm --filter api typecheck` → clean.
+- Full `pnpm --filter api test` → 360 pass; the 4 failures are all in the orders
+  module from concurrent in-progress work, confirmed unrelated via the stash
+  check above.

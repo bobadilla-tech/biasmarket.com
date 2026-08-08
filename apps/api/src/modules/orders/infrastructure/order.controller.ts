@@ -227,8 +227,8 @@ export function toOrderDto(row: OrderRow): OrderResponseDto {
   };
 }
 
-function toOrderDetailDto(row: OrderDetailRow): OrderDetailResponseDto {
-  return { ...toOrderDto(row), proofs: row.proofs.map(toPaymentProofDto) };
+function toOrderDetailDto(row: OrderRow): OrderDetailResponseDto {
+  return toOrderDto(row);
 }
 
 function toOrderStatusDto(row: OrderStatusRow): OrderStatusResponseDto {

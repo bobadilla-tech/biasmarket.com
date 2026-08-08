@@ -132,9 +132,6 @@ describe("orders + checkout (e2e)", () => {
       await prisma.orderPayment.deleteMany({
         where: { orderId: { in: orderIds } },
       });
-      await prisma.paymentProof.deleteMany({
-        where: { orderId: { in: orderIds } },
-      });
       await prisma.orderItem.deleteMany({
         where: { orderId: { in: orderIds } },
       });

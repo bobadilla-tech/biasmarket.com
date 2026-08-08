@@ -117,9 +117,8 @@ Output: → Auto-generated store + theme
    - Order ID
    - Delirvery Type
    - Payment instructions
-3. Uploads:
-
-   - Proof of payment (image)
+3. Is handed off to WhatsApp to pay (payment coordinated with the seller — the
+   seller then records it; see 5.6 — no in-app proof upload in the MVP)
 
 ### Delivery Status
 
@@ -141,9 +140,10 @@ to exactly one of them, so it's always clear who configures what.
 - Not customer-facing; used only by the Bias Market operator
 - Out of scope for MVP beyond basic account/store listing (see
   [architecture.md](architecture.md#3-multi-tenant-design-critical))
-- What actually exists today: a `role: "admin"` gate + one screen (contact
-  inquiries from the public `/contact` form) — see [admin.md](admin.md).
-  Account/store management described above is still unbuilt.
+- What actually exists today: a `role: "admin"` gate + three screens — contact
+  inquiries from the public `/contact` form, stores (listing + impersonation),
+  and users (listing + ban) — see [admin.md](admin.md). Account/store management
+  beyond that is still unbuilt.
 
 ### 4.2 Seller Panel (per store)
 
@@ -274,17 +274,25 @@ Flow:
 
 1. Buyer adds items to cart, proceeds to checkout
 2. Buyer selects delivery method (pickup or courier)
-3. System calculates the required payment (deposit % or full, per 4.4/4.5)
-4. **Order is created** with status `PENDING_PAYMENT`
-   - Does **not** decrement confirmed stock
+3. System calculates the required payment (deposit % or full, per 5.4/5.5)
+4. **Order is created** with `paymentStatus PENDING_PAYMENT`
+   - Does **not** decrement confirmed stock (soft hold on `reserved` instead)
    - Does **not** count toward sales totals
-   - Expires automatically after a configurable window (e.g. 24–48h) if no proof
-     is submitted, freeing the reserved item
-5. Buyer uploads payment proof → status `PAYMENT_SUBMITTED`
-6. Seller reviews in the panel:
+   - Expires automatically after the store's configured window
+     (`Store.holdWindowHours`, default 48h) if nothing is recorded, freeing the
+     reserved item
+5. **Buyer is handed off to WhatsApp to pay** — checkout builds a pre-filled
+   `wa.me` message from the store's WhatsApp number (order id, items, total,
+   delivery + payment method) and redirects; payment is coordinated with the
+   seller outside the app. There is **no in-app buyer proof upload** in the MVP
+   — the seller records what came in (step 6), see security-payments.md §9.2.
+6. **Seller records the payment** in the panel (`OrderPayment`: amount, method,
+   optional note, optional image) — the seller enters what was received over
+   WhatsApp, not the buyer. Recording enough to cover the required amount, or
+   approving directly, moves the order to `VERIFIED`:
    - Approve → `VERIFIED` (now counts as a confirmed order)
    - Reject → `REJECTED`
-7. From `VERIFIED`, the order proceeds into the fulfillment states in 4.7 Full
+7. From `VERIFIED`, the order proceeds into the fulfillment states in 5.7. Full
    validation rules, file upload limits, and the technical version of this flow
    are defined in
    [security-payments.md](security-payments.md#9-payment-flow-design-manual) —
@@ -296,15 +304,19 @@ Flow:
 For import-based sellers, "paid" is not the same as "in hand." Buyers need
 visibility into where their order actually is:
 
-1. `PENDING_PAYMENT` — order created, awaiting proof (4.6)
-2. `PAYMENT_SUBMITTED` — proof uploaded, awaiting seller review
-3. `VERIFIED` — payment confirmed, order is real
-4. `ORDERING` — seller has included it in a bulk purchase from origin country
+1. `PENDING_PAYMENT` — order created, awaiting payment (5.6)
+2. `PARTIALLY_PAID` — seller has recorded a partial payment (deposit), still
+   awaiting the rest
+3. `PAYMENT_SUBMITTED` — a legal state in the model, but no current flow
+   produces it: sellers approve/reject straight from `PENDING_PAYMENT` /
+   `PARTIALLY_PAID` based on the WhatsApp conversation (5.6)
+4. `VERIFIED` — payment confirmed (seller-approved), order is real
+5. `ORDERING` — seller has included it in a bulk purchase from origin country
    (Korea, etc.)
-5. `IN_TRANSIT` — shipped from origin, en route to seller
-6. `READY` — arrived, available for pickup or local shipping
-7. `COMPLETED` — delivered to buyer / picked up
-8. `REJECTED` / `CANCELLED` — terminal failure states Not every store will use
+6. `IN_TRANSIT` — shipped from origin, en route to seller
+7. `READY` — arrived, available for pickup or local shipping
+8. `COMPLETED` — delivered to buyer / picked up
+9. `REJECTED` / `CANCELLED` — terminal failure states Not every store will use
    every state (a store with in-stock-only inventory can skip
    `ORDERING`/`IN_TRANSIT`), so this list is configurable per store's business
    type, but the states themselves are fixed vocabulary in the data model — see
@@ -324,13 +336,14 @@ visibility into where their order actually is:
 
 ### 5.9 Seller Panel (management)
 
-Beyond product management (4.2) and payment/delivery configuration (4.4, 4.5),
+Beyond product management (5.2) and payment/delivery configuration (5.4, 5.5),
 the seller panel includes:
 
 - Dashboard: pending orders needing review, recent activity
 - Category management
-- Order management: filter by status, move orders through the states in 4.7,
-  approve/reject payment proofs
+- Order management: filter by status, move orders through the states in 5.7,
+  approve/reject payments (the seller records the received payment first — see
+  5.6)
 - Store settings: name, theme basics, contact info, language (see
   [i18n.md](i18n.md))
 

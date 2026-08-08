@@ -5,9 +5,9 @@ SaaS), not sellers. Distinct from the per-store seller panel described in
 [product.md §4.2](product.md#42-seller-panel-per-store): nothing here is scoped
 to a `storeId`, and it's gated by `role: "admin"` on the `User` model instead of
 store ownership. See [product.md §4.1](product.md#41-platform-layer-superadmin)
-for where this fits in the platform/seller/storefront layering — today it only
-covers contact inquiries; full account/store management described there is still
-unbuilt.
+for where this fits in the platform/seller/storefront layering — today it covers
+contact inquiries, stores (listing + impersonation), and users (listing + ban);
+full account/store management described there is still unbuilt.
 
 ## Access
 
@@ -17,9 +17,8 @@ unbuilt.
   shadcn's `Sidebar` primitives — `apps/web/components/ui/sidebar.tsx`,
   `style: "base-nova"` per `apps/web/components.json`): collapsible on desktop,
   slides in as a sheet on mobile. Footer shows the logged-in admin's name/email
-  (`authClient.useSession()`) and a working sign-out. "Stores" is real (see
-  below); "Users" is still a disabled "coming soon" placeholder, matching
-  product.md §4.1's still-unbuilt scope.
+  (`authClient.useSession()`) and a working sign-out. All three `NAV_ITEMS`
+  entries — Inquiries, Stores, Users — are real pages (see below).
 - **Login redirect:** `apps/web/app/[locale]/(onboarding)/login/page.tsx` checks
   `data.user.role` from the `signIn.email()` response — an admin lands on
   `/admin` directly instead of the seller-only `/onboarding/create-store` flow.
@@ -105,8 +104,18 @@ After impersonating, the admin lands on that seller's
 `authClient.admin.stopImpersonating()` and returns to `/admin/stores`.
 
 Ban/unban (`banned`/`banReason`/`banExpires` on `User`) came along as required
-columns for the plugin's schema but nothing reads or writes them yet — dormant,
-same shape as `ContactInquiry.status: ARCHIVED`.
+columns for the plugin's schema and now has a real surface: the Users page (next
+section) lists every account and exposes a per-row ban toggle.
+
+## Users
+
+`/admin/users` lists every account platform-wide (email, name, role, store
+count, ban state) via `authClient.admin.listUsers` (better-auth admin plugin)
+plus `adminUsersApi.getStoreCounts` (an admin-only `Users`-tagged endpoint that
+counts each owner's stores), with a per-row **Ban/Unban** button
+(`use-toggle-user-ban.ts` → `authClient.admin.banUser` / `unbanUser`). The ban
+button is disabled for `role: "admin"` rows — admins can't ban each other. Uses
+the same admin-only role gate as the other screens.
 
 ## Related public pages
 
@@ -129,9 +138,10 @@ for the broader gap).
 
 ## Extending this later
 
-A shared nav shell already exists (see Access, above) — adding a second admin
-feature is: build the page under `admin/<name>/page.tsx`, flip its `NAV_ITEMS`
-entry in `app-sidebar.tsx` from `disabled: true` to a real `href`, add its i18n
-strings. Still worth reconsidering once there's more than one admin-only
+A shared nav shell already exists (see Access, above) — adding another admin
+feature is: build the page under `admin/<name>/page.tsx`, add its `NAV_ITEMS`
+entry in `app-sidebar.tsx` (every current entry is live; a future
+not-yet-built page can still use `disabled: true` to show it greyed out), add
+its i18n strings. Still worth reconsidering once there's more than one admin-only
 resource: whether `@Roles(['admin'])` per-route is enough, or a dedicated
 `AdminModule`/guard composition makes more sense.

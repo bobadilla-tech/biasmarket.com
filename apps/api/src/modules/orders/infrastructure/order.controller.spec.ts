@@ -61,7 +61,6 @@ describe("OrderController.addPayment", () => {
     paidPercentage: 40,
     items: [],
     payments: [],
-    proofs: [],
   };
 
   beforeEach(async () => {

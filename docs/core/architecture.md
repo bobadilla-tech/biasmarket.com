@@ -36,84 +36,96 @@ keeps multi-tenant isolation enforceable in one place instead of two.
 
 ---
 
-## 2. Backend Architecture Upgrade (DDD-lite)
+## 2. Orders — DDD-lite (implemented)
 
-Flat `controller/service/dto` per module is fine at MVP size but payments/orders
-already have enough business rules (status transitions, tenant checks, proof
-review) to warrant separating **what the domain allows** from **how NestJS wires
-it up**. Apply DDD-lite only to `orders` and `payments` — leave `users`,
-`uploads`, `themes` as simple CRUD modules. Don't apply this pattern everywhere;
-that's overengineering for CRUD modules.
+✅ **Implemented for `orders` only.** The order/payment state machine has enough
+business rules (three-way status transitions, tenant checks, payment
+recording/review) that this module is layered
+`domain/application/infrastructure` instead of flat `controller/service/dto`.
+Every other module (`products`, `stores`, `payment-config`, ...) stays flat CRUD
+— don't apply this layering anywhere else; that's overengineering for CRUD
+modules.
 
 ```
 modules/
   orders/
     domain/
-      order.entity.ts         # invariants: status transitions, total calc
-      order-status.vo.ts      # enum + allowed-transition map
+      order.entity.ts         # invariants: status transitions, VERIFIED gate on fulfillment
+      order-status.vo.ts      # PaymentStatus/FulfillmentStatus transition tables
+      order.entity.spec.ts / order-status.vo.spec.ts
     application/
-      create-order.usecase.ts
-      submit-payment-proof.usecase.ts
-      review-payment.usecase.ts   # admin approve/reject
+      create-order.usecase.ts     # public checkout → PENDING_PAYMENT + WhatsApp handoff
+      review-payment.usecase.ts   # seller approve/reject: stock, AuditLog, buyer email
+      advance-fulfillment.usecase.ts
+      cancel-order.usecase.ts
+      expire-orders.usecase.ts    # swept by orders-cron.service.ts (@Cron "*/5 * * * *")
+      customer-account.service.ts # buyer phone/email account
     infrastructure/
-      order.repository.ts     # Prisma-backed, implements domain interface
+      order.repository.ts     # Prisma-backed + assertOwnership/findRowByIdForStore
       order.controller.ts
+      checkout.controller.ts
+      customers.controller.ts / customer-account.controller.ts
     dto/
-      create-order.dto.ts
+      create-order.dto.ts / review-payment.dto.ts / ...
 ```
 
-Example — `order.entity.ts`:
+Example — `order.entity.ts` (real shape: payment and fulfillment are tracked
+separately, transitions enforced via the VO tables — see §4):
 
 ```ts
 export class Order {
   constructor(
     public readonly id: string,
     public readonly storeId: string,
-    private status: OrderStatus,
+    private paymentStatus: PaymentStatus,
+    private fulfillmentStatus: FulfillmentStatus,
   ) {}
 
-  submitPayment(): void {
-    if (this.status !== OrderStatus.PENDING_PAYMENT) {
-      throw new InvalidOrderTransitionError(this.status, "PAYMENT_SUBMITTED");
-    }
-    this.status = OrderStatus.PAYMENT_SUBMITTED;
+  approvePayment(): void {
+    assertPaymentTransition(this.paymentStatus, "VERIFIED");
+    this.paymentStatus = "VERIFIED";
   }
 
-  approvePayment(reviewerId: string): void {
-    if (this.status !== OrderStatus.PAYMENT_SUBMITTED) {
-      throw new InvalidOrderTransitionError(this.status, "VERIFIED");
+  advanceFulfillment(next: FulfillmentStatus): void {
+    if (this.paymentStatus !== "VERIFIED") {
+      throw new BadRequestException(
+        "Order must be VERIFIED before fulfillment",
+      );
     }
-    this.status = OrderStatus.VERIFIED;
+    assertFulfillmentTransition(this.fulfillmentStatus, next);
+    this.fulfillmentStatus = next;
   }
 }
 ```
 
-Use-case orchestrates, controller stays thin:
+Use-case orchestrates, controller stays thin; ownership is asserted before the
+transition runs:
 
 ```ts
 @Injectable()
 export class ReviewPaymentUseCase {
   constructor(private readonly orders: OrderRepository) {}
 
-  async execute(
-    orderId: string,
-    storeId: string,
-    decision: "approve" | "reject",
-    reviewerId: string,
-  ) {
-    const order = await this.orders.findByIdForStore(orderId, storeId); // tenant check baked in
-    if (!order) throw new NotFoundException();
-    decision === "approve"
-      ? order.approvePayment(reviewerId)
-      : order.rejectPayment(reviewerId);
-    await this.orders.save(order);
+  async execute(orderId, storeId, userId, decision, reason?) {
+    await this.orders.assertOwnership(storeId, userId); // tenant check
+    const row = await this.orders.findRowByIdForStore(orderId, storeId);
+    const entity = new Order(
+      row.id,
+      row.storeId,
+      row.paymentStatus,
+      row.fulfillmentStatus,
+    );
+    decision === "approve" ? entity.approvePayment() : entity.rejectPayment();
+    // transaction: guarded updateMany, stock decrement/release, AuditLog, buyer email
   }
 }
 ```
 
 Why: status transitions are exactly where "admin approves an already-fulfilled
-order" bugs live. Putting the rule in one entity method instead of scattered
-`if` checks across controllers is the payoff.
+order" bugs live. Putting the rule in one entity method (backed by unit tests)
+instead of scattered `if` checks across controllers is the payoff — see
+[security-payments.md §9](security-payments.md#9-payment-flow-design-manual) for
+the flow these rules guard.
 
 ---
 
@@ -122,7 +134,38 @@ order" bugs live. Putting the rule in one entity method instead of scattered
 **Rule**: every query that touches tenant data filters by `store_id`. No
 exceptions, no "trusted" internal calls that skip it.
 
-### Tenant resolution
+### Tenant resolution (what's actually running)
+
+There is **no** global `TenantMiddleware`/`AsyncLocalStorage` layer — the
+middleware design below was considered and rejected for now. Tenancy is enforced
+per service method, in the flat `controller/service` modules:
+
+- Every query filters by `storeId` as a first-class part of the Prisma `where`.
+- Every mutation and every by-id read re-verifies ownership **after** fetching:
+  `assertOwnership(storeId, userId)` checks the caller is the `Store.ownerId`,
+  then `findOwned*`/`findRowByIdForStore`-style helpers scope the actual
+  read/write back to `storeId` (e.g.
+  `apps/api/src/modules/orders/infrastructure/order.controller.ts` +
+  `order.repository.ts`). A copy-pasted query that forgets the filter fails the
+  ownership check instead of silently leaking rows.
+- This pattern was audited across all 13 tenant-scoped modules (`products`,
+  `categories`, `collections`, `store-sections`, `payment-config`,
+  `delivery-config`, `pickup-points`, `notifications`, `stats`, `orders`,
+  `customers`, `stores`, `customer-auth`) with **zero IDOR gaps** —
+  `docs/audits/audit-2026-08-08.md` §5, §13.
+
+Tradeoff vs. a middleware layer: tenant safety is enforced by convention (every
+new service method must call the helper) rather than by a structural guarantee
+that's impossible to bypass — an acceptable tradeoff at current team size (audit
+§5), worth revisiting if the team grows or a method ever ships without the
+helper.
+
+### Considered and rejected for now: TenantMiddleware + AsyncLocalStorage
+
+The original design (never built — no `TenantMiddleware` class or
+`tenantContext`/`AsyncLocalStorage` usage exists anywhere in `apps/api/src`)
+resolved the tenant in middleware and exposed it app-wide via an
+`AsyncLocalStorage`-based `RequestContext`:
 
 ```
 Request → TenantMiddleware → resolves store_id from:
@@ -131,30 +174,13 @@ Request → TenantMiddleware → resolves store_id from:
 → attaches to AsyncLocalStorage-based RequestContext
 ```
 
-```ts
-@Injectable()
-export class TenantMiddleware implements NestMiddleware {
-  constructor(private readonly stores: StoreRepository) {}
-
-  async use(req: Request, res: Response, next: NextFunction) {
-    const slug = extractSlug(req); // /store/:slug path param
-    const store = await this.stores.findBySlug(slug);
-    if (!store) throw new NotFoundException("Store not found");
-    tenantContext.run({ storeId: store.id }, () => next());
-  }
-}
-```
-
-- Repository layer reads `storeId` from `tenantContext`, not from a param the
-  caller can forget to pass — this is what prevents a copy-pasted query from
-  silently leaking cross-tenant rows.
-- Admin dashboard requests: `store_id` comes from the JWT (issued after the user
-  authenticates against a specific store), not the URL — prevents an admin token
-  for store A being replayed with store B's slug.
-- Postgres-level backstop: consider **Row-Level Security**
-  (`CREATE POLICY ... USING (store_id = current_setting('app.store_id'))`) once
-  the app layer is stable — defense in depth, not a replacement for the
-  middleware.
+Not built because the per-service ownership checks above already cover the same
+ground, and a context object that "reads `storeId` for you" is only as safe as
+the code that consults it. The **Postgres Row-Level Security** backstop that
+design floated
+(`CREATE POLICY ... USING (store_id = current_setting('app.store_id'))`) is
+likewise deferred: the audited app-layer checks already have zero found gaps, so
+this is a "someday, not urgent" hardening step (audit §17), not a current need.
 
 ### Slug strategy
 
@@ -241,7 +267,8 @@ Other fixes that are in the current schema:
   (`PENDING_REVIEW | APPROVED | REJECTED`), not a free string — but the whole
   `PaymentProof` model is **schema-only today** (never created anywhere in
   `apps/api/src`); the live flow is seller-recorded `OrderPayment` + WhatsApp
-  handoff, see [security-payments.md §9](security-payments.md#9-payment-flow-design-manual).
+  handoff, see
+  [security-payments.md §9](security-payments.md#9-payment-flow-design-manual).
 - **`AuditLog`** (`actorId`, `storeId`, `action`, `entityType`, `entityId`,
   `metadata Json`, `createdAt`) — written on the payment decisions that matter:
   approve/reject (`review-payment.usecase.ts`), partial payments
