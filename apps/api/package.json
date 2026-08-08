@@ -39,6 +39,7 @@
     "@biasmarket/i18n": "workspace:*",
     "@biasmarket/types": "workspace:*",
     "@biasmarket/utils": "workspace:*",
+    "@js-temporal/polyfill": "^0.5.1",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/jwt": "^11.0.2",

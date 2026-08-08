@@ -124,10 +124,18 @@ describe("StoreSectionsService", () => {
   describe("reorder()", () => {
     it("rewrites the position of every section in the given order", async () => {
       prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
+      prisma.storeSection.findMany.mockResolvedValue([
+        { id: "s-2" },
+        { id: "s-1" },
+      ]);
       prisma.storeSection.update.mockResolvedValue({});
 
       await service.reorder(storeId, ownerId, { sectionIds: ["s-2", "s-1"] });
 
+      expect(prisma.storeSection.findMany).toHaveBeenCalledWith({
+        where: { id: { in: ["s-2", "s-1"] }, storeId },
+        select: { id: true },
+      });
       expect(prisma.storeSection.update).toHaveBeenNthCalledWith(1, {
         where: { id: "s-2" },
         data: { position: 0 },
@@ -136,6 +144,18 @@ describe("StoreSectionsService", () => {
         where: { id: "s-1" },
         data: { position: 1 },
       });
+    });
+
+    it("throws BadRequestException when a sectionId does not belong to the store", async () => {
+      prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
+      prisma.storeSection.findMany.mockResolvedValue([{ id: "s-1" }]);
+
+      await expect(
+        service.reorder(storeId, ownerId, {
+          sectionIds: ["s-1", "other-stores-section"],
+        }),
+      ).rejects.toThrow(BadRequestException);
+      expect(prisma.storeSection.update).not.toHaveBeenCalled();
     });
   });
 });

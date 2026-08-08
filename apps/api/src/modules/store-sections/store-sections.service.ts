@@ -21,10 +21,12 @@ export class StoreSectionsService {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
+
     if (!store) throw new NotFoundException("Store no encontrada");
     if (store.ownerId !== userId) {
       throw new ForbiddenException("No sos dueño de esta store");
     }
+
     return store;
   }
 
@@ -122,6 +124,18 @@ export class StoreSectionsService {
 
   async reorder(storeId: string, userId: string, dto: ReorderStoreSectionsDto) {
     await this.assertOwnership(storeId, userId);
+
+    const owned = await this.prisma.storeSection.findMany({
+      where: { id: { in: dto.sectionIds }, storeId },
+      select: { id: true },
+    });
+
+    if (owned.length !== dto.sectionIds.length) {
+      throw new BadRequestException(
+        "Una o más secciones no pertenecen a esta store",
+      );
+    }
+
     return this.prisma.$transaction(
       dto.sectionIds.map((sectionId, position) =>
         this.prisma.storeSection.update({
