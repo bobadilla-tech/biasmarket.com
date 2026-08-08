@@ -20,7 +20,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const context = host.switchToHttp();
 
     const response = context.getResponse<Response>();
-    const request = context.getNext<Request>();
+    const request = context.getRequest<Request>();
 
     if (exception instanceof InvalidOrderTransitionError) {
       const httpException = new BadRequestException(exception.message);

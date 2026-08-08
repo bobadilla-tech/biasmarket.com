@@ -14,7 +14,7 @@ import {
   removeItem,
   updateQuantity,
 } from "@/lib/cart";
-import { apiFetch } from "@/lib/api";
+import { useCartStock } from "@/features/cart";
 
 function displayName(item: CartItem) {
   return item.variantLabel ? `${item.name} (${item.variantLabel})` : item.name;
@@ -110,54 +110,10 @@ export function CartPageClient() {
   const t = useTranslations("storefront.cartPage");
   const { slug } = useParams<{ slug: string }>();
   const [items, setItems] = useState<CartItem[]>([]);
-  const [variantAvail, setVariantAvail] = useState<Map<string, number>>(
-    new Map(),
-  );
-  const [productAvail, setProductAvail] = useState<Map<string, number>>(
-    new Map(),
-  );
+  const { variantAvail, productAvail } = useCartStock(slug);
 
   useEffect(() => {
     setItems(getCart(slug));
-  }, [slug]);
-
-  useEffect(() => {
-    let cancelled = false;
-    apiFetch(`/stores/${slug}/public`, {}, "Store not found")
-      .then((data: any) => {
-        if (cancelled) return;
-        const vMap = new Map<string, number>();
-        const pMap = new Map<string, number>();
-        for (const section of data.sections ?? []) {
-          if (section.type !== "COLLECTION" || !section.collection) continue;
-          for (const cp of section.collection.products) {
-            const product = cp.product;
-            if (product?.discontinued) continue;
-            const variants = product.variants ?? [];
-            if (variants.length === 0) {
-              pMap.set(product.id, Infinity);
-              continue;
-            }
-            let sum = 0;
-            let unlimited = false;
-            for (const v of variants) {
-              const available = v.stock === null
-                ? Infinity
-                : v.stock - (v.reserved ?? 0);
-              vMap.set(v.id, available);
-              if (available === Infinity) unlimited = true;
-              else sum += available;
-            }
-            pMap.set(product.id, unlimited ? Infinity : sum);
-          }
-        }
-        setVariantAvail(vMap);
-        setProductAvail(pMap);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
   }, [slug]);
 
   const availableFor = (item: CartItem) =>

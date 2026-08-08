@@ -1,6 +1,7 @@
 import { expect, test } from "vitest";
 import type {
   CollectionWithProductsResponseDto,
+  ProductInCollectionResponseDto,
   StoreSectionResponseDto,
 } from "@biasmarket/types";
 import { hydrateSections } from "./hydrate-sections";
@@ -104,5 +105,64 @@ test("a COLLECTION section with no matching collection hydrates to an empty prod
       type: "COLLECTION",
       collection: { name: "", products: [] },
     },
+  ]);
+});
+
+test("drops products the public storefront hides (non-PUBLISHED, deleted, discontinued)", () => {
+  const baseProduct: ProductInCollectionResponseDto = {
+    id: "product-1",
+    storeId: "store-1",
+    name: "Photocard",
+    description: "",
+    price: "10.00",
+    currency: "USD",
+    images: [],
+    availableUntil: null,
+    status: "PUBLISHED",
+    soldOut: false,
+    discontinued: false,
+    variants: [],
+    deletedAt: null,
+    createdAt: new Date().toISOString(),
+  };
+  const entry = (
+    productId: string,
+    product: ProductInCollectionResponseDto,
+  ) => ({
+    collectionId: "collection-1",
+    productId,
+    position: 0,
+    product,
+  });
+  const collection = {
+    id: "collection-1",
+    storeId: "store-1",
+    name: "Featured",
+    slug: "featured",
+    description: "",
+    createdAt: new Date().toISOString(),
+    products: [
+      entry("visible", baseProduct),
+      entry("draft", { ...baseProduct, id: "draft", status: "DRAFT" }),
+      entry("deleted", {
+        ...baseProduct,
+        id: "deleted",
+        deletedAt: "2026-01-01T00:00:00.000Z",
+      }),
+      entry("discontinued", {
+        ...baseProduct,
+        id: "discontinued",
+        discontinued: true,
+      }),
+    ],
+  } satisfies CollectionWithProductsResponseDto;
+
+  const result = hydrateSections(
+    [section({ type: "COLLECTION", collectionId: "collection-1" })],
+    [collection],
+  );
+
+  expect(result[0].collection?.products.map((cp) => cp.productId)).toEqual([
+    "visible",
   ]);
 });

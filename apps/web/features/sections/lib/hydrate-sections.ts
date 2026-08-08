@@ -1,4 +1,5 @@
 import type {
+  CollectionProductWithProductResponseDto,
   CollectionWithProductsResponseDto,
   StoreSectionResponseDto,
 } from "@biasmarket/types";
@@ -27,7 +28,7 @@ export function hydrateSections(
           type: section.type,
           collection: {
             name: collection?.name ?? "",
-            products: collection?.products ?? [],
+            products: collection?.products.filter(isPubliclyVisible) ?? [],
           },
         };
       }
@@ -37,4 +38,16 @@ export function hydrateSections(
         content: section.content,
       };
     });
+}
+
+// Mirrors `stores.service.ts` `findPublicBySlug()`'s application-level filter
+// (status/deletedAt/discontinued) so the builder preview can't show products
+// the public storefront hides. Note: like `findPublicBySlug`, sold-out
+// products are kept — the renderer surfaces them with their "sold out" state.
+function isPubliclyVisible(
+  cp: CollectionProductWithProductResponseDto,
+): boolean {
+  return cp.product.status === "PUBLISHED" &&
+    cp.product.deletedAt === null &&
+    cp.product.discontinued === false;
 }

@@ -81,6 +81,25 @@ test("logs out and redirects to the store page", async () => {
   });
 });
 
+test("keeps logout and back-to-store reachable at the mobile breakpoint", () => {
+  renderWithProviders(
+    <CustomerProfileView slug="my-store" profile={profile} />,
+  );
+
+  // `AccountSidebar` renders both the mobile top bar and the desktop aside
+  // unconditionally (hidden via CSS), so both actions appear twice.
+  expect(screen.getAllByRole("button", { name: "Cerrar sesión" })).toHaveLength(
+    2,
+  );
+  const backLinks = screen.getAllByRole("link", { name: "Volver a la tienda" });
+  expect(backLinks).toHaveLength(2);
+  expect(
+    backLinks.every((link) =>
+      link.getAttribute("href")?.includes("/store/my-store")
+    ),
+  ).toBe(true);
+});
+
 test("switches to the profile section", async () => {
   const user = userEvent.setup();
   renderWithProviders(

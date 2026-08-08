@@ -101,12 +101,15 @@ nav-entry task, not new feature work:
 ## Decided (was open in an earlier draft, resolved on review)
 
 - **Badge shows a plain total count, not "new since last viewed."** The report's
-  acceptance criterion is just "so the vendor notices at a glance if there's new
-  activity," which a plain total satisfies without needing read/unread tracking
-  infrastructure — no `read`/`viewedAt` column, no extra state. This is now
-  reflected in the route name itself (`.../count`, not `.../unread-count`) so
-  implementation doesn't accidentally build read-tracking the badge doesn't
-  need.
+  acceptance criterion is "so the vendor notices at a glance if there's new
+  activity" — a plain total satisfies the spirit of that (waitlist volume, and
+  any recent request shows up as a count increase) without needing read/unread
+  tracking infrastructure — no `read`/`viewedAt` column, no extra state. It is
+  not a "new since last time" indicator and does not exclude already-contacted
+  requests: `RestockRequest` has no contacted/status field, so there's no
+  "pending-only" count to show without a schema change. This is now reflected in
+  the route name itself (`.../count`, not `.../unread-count`) so implementation
+  doesn't accidentally build read-tracking the badge doesn't need.
 
 ## Open questions to resolve during implementation
 

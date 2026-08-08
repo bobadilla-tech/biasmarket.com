@@ -4,7 +4,7 @@
 
 CI (`api#typecheck`) fails on `main`-bound branch work:
 
-```
+```text
 src/common/filters/all-exceptions.filter.ts:52:17 - error TS2304: Cannot find name 'Temporal'.
 ```
 
@@ -20,7 +20,7 @@ src/common/filters/all-exceptions.filter.ts:52:17 - error TS2304: Cannot find na
 1. `"ESNext.Temporal"` is not a real TypeScript `lib` value. Running `tsc`
    directly reproduces a _second_, more informative error the CI log above
    truncated past:
-   ```
+   ```text
    tsconfig.json(22,23): error TS6046: Argument for '--lib' option must be:
    'es5', 'es6', ... 'esnext.float16', 'esnext.error', 'esnext.sharedmemory',
    'decorators', 'decorators.legacy'.
@@ -35,7 +35,7 @@ src/common/filters/all-exceptions.filter.ts:52:17 - error TS2304: Cannot find na
    (`node -v` → `v26.5.0`, already matching CI's pinned `NODE_VERSION: "26"` in
    `.github/workflows/ci.yml:25` — no version bump is even possible here without
    going pre-release):
-   ```
+   ```console
    $ node -e "console.log(typeof Temporal)"
    undefined
    $ node --harmony-temporal -e "console.log(typeof Temporal)"
@@ -114,3 +114,12 @@ swapping back to `Date.now()`.
 - No repo-wide `esnext`-only API usage in `apps/api/src` found, so dropping
   `ESNext.Temporal` and keeping only `ES2023` in `lib` doesn't remove anything
   else in use.
+- Runtime response-contract test added on review:
+  `apps/api/src/common/filters/all-exceptions.filter.spec.ts` passes an unknown
+  exception and a known `HttpException` through `catch()` and verifies the
+  response shape, the timestamp's serialized ISO-8601 wire format, and the
+  logger invocation — kept as a separate validation step from the typecheck
+  commands above. Writing this test also surfaced the `getNext<Request>()` bug
+  (it returns the middleware `next` function, so `request.method`/`request.url`
+  were `undefined` in logs and the JSON body) — fixed to
+  `context.getRequest<Request>()` in the same pass.

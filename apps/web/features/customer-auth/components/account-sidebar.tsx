@@ -44,14 +44,22 @@ export function AccountSidebar({
               {displayName}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onLogout}
-            disabled={logoutPending}
-            className="text-sm font-medium text-gray-500 hover:text-gray-700 disabled:opacity-60"
-          >
-            {t("logout")}
-          </button>
+          <div className="flex items-center gap-4">
+            <Link
+              href={`/store/${slug}`}
+              className="store-theme-link text-sm font-semibold"
+            >
+              {t("backToStore")}
+            </Link>
+            <button
+              type="button"
+              onClick={onLogout}
+              disabled={logoutPending}
+              className="text-sm font-medium text-gray-500 hover:text-gray-700 disabled:opacity-60"
+            >
+              {t("logout")}
+            </button>
+          </div>
         </div>
         <div className="flex items-center gap-2 overflow-x-auto px-6 pb-4">
           {NAV_ITEMS.map(({ key, icon: Icon }) => (

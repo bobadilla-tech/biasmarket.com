@@ -139,7 +139,11 @@ from them, rather than writing bespoke markup per section.
      tab.
 3. **Mobile**: sidebar collapses to a top tab bar, modeled on `OrdersTabs`'s
    pattern — same two destinations (`Pedidos`/`Perfil`), not a hamburger menu
-   (per the mockup).
+   (per the mockup). The sidebar footer is **not** dropped at the mobile
+   breakpoint: both its actions stay reachable alongside the two-destination tab
+   bar — the logout button and the "Volver a la tienda" link both live in the
+   mobile top bar (the row above the tabs), so neither action becomes
+   desktop-only.
 4. **Fix the `edit-contact-form.tsx:65` stray-text bug** as part of this
    rewrite.
 5. **No backend changes needed** with the prop-narrowing approach for the status
@@ -195,6 +199,17 @@ frontend-only. Deviations/learnings from the approach section above:
   of scope for a layout redesign. `AccountOrderCard` shows order
   number/date/amount/status only. Flagging in case a future task wants that
   surface — it doesn't exist yet on either seller or buyer side for buyers.
+- **Mobile top bar placement (added on review).** The initial implementation
+  kept only `Pedidos`/`Perfil` and logout at the mobile breakpoint — the
+  desktop-only `<aside>` held "Volver a la tienda", which silently became
+  unreachable on phones. Moved the "Volver a la tienda" link into the mobile top
+  bar next to the logout button (per the revised step 3 above), so the sidebar
+  footer's two actions both stay reachable at the mobile breakpoint.
+- **Mobile-flow coverage added**: `customer-profile-view.test.tsx` asserts both
+  logout and "Volver a la tienda" render in the mobile path (the component
+  renders the mobile top bar and the desktop `<aside>` unconditionally, toggled
+  by `md:` classes, so the test checks both DOM copies are present rather than
+  pretending CSS breakpoints apply in jsdom).
 - Fixed the `edit-contact-form.tsx:65` stray `const schema` bug as planned.
 - Added `storefront.accountPage.nav.{orders,profile}` keys to `es`/`en`
   `packages/i18n`; rebuilt `@biasmarket/i18n`'s `dist` locally so `apps/web`'s

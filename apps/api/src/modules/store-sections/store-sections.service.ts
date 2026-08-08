@@ -138,13 +138,23 @@ export class StoreSectionsService {
       );
     }
 
-    return this.prisma.$transaction(
-      dto.sectionIds.map((sectionId, position) =>
-        this.prisma.storeSection.update({
-          where: { id: sectionId },
+    return this.prisma.$transaction(async (tx) => {
+      for (const [position, sectionId] of dto.sectionIds.entries()) {
+        const result = await tx.storeSection.updateMany({
+          where: { id: sectionId, storeId },
           data: { position },
-        })
-      ),
-    );
+        });
+        if (result.count !== 1) {
+          throw new BadRequestException(
+            "Una o más secciones no pertenecen a esta store",
+          );
+        }
+      }
+
+      return tx.storeSection.findMany({
+        where: { id: { in: dto.sectionIds }, storeId },
+        orderBy: { position: "asc" },
+      });
+    });
   }
 }

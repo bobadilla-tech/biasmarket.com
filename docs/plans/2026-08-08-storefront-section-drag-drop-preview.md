@@ -150,15 +150,22 @@ Confirmed by direct investigation:
    the exact mobile interaction during implementation; dnd-kit supports touch
    out of the box.
 
-## Open questions to resolve during implementation
+## Open questions (resolved during implementation)
+
+Both items below are closed by the shipped work in "Status: implemented" — the
+remaining text is kept for the record, not as an open decision:
 
 - Does `StoreSection` need the `hidden` boolean column (step 4), or is
-  delete/recreate acceptable? Leans toward adding the column — check with the
-  person driving implementation if data loss on re-toggle is a concern.
-- Multiple-images-per-banner-section vs. one `BANNER` row per image: current
-  schema already supports "multiple `BANNER` rows," which satisfies "add more
-  than one secondary banner" without a schema change — confirm this reading is
-  correct before assuming a `content: Json` array is needed instead.
+  delete/recreate acceptable? **Resolved: the `hidden` column, confirmed.** The
+  delete/recreate alternative was rejected (it loses the seller's image/content
+  choice on re-show) and the column landed as implemented — see the `hidden`
+  migration and DTO/mapper/public-query checklist in "Status: implemented". The
+  plan's Approach step 4 is the only behavior: hidden-based toggling, no
+  delete/recreate path.
+- Multiple-images-per-banner-section vs. one `BANNER` row per image: **Resolved:
+  one `BANNER` row per image.** Multiple `BANNER` rows were confirmed sufficient
+  (schema unchanged, no `content: Json` array needed), and the builder lets
+  sellers add more `BANNER` sections accordingly.
 
 ## Status: implemented
 
@@ -186,6 +193,13 @@ Confirmed by direct investigation:
   builder's local section list to this collections response by `collectionId`,
   filters out `hidden` sections, and sorts by `position` before handing the
   result to the shared renderer.
+  - **Public-visibility contract (added on review):** `hydrateSections()` also
+    applies the same product filter as `findPublicBySlug()` (status `PUBLISHED`,
+    `deletedAt` null, `discontinued` false — `soldOut` intentionally kept,
+    matching the public query) before hydrated COLLECTION tiles reach the
+    renderer. Without this, the seller-side `collections.findAll` data would let
+    the preview show DRAFT/deleted/discontinued products the public page hides;
+    a test in `hydrate-sections.test.ts` pins the filter to the public contract.
 - Shared renderer: `apps/web/components/storefront/section-renderer.tsx`
   (`StoreSectionRenderer`) holds the exact COLLECTION/BANNER/TEXT_BLOCK switch
   that used to be inline in `store/[slug]/page.tsx` — that page now imports it
