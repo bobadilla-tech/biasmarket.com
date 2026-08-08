@@ -50,6 +50,7 @@ export default defineConfig({
           "ProductSearch",
           "Stats",
           "Users",
+          "Restock",
         ],
       },
     },

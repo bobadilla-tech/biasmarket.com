@@ -211,7 +211,7 @@ export class StoresService {
     if (!store) throw new NotFoundException("Tienda no encontrada");
 
     const rawSections = await this.prisma.storeSection.findMany({
-      where: { storeId: store.id },
+      where: { storeId: store.id, hidden: false },
       orderBy: { position: "asc" },
       include: {
         collection: {
@@ -270,6 +270,7 @@ export class StoresService {
         collectionId: null,
         content: {},
         position: sections.length,
+        hidden: false,
         createdAt: new Date(),
         collection: {
           id: null as unknown as string,

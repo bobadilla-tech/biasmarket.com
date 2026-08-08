@@ -18,6 +18,7 @@ import {
   publicDeliveryConfig,
   publicPaymentConfig,
   publicPickupPoints,
+  restock,
   stats,
   stores,
   storeSections,
@@ -67,4 +68,5 @@ export const apiClient = {
   productSearch,
   stats,
   users,
+  restock,
 };

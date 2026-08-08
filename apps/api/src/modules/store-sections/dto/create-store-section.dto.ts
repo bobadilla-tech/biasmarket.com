@@ -1,4 +1,11 @@
-import { IsEnum, IsInt, IsObject, IsOptional, IsString } from "class-validator";
+import {
+  IsBoolean,
+  IsEnum,
+  IsInt,
+  IsObject,
+  IsOptional,
+  IsString,
+} from "class-validator";
 
 export enum StoreSectionTypeDto {
   COLLECTION = "COLLECTION",
@@ -21,4 +28,8 @@ export class CreateStoreSectionDto {
   @IsOptional()
   @IsInt()
   position?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  hidden?: boolean;
 }

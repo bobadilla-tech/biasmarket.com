@@ -1584,6 +1584,18 @@ export const ProductInCollectionResponseDtoStatus = {
   PUBLISHED: "PUBLISHED",
 } as const;
 
+export interface ProductVariantInCollectionResponseDto {
+  id: string;
+  name: string;
+  /** @nullable */
+  stock: number | null;
+  reserved: number;
+  /** @nullable */
+  priceOverride: string | null;
+  /** @nullable */
+  imageOverride: string | null;
+}
+
 export interface ProductInCollectionResponseDto {
   id: string;
   storeId: string;
@@ -1597,6 +1609,7 @@ export interface ProductInCollectionResponseDto {
   status: ProductInCollectionResponseDtoStatus;
   soldOut: boolean;
   discontinued: boolean;
+  variants: ProductVariantInCollectionResponseDto[];
   /** @nullable */
   deletedAt: string | null;
   createdAt: string;
@@ -1656,6 +1669,7 @@ export interface CreateStoreSectionDto {
   collectionId?: string;
   content?: CreateStoreSectionDtoContent;
   position?: number;
+  hidden?: boolean;
 }
 
 export type StoreSectionResponseDtoType =
@@ -1677,6 +1691,7 @@ export interface StoreSectionResponseDto {
   collectionId: string | null;
   content: StoreSectionResponseDtoContent;
   position: number;
+  hidden: boolean;
   createdAt: string;
 }
 
@@ -1700,6 +1715,7 @@ export interface UpdateStoreSectionDto {
   collectionId?: string;
   content?: UpdateStoreSectionDtoContent;
   position?: number;
+  hidden?: boolean;
 }
 
 export interface PaymentStatusCountsResponseDto {
@@ -1842,6 +1858,46 @@ export interface UpdateCustomerProfileResponseDto {
   pendingEmail: string | null;
   /** @nullable */
   pendingPhone: string | null;
+}
+
+export interface CreateRestockRequestDto {
+  /** @minLength 1 */
+  name: string;
+  /** @minLength 6 */
+  phone: string;
+  /** @minLength 1 */
+  productId: string;
+  variantId?: string;
+}
+
+export interface RestockRequestResultResponseDto {
+  id: string;
+  createdAt: string;
+}
+
+export interface RestockRequestProductDto {
+  id: string;
+  name: string;
+  images: string[];
+}
+
+export interface RestockRequestVariantDto {
+  id: string;
+  name: string;
+}
+
+export interface RestockRequestResponseDto {
+  id: string;
+  name: string;
+  phone: string;
+  createdAt: string;
+  product: RestockRequestProductDto;
+  /** @nullable */
+  variant: RestockRequestVariantDto | null;
+}
+
+export interface RestockCountResponseDto {
+  count: number;
 }
 
 export type StoresControllerfindFeaturedParams = {

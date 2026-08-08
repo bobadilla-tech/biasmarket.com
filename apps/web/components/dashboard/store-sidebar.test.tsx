@@ -1,4 +1,4 @@
-import { afterEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { NextIntlClientProvider } from "next-intl";
@@ -19,9 +19,12 @@ vi.mock("@/lib/auth-client", () => ({
 }));
 
 const notificationsMock = vi.hoisted(() => ({ unreadCount: vi.fn() }));
+const restockMock = vi.hoisted(() => ({ count: vi.fn() }));
 vi.mock(
   "@/lib/api-client",
-  () => ({ apiClient: { notifications: notificationsMock } }),
+  () => ({
+    apiClient: { notifications: notificationsMock, restock: restockMock },
+  }),
 );
 
 const { StoreSidebar } = await import("./store-sidebar");
@@ -54,9 +57,14 @@ function renderSidebar() {
   );
 }
 
+beforeEach(() => {
+  restockMock.count.mockResolvedValue({ count: 0 });
+});
+
 afterEach(() => {
   cleanup();
   notificationsMock.unreadCount.mockReset();
+  restockMock.count.mockReset();
 });
 
 test("hides the badge when unread count is 0", async () => {
@@ -79,4 +87,21 @@ test("truncates counts above 9 to '9+'", async () => {
   renderSidebar();
 
   expect(await screen.findByText("9+")).toBeDefined();
+});
+
+test("renders the restock count on the restock nav badge", async () => {
+  notificationsMock.unreadCount.mockResolvedValue({ count: 0 });
+  restockMock.count.mockResolvedValue({ count: 3 });
+  renderSidebar();
+
+  expect(await screen.findByText("Reposición")).toBeDefined();
+  expect(await screen.findByText("3")).toBeDefined();
+});
+
+test("hides the restock badge when the count is 0", async () => {
+  notificationsMock.unreadCount.mockResolvedValue({ count: 0 });
+  renderSidebar();
+
+  await screen.findByText("Reposición");
+  expect(screen.queryByText("0")).toBeNull();
 });

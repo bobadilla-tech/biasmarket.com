@@ -10,7 +10,7 @@ describe("RestockService", () => {
     store: { findUnique: Mock };
     product: { findUnique: Mock };
     productVariant: { findUnique: Mock };
-    restockRequest: { create: Mock; findMany: Mock };
+    restockRequest: { create: Mock; findMany: Mock; count: Mock };
   };
 
   const store = { id: "store-1", slug: "myshop", ownerId: "user-1" };
@@ -31,7 +31,7 @@ describe("RestockService", () => {
       store: { findUnique: vi.fn() },
       product: { findUnique: vi.fn() },
       productVariant: { findUnique: vi.fn() },
-      restockRequest: { create: vi.fn(), findMany: vi.fn() },
+      restockRequest: { create: vi.fn(), findMany: vi.fn(), count: vi.fn() },
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -167,6 +167,36 @@ describe("RestockService", () => {
         },
       });
       expect(result).toEqual([{ id: "req-1" }]);
+    });
+  });
+
+  describe("count()", () => {
+    it("returns the total number of restock requests for the store", async () => {
+      prisma.store.findUnique.mockResolvedValue(store);
+      prisma.restockRequest.count.mockResolvedValue(7);
+
+      const result = await service.count("store-1", "user-1");
+
+      expect(prisma.restockRequest.count).toHaveBeenCalledWith({
+        where: { storeId: "store-1" },
+      });
+      expect(result).toEqual({ count: 7 });
+    });
+
+    it("throws NotFoundException when the store does not exist", async () => {
+      prisma.store.findUnique.mockResolvedValue(null);
+
+      await expect(service.count("store-1", "user-1")).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it("throws ForbiddenException when the user is not the owner", async () => {
+      prisma.store.findUnique.mockResolvedValue(store);
+
+      await expect(service.count("store-1", "intruder")).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 });

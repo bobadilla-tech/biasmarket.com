@@ -168,8 +168,15 @@
     "bodyPlaceholder": "Contenido de texto",
     "add": "Agregar sección",
     "delete": "Eliminar",
-    "moveUp": "Subir",
-    "moveDown": "Bajar"
+    "edit": "Editar",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "hide": "Ocultar",
+    "show": "Mostrar",
+    "hiddenBadge": "Oculta",
+    "dragHandle": "Arrastrar para reordenar",
+    "preview": "Vista previa",
+    "emptyPreview": "Agrega secciones para ver la vista previa."
   },
   "table": {
     "name": "Nombre",
@@ -203,6 +210,7 @@
       "payments": "Pagos",
       "customers": "Clientes",
       "analytics": "Analíticas",
+      "restock": "Reposición",
       "settings": "Configuración",
       "preferences": "Preferencias",
       "notifications": "Notificaciones"

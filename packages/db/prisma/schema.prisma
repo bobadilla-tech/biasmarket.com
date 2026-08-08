@@ -201,6 +201,7 @@ model StoreSection {
   collectionId String?
   content      Json             @default("{}")
   position     Int
+  hidden       Boolean          @default(false)
   createdAt    DateTime         @default(now())
 
   store      Store       @relation(fields: [storeId], references: [id])

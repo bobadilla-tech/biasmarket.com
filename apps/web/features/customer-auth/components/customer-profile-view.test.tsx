@@ -58,7 +58,7 @@ test("renders the customer's details and order history", () => {
     <CustomerProfileView slug="my-store" profile={profile} />,
   );
 
-  expect(screen.getByText("Jane Doe")).toBeDefined();
+  expect(screen.getAllByText("Jane Doe").length).toBeGreaterThan(0);
   expect(screen.getByText("jane@example.com")).toBeDefined();
   expect(screen.getByText("PEN 100.00")).toBeDefined();
 });
@@ -70,10 +70,25 @@ test("logs out and redirects to the store page", async () => {
     <CustomerProfileView slug="my-store" profile={profile} />,
   );
 
-  await user.click(screen.getByRole("button", { name: "Cerrar sesión" }));
+  const [logoutButton] = screen.getAllByRole("button", {
+    name: "Cerrar sesión",
+  });
+  await user.click(logoutButton);
 
   await waitFor(() => {
     expect(logout).toHaveBeenCalledWith("my-store");
     expect(push).toHaveBeenCalledWith("/es/store/my-store");
   });
+});
+
+test("switches to the profile section", async () => {
+  const user = userEvent.setup();
+  renderWithProviders(
+    <CustomerProfileView slug="my-store" profile={profile} />,
+  );
+
+  const [profileTab] = screen.getAllByRole("button", { name: "Perfil" });
+  await user.click(profileTab);
+
+  expect(screen.getByText("Correo y teléfono")).toBeDefined();
 });

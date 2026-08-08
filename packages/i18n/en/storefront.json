@@ -148,6 +148,10 @@
     "loggedOutTitle": "You're not logged in",
     "loggedOutBody": "Log in to see your account and order history.",
     "goToLogin": "Log in",
+    "nav": {
+      "orders": "Orders",
+      "profile": "Profile"
+    },
     "status": {
       "toConfirm": "To confirm",
       "partial": "Partial payment",

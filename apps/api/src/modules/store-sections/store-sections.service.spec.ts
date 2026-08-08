@@ -116,7 +116,50 @@ describe("StoreSectionsService", () => {
           collectionId: null,
           content: { imageUrl: "https://example.com/banner.png" },
           position: 0,
+          hidden: false,
         },
+      });
+    });
+
+    it("passes an explicit hidden flag through to the create payload", async () => {
+      prisma.storeSection.count.mockResolvedValue(0);
+      prisma.storeSection.create.mockResolvedValue({ id: sectionId });
+
+      await service.create(storeId, ownerId, {
+        type: "BANNER" as any,
+        content: { imageUrl: "https://example.com/banner.png" },
+        hidden: true,
+      });
+
+      expect(prisma.storeSection.create).toHaveBeenCalledWith({
+        data: {
+          storeId,
+          type: "BANNER",
+          collectionId: null,
+          content: { imageUrl: "https://example.com/banner.png" },
+          position: 0,
+          hidden: true,
+        },
+      });
+    });
+  });
+
+  describe("update()", () => {
+    it("updates the hidden flag without requiring other fields", async () => {
+      prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
+      prisma.storeSection.findUnique.mockResolvedValue({
+        id: sectionId,
+        storeId,
+        type: "BANNER",
+        collectionId: null,
+      });
+      prisma.storeSection.update.mockResolvedValue({});
+
+      await service.update(sectionId, storeId, ownerId, { hidden: true });
+
+      expect(prisma.storeSection.update).toHaveBeenCalledWith({
+        where: { id: sectionId },
+        data: { hidden: true },
       });
     });
   });

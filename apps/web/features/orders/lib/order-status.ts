@@ -24,8 +24,16 @@ type OrderStatusFields = Pick<
   "paymentStatus" | "fulfillmentStatus" | "pendingAmount"
 >;
 
+// Narrower than `OrderStatusFields` — this function never reads
+// `pendingAmount` (unlike `paymentsLocked` below, which does), so its
+// parameter only requires the two fields it actually branches on. Widening
+// `OrderStatusFields` itself instead would silently affect `paymentsLocked`
+// too (a caller omitting `pendingAmount` would get `Number(undefined) <= 0`
+// -> `false`, with no compile error). Every existing caller still passes the
+// full `OrderStatusFields` shape, a superset, so this narrowing is
+// non-breaking under structural typing.
 export function getOrderStatus(
-  order: OrderStatusFields,
+  order: Pick<OrderStatusFields, "paymentStatus" | "fulfillmentStatus">,
   t: ReturnType<typeof useTranslations>,
 ) {
   if (order.paymentStatus === "REJECTED") {

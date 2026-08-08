@@ -75,7 +75,10 @@ export class CollectionsService {
     return this.prisma.collection.findMany({
       where: { storeId },
       include: {
-        products: { orderBy: { position: "asc" }, include: { product: true } },
+        products: {
+          orderBy: { position: "asc" },
+          include: { product: { include: { variants: true } } },
+        },
       },
     });
   }

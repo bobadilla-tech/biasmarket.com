@@ -8,10 +8,7 @@ import { getOrderStatus } from "../lib/order-status";
 
 export function OrderStatusBadge(
   { order }: {
-    order: Pick<
-      OrderResponseDto,
-      "paymentStatus" | "fulfillmentStatus" | "pendingAmount"
-    >;
+    order: Pick<OrderResponseDto, "paymentStatus" | "fulfillmentStatus">;
   },
 ) {
   const t = useTranslations("dashboard.orders");

@@ -23,6 +23,7 @@ interface StoreSectionRow {
   collectionId: string | null;
   content: unknown;
   position: number;
+  hidden: boolean;
   createdAt: Date;
 }
 

@@ -157,3 +157,51 @@ from them, rather than writing bespoke markup per section.
 - Not touching seller-side account/orders UI — this is buyer-storefront only.
 - Not adding deep-linkable tab routes unless implementation reveals a real need
   for them.
+
+## Execution notes (implemented 2026-08-08)
+
+Implemented as planned, plain client-state tab switching (no querystring),
+frontend-only. Deviations/learnings from the approach section above:
+
+- **Status badge**: built exactly as specified — narrowed `getOrderStatus()`'s
+  own parameter to
+  `Pick<OrderStatusFields, "paymentStatus" |
+  "fulfillmentStatus">` in
+  `order-status.ts`, left the shared `OrderStatusFields` type (and
+  `paymentsLocked`, which still needs `pendingAmount`) untouched.
+  `OrderStatusBadge`'s prop type narrowed to match. Every existing caller
+  (`orders-table.tsx`, `payments-page-client.tsx`, `shipping-page-client.tsx`,
+  `customer-detail-sheet.tsx`) still passes the full `OrderStatusFields` shape,
+  a superset — confirmed compiling clean and all pre-existing tests still
+  passing, no widening/DTO-change fallback needed.
+- **New components landed at the planned paths**, not the "shared" path named
+  loosely in conversation: `InitialsAvatar` in `apps/web/components/ui/`
+  (deterministic color via a small fixed palette + string hash, not theme CSS
+  vars — this is a person avatar, not store branding); `AccountSidebar`,
+  `AccountOrdersSection`, `AccountOrderCard`, `AccountProfileSection` in
+  `apps/web/features/customer-auth/components/`. `packages/ui` was confirmed
+  still a dead stub, not touched.
+- **`AccountSidebar` is one component, not two** — it renders both the desktop
+  `<aside>` and the mobile top-bar+tab-row markup unconditionally, toggling
+  visibility with `hidden md:flex` / `md:hidden`. Simpler than a
+  breakpoint-conditional render, but means both copies exist in the DOM at once
+  — RTL queries in `customer-profile-view.test.tsx` had to switch from
+  `getByText`/`getByRole` to `getAllByText`/`getAllByRole` (or index `[0]`) to
+  avoid "multiple elements found" failures. Worth knowing before writing more
+  tests against this component.
+- **"Ver detalle" button dropped.** No buyer-facing order-detail route/modal
+  exists anywhere in the app (confirmed by search) — the plan's fallback ("adapt
+  the seller pattern") would have meant building a whole new detail surface, out
+  of scope for a layout redesign. `AccountOrderCard` shows order
+  number/date/amount/status only. Flagging in case a future task wants that
+  surface — it doesn't exist yet on either seller or buyer side for buyers.
+- Fixed the `edit-contact-form.tsx:65` stray `const schema` bug as planned.
+- Added `storefront.accountPage.nav.{orders,profile}` keys to `es`/`en`
+  `packages/i18n`; rebuilt `@biasmarket/i18n`'s `dist` locally so `apps/web`'s
+  vitest run (which resolves the package's built `main`, not source) picked up
+  the new keys — `pnpm test`/`turbo test` do this automatically via
+  `dependsOn: ["^build"]`, but running vitest directly inside `apps/web` does
+  not, so this is a trap for next time if a package.json message key is added
+  without a `pnpm --filter @biasmarket/i18n build` first.
+- Verified: `pnpm --filter web typecheck` clean, full `pnpm --filter web test`
+  green (195/195, all pre-existing suites untouched in behavior).

@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { ProductCard } from "./product-card";
 import { CartLink } from "./cart-link";
 import { isProductOutOfStock } from "@/features/discovery/lib/product-stock";
 import { SITE_URL } from "@/lib/site-config";
 import { StoreLogo } from "@/components/store-logo";
+import { ProductCard } from "@/components/storefront/product-card";
+import { StoreSectionRenderer } from "@/components/storefront/section-renderer";
 
 async function getStore(slug: string) {
   const apiUrl = process.env.INTERNAL_API_URL ??
@@ -222,64 +223,7 @@ export default async function StorePage({
           ? soldOutProducts.length > 0
             ? null
             : <p className="text-gray-500 text-center">{t("noProducts")}</p>
-          : (
-            visibleSections.map((section: any) => {
-              if (section.type === "COLLECTION") {
-                const products = [...(section.collection?.products ?? [])]
-                  .sort((a, b) =>
-                    Number(isProductOutOfStock(a.product)) -
-                    Number(isProductOutOfStock(b.product))
-                  );
-
-                if (products.length === 0) return null;
-
-                const visible = products.filter(
-                  (cp: any) =>
-                    !cp.product?.discontinued &&
-                    !isProductOutOfStock(cp.product),
-                );
-                if (visible.length === 0) return null;
-                return (
-                  <section key={section.id}>
-                    {section.collection?.name && (
-                      <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                        {section.collection.name}
-                      </h2>
-                    )}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                      {visible.map((cp: any) => (
-                        <ProductCard
-                          key={cp.product.id}
-                          slug={slug}
-                          product={cp.product}
-                        />
-                      ))}
-                    </div>
-                  </section>
-                );
-              }
-              if (section.type === "BANNER") {
-                return (
-                  <section key={section.id}>
-                    {section.content?.imageUrl && (
-                      <a href={section.content?.linkUrl ?? "#"}>
-                        <img
-                          src={section.content.imageUrl}
-                          alt={section.content.alt ?? ""}
-                          className="w-full rounded-xl object-cover"
-                        />
-                      </a>
-                    )}
-                  </section>
-                );
-              }
-              return (
-                <section key={section.id} className="prose max-w-none">
-                  <p>{section.content?.body}</p>
-                </section>
-              );
-            })
-          )}
+          : <StoreSectionRenderer slug={slug} sections={visibleSections} />}
         {/* Sold-out section rendered after visible sections */}
         {soldOutProducts.length > 0 && (
           <section

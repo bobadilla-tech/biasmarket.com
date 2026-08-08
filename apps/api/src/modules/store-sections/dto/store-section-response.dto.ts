@@ -21,6 +21,9 @@ export class StoreSectionResponseDto {
   @ApiProperty()
   position: number;
 
+  @ApiProperty()
+  hidden: boolean;
+
   @ApiProperty({ type: String, format: "date-time" })
   createdAt: string;
 }

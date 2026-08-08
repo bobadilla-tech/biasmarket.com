@@ -329,6 +329,19 @@ describe("StoresService", () => {
       ]);
     });
 
+    it("excludes hidden sections from the public query", async () => {
+      prisma.storeSection.findMany.mockResolvedValue([]);
+      prisma.product.findMany.mockResolvedValue([]);
+
+      await service.findPublicBySlug("my-store");
+
+      expect(prisma.storeSection.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { storeId, hidden: false },
+        }),
+      );
+    });
+
     it("does not append a trailing section when every published product is already covered", async () => {
       prisma.storeSection.findMany.mockResolvedValue([
         {

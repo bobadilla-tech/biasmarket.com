@@ -75,6 +75,7 @@ export class StoreSectionsService {
           : null,
         content: (dto.content ?? {}) as Prisma.InputJsonValue,
         position,
+        hidden: dto.hidden ?? false,
       },
     });
   }
@@ -113,6 +114,7 @@ export class StoreSectionsService {
         ...(dto.content !== undefined &&
           { content: dto.content as Prisma.InputJsonValue }),
         ...(dto.position !== undefined && { position: dto.position }),
+        ...(dto.hidden !== undefined && { hidden: dto.hidden }),
       },
     });
   }

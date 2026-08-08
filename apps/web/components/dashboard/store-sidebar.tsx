@@ -13,6 +13,7 @@ import {
   Lightbulb,
   LogOut,
   Package,
+  PackageSearch,
   Rows3,
   Settings,
   ShoppingBag,
@@ -27,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { StoreLogo } from "@/components/store-logo";
 import type { DashboardStore } from "@/features/stores";
 import { useUnreadCount } from "@/features/notifications";
+import { useRestockCount } from "@/features/restock";
 
 const COLLAPSE_STORAGE_KEY = "store-sidebar-collapsed";
 
@@ -49,6 +51,7 @@ const primaryItems: NavItem[] = [
 
 const growthItems: NavItem[] = [
   { key: "customers", icon: Users, href: "customers" },
+  { key: "restock", icon: PackageSearch, href: "restock" },
   { key: "analytics", icon: BarChart3, href: "analytics" },
   { key: "notifications", icon: Bell, href: "notifications" },
 ];
@@ -65,7 +68,7 @@ function SidebarSection({
   pathname,
   t,
   collapsed,
-  unreadCount = 0,
+  badges = {},
 }: {
   title: string;
   items: NavItem[];
@@ -73,7 +76,7 @@ function SidebarSection({
   pathname: string;
   t: any;
   collapsed: boolean;
-  unreadCount?: number;
+  badges?: Record<string, number>;
 }) {
   return (
     <div className="space-y-2">
@@ -92,7 +95,7 @@ function SidebarSection({
             : `/dashboard/${slug}/${item.href}`;
           const isActive = href ? pathname === href : false;
           const label = t(`nav.${item.key}`);
-          const badgeCount = item.key === "notifications" ? unreadCount : 0;
+          const badgeCount = badges[item.key] ?? 0;
 
           if (!href) {
             return (
@@ -165,6 +168,7 @@ export function StoreSidebar({
   const { data: session } = authClient.useSession();
   const [collapsed, setCollapsed] = useState(false);
   const { data: unreadCountData } = useUnreadCount(store?.id);
+  const { data: restockCountData } = useRestockCount(store?.id);
 
   useEffect(() => {
     const stored = globalThis.localStorage.getItem(COLLAPSE_STORAGE_KEY);
@@ -260,7 +264,10 @@ export function StoreSidebar({
           pathname={pathname}
           t={t}
           collapsed={effectiveCollapsed}
-          unreadCount={unreadCountData?.count ?? 0}
+          badges={{
+            notifications: unreadCountData?.count ?? 0,
+            restock: restockCountData?.count ?? 0,
+          }}
         />
         <SidebarSection
           title={t("sections.settings")}

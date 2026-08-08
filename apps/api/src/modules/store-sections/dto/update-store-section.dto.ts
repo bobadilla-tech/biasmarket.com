@@ -1,4 +1,11 @@
-import { IsEnum, IsInt, IsObject, IsOptional, IsString } from "class-validator";
+import {
+  IsBoolean,
+  IsEnum,
+  IsInt,
+  IsObject,
+  IsOptional,
+  IsString,
+} from "class-validator";
 import { StoreSectionTypeDto } from "./create-store-section.dto.js";
 
 export class UpdateStoreSectionDto {
@@ -17,4 +24,8 @@ export class UpdateStoreSectionDto {
   @IsOptional()
   @IsInt()
   position?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  hidden?: boolean;
 }

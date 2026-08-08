@@ -59,6 +59,14 @@ export class CollectionsController {
             collectionProduct.product.availableUntil?.toISOString() ?? null,
           deletedAt: collectionProduct.product.deletedAt?.toISOString() ?? null,
           createdAt: collectionProduct.product.createdAt.toISOString(),
+          variants: collectionProduct.product.variants.map((variant) => ({
+            id: variant.id,
+            name: variant.name,
+            stock: variant.stock,
+            reserved: variant.reserved,
+            priceOverride: variant.priceOverride?.toString() ?? null,
+            imageOverride: variant.imageOverride,
+          })),
         },
       })),
     }));
