@@ -51,6 +51,8 @@ COPY . .
 
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_SENTRY_DSN
+ENV NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN
 # Turbo's own cache (task hashes/outputs) is BuildKit-cache-mounted the same
 # way the pnpm store is above — without it, every build recompiles every
 # workspace package from scratch even when only one file changed, since

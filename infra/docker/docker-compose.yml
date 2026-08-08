@@ -39,6 +39,7 @@ services:
       dockerfile: infra/docker/web.Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN}
     restart: unless-stopped
     env_file: .env
     environment:

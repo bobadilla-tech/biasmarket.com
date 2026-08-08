@@ -2,11 +2,15 @@ import * as Sentry from "@sentry/node";
 import type { Instrumentation } from "next";
 
 // Server-side error tracking (GlitchTip, Sentry-protocol-compatible).
-// Env-gated on SENTRY_DSN so local dev/CI never needs a GlitchTip account.
+// Env-gated on WEB_SENTRY_DSN so local dev/CI never needs a GlitchTip
+// account. Distinct from the API's SENTRY_DSN (they report to different
+// GlitchTip projects) and from NEXT_PUBLIC_SENTRY_DSN (client bundle).
 export function register() {
-  const dsn = process.env.SENTRY_DSN;
+  const dsn = process.env.WEB_SENTRY_DSN;
   if (!dsn) {
-    console.log("[sentry] SENTRY_DSN not set — server error tracking disabled");
+    console.log(
+      "[sentry] WEB_SENTRY_DSN not set — server error tracking disabled",
+    );
     return;
   }
 
@@ -25,7 +29,7 @@ export const onRequestError: Instrumentation.onRequestError = async (
   error,
   request,
 ) => {
-  if (!process.env.SENTRY_DSN) return;
+  if (!process.env.WEB_SENTRY_DSN) return;
 
   Sentry.captureException(error, {
     extra: { request },

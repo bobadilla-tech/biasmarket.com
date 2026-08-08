@@ -79,8 +79,9 @@ Dashboard → Configuración → Editar
    • Logo
    • Idioma de la tienda (ES/EN)
    • Moneda por defecto
-   • WhatsApp (número de contacto opcional, no reemplaza
-     el flujo de pago in-app)
+   • WhatsApp (número de contacto — el checkout arma el mensaje
+     wa.me para coordinar el pago; si no hay número, el comprador
+     solo recibe las instrucciones de pago)
    • Instrucciones de pago
    • Métodos de pago habilitados + % de depósito
    • Métodos de entrega (recojo / courier) y puntos de recojo
