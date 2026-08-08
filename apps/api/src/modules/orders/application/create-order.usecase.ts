@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import type { PickupPoint, Prisma } from "@biasmarket/db";
+import type { PickupPoint, Prisma, ProductVariant } from "@biasmarket/db";
 import {
   buildWhatsAppOrderMessage,
   buildWhatsAppUrl,
@@ -241,16 +241,25 @@ export class CreateOrderUseCase {
             variantName = variant.name;
 
             if (variant.stock !== null) {
-              const available = variant.stock - variant.reserved;
-              if (available < item.quantity) {
+              // Atomic conditional decrement — the WHERE clause re-checks
+              // availability at write time inside Postgres, so two
+              // concurrent transactions racing the same variant can't both
+              // read "available" before either commits (the bug this
+              // replaces: separate findUnique-then-update with no lock).
+              // Matches the FOR UPDATE lock pattern used for PickupPoint
+              // above, just expressed as a single statement since the write
+              // itself is the availability check here.
+              const [updatedVariant] = await tx.$queryRaw<ProductVariant[]>`
+                UPDATE "ProductVariant"
+                SET reserved = reserved + ${item.quantity}
+                WHERE id = ${variant.id} AND stock - reserved >= ${item.quantity}
+                RETURNING *
+              `;
+              if (!updatedVariant) {
                 throw new BadRequestException(
                   `Stock insuficiente para ${variant.name}`,
                 );
               }
-              const updatedVariant = await tx.productVariant.update({
-                where: { id: variant.id },
-                data: { reserved: { increment: item.quantity } },
-              });
               await this.notifications.syncStockAlerts(
                 tx,
                 store,

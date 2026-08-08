@@ -169,72 +169,86 @@ export class TenantMiddleware implements NestMiddleware {
 
 ## 4. Database Improvements
 
-Split the single `status` field on `Order` into three independent state machines
-— order lifecycle, payment review, and fulfillment don't move in lockstep (an
-order can be `VERIFIED` and still `UNFULFILLED` for days).
+✅ **Implemented** — the order status split below shipped in migration
+`20260720175558_add_order_flow_tables` and is the current schema
+(`packages/db/prisma/schema.prisma`), not a proposal. `Order` carries **three
+independent state machines** that don't move in lockstep (an order can be
+`VERIFIED` and still `ORDERING` for days):
 
 ```prisma
-model Store {
-  id                  String   @id @default(cuid())
-  name                String
-  slug                String   @unique
-  ownerId             String
-  themeConfig         Json
-  paymentInstructions String
-  createdAt           DateTime @default(now())
-
-  owner    User      @relation(fields: [ownerId], references: [id])
-  products Product[]
-  orders   Order[]
-
-  @@index([ownerId])
-}
-
 model Order {
-  id               String            @id @default(cuid())
-  storeId          String
-  customerEmail    String
-  paymentStatus    PaymentStatus     @default(PENDING)
-  fulfillmentStatus FulfillmentStatus @default(UNFULFILLED)
-  totalAmount      Decimal           @db.Decimal(10, 2)
-  createdAt        DateTime          @default(now())
+  id                String             @id @default(cuid())
+  storeId           String
+  paymentStatus     PaymentStatus      @default(PENDING_PAYMENT)
+  fulfillmentStatus FulfillmentStatus  @default(ORDERING)
+  status            OrderStatus        @default(ACTIVE)   // cancellation axis
+  paymentRejectionReason String?
+  cancellationResolution CancellationResolution?
+  retainedAmount    Decimal?           @db.Decimal(10, 2)
+  releasedAmount    Decimal?           @db.Decimal(10, 2)
+  totalAmount       Decimal            @db.Decimal(10, 2)
+  requiredAmount    Decimal            @db.Decimal(10, 2)
+  expiresAt         DateTime
 
-  store Store       @relation(fields: [storeId], references: [id])
-  items OrderItem[]
-  proof PaymentProof?
-
-  @@index([storeId, paymentStatus])   // admin "pending review" queue
-  @@index([storeId, createdAt])       // order list, paginated
+  proofs   PaymentProof[]   // schema-only today — see security-payments.md §9
+  payments OrderPayment[]   // the real seller-recorded payment records
 }
 
 enum PaymentStatus {
-  PENDING
-  SUBMITTED
+  PENDING_PAYMENT
+  PARTIALLY_PAID
+  PAYMENT_SUBMITTED
   VERIFIED
   REJECTED
+  CANCELLED
 }
 
 enum FulfillmentStatus {
-  UNFULFILLED
-  SHIPPED
-  DELIVERED
+  ORDERING
+  IN_TRANSIT
+  READY
+  COMPLETED
+}
+
+enum OrderStatus {
+  ACTIVE
+  CANCELLED
 }
 ```
 
-Other fixes vs. the original schema:
+- `paymentStatus` is the money axis — `PENDING_PAYMENT → VERIFIED/REJECTED`
+  (with `PARTIALLY_PAID`/`PAYMENT_SUBMITTED` in between), enforced by the
+  transition tables in `order-status.vo.ts` and the entity in `order.entity.ts`,
+  driven by the seller recording payments / approving-rejecting — see
+  [security-payments.md §9](security-payments.md#9-payment-flow-design-manual).
+- `fulfillmentStatus` is the delivery axis — strictly linear
+  `ORDERING → IN_TRANSIT → READY → COMPLETED`, hard-gated on
+  `paymentStatus === VERIFIED` (`order.entity.ts`).
+- `status` (`OrderStatus`) is the cancellation axis — `ACTIVE → CANCELLED`
+  (expired soft-hold sweep or seller-cancelled), carrying the cancellation
+  bookkeeping (`cancellationResolution`, `retainedAmount`, `releasedAmount`,
+  `releasedResolution`) alongside.
 
-- `totalAmount` as `Decimal`, never `Float` — money math on floats is a real bug
-  class, not theoretical.
-- `Product.price` → same `Decimal` fix.
-- Add `Product.storeId` composite index `@@index([storeId])` — every storefront
-  product listing filters by it.
-- `PaymentProof.status` → its own small enum
-  (`PENDING_REVIEW | APPROVED | REJECTED`), not a free string.
-- **Audit log**: add an `AuditLog` model (`actorId`, `storeId`, `action`,
-  `entityType`, `entityId`, `metadata Json`, `createdAt`) written on every
-  payment approve/reject and product mutation. This is the thing that saves you
-  when a seller disputes "I never rejected that order" — cheap to add now,
-  expensive to reconstruct later.
+Other fixes that are in the current schema:
+
+- **Money is `Decimal`, never `Float`** — `Order.totalAmount`/`requiredAmount`
+  and `Product.price` are all `Decimal @db.Decimal(10, 2)`; floats for money are
+  a real bug class (two precision bugs were caught and fixed in
+  `apps/api/src/common/payment-summary.ts`).
+- **Product indexes**: `@@index([storeId])` and `@@index([storeId, status])` —
+  every storefront product listing filters by them.
+- **`PaymentProof.status`** is its own small enum
+  (`PENDING_REVIEW | APPROVED | REJECTED`), not a free string — but the whole
+  `PaymentProof` model is **schema-only today** (never created anywhere in
+  `apps/api/src`); the live flow is seller-recorded `OrderPayment` + WhatsApp
+  handoff, see [security-payments.md §9](security-payments.md#9-payment-flow-design-manual).
+- **`AuditLog`** (`actorId`, `storeId`, `action`, `entityType`, `entityId`,
+  `metadata Json`, `createdAt`) — written on the payment decisions that matter:
+  approve/reject (`review-payment.usecase.ts`), partial payments
+  (`order.controller.ts`), cancellations (`cancel-order.usecase.ts`), and
+  fulfillment advances (`advance-fulfillment.usecase.ts`). This is the thing
+  that saves you when a seller disputes "I never rejected that order." (Not
+  written on product mutations.)
 
 ---
 

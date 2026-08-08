@@ -11,10 +11,14 @@ import { ApiProperty } from "@nestjs/swagger";
 //   as-string convention, because the repository already reduces every
 //   payment's Decimal `amount` through `Number(...)` before this DTO ever
 //   sees it (same reasoning as `Stores.findFeatured`'s `revenue` field).
-// - `findOne` additionally includes `proofs` (buyer-submitted payment-proof
-//   images); `findAll` does not — modeled as an extension
-//   (`OrderDetailResponseDto extends OrderResponseDto`), same
-//   DTO-extension-chain pattern `products` used for its multiple shapes.
+// - `findOne` uses `OrderDetailResponseDto`, a thin extension of
+//   `OrderResponseDto` (same DTO-extension-chain pattern `products` used for
+//   its multiple shapes) — historically added `proofs` (the buyer-submitted
+//   `PaymentProof` model), which was deleted as dead schema (never written
+//   anywhere in apps/api — the real flow is seller-recorded `OrderPayment`
+//   instead) per
+//   docs/plans/2026-08-08-payment-proof-image-access-control-plan.md. Kept
+//   as its own type in case `findOne` grows real detail-only fields later.
 // - `review`/`advance`/`cancel` return the *raw* Prisma `Order` row
 //   (`tx.order.update`/`findUniqueOrThrow`, never passed through
 //   `withPaymentSummary`) — no `items`, no `payments`, no `proofs`, no
@@ -157,32 +161,6 @@ export class OrderPaymentResponseDto {
   createdAt: string;
 }
 
-export class PaymentProofResponseDto {
-  @ApiProperty()
-  id: string;
-
-  @ApiProperty()
-  orderId: string;
-
-  @ApiProperty()
-  storeId: string;
-
-  @ApiProperty()
-  imageUrl: string;
-
-  @ApiProperty({ enum: ["PENDING_REVIEW", "APPROVED", "REJECTED"] })
-  status: "PENDING_REVIEW" | "APPROVED" | "REJECTED";
-
-  @ApiProperty({ type: String, format: "date-time" })
-  submittedAt: string;
-
-  @ApiProperty({ type: String, nullable: true })
-  reviewedBy: string | null;
-
-  @ApiProperty({ type: String, format: "date-time", nullable: true })
-  reviewedAt: string | null;
-}
-
 // `findAll`'s shape (via OrderRepository.withPaymentSummary) — no `proofs`.
 export class OrderResponseDto {
   @ApiProperty()
@@ -300,11 +278,9 @@ export class OrderResponseDto {
   payments: OrderPaymentResponseDto[];
 }
 
-// `findOne`/`addPayment`'s shape — adds `proofs`.
-export class OrderDetailResponseDto extends OrderResponseDto {
-  @ApiProperty({ type: [PaymentProofResponseDto] })
-  proofs: PaymentProofResponseDto[];
-}
+// `findOne`/`addPayment`'s shape — see the module comment above for why this
+// stays a separate (currently identical) type from `OrderResponseDto`.
+export class OrderDetailResponseDto extends OrderResponseDto {}
 
 // `review`/`advance`/`cancel`'s shape — the raw Order row, no joins, no
 // computed payment-summary fields (see the module comment above).

@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { ThrottlerModule } from "@nestjs/throttler";
 import { OrderController } from "./infrastructure/order.controller.js";
 import { CheckoutController } from "./infrastructure/checkout.controller.js";
 import { CustomerAccountController } from "./infrastructure/customer-account.controller.js";
@@ -15,7 +16,10 @@ import { CustomerAccountService } from "./application/customer-account.service.j
 import { NotificationsModule } from "../notifications/notifications.module.js";
 
 @Module({
-  imports: [NotificationsModule],
+  imports: [
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 5 }]),
+    NotificationsModule,
+  ],
   controllers: [
     OrderController,
     CheckoutController,

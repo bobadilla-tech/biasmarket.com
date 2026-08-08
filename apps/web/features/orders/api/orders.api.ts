@@ -68,6 +68,10 @@ export const ordersApi = {
     return data;
   },
 
+  paymentImageUrl(storeId: string, orderId: string, paymentId: string) {
+    return `${apiUrl()}/api/stores/${storeId}/orders/${orderId}/payments/${paymentId}/image`;
+  },
+
   cancelOrder(
     storeId: string,
     orderId: string,

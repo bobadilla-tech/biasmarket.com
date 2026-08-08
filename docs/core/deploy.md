@@ -186,15 +186,27 @@ Look for a "certificate obtained successfully" log line before retesting
 Product images and store logos are stored in a self-hosted MinIO instance (the
 `minio` service), not the R2 setup described in [`roadmap.md`](roadmap.md) — see
 the note there. On first boot the one-shot `minio-init` service (`minio/mc`)
-creates two buckets — `S3_BUCKET` for product images and `S3_LOGO_BUCKET` for
-store logos, kept separate — and sets both public-read; it's idempotent, so it
-also runs harmlessly on every redeploy.
+creates three buckets — `S3_BUCKET` for product images and `S3_LOGO_BUCKET` for
+store logos, both set public-read, and `S3_PAYMENT_BUCKET` for payment-proof
+images (bank-transfer/Yape/Plin screenshots), deliberately left **without** a
+public-read policy — it's idempotent, so it also runs harmlessly on every
+redeploy.
 
-`S3_LOGO_BUCKET` is validated at boot the same way as the other `S3_*` vars — if
-it's missing from the server's `.env`, the API crashes on startup rather than
-just failing logo uploads. When pulling in the change that introduced this var
-for the first time, add `S3_LOGO_BUCKET=logos` to
-`~/biasmarket/infra/docker/.env` **before** running `pnpm docker:prod`.
+Payment images are never linked directly (no public URL is ever handed to a
+browser); they're read exclusively through the authenticated
+`GET stores/:storeId/orders/:orderId/payments/:paymentId/image` endpoint, which
+streams the object through the API after the usual `assertOwnership` check — see
+`apps/api/src/modules/orders/infrastructure/order.controller.ts` and
+`docs/plans/2026-08-08-payment-proof-image-access-control-plan.md` for why a
+presigned-URL redirect was rejected in favor of streaming (the Docker-internal
+vs. public `S3_ENDPOINT` mismatch).
+
+`S3_LOGO_BUCKET`/`S3_PAYMENT_BUCKET` are validated at boot the same way as the
+other `S3_*` vars — if either is missing from the server's `.env`, the API
+crashes on startup rather than just failing that upload/read path. When pulling
+in the change that introduced `S3_PAYMENT_BUCKET`, add
+`S3_PAYMENT_BUCKET=payments` to `~/biasmarket/infra/docker/.env` **before**
+running `pnpm docker:prod`.
 
 Verify it worked:
 

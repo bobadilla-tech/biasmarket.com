@@ -164,6 +164,9 @@ describe("CreateOrderUseCase", () => {
       reserved: 0,
       priceOverride: null,
     });
+    // Simulates the atomic conditional UPDATE's WHERE clause excluding the
+    // row (insufficient stock) — the real DB would return zero rows here.
+    prisma.$queryRaw.mockResolvedValue([]);
 
     await expect(
       useCase.execute(slug, {
@@ -216,23 +219,28 @@ describe("CreateOrderUseCase", () => {
       customerName: "Jane",
       customerPhone: dto.customerPhone,
     });
-    prisma.productVariant.update.mockResolvedValue({
+    // Simulates the atomic conditional UPDATE ... RETURNING * succeeding.
+    prisma.$queryRaw.mockResolvedValue([{
       id: "variant-1",
       productId: "product-1",
       name: "Large",
       stock: 5,
       reserved: 2,
-    });
+    }]);
 
     const result = await useCase.execute(slug, {
       ...dto,
       items: [{ ...dto.items[0], variantId: "variant-1" }],
     });
 
-    expect(prisma.productVariant.update).toHaveBeenCalledWith({
-      where: { id: "variant-1" },
-      data: { reserved: { increment: 2 } },
-    });
+    expect(prisma.$queryRaw).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.stringContaining('UPDATE "ProductVariant"'),
+      ]),
+      2,
+      "variant-1",
+      2,
+    );
     expect(prisma.order.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({

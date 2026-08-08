@@ -6,6 +6,11 @@ vi.mock("@thallesp/nestjs-better-auth", () => ({
   Session: () => () => undefined,
 }));
 
+vi.mock("@nestjs/throttler", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@nestjs/throttler")>();
+  return { ...actual, ThrottlerGuard: class ThrottlerGuard {} };
+});
+
 import { OrderController } from "./order.controller.js";
 import { OrderRepository } from "./order.repository.js";
 import { ReviewPaymentUseCase } from "../application/review-payment.usecase.js";
@@ -23,6 +28,7 @@ describe("OrderController.addPayment", () => {
   };
   let reviewPayment: { execute: Mock };
   let prisma: { $transaction: Mock; orderPayment: { create: Mock } };
+  let tx: { orderPayment: { create: Mock }; auditLog: { create: Mock } };
 
   const storeId = "store-1";
   const orderId = "order-1";
@@ -59,7 +65,10 @@ describe("OrderController.addPayment", () => {
   };
 
   beforeEach(async () => {
-    const tx = { orderPayment: { create: vi.fn() } };
+    tx = {
+      orderPayment: { create: vi.fn() },
+      auditLog: { create: vi.fn() },
+    };
     prisma = {
       $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(tx)),
       orderPayment: tx.orderPayment,
@@ -86,7 +95,7 @@ describe("OrderController.addPayment", () => {
     controller = module.get(OrderController);
   });
 
-  it("a partial payment writes PARTIALLY_PAID directly and never calls ReviewPaymentUseCase", async () => {
+  it("a partial payment writes PARTIALLY_PAID directly, audits it, and never calls ReviewPaymentUseCase", async () => {
     orders.findRowByIdForStore
       .mockResolvedValueOnce({
         currency: "PEN",
@@ -103,6 +112,20 @@ describe("OrderController.addPayment", () => {
       { paymentStatus: "PARTIALLY_PAID" },
       expect.anything(),
     );
+    expect(tx.auditLog.create).toHaveBeenCalledWith({
+      data: {
+        actorId: userId,
+        storeId,
+        action: "payment.partial",
+        entityType: "Order",
+        entityId: orderId,
+        metadata: {
+          amount: 40,
+          method: "YAPE",
+          resultingPaymentStatus: "PARTIALLY_PAID",
+        },
+      },
+    });
     expect(reviewPayment.execute).not.toHaveBeenCalled();
   });
 

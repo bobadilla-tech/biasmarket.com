@@ -3,6 +3,7 @@ import "dotenv/config";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module.js";
 import { ValidationPipe } from "@nestjs/common";
+import helmet from "helmet";
 import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter.js";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import metadata from "./metadata.js";
@@ -16,6 +17,13 @@ async function bootstrap() {
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
   );
   app.useGlobalFilters(new AllExceptionsFilter());
+
+  // CSP off: this is a JSON-only API past the Swagger page, and helmet's
+  // default CSP breaks Swagger UI's inline scripts/styles at /api/docs
+  // (on by default outside production — see swaggerEnabled below). CSP stays
+  // meaningful where it matters because Swagger is off in production unless
+  // explicitly opted in.
+  app.use(helmet({ contentSecurityPolicy: false }));
 
   app.setGlobalPrefix("api");
 

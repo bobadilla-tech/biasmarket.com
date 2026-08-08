@@ -1,5 +1,6 @@
 import { Test, type TestingModule } from "@nestjs/testing";
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   NotFoundException,
@@ -22,9 +23,10 @@ describe("CollectionsService", () => {
     };
     collectionProduct: {
       count: Mock;
+      findMany: Mock;
       upsert: Mock;
       delete: Mock;
-      update: Mock;
+      updateMany: Mock;
     };
     $transaction: Mock;
   };
@@ -47,11 +49,12 @@ describe("CollectionsService", () => {
       },
       collectionProduct: {
         count: vi.fn(),
+        findMany: vi.fn(),
         upsert: vi.fn(),
         delete: vi.fn(),
-        update: vi.fn(),
+        updateMany: vi.fn(),
       },
-      $transaction: vi.fn((ops) => Promise.all(ops)),
+      $transaction: vi.fn((fn) => fn(prisma)),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -152,20 +155,44 @@ describe("CollectionsService", () => {
         id: collectionId,
         storeId,
       });
-      prisma.collectionProduct.update.mockResolvedValue({});
+      prisma.collectionProduct.updateMany.mockResolvedValue({ count: 1 });
+      prisma.collectionProduct.findMany.mockResolvedValue([{ id: "cp-1" }]);
 
-      await service.reorderProducts(collectionId, storeId, ownerId, {
-        productIds: ["p-2", "p-1"],
-      });
+      const result = await service.reorderProducts(
+        collectionId,
+        storeId,
+        ownerId,
+        { productIds: ["p-2", "p-1"] },
+      );
 
-      expect(prisma.collectionProduct.update).toHaveBeenNthCalledWith(1, {
-        where: { collectionId_productId: { collectionId, productId: "p-2" } },
+      expect(prisma.collectionProduct.updateMany).toHaveBeenNthCalledWith(1, {
+        where: { collectionId, productId: "p-2" },
         data: { position: 0 },
       });
-      expect(prisma.collectionProduct.update).toHaveBeenNthCalledWith(2, {
-        where: { collectionId_productId: { collectionId, productId: "p-1" } },
+      expect(prisma.collectionProduct.updateMany).toHaveBeenNthCalledWith(2, {
+        where: { collectionId, productId: "p-1" },
         data: { position: 1 },
       });
+      expect(prisma.collectionProduct.findMany).toHaveBeenCalledWith({
+        where: { collectionId, productId: { in: ["p-2", "p-1"] } },
+        orderBy: { position: "asc" },
+      });
+      expect(result).toEqual([{ id: "cp-1" }]);
+    });
+
+    it("throws BadRequestException when a productId is not a member of the collection", async () => {
+      prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
+      prisma.collection.findUnique.mockResolvedValue({
+        id: collectionId,
+        storeId,
+      });
+      prisma.collectionProduct.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(
+        service.reorderProducts(collectionId, storeId, ownerId, {
+          productIds: ["foreign-product"],
+        }),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });

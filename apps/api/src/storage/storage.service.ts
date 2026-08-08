@@ -1,10 +1,12 @@
 import { Injectable } from "@nestjs/common";
 import {
   DeleteObjectCommand,
+  GetObjectCommand,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
 import { randomUUID } from "node:crypto";
+import type { Readable } from "node:stream";
 
 function requiredEnv(name: string): string {
   const value = process.env[name];
@@ -16,6 +18,10 @@ function requiredEnv(name: string): string {
 export class StorageService {
   private readonly bucket = requiredEnv("S3_BUCKET");
   private readonly logoBucket = requiredEnv("S3_LOGO_BUCKET");
+  // Kept private (no anonymous-read policy — see infra/docker/docker-compose*
+  // minio-init) — the authenticated streaming endpoint in order.controller.ts
+  // is the only intended way to read a payment image.
+  private readonly paymentBucket = requiredEnv("S3_PAYMENT_BUCKET");
   private readonly publicUrl = requiredEnv("S3_PUBLIC_URL");
 
   private client = new S3Client({
@@ -37,7 +43,7 @@ export class StorageService {
   }
 
   async uploadPaymentImage(buffer: Buffer, mimeType: string): Promise<string> {
-    return this.upload(this.bucket, "payments", buffer, mimeType);
+    return this.upload(this.paymentBucket, "payments", buffer, mimeType);
   }
 
   // Inverse of `upload`'s `${publicUrl}/${bucket}/${key}` URL shape.
@@ -46,6 +52,31 @@ export class StorageService {
     await this.client.send(
       new DeleteObjectCommand({ Bucket: this.bucket, Key: key }),
     );
+  }
+
+  // Streams a payment image for the authenticated GET endpoint in
+  // order.controller.ts — never redirects to a presigned URL (see
+  // docs/plans/2026-08-08-payment-proof-image-access-control-plan.md's
+  // feasibility analysis: S3_ENDPOINT is the internal `minio:9000` Docker
+  // hostname in prod, so a presigned URL signed against the existing client
+  // would point somewhere the browser can't reach). Parses bucket + key from
+  // the stored URL rather than assuming `this.paymentBucket` so images
+  // uploaded before the bucket split still resolve.
+  async getPaymentImageStream(
+    url: string,
+  ): Promise<{ body: Readable; contentType: string }> {
+    const path = new URL(url).pathname;
+    const [, bucket, ...keyParts] = path.split("/");
+    const key = keyParts.join("/");
+
+    const result = await this.client.send(
+      new GetObjectCommand({ Bucket: bucket, Key: key }),
+    );
+
+    return {
+      body: result.Body as Readable,
+      contentType: result.ContentType ?? "application/octet-stream",
+    };
   }
 
   private async upload(

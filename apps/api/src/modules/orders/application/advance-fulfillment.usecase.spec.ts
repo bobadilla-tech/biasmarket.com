@@ -12,6 +12,8 @@ describe("AdvanceFulfillmentUseCase", () => {
   let prisma: {
     store: { findUnique: Mock };
     order: { findUnique: Mock; update: Mock };
+    auditLog: { create: Mock };
+    $transaction: Mock;
   };
 
   const ownerId = "user-1";
@@ -23,6 +25,8 @@ describe("AdvanceFulfillmentUseCase", () => {
     prisma = {
       store: { findUnique: vi.fn() },
       order: { findUnique: vi.fn(), update: vi.fn() },
+      auditLog: { create: vi.fn() },
+      $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(prisma)),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -82,6 +86,16 @@ describe("AdvanceFulfillmentUseCase", () => {
     expect(prisma.order.update).toHaveBeenCalledWith({
       where: { id: orderId },
       data: { fulfillmentStatus: "IN_TRANSIT" },
+    });
+    expect(prisma.auditLog.create).toHaveBeenCalledWith({
+      data: {
+        actorId: ownerId,
+        storeId,
+        action: "fulfillment.advanced",
+        entityType: "Order",
+        entityId: orderId,
+        metadata: { fromStatus: "ORDERING", toStatus: "IN_TRANSIT" },
+      },
     });
   });
 
