@@ -1,0 +1,23 @@
+version = 1
+
+[[analyzers]]
+name = "javascript"
+enabled = true
+
+  [analyzers.meta]
+  environment = ["nodejs"]
+
+  [analyzers.config]
+  disable_rules = [
+    "JS-0067"
+  ]
+
+[[transformers]]
+name = "ignore"
+enabled = true
+
+  [transformers.config]
+  ignore_patterns = [
+    "**/*.spec.ts",
+    "**/*.test.ts",
+  ]

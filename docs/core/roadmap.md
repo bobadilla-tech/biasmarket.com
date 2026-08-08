@@ -44,6 +44,9 @@ Where this ships, what ships when, and what could go wrong.
   [security-payments.md §9.2](security-payments.md#92-flow))
 - i18n foundation — ES/EN UI strings, `User.locale`/`Store.locale` (see
   [i18n.md](i18n.md))
+- Cross-store discovery layer — featured stores, store directory, global product
+  search (see
+  [product.md §5.10](product.md#510-discovery-layer-public-cross-store))
 
 ### v1
 
@@ -55,10 +58,12 @@ Where this ships, what ships when, and what could go wrong.
 ### v2
 
 - Real payment integrations
-- Advanced inventory management — low-stock alerts, restock workflows,
-  multi-warehouse (basic per-variant stock and soft-hold already ship in MVP,
-  see [product.md §4.2](product.md#42-product-management--crud-seller-panel) and
-  [security-payments.md §9.2](security-payments.md#92-flow))
+- Advanced inventory management — low-stock alerts, multi-warehouse (basic
+  per-variant stock and soft-hold already ship in MVP, see
+  [product.md §4.2](product.md#42-product-management--crud-seller-panel) and
+  [security-payments.md §9.2](security-payments.md#92-flow); restock-interest
+  workflow already shipped too — `apps/api/src/modules/restock/`, a buyer can
+  ask to be notified when a sold-out product/variant restocks)
 - Group order system (K-pop specific)
 
 ---

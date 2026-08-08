@@ -70,9 +70,12 @@ table at `/admin/inquiries`:
   `PATCH /api/contact/:id/review` (mark reviewed), both
   `@UseGuards(AuthGuard) @Roles(['admin'])`.
 
-No outbound email/notifications — the panel itself is the only place these show
-up today (no Resend/mailer integration exists in the api yet). No pagination —
-fine at current volume, revisit if the table grows large.
+No outbound email/notifications for inquiries specifically — the panel itself is
+the only place these show up today. (A Resend-backed mailer does exist elsewhere
+in the api — buyer account verification, password/email/phone change, and
+payment-status emails, see `apps/api/src/mailer/` — it's just not wired to
+contact inquiries.) No pagination — fine at current volume, revisit if the table
+grows large.
 
 ## Stores & impersonation
 

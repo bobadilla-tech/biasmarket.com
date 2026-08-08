@@ -312,7 +312,13 @@ visibility into where their order actually is:
 
 ### 5.8 Buyer Authentication (Public Storefront)
 
-- Phone number + password (no email or SMS verification cost in MVP)
+- Phone number + password is the required identity (`Customer.phone` +
+  `passwordHash`, unique per store)
+- Email is optional and, once added, goes through a verification flow
+  (`Customer.email`/`emailVerified`/`pendingEmail`) — same for phone number
+  changes (`pendingPhone`) — see
+  `apps/api/src/modules/orders/application/customer-account.service.ts`. No SMS
+  verification.
 - Buyer can view their own order history and current status per order
 - No social login in MVP
 
@@ -327,6 +333,30 @@ the seller panel includes:
   approve/reject payment proofs
 - Store settings: name, theme basics, contact info, language (see
   [i18n.md](i18n.md))
+
+### 5.10 Discovery Layer (Public, Cross-Store)
+
+Shipped, not originally in this spec — the one deliberate expansion beyond
+"single-store builder." Bias Market is still not a marketplace (buyers still
+browse and check out on one store at a time, per-store, exactly as 4.3
+describes); this is an **acquisition layer on top of it**, so a seller isn't
+solely dependent on their own social following to get buyers. Three surfaces,
+all reading across every store, none of them transactional themselves:
+
+- **Featured stores** (`GET /stores/featured`, home-page section): stores with
+  ≥3 `VERIFIED` orders in the trailing 30 days, at least one published product,
+  and not banned — an activity signal, not a manually curated/paid placement.
+- **Store directory** (`/stores`): paginated, searchable list of every public
+  store (name, slug, owner, logo).
+- **Global product search** (`/search`): searches products across all stores at
+  once, not scoped to one storefront — the same product-listing rules apply
+  (4.3: only `PUBLISHED` products surface).
+
+A store can opt out entirely: `Store.isPublic` (default `true`) gates inclusion
+in featured/directory/search — toggled in store settings
+(`features/store-settings`). Clicking through from any of these still lands the
+buyer on that store's own `/store/[slug]` page — checkout, payment methods, and
+delivery options remain fully per-store (4.4–4.6), unchanged by this layer.
 
 ---
 
