@@ -140,8 +140,8 @@ for the broader gap).
 
 A shared nav shell already exists (see Access, above) — adding another admin
 feature is: build the page under `admin/<name>/page.tsx`, add its `NAV_ITEMS`
-entry in `app-sidebar.tsx` (every current entry is live; a future
-not-yet-built page can still use `disabled: true` to show it greyed out), add
-its i18n strings. Still worth reconsidering once there's more than one admin-only
+entry in `app-sidebar.tsx` (every current entry is live; a future not-yet-built
+page can still use `disabled: true` to show it greyed out), add its i18n
+strings. Still worth reconsidering once there's more than one admin-only
 resource: whether `@Roles(['admin'])` per-route is enough, or a dedicated
 `AdminModule`/guard composition makes more sense.

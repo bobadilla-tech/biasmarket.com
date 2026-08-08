@@ -207,10 +207,9 @@ The buyer follows the order from `PENDING_PAYMENT` to `COMPLETED` on
   `PaymentProof` for real (a buyer-facing upload endpoint +
   `PENDING_REVIEW`/`APPROVED`/ `REJECTED` review) is a possible future addition,
   only worth building if real sellers report the WhatsApp handoff as actual
-  friction (audit §3, §16 #7). Until then it stays schema-only. Note:
-  `docs/business/buyer-flow.md` and `seller-flow.md` describe the in-app upload
-  flow as if it shipped — that's stale; the code has only the WhatsApp handoff +
-  seller-recorded flow.
+  friction (audit §3, §16 #7). Until then it stays schema-only. (The
+  `docs/business/buyer-flow.md`/`seller-flow.md` diagrams document the current
+  WhatsApp handoff + seller-recorded flow.)
 - Stripe / MercadoPago integration for automatic verification (removes the
   manual review step for stores that opt in)
 - Hybrid manual + automated, selectable per store, consistent with the

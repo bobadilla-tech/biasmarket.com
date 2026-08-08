@@ -1,15 +1,15 @@
 # Buyer Flow
 
-Reflects the actual proof-of-payment order flow implemented in the app — see
+Reflects the actual payment flow implemented in the app — checkout hands the
+buyer off to WhatsApp to pay, and the seller records what was received — see
 [`docs/core/security-payments.md` §9](../core/security-payments.md#9-payment-flow-design-manual)
 and
 [`docs/core/product.md` §5.6–5.7](../core/product.md#56-checkout--order-creation-flow)
 for the technical/product-level source of truth this diagram follows.
 
-(Previous version of this doc described a WhatsApp-coordination flow —
-`awaiting_payment` → seller confirms over WhatsApp → `payment_confirmed`. That
-was never what got built; the real flow is in-app proof upload + seller review
-in the dashboard, no WhatsApp handoff required.)
+(There is **no in-app proof upload** in the MVP: `PaymentProof` is schema-only.
+The buyer pays over WhatsApp — or through whatever the seller shares — and the
+seller records the payment in the panel.)
 
 ```
 Entra a Bias Market
@@ -62,16 +62,19 @@ Entra a Bias Market
    Orden creada → PENDING_PAYMENT
         • Hold de stock (soft-hold, no descuenta stock real)
         • No cuenta como venta confirmada
-        • Expira sola si no se sube comprobante (ventana configurable)
+        • Expira sola si el vendedor no registra el pago
+          (ventana configurable, default 48h)
         │
         ▼
-   Sube comprobante de pago (imagen)
+   Handoff a WhatsApp — checkout abre un mensaje wa.me
+   prellenado (id de orden, items, total, método de entrega
+   y pago) al número de la tienda; el pago se coordina con
+   el vendedor fuera de la app (si la tienda no tiene WhatsApp
+   configurado, el comprador solo recibe las instrucciones de pago)
         │
         ▼
-   PAYMENT_SUBMITTED — esperando revisión del vendedor
-        │
-        ▼
-   Vendedor revisa en su panel
+   El vendedor registra lo recibido en su panel
+   (monto, método, nota, imagen opcional) → aprobar / rechazar
         │
    ┌────┴────┐
    ▼         ▼
@@ -93,5 +96,5 @@ ORDERING → IN_TRANSIT → READY → COMPLETED
 en todo momento, desde PENDING_PAYMENT hasta COMPLETED
 ```
 
-Si la orden expira sin comprobante: `PENDING_PAYMENT` → `CANCELLED`
+Si la orden expira sin pago registrado: `PENDING_PAYMENT` → `CANCELLED`
 automáticamente, sin acción del vendedor, hold liberado.

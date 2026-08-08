@@ -225,3 +225,59 @@ than treating it as incidental to "add helmet."
 The public checkout endpoint is rate-limited; the payment-registration endpoint
 is rate-limited; `helmet` is active; a CSRF baseline exists beyond the current
 buyer-auth-only `OriginGuard`, applied consistently rather than as a one-off.
+
+## Implementation notes (2026-08-08)
+
+- **Problem 1 (checkout throttle):** done. `orders.module.ts` now imports
+  `ThrottlerModule.forRoot([{ ttl: 60_000, limit: 5 }])` (matching the repo's
+  per-module convention); `checkout.controller.ts`'s `create` route overrides
+  with `@Throttle({ default: { ttl: 60_000, limit: 10 } })` +
+  `@UseGuards(ThrottlerGuard)`. Per-buyer-account throttling (keyed off
+  phone/customerId, on top of the default per-IP tracker) was **deferred**:
+  `@nestjs/throttler@6.5.0` supports this via a custom `getTracker()` override
+  on a `ThrottlerGuard` subclass, but that's a second moving part for a problem
+  rated MEDIUM specifically because the blast radius is bounded and self-healing
+  (soft-hold `expiresAt` sweep) — not worth the added complexity in this pass.
+- **Problem 2 (`addPayment` throttle):** done, narrowly. Only `addPayment` got
+  `@Throttle({ default: { ttl: 60_000, limit: 20 } })` +
+  `@UseGuards(ThrottlerGuard)`; `review`/`advance`/`cancel` were left alone per
+  the plan's own guidance ("goal is closing the specific gap the audit named,
+  not blanket-throttling every route").
+- **Problem 3 (helmet):** done.
+  `app.use(helmet({ contentSecurityPolicy:
+  false }))` in `main.ts`, added
+  before `setGlobalPrefix`/`enableCors`. Went with disabling CSP outright (one
+  of the two options this plan named) rather than path-scoping it to skip
+  `/api/docs` — simpler, and consistent with the plan's own reasoning that CSP's
+  value here is mostly about the Swagger page, which is off by default in
+  production.
+- **Problem 3 (CSRF/`OriginGuard` generalization): deferred, scope explicitly
+  cut down.** Did not convert `OriginGuard` to a global `APP_GUARD`. Reason:
+  this repo's e2e suite has zero `Origin`-header coverage outside
+  `customer-auth-rate-limit.e2e-spec.ts` and `customer-account-auth.e2e-spec.ts`
+  — a global guard would 403 every state-changing request in ~15 other e2e spec
+  files (`stores`, `products`, `orders`, `categories`, `collections`, seller
+  `auth` sign-up/sign-in, etc.), none of which are in this plan's scope, and
+  several of which were actively being edited by two other in-flight plans while
+  this work happened. Given the Severity Classification above already rates this
+  "mostly defense-in-depth, not an open hole" and explicitly says "there is no
+  known practical bypass of `SameSite=Lax` in this app's cookie config today,"
+  the risk/benefit of a blanket global guard didn't clear the bar for this pass.
+  `OriginGuard` stays applied exactly where it was (buyer-auth mutations), which
+  is already internally consistent, not a one-off within that domain. Full
+  app-wide CSRF middleware is a reasonable follow-up but should be its own
+  scoped plan with e2e fixture updates included, not squeezed into a
+  helmet/throttler pass.
+- **Verification:** `pnpm --filter api test` (unit) passes, including the
+  orders-scoped suite re-run in isolation. `pnpm --filter api test:e2e` could
+  not be exercised end-to-end in this environment — no local Docker/MinIO stack
+  running (`S3_BUCKET`/`S3_PAYMENT_BUCKET` env vars point at a MinIO instance
+  that wasn't up), and the working tree was in heavy concurrent flux from other
+  in-flight plans while this was being verified. Confirmed by reading code and
+  by unit tests that: `ThrottlerModule`/ `@Throttle` wiring matches the working
+  `contact`/`customer-auth` pattern exactly, and
+  `helmet({ contentSecurityPolicy: false })` doesn't touch any
+  CORS/response-shape behavior. **Still needs a real manual pass** once
+  `pnpm docker:dev` is up: hammer `POST /api/stores/:slug/checkout` past 10
+  req/min and confirm 429, load `/api/docs` with helmet on, and load the
+  dashboard/storefront in a browser to eyeball images/fonts.

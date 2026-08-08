@@ -15,12 +15,7 @@ import {
 import { normalizePhone } from "@biasmarket/utils/phone-country";
 import { PrismaService } from "../../prisma/prisma.service.js";
 import { CustomerAccountService } from "../orders/application/customer-account.service.js";
-
-function requiredEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) throw new Error(`Missing required env var: ${name}`);
-  return value;
-}
+import { requiredEnv } from "../../config/env.validation.js";
 
 // Derives a short, stable fingerprint of the current password hash. Embedded
 // in every session token issued for a customer (see

@@ -1312,6 +1312,45 @@
         ]
       }
     },
+    "/stores/{storeId}/orders/{orderId}/payments/{paymentId}/image": {
+      "get": {
+        "operationId": "OrderController_getPaymentImage",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "paymentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Order"
+        ]
+      }
+    },
     "/stores/{storeId}/orders/{orderId}/payments": {
       "post": {
         "operationId": "OrderController_addPayment",
@@ -5113,54 +5152,6 @@
           "payments"
         ]
       },
-      "PaymentProofResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "orderId": {
-            "type": "string"
-          },
-          "storeId": {
-            "type": "string"
-          },
-          "imageUrl": {
-            "type": "string"
-          },
-          "status": {
-            "enum": [
-              "PENDING_REVIEW",
-              "APPROVED",
-              "REJECTED"
-            ],
-            "type": "string"
-          },
-          "submittedAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "reviewedBy": {
-            "type": "string",
-            "nullable": true
-          },
-          "reviewedAt": {
-            "type": "string",
-            "nullable": true,
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "id",
-          "orderId",
-          "storeId",
-          "imageUrl",
-          "status",
-          "submittedAt",
-          "reviewedBy",
-          "reviewedAt"
-        ]
-      },
       "OrderDetailResponseDto": {
         "type": "object",
         "properties": {
@@ -5314,12 +5305,6 @@
             "items": {
               "$ref": "#/components/schemas/OrderPaymentResponseDto"
             }
-          },
-          "proofs": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PaymentProofResponseDto"
-            }
           }
         },
         "required": [
@@ -5352,8 +5337,7 @@
           "pendingAmount",
           "paidPercentage",
           "items",
-          "payments",
-          "proofs"
+          "payments"
         ]
       },
       "ReviewPaymentDto": {

@@ -210,10 +210,10 @@ without it, and it's listed as an MVP deliverable in [roadmap.md](roadmap.md).
   [security-payments.md §9.2](security-payments.md#92-flow)) happens at the
   variant level if variants exist, otherwise at the product level **Images**
 
-- Stored in Cloudflare R2, same as payment proofs — see
-  [security-payments.md §10](security-payments.md#10-storage-strategy)
+- Stored in object storage (public bucket — MinIO in the current deploy; see
+  [security-payments.md §10](security-payments.md#10-storage-strategy))
 - MVP limit: up to 5 images per product, JPEG/PNG only, same size/type rules as
-  proof uploads (§7.3 of that file)
+  payment images (§7.3 of that file)
 
 ### 5.3 Storefront Features (Public Storefront)
 

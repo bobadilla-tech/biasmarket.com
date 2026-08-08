@@ -7,12 +7,7 @@ import {
 } from "@aws-sdk/client-s3";
 import { randomUUID } from "node:crypto";
 import type { Readable } from "node:stream";
-
-function requiredEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) throw new Error(`Missing required env var: ${name}`);
-  return value;
-}
+import { requiredEnv } from "../config/env.validation.js";
 
 @Injectable()
 export class StorageService {

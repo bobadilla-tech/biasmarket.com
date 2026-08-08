@@ -1,14 +1,14 @@
 # Seller Flow
 
-Reflects the actual proof-of-payment review flow — see
+Reflects the actual payment flow — the seller records what the buyer sent over
+WhatsApp and approves/rejects from the panel — see
 [`docs/core/security-payments.md` §9](../core/security-payments.md#9-payment-flow-design-manual)
 and
 [`docs/core/product.md` §5.9](../core/product.md#59-seller-panel-management).
 
-(Previous version described "Verificar pago" happening over a WhatsApp
-conversation with a manual "Mark as Paid" button. That's not the built flow —
-review happens against an uploaded proof image inside the dashboard, no WhatsApp
-step.)
+(There is **no buyer-uploaded proof image** to review in the MVP: `PaymentProof`
+is schema-only. Payment happens over WhatsApp and the seller records the
+`OrderPayment` themselves — amount, method, optional note, optional image.)
 
 ```
 Login (dashboard, per store)
@@ -23,16 +23,22 @@ Productos  Pedidos   Categorías/   Pago y entrega   Configuración
                                      puntos de recojo)
    │
    ▼
-Pedidos → filtra por estado
+Pedidos → filtra por estado (PENDING_PAYMENT, PARTIALLY_PAID, …)
    │
    ▼
-Selecciona un pedido en PAYMENT_SUBMITTED
+Selecciona un pedido pendiente
    │
    ▼
-Ve el comprobante de pago subido por el comprador
+Registra el pago recibido (OrderPayment): monto, método,
+nota opcional, imagen opcional
+   │
+   ├── Monto parcial → PARTIALLY_PAID (sigue con soft-hold)
+   │
+   └── Monto suficiente para cubrir requiredAmount → pasa
+       directo por la ruta de aprobación → VERIFIED
    │
    ▼
-Revisa (aprobar / rechazar)
+Aprobar / rechazar
    │
    ┌────┴────┐
    ▼         ▼
@@ -42,16 +48,17 @@ Aprueba    Rechaza
 VERIFIED   REJECTED
    │         │
    │         ▼
-   │      Stock (soft-hold) liberado automáticamente
-   │
+   │      Hold liberado; rechazo terminal (sin reapertura)
+   │      en el MVP
    ▼
 Stock descontado automáticamente (a nivel de variante si existen,
-si no a nivel de producto)
+si no a nivel de producto); venta confirmada, cuenta en ventas
    │
    ▼
 Orden avanza por los estados de cumplimiento:
 ORDERING → IN_TRANSIT → READY → COMPLETED
-(el vendedor cambia el estado manualmente en cada paso)
+(el vendedor cambia el estado manualmente en cada paso;
+no se puede avanzar si el pago no está VERIFIED)
 
 
 Gestión de productos (independiente del flujo de pedidos)
@@ -72,8 +79,8 @@ un producto referenciado por una orden existente nunca se
 borra realmente, para no romper el historial de esa orden)
 
 
-Si una orden se cancela (expira sin comprobante, o el
-comprador la abandona):
+Si una orden se cancela (expira sin pago registrado — sweep
+cada 5 min — o el vendedor la cancela):
    │
    ▼
 CANCELLED — stock (soft-hold) liberado automáticamente,

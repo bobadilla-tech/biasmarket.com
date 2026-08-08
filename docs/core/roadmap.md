@@ -11,9 +11,10 @@ Where this ships, what ships when, and what could go wrong.
   [architecture.md](architecture.md#3-multi-tenant-design-critical))
 - DB: Postgres in a container on the same VPS (see
   [architecture.md](architecture.md#8-docker--deployment-improvements))
-- Storage: Cloudflare R2 (planned) — actual MVP deploy uses self-hosted MinIO
-  instead, see [deploy.md](deploy.md#image-uploads-minio) and "Known
-  limitations"; not yet reconciled with this doc
+- Storage: object storage — spec planned Cloudflare R2; the MVP deploy actually
+  runs self-hosted MinIO (product images public, seller-recorded payment images
+  in a private bucket), see [deploy.md](deploy.md#image-uploads-minio) and
+  [security-payments.md §10](security-payments.md#10-storage-strategy)
 - Email: Resend (transactional — signup, payment status, see
   [architecture.md](architecture.md#9-performance--scaling))
 
@@ -30,14 +31,17 @@ Where this ships, what ships when, and what could go wrong.
 ### MVP
 
 - Auth (seller + buyer — see
-  [product.md §4.8](product.md#48-buyer-authentication-public-storefront))
+  [product.md §5.8](product.md#58-buyer-authentication-public-storefront))
 - Store creation
 - Product CRUD
 - Payment & delivery configuration (per store — see
-  [product.md §4.4](product.md#44-payment-configuration-seller-panel) and
-  [§4.5](product.md#45-delivery-methods-seller-panel))
+  [product.md §5.4](product.md#54-payment-configuration-seller-panel) and
+  [§5.5](product.md#55-delivery-methods-seller-panel))
 - Order flow
-- Payment proof upload
+- Payment recording & review — WhatsApp handoff + seller-recorded payments, no
+  buyer-side proof upload (see
+  [security-payments.md §9.2](security-payments.md#92-flow); in-app buyer proof
+  upload is a possible future addition, §9.4)
 - Admin review
 - Order expiration handling — auto-cancel unpaid `PENDING_PAYMENT` orders and
   release the stock hold (see
@@ -60,7 +64,7 @@ Where this ships, what ships when, and what could go wrong.
 - Real payment integrations
 - Advanced inventory management — low-stock alerts, multi-warehouse (basic
   per-variant stock and soft-hold already ship in MVP, see
-  [product.md §4.2](product.md#42-product-management--crud-seller-panel) and
+  [product.md §5.2](product.md#52-product-management--crud-seller-panel) and
   [security-payments.md §9.2](security-payments.md#92-flow); restock-interest
   workflow already shipped too — `apps/api/src/modules/restock/`, a buyer can
   ask to be notified when a sold-out product/variant restocks)

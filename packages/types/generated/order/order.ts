@@ -62,6 +62,26 @@ export const findOne = async (
   });
 };
 
+export const getGetPaymentImageUrl = (
+  storeId: string,
+  orderId: string,
+  paymentId: string,
+) => {
+  return `/stores/${storeId}/orders/${orderId}/payments/${paymentId}/image`;
+};
+
+export const getPaymentImage = async (
+  storeId: string,
+  orderId: string,
+  paymentId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<void> => {
+  return customFetch<void>(getGetPaymentImageUrl(storeId, orderId, paymentId), {
+    ...options,
+    method: "GET",
+  });
+};
+
 export const getAddPaymentUrl = (storeId: string, orderId: string) => {
   return `/stores/${storeId}/orders/${orderId}/payments`;
 };

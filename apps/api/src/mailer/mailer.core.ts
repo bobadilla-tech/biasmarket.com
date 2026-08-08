@@ -3,12 +3,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
-
-function requiredEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) throw new Error(`Missing required env var: ${name}`);
-  return value;
-}
+import { requiredEnv } from "../config/env.validation.js";
 
 function resolveDriver(): "file" | "resend" {
   const raw = process.env.MAIL_DRIVER;
@@ -34,9 +29,18 @@ export interface SendEmailParams {
 
 export class MailerCore {
   private readonly driver: "file" | "resend" = resolveDriver();
-  private readonly apiKey = requiredEnv("RESEND_API_KEY");
-  private readonly fromEmail = requiredEnv("RESEND_FROM_EMAIL");
-  private client = new Resend(this.apiKey);
+  // RESEND_* are only required when the "resend" driver is active — the
+  // file driver is the documented local dev mode and must boot without
+  // third-party credentials (see validateEnv, same rule).
+  private readonly apiKey = this.driver === "resend"
+    ? requiredEnv("RESEND_API_KEY")
+    : "";
+  private readonly fromEmail = this.driver === "resend"
+    ? requiredEnv("RESEND_FROM_EMAIL")
+    : (process.env.RESEND_FROM_EMAIL ?? "no-reply@biasmarket.com");
+  private client = this.driver === "resend"
+    ? new Resend(this.apiKey)
+    : undefined;
 
   async send(params: SendEmailParams): Promise<{ id: string }> {
     const from = params.from ?? this.fromEmail;
@@ -48,7 +52,8 @@ export class MailerCore {
   private async sendViaResend(
     params: SendEmailParams & { from: string },
   ): Promise<{ id: string }> {
-    const { data, error } = await this.client.emails.send({
+    // Only reachable when driver === "resend", so client is always set.
+    const { data, error } = await this.client!.emails.send({
       from: params.from,
       to: params.to,
       subject: params.subject,

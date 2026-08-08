@@ -6,9 +6,18 @@ import { ValidationPipe } from "@nestjs/common";
 import helmet from "helmet";
 import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter.js";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import { initErrorTracking } from "./common/error-tracking.js";
+import { validateEnv } from "./config/env.validation.js";
 import metadata from "./metadata.js";
 
 async function bootstrap() {
+  // Refuse to boot before the server starts listening if a required env var
+  // is missing, rather than failing on the first request that needs it.
+  validateEnv();
+  // Env-gated: no-op unless SENTRY_DSN is set, so local dev isn't forced to
+  // configure it (unhandled errors still reach stdout either way).
+  initErrorTracking();
+
   const app = await NestFactory.create(AppModule, {
     bodyParser: false,
   });

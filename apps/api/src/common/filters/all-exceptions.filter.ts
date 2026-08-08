@@ -10,6 +10,7 @@ import {
 import type { Response } from "express";
 import { Temporal } from "@js-temporal/polyfill";
 import { extractMessage, stringifyError } from "@biasmarket/utils/errors";
+import { captureException } from "../error-tracking.js";
 import { InvalidOrderTransitionError } from "../../modules/orders/domain/order-status.vo.js";
 
 @Catch()
@@ -31,6 +32,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       return this.handleHttpExpression(exception, response, request);
     }
+
+    // Report to the error tracker (if configured) in addition to stdout —
+    // don't remove the existing logging, add to it.
+    captureException(exception);
 
     this.logger.error(
       `Unhandled exception on ${request.method} ${request.url}`,
