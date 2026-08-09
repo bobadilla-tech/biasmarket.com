@@ -46,7 +46,20 @@ Confirmed via investigation, not assumed:
   ordered) — it is not a buyer-facing payment-instructions surface and this plan
   doesn't touch it. (A separate plan,
   `2026-08-08-configurable-whatsapp-templates-plan.md`, covers making its
-  content store-configurable — different concern, don't conflate.)
+  content store-configurable — different concern, don't conflate. **That plan
+  has since landed** — `buildWhatsAppOrderMessage` now takes an optional
+  per-store template argument, but its call signature with no template is
+  unchanged, so nothing here needs adjusting for that.)
+- **Update since this plan was written: both `configurable-whatsapp-templates`
+  and `buyer-shipping-addresses` have landed and touched the exact two files
+  this plan's Frontend changes section 2-3 edit.** `checkout-form.tsx`'s
+  `onSubmit` now builds a conditional `shippingAddress` object into the
+  `mutateAsync(...)` call (a few lines above the `location.href` redirect this
+  plan changes) and the redirect lines themselves (`checkout-form.tsx:320-321`
+  as of the shipping-addresses plan's last edit) are confirmed **still
+  unconditional and untouched** — the fix this plan proposes is still needed
+  exactly as described. Re-read the current file fresh before editing rather
+  than assuming the line numbers cited below still match exactly.
 
 ## Decision: `PaymentMethodConfig.details` shape
 

@@ -163,22 +163,29 @@ already using `include` get the new fields for free.
    `order.controller.ts:363-375` already applies on the seller path) — low
    money-risk since an unreviewed submission doesn't count yet, but there's no
    reason to let a buyer submit a nonsense amount a seller then has to manually
-   catch. Ownership check: the session shape is `{ id, storeId }`
-   (`@CustomerSession()`, not `session.customerId` — confirm against
-   `customer-session.guard.ts`/`customer-auth.controller.ts` before writing
-   this), so the check is `order.customerId === session.id` (or, once the
-   global-buyer-account plan lands,
-   `order.buyerAccountId === session.buyerAccountId` — **if that plan hasn't
-   landed yet when this one executes, use the current per-store `Customer.id`
-   session shape; don't block this plan on that one**, see sequencing note
-   below) **and** `order.storeId === store.id` (resolved from `:slug`). Creates
-   an `OrderPayment` row with `source: BUYER_SUBMITTED`,
-   `reviewStatus: PENDING_REVIEW`. **Guest orders (`Order.customerId === null`)
-   are out of scope for this endpoint** — `CustomerSessionGuard` requires an
-   authenticated `Customer` with a `passwordHash`, so a guest buyer has no
-   session and cannot reach this endpoint even for their own order; state this
-   explicitly as a non-goal rather than leaving it an implicit gap, since guest
-   checkout is common in this product.
+   catch. **Update since this plan was written:
+   `2026-08-08-global-buyer-account-plan.md` has landed** (see its own Execution
+   notes) — `CustomerSessionGuard`'s real shape today is
+   `{ buyerAccountId: string }` only, **no `storeId`, no `id`, no `customerId`
+   at all** (`customer-session.guard.ts:39-40`). Ignore this plan's earlier "use
+   `session.id` unless the global plan has landed" hedge — that plan has landed,
+   use the real shape directly: ownership check is
+   `order.buyerAccountId === session.buyerAccountId` **and**
+   `order.storeId === store.id` (resolved from `:slug`). `Order.buyerAccountId`
+   is a real nullable column already (`schema.prisma:227`, added alongside the
+   legacy `customerId`). Route shape stays store-scoped
+   (`stores/:slug/account/orders/:orderId/payments`) even though the identity
+   behind it is global — mirror `addresses.controller.ts`'s already-landed
+   precedent for this exact pattern (`@ApiParam({ name: "slug" })` without a
+   matching `@Param` — required or Orval's spec validator rejects the `{slug}`
+   path segment, same gap `customer-auth.controller.ts` hit first). Creates an
+   `OrderPayment` row with `source: BUYER_SUBMITTED`,
+   `reviewStatus: PENDING_REVIEW`. **Guest orders
+   (`Order.buyerAccountId === null`) are out of scope for this endpoint** —
+   `CustomerSessionGuard` requires an authenticated `BuyerAccount`, so a guest
+   buyer has no session and cannot reach this endpoint even for their own order;
+   state this explicitly as a non-goal rather than leaving it an implicit gap,
+   since guest checkout is common in this product.
 4. **New buyer read endpoint** for the buyer's own submitted images: extend
    `GET stores/:slug/account/orders/:orderId/payments/:paymentId/image` (or fold
    into whatever the mini-dashboard plan needs) — same `CustomerSessionGuard` +
@@ -227,17 +234,26 @@ already using `include` get the new fields for free.
    where to add the approve/reject affordance.
 3. Regenerate OpenAPI + Orval client after DTO changes.
 
-## Sequencing note (real dependency, not optional)
+## Sequencing note — resolved, `global-buyer-account` already landed
 
-This plan's buyer-facing endpoints are gated by `CustomerSessionGuard`, which
-today carries `{customerId, storeId}` (per-store). If
-`2026-08-08-global-buyer-account-plan.md` lands first, the session shape changes
-to `{buyerAccountId}` (no `storeId`) and this plan's ownership checks need to
-match against `CustomerStoreLink`/`buyerAccountId` instead. **Do not block this
-plan on that one** — implement against the current per-store session shape; if
-the global-account plan lands later, its own "files likely touched" list should
-include this plan's new endpoints as a required follow-up update, not the other
-way around. Flag this explicitly in whichever plan lands second.
+This plan was originally written to hedge against `CustomerSessionGuard` still
+carrying the old per-store `{customerId, storeId}` shape. That's no longer the
+case: `2026-08-08-global-buyer-account-plan.md` and
+`2026-08-08-buyer-shipping-addresses-plan.md` (which hit and fixed exactly this
+"built against the stale session shape" bug once already, see that plan's own
+Execution notes) have both landed. Implement directly against today's real
+shape, `{buyerAccountId}` — see the updated ownership-check text above. No
+hedging needed.
+
+**Migration-application check before starting**: `global-buyer-account`'s own
+execution notes record that its schema migration
+(`20260809220000_add_buyer_account`) was hand-written but **never applied to a
+real database** in that session (no live Postgres available then). Confirm
+`prisma migrate status` is clean (all migrations through
+`20260809230000_add_buyer_shipping_addresses` applied) against whatever dev DB
+this session has access to before writing new migrations on top — otherwise
+`pnpm db:generate`/`prisma migrate dev` may generate a diff against tables that
+don't actually exist yet.
 
 ## Non-goals
 

@@ -62,13 +62,38 @@ Confirmed via investigation:
   `buildWhatsAppUrl` (`packages/utils/src/whatsapp/index.ts:109-115`) already
   exist and are usable client-side for a "contact seller" button — this plan
   reuses them, doesn't add a new WhatsApp-link builder.
-- **Cross-plan risk, worth knowing before starting**:
-  `2026-08-08-global-buyer-account-plan.md` explicitly names this plan in its
-  own "Shared-file conflict warning," flagging that the buyer session shape
-  (`{id, storeId}` today) "may shift during implementation" if that plan lands
-  first. This plan's ownership checks below are written against today's shape —
-  re-read that plan's execution notes (once it has any) before starting if
-  there's a chance it landed first.
+- **Update since this plan was written — both flagged dependencies have now
+  landed, resolving the two biggest open questions below:**
+  - `2026-08-08-global-buyer-account-plan.md` is done. `CustomerSessionGuard`'s
+    real shape is `{ buyerAccountId: string }` — no `storeId`, no `id`, no
+    `customerId` (`customer-session.guard.ts:39-40`). Every ownership check in
+    this plan must use `order.buyerAccountId === session.buyerAccountId`
+    (`Order.buyerAccountId` is a real nullable column, `schema.prisma:227`), not
+    the old `session.id` shape this doc was originally written against.
+  - `2026-08-08-buyer-shipping-addresses-plan.md` is done too, and its own
+    execution notes **explicitly hand this plan a piece of work**: "Address-book
+    CRUD UI ... was not built this session, deliberately ... this plan owns the
+    entry point/nav item ... there's no page to mount a list into [until this
+    plan lands]." The backend is real and live
+    (`GET/POST/PATCH/DELETE stores/:slug/account/addresses`, ownership via
+    `buyerAccountId`) — this plan now needs to build the actual address-list UI
+    (add/edit/delete/set-default), not just reserve a nav slot for it. See new
+    Scope item 6 below.
+  - A `GlobalAccountController`
+    (`apps/api/src/modules/customer-auth/global-account.controller.ts`) already
+    exposes slug-independent `GET account/me` and `GET account/orders` (real
+    cross-store data, `Order.buyerAccountId`-scoped) — but it's deliberately
+    **not** wired into the Orval client or any frontend yet (no global nav-bar
+    "logged in as X" indicator built). This plan's own Non-goals below still
+    correctly keep cross-store aggregation out of scope for _this_ pass; just
+    know the backend piece already exists if that changes later, no need to
+    build it.
+  - `2026-08-08-configurable-whatsapp-templates-plan.md` landed with
+    `NEW_ORDER`/`PAYMENT_REMINDER` only — `ORDER_INQUIRY` is not just "not yet
+    built," the API's `parseType()` actively **rejects it with a 400**. Scope
+    item 5's hardcoded fallback message stays exactly as originally planned;
+    don't attempt to call a whatsapp-templates endpoint with `ORDER_INQUIRY`, it
+    will fail.
 
 ## Scope
 
@@ -85,15 +110,14 @@ Confirmed via investigation:
    proof-upload plan has landed — the upload-proof form for orders still owing
    money.
 2. **Backend**: new endpoint `GET stores/:slug/account/orders/:orderId` gated by
-   `CustomerSessionGuard`, ownership-checked (`order.customerId === session.id`
-   — the `@CustomerSession()` decorator injects `{ id, storeId }`, confirmed
-   against `customer-session.guard.ts:35-37` and every existing controller
-   method that consumes it, e.g. `customer-auth.controller.ts:100,118,132`;
-   there is no `session.customerId` field), returning a real detail DTO (items,
-   delivery info, payment history) — **not** the narrow
-   `AccountOrderResponseDto` used for the list. **Reuse `OrderDetailResponseDto`
-   directly** (`apps/api/src/modules/orders/dto/order-response.dto.ts:283`) —
-   confirmed it's currently a plain extension of `OrderResponseDto` with no
+   `CustomerSessionGuard`, ownership-checked
+   (`order.buyerAccountId === session.buyerAccountId` — the real, landed session
+   shape, see the update note above; there is no `session.id` or
+   `session.customerId` field), returning a real detail DTO (items, delivery
+   info, payment history) — **not** the narrow `AccountOrderResponseDto` used
+   for the list. **Reuse `OrderDetailResponseDto` directly**
+   (`apps/api/src/modules/orders/dto/order-response.dto.ts:283`) — confirmed
+   it's currently a plain extension of `OrderResponseDto` with no
    seller-only/internal-notes fields added on top, so no buyer-safe subset is
    needed; don't build a second DTO for the same shape. **Loading/error
    states**: reuse this same route's existing convention —
@@ -115,35 +139,41 @@ Confirmed via investigation:
    existing guest-order handling, not a gap this plan needs to close).
 5. **"Contact seller" affordance**: add a persistent WhatsApp/store-link button
    on both the order-list and order-detail views — reuse
-   `buildWhatsAppUrl(store.whatsappNumber, ...)`. Default message content: **do
-   not hand-roll a new message string here** — this is exactly what
-   `2026-08-08-configurable-whatsapp-templates-plan.md` is scoping (a per-store
-   configurable template with an "order inquiry" variant). If that plan hasn't
-   landed yet, use a minimal hardcoded fallback
-   (`"Hola, tengo una consulta sobre mi pedido #${orderId.slice(0,8)}"`) and
-   leave a comment pointing at the templates plan for the real fix — don't
-   invest in message-template logic here, it's duplicated scope.
+   `buildWhatsAppUrl(store.whatsappNumber, ...)`. Use a minimal hardcoded
+   fallback message
+   (`"Hola, tengo una consulta sobre mi pedido #${orderId.slice(0,8)}"`) —
+   **not** the whatsapp-templates endpoint: that module only supports
+   `NEW_ORDER`/`PAYMENT_REMINDER` today and its `parseType()` rejects any other
+   type (including a hypothetical `ORDER_INQUIRY`) with a 400. Don't invest in
+   message-template logic here, it's out of scope and the backend doesn't
+   support it yet.
+6. **Address-book UI** (new scope, per the update note above —
+   `2026-08-08-buyer-shipping-addresses-plan.md` built the backend and
+   explicitly deferred this piece here): a section/page in the buyer account
+   area listing saved addresses (`GET stores/:slug/account/addresses`, already
+   live) with add/edit/delete and set-default actions
+   (`POST`/`PATCH`/`DELETE .../addresses/:id`, also already live — this is pure
+   frontend work, no new backend endpoints needed). Add a real `addresses` entry
+   to `account-sidebar.tsx`'s `NAV_ITEMS` pointing at it — no more "add
+   conditionally" hedging, the backend this nav item points to is real and
+   merged.
 
 ## Non-goals
 
-- Not adding an `addresses` entry to `account-sidebar.tsx`'s `NAV_ITEMS` (lines
-  12-15) — that's one line of coordination overhead better owned by whichever of
-  this plan or `2026-08-08-buyer-shipping-addresses-plan.md` lands **second**
-  (add the nav entry once the other plan's surface actually exists to point at),
-  not a scope item either plan needs to track proactively.
-
-- Not building cross-store order aggregation (`GET account/orders` across every
-  store a buyer has used) — that's `2026-08-08-global-buyer-account-plan.md`'s
-  scope, gated on its schema migration landing. This plan's order list/detail
-  stays scoped to the current store, matching today's per-store session model.
+- Not building cross-store order aggregation in the frontend — the backend
+  (`GlobalAccountController`'s `GET account/orders`) already exists (see the
+  update note above) but isn't wired to the Orval client or any UI; wiring up a
+  genuine cross-store "all my orders everywhere" view is a follow-up, not this
+  plan's scope. This plan's order list/detail stays scoped to the current
+  store's `stores/:slug/account/orders/:orderId`.
 - Not building the payment-proof upload form's submission logic itself
   (mutation + validation) — owned by
   `2026-08-08-buyer-proof-of-payment-upload-plan.md`. This plan only mounts it
   in the right place once it exists.
-- Not building address CRUD — owned by
-  `2026-08-08-buyer-shipping-addresses-plan.md`.
 - Not rewriting the seller-side `order-detail-sheet.tsx` — read-only reference,
   not shared code.
+- Not building a global nav-bar "logged in as X" indicator that spans stores —
+  still out of scope, same as `global-buyer-account`'s own non-goals.
 
 ## Files likely touched
 
@@ -151,12 +181,21 @@ Confirmed via investigation:
   `apps/web/app/[locale]/(storefront)/store/[slug]/account/orders/[orderId]/page.tsx`
   - client component
 - `apps/web/features/customer-auth/components/account-order-card.tsx` (make
-  clickable), `account-sidebar.tsx` (nav, conditional on siblings)
+  clickable), `account-sidebar.tsx` (real `addresses` nav entry)
 - `apps/api/src/modules/customer-auth/` — new detail endpoint, DTO
 - `apps/web/app/[locale]/(storefront)/store/[slug]/checkout/checkout-page-client.tsx`
   (link to order detail)
-- `apps/api/openapi.json` + `packages/types/generated/**`
-- i18n: new copy for order-detail labels.
+- New address-book UI (list + add/edit/delete/set-default), calling the
+  already-live `apps/api/src/modules/addresses/` endpoints via
+  `apiClient.addresses.*` (already registered in `apps/web/lib/api-client.ts`
+  per that plan's execution notes) — likely a new
+  `features/customer-auth/components/account-addresses-section.tsx` or similar,
+  following the existing `account-orders-section.tsx`/
+  `account-profile-section.tsx` pattern.
+- `apps/api/openapi.json` + `packages/types/generated/**` (only if the new
+  order-detail endpoint needs it — the addresses endpoints are already
+  generated)
+- i18n: new copy for order-detail labels + address-book UI.
 
 ## Verification
 
@@ -164,7 +203,10 @@ Confirmed via investigation:
   account → order list → order detail; confirm payment history and delivery info
   render correctly; confirm "contact seller" opens WhatsApp with a sane
   prefilled message; confirm a different buyer (or logged-out session) gets
-  403/redirect when hitting another buyer's order-detail URL directly.
+  403/redirect when hitting another buyer's order-detail URL directly; add/edit/
+  delete/set-default an address from the new address-book UI and confirm it's
+  the same one `checkout-form.tsx`'s courier-address prefill picks up (per
+  `buyer-shipping-addresses`'s already-landed `useDefaultShippingAddress` hook).
 - `pnpm typecheck`, `pnpm --filter web test`, `pnpm --filter api test`.
 
 ## Definition of done
@@ -172,4 +214,7 @@ Confirmed via investigation:
 A logged-in buyer can click from their order list into a real detail view
 showing items, delivery info, and payment history, and can reach the seller via
 WhatsApp from that view — closing the audit's §16 item 4 gap ("buyers currently
-can't see their own order status in any real way").
+can't see their own order status in any real way"). A buyer can also manage
+their saved addresses (list/add/edit/delete/set-default) from the account area,
+closing out the piece `buyer-shipping-addresses` deliberately left for this
+plan.
