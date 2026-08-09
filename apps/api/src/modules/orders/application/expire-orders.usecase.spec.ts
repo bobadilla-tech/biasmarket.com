@@ -7,7 +7,7 @@ import { NotificationsService } from "../../notifications/notifications.service.
 describe("ExpireOrdersUseCase", () => {
   let useCase: ExpireOrdersUseCase;
   let prisma: {
-    order: { findMany: Mock; update: Mock };
+    order: { findMany: Mock; updateMany: Mock };
     productVariant: { findUnique: Mock; update: Mock };
     store: { findUnique: Mock };
     product: { findUnique: Mock };
@@ -16,7 +16,10 @@ describe("ExpireOrdersUseCase", () => {
 
   beforeEach(async () => {
     prisma = {
-      order: { findMany: vi.fn(), update: vi.fn() },
+      order: {
+        findMany: vi.fn(),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
       productVariant: { findUnique: vi.fn(), update: vi.fn() },
       store: { findUnique: vi.fn() },
       product: { findUnique: vi.fn() },
@@ -52,8 +55,8 @@ describe("ExpireOrdersUseCase", () => {
       where: { id: "variant-1" },
       data: { reserved: { decrement: 2 } },
     });
-    expect(prisma.order.update).toHaveBeenCalledWith({
-      where: { id: "order-1" },
+    expect(prisma.order.updateMany).toHaveBeenCalledWith({
+      where: { id: "order-1", paymentStatus: "PENDING_PAYMENT" },
       data: { paymentStatus: "CANCELLED" },
     });
     expect(result).toEqual({ cancelled: 1 });
@@ -79,6 +82,18 @@ describe("ExpireOrdersUseCase", () => {
     const result = await useCase.execute();
 
     expect(result).toEqual({ cancelled: 0 });
-    expect(prisma.order.update).not.toHaveBeenCalled();
+    expect(prisma.order.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("skips stock mutation when another request already changed the order's status", async () => {
+    prisma.order.findMany.mockResolvedValue([
+      { id: "order-1", items: [{ variantId: "variant-1", quantity: 2 }] },
+    ]);
+    prisma.order.updateMany.mockResolvedValue({ count: 0 });
+
+    const result = await useCase.execute();
+
+    expect(prisma.productVariant.update).not.toHaveBeenCalled();
+    expect(result).toEqual({ cancelled: 0 });
   });
 });

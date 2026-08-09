@@ -18,8 +18,20 @@ export class ExpireOrdersUseCase {
       include: { items: true },
     });
 
+    let cancelled = 0;
+
     for (const order of expired) {
       await this.prisma.$transaction(async (tx) => {
+        // Guard against a seller decision (verify/reject) landing between
+        // findMany and this transaction: only cancel if still PENDING_PAYMENT,
+        // otherwise skip stock mutation entirely instead of double-applying it.
+        const guard = await tx.order.updateMany({
+          where: { id: order.id, paymentStatus: "PENDING_PAYMENT" },
+          data: { paymentStatus: "CANCELLED" },
+        });
+        if (guard.count === 0) return;
+        cancelled++;
+
         const store = await tx.store.findUnique({
           where: { id: order.storeId },
         });
@@ -47,13 +59,9 @@ export class ExpireOrdersUseCase {
             }
           }
         }
-        await tx.order.update({
-          where: { id: order.id },
-          data: { paymentStatus: "CANCELLED" },
-        });
       });
     }
 
-    return { cancelled: expired.length };
+    return { cancelled };
   }
 }
