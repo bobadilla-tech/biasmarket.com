@@ -42,7 +42,7 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
     handleSubmit,
     watch,
     reset,
-    formState: { isSubmitting },
+    formState: { isSubmitting, errors },
   } = useForm<ProfileFormInput>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
@@ -52,6 +52,11 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
       defaultCurrency:
         (store.defaultCurrency as ProfileFormInput["defaultCurrency"]) ??
           SUPPORTED_CURRENCIES[0],
+      locale: (store.locale as ProfileFormInput["locale"]) ?? "es",
+      instagramUrl: store.instagramUrl ?? "",
+      facebookUrl: store.facebookUrl ?? "",
+      tiktokUrl: store.tiktokUrl ?? "",
+      twitterUrl: store.twitterUrl ?? "",
     },
   });
 
@@ -63,6 +68,11 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
       defaultCurrency:
         (store.defaultCurrency as ProfileFormInput["defaultCurrency"]) ??
           SUPPORTED_CURRENCIES[0],
+      locale: (store.locale as ProfileFormInput["locale"]) ?? "es",
+      instagramUrl: store.instagramUrl ?? "",
+      facebookUrl: store.facebookUrl ?? "",
+      tiktokUrl: store.tiktokUrl ?? "",
+      twitterUrl: store.twitterUrl ?? "",
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -70,6 +80,11 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
     store.defaultCurrency,
     store.paymentInstructions,
     store.name,
+    store.locale,
+    store.instagramUrl,
+    store.facebookUrl,
+    store.tiktokUrl,
+    store.twitterUrl,
     reset,
   ]);
 
@@ -148,7 +163,7 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
           </Field>
         </div>
 
-        <div className="mt-4 grid gap-4 sm:grid-cols-[minmax(0,1fr)_180px]">
+        <div className="mt-4 grid gap-4 sm:grid-cols-3">
           <Field label={t("profile.whatsappLabel")}>
             <Controller
               control={control}
@@ -176,6 +191,67 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
                 </option>
               ))}
             </Select>
+          </Field>
+          <Field label={t("profile.localeLabel")}>
+            <Select
+              {...register("locale")}
+              className="h-12 w-full"
+              selectClassName="store-theme-input h-full rounded-2xl border border-[#e7dcf3] bg-[#fbf8fe] text-sm text-[#341b55] outline-none"
+            >
+              <option value="es">Español (es)</option>
+              <option value="en">English (en)</option>
+            </Select>
+          </Field>
+        </div>
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <Field label={t("profile.instagramLabel")}>
+            <Input
+              {...register("instagramUrl")}
+              placeholder={t("profile.instagramPlaceholder")}
+              className="store-theme-input h-12 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] text-[#341b55] shadow-none"
+            />
+            {errors.instagramUrl && (
+              <p className="mt-1 text-xs text-[#b24368]">
+                {errors.instagramUrl.message}
+              </p>
+            )}
+          </Field>
+          <Field label={t("profile.facebookLabel")}>
+            <Input
+              {...register("facebookUrl")}
+              placeholder={t("profile.facebookPlaceholder")}
+              className="store-theme-input h-12 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] text-[#341b55] shadow-none"
+            />
+            {errors.facebookUrl && (
+              <p className="mt-1 text-xs text-[#b24368]">
+                {errors.facebookUrl.message}
+              </p>
+            )}
+          </Field>
+          <Field label={t("profile.tiktokLabel")}>
+            <Input
+              {...register("tiktokUrl")}
+              placeholder={t("profile.tiktokPlaceholder")}
+              className="store-theme-input h-12 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] text-[#341b55] shadow-none"
+            />
+            {errors.tiktokUrl && (
+              <p className="mt-1 text-xs text-[#b24368]">
+                {errors.tiktokUrl.message}
+              </p>
+            )}
+          </Field>
+          <Field label={t("profile.twitterLabel")}>
+            <Input
+              {...register("twitterUrl")}
+              placeholder={t("profile.twitterPlaceholder")}
+              className="store-theme-input h-12 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] text-[#341b55] shadow-none"
+            />
+            {errors.twitterUrl && (
+              <p className="mt-1 text-xs text-[#b24368]">
+                {errors.twitterUrl.message}
+              </p>
+            )}
           </Field>
         </div>
 

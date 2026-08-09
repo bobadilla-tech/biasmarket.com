@@ -31,6 +31,14 @@ export interface StoreResponseDto {
   paymentInstructions: string;
   /** @nullable */
   whatsappNumber: string | null;
+  /** @nullable */
+  instagramUrl: string | null;
+  /** @nullable */
+  facebookUrl: string | null;
+  /** @nullable */
+  tiktokUrl: string | null;
+  /** @nullable */
+  twitterUrl: string | null;
   defaultCurrency: string;
   holdWindowHours: number;
   lowStockThreshold: number;
@@ -60,6 +68,14 @@ export interface StoreWithOwnerResponseDto {
   paymentInstructions: string;
   /** @nullable */
   whatsappNumber: string | null;
+  /** @nullable */
+  instagramUrl: string | null;
+  /** @nullable */
+  facebookUrl: string | null;
+  /** @nullable */
+  tiktokUrl: string | null;
+  /** @nullable */
+  twitterUrl: string | null;
   defaultCurrency: string;
   holdWindowHours: number;
   lowStockThreshold: number;
@@ -73,7 +89,16 @@ export type UpdateStoreDtoThemeConfig = { [key: string]: unknown };
 
 export interface UpdateStoreDto {
   name?: string;
+  locale?: string;
   whatsappNumber?: string;
+  /** @nullable */
+  instagramUrl?: string | null;
+  /** @nullable */
+  facebookUrl?: string | null;
+  /** @nullable */
+  tiktokUrl?: string | null;
+  /** @nullable */
+  twitterUrl?: string | null;
   paymentInstructions?: string;
   defaultCurrency?: string;
   themeConfig?: UpdateStoreDtoThemeConfig;
@@ -228,6 +253,14 @@ export interface StorePublicDetailResponseDto {
   paymentInstructions: string;
   /** @nullable */
   whatsappNumber: string | null;
+  /** @nullable */
+  instagramUrl: string | null;
+  /** @nullable */
+  facebookUrl: string | null;
+  /** @nullable */
+  tiktokUrl: string | null;
+  /** @nullable */
+  twitterUrl: string | null;
   defaultCurrency: string;
   holdWindowHours: number;
   lowStockThreshold: number;

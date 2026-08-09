@@ -231,6 +231,30 @@ describe("StoresService", () => {
         },
       });
     });
+
+    it("updates locale and social links when provided", async () => {
+      prisma.store.findUnique.mockResolvedValue({ id: "store-1", ownerId });
+      prisma.store.update.mockResolvedValue({ id: "store-1" });
+
+      await service.update("store-1", ownerId, {
+        locale: "en",
+        instagramUrl: "https://instagram.com/mystore",
+        facebookUrl: "https://facebook.com/mystore",
+        tiktokUrl: "",
+        twitterUrl: null,
+      });
+
+      expect(prisma.store.update).toHaveBeenCalledWith({
+        where: { id: "store-1" },
+        data: {
+          locale: "en",
+          instagramUrl: "https://instagram.com/mystore",
+          facebookUrl: "https://facebook.com/mystore",
+          tiktokUrl: null,
+          twitterUrl: null,
+        },
+      });
+    });
   });
 
   describe("findPublicBySlug()", () => {

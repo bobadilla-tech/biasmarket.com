@@ -78,6 +78,33 @@ function collectSoldOutProducts(store: any): any[] {
   return Array.from(seen.values());
 }
 
+function StoreSocialLinks({ store }: { store: any }) {
+  const socials = [
+    { key: "instagram", label: "Instagram", url: store.instagramUrl },
+    { key: "facebook", label: "Facebook", url: store.facebookUrl },
+    { key: "tiktok", label: "TikTok", url: store.tiktokUrl },
+    { key: "twitter", label: "X", url: store.twitterUrl },
+  ].filter((s) => Boolean(s.url));
+
+  if (socials.length === 0) return null;
+
+  return (
+    <div className="flex items-center gap-2">
+      {socials.map((s) => (
+        <a
+          key={s.key}
+          href={s.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-medium text-gray-600 transition hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"
+        >
+          {s.label}
+        </a>
+      ))}
+    </div>
+  );
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -178,14 +205,17 @@ export default async function StorePage({
     return (
       <div className="min-h-screen bg-gray-50">
         <header className="border-b border-gray-100 bg-white px-6 py-8">
-          <div className="mx-auto flex max-w-5xl items-center justify-center gap-3">
-            <StoreLogo
-              name={store.name}
-              logoUrl={store.logoUrl}
-              size={48}
-              className="text-sm"
-            />
-            <h1 className="text-2xl font-bold text-gray-900">{store.name}</h1>
+          <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 sm:flex-row">
+            <div className="flex items-center gap-3">
+              <StoreLogo
+                name={store.name}
+                logoUrl={store.logoUrl}
+                size={48}
+                className="text-sm"
+              />
+              <h1 className="text-2xl font-bold text-gray-900">{store.name}</h1>
+            </div>
+            <StoreSocialLinks store={store} />
           </div>
         </header>
         <main className="max-w-5xl mx-auto px-4 py-8">
@@ -208,14 +238,17 @@ export default async function StorePage({
         }}
       />
       <header className="border-b border-gray-100 bg-white px-6 py-8">
-        <div className="mx-auto flex max-w-5xl items-center justify-center gap-3">
-          <StoreLogo
-            name={store.name}
-            logoUrl={store.logoUrl}
-            size={48}
-            className="text-sm"
-          />
-          <h1 className="text-2xl font-bold text-gray-900">{store.name}</h1>
+        <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 sm:flex-row">
+          <div className="flex items-center gap-3">
+            <StoreLogo
+              name={store.name}
+              logoUrl={store.logoUrl}
+              size={48}
+              className="text-sm"
+            />
+            <h1 className="text-2xl font-bold text-gray-900">{store.name}</h1>
+          </div>
+          <StoreSocialLinks store={store} />
         </div>
       </header>
       <main className="max-w-5xl mx-auto px-4 py-8 space-y-10">
