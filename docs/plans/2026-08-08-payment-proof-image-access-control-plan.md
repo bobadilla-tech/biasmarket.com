@@ -1,7 +1,8 @@
 # Payment-proof / payment image access control
 
-**Status:** Pre-implementation plan (written ahead of the work, per audit
-follow-up request).
+**Status:** Implemented 2026-08-08. See "Execution notes" at the bottom for what
+landed and the residual exposure that remains (legacy `payments/` objects in the
+shared public bucket).
 
 **Source:** `docs/audits/audit-2026-08-08.md` §7, §12 (critical finding #2), §13
 (finding #1), §16 (#2, #7).
@@ -201,9 +202,12 @@ flagging it back — it's a scope-expanding decision, not a pure cleanup.
 
 ## Definition of done
 
-No payment-proof/payment image is reachable without an ownership check;
-`PaymentProof`'s fate is decided and the schema/code reflect that decision
-consistently (no half-wired dead model left behind).
+No payment-proof/payment image **uploaded after this change** is reachable
+without an ownership check; `PaymentProof`'s fate is decided and the schema/code
+reflect that decision consistently (no half-wired dead model left behind).
+Pre-split `payments/*` objects in the shared public `S3_BUCKET` are an
+explicitly accepted residual exposure (see execution notes) — closing it is a
+separate backfill-migration or bucket-policy task.
 
 ## Execution notes
 
@@ -235,6 +239,23 @@ short-circuits before touching the payment/storage, a missing `imageUrl` 404s
 instead of streaming, and a successful call streams the right body with the
 right `Content-Type`. `pnpm --filter api test` (379 tests),
 `pnpm --filter web test` (190 tests), and `pnpm typecheck` all pass clean.
+
+**Residual exposure (accepted, documented):** the bucket-split only protects
+_post-split_ uploads. Any `OrderPayment.imageUrl` written before the
+`S3_PAYMENT_BUCKET` split still points at the old shared `S3_BUCKET` under the
+`payments/` key prefix, and that bucket still carries MinIO's anonymous-read
+policy (it must — it also serves public product images), so those **legacy
+objects remain fetchable at their old public URLs** by anyone who obtains one.
+The plan's DoD ("no payment image is reachable without an ownership check") is
+therefore narrowed to _new_ uploads; the legacy set is out of scope unless real
+production traffic materializes. Closing it would require either (a) migrating
+existing `payments/*` objects into `S3_PAYMENT_BUCKET` and rewriting each
+`OrderPayment.imageUrl` to the new key (a backfill migration against both MinIO
+and the DB), or (b) a MinIO bucket-policy statement on `S3_BUCKET` denying
+anonymous `s3:GetObject` on the `payments/*` prefix only. Neither was done:
+there is no meaningful production data yet (the execution notes' "no real
+production traffic" caveat applies), and both carry real migration/infra cost
+for closing an exposure with zero known leaked keys.
 
 Not done, out of scope for this plan: no e2e test hits the new endpoint over
 HTTP (the plan's "Verification" section's 401/403 manual-check bullet was

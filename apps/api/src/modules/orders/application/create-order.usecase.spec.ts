@@ -236,9 +236,11 @@ describe("CreateOrderUseCase", () => {
     expect(prisma.$queryRaw).toHaveBeenCalledWith(
       expect.arrayContaining([
         expect.stringContaining('UPDATE "ProductVariant"'),
+        expect.stringContaining('"Product".storeId'),
       ]),
       2,
       "variant-1",
+      store.id,
       2,
     );
     expect(prisma.order.create).toHaveBeenCalledWith(

@@ -94,14 +94,20 @@ Classification below for why.
 **Revised fix scope:** bring `reorderProducts` in line with the store-sections
 pattern for consistency and to turn the opaque 500 into a proper 400 — swap the
 per-item `collectionProduct.update()` for
-`collectionProduct.updateMany({ where: { collectionId, productId }, data:
+`collectionProduct.updateMany({ where: { collectionId, productId, data:
 { position } })`
 inside the `$transaction`, asserting `result.count === 1` per item and throwing
 `BadRequestException` otherwise (mirroring store-sections'
 `if (result.count !== 1) throw new BadRequestException(...)` shape exactly).
-`storeId` scoping is reached transitively through the already-verified
-`collectionId` — `CollectionProduct` has no `storeId` column of its own, so
-there's nothing further to add to the `where`.
+`storeId` scoping is additionally enforced at the database boundary, not just
+transitively: both write predicates carry `collection: { storeId }` and
+`product: { storeId }` relation filters alongside `collectionId`/`productId`
+(`CollectionProduct` has no `storeId` column of its own, so the store scope goes
+through its relations), so a cross-store collection/product pair is rejected by
+the write itself (count 0 → 400), not only by the preflight
+`findOwnedCollection` check. The regression spec asserts exactly this: a
+`productId` belonging to a different store's product is rejected even when
+`collectionId` is the owner's.
 
 ## Problem 2 — `delivery-config` has zero test coverage
 
@@ -182,7 +188,12 @@ write — `CollectionProduct`'s compound primary key
 can only ever match rows already scoped to that collection. The worst outcome
 today is a caller (who does own the collection) supplying a `productId` not in
 it and getting an unhandled 500 instead of a 400 — a robustness/error-contract
-nit, not a security hole. Worth fixing for consistency with the shipped
+nit, not a security hole. The shipped fix keeps this at LOW but closes the
+residual "scoping relies on the preflight ownership check alone" gap: the write
+predicates now scope both the `collection` and `product` relations to `storeId`
+at the database boundary, so even a caller who somehow got past
+`findOwnedCollection` (or a future refactor that weakened it) could not match a
+row outside the caller's store. Worth fixing for consistency with the shipped
 store-sections pattern and for a better error contract, but it is not a TOCTOU
 tenant-isolation bug the way the original version of this plan (and the
 codacy-cleanup doc's "same shape" note) implied. Downgrade from the audit's
@@ -204,18 +215,22 @@ coverage closing a gap, not a fix for something currently broken.
 
 ### What landed
 
-**Problem 1 — `reorderProducts` (`collections.service.ts`).** Implemented
-exactly as the revised fix scope describes: the reorder now runs inside
-`this.prisma.$transaction(async (tx) => { ... })`, iterating
+**Problem 1 — `reorderProducts` (`collections.service.ts`).** Implemented per
+the revised fix scope, with one hardening added during execution: the reorder
+now runs inside `this.prisma.$transaction(async (tx) => { ... })`, iterating
 `dto.productIds.entries()`, issuing
-`tx.collectionProduct.updateMany({ where: { collectionId, productId },
-data: { position } })`
+`tx.collectionProduct.updateMany({ where: { collectionId, productId,
+collection: { storeId }, product: { storeId } }, data: { position } })`
 per item, asserting `result.count === 1`, and throwing
 `BadRequestException("Uno o más productos no pertenecen a esta colección")` on a
 mismatch. The opaque P2025/unhandled-500 path is gone — a non-member `productId`
-now surfaces as a clean 400. `storeId` scoping is reached transitively through
-the already-ownership-verified `collectionId`, as the plan's revised scope noted
-(there's no `storeId` column on `CollectionProduct`).
+now surfaces as a clean 400. **Both write predicates are scoped to `storeId` at
+the database boundary via their `collection`/`product` relation filters** (not
+only reached transitively through the already-ownership-verified
+`collectionId`): `CollectionProduct` has no `storeId` column of its own, so the
+store scope goes through its relations — the `updateMany` where-clause cannot
+match a row whose collection or product belongs to another store, and the same
+scoping applies to the post-write re-read `findMany`.
 
 `collections.service.spec.ts` updated to match the new shape:
 
@@ -224,13 +239,19 @@ the already-ownership-verified `collectionId`, as the plan's revised scope noted
   `$transaction` mock switched from the array form
   (`vi.fn((ops) => Promise.all(ops))`) to the interactive form
   (`vi.fn((fn) => fn(prisma))`) — same as `store-sections.service.spec.ts`.
-- The existing happy-path test now asserts the two `updateMany` calls
-  (`{ collectionId, productId: "p-2" }`/`{ position: 0 }`, then
-  `{ collectionId, productId: "p-1" }`/`{ position: 1 }`) and the re-read
-  `findMany`, and checks the resolved return value.
+- The existing happy-path test now asserts the two `updateMany` calls (each
+  carrying `collection: { storeId }`/`product: { storeId }` alongside
+  `collectionId`/`productId`) and the re-read `findMany`, and checks the
+  resolved return value.
 - New regression test: `updateMany` resolving `{ count: 0 }` →
   `BadRequestException`. This is the error-contract test the plan's Verification
   section called for.
+- New cross-store test: a `productId` that belongs to a different store's
+  product (i.e. whose `product.storeId !== collection.storeId`) is rejected —
+  the store-scoped `updateMany` predicate resolves `{ count: 0 }` and the call
+  throws `BadRequestException`. This asserts the DB-boundary scoping, not just
+  the preflight `findOwnedCollection` guard, blocks cross-store
+  collection/product pairs.
 
 **Problem 2 — `delivery-config.service.spec.ts` (new file, 11 tests).** Coverage
 matches the payment-config template plus the plan's two additions:

@@ -6,9 +6,10 @@ WhatsApp and approves/rejects from the panel — see
 and
 [`docs/core/product.md` §5.9](../core/product.md#59-seller-panel-management).
 
-(There is **no buyer-uploaded proof image** to review in the MVP: `PaymentProof`
-is schema-only. Payment happens over WhatsApp and the seller records the
-`OrderPayment` themselves — amount, method, optional note, optional image.)
+(There is **no buyer-uploaded proof image** to review in the MVP — the old
+schema-only `PaymentProof` model was removed. Payment happens over WhatsApp and
+the seller records the `OrderPayment` themselves — amount, method, optional
+note, optional image.)
 
 ```
 Login (dashboard, per store)
@@ -33,23 +34,16 @@ Registra el pago recibido (OrderPayment): monto, método,
 nota opcional, imagen opcional
    │
    ├── Monto parcial → PARTIALLY_PAID (sigue con soft-hold)
+   │      │
+   │      ▼
+   │   Aprobar / rechazar desde el panel
+   │      │
+   │      ├── Aprueba → VERIFIED
+   │      └── Rechaza → REJECTED (hold liberado; terminal en el MVP)
    │
    └── Monto suficiente para cubrir requiredAmount → pasa
        directo por la ruta de aprobación → VERIFIED
    │
-   ▼
-Aprobar / rechazar
-   │
-   ┌────┴────┐
-   ▼         ▼
-Aprueba    Rechaza
-   │         │
-   ▼         ▼
-VERIFIED   REJECTED
-   │         │
-   │         ▼
-   │      Hold liberado; rechazo terminal (sin reapertura)
-   │      en el MVP
    ▼
 Stock descontado automáticamente (a nivel de variante si existen,
 si no a nivel de producto); venta confirmada, cuenta en ventas

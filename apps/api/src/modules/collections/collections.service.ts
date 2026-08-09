@@ -141,9 +141,15 @@ export class CollectionsService {
   ) {
     await this.findOwnedCollection(collectionId, storeId, userId);
     return this.prisma.$transaction(async (tx) => {
+      const scopedWhere = {
+        collectionId,
+        collection: { storeId },
+        product: { storeId },
+      } as const;
+
       for (const [position, productId] of dto.productIds.entries()) {
         const result = await tx.collectionProduct.updateMany({
-          where: { collectionId, productId },
+          where: { ...scopedWhere, productId },
           data: { position },
         });
         if (result.count !== 1) {
@@ -154,7 +160,7 @@ export class CollectionsService {
       }
 
       return tx.collectionProduct.findMany({
-        where: { collectionId, productId: { in: dto.productIds } },
+        where: { ...scopedWhere, productId: { in: dto.productIds } },
         orderBy: { position: "asc" },
       });
     });

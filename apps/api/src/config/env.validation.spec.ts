@@ -16,6 +16,29 @@ const REQUIRED = [
   "S3_SECRET_KEY",
 ];
 
+const OPTIONAL = [
+  "MAIL_DRIVER",
+  "RESEND_API_KEY",
+  "RESEND_FROM_EMAIL",
+  "NODE_ENV",
+];
+
+// Capture original values once at module load so the suite can restore
+// process.env exactly, distinguishing vars that were unset (deleted) from
+// vars that had a value.
+const ORIGINAL = Object.fromEntries(
+  [...REQUIRED, ...OPTIONAL].map((name) => [name, process.env[name]]),
+);
+
+function restore(name: string) {
+  const original = ORIGINAL[name];
+  if (original === undefined) {
+    delete process.env[name];
+  } else {
+    process.env[name] = original;
+  }
+}
+
 function setAllRequired() {
   for (const name of REQUIRED) process.env[name] = `test-${name}`;
 }
@@ -46,11 +69,7 @@ describe("validateEnv", () => {
   });
 
   afterEach(() => {
-    for (const name of REQUIRED) delete process.env[name];
-    delete process.env.MAIL_DRIVER;
-    delete process.env.RESEND_API_KEY;
-    delete process.env.RESEND_FROM_EMAIL;
-    delete process.env.NODE_ENV;
+    for (const name of [...REQUIRED, ...OPTIONAL]) restore(name);
   });
 
   it("passes when every required var is set with the file mail driver", () => {

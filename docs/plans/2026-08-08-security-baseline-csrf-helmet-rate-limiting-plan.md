@@ -1,7 +1,7 @@
 # Security baseline: CSRF/helmet + general rate limiting
 
-**Status:** Pre-implementation plan (written ahead of the work, per audit
-follow-up request).
+**Status:** Implemented 2026-08-08 (helmet CSP config refined 2026-08-09). See
+"Implementation notes" for what landed and what was explicitly deferred.
 
 **Source:** `docs/audits/audit-2026-08-08.md` §12 (important findings #3, #4),
 §13 (findings #2, #4), §16 (#5, #6).
@@ -223,8 +223,13 @@ than treating it as incidental to "add helmet."
 ## Definition of done
 
 The public checkout endpoint is rate-limited; the payment-registration endpoint
-is rate-limited; `helmet` is active; a CSRF baseline exists beyond the current
-buyer-auth-only `OriginGuard`, applied consistently rather than as a one-off.
+is rate-limited; `helmet` is active with CSP enabled (Swagger's `/api/docs` path
+exempt); and the buyer-auth `OriginGuard` baseline is documented as the CSRF
+story for this pass. **App-wide CSRF middleware is explicitly out of scope for
+this plan** — generalizing `OriginGuard` to a global `APP_GUARD` was deferred
+(see implementation notes), so "a CSRF baseline beyond buyer-auth" is not a DoD
+item here; it's a separate scoped follow-up plan with e2e fixture updates
+included.
 
 ## Implementation notes (2026-08-08)
 
@@ -243,14 +248,15 @@ buyer-auth-only `OriginGuard`, applied consistently rather than as a one-off.
   `@UseGuards(ThrottlerGuard)`; `review`/`advance`/`cancel` were left alone per
   the plan's own guidance ("goal is closing the specific gap the audit named,
   not blanket-throttling every route").
-- **Problem 3 (helmet):** done.
-  `app.use(helmet({ contentSecurityPolicy:
-  false }))` in `main.ts`, added
-  before `setGlobalPrefix`/`enableCors`. Went with disabling CSP outright (one
-  of the two options this plan named) rather than path-scoping it to skip
-  `/api/docs` — simpler, and consistent with the plan's own reasoning that CSP's
-  value here is mostly about the Swagger page, which is off by default in
-  production.
+- **Problem 3 (helmet):** done. `helmet()` (CSP **enabled**, helmet's default
+  directives) is applied to every API response, with a path-scoped exemption
+  middleware that skips helmet entirely for `/api/docs` and its assets — so
+  Swagger UI's inline scripts/styles keep working (Swagger is off by default in
+  production, see `swaggerEnabled`). This is the "keep CSP meaningful in
+  production" option, refined from the original `contentSecurityPolicy: false`
+  choice after review: rather than disabling CSP app-wide and relying on Swagger
+  being off in prod, the API now serves a real CSP everywhere except the
+  explicitly-exempt Swagger surface.
 - **Problem 3 (CSRF/`OriginGuard` generalization): deferred, scope explicitly
   cut down.** Did not convert `OriginGuard` to a global `APP_GUARD`. Reason:
   this repo's e2e suite has zero `Origin`-header coverage outside
@@ -277,10 +283,9 @@ buyer-auth-only `OriginGuard`, applied consistently rather than as a one-off.
   by unit tests that: `ThrottlerModule`/ `@Throttle` wiring matches the working
   `contact`/`customer-auth` pattern exactly, and
   `helmet({ contentSecurityPolicy: false })` doesn't touch any
-  CORS/response-shape behavior. **Still needs a real manual pass** once
-  `pnpm docker:dev` is up: hammer `POST /api/stores/:slug/checkout` past 10
-  req/min and confirm 429, load `/api/docs` with helmet on, and load the
-  dashboard/storefront in a browser to eyeball images/fonts.
+  CORS/response-shape behavior. **Manual pass completed — see "Manual
+  verification pass (2026-08-09)" below** for the real 429/helmet/Swagger/
+  browser checks.
 
 ## Manual verification pass (2026-08-09)
 
@@ -309,7 +314,8 @@ instead — faster, no image build needed).
   (`Access-Control-Allow-Origin: http://localhost:3001`,
   `Access-Control-Allow-Credentials: true`).
 - `http://localhost:3000/api/docs`: 200, Swagger UI's own JS bundle 200s too —
-  CSP-off means nothing left to block it.
+  the `/api/docs` path is exempted from helmet, so CSP never applies to the
+  Swagger surface.
 - `POST /api/stores/demo-tienda-de-camila/checkout` hammered 12x: requests 1–10
   got real `400`s (validation, empty body), request 11+ got a clean `429` — not
   a `500`, not a silent pass-through.

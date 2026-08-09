@@ -7,9 +7,9 @@ and
 [`docs/core/product.md` §5.6–5.7](../core/product.md#56-checkout--order-creation-flow)
 for the technical/product-level source of truth this diagram follows.
 
-(There is **no in-app proof upload** in the MVP: `PaymentProof` is schema-only.
-The buyer pays over WhatsApp — or through whatever the seller shares — and the
-seller records the payment in the panel.)
+(There is **no in-app proof upload** in the MVP — the old schema-only
+`PaymentProof` model was removed. The buyer pays over WhatsApp — or through
+whatever the seller shares — and the seller records the payment in the panel.)
 
 ```
 Entra a Bias Market

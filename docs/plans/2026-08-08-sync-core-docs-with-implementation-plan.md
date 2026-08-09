@@ -1,7 +1,8 @@
 # Sync core docs with actual implementation
 
-**Status:** Pre-implementation plan (written ahead of the work, per audit
-follow-up request).
+**Status:** Implemented 2026-08-08. All five items are closed — see the per-item
+notes below (the pre-implementation content documents the audit's original
+findings, followed by what actually landed).
 
 **Source:** `docs/audits/audit-2026-08-08.md` §0, §12 (important finding #9).
 
@@ -87,7 +88,11 @@ has since evolved past, in ways significant enough to mislead a new contributor.
    needed to `deploy.md` unless implementation lands first — re-check
    `git log docs/core/deploy.md` and the two plan files' `Status:` lines
    immediately before starting execution, since this could change between review
-   and implementation.
+   and implementation. **Landed outcome:** the security-baseline and
+   observability plans both shipped (2026-08-08), so `deploy.md`'s limitations
+   list was updated to remove the now-closed rate-limiting / CSRF+helmet /
+   env-var-validation items (each replaced by a short "what's actually in place"
+   note), leaving single-VM and self-hosted-MinIO as the open items.
 
 ## Re-verification (2026-08-08, plan review pass)
 
@@ -124,6 +129,9 @@ actual code (not re-trusting the audit's claims from memory):
 - **Item 5** (deploy.md): confirmed both concurrent plans this item is
   conditioned on are still pre-implementation — list is accurate as-is, no edit
   needed at this time (re-check before execution, see inline note above).
+  **Landed:** both plans shipped, and `deploy.md`'s known-limitations list was
+  updated to drop the three closed items (rate limiting, CSRF/helmet, env-var
+  validation) per item 5's inline landing note.
 
 No additional discrepancies were found in the sections read during this pass.
 `docs/core/admin.md` and `docs/core/product.md` were already partially updated
@@ -145,7 +153,7 @@ the Verification section below).
 | 2 | `TenantMiddleware`/`AsyncLocalStorage` tenant resolution (`architecture.md` §3)                    | **MEDIUM-HIGH** | Presented as "CRITICAL" design in the doc's own heading, with a full code sample — a new contributor could go looking for (or start building) a middleware/context layer that isn't there, or misjudge how tenant isolation is actually enforced (per-service `assertOwnership`, audited with zero IDOR gaps per the audit's §5/§13). Slightly below item 3 because the actual pattern is at least documented correctly one section over in CLAUDE.md, giving a careful reader a second source to catch the contradiction.                    |
 | 1 | Three-way order status split framed as a recommendation (`architecture.md` §4)                     | **MEDIUM**      | Misleading in a "this looks unfinished" direction rather than a "build the wrong thing" direction — a reader would underestimate how far the order model has progressed, and the stale Prisma sample (two enums, no `OrderStatus` cancellation axis, wrong enum values like `PENDING`/`SHIPPED` vs. real `PENDING_PAYMENT`/`ORDERING`) could get copy-pasted into new code by mistake. Real but lower-stakes than 2/3 since it doesn't point someone at nonexistent buyer-facing surface area.                                                |
 | 4 | `admin.md` "Users still placeholder" (narrowed scope)                                              | **LOW-MEDIUM**  | One stale sentence in an otherwise-accurate, already-mostly-fixed doc. Low cost to a reader — worst case someone avoids touching `/admin/users` code assuming it's a stub, or is mildly surprised the "coming soon" page has a working ban button. No risk of building the wrong thing since the real feature already exists to compare against.                                                                                                                                                                                              |
-| 5 | `deploy.md` known limitations (conditional)                                                        | **LOW**         | Currently a no-op — re-verified accurate as of this review, contingent only on two other plans' completion timing. Not a live discrepancy right now, just a watch item.                                                                                                                                                                                                                                                                                                                                                                       |
+| 5 | `deploy.md` known limitations (conditional)                                                        | **LOW**         | Landed — once the security-baseline and observability plans shipped, the closed limitations (rate limiting, CSRF/helmet, env-var validation) were removed from `deploy.md`, leaving single-VM and self-hosted MinIO as the open items.                                                                                                                                                                                                                                                                                                        |
 
 ## Approach
 

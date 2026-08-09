@@ -534,6 +534,7 @@
       "registerPayment": "Guardar pago",
       "paymentsLocked": "Este pedido no permite registrar más pagos.",
       "uploadPaymentImage": "Subir comprobante de pago",
+      "viewPaymentProof": "Ver comprobante de pago",
       "uploadPaymentImageHint": "PNG o JPG (máx. recomendado 5MB)",
       "chooseImage": "Elegir",
       "imagePreview": "Vista previa",

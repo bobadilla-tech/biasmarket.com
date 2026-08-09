@@ -534,6 +534,7 @@
       "registerPayment": "Save payment",
       "paymentsLocked": "Payments are locked for this order.",
       "uploadPaymentImage": "Upload payment proof",
+      "viewPaymentProof": "View payment proof",
       "uploadPaymentImageHint": "PNG or JPG (max. recommended 5MB)",
       "chooseImage": "Choose",
       "imagePreview": "Preview",

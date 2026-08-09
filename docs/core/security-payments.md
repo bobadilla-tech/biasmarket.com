@@ -126,12 +126,12 @@ as a confirmed sale at each step.
 ### 9.2 Flow (what's actually live)
 
 > **Buyer-proof-upload caveat:** the MVP does **not** collect an in-app payment
-> proof from the buyer. `PaymentProof` (with its
-> `PENDING_REVIEW | APPROVED | REJECTED` state) exists in the schema but is
-> never created anywhere in `apps/api/src`. What actually ships is a **WhatsApp
-> handoff** plus the **seller manually recording** what came in — see below.
-> In-app buyer proof upload is a possible future addition, not current behavior
-> (§9.4).
+> proof from the buyer. The old schema-only `PaymentProof` model (with its
+> `PENDING_REVIEW | APPROVED | REJECTED` state) was deleted in migration
+> `20260808192135_delete_payment_proof` — no such model exists today. What
+> actually ships is a **WhatsApp handoff** plus the **seller manually
+> recording** what came in — see below. In-app buyer proof upload is a possible
+> future addition, not current behavior (§9.4).
 
 1. **Order created** → `paymentStatus PENDING_PAYMENT`
    - Created as soon as buyer completes checkout (before any payment evidence
@@ -203,13 +203,14 @@ The buyer follows the order from `PENDING_PAYMENT` to `COMPLETED` on
 
 ### 9.4 Future Upgrade Path
 
-- **In-app buyer proof upload (not built, deliberately)** — wiring
-  `PaymentProof` for real (a buyer-facing upload endpoint +
-  `PENDING_REVIEW`/`APPROVED`/ `REJECTED` review) is a possible future addition,
-  only worth building if real sellers report the WhatsApp handoff as actual
-  friction (audit §3, §16 #7). Until then it stays schema-only. (The
-  `docs/business/buyer-flow.md`/`seller-flow.md` diagrams document the current
-  WhatsApp handoff + seller-recorded flow.)
+- **In-app buyer proof upload (not built, deliberately)** — wiring this for real
+  (a buyer-facing upload endpoint + `PENDING_REVIEW`/`APPROVED`/`REJECTED`
+  review) is a possible future addition, only worth building if real sellers
+  report the WhatsApp handoff as actual friction (audit §3, §16 #7). The
+  `PaymentProof` model was deleted rather than left half-wired, so building it
+  would mean a new schema model + migration, a buyer upload API, and a review
+  surface. (The `docs/business/buyer-flow.md`/`seller-flow.md` diagrams document
+  the current WhatsApp handoff + seller-recorded flow.)
 - Stripe / MercadoPago integration for automatic verification (removes the
   manual review step for stores that opt in)
 - Hybrid manual + automated, selectable per store, consistent with the
@@ -227,8 +228,7 @@ Use:
   product images and store logos live in public buckets, and seller-recorded
   payment images (`OrderPayment.imageUrl`) go to a separate **private** bucket
   (`S3_PAYMENT_BUCKET`) served only through the authenticated, ownership-checked
-  endpoint described in §9.2. Buyer-uploaded payment proofs (`PaymentProof`) are
-  not implemented (schema-only).
+  endpoint described in §9.2. There is no buyer-uploaded proof model.
 
 Store:
 

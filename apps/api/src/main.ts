@@ -27,12 +27,16 @@ async function bootstrap() {
   );
   app.useGlobalFilters(new AllExceptionsFilter());
 
-  // CSP off: this is a JSON-only API past the Swagger page, and helmet's
-  // default CSP breaks Swagger UI's inline scripts/styles at /api/docs
-  // (on by default outside production — see swaggerEnabled below). CSP stays
-  // meaningful where it matters because Swagger is off in production unless
-  // explicitly opted in.
-  app.use(helmet({ contentSecurityPolicy: false }));
+  // helmet with CSP enabled (helmet's default directives), except for the
+  // Swagger UI surface at /api/docs — default CSP blocks Swagger's inline
+  // scripts/styles, and Swagger is a dev/recon surface that's off by default
+  // in production (see swaggerEnabled below). Every other API response keeps a
+  // real Content-Security-Policy.
+  const helmetMiddleware = helmet();
+  app.use((req, res, next) => {
+    if (req.path.startsWith("/api/docs")) return next();
+    helmetMiddleware(req, res, next);
+  });
 
   app.setGlobalPrefix("api");
 

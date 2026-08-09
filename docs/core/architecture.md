@@ -46,7 +46,7 @@ Every other module (`products`, `stores`, `payment-config`, ...) stays flat CRUD
 — don't apply this layering anywhere else; that's overengineering for CRUD
 modules.
 
-```
+```text
 modules/
   orders/
     domain/
@@ -216,7 +216,6 @@ model Order {
   requiredAmount    Decimal            @db.Decimal(10, 2)
   expiresAt         DateTime
 
-  proofs   PaymentProof[]   // schema-only today — see security-payments.md §9
   payments OrderPayment[]   // the real seller-recorded payment records
 }
 
@@ -243,9 +242,11 @@ enum OrderStatus {
 ```
 
 - `paymentStatus` is the money axis — `PENDING_PAYMENT → VERIFIED/REJECTED`
-  (with `PARTIALLY_PAID`/`PAYMENT_SUBMITTED` in between), enforced by the
-  transition tables in `order-status.vo.ts` and the entity in `order.entity.ts`,
-  driven by the seller recording payments / approving-rejecting — see
+  (with `PARTIALLY_PAID` in between; `PAYMENT_SUBMITTED` is a legal state in the
+  model but no code path sets it), enforced by the transition tables in
+  `order-status.vo.ts` and the entity in `order.entity.ts`, driven by the seller
+  recording payments and approving/rejecting from `PENDING_PAYMENT` or
+  `PARTIALLY_PAID` — see
   [security-payments.md §9](security-payments.md#9-payment-flow-design-manual).
 - `fulfillmentStatus` is the delivery axis — strictly linear
   `ORDERING → IN_TRANSIT → READY → COMPLETED`, hard-gated on
@@ -263,11 +264,11 @@ Other fixes that are in the current schema:
   `apps/api/src/common/payment-summary.ts`).
 - **Product indexes**: `@@index([storeId])` and `@@index([storeId, status])` —
   every storefront product listing filters by them.
-- **`PaymentProof.status`** is its own small enum
-  (`PENDING_REVIEW | APPROVED | REJECTED`), not a free string — but the whole
-  `PaymentProof` model is **schema-only today** (never created anywhere in
-  `apps/api/src`); the live flow is seller-recorded `OrderPayment` + WhatsApp
-  handoff, see
+- **`PaymentProof` was removed** — the buyer-upload model and its `ProofStatus`
+  enum (`PENDING_REVIEW | APPROVED | REJECTED`) existed schema-only (never
+  created anywhere in `apps/api/src`) and were deleted in migration
+  `20260808192135_delete_payment_proof`; the live flow is seller-recorded
+  `OrderPayment` + WhatsApp handoff, see
   [security-payments.md §9](security-payments.md#9-payment-flow-design-manual).
 - **`AuditLog`** (`actorId`, `storeId`, `action`, `entityType`, `entityId`,
   `metadata Json`, `createdAt`) — written on the payment decisions that matter:

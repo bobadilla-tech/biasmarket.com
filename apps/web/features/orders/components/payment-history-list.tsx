@@ -4,7 +4,6 @@ import { Receipt } from "lucide-react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { cn } from "@/lib/utils";
 import { formatOrderDate } from "../lib/order-format";
 import { ordersApi } from "../api/orders.api";
 import type { OrderPaymentResponseDto } from "@biasmarket/types";
@@ -49,17 +48,14 @@ export function PaymentHistoryList({
               key={payment.id}
               className="flex items-start gap-3 rounded-xl border border-[#f0e7f8] bg-[#fcf9ff] p-3 transition hover:bg-white"
             >
-              <div
-                className={cn(
-                  "mt-0.5 flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#f0e7f8] text-[var(--store-primary)]",
-                  imageUrl ? "cursor-pointer" : "",
-                )}
-                onClick={() => {
-                  if (imageUrl) onPreview(imageUrl);
-                }}
-              >
-                {imageUrl
-                  ? (
+              {imageUrl
+                ? (
+                  <button
+                    type="button"
+                    onClick={() => onPreview(imageUrl)}
+                    aria-label={t("details.viewPaymentProof")}
+                    className="mt-0.5 flex size-7 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-[#f0e7f8] text-[var(--store-primary)]"
+                  >
                     <Image
                       src={imageUrl}
                       alt=""
@@ -68,9 +64,13 @@ export function PaymentHistoryList({
                       className="h-full w-full object-cover"
                       unoptimized
                     />
-                  )
-                  : <Receipt className="size-3.5" />}
-              </div>
+                  </button>
+                )
+                : (
+                  <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#f0e7f8] text-[var(--store-primary)]">
+                    <Receipt className="size-3.5" />
+                  </div>
+                )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-bold text-[#2d1649]">

@@ -166,26 +166,45 @@ describe("CollectionsService", () => {
       );
 
       expect(prisma.collectionProduct.updateMany).toHaveBeenNthCalledWith(1, {
-        where: { collectionId, productId: "p-2" },
+        where: {
+          collectionId,
+          collection: { storeId },
+          product: { storeId },
+          productId: "p-2",
+        },
         data: { position: 0 },
       });
       expect(prisma.collectionProduct.updateMany).toHaveBeenNthCalledWith(2, {
-        where: { collectionId, productId: "p-1" },
+        where: {
+          collectionId,
+          collection: { storeId },
+          product: { storeId },
+          productId: "p-1",
+        },
         data: { position: 1 },
       });
       expect(prisma.collectionProduct.findMany).toHaveBeenCalledWith({
-        where: { collectionId, productId: { in: ["p-2", "p-1"] } },
+        where: {
+          collectionId,
+          collection: { storeId },
+          product: { storeId },
+          productId: { in: ["p-2", "p-1"] },
+        },
         orderBy: { position: "asc" },
       });
       expect(result).toEqual([{ id: "cp-1" }]);
     });
 
-    it("throws BadRequestException when a productId is not a member of the collection", async () => {
+    it("throws BadRequestException for a cross-store or non-member productId", async () => {
       prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
       prisma.collection.findUnique.mockResolvedValue({
         id: collectionId,
         storeId,
       });
+      // A productId whose product belongs to another store (or that isn't in
+      // this collection) makes the storeId-scoped updateMany predicate match
+      // nothing → count 0 → 400. This is the DB-boundary scoping working, not
+      // just the preflight findOwnedCollection guard.
       prisma.collectionProduct.updateMany.mockResolvedValue({ count: 0 });
 
       await expect(
@@ -193,6 +212,39 @@ describe("CollectionsService", () => {
           productIds: ["foreign-product"],
         }),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it("scopes both write predicates to the store through the collection and product relations", async () => {
+      prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
+      prisma.collection.findUnique.mockResolvedValue({
+        id: collectionId,
+        storeId,
+      });
+      prisma.collectionProduct.updateMany.mockResolvedValue({ count: 1 });
+      prisma.collectionProduct.findMany.mockResolvedValue([]);
+
+      await service.reorderProducts(collectionId, storeId, ownerId, {
+        productIds: ["p-1"],
+      });
+
+      expect(prisma.collectionProduct.updateMany).toHaveBeenCalledWith({
+        where: {
+          collectionId,
+          collection: { storeId },
+          product: { storeId },
+          productId: "p-1",
+        },
+        data: { position: 0 },
+      });
+      expect(prisma.collectionProduct.findMany).toHaveBeenCalledWith({
+        where: {
+          collectionId,
+          collection: { storeId },
+          product: { storeId },
+          productId: { in: ["p-1"] },
+        },
+        orderBy: { position: "asc" },
+      });
     });
   });
 });

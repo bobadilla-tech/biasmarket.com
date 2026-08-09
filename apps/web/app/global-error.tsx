@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import * as Sentry from "@sentry/react";
 
 // Catches errors in the root layout itself (the one place `[locale]/error.tsx`
@@ -12,7 +13,9 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  Sentry.captureException(error);
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
 
   return (
     <html lang="en">

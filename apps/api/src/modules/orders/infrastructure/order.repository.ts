@@ -59,12 +59,10 @@ export class OrderRepository {
     orderId: string,
     storeId: string,
   ) {
-    const payment = await this.prisma.orderPayment.findUnique({
-      where: { id: paymentId },
+    const payment = await this.prisma.orderPayment.findFirst({
+      where: { id: paymentId, orderId, storeId },
     });
-    if (
-      !payment || payment.orderId !== orderId || payment.storeId !== storeId
-    ) {
+    if (!payment) {
       throw new NotFoundException("Pago no encontrado");
     }
     return payment;

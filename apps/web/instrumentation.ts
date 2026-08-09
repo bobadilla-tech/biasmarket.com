@@ -1,11 +1,14 @@
-import * as Sentry from "@sentry/node";
 import type { Instrumentation } from "next";
 
 // Server-side error tracking (GlitchTip, Sentry-protocol-compatible).
 // Env-gated on WEB_SENTRY_DSN so local dev/CI never needs a GlitchTip
 // account. Distinct from the API's SENTRY_DSN (they report to different
 // GlitchTip projects) and from NEXT_PUBLIC_SENTRY_DSN (client bundle).
-export function register() {
+//
+// The @sentry/node import is type-only here and loaded dynamically inside
+// the handlers below: instrumentation.ts is evaluated in both the Node and
+// Edge runtimes, and the Node Sentry SDK must only ever execute in Node.
+export async function register() {
   // Runs in both the Node and Edge runtimes (there's a middleware/proxy.ts);
   // the Node Sentry SDK must only ever execute in the Node runtime.
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
@@ -18,6 +21,7 @@ export function register() {
     return;
   }
 
+  const Sentry = await import("@sentry/node");
   Sentry.init({
     dsn,
     tracesSampleRate: 0.01,
@@ -32,11 +36,22 @@ export function register() {
 export const onRequestError: Instrumentation.onRequestError = async (
   error,
   request,
+  context,
 ) => {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
   if (!process.env.WEB_SENTRY_DSN) return;
 
+  const Sentry = await import("@sentry/node");
+  // Only the HTTP method, the pathname without its query string, and the
+  // route context are reported — never headers, cookies, authorization
+  // credentials, or query-string data.
   Sentry.captureException(error, {
-    extra: { request },
+    extra: {
+      request: {
+        method: request.method,
+        pathname: request.path.split("?")[0],
+        routePath: context.routePath,
+      },
+    },
   });
 };

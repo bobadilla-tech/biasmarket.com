@@ -15,7 +15,13 @@ const ORIGINAL_DSN = process.env.SENTRY_DSN;
 
 describe("initErrorTracking", () => {
   afterEach(() => {
-    process.env.SENTRY_DSN = ORIGINAL_DSN;
+    // Assigning `undefined` to process.env serializes to the string
+    // "undefined" — restore properly by deleting when it was unset.
+    if (ORIGINAL_DSN === undefined) {
+      delete process.env.SENTRY_DSN;
+    } else {
+      process.env.SENTRY_DSN = ORIGINAL_DSN;
+    }
     vi.clearAllMocks();
   });
 

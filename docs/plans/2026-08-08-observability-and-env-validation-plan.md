@@ -1,7 +1,7 @@
 # Observability + startup env-var validation
 
-**Status:** Pre-implementation plan (written ahead of the work, per audit
-follow-up request).
+**Status:** Implemented 2026-08-08. See "Implementation notes" at the bottom for
+what landed and where it differs from the pre-implementation framing below.
 
 **Source:** `docs/audits/audit-2026-08-08.md` §12 (important findings #5, #7),
 §16 (#4).
@@ -107,11 +107,12 @@ grouped by current validation state:
 **Already validated eagerly at boot today (keep, just route through the shared
 helper instead of a local copy):**
 
-- `S3_BUCKET`, `S3_LOGO_BUCKET`, `S3_PUBLIC_URL`, `S3_ENDPOINT`,
-  `S3_ACCESS_KEY`, `S3_SECRET_KEY` (`storage.service.ts`)
-- `RESEND_API_KEY`, `RESEND_FROM_EMAIL` (`mailer.core.ts`) — see the Context
-  note above about this being required unconditionally today, not just when
-  `MAIL_DRIVER=resend`
+- `S3_BUCKET`, `S3_LOGO_BUCKET`, `S3_PAYMENT_BUCKET`, `S3_PUBLIC_URL`,
+  `S3_ENDPOINT`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` (`storage.service.ts`)
+- `RESEND_API_KEY`, `RESEND_FROM_EMAIL` (`mailer.core.ts`) — conditional on
+  `MAIL_DRIVER=resend`, not required unconditionally. `resolveDriver()` returns
+  `"file"` when `MAIL_DRIVER` is unset, and the file driver is the documented
+  local dev mode; only the `resend` driver needs the third-party credentials.
 
 **Read directly with no validation, no throw, silent fallback where a fallback
 exists — the vars `deploy.md` is actually describing:**
@@ -148,12 +149,14 @@ list:**
 
 Net: the boot-time-required set this plan should actually enforce is
 `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `WEB_URL`,
-`CUSTOMER_ACCOUNT_TOKEN_SECRET`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, and the
-six `S3_*` vars — larger and more specific than the original draft's list (which
-named `DATABASE_URL`, `BETTER_AUTH_SECRET`, `WEB_URL`, `RESEND_API_KEY` and
-waved at "whatever else the grep turns up"; it missed `BETTER_AUTH_URL`,
-`RESEND_FROM_EMAIL`, and — the most operationally relevant miss —
-`CUSTOMER_ACCOUNT_TOKEN_SECRET`).
+`CUSTOMER_ACCOUNT_TOKEN_SECRET`, plus `RESEND_API_KEY`/`RESEND_FROM_EMAIL` only
+when `MAIL_DRIVER=resend`, and the seven `S3_*` vars (`S3_BUCKET`,
+`S3_LOGO_BUCKET`, `S3_PAYMENT_BUCKET`, `S3_PUBLIC_URL`, `S3_ENDPOINT`,
+`S3_ACCESS_KEY`, `S3_SECRET_KEY`) — larger and more specific than the original
+draft's list (which named `DATABASE_URL`, `BETTER_AUTH_SECRET`, `WEB_URL`,
+`RESEND_API_KEY` and waved at "whatever else the grep turns up"; it missed
+`BETTER_AUTH_URL`, `RESEND_FROM_EMAIL`, `S3_PAYMENT_BUCKET`, and — the most
+operationally relevant miss — `CUSTOMER_ACCOUNT_TOKEN_SECRET`).
 
 Fail fast (throw before the server starts listening) with a clear message naming
 exactly which var is missing — mirror the exact error message shape
@@ -262,3 +265,29 @@ closer to HIGH.**
   `requiredEnv()` copies) rather than new design work — but not HIGH across the
   board, since most of the affected vars already fail loudly, just with rough
   error messages rather than a silent, no-boot-time failure.
+
+## Implementation notes
+
+**Problem 1 — error tracking (implemented).** `AllExceptionsFilter` now calls
+`captureException(exception)` in the unhandled-exception branch, alongside the
+existing stdout logging — confirmed by
+`apps/api/src/common/error-tracking.spec.ts`, which asserts both the tracker and
+the logger fire for a non-`HttpException`, and that `HttpException`s still take
+the existing `handleHttpExpression` path. `apps/web/instrumentation.ts`
+(`register()` + `onRequestError()`) now guard on a `SENTRY_DSN` allowlist and
+`NEXT_RUNTIME`, importing the `@sentry/nextjs` SDK dynamically only when
+configured, so web builds don't require a DSN.
+
+**Problem 2 — startup env-var validation (implemented).**
+`apps/api/src/config/env.validation.ts` is now the single shared `requiredEnv()`
+(imported by `storage.service.ts`, `mailer.core.ts`, `customer-auth.service.ts`,
+`customer-session.guard.ts`, and `customer-account.service.ts`, each of which
+dropped its local copy) plus a `validateEnv()` called from `main.ts` before
+`NestFactory.create`, asserting `DATABASE_URL`, `BETTER_AUTH_SECRET`,
+`BETTER_AUTH_URL`, `WEB_URL`, `CUSTOMER_ACCOUNT_TOKEN_SECRET`, and the seven
+`S3_*` vars. `RESEND_API_KEY`/`RESEND_FROM_EMAIL` are now required **only when
+`MAIL_DRIVER=resend`** (the file driver boots without third-party credentials),
+which fixes the latent bug the Context section flagged; an invalid `MAIL_DRIVER`
+value throws at boot. An unset `NODE_ENV` in a non-local deployment logs a
+warning rather than failing (matching the plan's "warn, don't hard-fail"
+decision). Verified by `apps/api/src/config/env.validation.spec.ts`.

@@ -288,8 +288,12 @@ Flow:
    — the seller records what came in (step 6), see security-payments.md §9.2.
 6. **Seller records the payment** in the panel (`OrderPayment`: amount, method,
    optional note, optional image) — the seller enters what was received over
-   WhatsApp, not the buyer. Recording enough to cover the required amount, or
-   approving directly, moves the order to `VERIFIED`:
+   WhatsApp, not the buyer. Recording enough to cover the required amount routes
+   straight through the approve path to `VERIFIED`; a partial amount leaves the
+   order in `PARTIALLY_PAID` (still on soft-hold) until the seller approves.
+   Approving directly always requires at least one recorded payment
+   (`paidAmount > 0`) — it can be done from `PENDING_PAYMENT` or
+   `PARTIALLY_PAID`, but never with no payment registered:
    - Approve → `VERIFIED` (now counts as a confirmed order)
    - Reject → `REJECTED`
 7. From `VERIFIED`, the order proceeds into the fulfillment states in 5.7. Full

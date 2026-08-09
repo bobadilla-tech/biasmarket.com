@@ -21,7 +21,12 @@ import type {
   PaymentMethodType,
   PaymentStatus,
 } from "@biasmarket/db";
-import { ApiConsumes, ApiQuery } from "@nestjs/swagger";
+import {
+  ApiConsumes,
+  ApiOkResponse,
+  ApiProduces,
+  ApiQuery,
+} from "@nestjs/swagger";
 import { OrderRepository } from "./order.repository.js";
 import { ReviewPaymentUseCase } from "../application/review-payment.usecase.js";
 import { AdvanceFulfillmentUseCase } from "../application/advance-fulfillment.usecase.js";
@@ -294,6 +299,8 @@ export class OrderController {
   // payment bucket is private, so `OrderPayment.imageUrl` alone is no longer
   // fetchable by anyone who obtains it, only via this ownership-gated route.
   @Get(":orderId/payments/:paymentId/image")
+  @ApiOkResponse({ schema: { type: "string", format: "binary" } })
+  @ApiProduces("image/jpeg", "image/png")
   async getPaymentImage(
     @Param("storeId") storeId: string,
     @Param("orderId") orderId: string,

@@ -289,15 +289,19 @@ pnpm seed:base:prod
 Deliberately out of scope for this first deploy — fine for "get pages live and
 share the link," not for handling real traffic or real payment data at volume:
 
-- **Rate limiting covers auth surfaces only.** Buyer
-  login/register/forgot-password are throttled via `@nestjs/throttler` (5
-  req/min), and better-auth's native rate limiter (3 req/10s) is forced on for
-  seller sign-in/sign-up — but no general-purpose throttling exists for the rest
-  of the API.
-- **No CSRF middleware, no `helmet`.**
-- **No startup env-var validation.** Missing/misconfigured prod env vars (e.g.
-  forgetting to set `WEB_URL`) fail silently or fall back to a `localhost`
-  default rather than refusing to boot.
+- **Rate limiting is targeted, not app-wide.** Throttled today: buyer
+  login/register/forgot-password (5 req/min via `@nestjs/throttler`),
+  better-auth's native limiter on seller sign-in/sign-up (3 req/10s), public
+  checkout creation (10/min), and payment registration (`addPayment`, 20/min).
+  Most other authenticated state-changing endpoints
+  (`review`/`advance`/`cancel`, product/category/collection writes, ...) still
+  have no explicit rate limit.
+- **No app-wide CSRF middleware.** `helmet` (CSP included) is active on every
+  API response except the `/api/docs` Swagger surface, and buyer-auth mutations
+  carry an `OriginGuard` check — but seller-auth routes rely on the session
+  cookie's `SameSite=Lax` alone; a global `OriginGuard`/CSRF-token scheme was
+  explicitly deferred (see
+  [`docs/plans/2026-08-08-security-baseline-csrf-helmet-rate-limiting-plan.md`](../plans/2026-08-08-security-baseline-csrf-helmet-rate-limiting-plan.md)).
 - **Single VM, no managed DB.** Fine at MVP scale; see
   [`roadmap.md`](roadmap.md) §11 for the documented scaling path (managed
   Postgres once this is the bottleneck).

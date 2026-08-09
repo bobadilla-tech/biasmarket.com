@@ -59,15 +59,18 @@ corrects/sharpens both this plan's and the audit's paraphrase):**
   tool (webpack-family), not a real install — matches what the 2026-08-03 spike
   already noted, now double-checked at execution time.
 
-1. **Run the spike neither prior doc ran.**
-   `pnpm add -D eslint
-   eslint-config-next` (or `typescript-eslint` directly,
-   for a non-Next package) in one already-classic-TS package first —
+1. **Run the spike neither prior doc ran.** `pnpm add -D eslint` +
+   **`typescript-eslint`** (the flat-config `typescript-eslint` package, not
+   `eslint-config-next`) in one already-classic-TS package first —
    **`packages/types` or `apps/api`** — to get a real, unblocked lint baseline
    running with zero open compatibility questions before touching the TS7-pinned
-   packages at all. Only after that, spike a minimal `eslint.config.mjs` against
-   `apps/web` (or another TS7 package) and observe the actual failure (if any) —
-   don't assume the documented reasoning holds until it's been tried once.
+   packages at all. Reserve **`eslint-config-next`** for **`apps/web`** only —
+   it's the Next-specific config (and drags in `eslint-plugin-next` +
+   `eslint-config-next`'s React/Next rules), so it doesn't belong in the
+   non-Next packages this step targets. Only after that, spike a minimal
+   `eslint.config.mjs` against `apps/web` (or another TS7 package) and observe
+   the actual failure (if any) — don't assume the documented reasoning holds
+   until it's been tried once.
 2. **If `apps/web`/TS7 packages are still blocked after that spike:** evaluate
    alternatives rather than waiting indefinitely — options include (a) pinning
    TypeScript to a classic-compiler version just for the lint task if that's
