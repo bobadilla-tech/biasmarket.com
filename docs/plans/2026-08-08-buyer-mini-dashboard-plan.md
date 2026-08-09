@@ -218,3 +218,105 @@ can't see their own order status in any real way"). A buyer can also manage
 their saved addresses (list/add/edit/delete/set-default) from the account area,
 closing out the piece `buyer-shipping-addresses` deliberately left for this
 plan.
+
+## Execution notes
+
+Implemented on the shared `fix/work` branch (multiple sessions committed to it
+in parallel during this run — see the concurrency note below).
+
+**Scope 1-5 (order detail, linking, contact-seller):**
+
+- Backend: `GET stores/:slug/account/orders/:orderId` added to
+  `CustomerAuthController`/`CustomerAuthService` (not a new controller — kept
+  with the other buyer-account endpoints, matching `me`/`updateMe`'s placement).
+  Ownership is `order.buyerAccountId === session.buyerAccountId`, checked in
+  `CustomerAuthService.getOrderDetail` after
+  `OrderRepository.findRowByIdForStore` (already 404s on a wrong `storeId`).
+  Both "order doesn't exist" and "order belongs to a different buyer" return the
+  same generic 404 — never a 403 — so a probing request can't distinguish the
+  two. `OrderRepository` needed adding to `OrdersModule`'s `exports` (it wasn't
+  exported before; only `CustomerAccountService` was). `toOrderDto`/`OrderRow`
+  are reused directly from `orders/infrastructure/order.controller.ts` —
+  confirmed cross-module import of a controller-local mapper is already this
+  repo's precedent (`customers.controller.ts` does the same for
+  `Customers.findOne`'s `orders`), not a new pattern.
+- Regenerated `apps/api/openapi.json` + `packages/types/generated/**` for the
+  new endpoint. Also picked up a real, pre-existing drift: `PaymentConfig`'s
+  `uploadQrImage` endpoint existed in `apps/api` source but had never been
+  regenerated into the committed client — unrelated to this plan, included
+  because the regen is holistic by nature. `packages/types/http.ts` gained an
+  `ApiError` class (`status` alongside the message) so `apps/web` can
+  distinguish 401 (no session) from 404 (wrong buyer / not found) without
+  string-matching backend messages — needed for the order-detail page's
+  "distinct not-found treatment" requirement in this plan's Scope item 2.
+- Frontend: new route `.../store/[slug]/account/orders/[orderId]/page.tsx` +
+  `order-detail-page-client.tsx` (loading/error states follow
+  `account-page-client.tsx`'s existing `LoadingState`/`ErrorState` + 401 →
+  login-link convention, plus a distinct not-found → back-to-account link for
+  404 via `ApiError`). `AccountOrderDetail` component built in
+  `features/customer-auth/components/`, reusing `dashboard.orders`' formatting
+  helpers (`formatOrderDate`, `getDeliveryLabel`, `getShippingAddress`,
+  `paymentMethodLabels`, `OrderStatusBadge`) rather than duplicating them under
+  `storefront.accountPage` — same underlying concepts as the seller sheet, not
+  seller-only actions, so sharing the translation namespace was a reuse call,
+  not a new abstraction. `AccountOrderCard` is now a real `Link` to the detail
+  route. `checkout-page-client.tsx`'s confirmation screen links to the
+  order-detail page, gated on `useCustomerProfile(slug)` resolving (guest
+  checkout has no account to view). `ContactSellerButton` (new,
+  `features/customer-auth/components/`) reuses `buildWhatsAppUrl` with the
+  plan's specified hardcoded fallback message — never calls the
+  whatsapp-templates endpoint, per this plan's explicit instruction.
+
+**Scope 6 (address book):** `AccountAddressesSection` + `AddressForm`
+(list/add/edit/delete/set-default), a real `addresses` entry in
+`account-sidebar.tsx`'s `NAV_ITEMS`/`AccountSection`, and
+`queries/use-addresses.ts` + `mutations/use-{create,update,delete}-address.ts`
+calling the already-live `apiClient.addresses.*` — no new backend endpoints
+needed, as the plan predicted. Delete uses the existing `AlertDialog` primitive
+(`confirm-transition-dialog.tsx`'s pattern). `use-addresses.ts`'s query key
+shares the `"addresses"` root with checkout's existing
+`useDefaultShippingAddress` key so one broad
+`invalidateQueries({ queryKey:
+["addresses"] })` after any mutation refreshes
+both the account page's list and checkout's prefill.
+
+**Concurrency note — the proof-of-payment-upload plan landed in parallel, on
+this same branch, during this session:** this plan's own instructions said to
+build the "previously sent screenshots" section defensively (empty state) since
+`2026-08-08-buyer-proof-of-payment-upload-plan.md` might not have landed yet. It
+hadn't when this session started, so `AccountOrderDetail` was first built with a
+hardcoded-empty screenshots section, exactly as instructed. While this session
+was still running, another session landed that plan for real on the same working
+tree — adding `CustomerOrderPaymentsController`,
+`OrderRepository.findOrderForBuyer`/`findPaymentForBuyer`,
+`OrderPaymentResponseDto`'s `source`/`reviewStatus`/`reviewedAt`/`reviewedBy`
+fields, and buyer-facing submit-proof/view-image UI — and extended
+`AccountOrderDetail` directly, in place, with the real submit-proof form,
+review-status badges, and an authenticated image grid, superseding the defensive
+placeholder. Final state has the real feature, not the fallback; no further
+action needed here.
+
+**A real bug found and fixed along the way, unrelated to this plan's own
+scope:** the other session's new `use-review-payment-proof.ts` (seller-side,
+`features/orders/mutations/`) imported `statsKeys` from the `@/features/stats`
+barrel instead of the leaf query module. That barrel re-exports
+`RecentOrdersList`, which imports `getOrderStatus` from the `@/features/orders`
+barrel, which re-exports `useEnabledPaymentMethods` →
+`@/features/store-settings` barrel → a component importing `@/i18n/navigation` —
+and `i18n/navigation.ts` calls next-intl's `createNavigation()` at module load
+time, which needs `next/navigation`'s `redirect` export. Any test mocking
+`next/navigation` narrowly (just `useParams`, the common case in this codebase)
+broke the moment it transitively imported this one new file — concretely,
+`order-detail-sheet.test.tsx` started failing at import/collection time, zero
+tests run. Same class of bug as the `@/lib/api-client` transitive-barrel gotcha
+already documented in `vitest.config.ts`; fixed the same way — import
+`@/features/stats/queries/use-stats-overview` directly instead of the barrel.
+
+**Verification:** `pnpm typecheck` (api + web) clean, `pnpm --filter api test`
+421/421 passing, `pnpm --filter web test` 198/198 passing. Manual browser
+verification (place an order → confirmation → account → order list → order
+detail; WhatsApp button; a different/logged-out session gets 404/redirect on
+another buyer's order URL; address add/edit/delete/set-default reflected in
+checkout's prefill) was **not** performed in this session — out of scope for an
+automated pass, flagged per this plan's own Verification section for a manual
+follow-up.

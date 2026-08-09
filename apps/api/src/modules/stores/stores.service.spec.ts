@@ -453,8 +453,22 @@ describe("StoresService", () => {
         { id: "store-1", name: "A", slug: "a", logoUrl: null },
       ]);
       prisma.order.findMany.mockResolvedValue([
-        { storeId: "store-1", payments: [{ amount: 500 }] },
-        { storeId: "store-1", payments: [{ amount: 200 }] },
+        {
+          storeId: "store-1",
+          payments: [{
+            amount: 500,
+            source: "SELLER_RECORDED",
+            reviewStatus: "N_A",
+          }],
+        },
+        {
+          storeId: "store-1",
+          payments: [{
+            amount: 200,
+            source: "SELLER_RECORDED",
+            reviewStatus: "N_A",
+          }],
+        },
       ]);
 
       const result = await service.findFeatured(10);
@@ -467,13 +481,27 @@ describe("StoresService", () => {
         { id: "store-1", name: "A", slug: "a", logoUrl: null },
         { id: "store-2", name: "B", slug: "b", logoUrl: null },
       ]);
+      const sellerPayment = (amount: number) => ({
+        amount,
+        source: "SELLER_RECORDED" as const,
+        reviewStatus: "N_A" as const,
+      });
       prisma.order.findMany.mockResolvedValue([
-        { storeId: "store-1", payments: [{ amount: 50 }] },
-        { storeId: "store-1", payments: [{ amount: 50 }] },
-        { storeId: "store-1", payments: [{ amount: 50 }] },
-        { storeId: "store-2", payments: [{ amount: 100 }] },
-        { storeId: "store-2", payments: [{ amount: 100 }] },
-        { storeId: "store-2", payments: [{ amount: 100 }] },
+        { storeId: "store-1", payments: [sellerPayment(50)] },
+        { storeId: "store-1", payments: [sellerPayment(50)] },
+        {
+          storeId: "store-1",
+          // A PENDING_REVIEW buyer submission on top of the counted 50 —
+          // must not inflate this store's public ranking revenue.
+          payments: [sellerPayment(50), {
+            amount: 1000,
+            source: "BUYER_SUBMITTED" as const,
+            reviewStatus: "PENDING_REVIEW" as const,
+          }],
+        },
+        { storeId: "store-2", payments: [sellerPayment(100)] },
+        { storeId: "store-2", payments: [sellerPayment(100)] },
+        { storeId: "store-2", payments: [sellerPayment(100)] },
       ]);
 
       const result = await service.findFeatured(10);
@@ -481,6 +509,7 @@ describe("StoresService", () => {
       expect(result.map((s) => s.id)).toEqual(["store-2", "store-1"]);
       expect(result[0].revenue).toBe(300);
       expect(result[0].orderCount).toBe(3);
+      expect(result[1].revenue).toBe(150);
     });
 
     it("scopes eligibility to stores with a published product and a non-banned owner", async () => {

@@ -295,7 +295,20 @@
           "description": "Accept cash when the buyer picks up the order."
         }
       },
-      "footer": "Enabled methods are shown when registering order payments."
+      "footer": "Enabled methods are shown when registering order payments.",
+      "editDetails": "Edit details",
+      "hideDetails": "Hide",
+      "saveDetails": "Save details",
+      "detailsInvalid": "Fill in the required fields before saving.",
+      "uploadQr": "Upload QR",
+      "uploading": "Uploading...",
+      "fields": {
+        "bankName": "Bank name",
+        "accountNumber": "Account number",
+        "accountHolder": "Account holder",
+        "accountType": "Account type (optional)",
+        "phoneNumber": "Phone number"
+      }
     },
     "delivery": {
       "title": "Delivery setup",
@@ -406,7 +419,8 @@
     },
     "types": {
       "LOW_STOCK": "Low stock",
-      "OUT_OF_STOCK": "Out of stock"
+      "OUT_OF_STOCK": "Out of stock",
+      "PAYMENT_PROOF_SUBMITTED": "Payment proof submitted"
     }
   },
   "preferences": {
@@ -575,6 +589,12 @@
     "approve": "Approve",
     "approveDisabledNoPayment": "Can't approve with no payment registered.",
     "reject": "Reject",
+    "proofReview": {
+      "pending": "Pending review",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "buyerSubmitted": "Sent by buyer"
+    },
     "markAs": "Mark {status}",
     "fulfillmentLabels": {
       "ORDERING": "Preparing",

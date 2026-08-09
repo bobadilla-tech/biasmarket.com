@@ -13,6 +13,7 @@ import {
 import { normalizePhone } from "@biasmarket/utils/phone-country";
 import { PrismaService } from "../../prisma/prisma.service.js";
 import { CustomerAccountService } from "../orders/application/customer-account.service.js";
+import { OrderRepository } from "../orders/infrastructure/order.repository.js";
 import { requiredEnv } from "../../config/env.validation.js";
 
 @Injectable()
@@ -20,6 +21,7 @@ export class CustomerAuthService {
   constructor(
     private prisma: PrismaService,
     private customerAccount: CustomerAccountService,
+    private orderRepository: OrderRepository,
   ) {}
 
   private async findStoreBySlug(slug: string) {
@@ -202,6 +204,26 @@ export class CustomerAuthService {
       },
       orders,
     };
+  }
+
+  // `findRowByIdForStore` already 404s on a wrong storeId; the buyerAccountId
+  // check below covers the remaining case — a different buyer's order inside
+  // the *same* store. Both cases return the same generic 404 (never a 403)
+  // so a probing request can't distinguish "doesn't exist" from "not yours".
+  async getOrderDetail(
+    slug: string,
+    session: { buyerAccountId: string },
+    orderId: string,
+  ) {
+    const store = await this.findStoreBySlug(slug);
+    const row = await this.orderRepository.findRowByIdForStore(
+      orderId,
+      store.id,
+    );
+    if (row.buyerAccountId !== session.buyerAccountId) {
+      throw new NotFoundException("Orden no encontrada");
+    }
+    return row;
   }
 
   async updateProfile(

@@ -62,3 +62,21 @@ export const upsert = async (
     body: JSON.stringify(upsertPaymentMethodDto),
   });
 };
+
+export const getUploadQrImageUrl = (storeId: string, method: string) => {
+  return `/stores/${storeId}/payment-methods/${method}/qr-image`;
+};
+
+export const uploadQrImage = async (
+  storeId: string,
+  method: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PaymentMethodConfigResponseDto> => {
+  return customFetch<PaymentMethodConfigResponseDto>(
+    getUploadQrImageUrl(storeId, method),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};

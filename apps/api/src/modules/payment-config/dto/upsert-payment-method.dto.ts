@@ -1,7 +1,15 @@
-import { IsBoolean, IsIn, IsOptional } from "class-validator";
+import {
+  IsBoolean,
+  IsIn,
+  IsObject,
+  IsOptional,
+  ValidateNested,
+} from "class-validator";
+import { Type } from "class-transformer";
 import type { PaymentMethodType } from "@biasmarket/db";
+import { PaymentMethodDetailsDto } from "./payment-method-details.dto.js";
 
-const PAYMENT_METHOD_TYPES: PaymentMethodType[] = [
+export const PAYMENT_METHOD_TYPES: PaymentMethodType[] = [
   "YAPE",
   "PLIN",
   "TRANSFER",
@@ -15,4 +23,10 @@ export class UpsertPaymentMethodDto {
   @IsOptional()
   @IsBoolean()
   enabled?: boolean;
+
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => PaymentMethodDetailsDto)
+  details?: PaymentMethodDetailsDto;
 }

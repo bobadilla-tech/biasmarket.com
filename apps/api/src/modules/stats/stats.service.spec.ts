@@ -76,7 +76,11 @@ describe("StatsService", () => {
       await service.getOverview(storeId, ownerId);
 
       expect(prisma.orderPayment.aggregate).toHaveBeenCalledWith({
-        where: { storeId, order: { paymentStatus: "VERIFIED" } },
+        where: {
+          storeId,
+          order: { paymentStatus: "VERIFIED" },
+          OR: [{ source: "SELLER_RECORDED" }, { reviewStatus: "APPROVED" }],
+        },
         _sum: { amount: true },
       });
     });
@@ -126,7 +130,11 @@ describe("StatsService", () => {
         {
           id: "order-1",
           requiredAmount: new Prisma.Decimal(100),
-          payments: [{ amount: new Prisma.Decimal(40) }],
+          payments: [{
+            amount: new Prisma.Decimal(40),
+            source: "SELLER_RECORDED",
+            reviewStatus: "N_A",
+          }],
         },
       ]);
 
@@ -169,7 +177,11 @@ describe("StatsService", () => {
             customerId: "customer-1",
             createdAt: new Date("2026-08-15T01:00:00Z"),
             paymentStatus: "VERIFIED",
-            payments: [{ amount: 40 }],
+            payments: [{
+              amount: 40,
+              source: "SELLER_RECORDED",
+              reviewStatus: "N_A",
+            }],
           },
           {
             customerId: "customer-2",
@@ -196,6 +208,44 @@ describe("StatsService", () => {
       const todayBucket = result.buckets[result.buckets.length - 1];
       expect(todayBucket.revenue).toBe(40);
       expect(todayBucket.orderCount).toBe(2);
+
+      vi.useRealTimers();
+    });
+
+    it("excludes a PENDING_REVIEW buyer-submitted payment from bucket revenue", async () => {
+      const now = new Date("2026-08-15T12:00:00Z");
+      vi.useFakeTimers();
+      vi.setSystemTime(now);
+
+      prisma.order.findMany
+        .mockResolvedValueOnce([
+          {
+            customerId: "customer-1",
+            createdAt: new Date("2026-08-15T01:00:00Z"),
+            paymentStatus: "VERIFIED",
+            payments: [
+              { amount: 40, source: "SELLER_RECORDED", reviewStatus: "N_A" },
+              {
+                amount: 1000,
+                source: "BUYER_SUBMITTED",
+                reviewStatus: "PENDING_REVIEW",
+              },
+            ],
+          },
+        ])
+        .mockResolvedValueOnce([
+          {
+            customerId: "customer-1",
+            createdAt: new Date("2026-08-15T01:00:00Z"),
+          },
+        ]);
+      prisma.orderItem.groupBy.mockResolvedValue([]);
+      prisma.product.findMany.mockResolvedValue([]);
+
+      const result = await service.getAnalytics(storeId, ownerId, "30d");
+
+      const todayBucket = result.buckets[result.buckets.length - 1];
+      expect(todayBucket.revenue).toBe(40);
 
       vi.useRealTimers();
     });

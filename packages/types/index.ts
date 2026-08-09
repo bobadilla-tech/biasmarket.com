@@ -1,4 +1,4 @@
-export { configureApiClient } from "./http.js";
+export { ApiError, configureApiClient } from "./http.js";
 export type { RequestOptions } from "./http.js";
 
 // Response/request DTO types, generated from apps/api's committed

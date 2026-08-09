@@ -4,6 +4,7 @@ import { OrderController } from "./infrastructure/order.controller.js";
 import { CheckoutController } from "./infrastructure/checkout.controller.js";
 import { CustomerAccountController } from "./infrastructure/customer-account.controller.js";
 import { CustomersController } from "./infrastructure/customers.controller.js";
+import { CustomerOrderPaymentsController } from "./infrastructure/customer-order-payments.controller.js";
 import { OrderRepository } from "./infrastructure/order.repository.js";
 import { CustomersService } from "./application/customers.service.js";
 import { CreateOrderUseCase } from "./application/create-order.usecase.js";
@@ -25,6 +26,7 @@ import { NotificationsModule } from "../notifications/notifications.module.js";
     CheckoutController,
     CustomerAccountController,
     CustomersController,
+    CustomerOrderPaymentsController,
   ],
   providers: [
     OrderRepository,
@@ -37,6 +39,6 @@ import { NotificationsModule } from "../notifications/notifications.module.js";
     CustomerAccountService,
     CustomersService,
   ],
-  exports: [CustomerAccountService],
+  exports: [CustomerAccountService, OrderRepository],
 })
 export class OrdersModule {}

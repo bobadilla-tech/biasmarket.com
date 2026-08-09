@@ -1,4 +1,5 @@
 import { Prisma } from "@biasmarket/db";
+import type { PaymentReviewStatus, PaymentSource } from "@biasmarket/db";
 
 export interface PaymentSummary {
   paidAmount: number;
@@ -6,14 +7,32 @@ export interface PaymentSummary {
   paidPercentage: number;
 }
 
+export interface SummablePayment {
+  amount: Prisma.Decimal;
+  source: PaymentSource;
+  reviewStatus: PaymentReviewStatus;
+}
+
+// Single source of truth for "does this row count as paid" — every
+// aggregation call site that sums `OrderPayment.amount` (stats revenue,
+// customer lifetimeSpend, the featured-stores ranking, this file) must use
+// this same predicate, or an unreviewed buyer-submitted proof silently
+// inflates a different number in each place. See
+// docs/plans/2026-08-08-buyer-proof-of-payment-upload-plan.md's "Critical
+// invariant" section.
+export function countsTowardPaid(payment: SummablePayment): boolean {
+  return payment.source === "SELLER_RECORDED" ||
+    payment.reviewStatus === "APPROVED";
+}
+
 // Arithmetic stays in Decimal space until the final `.toNumber()` — plain
 // `Number` subtraction here previously produced 59.989999999999995 instead
 // of 59.99 for a 99.99 order with a 40.00 payment.
 export function computePaymentSummary(
   requiredAmount: Prisma.Decimal,
-  payments: { amount: Prisma.Decimal }[],
+  payments: SummablePayment[],
 ): PaymentSummary {
-  const paid = payments.reduce(
+  const paid = payments.filter(countsTowardPaid).reduce(
     (sum, payment) => sum.plus(payment.amount),
     new Prisma.Decimal(0),
   );
@@ -32,7 +51,7 @@ export function computePaymentSummary(
 export function withPaymentSummary<
   T extends {
     requiredAmount: Prisma.Decimal;
-    payments?: { amount: Prisma.Decimal }[];
+    payments?: SummablePayment[];
   },
 >(order: T): T & PaymentSummary {
   return {

@@ -486,6 +486,7 @@ export type NotificationResponseDtoType =
 export const NotificationResponseDtoType = {
   LOW_STOCK: "LOW_STOCK",
   OUT_OF_STOCK: "OUT_OF_STOCK",
+  PAYMENT_PROOF_SUBMITTED: "PAYMENT_PROOF_SUBMITTED",
 } as const;
 
 export type NotificationResponseDtoMetadata = { [key: string]: unknown };
@@ -689,6 +690,28 @@ export const OrderPaymentResponseDtoMethod = {
   CASH: "CASH",
 } as const;
 
+export type OrderPaymentResponseDtoSource =
+  typeof OrderPaymentResponseDtoSource[
+    keyof typeof OrderPaymentResponseDtoSource
+  ];
+
+export const OrderPaymentResponseDtoSource = {
+  SELLER_RECORDED: "SELLER_RECORDED",
+  BUYER_SUBMITTED: "BUYER_SUBMITTED",
+} as const;
+
+export type OrderPaymentResponseDtoReviewStatus =
+  typeof OrderPaymentResponseDtoReviewStatus[
+    keyof typeof OrderPaymentResponseDtoReviewStatus
+  ];
+
+export const OrderPaymentResponseDtoReviewStatus = {
+  N_A: "N_A",
+  PENDING_REVIEW: "PENDING_REVIEW",
+  APPROVED: "APPROVED",
+  REJECTED: "REJECTED",
+} as const;
+
 export interface OrderPaymentResponseDto {
   id: string;
   orderId: string;
@@ -702,6 +725,12 @@ export interface OrderPaymentResponseDto {
   /** @nullable */
   imageUrl: string | null;
   createdAt: string;
+  source: OrderPaymentResponseDtoSource;
+  reviewStatus: OrderPaymentResponseDtoReviewStatus;
+  /** @nullable */
+  reviewedAt: string | null;
+  /** @nullable */
+  reviewedBy: string | null;
 }
 
 export interface OrderResponseDto {
@@ -1524,9 +1553,19 @@ export const UpsertPaymentMethodDtoMethod = {
   CASH: "CASH",
 } as const;
 
+export interface PaymentMethodDetailsDto {
+  bankName?: string;
+  accountNumber?: string;
+  accountHolder?: string;
+  accountType?: string;
+  phoneNumber?: string;
+  qrImageUrl?: string;
+}
+
 export interface UpsertPaymentMethodDto {
   method: UpsertPaymentMethodDtoMethod;
   enabled?: boolean;
+  details?: PaymentMethodDetailsDto;
 }
 
 export interface CreateInquiryDto {

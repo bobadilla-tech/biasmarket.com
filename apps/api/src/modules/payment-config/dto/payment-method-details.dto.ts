@@ -1,0 +1,34 @@
+import { IsOptional, IsString, IsUrl } from "class-validator";
+
+// Structural union of the three method-shapes this plan defines (see
+// docs/plans/2026-08-08-buyer-post-checkout-payment-instructions-plan.md's
+// "Decision: PaymentMethodConfig.details shape") — all fields optional here,
+// the method-conditional "which fields are actually required" check lives in
+// PaymentConfigService.normalizeDetails, since class-validator's
+// @ValidateIf only sees the nested object, not the sibling `method` field on
+// the parent DTO.
+export class PaymentMethodDetailsDto {
+  @IsOptional()
+  @IsString()
+  bankName?: string;
+
+  @IsOptional()
+  @IsString()
+  accountNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  accountHolder?: string;
+
+  @IsOptional()
+  @IsString()
+  accountType?: string;
+
+  @IsOptional()
+  @IsString()
+  phoneNumber?: string;
+
+  @IsOptional()
+  @IsUrl()
+  qrImageUrl?: string;
+}

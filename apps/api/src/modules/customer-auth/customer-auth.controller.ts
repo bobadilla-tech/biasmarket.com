@@ -31,6 +31,8 @@ import {
   UpdateCustomerProfileResponseDto,
 } from "./dto/customer-auth-response.dto.js";
 import { toAccountOrderDto } from "./dto/account-order-response.dto.js";
+import { toOrderDto } from "../orders/infrastructure/order.controller.js";
+import type { OrderDetailResponseDto } from "../orders/dto/order-response.dto.js";
 
 function setSessionCookie(res: Response, token: string): void {
   res.cookie(CUSTOMER_SESSION_COOKIE, token, {
@@ -122,6 +124,28 @@ export class CustomerAuthController {
       customer: profile.customer,
       orders: profile.orders.map(toAccountOrderDto),
     };
+  }
+
+  // Reuses `Order`'s own `toOrderDto`/`OrderDetailResponseDto` rather than a
+  // buyer-safe subset DTO — confirmed `OrderDetailResponseDto` carries no
+  // seller-only/internal fields on top of `OrderResponseDto` (see
+  // docs/plans/2026-08-08-buyer-mini-dashboard-plan.md). Ownership is
+  // `order.buyerAccountId === session.buyerAccountId`, enforced in
+  // `CustomerAuthService.getOrderDetail`.
+  @Public()
+  @UseGuards(CustomerSessionGuard)
+  @Get("orders/:orderId")
+  async orderDetail(
+    @Param("slug") slug: string,
+    @Param("orderId") orderId: string,
+    @CustomerSession() session: { buyerAccountId: string },
+  ): Promise<OrderDetailResponseDto> {
+    const row = await this.customerAuth.getOrderDetail(
+      slug,
+      session,
+      orderId,
+    );
+    return toOrderDto(row);
   }
 
   @Public()

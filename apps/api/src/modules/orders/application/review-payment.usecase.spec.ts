@@ -105,7 +105,11 @@ describe("ReviewPaymentUseCase", () => {
       paymentStatus: "PENDING_PAYMENT",
       fulfillmentStatus: "ORDERING",
       requiredAmount,
-      payments: [{ amount: requiredAmount }],
+      payments: [{
+        amount: requiredAmount,
+        source: "SELLER_RECORDED",
+        reviewStatus: "N_A",
+      }],
       items: [{ variantId: "variant-1", productId: "product-1", quantity: 2 }],
     });
     prisma.productVariant.findUnique.mockResolvedValue({
@@ -194,7 +198,11 @@ describe("ReviewPaymentUseCase", () => {
       paymentStatus: "PENDING_PAYMENT",
       fulfillmentStatus: "ORDERING",
       requiredAmount,
-      payments: [{ amount: requiredAmount }],
+      payments: [{
+        amount: requiredAmount,
+        source: "SELLER_RECORDED",
+        reviewStatus: "N_A",
+      }],
       items: [{ variantId: "variant-1", quantity: 1 }],
     });
     prisma.productVariant.findUnique.mockResolvedValue({
@@ -220,7 +228,11 @@ describe("ReviewPaymentUseCase", () => {
       fulfillmentStatus: "ORDERING",
       customerEmail: "buyer@example.com",
       requiredAmount,
-      payments: [{ amount: requiredAmount }],
+      payments: [{
+        amount: requiredAmount,
+        source: "SELLER_RECORDED",
+        reviewStatus: "N_A",
+      }],
       items: [{ variantId: "variant-1", productId: "product-1", quantity: 1 }],
     });
     prisma.order.updateMany.mockResolvedValue({ count: 0 });
@@ -242,7 +254,11 @@ describe("ReviewPaymentUseCase", () => {
       fulfillmentStatus: "ORDERING",
       customerEmail: "buyer@example.com",
       requiredAmount,
-      payments: [{ amount: requiredAmount }],
+      payments: [{
+        amount: requiredAmount,
+        source: "SELLER_RECORDED",
+        reviewStatus: "N_A",
+      }],
       items: [],
     });
     prisma.order.findUniqueOrThrow.mockResolvedValue({
@@ -385,6 +401,29 @@ describe("ReviewPaymentUseCase", () => {
     expect(prisma.productVariant.update).not.toHaveBeenCalled();
   });
 
+  it("rejects approving an order whose only payment is a PENDING_REVIEW buyer submission", async () => {
+    prisma.order.findUnique.mockResolvedValue({
+      id: orderId,
+      storeId,
+      paymentStatus: "PENDING_PAYMENT",
+      fulfillmentStatus: "ORDERING",
+      requiredAmount,
+      payments: [{
+        amount: requiredAmount,
+        source: "BUYER_SUBMITTED",
+        reviewStatus: "PENDING_REVIEW",
+      }],
+      items: [],
+    });
+
+    await expect(useCase.execute(orderId, storeId, ownerId, "approve")).rejects
+      .toThrow(
+        BadRequestException,
+      );
+
+    expect(prisma.order.updateMany).not.toHaveBeenCalled();
+  });
+
   it("allows approving an order with a partial payment below requiredAmount", async () => {
     prisma.order.findUnique.mockResolvedValue({
       id: orderId,
@@ -392,7 +431,11 @@ describe("ReviewPaymentUseCase", () => {
       paymentStatus: "PENDING_PAYMENT",
       fulfillmentStatus: "ORDERING",
       requiredAmount,
-      payments: [{ amount: new Prisma.Decimal("30.00") }],
+      payments: [{
+        amount: new Prisma.Decimal("30.00"),
+        source: "SELLER_RECORDED",
+        reviewStatus: "N_A",
+      }],
       items: [],
     });
     prisma.order.findUniqueOrThrow.mockResolvedValue({

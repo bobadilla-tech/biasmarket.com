@@ -6,6 +6,7 @@ import {
 } from "@nestjs/common";
 import type { Prisma } from "@biasmarket/db";
 import { PrismaService } from "../../prisma/prisma.service.js";
+import { countsTowardPaid } from "../../common/payment-summary.js";
 import { slugify } from "@biasmarket/utils/strings";
 import type { UpdateStoreDto } from "./dto/update-store.dto.js";
 import type { CreateStoreDto } from "./dto/create-store.dto.js";
@@ -170,13 +171,22 @@ export class StoresService {
         paymentStatus: "VERIFIED",
         createdAt: { gte: since },
       },
-      select: { storeId: true, payments: { select: { amount: true } } },
+      select: {
+        storeId: true,
+        payments: {
+          select: { amount: true, source: true, reviewStatus: true },
+        },
+      },
     });
 
     const revenueByStore = new Map<string, number>();
     const orderCountByStore = new Map<string, number>();
     for (const order of orders) {
-      const revenue = order.payments.reduce(
+      // A VERIFIED order can still carry a buyer-submitted proof pending
+      // review (e.g. re-submitted after the seller already recorded the
+      // balance manually) — exclude it, same as every other revenue
+      // aggregate. See common/payment-summary.ts's `countsTowardPaid`.
+      const revenue = order.payments.filter(countsTowardPaid).reduce(
         (sum, p) => sum + Number(p.amount),
         0,
       );

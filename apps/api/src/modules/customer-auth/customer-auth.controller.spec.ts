@@ -4,8 +4,14 @@ import { CustomerAuthController } from "./customer-auth.controller.js";
 import { CustomerAuthService } from "./customer-auth.service.js";
 import { CustomerSessionGuard } from "./customer-session.guard.js";
 
+// `AuthGuard`/`Session` are needed too, not just `Public` — this spec's
+// controller imports `toOrderDto` from `order.controller.ts` (see
+// docs/plans/2026-08-08-buyer-mini-dashboard-plan.md), which uses both at
+// module-load time (`@UseGuards(AuthGuard)`, `@Session() session`).
 vi.mock("@thallesp/nestjs-better-auth", () => ({
   Public: () => () => undefined,
+  AuthGuard: class AuthGuard {},
+  Session: () => () => undefined,
 }));
 
 vi.mock("@nestjs/throttler", async (importOriginal) => {
@@ -22,6 +28,7 @@ describe("CustomerAuthController", () => {
     getProfile: Mock;
     updateProfile: Mock;
     forgotPassword: Mock;
+    getOrderDetail: Mock;
   };
   let res: { cookie: Mock; clearCookie: Mock };
 
@@ -33,6 +40,7 @@ describe("CustomerAuthController", () => {
       getProfile: vi.fn(),
       updateProfile: vi.fn(),
       forgotPassword: vi.fn(),
+      getOrderDetail: vi.fn(),
     };
     res = { cookie: vi.fn(), clearCookie: vi.fn() };
 
@@ -143,6 +151,56 @@ describe("CustomerAuthController", () => {
       "+51988888888",
     );
     expect(result).toEqual({ ok: true });
+  });
+
+  it("orderDetail() delegates to the service and maps the row through toOrderDto", async () => {
+    const session = { buyerAccountId: "buyer-1" };
+    const row = {
+      id: "order-1",
+      storeId: "store-1",
+      customerId: null,
+      customerEmail: null,
+      customerPhone: "+51988888888",
+      customerName: "Jane",
+      deliveryMethodType: "PICKUP",
+      deliveryDetails: null,
+      pickupPointId: null,
+      pickupDate: null,
+      paymentMethod: null,
+      paymentStatus: "PENDING_PAYMENT",
+      paymentRejectionReason: null,
+      fulfillmentStatus: "ORDERING",
+      status: "ACTIVE",
+      cancellationResolution: null,
+      cancellationReason: null,
+      retainedAmount: null,
+      releasedAmount: null,
+      releasedResolution: null,
+      totalAmount: { toString: () => "100.00" },
+      requiredAmount: { toString: () => "100.00" },
+      currency: "PEN",
+      expiresAt: new Date("2026-01-02"),
+      createdAt: new Date("2026-01-01"),
+      paidAmount: 0,
+      pendingAmount: 100,
+      paidPercentage: 0,
+      items: [],
+      payments: [],
+    };
+    service.getOrderDetail.mockResolvedValue(row);
+
+    const result = await controller.orderDetail(
+      "my-store",
+      "order-1",
+      session,
+    );
+
+    expect(service.getOrderDetail).toHaveBeenCalledWith(
+      "my-store",
+      session,
+      "order-1",
+    );
+    expect(result).toEqual(expect.objectContaining({ id: "order-1" }));
   });
 
   it("logout() clears the session cookie", () => {

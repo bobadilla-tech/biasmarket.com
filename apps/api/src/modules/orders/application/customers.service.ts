@@ -6,7 +6,10 @@ import {
 import { Prisma } from "@biasmarket/db";
 import { normalizePhone } from "@biasmarket/utils/phone-country";
 import { PrismaService } from "../../../prisma/prisma.service.js";
-import { withPaymentSummary } from "../../../common/payment-summary.js";
+import {
+  countsTowardPaid,
+  withPaymentSummary,
+} from "../../../common/payment-summary.js";
 
 // Orders without a linked `Customer` (guest checkout — no email, or a phone
 // that matched an existing account's number with a different email on file)
@@ -61,6 +64,9 @@ export class CustomersService {
         where: {
           storeId,
           order: { paymentStatus: "VERIFIED", customerId: { not: null } },
+          // Excludes a buyer-submitted proof still awaiting seller review —
+          // see common/payment-summary.ts's `countsTowardPaid`.
+          OR: [{ source: "SELLER_RECORDED" }, { reviewStatus: "APPROVED" }],
         },
         select: { amount: true, order: { select: { customerId: true } } },
       }),
@@ -72,7 +78,9 @@ export class CustomersService {
           customerEmail: true,
           paymentStatus: true,
           createdAt: true,
-          payments: { select: { amount: true } },
+          payments: {
+            select: { amount: true, source: true, reviewStatus: true },
+          },
         },
       }),
     ]);
@@ -136,7 +144,7 @@ export class CustomersService {
         guest.email = order.customerEmail ?? null;
       }
       if (order.paymentStatus === "VERIFIED") {
-        for (const payment of order.payments) {
+        for (const payment of order.payments.filter(countsTowardPaid)) {
           guest.spend = guest.spend.plus(payment.amount);
         }
       }

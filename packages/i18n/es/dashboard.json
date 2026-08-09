@@ -295,7 +295,20 @@
           "description": "Acepta efectivo cuando el comprador retire el pedido."
         }
       },
-      "footer": "Los métodos habilitados se muestran al registrar abonos de pedidos."
+      "footer": "Los métodos habilitados se muestran al registrar abonos de pedidos.",
+      "editDetails": "Editar datos",
+      "hideDetails": "Ocultar",
+      "saveDetails": "Guardar datos",
+      "detailsInvalid": "Completa los campos requeridos antes de guardar.",
+      "uploadQr": "Subir QR",
+      "uploading": "Subiendo...",
+      "fields": {
+        "bankName": "Nombre del banco",
+        "accountNumber": "Número de cuenta",
+        "accountHolder": "Titular de la cuenta",
+        "accountType": "Tipo de cuenta (opcional)",
+        "phoneNumber": "Número de teléfono"
+      }
     },
     "delivery": {
       "title": "Configuración de entrega",
@@ -406,7 +419,8 @@
     },
     "types": {
       "LOW_STOCK": "Stock bajo",
-      "OUT_OF_STOCK": "Sin stock"
+      "OUT_OF_STOCK": "Sin stock",
+      "PAYMENT_PROOF_SUBMITTED": "Comprobante de pago enviado"
     }
   },
   "preferences": {
@@ -575,6 +589,12 @@
     "approve": "Aprobar",
     "approveDisabledNoPayment": "No se puede aprobar sin ningún pago registrado.",
     "reject": "Rechazar",
+    "proofReview": {
+      "pending": "Pendiente de revisión",
+      "approved": "Aprobado",
+      "rejected": "Rechazado",
+      "buyerSubmitted": "Enviado por el comprador"
+    },
     "markAs": "Marcar {status}",
     "fulfillmentLabels": {
       "ORDERING": "En preparación",

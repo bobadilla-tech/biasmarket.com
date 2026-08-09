@@ -18,6 +18,20 @@ export interface RequestOptions extends RequestInit {
   fallbackErrorMessage?: string;
 }
 
+// Carries the HTTP status alongside the message so callers that need to
+// distinguish e.g. 401 (no session) from 404 (wrong owner / not found) can do
+// so with `error instanceof ApiError && error.status === 404`, instead of
+// string-matching the backend's message text.
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 // Error responses aren't part of the OpenAPI generation pipeline (only 2xx
 // paths are typed — see docs/plans/2026-08-04-nestjs-openapi-client-generation-plan.md's
 // Phase 3 scope note), so the parsed error body is untyped here. Same
@@ -64,12 +78,13 @@ export async function customFetch<T>(
   }
 
   if (!res.ok) {
-    throw new Error(
+    throw new ApiError(
       errorMessage(
         parseError ? undefined : data,
         fallbackErrorMessage,
         res.status,
       ),
+      res.status,
     );
   }
   if (parseError) {

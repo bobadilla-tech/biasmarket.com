@@ -7,6 +7,7 @@ export {
 } from "./queries/use-enabled-payment-methods";
 
 export { useReviewPayment } from "./mutations/use-review-payment";
+export { useReviewPaymentProof } from "./mutations/use-review-payment-proof";
 export { useAdvanceFulfillment } from "./mutations/use-advance-fulfillment";
 export { useRegisterPayment } from "./mutations/use-register-payment";
 export { useOptimisticStatusChange } from "./mutations/use-optimistic-status-change";

@@ -9,6 +9,7 @@ const {
   findEnabledPaymentConfig,
   createCheckout,
   findAddresses,
+  findStorePublic,
 } = vi.hoisted(() => ({
   findEnabledDeliveryConfig: vi.fn(),
   findEnabledPickupPoints: vi.fn(),
@@ -18,6 +19,7 @@ const {
   // logged-out buyer's 401, and the hook (useDefaultShippingAddress) never
   // surfaces that as a UI error, only as an empty prefill.
   findAddresses: vi.fn().mockRejectedValue(new Error("not authenticated")),
+  findStorePublic: vi.fn(),
 }));
 
 vi.mock("@/lib/api-client", () => ({
@@ -27,8 +29,15 @@ vi.mock("@/lib/api-client", () => ({
     publicPaymentConfig: { findEnabled: findEnabledPaymentConfig },
     checkout: { create: createCheckout },
     addresses: { findAll: findAddresses },
+    stores: { findPublic: findStorePublic },
   },
 }));
+
+// getDeliveryOptions bundles this in on every mount — a default resolve
+// keeps every test below from having to set it up individually. Not reset
+// by `vi.clearAllMocks()` (that only clears call history, not the mocked
+// implementation), so this stays in effect across the whole file.
+findStorePublic.mockResolvedValue({ paymentInstructions: "" });
 
 const { CheckoutForm } = await import("./checkout-form");
 
@@ -71,7 +80,13 @@ test("submits with the delivery type, pickup point, and payment method the buyer
     { method: "TRANSFER", enabled: true, details: {} },
   ]);
   createCheckout.mockResolvedValue({
-    order: { id: "order-1" },
+    order: {
+      id: "order-1",
+      paymentMethod: "TRANSFER",
+      requiredAmount: "15.00",
+      totalAmount: "15.00",
+      currency: "PEN",
+    },
     whatsappUrl: null,
   });
 
@@ -97,7 +112,7 @@ test("submits with the delivery type, pickup point, and payment method the buyer
     "jane@example.com",
   );
   await user.click(
-    screen.getByRole("button", { name: /Confirmar y continuar/i }),
+    screen.getByRole("button", { name: /Confirmar pedido/i }),
   );
 
   await waitFor(() => {
@@ -114,6 +129,11 @@ test("submits with the delivery type, pickup point, and payment method the buyer
     expect(onOrderCreated).toHaveBeenCalledWith({
       orderId: "order-1",
       customerEmail: "jane@example.com",
+      paymentMethod: "TRANSFER",
+      requiredAmount: "15.00",
+      totalAmount: "15.00",
+      currency: "PEN",
+      whatsappUrl: null,
     });
   });
 });
@@ -150,7 +170,7 @@ test("renders a closed-today pickup point as selectable (not disabled) and does 
   // With no available-today point to auto-default to, the field stays
   // unset until the buyer explicitly picks a point + date.
   const submitButton = screen.getByRole("button", {
-    name: /Confirmar y continuar/i,
+    name: /Confirmar pedido/i,
   }) as HTMLButtonElement;
   expect(submitButton.disabled).toBe(true);
 });
@@ -196,7 +216,7 @@ test("selecting a closed-today point reveals a date picker defaulted to the next
     "988888888",
   );
   const submitButton = screen.getByRole("button", {
-    name: /Confirmar y continuar/i,
+    name: /Confirmar pedido/i,
   }) as HTMLButtonElement;
   expect(submitButton.disabled).toBe(false);
 });
@@ -246,7 +266,7 @@ test("submits with the chosen pickupDate when a closed-today point was selected"
     "jane@example.com",
   );
   await user.click(
-    screen.getByRole("button", { name: /Confirmar y continuar/i }),
+    screen.getByRole("button", { name: /Confirmar pedido/i }),
   );
 
   await waitFor(() => {
@@ -337,7 +357,7 @@ test("submits the inline shippingAddress fields for a COURIER order", async () =
     "jane@example.com",
   );
   await user.click(
-    screen.getByRole("button", { name: /Confirmar y continuar/i }),
+    screen.getByRole("button", { name: /Confirmar pedido/i }),
   );
 
   await waitFor(() => {

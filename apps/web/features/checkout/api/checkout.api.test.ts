@@ -4,12 +4,14 @@ const publicDeliveryConfigMock = { findEnabled: vi.fn() };
 const publicPickupPointsMock = { findEnabled: vi.fn() };
 const publicPaymentConfigMock = { findEnabled: vi.fn() };
 const checkoutMock = { create: vi.fn() };
+const storesMock = { findPublic: vi.fn() };
 vi.mock("@/lib/api-client", () => ({
   apiClient: {
     publicDeliveryConfig: publicDeliveryConfigMock,
     publicPickupPoints: publicPickupPointsMock,
     publicPaymentConfig: publicPaymentConfigMock,
     checkout: checkoutMock,
+    stores: storesMock,
   },
 }));
 
@@ -20,9 +22,10 @@ afterEach(() => {
   publicPickupPointsMock.findEnabled.mockReset();
   publicPaymentConfigMock.findEnabled.mockReset();
   checkoutMock.create.mockReset();
+  storesMock.findPublic.mockReset();
 });
 
-test("getDeliveryOptions fetches all three public config endpoints for the slug", async () => {
+test("getDeliveryOptions fetches all four public config endpoints for the slug", async () => {
   publicDeliveryConfigMock.findEnabled.mockResolvedValue([
     { type: "PICKUP", enabled: true, details: {} },
   ]);
@@ -33,6 +36,9 @@ test("getDeliveryOptions fetches all three public config endpoints for the slug"
   publicPaymentConfigMock.findEnabled.mockResolvedValue([
     { method: "YAPE", enabled: true, details: {} },
   ]);
+  storesMock.findPublic.mockResolvedValue({
+    paymentInstructions: "Pay at pickup",
+  });
 
   const result = await checkoutApi.getDeliveryOptions("my-store");
 
@@ -41,10 +47,12 @@ test("getDeliveryOptions fetches all three public config endpoints for the slug"
   );
   expect(publicPickupPointsMock.findEnabled).toHaveBeenCalledWith("my-store");
   expect(publicPaymentConfigMock.findEnabled).toHaveBeenCalledWith("my-store");
+  expect(storesMock.findPublic).toHaveBeenCalledWith("my-store");
   expect(result.methods).toHaveLength(1);
   expect(result.points).toHaveLength(1);
   expect(result.weekday).toBe(3);
   expect(result.paymentMethods).toHaveLength(1);
+  expect(result.storePaymentInstructions).toBe("Pay at pickup");
 });
 
 test("submit delegates to the generated Checkout.create, omitting empty optional fields", async () => {

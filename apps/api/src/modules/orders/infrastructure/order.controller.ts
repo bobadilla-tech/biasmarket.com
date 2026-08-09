@@ -115,6 +115,10 @@ export interface OrderPaymentRow {
   note: string | null;
   imageUrl: string | null;
   createdAt: Date;
+  source: "SELLER_RECORDED" | "BUYER_SUBMITTED";
+  reviewStatus: "N_A" | "PENDING_REVIEW" | "APPROVED" | "REJECTED";
+  reviewedAt: Date | null;
+  reviewedBy: string | null;
 }
 
 export interface OrderRow {
@@ -207,11 +211,14 @@ function toOrderItemDto(item: OrderItemRow): OrderItemResponseDto {
   };
 }
 
-function toOrderPaymentDto(payment: OrderPaymentRow): OrderPaymentResponseDto {
+export function toOrderPaymentDto(
+  payment: OrderPaymentRow,
+): OrderPaymentResponseDto {
   return {
     ...payment,
     amount: payment.amount.toString(),
     createdAt: payment.createdAt.toISOString(),
+    reviewedAt: payment.reviewedAt?.toISOString() ?? null,
   };
 }
 
@@ -459,6 +466,97 @@ export class OrderController {
         session.user.id,
         "approve",
       );
+    }
+
+    const updated = await this.orders.findRowByIdForStore(orderId, storeId);
+    return toOrderDetailDto(updated);
+  }
+
+  // Approve/reject a single buyer-submitted proof-of-payment row (`source:
+  // BUYER_SUBMITTED`) — distinct from `review` below, which transitions the
+  // *order's* overall paymentStatus. Approving here only flips this row's
+  // `reviewStatus` to `APPROVED` (making it count toward `paidAmount`, per
+  // `common/payment-summary.ts`'s `countsTowardPaid`) and then re-derives the
+  // order's status from the new total — same PARTIALLY_PAID/VERIFIED logic
+  // `addPayment` above already runs for a seller-recorded payment, so a
+  // buyer's approved submission reaches the same end state a seller manually
+  // recording that amount would.
+  @Patch(":orderId/payments/:paymentId/review")
+  async reviewPaymentProof(
+    @Param("storeId") storeId: string,
+    @Param("orderId") orderId: string,
+    @Param("paymentId") paymentId: string,
+    @Session() session: UserSession,
+    @Body() dto: ReviewPaymentDto,
+  ): Promise<OrderDetailResponseDto> {
+    await this.orders.assertOwnership(storeId, session.user.id);
+    const payment = await this.orders.findPaymentForStore(
+      paymentId,
+      orderId,
+      storeId,
+    );
+    if (payment.source !== "BUYER_SUBMITTED") {
+      throw new BadRequestException(
+        "Solo se pueden revisar comprobantes enviados por el comprador",
+      );
+    }
+    if (payment.reviewStatus !== "PENDING_REVIEW") {
+      throw new BadRequestException("Este comprobante ya fue revisado");
+    }
+
+    const reviewStatus = dto.decision === "approve" ? "APPROVED" : "REJECTED";
+    await this.prisma.$transaction(async (tx) => {
+      await tx.orderPayment.update({
+        where: { id: paymentId },
+        data: {
+          reviewStatus,
+          reviewedAt: new Date(),
+          reviewedBy: session.user.id,
+        },
+      });
+      await tx.auditLog.create({
+        data: {
+          actorId: session.user.id,
+          storeId,
+          action: dto.decision === "approve"
+            ? "payment_proof.approved"
+            : "payment_proof.rejected",
+          entityType: "OrderPayment",
+          entityId: paymentId,
+          metadata: { reason: dto.reason ?? null },
+        },
+      });
+    });
+
+    if (dto.decision === "approve") {
+      const order = await this.orders.findRowByIdForStore(orderId, storeId);
+      const toCents = (n: number) => Math.round(n * 100);
+      // Only auto-advance status from the two "still collecting money" states
+      // — mirrors the domain guard in order-status.vo.ts (VERIFIED/REJECTED/
+      // CANCELLED have no outgoing transitions). A proof left PENDING_REVIEW
+      // while the order moved on for an unrelated reason (e.g. the seller
+      // rejected it separately) still gets marked APPROVED above for the
+      // record, it just doesn't try to re-drive an order that can no longer
+      // legally change state.
+      if (
+        order.paymentStatus === "PENDING_PAYMENT" ||
+        order.paymentStatus === "PARTIALLY_PAID"
+      ) {
+        if (
+          toCents(order.paidAmount) >= toCents(Number(order.requiredAmount))
+        ) {
+          await this.reviewPayment.execute(
+            orderId,
+            storeId,
+            session.user.id,
+            "approve",
+          );
+        } else if (order.paidAmount > 0) {
+          await this.orders.saveStatus(orderId, {
+            paymentStatus: "PARTIALLY_PAID",
+          });
+        }
+      }
     }
 
     const updated = await this.orders.findRowByIdForStore(orderId, storeId);

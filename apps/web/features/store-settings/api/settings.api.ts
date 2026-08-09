@@ -107,6 +107,36 @@ export const settingsApi = {
       ),
     ),
 
+  savePaymentMethodDetails: (
+    storeId: string,
+    method: "YAPE" | "PLIN" | "TRANSFER" | "CASH",
+    details: Record<string, unknown>,
+  ) => apiClient.paymentConfig.upsert(storeId, { method, details }),
+
+  // Multipart — same carve-out as products' image uploads / stores'
+  // uploadLogo (see apps/web/AGENTS.md's OpenAPI note).
+  async uploadPaymentQrImage(
+    storeId: string,
+    method: "YAPE" | "PLIN",
+    file: File,
+    fallbackErrorMessage?: string,
+  ) {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const apiUrl = process.env.INTERNAL_API_URL ??
+      process.env.NEXT_PUBLIC_API_URL;
+    const res = await fetch(
+      `${apiUrl}/api/stores/${storeId}/payment-methods/${method}/qr-image`,
+      { method: "POST", credentials: "include", body: formData },
+    );
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      throw new Error(data?.message ?? fallbackErrorMessage ?? "Network error");
+    }
+    return data as { details: { qrImageUrl?: string } };
+  },
+
   // A type with no override row resolves to null — callers fall back to the
   // hardcoded default template.
   async getWhatsAppTemplates(storeId: string) {

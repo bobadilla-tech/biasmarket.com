@@ -57,7 +57,15 @@ const PAYMENT_METHOD_ICONS: Record<string, React.ReactNode> = {
 interface CheckoutFormProps {
   slug: string;
   items: CartItem[];
-  onOrderCreated: (result: { orderId: string; customerEmail: string }) => void;
+  onOrderCreated: (result: {
+    orderId: string;
+    customerEmail: string;
+    paymentMethod: "YAPE" | "PLIN" | "TRANSFER" | "CASH" | null;
+    requiredAmount: string;
+    totalAmount: string;
+    currency: string;
+    whatsappUrl: string | null;
+  }) => void;
 }
 
 // next-intl's typed t() rejects a template-literal key — these two build a
@@ -316,10 +324,12 @@ export function CheckoutForm(
     onOrderCreated({
       orderId: result.order.id,
       customerEmail: values.customerEmail,
+      paymentMethod: result.order.paymentMethod,
+      requiredAmount: result.order.requiredAmount,
+      totalAmount: result.order.totalAmount,
+      currency: result.order.currency,
+      whatsappUrl: result.whatsappUrl,
     });
-    if (result.whatsappUrl) {
-      globalThis.location.href = result.whatsappUrl;
-    }
   });
 
   const weekdays = weekdayLabels(t);

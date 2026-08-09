@@ -159,6 +159,20 @@ export class OrderPaymentResponseDto {
 
   @ApiProperty({ type: String, format: "date-time" })
   createdAt: string;
+
+  @ApiProperty({ enum: ["SELLER_RECORDED", "BUYER_SUBMITTED"] })
+  source: "SELLER_RECORDED" | "BUYER_SUBMITTED";
+
+  @ApiProperty({
+    enum: ["N_A", "PENDING_REVIEW", "APPROVED", "REJECTED"],
+  })
+  reviewStatus: "N_A" | "PENDING_REVIEW" | "APPROVED" | "REJECTED";
+
+  @ApiProperty({ type: String, format: "date-time", nullable: true })
+  reviewedAt: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  reviewedBy: string | null;
 }
 
 // `findAll`'s shape (via OrderRepository.withPaymentSummary) — no `proofs`.
