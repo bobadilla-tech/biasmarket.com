@@ -5,8 +5,20 @@ import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { formatOrderDate } from "../lib/order-format";
+import { paymentMethodLabels } from "../lib/payment-method-labels";
 import { ordersApi } from "../api/orders.api";
 import type { OrderPaymentResponseDto } from "@biasmarket/types";
+
+// Tiny inline logo for the branded methods (Yape/Plin); TRANSFER/CASH have no
+// brand asset and stay text-only. Decorative next to the text label, so
+// alt="" — the label right after it carries the accessible name.
+const PAYMENT_METHOD_LOGOS: Record<
+  string,
+  { src: string; width: number; height: number }
+> = {
+  YAPE: { src: "/logos/integrations/yape.webp", width: 200, height: 200 },
+  PLIN: { src: "/logos/integrations/plin.png", width: 185, height: 185 },
+};
 
 export function PaymentHistoryList({
   currency,
@@ -20,12 +32,7 @@ export function PaymentHistoryList({
   const t = useTranslations("dashboard.orders");
   const { locale } = useParams<{ locale: string }>();
 
-  const paymentMethodLabels: Record<string, string> = {
-    YAPE: t("paymentMethodLabels.YAPE"),
-    PLIN: t("paymentMethodLabels.PLIN"),
-    TRANSFER: t("paymentMethodLabels.TRANSFER"),
-    CASH: t("paymentMethodLabels.CASH"),
-  };
+  const labels = paymentMethodLabels(t);
 
   if (payments.length === 0) return null;
 
@@ -43,6 +50,9 @@ export function PaymentHistoryList({
               payment.id,
             )
             : null;
+          const methodLogo = payment.method
+            ? PAYMENT_METHOD_LOGOS[payment.method]
+            : undefined;
           return (
             <div
               key={payment.id}
@@ -77,9 +87,18 @@ export function PaymentHistoryList({
                     {currency} {payment.amount}
                     {payment.method
                       ? (
-                        <span className="ml-1 font-medium text-[#8f7da8]">
-                          · {paymentMethodLabels[payment.method] ??
-                            payment.method}
+                        <span className="ml-1 inline-flex items-center gap-1 font-medium text-[#8f7da8]">
+                          <span aria-hidden="true">·</span>
+                          {methodLogo && (
+                            <Image
+                              src={methodLogo.src}
+                              alt=""
+                              width={methodLogo.width}
+                              height={methodLogo.height}
+                              className="size-3.5 shrink-0 object-contain"
+                            />
+                          )}
+                          {labels[payment.method] ?? payment.method}
                         </span>
                       )
                       : null}

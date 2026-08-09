@@ -13,6 +13,7 @@ import {
   buildRegisterPaymentSchema,
   type RegisterPaymentInput,
 } from "../schemas/register-payment.schema";
+import { paymentMethodLabels } from "../lib/payment-method-labels";
 
 export function RegisterPaymentForm({
   pendingAmount,
@@ -29,12 +30,7 @@ export function RegisterPaymentForm({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const paymentMethodLabels: Record<string, string> = {
-    YAPE: t("paymentMethodLabels.YAPE"),
-    PLIN: t("paymentMethodLabels.PLIN"),
-    TRANSFER: t("paymentMethodLabels.TRANSFER"),
-    CASH: t("paymentMethodLabels.CASH"),
-  };
+  const labels = paymentMethodLabels(t);
 
   const { register, handleSubmit, watch, control, reset } = useForm<
     RegisterPaymentInput
@@ -94,7 +90,7 @@ export function RegisterPaymentForm({
         </option>
         {enabledMethods.map((methodOption) => (
           <option key={methodOption} value={methodOption}>
-            {paymentMethodLabels[methodOption] ?? methodOption}
+            {labels[methodOption] ?? methodOption}
           </option>
         ))}
       </Select>

@@ -3378,6 +3378,103 @@
           "Restock"
         ]
       }
+    },
+    "/stores/{storeId}/whatsapp-templates/{type}": {
+      "get": {
+        "operationId": "WhatsappTemplatesController_findOne",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "enum": [
+                "NEW_ORDER",
+                "PAYMENT_REMINDER"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/WhatsAppTemplateResponseDto"
+                    }
+                  ],
+                  "nullable": true
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "WhatsappTemplates"
+        ]
+      },
+      "put": {
+        "operationId": "WhatsappTemplatesController_upsert",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "enum": [
+                "NEW_ORDER",
+                "PAYMENT_REMINDER"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWhatsAppTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhatsAppTemplateResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "WhatsappTemplates"
+        ]
+      }
     }
   },
   "info": {
@@ -7500,6 +7597,50 @@
         },
         "required": [
           "count"
+        ]
+      },
+      "UpdateWhatsAppTemplateDto": {
+        "type": "object",
+        "properties": {
+          "template": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "template"
+        ]
+      },
+      "WhatsAppTemplateResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "NEW_ORDER",
+              "PAYMENT_REMINDER"
+            ],
+            "type": "string"
+          },
+          "template": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "type",
+          "template",
+          "updatedAt"
         ]
       }
     }

@@ -21,6 +21,7 @@ import { NotificationsModule } from "./modules/notifications/notifications.modul
 import { StatsModule } from "./modules/stats/stats.module.js";
 import { CustomerAuthModule } from "./modules/customer-auth/customer-auth.module.js";
 import { RestockModule } from "./modules/restock/restock.module.js";
+import { WhatsappTemplatesModule } from "./modules/whatsapp-templates/whatsapp-templates.module.js";
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { RestockModule } from "./modules/restock/restock.module.js";
     StatsModule,
     CustomerAuthModule,
     RestockModule,
+    WhatsappTemplatesModule,
   ],
   controllers: [AppController],
 })

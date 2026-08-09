@@ -38,6 +38,7 @@ describe("CreateOrderUseCase", () => {
     product: { findUnique: Mock };
     productVariant: { findUnique: Mock; update: Mock };
     order: { create: Mock };
+    whatsAppMessageTemplate: { findUnique: Mock };
   };
   let notifications: { syncStockAlerts: Mock };
   let customerAccounts: {
@@ -77,6 +78,7 @@ describe("CreateOrderUseCase", () => {
       product: { findUnique: vi.fn() },
       productVariant: { findUnique: vi.fn(), update: vi.fn() },
       order: { create: vi.fn() },
+      whatsAppMessageTemplate: { findUnique: vi.fn() },
     };
     notifications = { syncStockAlerts: vi.fn() };
     customerAccounts = {
@@ -98,6 +100,10 @@ describe("CreateOrderUseCase", () => {
     prisma.store.findUnique.mockResolvedValue(store);
     prisma.deliveryMethodConfig.findUnique.mockResolvedValue(deliveryConfig);
     prisma.pickupPoint.count.mockResolvedValue(0);
+    // No saved NEW_ORDER override by default — order messages use the
+    // hardcoded default template (regression-checked in the custom-template
+    // test below).
+    prisma.whatsAppMessageTemplate.findUnique.mockResolvedValue(null);
   });
 
   afterEach(() => {
@@ -236,7 +242,7 @@ describe("CreateOrderUseCase", () => {
     expect(prisma.$queryRaw).toHaveBeenCalledWith(
       expect.arrayContaining([
         expect.stringContaining('UPDATE "ProductVariant"'),
-        expect.stringContaining('"Product".storeId'),
+        expect.stringContaining('"Product"."storeId"'),
       ]),
       2,
       "variant-1",
@@ -325,6 +331,80 @@ describe("CreateOrderUseCase", () => {
     const result = await useCase.execute(slug, dto);
 
     expect(result.whatsappUrl).toBeNull();
+  });
+
+  it("renders the store's saved NEW_ORDER template instead of the default", async () => {
+    prisma.product.findUnique.mockResolvedValue({
+      id: "product-1",
+      storeId: store.id,
+      status: "PUBLISHED",
+      deletedAt: null,
+      price: new FakeDecimal(10),
+      currency: "PEN",
+      name: "Widget",
+      variants: [],
+    });
+    prisma.order.create.mockResolvedValue({
+      id: "order-123456",
+      totalAmount: new FakeDecimal(20),
+      currency: "PEN",
+      deliveryMethodType: "PICKUP",
+      customerName: "Jane",
+      customerPhone: dto.customerPhone,
+    });
+    prisma.whatsAppMessageTemplate.findUnique.mockResolvedValue({
+      id: "tmpl-1",
+      storeId: store.id,
+      type: "NEW_ORDER",
+      template: "*Pedido {{orderRef}}* en {{storeName}}\n{{items}}",
+      updatedAt: new Date("2026-08-09T12:00:00.000Z"),
+    });
+
+    const result = await useCase.execute(slug, dto);
+
+    expect(prisma.whatsAppMessageTemplate.findUnique).toHaveBeenCalledWith({
+      where: {
+        storeId_type: { storeId: store.id, type: "NEW_ORDER" },
+      },
+    });
+    expect(result.whatsappUrl).toContain(
+      encodeURIComponent("*Pedido #123456* en My Store"),
+    );
+    expect(result.whatsappUrl).toContain(
+      encodeURIComponent("2x Widget - 10.00 PEN c/u"),
+    );
+    // The default-message marker must not appear when a custom template is set.
+    expect(result.whatsappUrl).not.toContain(
+      encodeURIComponent("Nuevo pedido en My Store"),
+    );
+  });
+
+  it("still sends today's exact default message when the store has no NEW_ORDER override", async () => {
+    prisma.product.findUnique.mockResolvedValue({
+      id: "product-1",
+      storeId: store.id,
+      status: "PUBLISHED",
+      deletedAt: null,
+      price: new FakeDecimal(10),
+      currency: "PEN",
+      name: "Widget",
+      variants: [],
+    });
+    prisma.order.create.mockResolvedValue({
+      id: "order-123456",
+      totalAmount: new FakeDecimal(20),
+      currency: "PEN",
+      deliveryMethodType: "PICKUP",
+      customerName: "Jane",
+      customerPhone: dto.customerPhone,
+    });
+
+    const result = await useCase.execute(slug, dto);
+
+    expect(result.whatsappUrl).toContain(
+      encodeURIComponent("*Nuevo pedido en My Store*"),
+    );
+    expect(result.whatsappUrl).toContain(encodeURIComponent("Ref: #123456"));
   });
 
   describe("customer accounts", () => {

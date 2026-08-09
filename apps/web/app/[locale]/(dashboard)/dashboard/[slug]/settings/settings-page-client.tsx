@@ -12,12 +12,16 @@ import {
   NotificationsSection,
   PaymentsSection,
   ProfileSection,
+  useWhatsAppTemplates,
+  WhatsAppMessagesSection,
 } from "@/features/store-settings";
 
 export function SettingsPageClient() {
   const t = useTranslations("dashboard.settings");
   const tCommon = useTranslations("common");
   const { store, loading: storeLoading } = useDashboardStore();
+  const { data: whatsappTemplates, isPending: whatsappLoading } =
+    useWhatsAppTemplates(store?.id);
 
   if (storeLoading || !store) {
     return (
@@ -63,6 +67,19 @@ export function SettingsPageClient() {
             <ProfileSection store={store} />
             <AppearanceSection store={store} />
             <PaymentsSection storeId={store.id} />
+            <WhatsAppMessagesSection
+              storeId={store.id}
+              templates={
+                whatsappTemplates
+                  ? {
+                    newOrder: whatsappTemplates.newOrder?.template ?? null,
+                    paymentReminder:
+                      whatsappTemplates.paymentReminder?.template ?? null,
+                  }
+                  : undefined
+              }
+              loading={whatsappLoading}
+            />
           </div>
 
           <div className="space-y-6">
