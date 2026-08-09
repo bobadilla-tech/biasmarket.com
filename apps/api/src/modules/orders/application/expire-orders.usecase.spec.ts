@@ -8,6 +8,7 @@ describe("ExpireOrdersUseCase", () => {
   let useCase: ExpireOrdersUseCase;
   let prisma: {
     order: { findMany: Mock; updateMany: Mock };
+    auditLog: { create: Mock };
     productVariant: { findUnique: Mock; update: Mock };
     store: { findUnique: Mock };
     product: { findUnique: Mock };
@@ -20,6 +21,7 @@ describe("ExpireOrdersUseCase", () => {
         findMany: vi.fn(),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
+      auditLog: { create: vi.fn() },
       productVariant: { findUnique: vi.fn(), update: vi.fn() },
       store: { findUnique: vi.fn() },
       product: { findUnique: vi.fn() },
@@ -42,7 +44,11 @@ describe("ExpireOrdersUseCase", () => {
 
   it("cancels expired PENDING_PAYMENT orders and releases finite-stock holds", async () => {
     prisma.order.findMany.mockResolvedValue([
-      { id: "order-1", items: [{ variantId: "variant-1", quantity: 2 }] },
+      {
+        id: "order-1",
+        storeId: "store-1",
+        items: [{ variantId: "variant-1", quantity: 2 }],
+      },
     ]);
     prisma.productVariant.findUnique.mockResolvedValue({
       id: "variant-1",
@@ -57,7 +63,17 @@ describe("ExpireOrdersUseCase", () => {
     });
     expect(prisma.order.updateMany).toHaveBeenCalledWith({
       where: { id: "order-1", paymentStatus: "PENDING_PAYMENT" },
-      data: { paymentStatus: "CANCELLED" },
+      data: { status: "CANCELLED", paymentStatus: "CANCELLED" },
+    });
+    expect(prisma.auditLog.create).toHaveBeenCalledWith({
+      data: {
+        actorId: "system",
+        storeId: "store-1",
+        action: "order.expired",
+        entityType: "Order",
+        entityId: "order-1",
+        metadata: {},
+      },
     });
     expect(result).toEqual({ cancelled: 1 });
   });
@@ -94,6 +110,7 @@ describe("ExpireOrdersUseCase", () => {
     const result = await useCase.execute();
 
     expect(prisma.productVariant.update).not.toHaveBeenCalled();
+    expect(prisma.auditLog.create).not.toHaveBeenCalled();
     expect(result).toEqual({ cancelled: 0 });
   });
 });

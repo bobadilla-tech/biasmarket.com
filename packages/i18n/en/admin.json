@@ -36,6 +36,8 @@
       "name": "Name",
       "slug": "Slug",
       "owner": "Owner",
+      "locale": "Locale",
+      "socials": "Social links",
       "createdAt": "Created",
       "actions": "Actions"
     },

@@ -38,6 +38,10 @@ model Store {
   logoUrl             String?
   paymentInstructions String
   whatsappNumber      String?
+  instagramUrl        String?
+  facebookUrl         String?
+  tiktokUrl           String?
+  twitterUrl          String?
   defaultCurrency     String   @default("PEN")
   holdWindowHours     Int      @default(48)
   lowStockThreshold     Int      @default(5)

@@ -22,6 +22,8 @@ export function AdminStoresTable(
             <th className="px-6 py-3 font-medium">{t("table.name")}</th>
             <th className="px-6 py-3 font-medium">{t("table.slug")}</th>
             <th className="px-6 py-3 font-medium">{t("table.owner")}</th>
+            <th className="px-6 py-3 font-medium">{t("table.locale")}</th>
+            <th className="px-6 py-3 font-medium">{t("table.socials")}</th>
             <th className="px-6 py-3 font-medium">{t("table.createdAt")}</th>
             <th className="px-6 py-3 font-medium">{t("table.actions")}</th>
           </tr>
@@ -29,6 +31,13 @@ export function AdminStoresTable(
         <tbody>
           {stores.map((store) => {
             const isImpersonating = impersonatingUserId === store.owner.id;
+            const socials = [
+              { name: "Instagram", url: store.instagramUrl },
+              { name: "Facebook", url: store.facebookUrl },
+              { name: "TikTok", url: store.tiktokUrl },
+              { name: "Twitter", url: store.twitterUrl },
+            ].filter((s) => Boolean(s.url));
+
             return (
               <tr
                 key={store.id}
@@ -41,6 +50,30 @@ export function AdminStoresTable(
                   <div className="text-xs text-gray-400">
                     {store.owner.email}
                   </div>
+                </td>
+                <td className="px-6 py-3 text-gray-600">
+                  <span className="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-semibold uppercase text-gray-700">
+                    {store.locale || "es"}
+                  </span>
+                </td>
+                <td className="px-6 py-3 text-gray-600">
+                  {socials.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {socials.map((s) => (
+                        <a
+                          key={s.name}
+                          href={s.url!}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-purple-600 hover:underline"
+                        >
+                          {s.name}
+                        </a>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-gray-400">-</span>
+                  )}
                 </td>
                 <td className="px-6 py-3 text-gray-600">
                   {new Date(store.createdAt).toLocaleDateString()}

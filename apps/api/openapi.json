@@ -3548,6 +3548,22 @@
             "type": "string",
             "nullable": true
           },
+          "instagramUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "facebookUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "tiktokUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "twitterUrl": {
+            "type": "string",
+            "nullable": true
+          },
           "defaultCurrency": {
             "type": "string"
           },
@@ -3578,6 +3594,10 @@
           "logoUrl",
           "paymentInstructions",
           "whatsappNumber",
+          "instagramUrl",
+          "facebookUrl",
+          "tiktokUrl",
+          "twitterUrl",
           "defaultCurrency",
           "holdWindowHours",
           "lowStockThreshold",
@@ -3639,6 +3659,22 @@
             "type": "string",
             "nullable": true
           },
+          "instagramUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "facebookUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "tiktokUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "twitterUrl": {
+            "type": "string",
+            "nullable": true
+          },
           "defaultCurrency": {
             "type": "string"
           },
@@ -3672,6 +3708,10 @@
           "logoUrl",
           "paymentInstructions",
           "whatsappNumber",
+          "instagramUrl",
+          "facebookUrl",
+          "tiktokUrl",
+          "twitterUrl",
           "defaultCurrency",
           "holdWindowHours",
           "lowStockThreshold",
@@ -3687,8 +3727,31 @@
           "name": {
             "type": "string"
           },
+          "locale": {
+            "type": "string"
+          },
           "whatsappNumber": {
             "type": "string"
+          },
+          "instagramUrl": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri"
+          },
+          "facebookUrl": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri"
+          },
+          "tiktokUrl": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri"
+          },
+          "twitterUrl": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri"
           },
           "paymentInstructions": {
             "type": "string"
@@ -4103,6 +4166,22 @@
             "type": "string",
             "nullable": true
           },
+          "instagramUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "facebookUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "tiktokUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "twitterUrl": {
+            "type": "string",
+            "nullable": true
+          },
           "defaultCurrency": {
             "type": "string"
           },
@@ -4139,6 +4218,10 @@
           "logoUrl",
           "paymentInstructions",
           "whatsappNumber",
+          "instagramUrl",
+          "facebookUrl",
+          "tiktokUrl",
+          "twitterUrl",
           "defaultCurrency",
           "holdWindowHours",
           "lowStockThreshold",
