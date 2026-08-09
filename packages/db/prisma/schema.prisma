@@ -458,8 +458,34 @@ model BuyerAccount {
   name            String?
   createdAt       DateTime @default(now())
 
-  stores CustomerStoreLink[]
-  orders Order[]
+  stores    CustomerStoreLink[]
+  orders    Order[]
+  addresses Address[]
+}
+
+// Buyer-owned, reusable across every store the BuyerAccount is linked to
+// (global identity — see docs/plans/2026-08-08-global-buyer-account-plan.md).
+// Not read server-side during checkout; the buyer's default address is only
+// ever a client-side prefill, checkout itself accepts inline shippingAddress
+// fields — see docs/plans/2026-08-08-buyer-shipping-addresses-plan.md's
+// "Important correction" section for why.
+model Address {
+  id             String   @id @default(cuid())
+  buyerAccountId String
+  label          String? // "Casa", "Trabajo" — buyer's own name for it
+  recipientName  String
+  phone          String
+  line1          String
+  line2          String?
+  city           String
+  region         String? // department/province, optional — Peru-first, keep loose
+  reference      String? // "frente al parque" — very common in LatAm addresses
+  isDefault      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  buyerAccount BuyerAccount @relation(fields: [buyerAccountId], references: [id])
+
+  @@index([buyerAccountId])
 }
 
 // Join row proving a BuyerAccount has an account/checkout footprint at a

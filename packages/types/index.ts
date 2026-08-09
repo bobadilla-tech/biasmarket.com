@@ -36,3 +36,4 @@ export * as stats from "./generated/stats/stats.js";
 export * as users from "./generated/users/users.js";
 export * as restock from "./generated/restock/restock.js";
 export * as whatsappTemplates from "./generated/whatsapp-templates/whatsapp-templates.js";
+export * as addresses from "./generated/addresses/addresses.js";

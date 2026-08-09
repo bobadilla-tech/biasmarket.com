@@ -270,6 +270,56 @@ describe("CreateOrderUseCase", () => {
     );
   });
 
+  it("snapshots the submitted shippingAddress into deliveryDetails for a COURIER order", async () => {
+    prisma.deliveryMethodConfig.findUnique.mockResolvedValue({
+      ...deliveryConfig,
+      type: "COURIER",
+      details: { estimatedCost: 15 },
+    });
+    prisma.product.findUnique.mockResolvedValue({
+      id: "product-1",
+      storeId: store.id,
+      status: "PUBLISHED",
+      deletedAt: null,
+      price: new FakeDecimal(10),
+      currency: "PEN",
+      name: "Widget",
+      variants: [],
+    });
+    prisma.order.create.mockResolvedValue({
+      id: "order-1",
+      totalAmount: new FakeDecimal(35),
+      currency: "PEN",
+      deliveryMethodType: "COURIER",
+      customerName: "Jane",
+      customerPhone: dto.customerPhone,
+    });
+
+    const shippingAddress = {
+      recipientName: "Jane Doe",
+      phone: "+51988888888",
+      line1: "Av. Principal 123",
+      city: "Lima",
+    };
+
+    await useCase.execute(slug, {
+      ...dto,
+      deliveryMethodType: "COURIER",
+      shippingAddress,
+    });
+
+    expect(prisma.order.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          deliveryDetails: expect.objectContaining({
+            estimatedCost: 15,
+            shippingAddress,
+          }),
+        }),
+      }),
+    );
+  });
+
   it("rejects a cart mixing products with different currencies", async () => {
     prisma.product.findUnique
       .mockResolvedValueOnce({

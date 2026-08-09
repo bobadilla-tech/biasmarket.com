@@ -9,6 +9,13 @@ const validValues = {
   pickupPointId: "",
   pickupDate: "",
   paymentMethod: "",
+  shippingRecipientName: "Jane Doe",
+  shippingPhone: "+51999999999",
+  shippingLine1: "Av. Principal 123",
+  shippingLine2: "",
+  shippingCity: "Lima",
+  shippingRegion: "",
+  shippingReference: "",
 };
 
 test("accepts valid values with no pickup points or payment methods configured", () => {
@@ -94,6 +101,29 @@ test("accepts a pickup date when the selected point isn't open today and a date 
     deliveryMethodType: "PICKUP",
     pickupPointId: "point-1",
     pickupDate: "2026-08-10",
+  });
+  expect(result.success).toBe(true);
+});
+
+test("requires a shipping address when COURIER is selected", () => {
+  const schema = buildCheckoutFormSchema(false, false);
+  const result = schema.safeParse({
+    ...validValues,
+    deliveryMethodType: "COURIER",
+    shippingLine1: "",
+  });
+  expect(result.success).toBe(false);
+});
+
+test("does not require a shipping address when PICKUP is selected", () => {
+  const schema = buildCheckoutFormSchema(false, false);
+  const result = schema.safeParse({
+    ...validValues,
+    deliveryMethodType: "PICKUP",
+    shippingRecipientName: "",
+    shippingPhone: "",
+    shippingLine1: "",
+    shippingCity: "",
   });
   expect(result.success).toBe(true);
 });

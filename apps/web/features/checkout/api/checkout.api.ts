@@ -1,5 +1,6 @@
 import { apiClient } from "@/lib/api-client";
 import type { CartItem } from "@/lib/cart";
+import type { ShippingAddressDto } from "@biasmarket/types";
 
 export const checkoutApi = {
   async getDeliveryOptions(slug: string) {
@@ -29,6 +30,7 @@ export const checkoutApi = {
       customerName?: string;
       customerPhone: string;
       customerEmail?: string;
+      shippingAddress?: ShippingAddressDto;
       items: CartItem[];
     },
     fallbackErrorMessage?: string,
@@ -45,6 +47,7 @@ export const checkoutApi = {
         customerName: values.customerName || undefined,
         customerPhone: values.customerPhone,
         customerEmail: values.customerEmail || undefined,
+        shippingAddress: values.shippingAddress,
         items: values.items.map((item) => ({
           productId: item.productId,
           variantId: item.variantId,

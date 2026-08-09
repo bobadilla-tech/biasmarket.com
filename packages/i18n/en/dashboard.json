@@ -554,6 +554,7 @@
       "progress": "Paid %",
       "delivery": "Delivery",
       "date": "Date",
+      "shippingAddress": "Shipping address",
       "items": "Items",
       "quantity": "{count} units",
       "addPayment": "Register payment",

@@ -20,6 +20,15 @@ export function buildCheckoutFormSchema(
       pickupPointId: z.string(),
       pickupDate: z.string(),
       paymentMethod: z.string(),
+      // Only required for COURIER (validated below) — inline fields, no
+      // addressId picker, see the plan doc referenced above.
+      shippingRecipientName: z.string(),
+      shippingPhone: z.string(),
+      shippingLine1: z.string(),
+      shippingLine2: z.string(),
+      shippingCity: z.string(),
+      shippingRegion: z.string(),
+      shippingReference: z.string(),
     })
     .refine(
       (data) =>
@@ -37,6 +46,27 @@ export function buildCheckoutFormSchema(
     .refine(
       (data) => !(paymentMethodsAvailable && !data.paymentMethod),
       { message: "payment method required", path: ["paymentMethod"] },
+    )
+    .refine(
+      (data) =>
+        !(data.deliveryMethodType === "COURIER" &&
+          !data.shippingRecipientName),
+      {
+        message: "shipping recipient name required",
+        path: ["shippingRecipientName"],
+      },
+    )
+    .refine(
+      (data) => !(data.deliveryMethodType === "COURIER" && !data.shippingPhone),
+      { message: "shipping phone required", path: ["shippingPhone"] },
+    )
+    .refine(
+      (data) => !(data.deliveryMethodType === "COURIER" && !data.shippingLine1),
+      { message: "shipping address required", path: ["shippingLine1"] },
+    )
+    .refine(
+      (data) => !(data.deliveryMethodType === "COURIER" && !data.shippingCity),
+      { message: "shipping city required", path: ["shippingCity"] },
     );
 }
 

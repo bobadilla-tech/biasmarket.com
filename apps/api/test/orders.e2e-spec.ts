@@ -122,6 +122,14 @@ describe("orders + checkout (e2e)", () => {
       .patch(`/stores/${storeId}/products/${productId}/publish`)
       .set("Cookie", sessionCookie)
       .expect(200);
+
+    // Only PICKUP is auto-created on store creation (stores.service.ts) —
+    // COURIER checkout tests below need it explicitly enabled.
+    await request(app.getHttpServer())
+      .post(`/stores/${storeId}/delivery-methods`)
+      .set("Cookie", sessionCookie)
+      .send({ type: "COURIER", enabled: true, details: { estimatedCost: 10 } })
+      .expect(201);
   });
 
   afterAll(async () => {
@@ -307,6 +315,50 @@ describe("orders + checkout (e2e)", () => {
     assertMatchesSchema(cancelRes.body, orderStatusSchema, openapi.components);
     expect(cancelRes.body.status).toBe("CANCELLED");
     expect(cancelRes.body.paymentStatus).toBe("CANCELLED");
+  });
+
+  // Coverage for docs/plans/2026-08-08-buyer-shipping-addresses-plan.md:
+  // COURIER checkout requires an inline shippingAddress (no addressId
+  // picker — see the plan's "Important correction" section).
+  it("checkout COURIER without shippingAddress 400s", async () => {
+    await request(app.getHttpServer())
+      .post(`/stores/${storeSlug}/checkout`)
+      .send({
+        deliveryMethodType: "COURIER",
+        customerPhone: "+51955555511",
+        items: [{ productId, variantId: productVariantId, quantity: 1 }],
+      })
+      .expect(400);
+  });
+
+  it("checkout COURIER snapshots shippingAddress into the order's deliveryDetails", async () => {
+    const shippingAddress = {
+      recipientName: "Jane Doe",
+      phone: "+51955555522",
+      line1: "Av. Principal 123",
+      city: "Lima",
+      region: "Lima",
+      reference: "Frente al parque",
+    };
+    const checkoutRes = await request(app.getHttpServer())
+      .post(`/stores/${storeSlug}/checkout`)
+      .send({
+        deliveryMethodType: "COURIER",
+        customerPhone: "+51955555522",
+        items: [{ productId, variantId: productVariantId, quantity: 1 }],
+        shippingAddress,
+      })
+      .expect(201);
+    assertMatchesSchema(
+      checkoutRes.body,
+      checkoutResultSchema,
+      openapi.components,
+    );
+    const orderId = checkoutRes.body.order.id as string;
+    orderIds.push(orderId);
+    expect(checkoutRes.body.order.deliveryDetails).toMatchObject({
+      shippingAddress,
+    });
   });
 
   // Regression coverage for the float-precision bug in

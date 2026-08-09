@@ -554,6 +554,7 @@
       "progress": "% pagado",
       "delivery": "Entrega",
       "date": "Fecha",
+      "shippingAddress": "Dirección de envío",
       "items": "Productos",
       "quantity": "{count} unidades",
       "addPayment": "Registrar pago",

@@ -84,3 +84,28 @@ test("enables Aprobar once a payment has been registered", () => {
   ) as HTMLButtonElement;
   expect(approveButton.disabled).toBe(false);
 });
+
+test("renders the snapshotted shipping address for a COURIER order", () => {
+  renderSheet({
+    ...baseOrder,
+    deliveryMethodType: "COURIER",
+    deliveryDetails: {
+      estimatedCost: 10,
+      shippingAddress: {
+        recipientName: "Jane Doe",
+        phone: "988888888",
+        line1: "Av. Principal 123",
+        city: "Lima",
+      },
+    },
+  });
+
+  expect(screen.getByText("Av. Principal 123")).toBeDefined();
+  expect(screen.getByText(/Jane Doe/)).toBeDefined();
+});
+
+test("does not render a shipping address section for a PICKUP order", () => {
+  renderSheet(baseOrder);
+
+  expect(screen.queryByText("Dirección de envío")).toBeNull();
+});

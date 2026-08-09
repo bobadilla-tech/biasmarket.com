@@ -338,6 +338,12 @@ export class CreateOrderUseCase {
                 ...((deliveryConfig.details as Record<string, unknown>) ?? {}),
                 pickupPointLabel: pickupPoint.label,
               }
+              : dto.deliveryMethodType === "COURIER"
+              ? {
+                ...((deliveryConfig.details as Record<string, unknown>) ??
+                  {}),
+                shippingAddress: { ...dto.shippingAddress },
+              }
               : deliveryConfig.details ?? {},
             pickupPointId: pickupPoint?.id ?? null,
             pickupDate,
