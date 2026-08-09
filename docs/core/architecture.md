@@ -482,8 +482,8 @@ biasmarket.example.com {
   `docs/plans/2026-08-09-workers-infra-setup-plan.md`. Ships with one
   proof-of-pipeline "ping" job; no real job has moved off `apps/api` yet
   (payment-proof review notifications, image processing/resizing on upload,
-  order confirmation emails, the order-expiration cron sweep — see the
-  companion `2026-08-09-migrate-background-jobs-to-workers-plan.md`).
+  order confirmation emails, the order-expiration cron sweep — see the companion
+  `2026-08-09-migrate-background-jobs-to-workers-plan.md`).
 - **Email delivery**: Resend, via a thin `EmailService` in a `notifications`
   module — call sites send `{template, locale, data}`, never raw HTML, so every
   email stays routed through the localized templates in [i18n.md](i18n.md). MVP

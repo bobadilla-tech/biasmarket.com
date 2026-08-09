@@ -7,7 +7,11 @@
 
 import "dotenv/config";
 import { Queue } from "bullmq";
-import { buildRedisConnection, QUEUE_NAMES, PING_JOB_NAME } from "@biasmarket/queue";
+import {
+  buildRedisConnection,
+  PING_JOB_NAME,
+  QUEUE_NAMES,
+} from "@biasmarket/queue";
 
 const message = process.argv[2] ?? "hello from apps/api";
 

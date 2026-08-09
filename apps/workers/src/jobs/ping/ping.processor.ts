@@ -2,9 +2,9 @@ import { Processor, WorkerHost } from "@nestjs/bullmq";
 import { Logger } from "@nestjs/common";
 import type { Job } from "bullmq";
 import {
-  QUEUE_NAMES,
-  pingJobPayloadSchema,
   type PingJobPayload,
+  pingJobPayloadSchema,
+  QUEUE_NAMES,
 } from "@biasmarket/queue";
 
 // The one proof-of-pipeline job this plan ships — confirms a job enqueued by
