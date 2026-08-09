@@ -77,11 +77,30 @@ export class StoresService {
     if (store.ownerId !== userId) {
       throw new ForbiddenException("No sos dueño de esta store");
     }
-    const { themeConfig, ...rest } = dto;
+    const {
+      themeConfig,
+      instagramUrl,
+      facebookUrl,
+      tiktokUrl,
+      twitterUrl,
+      ...rest
+    } = dto;
     return this.prisma.store.update({
       where: { id: storeId },
       data: {
         ...rest,
+        ...(instagramUrl !== undefined && {
+          instagramUrl: instagramUrl || null,
+        }),
+        ...(facebookUrl !== undefined && {
+          facebookUrl: facebookUrl || null,
+        }),
+        ...(tiktokUrl !== undefined && {
+          tiktokUrl: tiktokUrl || null,
+        }),
+        ...(twitterUrl !== undefined && {
+          twitterUrl: twitterUrl || null,
+        }),
         ...(themeConfig !== undefined && {
           themeConfig: themeConfig as Prisma.InputJsonValue,
         }),

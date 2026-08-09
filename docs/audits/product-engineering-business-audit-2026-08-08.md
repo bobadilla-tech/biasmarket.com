@@ -164,33 +164,26 @@ single source of truth for
 mutation calls `assertOwnership` first. This is well-tested — dedicated
 VO/entity specs cover every transition and guard error.
 
-**Two real gaps, both isolated to the cron sweep** (`orders-cron.service.ts`,
+**One remaining gap is isolated to the cron sweep** (`orders-cron.service.ts`,
 runs every 5 min via `ExpireOrdersUseCase`):
 
-1. **Race condition (real bug):** `expire-orders.usecase.ts:50-53` writes
-   `paymentStatus: CANCELLED` via a bare `tx.order.update`, with **no
-   `updateMany({where:{paymentStatus:"PENDING_PAYMENT"}})` guard** — unlike
-   every other transition path in this module, which all use
-   optimistic-concurrency guards. If a seller approves/rejects an order in the
-   window between the cron's `findMany` read and its write, cron silently
-   overwrites that decision back to `CANCELLED`, and for an approved order the
-   stock `reserved` count gets decremented twice (once by
-   `ReviewPaymentUseCase`, once by cron), corrupting inventory counts. **Fix:**
-   add the same `updateMany` guard used everywhere else in this module, ~5
-   lines.
-2. **Silent cancellation:** cron-expired orders write no `AuditLog` row (every
+1. **Silent cancellation:** cron-expired orders write no `AuditLog` row (every
    human-triggered transition does), and never touch the separate `status`
    field, leaving `status: ACTIVE` + `paymentStatus: CANCELLED` — an
    inconsistent combination vs. seller-initiated cancellation, which sets both.
 
-Neither is covered by a test today (the existing cron spec only asserts the
-happy path). No `orders/**/*.e2e-spec.ts` exercises the full state machine end
-to end, and **the whole `test:e2e` suite is not run in CI** (§13/§14) — so this
-is the kind of bug that would only surface in production.
+The expiry race condition previously described here is fixed: the sweep now
+conditionally claims each order with `updateMany({ where: { id, paymentStatus:
+"PENDING_PAYMENT" } })` before releasing any reservation, so a concurrent
+seller decision skips the stock mutation. The remaining cancellation gap is
+covered only by the happy-path cron spec today. No `orders/**/*.e2e-spec.ts`
+exercises the full state machine end to end, and **the whole `test:e2e` suite is
+not run in CI** (§13/§14).
 
 **Overall: the state machine is well-designed and mostly production-ready.**
-This is the strongest-engineered part of the codebase. Fix the two cron issues
-before relying on it under real concurrent load.
+This is the strongest-engineered part of the codebase. Add the missing audit
+trail/status update to cron cancellation before relying on it as a complete
+state-machine record.
 
 ---
 
@@ -311,8 +304,6 @@ without committing to a payments roadmap.
   rendered in-app, not just WhatsApp redirect)
 - Buyer order-tracking page (status, what's next, is a real page — currently
   zero-effort card only)
-- Fix the cron race condition (§6) before relying on the expiry sweep under real
-  load
 - Automated DB/MinIO backups (§13) — currently manual-only, real data-loss
   exposure
 
@@ -357,7 +348,7 @@ without committing to a payments roadmap.
 | Inventory                         | Atomic reservation, no race conditions                                             | Same                                              | None                                        | —                          | —      |
 | Cart                              | Client-side, real                                                                  | Same                                              | None                                        | —                          | —      |
 | Checkout                          | Real, server-recomputes prices, atomic stock                                       | In-app payment instructions after submit          | Missing screen                              | **High**                   | Low    |
-| Orders (backend)                  | Well-modeled state machine, audited, mostly tested                                 | Same + cron guard fix                             | Race condition + missing audit on cron path | **High**                   | Low    |
+| Orders (backend)                  | Well-modeled state machine, audited, mostly tested                                 | Same + complete cron cancellation record          | Missing audit/status update on cron path   | **High**                   | Low    |
 | Orders (buyer-facing)             | Non-clickable card only                                                            | Real tracking page                                | Missing page                                | **High**                   | Medium |
 | Payment proof                     | Seller-recorded, access-controlled                                                 | Optionally buyer-initiated upload                 | Missing buyer UI                            | Medium                     | Medium |
 | Payment status                    | Manual only, correctly modeled                                                     | Ready to extend for gateway later                 | None blocking                               | —                          | —      |
@@ -370,7 +361,7 @@ without committing to a payments roadmap.
 | Search                            | Not audited in depth this pass; discovery layer exists per docs                    | —                                                 | —                                           | —                          | —      |
 | File storage                      | Private buckets, access-controlled, magic-byte validated uploads                   | Same                                              | None material                               | —                          | —      |
 | Security                          | Ownership pattern universal, no IDOR found; CSRF/rate-limit gaps on seller routes  | CSRF + rate-limit parity with buyer routes        | See §14                                     | Medium                     | Low    |
-| Testing                           | Strong unit+e2e coverage per-module; e2e not run in CI; cron race untested         | e2e in CI                                         | Missing CI job                              | Medium                     | Low    |
+| Testing                           | Strong unit+e2e coverage per-module; e2e not run in CI; cron cancellation gap untested | e2e in CI                                      | Missing CI job                              | Medium                     | Low    |
 | Observability                     | GlitchTip + env validation just landed; no structured logging/aggregation          | Same + logging                                    | Logging gap                                 | Low                        | Medium |
 | Deployment                        | Single-VM Compose, health-gated containers, no zero-downtime, no automated backups | Automated backups minimum                         | Backup automation                           | **High**                   | Low    |
 | SEO                               | Not deeply audited this pass                                                       | —                                                 | —                                           | —                          | —      |
@@ -383,10 +374,6 @@ without committing to a payments roadmap.
 
 **Critical (fix before/around launch):**
 
-- Cron expiry race condition — can silently overwrite a seller's payment
-  decision and double-decrement stock
-  (`orders/application/expire-orders.usecase.ts:50-53`). Small fix, real
-  correctness risk.
 - No automated DB/MinIO backups — manual `pg_dump`/`tar` only, documented but
   not scheduled. A lost VM disk between manual backups loses all
   orders/products/payment records.
@@ -472,7 +459,7 @@ worth planning for (not building now):
 Global Buyer Identity        → deferred migration (§4), wait for demand signal
 Seller / Store Tenancy       → already correct, no changes needed
 Products                     → already correct
-Orders                       → already correct, fix the two cron issues (§6)
+Orders                       → already correct, complete the cron cancellation record (§6)
 Manual Payment Proof         → already correct, buyer-upload UI is additive, not a redesign
 Order State Machine          → already correct, well-tested
 Future Payment Abstraction   → OrderPayment.source: MANUAL|GATEWAY is the one column to
@@ -490,13 +477,14 @@ independent scaling need identified anywhere in this audit. Keep the monolith.
 
 **Phase 0 — Foundations (before more feature work)**
 
-- Fix cron expiry race condition + missing audit log (§6) — small, high-value
+- Add an audit log and consistent order status update to cron expiry (§6) —
+  small, high-value
 - Stand up automated DB/MinIO backup (cron job or Compose service running the
   already-documented manual commands on a schedule)
 - Add `test:e2e` to CI
 - Extend `OriginGuard` to seller-dashboard mutation routes; add a global default
-  throttle _Dependencies:_ none. _Risk if skipped:_ silent data corruption (cron
-  bug), unrecoverable data loss (backups), regressions merging unnoticed (e2e).
+  throttle _Dependencies:_ none. _Risk if skipped:_ incomplete cancellation
+  history, unrecoverable data loss (backups), regressions merging unnoticed (e2e).
   _Done when:_ all four shipped and covered by a test/CI check where applicable.
 
 **Phase 1 — Chaos-Killer MVP (buyer-side completion)**
@@ -547,11 +535,10 @@ independent scaling need identified anywhere in this audit. Keep the monolith.
 
 ## 16. Top 10 things to do next
 
-1. **Fix the cron expiry race condition.** Why: silent data corruption
-   (overwrites seller decisions, double-decrements stock) under real concurrent
-   load. Outcome: `orders-cron` becomes trustworthy. Dependencies: none.
-   Complexity: trivial (add one `updateMany` guard + `AuditLog` write, mirrors
-   existing pattern in the same module).
+1. **Add an audit log and consistent status update to cron expiry.** Why:
+   automated cancellations currently lack the audit trail and leave the
+   separate order status unchanged. Outcome: expiry matches seller-triggered
+   cancellation semantics. Dependencies: none. Complexity: low.
 2. **Automate DB/MinIO backups.** Why: current backup is manual-only; VM loss =
    total data loss. Outcome: scheduled, verified backup running. Dependencies:
    none. Complexity: low (script the already-documented manual commands into
@@ -627,9 +614,9 @@ not a redesign.
 
 **Engineering readiness: 7/10.** Ownership/tenant isolation is genuinely solid
 (no IDOR found across a full pass), the order state machine is well-modeled and
-mostly tested, atomic stock handling is correct. Docked for the cron race
-condition, missing e2e-in-CI, and the CSRF/rate-limit inconsistency between
-buyer and seller routes — all real but all small, contained fixes, not
+mostly tested, atomic stock handling is correct. Docked for the incomplete cron
+cancellation record, missing e2e-in-CI, and the CSRF/rate-limit inconsistency
+between buyer and seller routes — all real but all small, contained fixes, not
 architectural problems.
 
 **MVP readiness: 5/10.** Held back specifically by §3/§10's buyer-side gap.
@@ -647,8 +634,8 @@ not "behind."
 
 **If I were the CTO joining today, my next 30 days:** ship the buyer-side
 completion (payment instructions screen + order tracking page — items #3/#4
-above), fix the cron bug and get backups automated in the same sprint since
-they're both small and both real risk, wire `test:e2e` into CI so the
+above), complete the cron cancellation record and get backups automated in the
+same sprint since they're both small and real risks, wire `test:e2e` into CI so the
 order-state-machine module stays trustworthy as more people touch it, and start
 instrumenting the retention/GMV metrics from day one of that buyer-flow release
 — not after. Everything else in this document (payments, monetization, global
@@ -673,9 +660,10 @@ today as dead schema in favor of a simpler `OrderPayment`-only flow. None of
 this requires a rewrite; it's the next feature to build, not an architecture
 problem.
 
-Two things need fixing regardless of feature work: a real (if narrow) race
-condition in the order-expiry cron job, and the total absence of automated
-backups. Both are small fixes with outsized downside if ignored.
+Two things need fixing regardless of feature work: the expiry cron's missing
+ audit trail/status update, and the total absence of automated backups. Both are
+small fixes with outsized downside if ignored. The cron's reservation-claim
+race is already guarded in the current implementation.
 
 Manual payments fit the MVP correctly as designed — BiasMarket never holds
 money, sellers verify externally-received payments, and the data model
@@ -689,7 +677,7 @@ the real decision should be driven by retention/GMV data the team isn't
 currently collecting.
 
 **Align around this:** finish the buyer's half of the order flow next, fix the
-two operational risks (cron race, backups) alongside it, start measuring
+two operational risks (cron cancellation records, backups) alongside it, start measuring
 retention and GMV the moment that ships, and defer every
 payments/monetization/multi-tenancy-evolution decision in this document until
 that data exists.
