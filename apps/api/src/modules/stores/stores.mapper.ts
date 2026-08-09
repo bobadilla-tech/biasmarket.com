@@ -13,6 +13,10 @@ export interface StoreRow {
   logoUrl: string | null;
   paymentInstructions: string;
   whatsappNumber: string | null;
+  instagramUrl: string | null;
+  facebookUrl: string | null;
+  tiktokUrl: string | null;
+  twitterUrl: string | null;
   defaultCurrency: string;
   holdWindowHours: number;
   lowStockThreshold: number;

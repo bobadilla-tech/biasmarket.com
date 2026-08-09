@@ -33,6 +33,18 @@ export class StoreResponseDto {
   @ApiProperty({ type: String, nullable: true })
   whatsappNumber: string | null;
 
+  @ApiProperty({ type: String, nullable: true })
+  instagramUrl: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  facebookUrl: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  tiktokUrl: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  twitterUrl: string | null;
+
   @ApiProperty()
   defaultCurrency: string;
 
