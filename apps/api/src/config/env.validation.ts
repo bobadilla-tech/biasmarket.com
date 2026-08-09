@@ -27,6 +27,14 @@ export function validateEnv(): void {
   // backstops and now use this shared helper.
   requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET");
 
+  // Required at boot so a missing REDIS_URL fails loudly here instead of on
+  // the first enqueue call. Redis being unreachable (vs. REDIS_URL being
+  // unset) is a different failure mode — BullMQ's Queue client connects
+  // lazily and retries in the background, so the app still boots and serves
+  // unrelated requests; only the individual queue.add() call fails, which
+  // callers must not let fail the parent request (see apps/api/src/queue).
+  requiredEnv("REDIS_URL");
+
   requiredEnv("S3_BUCKET");
   requiredEnv("S3_LOGO_BUCKET");
   requiredEnv("S3_PAYMENT_BUCKET");

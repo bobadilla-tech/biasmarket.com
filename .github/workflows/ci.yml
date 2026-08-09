@@ -32,8 +32,10 @@ jobs:
     outputs:
       api: ${{ steps.filter.outputs.api }}
       web: ${{ steps.filter.outputs.web }}
+      workers: ${{ steps.filter.outputs.workers }}
       db: ${{ steps.filter.outputs.db }}
       i18n: ${{ steps.filter.outputs.i18n }}
+      queue: ${{ steps.filter.outputs.queue }}
       types: ${{ steps.filter.outputs.types }}
       ui: ${{ steps.filter.outputs.ui }}
       utils: ${{ steps.filter.outputs.utils }}
@@ -50,6 +52,7 @@ jobs:
               - 'apps/api/**'
               - 'packages/db/**'
               - 'packages/i18n/**'
+              - 'packages/queue/**'
               - 'packages/types/**'
               - 'packages/utils/**'
               - 'pnpm-lock.yaml'
@@ -67,6 +70,14 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+            workers:
+              - 'apps/workers/**'
+              - 'packages/queue/**'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'turbo.json'
+              - 'package.json'
+              - '.github/workflows/ci.yml'
             db:
               - 'packages/db/**'
               - 'pnpm-lock.yaml'
@@ -76,6 +87,13 @@ jobs:
               - '.github/workflows/ci.yml'
             i18n:
               - 'packages/i18n/**'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'turbo.json'
+              - 'package.json'
+              - '.github/workflows/ci.yml'
+            queue:
+              - 'packages/queue/**'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
               - 'turbo.json'
@@ -211,6 +229,57 @@ jobs:
           flags: web
           fail_ci_if_error: false
 
+  workers:
+    name: Workers
+    needs: detect-changes
+    if: needs.detect-changes.outputs.workers == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Cache turbo
+        uses: actions/cache@v6
+        with:
+          path: .turbo/cache
+          key: turbo-workers-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            turbo-workers-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+
+      - name: Lint
+        run: pnpm turbo run lint --filter=workers
+
+      - name: Typecheck
+        run: pnpm turbo run typecheck --filter=workers
+
+      - name: Build
+        run: pnpm turbo run build --filter=workers
+
+      - name: Test with coverage
+        run: pnpm --filter workers test:cov
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: apps/workers/coverage/lcov.info
+          flags: workers
+          fail_ci_if_error: false
+
   db:
     name: DB (Prisma)
     needs: detect-changes
@@ -288,6 +357,43 @@ jobs:
 
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=@biasmarket/i18n
+
+  queue:
+    name: Queue
+    needs: detect-changes
+    if: needs.detect-changes.outputs.queue == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Cache turbo
+        uses: actions/cache@v6
+        with:
+          path: .turbo/cache
+          key: turbo-queue-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            turbo-queue-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+
+      - name: Build
+        run: pnpm turbo run build --filter=@biasmarket/queue
+
+      - name: Typecheck
+        run: pnpm turbo run typecheck --filter=@biasmarket/queue
 
   types:
     name: Types
@@ -415,8 +521,10 @@ jobs:
       - detect-changes
       - api
       - web
+      - workers
       - db
       - i18n
+      - queue
       - types
       - ui
       - utils
@@ -432,12 +540,20 @@ jobs:
             echo "Web checks failed"
             exit 1
           fi
+          if [[ "${{ needs.workers.result }}" == "failure" ]]; then
+            echo "Workers checks failed"
+            exit 1
+          fi
           if [[ "${{ needs.db.result }}" == "failure" ]]; then
             echo "DB checks failed"
             exit 1
           fi
           if [[ "${{ needs.i18n.result }}" == "failure" ]]; then
             echo "i18n checks failed"
+            exit 1
+          fi
+          if [[ "${{ needs.queue.result }}" == "failure" ]]; then
+            echo "Queue checks failed"
             exit 1
           fi
           if [[ "${{ needs.types.result }}" == "failure" ]]; then

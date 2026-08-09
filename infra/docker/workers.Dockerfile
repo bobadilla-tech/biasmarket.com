@@ -1,8 +1,9 @@
 # syntax=docker/dockerfile:1
 #
-# Single Dockerfile for web, dev and prod share the `base`/`deps` stages.
+# Single Dockerfile for workers, dev and prod share the `base`/`deps` stages.
 # docker-compose.dev.yml builds target `dev`, docker-compose.yml (prod)
-# builds the default final target `runtime`.
+# builds the default final target `runtime`. Mirrors api.Dockerfile's shape —
+# see that file's comments for the rationale behind each stage.
 
 # node:26-slim no longer bundles corepack, install it pinned (not @latest)
 # so pnpm resolution is reproducible across builds.
@@ -11,6 +12,9 @@ ENV COREPACK_HOME=/usr/local/share/corepack \
     COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN npm install -g corepack@0.35.0 && corepack enable && corepack prepare pnpm@10.11.0 --activate
 WORKDIR /app
+# Reused verbatim from api's healthcheck — both services expose the same
+# "GET a path, check < 500" shape at /health, see api-healthcheck.ts.
+COPY infra/docker/api-healthcheck.ts ./infra/docker/api-healthcheck.ts
 
 # ---------------------------------------------------------------------------
 # dev: source is bind-mounted by docker-compose.dev.yml at container start,
@@ -25,11 +29,14 @@ ENV NODE_ENV=development
 # process exits — not just the one it's trying to clean up after.
 RUN apt-get update && apt-get install -y --no-install-recommends procps \
     && rm -rf /var/lib/apt/lists/*
-EXPOSE 3001
+EXPOSE 3002
 
 # ---------------------------------------------------------------------------
 # deps: workspace install, cached by lockfile hash and a BuildKit pnpm
-# store mount so unrelated code changes never re-download packages.
+# store mount so unrelated code changes never re-download packages. Every
+# workspace member's package.json must be present here (not just workers'
+# own dependencies) — `pnpm install --frozen-lockfile` with no `--filter`
+# reconciles against the whole workspace lockfile.
 # ---------------------------------------------------------------------------
 FROM base AS deps
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
@@ -46,39 +53,35 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm-store \
     pnpm install --frozen-lockfile --store-dir=/pnpm-store
 
 # ---------------------------------------------------------------------------
-# build: compile web to a standalone Next.js output
+# build: compile workers (and its one workspace dependency, packages/queue),
+# then prune node_modules down to workers' prod deps only. No Postgres/Prisma
+# step here — apps/workers never depends on @biasmarket/db, see the plan.
 # ---------------------------------------------------------------------------
 FROM deps AS build
 COPY . .
 
-ARG NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-ARG NEXT_PUBLIC_SENTRY_DSN
-ENV NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN
-# Turbo's own cache (task hashes/outputs) is BuildKit-cache-mounted the same
-# way the pnpm store is above — without it, every build recompiles every
-# workspace package from scratch even when only one file changed, since
-# .turbo is gitignored/dockerignored and this stage starts from a fresh COPY.
 RUN --mount=type=cache,id=turbo-cache,target=/app/.turbo \
-    pnpm exec turbo run build --filter=web
+    pnpm exec turbo run build --filter=workers
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm-store \
+    pnpm install --prod --frozen-lockfile --filter=workers... --store-dir=/pnpm-store
 
 # ---------------------------------------------------------------------------
-# runtime: prod image, non-root. Next standalone output bundles its own
-# minimal node_modules, so this stage doesn't need pnpm/corepack at all —
-# start clean from node:26-slim instead of `base` to keep it lean.
+# runtime: prod image, non-root, only what workers needs at boot — no
+# migrate-on-boot step (that's api's job, workers has no database).
 # ---------------------------------------------------------------------------
-FROM node:26-slim AS runtime
-WORKDIR /app
-ENV NODE_ENV=production \
-    PORT=3001 \
-    HOSTNAME=0.0.0.0
-RUN groupadd --gid 1001 nextjs \
-    && useradd --create-home --uid 1001 --gid nextjs nextjs
+FROM base AS runtime
+ENV NODE_ENV=production
+RUN groupadd --gid 1001 nestjs \
+    && useradd --create-home --uid 1001 --gid nestjs nestjs
 
-COPY --from=build --chown=nextjs:nextjs /app/apps/web/.next/standalone ./
-COPY --from=build --chown=nextjs:nextjs /app/apps/web/.next/static ./apps/web/.next/static
-COPY --from=build --chown=nextjs:nextjs /app/apps/web/public ./apps/web/public
+COPY --from=build --chown=nestjs:nestjs /app/node_modules ./node_modules
+COPY --from=build --chown=nestjs:nestjs /app/apps/workers/node_modules ./apps/workers/node_modules
+COPY --from=build --chown=nestjs:nestjs /app/apps/workers/dist ./apps/workers/dist
+COPY --from=build --chown=nestjs:nestjs /app/apps/workers/package.json ./apps/workers/package.json
+COPY --from=build --chown=nestjs:nestjs /app/packages ./packages
+COPY --from=build --chown=nestjs:nestjs /app/package.json ./package.json
+COPY --from=build --chown=nestjs:nestjs /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
 
-USER nextjs
-EXPOSE 3001
-CMD ["node", "apps/web/server.js"]
+USER nestjs
+EXPOSE 3002
+CMD ["node", "apps/workers/dist/main.js"]

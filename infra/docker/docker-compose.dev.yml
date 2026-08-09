@@ -59,6 +59,24 @@ services:
     entrypoint: >
       sh -c "mc mb --ignore-existing local/products && mc anonymous set download local/products && mc mb --ignore-existing local/logos && mc anonymous set download local/logos && mc mb --ignore-existing local/payments"
 
+  redis:
+    image: redis:7-alpine
+    networks: [stack]
+    env_file:
+      - .env.example
+      - path: .env.local
+        required: false
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    command: sh -c 'redis-server --requirepass "$$REDIS_PASSWORD" --appendonly yes'
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   api:
     build:
       context: ../..
@@ -77,6 +95,7 @@ services:
       - api_app_node_modules:/app/apps/api/node_modules
       - api_db_node_modules:/app/packages/db/node_modules
       - api_i18n_node_modules:/app/packages/i18n/node_modules
+      - api_queue_node_modules:/app/packages/queue/node_modules
       - api_types_node_modules:/app/packages/types/node_modules
       - api_utils_node_modules:/app/packages/utils/node_modules
     ports:
@@ -86,8 +105,41 @@ services:
         condition: service_healthy
       minio-init:
         condition: service_completed_successfully
+      redis:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "node", "/app/infra/docker/api-healthcheck.ts"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  workers:
+    build:
+      context: ../..
+      dockerfile: infra/docker/workers.Dockerfile
+      target: dev
+    networks: [stack]
+    working_dir: /app
+    env_file:
+      - .env.example
+      - path: .env.local
+        required: false
+    environment:
+      - PORT=3002
+    command: sh infra/docker/scripts/workers-dev.sh
+    volumes:
+      - ../..:/app
+      - workers_root_node_modules:/app/node_modules
+      - workers_app_node_modules:/app/apps/workers/node_modules
+      - workers_queue_node_modules:/app/packages/queue/node_modules
+    expose:
+      - "3002"
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "/app/infra/docker/api-healthcheck.ts", "3002", "/health"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -122,12 +174,17 @@ services:
 volumes:
   db_data:
   minio_data:
+  redis_data:
   api_root_node_modules:
   api_app_node_modules:
   api_db_node_modules:
   api_i18n_node_modules:
+  api_queue_node_modules:
   api_types_node_modules:
   api_utils_node_modules:
+  workers_root_node_modules:
+  workers_app_node_modules:
+  workers_queue_node_modules:
   web_root_node_modules:
   web_app_node_modules:
   web_i18n_node_modules:

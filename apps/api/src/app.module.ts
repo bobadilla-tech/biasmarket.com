@@ -3,6 +3,7 @@ import { ScheduleModule } from "@nestjs/schedule";
 import { PrismaModule } from "./prisma/prisma.module.js";
 import { StorageModule } from "./storage/storage.module.js";
 import { MailerModule } from "./mailer/mailer.module.js";
+import { QueueModule } from "./queue/queue.module.js";
 import { AppController } from "./app.controller.js";
 import { StoresModule } from "./modules/stores/stores.module.js";
 import { ProductsModule } from "./modules/products/products.module.js";
@@ -32,6 +33,7 @@ import { AddressesModule } from "./modules/addresses/addresses.module.js";
     PrismaModule,
     StorageModule,
     MailerModule,
+    QueueModule,
     UsersModule,
     HealthModule,
     SellerAuthModule,

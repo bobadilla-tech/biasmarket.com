@@ -13,6 +13,23 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - redis_data:/data
+    command: sh -c 'redis-server --requirepass "$$REDIS_PASSWORD" --appendonly yes'
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    # Not published to the host — only reachable inside the compose network,
+    # same trust model as db/minio.
+    expose:
+      - "6379"
+
   api:
     build:
       context: ../..
@@ -26,8 +43,28 @@ services:
         condition: service_healthy
       minio-init:
         condition: service_completed_successfully
+      redis:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "node", "/app/infra/docker/api-healthcheck.ts"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  workers:
+    build:
+      context: ../..
+      dockerfile: infra/docker/workers.Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - PORT=3002
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "/app/infra/docker/api-healthcheck.ts", "3002", "/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -104,3 +141,4 @@ volumes:
   caddy_data:
   caddy_config:
   minio_data:
+  redis_data:

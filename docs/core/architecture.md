@@ -476,10 +476,14 @@ biasmarket.example.com {
   for cache coherency across instances anyway).
 - **Redis** (v1+): session/JWT blocklist for logout-everywhere, rate-limit
   counters shared across instances, store-config cache mentioned above.
-- **Queues** (v1+): payment-proof review notifications, image
-  processing/resizing on upload, eventually order confirmation emails — anything
-  that doesn't need to block the HTTP response. BullMQ (Redis-backed) is the
-  natural fit given NestJS + Redis already in the stack.
+- **Queues**: ✅ Implemented (infra only) — `apps/workers` (NestJS + BullMQ,
+  Redis-backed), a shared `packages/queue` contracts package, and Redis wired
+  into both dev and prod Docker stacks, see
+  `docs/plans/2026-08-09-workers-infra-setup-plan.md`. Ships with one
+  proof-of-pipeline "ping" job; no real job has moved off `apps/api` yet
+  (payment-proof review notifications, image processing/resizing on upload,
+  order confirmation emails, the order-expiration cron sweep — see the
+  companion `2026-08-09-migrate-background-jobs-to-workers-plan.md`).
 - **Email delivery**: Resend, via a thin `EmailService` in a `notifications`
   module — call sites send `{template, locale, data}`, never raw HTML, so every
   email stays routed through the localized templates in [i18n.md](i18n.md). MVP

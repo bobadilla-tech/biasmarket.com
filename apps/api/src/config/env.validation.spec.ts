@@ -7,6 +7,7 @@ const REQUIRED = [
   "BETTER_AUTH_URL",
   "WEB_URL",
   "CUSTOMER_ACCOUNT_TOKEN_SECRET",
+  "REDIS_URL",
   "S3_BUCKET",
   "S3_LOGO_BUCKET",
   "S3_PAYMENT_BUCKET",
@@ -95,6 +96,11 @@ describe("validateEnv", () => {
     expect(() => validateEnv()).toThrow(
       "Missing required env var: BETTER_AUTH_SECRET",
     );
+  });
+
+  it("refuses to boot when REDIS_URL is missing", () => {
+    delete process.env.REDIS_URL;
+    expect(() => validateEnv()).toThrow("Missing required env var: REDIS_URL");
   });
 
   it("does not require RESEND_* while MAIL_DRIVER=file (or unset)", () => {
