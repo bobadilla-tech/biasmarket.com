@@ -15,12 +15,7 @@ import {
   CUSTOMER_SESSION_COOKIE,
   CUSTOMER_SESSION_TTL_MS,
 } from "./customer-session.constants.js";
-
-function requiredEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) throw new Error(`Missing required env var: ${name}`);
-  return value;
-}
+import { requiredEnv } from "../../config/env.validation.js";
 
 // No cookie-parser middleware is installed in this app (see main.ts) — the
 // session token's own characters (base64url + ".") never need escaping, so

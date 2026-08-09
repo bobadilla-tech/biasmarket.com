@@ -11,9 +11,9 @@ files link back to it where relevant and shouldn't restate it.
 - [`outreach.md`](outreach.md) — a tighter 7-day, 50-lead outreach sprint
   variant of the same playbook.
 - [`buyer-flow.md`](buyer-flow.md) — buyer-side journey, browse → checkout →
-  proof upload → order tracking.
+  WhatsApp payment handoff → order tracking.
 - [`seller-flow.md`](seller-flow.md) — seller-side journey, product management +
-  payment review.
+  recording/reviewing payments.
 - [`marketplace-flow.md`](marketplace-flow.md) — the cross-store discovery layer
   (featured stores, directory, search).
 - [`store-management-flow.md`](store-management-flow.md) — product/category/

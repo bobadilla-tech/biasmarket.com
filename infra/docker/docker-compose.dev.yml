@@ -42,9 +42,11 @@ services:
       retries: 10
       start_period: 10s
 
-  # One-shot: creates the bucket and sets it public-read, then exits.
-  # Safe to re-run on every `pnpm docker:dev` — both mc commands are
-  # idempotent (--ignore-existing / re-applying the same anonymous policy).
+  # One-shot: creates the buckets and sets public-read on products/logos,
+  # then exits. Safe to re-run on every `pnpm docker:dev` — every mc command
+  # is idempotent (--ignore-existing / re-applying the same anonymous
+  # policy). `payments` deliberately gets no anonymous policy — private,
+  # readable only through the API's authenticated endpoint.
   minio-init:
     image: minio/mc
     networks: [stack]
@@ -55,7 +57,7 @@ services:
       minio:
         condition: service_healthy
     entrypoint: >
-      sh -c "mc mb --ignore-existing local/products && mc anonymous set download local/products && mc mb --ignore-existing local/logos && mc anonymous set download local/logos"
+      sh -c "mc mb --ignore-existing local/products && mc anonymous set download local/products && mc mb --ignore-existing local/logos && mc anonymous set download local/logos && mc mb --ignore-existing local/payments"
 
   api:
     build:

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -139,13 +140,29 @@ export class CollectionsService {
     dto: ReorderCollectionProductsDto,
   ) {
     await this.findOwnedCollection(collectionId, storeId, userId);
-    return this.prisma.$transaction(
-      dto.productIds.map((productId, position) =>
-        this.prisma.collectionProduct.update({
-          where: { collectionId_productId: { collectionId, productId } },
+    return this.prisma.$transaction(async (tx) => {
+      const scopedWhere = {
+        collectionId,
+        collection: { storeId },
+        product: { storeId },
+      } as const;
+
+      for (const [position, productId] of dto.productIds.entries()) {
+        const result = await tx.collectionProduct.updateMany({
+          where: { ...scopedWhere, productId },
           data: { position },
-        })
-      ),
-    );
+        });
+        if (result.count !== 1) {
+          throw new BadRequestException(
+            "Uno o más productos no pertenecen a esta colección",
+          );
+        }
+      }
+
+      return tx.collectionProduct.findMany({
+        where: { ...scopedWhere, productId: { in: dto.productIds } },
+        orderBy: { position: "asc" },
+      });
+    });
   }
 }

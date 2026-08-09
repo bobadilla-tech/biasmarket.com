@@ -69,6 +69,12 @@ test("cancelOrder delegates to the generated Order.cancel", async () => {
   );
 });
 
+test("paymentImageUrl builds the authenticated streaming endpoint path", () => {
+  expect(ordersApi.paymentImageUrl("store-1", "o1", "p1")).toBe(
+    "http://localhost:3000/api/stores/store-1/orders/o1/payments/p1/image",
+  );
+});
+
 test("list delegates to the generated Order.findAll", async () => {
   ordersMock.findAll.mockResolvedValue([]);
 

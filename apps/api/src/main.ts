@@ -3,11 +3,21 @@ import "dotenv/config";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module.js";
 import { ValidationPipe } from "@nestjs/common";
+import helmet from "helmet";
 import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter.js";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import { initErrorTracking } from "./common/error-tracking.js";
+import { validateEnv } from "./config/env.validation.js";
 import metadata from "./metadata.js";
 
 async function bootstrap() {
+  // Refuse to boot before the server starts listening if a required env var
+  // is missing, rather than failing on the first request that needs it.
+  validateEnv();
+  // Env-gated: no-op unless SENTRY_DSN is set, so local dev isn't forced to
+  // configure it (unhandled errors still reach stdout either way).
+  initErrorTracking();
+
   const app = await NestFactory.create(AppModule, {
     bodyParser: false,
   });
@@ -16,6 +26,17 @@ async function bootstrap() {
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
   );
   app.useGlobalFilters(new AllExceptionsFilter());
+
+  // helmet with CSP enabled (helmet's default directives), except for the
+  // Swagger UI surface at /api/docs — default CSP blocks Swagger's inline
+  // scripts/styles, and Swagger is a dev/recon surface that's off by default
+  // in production (see swaggerEnabled below). Every other API response keeps a
+  // real Content-Security-Policy.
+  const helmetMiddleware = helmet();
+  app.use((req, res, next) => {
+    if (req.path.startsWith("/api/docs")) return next();
+    helmetMiddleware(req, res, next);
+  });
 
   app.setGlobalPrefix("api");
 

@@ -1,11 +1,12 @@
 import { Injectable } from "@nestjs/common";
 import type { FulfillmentStatus } from "@biasmarket/db";
+import { PrismaService } from "../../../prisma/prisma.service.js";
 import { OrderRepository } from "../infrastructure/order.repository.js";
 import { Order } from "../domain/order.entity.js";
 
 @Injectable()
 export class AdvanceFulfillmentUseCase {
-  constructor(private orders: OrderRepository) {}
+  constructor(private prisma: PrismaService, private orders: OrderRepository) {}
 
   async execute(
     orderId: string,
@@ -23,10 +24,29 @@ export class AdvanceFulfillmentUseCase {
       row.fulfillmentStatus,
     );
 
+    const fromStatus = entity.currentFulfillmentStatus;
     entity.advanceFulfillment(status);
+    const toStatus = entity.currentFulfillmentStatus;
 
-    return this.orders.saveStatus(orderId, {
-      fulfillmentStatus: entity.currentFulfillmentStatus,
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await this.orders.saveStatus(
+        orderId,
+        { fulfillmentStatus: toStatus },
+        tx,
+      );
+
+      await tx.auditLog.create({
+        data: {
+          actorId: userId,
+          storeId,
+          action: "fulfillment.advanced",
+          entityType: "Order",
+          entityId: orderId,
+          metadata: { fromStatus, toStatus },
+        },
+      });
+
+      return updated;
     });
   }
 }

@@ -1,5 +1,6 @@
-import { Body, Controller, Param, Post } from "@nestjs/common";
+import { Body, Controller, Param, Post, UseGuards } from "@nestjs/common";
 import { Public } from "@thallesp/nestjs-better-auth";
+import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
 import { CreateOrderUseCase } from "../application/create-order.usecase.js";
 import { CreateOrderDto } from "../dto/create-order.dto.js";
 import type {
@@ -88,6 +89,8 @@ export class CheckoutController {
   constructor(private createOrder: CreateOrderUseCase) {}
 
   @Public()
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
   @Post()
   async create(
     @Param("slug") slug: string,

@@ -7,6 +7,10 @@ const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: path.join(__dirname, "../.."),
+  // Plain Sentry SDKs (server instrumentation) must stay external so their
+  // Node builtins aren't re-bundled by Next — traced into the standalone
+  // output instead.
+  serverExternalPackages: ["@sentry/node", "@sentry/react"],
   images: {
     remotePatterns: [
       { protocol: "http", hostname: "localhost", port: "9000" },

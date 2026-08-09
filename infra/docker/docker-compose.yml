@@ -39,6 +39,7 @@ services:
       dockerfile: infra/docker/web.Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN}
     restart: unless-stopped
     env_file: .env
     environment:
@@ -66,9 +67,11 @@ services:
     # Public read access is exposed exclusively via Caddy (cdn.biasmarket.com),
     # the admin console (9001) is intentionally not routed anywhere.
 
-  # One-shot: creates the bucket and sets it public-read, then exits.
-  # Safe to re-run on every `pnpm docker:prod` — both mc commands are
-  # idempotent (--ignore-existing / re-applying the same anonymous policy).
+  # One-shot: creates the buckets and sets public-read on products/logos,
+  # then exits. Safe to re-run on every `pnpm docker:prod` — every mc command
+  # is idempotent (--ignore-existing / re-applying the same anonymous
+  # policy). S3_PAYMENT_BUCKET deliberately gets no anonymous policy — it
+  # stays private, readable only through the API's authenticated endpoint.
   minio-init:
     image: minio/mc
     restart: "no"
@@ -78,7 +81,7 @@ services:
       minio:
         condition: service_healthy
     entrypoint: >
-      sh -c "mc mb --ignore-existing local/${S3_BUCKET} && mc anonymous set download local/${S3_BUCKET} && mc mb --ignore-existing local/${S3_LOGO_BUCKET} && mc anonymous set download local/${S3_LOGO_BUCKET}"
+      sh -c "mc mb --ignore-existing local/${S3_BUCKET} && mc anonymous set download local/${S3_BUCKET} && mc mb --ignore-existing local/${S3_LOGO_BUCKET} && mc anonymous set download local/${S3_LOGO_BUCKET} && mc mb --ignore-existing local/${S3_PAYMENT_BUCKET}"
 
   caddy:
     image: caddy:2-alpine

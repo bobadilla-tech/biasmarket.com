@@ -14,12 +14,7 @@ import {
 } from "@biasmarket/utils/customer-account-token";
 import { PrismaService } from "../../../prisma/prisma.service.js";
 import { MailerService } from "../../../mailer/mailer.service.js";
-
-function requiredEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) throw new Error(`Missing required env var: ${name}`);
-  return value;
-}
+import { requiredEnv } from "../../../config/env.validation.js";
 
 function buildCustomerVerificationEmailHtml(
   url: string,

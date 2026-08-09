@@ -815,30 +815,6 @@ export const OrderDetailResponseDtoReleasedResolution = {
   STORE_CREDIT: "STORE_CREDIT",
 } as const;
 
-export type PaymentProofResponseDtoStatus =
-  typeof PaymentProofResponseDtoStatus[
-    keyof typeof PaymentProofResponseDtoStatus
-  ];
-
-export const PaymentProofResponseDtoStatus = {
-  PENDING_REVIEW: "PENDING_REVIEW",
-  APPROVED: "APPROVED",
-  REJECTED: "REJECTED",
-} as const;
-
-export interface PaymentProofResponseDto {
-  id: string;
-  orderId: string;
-  storeId: string;
-  imageUrl: string;
-  status: PaymentProofResponseDtoStatus;
-  submittedAt: string;
-  /** @nullable */
-  reviewedBy: string | null;
-  /** @nullable */
-  reviewedAt: string | null;
-}
-
 export interface OrderDetailResponseDto {
   id: string;
   storeId: string;
@@ -883,7 +859,6 @@ export interface OrderDetailResponseDto {
   paidPercentage: number;
   items: OrderItemResponseDto[];
   payments: OrderPaymentResponseDto[];
-  proofs: PaymentProofResponseDto[];
 }
 
 export type ReviewPaymentDtoDecision =

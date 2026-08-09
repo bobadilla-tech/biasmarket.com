@@ -26,13 +26,11 @@ export class OrderRepository {
   async findRowByIdForStore(orderId: string, storeId: string) {
     const includeWithPayments = {
       items: { include: { product: true, variant: true } },
-      proofs: true,
       payments: { orderBy: { createdAt: "desc" } },
     } as const;
 
     const includeWithoutPayments = {
       items: { include: { product: true, variant: true } },
-      proofs: true,
     } as const;
 
     let order: any;
@@ -54,6 +52,20 @@ export class OrderRepository {
       throw new NotFoundException("Orden no encontrada");
     }
     return withPaymentSummary(order);
+  }
+
+  async findPaymentForStore(
+    paymentId: string,
+    orderId: string,
+    storeId: string,
+  ) {
+    const payment = await this.prisma.orderPayment.findFirst({
+      where: { id: paymentId, orderId, storeId },
+    });
+    if (!payment) {
+      throw new NotFoundException("Pago no encontrado");
+    }
+    return payment;
   }
 
   async findManyForStore(

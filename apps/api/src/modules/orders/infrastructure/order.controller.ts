@@ -3,22 +3,30 @@ import {
   Body,
   Controller,
   Get,
+  NotFoundException,
   Param,
   Patch,
   Post,
   Query,
+  StreamableFile,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from "@nestjs/common";
 import { AuthGuard, Session } from "@thallesp/nestjs-better-auth";
 import type { UserSession } from "@thallesp/nestjs-better-auth";
+import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
 import type {
   FulfillmentStatus,
   PaymentMethodType,
   PaymentStatus,
 } from "@biasmarket/db";
-import { ApiConsumes, ApiQuery } from "@nestjs/swagger";
+import {
+  ApiConsumes,
+  ApiOkResponse,
+  ApiProduces,
+  ApiQuery,
+} from "@nestjs/swagger";
 import { OrderRepository } from "./order.repository.js";
 import { ReviewPaymentUseCase } from "../application/review-payment.usecase.js";
 import { AdvanceFulfillmentUseCase } from "../application/advance-fulfillment.usecase.js";
@@ -37,7 +45,6 @@ import type {
   OrderResponseDto,
   OrderStatusResponseDto,
   OrderVariantResponseDto,
-  PaymentProofResponseDto,
 } from "../dto/order-response.dto.js";
 
 type PaymentStatusLiteral =
@@ -110,17 +117,6 @@ export interface OrderPaymentRow {
   createdAt: Date;
 }
 
-interface PaymentProofRow {
-  id: string;
-  orderId: string;
-  storeId: string;
-  imageUrl: string;
-  status: "PENDING_REVIEW" | "APPROVED" | "REJECTED";
-  submittedAt: Date;
-  reviewedBy: string | null;
-  reviewedAt: Date | null;
-}
-
 export interface OrderRow {
   id: string;
   storeId: string;
@@ -152,10 +148,6 @@ export interface OrderRow {
   paidPercentage: number;
   items: OrderItemRow[];
   payments: OrderPaymentRow[];
-}
-
-interface OrderDetailRow extends OrderRow {
-  proofs: PaymentProofRow[];
 }
 
 interface OrderStatusRow {
@@ -223,14 +215,6 @@ function toOrderPaymentDto(payment: OrderPaymentRow): OrderPaymentResponseDto {
   };
 }
 
-function toPaymentProofDto(proof: PaymentProofRow): PaymentProofResponseDto {
-  return {
-    ...proof,
-    submittedAt: proof.submittedAt.toISOString(),
-    reviewedAt: proof.reviewedAt?.toISOString() ?? null,
-  };
-}
-
 export function toOrderDto(row: OrderRow): OrderResponseDto {
   return {
     ...row,
@@ -248,8 +232,8 @@ export function toOrderDto(row: OrderRow): OrderResponseDto {
   };
 }
 
-function toOrderDetailDto(row: OrderDetailRow): OrderDetailResponseDto {
-  return { ...toOrderDto(row), proofs: row.proofs.map(toPaymentProofDto) };
+function toOrderDetailDto(row: OrderRow): OrderDetailResponseDto {
+  return toOrderDto(row);
 }
 
 function toOrderStatusDto(row: OrderStatusRow): OrderStatusResponseDto {
@@ -309,9 +293,40 @@ export class OrderController {
     return toOrderDetailDto(row);
   }
 
+  // Authenticated streaming read for a payment's proof image — the only
+  // way to fetch one. Never redirects to a presigned URL (see
+  // docs/plans/2026-08-08-payment-proof-image-access-control-plan.md): the
+  // payment bucket is private, so `OrderPayment.imageUrl` alone is no longer
+  // fetchable by anyone who obtains it, only via this ownership-gated route.
+  @Get(":orderId/payments/:paymentId/image")
+  @ApiOkResponse({ schema: { type: "string", format: "binary" } })
+  @ApiProduces("image/jpeg", "image/png")
+  async getPaymentImage(
+    @Param("storeId") storeId: string,
+    @Param("orderId") orderId: string,
+    @Param("paymentId") paymentId: string,
+    @Session() session: UserSession,
+  ): Promise<StreamableFile> {
+    await this.orders.assertOwnership(storeId, session.user.id);
+    const payment = await this.orders.findPaymentForStore(
+      paymentId,
+      orderId,
+      storeId,
+    );
+    if (!payment.imageUrl) {
+      throw new NotFoundException("Este pago no tiene comprobante");
+    }
+    const { body, contentType } = await this.storage.getPaymentImageStream(
+      payment.imageUrl,
+    );
+    return new StreamableFile(body, { type: contentType });
+  }
+
   @Post(":orderId/payments")
   @ApiConsumes("multipart/form-data")
   @UseInterceptors(FileInterceptor("file"))
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 20 } })
   async addPayment(
     @Param("storeId") storeId: string,
     @Param("orderId") orderId: string,
@@ -415,6 +430,20 @@ export class OrderController {
             { paymentStatus: nextStatus },
             tx,
           );
+          await tx.auditLog.create({
+            data: {
+              actorId: session.user.id,
+              storeId,
+              action: "payment.partial",
+              entityType: "Order",
+              entityId: orderId,
+              metadata: {
+                amount: numericAmount,
+                method,
+                resultingPaymentStatus: nextStatus,
+              },
+            },
+          });
         }
       });
     } catch (e) {

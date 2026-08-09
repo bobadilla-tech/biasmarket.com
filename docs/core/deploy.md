@@ -186,15 +186,27 @@ Look for a "certificate obtained successfully" log line before retesting
 Product images and store logos are stored in a self-hosted MinIO instance (the
 `minio` service), not the R2 setup described in [`roadmap.md`](roadmap.md) — see
 the note there. On first boot the one-shot `minio-init` service (`minio/mc`)
-creates two buckets — `S3_BUCKET` for product images and `S3_LOGO_BUCKET` for
-store logos, kept separate — and sets both public-read; it's idempotent, so it
-also runs harmlessly on every redeploy.
+creates three buckets — `S3_BUCKET` for product images and `S3_LOGO_BUCKET` for
+store logos, both set public-read, and `S3_PAYMENT_BUCKET` for payment-proof
+images (bank-transfer/Yape/Plin screenshots), deliberately left **without** a
+public-read policy — it's idempotent, so it also runs harmlessly on every
+redeploy.
 
-`S3_LOGO_BUCKET` is validated at boot the same way as the other `S3_*` vars — if
-it's missing from the server's `.env`, the API crashes on startup rather than
-just failing logo uploads. When pulling in the change that introduced this var
-for the first time, add `S3_LOGO_BUCKET=logos` to
-`~/biasmarket/infra/docker/.env` **before** running `pnpm docker:prod`.
+Payment images are never linked directly (no public URL is ever handed to a
+browser); they're read exclusively through the authenticated
+`GET stores/:storeId/orders/:orderId/payments/:paymentId/image` endpoint, which
+streams the object through the API after the usual `assertOwnership` check — see
+`apps/api/src/modules/orders/infrastructure/order.controller.ts` and
+`docs/plans/2026-08-08-payment-proof-image-access-control-plan.md` for why a
+presigned-URL redirect was rejected in favor of streaming (the Docker-internal
+vs. public `S3_ENDPOINT` mismatch).
+
+`S3_LOGO_BUCKET`/`S3_PAYMENT_BUCKET` are validated at boot the same way as the
+other `S3_*` vars — if either is missing from the server's `.env`, the API
+crashes on startup rather than just failing that upload/read path. When pulling
+in the change that introduced `S3_PAYMENT_BUCKET`, add
+`S3_PAYMENT_BUCKET=payments` to `~/biasmarket/infra/docker/.env` **before**
+running `pnpm docker:prod`.
 
 Verify it worked:
 
@@ -277,15 +289,19 @@ pnpm seed:base:prod
 Deliberately out of scope for this first deploy — fine for "get pages live and
 share the link," not for handling real traffic or real payment data at volume:
 
-- **Rate limiting covers auth surfaces only.** Buyer
-  login/register/forgot-password are throttled via `@nestjs/throttler` (5
-  req/min), and better-auth's native rate limiter (3 req/10s) is forced on for
-  seller sign-in/sign-up — but no general-purpose throttling exists for the rest
-  of the API.
-- **No CSRF middleware, no `helmet`.**
-- **No startup env-var validation.** Missing/misconfigured prod env vars (e.g.
-  forgetting to set `WEB_URL`) fail silently or fall back to a `localhost`
-  default rather than refusing to boot.
+- **Rate limiting is targeted, not app-wide.** Throttled today: buyer
+  login/register/forgot-password (5 req/min via `@nestjs/throttler`),
+  better-auth's native limiter on seller sign-in/sign-up (3 req/10s), public
+  checkout creation (10/min), and payment registration (`addPayment`, 20/min).
+  Most other authenticated state-changing endpoints
+  (`review`/`advance`/`cancel`, product/category/collection writes, ...) still
+  have no explicit rate limit.
+- **No app-wide CSRF middleware.** `helmet` (CSP included) is active on every
+  API response except the `/api/docs` Swagger surface, and buyer-auth mutations
+  carry an `OriginGuard` check — but seller-auth routes rely on the session
+  cookie's `SameSite=Lax` alone; a global `OriginGuard`/CSRF-token scheme was
+  explicitly deferred (see
+  [`docs/plans/2026-08-08-security-baseline-csrf-helmet-rate-limiting-plan.md`](../plans/2026-08-08-security-baseline-csrf-helmet-rate-limiting-plan.md)).
 - **Single VM, no managed DB.** Fine at MVP scale; see
   [`roadmap.md`](roadmap.md) §11 for the documented scaling path (managed
   Postgres once this is the bottleneck).

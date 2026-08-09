@@ -21,10 +21,9 @@ model User {
   createdAt     DateTime
   updatedAt     DateTime
 
-  sessions       Session[]
-  accounts       Account[]
-  stores         Store[]
-  reviewedProofs PaymentProof[]
+  sessions Session[]
+  accounts Account[]
+  stores   Store[]
 
   @@map("user")
 }
@@ -247,7 +246,6 @@ model Order {
   customer    Customer?      @relation(fields: [customerId], references: [id])
   pickupPoint PickupPoint?   @relation(fields: [pickupPointId], references: [id], onDelete: SetNull)
   items       OrderItem[]
-  proofs      PaymentProof[]
   payments    OrderPayment[]
 
   @@index([storeId, paymentStatus])
@@ -272,23 +270,6 @@ model OrderItem {
 
   @@index([orderId])
   @@index([storeId])
-}
-
-model PaymentProof {
-  id          String      @id @default(cuid())
-  orderId     String
-  storeId     String
-  imageUrl    String
-  status      ProofStatus @default(PENDING_REVIEW)
-  submittedAt DateTime    @default(now())
-  reviewedBy  String?
-  reviewedAt  DateTime?
-
-  order    Order @relation(fields: [orderId], references: [id])
-  reviewer User? @relation(fields: [reviewedBy], references: [id])
-
-  @@index([orderId])
-  @@index([storeId, status])
 }
 
 model OrderPayment {
@@ -337,12 +318,6 @@ enum CancellationResolution {
   REFUNDED
   RETAINED
   STORE_CREDIT
-}
-
-enum ProofStatus {
-  PENDING_REVIEW
-  APPROVED
-  REJECTED
 }
 
 enum DeliveryMethodType {

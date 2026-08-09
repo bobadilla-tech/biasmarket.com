@@ -132,9 +132,6 @@ describe("orders + checkout (e2e)", () => {
       await prisma.orderPayment.deleteMany({
         where: { orderId: { in: orderIds } },
       });
-      await prisma.paymentProof.deleteMany({
-        where: { orderId: { in: orderIds } },
-      });
       await prisma.orderItem.deleteMany({
         where: { orderId: { in: orderIds } },
       });
@@ -387,5 +384,69 @@ describe("orders + checkout (e2e)", () => {
       where: { productId: precisionProductId },
     });
     await prisma.product.deleteMany({ where: { id: precisionProductId } });
+  });
+
+  // Regression coverage for the stock-hold race condition (HIGH severity —
+  // see docs/plans/2026-08-08-orders-module-hardening-plan.md Problem 1):
+  // create-order.usecase.ts's variant-availability check used to be a plain
+  // findUnique + update with no row lock, so two concurrent checkouts for
+  // the same limited-stock variant could both pass the "is there stock"
+  // check before either write committed. Requires a real Postgres
+  // transaction/locking semantics, so unlike the rest of this file this
+  // can't be simulated against the unit suite's fake PrismaService.
+  it("concurrent checkouts for a stock=1 variant: exactly one succeeds, the other gets a clean rejection", async () => {
+    const raceProductRes = await request(app.getHttpServer())
+      .post(`/stores/${storeId}/products`)
+      .set("Cookie", sessionCookie)
+      .send({
+        name: "E2E Race Product",
+        price: 10,
+        currency: "PEN",
+        stock: 1,
+      })
+      .expect(201);
+    const raceProductId = raceProductRes.body.id;
+    const raceVariantId = raceProductRes.body.variants[0].id;
+    await request(app.getHttpServer())
+      .patch(`/stores/${storeId}/products/${raceProductId}/publish`)
+      .set("Cookie", sessionCookie)
+      .expect(200);
+
+    const attemptCheckout = (customerPhone: string) =>
+      request(app.getHttpServer())
+        .post(`/stores/${storeSlug}/checkout`)
+        .send({
+          deliveryMethodType: "PICKUP",
+          customerPhone,
+          items: [
+            { productId: raceProductId, variantId: raceVariantId, quantity: 1 },
+          ],
+        });
+
+    const [resA, resB] = await Promise.all([
+      attemptCheckout("+51977777771"),
+      attemptCheckout("+51977777772"),
+    ]);
+
+    const succeeded = [resA, resB].filter((r) => r.status === 201);
+    const rejected = [resA, resB].filter((r) => r.status === 400);
+    expect(succeeded).toHaveLength(1);
+    expect(rejected).toHaveLength(1);
+    expect(rejected[0]!.body.message).toContain("Stock insuficiente");
+
+    const winningOrderId = succeeded[0]!.body.order.id as string;
+
+    const variant = await prisma.productVariant.findUniqueOrThrow({
+      where: { id: raceVariantId },
+    });
+    expect(variant.reserved).toBe(1);
+    expect(variant.stock).toBe(1);
+
+    await prisma.orderItem.deleteMany({ where: { orderId: winningOrderId } });
+    await prisma.order.deleteMany({ where: { id: winningOrderId } });
+    await prisma.productVariant.deleteMany({
+      where: { productId: raceProductId },
+    });
+    await prisma.product.deleteMany({ where: { id: raceProductId } });
   });
 });
