@@ -391,8 +391,9 @@ test("prefills the shippingAddress fields from the buyer's saved default address
 
   await waitFor(() => {
     expect(
-      (screen.getByPlaceholderText("Nombre de quien recibe") as
-        HTMLInputElement).value,
+      (screen.getByPlaceholderText(
+        "Nombre de quien recibe",
+      ) as HTMLInputElement).value,
     ).toBe("Jane Doe");
     expect(
       (screen.getByPlaceholderText("Ciudad") as HTMLInputElement).value,
