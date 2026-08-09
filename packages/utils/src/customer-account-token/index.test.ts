@@ -10,10 +10,10 @@ describe("customer account token", () => {
   const secret = "test-secret";
 
   it("round-trips a valid token, defaulting to the 'confirm' purpose", () => {
-    const token = createCustomerAccountToken("customer-1", secret);
+    const token = createCustomerAccountToken("buyer-1", secret);
 
     expect(verifyCustomerAccountToken(token, secret)).toEqual({
-      customerId: "customer-1",
+      buyerAccountId: "buyer-1",
       purpose: "confirm",
     });
   });
@@ -27,16 +27,16 @@ describe("customer account token", () => {
         "change-phone",
       ] as const
     ) {
-      const token = createCustomerAccountToken("customer-1", secret, purpose);
+      const token = createCustomerAccountToken("buyer-1", secret, purpose);
       expect(verifyCustomerAccountToken(token, secret)).toEqual({
-        customerId: "customer-1",
+        buyerAccountId: "buyer-1",
         purpose,
       });
     }
   });
 
   it("rejects a token signed with a different secret", () => {
-    const token = createCustomerAccountToken("customer-1", secret);
+    const token = createCustomerAccountToken("buyer-1", secret);
 
     expect(verifyCustomerAccountToken(token, "other-secret")).toBeNull();
   });
@@ -49,7 +49,7 @@ describe("customer account token", () => {
   it("rejects an expired 'confirm' token", () => {
     const realNow = Date.now;
     Date.now = () => new Date("2020-01-01").getTime();
-    const token = createCustomerAccountToken("customer-1", secret);
+    const token = createCustomerAccountToken("buyer-1", secret);
     Date.now = () => new Date("2020-02-01").getTime();
 
     expect(verifyCustomerAccountToken(token, secret)).toBeNull();
@@ -61,12 +61,12 @@ describe("customer account token", () => {
     const realNow = Date.now;
     Date.now = () => new Date("2020-01-01T00:00:00Z").getTime();
     const resetToken = createCustomerAccountToken(
-      "customer-1",
+      "buyer-1",
       secret,
       "reset",
     );
     const confirmToken = createCustomerAccountToken(
-      "customer-1",
+      "buyer-1",
       secret,
       "confirm",
     );
@@ -74,7 +74,7 @@ describe("customer account token", () => {
 
     expect(verifyCustomerAccountToken(resetToken, secret)).toBeNull();
     expect(verifyCustomerAccountToken(confirmToken, secret)).toEqual({
-      customerId: "customer-1",
+      buyerAccountId: "buyer-1",
       purpose: "confirm",
     });
 
@@ -86,27 +86,16 @@ describe("customer session token", () => {
   const secret = "test-secret";
 
   it("round-trips a valid token", () => {
-    const token = createCustomerSessionToken(
-      "customer-1",
-      "store-1",
-      "v1",
-      secret,
-    );
+    const token = createCustomerSessionToken("buyer-1", 1, secret);
 
     expect(verifyCustomerSessionToken(token, secret)).toEqual({
-      customerId: "customer-1",
-      storeId: "store-1",
-      passwordVersion: "v1",
+      buyerAccountId: "buyer-1",
+      passwordVersion: 1,
     });
   });
 
   it("rejects a token signed with a different secret", () => {
-    const token = createCustomerSessionToken(
-      "customer-1",
-      "store-1",
-      "v1",
-      secret,
-    );
+    const token = createCustomerSessionToken("buyer-1", 1, secret);
 
     expect(verifyCustomerSessionToken(token, "other-secret")).toBeNull();
   });
@@ -119,16 +108,18 @@ describe("customer session token", () => {
   it("rejects an expired token", () => {
     const realNow = Date.now;
     Date.now = () => new Date("2020-01-01").getTime();
-    const token = createCustomerSessionToken(
-      "customer-1",
-      "store-1",
-      "v1",
-      secret,
-    );
+    const token = createCustomerSessionToken("buyer-1", 1, secret);
     Date.now = () => new Date("2021-01-01").getTime();
 
     expect(verifyCustomerSessionToken(token, secret)).toBeNull();
 
     Date.now = realNow;
+  });
+
+  it("invalidates the token when the embedded password version no longer matches", () => {
+    const token = createCustomerSessionToken("buyer-1", 1, secret);
+    const verified = verifyCustomerSessionToken(token, secret);
+
+    expect(verified?.passwordVersion).not.toBe(2);
   });
 });

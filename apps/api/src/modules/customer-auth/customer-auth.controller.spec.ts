@@ -87,7 +87,7 @@ describe("CustomerAuthController", () => {
 
   it("changePassword() reissues the session cookie with a fresh token", async () => {
     service.changePassword.mockResolvedValue("new-signed-token");
-    const session = { id: "customer-1", storeId: "store-1" };
+    const session = { buyerAccountId: "buyer-1" };
 
     const result = await controller.changePassword(
       session,
@@ -96,7 +96,7 @@ describe("CustomerAuthController", () => {
     );
 
     expect(service.changePassword).toHaveBeenCalledWith(
-      "customer-1",
+      "buyer-1",
       "old-1",
       "new-1",
     );
@@ -109,7 +109,7 @@ describe("CustomerAuthController", () => {
   });
 
   it("me() delegates to the service with the slug and session", async () => {
-    const session = { id: "customer-1", storeId: "store-1" };
+    const session = { buyerAccountId: "buyer-1" };
     service.getProfile.mockResolvedValue({ customer: {}, orders: [] });
 
     const result = await controller.me("my-store", session);
@@ -119,7 +119,7 @@ describe("CustomerAuthController", () => {
   });
 
   it("updateMe() delegates to the service with the slug, session, and dto", async () => {
-    const session = { id: "customer-1", storeId: "store-1" };
+    const session = { buyerAccountId: "buyer-1" };
     service.updateProfile.mockResolvedValue({ name: "New Name" });
     const dto = { name: "New Name" };
 

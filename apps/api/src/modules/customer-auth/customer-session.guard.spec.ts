@@ -7,7 +7,6 @@ import {
   CustomerSessionGuard,
   type CustomerSessionRequest,
 } from "./customer-session.guard.js";
-import { derivePasswordVersion } from "./customer-auth.service.js";
 import type { PrismaService } from "../../prisma/prisma.service.js";
 import { CUSTOMER_SESSION_COOKIE } from "./customer-session.constants.js";
 
@@ -27,12 +26,12 @@ function buildContext(cookieHeader: string | undefined) {
 }
 
 describe("CustomerSessionGuard", () => {
-  let prisma: { customer: { findUnique: Mock } };
+  let prisma: { buyerAccount: { findUnique: Mock } };
   let guard: CustomerSessionGuard;
 
   beforeEach(() => {
     process.env.CUSTOMER_ACCOUNT_TOKEN_SECRET = "test-secret";
-    prisma = { customer: { findUnique: vi.fn() } };
+    prisma = { buyerAccount: { findUnique: vi.fn() } };
     guard = new CustomerSessionGuard(prisma as unknown as PrismaService);
   });
 
@@ -56,17 +55,12 @@ describe("CustomerSessionGuard", () => {
 
   it("rejects a token whose password version no longer matches (password changed since issuance)", async () => {
     const oldHash = await hashPassword("old-password-1");
-    const token = createCustomerSessionToken(
-      "customer-1",
-      "store-1",
-      derivePasswordVersion(oldHash),
-      "test-secret",
-    );
+    const token = createCustomerSessionToken("buyer-1", 1, "test-secret");
     const newHash = await hashPassword("new-password-1");
-    prisma.customer.findUnique.mockResolvedValue({
-      id: "customer-1",
-      storeId: "store-1",
+    prisma.buyerAccount.findUnique.mockResolvedValue({
+      id: "buyer-1",
       passwordHash: newHash,
+      passwordVersion: 2,
     });
 
     const { context } = buildContext(`${CUSTOMER_SESSION_COOKIE}=${token}`);
@@ -78,16 +72,11 @@ describe("CustomerSessionGuard", () => {
 
   it("accepts a valid token, attaches the session, and reissues a fresh cookie", async () => {
     const passwordHash = await hashPassword("current-password-1");
-    const token = createCustomerSessionToken(
-      "customer-1",
-      "store-1",
-      derivePasswordVersion(passwordHash),
-      "test-secret",
-    );
-    prisma.customer.findUnique.mockResolvedValue({
-      id: "customer-1",
-      storeId: "store-1",
+    const token = createCustomerSessionToken("buyer-1", 1, "test-secret");
+    prisma.buyerAccount.findUnique.mockResolvedValue({
+      id: "buyer-1",
       passwordHash,
+      passwordVersion: 1,
     });
 
     const { req, res, cookieMock, context } = buildContext(
@@ -97,10 +86,7 @@ describe("CustomerSessionGuard", () => {
     const result = await guard.canActivate(context);
 
     expect(result).toBe(true);
-    expect(req.customerSession).toEqual({
-      id: "customer-1",
-      storeId: "store-1",
-    });
+    expect(req.customerSession).toEqual({ buyerAccountId: "buyer-1" });
     expect(cookieMock).toHaveBeenCalledWith(
       CUSTOMER_SESSION_COOKIE,
       expect.any(String),
@@ -109,18 +95,12 @@ describe("CustomerSessionGuard", () => {
     void res;
   });
 
-  it("rejects when the token belongs to a customer that has since moved stores", async () => {
-    const passwordHash = await hashPassword("current-password-1");
-    const token = createCustomerSessionToken(
-      "customer-1",
-      "store-1",
-      derivePasswordVersion(passwordHash),
-      "test-secret",
-    );
-    prisma.customer.findUnique.mockResolvedValue({
-      id: "customer-1",
-      storeId: "store-2",
-      passwordHash,
+  it("rejects when the account has no password set (deleted/never-registered)", async () => {
+    const token = createCustomerSessionToken("buyer-1", 0, "test-secret");
+    prisma.buyerAccount.findUnique.mockResolvedValue({
+      id: "buyer-1",
+      passwordHash: null,
+      passwordVersion: 0,
     });
 
     const { context } = buildContext(`${CUSTOMER_SESSION_COOKIE}=${token}`);

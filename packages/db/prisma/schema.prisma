@@ -64,6 +64,7 @@ model Store {
   notifications   Notification[]
   restockRequests RestockRequest[]
   whatsappTemplates WhatsAppMessageTemplate[]
+  buyerLinks      CustomerStoreLink[]
 
   @@index([ownerId])
 }
@@ -219,6 +220,11 @@ model Order {
   id                 String             @id @default(cuid())
   storeId            String
   customerId         String?
+  // New global buyer identity, added alongside `customerId` rather than
+  // replacing it — see docs/plans/2026-08-08-global-buyer-account-plan.md.
+  // `customerId` is dropped in a later follow-up migration once the backfill
+  // is verified complete.
+  buyerAccountId     String?
   customerEmail      String?
   customerPhone      String
   customerName       String?
@@ -247,15 +253,17 @@ model Order {
   expiresAt          DateTime
   createdAt          DateTime           @default(now())
 
-  store       Store          @relation(fields: [storeId], references: [id])
-  customer    Customer?      @relation(fields: [customerId], references: [id])
-  pickupPoint PickupPoint?   @relation(fields: [pickupPointId], references: [id], onDelete: SetNull)
-  items       OrderItem[]
-  payments    OrderPayment[]
+  store        Store          @relation(fields: [storeId], references: [id])
+  customer     Customer?      @relation(fields: [customerId], references: [id])
+  buyerAccount BuyerAccount?  @relation(fields: [buyerAccountId], references: [id])
+  pickupPoint  PickupPoint?   @relation(fields: [pickupPointId], references: [id], onDelete: SetNull)
+  items        OrderItem[]
+  payments     OrderPayment[]
 
   @@index([storeId, paymentStatus])
   @@index([storeId, createdAt])
   @@index([paymentStatus, expiresAt])
+  @@index([buyerAccountId])
 }
 
 model OrderItem {
@@ -426,6 +434,47 @@ model Customer {
   orders Order[]
 
   @@unique([storeId, phone])
+  @@index([storeId])
+}
+
+// Global buyer identity — one per phone number across every store, replacing
+// per-store `Customer` as the buyer-auth root. See
+// docs/plans/2026-08-08-global-buyer-account-plan.md. `Customer` itself is
+// kept as a per-store "who has bought here" projection for the seller
+// Customers dashboard, decoupled from auth.
+model BuyerAccount {
+  id              String   @id @default(cuid())
+  phone           String   @unique
+  passwordHash    String?
+  // Bumped (not re-derived from the hash) on every password change and
+  // embedded in the session token — the only session-revocation mechanism
+  // this stateless-token design has. Replaces the per-Customer
+  // hash-derived `derivePasswordVersion` stamp the old guard used.
+  passwordVersion Int      @default(0)
+  email           String?
+  emailVerified   Boolean  @default(false)
+  pendingEmail    String?
+  pendingPhone    String?
+  name            String?
+  createdAt       DateTime @default(now())
+
+  stores CustomerStoreLink[]
+  orders Order[]
+}
+
+// Join row proving a BuyerAccount has an account/checkout footprint at a
+// given store. Created on first successful login/checkout at a new store
+// (auto-link, not an opt-in step — see the plan's "API / auth changes").
+model CustomerStoreLink {
+  id             String   @id @default(cuid())
+  buyerAccountId String
+  storeId        String
+  createdAt      DateTime @default(now())
+
+  buyerAccount BuyerAccount @relation(fields: [buyerAccountId], references: [id])
+  store        Store        @relation(fields: [storeId], references: [id])
+
+  @@unique([buyerAccountId, storeId])
   @@index([storeId])
 }
 

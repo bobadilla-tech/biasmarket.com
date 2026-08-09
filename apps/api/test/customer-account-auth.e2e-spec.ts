@@ -47,11 +47,21 @@ describe("customer account + customer auth (e2e)", () => {
   let orderId: string | undefined;
   let customerSessionCookie: string;
 
+  // Second store, for the cross-store BuyerAccount scenario — see the last
+  // `it` block below.
+  let storeBId: string | undefined;
+  let productBId: string | undefined;
+  let orderBId: string | undefined;
+  let crossStoreBuyerAccountId: string | undefined;
+
   const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const sellerEmail = `caa-e2e-seller-${runId}@example.com`;
   const customerEmail = `caa-e2e-customer-${runId}@example.com`;
   const customerPhone = "+51966666666";
   const password = "correcthorsebatterystaple";
+  const crossStoreEmail = `caa-e2e-crossstore-${runId}@example.com`;
+  const crossStorePhone = "+51977777777";
+  const crossStorePassword = "correcthorsebatterystaple3";
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -134,6 +144,40 @@ describe("customer account + customer auth (e2e)", () => {
       await prisma.productVariant.deleteMany({ where: { productId } });
       await prisma.product.deleteMany({ where: { id: productId } });
     }
+
+    if (orderBId) {
+      await prisma.orderItem.deleteMany({ where: { orderId: orderBId } });
+      await prisma.order.deleteMany({ where: { id: orderBId } });
+    }
+    if (productBId) {
+      await prisma.productVariant.deleteMany({
+        where: { productId: productBId },
+      });
+      await prisma.product.deleteMany({ where: { id: productBId } });
+    }
+    if (crossStoreBuyerAccountId) {
+      // CustomerStoreLink FKs RESTRICT-delete against BuyerAccount, so the
+      // links (and the per-store Customer projections they mirror) must go
+      // first.
+      await prisma.customerStoreLink.deleteMany({
+        where: { buyerAccountId: crossStoreBuyerAccountId },
+      });
+      await prisma.customer.deleteMany({ where: { phone: crossStorePhone } });
+      await prisma.buyerAccount.deleteMany({
+        where: { id: crossStoreBuyerAccountId },
+      });
+    }
+    if (storeBId) {
+      await prisma.notification.deleteMany({ where: { storeId: storeBId } });
+      await prisma.paymentMethodConfig.deleteMany({
+        where: { storeId: storeBId },
+      });
+      await prisma.deliveryMethodConfig.deleteMany({
+        where: { storeId: storeBId },
+      });
+      await prisma.store.deleteMany({ where: { id: storeBId } });
+    }
+
     if (storeId) {
       await prisma.notification.deleteMany({ where: { storeId } });
       await prisma.paymentMethodConfig.deleteMany({ where: { storeId } });
@@ -321,6 +365,140 @@ describe("customer account + customer auth (e2e)", () => {
       );
       const resetHtml = readFileSync(resetMailerFile, "utf-8");
       expect(resetHtml).toMatch(/account\/confirm\?token=/);
+    },
+  );
+
+  it(
+    "one BuyerAccount persists across stores: register/login at store A, " +
+      "then check out at store B with the same phone -> one BuyerAccount, " +
+      "two CustomerStoreLink rows, both orders visible via GET /account/orders",
+    async () => {
+      const existingMailerFiles = new Set(readdirSync(mailerDevDir));
+
+      // Checkout + confirm + register + login at store A (reusing the
+      // already-published product from the outer beforeAll).
+      const checkoutARes = await request(app.getHttpServer())
+        .post(`/stores/${storeSlug}/checkout`)
+        .send({
+          deliveryMethodType: "PICKUP",
+          customerPhone: crossStorePhone,
+          customerEmail: crossStoreEmail,
+          customerName: "Cross Store Buyer",
+          items: [{ productId, variantId: productVariantId, quantity: 1 }],
+        })
+        .expect(201);
+      const orderAId = checkoutARes.body.order.id as string;
+
+      const mailerFile = await waitForNewMailerFile(
+        existingMailerFiles,
+        crossStoreEmail,
+      );
+      const html = readFileSync(mailerFile, "utf-8");
+      const tokenMatch = html.match(/token=([^&"]+)/);
+      if (!tokenMatch) {
+        throw new Error("confirm-account link not found in email");
+      }
+      const token = tokenMatch[1]!;
+
+      await request(app.getHttpServer())
+        .post(`/stores/${storeSlug}/account/register`)
+        .set("Origin", "http://localhost:3001")
+        .send({ token, password: crossStorePassword })
+        .expect(201);
+
+      const loginARes = await request(app.getHttpServer())
+        .post(`/stores/${storeSlug}/account/login`)
+        .set("Origin", "http://localhost:3001")
+        .send({ phone: crossStorePhone, password: crossStorePassword })
+        .expect(201);
+      const setCookieA = loginARes.headers["set-cookie"] as unknown as
+        string[];
+      const rawA = setCookieA?.find((c) => c.includes("bm_customer_session"));
+      if (!rawA) throw new Error("login at store A returned no cookie");
+      const sessionCookie = rawA.split(";")[0]!;
+
+      // Second store, owned by the same seller — this is the store the
+      // buyer has never touched before this checkout.
+      const storeBSlug = `caa-e2e-b-${runId}`;
+      const storeBRes = await request(app.getHttpServer())
+        .post("/stores")
+        .set("Cookie", sellerSessionCookie)
+        .send({
+          name: "E2E Store B",
+          slug: storeBSlug,
+          whatsappNumber: "+51900000001",
+        })
+        .expect(201);
+      storeBId = storeBRes.body.id;
+
+      const productBRes = await request(app.getHttpServer())
+        .post(`/stores/${storeBId}/products`)
+        .set("Cookie", sellerSessionCookie)
+        .send({ name: "E2E Product B", price: 15, currency: "PEN", stock: 100 })
+        .expect(201);
+      productBId = productBRes.body.id;
+      const productBVariantId = productBRes.body.variants[0].id;
+      await request(app.getHttpServer())
+        .patch(`/stores/${storeBId}/products/${productBId}/publish`)
+        .set("Cookie", sellerSessionCookie)
+        .expect(200);
+
+      // Checkout at store B with the SAME phone/email — no login at store B
+      // required for the link to form; `findOrCreateCustomer` auto-links on
+      // any successful checkout, per the plan's "API / auth changes".
+      const checkoutBRes = await request(app.getHttpServer())
+        .post(`/stores/${storeBSlug}/checkout`)
+        .send({
+          deliveryMethodType: "PICKUP",
+          customerPhone: crossStorePhone,
+          customerEmail: crossStoreEmail,
+          customerName: "Cross Store Buyer",
+          items: [{ productId: productBId, variantId: productBVariantId, quantity: 1 }],
+        })
+        .expect(201);
+      orderBId = checkoutBRes.body.order.id as string;
+
+      const buyerAccount = await prisma.buyerAccount.findUniqueOrThrow({
+        where: { phone: crossStorePhone },
+      });
+      crossStoreBuyerAccountId = buyerAccount.id;
+
+      const links = await prisma.customerStoreLink.findMany({
+        where: { buyerAccountId: buyerAccount.id },
+      });
+      expect(links.map((l) => l.storeId).sort()).toEqual(
+        [storeId, storeBId].sort(),
+      );
+
+      const ordersInDb = await prisma.order.findMany({
+        where: { buyerAccountId: buyerAccount.id },
+      });
+      expect(ordersInDb.map((o) => o.id).sort()).toEqual(
+        [orderAId, orderBId].sort(),
+      );
+
+      // The store-A session (a global BuyerAccount session — no `storeId`
+      // in the token) must see both orders through the slug-independent
+      // endpoint, even though it was never used to log in at store B.
+      const globalOrdersRes = await request(app.getHttpServer())
+        .get("/account/orders")
+        .set("Cookie", sessionCookie)
+        .expect(200);
+      expect(
+        globalOrdersRes.body.map((o: { id: string }) => o.id).sort(),
+      ).toEqual([orderAId, orderBId].sort());
+      const orderBRow = globalOrdersRes.body.find(
+        (o: { id: string }) => o.id === orderBId,
+      );
+      expect(orderBRow.storeSlug).toBe(storeBSlug);
+
+      const globalMeRes = await request(app.getHttpServer())
+        .get("/account/me")
+        .set("Cookie", sessionCookie)
+        .expect(200);
+      expect(
+        globalMeRes.body.stores.map((s: { slug: string }) => s.slug).sort(),
+      ).toEqual([storeSlug, storeBSlug].sort());
     },
   );
 });

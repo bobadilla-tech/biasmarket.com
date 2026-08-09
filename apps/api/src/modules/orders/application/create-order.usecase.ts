@@ -183,6 +183,7 @@ export class CreateOrderUseCase {
         }
 
         let customerId: string | undefined;
+        let buyerAccountId: string | undefined;
         let pendingVerificationCustomer:
           | Awaited<
             ReturnType<CustomerAccountService["findOrCreateCustomer"]>
@@ -198,6 +199,7 @@ export class CreateOrderUseCase {
               dto.customerName,
             );
           customerId = pendingVerificationCustomer.customer?.id;
+          buyerAccountId = pendingVerificationCustomer.buyerAccount?.id;
         }
 
         // Seeded from the first line amount (rather than `new Prisma.Decimal(0)`)
@@ -325,6 +327,7 @@ export class CreateOrderUseCase {
           data: {
             storeId: store.id,
             customerId,
+            buyerAccountId,
             customerEmail: dto.customerEmail,
             customerPhone: dto.customerPhone,
             customerName: dto.customerName,
@@ -386,10 +389,10 @@ export class CreateOrderUseCase {
 
     if (
       pendingVerificationCustomer?.needsVerificationEmail &&
-      pendingVerificationCustomer.customer
+      pendingVerificationCustomer.buyerAccount
     ) {
       await this.customerAccounts.sendVerificationEmail(
-        pendingVerificationCustomer.customer,
+        pendingVerificationCustomer.buyerAccount,
         store,
       );
     }

@@ -20,12 +20,16 @@ function sign(payload: string, secret: string): string {
   return createHmac("sha256", secret).update(payload).digest("base64url");
 }
 
+// `buyerAccountId` — these tokens (confirm/reset/change-email/change-phone)
+// identify a global `BuyerAccount`, not a per-store `Customer`, since buyer
+// auth moved onto the global identity model (see
+// docs/plans/2026-08-08-global-buyer-account-plan.md).
 export function createCustomerAccountToken(
-  customerId: string,
+  buyerAccountId: string,
   secret: string,
   purpose: CustomerAccountTokenPurpose = "confirm",
 ): string {
-  const payload = `${customerId}.${purpose}.${
+  const payload = `${buyerAccountId}.${purpose}.${
     Date.now() + ttlForPurpose(purpose)
   }`;
   const encodedPayload = Buffer.from(payload, "utf8").toString("base64url");
@@ -35,7 +39,7 @@ export function createCustomerAccountToken(
 export function verifyCustomerAccountToken(
   token: string,
   secret: string,
-): { customerId: string; purpose: CustomerAccountTokenPurpose } | null {
+): { buyerAccountId: string; purpose: CustomerAccountTokenPurpose } | null {
   const [encodedPayload, signature] = token.split(".");
   if (!encodedPayload || !signature) return null;
 
@@ -49,7 +53,7 @@ export function verifyCustomerAccountToken(
     return null;
   }
 
-  const [customerId, purposeRaw, expiresAtRaw] = payload.split(".");
+  const [buyerAccountId, purposeRaw, expiresAtRaw] = payload.split(".");
   const expiresAt = Number(expiresAtRaw);
   const validPurposes: CustomerAccountTokenPurpose[] = [
     "confirm",
@@ -59,35 +63,35 @@ export function verifyCustomerAccountToken(
   ];
   const purpose = validPurposes.find((p) => p === purposeRaw);
   if (
-    !customerId || !purpose || !Number.isFinite(expiresAt) ||
+    !buyerAccountId || !purpose || !Number.isFinite(expiresAt) ||
     Date.now() > expiresAt
   ) {
     return null;
   }
 
-  return { customerId, purpose };
+  return { buyerAccountId, purpose };
 }
 
 // Buyer login session token — same stateless HMAC style as the token pair
-// above, not a new mechanism. Fixed absolute TTL per issuance; the
+// above, not a new mechanism. No `storeId` in the payload: the identity is
+// now global, not per-store. Fixed absolute TTL per issuance; the
 // CustomerSessionGuard reissues a fresh token (sliding renewal) on every
 // authenticated request, so an active session never expires mid-use while a
 // fully idle one still expires SESSION_TOKEN_TTL_MS after its last use.
-// `passwordVersion` (derived from the current password hash, see
-// apps/api's CustomerAuthService.derivePasswordVersion) is embedded so that
-// changing a customer's password invalidates every session token issued
-// before the change — this design has no server-side revocation list, so
-// that's the only way a "log out everywhere" / compromised-token scenario
-// is mitigated.
+// `passwordVersion` is `BuyerAccount.passwordVersion`, an integer bumped on
+// every password change (not re-derived from the hash) and embedded so that
+// changing a password invalidates every session token issued before the
+// change — this design has no server-side revocation list, so that's the
+// only way a "log out everywhere" / compromised-token scenario is
+// mitigated.
 const SESSION_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 export function createCustomerSessionToken(
-  customerId: string,
-  storeId: string,
-  passwordVersion: string,
+  buyerAccountId: string,
+  passwordVersion: number,
   secret: string,
 ): string {
-  const payload = `${customerId}.${storeId}.${passwordVersion}.${
+  const payload = `${buyerAccountId}.${passwordVersion}.${
     Date.now() + SESSION_TOKEN_TTL_MS
   }`;
   const encodedPayload = Buffer.from(payload, "utf8").toString("base64url");
@@ -97,7 +101,7 @@ export function createCustomerSessionToken(
 export function verifyCustomerSessionToken(
   token: string,
   secret: string,
-): { customerId: string; storeId: string; passwordVersion: string } | null {
+): { buyerAccountId: string; passwordVersion: number } | null {
   const [encodedPayload, signature] = token.split(".");
   if (!encodedPayload || !signature) return null;
 
@@ -111,19 +115,19 @@ export function verifyCustomerSessionToken(
     return null;
   }
 
-  const [customerId, storeId, passwordVersion, expiresAtRaw] = payload.split(
+  const [buyerAccountId, passwordVersionRaw, expiresAtRaw] = payload.split(
     ".",
   );
   const expiresAt = Number(expiresAtRaw);
+  const passwordVersion = Number(passwordVersionRaw);
   if (
-    !customerId ||
-    !storeId ||
-    !passwordVersion ||
+    !buyerAccountId ||
+    !Number.isFinite(passwordVersion) ||
     !Number.isFinite(expiresAt) ||
     Date.now() > expiresAt
   ) {
     return null;
   }
 
-  return { customerId, storeId, passwordVersion };
+  return { buyerAccountId, passwordVersion };
 }
