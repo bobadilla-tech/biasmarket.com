@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { CreditCard } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
@@ -13,10 +14,42 @@ import { useSavePaymentMethods } from "../mutations/use-save-payment-methods";
 import { SectionCard, useSavedFlash } from "./section-primitives";
 
 const PAYMENT_METHODS = [
-  { key: "yape", method: "YAPE", color: "bg-[#f8ddf2] text-[#bd2d84]" },
-  { key: "plin", method: "PLIN", color: "bg-[#ece0ff] text-[#7540d9]" },
+  {
+    key: "yape",
+    method: "YAPE",
+    color: "bg-[#f8ddf2] text-[#bd2d84]",
+    logo: "/logos/integrations/yape.webp",
+  },
+  {
+    key: "plin",
+    method: "PLIN",
+    color: "bg-[#ece0ff] text-[#7540d9]",
+    logo: "/logos/integrations/plin.png",
+  },
   { key: "transfer", method: "TRANSFER", color: "bg-[#e4f5ff] text-[#2472ae]" },
   { key: "cash", method: "CASH", color: "bg-[#ebf9ef] text-[#27965e]" },
+] as const;
+
+// Decorative "we support these banks" hint for the generic bank-transfer row —
+// no selected-bank data exists yet (see plan), so these are brand logos, not
+// config-driven. Each logo gets its own max-width + object-contain container:
+// bcp.png (~2.9:1) and interbank-horizontal-logo.webp (~5.26:1) have very
+// different aspect ratios and a shared fixed height would let one overflow.
+const TRANSFER_BANKS = [
+  {
+    src: "/logos/integrations/bcp.png",
+    alt: "BCP",
+    width: 761,
+    height: 262,
+    containerClassName: "max-w-16",
+  },
+  {
+    src: "/logos/integrations/interbank-horizontal-logo.webp",
+    alt: "Interbank",
+    width: 3840,
+    height: 730,
+    containerClassName: "max-w-24",
+  },
 ] as const;
 
 const DEFAULT_ENABLED: Record<string, boolean> = {
@@ -57,14 +90,26 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
             className="flex items-center justify-between rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3"
           >
             <div className="flex items-center gap-3">
-              <Badge
-                className={cn(
-                  "rounded-2xl px-2.5 py-1.5 text-xs font-semibold",
-                  method.color,
+              {"logo" in method
+                ? (
+                  <Image
+                    src={method.logo}
+                    alt={t(`payments.items.${method.key}.label`)}
+                    width={32}
+                    height={32}
+                    className="size-8 shrink-0 object-contain"
+                  />
+                )
+                : (
+                  <Badge
+                    className={cn(
+                      "rounded-2xl px-2.5 py-1.5 text-xs font-semibold",
+                      method.color,
+                    )}
+                  >
+                    {t(`payments.items.${method.key}.short`)}
+                  </Badge>
                 )}
-              >
-                {t(`payments.items.${method.key}.short`)}
-              </Badge>
               <div>
                 <p className="text-sm font-medium text-[#341b55]">
                   {t(`payments.items.${method.key}.label`)}
@@ -72,6 +117,21 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
                 <p className="text-xs text-[#9582ad]">
                   {t(`payments.items.${method.key}.description`)}
                 </p>
+                {method.method === "TRANSFER" && (
+                  <div className="mt-2 flex items-center gap-3">
+                    {TRANSFER_BANKS.map((bank) => (
+                      <div key={bank.src} className={bank.containerClassName}>
+                        <Image
+                          src={bank.src}
+                          alt={bank.alt}
+                          width={bank.width}
+                          height={bank.height}
+                          className="h-auto w-full object-contain"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
             <Switch

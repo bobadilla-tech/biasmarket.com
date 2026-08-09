@@ -3,13 +3,13 @@
 import { useEffect, useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import {
   Banknote,
   Check,
   Landmark,
   MessageCircle,
-  Smartphone,
   Store,
   Truck,
 } from "lucide-react";
@@ -31,8 +31,24 @@ const inputClassName =
   "store-theme-input rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none";
 
 const PAYMENT_METHOD_ICONS: Record<string, React.ReactNode> = {
-  YAPE: <Smartphone className="size-5" />,
-  PLIN: <Smartphone className="size-5" />,
+  YAPE: (
+    <Image
+      src="/logos/integrations/yape.webp"
+      alt="Yape"
+      width={200}
+      height={200}
+      className="size-5 object-contain"
+    />
+  ),
+  PLIN: (
+    <Image
+      src="/logos/integrations/plin.png"
+      alt="Plin"
+      width={185}
+      height={185}
+      className="size-5 object-contain"
+    />
+  ),
   TRANSFER: <Landmark className="size-5" />,
   CASH: <Banknote className="size-5" />,
 };

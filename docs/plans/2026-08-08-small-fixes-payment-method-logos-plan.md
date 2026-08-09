@@ -134,3 +134,52 @@ Yape and Plin show their real logos in both Settings → Payments and checkout's
 payment-method picker; BCP and Interbank logos appear as a supported-banks hint
 next to the bank-transfer option. No backend changes, no new data model — purely
 visual, safe to land independently of every other plan in this batch.
+
+## Execution notes (implemented 2026-08-09)
+
+Landed on branch `feat/payment-method-logos`. Implemented as planned,
+frontend-only, zero schema/API/Orval changes. Deviations/learnings:
+
+- **`payments-section.tsx`**: `PAYMENT_METHODS` rows for `yape`/`plin` gained a
+  `logo` asset path; the row renders a 32×32 `next/image` (`object-contain`,
+  `shrink-0`) when a `logo` is present and falls back to the existing colored
+  `Badge` for `transfer`/`cash`. The BCP/Interbank strip sits under the transfer
+  row's description text as a `flex items-center gap-3` strip, each logo in its
+  own `max-w-16`/`max-w-24` + `object-contain` container (per the plan's
+  no-shared-fixed-height rule — `bcp.png` ~2.9:1 vs
+  `interbank-horizontal-logo.webp` ~5.26:1) with `h-auto w-full` so each keeps
+  its intrinsic aspect ratio. Edit kept additive/small for the concurrent
+  `2026-08-08-buyer-post-checkout-payment-instructions-plan.md` (which adds an
+  expand/edit affordance to the same file) — only the badge/strip internals
+  changed, row structure untouched.
+- **`checkout-form.tsx`**: `PAYMENT_METHOD_ICONS.YAPE`/`.PLIN` swapped from the
+  shared `<Smartphone>` lucide icon to real `next/image` logos sized `size-5`
+  (matching the lucide icons' slot size, `object-contain`); `Smartphone` import
+  removed. `TRANSFER`/`CASH` untouched. Note the module-level `Record` now holds
+  JSX with `<Image>` — fine in this client component.
+- **Shared text-label map**: added
+  `apps/web/features/orders/lib/payment-method-labels.ts` (typed like
+  `order-format.ts`'s helpers, `ReturnType<typeof useTranslations>`, keys under
+  the `dashboard.orders` namespace). Both `register-payment-form.tsx` and
+  `payment-history-list.tsx` now import it — the 2-place duplication is gone.
+  `register-payment-form.tsx` is text-only extraction (label sits inside a
+  native `<option>`; no logo swap, per plan).
+- **`payment-history-list.tsx`**: also added a tiny inline `size-3.5` logo
+  before the method text for `YAPE`/`PLIN` only (`alt=""`, decorative — the text
+  label carries the accessible name), `TRANSFER`/`CASH` stay text-only. This
+  went slightly beyond the plan's text-extraction-only ask for this file, but
+  matches the plan's own suggested "tiny inline `<Image>` before the text"
+  treatment and keeps the wired logos consistent in the seller's order view.
+  `payment.method` is nullable, so the lookup guards it before indexing.
+- **Type-narrowing gotchas** (fixed during typecheck): `PAYMENT_METHODS` is an
+  `as const` union — `method.logo` doesn't exist on the `transfer`/`cash`
+  members, so the row uses `"logo" in method` instead of truthiness to narrow.
+- **Verification**: `pnpm typecheck` (11 tasks, all pass) and
+  `pnpm --filter web test` (53 files, 190 tests pass) — including the existing
+  `checkout-form.test.tsx`, which renders a YAPE card and confirms `next/image`
+  works under the repo's vitest/jsdom setup (no `next/image` mock needed; the
+  checkout test was the first in the suite to render one). No manual browser
+  pass was run — the plan's mobile-overflow check for
+  `interbank-horizontal-logo.webp` is guarded by the per-logo `max-w` +
+  `object-contain` containers, but a quick visual pass at a narrow viewport is
+  still recommended before merge.
