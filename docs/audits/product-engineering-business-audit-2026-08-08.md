@@ -391,9 +391,9 @@ without committing to a payments roadmap.
   higher-value targets (cancel orders, approve payments, delete stores).
 - Throttler config duplicated identically across 4 modules instead of one global
   default — drift risk, not a live bug.
-- Possible real GlitchTip DSN committed in `infra/docker/.env.example` under a
-  "safe dev defaults" banner — worth a five-minute check with whoever owns
-  `issues.bobadilla.tech` on whether that's actually the production project.
+- GlitchTip DSNs were previously committed in `infra/docker/.env.example` under
+  a "safe dev defaults" banner. The example is now blank; rotate the exposed
+  project DSNs in GlitchTip before using them again.
 
 **Acceptable (can stay):**
 
@@ -535,44 +535,44 @@ independent scaling need identified anywhere in this audit. Keep the monolith.
 
 ## 16. Top 10 things to do next
 
-1. **Add an audit log and consistent status update to cron expiry.** Why:
+1. **Rotate the exposed GlitchTip DSNs and provision them as deployment
+   secrets.** Why: credentials were committed in an example env file. Outcome:
+   old project keys are invalidated and examples contain no live credentials.
+   Dependencies: GlitchTip access. Complexity: trivial.
+2. **Add an audit log and consistent status update to cron expiry.** Why:
    automated cancellations currently lack the audit trail and leave the
    separate order status unchanged. Outcome: expiry matches seller-triggered
    cancellation semantics. Dependencies: none. Complexity: low.
-2. **Automate DB/MinIO backups.** Why: current backup is manual-only; VM loss =
+3. **Automate DB/MinIO backups.** Why: current backup is manual-only; VM loss =
    total data loss. Outcome: scheduled, verified backup running. Dependencies:
    none. Complexity: low (script the already-documented manual commands into
    cron/Compose).
-3. **Ship buyer-facing payment-instructions screen post-checkout.** Why: this is
+4. **Ship buyer-facing payment-instructions screen post-checkout.** Why: this is
    the single biggest gap between "order created" and a usable buyer experience.
    Outcome: buyers see how/where to pay without relying solely on WhatsApp.
    Dependencies: none, `Store.paymentInstructions` already exists. Complexity:
    low-medium (new page + component).
-4. **Ship buyer order-tracking page.** Why: buyers currently can't see their own
+5. **Ship buyer order-tracking page.** Why: buyers currently can't see their own
    order status in any real way. Outcome: closes the loop the product pitch
    promises. Dependencies: none, `Order`/`OrderPayment` data already exposed via
    `CustomerProfileResponseDto`. Complexity: medium.
-5. **Add `test:e2e` to CI.** Why: the order state machine (the most important
+6. **Add `test:e2e` to CI.** Why: the order state machine (the most important
    module) is currently only e2e-tested locally, if at all, before merge.
    Outcome: regressions caught pre-merge. Dependencies: none. Complexity: low
    (wire existing suite into the CI workflow).
-6. **Extend `OriginGuard` (CSRF defense) to seller-dashboard mutation routes.**
+7. **Extend `OriginGuard` (CSRF defense) to seller-dashboard mutation routes.**
    Why: highest-value actions (cancel orders, approve payments, delete stores)
    currently rely on cookie `SameSite` alone; buyer routes already got the
    explicit fix. Outcome: consistent CSRF posture. Dependencies: none, pattern
    already exists to copy. Complexity: low.
-7. **Add a global default rate-limit guard for the seller-dashboard API.** Why:
+8. **Add a global default rate-limit guard for the seller-dashboard API.** Why:
    currently zero rate limiting on most authenticated mutations. Outcome:
    consistent abuse protection. Dependencies: none. Complexity: low.
-8. **Instrument the 3-4 retention/GMV metrics from §9/§15 Phase 3.** Why:
+9. **Instrument the 3-4 retention/GMV metrics from §9/§15 Phase 3.** Why:
    monetization and automated-payments decisions are currently pure speculation
    without this data. Outcome: a data-backed answer to "which model, when."
    Dependencies: Phase 1 (buyer flow) live first, so usage is real. Complexity:
    low (analytics events + a dashboard query).
-9. **Verify/rotate the GlitchTip DSN in `infra/docker/.env.example` if it's a
-   real production endpoint.** Why: committed under a "safe dev defaults" label
-   but looks like a live project ID. Outcome: either confirmed harmless or
-   rotated. Dependencies: none. Complexity: trivial (5-minute check).
 10. **Decide, on purpose, whether buyer-initiated proof upload is worth
     building** — don't build it speculatively; ask 5-10 sellers using the Phase
     1 flow whether manual recording is actually painful. Why: it's a real,

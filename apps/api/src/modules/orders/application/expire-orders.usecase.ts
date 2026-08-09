@@ -27,10 +27,21 @@ export class ExpireOrdersUseCase {
         // otherwise skip stock mutation entirely instead of double-applying it.
         const guard = await tx.order.updateMany({
           where: { id: order.id, paymentStatus: "PENDING_PAYMENT" },
-          data: { paymentStatus: "CANCELLED" },
+          data: { status: "CANCELLED", paymentStatus: "CANCELLED" },
         });
         if (guard.count === 0) return;
         cancelled++;
+
+        await tx.auditLog.create({
+          data: {
+            actorId: "system",
+            storeId: order.storeId,
+            action: "order.expired",
+            entityType: "Order",
+            entityId: order.id,
+            metadata: {},
+          },
+        });
 
         const store = await tx.store.findUnique({
           where: { id: order.storeId },

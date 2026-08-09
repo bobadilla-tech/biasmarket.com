@@ -61,9 +61,8 @@ async function bootstrap() {
       .build(),
   );
 
-  // Swagger UI exposes route/model shape (recon surface) on an app that has
-  // no CSRF/helmet yet (docs/core/deploy.md) — default on outside production,
-  // off in production unless explicitly opted in.
+  // Swagger UI exposes route/model shape (recon surface), so keep it enabled
+  // by default outside production and opt-in only in production.
   const swaggerEnabled = process.env.SWAGGER_ENABLED
     ? process.env.SWAGGER_ENABLED === "true"
     : process.env.NODE_ENV !== "production";
