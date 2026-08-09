@@ -81,8 +81,10 @@ export class OrderRepository {
     buyerAccountId: string,
   ) {
     const order = await this.findRowByIdForStore(orderId, storeId);
-    if ((order as { buyerAccountId: string | null }).buyerAccountId !==
-      buyerAccountId) {
+    if (
+      (order as { buyerAccountId: string | null }).buyerAccountId !==
+        buyerAccountId
+    ) {
       throw new NotFoundException("Orden no encontrada");
     }
     return order;

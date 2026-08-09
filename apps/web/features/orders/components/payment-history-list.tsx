@@ -28,11 +28,13 @@ function ProofReviewBadge(
     <span
       className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${style}`}
     >
-      {t(`proofReview.${reviewStatus === "PENDING_REVIEW"
-        ? "pending"
-        : reviewStatus === "APPROVED"
-        ? "approved"
-        : "rejected"}`)}
+      {t(`proofReview.${
+        reviewStatus === "PENDING_REVIEW"
+          ? "pending"
+          : reviewStatus === "APPROVED"
+          ? "approved"
+          : "rejected"
+      }`)}
     </span>
   );
 }

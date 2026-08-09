@@ -1,7 +1,18 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { statsKeys } from "@/features/stats";
+// Direct submodule import, not the `@/features/stats` barrel — that barrel
+// re-exports `RecentOrdersList`, which imports `getOrderStatus` from the
+// `@/features/orders` barrel (this file's own feature), which in turn
+// re-exports `useEnabledPaymentMethods` -> `@/features/store-settings`
+// barrel -> a component importing `@/i18n/navigation`. That chain is fine at
+// runtime, but `i18n/navigation.ts` calls `createNavigation()` at module
+// load time, which needs `redirect` from `next/navigation` — any unit test
+// that mocks `next/navigation` narrowly (just `useParams`, the common case)
+// breaks the moment it transitively imports this file. Same class of bug as
+// the `@/lib/api-client` transitive-barrel gotcha documented in
+// vitest.config.ts; same fix, import the leaf module directly.
+import { statsKeys } from "@/features/stats/queries/use-stats-overview";
 import { apiClient } from "@/lib/api-client";
 import { ordersKeys } from "../queries/use-orders";
 

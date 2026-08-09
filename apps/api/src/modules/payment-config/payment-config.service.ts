@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import type { Prisma, PaymentMethodType } from "@biasmarket/db";
+import type { PaymentMethodType, Prisma } from "@biasmarket/db";
 import { PrismaService } from "../../prisma/prisma.service.js";
 import { StorageService } from "../../storage/storage.service.js";
 import type { UpsertPaymentMethodDto } from "./dto/upsert-payment-method.dto.js";
@@ -127,12 +127,16 @@ export class PaymentConfigService {
         storeId,
         method,
         enabled: true,
-        details: { ...previousDetails, qrImageUrl: url } as
-          Prisma.InputJsonValue,
+        details: {
+          ...previousDetails,
+          qrImageUrl: url,
+        } as Prisma.InputJsonValue,
       },
       update: {
-        details: { ...previousDetails, qrImageUrl: url } as
-          Prisma.InputJsonValue,
+        details: {
+          ...previousDetails,
+          qrImageUrl: url,
+        } as Prisma.InputJsonValue,
       },
     });
 

@@ -7,7 +7,10 @@ export function useUpdateAddress(slug: string) {
 
   return useMutation({
     mutationFn: (
-      { id, dto }: { id: string; dto: Partial<AddressInput> & { isDefault?: boolean } },
+      { id, dto }: {
+        id: string;
+        dto: Partial<AddressInput> & { isDefault?: boolean };
+      },
     ) => apiClient.addresses.update(slug, id, dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["addresses"] });

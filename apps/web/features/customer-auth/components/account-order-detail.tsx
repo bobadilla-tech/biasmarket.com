@@ -15,20 +15,30 @@ import {
   RegisterPaymentForm,
   type RegisterPaymentInput,
 } from "@/features/orders";
-import { getShippingAddress, getDeliveryLabel } from "@/features/orders/lib/order-format";
+import {
+  getDeliveryLabel,
+  getShippingAddress,
+} from "@/features/orders/lib/order-format";
 import { paymentMethodLabels } from "@/features/orders/lib/payment-method-labels";
 import { ContactSellerButton } from "./contact-seller-button";
 import { orderPaymentsApi } from "../api/order-payments.api";
 import { useSubmitPaymentProof } from "../mutations/use-submit-payment-proof";
 import { usePublicPaymentMethods } from "../queries/use-public-payment-methods";
-import type { OrderDetailResponseDto, OrderPaymentResponseDto } from "@biasmarket/types";
+import type {
+  OrderDetailResponseDto,
+  OrderPaymentResponseDto,
+} from "@biasmarket/types";
 
 // Order-level states that no longer accept a new buyer-submitted proof —
 // mirrors the exact guard `CustomerOrderPaymentsController.submit` enforces
 // server-side (see apps/api's controller), so the form doesn't render only to
 // 400 on submit.
 const CLOSED_PAYMENT_STATUSES = new Set(["CANCELLED", "REJECTED", "VERIFIED"]);
-const CLOSED_FULFILLMENT_STATUSES = new Set(["IN_TRANSIT", "READY", "COMPLETED"]);
+const CLOSED_FULFILLMENT_STATUSES = new Set([
+  "IN_TRANSIT",
+  "READY",
+  "COMPLETED",
+]);
 
 function ProofReviewBadge(
   { reviewStatus, t }: {
@@ -92,7 +102,10 @@ export function AccountOrderDetail(
 
   return (
     <div className="flex flex-col gap-6">
-      <PaymentProofLightbox url={previewUrl} onClose={() => setPreviewUrl(null)} />
+      <PaymentProofLightbox
+        url={previewUrl}
+        onClose={() => setPreviewUrl(null)}
+      />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
@@ -145,7 +158,9 @@ export function AccountOrderDetail(
         </div>
         {shippingAddress && (
           <div className="flex flex-col gap-1 border-t border-gray-100 pt-3 text-sm">
-            <span className="text-gray-500">{t("details.shippingAddress")}</span>
+            <span className="text-gray-500">
+              {t("details.shippingAddress")}
+            </span>
             <p className="font-semibold text-gray-900">
               {shippingAddress.recipientName} · {shippingAddress.phone}
             </p>

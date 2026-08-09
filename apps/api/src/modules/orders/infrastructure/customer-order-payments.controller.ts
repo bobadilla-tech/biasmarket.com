@@ -2,17 +2,22 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Get,
   NotFoundException,
   Param,
   Post,
-  Get,
   StreamableFile,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { ApiConsumes, ApiOkResponse, ApiParam, ApiProduces } from "@nestjs/swagger";
+import {
+  ApiConsumes,
+  ApiOkResponse,
+  ApiParam,
+  ApiProduces,
+} from "@nestjs/swagger";
 import { Public } from "@thallesp/nestjs-better-auth";
 import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
 import type { PaymentMethodType } from "@biasmarket/db";

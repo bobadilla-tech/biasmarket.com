@@ -542,7 +542,9 @@ export class OrderController {
         order.paymentStatus === "PENDING_PAYMENT" ||
         order.paymentStatus === "PARTIALLY_PAID"
       ) {
-        if (toCents(order.paidAmount) >= toCents(Number(order.requiredAmount))) {
+        if (
+          toCents(order.paidAmount) >= toCents(Number(order.requiredAmount))
+        ) {
           await this.reviewPayment.execute(
             orderId,
             storeId,

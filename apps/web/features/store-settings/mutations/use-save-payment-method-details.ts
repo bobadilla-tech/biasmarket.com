@@ -13,7 +13,8 @@ export function useSavePaymentMethodDetails(storeId: string | undefined) {
         method: "YAPE" | "PLIN" | "TRANSFER" | "CASH";
         details: Record<string, unknown>;
       },
-    ) => settingsApi.savePaymentMethodDetails(storeId as string, method, details),
+    ) =>
+      settingsApi.savePaymentMethodDetails(storeId as string, method, details),
     onSuccess: () => {
       if (!storeId) return;
       queryClient.invalidateQueries({

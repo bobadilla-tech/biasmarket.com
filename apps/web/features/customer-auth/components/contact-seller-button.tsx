@@ -30,7 +30,10 @@ export function ContactSellerButton(
 
   return (
     <a
-      href={buildWhatsAppUrl(store.whatsappNumber, buildContactMessage(orderId))}
+      href={buildWhatsAppUrl(
+        store.whatsappNumber,
+        buildContactMessage(orderId),
+      )}
       target="_blank"
       rel="noopener noreferrer"
       className={className ??

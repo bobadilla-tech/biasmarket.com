@@ -134,41 +134,41 @@ export function CheckoutPageClient() {
 
                 {(order.paymentMethod === "YAPE" ||
                   order.paymentMethod === "PLIN") && (
-                  hasWalletDetails
-                    ? (
-                      <div className="flex flex-col items-start gap-2">
-                        <dl className="flex flex-col gap-1 text-sm text-gray-600">
-                          <div className="flex justify-between gap-4">
-                            <dt>{t("confirmationPhoneNumber")}</dt>
-                            <dd className="font-medium text-gray-900">
-                              {String(details.phoneNumber)}
-                            </dd>
-                          </div>
-                          <div className="flex justify-between gap-4">
-                            <dt>{t("confirmationAccountHolder")}</dt>
-                            <dd className="font-medium text-gray-900">
-                              {String(details.accountHolder)}
-                            </dd>
-                          </div>
-                        </dl>
-                        {typeof details.qrImageUrl === "string" &&
-                          details.qrImageUrl && (
-                          <Image
-                            src={details.qrImageUrl}
-                            alt={t("confirmationQrAlt")}
-                            width={160}
-                            height={160}
-                            className="mx-auto size-40 rounded-lg border border-gray-100 object-contain"
-                          />
-                        )}
-                      </div>
-                    )
-                    : (
-                      <p className="text-sm text-amber-600">
-                        {t("confirmationNoDetails")}
-                      </p>
-                    )
-                )}
+                    hasWalletDetails
+                      ? (
+                        <div className="flex flex-col items-start gap-2">
+                          <dl className="flex flex-col gap-1 text-sm text-gray-600">
+                            <div className="flex justify-between gap-4">
+                              <dt>{t("confirmationPhoneNumber")}</dt>
+                              <dd className="font-medium text-gray-900">
+                                {String(details.phoneNumber)}
+                              </dd>
+                            </div>
+                            <div className="flex justify-between gap-4">
+                              <dt>{t("confirmationAccountHolder")}</dt>
+                              <dd className="font-medium text-gray-900">
+                                {String(details.accountHolder)}
+                              </dd>
+                            </div>
+                          </dl>
+                          {typeof details.qrImageUrl === "string" &&
+                            details.qrImageUrl && (
+                            <Image
+                              src={details.qrImageUrl}
+                              alt={t("confirmationQrAlt")}
+                              width={160}
+                              height={160}
+                              className="mx-auto size-40 rounded-lg border border-gray-100 object-contain"
+                            />
+                          )}
+                        </div>
+                      )
+                      : (
+                        <p className="text-sm text-amber-600">
+                          {t("confirmationNoDetails")}
+                        </p>
+                      )
+                  )}
               </div>
             )}
 
