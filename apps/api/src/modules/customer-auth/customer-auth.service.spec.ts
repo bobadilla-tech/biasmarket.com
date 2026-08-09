@@ -14,6 +14,7 @@ import {
 import { CustomerAuthService } from "./customer-auth.service.js";
 import { PrismaService } from "../../prisma/prisma.service.js";
 import { CustomerAccountService } from "../orders/application/customer-account.service.js";
+import { OrderRepository } from "../orders/infrastructure/order.repository.js";
 
 describe("CustomerAuthService", () => {
   let service: CustomerAuthService;
@@ -33,6 +34,7 @@ describe("CustomerAuthService", () => {
     sendEmailChangeConfirmation: Mock;
     sendPhoneChangeConfirmation: Mock;
   };
+  let orderRepository: { findRowByIdForStore: Mock };
 
   const store = { id: "store-1", slug: "my-store" };
 
@@ -55,12 +57,14 @@ describe("CustomerAuthService", () => {
       sendEmailChangeConfirmation: vi.fn(),
       sendPhoneChangeConfirmation: vi.fn(),
     };
+    orderRepository = { findRowByIdForStore: vi.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CustomerAuthService,
         { provide: PrismaService, useValue: prisma },
         { provide: CustomerAccountService, useValue: customerAccount },
+        { provide: OrderRepository, useValue: orderRepository },
       ],
     }).compile();
 
@@ -425,6 +429,48 @@ describe("CustomerAuthService", () => {
 
       await expect(service.getProfile("missing-store", session)).rejects
         .toBeInstanceOf(NotFoundException);
+    });
+  });
+
+  describe("getOrderDetail", () => {
+    const session = { buyerAccountId: "buyer-1" };
+
+    it("returns the order row when it belongs to this buyer", async () => {
+      const row = { id: "order-1", buyerAccountId: "buyer-1" };
+      orderRepository.findRowByIdForStore.mockResolvedValue(row);
+
+      const result = await service.getOrderDetail(
+        "my-store",
+        session,
+        "order-1",
+      );
+
+      expect(orderRepository.findRowByIdForStore).toHaveBeenCalledWith(
+        "order-1",
+        store.id,
+      );
+      expect(result).toBe(row);
+    });
+
+    it("404s when the order belongs to a different buyer", async () => {
+      orderRepository.findRowByIdForStore.mockResolvedValue({
+        id: "order-1",
+        buyerAccountId: "someone-else",
+      });
+
+      await expect(
+        service.getOrderDetail("my-store", session, "order-1"),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it("propagates a 404 for a nonexistent order or wrong store", async () => {
+      orderRepository.findRowByIdForStore.mockRejectedValue(
+        new NotFoundException("Orden no encontrada"),
+      );
+
+      await expect(
+        service.getOrderDetail("my-store", session, "missing-order"),
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 

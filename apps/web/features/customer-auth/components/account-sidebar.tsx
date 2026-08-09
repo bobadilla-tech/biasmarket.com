@@ -1,16 +1,17 @@
 "use client";
 
-import { LogOut, Package, User } from "lucide-react";
+import { LogOut, MapPin, Package, User } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { InitialsAvatar } from "@/components/ui/initials-avatar";
 import type { CustomerProfileResponseDto } from "@biasmarket/types";
 
-export type AccountSection = "orders" | "profile";
+export type AccountSection = "orders" | "addresses" | "profile";
 
 const NAV_ITEMS: { key: AccountSection; icon: typeof Package }[] = [
   { key: "orders", icon: Package },
+  { key: "addresses", icon: MapPin },
   { key: "profile", icon: User },
 ];
 

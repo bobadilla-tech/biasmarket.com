@@ -68,6 +68,45 @@ export class OrderRepository {
     return payment;
   }
 
+  // Buyer-facing equivalent of `findRowByIdForStore` — same store-scoped 404,
+  // plus a `buyerAccountId` check so a buyer can only ever reach their own
+  // orders. Guest orders (`buyerAccountId === null`) can never match a real
+  // session's `buyerAccountId`, so they 404 here too — expected, per
+  // docs/plans/2026-08-08-buyer-proof-of-payment-upload-plan.md's stated
+  // non-goal (guest orders don't have a buyer session to authenticate this
+  // endpoint with in the first place).
+  async findOrderForBuyer(
+    orderId: string,
+    storeId: string,
+    buyerAccountId: string,
+  ) {
+    const order = await this.findRowByIdForStore(orderId, storeId);
+    if ((order as { buyerAccountId: string | null }).buyerAccountId !==
+      buyerAccountId) {
+      throw new NotFoundException("Orden no encontrada");
+    }
+    return order;
+  }
+
+  // Single compound query on {paymentId, orderId, buyerAccountId} — never
+  // check order ownership and payment lookup as two separate queries here,
+  // that would let a buyer view another buyer's payment/image by pairing
+  // their own valid orderId with someone else's paymentId (IDOR). See the
+  // plan doc's explicit warning on this call site.
+  async findPaymentForBuyer(
+    paymentId: string,
+    orderId: string,
+    buyerAccountId: string,
+  ) {
+    const payment = await this.prisma.orderPayment.findFirst({
+      where: { id: paymentId, orderId, order: { buyerAccountId } },
+    });
+    if (!payment) {
+      throw new NotFoundException("Pago no encontrado");
+    }
+    return payment;
+  }
+
   async findManyForStore(
     storeId: string,
     filters: {

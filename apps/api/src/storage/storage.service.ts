@@ -41,6 +41,17 @@ export class StorageService {
     return this.upload(this.paymentBucket, "payments", buffer, mimeType);
   }
 
+  // Yape/Plin QR codes are meant to be shown to any buyer at checkout, so
+  // these live in the public `bucket` (same as product images), not the
+  // private `paymentBucket` used for buyer-submitted proof-of-payment
+  // screenshots — don't conflate the two.
+  async uploadPaymentQrImage(
+    buffer: Buffer,
+    mimeType: string,
+  ): Promise<string> {
+    return this.upload(this.bucket, "payment-qr", buffer, mimeType);
+  }
+
   // Inverse of `upload`'s `${publicUrl}/${bucket}/${key}` URL shape.
   async deleteImage(url: string): Promise<void> {
     const key = url.slice(`${this.publicUrl}/${this.bucket}/`.length);

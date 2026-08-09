@@ -214,3 +214,130 @@ A buyer who completes checkout sees, in-app, concrete instructions for the
 payment method they selected (bank account details, or Yape/Plin number + QR),
 without needing to rely on WhatsApp as the only channel — matching the audit's
 own "done when" criterion in §15 Phase 1.
+
+## Execution notes
+
+- **Branch**: worked on `fix/work`, a shared branch multiple sessions were
+  committing to concurrently at the time (the `buyer-proof-of-payment-upload`
+  plan was landing alongside this one, uncommitted, in the same working tree —
+  its edits to `customer-auth`, `orders`, `stats`, `stores`, and
+  `schema.prisma` were left untouched throughout).
+- **Pre-flight**: `prisma migrate status` showed
+  `20260809210000_add_store_socials`, `20260809220000_add_buyer_account`, and
+  `20260809230000_add_buyer_shipping_addresses` unapplied to the dev DB;
+  ran `prisma migrate deploy` to bring it current before adding anything new.
+  This plan needed no new migration — `PaymentMethodConfig.details` is an
+  existing `Json` column, per the plan's own "no schema migration needed"
+  decision.
+- **Re-read `checkout-form.tsx` fresh, per the plan's own update note**:
+  confirmed the unconditional `globalThis.location.href = result.whatsappUrl`
+  redirect was still present and untouched by the two sibling plans, now at
+  `checkout-form.tsx:320-321` (matching the note's citation exactly).
+- **Backend** (`apps/api/src/modules/payment-config/`):
+  - New `PaymentMethodDetailsDto` (`dto/payment-method-details.dto.ts`) — a
+    single permissive class with all fields optional, since class-validator's
+    `@ValidateIf` can't see a sibling field on the parent DTO from inside a
+    `@ValidateNested` object. `UpsertPaymentMethodDto` gained an optional
+    `details` field (`@ValidateNested` + `@Type`), and exports
+    `PAYMENT_METHOD_TYPES` (was a local const) so the QR endpoint could reuse
+    it for its own method-type guard.
+  - `PaymentConfigService.upsert` now persists `dto.details` via a new
+    `normalizeDetails(method, details)` — the actual "which fields are
+    required" check lives here, not in the DTO: TRANSFER requires
+    `bankName`/`accountNumber`/`accountHolder`, YAPE/PLIN require
+    `phoneNumber`/`accountHolder`, CASH silently drops any submitted details
+    (never 400s — the settings UI never shows detail fields for CASH, but a
+    stray payload here shouldn't break the enable/disable toggle path). A
+    plain enable/disable call (`dto.details === undefined`) still leaves
+    existing `details` untouched on update, preserving the existing spec's
+    "toggles enabled without touching details" expectation.
+  - `Prisma`'s `Json` column type doesn't accept `Record<string, unknown>`
+    directly — every write needed `as Prisma.InputJsonValue`, the same cast
+    already used in `delivery-config.service.ts`.
+  - New `POST stores/:storeId/payment-methods/:method/qr-image` (multipart,
+    `FileInterceptor`, mirrors `products.controller.ts`'s image-upload
+    pattern exactly: 5MB cap, JPEG/PNG magic-byte sniffing). Rejects
+    TRANSFER/CASH with 400. `PaymentConfigService.uploadQrImage` merges the
+    new `qrImageUrl` into the method's existing `details` (doesn't clobber
+    `phoneNumber`/`accountHolder`) and deletes the previous QR object from the
+    bucket via `StorageService.deleteImage` when replacing one.
+  - `StorageService.uploadPaymentQrImage` — new method, uploads to the
+    existing public `bucket` (not `paymentBucket`) under a `payment-qr/`
+    prefix, per the plan's explicit "public bucket, not the private proof
+    bucket" decision.
+  - No change needed to `PaymentMethodConfigResponseDto` or the public
+    `findEnabled` endpoint — confirmed both already pass `details` through
+    untouched, exactly as the plan's Context section stated.
+- **OpenAPI/Orval**: ran
+  `pnpm --filter api generate:openapi && pnpm --filter @biasmarket/types generate`
+  and committed the diff. Note for future concurrent-branch work: this
+  regenerates from the *whole* built API, so it captured the other session's
+  in-flight backend changes too, not just this plan's — expected and fine
+  given both sessions were building toward the same shared branch tip.
+- **Frontend — settings UI**
+  (`apps/web/features/store-settings/components/payments-section.tsx`): added
+  a per-method "editar datos" expand row (plain inline expansion, not a
+  `Sheet` — simpler for 3-4 text fields, and the pickup-point plan's Sheet
+  precedent was aimed at a much larger form). TRANSFER shows
+  bank/account/holder/type inputs; YAPE/PLIN show phone/holder + a QR file
+  input with live preview. New `payment-details.schema.ts` (zod,
+  `transferDetailsSchema`/`walletDetailsSchema`) validates client-side before
+  the save call. Two new mutations:
+  `use-save-payment-method-details.ts` (JSON `PATCH`-equivalent via the
+  existing `upsert`) and `use-upload-payment-qr-image.ts` (raw
+  `fetch`/`FormData`, the same documented multipart carve-out as
+  `uploadLogo`/products' image uploads — not routed through the generated
+  Orval client).
+- **Frontend — checkout confirmation**
+  (`checkout-page-client.tsx`): `onOrderCreated`'s payload widened from
+  `{orderId, customerEmail}` to also carry `paymentMethod`, `requiredAmount`,
+  `totalAmount`, `currency`, and `whatsappUrl` — all already present on
+  `CheckoutOrderResponseDto`/`CheckoutResultResponseDto`, so no extra fetch for
+  those. The confirmation screen calls `useDeliveryOptions(slug)` itself
+  (same query key `CheckoutForm` already populated, so this reads cache, not a
+  second network round-trip) to look up the chosen method's `details` and the
+  store's `paymentInstructions`, and renders method-specific instructions
+  (bank fields / phone+QR / a plain cash note), falling back to a
+  "store hasn't configured this yet" notice if `details` is still empty.
+  `Store.paymentInstructions` (previously write-only) now renders whenever
+  non-empty.
+- **WhatsApp-redirect decision, executed as specified**: removed the
+  unconditional `globalThis.location.href = result.whatsappUrl` from
+  `checkout-form.tsx`'s `onSubmit`. The confirmation screen is now always the
+  outcome of a successful checkout; "Contact seller on WhatsApp" renders as an
+  `<a target="_blank">` button only when `whatsappUrl` is present, next to the
+  payment instructions rather than replacing them. Submit button copy changed
+  from "Confirmar y continuar por WhatsApp" (implied an automatic redirect
+  that no longer happens) to "Confirmar pedido" in both locales.
+- **i18n**: new `storefront.json` keys under `checkoutPage`
+  (`confirmationAmountLabel`, `confirmationMethodLabel`,
+  `confirmationBankName/AccountNumber/AccountHolder/AccountType`,
+  `confirmationPhoneNumber`, `confirmationQrAlt`, `confirmationNoDetails`,
+  `confirmationCashNote`, `confirmationStoreInstructionsLabel`,
+  `whatsappButton`) and new `dashboard.json` keys under `settings.payments`
+  (`editDetails`, `hideDetails`, `saveDetails`, `detailsInvalid`, `uploadQr`,
+  `uploading`, `fields.*`) — es + en both.
+- **Testing & verification**:
+  - Added `payment-config.service.spec.ts` cases: TRANSFER/YAPE/PLIN details
+    persistence (success + missing-required-field 400), CASH silently
+    dropping details, and `uploadQrImage` (method-type rejection, detail
+    merge, previous-QR deletion on replace). `pnpm --filter api test`
+    scoped to this file: 14/14 passing.
+  - Updated `checkout-form.test.tsx` and `checkout.api.test.ts`: both mock
+    `apiClient.stores.findPublic` now (called by `getDeliveryOptions` on every
+    mount), widened the `onOrderCreated` assertion in the pickup/TRANSFER test
+    to the new payload shape, added a `storePaymentInstructions` assertion,
+    and updated all "Confirmar y continuar" button-name matchers to "Confirmar
+    pedido". `pnpm exec vitest run features/checkout features/store-settings`
+    scoped to `apps/web`: 46/46 passing.
+  - **`pnpm --filter api test` (whole suite) and `pnpm typecheck` both
+    currently fail on this branch — confirmed, before and independent of this
+    plan's changes, entirely inside files the concurrent session was mid-way
+    through** (`customer-auth`, `stats`, `orders/customers`,
+    `orders/review-payment`, `stores.service.spec.ts` on the test side;
+    `account-order-detail.tsx`/`contact-seller-button.tsx` missing i18n keys
+    on the typecheck side). Verified by `git status` that every failing
+    file is untracked or modified by that other work, not this one, and by
+    scoping `tsc --noEmit`/`vitest run` to this plan's own touched files,
+    which pass cleanly. Left as-is rather than fixed, since fixing would mean
+    editing code mid-flight in another session's shared working tree.

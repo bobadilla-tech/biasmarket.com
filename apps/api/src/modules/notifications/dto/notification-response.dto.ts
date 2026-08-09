@@ -9,8 +9,10 @@ export class NotificationResponseDto {
   @ApiProperty()
   storeId: string;
 
-  @ApiProperty({ enum: ["LOW_STOCK", "OUT_OF_STOCK"] })
-  type: "LOW_STOCK" | "OUT_OF_STOCK";
+  @ApiProperty({
+    enum: ["LOW_STOCK", "OUT_OF_STOCK", "PAYMENT_PROOF_SUBMITTED"],
+  })
+  type: "LOW_STOCK" | "OUT_OF_STOCK" | "PAYMENT_PROOF_SUBMITTED";
 
   @ApiProperty()
   entityType: string;

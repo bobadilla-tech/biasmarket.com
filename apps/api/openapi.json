@@ -1403,6 +1403,62 @@
         ]
       }
     },
+    "/stores/{storeId}/orders/{orderId}/payments/{paymentId}/review": {
+      "patch": {
+        "operationId": "OrderController_reviewPaymentProof",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "paymentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewPaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDetailResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Order"
+        ]
+      }
+    },
     "/stores/{storeId}/orders/{orderId}/review": {
       "patch": {
         "operationId": "OrderController_review",
@@ -1693,6 +1749,97 @@
         },
         "tags": [
           "Customers"
+        ]
+      }
+    },
+    "/stores/{slug}/account/orders/{orderId}/payments": {
+      "post": {
+        "operationId": "CustomerOrderPaymentsController_submit",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderPaymentResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "CustomerOrderPayments"
+        ]
+      }
+    },
+    "/stores/{slug}/account/orders/{orderId}/payments/{paymentId}/image": {
+      "get": {
+        "operationId": "CustomerOrderPaymentsController_getImage",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "paymentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "CustomerOrderPayments"
         ]
       }
     },
@@ -2085,6 +2232,44 @@
             }
           }
         },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethodConfigResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "PaymentConfig"
+        ]
+      }
+    },
+    "/stores/{storeId}/payment-methods/{method}/qr-image": {
+      "post": {
+        "operationId": "PaymentConfigController_uploadQrImage",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "method",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "201": {
             "description": "",
@@ -3236,6 +3421,44 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UpdateCustomerProfileResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "CustomerAuth"
+        ]
+      }
+    },
+    "/stores/{slug}/account/orders/{orderId}": {
+      "get": {
+        "operationId": "CustomerAuthController_orderDetail",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDetailResponseDto"
                 }
               }
             }
@@ -5038,7 +5261,8 @@
           "type": {
             "enum": [
               "LOW_STOCK",
-              "OUT_OF_STOCK"
+              "OUT_OF_STOCK",
+              "PAYMENT_PROOF_SUBMITTED"
             ],
             "type": "string"
           },
@@ -5337,6 +5561,31 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "source": {
+            "enum": [
+              "SELLER_RECORDED",
+              "BUYER_SUBMITTED"
+            ],
+            "type": "string"
+          },
+          "reviewStatus": {
+            "enum": [
+              "N_A",
+              "PENDING_REVIEW",
+              "APPROVED",
+              "REJECTED"
+            ],
+            "type": "string"
+          },
+          "reviewedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "reviewedBy": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
@@ -5348,7 +5597,11 @@
           "method",
           "note",
           "imageUrl",
-          "createdAt"
+          "createdAt",
+          "source",
+          "reviewStatus",
+          "reviewedAt",
+          "reviewedBy"
         ]
       },
       "OrderResponseDto": {
@@ -5731,11 +5984,11 @@
         "type": "object",
         "properties": {
           "decision": {
-            "type": "string",
             "enum": [
               "approve",
               "reject"
-            ]
+            ],
+            "type": "string"
           },
           "reason": {
             "type": "string",
@@ -6726,6 +6979,30 @@
           "createdAt"
         ]
       },
+      "PaymentMethodDetailsDto": {
+        "type": "object",
+        "properties": {
+          "bankName": {
+            "type": "string"
+          },
+          "accountNumber": {
+            "type": "string"
+          },
+          "accountHolder": {
+            "type": "string"
+          },
+          "accountType": {
+            "type": "string"
+          },
+          "phoneNumber": {
+            "type": "string"
+          },
+          "qrImageUrl": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
       "UpsertPaymentMethodDto": {
         "type": "object",
         "properties": {
@@ -6740,6 +7017,9 @@
           },
           "enabled": {
             "type": "boolean"
+          },
+          "details": {
+            "$ref": "#/components/schemas/PaymentMethodDetailsDto"
           }
         },
         "required": [

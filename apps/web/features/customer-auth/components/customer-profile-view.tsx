@@ -6,6 +6,7 @@ import type { CustomerProfileResponseDto } from "@biasmarket/types";
 import { useCustomerLogout } from "../mutations/use-customer-logout";
 import { type AccountSection, AccountSidebar } from "./account-sidebar";
 import { AccountOrdersSection } from "./account-orders-section";
+import { AccountAddressesSection } from "./account-addresses-section";
 import { AccountProfileSection } from "./account-profile-section";
 
 export function CustomerProfileView(
@@ -32,9 +33,13 @@ export function CustomerProfileView(
           logoutPending={logout.isPending}
         />
         <main className="flex-1 px-6 py-6 md:px-0 md:py-0">
-          {section === "orders"
-            ? <AccountOrdersSection profile={profile} />
-            : <AccountProfileSection slug={slug} profile={profile} />}
+          {section === "orders" && (
+            <AccountOrdersSection slug={slug} profile={profile} />
+          )}
+          {section === "addresses" && <AccountAddressesSection slug={slug} />}
+          {section === "profile" && (
+            <AccountProfileSection slug={slug} profile={profile} />
+          )}
         </main>
       </div>
     </div>

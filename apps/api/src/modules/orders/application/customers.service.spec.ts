@@ -97,8 +97,18 @@ describe("CustomersService", () => {
         },
       ]);
       prisma.orderPayment.findMany.mockResolvedValue([
-        { amount: 50, order: { customerId: "customer-1" } },
-        { amount: 30, order: { customerId: "customer-1" } },
+        {
+          amount: 50,
+          source: "SELLER_RECORDED",
+          reviewStatus: "N_A",
+          order: { customerId: "customer-1" },
+        },
+        {
+          amount: 30,
+          source: "SELLER_RECORDED",
+          reviewStatus: "N_A",
+          order: { customerId: "customer-1" },
+        },
       ]);
 
       const result = await service.findAllForStore(storeId, ownerId);
@@ -139,6 +149,7 @@ describe("CustomersService", () => {
         where: {
           storeId,
           order: { paymentStatus: "VERIFIED", customerId: { not: null } },
+          OR: [{ source: "SELLER_RECORDED" }, { reviewStatus: "APPROVED" }],
         },
         select: { amount: true, order: { select: { customerId: true } } },
       });
@@ -157,7 +168,11 @@ describe("CustomersService", () => {
           customerEmail: null,
           paymentStatus: "VERIFIED",
           createdAt: new Date("2026-03-01"),
-          payments: [{ amount: new Prisma.Decimal(40) }],
+          payments: [{
+            amount: new Prisma.Decimal(40),
+            source: "SELLER_RECORDED",
+            reviewStatus: "N_A",
+          }],
         },
         {
           customerPhone: "51987654321",
@@ -173,7 +188,11 @@ describe("CustomersService", () => {
           customerEmail: null,
           paymentStatus: "VERIFIED",
           createdAt: new Date("2026-02-01"),
-          payments: [{ amount: new Prisma.Decimal(10) }],
+          payments: [{
+            amount: new Prisma.Decimal(10),
+            source: "SELLER_RECORDED",
+            reviewStatus: "N_A",
+          }],
         },
       ]);
 
@@ -211,6 +230,38 @@ describe("CustomersService", () => {
       ]);
     });
 
+    it("excludes a PENDING_REVIEW buyer-submitted payment from guest lifetimeSpend", async () => {
+      prisma.customer.findMany.mockResolvedValue([]);
+      prisma.order.groupBy.mockResolvedValue([]);
+      prisma.orderPayment.findMany.mockResolvedValue([]);
+      prisma.order.findMany.mockResolvedValue([
+        {
+          customerPhone: "+51987654321",
+          customerName: "Ana",
+          customerEmail: null,
+          paymentStatus: "VERIFIED",
+          createdAt: new Date("2026-03-01"),
+          payments: [
+            {
+              amount: new Prisma.Decimal(40),
+              source: "SELLER_RECORDED",
+              reviewStatus: "N_A",
+            },
+            {
+              amount: new Prisma.Decimal(1000),
+              source: "BUYER_SUBMITTED",
+              reviewStatus: "PENDING_REVIEW",
+            },
+          ],
+        },
+      ]);
+
+      const result = await service.findAllForStore(storeId, ownerId);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].lifetimeSpend).toBe(40);
+    });
+
     it("folds guest orders into an existing customer row with the same phone", async () => {
       prisma.customer.findMany.mockResolvedValue([
         {
@@ -230,7 +281,12 @@ describe("CustomersService", () => {
         },
       ]);
       prisma.orderPayment.findMany.mockResolvedValue([
-        { amount: 30, order: { customerId: "customer-1" } },
+        {
+          amount: 30,
+          source: "SELLER_RECORDED",
+          reviewStatus: "N_A",
+          order: { customerId: "customer-1" },
+        },
       ]);
       prisma.order.findMany.mockResolvedValue([
         {
@@ -239,7 +295,11 @@ describe("CustomersService", () => {
           customerEmail: null,
           paymentStatus: "VERIFIED",
           createdAt: new Date("2026-06-01"),
-          payments: [{ amount: new Prisma.Decimal(20) }],
+          payments: [{
+            amount: new Prisma.Decimal(20),
+            source: "SELLER_RECORDED",
+            reviewStatus: "N_A",
+          }],
         },
       ]);
 
@@ -283,7 +343,11 @@ describe("CustomersService", () => {
         {
           id: "order-1",
           requiredAmount: new Prisma.Decimal(100),
-          payments: [{ amount: new Prisma.Decimal(40) }],
+          payments: [{
+            amount: new Prisma.Decimal(40),
+            source: "SELLER_RECORDED",
+            reviewStatus: "N_A",
+          }],
         },
       ]);
 
@@ -318,7 +382,11 @@ describe("CustomersService", () => {
           customerEmail: "ana@example.com",
           requiredAmount: new Prisma.Decimal(100),
           createdAt: new Date("2026-03-01"),
-          payments: [{ amount: new Prisma.Decimal(40) }],
+          payments: [{
+            amount: new Prisma.Decimal(40),
+            source: "SELLER_RECORDED",
+            reviewStatus: "N_A",
+          }],
         },
         {
           id: "order-g2",
@@ -397,7 +465,11 @@ describe("CustomersService", () => {
         {
           id: "order-1",
           requiredAmount: new Prisma.Decimal(100),
-          payments: [{ amount: new Prisma.Decimal(40) }],
+          payments: [{
+            amount: new Prisma.Decimal(40),
+            source: "SELLER_RECORDED",
+            reviewStatus: "N_A",
+          }],
         },
       ]);
 

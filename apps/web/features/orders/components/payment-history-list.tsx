@@ -4,10 +4,38 @@ import { Receipt } from "lucide-react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { Button } from "@/components/ui/button";
 import { formatOrderDate } from "../lib/order-format";
 import { paymentMethodLabels } from "../lib/payment-method-labels";
 import { ordersApi } from "../api/orders.api";
+import { useReviewPaymentProof } from "../mutations/use-review-payment-proof";
 import type { OrderPaymentResponseDto } from "@biasmarket/types";
+
+function ProofReviewBadge(
+  { reviewStatus, t }: {
+    reviewStatus: OrderPaymentResponseDto["reviewStatus"];
+    t: ReturnType<typeof useTranslations<"dashboard.orders">>;
+  },
+) {
+  const styles: Record<string, string> = {
+    PENDING_REVIEW: "bg-amber-50 text-amber-600",
+    APPROVED: "bg-emerald-50 text-emerald-600",
+    REJECTED: "bg-rose-50 text-rose-600",
+  };
+  const style = styles[reviewStatus];
+  if (!style) return null;
+  return (
+    <span
+      className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${style}`}
+    >
+      {t(`proofReview.${reviewStatus === "PENDING_REVIEW"
+        ? "pending"
+        : reviewStatus === "APPROVED"
+        ? "approved"
+        : "rejected"}`)}
+    </span>
+  );
+}
 
 // Tiny inline logo for the branded methods (Yape/Plin); TRANSFER/CASH have no
 // brand asset and stay text-only. Decorative next to the text label, so
@@ -33,6 +61,8 @@ export function PaymentHistoryList({
   const { locale } = useParams<{ locale: string }>();
 
   const labels = paymentMethodLabels(t);
+  const storeId = payments[0]?.storeId ?? "";
+  const reviewProof = useReviewPaymentProof(storeId);
 
   if (payments.length === 0) return null;
 
@@ -83,11 +113,11 @@ export function PaymentHistoryList({
                 )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-bold text-[#2d1649]">
+                  <span className="flex flex-wrap items-center gap-1.5 font-bold text-[#2d1649]">
                     {currency} {payment.amount}
                     {payment.method
                       ? (
-                        <span className="ml-1 inline-flex items-center gap-1 font-medium text-[#8f7da8]">
+                        <span className="inline-flex items-center gap-1 font-medium text-[#8f7da8]">
                           <span aria-hidden="true">·</span>
                           {methodLogo && (
                             <Image
@@ -102,6 +132,12 @@ export function PaymentHistoryList({
                         </span>
                       )
                       : null}
+                    {payment.source === "BUYER_SUBMITTED" && (
+                      <ProofReviewBadge
+                        reviewStatus={payment.reviewStatus}
+                        t={t}
+                      />
+                    )}
                   </span>
                   <span className="text-[11px] font-medium text-[#8f7da8]">
                     {formatOrderDate(payment.createdAt, locale, t)}
@@ -114,6 +150,40 @@ export function PaymentHistoryList({
                     </p>
                   )
                   : null}
+                {payment.source === "BUYER_SUBMITTED" &&
+                  payment.reviewStatus === "PENDING_REVIEW" && (
+                  <div className="mt-2 flex gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={reviewProof.isPending}
+                      onClick={() =>
+                        reviewProof.mutate({
+                          orderId: payment.orderId,
+                          paymentId: payment.id,
+                          decision: "approve",
+                        })}
+                      className="store-theme-primary-button h-7 rounded-full px-3 text-xs font-semibold hover:opacity-100"
+                    >
+                      {t("approve")}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      disabled={reviewProof.isPending}
+                      onClick={() =>
+                        reviewProof.mutate({
+                          orderId: payment.orderId,
+                          paymentId: payment.id,
+                          decision: "reject",
+                        })}
+                      className="h-7 rounded-full px-3 text-xs font-semibold text-[#b24368] hover:bg-[#fff0f5]"
+                    >
+                      {t("reject")}
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           );

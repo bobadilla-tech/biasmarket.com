@@ -100,6 +100,32 @@ export const addPayment = async (
   );
 };
 
+export const getReviewPaymentProofUrl = (
+  storeId: string,
+  orderId: string,
+  paymentId: string,
+) => {
+  return `/stores/${storeId}/orders/${orderId}/payments/${paymentId}/review`;
+};
+
+export const reviewPaymentProof = async (
+  storeId: string,
+  orderId: string,
+  paymentId: string,
+  reviewPaymentDto: ReviewPaymentDto,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OrderDetailResponseDto> => {
+  return customFetch<OrderDetailResponseDto>(
+    getReviewPaymentProofUrl(storeId, orderId, paymentId),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(reviewPaymentDto),
+    },
+  );
+};
+
 export const getReviewUrl = (storeId: string, orderId: string) => {
   return `/stores/${storeId}/orders/${orderId}/review`;
 };

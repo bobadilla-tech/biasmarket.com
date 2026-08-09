@@ -295,11 +295,33 @@ model OrderPayment {
   note      String?
   imageUrl  String?
   createdAt DateTime           @default(now())
+  // Buyer-submitted proof-of-payment upload — see
+  // docs/plans/2026-08-08-buyer-proof-of-payment-upload-plan.md. `source`
+  // distinguishes who created the row; `reviewStatus` gates whether it
+  // counts toward `paidAmount` (see common/payment-summary.ts's
+  // `countsTowardPaid` — the single source of truth for this filter, reused
+  // by every aggregation call site so this invariant can't drift per-site).
+  source       PaymentSource       @default(SELLER_RECORDED)
+  reviewStatus PaymentReviewStatus @default(N_A)
+  reviewedAt   DateTime?
+  reviewedBy   String?
 
   order Order @relation(fields: [orderId], references: [id])
 
   @@index([orderId, createdAt])
   @@index([storeId, createdAt])
+}
+
+enum PaymentSource {
+  SELLER_RECORDED
+  BUYER_SUBMITTED
+}
+
+enum PaymentReviewStatus {
+  N_A
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
 }
 
 enum PaymentStatus {
@@ -483,7 +505,14 @@ model Address {
   isDefault      Boolean  @default(false)
   createdAt      DateTime @default(now())
 
-  buyerAccount BuyerAccount @relation(fields: [buyerAccountId], references: [id])
+  // Explicit onDelete: Cascade — matches the actually-applied FK from
+  // 20260809230000_add_buyer_shipping_addresses (deleting a BuyerAccount
+  // should delete their saved addresses with it). Was previously left
+  // implicit here, which defaults to RESTRICT and drifted from the real DB
+  // constraint — discovered because `prisma migrate dev` for this plan's own
+  // migration tried to "fix" the drift by silently flipping the live FK to
+  // RESTRICT. Pinned explicitly now so that can't happen again.
+  buyerAccount BuyerAccount @relation(fields: [buyerAccountId], references: [id], onDelete: Cascade)
 
   @@index([buyerAccountId])
 }
@@ -525,6 +554,7 @@ model ContactInquiry {
 enum NotificationType {
   LOW_STOCK
   OUT_OF_STOCK
+  PAYMENT_PROOF_SUBMITTED
 }
 
 model Notification {

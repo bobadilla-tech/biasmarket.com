@@ -4,10 +4,14 @@ import type { ShippingAddressDto } from "@biasmarket/types";
 
 export const checkoutApi = {
   async getDeliveryOptions(slug: string) {
-    const [methods, pickupPoints, paymentMethods] = await Promise.all([
+    const [methods, pickupPoints, paymentMethods, store] = await Promise.all([
       apiClient.publicDeliveryConfig.findEnabled(slug),
       apiClient.publicPickupPoints.findEnabled(slug),
+      // Already carries each method's structured `details` (bank account /
+      // Yape-Plin number + QR) — the checkout confirmation screen reads this
+      // same cached query instead of doing a second fetch.
       apiClient.publicPaymentConfig.findEnabled(slug),
+      apiClient.stores.findPublic(slug),
     ]);
     return {
       methods,
@@ -17,6 +21,7 @@ export const checkoutApi = {
       // never diverges between browser and API.
       weekday: pickupPoints.weekday,
       paymentMethods,
+      storePaymentInstructions: store.paymentInstructions,
     };
   },
 

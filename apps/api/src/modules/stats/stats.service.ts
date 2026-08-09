@@ -9,7 +9,10 @@ import type {
   PaymentMethodType,
   PaymentStatus,
 } from "@biasmarket/db";
-import { withPaymentSummary } from "../../common/payment-summary.js";
+import {
+  countsTowardPaid,
+  withPaymentSummary,
+} from "../../common/payment-summary.js";
 import { PrismaService } from "../../prisma/prisma.service.js";
 import { buildBuckets } from "./analytics-buckets.js";
 import type {
@@ -72,7 +75,15 @@ export class StatsService {
       recentOrdersRaw,
     ] = await Promise.all([
       this.prisma.orderPayment.aggregate({
-        where: { storeId, order: { paymentStatus: "VERIFIED" } },
+        where: {
+          storeId,
+          order: { paymentStatus: "VERIFIED" },
+          // Excludes a buyer-submitted proof still awaiting seller review —
+          // see common/payment-summary.ts's `countsTowardPaid`, the same
+          // predicate every other revenue/spend aggregate in this codebase
+          // filters by.
+          OR: [{ source: "SELLER_RECORDED" }, { reviewStatus: "APPROVED" }],
+        },
         _sum: { amount: true },
       }),
       this.prisma.order.groupBy({
@@ -151,7 +162,9 @@ export class StatsService {
           customerId: true,
           createdAt: true,
           paymentStatus: true,
-          payments: { select: { amount: true } },
+          payments: {
+            select: { amount: true, source: true, reviewStatus: true },
+          },
         },
       }),
       this.prisma.order.findMany({
@@ -193,7 +206,7 @@ export class StatsService {
         .reduce(
           (sum, order) =>
             sum.plus(
-              order.payments.reduce(
+              order.payments.filter(countsTowardPaid).reduce(
                 (s, p) => s.plus(p.amount),
                 new Prisma.Decimal(0),
               ),

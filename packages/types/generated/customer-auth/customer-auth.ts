@@ -11,6 +11,7 @@ import type {
   ForgotPasswordDto,
   LoginCustomerDto,
   OkResponseDto,
+  OrderDetailResponseDto,
   RegisterCustomerDto,
   UpdateCustomerProfileDto,
   UpdateCustomerProfileResponseDto,
@@ -114,6 +115,21 @@ export const updateMe = async (
     method: "PATCH",
     headers: { "Content-Type": "application/json", ...options?.headers },
     body: JSON.stringify(updateCustomerProfileDto),
+  });
+};
+
+export const getOrderDetailUrl = (slug: string, orderId: string) => {
+  return `/stores/${slug}/account/orders/${orderId}`;
+};
+
+export const orderDetail = async (
+  slug: string,
+  orderId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OrderDetailResponseDto> => {
+  return customFetch<OrderDetailResponseDto>(getOrderDetailUrl(slug, orderId), {
+    ...options,
+    method: "GET",
   });
 };
 
