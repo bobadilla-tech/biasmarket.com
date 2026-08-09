@@ -187,4 +187,3 @@ the WhatsApp-templates plan) going forward.
   - Added unit test cases for updating `locale` and social links in `stores.service.spec.ts`.
   - Ran `pnpm --filter api test`: all 381 tests across 43 test files passed cleanly.
   - Ran `pnpm typecheck`: typecheck passed cleanly with zero errors across all monorepo packages.
-
