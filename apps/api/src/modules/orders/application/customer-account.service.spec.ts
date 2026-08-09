@@ -14,6 +14,8 @@ describe("CustomerAccountService", () => {
   let service: CustomerAccountService;
   let prisma: {
     customer: { findUnique: Mock; create: Mock; update: Mock };
+    buyerAccount: { findUnique: Mock; create: Mock; update: Mock };
+    customerStoreLink: { upsert: Mock };
     order: { findMany: Mock };
     store: { findUnique: Mock };
   };
@@ -27,6 +29,8 @@ describe("CustomerAccountService", () => {
 
     prisma = {
       customer: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
+      buyerAccount: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
+      customerStoreLink: { upsert: vi.fn() },
       order: { findMany: vi.fn() },
       store: { findUnique: vi.fn().mockResolvedValue(store) },
     };
@@ -44,14 +48,21 @@ describe("CustomerAccountService", () => {
   });
 
   describe("findOrCreateCustomer", () => {
-    it("creates a new unverified customer when none exists for the phone", async () => {
+    it("creates a new BuyerAccount, links the store, and creates the per-store Customer projection", async () => {
+      prisma.buyerAccount.findUnique.mockResolvedValue(null);
+      const buyerAccount = {
+        id: "buyer-1",
+        email: "jane@example.com",
+        emailVerified: false,
+      };
+      prisma.buyerAccount.create.mockResolvedValue(buyerAccount);
       prisma.customer.findUnique.mockResolvedValue(null);
-      const created = {
+      const customer = {
         id: "customer-1",
         email: "jane@example.com",
         emailVerified: false,
       };
-      prisma.customer.create.mockResolvedValue(created);
+      prisma.customer.create.mockResolvedValue(customer);
 
       const result = await service.findOrCreateCustomer(
         prisma as never,
@@ -61,6 +72,24 @@ describe("CustomerAccountService", () => {
         "Jane",
       );
 
+      expect(prisma.buyerAccount.create).toHaveBeenCalledWith({
+        data: {
+          phone: "+51988888888",
+          email: "jane@example.com",
+          name: "Jane",
+          emailVerified: false,
+        },
+      });
+      expect(prisma.customerStoreLink.upsert).toHaveBeenCalledWith({
+        where: {
+          buyerAccountId_storeId: {
+            buyerAccountId: "buyer-1",
+            storeId: store.id,
+          },
+        },
+        create: { buyerAccountId: "buyer-1", storeId: store.id },
+        update: {},
+      });
       expect(prisma.customer.create).toHaveBeenCalledWith({
         data: {
           storeId: store.id,
@@ -71,12 +100,19 @@ describe("CustomerAccountService", () => {
         },
       });
       expect(result).toEqual({
-        customer: created,
+        customer,
+        buyerAccount,
         needsVerificationEmail: true,
       });
     });
 
-    it("normalizes a differently-formatted phone before the lookup and the create", async () => {
+    it("normalizes a differently-formatted phone before every lookup and write", async () => {
+      prisma.buyerAccount.findUnique.mockResolvedValue(null);
+      prisma.buyerAccount.create.mockResolvedValue({
+        id: "buyer-1",
+        email: "jane@example.com",
+        emailVerified: false,
+      });
       prisma.customer.findUnique.mockResolvedValue(null);
       prisma.customer.create.mockResolvedValue({
         id: "customer-1",
@@ -92,29 +128,31 @@ describe("CustomerAccountService", () => {
         "Jane",
       );
 
+      expect(prisma.buyerAccount.findUnique).toHaveBeenCalledWith({
+        where: { phone: "+51988888888" },
+      });
       expect(prisma.customer.findUnique).toHaveBeenCalledWith({
         where: {
           storeId_phone: { storeId: store.id, phone: "+51988888888" },
         },
       });
-      expect(prisma.customer.create).toHaveBeenCalledWith({
-        data: {
-          storeId: store.id,
-          phone: "+51988888888",
-          email: "jane@example.com",
-          name: "Jane",
-          emailVerified: false,
-        },
-      });
     });
 
-    it("returns the existing customer without an update when email matches and is verified", async () => {
-      const existing = {
-        id: "customer-1",
+    it("reuses an existing verified BuyerAccount as-is, but still upserts the per-store Customer projection", async () => {
+      const buyerAccount = {
+        id: "buyer-1",
         email: "jane@example.com",
         emailVerified: true,
       };
-      prisma.customer.findUnique.mockResolvedValue(existing);
+      prisma.buyerAccount.findUnique.mockResolvedValue(buyerAccount);
+      const existingCustomer = { id: "customer-1", storeId: store.id };
+      prisma.customer.findUnique.mockResolvedValue(existingCustomer);
+      const updatedCustomer = {
+        ...existingCustomer,
+        email: "jane@example.com",
+        emailVerified: true,
+      };
+      prisma.customer.update.mockResolvedValue(updatedCustomer);
 
       const result = await service.findOrCreateCustomer(
         prisma as never,
@@ -124,22 +162,33 @@ describe("CustomerAccountService", () => {
         "Jane",
       );
 
-      expect(prisma.customer.update).not.toHaveBeenCalled();
+      expect(prisma.buyerAccount.update).not.toHaveBeenCalled();
+      expect(prisma.customer.update).toHaveBeenCalledWith({
+        where: { id: "customer-1" },
+        data: { email: "jane@example.com", name: "Jane", emailVerified: true },
+      });
       expect(result).toEqual({
-        customer: existing,
+        customer: updatedCustomer,
+        buyerAccount,
         needsVerificationEmail: false,
       });
     });
 
     it("re-sends verification when the same unverified email checks out again", async () => {
       const existing = {
-        id: "customer-1",
+        id: "buyer-1",
         email: "jane@example.com",
         emailVerified: false,
       };
       const updated = { ...existing, emailVerified: false };
-      prisma.customer.findUnique.mockResolvedValue(existing);
-      prisma.customer.update.mockResolvedValue(updated);
+      prisma.buyerAccount.findUnique.mockResolvedValue(existing);
+      prisma.buyerAccount.update.mockResolvedValue(updated);
+      prisma.customer.findUnique.mockResolvedValue(null);
+      prisma.customer.create.mockResolvedValue({
+        id: "customer-1",
+        email: "jane@example.com",
+        emailVerified: false,
+      });
 
       const result = await service.findOrCreateCustomer(
         prisma as never,
@@ -149,23 +198,21 @@ describe("CustomerAccountService", () => {
         "Jane",
       );
 
-      expect(prisma.customer.update).toHaveBeenCalledWith({
-        where: { id: "customer-1" },
+      expect(prisma.buyerAccount.update).toHaveBeenCalledWith({
+        where: { id: "buyer-1" },
         data: { email: "jane@example.com", emailVerified: false },
       });
-      expect(result).toEqual({
-        customer: updated,
-        needsVerificationEmail: true,
-      });
+      expect(result.buyerAccount).toEqual(updated);
+      expect(result.needsVerificationEmail).toBe(true);
     });
 
-    it("does not touch a verified customer when a different email is submitted for the same phone", async () => {
+    it("does not create a link or touch anything when a different email is submitted for a verified account (identity mismatch guard)", async () => {
       const existing = {
-        id: "customer-1",
+        id: "buyer-1",
         email: "jane@example.com",
         emailVerified: true,
       };
-      prisma.customer.findUnique.mockResolvedValue(existing);
+      prisma.buyerAccount.findUnique.mockResolvedValue(existing);
 
       const result = await service.findOrCreateCustomer(
         prisma as never,
@@ -175,18 +222,24 @@ describe("CustomerAccountService", () => {
         "Attacker",
       );
 
-      expect(prisma.customer.update).not.toHaveBeenCalled();
+      expect(prisma.buyerAccount.update).not.toHaveBeenCalled();
+      expect(prisma.customerStoreLink.upsert).not.toHaveBeenCalled();
       expect(prisma.customer.create).not.toHaveBeenCalled();
-      expect(result).toEqual({ customer: null, needsVerificationEmail: false });
+      expect(prisma.customer.update).not.toHaveBeenCalled();
+      expect(result).toEqual({
+        customer: null,
+        buyerAccount: null,
+        needsVerificationEmail: false,
+      });
     });
 
-    it("does not touch an unverified customer when a different email is submitted for the same phone", async () => {
+    it("does not create a link or touch anything when a different email is submitted for an unverified account (identity mismatch guard)", async () => {
       const existing = {
-        id: "customer-1",
+        id: "buyer-1",
         email: "jane@example.com",
         emailVerified: false,
       };
-      prisma.customer.findUnique.mockResolvedValue(existing);
+      prisma.buyerAccount.findUnique.mockResolvedValue(existing);
 
       const result = await service.findOrCreateCustomer(
         prisma as never,
@@ -196,18 +249,23 @@ describe("CustomerAccountService", () => {
         "Someone Else",
       );
 
-      expect(prisma.customer.update).not.toHaveBeenCalled();
-      expect(result).toEqual({ customer: null, needsVerificationEmail: false });
+      expect(prisma.buyerAccount.update).not.toHaveBeenCalled();
+      expect(prisma.customerStoreLink.upsert).not.toHaveBeenCalled();
+      expect(result).toEqual({
+        customer: null,
+        buyerAccount: null,
+        needsVerificationEmail: false,
+      });
     });
   });
 
   describe("sendVerificationEmail", () => {
     it("sends an email with a confirm link and never throws on mailer failure", async () => {
       mailer.send.mockRejectedValue(new Error("boom"));
-      const customer = { id: "customer-1", email: "jane@example.com" };
+      const buyerAccount = { id: "buyer-1", email: "jane@example.com" };
 
       await expect(
-        service.sendVerificationEmail(customer as never, store as never),
+        service.sendVerificationEmail(buyerAccount as never, store as never),
       ).resolves.toBeUndefined();
 
       expect(mailer.send).toHaveBeenCalledWith(
@@ -220,10 +278,13 @@ describe("CustomerAccountService", () => {
       );
     });
 
-    it("does nothing when the customer has no email", async () => {
-      const customer = { id: "customer-1", email: null };
+    it("does nothing when the account has no email", async () => {
+      const buyerAccount = { id: "buyer-1", email: null };
 
-      await service.sendVerificationEmail(customer as never, store as never);
+      await service.sendVerificationEmail(
+        buyerAccount as never,
+        store as never,
+      );
 
       expect(mailer.send).not.toHaveBeenCalled();
     });
@@ -239,7 +300,7 @@ describe("CustomerAccountService", () => {
 
     it("throws NotFoundException when the store does not exist", async () => {
       prisma.store.findUnique.mockResolvedValue(null);
-      const token = createCustomerAccountToken("customer-1", "test-secret");
+      const token = createCustomerAccountToken("buyer-1", "test-secret");
 
       await expect(service.confirmAccount("missing-store", token)).rejects
         .toThrow(
@@ -254,11 +315,10 @@ describe("CustomerAccountService", () => {
         );
     });
 
-    it("marks the customer verified and returns their orders for this store", async () => {
-      const token = createCustomerAccountToken("customer-1", "test-secret");
-      const customer = {
-        id: "customer-1",
-        storeId: store.id,
+    it("marks the buyer account verified and returns their orders for this store", async () => {
+      const token = createCustomerAccountToken("buyer-1", "test-secret");
+      const buyerAccount = {
+        id: "buyer-1",
         name: "Jane",
         email: "jane@example.com",
         phone: "+51988888888",
@@ -266,19 +326,24 @@ describe("CustomerAccountService", () => {
         passwordHash: null,
       };
       const orders = [{ id: "order-1", paymentStatus: "PENDING_PAYMENT" }];
-      prisma.customer.findUnique.mockResolvedValue(customer);
-      prisma.customer.update.mockResolvedValue({
-        ...customer,
+      prisma.buyerAccount.findUnique.mockResolvedValue(buyerAccount);
+      prisma.buyerAccount.update.mockResolvedValue({
+        ...buyerAccount,
         emailVerified: true,
       });
       prisma.order.findMany.mockResolvedValue(orders);
 
       const result = await service.confirmAccount(store.slug, token);
 
-      expect(prisma.customer.update).toHaveBeenCalledWith({
-        where: { id: "customer-1" },
+      expect(prisma.buyerAccount.update).toHaveBeenCalledWith({
+        where: { id: "buyer-1" },
         data: { emailVerified: true },
       });
+      expect(prisma.order.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { buyerAccountId: "buyer-1", storeId: store.id },
+        }),
+      );
       expect(result).toEqual({
         purpose: "confirm",
         customer: {
@@ -292,35 +357,33 @@ describe("CustomerAccountService", () => {
     });
 
     it("reports hasPassword: true once a password has been set, without touching emailVerified again", async () => {
-      const token = createCustomerAccountToken("customer-1", "test-secret");
-      const customer = {
-        id: "customer-1",
-        storeId: store.id,
+      const token = createCustomerAccountToken("buyer-1", "test-secret");
+      const buyerAccount = {
+        id: "buyer-1",
         name: "Jane",
         email: "jane@example.com",
         phone: "+51988888888",
         emailVerified: true,
         passwordHash: "already-set",
       };
-      prisma.customer.findUnique.mockResolvedValue(customer);
+      prisma.buyerAccount.findUnique.mockResolvedValue(buyerAccount);
       prisma.order.findMany.mockResolvedValue([]);
 
       const result = await service.confirmAccount(store.slug, token);
 
-      expect(prisma.customer.update).not.toHaveBeenCalled();
+      expect(prisma.buyerAccount.update).not.toHaveBeenCalled();
       expect(result.purpose).toBe("confirm");
       expect(result.customer.hasPassword).toBe(true);
     });
 
     it("applies a pending email for a 'change-email' token", async () => {
       const token = createCustomerAccountToken(
-        "customer-1",
+        "buyer-1",
         "test-secret",
         "change-email",
       );
-      const customer = {
-        id: "customer-1",
-        storeId: store.id,
+      const buyerAccount = {
+        id: "buyer-1",
         name: "Jane",
         email: "old@example.com",
         pendingEmail: "new@example.com",
@@ -328,9 +391,9 @@ describe("CustomerAccountService", () => {
         emailVerified: true,
         passwordHash: "already-set",
       };
-      prisma.customer.findUnique.mockResolvedValue(customer);
-      prisma.customer.update.mockResolvedValue({
-        ...customer,
+      prisma.buyerAccount.findUnique.mockResolvedValue(buyerAccount);
+      prisma.buyerAccount.update.mockResolvedValue({
+        ...buyerAccount,
         email: "new@example.com",
         pendingEmail: null,
       });
@@ -338,8 +401,8 @@ describe("CustomerAccountService", () => {
 
       const result = await service.confirmAccount(store.slug, token);
 
-      expect(prisma.customer.update).toHaveBeenCalledWith({
-        where: { id: "customer-1" },
+      expect(prisma.buyerAccount.update).toHaveBeenCalledWith({
+        where: { id: "buyer-1" },
         data: {
           email: "new@example.com",
           pendingEmail: null,
@@ -352,13 +415,12 @@ describe("CustomerAccountService", () => {
 
     it("applies a pending phone for a 'change-phone' token", async () => {
       const token = createCustomerAccountToken(
-        "customer-1",
+        "buyer-1",
         "test-secret",
         "change-phone",
       );
-      const customer = {
-        id: "customer-1",
-        storeId: store.id,
+      const buyerAccount = {
+        id: "buyer-1",
         name: "Jane",
         email: "jane@example.com",
         phone: "+51900000000",
@@ -366,9 +428,9 @@ describe("CustomerAccountService", () => {
         emailVerified: true,
         passwordHash: "already-set",
       };
-      prisma.customer.findUnique.mockResolvedValue(customer);
-      prisma.customer.update.mockResolvedValue({
-        ...customer,
+      prisma.buyerAccount.findUnique.mockResolvedValue(buyerAccount);
+      prisma.buyerAccount.update.mockResolvedValue({
+        ...buyerAccount,
         phone: "+51900000001",
         pendingPhone: null,
       });
@@ -376,8 +438,8 @@ describe("CustomerAccountService", () => {
 
       const result = await service.confirmAccount(store.slug, token);
 
-      expect(prisma.customer.update).toHaveBeenCalledWith({
-        where: { id: "customer-1" },
+      expect(prisma.buyerAccount.update).toHaveBeenCalledWith({
+        where: { id: "buyer-1" },
         data: { phone: "+51900000001", pendingPhone: null },
       });
       expect(result.purpose).toBe("change-phone");
@@ -386,13 +448,12 @@ describe("CustomerAccountService", () => {
 
     it("normalizes an already-unnormalized pendingPhone when applying it (defense in depth)", async () => {
       const token = createCustomerAccountToken(
-        "customer-1",
+        "buyer-1",
         "test-secret",
         "change-phone",
       );
-      const customer = {
-        id: "customer-1",
-        storeId: store.id,
+      const buyerAccount = {
+        id: "buyer-1",
         name: "Jane",
         email: "jane@example.com",
         phone: "+51900000000",
@@ -400,9 +461,9 @@ describe("CustomerAccountService", () => {
         emailVerified: true,
         passwordHash: "already-set",
       };
-      prisma.customer.findUnique.mockResolvedValue(customer);
-      prisma.customer.update.mockResolvedValue({
-        ...customer,
+      prisma.buyerAccount.findUnique.mockResolvedValue(buyerAccount);
+      prisma.buyerAccount.update.mockResolvedValue({
+        ...buyerAccount,
         phone: "+51900000001",
         pendingPhone: null,
       });
@@ -410,21 +471,20 @@ describe("CustomerAccountService", () => {
 
       await service.confirmAccount(store.slug, token);
 
-      expect(prisma.customer.update).toHaveBeenCalledWith({
-        where: { id: "customer-1" },
+      expect(prisma.buyerAccount.update).toHaveBeenCalledWith({
+        where: { id: "buyer-1" },
         data: { phone: "+51900000001", pendingPhone: null },
       });
     });
 
-    it("rejects a 'change-phone' token when another customer already has that phone", async () => {
+    it("rejects a 'change-phone' token when another buyer account already has that phone", async () => {
       const token = createCustomerAccountToken(
-        "customer-1",
+        "buyer-1",
         "test-secret",
         "change-phone",
       );
-      const customer = {
-        id: "customer-1",
-        storeId: store.id,
+      const buyerAccount = {
+        id: "buyer-1",
         name: "Jane",
         email: "jane@example.com",
         phone: "+51900000000",
@@ -432,9 +492,9 @@ describe("CustomerAccountService", () => {
         emailVerified: true,
         passwordHash: "already-set",
       };
-      const rival = { ...customer, id: "customer-2" };
-      prisma.customer.findUnique
-        .mockResolvedValueOnce(customer)
+      const rival = { ...buyerAccount, id: "buyer-2" };
+      prisma.buyerAccount.findUnique
+        .mockResolvedValueOnce(buyerAccount)
         .mockResolvedValueOnce(rival);
       prisma.order.findMany.mockResolvedValue([]);
 
@@ -442,44 +502,44 @@ describe("CustomerAccountService", () => {
         ConflictException,
       );
 
-      expect(prisma.customer.update).not.toHaveBeenCalled();
-      expect(prisma.customer.findUnique).toHaveBeenCalledWith({
-        where: {
-          storeId_phone: { storeId: store.id, phone: "+51900000001" },
-        },
+      expect(prisma.buyerAccount.update).not.toHaveBeenCalled();
+      expect(prisma.buyerAccount.findUnique).toHaveBeenCalledWith({
+        where: { phone: "+51900000001" },
       });
     });
 
-    it("does not mutate the customer for a 'reset' token", async () => {
+    it("does not mutate the buyer account for a 'reset' token", async () => {
       const token = createCustomerAccountToken(
-        "customer-1",
+        "buyer-1",
         "test-secret",
         "reset",
       );
-      const customer = {
-        id: "customer-1",
-        storeId: store.id,
+      const buyerAccount = {
+        id: "buyer-1",
         name: "Jane",
         email: "jane@example.com",
         phone: "+51988888888",
         emailVerified: true,
         passwordHash: "already-set",
       };
-      prisma.customer.findUnique.mockResolvedValue(customer);
+      prisma.buyerAccount.findUnique.mockResolvedValue(buyerAccount);
       prisma.order.findMany.mockResolvedValue([]);
 
       const result = await service.confirmAccount(store.slug, token);
 
-      expect(prisma.customer.update).not.toHaveBeenCalled();
+      expect(prisma.buyerAccount.update).not.toHaveBeenCalled();
       expect(result.purpose).toBe("reset");
     });
   });
 
   describe("sendPasswordResetEmail", () => {
     it("sends an email with a confirm link", async () => {
-      const customer = { id: "customer-1", email: "jane@example.com" };
+      const buyerAccount = { id: "buyer-1", email: "jane@example.com" };
 
-      await service.sendPasswordResetEmail(customer as never, store as never);
+      await service.sendPasswordResetEmail(
+        buyerAccount as never,
+        store as never,
+      );
 
       expect(mailer.send).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -491,10 +551,13 @@ describe("CustomerAccountService", () => {
       );
     });
 
-    it("does nothing when the customer has no email", async () => {
-      const customer = { id: "customer-1", email: null };
+    it("does nothing when the account has no email", async () => {
+      const buyerAccount = { id: "buyer-1", email: null };
 
-      await service.sendPasswordResetEmail(customer as never, store as never);
+      await service.sendPasswordResetEmail(
+        buyerAccount as never,
+        store as never,
+      );
 
       expect(mailer.send).not.toHaveBeenCalled();
     });
@@ -502,10 +565,10 @@ describe("CustomerAccountService", () => {
 
   describe("sendEmailChangeConfirmation", () => {
     it("sends the confirmation to the new address, not the current one", async () => {
-      const customer = { id: "customer-1", email: "old@example.com" };
+      const buyerAccount = { id: "buyer-1", email: "old@example.com" };
 
       await service.sendEmailChangeConfirmation(
-        customer as never,
+        buyerAccount as never,
         store as never,
         "new@example.com",
       );
@@ -518,10 +581,10 @@ describe("CustomerAccountService", () => {
 
   describe("sendPhoneChangeConfirmation", () => {
     it("sends the confirmation to the current verified email", async () => {
-      const customer = { id: "customer-1", email: "jane@example.com" };
+      const buyerAccount = { id: "buyer-1", email: "jane@example.com" };
 
       await service.sendPhoneChangeConfirmation(
-        customer as never,
+        buyerAccount as never,
         store as never,
       );
 
@@ -530,11 +593,11 @@ describe("CustomerAccountService", () => {
       );
     });
 
-    it("does nothing when the customer has no email on file", async () => {
-      const customer = { id: "customer-1", email: null };
+    it("does nothing when the account has no email on file", async () => {
+      const buyerAccount = { id: "buyer-1", email: null };
 
       await service.sendPhoneChangeConfirmation(
-        customer as never,
+        buyerAccount as never,
         store as never,
       );
 

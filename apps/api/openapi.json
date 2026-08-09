@@ -3276,6 +3276,51 @@
         ]
       }
     },
+    "/account/me": {
+      "get": {
+        "operationId": "GlobalAccountController_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GlobalAccountProfileResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "GlobalAccount"
+        ]
+      }
+    },
+    "/account/orders": {
+      "get": {
+        "operationId": "GlobalAccountController_orders",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GlobalAccountOrderResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "GlobalAccount"
+        ]
+      }
+    },
     "/stores/{slug}/restock-requests": {
       "post": {
         "operationId": "RestockController_create",
@@ -7470,6 +7515,117 @@
           "name",
           "pendingEmail",
           "pendingPhone"
+        ]
+      },
+      "LinkedStoreResponseDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug",
+          "name"
+        ]
+      },
+      "GlobalAccountProfileResponseDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string"
+          },
+          "emailVerified": {
+            "type": "boolean"
+          },
+          "pendingEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "pendingPhone": {
+            "type": "string",
+            "nullable": true
+          },
+          "stores": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LinkedStoreResponseDto"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "email",
+          "phone",
+          "emailVerified",
+          "pendingEmail",
+          "pendingPhone",
+          "stores"
+        ]
+      },
+      "GlobalAccountOrderResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "paymentStatus": {
+            "enum": [
+              "PENDING_PAYMENT",
+              "PARTIALLY_PAID",
+              "PAYMENT_SUBMITTED",
+              "VERIFIED",
+              "REJECTED",
+              "CANCELLED"
+            ],
+            "type": "string"
+          },
+          "fulfillmentStatus": {
+            "enum": [
+              "ORDERING",
+              "IN_TRANSIT",
+              "READY",
+              "COMPLETED"
+            ],
+            "type": "string"
+          },
+          "totalAmount": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "storeSlug": {
+            "type": "string"
+          },
+          "storeName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "paymentStatus",
+          "fulfillmentStatus",
+          "totalAmount",
+          "currency",
+          "createdAt",
+          "storeSlug",
+          "storeName"
         ]
       },
       "CreateRestockRequestDto": {

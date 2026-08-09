@@ -97,12 +97,12 @@ export class CustomerAuthController {
   @UseGuards(CustomerSessionGuard, OriginGuard)
   @Post("change-password")
   async changePassword(
-    @CustomerSession() session: { id: string; storeId: string },
+    @CustomerSession() session: { buyerAccountId: string },
     @Body() dto: ChangeCustomerPasswordDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<OkResponseDto> {
     const token = await this.customerAuth.changePassword(
-      session.id,
+      session.buyerAccountId,
       dto.currentPassword,
       dto.newPassword,
     );
@@ -115,7 +115,7 @@ export class CustomerAuthController {
   @Get("me")
   async me(
     @Param("slug") slug: string,
-    @CustomerSession() session: { id: string; storeId: string },
+    @CustomerSession() session: { buyerAccountId: string },
   ): Promise<CustomerProfileResponseDto> {
     const profile = await this.customerAuth.getProfile(slug, session);
     return {
@@ -129,7 +129,7 @@ export class CustomerAuthController {
   @Patch("me")
   updateMe(
     @Param("slug") slug: string,
-    @CustomerSession() session: { id: string; storeId: string },
+    @CustomerSession() session: { buyerAccountId: string },
     @Body() dto: UpdateCustomerProfileDto,
   ): Promise<UpdateCustomerProfileResponseDto> {
     return this.customerAuth.updateProfile(slug, session, dto);

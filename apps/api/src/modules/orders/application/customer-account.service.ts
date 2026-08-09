@@ -5,7 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from "@nestjs/common";
-import type { Customer, Prisma, Store } from "@biasmarket/db";
+import type { BuyerAccount, Customer, Prisma, Store } from "@biasmarket/db";
 import { escapeHtml } from "@biasmarket/utils/strings";
 import { normalizePhone } from "@biasmarket/utils/phone-country";
 import {
@@ -92,92 +92,139 @@ export class CustomerAccountService {
     private mailer: MailerService,
   ) {}
 
+  // Resolves/creates the global `BuyerAccount` for this phone number, then
+  // ensures a `CustomerStoreLink` (this store) and a `Customer` projection
+  // row (the seller-facing "who has bought here" dashboard, decoupled from
+  // auth — see the plan doc's "What happens to Customer") both exist for it.
+  // The identity-mismatch guard now runs against `BuyerAccount` (global)
+  // instead of the old per-store `Customer` check, since the phone number is
+  // now the global identity key.
   async findOrCreateCustomer(
     tx: Prisma.TransactionClient | PrismaService,
     storeId: string,
     phone: string,
     email: string,
     name: string | undefined,
-  ): Promise<{ customer: Customer | null; needsVerificationEmail: boolean }> {
+  ): Promise<
+    {
+      customer: Customer | null;
+      buyerAccount: BuyerAccount | null;
+      needsVerificationEmail: boolean;
+    }
+  > {
     const normalizedPhone = normalizePhone(phone);
-    const existing = await tx.customer.findUnique({
-      where: { storeId_phone: { storeId, phone: normalizedPhone } },
+    const existing = await tx.buyerAccount.findUnique({
+      where: { phone: normalizedPhone },
     });
 
+    let buyerAccount: BuyerAccount;
+    let needsVerificationEmail: boolean;
+
     if (!existing) {
-      const customer = await tx.customer.create({
+      buyerAccount = await tx.buyerAccount.create({
+        data: { phone: normalizedPhone, email, name, emailVerified: false },
+      });
+      needsVerificationEmail = true;
+    } else if (existing.email !== email) {
+      // Matching phone with a different email than what's on file — could be
+      // a typo, or someone else's checkout using a phone number they know
+      // but don't own the account for. Never mutate an existing buyer's
+      // identity from an unauthenticated checkout request: don't touch
+      // email/emailVerified, don't link this order to their buyerAccountId,
+      // don't create a store link or Customer row, don't send a
+      // verification email. Falls back to a guest order.
+      return { customer: null, buyerAccount: null, needsVerificationEmail: false };
+    } else if (existing.emailVerified) {
+      buyerAccount = existing;
+      needsVerificationEmail = false;
+    } else {
+      buyerAccount = await tx.buyerAccount.update({
+        where: { id: existing.id },
+        data: { email, emailVerified: false },
+      });
+      needsVerificationEmail = true;
+    }
+
+    await tx.customerStoreLink.upsert({
+      where: {
+        buyerAccountId_storeId: { buyerAccountId: buyerAccount.id, storeId },
+      },
+      create: { buyerAccountId: buyerAccount.id, storeId },
+      update: {},
+    });
+
+    const existingCustomer = await tx.customer.findUnique({
+      where: { storeId_phone: { storeId, phone: normalizedPhone } },
+    });
+    const customer = existingCustomer
+      ? await tx.customer.update({
+        where: { id: existingCustomer.id },
+        data: { email, name, emailVerified: buyerAccount.emailVerified },
+      })
+      : await tx.customer.create({
         data: {
           storeId,
           phone: normalizedPhone,
           email,
           name,
-          emailVerified: false,
+          emailVerified: buyerAccount.emailVerified,
         },
       });
-      return { customer, needsVerificationEmail: true };
-    }
 
-    if (existing.email !== email) {
-      // Matching phone with a different email than what's on file — could be
-      // a typo, or someone else's checkout using a phone number they know
-      // but don't own the account for. Never mutate an existing customer's
-      // identity from an unauthenticated checkout request: don't touch
-      // email/emailVerified, don't link this order to their customerId,
-      // don't send a verification email. Falls back to a guest order.
-      return { customer: null, needsVerificationEmail: false };
-    }
-
-    if (existing.emailVerified) {
-      return { customer: existing, needsVerificationEmail: false };
-    }
-
-    const customer = await tx.customer.update({
-      where: { id: existing.id },
-      data: { email, emailVerified: false },
-    });
-    return { customer, needsVerificationEmail: true };
+    return { customer, buyerAccount, needsVerificationEmail };
   }
 
-  async sendVerificationEmail(customer: Customer, store: Store): Promise<void> {
-    if (!customer.email) return;
+  async sendVerificationEmail(
+    buyerAccount: BuyerAccount,
+    store: Store,
+  ): Promise<void> {
+    if (!buyerAccount.email) return;
 
     try {
       const secret = requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET");
-      const token = createCustomerAccountToken(customer.id, secret, "confirm");
+      const token = createCustomerAccountToken(
+        buyerAccount.id,
+        secret,
+        "confirm",
+      );
       const url = this.confirmUrl(store.slug, token);
 
       await this.mailer.send({
-        to: customer.email,
+        to: buyerAccount.email,
         subject: "Confirma tu cuenta — Bias Market / Confirm your account",
         html: buildCustomerVerificationEmailHtml(url, store.name),
       });
     } catch (err) {
       this.logger.error(
-        `Failed to send customer verification email for ${customer.id}`,
+        `Failed to send customer verification email for ${buyerAccount.id}`,
         err,
       );
     }
   }
 
   async sendPasswordResetEmail(
-    customer: Customer,
+    buyerAccount: BuyerAccount,
     store: Store,
   ): Promise<void> {
-    if (!customer.email) return;
+    if (!buyerAccount.email) return;
 
     try {
       const secret = requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET");
-      const token = createCustomerAccountToken(customer.id, secret, "reset");
+      const token = createCustomerAccountToken(
+        buyerAccount.id,
+        secret,
+        "reset",
+      );
       const url = this.confirmUrl(store.slug, token);
 
       await this.mailer.send({
-        to: customer.email,
+        to: buyerAccount.email,
         subject: "Restablece tu contraseña — Bias Market / Reset your password",
         html: buildPasswordResetEmailHtml(url, store.name),
       });
     } catch (err) {
       this.logger.error(
-        `Failed to send password reset email for ${customer.id}`,
+        `Failed to send password reset email for ${buyerAccount.id}`,
         err,
       );
     }
@@ -185,14 +232,14 @@ export class CustomerAccountService {
 
   // Sent to the *new* address — that's what proves ownership of it.
   async sendEmailChangeConfirmation(
-    customer: Customer,
+    buyerAccount: BuyerAccount,
     store: Store,
     newEmail: string,
   ): Promise<void> {
     try {
       const secret = requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET");
       const token = createCustomerAccountToken(
-        customer.id,
+        buyerAccount.id,
         secret,
         "change-email",
       );
@@ -206,7 +253,7 @@ export class CustomerAccountService {
       });
     } catch (err) {
       this.logger.error(
-        `Failed to send email-change confirmation for ${customer.id}`,
+        `Failed to send email-change confirmation for ${buyerAccount.id}`,
         err,
       );
     }
@@ -216,29 +263,29 @@ export class CustomerAccountService {
   // in this app to prove control of the new phone number, so control of the
   // account's existing verified email stands in for it instead.
   async sendPhoneChangeConfirmation(
-    customer: Customer,
+    buyerAccount: BuyerAccount,
     store: Store,
   ): Promise<void> {
-    if (!customer.email) return;
+    if (!buyerAccount.email) return;
 
     try {
       const secret = requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET");
       const token = createCustomerAccountToken(
-        customer.id,
+        buyerAccount.id,
         secret,
         "change-phone",
       );
       const url = this.confirmUrl(store.slug, token);
 
       await this.mailer.send({
-        to: customer.email,
+        to: buyerAccount.email,
         subject:
           "Confirma tu nuevo teléfono — Bias Market / Confirm your new phone",
         html: buildPhoneChangeEmailHtml(url, store.name),
       });
     } catch (err) {
       this.logger.error(
-        `Failed to send phone-change confirmation for ${customer.id}`,
+        `Failed to send phone-change confirmation for ${buyerAccount.id}`,
         err,
       );
     }
@@ -261,41 +308,43 @@ export class CustomerAccountService {
     const verified = verifyCustomerAccountToken(token, secret);
     if (!verified) throw new BadRequestException("Enlace inválido o expirado");
 
-    let customer = await this.prisma.customer.findUnique({
-      where: { id: verified.customerId },
+    let buyerAccount = await this.prisma.buyerAccount.findUnique({
+      where: { id: verified.buyerAccountId },
     });
-    if (!customer || customer.storeId !== store.id) {
+    if (!buyerAccount) {
       throw new BadRequestException("Enlace inválido o expirado");
     }
 
-    if (verified.purpose === "confirm" && !customer.emailVerified) {
-      customer = await this.prisma.customer.update({
-        where: { id: customer.id },
+    if (verified.purpose === "confirm" && !buyerAccount.emailVerified) {
+      buyerAccount = await this.prisma.buyerAccount.update({
+        where: { id: buyerAccount.id },
         data: { emailVerified: true },
       });
-    } else if (verified.purpose === "change-email" && customer.pendingEmail) {
-      customer = await this.prisma.customer.update({
-        where: { id: customer.id },
+    } else if (
+      verified.purpose === "change-email" && buyerAccount.pendingEmail
+    ) {
+      buyerAccount = await this.prisma.buyerAccount.update({
+        where: { id: buyerAccount.id },
         data: {
-          email: customer.pendingEmail,
+          email: buyerAccount.pendingEmail,
           pendingEmail: null,
           emailVerified: true,
         },
       });
-    } else if (verified.purpose === "change-phone" && customer.pendingPhone) {
-      const normalizedPhone = normalizePhone(customer.pendingPhone);
-      const existing = await this.prisma.customer.findUnique({
-        where: {
-          storeId_phone: { storeId: customer.storeId, phone: normalizedPhone },
-        },
+    } else if (
+      verified.purpose === "change-phone" && buyerAccount.pendingPhone
+    ) {
+      const normalizedPhone = normalizePhone(buyerAccount.pendingPhone);
+      const existing = await this.prisma.buyerAccount.findUnique({
+        where: { phone: normalizedPhone },
       });
-      if (existing && existing.id !== customer.id) {
+      if (existing && existing.id !== buyerAccount.id) {
         throw new ConflictException(
           "Ya existe un comprador con ese número de teléfono",
         );
       }
-      customer = await this.prisma.customer.update({
-        where: { id: customer.id },
+      buyerAccount = await this.prisma.buyerAccount.update({
+        where: { id: buyerAccount.id },
         data: {
           phone: normalizedPhone,
           pendingPhone: null,
@@ -304,7 +353,7 @@ export class CustomerAccountService {
     }
 
     const orders = await this.prisma.order.findMany({
-      where: { customerId: customer.id, storeId: store.id },
+      where: { buyerAccountId: buyerAccount.id, storeId: store.id },
       orderBy: { createdAt: "desc" },
       select: {
         id: true,
@@ -319,10 +368,10 @@ export class CustomerAccountService {
     return {
       purpose: verified.purpose,
       customer: {
-        name: customer.name,
-        email: customer.email,
-        phone: customer.phone,
-        hasPassword: Boolean(customer.passwordHash),
+        name: buyerAccount.name,
+        email: buyerAccount.email,
+        phone: buyerAccount.phone,
+        hasPassword: Boolean(buyerAccount.passwordHash),
       },
       orders,
     };

@@ -436,19 +436,24 @@ describe("CreateOrderUseCase", () => {
       expect(customerAccounts.sendVerificationEmail).not.toHaveBeenCalled();
       expect(prisma.order.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ customerId: undefined }),
+          data: expect.objectContaining({
+            customerId: undefined,
+            buyerAccountId: undefined,
+          }),
         }),
       );
     });
 
-    it("links the order to the customer account and sends a verification email for a new/unverified customer", async () => {
+    it("links the order to the buyer account and sends a verification email for a new/unverified account", async () => {
       const customer = {
         id: "customer-1",
         storeId: store.id,
         email: "jane@example.com",
       };
+      const buyerAccount = { id: "buyer-1", email: "jane@example.com" };
       customerAccounts.findOrCreateCustomer.mockResolvedValue({
         customer,
+        buyerAccount,
         needsVerificationEmail: true,
       });
 
@@ -466,11 +471,14 @@ describe("CreateOrderUseCase", () => {
       );
       expect(prisma.order.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ customerId: "customer-1" }),
+          data: expect.objectContaining({
+            customerId: "customer-1",
+            buyerAccountId: "buyer-1",
+          }),
         }),
       );
       expect(customerAccounts.sendVerificationEmail).toHaveBeenCalledWith(
-        customer,
+        buyerAccount,
         store,
       );
     });
@@ -481,8 +489,10 @@ describe("CreateOrderUseCase", () => {
         storeId: store.id,
         email: "jane@example.com",
       };
+      const buyerAccount = { id: "buyer-1", email: "jane@example.com" };
       customerAccounts.findOrCreateCustomer.mockResolvedValue({
         customer,
+        buyerAccount,
         needsVerificationEmail: false,
       });
 
@@ -494,7 +504,10 @@ describe("CreateOrderUseCase", () => {
       expect(customerAccounts.sendVerificationEmail).not.toHaveBeenCalled();
       expect(prisma.order.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ customerId: customer.id }),
+          data: expect.objectContaining({
+            customerId: customer.id,
+            buyerAccountId: buyerAccount.id,
+          }),
         }),
       );
     });
@@ -502,6 +515,7 @@ describe("CreateOrderUseCase", () => {
     it("does not link the order to a customer when the mismatch guard returns null", async () => {
       customerAccounts.findOrCreateCustomer.mockResolvedValue({
         customer: null,
+        buyerAccount: null,
         needsVerificationEmail: false,
       });
 
@@ -513,7 +527,10 @@ describe("CreateOrderUseCase", () => {
       expect(customerAccounts.sendVerificationEmail).not.toHaveBeenCalled();
       expect(prisma.order.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ customerId: undefined }),
+          data: expect.objectContaining({
+            customerId: undefined,
+            buyerAccountId: undefined,
+          }),
         }),
       );
     });

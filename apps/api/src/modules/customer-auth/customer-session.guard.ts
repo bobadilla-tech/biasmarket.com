@@ -10,7 +10,6 @@ import {
   verifyCustomerSessionToken,
 } from "@biasmarket/utils/customer-account-token";
 import { PrismaService } from "../../prisma/prisma.service.js";
-import { derivePasswordVersion } from "./customer-auth.service.js";
 import {
   CUSTOMER_SESSION_COOKIE,
   CUSTOMER_SESSION_TTL_MS,
@@ -32,8 +31,13 @@ function parseCookies(header: string | undefined): Record<string, string> {
   return cookies;
 }
 
+// No `storeId` here — the session identifies a global `BuyerAccount`, not a
+// per-store `Customer`. Any endpoint that needs store scoping does its own
+// explicit check (a `CustomerStoreLink` lookup, or filtering orders by
+// `storeId`) instead of relying on the session for it. See
+// docs/plans/2026-08-08-global-buyer-account-plan.md.
 export interface CustomerSessionRequest extends Request {
-  customerSession: { id: string; storeId: string };
+  customerSession: { buyerAccountId: string };
 }
 
 // Independent of and parallel to the seller AuthGuard
@@ -59,16 +63,15 @@ export class CustomerSessionGuard implements CanActivate {
     const verified = verifyCustomerSessionToken(token, secret);
     if (!verified) throw new UnauthorizedException("Sesión expirada");
 
-    const customer = await this.prisma.customer.findUnique({
-      where: { id: verified.customerId },
+    const buyerAccount = await this.prisma.buyerAccount.findUnique({
+      where: { id: verified.buyerAccountId },
     });
     if (
-      !customer?.passwordHash ||
-      customer.storeId !== verified.storeId ||
-      derivePasswordVersion(customer.passwordHash) !== verified.passwordVersion
+      !buyerAccount?.passwordHash ||
+      buyerAccount.passwordVersion !== verified.passwordVersion
     ) {
-      // Covers: customer deleted, moved store, or (most commonly) password
-      // changed since this token was issued — see derivePasswordVersion.
+      // Covers: account deleted, or (most commonly) password changed since
+      // this token was issued — see BuyerAccount.passwordVersion.
       throw new UnauthorizedException("Sesión expirada");
     }
 
@@ -77,9 +80,8 @@ export class CustomerSessionGuard implements CanActivate {
     // still expires CUSTOMER_SESSION_TTL_MS after its last authenticated
     // request. Deliberate choice, not the only valid one — see the plan doc.
     const fresh = createCustomerSessionToken(
-      customer.id,
-      customer.storeId,
-      verified.passwordVersion,
+      buyerAccount.id,
+      buyerAccount.passwordVersion,
       secret,
     );
     res.cookie(CUSTOMER_SESSION_COOKIE, fresh, {
@@ -91,8 +93,7 @@ export class CustomerSessionGuard implements CanActivate {
     });
 
     (req as CustomerSessionRequest).customerSession = {
-      id: customer.id,
-      storeId: customer.storeId,
+      buyerAccountId: buyerAccount.id,
     };
     return true;
   }

@@ -311,3 +311,102 @@ stores via one `GET account/orders` call. Pre-existing `Customer` rows are
 either merged into a `BuyerAccount` or explicitly logged as
 unmigrated-pending-manual-review — no silent data loss. Seller-facing Customers
 dashboard behavior is unchanged.
+
+## Execution notes
+
+Landed on a dedicated branch/worktree (`feat/global-buyer-account`, checked out
+at `../biasmarket.com-global-buyer-account` off `origin/main`, pushed to
+`origin` so sibling plans can build on it), not on the session's starting
+branch (`feat/buyer-shipping-addresses`) — this plan's blast radius is high
+enough to warrant full isolation. Before touching
+`apps/api/src/modules/customer-auth/` or `CustomerSessionGuard`, checked every
+local/remote branch for concurrent changes to that module or
+`apps/api/src/modules/orders/`: none of the sibling plans this batch flags as
+depending on this one (buyer-proof-of-payment-upload,
+buyer-shipping-addresses, buyer-mini-dashboard) had started as branches yet.
+Unrelated in-flight branches (`codacy-fixes`, `feat/cfg-wa-templates`,
+`fix/order-payment-precision-v2`) touch adjacent files but not the
+identity/session surface this plan rewrites — no conflict.
+
+**Schema and decisions taken as-is, no deviation:** `BuyerAccount` +
+`CustomerStoreLink` as specified, `Order.buyerAccountId` added alongside
+`customerId` (not replacing it), `Customer` kept unchanged as a per-store
+projection decoupled from auth, session token shape `{buyerAccountId,
+passwordVersion}` with `BuyerAccount.passwordVersion` as a real `Int` column
+bumped on every password change (`derivePasswordVersion`'s hash-derived stamp
+is gone entirely — deleted, not deprecated), and auto-link-on-first-success
+(no opt-in step) for both login and checkout, per the plan's recommendation.
+`findOrCreateCustomer`'s "matching phone, different email → don't mutate, fall
+back to guest" guard was carried forward onto `BuyerAccount` intact.
+
+**Real deviation, worth flagging: the frontend needed zero changes.** The plan
+expected "a wide-radius frontend change ... expect to touch all 7
+mutation/query files." That didn't happen, because `register`/`login`/
+`forgotPassword`/`changePassword`/`me`/`updateMe`/`logout` kept their exact
+request/response DTO shapes under the same `stores/:slug/account/*` routes —
+only the internal resolution moved from `Customer` to `BuyerAccount`. Verified
+by diffing the regenerated `packages/types/generated/customer-auth/` and
+`customer-account/` clients against the pre-change versions: zero diff. `apps/
+web/features/customer-auth/**` was never touched, and `pnpm --filter web test`
+(192 tests) passes unmodified — real confirmation, not an assumption. The two
+brand-new endpoints (`GET account/me`, `GET account/orders`, in a new
+`GlobalAccountController`, no slug) are live and e2e-tested but **not** added
+to `packages/types/orval.config.ts`'s tag filter, so no generated client
+exists for them yet and nothing in the storefront calls them — matches the
+plan's explicit non-goal (no nav-bar "logged in as X" indicator this pass).
+Add the `GlobalAccount` tag to the Orval filter when a future pass wires up
+that UI.
+
+**Migration script was written, not run.** `apps/api/scripts/
+migrate-buyer-accounts.ts` implements the collision policy exactly as
+specified (email-equality signal, most-recently-created row wins on
+passwordHash/email, raw hash comparison never used, unambiguous groups apply
+even when some groups are skipped) and defaults to a dry run — it requires an
+explicit `--apply` flag to write anything, on top of this repo's standing rule
+against running migration scripts against real data without sign-off. Neither
+the dry run nor `--apply` was executed in this session; no user sign-off was
+sought because there was no live database in the execution environment to run
+it against in the first place (see below).
+
+**Schema migration SQL was hand-authored, not generated via `prisma migrate
+dev`.** The execution environment (a fresh git worktree) had no running
+Postgres and no `.env` (copied the config — not data — from the primary
+worktree to unblock builds). Running `prisma migrate dev` would have required
+a live database connection this environment didn't have, so the migration
+(`packages/db/prisma/migrations/20260809220000_add_buyer_account/
+migration.sql`) was written by hand, matching this repo's existing migration
+SQL conventions exactly (`CreateTable`/`CreateIndex`/`AddForeignKey` blocks,
+same default-action inference as `Order.customerId`'s existing `SET NULL`
+FK). `pnpm db:generate` (`prisma generate`, no DB connection needed) was run
+so the Prisma Client types match the new schema — `pnpm typecheck` passes
+clean on that basis. **The SQL has not been applied to any database.**
+Whoever picks this up next needs to run `prisma migrate deploy` (or `pnpm
+--filter @biasmarket/db migrate` against a real dev DB) before this is
+usable, and should sanity-check the hand-written SQL against what `prisma
+migrate dev` would have generated once a database is available.
+
+**e2e test extended, not run.** `apps/api/test/customer-account-auth.e2e-spec.ts`
+now has the cross-store scenario the plan's Verification section asked for:
+register/login at store A, checkout at store B with the same phone, then
+assert one `BuyerAccount` row, two `CustomerStoreLink` rows, both orders via
+`GET /account/orders`, and both store slugs via `GET /account/me`'s `stores`
+list. It compiles clean (part of the full `pnpm typecheck` pass) but wasn't
+executed — same reason as above, no live Postgres in this environment. Run
+`pnpm docker:dev` then `pnpm --filter api test:e2e` before trusting this
+beyond "it typechecks."
+
+**What was actually run and passed, in this environment:** `pnpm typecheck`
+across `api`/`web`/`@biasmarket/db`/`@biasmarket/utils`/`@biasmarket/types`
+(clean); `pnpm --filter api test` (394/394); `pnpm --filter web test`
+(192/192, unmodified); `pnpm --filter @biasmarket/utils test` (66/66, covers
+the rewritten `customer-account-token` util). `pnpm --filter api test:e2e`
+was **not** run — no database available.
+
+One incidental, unrelated diff worth flagging so a reviewer doesn't mistake it
+for buyer-account work: regenerating `packages/types/generated/**` picked up
+cosmetic reformatting in `products.ts`, `stores.ts`, and `api.schemas.ts`
+(import-order and TS indexed-access-type parenthesization) from whatever
+Prettier/Orval patch versions this fresh worktree's `pnpm install` resolved,
+unrelated to any DTO change in this plan. `customer-auth.ts` and
+`customer-account.ts` — the two clients this plan's backend changes actually
+touch — have **zero** diff, confirming the contract really didn't change.

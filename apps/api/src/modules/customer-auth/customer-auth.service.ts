@@ -1,8 +1,6 @@
-import { createHash } from "node:crypto";
 import {
   BadRequestException,
   ConflictException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -16,19 +14,6 @@ import { normalizePhone } from "@biasmarket/utils/phone-country";
 import { PrismaService } from "../../prisma/prisma.service.js";
 import { CustomerAccountService } from "../orders/application/customer-account.service.js";
 import { requiredEnv } from "../../config/env.validation.js";
-
-// Derives a short, stable fingerprint of the current password hash. Embedded
-// in every session token issued for a customer (see
-// createCustomerSessionToken) so that changing the password invalidates
-// every token issued before the change — the only revocation mechanism this
-// stateless-token session design has (see docs/plans/2026-08-02-buyer-accounts-phase12-plan.md,
-// "Session storage").
-export function derivePasswordVersion(passwordHash: string): string {
-  return createHash("sha256").update(passwordHash).digest("base64url").slice(
-    0,
-    16,
-  );
-}
 
 @Injectable()
 export class CustomerAuthService {
@@ -44,17 +29,26 @@ export class CustomerAuthService {
   }
 
   private issueSessionToken(
-    customerId: string,
-    storeId: string,
-    passwordHash: string,
+    buyerAccountId: string,
+    passwordVersion: number,
   ): string {
     const secret = requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET");
-    return createCustomerSessionToken(
-      customerId,
-      storeId,
-      derivePasswordVersion(passwordHash),
-      secret,
-    );
+    return createCustomerSessionToken(buyerAccountId, passwordVersion, secret);
+  }
+
+  // Any known buyer becomes "linked" to any store they successfully
+  // register/log in/check out at — no confirmation step, matches the
+  // low-friction framing in the plan doc. Idempotent: a link that already
+  // exists is a silent no-op.
+  private async ensureStoreLink(
+    buyerAccountId: string,
+    storeId: string,
+  ): Promise<void> {
+    await this.prisma.customerStoreLink.upsert({
+      where: { buyerAccountId_storeId: { buyerAccountId, storeId } },
+      create: { buyerAccountId, storeId },
+      update: {},
+    });
   }
 
   async register(
@@ -62,7 +56,7 @@ export class CustomerAuthService {
     token: string,
     password: string,
   ): Promise<{ ok: true }> {
-    const store = await this.findStoreBySlug(slug);
+    await this.findStoreBySlug(slug);
 
     const secret = requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET");
     const verified = verifyCustomerAccountToken(token, secret);
@@ -73,10 +67,10 @@ export class CustomerAuthService {
       throw new BadRequestException("Enlace inválido o expirado");
     }
 
-    const customer = await this.prisma.customer.findUnique({
-      where: { id: verified.customerId },
+    const buyerAccount = await this.prisma.buyerAccount.findUnique({
+      where: { id: verified.buyerAccountId },
     });
-    if (!customer || customer.storeId !== store.id) {
+    if (!buyerAccount) {
       throw new BadRequestException("Enlace inválido o expirado");
     }
 
@@ -89,18 +83,22 @@ export class CustomerAuthService {
     // "reset"-purpose token is exempt — that's the whole point of forgot
     // password — and gets a much shorter TTL to bound the risk (see
     // `ttlForPurpose` in the token util).
-    if (verified.purpose === "confirm" && customer.passwordHash) {
+    if (verified.purpose === "confirm" && buyerAccount.passwordHash) {
       throw new ConflictException(
         "Esta cuenta ya tiene una contraseña configurada",
       );
     }
 
     const passwordHash = await hashPassword(password);
-    await this.prisma.customer.update({
-      where: { id: customer.id },
+    await this.prisma.buyerAccount.update({
+      where: { id: buyerAccount.id },
       data: verified.purpose === "confirm"
-        ? { passwordHash, emailVerified: true }
-        : { passwordHash },
+        ? {
+          passwordHash,
+          emailVerified: true,
+          passwordVersion: { increment: 1 },
+        }
+        : { passwordHash, passwordVersion: { increment: 1 } },
     });
 
     return { ok: true };
@@ -108,94 +106,77 @@ export class CustomerAuthService {
 
   async forgotPassword(slug: string, phone: string): Promise<void> {
     const store = await this.findStoreBySlug(slug);
-    const customer = await this.prisma.customer.findUnique({
-      where: {
-        storeId_phone: { storeId: store.id, phone: normalizePhone(phone) },
-      },
+    const buyerAccount = await this.prisma.buyerAccount.findUnique({
+      where: { phone: normalizePhone(phone) },
     });
 
     // Always resolve — never confirm or deny whether an account exists for
     // this phone number.
-    if (!customer?.passwordHash || !customer.email) return;
+    if (!buyerAccount?.passwordHash || !buyerAccount.email) return;
 
-    await this.customerAccount.sendPasswordResetEmail(customer, store);
+    await this.customerAccount.sendPasswordResetEmail(buyerAccount, store);
   }
 
   async login(slug: string, phone: string, password: string): Promise<string> {
     const store = await this.findStoreBySlug(slug);
-    const customer = await this.prisma.customer.findUnique({
-      where: {
-        storeId_phone: { storeId: store.id, phone: normalizePhone(phone) },
-      },
+    const buyerAccount = await this.prisma.buyerAccount.findUnique({
+      where: { phone: normalizePhone(phone) },
     });
 
     // Same generic error whether the phone doesn't exist or the password is
     // wrong — never leak which one it was.
-    if (!customer?.passwordHash) {
+    if (!buyerAccount?.passwordHash) {
       throw new UnauthorizedException("Teléfono o contraseña inválidos");
     }
 
     const valid = await verifyPassword({
-      hash: customer.passwordHash,
+      hash: buyerAccount.passwordHash,
       password,
     });
     if (!valid) {
       throw new UnauthorizedException("Teléfono o contraseña inválidos");
     }
 
-    return this.issueSessionToken(
-      customer.id,
-      customer.storeId,
-      customer.passwordHash,
-    );
+    await this.ensureStoreLink(buyerAccount.id, store.id);
+
+    return this.issueSessionToken(buyerAccount.id, buyerAccount.passwordVersion);
   }
 
   async changePassword(
-    customerId: string,
+    buyerAccountId: string,
     currentPassword: string,
     newPassword: string,
   ): Promise<string> {
-    const customer = await this.prisma.customer.findUnique({
-      where: { id: customerId },
+    const buyerAccount = await this.prisma.buyerAccount.findUnique({
+      where: { id: buyerAccountId },
     });
-    if (!customer?.passwordHash) {
+    if (!buyerAccount?.passwordHash) {
       throw new UnauthorizedException("No autenticado");
     }
 
     const valid = await verifyPassword({
-      hash: customer.passwordHash,
+      hash: buyerAccount.passwordHash,
       password: currentPassword,
     });
     if (!valid) throw new BadRequestException("Contraseña actual incorrecta");
 
     const passwordHash = await hashPassword(newPassword);
-    await this.prisma.customer.update({
-      where: { id: customer.id },
-      data: { passwordHash },
+    const updated = await this.prisma.buyerAccount.update({
+      where: { id: buyerAccount.id },
+      data: { passwordHash, passwordVersion: { increment: 1 } },
     });
 
-    return this.issueSessionToken(customer.id, customer.storeId, passwordHash);
+    return this.issueSessionToken(updated.id, updated.passwordVersion);
   }
 
-  // `slug` comes from the route, `session.storeId` from the signed cookie —
-  // asserting they match is what stops a valid session for store A from
-  // reading/editing a profile through store B's URL. Same ownership-check
-  // discipline as `assertOwnership` elsewhere in the codebase, just against
-  // a store slug instead of a User-owned resource.
-  private async assertStoreMatch(slug: string, storeId: string) {
+  async getProfile(slug: string, session: { buyerAccountId: string }) {
     const store = await this.findStoreBySlug(slug);
-    if (store.id !== storeId) throw new ForbiddenException("No autorizado");
-    return store;
-  }
 
-  async getProfile(slug: string, session: { id: string; storeId: string }) {
-    await this.assertStoreMatch(slug, session.storeId);
-
-    const customer = await this.prisma.customer.findUniqueOrThrow({
-      where: { id: session.id },
+    const buyerAccount = await this.prisma.buyerAccount.findUniqueOrThrow({
+      where: { id: session.buyerAccountId },
     });
     const orders = await this.prisma.order.findMany({
-      where: { customerId: customer.id, storeId: customer.storeId },
+      where: { buyerAccountId: buyerAccount.id, storeId: store.id },
       orderBy: { createdAt: "desc" },
       select: {
         id: true,
@@ -209,12 +190,12 @@ export class CustomerAuthService {
 
     return {
       customer: {
-        name: customer.name,
-        email: customer.email,
-        phone: customer.phone,
-        emailVerified: customer.emailVerified,
-        pendingEmail: customer.pendingEmail,
-        pendingPhone: customer.pendingPhone,
+        name: buyerAccount.name,
+        email: buyerAccount.email,
+        phone: buyerAccount.phone,
+        emailVerified: buyerAccount.emailVerified,
+        pendingEmail: buyerAccount.pendingEmail,
+        pendingPhone: buyerAccount.pendingPhone,
       },
       orders,
     };
@@ -222,13 +203,13 @@ export class CustomerAuthService {
 
   async updateProfile(
     slug: string,
-    session: { id: string; storeId: string },
+    session: { buyerAccountId: string },
     dto: { name: string; email?: string; phone?: string },
   ) {
-    const store = await this.assertStoreMatch(slug, session.storeId);
+    const store = await this.findStoreBySlug(slug);
 
-    const customer = await this.prisma.customer.findUniqueOrThrow({
-      where: { id: session.id },
+    const buyerAccount = await this.prisma.buyerAccount.findUniqueOrThrow({
+      where: { id: session.buyerAccountId },
     });
 
     const data: { name: string; pendingEmail?: string; pendingPhone?: string } =
@@ -239,12 +220,14 @@ export class CustomerAuthService {
     let sendEmailChangeTo: string | undefined;
     let sendPhoneChange = false;
 
-    if (dto.email && dto.email !== customer.email) {
-      const clash = await this.prisma.customer.findFirst({
+    if (dto.email && dto.email !== buyerAccount.email) {
+      // Global uniqueness check — the account is no longer store-scoped, so
+      // an email clash against any other `BuyerAccount` blocks the change,
+      // not just one within the current store.
+      const clash = await this.prisma.buyerAccount.findFirst({
         where: {
-          storeId: store.id,
           email: dto.email,
-          NOT: { id: customer.id },
+          NOT: { id: buyerAccount.id },
         },
       });
       if (clash) throw new ConflictException("Este correo ya está en uso");
@@ -254,16 +237,14 @@ export class CustomerAuthService {
     }
 
     const normalizedPhone = dto.phone ? normalizePhone(dto.phone) : undefined;
-    if (normalizedPhone && normalizedPhone !== customer.phone) {
-      if (!customer.emailVerified) {
+    if (normalizedPhone && normalizedPhone !== buyerAccount.phone) {
+      if (!buyerAccount.emailVerified) {
         throw new BadRequestException(
           "Verifica tu correo antes de cambiar tu teléfono",
         );
       }
-      const clash = await this.prisma.customer.findUnique({
-        where: {
-          storeId_phone: { storeId: store.id, phone: normalizedPhone },
-        },
+      const clash = await this.prisma.buyerAccount.findUnique({
+        where: { phone: normalizedPhone },
       });
       if (clash) throw new ConflictException("Este teléfono ya está en uso");
 
@@ -271,8 +252,8 @@ export class CustomerAuthService {
       sendPhoneChange = true;
     }
 
-    const updated = await this.prisma.customer.update({
-      where: { id: customer.id },
+    const updated = await this.prisma.buyerAccount.update({
+      where: { id: buyerAccount.id },
       data,
     });
 
@@ -292,5 +273,58 @@ export class CustomerAuthService {
       pendingEmail: updated.pendingEmail,
       pendingPhone: updated.pendingPhone,
     };
+  }
+
+  // Slug-independent — the first genuinely global buyer endpoint. Returns
+  // the BuyerAccount profile plus every store it's linked to.
+  async getGlobalProfile(buyerAccountId: string) {
+    const buyerAccount = await this.prisma.buyerAccount.findUniqueOrThrow({
+      where: { id: buyerAccountId },
+      include: { stores: { include: { store: true } } },
+    });
+
+    return {
+      name: buyerAccount.name,
+      email: buyerAccount.email,
+      phone: buyerAccount.phone,
+      emailVerified: buyerAccount.emailVerified,
+      pendingEmail: buyerAccount.pendingEmail,
+      pendingPhone: buyerAccount.pendingPhone,
+      stores: buyerAccount.stores.map((link) => ({
+        slug: link.store.slug,
+        name: link.store.name,
+      })),
+    };
+  }
+
+  // Raw scan by `buyerAccountId` rather than joining through
+  // `CustomerStoreLink` — an order can exist without an active link (e.g. a
+  // since-removed link), and the intent here is "every order this account
+  // has ever placed," not "every order at a store it's currently linked to."
+  async getGlobalOrders(buyerAccountId: string) {
+    const orders = await this.prisma.order.findMany({
+      where: { buyerAccountId },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        paymentStatus: true,
+        fulfillmentStatus: true,
+        totalAmount: true,
+        currency: true,
+        createdAt: true,
+        store: { select: { slug: true, name: true } },
+      },
+    });
+
+    return orders.map((order) => ({
+      id: order.id,
+      paymentStatus: order.paymentStatus,
+      fulfillmentStatus: order.fulfillmentStatus,
+      totalAmount: order.totalAmount,
+      currency: order.currency,
+      createdAt: order.createdAt,
+      storeSlug: order.store.slug,
+      storeName: order.store.name,
+    }));
   }
 }
