@@ -281,3 +281,44 @@ buyer-auth-only `OriginGuard`, applied consistently rather than as a one-off.
   `pnpm docker:dev` is up: hammer `POST /api/stores/:slug/checkout` past 10
   req/min and confirm 429, load `/api/docs` with helmet on, and load the
   dashboard/storefront in a browser to eyeball images/fonts.
+
+## Manual verification pass (2026-08-09)
+
+The "still needs a real manual pass" note above is now done. Ran locally against
+local Postgres + a `minio`/`minio-init`-only `docker compose up` (skipped the
+`api`/`web` containers, used `pnpm --filter api dev` / `pnpm --filter web dev`
+instead — faster, no image build needed).
+
+- `pnpm --filter api test`: 378/379 pass. The 1 failure
+  (`order.controller.spec.ts` › `OrderController.getPaymentImage` › "streams the
+  stored image...") is in the concurrent payment-proof-image-access-control
+  plan's new test, unrelated to throttle/helmet/CSRF — not touched here.
+- `pnpm --filter api test:e2e`: 45/46 pass (env vars needed sourcing from
+  `apps/api/.env` first — the e2e config doesn't `dotenv/config` on its own,
+  only `main.ts` does). `orders.e2e-spec.ts` (7 tests, exercises both the
+  checkout and `addPayment` throttled routes) and
+  `customer-auth-rate-limit.e2e-spec.ts` both pass, confirming the throttle
+  limits picked (10/min checkout, 20/min `addPayment`) don't false-positive
+  against normal test traffic. The 1 failure (`stores.e2e-spec.ts`,
+  `$.sections[0].hidden` not in the openapi schema) is unrelated schema drift,
+  not touched here.
+- `curl -I http://localhost:3000/api/health`: helmet headers present
+  (`Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy`,
+  `Strict-Transport-Security`, `X-Content-Type-Options`, `X-Frame-Options`,
+  etc.), and CORS still correct alongside them
+  (`Access-Control-Allow-Origin: http://localhost:3001`,
+  `Access-Control-Allow-Credentials: true`).
+- `http://localhost:3000/api/docs`: 200, Swagger UI's own JS bundle 200s too —
+  CSP-off means nothing left to block it.
+- `POST /api/stores/demo-tienda-de-camila/checkout` hammered 12x: requests 1–10
+  got real `400`s (validation, empty body), request 11+ got a clean `429` — not
+  a `500`, not a silent pass-through.
+- Storefront and seller dashboard: logged in as a seeded seller
+  (`seed-seller1@biasmarket.dev`) via a real Chromium instance (Playwright,
+  driving an actual browser rather than asserting on markup), screenshotted
+  both. Confirmed via `img.naturalWidth`/`img.complete` on every rendered
+  `<img>`, `document.fonts.status === "loaded"`, zero console errors, and zero
+  failed/4xx-or-worse network requests on either page. This is the check the
+  plan flagged as "likely misapplied"/no expected conflict (helmet only touches
+  `apps/api`'s JSON/Swagger responses, not the `apps/web` document or MinIO's
+  own responses) — confirmed empirically rather than left as an inference.

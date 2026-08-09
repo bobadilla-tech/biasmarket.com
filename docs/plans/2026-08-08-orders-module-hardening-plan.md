@@ -1,8 +1,11 @@
 # Orders module hardening
 
-**Status:** Pre-implementation plan (written ahead of the work, per audit
+**Status:** Implemented 2026-08-08. See "Implementation notes" at the bottom for
+what shipped, the one deviation from this plan's suggested fix, and why.
+
+**Original status (pre-implementation):** written ahead of the work, per audit
 follow-up request — deviates from this directory's usual "record after it lands"
-convention).
+convention.
 
 **Source:** `docs/audits/audit-2026-08-08.md` §6, §12 (critical finding #1), §16
 (#1).
@@ -192,3 +195,49 @@ advance, partial seller-recorded payment via `addPayment`) writes an `AuditLog`
 row — approve/reject/cancel and full-payment `addPayment` were already covered
 before this plan; declared response DTOs match actual response shape (already
 true — Problem 3 needs verification, not a code change).
+
+## Implementation notes (2026-08-08)
+
+- **Problem 1 — shipped with the second fix option, not `FOR UPDATE`.** The plan
+  offered two equivalent options: a `SELECT ... FOR UPDATE` read (matching
+  `PickupPoint`) or a single conditional
+  `UPDATE ... WHERE reserved + quantity
+  <= stock RETURNING *`. Went with the
+  atomic `UPDATE` instead of copying the `FOR UPDATE` pattern verbatim:
+  `FOR UPDATE` here would mean `SELECT * FROM
+  "ProductVariant" ... FOR UPDATE`
+  via `$queryRaw`, and Prisma's raw-query path doesn't rehydrate `Decimal`
+  columns into `Prisma.Decimal` instances — it returns them as plain
+  strings/numbers. `ProductVariant.priceOverride` is a `Decimal` column the
+  surrounding code calls `.times()` on; a raw-query read would have silently
+  handed back a non-Decimal value for that field. The conditional
+  `UPDATE ... RETURNING *` has the same theoretical issue but never exercises it
+  in practice, since the code keeps using the original typed `findUnique` result
+  for `priceOverride`/`name` and only reads `stock`/`reserved`/`id` off the
+  raw-returned row (all plain ints/strings, no Decimal fields touched). Net
+  effect matches the plan's intent — DB-enforced atomicity, no app-level race —
+  just via the option that didn't require introducing a raw-query Decimal
+  footgun. See `create-order.usecase.ts:243-266`.
+- **Problem 2 — shipped exactly as scoped.** `AdvanceFulfillmentUseCase` now
+  injects `PrismaService` and wraps `saveStatus` + `auditLog.create` in one
+  `$transaction` (`fromStatus`/`toStatus` in metadata); no `orders.module.ts`
+  change was needed (`PrismaService` is `@Global()`). The `addPayment`
+  partial-payment branch writes `payment.partial` with
+  `{ amount, method, resultingPaymentStatus }`, inside the same transaction as
+  the existing `OrderPayment` create — the full-payment branch was left alone,
+  per the plan.
+- **Problem 3 — verified, not touched**, as the plan expected: both DTOs still
+  declare `retainedAmount`/`releasedAmount`/`releasedResolution`, and the e2e
+  suite's `assertMatchesSchema` checks are green.
+- **Concurrency with other in-flight plans, confirmed harmless.** The
+  payment-proof-image-access-control plan landed its `getPaymentImage` endpoint
+  in `order.controller.ts`/`order.repository.ts` while this work was in
+  progress, as this plan's own note anticipated. Re-read both files after that
+  landed; the two changes touch disjoint code (their new endpoint vs. this
+  plan's edit inside the existing `addPayment` partial-payment branch) and both
+  unit and e2e suites pass with both changes present.
+- **Verification actually run:** `pnpm --filter api test` (379 passed),
+  `pnpm --filter api test:e2e` against a real local Postgres — all 7
+  `orders.e2e-spec.ts` tests pass including the new stock=1 concurrent-checkout
+  test (one 201, one clean 400 "Stock insuficiente", `reserved` ends at 1, no DB
+  constraint crash), and `pnpm typecheck` clean.

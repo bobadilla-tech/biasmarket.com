@@ -204,3 +204,40 @@ flagging it back — it's a scope-expanding decision, not a pure cleanup.
 No payment-proof/payment image is reachable without an ownership check;
 `PaymentProof`'s fate is decided and the schema/code reflect that decision
 consistently (no half-wired dead model left behind).
+
+## Execution notes
+
+Landed as described — both recommendations taken as-is, no scope disagreement:
+streaming through the API (not a presigned redirect) for Problem 1, and option
+(a) (new private `S3_PAYMENT_BUCKET`, no anonymous-read policy in either
+`minio-init` service) over leaving the bucket shared-and-public. Problem 2 also
+took the recommended option (a) —
+`PaymentProof`/`ProofStatus`/`reviewedProofs`/`proofs` deleted outright
+(migration `20260808192135_delete_payment_proof`), not wired up as a real
+buyer-upload feature. No product reason surfaced to prefer (b).
+
+One real deviation from this doc's suggested shape, found necessary during
+implementation: `StorageService.getPaymentImageStream` does **not** assume
+`payment.imageUrl` always has the `${publicUrl}/${paymentBucket}/` prefix. It
+parses `new URL(url).pathname` and takes the first path segment as the bucket,
+the rest as the key. Reason: any `OrderPayment.imageUrl` written _before_ this
+change points at the old shared bucket
+(`${publicUrl}/${S3_BUCKET}/payments/...`), not the new `S3_PAYMENT_BUCKET`. A
+hardcoded-bucket implementation would 500 on every pre-existing payment image
+instead of serving it — this repo has no real production traffic yet, but
+there's no reason to make the endpoint data-dependent on upload date when
+parsing the URL generically costs nothing extra.
+
+Additional gap closed beyond the plan's own scope: `order.controller.spec.ts`
+had zero coverage for the new `getPaymentImage` endpoint despite it being the
+actual HIGH-severity fix. Added three unit tests — ownership-check
+short-circuits before touching the payment/storage, a missing `imageUrl` 404s
+instead of streaming, and a successful call streams the right body with the
+right `Content-Type`. `pnpm --filter api test` (379 tests),
+`pnpm --filter web test` (190 tests), and `pnpm typecheck` all pass clean.
+
+Not done, out of scope for this plan: no e2e test hits the new endpoint over
+HTTP (the plan's "Verification" section's 401/403 manual-check bullet was
+verified via the unit tests' ownership-delegation assertion, not an actual HTTP
+round-trip against a running server) — worth adding if `orders.e2e-spec.ts` gets
+a real payment-image fixture in the future.

@@ -11,6 +11,7 @@ vi.mock("@nestjs/throttler", async (importOriginal) => {
   return { ...actual, ThrottlerGuard: class ThrottlerGuard {} };
 });
 
+import { NotFoundException } from "@nestjs/common";
 import { OrderController } from "./order.controller.js";
 import { OrderRepository } from "./order.repository.js";
 import { ReviewPaymentUseCase } from "../application/review-payment.usecase.js";
@@ -24,9 +25,11 @@ describe("OrderController.addPayment", () => {
   let orders: {
     assertOwnership: Mock;
     findRowByIdForStore: Mock;
+    findPaymentForStore: Mock;
     saveStatus: Mock;
   };
   let reviewPayment: { execute: Mock };
+  let storage: { uploadPaymentImage: Mock; getPaymentImageStream: Mock };
   let prisma: { $transaction: Mock; orderPayment: { create: Mock } };
   let tx: { orderPayment: { create: Mock }; auditLog: { create: Mock } };
 
@@ -75,9 +78,11 @@ describe("OrderController.addPayment", () => {
     orders = {
       assertOwnership: vi.fn(),
       findRowByIdForStore: vi.fn(),
+      findPaymentForStore: vi.fn(),
       saveStatus: vi.fn(),
     };
     reviewPayment = { execute: vi.fn() };
+    storage = { uploadPaymentImage: vi.fn(), getPaymentImageStream: vi.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [OrderController],
@@ -87,7 +92,7 @@ describe("OrderController.addPayment", () => {
         { provide: AdvanceFulfillmentUseCase, useValue: { execute: vi.fn() } },
         { provide: CancelOrderUseCase, useValue: { execute: vi.fn() } },
         { provide: PrismaService, useValue: prisma },
-        { provide: StorageService, useValue: { uploadPaymentImage: vi.fn() } },
+        { provide: StorageService, useValue: storage },
       ],
     }).compile();
 
@@ -167,5 +172,101 @@ describe("OrderController.addPayment", () => {
       userId,
       "approve",
     );
+  });
+});
+
+describe("OrderController.getPaymentImage", () => {
+  let controller: OrderController;
+  let orders: {
+    assertOwnership: Mock;
+    findPaymentForStore: Mock;
+  };
+  let storage: { getPaymentImageStream: Mock };
+
+  const storeId = "store-1";
+  const orderId = "order-1";
+  const paymentId = "payment-1";
+  const userId = "user-1";
+  const session = { user: { id: userId } } as any;
+
+  beforeEach(async () => {
+    orders = {
+      assertOwnership: vi.fn(),
+      findPaymentForStore: vi.fn(),
+    };
+    storage = { getPaymentImageStream: vi.fn() };
+
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [OrderController],
+      providers: [
+        { provide: OrderRepository, useValue: orders },
+        { provide: ReviewPaymentUseCase, useValue: { execute: vi.fn() } },
+        { provide: AdvanceFulfillmentUseCase, useValue: { execute: vi.fn() } },
+        { provide: CancelOrderUseCase, useValue: { execute: vi.fn() } },
+        { provide: PrismaService, useValue: {} },
+        { provide: StorageService, useValue: storage },
+      ],
+    }).compile();
+
+    controller = module.get(OrderController);
+  });
+
+  it("checks ownership before touching the payment or storage", async () => {
+    orders.assertOwnership.mockRejectedValueOnce(new Error("not owner"));
+
+    await expect(
+      controller.getPaymentImage(storeId, orderId, paymentId, session),
+    ).rejects.toThrow("not owner");
+
+    expect(orders.findPaymentForStore).not.toHaveBeenCalled();
+    expect(storage.getPaymentImageStream).not.toHaveBeenCalled();
+  });
+
+  it("404s when the payment has no image instead of streaming anything", async () => {
+    orders.findPaymentForStore.mockResolvedValueOnce({
+      id: paymentId,
+      orderId,
+      storeId,
+      imageUrl: null,
+    });
+
+    await expect(
+      controller.getPaymentImage(storeId, orderId, paymentId, session),
+    ).rejects.toThrow(NotFoundException);
+
+    expect(storage.getPaymentImageStream).not.toHaveBeenCalled();
+  });
+
+  it("streams the stored image with its content type once ownership and the payment both check out", async () => {
+    orders.findPaymentForStore.mockResolvedValueOnce({
+      id: paymentId,
+      orderId,
+      storeId,
+      imageUrl: "https://cdn.biasmarket.com/payments/payments/abc.jpg",
+    });
+    const body = { pipe: vi.fn() } as any;
+    storage.getPaymentImageStream.mockResolvedValueOnce({
+      body,
+      contentType: "image/jpeg",
+    });
+
+    const result = await controller.getPaymentImage(
+      storeId,
+      orderId,
+      paymentId,
+      session,
+    );
+
+    expect(orders.assertOwnership).toHaveBeenCalledWith(storeId, userId);
+    expect(orders.findPaymentForStore).toHaveBeenCalledWith(
+      paymentId,
+      orderId,
+      storeId,
+    );
+    expect(storage.getPaymentImageStream).toHaveBeenCalledWith(
+      "https://cdn.biasmarket.com/payments/payments/abc.jpg",
+    );
+    expect(result.getStream()).toBe(body);
+    expect(result.getHeaders().type).toBe("image/jpeg");
   });
 });
