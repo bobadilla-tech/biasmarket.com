@@ -166,24 +166,46 @@ the WhatsApp-templates plan) going forward.
 
 ## Execution notes
 
-- **Branch**: Dedicated branch `feat/store-socials-and-locale` created from up-to-date `main`.
+- **Branch**: Dedicated branch `feat/store-socials-and-locale` created from
+  up-to-date `main`.
 - **Database & Schema**:
-  - Added `instagramUrl`, `facebookUrl`, `tiktokUrl`, and `twitterUrl` nullable string columns to `Store` model in `packages/db/prisma/schema.prisma`.
-  - Created migration `20260809210000_add_store_socials` and ran `prisma generate`.
+  - Added `instagramUrl`, `facebookUrl`, `tiktokUrl`, and `twitterUrl` nullable
+    string columns to `Store` model in `packages/db/prisma/schema.prisma`.
+  - Created migration `20260809210000_add_store_socials` and ran
+    `prisma generate`.
 - **Backend API**:
-  - Updated `UpdateStoreDto` (`apps/api/src/modules/stores/dto/update-store.dto.ts`) with `@IsIn(["es", "en"])` for `locale` and `@IsUrl()` + `@ValidateIf` for the 4 social fields.
+  - Updated `UpdateStoreDto`
+    (`apps/api/src/modules/stores/dto/update-store.dto.ts`) with
+    `@IsIn(["es", "en"])` for `locale` and `@IsUrl()` + `@ValidateIf` for the 4
+    social fields.
   - Updated `StoresService.update` to map empty string values to `null`.
-  - Updated `StoreRow` and `toStoreDto` in `apps/api/src/modules/stores/stores.mapper.ts` as the single choke point for all store read paths.
-  - Updated `StoreResponseDto` in `apps/api/src/modules/stores/dto/store-response.dto.ts`.
+  - Updated `StoreRow` and `toStoreDto` in
+    `apps/api/src/modules/stores/stores.mapper.ts` as the single choke point for
+    all store read paths.
+  - Updated `StoreResponseDto` in
+    `apps/api/src/modules/stores/dto/store-response.dto.ts`.
   - Regenerated `openapi.json` and `@biasmarket/types`.
 - **Frontend & i18n**:
-  - Updated `dashboardStoreSchema` (`apps/web/features/stores/schemas/dashboard-store.schema.ts`).
-  - Extended `profileFormSchema` (`apps/web/features/store-settings/schemas/profile.schema.ts`) with `z.string().url().optional().or(z.literal(""))` for social URLs and `z.enum(["es", "en"])` for locale.
-  - Updated `ProfileSection` form component (`apps/web/features/store-settings/components/profile-section.tsx`) to surface the `locale` select and 4 social link inputs with client-side Zod validation errors.
-  - Added `StoreSocialLinks` component to public storefront page header (`apps/web/app/[locale]/(storefront)/store/[slug]/page.tsx`).
-  - Added `locale` and `socials` columns to `AdminStoresTable` (`apps/web/features/admin/components/admin-stores-table.tsx`).
-  - Added i18n labels in Spanish (`es/dashboard.json`, `es/admin.json`) and English (`en/dashboard.json`, `en/admin.json`).
+  - Updated `dashboardStoreSchema`
+    (`apps/web/features/stores/schemas/dashboard-store.schema.ts`).
+  - Extended `profileFormSchema`
+    (`apps/web/features/store-settings/schemas/profile.schema.ts`) with
+    `z.string().url().optional().or(z.literal(""))` for social URLs and
+    `z.enum(["es", "en"])` for locale.
+  - Updated `ProfileSection` form component
+    (`apps/web/features/store-settings/components/profile-section.tsx`) to
+    surface the `locale` select and 4 social link inputs with client-side Zod
+    validation errors.
+  - Added `StoreSocialLinks` component to public storefront page header
+    (`apps/web/app/[locale]/(storefront)/store/[slug]/page.tsx`).
+  - Added `locale` and `socials` columns to `AdminStoresTable`
+    (`apps/web/features/admin/components/admin-stores-table.tsx`).
+  - Added i18n labels in Spanish (`es/dashboard.json`, `es/admin.json`) and
+    English (`en/dashboard.json`, `en/admin.json`).
 - **Testing & Verification**:
-  - Added unit test cases for updating `locale` and social links in `stores.service.spec.ts`.
-  - Ran `pnpm --filter api test`: all 381 tests across 43 test files passed cleanly.
-  - Ran `pnpm typecheck`: typecheck passed cleanly with zero errors across all monorepo packages.
+  - Added unit test cases for updating `locale` and social links in
+    `stores.service.spec.ts`.
+  - Ran `pnpm --filter api test`: all 381 tests across 43 test files passed
+    cleanly.
+  - Ran `pnpm typecheck`: typecheck passed cleanly with zero errors across all
+    monorepo packages.

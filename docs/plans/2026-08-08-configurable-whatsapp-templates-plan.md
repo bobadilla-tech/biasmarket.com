@@ -224,8 +224,7 @@ this keep getting today's exact default messages, unchanged.
 
 Landed on `feat/configurable-whatsapp-templates` (branched from
 `feat/payment-method-logos`). Plan was written as a review-first doc before
-code, so these notes record what actually shipped against the original
-proposal.
+code, so these notes record what actually shipped against the original proposal.
 
 ### Prisma
 
@@ -243,10 +242,10 @@ proposal.
   impossible (the factory also avoids `lastIndex` state bleed between the two
   passes).
 - `WHATSAPP_REQUIRED_TOKENS`: `NEW_ORDER → [orderRef, items]`,
-  `PAYMENT_REMINDER → [orderRef, pendingAmount]`. (This doc says "define a
-  fixed list per type" without pinning the reminder's list; the plan's earlier
-  draft required `pendingAmount` for the reminder, and that posture was kept —
-  a reminder that names the order but not the amount is arguably useless.)
+  `PAYMENT_REMINDER → [orderRef, pendingAmount]`. (This doc says "define a fixed
+  list per type" without pinning the reminder's list; the plan's earlier draft
+  required `pendingAmount` for the reminder, and that posture was kept — a
+  reminder that names the order but not the amount is arguably useless.)
 - `WHATSAPP_MESSAGE_TOKENS` added (superset of required) for the settings UI's
   inline variable chips.
 - `buildWhatsAppOrderMessage` / `buildWhatsAppPaymentReminderMessage` keep their
@@ -299,9 +298,10 @@ proposal.
 
 ### OpenAPI / generated client
 
-- `pnpm --filter api generate:openapi` + `pnpm --filter @biasmarket/types
-  generate`, then rebuilt `packages/types`; `apiClient.whatsappTemplates`
-  registered in `apps/web/lib/api-client.ts`.
+- `pnpm --filter api generate:openapi` +
+  `pnpm --filter @biasmarket/types
+  generate`, then rebuilt `packages/types`;
+  `apiClient.whatsappTemplates` registered in `apps/web/lib/api-client.ts`.
 
 ### Tests
 
@@ -313,7 +313,7 @@ proposal.
   `ORDER_INQUIRY`, 403 non-owner, save+GET schema-valid, and the two checkout
   flows — custom template renders in the seller-bound WhatsApp URL, and a store
   with no override still gets today's exact default message.
-- Full suites: `pnpm --filter api test` 393/393, root `pnpm typecheck`
-  11/11. e2e suite: 50/54 — the 4 remaining failures are all
-  `ECONNREFUSED :9000` (MinIO not running locally) on logo/payment-proof upload
-  tests, pre-existing and unrelated.
+- Full suites: `pnpm --filter api test` 393/393, root `pnpm typecheck` 11/11.
+  e2e suite: 50/54 — the 4 remaining failures are all `ECONNREFUSED :9000`
+  (MinIO not running locally) on logo/payment-proof upload tests, pre-existing
+  and unrelated.

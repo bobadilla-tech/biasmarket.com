@@ -7,10 +7,10 @@ import {
   buildWhatsAppOrderMessage,
   buildWhatsAppPaymentReminderMessage,
   getMissingRequiredTokens,
+  WHATSAPP_MESSAGE_TOKENS,
   type WhatsAppMessageType,
   type WhatsAppOrderInput,
   type WhatsAppPaymentReminderInput,
-  WHATSAPP_MESSAGE_TOKENS,
 } from "@biasmarket/utils/whatsapp";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -68,10 +68,7 @@ function MessageTemplateEditor({
 
   const hasCustomTemplate = text.trim().length > 0;
   const missing = useMemo(
-    () =>
-      hasCustomTemplate
-        ? getMissingRequiredTokens(type, text)
-        : [],
+    () => hasCustomTemplate ? getMissingRequiredTokens(type, text) : [],
     [type, text, hasCustomTemplate],
   );
 
@@ -84,7 +81,9 @@ function MessageTemplateEditor({
     : buildWhatsAppPaymentReminderMessage(SAMPLE_REMINDER_INPUT);
 
   const insertToken = (token: string) => {
-    setText((current) => `${current}${current && !current.endsWith(" ") ? " " : ""}{{${token}}}`);
+    setText((current) =>
+      `${current}${current && !current.endsWith(" ") ? " " : ""}{{${token}}}`
+    );
   };
 
   return (
@@ -170,7 +169,9 @@ export function WhatsAppMessagesSection({
   loading,
 }: {
   storeId: string;
-  templates: { newOrder: string | null; paymentReminder: string | null } | undefined;
+  templates:
+    | { newOrder: string | null; paymentReminder: string | null }
+    | undefined;
   loading: boolean;
 }) {
   const t = useTranslations("dashboard.settings.whatsappMessages");
@@ -182,9 +183,7 @@ export function WhatsAppMessagesSection({
       description={t("description")}
     >
       {loading || !templates
-        ? (
-          <p className="text-sm text-[#8f7da8]">{t("loading")}</p>
-        )
+        ? <p className="text-sm text-[#8f7da8]">{t("loading")}</p>
         : (
           <div className="space-y-4">
             <MessageTemplateEditor

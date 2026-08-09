@@ -15,10 +15,12 @@ export function useSaveWhatsAppTemplate(
       settingsApi.saveWhatsAppTemplate(storeId as string, type, template),
     onSuccess: (saved) => {
       const key = whatsappTemplatesKeys.byStore(storeId as string);
-      queryClient.setQueryData<{
-        newOrder: unknown;
-        paymentReminder: unknown;
-      } | undefined>(key, (current) => {
+      queryClient.setQueryData<
+        {
+          newOrder: unknown;
+          paymentReminder: unknown;
+        } | undefined
+      >(key, (current) => {
         if (!current) return current;
         return {
           ...current,

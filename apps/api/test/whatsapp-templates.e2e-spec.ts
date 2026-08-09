@@ -189,7 +189,8 @@ describe("whatsapp-templates (e2e)", () => {
   });
 
   it("saves a valid template and returns it on GET, matching the response DTO", async () => {
-    const template = "*Nuevo pedido en {{storeName}}* #{{orderRef}}\n{{items}}\nTotal: {{totalAmount}} {{currency}}";
+    const template =
+      "*Nuevo pedido en {{storeName}}* #{{orderRef}}\n{{items}}\nTotal: {{totalAmount}} {{currency}}";
     const putRes = await request(app.getHttpServer())
       .put(`/stores/${storeId}/whatsapp-templates/NEW_ORDER`)
       .set("Cookie", sessionCookie)
@@ -219,7 +220,9 @@ describe("whatsapp-templates (e2e)", () => {
     const whatsappUrl = checkoutRes.body.whatsappUrl as string;
     orderIds.push(checkoutRes.body.order.id);
 
-    expect(whatsappUrl).toContain(encodeURIComponent("*Nuevo pedido en E2E Store*"));
+    expect(whatsappUrl).toContain(
+      encodeURIComponent("*Nuevo pedido en E2E Store*"),
+    );
     expect(whatsappUrl).toContain(encodeURIComponent("Total: 25.00 PEN"));
     // The hardcoded default's distinctive marker must not be present.
     expect(whatsappUrl).not.toContain(encodeURIComponent("Ref: #"));
@@ -271,7 +274,9 @@ describe("whatsapp-templates (e2e)", () => {
         encodeURIComponent("*Nuevo pedido en Default Store*"),
       );
       expect(whatsappUrl).toContain(encodeURIComponent("Ref: #"));
-      expect(whatsappUrl).toContain(encodeURIComponent("Entrega: Retiro presencial"));
+      expect(whatsappUrl).toContain(
+        encodeURIComponent("Entrega: Retiro presencial"),
+      );
     } finally {
       // Order rows must go first — OrderItem.productId blocks deleting the
       // product (and then the store) this store owns.

@@ -133,7 +133,11 @@ export class CustomerAccountService {
       // email/emailVerified, don't link this order to their buyerAccountId,
       // don't create a store link or Customer row, don't send a
       // verification email. Falls back to a guest order.
-      return { customer: null, buyerAccount: null, needsVerificationEmail: false };
+      return {
+        customer: null,
+        buyerAccount: null,
+        needsVerificationEmail: false,
+      };
     } else if (existing.emailVerified) {
       buyerAccount = existing;
       needsVerificationEmail = false;

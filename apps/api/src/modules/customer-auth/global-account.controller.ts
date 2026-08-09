@@ -4,8 +4,8 @@ import { CustomerAuthService } from "./customer-auth.service.js";
 import { CustomerSessionGuard } from "./customer-session.guard.js";
 import { CustomerSession } from "./customer-session.decorator.js";
 import {
-  GlobalAccountProfileResponseDto,
   GlobalAccountOrderResponseDto,
+  GlobalAccountProfileResponseDto,
   toGlobalAccountOrderDto,
 } from "./dto/global-account-response.dto.js";
 

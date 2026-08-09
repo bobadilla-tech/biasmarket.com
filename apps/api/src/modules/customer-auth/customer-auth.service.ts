@@ -139,7 +139,10 @@ export class CustomerAuthService {
 
     await this.ensureStoreLink(buyerAccount.id, store.id);
 
-    return this.issueSessionToken(buyerAccount.id, buyerAccount.passwordVersion);
+    return this.issueSessionToken(
+      buyerAccount.id,
+      buyerAccount.passwordVersion,
+    );
   }
 
   async changePassword(

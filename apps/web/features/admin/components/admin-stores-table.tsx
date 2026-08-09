@@ -57,23 +57,23 @@ export function AdminStoresTable(
                   </span>
                 </td>
                 <td className="px-6 py-3 text-gray-600">
-                  {socials.length > 0 ? (
-                    <div className="flex flex-wrap gap-1.5">
-                      {socials.map((s) => (
-                        <a
-                          key={s.name}
-                          href={s.url!}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-purple-600 hover:underline"
-                        >
-                          {s.name}
-                        </a>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-xs text-gray-400">-</span>
-                  )}
+                  {socials.length > 0
+                    ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {socials.map((s) => (
+                          <a
+                            key={s.name}
+                            href={s.url!}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-purple-600 hover:underline"
+                          >
+                            {s.name}
+                          </a>
+                        ))}
+                      </div>
+                    )
+                    : <span className="text-xs text-gray-400">-</span>}
                 </td>
                 <td className="px-6 py-3 text-gray-600">
                   {new Date(store.createdAt).toLocaleDateString()}

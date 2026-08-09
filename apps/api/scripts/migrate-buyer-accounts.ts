@@ -16,7 +16,7 @@
 //   pnpm --filter api migrate:buyer-accounts            # dry run
 //   pnpm --filter api migrate:buyer-accounts -- --apply # writes
 
-import { PrismaClient, type Customer } from "@biasmarket/db";
+import { type Customer, PrismaClient } from "@biasmarket/db";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { normalizePhone } from "@biasmarket/utils/phone-country";
 
@@ -162,10 +162,14 @@ async function main() {
   }
 
   const merged = results.filter((r) => r.status === "merged");
-  const alreadyMigrated = results.filter((r) => r.status === "already-migrated");
+  const alreadyMigrated = results.filter((r) =>
+    r.status === "already-migrated"
+  );
   const skipped = results.filter((r) => r.status === "skipped-collision");
 
-  console.log(`\n${merged.length} group(s) ${apply ? "merged" : "would be merged"}.`);
+  console.log(
+    `\n${merged.length} group(s) ${apply ? "merged" : "would be merged"}.`,
+  );
   for (const r of merged) {
     if (r.supersededCustomerIds && r.supersededCustomerIds.length > 0) {
       console.log(
@@ -177,7 +181,9 @@ async function main() {
   }
 
   if (alreadyMigrated.length > 0) {
-    console.log(`\n${alreadyMigrated.length} group(s) already migrated, skipped.`);
+    console.log(
+      `\n${alreadyMigrated.length} group(s) already migrated, skipped.`,
+    );
   }
 
   if (skipped.length > 0) {

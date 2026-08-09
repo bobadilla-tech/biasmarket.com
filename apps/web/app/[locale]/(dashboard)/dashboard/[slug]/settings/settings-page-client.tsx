@@ -69,15 +69,13 @@ export function SettingsPageClient() {
             <PaymentsSection storeId={store.id} />
             <WhatsAppMessagesSection
               storeId={store.id}
-              templates={
-                whatsappTemplates
-                  ? {
-                    newOrder: whatsappTemplates.newOrder?.template ?? null,
-                    paymentReminder:
-                      whatsappTemplates.paymentReminder?.template ?? null,
-                  }
-                  : undefined
-              }
+              templates={whatsappTemplates
+                ? {
+                  newOrder: whatsappTemplates.newOrder?.template ?? null,
+                  paymentReminder:
+                    whatsappTemplates.paymentReminder?.template ?? null,
+                }
+                : undefined}
               loading={whatsappLoading}
             />
           </div>

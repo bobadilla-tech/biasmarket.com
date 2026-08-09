@@ -411,8 +411,7 @@ describe("customer account + customer auth (e2e)", () => {
         .set("Origin", "http://localhost:3001")
         .send({ phone: crossStorePhone, password: crossStorePassword })
         .expect(201);
-      const setCookieA = loginARes.headers["set-cookie"] as unknown as
-        string[];
+      const setCookieA = loginARes.headers["set-cookie"] as unknown as string[];
       const rawA = setCookieA?.find((c) => c.includes("bm_customer_session"));
       if (!rawA) throw new Error("login at store A returned no cookie");
       const sessionCookie = rawA.split(";")[0]!;
@@ -453,7 +452,11 @@ describe("customer account + customer auth (e2e)", () => {
           customerPhone: crossStorePhone,
           customerEmail: crossStoreEmail,
           customerName: "Cross Store Buyer",
-          items: [{ productId: productBId, variantId: productBVariantId, quantity: 1 }],
+          items: [{
+            productId: productBId,
+            variantId: productBVariantId,
+            quantity: 1,
+          }],
         })
         .expect(201);
       orderBId = checkoutBRes.body.order.id as string;

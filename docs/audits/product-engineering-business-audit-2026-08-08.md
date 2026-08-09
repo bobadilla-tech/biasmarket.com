@@ -173,12 +173,13 @@ runs every 5 min via `ExpireOrdersUseCase`):
    inconsistent combination vs. seller-initiated cancellation, which sets both.
 
 The expiry race condition previously described here is fixed: the sweep now
-conditionally claims each order with `updateMany({ where: { id, paymentStatus:
-"PENDING_PAYMENT" } })` before releasing any reservation, so a concurrent
-seller decision skips the stock mutation. The remaining cancellation gap is
-covered only by the happy-path cron spec today. No `orders/**/*.e2e-spec.ts`
-exercises the full state machine end to end, and **the whole `test:e2e` suite is
-not run in CI** (§13/§14).
+conditionally claims each order with
+`updateMany({ where: { id, paymentStatus:
+"PENDING_PAYMENT" } })` before
+releasing any reservation, so a concurrent seller decision skips the stock
+mutation. The remaining cancellation gap is covered only by the happy-path cron
+spec today. No `orders/**/*.e2e-spec.ts` exercises the full state machine end to
+end, and **the whole `test:e2e` suite is not run in CI** (§13/§14).
 
 **Overall: the state machine is well-designed and mostly production-ready.**
 This is the strongest-engineered part of the codebase. Add the missing audit
@@ -338,35 +339,35 @@ without committing to a payments roadmap.
 
 ## 11. Gap analysis
 
-| Area                              | Current State                                                                      | Target State                                      | Gap                                         | Priority                   | Effort |
-| --------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------- | ------------------------------------------- | -------------------------- | ------ |
-| Authentication                    | Seller (better-auth) + buyer (custom signed-cookie) both solid, well-isolated      | Same                                              | None material                               | —                          | —      |
-| Buyer accounts                    | Per-store only, real login/session/profile                                         | Global across stores                              | Schema migration + dedup                    | Low (no demand signal yet) | High   |
-| Seller accounts                   | Complete, role-based, admin RBAC enforced                                          | Same                                              | None material                               | —                          | —      |
-| Multi-tenancy                     | Path-based, storeId everywhere, ownership enforced per-service                     | Same (evolve to subdomains only if a seller asks) | None blocking                               | —                          | —      |
-| Products/catalog                  | Full CRUD, variants, images, stock                                                 | Same                                              | None material                               | —                          | —      |
-| Inventory                         | Atomic reservation, no race conditions                                             | Same                                              | None                                        | —                          | —      |
-| Cart                              | Client-side, real                                                                  | Same                                              | None                                        | —                          | —      |
-| Checkout                          | Real, server-recomputes prices, atomic stock                                       | In-app payment instructions after submit          | Missing screen                              | **High**                   | Low    |
-| Orders (backend)                  | Well-modeled state machine, audited, mostly tested                                 | Same + complete cron cancellation record          | Missing audit/status update on cron path   | **High**                   | Low    |
-| Orders (buyer-facing)             | Non-clickable card only                                                            | Real tracking page                                | Missing page                                | **High**                   | Medium |
-| Payment proof                     | Seller-recorded, access-controlled                                                 | Optionally buyer-initiated upload                 | Missing buyer UI                            | Medium                     | Medium |
-| Payment status                    | Manual only, correctly modeled                                                     | Ready to extend for gateway later                 | None blocking                               | —                          | —      |
-| Shipping/fulfillment              | Linear status, pickup points, delivery config                                      | Same                                              | None material                               | —                          | —      |
-| Notifications                     | In-app only                                                                        | Optional email for stock alerts                   | Missing email trigger                       | Low                        | Low    |
-| Customer management (seller side) | Full CRUD via dashboard                                                            | Same                                              | None material                               | —                          | —      |
-| Seller dashboard                  | Most complete part of the app                                                      | Same                                              | None material                               | —                          | —      |
-| Buyer dashboard                   | Minimal (order cards only)                                                         | Real account/order center                         | See above                                   | **High**                   | Medium |
-| Analytics                         | Real seller-side stats module, no hardcoded numbers                                | Same                                              | None material                               | —                          | —      |
-| Search                            | Not audited in depth this pass; discovery layer exists per docs                    | —                                                 | —                                           | —                          | —      |
-| File storage                      | Private buckets, access-controlled, magic-byte validated uploads                   | Same                                              | None material                               | —                          | —      |
-| Security                          | Ownership pattern universal, no IDOR found; CSRF/rate-limit gaps on seller routes  | CSRF + rate-limit parity with buyer routes        | See §14                                     | Medium                     | Low    |
-| Testing                           | Strong unit+e2e coverage per-module; e2e not run in CI; cron cancellation gap untested | e2e in CI                                      | Missing CI job                              | Medium                     | Low    |
-| Observability                     | GlitchTip + env validation just landed; no structured logging/aggregation          | Same + logging                                    | Logging gap                                 | Low                        | Medium |
-| Deployment                        | Single-VM Compose, health-gated containers, no zero-downtime, no automated backups | Automated backups minimum                         | Backup automation                           | **High**                   | Low    |
-| SEO                               | Not deeply audited this pass                                                       | —                                                 | —                                           | —                          | —      |
-| Performance                       | Not deeply audited this pass                                                       | —                                                 | —                                           | —                          | —      |
-| Accessibility                     | Not deeply audited this pass                                                       | —                                                 | —                                           | —                          | —      |
+| Area                              | Current State                                                                          | Target State                                      | Gap                                      | Priority                   | Effort |
+| --------------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------- | ---------------------------------------- | -------------------------- | ------ |
+| Authentication                    | Seller (better-auth) + buyer (custom signed-cookie) both solid, well-isolated          | Same                                              | None material                            | —                          | —      |
+| Buyer accounts                    | Per-store only, real login/session/profile                                             | Global across stores                              | Schema migration + dedup                 | Low (no demand signal yet) | High   |
+| Seller accounts                   | Complete, role-based, admin RBAC enforced                                              | Same                                              | None material                            | —                          | —      |
+| Multi-tenancy                     | Path-based, storeId everywhere, ownership enforced per-service                         | Same (evolve to subdomains only if a seller asks) | None blocking                            | —                          | —      |
+| Products/catalog                  | Full CRUD, variants, images, stock                                                     | Same                                              | None material                            | —                          | —      |
+| Inventory                         | Atomic reservation, no race conditions                                                 | Same                                              | None                                     | —                          | —      |
+| Cart                              | Client-side, real                                                                      | Same                                              | None                                     | —                          | —      |
+| Checkout                          | Real, server-recomputes prices, atomic stock                                           | In-app payment instructions after submit          | Missing screen                           | **High**                   | Low    |
+| Orders (backend)                  | Well-modeled state machine, audited, mostly tested                                     | Same + complete cron cancellation record          | Missing audit/status update on cron path | **High**                   | Low    |
+| Orders (buyer-facing)             | Non-clickable card only                                                                | Real tracking page                                | Missing page                             | **High**                   | Medium |
+| Payment proof                     | Seller-recorded, access-controlled                                                     | Optionally buyer-initiated upload                 | Missing buyer UI                         | Medium                     | Medium |
+| Payment status                    | Manual only, correctly modeled                                                         | Ready to extend for gateway later                 | None blocking                            | —                          | —      |
+| Shipping/fulfillment              | Linear status, pickup points, delivery config                                          | Same                                              | None material                            | —                          | —      |
+| Notifications                     | In-app only                                                                            | Optional email for stock alerts                   | Missing email trigger                    | Low                        | Low    |
+| Customer management (seller side) | Full CRUD via dashboard                                                                | Same                                              | None material                            | —                          | —      |
+| Seller dashboard                  | Most complete part of the app                                                          | Same                                              | None material                            | —                          | —      |
+| Buyer dashboard                   | Minimal (order cards only)                                                             | Real account/order center                         | See above                                | **High**                   | Medium |
+| Analytics                         | Real seller-side stats module, no hardcoded numbers                                    | Same                                              | None material                            | —                          | —      |
+| Search                            | Not audited in depth this pass; discovery layer exists per docs                        | —                                                 | —                                        | —                          | —      |
+| File storage                      | Private buckets, access-controlled, magic-byte validated uploads                       | Same                                              | None material                            | —                          | —      |
+| Security                          | Ownership pattern universal, no IDOR found; CSRF/rate-limit gaps on seller routes      | CSRF + rate-limit parity with buyer routes        | See §14                                  | Medium                     | Low    |
+| Testing                           | Strong unit+e2e coverage per-module; e2e not run in CI; cron cancellation gap untested | e2e in CI                                         | Missing CI job                           | Medium                     | Low    |
+| Observability                     | GlitchTip + env validation just landed; no structured logging/aggregation              | Same + logging                                    | Logging gap                              | Low                        | Medium |
+| Deployment                        | Single-VM Compose, health-gated containers, no zero-downtime, no automated backups     | Automated backups minimum                         | Backup automation                        | **High**                   | Low    |
+| SEO                               | Not deeply audited this pass                                                           | —                                                 | —                                        | —                          | —      |
+| Performance                       | Not deeply audited this pass                                                           | —                                                 | —                                        | —                          | —      |
+| Accessibility                     | Not deeply audited this pass                                                           | —                                                 | —                                        | —                          | —      |
 
 ---
 
@@ -484,8 +485,9 @@ independent scaling need identified anywhere in this audit. Keep the monolith.
 - Add `test:e2e` to CI
 - Extend `OriginGuard` to seller-dashboard mutation routes; add a global default
   throttle _Dependencies:_ none. _Risk if skipped:_ incomplete cancellation
-  history, unrecoverable data loss (backups), regressions merging unnoticed (e2e).
-  _Done when:_ all four shipped and covered by a test/CI check where applicable.
+  history, unrecoverable data loss (backups), regressions merging unnoticed
+  (e2e). _Done when:_ all four shipped and covered by a test/CI check where
+  applicable.
 
 **Phase 1 — Chaos-Killer MVP (buyer-side completion)**
 
@@ -540,9 +542,9 @@ independent scaling need identified anywhere in this audit. Keep the monolith.
    old project keys are invalidated and examples contain no live credentials.
    Dependencies: GlitchTip access. Complexity: trivial.
 2. **Add an audit log and consistent status update to cron expiry.** Why:
-   automated cancellations currently lack the audit trail and leave the
-   separate order status unchanged. Outcome: expiry matches seller-triggered
-   cancellation semantics. Dependencies: none. Complexity: low.
+   automated cancellations currently lack the audit trail and leave the separate
+   order status unchanged. Outcome: expiry matches seller-triggered cancellation
+   semantics. Dependencies: none. Complexity: low.
 3. **Automate DB/MinIO backups.** Why: current backup is manual-only; VM loss =
    total data loss. Outcome: scheduled, verified backup running. Dependencies:
    none. Complexity: low (script the already-documented manual commands into
@@ -635,11 +637,11 @@ not "behind."
 **If I were the CTO joining today, my next 30 days:** ship the buyer-side
 completion (payment instructions screen + order tracking page — items #3/#4
 above), complete the cron cancellation record and get backups automated in the
-same sprint since they're both small and real risks, wire `test:e2e` into CI so the
-order-state-machine module stays trustworthy as more people touch it, and start
-instrumenting the retention/GMV metrics from day one of that buyer-flow release
-— not after. Everything else in this document (payments, monetization, global
-buyer identity, subdomains) waits for what that data says.
+same sprint since they're both small and real risks, wire `test:e2e` into CI so
+the order-state-machine module stays trustworthy as more people touch it, and
+start instrumenting the retention/GMV metrics from day one of that buyer-flow
+release — not after. Everything else in this document (payments, monetization,
+global buyer identity, subdomains) waits for what that data says.
 
 ---
 
@@ -661,9 +663,9 @@ this requires a rewrite; it's the next feature to build, not an architecture
 problem.
 
 Two things need fixing regardless of feature work: the expiry cron's missing
- audit trail/status update, and the total absence of automated backups. Both are
-small fixes with outsized downside if ignored. The cron's reservation-claim
-race is already guarded in the current implementation.
+audit trail/status update, and the total absence of automated backups. Both are
+small fixes with outsized downside if ignored. The cron's reservation-claim race
+is already guarded in the current implementation.
 
 Manual payments fit the MVP correctly as designed — BiasMarket never holds
 money, sellers verify externally-received payments, and the data model
@@ -677,7 +679,7 @@ the real decision should be driven by retention/GMV data the team isn't
 currently collecting.
 
 **Align around this:** finish the buyer's half of the order flow next, fix the
-two operational risks (cron cancellation records, backups) alongside it, start measuring
-retention and GMV the moment that ships, and defer every
+two operational risks (cron cancellation records, backups) alongside it, start
+measuring retention and GMV the moment that ships, and defer every
 payments/monetization/multi-tenancy-evolution decision in this document until
 that data exists.

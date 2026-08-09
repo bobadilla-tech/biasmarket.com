@@ -1,11 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Put,
-  UseGuards,
-} from "@nestjs/common";
+import { Body, Controller, Get, Param, Put, UseGuards } from "@nestjs/common";
 import { ApiOkResponse, ApiParam, getSchemaPath } from "@nestjs/swagger";
 import { AuthGuard, Session } from "@thallesp/nestjs-better-auth";
 import type { UserSession } from "@thallesp/nestjs-better-auth";
@@ -13,7 +6,11 @@ import { WhatsappTemplatesService } from "./whatsapp-templates.service.js";
 import { UpdateWhatsAppTemplateDto } from "./dto/update-whatsapp-template.dto.js";
 import { WhatsAppTemplateResponseDto } from "./dto/whatsapp-template-response.dto.js";
 
-const WHATSAPP_MESSAGE_TYPE_PARAM = { name: "type", type: String, enum: ["NEW_ORDER", "PAYMENT_REMINDER"] };
+const WHATSAPP_MESSAGE_TYPE_PARAM = {
+  name: "type",
+  type: String,
+  enum: ["NEW_ORDER", "PAYMENT_REMINDER"],
+};
 
 interface WhatsAppTemplateRow {
   id: string;
