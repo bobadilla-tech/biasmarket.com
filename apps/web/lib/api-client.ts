@@ -24,6 +24,7 @@ import {
   storeSections,
   suggestions,
   users,
+  whatsappTemplates,
 } from "@biasmarket/types";
 
 // INTERNAL_API_URL for server-side fetches and NEXT_PUBLIC_API_URL for the
@@ -69,4 +70,5 @@ export const apiClient = {
   stats,
   users,
   restock,
+  whatsappTemplates,
 };

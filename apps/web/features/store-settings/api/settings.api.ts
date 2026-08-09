@@ -106,4 +106,20 @@ export const settingsApi = {
         })
       ),
     ),
+
+  // A type with no override row resolves to null — callers fall back to the
+  // hardcoded default template.
+  async getWhatsAppTemplates(storeId: string) {
+    const [newOrder, paymentReminder] = await Promise.all([
+      apiClient.whatsappTemplates.findOne(storeId, "NEW_ORDER"),
+      apiClient.whatsappTemplates.findOne(storeId, "PAYMENT_REMINDER"),
+    ]);
+    return { newOrder, paymentReminder };
+  },
+
+  saveWhatsAppTemplate: (
+    storeId: string,
+    type: "NEW_ORDER" | "PAYMENT_REMINDER",
+    template: string,
+  ) => apiClient.whatsappTemplates.upsert(storeId, type, { template }),
 };

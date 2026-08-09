@@ -258,8 +258,8 @@ export class CreateOrderUseCase {
                 SET reserved = reserved + ${item.quantity}
                 FROM "Product"
                 WHERE "ProductVariant".id = ${variant.id}
-                  AND "ProductVariant".productId = "Product".id
-                  AND "Product".storeId = ${store.id}
+                  AND "ProductVariant"."productId" = "Product".id
+                  AND "Product"."storeId" = ${store.id}
                   AND "ProductVariant".stock - "ProductVariant".reserved >= ${item.quantity}
                 RETURNING "ProductVariant".*
               `;
@@ -354,6 +354,17 @@ export class CreateOrderUseCase {
         };
       });
 
+    // A store's saved NEW_ORDER override (whatsapp-templates module); null
+    // when the seller never customized it, in which case
+    // buildWhatsAppOrderMessage falls back to the hardcoded default.
+    const orderTemplate = store.whatsappNumber
+      ? await this.prisma.whatsAppMessageTemplate.findUnique({
+        where: {
+          storeId_type: { storeId: store.id, type: "NEW_ORDER" },
+        },
+      })
+      : null;
+
     const whatsappUrl = store.whatsappNumber
       ? buildWhatsAppUrl(
         store.whatsappNumber,
@@ -369,7 +380,7 @@ export class CreateOrderUseCase {
           paymentMethod: order.paymentMethod,
           customerName: order.customerName,
           customerPhone: order.customerPhone,
-        }),
+        }, orderTemplate?.template),
       )
       : null;
 

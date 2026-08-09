@@ -219,3 +219,101 @@ A seller can edit the wording of their store's WhatsApp order/reminder/ inquiry
 messages from Settings, with required-variable validation preventing a message
 that drops critical info (order reference, products); stores that never touch
 this keep getting today's exact default messages, unchanged.
+
+## Execution notes
+
+Landed on `feat/configurable-whatsapp-templates` (branched from
+`feat/payment-method-logos`). Plan was written as a review-first doc before
+code, so these notes record what actually shipped against the original
+proposal.
+
+### Prisma
+
+- `WhatsAppMessageType` enum (`NEW_ORDER`, `PAYMENT_REMINDER`; no
+  `ORDER_INQUIRY`, per the scope simplification) + `WhatsAppMessageTemplate`
+  model with `@@unique([storeId, type])` and a `storeId` index.
+- Migration `20260809202116_add_whatsapp_message_templates`, applied to the
+  local dev DB (`prisma migrate status` clean afterwards).
+
+### utils (`packages/utils/src/whatsapp/index.ts`)
+
+- Single tokenizer: `createTokenRegex()` is a **factory** returning a fresh
+  global regex; both `extractTokens` and `renderWhatsAppTemplate` call it, so
+  the validation/substitution "one tokenizer, two regexes" risk is structurally
+  impossible (the factory also avoids `lastIndex` state bleed between the two
+  passes).
+- `WHATSAPP_REQUIRED_TOKENS`: `NEW_ORDER → [orderRef, items]`,
+  `PAYMENT_REMINDER → [orderRef, pendingAmount]`. (This doc says "define a
+  fixed list per type" without pinning the reminder's list; the plan's earlier
+  draft required `pendingAmount` for the reminder, and that posture was kept —
+  a reminder that names the order but not the amount is arguably useless.)
+- `WHATSAPP_MESSAGE_TOKENS` added (superset of required) for the settings UI's
+  inline variable chips.
+- `buildWhatsAppOrderMessage` / `buildWhatsAppPaymentReminderMessage` keep their
+  exact old signatures; the optional `template` arg falls back to the previous
+  hardcoded output when null/blank. Unknown tokens render literally.
+- `buildWhatsAppUrl` untouched.
+
+### API (`apps/api/src/modules/whatsapp-templates/`)
+
+- New flat module: `GET/PUT stores/:storeId/whatsapp-templates/:type`,
+  `AuthGuard`, per-request `assertOwnership` (404 unknown store, 403 non-owner —
+  same helpers shape as the other CRUD modules).
+- `parseType()` validates the `type` param against the enum in the service
+  (rejects `ORDER_INQUIRY` with 400 — the plan explicitly defers it).
+- Validation on save: `getMissingRequiredTokens` → 400 naming the missing
+  `{{tokens}}`; `@MaxLength(1000)` on the DTO (enforced by main.ts's global
+  ValidationPipe — note e2e boots `AppModule` without that pipe, so the length
+  cap is covered by the DTO/OpenAPI, not the e2e spec).
+- `findUnique` on a store with no override returns `null`; Nest's express
+  adapter serializes `null` as an empty body (`isNil → response.send()`). The
+  Orval `customFetch` keeps `data` undefined for empty bodies, which the web
+  layer already treats as "no override" — verified explicitly by an e2e test.
+
+### create-order.usecase.ts + a pre-existing bug this surfaced
+
+- The use case now reads the store's `NEW_ORDER` template and passes it into
+  `buildWhatsAppOrderMessage`; null → today's exact default path.
+- **Unrelated pre-existing bug fixed along the way**: the stock-reservation
+  `$queryRaw` UPDATE referenced camelCase columns **unquoted**
+  (`"ProductVariant".productId`, `"Product".storeId`). Postgres folds unquoted
+  identifiers to lowercase, so checkout threw `ColumnNotFound` — the existing
+  `orders.e2e-spec.ts` checkout tests were already failing on this before this
+  branch. Both references are now quoted (`"ProductVariant"."productId"`,
+  `"Product"."storeId"`), and the unit-test string assertion was updated to
+  match. This was required to get the plan's "custom template flows into
+  checkout" e2e verification runnable.
+
+### Web / client-side
+
+- Settings: new `WhatsApp messages` section (`whatsapp-messages-section.tsx`)
+  with a textarea per type, clickable variable-token chips (from
+  `WHATSAPP_MESSAGE_TOKENS`), a live preview rendered with placeholder sample
+  data, and inline required-variable validation. Wired via
+  `use-whatsapp-templates.ts` / `use-save-whatsapp-template.ts` through the
+  generated client.
+- `payments-page-client.tsx:83` (the plan's flagged `PAYMENT_REMINDER` client
+  call site) now fetches the store's saved template and passes it into the
+  builder — fixing only the server side would have left the dashboard reminder
+  permanently hardcoded.
+
+### OpenAPI / generated client
+
+- `pnpm --filter api generate:openapi` + `pnpm --filter @biasmarket/types
+  generate`, then rebuilt `packages/types`; `apiClient.whatsappTemplates`
+  registered in `apps/web/lib/api-client.ts`.
+
+### Tests
+
+- utils: tokenizer / required-token validation / substitution / default-fallback
+  cases (exact default-string regression).
+- api unit: `whatsapp-templates` service + controller specs (6 + 3 tests).
+- api e2e (`whatsapp-templates.e2e-spec.ts`, 8 tests): empty-body no-override,
+  400 for missing required tokens (both types) and for the deferred
+  `ORDER_INQUIRY`, 403 non-owner, save+GET schema-valid, and the two checkout
+  flows — custom template renders in the seller-bound WhatsApp URL, and a store
+  with no override still gets today's exact default message.
+- Full suites: `pnpm --filter api test` 393/393, root `pnpm typecheck`
+  11/11. e2e suite: 50/54 — the 4 remaining failures are all
+  `ECONNREFUSED :9000` (MinIO not running locally) on logo/payment-proof upload
+  tests, pre-existing and unrelated.

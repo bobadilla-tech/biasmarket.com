@@ -361,6 +361,27 @@
         }
       },
       "thresholdLabel": "Umbral de stock bajo (unidades)"
+    },
+    "whatsappMessages": {
+      "title": "Mensajes de WhatsApp",
+      "description": "Personaliza el texto de los mensajes que tu tienda envía y recibe por WhatsApp.",
+      "previewLabel": "Vista previa con datos de ejemplo",
+      "variablesLabel": "Variables disponibles",
+      "emptyHint": "Déjalo vacío para mantener el mensaje por defecto.",
+      "insertVariable": "Insertar {token}",
+      "save": "Guardar mensaje",
+      "saving": "Guardando...",
+      "saved": "Guardado",
+      "loading": "Cargando plantillas...",
+      "missingTokens": "Faltan las variables requeridas: {tokens}",
+      "newOrder": {
+        "title": "Mensaje de nuevo pedido",
+        "description": "Lo recibes en tu WhatsApp cuando un comprador hace un pedido. Variables requeridas: la referencia del pedido y los productos."
+      },
+      "paymentReminder": {
+        "title": "Mensaje de recordatorio de pago",
+        "description": "Se usa cuando contactas a un comprador por un saldo pendiente. Variables requeridas: la referencia del pedido y el monto pendiente."
+      }
     }
   },
   "notifications": {

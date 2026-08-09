@@ -361,6 +361,27 @@
         }
       },
       "thresholdLabel": "Low stock threshold (units)"
+    },
+    "whatsappMessages": {
+      "title": "WhatsApp messages",
+      "description": "Customize the wording of the messages your store sends and receives over WhatsApp.",
+      "previewLabel": "Preview with sample data",
+      "variablesLabel": "Variables you can use",
+      "emptyHint": "Leave empty to keep the default message.",
+      "insertVariable": "Insert {token}",
+      "save": "Save message",
+      "saving": "Saving...",
+      "saved": "Saved",
+      "loading": "Loading templates...",
+      "missingTokens": "Missing required variables: {tokens}",
+      "newOrder": {
+        "title": "New order message",
+        "description": "Received on your WhatsApp when a buyer places an order. Required variables: the order reference and the itemized products."
+      },
+      "paymentReminder": {
+        "title": "Payment reminder message",
+        "description": "Used when you contact a buyer about a pending balance. Required variables: the order reference and the pending amount."
+      }
     }
   },
   "notifications": {

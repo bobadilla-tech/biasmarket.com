@@ -75,8 +75,8 @@ export const getPaymentImage = async (
   orderId: string,
   paymentId: string,
   options?: Parameters<typeof customFetch>[1],
-): Promise<void> => {
-  return customFetch<void>(getGetPaymentImageUrl(storeId, orderId, paymentId), {
+): Promise<Blob> => {
+  return customFetch<Blob>(getGetPaymentImageUrl(storeId, orderId, paymentId), {
     ...options,
     method: "GET",
   });

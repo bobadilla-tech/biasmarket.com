@@ -1907,6 +1907,29 @@ export interface RestockCountResponseDto {
   count: number;
 }
 
+export type WhatsAppTemplateResponseDtoType =
+  typeof WhatsAppTemplateResponseDtoType[
+    keyof typeof WhatsAppTemplateResponseDtoType
+  ];
+
+export const WhatsAppTemplateResponseDtoType = {
+  NEW_ORDER: "NEW_ORDER",
+  PAYMENT_REMINDER: "PAYMENT_REMINDER",
+} as const;
+
+export interface WhatsAppTemplateResponseDto {
+  id: string;
+  storeId: string;
+  type: WhatsAppTemplateResponseDtoType;
+  template: string;
+  updatedAt: string;
+}
+
+export interface UpdateWhatsAppTemplateDto {
+  /** @maxLength 1000 */
+  template: string;
+}
+
 export type StoresControllerfindFeaturedParams = {
   limit?: string;
 };

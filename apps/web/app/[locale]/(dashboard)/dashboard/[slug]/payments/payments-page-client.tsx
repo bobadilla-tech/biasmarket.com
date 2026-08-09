@@ -25,6 +25,7 @@ import {
   useOrders,
   useReviewPayment,
 } from "@/features/orders";
+import { useWhatsAppTemplates } from "@/features/store-settings/queries/use-whatsapp-templates";
 
 const PAYMENT_ATTENTION_STATUSES = new Set([
   "PENDING_PAYMENT",
@@ -43,6 +44,7 @@ export function PaymentsPageClient() {
     tCommon("networkError"),
   );
   const reviewPayment = useReviewPayment(storeId, tCommon("networkError"));
+  const whatsappTemplates = useWhatsAppTemplates(storeId);
 
   const [confirmTarget, setConfirmTarget] = useState<
     {
@@ -86,7 +88,7 @@ export function PaymentsPageClient() {
         pendingAmount: order.pendingAmount,
         currency: order.currency,
         customerName: order.customerName,
-      }),
+      }, whatsappTemplates.data?.paymentReminder?.template),
     );
 
   if (storeLoading || ordersLoading) {

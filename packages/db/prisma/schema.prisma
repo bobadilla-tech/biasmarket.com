@@ -59,6 +59,7 @@ model Store {
   pickupPoints    PickupPoint[]
   notifications   Notification[]
   restockRequests RestockRequest[]
+  whatsappTemplates WhatsAppMessageTemplate[]
 
   @@index([ownerId])
 }
@@ -355,6 +356,28 @@ model DeliveryMethodConfig {
   enabled   Boolean            @default(true)
   details   Json
   createdAt DateTime           @default(now())
+
+  store Store @relation(fields: [storeId], references: [id])
+
+  @@unique([storeId, type])
+  @@index([storeId])
+}
+
+enum WhatsAppMessageType {
+  NEW_ORDER
+  PAYMENT_REMINDER
+}
+
+// Per-store override for the WhatsApp message a seller sends to a buyer —
+// see docs/plans/2026-08-08-configurable-whatsapp-templates-plan.md. A store
+// with no row for a given type falls back to the hardcoded default template
+// in packages/utils/src/whatsapp/index.ts.
+model WhatsAppMessageTemplate {
+  id        String               @id @default(cuid())
+  storeId   String
+  type      WhatsAppMessageType
+  template  String
+  updatedAt DateTime             @updatedAt
 
   store Store @relation(fields: [storeId], references: [id])
 
