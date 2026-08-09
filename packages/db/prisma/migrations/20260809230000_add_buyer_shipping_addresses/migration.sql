@@ -1,7 +1,7 @@
 -- CreateTable
 CREATE TABLE "Address" (
     "id" TEXT NOT NULL,
-    "customerId" TEXT NOT NULL,
+    "buyerAccountId" TEXT NOT NULL,
     "label" TEXT,
     "recipientName" TEXT NOT NULL,
     "phone" TEXT NOT NULL,
@@ -17,7 +17,7 @@ CREATE TABLE "Address" (
 );
 
 -- CreateIndex
-CREATE INDEX "Address_customerId_idx" ON "Address"("customerId");
+CREATE INDEX "Address_buyerAccountId_idx" ON "Address"("buyerAccountId");
 
 -- AddForeignKey
-ALTER TABLE "Address" ADD CONSTRAINT "Address_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "Customer"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Address" ADD CONSTRAINT "Address_buyerAccountId_fkey" FOREIGN KEY ("buyerAccountId") REFERENCES "BuyerAccount"("id") ON DELETE CASCADE ON UPDATE CASCADE;

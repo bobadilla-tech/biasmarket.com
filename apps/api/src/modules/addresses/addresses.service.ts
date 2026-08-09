@@ -7,9 +7,9 @@ import type { UpdateAddressDto } from "./dto/update-address.dto.js";
 export class AddressesService {
   constructor(private prisma: PrismaService) {}
 
-  async findAllByCustomer(customerId: string) {
+  async findAllByBuyerAccount(buyerAccountId: string) {
     const addresses = await this.prisma.address.findMany({
-      where: { customerId },
+      where: { buyerAccountId },
       orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
     });
     return addresses.map((a) => ({
@@ -18,21 +18,23 @@ export class AddressesService {
     }));
   }
 
-  async create(customerId: string, dto: CreateAddressDto) {
+  async create(buyerAccountId: string, dto: CreateAddressDto) {
     return this.prisma.$transaction(async (tx) => {
-      const existingCount = await tx.address.count({ where: { customerId } });
+      const existingCount = await tx.address.count({
+        where: { buyerAccountId },
+      });
       const makeDefault = dto.isDefault || existingCount === 0;
 
       if (makeDefault) {
         await tx.address.updateMany({
-          where: { customerId },
+          where: { buyerAccountId },
           data: { isDefault: false },
         });
       }
 
       const created = await tx.address.create({
         data: {
-          customerId,
+          buyerAccountId,
           label: dto.label ?? null,
           recipientName: dto.recipientName,
           phone: dto.phone,
@@ -52,18 +54,22 @@ export class AddressesService {
     });
   }
 
-  async update(customerId: string, addressId: string, dto: UpdateAddressDto) {
+  async update(
+    buyerAccountId: string,
+    addressId: string,
+    dto: UpdateAddressDto,
+  ) {
     const address = await this.prisma.address.findUnique({
       where: { id: addressId },
     });
-    if (!address || address.customerId !== customerId) {
+    if (!address || address.buyerAccountId !== buyerAccountId) {
       throw new NotFoundException("Dirección no encontrada");
     }
 
     return this.prisma.$transaction(async (tx) => {
       if (dto.isDefault === true) {
         await tx.address.updateMany({
-          where: { customerId },
+          where: { buyerAccountId },
           data: { isDefault: false },
         });
       }
@@ -92,11 +98,11 @@ export class AddressesService {
     });
   }
 
-  async delete(customerId: string, addressId: string) {
+  async delete(buyerAccountId: string, addressId: string) {
     const address = await this.prisma.address.findUnique({
       where: { id: addressId },
     });
-    if (!address || address.customerId !== customerId) {
+    if (!address || address.buyerAccountId !== buyerAccountId) {
       throw new NotFoundException("Dirección no encontrada");
     }
 
@@ -105,7 +111,7 @@ export class AddressesService {
 
       if (address.isDefault) {
         const remainingFirst = await tx.address.findFirst({
-          where: { customerId },
+          where: { buyerAccountId },
           orderBy: { createdAt: "desc" },
         });
         if (remainingFirst) {

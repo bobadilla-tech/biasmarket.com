@@ -52,6 +52,7 @@ export default defineConfig({
           "Users",
           "Restock",
           "WhatsappTemplates",
+          "Addresses",
         ],
       },
     },

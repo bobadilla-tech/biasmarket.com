@@ -1,6 +1,7 @@
 import { Type } from "class-transformer";
 import {
   ArrayMinSize,
+  IsDefined,
   IsEmail,
   IsIn,
   IsInt,
@@ -9,6 +10,7 @@ import {
   Matches,
   Min,
   MinLength,
+  ValidateIf,
   ValidateNested,
 } from "class-validator";
 
@@ -23,6 +25,42 @@ export class CreateOrderItemDto {
   @IsInt()
   @Min(1)
   quantity: number;
+}
+
+// Snapshotted verbatim into Order.deliveryDetails at order-creation time —
+// never read back server-side afterwards. Guests and logged-in buyers submit
+// the same inline shape; there is no addressId picker. See
+// docs/plans/2026-08-08-buyer-shipping-addresses-plan.md's "Important
+// correction" section for why a saved-address FK reference was dropped from
+// this DTO.
+export class ShippingAddressDto {
+  @IsString()
+  @MinLength(1)
+  recipientName: string;
+
+  @IsString()
+  @MinLength(6)
+  phone: string;
+
+  @IsString()
+  @MinLength(1)
+  line1: string;
+
+  @IsOptional()
+  @IsString()
+  line2?: string;
+
+  @IsString()
+  @MinLength(1)
+  city: string;
+
+  @IsOptional()
+  @IsString()
+  region?: string;
+
+  @IsOptional()
+  @IsString()
+  reference?: string;
 }
 
 export class CreateOrderDto {
@@ -56,6 +94,14 @@ export class CreateOrderDto {
   @IsOptional()
   @IsEmail()
   customerEmail?: string;
+
+  // Required when deliveryMethodType is COURIER (validated below), unused
+  // for PICKUP — see the plan doc referenced on ShippingAddressDto.
+  @ValidateIf((o) => o.deliveryMethodType === "COURIER")
+  @IsDefined()
+  @ValidateNested()
+  @Type(() => ShippingAddressDto)
+  shippingAddress?: ShippingAddressDto;
 
   @ArrayMinSize(1)
   @ValidateNested({ each: true })

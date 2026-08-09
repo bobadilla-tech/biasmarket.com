@@ -1,6 +1,6 @@
 export class AddressResponseDto {
   id: string;
-  customerId: string;
+  buyerAccountId: string;
   label: string | null;
   recipientName: string;
   phone: string;

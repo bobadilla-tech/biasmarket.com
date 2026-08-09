@@ -1,4 +1,5 @@
 import {
+  addresses,
   categories,
   checkout,
   collections,
@@ -71,4 +72,5 @@ export const apiClient = {
   users,
   restock,
   whatsappTemplates,
+  addresses,
 };

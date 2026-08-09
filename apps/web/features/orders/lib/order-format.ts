@@ -72,6 +72,39 @@ export function getDeliveryLabel(
   return t("delivery.courier");
 }
 
+// Snapshotted verbatim into Order.deliveryDetails.shippingAddress at
+// checkout for COURIER orders (see create-order.usecase.ts) — never read
+// server-side afterwards, only rendered here for the seller. `null` for
+// PICKUP orders and for pre-existing COURIER orders created before this
+// field existed.
+export interface OrderShippingAddress {
+  recipientName: string;
+  phone: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  region?: string;
+  reference?: string;
+}
+
+export function getShippingAddress(
+  order: OrderResponseDto,
+): OrderShippingAddress | null {
+  if (order.deliveryMethodType !== "COURIER") return null;
+  const details = order.deliveryDetails ?? {};
+  const address = details.shippingAddress;
+  if (
+    !address || typeof address !== "object" ||
+    typeof (address as Record<string, unknown>).recipientName !== "string" ||
+    typeof (address as Record<string, unknown>).phone !== "string" ||
+    typeof (address as Record<string, unknown>).line1 !== "string" ||
+    typeof (address as Record<string, unknown>).city !== "string"
+  ) {
+    return null;
+  }
+  return address as OrderShippingAddress;
+}
+
 export function getProductSummary(
   order: OrderResponseDto,
   t: ReturnType<typeof useTranslations>,

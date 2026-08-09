@@ -22,6 +22,7 @@ import { StatsModule } from "./modules/stats/stats.module.js";
 import { CustomerAuthModule } from "./modules/customer-auth/customer-auth.module.js";
 import { RestockModule } from "./modules/restock/restock.module.js";
 import { WhatsappTemplatesModule } from "./modules/whatsapp-templates/whatsapp-templates.module.js";
+import { AddressesModule } from "./modules/addresses/addresses.module.js";
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { WhatsappTemplatesModule } from "./modules/whatsapp-templates/whatsapp-t
     CustomerAuthModule,
     RestockModule,
     WhatsappTemplatesModule,
+    AddressesModule,
   ],
   controllers: [AppController],
 })

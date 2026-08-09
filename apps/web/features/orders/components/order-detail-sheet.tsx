@@ -17,6 +17,7 @@ import {
   formatOrderDate,
   getDeliveryLabel,
   getOrderNumber,
+  getShippingAddress,
 } from "../lib/order-format";
 import { paymentsLocked } from "../lib/order-status";
 import { RegisterPaymentForm } from "./register-payment-form";
@@ -144,6 +145,39 @@ export function OrderDetailSheet({
                       </span>
                     </div>
                   </div>
+
+                  {(() => {
+                    const shippingAddress = getShippingAddress(order);
+                    if (!shippingAddress) return null;
+                    return (
+                      <div className="space-y-1 border-t border-[#f3ebff] pt-3 text-sm">
+                        <span className="font-medium text-[#8f7da8]">
+                          {t("details.shippingAddress")}
+                        </span>
+                        <p className="font-semibold text-[#2d1649]">
+                          {shippingAddress.recipientName} ·{" "}
+                          {shippingAddress.phone}
+                        </p>
+                        <p className="text-[#2d1649]">
+                          {shippingAddress.line1}
+                          {shippingAddress.line2
+                            ? `, ${shippingAddress.line2}`
+                            : ""}
+                        </p>
+                        <p className="text-[#2d1649]">
+                          {shippingAddress.city}
+                          {shippingAddress.region
+                            ? `, ${shippingAddress.region}`
+                            : ""}
+                        </p>
+                        {shippingAddress.reference && (
+                          <p className="text-[#8f7da8]">
+                            {shippingAddress.reference}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 <div className="space-y-4 rounded-[24px] border border-[#eadcf8] bg-white p-5 shadow-sm">

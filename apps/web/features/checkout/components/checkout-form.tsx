@@ -16,6 +16,7 @@ import {
 import { PhoneInput } from "@/components/ui/phone-input";
 import { type CartItem, hasMixedCurrencies } from "@/lib/cart";
 import { useDeliveryOptions } from "../queries/use-delivery-options";
+import { useDefaultShippingAddress } from "../queries/use-default-shipping-address";
 import { useSubmitCheckout } from "../mutations/use-submit-checkout";
 import {
   getPickupAvailability,
@@ -99,6 +100,7 @@ export function CheckoutForm(
 ) {
   const t = useTranslations("storefront.checkoutPage");
   const deliveryOptions = useDeliveryOptions(slug);
+  const defaultAddress = useDefaultShippingAddress(slug);
   const submitCheckout = useSubmitCheckout(slug);
 
   const methods = deliveryOptions.data?.methods ?? [];
@@ -158,6 +160,13 @@ export function CheckoutForm(
       pickupPointId: "",
       pickupDate: "",
       paymentMethod: "",
+      shippingRecipientName: "",
+      shippingPhone: "",
+      shippingLine1: "",
+      shippingLine2: "",
+      shippingCity: "",
+      shippingRegion: "",
+      shippingReference: "",
     },
   });
 
@@ -198,6 +207,47 @@ export function CheckoutForm(
   const pickupPointId = form.watch("pickupPointId");
   const pickupDate = form.watch("pickupDate");
   const paymentMethod = form.watch("paymentMethod");
+  const shippingRecipientName = form.watch("shippingRecipientName");
+  const shippingPhone = form.watch("shippingPhone");
+  const shippingLine1 = form.watch("shippingLine1");
+  const shippingCity = form.watch("shippingCity");
+
+  // Prefill from the buyer's saved default address the moment it loads —
+  // guests/logged-out buyers just get `null` back (query never throws into
+  // the UI, see useDefaultShippingAddress) and the fields stay empty. Only
+  // fills fields the buyer hasn't already typed into, so it never clobbers
+  // an in-progress edit. Gated on `deliveryMethodType === "COURIER"`: the
+  // shippingAddress inputs aren't mounted before then, and `setValue` on an
+  // unregistered field only updates form state, not the input's DOM value —
+  // so if the address query resolves first, this still needs to (re-)run
+  // once the fields actually mount.
+  useEffect(() => {
+    if (deliveryMethodType !== "COURIER") return;
+    const address = defaultAddress.data;
+    if (!address) return;
+    if (!form.getValues("shippingRecipientName")) {
+      form.setValue("shippingRecipientName", address.recipientName);
+    }
+    if (!form.getValues("shippingPhone")) {
+      form.setValue("shippingPhone", address.phone);
+    }
+    if (!form.getValues("shippingLine1")) {
+      form.setValue("shippingLine1", address.line1);
+    }
+    if (!form.getValues("shippingLine2")) {
+      form.setValue("shippingLine2", address.line2 ?? "");
+    }
+    if (!form.getValues("shippingCity")) {
+      form.setValue("shippingCity", address.city);
+    }
+    if (!form.getValues("shippingRegion")) {
+      form.setValue("shippingRegion", address.region ?? "");
+    }
+    if (!form.getValues("shippingReference")) {
+      form.setValue("shippingReference", address.reference ?? "");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultAddress.data, deliveryMethodType]);
 
   // Defaults the date field to the point's next open day the moment a
   // date-requiring point becomes selected (or the pickupDate was cleared by
@@ -250,6 +300,17 @@ export function CheckoutForm(
       customerName: values.customerName,
       customerPhone: values.customerPhone,
       customerEmail: values.customerEmail,
+      shippingAddress: values.deliveryMethodType === "COURIER"
+        ? {
+          recipientName: values.shippingRecipientName,
+          phone: values.shippingPhone,
+          line1: values.shippingLine1,
+          line2: values.shippingLine2 || undefined,
+          city: values.shippingCity,
+          region: values.shippingRegion || undefined,
+          reference: values.shippingReference || undefined,
+        }
+        : undefined,
       items,
     });
     onOrderCreated({
@@ -406,9 +467,78 @@ export function CheckoutForm(
         )}
 
         {deliveryMethodType === "COURIER" && (
-          <div className="flex items-start gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
-            <Truck className="store-theme-active-text size-5 shrink-0" />
-            <p>{t("courierNote")}</p>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-start gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
+              <Truck className="store-theme-active-text size-5 shrink-0" />
+              <p>{t("courierNote")}</p>
+            </div>
+
+            <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+              {t("shippingAddressLabel")}
+            </span>
+
+            <input
+              placeholder={t("shippingRecipientNamePlaceholder")}
+              className={inputClassName}
+              {...form.register("shippingRecipientName")}
+            />
+            {form.formState.errors.shippingRecipientName && (
+              <p className="text-sm text-red-500">
+                {t("shippingRecipientNameRequired")}
+              </p>
+            )}
+
+            <input
+              placeholder={t("shippingPhonePlaceholder")}
+              className={inputClassName}
+              {...form.register("shippingPhone")}
+            />
+            {form.formState.errors.shippingPhone && (
+              <p className="text-sm text-red-500">
+                {t("shippingPhoneRequired")}
+              </p>
+            )}
+
+            <input
+              placeholder={t("shippingLine1Placeholder")}
+              className={inputClassName}
+              {...form.register("shippingLine1")}
+            />
+            {form.formState.errors.shippingLine1 && (
+              <p className="text-sm text-red-500">
+                {t("shippingLine1Required")}
+              </p>
+            )}
+
+            <input
+              placeholder={t("shippingLine2Placeholder")}
+              className={inputClassName}
+              {...form.register("shippingLine2")}
+            />
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <input
+                placeholder={t("shippingCityPlaceholder")}
+                className={inputClassName}
+                {...form.register("shippingCity")}
+              />
+              <input
+                placeholder={t("shippingRegionPlaceholder")}
+                className={inputClassName}
+                {...form.register("shippingRegion")}
+              />
+            </div>
+            {form.formState.errors.shippingCity && (
+              <p className="text-sm text-red-500">
+                {t("shippingCityRequired")}
+              </p>
+            )}
+
+            <input
+              placeholder={t("shippingReferencePlaceholder")}
+              className={inputClassName}
+              {...form.register("shippingReference")}
+            />
           </div>
         )}
 
@@ -489,7 +619,10 @@ export function CheckoutForm(
           (deliveryMethodType === "PICKUP" && points.length > 0 &&
             !pickupPointId) ||
           pickupDateBlocking ||
-          (paymentMethods.length > 0 && !paymentMethod)}
+          (paymentMethods.length > 0 && !paymentMethod) ||
+          (deliveryMethodType === "COURIER" &&
+            (!shippingRecipientName || !shippingPhone || !shippingLine1 ||
+              !shippingCity))}
         className="store-theme-primary-button flex flex-col items-center gap-1 rounded-xl px-5 py-4 transition disabled:opacity-60"
       >
         <span className="flex items-center gap-2 text-sm font-semibold">

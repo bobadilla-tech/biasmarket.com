@@ -24,13 +24,13 @@ describe("AddressesService", () => {
     service = new AddressesService(mockPrisma);
   });
 
-  describe("findAllByCustomer", () => {
+  describe("findAllByBuyerAccount", () => {
     it("returns addresses with ISO string dates", async () => {
       const createdAt = new Date();
       mockPrisma.address.findMany.mockResolvedValue([
         {
           id: "addr_1",
-          customerId: "cust_1",
+          buyerAccountId: "buyer_1",
           label: "Casa",
           recipientName: "Maria",
           phone: "987654321",
@@ -44,12 +44,12 @@ describe("AddressesService", () => {
         },
       ]);
 
-      const result = await service.findAllByCustomer("cust_1");
+      const result = await service.findAllByBuyerAccount("buyer_1");
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe("addr_1");
       expect(result[0].createdAt).toBe(createdAt.toISOString());
       expect(mockPrisma.address.findMany).toHaveBeenCalledWith({
-        where: { customerId: "cust_1" },
+        where: { buyerAccountId: "buyer_1" },
         orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
       });
     });
@@ -61,7 +61,7 @@ describe("AddressesService", () => {
       const createdAt = new Date();
       mockPrisma.address.create.mockResolvedValue({
         id: "addr_1",
-        customerId: "cust_1",
+        buyerAccountId: "buyer_1",
         label: "Casa",
         recipientName: "Maria",
         phone: "987654321",
@@ -74,7 +74,7 @@ describe("AddressesService", () => {
         createdAt,
       });
 
-      const result = await service.create("cust_1", {
+      const result = await service.create("buyer_1", {
         label: "Casa",
         recipientName: "Maria",
         phone: "987654321",
@@ -84,21 +84,21 @@ describe("AddressesService", () => {
 
       expect(result.isDefault).toBe(true);
       expect(mockPrisma.address.updateMany).toHaveBeenCalledWith({
-        where: { customerId: "cust_1" },
+        where: { buyerAccountId: "buyer_1" },
         data: { isDefault: false },
       });
     });
   });
 
   describe("update", () => {
-    it("throws NotFoundException if address belongs to another customer", async () => {
+    it("throws NotFoundException if address belongs to another buyer account", async () => {
       mockPrisma.address.findUnique.mockResolvedValue({
         id: "addr_1",
-        customerId: "cust_2",
+        buyerAccountId: "buyer_2",
       });
 
       await expect(
-        service.update("cust_1", "addr_1", { label: "Trabajo" }),
+        service.update("buyer_1", "addr_1", { label: "Trabajo" }),
       ).rejects.toThrow(NotFoundException);
     });
   });
@@ -107,7 +107,7 @@ describe("AddressesService", () => {
     it("deletes address and reassigns default if deleted address was default", async () => {
       mockPrisma.address.findUnique.mockResolvedValue({
         id: "addr_1",
-        customerId: "cust_1",
+        buyerAccountId: "buyer_1",
         isDefault: true,
       });
       mockPrisma.address.delete.mockResolvedValue({});
@@ -115,7 +115,7 @@ describe("AddressesService", () => {
         id: "addr_2",
       });
 
-      const result = await service.delete("cust_1", "addr_1");
+      const result = await service.delete("buyer_1", "addr_1");
 
       expect(result.success).toBe(true);
       expect(mockPrisma.address.delete).toHaveBeenCalledWith({

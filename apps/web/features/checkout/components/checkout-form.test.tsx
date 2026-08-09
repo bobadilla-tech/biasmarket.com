@@ -8,11 +8,16 @@ const {
   findEnabledPickupPoints,
   findEnabledPaymentConfig,
   createCheckout,
+  findAddresses,
 } = vi.hoisted(() => ({
   findEnabledDeliveryConfig: vi.fn(),
   findEnabledPickupPoints: vi.fn(),
   findEnabledPaymentConfig: vi.fn(),
   createCheckout: vi.fn(),
+  // Defaults to a rejection (unauthenticated) — matches a real guest/
+  // logged-out buyer's 401, and the hook (useDefaultShippingAddress) never
+  // surfaces that as a UI error, only as an empty prefill.
+  findAddresses: vi.fn().mockRejectedValue(new Error("not authenticated")),
 }));
 
 vi.mock("@/lib/api-client", () => ({
@@ -21,6 +26,7 @@ vi.mock("@/lib/api-client", () => ({
     publicPickupPoints: { findEnabled: findEnabledPickupPoints },
     publicPaymentConfig: { findEnabled: findEnabledPaymentConfig },
     checkout: { create: createCheckout },
+    addresses: { findAll: findAddresses },
   },
 }));
 
@@ -288,5 +294,109 @@ test("switching to courier shows the WhatsApp coordination note instead of picku
       screen.getByText(/costo de envío se coordina por WhatsApp/i),
     ).toBeDefined();
     expect(screen.queryByText("Alameda 28 de Julio")).toBeNull();
+  });
+});
+
+test("submits the inline shippingAddress fields for a COURIER order", async () => {
+  findEnabledDeliveryConfig.mockResolvedValue([
+    { type: "COURIER", enabled: true, details: {} },
+  ]);
+  findEnabledPickupPoints.mockResolvedValue({ weekday: today, points: [] });
+  findEnabledPaymentConfig.mockResolvedValue([]);
+  createCheckout.mockResolvedValue({
+    order: { id: "order-1" },
+    whatsappUrl: null,
+  });
+
+  const user = userEvent.setup();
+  renderWithProviders(
+    <CheckoutForm slug="my-store" items={cartItems} onOrderCreated={vi.fn()} />,
+  );
+
+  await screen.findByText(/costo de envío se coordina por WhatsApp/i);
+
+  await user.type(
+    screen.getByPlaceholderText("Nombre de quien recibe"),
+    "Jane Doe",
+  );
+  await user.type(
+    screen.getByPlaceholderText("Teléfono de contacto"),
+    "988888888",
+  );
+  await user.type(
+    screen.getByPlaceholderText("Dirección (calle, número)"),
+    "Av. Principal 123",
+  );
+  await user.type(screen.getByPlaceholderText("Ciudad"), "Lima");
+  await user.type(
+    screen.getByPlaceholderText("Teléfono (WhatsApp)"),
+    "988888888",
+  );
+  await user.type(
+    screen.getByPlaceholderText("Email"),
+    "jane@example.com",
+  );
+  await user.click(
+    screen.getByRole("button", { name: /Confirmar y continuar/i }),
+  );
+
+  await waitFor(() => {
+    expect(createCheckout).toHaveBeenCalledWith(
+      "my-store",
+      expect.objectContaining({
+        deliveryMethodType: "COURIER",
+        shippingAddress: {
+          recipientName: "Jane Doe",
+          phone: "988888888",
+          line1: "Av. Principal 123",
+          line2: undefined,
+          city: "Lima",
+          region: undefined,
+          reference: undefined,
+        },
+      }),
+      expect.anything(),
+    );
+  });
+});
+
+test("prefills the shippingAddress fields from the buyer's saved default address", async () => {
+  findEnabledDeliveryConfig.mockResolvedValue([
+    { type: "COURIER", enabled: true, details: {} },
+  ]);
+  findEnabledPickupPoints.mockResolvedValue({ weekday: today, points: [] });
+  findEnabledPaymentConfig.mockResolvedValue([]);
+  findAddresses.mockResolvedValue([
+    {
+      id: "addr-1",
+      buyerAccountId: "buyer-1",
+      label: null,
+      recipientName: "Jane Doe",
+      phone: "988888888",
+      line1: "Av. Principal 123",
+      line2: null,
+      city: "Lima",
+      region: null,
+      reference: null,
+      isDefault: true,
+      createdAt: new Date().toISOString(),
+    },
+  ]);
+
+  renderWithProviders(
+    <CheckoutForm slug="my-store" items={cartItems} onOrderCreated={vi.fn()} />,
+  );
+
+  await screen.findByText(/costo de envío se coordina por WhatsApp/i);
+
+  await waitFor(() => {
+    expect(
+      (screen.getByPlaceholderText(
+        "Nombre de quien recibe",
+      ) as HTMLInputElement).value,
+    ).toBe("Jane Doe");
+    expect(
+      (screen.getByPlaceholderText("Ciudad") as HTMLInputElement).value,
+    ).toBe("Lima");
   });
 });
