@@ -149,9 +149,7 @@ export type StorePublicDetailResponseDtoThemeConfig = {
 };
 
 export type StoreSectionWithCollectionResponseDtoType =
-  (typeof StoreSectionWithCollectionResponseDtoType)[
-    keyof typeof StoreSectionWithCollectionResponseDtoType
-  ];
+  (typeof StoreSectionWithCollectionResponseDtoType)[keyof typeof StoreSectionWithCollectionResponseDtoType];
 
 export const StoreSectionWithCollectionResponseDtoType = {
   COLLECTION: "COLLECTION",
@@ -160,9 +158,7 @@ export const StoreSectionWithCollectionResponseDtoType = {
 } as const;
 
 export type PublicProductWithVariantsResponseDtoStatus =
-  (typeof PublicProductWithVariantsResponseDtoStatus)[
-    keyof typeof PublicProductWithVariantsResponseDtoStatus
-  ];
+  (typeof PublicProductWithVariantsResponseDtoStatus)[keyof typeof PublicProductWithVariantsResponseDtoStatus];
 
 export const PublicProductWithVariantsResponseDtoStatus = {
   DRAFT: "DRAFT",
@@ -317,9 +313,7 @@ export interface CreateProductDto {
 }
 
 export type ProductWithVariantsResponseDtoStatus =
-  (typeof ProductWithVariantsResponseDtoStatus)[
-    keyof typeof ProductWithVariantsResponseDtoStatus
-  ];
+  (typeof ProductWithVariantsResponseDtoStatus)[keyof typeof ProductWithVariantsResponseDtoStatus];
 
 export const ProductWithVariantsResponseDtoStatus = {
   DRAFT: "DRAFT",
@@ -363,9 +357,7 @@ export interface ProductWithVariantsResponseDto {
 }
 
 export type ProductDetailResponseDtoStatus =
-  (typeof ProductDetailResponseDtoStatus)[
-    keyof typeof ProductDetailResponseDtoStatus
-  ];
+  (typeof ProductDetailResponseDtoStatus)[keyof typeof ProductDetailResponseDtoStatus];
 
 export const ProductDetailResponseDtoStatus = {
   DRAFT: "DRAFT",
@@ -480,9 +472,8 @@ export interface ProductSearchResultResponseDto {
   limit: number;
 }
 
-export type NotificationResponseDtoType = (typeof NotificationResponseDtoType)[
-  keyof typeof NotificationResponseDtoType
-];
+export type NotificationResponseDtoType =
+  (typeof NotificationResponseDtoType)[keyof typeof NotificationResponseDtoType];
 
 export const NotificationResponseDtoType = {
   LOW_STOCK: "LOW_STOCK",
@@ -520,9 +511,7 @@ export interface UserStoreCountResponseDto {
 }
 
 export type OrderResponseDtoDeliveryMethodType =
-  (typeof OrderResponseDtoDeliveryMethodType)[
-    keyof typeof OrderResponseDtoDeliveryMethodType
-  ];
+  (typeof OrderResponseDtoDeliveryMethodType)[keyof typeof OrderResponseDtoDeliveryMethodType];
 
 export const OrderResponseDtoDeliveryMethodType = {
   PICKUP: "PICKUP",
@@ -538,9 +527,7 @@ export type OrderResponseDtoDeliveryDetails = { [key: string]: unknown } | null;
  * @nullable
  */
 export type OrderResponseDtoPaymentMethod =
-  | (typeof OrderResponseDtoPaymentMethod)[
-    keyof typeof OrderResponseDtoPaymentMethod
-  ]
+  | (typeof OrderResponseDtoPaymentMethod)[keyof typeof OrderResponseDtoPaymentMethod]
   | null;
 
 export const OrderResponseDtoPaymentMethod = {
@@ -551,9 +538,7 @@ export const OrderResponseDtoPaymentMethod = {
 } as const;
 
 export type OrderResponseDtoPaymentStatus =
-  (typeof OrderResponseDtoPaymentStatus)[
-    keyof typeof OrderResponseDtoPaymentStatus
-  ];
+  (typeof OrderResponseDtoPaymentStatus)[keyof typeof OrderResponseDtoPaymentStatus];
 
 export const OrderResponseDtoPaymentStatus = {
   PENDING_PAYMENT: "PENDING_PAYMENT",
@@ -565,9 +550,7 @@ export const OrderResponseDtoPaymentStatus = {
 } as const;
 
 export type OrderResponseDtoFulfillmentStatus =
-  (typeof OrderResponseDtoFulfillmentStatus)[
-    keyof typeof OrderResponseDtoFulfillmentStatus
-  ];
+  (typeof OrderResponseDtoFulfillmentStatus)[keyof typeof OrderResponseDtoFulfillmentStatus];
 
 export const OrderResponseDtoFulfillmentStatus = {
   ORDERING: "ORDERING",
@@ -588,9 +571,7 @@ export const OrderResponseDtoStatus = {
  * @nullable
  */
 export type OrderResponseDtoCancellationResolution =
-  | (typeof OrderResponseDtoCancellationResolution)[
-    keyof typeof OrderResponseDtoCancellationResolution
-  ]
+  | (typeof OrderResponseDtoCancellationResolution)[keyof typeof OrderResponseDtoCancellationResolution]
   | null;
 
 export const OrderResponseDtoCancellationResolution = {
@@ -603,9 +584,7 @@ export const OrderResponseDtoCancellationResolution = {
  * @nullable
  */
 export type OrderResponseDtoReleasedResolution =
-  | (typeof OrderResponseDtoReleasedResolution)[
-    keyof typeof OrderResponseDtoReleasedResolution
-  ]
+  | (typeof OrderResponseDtoReleasedResolution)[keyof typeof OrderResponseDtoReleasedResolution]
   | null;
 
 export const OrderResponseDtoReleasedResolution = {
@@ -615,9 +594,7 @@ export const OrderResponseDtoReleasedResolution = {
 } as const;
 
 export type OrderProductResponseDtoStatus =
-  (typeof OrderProductResponseDtoStatus)[
-    keyof typeof OrderProductResponseDtoStatus
-  ];
+  (typeof OrderProductResponseDtoStatus)[keyof typeof OrderProductResponseDtoStatus];
 
 export const OrderProductResponseDtoStatus = {
   DRAFT: "DRAFT",
@@ -679,9 +656,7 @@ export interface OrderItemResponseDto {
  * @nullable
  */
 export type OrderPaymentResponseDtoMethod =
-  | (typeof OrderPaymentResponseDtoMethod)[
-    keyof typeof OrderPaymentResponseDtoMethod
-  ]
+  | (typeof OrderPaymentResponseDtoMethod)[keyof typeof OrderPaymentResponseDtoMethod]
   | null;
 
 export const OrderPaymentResponseDtoMethod = {
@@ -692,9 +667,7 @@ export const OrderPaymentResponseDtoMethod = {
 } as const;
 
 export type OrderPaymentResponseDtoSource =
-  (typeof OrderPaymentResponseDtoSource)[
-    keyof typeof OrderPaymentResponseDtoSource
-  ];
+  (typeof OrderPaymentResponseDtoSource)[keyof typeof OrderPaymentResponseDtoSource];
 
 export const OrderPaymentResponseDtoSource = {
   SELLER_RECORDED: "SELLER_RECORDED",
@@ -702,9 +675,7 @@ export const OrderPaymentResponseDtoSource = {
 } as const;
 
 export type OrderPaymentResponseDtoReviewStatus =
-  (typeof OrderPaymentResponseDtoReviewStatus)[
-    keyof typeof OrderPaymentResponseDtoReviewStatus
-  ];
+  (typeof OrderPaymentResponseDtoReviewStatus)[keyof typeof OrderPaymentResponseDtoReviewStatus];
 
 export const OrderPaymentResponseDtoReviewStatus = {
   N_A: "N_A",
@@ -781,9 +752,7 @@ export interface OrderResponseDto {
 }
 
 export type OrderDetailResponseDtoDeliveryMethodType =
-  (typeof OrderDetailResponseDtoDeliveryMethodType)[
-    keyof typeof OrderDetailResponseDtoDeliveryMethodType
-  ];
+  (typeof OrderDetailResponseDtoDeliveryMethodType)[keyof typeof OrderDetailResponseDtoDeliveryMethodType];
 
 export const OrderDetailResponseDtoDeliveryMethodType = {
   PICKUP: "PICKUP",
@@ -801,9 +770,7 @@ export type OrderDetailResponseDtoDeliveryDetails = {
  * @nullable
  */
 export type OrderDetailResponseDtoPaymentMethod =
-  | (typeof OrderDetailResponseDtoPaymentMethod)[
-    keyof typeof OrderDetailResponseDtoPaymentMethod
-  ]
+  | (typeof OrderDetailResponseDtoPaymentMethod)[keyof typeof OrderDetailResponseDtoPaymentMethod]
   | null;
 
 export const OrderDetailResponseDtoPaymentMethod = {
@@ -814,9 +781,7 @@ export const OrderDetailResponseDtoPaymentMethod = {
 } as const;
 
 export type OrderDetailResponseDtoPaymentStatus =
-  (typeof OrderDetailResponseDtoPaymentStatus)[
-    keyof typeof OrderDetailResponseDtoPaymentStatus
-  ];
+  (typeof OrderDetailResponseDtoPaymentStatus)[keyof typeof OrderDetailResponseDtoPaymentStatus];
 
 export const OrderDetailResponseDtoPaymentStatus = {
   PENDING_PAYMENT: "PENDING_PAYMENT",
@@ -828,9 +793,7 @@ export const OrderDetailResponseDtoPaymentStatus = {
 } as const;
 
 export type OrderDetailResponseDtoFulfillmentStatus =
-  (typeof OrderDetailResponseDtoFulfillmentStatus)[
-    keyof typeof OrderDetailResponseDtoFulfillmentStatus
-  ];
+  (typeof OrderDetailResponseDtoFulfillmentStatus)[keyof typeof OrderDetailResponseDtoFulfillmentStatus];
 
 export const OrderDetailResponseDtoFulfillmentStatus = {
   ORDERING: "ORDERING",
@@ -840,9 +803,7 @@ export const OrderDetailResponseDtoFulfillmentStatus = {
 } as const;
 
 export type OrderDetailResponseDtoStatus =
-  (typeof OrderDetailResponseDtoStatus)[
-    keyof typeof OrderDetailResponseDtoStatus
-  ];
+  (typeof OrderDetailResponseDtoStatus)[keyof typeof OrderDetailResponseDtoStatus];
 
 export const OrderDetailResponseDtoStatus = {
   ACTIVE: "ACTIVE",
@@ -853,9 +814,7 @@ export const OrderDetailResponseDtoStatus = {
  * @nullable
  */
 export type OrderDetailResponseDtoCancellationResolution =
-  | (typeof OrderDetailResponseDtoCancellationResolution)[
-    keyof typeof OrderDetailResponseDtoCancellationResolution
-  ]
+  | (typeof OrderDetailResponseDtoCancellationResolution)[keyof typeof OrderDetailResponseDtoCancellationResolution]
   | null;
 
 export const OrderDetailResponseDtoCancellationResolution = {
@@ -868,9 +827,7 @@ export const OrderDetailResponseDtoCancellationResolution = {
  * @nullable
  */
 export type OrderDetailResponseDtoReleasedResolution =
-  | (typeof OrderDetailResponseDtoReleasedResolution)[
-    keyof typeof OrderDetailResponseDtoReleasedResolution
-  ]
+  | (typeof OrderDetailResponseDtoReleasedResolution)[keyof typeof OrderDetailResponseDtoReleasedResolution]
   | null;
 
 export const OrderDetailResponseDtoReleasedResolution = {
@@ -940,9 +897,7 @@ export interface ReviewPaymentDto {
 }
 
 export type OrderStatusResponseDtoDeliveryMethodType =
-  (typeof OrderStatusResponseDtoDeliveryMethodType)[
-    keyof typeof OrderStatusResponseDtoDeliveryMethodType
-  ];
+  (typeof OrderStatusResponseDtoDeliveryMethodType)[keyof typeof OrderStatusResponseDtoDeliveryMethodType];
 
 export const OrderStatusResponseDtoDeliveryMethodType = {
   PICKUP: "PICKUP",
@@ -960,9 +915,7 @@ export type OrderStatusResponseDtoDeliveryDetails = {
  * @nullable
  */
 export type OrderStatusResponseDtoPaymentMethod =
-  | (typeof OrderStatusResponseDtoPaymentMethod)[
-    keyof typeof OrderStatusResponseDtoPaymentMethod
-  ]
+  | (typeof OrderStatusResponseDtoPaymentMethod)[keyof typeof OrderStatusResponseDtoPaymentMethod]
   | null;
 
 export const OrderStatusResponseDtoPaymentMethod = {
@@ -973,9 +926,7 @@ export const OrderStatusResponseDtoPaymentMethod = {
 } as const;
 
 export type OrderStatusResponseDtoPaymentStatus =
-  (typeof OrderStatusResponseDtoPaymentStatus)[
-    keyof typeof OrderStatusResponseDtoPaymentStatus
-  ];
+  (typeof OrderStatusResponseDtoPaymentStatus)[keyof typeof OrderStatusResponseDtoPaymentStatus];
 
 export const OrderStatusResponseDtoPaymentStatus = {
   PENDING_PAYMENT: "PENDING_PAYMENT",
@@ -987,9 +938,7 @@ export const OrderStatusResponseDtoPaymentStatus = {
 } as const;
 
 export type OrderStatusResponseDtoFulfillmentStatus =
-  (typeof OrderStatusResponseDtoFulfillmentStatus)[
-    keyof typeof OrderStatusResponseDtoFulfillmentStatus
-  ];
+  (typeof OrderStatusResponseDtoFulfillmentStatus)[keyof typeof OrderStatusResponseDtoFulfillmentStatus];
 
 export const OrderStatusResponseDtoFulfillmentStatus = {
   ORDERING: "ORDERING",
@@ -999,9 +948,7 @@ export const OrderStatusResponseDtoFulfillmentStatus = {
 } as const;
 
 export type OrderStatusResponseDtoStatus =
-  (typeof OrderStatusResponseDtoStatus)[
-    keyof typeof OrderStatusResponseDtoStatus
-  ];
+  (typeof OrderStatusResponseDtoStatus)[keyof typeof OrderStatusResponseDtoStatus];
 
 export const OrderStatusResponseDtoStatus = {
   ACTIVE: "ACTIVE",
@@ -1012,9 +959,7 @@ export const OrderStatusResponseDtoStatus = {
  * @nullable
  */
 export type OrderStatusResponseDtoCancellationResolution =
-  | (typeof OrderStatusResponseDtoCancellationResolution)[
-    keyof typeof OrderStatusResponseDtoCancellationResolution
-  ]
+  | (typeof OrderStatusResponseDtoCancellationResolution)[keyof typeof OrderStatusResponseDtoCancellationResolution]
   | null;
 
 export const OrderStatusResponseDtoCancellationResolution = {
@@ -1027,9 +972,7 @@ export const OrderStatusResponseDtoCancellationResolution = {
  * @nullable
  */
 export type OrderStatusResponseDtoReleasedResolution =
-  | (typeof OrderStatusResponseDtoReleasedResolution)[
-    keyof typeof OrderStatusResponseDtoReleasedResolution
-  ]
+  | (typeof OrderStatusResponseDtoReleasedResolution)[keyof typeof OrderStatusResponseDtoReleasedResolution]
   | null;
 
 export const OrderStatusResponseDtoReleasedResolution = {
@@ -1079,9 +1022,8 @@ export interface OrderStatusResponseDto {
   createdAt: string;
 }
 
-export type AdvanceFulfillmentDtoStatus = (typeof AdvanceFulfillmentDtoStatus)[
-  keyof typeof AdvanceFulfillmentDtoStatus
-];
+export type AdvanceFulfillmentDtoStatus =
+  (typeof AdvanceFulfillmentDtoStatus)[keyof typeof AdvanceFulfillmentDtoStatus];
 
 export const AdvanceFulfillmentDtoStatus = {
   IN_TRANSIT: "IN_TRANSIT",
@@ -1111,9 +1053,7 @@ export const CancelOrderDtoRetainMode = {
 } as const;
 
 export type CancelOrderDtoReleasedResolution =
-  (typeof CancelOrderDtoReleasedResolution)[
-    keyof typeof CancelOrderDtoReleasedResolution
-  ];
+  (typeof CancelOrderDtoReleasedResolution)[keyof typeof CancelOrderDtoReleasedResolution];
 
 export const CancelOrderDtoReleasedResolution = {
   REFUNDED: "REFUNDED",
@@ -1131,18 +1071,15 @@ export interface CancelOrderDto {
 }
 
 export type CreateOrderDtoDeliveryMethodType =
-  (typeof CreateOrderDtoDeliveryMethodType)[
-    keyof typeof CreateOrderDtoDeliveryMethodType
-  ];
+  (typeof CreateOrderDtoDeliveryMethodType)[keyof typeof CreateOrderDtoDeliveryMethodType];
 
 export const CreateOrderDtoDeliveryMethodType = {
   PICKUP: "PICKUP",
   COURIER: "COURIER",
 } as const;
 
-export type CreateOrderDtoPaymentMethod = (typeof CreateOrderDtoPaymentMethod)[
-  keyof typeof CreateOrderDtoPaymentMethod
-];
+export type CreateOrderDtoPaymentMethod =
+  (typeof CreateOrderDtoPaymentMethod)[keyof typeof CreateOrderDtoPaymentMethod];
 
 export const CreateOrderDtoPaymentMethod = {
   YAPE: "YAPE",
@@ -1188,9 +1125,7 @@ export interface CreateOrderDto {
 }
 
 export type CheckoutOrderResponseDtoDeliveryMethodType =
-  (typeof CheckoutOrderResponseDtoDeliveryMethodType)[
-    keyof typeof CheckoutOrderResponseDtoDeliveryMethodType
-  ];
+  (typeof CheckoutOrderResponseDtoDeliveryMethodType)[keyof typeof CheckoutOrderResponseDtoDeliveryMethodType];
 
 export const CheckoutOrderResponseDtoDeliveryMethodType = {
   PICKUP: "PICKUP",
@@ -1201,9 +1136,7 @@ export const CheckoutOrderResponseDtoDeliveryMethodType = {
  * @nullable
  */
 export type CheckoutOrderResponseDtoPaymentMethod =
-  | (typeof CheckoutOrderResponseDtoPaymentMethod)[
-    keyof typeof CheckoutOrderResponseDtoPaymentMethod
-  ]
+  | (typeof CheckoutOrderResponseDtoPaymentMethod)[keyof typeof CheckoutOrderResponseDtoPaymentMethod]
   | null;
 
 export const CheckoutOrderResponseDtoPaymentMethod = {
@@ -1214,9 +1147,7 @@ export const CheckoutOrderResponseDtoPaymentMethod = {
 } as const;
 
 export type CheckoutOrderResponseDtoPaymentStatus =
-  (typeof CheckoutOrderResponseDtoPaymentStatus)[
-    keyof typeof CheckoutOrderResponseDtoPaymentStatus
-  ];
+  (typeof CheckoutOrderResponseDtoPaymentStatus)[keyof typeof CheckoutOrderResponseDtoPaymentStatus];
 
 export const CheckoutOrderResponseDtoPaymentStatus = {
   PENDING_PAYMENT: "PENDING_PAYMENT",
@@ -1228,9 +1159,7 @@ export const CheckoutOrderResponseDtoPaymentStatus = {
 } as const;
 
 export type CheckoutOrderResponseDtoFulfillmentStatus =
-  (typeof CheckoutOrderResponseDtoFulfillmentStatus)[
-    keyof typeof CheckoutOrderResponseDtoFulfillmentStatus
-  ];
+  (typeof CheckoutOrderResponseDtoFulfillmentStatus)[keyof typeof CheckoutOrderResponseDtoFulfillmentStatus];
 
 export const CheckoutOrderResponseDtoFulfillmentStatus = {
   ORDERING: "ORDERING",
@@ -1240,9 +1169,7 @@ export const CheckoutOrderResponseDtoFulfillmentStatus = {
 } as const;
 
 export type CheckoutOrderResponseDtoStatus =
-  (typeof CheckoutOrderResponseDtoStatus)[
-    keyof typeof CheckoutOrderResponseDtoStatus
-  ];
+  (typeof CheckoutOrderResponseDtoStatus)[keyof typeof CheckoutOrderResponseDtoStatus];
 
 export const CheckoutOrderResponseDtoStatus = {
   ACTIVE: "ACTIVE",
@@ -1253,9 +1180,7 @@ export const CheckoutOrderResponseDtoStatus = {
  * @nullable
  */
 export type CheckoutOrderResponseDtoCancellationResolution =
-  | (typeof CheckoutOrderResponseDtoCancellationResolution)[
-    keyof typeof CheckoutOrderResponseDtoCancellationResolution
-  ]
+  | (typeof CheckoutOrderResponseDtoCancellationResolution)[keyof typeof CheckoutOrderResponseDtoCancellationResolution]
   | null;
 
 export const CheckoutOrderResponseDtoCancellationResolution = {
@@ -1268,9 +1193,7 @@ export const CheckoutOrderResponseDtoCancellationResolution = {
  * @nullable
  */
 export type CheckoutOrderResponseDtoReleasedResolution =
-  | (typeof CheckoutOrderResponseDtoReleasedResolution)[
-    keyof typeof CheckoutOrderResponseDtoReleasedResolution
-  ]
+  | (typeof CheckoutOrderResponseDtoReleasedResolution)[keyof typeof CheckoutOrderResponseDtoReleasedResolution]
   | null;
 
 export const CheckoutOrderResponseDtoReleasedResolution = {
@@ -1348,9 +1271,7 @@ export interface CheckoutResultResponseDto {
 }
 
 export type ConfirmAccountResponseDtoPurpose =
-  (typeof ConfirmAccountResponseDtoPurpose)[
-    keyof typeof ConfirmAccountResponseDtoPurpose
-  ];
+  (typeof ConfirmAccountResponseDtoPurpose)[keyof typeof ConfirmAccountResponseDtoPurpose];
 
 export const ConfirmAccountResponseDtoPurpose = {
   confirm: "confirm",
@@ -1369,9 +1290,7 @@ export interface ConfirmAccountCustomerResponseDto {
 }
 
 export type AccountOrderResponseDtoPaymentStatus =
-  (typeof AccountOrderResponseDtoPaymentStatus)[
-    keyof typeof AccountOrderResponseDtoPaymentStatus
-  ];
+  (typeof AccountOrderResponseDtoPaymentStatus)[keyof typeof AccountOrderResponseDtoPaymentStatus];
 
 export const AccountOrderResponseDtoPaymentStatus = {
   PENDING_PAYMENT: "PENDING_PAYMENT",
@@ -1383,9 +1302,7 @@ export const AccountOrderResponseDtoPaymentStatus = {
 } as const;
 
 export type AccountOrderResponseDtoFulfillmentStatus =
-  (typeof AccountOrderResponseDtoFulfillmentStatus)[
-    keyof typeof AccountOrderResponseDtoFulfillmentStatus
-  ];
+  (typeof AccountOrderResponseDtoFulfillmentStatus)[keyof typeof AccountOrderResponseDtoFulfillmentStatus];
 
 export const AccountOrderResponseDtoFulfillmentStatus = {
   ORDERING: "ORDERING",
@@ -1441,9 +1358,7 @@ export interface CustomerDetailResponseDto {
 }
 
 export type DeliveryMethodConfigResponseDtoType =
-  (typeof DeliveryMethodConfigResponseDtoType)[
-    keyof typeof DeliveryMethodConfigResponseDtoType
-  ];
+  (typeof DeliveryMethodConfigResponseDtoType)[keyof typeof DeliveryMethodConfigResponseDtoType];
 
 export const DeliveryMethodConfigResponseDtoType = {
   PICKUP: "PICKUP",
@@ -1461,9 +1376,8 @@ export interface DeliveryMethodConfigResponseDto {
   createdAt: string;
 }
 
-export type UpsertDeliveryMethodDtoType = (typeof UpsertDeliveryMethodDtoType)[
-  keyof typeof UpsertDeliveryMethodDtoType
-];
+export type UpsertDeliveryMethodDtoType =
+  (typeof UpsertDeliveryMethodDtoType)[keyof typeof UpsertDeliveryMethodDtoType];
 
 export const UpsertDeliveryMethodDtoType = {
   PICKUP: "PICKUP",
@@ -1524,9 +1438,7 @@ export interface PublicPickupPointsResponseDto {
 }
 
 export type PaymentMethodConfigResponseDtoMethod =
-  (typeof PaymentMethodConfigResponseDtoMethod)[
-    keyof typeof PaymentMethodConfigResponseDtoMethod
-  ];
+  (typeof PaymentMethodConfigResponseDtoMethod)[keyof typeof PaymentMethodConfigResponseDtoMethod];
 
 export const PaymentMethodConfigResponseDtoMethod = {
   YAPE: "YAPE",
@@ -1549,9 +1461,7 @@ export interface PaymentMethodConfigResponseDto {
 }
 
 export type UpsertPaymentMethodDtoMethod =
-  (typeof UpsertPaymentMethodDtoMethod)[
-    keyof typeof UpsertPaymentMethodDtoMethod
-  ];
+  (typeof UpsertPaymentMethodDtoMethod)[keyof typeof UpsertPaymentMethodDtoMethod];
 
 export const UpsertPaymentMethodDtoMethod = {
   YAPE: "YAPE",
@@ -1644,9 +1554,7 @@ export interface CollectionResponseDto {
 }
 
 export type ProductInCollectionResponseDtoStatus =
-  (typeof ProductInCollectionResponseDtoStatus)[
-    keyof typeof ProductInCollectionResponseDtoStatus
-  ];
+  (typeof ProductInCollectionResponseDtoStatus)[keyof typeof ProductInCollectionResponseDtoStatus];
 
 export const ProductInCollectionResponseDtoStatus = {
   DRAFT: "DRAFT",
@@ -1741,9 +1649,8 @@ export interface CreateStoreSectionDto {
   hidden?: boolean;
 }
 
-export type StoreSectionResponseDtoType = (typeof StoreSectionResponseDtoType)[
-  keyof typeof StoreSectionResponseDtoType
-];
+export type StoreSectionResponseDtoType =
+  (typeof StoreSectionResponseDtoType)[keyof typeof StoreSectionResponseDtoType];
 
 export const StoreSectionResponseDtoType = {
   COLLECTION: "COLLECTION",
@@ -1804,6 +1711,20 @@ export interface FulfillmentStatusCountsResponseDto {
   COMPLETED: number;
 }
 
+export interface OutstandingPartialPaymentResponseDto {
+  id: string;
+  /** @nullable */
+  customerName: string | null;
+  customerPhone: string;
+  currency: string;
+  totalAmount: string;
+  requiredAmount: string;
+  paidAmount: number;
+  pendingAmount: number;
+  paidPercentage: number;
+  createdAt: string;
+}
+
 export interface StatsOverviewResponseDto {
   revenue: number;
   totalOrders: number;
@@ -1811,12 +1732,11 @@ export interface StatsOverviewResponseDto {
   fulfillmentStatusCounts: FulfillmentStatusCountsResponseDto;
   lowStockCount: number;
   recentOrders: OrderResponseDto[];
+  partialPaymentOrders: OutstandingPartialPaymentResponseDto[];
 }
 
 export type AnalyticsResultResponseDtoRange =
-  (typeof AnalyticsResultResponseDtoRange)[
-    keyof typeof AnalyticsResultResponseDtoRange
-  ];
+  (typeof AnalyticsResultResponseDtoRange)[keyof typeof AnalyticsResultResponseDtoRange];
 
 export const AnalyticsResultResponseDtoRange = {
   "30d": "30d",
@@ -1849,9 +1769,7 @@ export interface AnalyticsResultResponseDto {
  * @nullable
  */
 export type PaymentMethodBreakdownRowResponseDtoMethod =
-  | (typeof PaymentMethodBreakdownRowResponseDtoMethod)[
-    keyof typeof PaymentMethodBreakdownRowResponseDtoMethod
-  ]
+  | (typeof PaymentMethodBreakdownRowResponseDtoMethod)[keyof typeof PaymentMethodBreakdownRowResponseDtoMethod]
   | null;
 
 export const PaymentMethodBreakdownRowResponseDtoMethod = {
@@ -1878,9 +1796,7 @@ export interface PaymentMethodsBreakdownResponseDto {
 }
 
 export type SuggestionResponseDtoSeverity =
-  (typeof SuggestionResponseDtoSeverity)[
-    keyof typeof SuggestionResponseDtoSeverity
-  ];
+  (typeof SuggestionResponseDtoSeverity)[keyof typeof SuggestionResponseDtoSeverity];
 
 export const SuggestionResponseDtoSeverity = {
   info: "info",
@@ -2003,9 +1919,7 @@ export interface RestockCountResponseDto {
 }
 
 export type WhatsAppTemplateResponseDtoType =
-  (typeof WhatsAppTemplateResponseDtoType)[
-    keyof typeof WhatsAppTemplateResponseDtoType
-  ];
+  (typeof WhatsAppTemplateResponseDtoType)[keyof typeof WhatsAppTemplateResponseDtoType];
 
 export const WhatsAppTemplateResponseDtoType = {
   NEW_ORDER: "NEW_ORDER",

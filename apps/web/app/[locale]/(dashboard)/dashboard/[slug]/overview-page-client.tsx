@@ -7,7 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingState } from "@/components/shared/loading-state";
 import { ErrorState } from "@/components/shared/error-state";
 import { useDashboardStore } from "@/features/stores";
-import { RecentOrdersList, StatTile, useStatsOverview } from "@/features/stats";
+import {
+  PartialPaymentsCard,
+  RecentOrdersList,
+  StatTile,
+  useStatsOverview,
+} from "@/features/stats";
 import type {
   FulfillmentStatusValue,
   PaymentStatusValue,
@@ -68,6 +73,8 @@ export function DashboardOverviewPageClient() {
             value={String(stats.lowStockCount)}
           />
         </div>
+
+        <PartialPaymentsCard orders={stats.partialPaymentOrders} />
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(300px,0.85fr)]">
           <RecentOrdersList orders={stats.recentOrders} locale={locale} />

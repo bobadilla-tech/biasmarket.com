@@ -2,13 +2,18 @@ import { mkdirSync, readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 
-// MAIL_DRIVER=file (see apps/api/.env) writes outgoing emails here instead
-// of sending them — used to pull the real email-verification link out of the
-// signup email, the same way a person would click it, rather than
-// hand-rolling a session/cookie shortcut.
+// MAIL_DRIVER=file (see infra/docker/.env.example) makes apps/workers write
+// outgoing emails to apps/workers/.mailer-dev instead of sending them — used
+// to pull the real email-verification link out of the signup email, the same
+// way a person would click it, rather than hand-rolling a session/cookie
+// shortcut. Resolved from this test file (apps/api/test) up to the repo root,
+// matching MailerCoreService's own `apps/workers/.mailer-dev` (its comment
+// explains the cwd-independence trick).
 export const mailerDevDir = join(
   fileURLToPath(new URL(".", import.meta.url)),
   "..",
+  "..",
+  "workers",
   ".mailer-dev",
 );
 mkdirSync(mailerDevDir, { recursive: true });

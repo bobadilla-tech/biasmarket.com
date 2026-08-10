@@ -8,6 +8,8 @@ import { normalizePhone } from "@biasmarket/utils/phone-country";
 import { PrismaService } from "../../../prisma/prisma.service.js";
 import {
   countsTowardPaid,
+  countsTowardRevenue,
+  REVENUE_ORDER_PAYMENT_STATUSES,
   withPaymentSummary,
 } from "../../../common/payment-summary.js";
 
@@ -63,7 +65,13 @@ export class CustomersService {
       this.prisma.orderPayment.findMany({
         where: {
           storeId,
-          order: { paymentStatus: "VERIFIED", customerId: { not: null } },
+          // Money actually collected and verified only — partial-payment
+          // orders count their paid amount, never the full order total, the
+          // same business rule `countsTowardRevenue` applies everywhere.
+          order: {
+            paymentStatus: { in: [...REVENUE_ORDER_PAYMENT_STATUSES] },
+            customerId: { not: null },
+          },
           // Excludes a buyer-submitted proof still awaiting seller review —
           // see common/payment-summary.ts's `countsTowardPaid`.
           OR: [{ source: "SELLER_RECORDED" }, { reviewStatus: "APPROVED" }],
@@ -143,7 +151,7 @@ export class CustomersService {
         if (order.customerName != null) guest.name = order.customerName;
         guest.email = order.customerEmail ?? null;
       }
-      if (order.paymentStatus === "VERIFIED") {
+      if (countsTowardRevenue(order.paymentStatus)) {
         for (const payment of order.payments.filter(countsTowardPaid)) {
           guest.spend = guest.spend.plus(payment.amount);
         }

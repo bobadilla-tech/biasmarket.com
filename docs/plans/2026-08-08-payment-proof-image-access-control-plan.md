@@ -262,3 +262,24 @@ HTTP (the plan's "Verification" section's 401/403 manual-check bullet was
 verified via the unit tests' ownership-delegation assertion, not an actual HTTP
 round-trip against a running server) — worth adding if `orders.e2e-spec.ts` gets
 a real payment-image fixture in the future.
+
+**Follow-up bug fixed 2026-08-10 (CORP header):** the streamed proof images
+loaded fine in an authenticated `fetch` but the browser refused to **render**
+them in `<img>`/`next/image` — every payment-proof thumbnail and lightbox was
+broken in the browser (`net::ERR_BLOCKED_BY_RESPONSE.NotSameOrigin`). Root
+cause: `helmet()`'s default `Cross-Origin-Resource-Policy: same-origin` on the
+API responses. The web frontend (`biasmarket.com` / `localhost:3001`) and the
+API (`api.biasmarket.com` / `localhost:3000`) are different origins, so Chromium
+enforces CORP on the no-CORS `<img>` request even though the session cookie
+(and thus the ownership check) passes. `fetch` with `credentials: "include"`
+works because it's CORS-governed, not CORP-governed — which is exactly why the
+earlier HTTP-level verification (curl) and the unit tests never caught it.
+Fix: `@Header("Cross-Origin-Resource-Policy", "cross-origin")` on both
+streaming handlers (`OrderController.getPaymentImage` and
+`CustomerOrderPaymentsController.getImage`). Scoped to the two endpoints, not
+relaxed globally, and the stream is still auth-gated — this only widens
+*embedding* to the session holder, who is the intended consumer. Verified with
+a real browser automation run (proof thumbnail went from `broken` to `ok`).
+Not covered by an automated test: the `@Header` decorator only takes effect at
+the HTTP layer, which the unit tests (direct handler calls) and the still-missing
+payment-image e2e fixture don't exercise — same gap already noted above.

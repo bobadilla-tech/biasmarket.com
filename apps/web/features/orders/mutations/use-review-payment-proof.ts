@@ -21,7 +21,7 @@ import { ordersKeys } from "../queries/use-orders";
 // order's overall paymentStatus. See
 // docs/plans/2026-08-08-buyer-proof-of-payment-upload-plan.md.
 export function useReviewPaymentProof(
-  storeId: string,
+  storeId: string | undefined,
   fallbackErrorMessage?: string,
 ) {
   const queryClient = useQueryClient();
@@ -31,19 +31,26 @@ export function useReviewPaymentProof(
       orderId,
       paymentId,
       decision,
+      reason,
     }: {
       orderId: string;
       paymentId: string;
       decision: "approve" | "reject";
-    }) =>
-      apiClient.orders.reviewPaymentProof(
+      reason?: string;
+    }) => {
+      if (!storeId) {
+        throw new Error(fallbackErrorMessage ?? "Store no disponible");
+      }
+      return apiClient.orders.reviewPaymentProof(
         storeId,
         orderId,
         paymentId,
-        { decision },
+        { decision, ...(reason && { reason }) },
         { fallbackErrorMessage },
-      ),
+      );
+    },
     onSuccess: () => {
+      if (!storeId) return;
       queryClient.invalidateQueries({ queryKey: ordersKeys.byStore(storeId) });
       void queryClient.invalidateQueries({
         queryKey: statsKeys.overview(storeId),

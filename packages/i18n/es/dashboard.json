@@ -489,6 +489,7 @@
       "progress": "% pagado"
     },
     "contactBuyer": "Contactar comprador",
+    "reviewProof": "Revisar comprobante",
     "breakdownTitle": "Ingresos por método de pago",
     "breakdownSubtitle": "Dinero recibido por método de pago en el período seleccionado",
     "unknownMethod": "Otro",
@@ -589,6 +590,7 @@
     },
     "approve": "Aprobar",
     "approveDisabledNoPayment": "No se puede aprobar sin ningún pago registrado.",
+    "approveReviewProof": "Revisa el comprobante del comprador para aprobar.",
     "reject": "Rechazar",
     "proofReview": {
       "pending": "Pendiente de revisión",
@@ -653,6 +655,12 @@
     },
     "recentOrdersTitle": "Pedidos recientes",
     "recentOrdersEmpty": "Todavía no hay pedidos.",
+    "partialPaymentsTitle": "Pagos parciales",
+    "partialPaymentsEmpty": "No hay pedidos con pago parcial.",
+    "partialPayments": {
+      "paid": "Pagado",
+      "remaining": "Restante"
+    },
     "paymentBreakdownTitle": "Pedidos por estado de pago",
     "fulfillmentBreakdownTitle": "Pedidos por estado de envío",
     "paymentStatusLabels": {

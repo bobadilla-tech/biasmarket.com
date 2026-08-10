@@ -17,13 +17,21 @@ import { useDashboardStore } from "@/features/stores";
 import type { OrderResponseDto } from "@biasmarket/types";
 import { PaymentMethodsBreakdown } from "@/features/stats";
 import {
+  CancelOrderDialog,
   ConfirmTransitionDialog,
   formatOrderDate,
   getInitials,
   getOrderNumber,
+  OrderDetailSheet,
   OrderStatusBadge,
+  PaymentProofLightbox,
+  paymentsLocked,
+  useCancelOrder,
+  useEnabledPaymentMethods,
   useOrders,
+  useRegisterPayment,
   useReviewPayment,
+  useReviewPaymentProof,
 } from "@/features/orders";
 import { useWhatsAppTemplates } from "@/features/store-settings/queries/use-whatsapp-templates";
 
@@ -44,12 +52,29 @@ export function PaymentsPageClient() {
     tCommon("networkError"),
   );
   const reviewPayment = useReviewPayment(storeId, tCommon("networkError"));
+  const reviewProof = useReviewPaymentProof(storeId, tCommon("networkError"));
+  const registerPayment = useRegisterPayment(storeId, tCommon("networkError"));
+  const cancelOrder = useCancelOrder(storeId, tCommon("networkError"));
+  const enabledMethods = useEnabledPaymentMethods(
+    storeId,
+    tCommon("networkError"),
+  ).data ?? [];
   const whatsappTemplates = useWhatsAppTemplates(storeId);
 
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [paymentPreviewUrl, setPaymentPreviewUrl] = useState<string | null>(
+    null,
+  );
   const [confirmTarget, setConfirmTarget] = useState<
     {
       orderId: string;
       decision: "approve" | "reject";
+      // Present when the decision targets a specific buyer-submitted proof
+      // row (`paymentId` in the reviewPaymentProof mutation); absent when it
+      // reviews the order's overall paymentStatus (order-level review).
+      paymentId?: string;
     } | null
   >(null);
   const [rejectReason, setRejectReason] = useState("");
@@ -62,19 +87,56 @@ export function PaymentsPageClient() {
   const paymentOrders = useMemo(
     () =>
       (orders ?? []).filter((order) =>
-        PAYMENT_ATTENTION_STATUSES.has(order.paymentStatus)
+        PAYMENT_ATTENTION_STATUSES.has(order.paymentStatus) ||
+        // VERIFIED is terminal, but a VERIFIED order approved on a deposit
+        // (or a legacy pre-guard approval) still carries an unpaid residual —
+        // it must stay in the payment queue so the seller can register it.
+        // Mirrors `paymentsLocked` (features/orders/lib/order-status.ts).
+        (order.paymentStatus === "VERIFIED" && order.pendingAmount > 0)
       ),
     [orders],
   );
 
+  // The specific buyer-submitted proof row still awaiting seller review for
+  // an order. Proof-level approve/reject decisions must target this row's
+  // paymentId (reviewPaymentProof), never the order-level review callback.
+  const pendingProofOf = (order: OrderResponseDto) =>
+    order.payments.find(
+      (payment) =>
+        payment.source === "BUYER_SUBMITTED" &&
+        payment.reviewStatus === "PENDING_REVIEW",
+    ) ?? null;
+
+  const selectedOrder = useMemo(
+    () => (selectedOrderId
+      ? (orders ?? []).find((order) => order.id === selectedOrderId) ?? null
+      : null),
+    [orders, selectedOrderId],
+  );
+
+  const openDetails = (order: OrderResponseDto) => {
+    setSelectedOrderId(order.id);
+    setDetailsOpen(true);
+  };
+
   const handleConfirm = async () => {
     if (!confirmTarget) return;
-    await reviewPayment.mutateAsync({
-      orderId: confirmTarget.orderId,
-      decision: confirmTarget.decision,
-      ...(confirmTarget.decision === "reject" &&
-        { reason: rejectReason.trim() }),
-    });
+    const { orderId, decision, paymentId } = confirmTarget;
+    const reason = decision === "reject" ? rejectReason.trim() : undefined;
+    if (paymentId) {
+      await reviewProof.mutateAsync({
+        orderId,
+        paymentId,
+        decision,
+        ...(reason && { reason }),
+      });
+    } else {
+      await reviewPayment.mutateAsync({
+        orderId,
+        decision,
+        ...(reason && { reason }),
+      });
+    }
     setConfirmTarget(null);
     setRejectReason("");
   };
@@ -154,7 +216,12 @@ export function PaymentsPageClient() {
                       );
                       const needsReview =
                         order.paymentStatus === "PENDING_PAYMENT" ||
-                        order.paymentStatus === "PAYMENT_SUBMITTED";
+                        order.paymentStatus === "PARTIALLY_PAID" ||
+                        (order.paymentStatus === "PAYMENT_SUBMITTED" &&
+                          order.paidAmount > 0);
+                      const hasPendingProof =
+                        order.paymentStatus === "PAYMENT_SUBMITTED" &&
+                        order.paidAmount <= 0;
 
                       return (
                         <tr
@@ -233,6 +300,64 @@ export function PaymentsPageClient() {
                                   </Button>
                                 </>
                               )}
+                              {hasPendingProof && (
+                                <>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => openDetails(order)}
+                                    className="h-8 rounded-full border-[#eadcf7] bg-white px-3 text-xs font-semibold text-[#2d1649] shadow-none hover:bg-[#fcf9ff]"
+                                  >
+                                    {t("reviewProof")}
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    onClick={() => {
+                                      const proof = pendingProofOf(order);
+                                      if (proof) {
+                                        setConfirmTarget({
+                                          orderId: order.id,
+                                          paymentId: proof.id,
+                                          decision: "approve",
+                                        });
+                                      }
+                                    }}
+                                    disabled={!pendingProofOf(order)}
+                                    className="store-theme-primary-button h-8 rounded-full px-3 text-xs font-semibold hover:opacity-100 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-50"
+                                  >
+                                    {tOrders("approve")}
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => {
+                                      const proof = pendingProofOf(order);
+                                      if (proof) {
+                                        setConfirmTarget({
+                                          orderId: order.id,
+                                          paymentId: proof.id,
+                                          decision: "reject",
+                                        });
+                                      }
+                                    }}
+                                    disabled={!pendingProofOf(order)}
+                                    className="h-8 rounded-full border-[#eadcf7] bg-white px-3 text-xs font-semibold text-[#2d1649] shadow-none hover:bg-[#fcf9ff]"
+                                  >
+                                    {tOrders("reject")}
+                                  </Button>
+                                </>
+                              )}
+                              {!needsReview &&
+                                !hasPendingProof && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => openDetails(order)}
+                                  className="h-8 rounded-full border-[#eadcf7] bg-white px-3 text-xs font-semibold text-[#2d1649] shadow-none hover:bg-[#fcf9ff]"
+                                >
+                                  {tOrders("view")}
+                                </Button>
+                              )}
                               {order.paymentStatus === "PARTIALLY_PAID" && (
                                 <a
                                   href={contactBuyerUrl(order)}
@@ -271,7 +396,9 @@ export function PaymentsPageClient() {
         label={confirmTarget
           ? paymentActionLabels[confirmTarget.decision]
           : null}
-        pending={reviewPayment.isPending}
+        pending={confirmTarget?.paymentId
+          ? reviewProof.isPending
+          : reviewPayment.isPending}
         onCancel={() => {
           setConfirmTarget(null);
           setRejectReason("");
@@ -282,6 +409,68 @@ export function PaymentsPageClient() {
           onReasonChange: setRejectReason,
           reasonRequired: true,
         })}
+      />
+
+      <PaymentProofLightbox
+        url={paymentPreviewUrl}
+        onClose={() => setPaymentPreviewUrl(null)}
+      />
+
+      <CancelOrderDialog
+        open={cancelDialogOpen}
+        onClose={() => setCancelDialogOpen(false)}
+        order={selectedOrder}
+        pending={cancelOrder.isPending}
+        onConfirm={async (values) => {
+          if (!selectedOrder) return;
+
+          await cancelOrder.mutateAsync({
+            orderId: selectedOrder.id,
+            values,
+          });
+
+          setCancelDialogOpen(false);
+          setDetailsOpen(false);
+        }}
+      />
+
+      <OrderDetailSheet
+        open={detailsOpen}
+        onOpenChange={(open) => {
+          setDetailsOpen(open);
+          if (!open) setSelectedOrderId(null);
+        }}
+        order={selectedOrder}
+        isPending={reviewPayment.isPending}
+        fulfillmentLabels={{}}
+        enabledMethods={enabledMethods}
+        registerPaymentSubmitting={registerPayment.isPending}
+        onRegisterPayment={(values) => {
+          if (!selectedOrder || paymentsLocked(selectedOrder)) {
+            return Promise.resolve();
+          }
+          return registerPayment.mutateAsync({
+            orderId: selectedOrder.id,
+            values,
+          });
+        }}
+        onPreviewPayment={setPaymentPreviewUrl}
+        onApprove={() =>
+          selectedOrder &&
+          setConfirmTarget({
+            orderId: selectedOrder.id,
+            paymentId: pendingProofOf(selectedOrder)?.id,
+            decision: "approve",
+          })}
+        onReject={() =>
+          selectedOrder &&
+          setConfirmTarget({
+            orderId: selectedOrder.id,
+            paymentId: pendingProofOf(selectedOrder)?.id,
+            decision: "reject",
+          })}
+        onAdvance={() => {}}
+        onCancel={() => setCancelDialogOpen(true)}
       />
     </div>
   );

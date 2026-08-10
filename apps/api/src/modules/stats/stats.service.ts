@@ -11,6 +11,7 @@ import type {
 } from "@biasmarket/db";
 import {
   countsTowardPaid,
+  REVENUE_ORDER_PAYMENT_STATUSES,
   withPaymentSummary,
 } from "../../common/payment-summary.js";
 import { PrismaService } from "../../prisma/prisma.service.js";
@@ -49,6 +50,13 @@ const FULFILLMENT_STATUSES: FulfillmentStatus[] = [
 
 const RECENT_ORDERS_LIMIT = 10;
 
+// Bound on how many outstanding partial payments the "Outstanding partial
+// payments" summary card resolves with their full `payments` include — the
+// dashboard only ever shows the most recent ones, and loading the whole table
+// for a large store would be a wasted full include (see the `payment-summary.ts`
+// note on bounded payment includes).
+const PARTIAL_PAYMENTS_LIMIT = 20;
+
 @Injectable()
 export class StatsService {
   constructor(private prisma: PrismaService) {}
@@ -73,15 +81,22 @@ export class StatsService {
       fulfillmentGroups,
       lowStockCount,
       recentOrdersRaw,
+      partialPaymentOrdersRaw,
     ] = await Promise.all([
       this.prisma.orderPayment.aggregate({
         where: {
           storeId,
-          order: { paymentStatus: "VERIFIED" },
-          // Excludes a buyer-submitted proof still awaiting seller review —
-          // see common/payment-summary.ts's `countsTowardPaid`, the same
-          // predicate every other revenue/spend aggregate in this codebase
-          // filters by.
+          // Revenue is money actually collected and verified — VERIFIED and
+          // PARTIALLY_PAID orders both qualify, but a partial payment only
+          // ever contributes its own paid amount, not the full order total.
+          // The `OR` below is `countsTowardPaid`: it excludes a
+          // buyer-submitted proof still awaiting seller review — see
+          // common/payment-summary.ts's `countsTowardRevenue` +
+          // `countsTowardPaid`, the same predicates every other revenue/spend
+          // aggregate in this codebase filters by.
+          order: {
+            paymentStatus: { in: [...REVENUE_ORDER_PAYMENT_STATUSES] },
+          },
           OR: [{ source: "SELLER_RECORDED" }, { reviewStatus: "APPROVED" }],
         },
         _sum: { amount: true },
@@ -112,6 +127,22 @@ export class StatsService {
           payments: { orderBy: { createdAt: "desc" } },
         },
       }),
+      // Every order still collecting money, with the same per-order
+      // paid/total/remaining summary the Order Details view shows — feeds
+      // the "Outstanding partial payments" card in the Summary view.
+      // Matches `countsTowardRevenue`: PARTIALLY_PAID and VERIFIED are the
+      // money-carrying statuses. A VERIFIED order approved on a deposit (or
+      // a legacy pre-guard order) still has pendingAmount > 0 and must stay
+      // visible so the seller can chase and collect the remainder.
+      this.prisma.order.findMany({
+        where: {
+          storeId,
+          paymentStatus: { in: [...REVENUE_ORDER_PAYMENT_STATUSES] },
+        },
+        orderBy: { createdAt: "desc" },
+        include: { payments: { orderBy: { createdAt: "desc" } } },
+        take: PARTIAL_PAYMENTS_LIMIT,
+      }),
     ]);
 
     const paymentStatusCounts = Object.fromEntries(
@@ -141,6 +172,12 @@ export class StatsService {
       fulfillmentStatusCounts,
       lowStockCount,
       recentOrders: recentOrdersRaw.map((order) => withPaymentSummary(order)),
+      partialPaymentOrders: partialPaymentOrdersRaw
+        .map((order) => withPaymentSummary(order))
+        // A VERIFIED row with its balance settled (rare: a deposit order whose
+        // remainder was later covered without an intermediate status change)
+        // no longer owes money — drop it so the card only lists what's owed.
+        .filter((order) => order.pendingAmount > 0),
     };
   }
 
@@ -155,33 +192,46 @@ export class StatsService {
     const rangeStart = buckets[0].start;
     const rangeEnd = buckets[buckets.length - 1].end;
 
-    const [rangeOrders, allCustomerOrders, topProductRows] = await Promise.all([
-      this.prisma.order.findMany({
-        where: { storeId, createdAt: { gte: rangeStart, lt: rangeEnd } },
-        select: {
-          customerId: true,
-          createdAt: true,
-          paymentStatus: true,
-          payments: {
-            select: { amount: true, source: true, reviewStatus: true },
+    const [rangeOrders, allCustomerOrders, topProductRows, rangePayments] =
+      await Promise.all([
+        this.prisma.order.findMany({
+          where: { storeId, createdAt: { gte: rangeStart, lt: rangeEnd } },
+          select: {
+            customerId: true,
+            createdAt: true,
           },
-        },
-      }),
-      this.prisma.order.findMany({
-        where: { storeId, customerId: { not: null } },
-        select: { customerId: true, createdAt: true },
-      }),
-      this.prisma.orderItem.groupBy({
-        by: ["productId"],
-        where: {
-          storeId,
-          order: { createdAt: { gte: rangeStart, lt: rangeEnd } },
-        },
-        _sum: { quantity: true },
-        orderBy: { _sum: { quantity: "desc" } },
-        take: TOP_PRODUCTS_LIMIT,
-      }),
-    ]);
+        }),
+        this.prisma.order.findMany({
+          where: { storeId, customerId: { not: null } },
+          select: { customerId: true, createdAt: true },
+        }),
+        this.prisma.orderItem.groupBy({
+          by: ["productId"],
+          where: {
+            storeId,
+            order: { createdAt: { gte: rangeStart, lt: rangeEnd } },
+          },
+          _sum: { quantity: true },
+          orderBy: { _sum: { quantity: "desc" } },
+          take: TOP_PRODUCTS_LIMIT,
+        }),
+        // Revenue follows the payment timestamp, not the order timestamp: a
+        // payment collected inside the range for an order placed earlier (or
+        // a deposit order settled inside the range) belongs in the bucket of
+        // the day it was actually received. Mirrors the overview revenue
+        // predicate — only `countsTowardPaid` rows on orders in
+        // REVENUE_ORDER_PAYMENT_STATUSES — so unreviewed PENDING_REVIEW
+        // proofs and rejected proofs never inflate a bucket.
+        this.prisma.orderPayment.findMany({
+          where: {
+            storeId,
+            createdAt: { gte: rangeStart, lt: rangeEnd },
+            OR: [{ source: "SELLER_RECORDED" }, { reviewStatus: "APPROVED" }],
+            order: { paymentStatus: { in: [...REVENUE_ORDER_PAYMENT_STATUSES] } },
+          },
+          select: { amount: true, createdAt: true },
+        }),
+      ]);
 
     // The customer a bucket's orders belong to is only "returning" if they
     // have ordered before — determined from this store's FULL order history,
@@ -201,16 +251,10 @@ export class StatsService {
         (order) => order.createdAt >= start && order.createdAt < end,
       );
 
-      const revenue = ordersInBucket
-        .filter((order) => order.paymentStatus === "VERIFIED")
+      const revenue = rangePayments
+        .filter((payment) => payment.createdAt >= start && payment.createdAt < end)
         .reduce(
-          (sum, order) =>
-            sum.plus(
-              order.payments.filter(countsTowardPaid).reduce(
-                (s, p) => s.plus(p.amount),
-                new Prisma.Decimal(0),
-              ),
-            ),
+          (sum, payment) => sum.plus(payment.amount),
           new Prisma.Decimal(0),
         )
         .toNumber();

@@ -38,6 +38,45 @@ export class FulfillmentStatusCountsResponseDto {
   COMPLETED: number;
 }
 
+// One row of `StatsOverviewResponseDto.partialPaymentOrders` — every
+// PARTIALLY_PAID order still collecting money, with the same per-order
+// paid/total/remaining summary the Order Details view shows (via the shared
+// `withPaymentSummary` helper). Decimal money fields keep the repo's
+// string convention (`totalAmount`/`requiredAmount`), while the
+// repository-computed `paidAmount`/`pendingAmount`/`paidPercentage` are plain
+// numbers, matching `OrderResponseDto`.
+export class OutstandingPartialPaymentResponseDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty({ type: String, nullable: true })
+  customerName: string | null;
+
+  @ApiProperty()
+  customerPhone: string;
+
+  @ApiProperty()
+  currency: string;
+
+  @ApiProperty({ type: String })
+  totalAmount: string;
+
+  @ApiProperty({ type: String })
+  requiredAmount: string;
+
+  @ApiProperty()
+  paidAmount: number;
+
+  @ApiProperty()
+  pendingAmount: number;
+
+  @ApiProperty()
+  paidPercentage: number;
+
+  @ApiProperty({ type: String, format: "date-time" })
+  createdAt: string;
+}
+
 // `getOverview`'s shape (`StatsService.getOverview`). `recentOrders` reuses
 // `Order`'s own `OrderResponseDto` — `StatsService.getOverview` runs the same
 // `{items: {product, variant}, payments}` include through the shared
@@ -63,6 +102,9 @@ export class StatsOverviewResponseDto {
 
   @ApiProperty({ type: [OrderResponseDto] })
   recentOrders: OrderResponseDto[];
+
+  @ApiProperty({ type: [OutstandingPartialPaymentResponseDto] })
+  partialPaymentOrders: OutstandingPartialPaymentResponseDto[];
 }
 
 export class AnalyticsBucketResponseDto {

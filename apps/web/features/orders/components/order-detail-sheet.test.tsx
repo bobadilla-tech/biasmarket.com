@@ -85,6 +85,22 @@ test("enables Aprobar once a payment has been registered", () => {
   expect(approveButton.disabled).toBe(false);
 });
 
+test("renders Aprobar enabled for a PARTIALLY_PAID order with a registered payment", () => {
+  renderSheet({
+    ...baseOrder,
+    paymentStatus: "PARTIALLY_PAID",
+    paidAmount: 40,
+    pendingAmount: 60,
+    paidPercentage: 40,
+  });
+
+  const approveButton = screen.getByRole(
+    "button",
+    { name: "Aprobar" },
+  ) as HTMLButtonElement;
+  expect(approveButton.disabled).toBe(false);
+});
+
 test("renders the snapshotted shipping address for a COURIER order", () => {
   renderSheet({
     ...baseOrder,

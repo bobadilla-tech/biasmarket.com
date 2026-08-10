@@ -489,6 +489,7 @@
       "progress": "Paid %"
     },
     "contactBuyer": "Contact buyer",
+    "reviewProof": "Review proof",
     "breakdownTitle": "Revenue by payment method",
     "breakdownSubtitle": "Money received per payment method in the selected period",
     "unknownMethod": "Other",
@@ -589,6 +590,7 @@
     },
     "approve": "Approve",
     "approveDisabledNoPayment": "Can't approve with no payment registered.",
+    "approveReviewProof": "Review the buyer's proof to approve.",
     "reject": "Reject",
     "proofReview": {
       "pending": "Pending review",
@@ -653,6 +655,12 @@
     },
     "recentOrdersTitle": "Recent orders",
     "recentOrdersEmpty": "No orders yet.",
+    "partialPaymentsTitle": "Partial payments",
+    "partialPaymentsEmpty": "No partially paid orders.",
+    "partialPayments": {
+      "paid": "Paid",
+      "remaining": "Remaining"
+    },
     "paymentBreakdownTitle": "Orders by payment status",
     "fulfillmentBreakdownTitle": "Orders by fulfillment status",
     "paymentStatusLabels": {

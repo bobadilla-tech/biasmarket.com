@@ -1,5 +1,9 @@
 import { Prisma } from "@biasmarket/db";
-import type { PaymentReviewStatus, PaymentSource } from "@biasmarket/db";
+import type {
+  PaymentReviewStatus,
+  PaymentSource,
+  PaymentStatus,
+} from "@biasmarket/db";
 
 export interface PaymentSummary {
   paidAmount: number;
@@ -23,6 +27,24 @@ export interface SummablePayment {
 export function countsTowardPaid(payment: SummablePayment): boolean {
   return payment.source === "SELLER_RECORDED" ||
     payment.reviewStatus === "APPROVED";
+}
+
+// The order payment statuses that carry money actually collected and verified
+// — VERIFIED (balance settled) and PARTIALLY_PAID (at least one verified/
+// seller-recorded payment received, remainder still owed). "Verified Revenue"
+// is the sum of `countsTowardPaid` payments across orders in these states:
+// a partial payment contributes only its paid amount, never the full order
+// total, and an order with no registered payment contributes nothing. Kept
+// next to `countsTowardPaid` so every revenue/spend aggregate (stats
+// overview + analytics, customer lifetimeSpend, guest spend) applies the same
+// rule instead of each hard-coding its own status set.
+export const REVENUE_ORDER_PAYMENT_STATUSES: readonly PaymentStatus[] = [
+  "VERIFIED",
+  "PARTIALLY_PAID",
+] as const;
+
+export function countsTowardRevenue(paymentStatus: PaymentStatus): boolean {
+  return REVENUE_ORDER_PAYMENT_STATUSES.includes(paymentStatus);
 }
 
 // Arithmetic stays in Decimal space until the final `.toNumber()` — plain

@@ -28,6 +28,7 @@ export {
 } from "./schemas/analytics.schema";
 export { StatTile } from "./components/stat-tile";
 export { RecentOrdersList } from "./components/recent-orders-list";
+export { PartialPaymentsCard } from "./components/partial-payments-card";
 export { SingleSeriesBarChart } from "./components/revenue-chart";
 export { NewVsReturningChart } from "./components/new-vs-returning-chart";
 export { TopProductsList } from "./components/top-products-list";

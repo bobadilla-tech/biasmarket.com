@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   NotFoundException,
   Param,
   Patch,
@@ -308,6 +309,12 @@ export class OrderController {
   @Get(":orderId/payments/:paymentId/image")
   @ApiOkResponse({ schema: { type: "string", format: "binary" } })
   @ApiProduces("image/jpeg", "image/png")
+  // Helmet's default CORP (`same-origin`) makes the browser block this image
+  // from being embedded by the web app's cross-origin `<img>` tags
+  // (`ERR_BLOCKED_BY_RESPONSE.NotSameOrigin`) — the web frontend
+  // (`biasmarket.com`) and the API (`api.biasmarket.com`) are different
+  // origins. Same reasoning as `CustomerOrderPaymentsController.getImage`.
+  @Header("Cross-Origin-Resource-Policy", "cross-origin")
   async getPaymentImage(
     @Param("storeId") storeId: string,
     @Param("orderId") orderId: string,
@@ -355,7 +362,15 @@ export class OrderController {
         "No se pueden registrar abonos en una orden rechazada",
       );
     }
-    if (order.paymentStatus === "VERIFIED") {
+    // A VERIFIED order only closes to further payments once its balance is
+    // actually settled. Approving on a deposit (or a legacy pre-guard order
+    // approved with zero money) leaves `pendingAmount > 0`, and the seller
+    // must be able to keep registering the remainder — mirrors the frontend
+    // `paymentsLocked` rule (features/orders/lib/order-status.ts).
+    if (
+      order.paymentStatus === "VERIFIED" &&
+      Number(order.pendingAmount) <= 0
+    ) {
       throw new BadRequestException("La orden ya está pagada");
     }
     if (
@@ -396,6 +411,12 @@ export class OrderController {
         ? "VERIFIED"
         : "PARTIALLY_PAID";
 
+    // Already-VERIFIED orders with a residual balance stay VERIFIED no matter
+    // what this payment brings them to: VERIFIED is terminal (order-status.vo
+    // has no outgoing transitions), stock was already decremented at approval,
+    // and routing through ReviewPaymentUseCase would throw VERIFIED -> VERIFIED.
+    const alreadyVerified = order.paymentStatus === "VERIFIED";
+
     let imageUrl: string | null = null;
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
@@ -431,7 +452,26 @@ export class OrderController {
         // `stock` (converting the soft-hold `reserved`), runs the domain
         // transition guard, and sends the buyer email. Writing `VERIFIED`
         // directly here would leave stock reserved forever, never sold down.
-        if (nextStatus === "PARTIALLY_PAID") {
+        if (alreadyVerified) {
+          // Order approved with a residual balance owed: record the payment
+          // without any status write (VERIFIED is terminal) — `paidAmount`/
+          // `pendingAmount` in the response are derived from the payments
+          // list, so they update automatically.
+          await tx.auditLog.create({
+            data: {
+              actorId: session.user.id,
+              storeId,
+              action: "payment.recorded",
+              entityType: "Order",
+              entityId: orderId,
+              metadata: {
+                amount: numericAmount,
+                method,
+                resultingPaymentStatus: "VERIFIED",
+              },
+            },
+          });
+        } else if (nextStatus === "PARTIALLY_PAID") {
           await this.orders.saveStatus(
             orderId,
             { paymentStatus: nextStatus },
@@ -459,7 +499,7 @@ export class OrderController {
       );
     }
 
-    if (nextStatus === "VERIFIED") {
+    if (!alreadyVerified && nextStatus === "VERIFIED") {
       await this.reviewPayment.execute(
         orderId,
         storeId,

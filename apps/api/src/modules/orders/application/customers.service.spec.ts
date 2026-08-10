@@ -127,7 +127,7 @@ describe("CustomersService", () => {
       ]);
     });
 
-    it("excludes non-VERIFIED payments from lifetime spend", async () => {
+    it("excludes payments from non-collecting orders from lifetime spend", async () => {
       prisma.customer.findMany.mockResolvedValue([
         {
           id: "customer-1",
@@ -148,7 +148,10 @@ describe("CustomersService", () => {
       expect(prisma.orderPayment.findMany).toHaveBeenCalledWith({
         where: {
           storeId,
-          order: { paymentStatus: "VERIFIED", customerId: { not: null } },
+          order: {
+            paymentStatus: { in: ["VERIFIED", "PARTIALLY_PAID"] },
+            customerId: { not: null },
+          },
           OR: [{ source: "SELLER_RECORDED" }, { reviewStatus: "APPROVED" }],
         },
         select: { amount: true, order: { select: { customerId: true } } },
@@ -260,6 +263,34 @@ describe("CustomersService", () => {
 
       expect(result).toHaveLength(1);
       expect(result[0].lifetimeSpend).toBe(40);
+    });
+
+    it("counts only the verified amount of a PARTIALLY_PAID guest order in lifetimeSpend", async () => {
+      prisma.customer.findMany.mockResolvedValue([]);
+      prisma.order.groupBy.mockResolvedValue([]);
+      prisma.orderPayment.findMany.mockResolvedValue([]);
+      prisma.order.findMany.mockResolvedValue([
+        {
+          customerPhone: "+51987654321",
+          customerName: "Ana",
+          customerEmail: null,
+          paymentStatus: "PARTIALLY_PAID",
+          createdAt: new Date("2026-03-01"),
+          payments: [
+            {
+              amount: new Prisma.Decimal(30),
+              source: "SELLER_RECORDED",
+              reviewStatus: "N_A",
+            },
+          ],
+        },
+      ]);
+
+      const result = await service.findAllForStore(storeId, ownerId);
+
+      expect(result).toHaveLength(1);
+      // The 100 order's 30 deposit, not the full total and not zero.
+      expect(result[0].lifetimeSpend).toBe(30);
     });
 
     it("folds guest orders into an existing customer row with the same phone", async () => {
