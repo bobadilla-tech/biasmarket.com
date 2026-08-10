@@ -1,0 +1,302 @@
+name: biasmarket
+# ^ MUST stay the literal first line. Compose project-name precedence is
+# `-p` > `COMPOSE_PROJECT_NAME` > this `name:` key > directory basename —
+# this file lives under infra/vps/, and without this pin Compose would
+# default the project name to "vps", silently creating brand-new empty
+# volumes instead of attaching to the existing `biasmarket_*` production
+# volumes. Verify with `docker volume ls | grep '^local\s*biasmarket_'`
+# before ever declaring a cutover successful.
+#
+# ============================================================================
+# NEVER run `docker compose down` (bare, no service/profile args) in this
+# directory. Compose's profile semantics mean a bare `down` only touches
+# services with NO `profiles:` key — exactly the always-on infra below
+# (db/redis/minio/caddy/uptime-kuma). It would kill Postgres/Redis/MinIO/
+# Caddy while leaving the blue/green app containers running and erroring
+# against a dead DB. Every operation here targets explicit service names
+# (`docker compose stop/rm <service>`) or goes through deploy.sh. See
+# docs/core/blue-green-migrations.md.
+# ============================================================================
+#
+# Two separate substitution mechanisms are in play, don't conflate them:
+#   - Compose-file interpolation (${POSTGRES_USER}, ${S3_ACCESS_KEY},
+#     ${IMAGE_TAG}, ...) is resolved from whatever `--env-file` is passed on
+#     the CLI at parse time. There is no `.env` in this directory for
+#     Compose to auto-discover (deliberately — env/shared.env isn't named
+#     `.env` and isn't at the project root), so every `docker compose`
+#     invocation MUST go through lib/compose.sh's `compose()` wrapper, which
+#     builds one temp file per invocation (env/shared.env's contents plus
+#     IMAGE_TAG=<sha>) and passes it via `--env-file`. A bare `docker
+#     compose ...` run by hand from this directory will fail loud on the
+#     `${IMAGE_TAG:?...}` guards below rather than silently deploying an
+#     empty-tag image.
+#   - `env_file: env/shared.env` / `env/<color>.runtime.env` on each service
+#     is the separate, standard mechanism that injects those same values as
+#     actual container environment variables at runtime — independent of
+#     the interpolation above.
+#
+# No service below sets `container_name:` — Compose's built-in per-service
+# DNS alias (bare service name, e.g. `api-green`) is already resolvable
+# without one, and pinning a name would collide with "old color stays alive
+# until explicit cleanup": the next deploy's migration phase would try to
+# create a container literally named e.g. `api-blue` while that name is
+# still occupied by the still-alive prior instance. All scripting uses
+# `docker compose exec/run/ps -q <service>`, never a hardcoded container
+# name.
+
+x-app-common: &app-common
+  restart: unless-stopped
+  networks: [stack]
+
+services:
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    networks: [stack]
+    env_file: env/shared.env
+    volumes:
+      - db_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks: [stack]
+    env_file: env/shared.env
+    volumes:
+      - redis_data:/data
+    command: sh -c 'redis-server --requirepass "$$REDIS_PASSWORD" --appendonly yes'
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    expose:
+      - "6379"
+
+  minio:
+    image: minio/minio
+    restart: unless-stopped
+    networks: [stack]
+    environment:
+      - MINIO_ROOT_USER=${S3_ACCESS_KEY}
+      - MINIO_ROOT_PASSWORD=${S3_SECRET_KEY}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  minio-init:
+    image: minio/mc
+    restart: "no"
+    networks: [stack]
+    environment:
+      - MC_HOST_local=http://${S3_ACCESS_KEY}:${S3_SECRET_KEY}@minio:9000
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      sh -c "mc mb --ignore-existing local/${S3_BUCKET} && mc anonymous set download local/${S3_BUCKET} && mc mb --ignore-existing local/${S3_LOGO_BUCKET} && mc anonymous set download local/${S3_LOGO_BUCKET} && mc mb --ignore-existing local/${S3_PAYMENT_BUCKET}"
+
+  uptime-kuma:
+    image: louislam/uptime-kuma:1.23.16
+    restart: unless-stopped
+    networks: [stack]
+    volumes:
+      - uptime_kuma_data:/app/data
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    networks: [stack]
+    env_file: env/shared.env
+    # No depends_on: ACME/TLS issuance is independent of backend
+    # reachability, a 502 while a backend is unready is correct behavior,
+    # not a startup-ordering bug (confirmed against Caddy 2 semantics).
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy/active:/etc/caddy/active:rw
+      - caddy_data:/data
+      - caddy_config:/config
+
+  # ---- Blue/green application services --------------------------------
+  # Each pair (api/web/workers x blue/green) is defined twice explicitly,
+  # never templated via anchors for the profile-bearing bits — profiles
+  # are the whole mechanism deploy.sh drives (`--profile blue|green`), so
+  # keeping them literal here keeps that mechanism grep-able and obvious.
+
+  api-blue:
+    <<: *app-common
+    image: ghcr.io/bobadilla-tech/biasmarket-api:${IMAGE_TAG:?IMAGE_TAG must be set — pass --env-file, see lib/compose.sh}
+    profiles: [blue]
+    env_file:
+      - env/shared.env
+      - env/blue.runtime.env
+    environment:
+      - PORT=3000
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "/app/infra/docker/api-healthcheck.ts"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  api-green:
+    <<: *app-common
+    image: ghcr.io/bobadilla-tech/biasmarket-api:${IMAGE_TAG:?IMAGE_TAG must be set — pass --env-file, see lib/compose.sh}
+    profiles: [green]
+    env_file:
+      - env/shared.env
+      - env/green.runtime.env
+    environment:
+      - PORT=3000
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "/app/infra/docker/api-healthcheck.ts"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  workers-blue:
+    <<: *app-common
+    image: ghcr.io/bobadilla-tech/biasmarket-workers:${IMAGE_TAG:?IMAGE_TAG must be set — pass --env-file, see lib/compose.sh}
+    profiles: [blue]
+    env_file:
+      - env/shared.env
+      - env/blue.runtime.env
+    environment:
+      - PORT=3002
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "/app/infra/docker/api-healthcheck.ts",
+          "3002",
+          "/health",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  workers-green:
+    <<: *app-common
+    image: ghcr.io/bobadilla-tech/biasmarket-workers:${IMAGE_TAG:?IMAGE_TAG must be set — pass --env-file, see lib/compose.sh}
+    profiles: [green]
+    env_file:
+      - env/shared.env
+      - env/green.runtime.env
+    environment:
+      - PORT=3002
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "/app/infra/docker/api-healthcheck.ts",
+          "3002",
+          "/health",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  web-blue:
+    <<: *app-common
+    image: ghcr.io/bobadilla-tech/biasmarket-web:${IMAGE_TAG:?IMAGE_TAG must be set — pass --env-file, see lib/compose.sh}
+    profiles: [blue]
+    env_file:
+      - env/shared.env
+      - env/blue.runtime.env
+    environment:
+      - PORT=3001
+    depends_on:
+      api-blue:
+        condition: service_healthy
+    # web's runtime image is a lean node:26-slim stage with no
+    # infra/docker/api-healthcheck.ts copied into it (unlike api/workers) —
+    # web.Dockerfile is explicitly out of scope for this migration, so this
+    # inlines the same "GET a path, exit 0 if status < 500" check via
+    # `node -e` instead of a file the image doesn't have.
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://127.0.0.1:3001/api/health',r=>{r.resume();process.exit(r.statusCode<500?0:1)}).on('error',()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  web-green:
+    <<: *app-common
+    image: ghcr.io/bobadilla-tech/biasmarket-web:${IMAGE_TAG:?IMAGE_TAG must be set — pass --env-file, see lib/compose.sh}
+    profiles: [green]
+    env_file:
+      - env/shared.env
+      - env/green.runtime.env
+    environment:
+      - PORT=3001
+    depends_on:
+      api-green:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://127.0.0.1:3001/api/health',r=>{r.resume();process.exit(r.statusCode<500?0:1)}).on('error',()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+networks:
+  stack:
+
+volumes:
+  db_data:
+  caddy_data:
+  caddy_config:
+  minio_data:
+  redis_data:
+  uptime_kuma_data:

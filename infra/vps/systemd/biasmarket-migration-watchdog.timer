@@ -1,0 +1,10 @@
+[Unit]
+Description=Run the Bias Market migration_pending watchdog every minute
+
+[Timer]
+OnCalendar=*-*-* *:*:00
+AccuracySec=5s
+Persistent=true
+
+[Install]
+WantedBy=timers.target

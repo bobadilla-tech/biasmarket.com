@@ -9,8 +9,9 @@
 // Idempotent: re-running skips monitors/the notification that already exist
 // by name, and re-saves the status page (safe to update repeatedly).
 //
-// Usage (run on the VM, from the repo root, after `pnpm docker:prod` has
-// brought `uptime-kuma` up):
+// Usage (run on the VM, from the repo root, after the infra/vps/ stack —
+// or, pre-cutover, infra/docker/docker-compose.yml — has brought
+// `uptime-kuma` up):
 //   KUMA_USERNAME=admin KUMA_PASSWORD=... node scripts/setup-kuma.ts
 //
 // Env vars:
@@ -20,18 +21,32 @@
 //   KUMA_PASSWORD  required, same as above
 //   API_URL        default https://api.biasmarket.com — where the durable-
 //                  history webhook notification posts to
-//   MONITORING_WEBHOOK_SECRET  read from infra/docker/.env if not set in the
-//                  environment (the same file `api` itself reads on boot)
+//   MONITORING_WEBHOOK_SECRET  read from infra/docker/.env, falling back to
+//                  infra/vps/env/shared.env, if not set in the environment
+//                  (whichever of those two files is the live one on the VPS
+//                  at the time this script runs — see docs/core/deploy.md)
 //   STATUS_PAGE_SLUG   default "status"
 //   STATUS_PAGE_TITLE  default "Bias Market Status"
+//
+// Blue/green note (see docs/core/blue-green-migrations.md): the two former
+// bare-hostname internal monitors ("API (internal)" @ http://api:3000,
+// "Web (internal)" @ http://web:3001) stop resolving entirely once only
+// `api-blue`/`api-green`/`web-blue`/`web-green` exist — this script now
+// creates 4 static per-color internal monitors instead. Re-run this script
+// before/at the first blue/green cutover (T11), not just once. Also creates
+// a Kuma "push" monitor backing the `migration_pending` stuck-deploy alert
+// (see the systemd timer in infra/vps/systemd/ +
+// infra/vps/bin/migration-watchdog.sh) — deliberately NOT wired through
+// POST /api/monitoring/webhook, which is inbound-only (Kuma calls it on its
+// own state transitions; nothing on the VPS can call it to trigger a page).
 //
 // Does NOT configure a real-time Slack/Discord notification — deliberately
 // out of scope here per the plan's alerting split (see
 // docs/plans/2026-08-09-uptime-kuma-monitoring-plan.md and
 // docs/core/incident-response.md); add one by hand in the Kuma UI (Settings →
-// Notifications) and attach it to the same 6 monitors when you have a
-// webhook URL for it, or extend this script with another addNotification
-// call using the same pattern as the webhook one below.
+// Notifications) and attach it to the monitors when you have a webhook URL
+// for it, or extend this script with another addNotification call using the
+// same pattern as the webhook one below.
 
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -61,7 +76,14 @@ function parseEnvFile(path: string): Record<string, string> {
   return out;
 }
 
+// infra/docker/.env is checked first (still the live file pre-cutover, and
+// per docs/core/deploy.md kept in place post-cutover too, stopped-but-not-
+// removed, as the T11 fallback), infra/vps/env/shared.env second (the
+// blue/green stack's real secrets file, once cutover has happened).
 const dockerEnv = parseEnvFile(join(repoRoot, "infra", "docker", ".env"));
+const vpsSharedEnv = parseEnvFile(
+  join(repoRoot, "infra", "vps", "env", "shared.env"),
+);
 
 function requiredEnv(name: string, fallback?: string): string {
   const value = process.env[name] ?? fallback;
@@ -75,13 +97,14 @@ const KUMA_PASSWORD = requiredEnv("KUMA_PASSWORD");
 const API_URL = process.env.API_URL ?? "https://api.biasmarket.com";
 const MONITORING_WEBHOOK_SECRET = requiredEnv(
   "MONITORING_WEBHOOK_SECRET",
-  dockerEnv.MONITORING_WEBHOOK_SECRET,
+  dockerEnv.MONITORING_WEBHOOK_SECRET ?? vpsSharedEnv.MONITORING_WEBHOOK_SECRET,
 );
 const STATUS_PAGE_SLUG = process.env.STATUS_PAGE_SLUG ?? "status";
 const STATUS_PAGE_TITLE = process.env.STATUS_PAGE_TITLE ??
   "Bias Market Status";
 
 const NOTIFICATION_NAME = "api-monitoring-webhook";
+const PUSH_MONITOR_NAME = "migration_pending watchdog";
 
 interface HttpMonitorSpec {
   type: "http";
@@ -98,11 +121,17 @@ interface PortMonitorSpec {
 }
 type MonitorSpec = HttpMonitorSpec | PortMonitorSpec;
 
-// Mirrors the 6-monitor table in
-// docs/plans/2026-08-09-uptime-kuma-monitoring-plan.md — external/internal
-// pairs isolate the fault domain (Caddy/DNS/TLS vs. the app itself) on the
-// first alert instead of requiring a second manual check. Only the two
-// `external: true` monitors go on the public status page.
+// Mirrors the monitor table in
+// docs/plans/2026-08-09-uptime-kuma-monitoring-plan.md (external/internal
+// pairs isolate the fault domain — Caddy/DNS/TLS vs. the app itself — on
+// the first alert instead of requiring a second manual check), updated per
+// docs/plans/2026-08-10-bluegreen-zero-downtime-deploy-plan.md T11: the two
+// bare-hostname internal monitors (`api`/`web` compose service names) are
+// gone post-cutover — only `api-blue`/`api-green`/`web-blue`/`web-green`
+// resolve — replaced by 4 static per-color monitors. Only the two
+// `external: true` monitors go on the public status page; the push monitor
+// (added separately below, not in this list — it isn't HTTP/port shaped)
+// never does either.
 const MONITORS: MonitorSpec[] = [
   {
     type: "http",
@@ -112,8 +141,14 @@ const MONITORS: MonitorSpec[] = [
   },
   {
     type: "http",
-    name: "API (internal)",
-    url: "http://api:3000/api/health",
+    name: "API (internal, blue)",
+    url: "http://api-blue:3000/api/health",
+    external: false,
+  },
+  {
+    type: "http",
+    name: "API (internal, green)",
+    url: "http://api-green:3000/api/health",
     external: false,
   },
   {
@@ -124,8 +159,14 @@ const MONITORS: MonitorSpec[] = [
   },
   {
     type: "http",
-    name: "Web (internal)",
-    url: "http://web:3001/api/health",
+    name: "Web (internal, blue)",
+    url: "http://web-blue:3001/api/health",
+    external: false,
+  },
+  {
+    type: "http",
+    name: "Web (internal, green)",
+    url: "http://web-green:3001/api/health",
     external: false,
   },
   { type: "port", name: "DB", hostname: "db", port: 5432, external: false },
@@ -150,9 +191,12 @@ async function main() {
 
   // Kuma pushes these automatically after a successful login (its own UI's
   // state-sync mechanism) — not a request/response call.
-  socket.on("monitorList", (list: Record<string, { id: number; name: string }>) => {
-    for (const m of Object.values(list)) existingMonitors.set(m.name, m.id);
-  });
+  socket.on(
+    "monitorList",
+    (list: Record<string, { id: number; name: string }>) => {
+      for (const m of Object.values(list)) existingMonitors.set(m.name, m.id);
+    },
+  );
   socket.on(
     "notificationList",
     (list: Array<{ id: number; name: string }>) => {
@@ -171,7 +215,9 @@ async function main() {
   );
 
   if (needsSetup) {
-    console.log("No admin account yet — creating one from KUMA_USERNAME/KUMA_PASSWORD ...");
+    console.log(
+      "No admin account yet — creating one from KUMA_USERNAME/KUMA_PASSWORD ...",
+    );
     const setupRes = await new Promise<{ ok: boolean; msg?: string }>(
       (resolve) =>
         socket.emit("setup", KUMA_USERNAME, KUMA_PASSWORD, resolve as Cb),
@@ -196,7 +242,9 @@ async function main() {
 
   let notificationId = existingNotifications.get(NOTIFICATION_NAME);
   if (notificationId) {
-    console.log(`Notification "${NOTIFICATION_NAME}" already exists (id ${notificationId}), reusing.`);
+    console.log(
+      `Notification "${NOTIFICATION_NAME}" already exists (id ${notificationId}), reusing.`,
+    );
   } else {
     const notification = {
       name: NOTIFICATION_NAME,
@@ -210,18 +258,23 @@ async function main() {
       }),
     };
     const res = await new Promise<{ ok: boolean; msg?: string; id: number }>(
-      (resolve) => socket.emit("addNotification", notification, null, resolve as Cb),
+      (resolve) =>
+        socket.emit("addNotification", notification, null, resolve as Cb),
     );
     if (!res.ok) throw new Error(`addNotification failed: ${res.msg}`);
     notificationId = res.id;
-    console.log(`Created notification "${NOTIFICATION_NAME}" (id ${notificationId}).`);
+    console.log(
+      `Created notification "${NOTIFICATION_NAME}" (id ${notificationId}).`,
+    );
   }
 
   const monitorIds = new Map<string, number>();
   for (const spec of MONITORS) {
     const existingId = existingMonitors.get(spec.name);
     if (existingId) {
-      console.log(`Monitor "${spec.name}" already exists (id ${existingId}), skipping.`);
+      console.log(
+        `Monitor "${spec.name}" already exists (id ${existingId}), skipping.`,
+      );
       monitorIds.set(spec.name, existingId);
       continue;
     }
@@ -259,9 +312,63 @@ async function main() {
     const res = await new Promise<
       { ok: boolean; msg?: string; monitorID: number }
     >((resolve) => socket.emit("add", monitor, resolve as Cb));
-    if (!res.ok) throw new Error(`add monitor "${spec.name}" failed: ${res.msg}`);
+    if (!res.ok) {
+      throw new Error(`add monitor "${spec.name}" failed: ${res.msg}`);
+    }
     monitorIds.set(spec.name, res.monitorID);
     console.log(`Created monitor "${spec.name}" (id ${res.monitorID}).`);
+  }
+
+  // Push monitor backing the `migration_pending` stuck-deploy alert (T9 /
+  // decision 9 in the blue/green plan). Kuma pings itself "down" if it
+  // *stops* receiving heartbeats within `interval` seconds — the opposite
+  // polarity from the HTTP/port monitors above. The heartbeat source is
+  // infra/vps/systemd/biasmarket-migration-watchdog.timer +
+  // infra/vps/bin/migration-watchdog.sh, which pings roughly once a minute
+  // but deliberately withholds the ping once state/migration_pending is
+  // older than its own threshold (default 3 minutes) — so this monitor's
+  // `interval` needs enough slack above that threshold to not flap on
+  // ordinary timer jitter, hence 240s here, not 60s like the others.
+  let pushMonitorId = existingMonitors.get(PUSH_MONITOR_NAME);
+  if (pushMonitorId) {
+    console.log(
+      `Push monitor "${PUSH_MONITOR_NAME}" already exists (id ${pushMonitorId}), reusing.`,
+    );
+  } else {
+    const pushMonitor = {
+      name: PUSH_MONITOR_NAME,
+      type: "push",
+      interval: 240,
+      retryInterval: 60,
+      resendInterval: 0,
+      maxretries: 1,
+      notificationIDList: { [notificationId]: true },
+      active: true,
+      upsideDown: false,
+      accepted_statuscodes: ["200-299"],
+    };
+    const res = await new Promise<
+      { ok: boolean; msg?: string; monitorID: number }
+    >((resolve) => socket.emit("add", pushMonitor, resolve as Cb));
+    if (!res.ok) throw new Error(`add push monitor failed: ${res.msg}`);
+    pushMonitorId = res.monitorID;
+    console.log(
+      `Created push monitor "${PUSH_MONITOR_NAME}" (id ${pushMonitorId}).`,
+    );
+  }
+
+  const pushDetail = await new Promise<
+    { ok: boolean; monitor?: { pushToken?: string } }
+  >((resolve) => socket.emit("getMonitor", pushMonitorId, resolve as Cb));
+  if (pushDetail.ok && pushDetail.monitor?.pushToken) {
+    console.log(
+      `Push monitor ready. Set KUMA_MIGRATION_PUSH_URL in infra/vps/env/watchdog.env to:\n` +
+        `  ${KUMA_URL}/api/push/${pushDetail.monitor.pushToken}?status=up&msg=OK&ping=`,
+    );
+  } else {
+    console.log(
+      `Push monitor exists but its token could not be read automatically — open "${PUSH_MONITOR_NAME}" in the Kuma dashboard to copy its push URL into infra/vps/env/watchdog.env.`,
+    );
   }
 
   console.log(`Setting up public status page "${STATUS_PAGE_SLUG}" ...`);

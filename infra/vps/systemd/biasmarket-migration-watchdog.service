@@ -1,0 +1,10 @@
+[Unit]
+Description=Bias Market migration_pending stuck-deploy watchdog (one-shot, fired by biasmarket-migration-watchdog.timer)
+After=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/opt/biasmarket/env/watchdog.env
+ExecStart=/opt/biasmarket/bin/migration-watchdog.sh
+# Deliberately not part of deploy.sh's own process tree/cgroup — a wedged
+# deploy must not be able to silence its own alarm.

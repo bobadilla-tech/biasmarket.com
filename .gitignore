@@ -11,3 +11,11 @@ postgres_data/
 coverage/
 cookies.txt
 .mailer-dev/
+
+# infra/vps/ blue/green prod stack — real secrets and runtime-generated
+# state, never committed. .example templates are unaffected (different
+# suffix, doesn't match these globs) — see infra/vps/env/*.env.example.
+infra/vps/env/*.env
+infra/vps/caddy/active/*.caddy
+infra/vps/state/
+infra/vps/releases/

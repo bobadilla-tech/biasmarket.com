@@ -1,0 +1,16 @@
+## Template only — see api.caddy.example for the full explanation. Same
+## mechanism, targets web-blue/web-green instead of api-blue/api-green.
+reverse_proxy web-blue:3001 {
+	health_uri /api/health
+	health_interval 10s
+	health_timeout 5s
+}
+
+## Canary shape:
+##
+## reverse_proxy web-blue:3001 web-green:3001 {
+## 	lb_policy weighted_round_robin 9 1
+## 	health_uri /api/health
+## 	health_interval 10s
+## 	health_timeout 5s
+## }
