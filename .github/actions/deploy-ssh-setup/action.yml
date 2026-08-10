@@ -1,0 +1,38 @@
+name: Deploy SSH setup
+description: >
+  Writes ~/.ssh/known_hosts and the two restricted deploy SSH keys (key A,
+  rrsync-restricted; key B, dispatcher-restricted — see
+  infra/vps/bin/ssh-deploy-dispatcher.sh and docs/core/blue-green-migrations.md),
+  and exposes SSH_HOST/SSH_USER via GITHUB_ENV for subsequent steps.
+inputs:
+  host:
+    required: true
+    description: VPS hostname/IP (DEPLOY_SSH_HOST secret)
+  user:
+    required: true
+    description: VPS deploy OS user (DEPLOY_SSH_USER secret)
+  known_hosts:
+    required: true
+    description: Pinned host key, captured once and verified out-of-band via the cloud console — never blind first-ssh-keyscan trust (DEPLOY_SSH_KNOWN_HOSTS secret)
+  key_rsync:
+    required: true
+    description: Private key for the rrsync-restricted sync target (DEPLOY_SSH_KEY_RSYNC secret)
+  key_dispatch:
+    required: true
+    description: Private key for the command= dispatcher-restricted deploy invocation (DEPLOY_SSH_KEY_DISPATCH secret)
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        set -euo pipefail
+        mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
+        printf '%s\n' "${{ inputs.known_hosts }}" > ~/.ssh/known_hosts
+        printf '%s\n' "${{ inputs.key_rsync }}" > ~/.ssh/deploy_rsync_key
+        printf '%s\n' "${{ inputs.key_dispatch }}" > ~/.ssh/deploy_dispatch_key
+        chmod 600 ~/.ssh/known_hosts ~/.ssh/deploy_rsync_key ~/.ssh/deploy_dispatch_key
+        {
+          echo "SSH_HOST=${{ inputs.host }}"
+          echo "SSH_USER=${{ inputs.user }}"
+        } >> "$GITHUB_ENV"

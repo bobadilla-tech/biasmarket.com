@@ -1,9 +1,20 @@
 # Deploying to Oracle Cloud (OCI)
 
-Prod deploy target for the MVP: a single Oracle Cloud VM running the
-`infra/docker/docker-compose.yml` stack. This doc covers everything specific to
-OCI — the stack itself (Docker Compose + Caddy) is host-agnostic and already
-documented in [`infra.md`](infra.md) and [`readme.md`](readme.md).
+**Superseded by the blue/green CI/CD flow** — see
+[`blue-green-migrations.md`](blue-green-migrations.md) for the current
+production deploy mechanism (GitHub Actions builds + pushes to GHCR, SSHes to
+the VPS, `infra/vps/deploy.sh` runs a zero-downtime blue/green cutover). This
+page is kept, not deleted, because `infra/docker/docker-compose.yml` remains a
+valid single-color stack for local testing, a from-scratch VM sanity check, or
+anyone who hasn't cut over yet — everything below still works as described, with
+one change flagged inline in step 6/Day 2: migrations no longer apply
+automatically on container boot (see the note there).
+
+Original context, still accurate for this stack specifically: a single Oracle
+Cloud VM running the `infra/docker/docker-compose.yml` stack. This doc covers
+everything specific to OCI — the stack itself (Docker Compose + Caddy) is
+host-agnostic and already documented in [`infra.md`](infra.md) and
+[`readme.md`](readme.md).
 
 Goal here is "get it live and shareable," not a hardened production setup — see
 [Known limitations](#known-limitations) at the bottom for what's deliberately
@@ -155,9 +166,18 @@ pnpm docker:prod
 # equivalent to: docker compose -f infra/docker/docker-compose.yml up -d --build
 ```
 
-The `api` container runs `prisma migrate deploy` automatically on every start
-before launching the server (see `api.Dockerfile`), so the schema is created on
-first boot — no manual migration step needed.
+**Migrations no longer run automatically on container boot** (`api.Dockerfile`'s
+`CMD` used to run `prisma migrate deploy && exec node apps/api/dist/main` on
+every start; it's now just `exec node apps/api/dist/main`, extracted so the
+blue/green flow could gate migrations behind health checks/smoke tests — see
+`blue-green-migrations.md`). This stack has no equivalent gate, so on first boot
+(and after pulling in any migration) run it by hand, once, before or right after
+bringing the stack up:
+
+```bash
+docker compose -f infra/docker/docker-compose.yml run --rm --no-deps api \
+  pnpm --filter @biasmarket/db exec prisma migrate deploy
+```
 
 ## 7. Verify
 
@@ -246,11 +266,11 @@ for the full design rationale.
    `MONITORING_WEBHOOK_SECRET` is read automatically from `infra/docker/.env`
    (same file `api` reads on boot). Idempotent — safe to re-run; it skips
    anything that already exists by name. Creates:
-   - The 6 monitors below, each wired to a `webhook`-type notification
-     pointed at `https://api.biasmarket.com/api/monitoring/webhook` with
-     header `X-Webhook-Secret: <MONITORING_WEBHOOK_SECRET value>` (Kuma
-     custom-header support on the built-in webhook notification type,
-     confirmed on the pinned 1.23.16 image).
+   - The 6 monitors below, each wired to a `webhook`-type notification pointed
+     at `https://api.biasmarket.com/api/monitoring/webhook` with header
+     `X-Webhook-Secret: <MONITORING_WEBHOOK_SECRET value>` (Kuma custom-header
+     support on the built-in webhook notification type, confirmed on the pinned
+     1.23.16 image).
    - A public status page at the `status` slug containing **only** the two
      external monitors (API, Web) — the user-facing surfaces. The other four
      stay dashboard-only, used for triage (see
@@ -269,22 +289,21 @@ for the full design rationale.
    | MinIO          | HTTP | `http://minio:9000/minio/health/live`   |
 
    The script deliberately does **not** configure a real-time Slack/Discord
-   notification — add one by hand in the Kuma UI (Settings → Notifications)
-   and attach it to the same 6 monitors, or extend the script with another
+   notification — add one by hand in the Kuma UI (Settings → Notifications) and
+   attach it to the same 6 monitors, or extend the script with another
    `addNotification` call (see the comment block at the top of
    `scripts/setup-kuma.ts`).
-2. Visit `https://status.biasmarket.com/` — the Caddyfile 302-redirects the
-   root path to `/status/status` (Kuma has no native "set as homepage"
-   setting, and an internal rewrite doesn't work: Kuma is an SPA whose
-   client-side router reads the browser's actual URL bar, so a logged-in
-   session bounces back to `/dashboard` unless the redirect is real and the
-   URL bar actually changes). `/dashboard` and everything else still works
-   normally. Kuma's own login endpoint has a built-in 20-req/min rate limiter
-   (confirmed on the pinned 1.23.16 image); no additional Caddy `basicauth`
-   layer is configured on top.
+2. Visit `https://status.biasmarket.com/` — the Caddyfile 302-redirects the root
+   path to `/status/status` (Kuma has no native "set as homepage" setting, and
+   an internal rewrite doesn't work: Kuma is an SPA whose client-side router
+   reads the browser's actual URL bar, so a logged-in session bounces back to
+   `/dashboard` unless the redirect is real and the URL bar actually changes).
+   `/dashboard` and everything else still works normally. Kuma's own login
+   endpoint has a built-in 20-req/min rate limiter (confirmed on the pinned
+   1.23.16 image); no additional Caddy `basicauth` layer is configured on top.
 3. Verify: stop one backend (e.g. `docker compose stop api`) and confirm both
-   the paired internal/external monitors go down, the webhook notification
-   fires (check `docker compose logs api` for the incoming POST, or query
+   the paired internal/external monitors go down, the webhook notification fires
+   (check `docker compose logs api` for the incoming POST, or query
    `GET /api/monitoring/incidents` as an admin), and (once restarted) the "up"
    transition closes things out. See the plan doc's "Verification" section for
    the full check list.
@@ -301,10 +320,11 @@ for the full design rationale.
 cd ~/biasmarket && git pull && pnpm docker:prod
 ```
 
-Rebuilds and restarts anything that changed, migrations reapply automatically
-(same `prisma migrate deploy` on `api` boot as step 6). No firewall/DNS/cert
-steps needed again — those are one-time, tied to the VM and domain, not the
-code.
+Rebuilds and restarts anything that changed. Migrations do **not** reapply
+automatically anymore (see step 6's note) — run the `prisma migrate deploy`
+command from step 6 by hand first if this pull brought in a new migration. No
+firewall/DNS/cert steps needed again — those are one-time, tied to the VM and
+domain, not the code.
 
 - **Logs:**
   `docker compose -f infra/docker/docker-compose.yml logs -f <service>`
@@ -347,9 +367,13 @@ pnpm env:init --prod --force
 # then manually re-add RESEND_API_KEY / RESEND_FROM_EMAIL to
 # infra/docker/.env — never auto-generated, see script output
 
-# bring everything back up; api's CMD runs `prisma migrate deploy` against
-# the now-empty DB, applying every migration in order from scratch
+# bring everything back up
 pnpm docker:prod
+
+# then apply every migration in order from scratch against the now-empty DB
+# (no longer automatic on container boot — see step 6's note)
+docker compose -f infra/docker/docker-compose.yml run --rm --no-deps api \
+  pnpm --filter @biasmarket/db exec prisma migrate deploy
 
 docker compose -f infra/docker/docker-compose.yml logs api --tail 50
 pnpm seed:base:prod

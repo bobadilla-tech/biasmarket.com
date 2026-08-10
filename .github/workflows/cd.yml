@@ -1,0 +1,220 @@
+name: CD
+
+# Triggered by CI's success, not by push directly — ci.yml itself needs
+# ZERO changes for this to work. See docs/plans/2026-08-10-bluegreen-zero-
+# downtime-deploy-plan.md decision 1 for the full security rationale behind
+# every condition in the `gate` job below.
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  # `event == 'push'` is the load-bearing check: without it, a public-repo
+  # fork PR whose default branch happens to also be named `main` produces a
+  # CI run that satisfies a looser filter, and `workflow_run` would then
+  # execute with the BASE repo's elevated permissions/secrets against the
+  # FORK's untrusted commit — `docker build` on an attacker-controlled
+  # Dockerfile with GHCR-push and SSH-deploy-key access downstream.
+  gate:
+    name: Gate
+    runs-on: ubuntu-latest
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    outputs:
+      head_sha: ${{ steps.sha.outputs.head_sha }}
+    steps:
+      - name: Expose head_sha
+        id: sha
+        run: echo "head_sha=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+
+  # Native arm64 runners, not x86_64 + QEMU — the VPS is Oracle Ampere A1
+  # (arm64). Every downstream checkout pins `ref: needs.gate.outputs.head_sha`
+  # explicitly and individually (never assumed to propagate) — this is what
+  # makes the gate job's fork-PR check actually load-bearing: without a
+  # pinned ref, a job could still end up building whatever the default
+  # `workflow_run` checkout resolves to.
+  build-push:
+    name: Build & push (${{ matrix.app }})
+    needs: gate
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        app: [api, web, workers]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.gate.outputs.head_sha }}
+          persist-credentials: false
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # NEXT_PUBLIC_API_URL/NEXT_PUBLIC_SENTRY_DSN are GitHub Variables, not
+      # Secrets (T8) — they're already public, baked into every shipped
+      # browser bundle. Harmless no-op build args for api/workers (unused
+      # ARGs, at most a benign buildx warning, never a failure).
+      - name: Build & push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/docker/${{ matrix.app }}.Dockerfile
+          push: true
+          tags: ghcr.io/bobadilla-tech/biasmarket-${{ matrix.app }}:${{ needs.gate.outputs.head_sha }}
+          cache-from: type=gha,scope=${{ matrix.app }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.app }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
+            NEXT_PUBLIC_SENTRY_DSN=${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
+
+  sync-and-deploy:
+    name: Sync & deploy
+    needs: [gate, build-push]
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 30
+    # Queue, never cancel mid-flight — a cancelled mid-deploy run risks a
+    # half-switched state (candidate started, migration applied, Caddy not
+    # yet flipped). This is the primary defense against a concurrent rsync
+    # clobbering a running deploy.sh's bytes mid-execution (decision 7):
+    # only one run in this group executes at a time, so its rsync-then-
+    # invoke sequence never overlaps another run's. deploy.sh's own internal
+    # `flock` (lib/lock.sh) is the second, independent layer, covering a
+    # manual operator invocation racing a CD-triggered one.
+    concurrency:
+      group: production-deploy
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.gate.outputs.head_sha }}
+          # Full history, not the default shallow clone — the staleness
+          # guard's `git merge-base --is-ancestor` below needs both the
+          # incoming SHA and an arbitrary historical current_sha from a
+          # prior deploy present locally, or the ancestry check fails to
+          # resolve rather than answer correctly (decision 1b).
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: ./.github/actions/deploy-ssh-setup
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          user: ${{ secrets.DEPLOY_SSH_USER }}
+          known_hosts: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
+          key_rsync: ${{ secrets.DEPLOY_SSH_KEY_RSYNC }}
+          key_dispatch: ${{ secrets.DEPLOY_SSH_KEY_DISPATCH }}
+
+      # workflow_run events can complete out of push order (an earlier
+      # commit's CI run can finish after a later commit's, on cache misses/
+      # retries) — refuse to deploy an out-of-order older commit over a
+      # newer one already live. deploy.sh has no git of its own (decision
+      # 7), so this ancestry check has to happen here, CD-side, against the
+      # full history checked out above.
+      - name: Staleness guard
+        run: |
+          set -euo pipefail
+          CURRENT_SHA="$(ssh -i ~/.ssh/deploy_dispatch_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'deploy.sh --print-current-sha')"
+          if [[ -z "$CURRENT_SHA" ]]; then
+            echo "No current_sha recorded on the VPS yet (never bootstrapped) — skipping ancestry check."
+            exit 0
+          fi
+          if ! git merge-base --is-ancestor "$CURRENT_SHA" "${{ needs.gate.outputs.head_sha }}"; then
+            echo "::error::Incoming SHA ${{ needs.gate.outputs.head_sha }} is not a descendant of the currently-live SHA $CURRENT_SHA — refusing an out-of-order deploy."
+            exit 1
+          fi
+          echo "OK: ${{ needs.gate.outputs.head_sha }} descends from live $CURRENT_SHA."
+
+      # --delete removes anything gone from infra/vps/ upstream, EXCLUDING
+      # the runtime-mutable paths that only ever exist on the VPS itself
+      # (real secrets, generated Caddy active-config, deploy state, release
+      # history/snapshots) — see infra/vps/docker-compose.yml's header
+      # comment and .gitignore.
+      - name: Sync infra/vps/ to the VPS
+        run: |
+          rsync -az --delete \
+            --exclude 'env/*.env' \
+            --exclude 'state/' \
+            --exclude 'caddy/active/*.caddy' \
+            --exclude 'releases/' \
+            -e "ssh -i ~/.ssh/deploy_rsync_key -o StrictHostKeyChecking=yes" \
+            infra/vps/ "$SSH_USER@$SSH_HOST:/opt/biasmarket/"
+
+      # Detached: the dispatcher backgrounds deploy.sh via systemd-run and
+      # returns immediately, so this step finishes in seconds regardless of
+      # how long the actual deploy takes — see
+      # infra/vps/bin/ssh-deploy-dispatcher.sh.
+      - name: Launch deploy (detached)
+        run: |
+          ssh -i ~/.ssh/deploy_dispatch_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" \
+            "deploy.sh ${{ needs.gate.outputs.head_sha }}"
+
+      # A SEPARATE SSH call from the one above, polling
+      # state/last_deploy_result (deploy.sh's secret-free completion
+      # signal) rather than blocking on the launching session or reading
+      # releases/history.log (more verbose, not guaranteed secret-free to
+      # the same strict standard).
+      - name: Wait for deploy result
+        run: |
+          set -uo pipefail
+          OUTPUT="$(ssh -i ~/.ssh/deploy_dispatch_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" \
+            "deploy.sh --wait-for-result ${{ needs.gate.outputs.head_sha }} 1500")"
+          STATUS=$?
+          echo "$OUTPUT"
+          exit "$STATUS"
+
+  # Old-color cleanup, scheduled ~30 minutes after a successful cutover —
+  # not "operator confirmation," a concrete mechanism. No explicit
+  # cancellation logic is needed for an in-window `deploy.sh --rollback`:
+  # rollback rewrites state/rollback_target to whatever color is now
+  # correctly benched, so this job's plain `deploy.sh --cleanup` call
+  # (state-driven, checked against current_color server-side) tears down
+  # the right color regardless of whether a rollback happened in between.
+  # The `production-cleanup` concurrency group instead protects against the
+  # OTHER case: a second deploy landing before this 30-minute window
+  # elapses cancels the first deploy's now-stale cleanup schedule outright.
+  scheduled-cleanup:
+    name: Scheduled old-color cleanup
+    needs: [gate, sync-and-deploy]
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 35
+    concurrency:
+      group: production-cleanup
+      cancel-in-progress: true
+    steps:
+      # `uses: ./...` below resolves the composite action from the checked-
+      # out workspace, so a checkout has to happen here too even though
+      # this job doesn't otherwise need repo contents.
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.gate.outputs.head_sha }}
+          persist-credentials: false
+
+      - uses: ./.github/actions/deploy-ssh-setup
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          user: ${{ secrets.DEPLOY_SSH_USER }}
+          known_hosts: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
+          key_rsync: ${{ secrets.DEPLOY_SSH_KEY_RSYNC }}
+          key_dispatch: ${{ secrets.DEPLOY_SSH_KEY_DISPATCH }}
+
+      - name: Wait 30 minutes, then clean up the previous color
+        run: |
+          sleep 1800
+          ssh -i ~/.ssh/deploy_dispatch_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'deploy.sh --cleanup'

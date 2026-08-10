@@ -16,3 +16,7 @@ apps/api/cookies.txt
 .env.local
 infra/docker/.env
 infra/docker/.env.local
+infra/vps/env/*.env
+infra/vps/caddy/active/*.caddy
+infra/vps/state
+infra/vps/releases

@@ -1,0 +1,58 @@
+api.biasmarket.com {
+	# /internal/* (apps/api's internal-jobs endpoints, e.g. the order-expiration
+	# sweep dispatched by apps/workers) is never reachable from the public
+	# internet — blocked here before the catch-all below, first-match-wins.
+	# apps/workers calls this path only over the internal Docker network
+	# (INTERNAL_API_URL, per-color — see env/blue.runtime.env /
+	# env/green.runtime.env), never through this domain.
+	handle /internal/* {
+		respond 404
+	}
+
+	# active/api.caddy is deploy.sh's live switch target: a one-line (or,
+	# during a canary window, two-line weighted) reverse_proxy block,
+	# atomically replaced (temp file + `mv`) and picked up by `docker
+	# compose exec caddy caddy reload` with no restart, no port rebind, and
+	# in-flight requests completing against their original upstream
+	# (confirmed against Caddy 2's real reload/import semantics). See
+	# caddy/active/api.caddy.example for the two shapes (steady-state /
+	# canary) and docs/core/blue-green-migrations.md for the switch
+	# sequence.
+	handle {
+		import /etc/caddy/active/api.caddy
+	}
+}
+
+biasmarket.com {
+	import /etc/caddy/active/web.caddy
+}
+
+# Public-read MinIO bucket (product images, store logos). Only the S3 API
+# port (9000) is proxied — the admin console (9001) is never routed here.
+# Unaffected by blue/green — minio has no color split.
+cdn.biasmarket.com {
+	reverse_proxy minio:9000
+}
+
+# Uptime Kuma. The status page is intentionally public; everything else
+# (dashboard, manage-status-page) sits behind Kuma's own admin login, which
+# has a built-in 20-req/min rate limiter on the login endpoint (confirmed on
+# the pinned 1.23.16 image, server/rate-limiter.js) — no separate Caddy
+# basicauth layer added on top. Unaffected by blue/green — uptime-kuma has
+# no color split.
+status.biasmarket.com {
+	# Kuma has no "set as homepage" setting of its own — the status page
+	# always lives at /status/<slug>. An internal `rewrite` doesn't work here:
+	# Kuma is an SPA, and its client-side router reads the browser's actual
+	# URL bar (still "/" after an internal rewrite, invisible to the
+	# browser), not the path Caddy forwarded upstream — a logged-in session
+	# bounces straight back to /dashboard regardless of what the server
+	# returned. A real redirect changes the URL bar itself, so the SPA boots
+	# up already agreeing on the path. 302, not 301: the slug is
+	# scripts/setup-kuma.ts's STATUS_PAGE_SLUG (default "status") and
+	# shouldn't get permanently cached by browsers if it ever changes.
+	@root path /
+	redir @root /status/status 302
+
+	reverse_proxy uptime-kuma:3001
+}

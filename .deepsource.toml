@@ -30,3 +30,13 @@ enabled = true
   # Boot-time env-var validation is a flat checklist (see env.validation.ts);
   # there's nothing to refactor, so never raise cyclomatic-complexity issues.
   cyclomatic_complexity_threshold = "critical"
+
+# Every infra/vps script is `#!/usr/bin/env bash` (uses [[ ]], =~,
+# BASH_REMATCH, mapfile, arrays). Auto-detection defaults to POSIX sh and
+# raises SC3010/SC3024 portability false positives — pin the dialect.
+[[analyzers]]
+name = "shell"
+enabled = true
+
+  [analyzers.meta]
+  dialect = "bash"

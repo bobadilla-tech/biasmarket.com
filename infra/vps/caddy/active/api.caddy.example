@@ -1,0 +1,28 @@
+## Template only — deploy.sh writes the REAL infra/vps/caddy/active/api.caddy
+## on the VPS (gitignored, never committed; not synced by rsync — see
+## .gitignore and the rsync --exclude in cd.yml). Copy this file by hand only
+## for the very first `deploy.sh --bootstrap` run on a fresh VPS, so Caddy has
+## something importable before any deploy has ever run.
+##
+## Steady state (100% of traffic on one color) looks like this:
+reverse_proxy api-blue:3000 {
+	health_uri /api/health
+	health_interval 10s
+	health_timeout 5s
+}
+
+## During a canary window (deploy.sh phase 10), the same file instead holds a
+## weighted two-upstream block, e.g. 90/10 in favor of the previously-live
+## color while the candidate proves itself against a slice of real traffic:
+##
+## reverse_proxy api-blue:3000 api-green:3000 {
+## 	lb_policy weighted_round_robin 9 1
+## 	health_uri /api/health
+## 	health_interval 10s
+## 	health_timeout 5s
+## }
+##
+## Both shapes are swapped in via temp-file-plus-`mv` (atomic) followed by
+## `docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
+## --adapter caddyfile` — no restart, no port rebind, in-flight requests
+## finish against their original upstream.
