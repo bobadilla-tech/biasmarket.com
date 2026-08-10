@@ -57,10 +57,6 @@ jobs:
       contents: read
       packages: write
     strategy:
-      # GHCR and the Actions cache apply secondary rate limits to bursts of
-      # parallel uploads. The images are already cache-optimized, so serialize
-      # these three pushes to make retries reliable.
-      max-parallel: 1
       matrix:
         app: [api, web, workers]
     steps:
