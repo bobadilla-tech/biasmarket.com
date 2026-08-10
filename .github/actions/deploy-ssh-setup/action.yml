@@ -36,7 +36,7 @@ runs:
         # bytes over the wire — without keepalives, a NAT/firewall on the
         # runner or VPS path reaps the idle connection and ssh dies with
         # "client_loop: send disconnect: Broken pipe".
-        cat >> ~/.ssh/config <<'EOF'
+        cat > ~/.ssh/config <<'EOF'
         Host *
           ServerAliveInterval 30
           ServerAliveCountMax 10
