@@ -3891,6 +3891,68 @@
           "Addresses"
         ]
       }
+    },
+    "/monitoring/webhook": {
+      "post": {
+        "operationId": "MonitoringController_webhook",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KumaWebhookDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Monitoring"
+        ]
+      }
+    },
+    "/monitoring/incidents": {
+      "get": {
+        "operationId": "MonitoringController_findAll",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Monitoring"
+        ]
+      }
     }
   },
   "info": {
@@ -8394,6 +8456,123 @@
             "type": "boolean"
           }
         }
+      },
+      "KumaHeartbeatDto": {
+        "type": "object",
+        "properties": {
+          "monitorID": {
+            "type": "number"
+          },
+          "status": {
+            "type": "number"
+          },
+          "important": {
+            "type": "boolean"
+          },
+          "time": {
+            "type": "string"
+          },
+          "msg": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "monitorID",
+          "status",
+          "important"
+        ]
+      },
+      "KumaMonitorDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "KumaWebhookDto": {
+        "type": "object",
+        "properties": {
+          "heartbeat": {
+            "$ref": "#/components/schemas/KumaHeartbeatDto"
+          },
+          "monitor": {
+            "$ref": "#/components/schemas/KumaMonitorDto"
+          },
+          "msg": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "heartbeat",
+          "monitor"
+        ]
+      },
+      "IncidentResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "monitorId": {
+            "type": "number"
+          },
+          "monitorName": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "resolvedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "monitorId",
+          "monitorName",
+          "message",
+          "startedAt",
+          "resolvedAt"
+        ]
+      },
+      "IncidentListResponseDto": {
+        "type": "object",
+        "properties": {
+          "incidents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IncidentResponseDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "incidents",
+          "total",
+          "page",
+          "limit"
+        ]
       }
     }
   }

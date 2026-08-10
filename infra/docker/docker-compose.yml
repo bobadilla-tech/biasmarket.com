@@ -126,6 +126,20 @@ services:
     entrypoint: >
       sh -c "mc mb --ignore-existing local/${S3_BUCKET} && mc anonymous set download local/${S3_BUCKET} && mc mb --ignore-existing local/${S3_LOGO_BUCKET} && mc anonymous set download local/${S3_LOGO_BUCKET} && mc mb --ignore-existing local/${S3_PAYMENT_BUCKET}"
 
+  # Prod-only — not in docker-compose.dev.yml. Monitoring is an operational
+  # concern for the deployed stack; there's no "is my laptop up" question
+  # worth answering per-developer. No docker.sock mount (Kuma's "Docker
+  # Container" monitor type needs it, but that grants host-root-equivalent
+  # access for a feature HTTP/TCP checks already cover — see
+  # docs/plans/2026-08-09-uptime-kuma-monitoring-plan.md). No ports: —
+  # reachable only via Caddy (status.biasmarket.com), same posture as
+  # minio's admin surface being deliberately unrouted.
+  uptime-kuma:
+    image: louislam/uptime-kuma:1.23.16
+    restart: unless-stopped
+    volumes:
+      - uptime_kuma_data:/app/data
+
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
@@ -134,6 +148,7 @@ services:
       - api
       - web
       - minio
+      - uptime-kuma
     ports:
       - "80:80"
       - "443:443"
@@ -148,3 +163,4 @@ volumes:
   caddy_config:
   minio_data:
   redis_data:
+  uptime_kuma_data:

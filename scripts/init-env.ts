@@ -33,6 +33,7 @@ const redisPassword = genPassword();
 const betterAuthSecret = genSecret(32);
 const customerAccountTokenSecret = genSecret(32);
 const internalJobsSecret = genSecret(32);
+const monitoringWebhookSecret = genSecret(32);
 const s3AccessKey = genPassword();
 const s3SecretKey = genPassword();
 
@@ -45,6 +46,7 @@ const replacements: Record<string, string> = {
   BETTER_AUTH_SECRET: betterAuthSecret,
   CUSTOMER_ACCOUNT_TOKEN_SECRET: customerAccountTokenSecret,
   INTERNAL_JOBS_SECRET: internalJobsSecret,
+  MONITORING_WEBHOOK_SECRET: monitoringWebhookSecret,
   BETTER_AUTH_URL: "https://api.biasmarket.com",
   WEB_URL: "https://biasmarket.com",
   NEXT_PUBLIC_API_URL: "https://api.biasmarket.com",
@@ -71,7 +73,7 @@ writeFileSync(envPath, out.join("\n"));
 
 console.log(`Wrote ${envPath} (prod)`);
 console.log(
-  "Generated: POSTGRES_PASSWORD, DATABASE_URL, REDIS_PASSWORD, REDIS_URL, BETTER_AUTH_SECRET, CUSTOMER_ACCOUNT_TOKEN_SECRET, INTERNAL_JOBS_SECRET, S3_ACCESS_KEY, S3_SECRET_KEY",
+  "Generated: POSTGRES_PASSWORD, DATABASE_URL, REDIS_PASSWORD, REDIS_URL, BETTER_AUTH_SECRET, CUSTOMER_ACCOUNT_TOKEN_SECRET, INTERNAL_JOBS_SECRET, MONITORING_WEBHOOK_SECRET, S3_ACCESS_KEY, S3_SECRET_KEY",
 );
 console.log(
   "Still needs manual entry in infra/docker/.env: RESEND_API_KEY, RESEND_FROM_EMAIL (see infra/docker/.env.example comments)",

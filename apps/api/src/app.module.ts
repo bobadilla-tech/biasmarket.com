@@ -23,6 +23,7 @@ import { CustomerAuthModule } from "./modules/customer-auth/customer-auth.module
 import { RestockModule } from "./modules/restock/restock.module.js";
 import { WhatsappTemplatesModule } from "./modules/whatsapp-templates/whatsapp-templates.module.js";
 import { AddressesModule } from "./modules/addresses/addresses.module.js";
+import { MonitoringModule } from "./modules/monitoring/monitoring.module.js";
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { AddressesModule } from "./modules/addresses/addresses.module.js";
     RestockModule,
     WhatsappTemplatesModule,
     AddressesModule,
+    MonitoringModule,
   ],
   controllers: [AppController],
 })

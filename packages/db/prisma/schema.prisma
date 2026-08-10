@@ -593,6 +593,20 @@ model AuditLog {
   @@index([entityType, entityId])
 }
 
+// Platform-level operational data (Uptime Kuma webhook events) — deliberately
+// outside the multi-tenancy model, no storeId: an API-down incident isn't
+// "owned" by any one store. See docs/plans/2026-08-09-uptime-kuma-monitoring-plan.md.
+model PlatformIncident {
+  id          String    @id @default(cuid())
+  monitorId   Int
+  monitorName String
+  message     String
+  startedAt   DateTime  @default(now())
+  resolvedAt  DateTime?
+
+  @@index([monitorId, resolvedAt])
+}
+
 //BETHER AUTH
 
 model Session {

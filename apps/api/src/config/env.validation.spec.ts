@@ -16,6 +16,7 @@ const REQUIRED = [
   "S3_ACCESS_KEY",
   "S3_SECRET_KEY",
   "INTERNAL_JOBS_SECRET",
+  "MONITORING_WEBHOOK_SECRET",
 ];
 
 const OPTIONAL = ["NODE_ENV"];
@@ -102,6 +103,13 @@ describe("validateEnv", () => {
     delete process.env.INTERNAL_JOBS_SECRET;
     expect(() => validateEnv()).toThrow(
       "Missing required env var: INTERNAL_JOBS_SECRET",
+    );
+  });
+
+  it("refuses to boot when MONITORING_WEBHOOK_SECRET is missing (Kuma's webhook can't authenticate)", () => {
+    delete process.env.MONITORING_WEBHOOK_SECRET;
+    expect(() => validateEnv()).toThrow(
+      "Missing required env var: MONITORING_WEBHOOK_SECRET",
     );
   });
 });

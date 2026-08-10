@@ -91,23 +91,26 @@ docker compose version   # confirm the compose plugin is present
 
 ## 4. Point DNS at the VM
 
-The stack uses three subdomains — `biasmarket.com` for the storefront/dashboard
-(`web`), `api.biasmarket.com` for the API (`api`), and `cdn.biasmarket.com` for
-public product images/store logos (`minio`) — each getting its own Caddy-issued
-cert (see [`../caddy/Caddyfile`](../caddy/Caddyfile)). Create **three** A
-records pointing at the reserved public IP from step 1:
+The stack uses four subdomains — `biasmarket.com` for the storefront/dashboard
+(`web`), `api.biasmarket.com` for the API (`api`), `cdn.biasmarket.com` for
+public product images/store logos (`minio`), and `status.biasmarket.com` for the
+Uptime Kuma status page — each getting its own Caddy-issued cert (see
+[`../caddy/Caddyfile`](../caddy/Caddyfile)). Create **four** A records pointing
+at the reserved public IP from step 1:
 
 | Host                                       | Points to               |
 | ------------------------------------------ | ----------------------- |
 | `biasmarket.com` (and `www` if you use it) | VM's reserved public IP |
 | `api.biasmarket.com`                       | VM's reserved public IP |
 | `cdn.biasmarket.com`                       | VM's reserved public IP |
+| `status.biasmarket.com`                    | VM's reserved public IP |
 
-Confirm all three resolve (`dig +short biasmarket.com`,
+Confirm all four resolve (`dig +short biasmarket.com`,
 `dig +short
-api.biasmarket.com`, `dig +short cdn.biasmarket.com`) before
-starting the stack — Caddy's automatic HTTPS will fail its ACME challenge for a
-domain that isn't live yet, though it retries.
+api.biasmarket.com`, `dig +short cdn.biasmarket.com`,
+`dig +short status.biasmarket.com`) before starting the stack — Caddy's
+automatic HTTPS will fail its ACME challenge for a domain that isn't live yet,
+though it retries.
 
 **If DNS is proxied through Cloudflare** (orange cloud, not grey/DNS-only): set
 SSL/TLS mode to **Full** in Cloudflare dashboard → SSL/TLS → Overview. Not
@@ -221,6 +224,56 @@ a browser, and a store logo the same way
 (`.../<S3_LOGO_BUCKET>/logos/<uuid>.jpg`). If uploads fail, check
 `docker compose logs api` for a `Missing required env var: S3_...` error first —
 `StorageService` now validates these at boot instead of failing silently.
+
+## 8. Set up Uptime Kuma monitoring
+
+`uptime-kuma` comes up with the rest of the stack (step 6) but needs one-time
+manual configuration through its own UI — nothing here is committed to the repo
+except the container itself. See
+[`docs/plans/2026-08-09-uptime-kuma-monitoring-plan.md`](../plans/2026-08-09-uptime-kuma-monitoring-plan.md)
+for the full design rationale; this is just the setup checklist.
+
+1. Visit `https://status.biasmarket.com` — Kuma's first-boot setup wizard
+   creates the admin account. Kuma's own login endpoint has a built-in
+   20-req/min rate limiter (confirmed on the pinned 1.23.16 image); no
+   additional Caddy `basicauth` layer is configured on top.
+2. Add two notification providers (Settings → Notifications):
+   - **Slack/Discord** (or another Kuma-native provider) pointed directly at
+     your incoming-webhook URL — this is the real-time page, independent of
+     `api`/`web` being up.
+   - **Webhook**, URL `https://api.biasmarket.com/api/monitoring/webhook`, with
+     header `X-Webhook-Secret: <MONITORING_WEBHOOK_SECRET value>`. Copy the
+     value from `infra/docker/.env` on the server — this is a second, manual
+     copy of the secret, stored in Kuma's own SQLite; rotating it means updating
+     both `.env` and Kuma's config (see
+     [`incident-response.md`](incident-response.md)).
+3. Create the 6 monitors below, attaching **both** notification providers to
+   each, and check "Important" transitions only fire on state changes (Kuma's
+   default):
+
+   | Monitor        | Type | Target                                  |
+   | -------------- | ---- | --------------------------------------- |
+   | API (external) | HTTP | `https://api.biasmarket.com/api/health` |
+   | API (internal) | HTTP | `http://api:3000/api/health`            |
+   | Web (external) | HTTP | `https://biasmarket.com/api/health`     |
+   | Web (internal) | HTTP | `http://web:3001/api/health`            |
+   | DB             | TCP  | `db:5432`                               |
+   | MinIO          | HTTP | `http://minio:9000/minio/health/live`   |
+
+4. Create a public status page (Status Pages → New) containing **only** the two
+   external monitors (API, Web) — the user-facing surfaces. Leave the other four
+   out of any public page; they stay visible only in the main dashboard for
+   triage.
+5. Verify: stop one backend (e.g. `docker compose stop api`) and confirm both
+   the paired internal/external monitors go down, the Slack/Discord alert fires,
+   and (once restarted) the "up" transition closes things out. See the plan
+   doc's "Verification" section for the full check list, including confirming a
+   `PlatformIncident` row appears via `GET /api/monitoring/incidents` (admin
+   session required).
+6. Set up an external, off-VM dead-man's-switch (e.g. UptimeRobot,
+   healthchecks.io, Better Stack) pinging `https://status.biasmarket.com` — this
+   is the one piece of monitoring deliberately _not_ self-hosted, since a
+   watcher hosted on the VM can't report the whole VM being down.
 
 ## Day 2
 

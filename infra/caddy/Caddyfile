@@ -23,3 +23,13 @@ biasmarket.com {
 cdn.biasmarket.com {
 	reverse_proxy minio:9000
 }
+
+# Uptime Kuma. The status page (/) is intentionally public; everything else
+# (dashboard, manage-status-page) sits behind Kuma's own admin login, which
+# has a built-in 20-req/min rate limiter on the login endpoint (confirmed on
+# the pinned 1.23.16 image, server/rate-limiter.js) — no separate Caddy
+# basicauth layer added on top, see
+# docs/plans/2026-08-09-uptime-kuma-monitoring-plan.md.
+status.biasmarket.com {
+	reverse_proxy uptime-kuma:3001
+}
