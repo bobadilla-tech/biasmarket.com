@@ -163,8 +163,12 @@ rotation.
 
 ## VPS provisioning (one-time, or after a VPS rebuild)
 
-Directory layout on the VPS, under a dedicated low-privilege `deploy` OS user
-(Docker-group member — **this is root-equivalent in practice**, not a
+Written for **Ubuntu 24.04** (matches `deploy.md`'s provisioning assumption —
+Oracle Ampere A1, arm64). Run through in order; each step depends on the one
+before it. Commands prefixed `# local:` run on your own machine, not the VPS.
+
+Directory layout this builds toward, under a dedicated low-privilege `deploy` OS
+user (Docker-group member — **this is root-equivalent in practice**, not a
 containment boundary; the real security boundary is SSH-key secrecy and
 CI-runner integrity, see the plan doc's decision 10):
 
@@ -177,81 +181,211 @@ CI-runner integrity, see the plan doc's decision 10):
   releases/                                                       <- history.log + pre-migration snapshots
 ```
 
+### Step 1 — packages, Docker, the `deploy` user
+
 ```bash
+sudo apt-get update
+sudo apt-get install -y rsync openssh-server curl
+
+# Docker Engine + Compose plugin — same install this repo already documents
+# in deploy.md step 3:
+curl -fsSL https://get.docker.com | sudo sh
+# (see https://docs.docker.com/engine/install/ubuntu/ for the manual/apt-repo
+# alternative if you'd rather not pipe a script to sh)
+
 sudo useradd --create-home --shell /bin/bash deploy
 sudo usermod -aG docker deploy
+newgrp docker   # only needed in your own shell if you're testing as `deploy` interactively
+
 sudo mkdir -p /opt/biasmarket/{env,caddy/active,state,releases}
 sudo chown -R deploy:deploy /opt/biasmarket
 ```
 
-### Two SSH keys, not one
+### Step 2 — install `rrsync`
+
+Ubuntu's `rsync` package ships `rrsync` gzipped, not on `PATH` — unpack it once
+([Ubuntu manpage](https://manpages.ubuntu.com/manpages/noble/man1/rrsync.1.html)):
+
+```bash
+sudo sh -c 'gunzip -c /usr/share/doc/rsync/scripts/rrsync.gz > /usr/local/bin/rrsync'
+sudo chmod 755 /usr/local/bin/rrsync
+rrsync --help   # confirm it runs
+```
+
+### Step 3 — generate the two deploy SSH keys
+
+Both ed25519, both **without a passphrase** (used non-interactively by CI).
+Generate them somewhere you control — your own machine is fine, they never need
+to leave it except as pasted GitHub secrets:
+
+```bash
+# local:
+ssh-keygen -t ed25519 -N "" -C "biasmarket-deploy-key-a-rsync" -f biasmarket_key_a
+ssh-keygen -t ed25519 -N "" -C "biasmarket-deploy-key-b-dispatch" -f biasmarket_key_b
+```
+
+This produces 4 files: `biasmarket_key_a[.pub]`, `biasmarket_key_b[.pub]`. The
+two **private** key files' contents go into GitHub secrets (Step 6). The two
+**public** key files go into the VPS's `authorized_keys` (next step).
+
+### Step 4 — restrict both keys via `authorized_keys`
 
 A single forced-command key restricted to "run deploy.sh" would silently break
 the rsync step (`rrsync` and a `command=` dispatcher can't be composed on one
-key) — provision two, both ed25519, both without a passphrase (used
-non-interactively by CI):
+key) — that's why there are two. As the `deploy` user on the VPS:
 
-**Key A — rsync-only**, restricted via
-[`rrsync`](https://github.com/WayneD/rrsync) (ships with the `rsync` package,
-`/usr/share/doc/rsync/scripts/rrsync` or similar depending on distro) scoped to
-`/opt/biasmarket/`:
-
-```
-command="rrsync /opt/biasmarket/",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-ed25519 AAAA... key-a-rsync
+```bash
+sudo -iu deploy
+mkdir -p ~/.ssh && chmod 700 ~/.ssh
 ```
 
-**Key B — deploy dispatcher**, restricted via
-`infra/vps/bin/ssh-deploy-dispatcher.sh` (synced to
-`/opt/biasmarket/bin/ssh-deploy-dispatcher.sh` by key A's rsync — chmod +x after
-the first sync):
+Append two lines to `~/.ssh/authorized_keys` (paste each `.pub` file's content
+after the `command=...` prefix shown — see
+[sshd's `AUTHORIZED_KEYS FILE FORMAT`](https://man.openbsd.org/sshd#AUTHORIZED_KEYS_FILE_FORMAT)
+for what these options mean):
 
 ```
-command="/opt/biasmarket/bin/ssh-deploy-dispatcher.sh",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-ed25519 AAAA... key-b-dispatch
+command="/usr/local/bin/rrsync /opt/biasmarket/",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-ed25519 AAAA...key-a-contents... biasmarket-deploy-key-a-rsync
+command="/opt/biasmarket/bin/ssh-deploy-dispatcher.sh",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-ed25519 AAAA...key-b-contents... biasmarket-deploy-key-b-dispatch
 ```
 
-Both lines go in `deploy`'s `~/.ssh/authorized_keys`. The dispatcher script
-itself documents its exact allowlist (see the file's header comment) — it never
-`eval`s `$SSH_ORIGINAL_COMMAND`, only matches it against anchored regexes for
-the handful of literal shapes `cd.yml` actually sends.
+```bash
+chmod 600 ~/.ssh/authorized_keys
+exit   # back to your own sudo-capable user
+```
 
-### `known_hosts`
+Key B's target script (`/opt/biasmarket/bin/ssh-deploy-dispatcher.sh`) won't
+exist yet — it arrives via key A's first rsync (`cd.yml`'s `sync-and-deploy`
+job, or a manual first sync, see Step 8). Make it executable once it lands:
+`sudo -u deploy chmod +x /opt/biasmarket/bin/ssh-deploy-dispatcher.sh`. The
+dispatcher script itself documents its exact allowlist (see the file's header
+comment) — it never `eval`s `$SSH_ORIGINAL_COMMAND`, only matches it against
+anchored regexes for the handful of literal shapes `cd.yml` sends.
+
+### Step 5 — pin `known_hosts`
 
 Capture once, **verified out-of-band via the Oracle Cloud console** (not blind
 first-`ssh-keyscan` trust — an attacker in a position to MITM the very first
 connection is exactly the threat model host-key pinning exists for):
 
 ```bash
+# local:
 ssh-keyscan -t ed25519 <vps-ip> > known_hosts_candidate
-# then, separately, open the OCI console's instance detail page and confirm
-# the host key fingerprint shown there (or fetched via a serial console
-# session) matches before trusting known_hosts_candidate
+cat known_hosts_candidate
 ```
 
-Store the verified file's contents as the `DEPLOY_SSH_KNOWN_HOSTS` GitHub secret
-(see [Required GitHub secrets/variables](#required-github-secretsvariables)
-below).
+Then, separately, open the VPS instance's detail page in the OCI console — or,
+for a stronger check, its
+[serial console](https://docs.oracle.com/en-us/iaas/Content/Compute/References/serialconsole.htm)
+— and confirm the host key fingerprint shown there matches
+`known_hosts_candidate` before trusting it. The verified file's contents become
+the `DEPLOY_SSH_KNOWN_HOSTS` GitHub secret (Step 6).
 
-### systemd units (migration_pending watchdog)
+### Step 6 — GitHub: secrets, variables, the `production` environment
+
+Create the environment first — Settings → Environments → New environment → name
+it `production`
+([GitHub docs](https://docs.github.com/en/actions/how-tos/manage-environments/create-environment)).
+`cd.yml`'s `sync-and-deploy`/`scheduled-cleanup` jobs declare
+`environment: production`, which is what makes environment-scoped secrets the
+right place (and gives you an optional required-reviewers approval gate for free
+if you want one later).
+
+Inside that environment (Settings → Environments → `production` → add secret —
+[secrets docs](https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions)):
+
+| Name                      | Value                                        |
+| ------------------------- | -------------------------------------------- |
+| `DEPLOY_SSH_HOST`         | VPS hostname/IP                              |
+| `DEPLOY_SSH_USER`         | `deploy`                                     |
+| `DEPLOY_SSH_KNOWN_HOSTS`  | Contents of the verified file from Step 5    |
+| `DEPLOY_SSH_KEY_RSYNC`    | Contents of `biasmarket_key_a` (private key) |
+| `DEPLOY_SSH_KEY_DISPATCH` | Contents of `biasmarket_key_b` (private key) |
+
+Repo-level, Settings → Secrets and variables → Actions → **Variables** tab, not
+Secrets
+([variables docs](https://docs.github.com/en/actions/learn-github-actions/variables))
+— `NEXT_PUBLIC_API_URL`/`NEXT_PUBLIC_SENTRY_DSN` are baked into the `web` image
+as build ARGs (see `infra/docker/web.Dockerfile`) and are already public,
+shipped in every browser bundle, so they don't belong alongside genuinely
+sensitive values:
+
+| Name                     |
+| ------------------------ |
+| `NEXT_PUBLIC_API_URL`    |
+| `NEXT_PUBLIC_SENTRY_DSN` |
+
+Set both before the first `cd.yml` run that builds `web`.
+
+### Step 7 — GHCR package visibility (one-time, manual, after the first build)
+
+`cd.yml`'s `build-push` job needs to run once (any push to `main`) before these
+packages exist. After that first successful run creates the 3 packages
+(`biasmarket-api`, `biasmarket-web`, `biasmarket-workers`), set each to
+**public** visibility — this does **not** auto-inherit from the repo being
+public
+([GitHub docs](https://docs.github.com/en/packages/learn-github-packages/configuring-a-packages-access-control-and-visibility)):
+
+1. `https://github.com/orgs/bobadilla-tech/packages` (or
+   `https://github.com/bobadilla-tech?tab=packages` if it's a user account, not
+   an org) → click each of the 3 packages.
+2. Package settings (right sidebar) → Danger Zone → Change visibility → Public.
+
+This is what lets the VPS pull images with zero registry credentials. If you
+need to keep them private instead, `deploy.sh`/the compose file would need a
+`docker login` step added on the VPS with a PAT — not the default path, not
+implemented here.
+
+### Step 8 — first sync, env files, systemd units, Kuma monitors
+
+With keys and secrets in place, either push to `main` (lets `cd.yml` do the
+first rsync automatically) or sync once by hand to bootstrap faster:
+
+```bash
+# local, using key A directly (bypasses CI for a one-time manual bootstrap):
+rsync -az \
+  -e "ssh -i biasmarket_key_a -o StrictHostKeyChecking=yes" \
+  infra/vps/ deploy@<vps-ip>:/opt/biasmarket/
+```
+
+Then, on the VPS as `deploy` (`sudo -iu deploy`, from `/opt/biasmarket`):
+
+```bash
+chmod +x bin/ssh-deploy-dispatcher.sh bin/migration-watchdog.sh deploy.sh
+
+# populate real env files — see each .example's header comment for what
+# goes in it. shared.env in particular: copy every secret BYTE-FOR-BYTE from
+# infra/docker/.env, never regenerate.
+cp env/shared.env.example env/shared.env       # then edit
+cp env/blue.runtime.env.example env/blue.runtime.env
+cp env/green.runtime.env.example env/green.runtime.env
+cp env/watchdog.env.example env/watchdog.env   # KUMA_MIGRATION_PUSH_URL comes after Kuma is up, see below
+```
+
+Install the migration-watchdog systemd units:
 
 ```bash
 sudo cp /opt/biasmarket/systemd/biasmarket-migration-watchdog.{service,timer} /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now biasmarket-migration-watchdog.timer
+sudo systemctl status biasmarket-migration-watchdog.timer   # should show "active (waiting)"
 ```
 
-Requires `/opt/biasmarket/env/watchdog.env` populated (see
-`infra/vps/env/watchdog.env.example` — `KUMA_MIGRATION_PUSH_URL` comes from the
-Kuma push monitor `scripts/setup-kuma.ts` creates, see next section). This timer
-is deliberately **not** part of `deploy.sh` itself — a wedged deploy must not be
-able to silence its own stuck-migration alarm.
+This timer is deliberately **not** part of `deploy.sh` itself — a wedged deploy
+must not be able to silence its own stuck-migration alarm. If it later fails
+silently, check with:
+`sudo journalctl -u biasmarket-migration-watchdog.service --since "10 min ago"`.
 
-### Uptime Kuma monitors
-
-Re-run `scripts/setup-kuma.ts` before/at the first blue/green cutover, and again
-after any VPS rebuild:
+`uptime-kuma` itself only comes up as part of the
+[first production cutover](#first-production-cutover-t11) below
+(`deploy.sh --bootstrap` starts it alongside the other always-on infra services,
+before the `blue` color) — so `scripts/setup-kuma.ts` can't be run until that's
+done. Come back to this once `--bootstrap` has completed: run it from your own
+machine or the VPS, wherever you have `pnpm`/`node` and network access to
+`https://status.biasmarket.com`:
 
 ```bash
-KUMA_USERNAME=admin KUMA_PASSWORD='<existing password>' node scripts/setup-kuma.ts
+KUMA_USERNAME=admin KUMA_PASSWORD='<pick or reuse the existing password>' node scripts/setup-kuma.ts
 ```
 
 Creates/updates: 4 static per-color internal monitors
@@ -260,53 +394,10 @@ Creates/updates: 4 static per-color internal monitors
 the external API/Web monitors (unchanged), DB/MinIO (unchanged, no color split),
 and the new `migration_pending watchdog` push monitor. The script prints that
 push monitor's URL on creation — copy it into
-`/opt/biasmarket/env/watchdog.env`'s `KUMA_MIGRATION_PUSH_URL`. See
+`/opt/biasmarket/env/watchdog.env`'s `KUMA_MIGRATION_PUSH_URL` on the VPS, then
+`sudo systemctl restart biasmarket-migration-watchdog.timer` to pick it up. See
 [`incident-response.md`](incident-response.md) for what fires when it misses a
-heartbeat.
-
-### GHCR package visibility (T8, one-time, manual)
-
-After `cd.yml`'s first successful run creates the 3 packages (`biasmarket-api`,
-`biasmarket-web`, `biasmarket-workers`), set each to **public** visibility —
-this does **not** auto-inherit from the repo being public:
-
-GitHub → the `bobadilla-tech` org (or user) → Packages → each of the 3 packages
-→ Package settings → Danger Zone → Change visibility → Public.
-
-This is what lets the VPS pull images with zero registry credentials. If you
-need to keep them private instead, `deploy.sh`/the compose file would need a
-`docker login` step added on the VPS with a PAT — not the default path, not
-implemented here.
-
-### GitHub Variables (T8, not Secrets)
-
-`NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_SENTRY_DSN` are baked into the `web`
-image as build ARGs (see `infra/docker/web.Dockerfile`) — they're already public
-(shipped in every browser bundle), so they belong in **Settings → Secrets and
-variables → Actions → Variables**, not Secrets. Set both there before the first
-`cd.yml` run that builds `web`.
-
-### Required GitHub secrets/variables
-
-Settings → Secrets and variables → Actions, on the `production` **Environment**
-(not repo-level — the `sync-and-deploy`/`scheduled-cleanup` jobs declare
-`environment: production`, which is what makes environment-scoped secrets the
-right place and adds an approval-gate option for free):
-
-| Name                      | Type   | Value                         |
-| ------------------------- | ------ | ----------------------------- |
-| `DEPLOY_SSH_HOST`         | Secret | VPS hostname/IP               |
-| `DEPLOY_SSH_USER`         | Secret | `deploy`                      |
-| `DEPLOY_SSH_KNOWN_HOSTS`  | Secret | Verified host key (see above) |
-| `DEPLOY_SSH_KEY_RSYNC`    | Secret | Key A private key             |
-| `DEPLOY_SSH_KEY_DISPATCH` | Secret | Key B private key             |
-
-Repo-level Variables (not Secrets, see above):
-
-| Name                     | Type     |
-| ------------------------ | -------- |
-| `NEXT_PUBLIC_API_URL`    | Variable |
-| `NEXT_PUBLIC_SENTRY_DSN` | Variable |
+heartbeat. Re-run this script again after any VPS rebuild.
 
 ## First production cutover (T11)
 
@@ -314,7 +405,7 @@ Manual, supervised, during a low-traffic window — the one deliberate exception
 to "no maintenance windows needed" in this whole design, since it's also the
 first real end-to-end validation of the mechanism against production data.
 
-Gate on all of:
+Gate on all of (VPS provisioning Steps 1–8 above, in order):
 
 - [ ] `env/shared.env` populated by **verbatim byte-for-byte copy** of every
       secret value from the current `infra/docker/.env` — never
@@ -323,21 +414,24 @@ Gate on all of:
       (`CUSTOMER_ACCOUNT_TOKEN_SECRET` specifically).
 - [ ] `infra/vps/docker-compose.yml`'s first line is `name: biasmarket` (verify
       you haven't accidentally edited this).
-- [ ] Kuma monitors updated (`scripts/setup-kuma.ts` re-run, push monitor +
-      systemd timer live) **before** the cutover, not after.
 - [ ] Two SSH keys provisioned, `known_hosts` pinned, GitHub secrets/variables
-      set (see above).
-- [ ] GHCR packages public (or a documented alternative in place).
+      set (Steps 3–6).
+- [ ] GHCR packages public, or a documented alternative in place (Step 7 — note
+      this needs at least one `cd.yml` run first, so it's normally done right
+      after the first `main` push post-setup, before this cutover).
 
-Then:
+Then, on the VPS as the `deploy` user, from `/opt/biasmarket` (already synced by
+an initial manual rsync, or a first `cd.yml` run — either way, `--bootstrap`
+only works once, before `state/current_color` exists):
 
 ```bash
-# on the VPS, as the deploy user, from /opt/biasmarket (already synced by
-# an initial manual rsync, or a first cd.yml run against a to-be-bootstrapped
-# VPS — either way, --bootstrap only works once, before state/current_color
-# exists)
 ./deploy.sh --bootstrap <current main HEAD sha>
 ```
+
+Immediately after `--bootstrap` succeeds, finish Step 8's Kuma setup
+(`scripts/setup-kuma.ts`, then paste the push monitor URL into
+`env/watchdog.env` and restart the watchdog timer) — this is the earliest point
+it can run, since `uptime-kuma` only just came up.
 
 Verify:
 
