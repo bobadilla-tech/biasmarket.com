@@ -436,3 +436,91 @@ executing inside `api`'s existing `orders` domain layer, reached only over the
 internal Docker network and behind a Caddy-level block plus a shared secret. No
 behavior visible to a buyer or seller changes (same emails, same content, same
 expiration timing) — only where and how reliably the work executes.
+
+## Implementation notes (post-landing)
+
+Landed as designed; the deviations below are implementation-level corrections
+and decisions this draft left open, not scope changes.
+
+- **`app.setGlobalPrefix("api")` exclude syntax**: this repo runs NestJS 11 /
+  Express 5, whose `path-to-regexp` (v8) dropped the legacy unnamed-wildcard
+  syntax (`(.*)`, bare `*`) this plan implicitly assumed. Nest auto-converts
+  `(.*)` at boot via an internal `LegacyRouteConverter` and logs a deprecation
+  warning rather than failing — so the plan's phrasing would have worked, just
+  noisily. Used the modern syntax directly instead:
+  `exclude: [{ path: "internal/*splat", method: RequestMethod.ALL }]`.
+- **Caddyfile had no `/api/*` matcher to insert before.** The pre-existing
+  `api.biasmarket.com` block was a single bare `reverse_proxy api:3000` with no
+  `handle` directives at all (the `/api` prefix is applied inside the Nest app,
+  not at Caddy) — there was nothing resembling the "existing catch-all `/api/*`
+  block" this plan described. Restructured the whole block into
+  `handle /internal/* { respond 404 }` followed by
+  `handle { reverse_proxy
+  api:3000 }`, first-match-wins as intended. Verified
+  live (not just `caddy validate`) by pointing a throwaway Caddy instance at the
+  same rule shape and confirming `/internal/orders/expire-sweep` 404s while
+  other paths reach the backend.
+- **`INTERNAL_JOBS_SECRET_HEADER` centralized in `packages/queue`**, not
+  hand-typed as a matching string literal in both `apps/api`'s guard and
+  `apps/workers`' processor. The plan didn't specify where this constant should
+  live; keeping it out of sync between producer and consumer felt like exactly
+  the drift `packages/queue` exists to prevent for job contracts, so it went in
+  `packages/queue/src/jobs/orders.jobs.ts` alongside the (payload-less)
+  `EXPIRE_ORDERS_JOB_NAME`/`EXPIRE_ORDERS_SCHEDULER_ID`/
+  `EXPIRE_ORDERS_CRON_PATTERN` constants — a small `orders.jobs.ts` file the
+  plan's "Files likely touched" list didn't call out by name (it only mentioned
+  `queue-names.ts` needing an `ORDERS` entry).
+- **`mailerJobOptions` (the tightened retention override) also lives in
+  `packages/queue`**, exported alongside `MAILER_JOB_NAME`/
+  `sendEmailParamsSchema`, rather than being written out twice (once in
+  `apps/api/src/queue/queue.module.ts`, once in
+  `apps/workers/src/queue/
+  queue.module.ts`). Both files import the same
+  constant into their
+  `BullModule.registerQueue({ name: QUEUE_NAMES.MAILER, defaultJobOptions:
+  mailerJobOptions })`
+  call — avoids the exact "governs nothing because it's not actually shared" gap
+  this plan flagged for `defaultJobOptions` itself.
+- **No new `ThrottlerModule.forRoot(...)` import was needed.** The plan
+  anticipated one might be ("this app doesn't have a global throttler instance
+  to inherit from") — but `orders.module.ts` already had
+  `ThrottlerModule.forRoot([{ ttl: 60_000, limit: 5 }])` from earlier
+  buyer-facing throttling work, and `InternalJobsController` lives in that same
+  module, so it inherits it for free.
+- **`InternalJobsController` also got `@ApiExcludeController()`** (not mentioned
+  in this plan) — keeps the internal-only endpoint out of the public Swagger
+  spec on top of the three runtime defense layers. Small addition, not a fourth
+  defense layer on its own (Swagger is already off-by-default in production).
+- **`scripts/send-test-email.ts`** enqueues through a directly-constructed
+  `Queue` (mirroring the existing `scripts/send-test-ping.ts` pattern) rather
+  than instantiating `MailerService` via Nest DI — `MailerService` now depends
+  on `@InjectQueue`, which needs a bootstrapped Nest app to resolve. Both reach
+  the same real BullMQ queue with the same schema validation; the script never
+  calls the `MailerService` class method by name, which is a narrower reading
+  than the plan's "call `MailerService.send()`" wording but satisfies its actual
+  goal ("enqueue through the real pipeline, not `MailerCore` directly").
+- **BullMQ v6 terminology**: this plan calls the sweep dispatch a "BullMQ
+  repeatable job" throughout; the actual API used is v6's Job Scheduler
+  (`queue.upsertJobScheduler(...)`), which is what "repeatable job" now means in
+  bullmq ≥5 (the older `repeat` option on `queue.add()` still exists but is the
+  legacy path). No behavior difference, just flagging the terminology for
+  whoever greps for "repeat" later.
+- **Verification actually run**: `pnpm typecheck` (all 9 packages),
+  `pnpm
+  --filter api test` (48 files / 426 tests, including new specs for
+  `MailerService` and `InternalJobsSecretGuard`), `pnpm --filter workers test`
+  (5 files / 8 tests, including new specs for `MailerProcessor`,
+  `ExpireOrdersProcessor`, `ExpireOrdersSchedulerService`), both apps'
+  `nest
+  build`, and a live (non-Docker) Caddy routing check for the
+  `/internal/*` block. **Not run**: the full docker-compose verification steps
+  (kill `apps/workers` mid-job and confirm the backlog drains, curl the internal
+  endpoint from inside vs. outside the Docker network against the real stack,
+  watch two live ticks of the scheduler) — those need the actual dev/prod Docker
+  stack up, which wasn't spun up during implementation. Worth running before
+  this is considered fully soaked, per this plan's own Verification section.
+- Pre-existing `apps/api/src/config/env.validation.spec.ts` needed updating (not
+  new coverage, a consequence of moving requirements): its
+  `MAIL_DRIVER`/`RESEND_*`-specific test cases were deleted (that logic no
+  longer lives in `apps/api`) and a case for the new required
+  `INTERNAL_JOBS_SECRET` was added.
