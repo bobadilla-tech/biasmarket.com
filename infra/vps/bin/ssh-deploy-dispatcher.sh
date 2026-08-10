@@ -27,44 +27,44 @@
 # operator wanting those runs deploy.sh directly from an interactive shell
 # on the VPS, not over this restricted key.
 #
-# Launches deploy.sh detached from this SSH session (systemd-run + setsid,
-# backgrounded, dispatcher exits immediately) so an ordinary network blip
-# between the GitHub runner and the VPS can't SIGHUP-kill a deploy mid-phase.
-# The caller (cd.yml) does not wait on this SSH call for the deploy's
-# outcome — it polls state/last_deploy_result over a separate connection.
+# Launches deploy.sh detached from this SSH session (setsid, backgrounded,
+# dispatcher exits immediately) so an ordinary network blip between the
+# GitHub runner and the VPS can't SIGHUP-kill a deploy mid-phase. The
+# caller (cd.yml) does not wait on this SSH call for the deploy's outcome —
+# it polls state/last_deploy_result over a separate connection.
+#
+# Previously wrapped in `systemd-run --scope --collect` for systemd cgroup
+# registration/`systemctl status` visibility. Dropped: on this VPS,
+# StartTransientUnit over a non-interactive forced-command SSH session (no
+# pty, no seat) hits polkit's "Interactive authentication required" —
+# scoping a polkit rules.d rule to it didn't resolve it, and systemd-run
+# was never load-bearing for anything beyond the SSH-transport detachment
+# setsid already provides on its own. Operator visibility into an
+# in-progress run now comes from state/deploy.lock.meta's live `phase=`
+# (see lib/lock.sh's update_lock_phase, and cmd_wait_for_result's
+# heartbeat) instead of `systemctl status`/journald per-run grouping.
 set -euo pipefail
 
 DEPLOY_ROOT="/opt/biasmarket"
 cmd="${SSH_ORIGINAL_COMMAND:-}"
 
 launch() {
-  # setsid: fully detaches from this script's (and therefore sshd's)
-  # controlling session. systemd-run --scope: registers the process tree
-  # with systemd's cgroup manager per the plan's stated execution model.
-  # --collect: let systemd garbage-collect the unit once it exits, no
-  # manual `systemctl reset-failed` bookkeeping needed.
-  local unit="$1"
+  local label="$1"
   shift
   local errfile
   errfile="$(mktemp)"
-  setsid systemd-run --scope --collect --unit="$unit" -- "$DEPLOY_ROOT/deploy.sh" "$@" \
-    >/dev/null 2>"$errfile" </dev/null &
+  setsid "$DEPLOY_ROOT/deploy.sh" "$@" >/dev/null 2>"$errfile" </dev/null &
   local bg_pid=$!
   disown
-  # systemd-run --scope blocks in the foreground for the scope's entire
-  # lifetime (a real deploy runs minutes) — if the backgrounded job has
-  # ALREADY exited within this short window, systemd-run failed before it
-  # even registered the unit (e.g. no D-Bus/session-bus access from a
-  # non-interactive forced-command SSH session). Previously this was
-  # swallowed silently: the dispatcher still exited 0, CD reported "Launch
-  # deploy" as successful, and --wait-for-result polled a result file that
-  # was never going to be written until its own 1500s timeout. Surface it
-  # loudly here instead.
+  # Catches deploy.sh failing, or failing to even exec (missing/
+  # non-executable file), near-instantly — e.g. an early die() before the
+  # lock is attempted — instead of silently vanishing until
+  # --wait-for-result's own 1500s timeout.
   sleep 2
   if ! kill -0 "$bg_pid" 2>/dev/null; then
     wait "$bg_pid"
     local rc=$?
-    echo "launch failed immediately (rc=$rc) for unit=$unit — systemd-run never registered the unit:" >&2
+    echo "launch failed immediately (rc=$rc) for $label:" >&2
     cat "$errfile" >&2
     rm -f "$errfile"
     exit 1
@@ -74,11 +74,11 @@ launch() {
 
 if [[ "$cmd" =~ ^deploy\.sh\ ([0-9a-f]{40})$ ]]; then
   sha="${BASH_REMATCH[1]}"
-  launch "biasmarket-deploy-${sha:0:12}-$(date +%s)" "$sha"
+  launch "deploy sha=$sha" "$sha"
 elif [[ "$cmd" == "deploy.sh --rollback" ]]; then
-  launch "biasmarket-rollback-$(date +%s)" --rollback
+  launch "rollback" --rollback
 elif [[ "$cmd" == "deploy.sh --cleanup" ]]; then
-  launch "biasmarket-cleanup-$(date +%s)" --cleanup
+  launch "cleanup" --cleanup
 elif [[ "$cmd" == "deploy.sh --print-current-sha" ]]; then
   # Synchronous, not detached — the caller needs this SSH call's stdout.
   exec "$DEPLOY_ROOT/deploy.sh" --print-current-sha

@@ -12,7 +12,7 @@
 #
 # Invoked either directly by an operator (all four forms) or, for the first
 # three, via the restricted SSH dispatcher (see bin/ssh-deploy-dispatcher.sh)
-# under `systemd-run`, detached from the SSH transport. See
+# under `setsid`, detached from the SSH transport. See
 # docs/core/blue-green-migrations.md for the full phase-by-phase writeup.
 #
 # NEVER `set -x` anywhere in this file or the libs it sources — several
