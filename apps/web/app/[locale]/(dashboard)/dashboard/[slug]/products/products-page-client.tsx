@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Grid2X2, LayoutList } from "lucide-react";
+import { Grid2X2, LayoutList, Wallet } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { SUPPORTED_CURRENCIES } from "@biasmarket/utils/currency";
@@ -10,10 +10,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { useDashboardStore } from "@/features/stores";
+import { StatTile } from "@/features/stats";
 import type { ProductDetailResponseDto } from "@biasmarket/types";
 import {
   getCategoryLabel,
   getProductAvailabilityState,
+  getPublishedCatalogValue,
   type ProductFormInput,
   ProductRow,
   ProductsHeader,
@@ -66,6 +68,11 @@ export function ProductsPageClient() {
   >(null);
 
   const defaultCurrency = asCurrency(store?.defaultCurrency);
+
+  const catalogValue = useMemo(
+    () => getPublishedCatalogValue(products, defaultCurrency),
+    [products, defaultCurrency],
+  );
 
   const createProduct = useCreateProduct(storeId);
   const updateProduct = useUpdateProduct(storeId);
@@ -183,6 +190,12 @@ export function ProductsPageClient() {
           addProductLabel={t("products.createTitle")}
           viewStorefrontLabel={t("viewStorefront")}
           viewStorefrontDisabled={!storeSlug}
+        />
+
+        <StatTile
+          icon={Wallet}
+          label={t("products.catalogValueLabel")}
+          value={`${defaultCurrency} ${catalogValue.toFixed(2)}`}
         />
 
         <div className="flex flex-wrap items-center justify-between gap-3">

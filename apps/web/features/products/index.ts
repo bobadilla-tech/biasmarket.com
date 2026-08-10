@@ -18,6 +18,7 @@ export {
 } from "./lib/availability-state";
 export { getCategoryLabel } from "./lib/category-label";
 export { keyForAttributes } from "./lib/variant-key";
+export { getPublishedCatalogValue } from "./lib/catalog-value";
 
 export { ProductsHeader } from "./components/products-header";
 export { ProductTile } from "./components/product-tile";

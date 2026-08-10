@@ -32,6 +32,16 @@ runs:
         printf '%s\n' "${{ inputs.key_rsync }}" > ~/.ssh/deploy_rsync_key
         printf '%s\n' "${{ inputs.key_dispatch }}" > ~/.ssh/deploy_dispatch_key
         chmod 600 ~/.ssh/known_hosts ~/.ssh/deploy_rsync_key ~/.ssh/deploy_dispatch_key
+        # deploy.sh --wait-for-result polls silently for up to 1500s with no
+        # bytes over the wire — without keepalives, a NAT/firewall on the
+        # runner or VPS path reaps the idle connection and ssh dies with
+        # "client_loop: send disconnect: Broken pipe".
+        cat > ~/.ssh/config <<'EOF'
+        Host *
+          ServerAliveInterval 30
+          ServerAliveCountMax 10
+        EOF
+        chmod 600 ~/.ssh/config
         {
           echo "SSH_HOST=${{ inputs.host }}"
           echo "SSH_USER=${{ inputs.user }}"

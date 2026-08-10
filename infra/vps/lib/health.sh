@@ -13,6 +13,7 @@ wait_for_healthy() {
   local services=("$@")
   local start
   start="$(date +%s)"
+  local last_report="$start"
 
   while true; do
     local all_healthy=true
@@ -37,6 +38,10 @@ wait_for_healthy() {
 
     local now
     now="$(date +%s)"
+    if (( now - last_report >= 15 )); then
+      log_info "waiting_for_healthy services=${services[*]} elapsed=$((now - start))s"
+      last_report="$now"
+    fi
     if (( now - start >= timeout )); then
       log_error "wait_for_healthy: timed out after ${timeout}s waiting for: ${services[*]}"
       return 1

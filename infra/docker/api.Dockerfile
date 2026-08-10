@@ -67,7 +67,8 @@ RUN pnpm --filter @biasmarket/db run db:generate
 RUN --mount=type=cache,id=turbo-cache,target=/app/.turbo \
     pnpm exec turbo run build --filter=api
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm-store \
-    pnpm install --prod --frozen-lockfile --filter=api... --store-dir=/pnpm-store
+    CI=true pnpm install --prod --frozen-lockfile --filter=api... \
+      --reporter=append-only --store-dir=/pnpm-store
 
 # ---------------------------------------------------------------------------
 # runtime: prod image, non-root, only what api needs at boot (still needs
