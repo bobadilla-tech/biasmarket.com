@@ -63,7 +63,7 @@ COPY . .
 RUN --mount=type=cache,id=turbo-cache,target=/app/.turbo \
     pnpm exec turbo run build --filter=workers
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm-store \
-    CI=true pnpm install --force --offline --prod --frozen-lockfile --filter=workers... \
+    CI=true pnpm install --prod --frozen-lockfile --filter=workers... \
       --reporter=append-only --store-dir=/pnpm-store
 
 # ---------------------------------------------------------------------------

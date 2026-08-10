@@ -67,7 +67,7 @@ RUN pnpm --filter @biasmarket/db run db:generate
 RUN --mount=type=cache,id=turbo-cache,target=/app/.turbo \
     pnpm exec turbo run build --filter=api
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm-store \
-    CI=true pnpm install --force --offline --prod --frozen-lockfile --filter=api... \
+    CI=true pnpm install --prod --frozen-lockfile --filter=api... \
       --reporter=append-only --store-dir=/pnpm-store
 
 # ---------------------------------------------------------------------------
