@@ -45,12 +45,12 @@ the actual implementation, this is the summary):
    retry with backoff.
 8. Write a weighted-canary Caddy config (10% to the candidate), reload, hold
    briefly, re-run smoke tests against the **public** domain, 3x retry.
-9. On success: write the 100%-candidate config, reload, commit
+
    `state/current_color`/`current_sha`/`rollback_target`, append to
    `releases/history.log`. Previous color is left running.
-10. On any failure at steps 4–8: tear down **only** the candidate; the previous
-    color and its Caddy routing are never touched.
-11. Always, on every exit path: write `state/last_deploy_result` (SHA, outcome,
+9. On any failure at steps 4–8: tear down **only** the candidate; the previous
+   color and its Caddy routing are never touched.
+10. Always, on every exit path: write `state/last_deploy_result` (SHA, outcome,
     phase, timestamp — nothing from `env/*.env`).
 
 ## Migration discipline (expand/contract)

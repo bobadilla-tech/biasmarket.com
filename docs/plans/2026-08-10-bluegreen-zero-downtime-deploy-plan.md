@@ -8,6 +8,50 @@ This file is the planning record; a fresh Claude session executes it (see the
 handoff prompt delivered alongside this plan) and should update this doc's
 status once work lands, per the normal convention.
 
+## Status: T1–T10 implemented, T11 (first production cutover) not run
+
+T1 through T10 from the task list below landed as designed, with one deliberate,
+documented deviation from the literal wording of decision 7/T7 (see below). T11
+— the actual VPS provisioning (SSH keys, `known_hosts`, GitHub
+secrets/variables, GHCR package visibility, systemd units) and the first real
+cutover — was **not** performed; it requires hands-on access to real
+infrastructure this session didn't have. It's fully scripted and documented as a
+checklist in
+[`docs/core/blue-green-migrations.md`](../core/blue-green-migrations.md#first-production-cutover-t11)
+instead.
+
+**Deviation from decision 7/T7's literal wording:** "rsync (via the
+rrsync-restricted key) and the deploy.sh invocation (via the
+dispatcher-restricted key) run under the same remote flock in one SSH call" is
+not actually achievable — `rrsync` and a `command=` dispatcher are two different
+forced commands on two different keys, so they can't be composed into a single
+SSH call. Implemented instead: sequential steps in the same `cd.yml` job,
+protected by GitHub's `concurrency: group: production-deploy` (serializes whole
+job runs, so no CD run's rsync ever overlaps another's) plus `deploy.sh`'s own
+internal `flock` (the second, independent layer — covers a manual operator
+invocation racing a CD-triggered one). Same safety property (a concurrent sync
+can't clobber a running `deploy.sh`'s bytes mid-execution), different mechanism.
+This also required two new read-only subcommands not in the original design —
+`deploy.sh --print-current-sha` (lets the CD-side staleness guard, decision 1b,
+read the VPS's live SHA through the same restricted dispatcher) and
+`deploy.sh --wait-for-result <sha> <timeout>` (lets CD block for a deploy's
+completion over a _second_ SSH call, since a forced-command dispatcher can't
+pass through an arbitrary polling shell loop on the first one). Both are
+allowlisted literally in `infra/vps/bin/ssh-deploy-dispatcher.sh`, same
+never-`eval` regex-anchored model as the three original commands.
+
+Everything else — the migration phase's gate/snapshot/lock_timeout, the
+weighted-canary Caddy switch, the state machine's lock/reconciliation/
+rollback-target tracking, the two-SSH-key security model, arm64-native GHA
+builds, the `migration_pending` push-monitor + independent systemd timer —
+landed as designed. Validated: `pnpm turbo run typecheck build test` (api 439
+tests, web 198 tests, all passing), `docker build` + boot test of the updated
+`api.Dockerfile` (confirms no migration on boot, confirms manual
+`prisma migrate deploy` still works), `docker compose config` against the real
+`infra/vps/docker-compose.yml` with example env files, every new shell script
+syntax-checked, `git grep "docker compose down"` returns nothing under
+`infra/vps/`.
+
 ## Context
 
 Prod today: SSH to the VPS, `git pull`,
@@ -30,10 +74,13 @@ multi-agent review, iterate until no unresolved HIGH findings) came from the
 user's task brief — see that brief for the complete original spec; this doc
 records the plan that resulted from it, not the brief itself.
 
-**This is a planning artifact.** No infra/CI/Docker/Caddy code changes have
-landed as of this commit. See the companion implementation-handoff prompt
-(delivered to the user separately, not stored in this repo) for how a fresh
-Claude session should execute this plan.
+**This was a planning artifact as originally written** — no infra/CI/Docker/
+Caddy code had landed as of the commit that introduced this file. See the
+"Status" section above: a later session executed the task list below, and that
+section is now the accurate record of what actually landed vs. what's still
+pending. See the companion implementation-handoff prompt (delivered to the user
+separately, not stored in this repo) for the execution brief that session worked
+from.
 
 ## Architecture-report summary (as found in the repo, confirmed by direct
 
