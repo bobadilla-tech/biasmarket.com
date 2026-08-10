@@ -9,6 +9,7 @@
     },
     "searchPlaceholder": "Search products...",
     "listTitle": "Product list",
+    "catalogValueLabel": "Total catalog value",
     "columns": {
       "product": "Product",
       "category": "Category",

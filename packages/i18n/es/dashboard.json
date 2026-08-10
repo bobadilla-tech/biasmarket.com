@@ -9,6 +9,7 @@
     },
     "searchPlaceholder": "Buscar productos...",
     "listTitle": "Lista de productos",
+    "catalogValueLabel": "Valor total del catálogo",
     "columns": {
       "product": "Producto",
       "category": "Categoría",
