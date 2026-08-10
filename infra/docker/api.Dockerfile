@@ -94,7 +94,11 @@ COPY --from=build --chown=nestjs:nestjs /app/pnpm-workspace.yaml ./pnpm-workspac
 
 USER nestjs
 EXPOSE 3000
-# Applies pending migrations on every container start — safe to run
-# repeatedly since `prisma migrate deploy` is a no-op when the DB is
-# already up to date. Dev's compose command does the same thing.
-CMD ["sh", "-c", "pnpm --filter @biasmarket/db exec prisma migrate deploy && exec node apps/api/dist/main"]
+# Migrations do NOT run here. infra/docker/docker-compose.yml (this stack)
+# still relies on this image applying its own schema on boot, same as
+# always. infra/vps/ (blue/green prod) runs `prisma migrate deploy` as its
+# own explicit, logged deploy.sh phase against the candidate image BEFORE
+# starting this container — see docs/core/blue-green-migrations.md — so
+# migrations there are gated by health checks/smoke tests, not tied to
+# every container start.
+CMD ["node", "apps/api/dist/main.js"]

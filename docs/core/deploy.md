@@ -246,11 +246,11 @@ for the full design rationale.
    `MONITORING_WEBHOOK_SECRET` is read automatically from `infra/docker/.env`
    (same file `api` reads on boot). Idempotent — safe to re-run; it skips
    anything that already exists by name. Creates:
-   - The 6 monitors below, each wired to a `webhook`-type notification
-     pointed at `https://api.biasmarket.com/api/monitoring/webhook` with
-     header `X-Webhook-Secret: <MONITORING_WEBHOOK_SECRET value>` (Kuma
-     custom-header support on the built-in webhook notification type,
-     confirmed on the pinned 1.23.16 image).
+   - The 6 monitors below, each wired to a `webhook`-type notification pointed
+     at `https://api.biasmarket.com/api/monitoring/webhook` with header
+     `X-Webhook-Secret: <MONITORING_WEBHOOK_SECRET value>` (Kuma custom-header
+     support on the built-in webhook notification type, confirmed on the pinned
+     1.23.16 image).
    - A public status page at the `status` slug containing **only** the two
      external monitors (API, Web) — the user-facing surfaces. The other four
      stay dashboard-only, used for triage (see
@@ -269,22 +269,21 @@ for the full design rationale.
    | MinIO          | HTTP | `http://minio:9000/minio/health/live`   |
 
    The script deliberately does **not** configure a real-time Slack/Discord
-   notification — add one by hand in the Kuma UI (Settings → Notifications)
-   and attach it to the same 6 monitors, or extend the script with another
+   notification — add one by hand in the Kuma UI (Settings → Notifications) and
+   attach it to the same 6 monitors, or extend the script with another
    `addNotification` call (see the comment block at the top of
    `scripts/setup-kuma.ts`).
-2. Visit `https://status.biasmarket.com/` — the Caddyfile 302-redirects the
-   root path to `/status/status` (Kuma has no native "set as homepage"
-   setting, and an internal rewrite doesn't work: Kuma is an SPA whose
-   client-side router reads the browser's actual URL bar, so a logged-in
-   session bounces back to `/dashboard` unless the redirect is real and the
-   URL bar actually changes). `/dashboard` and everything else still works
-   normally. Kuma's own login endpoint has a built-in 20-req/min rate limiter
-   (confirmed on the pinned 1.23.16 image); no additional Caddy `basicauth`
-   layer is configured on top.
+2. Visit `https://status.biasmarket.com/` — the Caddyfile 302-redirects the root
+   path to `/status/status` (Kuma has no native "set as homepage" setting, and
+   an internal rewrite doesn't work: Kuma is an SPA whose client-side router
+   reads the browser's actual URL bar, so a logged-in session bounces back to
+   `/dashboard` unless the redirect is real and the URL bar actually changes).
+   `/dashboard` and everything else still works normally. Kuma's own login
+   endpoint has a built-in 20-req/min rate limiter (confirmed on the pinned
+   1.23.16 image); no additional Caddy `basicauth` layer is configured on top.
 3. Verify: stop one backend (e.g. `docker compose stop api`) and confirm both
-   the paired internal/external monitors go down, the webhook notification
-   fires (check `docker compose logs api` for the incoming POST, or query
+   the paired internal/external monitors go down, the webhook notification fires
+   (check `docker compose logs api` for the incoming POST, or query
    `GET /api/monitoring/incidents` as an admin), and (once restarted) the "up"
    transition closes things out. See the plan doc's "Verification" section for
    the full check list.
