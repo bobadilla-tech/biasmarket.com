@@ -22,6 +22,7 @@ export function validateEnv(): void {
   // third-party credentials, same rule apps/api's env.validation.ts used to
   // enforce before the mailer moved here.
   const mailDriver = process.env.MAIL_DRIVER ?? "file";
+
   if (mailDriver === "resend") {
     requiredEnv("RESEND_API_KEY");
     requiredEnv("RESEND_FROM_EMAIL");
