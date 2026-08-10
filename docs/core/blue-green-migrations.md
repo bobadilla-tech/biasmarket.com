@@ -345,7 +345,7 @@ first rsync automatically) or sync once by hand to bootstrap faster:
 # local, using key A directly (bypasses CI for a one-time manual bootstrap):
 rsync -az \
   -e "ssh -i biasmarket_key_a -o StrictHostKeyChecking=yes" \
-  infra/vps/ deploy@<vps-ip>:/opt/biasmarket/
+  infra/vps/ deploy@<vps-ip>:.
 ```
 
 Then, on the VPS as `deploy` (`sudo -iu deploy`, from `/opt/biasmarket`):
@@ -440,6 +440,38 @@ docker volume ls | grep '^local\s*biasmarket_'   # same volume set as the old in
 curl -I https://biasmarket.com                    # 200
 curl https://api.biasmarket.com/api/health         # {"status":"ok",...}
 ```
+
+### Bootstrap lessons and operational deviations
+
+The first OCI bootstrap exposed a few details worth making explicit:
+
+- The forced rsync key uses `command="/usr/local/bin/rrsync /opt/biasmarket/"`.
+  With this restriction, the rsync destination must be relative:
+  `deploy@<vps-ip>:.`. Passing `/opt/biasmarket/` makes `rrsync` try to resolve
+  `/opt/biasmarket/opt/biasmarket` and fails. The CD workflow uses `:.` for the
+  same reason.
+- Run operator commands with a single login-shell command, for example
+  `sudo -iu deploy bash -lc 'cd /opt/biasmarket && ./deploy.sh --bootstrap <sha>'`.
+  Commands typed after an interactive `sudo -iu deploy` are easy to run in the
+  wrong shell or directory.
+- The private key and public key must be one matching pair. If a key is
+  regenerated, replace both its public line in `authorized_keys` and its
+  corresponding GitHub secret. Never paste private key contents into chat, logs,
+  commits, or issue reports; rotate any key that was exposed.
+- `env/shared.env`, `env/blue.runtime.env`, `env/green.runtime.env`, and
+  `env/watchdog.env` are intentionally absent from rsync and must be created on
+  the VPS before bootstrap. `shared.env` must be copied byte-for-byte from the
+  real production `infra/docker/.env`.
+- An apt lock held by another `apt-get` process is not fixed by deleting the
+  lock file. Wait for the package operation to finish and retry if needed.
+- Compose's `Found orphan containers` warning can appear when migrating from the
+  old single-color stack. It is informational unless old containers must be
+  deliberately removed after confirming they are no longer serving traffic.
+
+`deploy.sh` reports each phase with phase and total elapsed seconds. Health
+waits also emit a bounded progress line every 15 seconds, so image pulls,
+migrations, and container health checks are visibly active without inventing a
+misleading percentage.
 
 Keep the old `infra/docker/docker-compose.yml` stack's containers
 **stopped-but-not-removed**, volumes untouched, for a defined grace period — the

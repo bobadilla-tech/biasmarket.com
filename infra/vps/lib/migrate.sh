@@ -80,9 +80,10 @@ sha=$sha
 color=$color
 started_at=$(date -u +%FT%TZ)
 EOF
-)"
+  )"
 
   local pending
+  log_info "Checking pending migrations for color=$color ..."
   mapfile -t pending < <(migration_pending_names "$color")
 
   if [[ ${#pending[@]} -eq 0 ]]; then

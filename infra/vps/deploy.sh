@@ -45,6 +45,8 @@ CANARY_HOLD_SECONDS=30
 
 CURRENT_SHA_FOR_RESULT=""
 LAST_PHASE="init"
+RUN_STARTED_AT="$(date +%s)"
+PHASE_STARTED_AT="$RUN_STARTED_AT"
 
 # Final action on every exit path, success or failure: an atomic,
 # secret-free write to state/last_deploy_result (SHA, outcome, phase
@@ -64,9 +66,14 @@ on_exit() {
 trap on_exit EXIT
 
 phase() {
+  local now elapsed total
+  now="$(date +%s)"
+  elapsed=$((now - PHASE_STARTED_AT))
+  total=$((now - RUN_STARTED_AT))
   LAST_PHASE="$1"
   update_lock_phase "$LAST_PHASE"
-  log_info "phase: $1"
+  log_info "phase: $1 phase_elapsed=${elapsed}s total_elapsed=${total}s"
+  PHASE_STARTED_AT="$now"
 }
 
 teardown_candidate() {
@@ -331,6 +338,7 @@ cmd_bootstrap() {
   run_migration_phase "$color" "$sha" "true"
   phase "migrated"
 
+  log_info "Starting bootstrap services for color=$color ..."
   compose --profile "$color" up -d "api-${color}" "web-${color}" "workers-${color}"
   if ! wait_for_healthy "$HEALTH_TIMEOUT_SECONDS" "api-${color}" "web-${color}" "workers-${color}"; then
     die "Bootstrap: $color failed to become healthy."

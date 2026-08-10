@@ -153,7 +153,10 @@ jobs:
             --exclude 'caddy/active/*.caddy' \
             --exclude 'releases/' \
             -e "ssh -i ~/.ssh/deploy_rsync_key -o StrictHostKeyChecking=yes" \
-            infra/vps/ "$SSH_USER@$SSH_HOST:/opt/biasmarket/"
+            # The deploy key is forced through `rrsync /opt/biasmarket/`.
+            # Use a relative remote path so rrsync maps it to that directory;
+            # an absolute /opt/biasmarket/ would be prefixed again.
+            infra/vps/ "$SSH_USER@$SSH_HOST:."
 
       # Detached: the dispatcher backgrounds deploy.sh via systemd-run and
       # returns immediately, so this step finishes in seconds regardless of
