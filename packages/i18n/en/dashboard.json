@@ -488,6 +488,7 @@
       "progress": "Paid %"
     },
     "contactBuyer": "Contact buyer",
+    "reviewProof": "Review proof",
     "breakdownTitle": "Revenue by payment method",
     "breakdownSubtitle": "Money received per payment method in the selected period",
     "unknownMethod": "Other",
@@ -588,6 +589,7 @@
     },
     "approve": "Approve",
     "approveDisabledNoPayment": "Can't approve with no payment registered.",
+    "approveReviewProof": "Review the buyer's proof to approve.",
     "reject": "Reject",
     "proofReview": {
       "pending": "Pending review",

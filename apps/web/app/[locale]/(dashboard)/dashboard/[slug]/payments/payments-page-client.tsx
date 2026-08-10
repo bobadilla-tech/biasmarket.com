@@ -17,12 +17,19 @@ import { useDashboardStore } from "@/features/stores";
 import type { OrderResponseDto } from "@biasmarket/types";
 import { PaymentMethodsBreakdown } from "@/features/stats";
 import {
+  CancelOrderDialog,
   ConfirmTransitionDialog,
   formatOrderDate,
   getInitials,
   getOrderNumber,
+  OrderDetailSheet,
   OrderStatusBadge,
+  PaymentProofLightbox,
+  paymentsLocked,
+  useCancelOrder,
+  useEnabledPaymentMethods,
   useOrders,
+  useRegisterPayment,
   useReviewPayment,
 } from "@/features/orders";
 import { useWhatsAppTemplates } from "@/features/store-settings/queries/use-whatsapp-templates";
@@ -44,8 +51,20 @@ export function PaymentsPageClient() {
     tCommon("networkError"),
   );
   const reviewPayment = useReviewPayment(storeId, tCommon("networkError"));
+  const registerPayment = useRegisterPayment(storeId, tCommon("networkError"));
+  const cancelOrder = useCancelOrder(storeId, tCommon("networkError"));
+  const enabledMethods = useEnabledPaymentMethods(
+    storeId,
+    tCommon("networkError"),
+  ).data ?? [];
   const whatsappTemplates = useWhatsAppTemplates(storeId);
 
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [paymentPreviewUrl, setPaymentPreviewUrl] = useState<string | null>(
+    null,
+  );
   const [confirmTarget, setConfirmTarget] = useState<
     {
       orderId: string;
@@ -66,6 +85,18 @@ export function PaymentsPageClient() {
       ),
     [orders],
   );
+
+  const selectedOrder = useMemo(
+    () => (selectedOrderId
+      ? (orders ?? []).find((order) => order.id === selectedOrderId) ?? null
+      : null),
+    [orders, selectedOrderId],
+  );
+
+  const openDetails = (order: OrderResponseDto) => {
+    setSelectedOrderId(order.id);
+    setDetailsOpen(true);
+  };
 
   const handleConfirm = async () => {
     if (!confirmTarget) return;
@@ -154,7 +185,12 @@ export function PaymentsPageClient() {
                       );
                       const needsReview =
                         order.paymentStatus === "PENDING_PAYMENT" ||
-                        order.paymentStatus === "PAYMENT_SUBMITTED";
+                        order.paymentStatus === "PARTIALLY_PAID" ||
+                        (order.paymentStatus === "PAYMENT_SUBMITTED" &&
+                          order.paidAmount > 0);
+                      const hasPendingProof =
+                        order.paymentStatus === "PAYMENT_SUBMITTED" &&
+                        order.paidAmount <= 0;
 
                       return (
                         <tr
@@ -233,6 +269,30 @@ export function PaymentsPageClient() {
                                   </Button>
                                 </>
                               )}
+                              {hasPendingProof && (
+                                <>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => openDetails(order)}
+                                    className="h-8 rounded-full border-[#eadcf7] bg-white px-3 text-xs font-semibold text-[#2d1649] shadow-none hover:bg-[#fcf9ff]"
+                                  >
+                                    {t("reviewProof")}
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() =>
+                                      setConfirmTarget({
+                                        orderId: order.id,
+                                        decision: "reject",
+                                      })}
+                                    className="h-8 rounded-full border-[#eadcf7] bg-white px-3 text-xs font-semibold text-[#2d1649] shadow-none hover:bg-[#fcf9ff]"
+                                  >
+                                    {tOrders("reject")}
+                                  </Button>
+                                </>
+                              )}
                               {order.paymentStatus === "PARTIALLY_PAID" && (
                                 <a
                                   href={contactBuyerUrl(order)}
@@ -282,6 +342,60 @@ export function PaymentsPageClient() {
           onReasonChange: setRejectReason,
           reasonRequired: true,
         })}
+      />
+
+      <PaymentProofLightbox
+        url={paymentPreviewUrl}
+        onClose={() => setPaymentPreviewUrl(null)}
+      />
+
+      <CancelOrderDialog
+        open={cancelDialogOpen}
+        onClose={() => setCancelDialogOpen(false)}
+        order={selectedOrder}
+        pending={cancelOrder.isPending}
+        onConfirm={async (values) => {
+          if (!selectedOrder) return;
+
+          await cancelOrder.mutateAsync({
+            orderId: selectedOrder.id,
+            values,
+          });
+
+          setCancelDialogOpen(false);
+          setDetailsOpen(false);
+        }}
+      />
+
+      <OrderDetailSheet
+        open={detailsOpen}
+        onOpenChange={(open) => {
+          setDetailsOpen(open);
+          if (!open) setSelectedOrderId(null);
+        }}
+        order={selectedOrder}
+        isPending={reviewPayment.isPending}
+        fulfillmentLabels={{}}
+        enabledMethods={enabledMethods}
+        registerPaymentSubmitting={registerPayment.isPending}
+        onRegisterPayment={(values) => {
+          if (!selectedOrder || paymentsLocked(selectedOrder)) {
+            return Promise.resolve();
+          }
+          return registerPayment.mutateAsync({
+            orderId: selectedOrder.id,
+            values,
+          });
+        }}
+        onPreviewPayment={setPaymentPreviewUrl}
+        onApprove={() =>
+          selectedOrder &&
+          setConfirmTarget({ orderId: selectedOrder.id, decision: "approve" })}
+        onReject={() =>
+          selectedOrder &&
+          setConfirmTarget({ orderId: selectedOrder.id, decision: "reject" })}
+        onAdvance={() => {}}
+        onCancel={() => setCancelDialogOpen(true)}
       />
     </div>
   );

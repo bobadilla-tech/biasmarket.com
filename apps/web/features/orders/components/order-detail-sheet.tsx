@@ -241,7 +241,8 @@ export function OrderDetailSheet({
                 <div className="flex w-full flex-wrap gap-2">
                   {!isPending &&
                     (order.paymentStatus === "PENDING_PAYMENT" ||
-                      order.paymentStatus === "PAYMENT_SUBMITTED") &&
+                      order.paymentStatus === "PAYMENT_SUBMITTED" ||
+                      order.paymentStatus === "PARTIALLY_PAID") &&
                     (
                       <>
                         <Button
@@ -249,7 +250,9 @@ export function OrderDetailSheet({
                           onClick={onApprove}
                           disabled={order.paidAmount <= 0}
                           title={order.paidAmount <= 0
-                            ? t("approveDisabledNoPayment")
+                            ? order.paymentStatus === "PAYMENT_SUBMITTED"
+                              ? t("approveReviewProof")
+                              : t("approveDisabledNoPayment")
                             : undefined}
                           className="store-theme-primary-button h-11 flex-1 rounded-2xl text-sm font-semibold hover:opacity-100 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-50"
                         >
@@ -257,7 +260,9 @@ export function OrderDetailSheet({
                         </Button>
                         {order.paidAmount <= 0 && (
                           <span className="sr-only">
-                            {t("approveDisabledNoPayment")}
+                            {order.paymentStatus === "PAYMENT_SUBMITTED"
+                              ? t("approveReviewProof")
+                              : t("approveDisabledNoPayment")}
                           </span>
                         )}
                         <Button

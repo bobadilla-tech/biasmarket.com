@@ -21,9 +21,16 @@ vi.mock("@/features/stats", () => ({
   PaymentMethodsBreakdown: () => null,
 }));
 
-const { findAll } = vi.hoisted(() => ({ findAll: vi.fn() }));
+const { findAll, review, paymentConfigFindAll } = vi.hoisted(() => ({
+  findAll: vi.fn(),
+  review: vi.fn(),
+  paymentConfigFindAll: vi.fn(),
+}));
 vi.mock("@/lib/api-client", () => ({
-  apiClient: { orders: { findAll, review: vi.fn() } },
+  apiClient: {
+    orders: { findAll, review },
+    paymentConfig: { findAll: paymentConfigFindAll },
+  },
 }));
 
 const baseOrder: OrderResponseDto = {
@@ -66,6 +73,7 @@ afterEach(() => {
 });
 
 test("Aprobar is disabled for an order with zero payment registered", async () => {
+  paymentConfigFindAll.mockResolvedValue([]);
   findAll.mockResolvedValue([baseOrder]);
   renderWithProviders(<PaymentsPageClient />);
 
@@ -76,6 +84,7 @@ test("Aprobar is disabled for an order with zero payment registered", async () =
 });
 
 test("Aprobar is enabled once a payment has been registered", async () => {
+  paymentConfigFindAll.mockResolvedValue([]);
   findAll.mockResolvedValue([{ ...baseOrder, paidAmount: 40 }]);
   renderWithProviders(<PaymentsPageClient />);
 
