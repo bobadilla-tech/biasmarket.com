@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 // One-off smoke test for the queue pipeline — enqueues a single "ping" job
 // and confirms apps/workers picks it up and completes it. Watch apps/workers'
 // logs (or `docker compose logs -f workers`) for the "Processed ping job"

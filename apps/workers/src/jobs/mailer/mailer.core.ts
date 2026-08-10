@@ -3,7 +3,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
-import { requiredEnv } from "../config/env.validation.js";
+import { requiredEnv } from "../../config/env.validation.js";
 
 function resolveDriver(): "file" | "resend" {
   const raw = process.env.MAIL_DRIVER;
@@ -14,10 +14,15 @@ function resolveDriver(): "file" | "resend" {
   );
 }
 
-// apps/api/src/mailer -> apps/api — works whether cwd is apps/api/ (bare
-// `pnpm dev`) or the repo root (Docker dev stack).
-const apiRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const devMailDir = join(apiRoot, ".mailer-dev");
+// apps/workers/src/jobs/mailer -> apps/workers — works whether cwd is
+// apps/workers/ (bare `pnpm dev`) or the repo root (Docker dev stack).
+const workersRoot = join(
+  dirname(fileURLToPath(import.meta.url)),
+  "..",
+  "..",
+  "..",
+);
+const devMailDir = join(workersRoot, ".mailer-dev");
 
 export interface SendEmailParams {
   to: string | string[];

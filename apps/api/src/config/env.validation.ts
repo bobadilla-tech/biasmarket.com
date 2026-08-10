@@ -10,53 +10,47 @@ export function requiredEnv(name: string): string {
   return value;
 }
 
-// Boot-time assertion of every env var the app actually depends on at
-// runtime. Called from main.ts before NestFactory.create — the earliest
-// point the process can refuse to start — so a bad deploy fails with a
-// clear message naming the missing var instead of silently falling back or
-// 500ing on the first request that needs it.
-export function validateEnv(): void {
-  requiredEnv("DATABASE_URL");
-  requiredEnv("BETTER_AUTH_SECRET");
-  requiredEnv("BETTER_AUTH_URL");
-  requiredEnv("WEB_URL");
+// Every env var the app requires at boot regardless of driver/runtime config.
+const REQUIRED_ENV_VARS = [
+  "DATABASE_URL",
+  "BETTER_AUTH_SECRET",
+  "BETTER_AUTH_URL",
+  "WEB_URL",
   // Previously validated only lazily at request time in three files — a
   // missing value passed boot and health checks and only 500ed on the first
   // buyer-auth request (login, session verification, order-flow customer
   // account). Promoted to boot-time here; the per-file calls remain as
   // backstops and now use this shared helper.
-  requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET");
-
+  "CUSTOMER_ACCOUNT_TOKEN_SECRET",
   // Required at boot so a missing REDIS_URL fails loudly here instead of on
   // the first enqueue call. Redis being unreachable (vs. REDIS_URL being
   // unset) is a different failure mode — BullMQ's Queue client connects
   // lazily and retries in the background, so the app still boots and serves
   // unrelated requests; only the individual queue.add() call fails, which
   // callers must not let fail the parent request (see apps/api/src/queue).
-  requiredEnv("REDIS_URL");
+  "REDIS_URL",
+  "S3_BUCKET",
+  "S3_LOGO_BUCKET",
+  "S3_PAYMENT_BUCKET",
+  "S3_PUBLIC_URL",
+  "S3_ENDPOINT",
+  "S3_ACCESS_KEY",
+  "S3_SECRET_KEY",
+  // Verifies apps/workers can call back into the expire-sweep endpoint.
+  // MAIL_DRIVER/RESEND_* moved to apps/workers' own env.validation.ts along
+  // with the mailer itself (see the migration plan) — apps/api no longer
+  // touches Resend at all.
+  "INTERNAL_JOBS_SECRET",
+];
 
-  requiredEnv("S3_BUCKET");
-  requiredEnv("S3_LOGO_BUCKET");
-  requiredEnv("S3_PAYMENT_BUCKET");
-  requiredEnv("S3_PUBLIC_URL");
-  requiredEnv("S3_ENDPOINT");
-  requiredEnv("S3_ACCESS_KEY");
-  requiredEnv("S3_SECRET_KEY");
-
-  // RESEND_* are only needed by the "resend" driver. MAIL_DRIVER=file (or
-  // unset, which resolveDriver() treats as "file") is the documented local
-  // dev mode and must not require third-party credentials at boot — the
-  // mailer previously required both unconditionally even in file mode (see
-  // mailer.core.ts), a latent bug this pass fixes alongside the
-  // consolidation.
-  const mailDriver = process.env.MAIL_DRIVER ?? "file";
-  if (mailDriver === "resend") {
-    requiredEnv("RESEND_API_KEY");
-    requiredEnv("RESEND_FROM_EMAIL");
-  } else if (mailDriver !== "file") {
-    throw new Error(
-      `Invalid MAIL_DRIVER: "${mailDriver}". Expected "file" or "resend".`,
-    );
+// Boot-time assertion of every env var the app actually depends on at
+// runtime. Called from main.ts before NestFactory.create — the earliest
+// point the process can refuse to start — so a bad deploy fails with a
+// clear message naming the missing var instead of silently falling back or
+// 500ing on the first request that needs it.
+export function validateEnv(): void {
+  for (const name of REQUIRED_ENV_VARS) {
+    requiredEnv(name);
   }
 
   // NODE_ENV unset in a non-local deployment silently disables the cookie

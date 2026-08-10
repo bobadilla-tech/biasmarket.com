@@ -66,9 +66,6 @@ importers:
       "@nestjs/platform-express":
         specifier: ^11.0.1
         version: 11.1.28(@nestjs/common@11.1.28(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)
-      "@nestjs/schedule":
-        specifier: ^6.1.3
-        version: 6.1.3(@nestjs/common@11.1.28(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)
       "@nestjs/swagger":
         specifier: ^11.4.6
         version: 11.4.6(@nestjs/common@11.1.28(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(typescript@5.9.3)
@@ -111,9 +108,6 @@ importers:
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
-      resend:
-        specifier: ^6.18.1
-        version: 6.18.1
       rxjs:
         specifier: ^7.8.1
         version: 7.8.2
@@ -326,6 +320,9 @@ importers:
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
+      resend:
+        specifier: ^6.18.1
+        version: 6.18.1
       rxjs:
         specifier: ^7.8.1
         version: 7.8.2
@@ -2204,14 +2201,6 @@ packages:
       "@nestjs/common": ^11.0.0
       "@nestjs/core": ^11.0.0
 
-  "@nestjs/schedule@6.1.3":
-    resolution: {
-      integrity: sha512-RflMFOpR16Dwd1jAUbeB4mfGTCh65fvEdL4mSjQPJChpkRGRjIXjb+6YQcK2faQrVT60c9DmLmoVR7/ONCtuYQ==,
-    }
-    peerDependencies:
-      "@nestjs/common": ^10.0.0 || ^11.0.0
-      "@nestjs/core": ^10.0.0 || ^11.0.0
-
   "@nestjs/schematics@11.1.0":
     resolution: {
       integrity: sha512-lVxGZ46tcdItFMoXr6vyKWlnOsm1SZm/GUqAEDvy2RL4Q4O+3bkziAhrO7Y8JLssFUUvNFEGqAizI52WAxhjDw==,
@@ -3794,11 +3783,6 @@ packages:
       integrity: sha512-gIW7lQLZbue7lRSWEFql49QJJWThrTFFeIMJdp3eH4tKoxm1OvEPg02rm4wCCSHS0cL3/Fizimb35b7k8atwsQ==,
     }
 
-  "@types/luxon@3.7.2":
-    resolution: {
-      integrity: sha512-gW+Oib+vUtGJBtNC8V9Reww0oIpusw+4m81uncg9REGZAJfqOQHfo/nkabnc7w0QReXyPqjrbWMJk6NuAkiX3Q==,
-    }
-
   "@types/methods@1.1.4":
     resolution: {
       integrity: sha512-ymXWVrDiCxTBE3+RIrrP533E70eA+9qu7zdWoHuOmGujkYtzf4HQF96b8nwHLqhuf4ykX61IGRIB38CC6/sImQ==,
@@ -5193,12 +5177,6 @@ packages:
       integrity: sha512-iSpDHpwwW/GhIg4JVODYlWUEpMNSimaHvqOhHpOz1W+Y97z1lL1nf+dpcF17cNwFRpTtKN9devgi1fxflp3Phw==,
     }
     engines: { node: ">=18" }
-
-  cron@4.4.0:
-    resolution: {
-      integrity: sha512-fkdfq+b+AHI4cKdhZlppHveI/mgz2qpiYxcm+t5E5TsxX7QrLS1VE0+7GENEk9z0EeGPcpSciGv6ez24duWhwQ==,
-    }
-    engines: { node: ">=18.x" }
 
   cross-spawn@7.0.6:
     resolution: {
@@ -10613,12 +10591,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  "@nestjs/schedule@6.1.3(@nestjs/common@11.1.28(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)":
-    dependencies:
-      "@nestjs/common": 11.1.28(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      "@nestjs/core": 11.1.28(@nestjs/common@11.1.28(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.1.28)(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      cron: 4.4.0
-
   "@nestjs/schematics@11.1.0(chokidar@4.0.3)(prettier@3.9.6)(typescript@5.9.3)":
     dependencies:
       "@angular-devkit/core": 19.2.24(chokidar@4.0.3)
@@ -11749,8 +11721,6 @@ snapshots:
 
   "@types/lodash@4.17.24": {}
 
-  "@types/luxon@3.7.2": {}
-
   "@types/methods@1.1.4": {}
 
   "@types/ms@2.1.0": {}
@@ -12760,11 +12730,6 @@ snapshots:
 
   cron-parser@5.7.0:
     dependencies:
-      luxon: 3.7.2
-
-  cron@4.4.0:
-    dependencies:
-      "@types/luxon": 3.7.2
       luxon: 3.7.2
 
   cross-spawn@7.0.6:

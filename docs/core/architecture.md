@@ -476,19 +476,28 @@ biasmarket.example.com {
   for cache coherency across instances anyway).
 - **Redis** (v1+): session/JWT blocklist for logout-everywhere, rate-limit
   counters shared across instances, store-config cache mentioned above.
-- **Queues**: ✅ Implemented (infra only) — `apps/workers` (NestJS + BullMQ,
-  Redis-backed), a shared `packages/queue` contracts package, and Redis wired
-  into both dev and prod Docker stacks, see
-  `docs/plans/2026-08-09-workers-infra-setup-plan.md`. Ships with one
-  proof-of-pipeline "ping" job; no real job has moved off `apps/api` yet
-  (payment-proof review notifications, image processing/resizing on upload,
-  order confirmation emails, the order-expiration cron sweep — see the companion
-  `2026-08-09-migrate-background-jobs-to-workers-plan.md`).
-- **Email delivery**: Resend, via a thin `EmailService` in a `notifications`
-  module — call sites send `{template, locale, data}`, never raw HTML, so every
-  email stays routed through the localized templates in [i18n.md](i18n.md). MVP
-  fires sends inline (signup confirmation, etc.); move to the queue above once
-  send volume or retry-on-failure matters.
+- **Queues**: ✅ Implemented — `apps/workers` (NestJS + BullMQ, Redis-backed), a
+  shared `packages/queue` contracts package, Redis wired into both dev and prod
+  Docker stacks (`docs/plans/2026-08-09-workers-infra-setup-plan.md`), and two
+  real jobs moved off `apps/api`'s request path
+  (`docs/plans/2026-08-09-migrate-background-jobs-to-workers-plan.md`): all 7
+  transactional-email call sites (`MailerService.send()` now enqueues instead of
+  sending inline) and the order-expiration cron sweep (`apps/workers` owns
+  scheduling via a BullMQ repeatable job, dispatching to a new internal
+  `apps/api` endpoint reached only over the Docker network, behind a Caddy block
+  and a shared-secret guard — the sweep's own domain logic stays in `apps/api`'s
+  `orders` module). Remaining candidates flagged but out of scope: payment-proof
+  review notifications' image processing/resizing on upload (no `sharp` usage
+  exists yet — new feature, not a migration), restock notifications,
+  contact-inquiry admin notifications. Pattern for future scheduled-job work:
+  `apps/workers` schedules, `apps/api` (or wherever the domain logic lives)
+  executes via an internal HTTP call — don't duplicate domain logic into
+  `apps/workers` itself, which deliberately has no database access.
+- **Email delivery**: Resend, via `apps/workers`' `MailerCore`
+  (`apps/workers/src/jobs/mailer/`) — `apps/api` builds the HTML per call site
+  and enqueues through `MailerService.send()`, `apps/workers` does the actual
+  Resend call (or writes to `.mailer-dev/` in dev). No email send blocks an
+  `apps/api` request anymore.
 - **Scaling path**: single Hetzner VPS (api + web + db + Caddy via compose) →
   split DB to managed Postgres (Neon/Supabase/RDS) first, since it's the hardest
   thing to scale horizontally yourself → then split `api` into multiple

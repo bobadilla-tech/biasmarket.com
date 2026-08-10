@@ -132,27 +132,37 @@ sites that already depend on it:
   `apps/api` no longer depends on the `resend` package at all once this lands
   (drop it from `apps/api/package.json`, add to `apps/workers/package.json`).
 - **Job-retention override for the mailer queue — the rendered HTML payload is
-  sensitive and needs tighter handling than the infra plan's generic default.**
-  Four of the seven emails embed a live, working account- action token directly
-  in the HTML (`customer-account.service.ts`'s
+  sensitive and needs tighter handling than a blind default.** Correction to an
+  earlier draft: the infra plan defines a shared `defaultJobOptions` constant in
+  `packages/queue/src/default-job-options.ts`, but **nothing in `apps/api` or
+  `apps/workers` actually passes it to `registerQueue()`/`queue.add()` today** —
+  grep confirms zero call sites reference it. So there is no active baseline to
+  "override" yet; every existing queue (`PING`) runs on BullMQ's own hardcoded
+  defaults (keep-everything), not the infra plan's intended one. This plan must
+  pass `defaultJobOptions` explicitly when registering the `mailer` queue (in
+  both `apps/api/src/queue/queue.module.ts` and
+  `apps/workers/src/queue/queue.module.ts`, see the "Files likely touched" note
+  below), and then apply its own tighter override on top for the reasons below —
+  not assume a shared policy is already governing anything. Four of the seven
+  emails embed a live, working account-action token directly in the HTML
+  (`customer-account.service.ts`'s
   verification/password-reset/email-change/phone-change links,
   `auth.config.ts`'s seller signup-verification link) — today that token only
   ever exists in process memory plus the one outbound Resend call. Once
   `mailer.send()` becomes `queue.add()`, the finished HTML (token included)
-  becomes a Redis-persisted job payload, and the infra plan's shared default
-  (`removeOnComplete: { count: 1000 }`, backed by an AOF/RDB-persisted volume)
+  becomes a Redis-persisted job payload, and leaving it on `defaultJobOptions`'s
+  `removeOnComplete: { count: 1000 }` (backed by an AOF/RDB-persisted volume)
   would keep it there well past the moment the email is actually sent — a real
   widening of exposure for what's effectively a bearer credential, not mentioned
-  in either plan's original security discussion. **Override the shared defaults
-  for the `mailer` queue specifically**: `removeOnComplete:
-  true` (delete
-  immediately on success, no retention — mailer jobs don't need historical
-  debugging the way, say, a future analytics job might),
-  `removeOnFail: { count: 20 }` (kept deliberately small, and called out
-  explicitly here as an **accepted residual risk**: a failed job's payload —
-  including its token — still sits in Redis until that count rolls over or
-  someone clears it by hand). This is meaningfully mitigated but not eliminated
-  by the tokens' own TTLs
+  in either plan's original security discussion. **Override for the `mailer`
+  queue specifically**: `removeOnComplete:
+  true` (delete immediately on
+  success, no retention — mailer jobs don't need historical debugging the way,
+  say, a future analytics job might), `removeOnFail: { count: 20 }` (kept
+  deliberately small, and called out explicitly here as an **accepted residual
+  risk**: a failed job's payload — including its token — still sits in Redis
+  until that count rolls over or someone clears it by hand). This is
+  meaningfully mitigated but not eliminated by the tokens' own TTLs
   (`packages/utils/src/customer-account-
   token/index.ts` — confirm/change-type
   tokens run ~30 days per `infra/docker/.env.example`'s existing comment, reset
@@ -308,8 +318,24 @@ traffic, both remaining options are legitimate for different reasons):
 - `apps/api/src/config/env.validation.ts` (drop `RESEND_*`/`MAIL_DRIVER`
   requirement), new equivalent in `apps/workers/src/config/env.validation.ts`
   (add it, conditional on `MAIL_DRIVER=resend` — same logic, new home)
-- `packages/queue/src/jobs/mailer.jobs.ts` (the `SendEmailParams` Zod schema, if
-  not already fully fleshed out by the infra plan beyond its placeholder)
+- `packages/queue/src/queue-names.ts` — **new file, not a placeholder to flesh
+  out.** The infra plan shipped `QUEUE_NAMES` with a single `PING` entry only
+  (its own non-goals section deliberately scoped it that way); add `MAILER` (and
+  `ORDERS`, for the sweep dispatcher below) here.
+- `packages/queue/src/jobs/mailer.jobs.ts` — **new file**, same caveat: no
+  mailer job file exists yet anywhere in `packages/queue`, only
+  `jobs/ping.jobs.ts`. Add the `SendEmailParams`-shaped Zod schema + inferred
+  type from scratch, following `ping.jobs.ts`'s shape.
+- `apps/api/src/queue/queue.module.ts`, `apps/workers/src/queue/queue.module.ts`
+  — both currently only call
+  `BullModule.registerQueue({ name:
+  QUEUE_NAMES.PING })`. Add a
+  `registerQueue({ name: QUEUE_NAMES.MAILER,
+  defaultJobOptions })` call (with
+  this plan's mailer-specific override, see above) to **both** files —
+  `@Processor(QUEUE_NAMES.MAILER)` in `apps/workers` has nothing to attach to
+  otherwise, and `apps/api`'s producer side can't `queue.add()` into an
+  unregistered queue name either.
 - `apps/api/src/modules/orders/application/orders-cron.service.ts` (deleted),
   `apps/api/src/app.module.ts` (remove `ScheduleModule.forRoot()`),
   `apps/api/package.json` (drop `@nestjs/schedule` — confirm no other usage
@@ -325,7 +351,9 @@ traffic, both remaining options are legitimate for different reasons):
   (this app doesn't have a global throttler instance to inherit from)
 - `apps/workers/src/jobs/orders/expire-orders-scheduler.ts` (BullMQ repeatable
   job registration + the HTTP call to the internal endpoint, using
-  `INTERNAL_API_URL`)
+  `INTERNAL_API_URL`) — needs `QUEUE_NAMES.ORDERS` registered in
+  `apps/workers/src/queue/queue.module.ts` (see above) to attach the repeatable
+  job to
 - `infra/caddy/Caddyfile` (new `handle /internal/*` block responding 404, placed
   before the existing `/api/*` catch-all)
 - `infra/docker/.env.example`, `scripts/init-env.ts` (`INTERNAL_JOBS_SECRET`,

@@ -15,14 +15,10 @@ const REQUIRED = [
   "S3_ENDPOINT",
   "S3_ACCESS_KEY",
   "S3_SECRET_KEY",
+  "INTERNAL_JOBS_SECRET",
 ];
 
-const OPTIONAL = [
-  "MAIL_DRIVER",
-  "RESEND_API_KEY",
-  "RESEND_FROM_EMAIL",
-  "NODE_ENV",
-];
+const OPTIONAL = ["NODE_ENV"];
 
 // Capture original values once at module load so the suite can restore
 // process.env exactly, distinguishing vars that were unset (deleted) from
@@ -65,7 +61,6 @@ describe("requiredEnv", () => {
 describe("validateEnv", () => {
   beforeEach(() => {
     setAllRequired();
-    process.env.MAIL_DRIVER = "file";
     process.env.NODE_ENV = "test";
   });
 
@@ -73,7 +68,7 @@ describe("validateEnv", () => {
     for (const name of [...REQUIRED, ...OPTIONAL]) restore(name);
   });
 
-  it("passes when every required var is set with the file mail driver", () => {
+  it("passes when every required var is set", () => {
     expect(() => validateEnv()).not.toThrow();
   });
 
@@ -103,25 +98,10 @@ describe("validateEnv", () => {
     expect(() => validateEnv()).toThrow("Missing required env var: REDIS_URL");
   });
 
-  it("does not require RESEND_* while MAIL_DRIVER=file (or unset)", () => {
-    delete process.env.RESEND_API_KEY;
-    delete process.env.RESEND_FROM_EMAIL;
-    expect(() => validateEnv()).not.toThrow();
-
-    delete process.env.MAIL_DRIVER;
-    expect(() => validateEnv()).not.toThrow();
-  });
-
-  it("requires RESEND_* when MAIL_DRIVER=resend", () => {
-    process.env.MAIL_DRIVER = "resend";
-    delete process.env.RESEND_API_KEY;
+  it("refuses to boot when INTERNAL_JOBS_SECRET is missing (apps/workers can't authenticate the sweep call)", () => {
+    delete process.env.INTERNAL_JOBS_SECRET;
     expect(() => validateEnv()).toThrow(
-      "Missing required env var: RESEND_API_KEY",
+      "Missing required env var: INTERNAL_JOBS_SECRET",
     );
-  });
-
-  it("rejects an invalid MAIL_DRIVER value", () => {
-    process.env.MAIL_DRIVER = "smtp";
-    expect(() => validateEnv()).toThrow('Invalid MAIL_DRIVER: "smtp"');
   });
 });

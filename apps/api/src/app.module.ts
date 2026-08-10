@@ -1,5 +1,4 @@
 import { Module } from "@nestjs/common";
-import { ScheduleModule } from "@nestjs/schedule";
 import { PrismaModule } from "./prisma/prisma.module.js";
 import { StorageModule } from "./storage/storage.module.js";
 import { MailerModule } from "./mailer/mailer.module.js";
@@ -27,7 +26,6 @@ import { AddressesModule } from "./modules/addresses/addresses.module.js";
 
 @Module({
   imports: [
-    ScheduleModule.forRoot(),
     StoresModule,
     ProductsModule,
     PrismaModule,
