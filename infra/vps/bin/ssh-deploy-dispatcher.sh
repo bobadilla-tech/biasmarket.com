@@ -51,8 +51,15 @@ cmd="${SSH_ORIGINAL_COMMAND:-}"
 launch() {
   local label="$1"
   shift
-  local errfile
-  errfile="$(mktemp)"
+  # Fixed path under state/ (excluded from cd.yml's rsync --delete, so it
+  # survives syncs) rather than mktemp — a mktemp file deleted right after
+  # the 2s liveness check below throws away deploy.sh's own log_info/
+  # log_error output for the rest of a real run, since the still-running
+  # process keeps writing to the now-unlinked inode with nothing left to
+  # read it back from. This is deploy.sh's full stderr for the most recent
+  # launch, not just early-failure output — overwritten fresh each launch.
+  local errfile="$DEPLOY_ROOT/state/last_launch.log"
+  : >"$errfile"
   setsid "$DEPLOY_ROOT/deploy.sh" "$@" >/dev/null 2>"$errfile" </dev/null &
   local bg_pid=$!
   disown
@@ -66,10 +73,8 @@ launch() {
     local rc=$?
     echo "launch failed immediately (rc=$rc) for $label:" >&2
     cat "$errfile" >&2
-    rm -f "$errfile"
     exit 1
   fi
-  rm -f "$errfile"
 }
 
 if [[ "$cmd" =~ ^deploy\.sh\ ([0-9a-f]{40})$ ]]; then
