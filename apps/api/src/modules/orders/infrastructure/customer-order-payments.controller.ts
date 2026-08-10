@@ -29,6 +29,7 @@ import { PrismaService } from "../../../prisma/prisma.service.js";
 import { StorageService } from "../../../storage/storage.service.js";
 import { NotificationsService } from "../../notifications/notifications.service.js";
 import { toOrderPaymentDto } from "./order.controller.js";
+import { countsTowardPaid } from "../../../common/payment-summary.js";
 import type { OrderPaymentResponseDto } from "../dto/order-response.dto.js";
 
 const PAYMENT_METHODS: PaymentMethodType[] = [
@@ -119,7 +120,17 @@ export class CustomerOrderPaymentsController {
       throw new BadRequestException("Monto inválido");
     }
     const toCents = (n: number) => Math.round(n * 100);
-    if (toCents(numericAmount) > toCents(order.pendingAmount)) {
+    // Enforce the remaining balance against BOTH already-credited amounts
+    // (pendingAmount) and already-submitted PENDING_REVIEW proofs (the
+    // "reserve"). A pending proof doesn't count toward paidAmount yet, so
+    // ignoring it lets a duplicate full-balance submission waste an image
+    // upload before the in-transaction re-check rejects it. The transaction
+    // below is the authoritative, atomic guard; this pre-check just rejects
+    // the obvious sequential case early.
+    const reservedCents = (order.payments ?? [])
+      .filter((p) => p.reviewStatus === "PENDING_REVIEW")
+      .reduce((sum, p) => sum + toCents(Number(p.amount)), 0);
+    if (toCents(numericAmount) > toCents(order.pendingAmount) - reservedCents) {
       throw new BadRequestException("El monto excede el saldo pendiente");
     }
     if (!method || !PAYMENT_METHODS.includes(method as PaymentMethodType)) {
@@ -143,6 +154,41 @@ export class CustomerOrderPaymentsController {
     );
 
     const payment = await this.prisma.$transaction(async (tx) => {
+      // Row-lock the order so two concurrent submissions serialize instead of
+      // both passing the re-check below on the same pre-commit snapshot.
+      // Without the lock, both transactions' `findMany` can run before either
+      // commits (READ COMMITTED doesn't see uncommitted rows), each computes
+      // the full balance as available, and both insert — over-submitting the
+      // order. The second transaction blocks here until the first commits,
+      // then its re-read sees the first's committed PENDING_REVIEW row and
+      // the reserve is respected. Same pattern as create-order.usecase.ts's
+      // stock-hold lock.
+      const [locked] = await tx.$queryRaw<
+        Array<{ id: string }>
+      >`SELECT id FROM "Order" WHERE id = ${orderId} FOR UPDATE`;
+      if (!locked) {
+        throw new NotFoundException("Orden no encontrada");
+      }
+
+      // Re-check the balance inside the transaction. Under the lock this read
+      // is guaranteed to see any earlier submission's committed PENDING_REVIEW
+      // row, so the available balance (credited + reserved) is authoritative.
+      const payments = await tx.orderPayment.findMany({
+        where: { orderId },
+        select: { amount: true, source: true, reviewStatus: true },
+      });
+      const creditedCents = payments
+        .filter(countsTowardPaid)
+        .reduce((sum, p) => sum + toCents(Number(p.amount)), 0);
+      const reservedCents = payments
+        .filter((p) => p.reviewStatus === "PENDING_REVIEW")
+        .reduce((sum, p) => sum + toCents(Number(p.amount)), 0);
+      const availableCents =
+        toCents(Number(order.requiredAmount)) - creditedCents - reservedCents;
+      if (toCents(numericAmount) > availableCents) {
+        throw new BadRequestException("El monto excede el saldo pendiente");
+      }
+
       const created = await tx.orderPayment.create({
         data: {
           orderId,
