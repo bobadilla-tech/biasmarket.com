@@ -143,6 +143,15 @@ cmd_deploy() {
   acquire_deploy_lock "deploy:$sha"
   phase "lock_acquired"
 
+  # Clear any stale result for this exact SHA (e.g. a prior failed attempt
+  # that's now being retried) — otherwise a --wait-for-result poller can
+  # match the OLD record on its very first poll and report failure
+  # instantly, even though this fresh attempt hasn't reached its own
+  # on_exit write yet. Safe here: the lock above guarantees no concurrent
+  # writer, and on_exit always rewrites this file by the time we exit,
+  # success or failure.
+  rm -f "$LAST_DEPLOY_RESULT_FILE"
+
   reconcile_state_with_reality
   phase "reconciled"
 
