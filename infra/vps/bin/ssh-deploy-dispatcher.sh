@@ -43,9 +43,33 @@ launch() {
   # with systemd's cgroup manager per the plan's stated execution model.
   # --collect: let systemd garbage-collect the unit once it exits, no
   # manual `systemctl reset-failed` bookkeeping needed.
-  setsid systemd-run --scope --collect --unit="$1" -- "$DEPLOY_ROOT/deploy.sh" "${@:2}" \
-    >/dev/null 2>&1 </dev/null &
+  local unit="$1"
+  shift
+  local errfile
+  errfile="$(mktemp)"
+  setsid systemd-run --scope --collect --unit="$unit" -- "$DEPLOY_ROOT/deploy.sh" "$@" \
+    >/dev/null 2>"$errfile" </dev/null &
+  local bg_pid=$!
   disown
+  # systemd-run --scope blocks in the foreground for the scope's entire
+  # lifetime (a real deploy runs minutes) — if the backgrounded job has
+  # ALREADY exited within this short window, systemd-run failed before it
+  # even registered the unit (e.g. no D-Bus/session-bus access from a
+  # non-interactive forced-command SSH session). Previously this was
+  # swallowed silently: the dispatcher still exited 0, CD reported "Launch
+  # deploy" as successful, and --wait-for-result polled a result file that
+  # was never going to be written until its own 1500s timeout. Surface it
+  # loudly here instead.
+  sleep 2
+  if ! kill -0 "$bg_pid" 2>/dev/null; then
+    wait "$bg_pid"
+    local rc=$?
+    echo "launch failed immediately (rc=$rc) for unit=$unit — systemd-run never registered the unit:" >&2
+    cat "$errfile" >&2
+    rm -f "$errfile"
+    exit 1
+  fi
+  rm -f "$errfile"
 }
 
 if [[ "$cmd" =~ ^deploy\.sh\ ([0-9a-f]{40})$ ]]; then

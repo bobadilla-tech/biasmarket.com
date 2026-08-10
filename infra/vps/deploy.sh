@@ -388,8 +388,9 @@ cmd_print_current_sha() {
 cmd_wait_for_result() {
   local sha="${1:?--wait-for-result requires a SHA}"
   local timeout="${2:-1500}"
-  local start
+  local start last_heartbeat
   start="$(date +%s)"
+  last_heartbeat="$start"
   while true; do
     if [[ -f "$LAST_DEPLOY_RESULT_FILE" ]] && grep -q "^sha=${sha}$" "$LAST_DEPLOY_RESULT_FILE"; then
       cat "$LAST_DEPLOY_RESULT_FILE"
@@ -398,6 +399,16 @@ cmd_wait_for_result() {
     fi
     local now
     now="$(date +%s)"
+    # Heartbeat every 15s: proves the SSH channel is alive (bytes flowing,
+    # not just relying on ServerAlive keepalives) and tells an operator
+    # watching the CD log which phase a stuck deploy is actually in,
+    # instead of dead air until the 1500s timeout.
+    if ((now - last_heartbeat >= 15)); then
+      local phase
+      phase="$( [[ -f "$LOCK_META_FILE" ]] && grep '^phase=' "$LOCK_META_FILE" | cut -d= -f2- )"
+      echo "waiting ... elapsed=$((now - start))s phase=${phase:-unknown}"
+      last_heartbeat="$now"
+    fi
     if ((now - start >= timeout)); then
       echo "timed out after ${timeout}s waiting for a result for sha=${sha}" >&2
       exit 2
