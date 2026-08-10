@@ -22,6 +22,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$ROOT_DIR"
 # shellcheck source=lib/log.sh
 source "$ROOT_DIR/lib/log.sh"
 # shellcheck source=lib/state.sh
@@ -346,9 +347,15 @@ cmd_bootstrap() {
   phase "color_healthy"
 
   mkdir -p "$CADDY_ACTIVE_DIR"
+  log_info "Writing active Caddy config for color=$color ..."
   write_active_config "$color"
+  log_info "Starting Caddy ..."
   compose up -d caddy
-  reload_caddy 2>/dev/null || log_warn "Initial caddy reload call failed (expected if this is Caddy's very first boot) — it reads caddy/active/*.caddy on its own startup regardless."
+  if reload_caddy; then
+    log_info "Caddy config reload succeeded."
+  else
+    log_warn "Initial Caddy reload failed (expected if this is Caddy's very first boot) — it reads caddy/active/*.caddy on startup."
+  fi
   phase "caddy_live"
 
   atomic_write "$CURRENT_COLOR_FILE" "$color"
