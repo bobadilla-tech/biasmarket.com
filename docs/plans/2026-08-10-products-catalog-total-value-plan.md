@@ -178,3 +178,43 @@ Products dashboard page shows a "Valor total del catálogo" stat tile, styled
 identically to Overview's revenue/orders tiles, computed client-side as the sum
 of published products' unit prices in the store's default currency — drafts and
 other-currency products excluded per the decisions above, zero backend changes.
+
+## Execution notes (implemented 2026-08-10)
+
+Landed as planned — frontend-only, zero backend/Orval changes. Deviations and
+learnings:
+
+- **`catalog-value.ts` matches the planned signature exactly** —
+  `getPublishedCatalogValue(products, currency)`, a single `reduce` that skips
+  non-`PUBLISHED` products and non-matching currencies, summing
+  `Number(product.price)`. No type-narrowing surprises: the generated
+  `ProductDetailResponseDtoStatus` const object's values are the `status`
+  field's union type's value space, so `product.status !== "PUBLISHED"`
+  typechecks without a magic-string cast.
+- **Test fixture pattern, no repo precedent.** The generated
+  `ProductDetailResponseDto` has ~15 required fields (including the nested
+  `variants`/`categories` arrays), and no existing `apps/web` test builds one.
+  The new test file uses a `product(overrides)` helper — a fully-typed default
+  DTO spread with overrides — rather than a `satisfies`-cast partial, so every
+  test case is a complete DTO and each case reads as a diff from the default.
+- **Barrel export** went into the existing `lib/` re-export block after
+  `keyForAttributes`, matching the block's ordering — no new pattern, as the
+  plan predicted.
+- **Tile placement:** the plan said "above the grid/list toggle row"; it lands
+  directly under `ProductsHeader` and above the toggle row, i.e. also above the
+  list view's "Lista de productos" card header. `defaultCurrency` flows through
+  the page's existing `asCurrency()` guard, so the `useMemo` dependency is
+  always a well-formed currency string.
+- **i18n keys** sit immediately after `listTitle` in both locales as planned
+  (es: "Valor total del catálogo", en: "Total catalog value").
+- **Verification:** `pnpm --filter web test` — 54 files / 203 tests pass,
+  including the 5 new `catalog-value.test.ts` cases; `pnpm typecheck` — all 14
+  tasks pass. Note `pnpm turbo run lint --filter=web` executes zero tasks: there
+  is no `lint` script in `apps/web` (consistent with this plan's Verification,
+  which only listed test + typecheck).
+- **Not done:** the plan's manual browser pass (both locales, tile matches a
+  hand-counted sum, updates after publish/unpublish/price-edit) wasn't run —
+  still recommended before merge. The TanStack auto-invalidation claim
+  ("confirm, not assume") therefore also stays unconfirmed in-browser, though
+  `useCreateProduct`/`useUpdateProduct`/`usePublishProduct` all invalidate
+  `productsKeys` per the established pattern, so it should hold.
