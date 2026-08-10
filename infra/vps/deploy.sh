@@ -22,6 +22,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$ROOT_DIR"
 # shellcheck source=lib/log.sh
 source "$ROOT_DIR/lib/log.sh"
 # shellcheck source=lib/state.sh
@@ -45,6 +46,8 @@ CANARY_HOLD_SECONDS=30
 
 CURRENT_SHA_FOR_RESULT=""
 LAST_PHASE="init"
+RUN_STARTED_AT="$(date +%s)"
+PHASE_STARTED_AT="$RUN_STARTED_AT"
 
 # Final action on every exit path, success or failure: an atomic,
 # secret-free write to state/last_deploy_result (SHA, outcome, phase
@@ -64,9 +67,14 @@ on_exit() {
 trap on_exit EXIT
 
 phase() {
+  local now elapsed total
+  now="$(date +%s)"
+  elapsed=$((now - PHASE_STARTED_AT))
+  total=$((now - RUN_STARTED_AT))
   LAST_PHASE="$1"
   update_lock_phase "$LAST_PHASE"
-  log_info "phase: $1"
+  log_info "phase: $1 phase_elapsed=${elapsed}s total_elapsed=${total}s"
+  PHASE_STARTED_AT="$now"
 }
 
 teardown_candidate() {
@@ -331,6 +339,7 @@ cmd_bootstrap() {
   run_migration_phase "$color" "$sha" "true"
   phase "migrated"
 
+  log_info "Starting bootstrap services for color=$color ..."
   compose --profile "$color" up -d "api-${color}" "web-${color}" "workers-${color}"
   if ! wait_for_healthy "$HEALTH_TIMEOUT_SECONDS" "api-${color}" "web-${color}" "workers-${color}"; then
     die "Bootstrap: $color failed to become healthy."
@@ -338,9 +347,15 @@ cmd_bootstrap() {
   phase "color_healthy"
 
   mkdir -p "$CADDY_ACTIVE_DIR"
+  log_info "Writing active Caddy config for color=$color ..."
   write_active_config "$color"
+  log_info "Starting Caddy ..."
   compose up -d caddy
-  reload_caddy 2>/dev/null || log_warn "Initial caddy reload call failed (expected if this is Caddy's very first boot) — it reads caddy/active/*.caddy on its own startup regardless."
+  if reload_caddy; then
+    log_info "Caddy config reload succeeded."
+  else
+    log_warn "Initial Caddy reload failed (expected if this is Caddy's very first boot) — it reads caddy/active/*.caddy on startup."
+  fi
   phase "caddy_live"
 
   atomic_write "$CURRENT_COLOR_FILE" "$color"
