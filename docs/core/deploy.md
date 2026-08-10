@@ -228,28 +228,36 @@ a browser, and a store logo the same way
 ## 8. Set up Uptime Kuma monitoring
 
 `uptime-kuma` comes up with the rest of the stack (step 6) but needs one-time
-manual configuration through its own UI — nothing here is committed to the repo
-except the container itself. See
+configuration — monitors, the durable-history webhook notification, and the
+public status page. `scripts/setup-kuma.ts` does this over Kuma's Socket.IO
+admin API (Kuma has no REST/config-file admin surface, so this is as close to
+"config as code" as it gets — nothing here is committed to the repo except the
+container itself and this script). See
 [`docs/plans/2026-08-09-uptime-kuma-monitoring-plan.md`](../plans/2026-08-09-uptime-kuma-monitoring-plan.md)
-for the full design rationale; this is just the setup checklist.
+for the full design rationale.
 
-1. Visit `https://status.biasmarket.com` — Kuma's first-boot setup wizard
-   creates the admin account. Kuma's own login endpoint has a built-in
-   20-req/min rate limiter (confirmed on the pinned 1.23.16 image); no
-   additional Caddy `basicauth` layer is configured on top.
-2. Add two notification providers (Settings → Notifications):
-   - **Slack/Discord** (or another Kuma-native provider) pointed directly at
-     your incoming-webhook URL — this is the real-time page, independent of
-     `api`/`web` being up.
-   - **Webhook**, URL `https://api.biasmarket.com/api/monitoring/webhook`, with
-     header `X-Webhook-Secret: <MONITORING_WEBHOOK_SECRET value>`. Copy the
-     value from `infra/docker/.env` on the server — this is a second, manual
-     copy of the secret, stored in Kuma's own SQLite; rotating it means updating
-     both `.env` and Kuma's config (see
+1. Run the setup script on the VM, from the repo root:
+
+   ```bash
+   KUMA_USERNAME=admin KUMA_PASSWORD='<pick a real password>' node scripts/setup-kuma.ts
+   ```
+
+   Creates the admin account (if Kuma's setup wizard hasn't run yet),
+   `MONITORING_WEBHOOK_SECRET` is read automatically from `infra/docker/.env`
+   (same file `api` reads on boot). Idempotent — safe to re-run; it skips
+   anything that already exists by name. Creates:
+   - The 6 monitors below, each wired to a `webhook`-type notification
+     pointed at `https://api.biasmarket.com/api/monitoring/webhook` with
+     header `X-Webhook-Secret: <MONITORING_WEBHOOK_SECRET value>` (Kuma
+     custom-header support on the built-in webhook notification type,
+     confirmed on the pinned 1.23.16 image).
+   - A public status page at the `status` slug containing **only** the two
+     external monitors (API, Web) — the user-facing surfaces. The other four
+     stay dashboard-only, used for triage (see
      [`incident-response.md`](incident-response.md)).
-3. Create the 6 monitors below, attaching **both** notification providers to
-   each, and check "Important" transitions only fire on state changes (Kuma's
-   default):
+   - The status page's icon set to the site's own favicon
+     (`scripts/assets/kuma-status-page-favicon.png`, a PNG export of
+     `apps/web/app/favicon.ico` — Kuma's logo upload only accepts PNG).
 
    | Monitor        | Type | Target                                  |
    | -------------- | ---- | --------------------------------------- |
@@ -260,17 +268,24 @@ for the full design rationale; this is just the setup checklist.
    | DB             | TCP  | `db:5432`                               |
    | MinIO          | HTTP | `http://minio:9000/minio/health/live`   |
 
-4. Create a public status page (Status Pages → New) containing **only** the two
-   external monitors (API, Web) — the user-facing surfaces. Leave the other four
-   out of any public page; they stay visible only in the main dashboard for
-   triage.
-5. Verify: stop one backend (e.g. `docker compose stop api`) and confirm both
-   the paired internal/external monitors go down, the Slack/Discord alert fires,
-   and (once restarted) the "up" transition closes things out. See the plan
-   doc's "Verification" section for the full check list, including confirming a
-   `PlatformIncident` row appears via `GET /api/monitoring/incidents` (admin
-   session required).
-6. Set up an external, off-VM dead-man's-switch (e.g. UptimeRobot,
+   The script deliberately does **not** configure a real-time Slack/Discord
+   notification — add one by hand in the Kuma UI (Settings → Notifications)
+   and attach it to the same 6 monitors, or extend the script with another
+   `addNotification` call (see the comment block at the top of
+   `scripts/setup-kuma.ts`).
+2. Visit `https://status.biasmarket.com/` — the Caddyfile internally rewrites
+   the root path to `/status/status` (Kuma has no native "set as homepage"
+   setting), so the public status page serves directly from the bare domain;
+   `/dashboard` and everything else still works normally. Kuma's own login
+   endpoint has a built-in 20-req/min rate limiter (confirmed on the pinned
+   1.23.16 image); no additional Caddy `basicauth` layer is configured on top.
+3. Verify: stop one backend (e.g. `docker compose stop api`) and confirm both
+   the paired internal/external monitors go down, the webhook notification
+   fires (check `docker compose logs api` for the incoming POST, or query
+   `GET /api/monitoring/incidents` as an admin), and (once restarted) the "up"
+   transition closes things out. See the plan doc's "Verification" section for
+   the full check list.
+4. Set up an external, off-VM dead-man's-switch (e.g. UptimeRobot,
    healthchecks.io, Better Stack) pinging `https://status.biasmarket.com` — this
    is the one piece of monitoring deliberately _not_ self-hosted, since a
    watcher hosted on the VM can't report the whole VM being down.

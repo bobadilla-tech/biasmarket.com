@@ -24,12 +24,20 @@ cdn.biasmarket.com {
 	reverse_proxy minio:9000
 }
 
-# Uptime Kuma. The status page (/) is intentionally public; everything else
+# Uptime Kuma. The status page is intentionally public; everything else
 # (dashboard, manage-status-page) sits behind Kuma's own admin login, which
 # has a built-in 20-req/min rate limiter on the login endpoint (confirmed on
 # the pinned 1.23.16 image, server/rate-limiter.js) — no separate Caddy
 # basicauth layer added on top, see
 # docs/plans/2026-08-09-uptime-kuma-monitoring-plan.md.
 status.biasmarket.com {
+	# Kuma has no "set as homepage" setting of its own — the status page
+	# always lives at /status/<slug>. Rewrite (not redirect: the URL bar
+	# stays at "/") the exact root path to the "status" slug that
+	# scripts/setup-kuma.ts creates (STATUS_PAGE_SLUG, default "status").
+	# Keep this in sync if that default ever changes.
+	@root path /
+	rewrite @root /status/status
+
 	reverse_proxy uptime-kuma:3001
 }

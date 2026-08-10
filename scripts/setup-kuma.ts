@@ -40,6 +40,17 @@ import { io } from "socket.io-client";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
+// PNG export of apps/web/app/favicon.ico (Kuma's status-page logo upload
+// only accepts PNG — see saveStatusPage below). Regenerate if the site
+// favicon changes: `sips -s format png apps/web/app/favicon.ico --out
+// scripts/assets/kuma-status-page-favicon.png` (macOS) or an equivalent
+// ImageMagick/ffmpeg call elsewhere.
+const statusPageLogoDataUrl = `data:image/png;base64,${
+  readFileSync(
+    join(repoRoot, "scripts", "assets", "kuma-status-page-favicon.png"),
+  ).toString("base64")
+}`;
+
 function parseEnvFile(path: string): Record<string, string> {
   if (!existsSync(path)) return {};
   const out: Record<string, string> = {};
@@ -300,13 +311,15 @@ async function main() {
           showCertificateExpiry: false,
           domainNameList: [],
         },
-        "none",
+        statusPageLogoDataUrl,
         publicGroupList,
         resolve as Cb,
       ),
   );
   if (!saveRes.ok) throw new Error(`saveStatusPage failed: ${saveRes.msg}`);
-  console.log(`Status page ready at ${KUMA_URL}/status/${STATUS_PAGE_SLUG}`);
+  console.log(
+    `Status page ready at ${KUMA_URL}/ (Caddy rewrites root to /status/${STATUS_PAGE_SLUG})`,
+  );
 
   socket.disconnect();
   console.log("Done.");
