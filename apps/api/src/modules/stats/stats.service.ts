@@ -11,6 +11,8 @@ import type {
 } from "@biasmarket/db";
 import {
   countsTowardPaid,
+  countsTowardRevenue,
+  REVENUE_ORDER_PAYMENT_STATUSES,
   withPaymentSummary,
 } from "../../common/payment-summary.js";
 import { PrismaService } from "../../prisma/prisma.service.js";
@@ -73,15 +75,22 @@ export class StatsService {
       fulfillmentGroups,
       lowStockCount,
       recentOrdersRaw,
+      partialPaymentOrdersRaw,
     ] = await Promise.all([
       this.prisma.orderPayment.aggregate({
         where: {
           storeId,
-          order: { paymentStatus: "VERIFIED" },
-          // Excludes a buyer-submitted proof still awaiting seller review —
-          // see common/payment-summary.ts's `countsTowardPaid`, the same
-          // predicate every other revenue/spend aggregate in this codebase
-          // filters by.
+          // Revenue is money actually collected and verified — VERIFIED and
+          // PARTIALLY_PAID orders both qualify, but a partial payment only
+          // ever contributes its own paid amount, not the full order total.
+          // The `OR` below is `countsTowardPaid`: it excludes a
+          // buyer-submitted proof still awaiting seller review — see
+          // common/payment-summary.ts's `countsTowardRevenue` +
+          // `countsTowardPaid`, the same predicates every other revenue/spend
+          // aggregate in this codebase filters by.
+          order: {
+            paymentStatus: { in: [...REVENUE_ORDER_PAYMENT_STATUSES] },
+          },
           OR: [{ source: "SELLER_RECORDED" }, { reviewStatus: "APPROVED" }],
         },
         _sum: { amount: true },
@@ -112,6 +121,14 @@ export class StatsService {
           payments: { orderBy: { createdAt: "desc" } },
         },
       }),
+      // Every order still collecting money, with the same per-order
+      // paid/total/remaining summary the Order Details view shows — feeds
+      // the "Outstanding partial payments" card in the Summary view.
+      this.prisma.order.findMany({
+        where: { storeId, paymentStatus: "PARTIALLY_PAID" },
+        orderBy: { createdAt: "desc" },
+        include: { payments: { orderBy: { createdAt: "desc" } } },
+      }),
     ]);
 
     const paymentStatusCounts = Object.fromEntries(
@@ -141,6 +158,9 @@ export class StatsService {
       fulfillmentStatusCounts,
       lowStockCount,
       recentOrders: recentOrdersRaw.map((order) => withPaymentSummary(order)),
+      partialPaymentOrders: partialPaymentOrdersRaw.map((order) =>
+        withPaymentSummary(order)
+      ),
     };
   }
 
@@ -202,7 +222,7 @@ export class StatsService {
       );
 
       const revenue = ordersInBucket
-        .filter((order) => order.paymentStatus === "VERIFIED")
+        .filter((order) => countsTowardRevenue(order.paymentStatus))
         .reduce(
           (sum, order) =>
             sum.plus(

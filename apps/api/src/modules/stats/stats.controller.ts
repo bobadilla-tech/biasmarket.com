@@ -13,12 +13,46 @@ import { StatsService } from "./stats.service.js";
 import type { AnalyticsRange } from "./analytics.types.js";
 import {
   AnalyticsResultResponseDto,
+  OutstandingPartialPaymentResponseDto,
   PaymentMethodsBreakdownResponseDto,
   StatsOverviewResponseDto,
 } from "./dto/stats-response.dto.js";
 import { toOrderDto } from "../orders/infrastructure/order.controller.js";
 
 const ANALYTICS_RANGES: AnalyticsRange[] = ["30d", "90d", "12m"];
+
+// Row shape of `StatsService.getOverview`'s `partialPaymentOrders` — the raw
+// Prisma order run through `withPaymentSummary` (Decimal money fields still
+// carry their `.toString()`, the computed summary fields are numbers).
+interface PartialPaymentOrderRow {
+  id: string;
+  customerName: string | null;
+  customerPhone: string;
+  currency: string;
+  totalAmount: { toString(): string };
+  requiredAmount: { toString(): string };
+  paidAmount: number;
+  pendingAmount: number;
+  paidPercentage: number;
+  createdAt: Date;
+}
+
+function toPartialPaymentOrderDto(
+  row: PartialPaymentOrderRow,
+): OutstandingPartialPaymentResponseDto {
+  return {
+    id: row.id,
+    customerName: row.customerName,
+    customerPhone: row.customerPhone,
+    currency: row.currency,
+    totalAmount: row.totalAmount.toString(),
+    requiredAmount: row.requiredAmount.toString(),
+    paidAmount: row.paidAmount,
+    pendingAmount: row.pendingAmount,
+    paidPercentage: row.paidPercentage,
+    createdAt: row.createdAt.toISOString(),
+  };
+}
 
 @Controller("stores/:storeId/stats")
 @UseGuards(AuthGuard)
@@ -34,6 +68,9 @@ export class StatsController {
     return {
       ...result,
       recentOrders: result.recentOrders.map(toOrderDto),
+      partialPaymentOrders: result.partialPaymentOrders.map(
+        toPartialPaymentOrderDto,
+      ),
     };
   }
 

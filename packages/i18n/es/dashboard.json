@@ -652,6 +652,12 @@
     },
     "recentOrdersTitle": "Pedidos recientes",
     "recentOrdersEmpty": "Todavía no hay pedidos.",
+    "partialPaymentsTitle": "Pagos parciales",
+    "partialPaymentsEmpty": "No hay pedidos con pago parcial.",
+    "partialPayments": {
+      "paid": "Pagado",
+      "remaining": "Restante"
+    },
     "paymentBreakdownTitle": "Pedidos por estado de pago",
     "fulfillmentBreakdownTitle": "Pedidos por estado de envío",
     "paymentStatusLabels": {
