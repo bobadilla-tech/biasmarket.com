@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   NotFoundException,
   Param,
   Post,
@@ -177,6 +178,13 @@ export class CustomerOrderPaymentsController {
   @ApiParam({ name: "slug", type: String })
   @ApiOkResponse({ schema: { type: "string", format: "binary" } })
   @ApiProduces("image/jpeg", "image/png")
+  // Helmet's default CORP (`same-origin`) makes the browser block this image
+  // from being embedded by the web app's cross-origin `<img>` tags
+  // (`ERR_BLOCKED_BY_RESPONSE.NotSameOrigin`) — the web frontend
+  // (`biasmarket.com`) and the API (`api.biasmarket.com`) are different
+  // origins. The stream is still auth-gated, so `cross-origin` only widens
+  // embedding to the session holder, which is exactly the intended consumer.
+  @Header("Cross-Origin-Resource-Policy", "cross-origin")
   @Public()
   @UseGuards(CustomerSessionGuard)
   @Get(":paymentId/image")

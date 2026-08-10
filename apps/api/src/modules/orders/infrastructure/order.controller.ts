@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   NotFoundException,
   Param,
   Patch,
@@ -308,6 +309,12 @@ export class OrderController {
   @Get(":orderId/payments/:paymentId/image")
   @ApiOkResponse({ schema: { type: "string", format: "binary" } })
   @ApiProduces("image/jpeg", "image/png")
+  // Helmet's default CORP (`same-origin`) makes the browser block this image
+  // from being embedded by the web app's cross-origin `<img>` tags
+  // (`ERR_BLOCKED_BY_RESPONSE.NotSameOrigin`) — the web frontend
+  // (`biasmarket.com`) and the API (`api.biasmarket.com`) are different
+  // origins. Same reasoning as `CustomerOrderPaymentsController.getImage`.
+  @Header("Cross-Origin-Resource-Policy", "cross-origin")
   async getPaymentImage(
     @Param("storeId") storeId: string,
     @Param("orderId") orderId: string,
