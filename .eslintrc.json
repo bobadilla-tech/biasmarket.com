@@ -1,0 +1,6 @@
+{
+  "root": true,
+  "rules": {
+    "no-implicit-globals": "off"
+  }
+}

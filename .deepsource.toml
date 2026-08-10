@@ -30,26 +30,3 @@ enabled = true
   # Boot-time env-var validation is a flat checklist (see env.validation.ts);
   # there's nothing to refactor, so never raise cyclomatic-complexity issues.
   cyclomatic_complexity_threshold = "critical"
-
-  # Rules that are false positives for this repo's framework/script patterns.
-  # - JS-0067: top-level `export function` in ESM modules is module scope, not
-  #   the global scope this rule targets.
-  # - JS-0327: NestJS `@Module()`/`@Controller()` marker classes are empty by
-  #   design.
-  # - JS-0263: CLI scripts (init-env.ts, api-healthcheck.ts) legitimately set
-  #   their own exit code — throwing instead would break the healthcheck
-  #   contract.
-  # - JS-0105: NestJS route handlers don't always need `this`.
-  # - JS-0116: BullMQ `WorkerHost.process` must return a Promise, so `async`
-  #   is required even when there's nothing to await.
-  # - JS-0320: test-only process.env restore uses a computed `delete` (also
-  #   covered by test_patterns).
-  [analyzers.config]
-  disable_rules = [
-    "JS-0067",
-    "JS-0327",
-    "JS-0263",
-    "JS-0105",
-    "JS-0116",
-    "JS-0320",
-  ]
