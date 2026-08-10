@@ -344,6 +344,10 @@ first rsync automatically) or sync once by hand to bootstrap faster:
 ```bash
 # local, using key A directly (bypasses CI for a one-time manual bootstrap):
 rsync -az \
+  --exclude 'env/*.env' \
+  --exclude 'state/' \
+  --exclude 'caddy/active/*.caddy' \
+  --exclude 'releases/' \
   -e "ssh -i biasmarket_key_a -o StrictHostKeyChecking=yes" \
   infra/vps/ deploy@<vps-ip>:.
 ```
