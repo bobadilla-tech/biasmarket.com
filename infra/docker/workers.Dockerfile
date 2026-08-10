@@ -63,7 +63,8 @@ COPY . .
 RUN --mount=type=cache,id=turbo-cache,target=/app/.turbo \
     pnpm exec turbo run build --filter=workers
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm-store \
-    pnpm install --prod --frozen-lockfile --filter=workers... --store-dir=/pnpm-store
+    pnpm install --offline --prod --frozen-lockfile --filter=workers... \
+      --reporter=append-only --store-dir=/pnpm-store
 
 # ---------------------------------------------------------------------------
 # runtime: prod image, non-root, only what workers needs at boot — no
