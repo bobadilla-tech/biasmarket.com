@@ -273,12 +273,15 @@ for the full design rationale.
    and attach it to the same 6 monitors, or extend the script with another
    `addNotification` call (see the comment block at the top of
    `scripts/setup-kuma.ts`).
-2. Visit `https://status.biasmarket.com/` — the Caddyfile internally rewrites
-   the root path to `/status/status` (Kuma has no native "set as homepage"
-   setting), so the public status page serves directly from the bare domain;
-   `/dashboard` and everything else still works normally. Kuma's own login
-   endpoint has a built-in 20-req/min rate limiter (confirmed on the pinned
-   1.23.16 image); no additional Caddy `basicauth` layer is configured on top.
+2. Visit `https://status.biasmarket.com/` — the Caddyfile 302-redirects the
+   root path to `/status/status` (Kuma has no native "set as homepage"
+   setting, and an internal rewrite doesn't work: Kuma is an SPA whose
+   client-side router reads the browser's actual URL bar, so a logged-in
+   session bounces back to `/dashboard` unless the redirect is real and the
+   URL bar actually changes). `/dashboard` and everything else still works
+   normally. Kuma's own login endpoint has a built-in 20-req/min rate limiter
+   (confirmed on the pinned 1.23.16 image); no additional Caddy `basicauth`
+   layer is configured on top.
 3. Verify: stop one backend (e.g. `docker compose stop api`) and confirm both
    the paired internal/external monitors go down, the webhook notification
    fires (check `docker compose logs api` for the incoming POST, or query
