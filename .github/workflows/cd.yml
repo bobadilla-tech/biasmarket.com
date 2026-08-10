@@ -171,7 +171,7 @@ jobs:
             -e "ssh -i ~/.ssh/deploy_rsync_key -o StrictHostKeyChecking=yes" \
             infra/vps/ "$SSH_USER@$SSH_HOST:."
 
-      # Detached: the dispatcher backgrounds deploy.sh via systemd-run and
+      # Detached: the dispatcher backgrounds deploy.sh via setsid and
       # returns immediately, so this step finishes in seconds regardless of
       # how long the actual deploy takes — see
       # infra/vps/bin/ssh-deploy-dispatcher.sh.
