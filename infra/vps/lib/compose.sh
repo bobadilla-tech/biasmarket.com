@@ -8,19 +8,30 @@
 #
 # IMAGE_TAG must already be exported by the caller before compose() is
 # called (deploy.sh sets it once it has determined the candidate SHA).
-# Never leaves the temp file behind: trapped cleanup on RETURN.
-
+# Never leaves the temp file behind: explicit rm after the call, exit code
+# preserved.
+#
+# NOT `trap 'rm -f "$tmp"' RETURN` (what this used to be): that trap fires
+# correctly on compose()'s own return, but then stays armed and misfires
+# again on the NEXT enclosing function's return too — by which point this
+# $tmp is already out of scope, raising "tmp: unbound variable" under
+# set -u. Only surfaced once something called compose() from one level
+# inside a small function that returns right after (smoke_api_direct/
+# smoke_web_direct in lib/smoke.sh) — every other call site invokes it
+# directly from cmd_deploy's/wait_for_healthy's own top-level flow.
 compose() {
-  local tmp
+  local tmp rc
   tmp="$(mktemp)"
-  trap 'rm -f "$tmp"' RETURN
 
   if [[ -f "$ENV_DIR/shared.env" ]]; then
     cat "$ENV_DIR/shared.env" >"$tmp"
   fi
   printf '\nIMAGE_TAG=%s\n' "${IMAGE_TAG:?compose(): IMAGE_TAG is not set}" >>"$tmp"
 
-  docker compose -f "$ROOT_DIR/docker-compose.yml" --env-file "$tmp" "$@"
+  rc=0
+  docker compose -f "$ROOT_DIR/docker-compose.yml" --env-file "$tmp" "$@" || rc=$?
+  rm -f "$tmp"
+  return "$rc"
 }
 
 # compose_running_container SERVICE — echoes the running container ID for a
