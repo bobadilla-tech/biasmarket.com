@@ -30,3 +30,21 @@ compose_running_container() {
   local service="$1"
   compose ps -q "$service"
 }
+
+# running_image_sha COLOR — echoes the image tag (the :sha suffix) a color's
+# running api container was started with, or nothing if it has no inspectable
+# container. Callers must export IMAGE_TAG first (compose() needs it even for
+# `ps`). Used by --rollback so a recreate-on-recovery restores the pre-fault
+# release instead of re-pulling the live (possibly faulty) tag.
+running_image_sha() {
+  local color="$1" cid image
+  cid="$(compose_running_container "api-${color}" 2>/dev/null || true)"
+  if [[ -n "$cid" ]]; then
+    image="$(docker inspect --format='{{index .Config.Image}}' "$cid" 2>/dev/null || true)"
+    if [[ -n "$image" ]]; then
+      echo "${image##*:}"
+      return 0
+    fi
+  fi
+  return 0
+}

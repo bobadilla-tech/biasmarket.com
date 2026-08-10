@@ -56,11 +56,14 @@ write_canary_config() {
 # written active/*.caddy is steady-state pointed at (used only by the
 # startup reconciliation check — a canary-shaped file at startup already
 # means a prior run crashed mid-switch and should also fail reconciliation).
+# Echoes "" (unparseable) when the file names BOTH colors, i.e. a weighted
+# canary — a crash mid-canary must NOT reconcile as if one color is live.
 active_config_color() {
   local file="$1"
   [[ -f "$file" ]] || { echo ""; return; }
-  grep -m1 -oE 'reverse_proxy [a-z]+-(blue|green):[0-9]+' "$file" \
-    | head -1 | grep -oE '(blue|green)' || echo ""
+  local colors
+  mapfile -t colors < <(grep -oE '[a-z]+-(blue|green):[0-9]+' "$file" | grep -oE '(blue|green)')
+  [[ ${#colors[@]} -eq 1 ]] && echo "${colors[0]}" || echo ""
 }
 
 reload_caddy() {

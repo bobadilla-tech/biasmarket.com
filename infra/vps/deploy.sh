@@ -156,10 +156,13 @@ cmd_deploy() {
 
   log_info "Deploying $sha into color=$candidate_color (current live color=$current_color, sha=$current_sha)"
 
+  # Must be exported BEFORE the migration phase: it runs `compose run` against
+  # the candidate's image, whose tag resolves via ${IMAGE_TAG} in the compose
+  # file — exporting only below would fatally exit at the first compose call.
+  export IMAGE_TAG="$sha"
   run_migration_phase "$candidate_color" "$sha" "$allow_destructive"
   phase "migrated"
 
-  export IMAGE_TAG="$sha"
   log_info "Starting candidate services (color=$candidate_color) ..."
   compose --profile "$candidate_color" up -d "api-${candidate_color}" "web-${candidate_color}" "workers-${candidate_color}"
   phase "candidate_started"
@@ -224,9 +227,23 @@ cmd_rollback() {
   CURRENT_SHA_FOR_RESULT="rollback-to-${target_color}"
 
   log_info "Health-checking rollback target ($target_color) before flipping traffic back to it ..."
-  export IMAGE_TAG="$(state_read "$CURRENT_SHA_FILE")"
+  # compose() requires IMAGE_TAG even for the read-only `ps` inside
+  # running_image_sha, so seed it with the live sha first — then replace it
+  # with the target's ACTUAL image tag. A recreate-on-recovery must restore
+  # the pre-fault release, never the live (possibly faulty) one.
+  export IMAGE_TAG
+  IMAGE_TAG="$(state_read "$CURRENT_SHA_FILE")"
+  local target_sha
+  target_sha="$(running_image_sha "$target_color")"
+  if [[ -n "$target_sha" ]]; then
+    log_info "Rollback target ($target_color) is running tag=$target_sha — will recreate from that tag if needed."
+    export IMAGE_TAG="$target_sha"
+  fi
   if ! wait_for_healthy 30 "api-${target_color}" "web-${target_color}" "workers-${target_color}"; then
-    log_warn "$target_color is not currently healthy — attempting to (re)start it before giving up."
+    if [[ -z "$target_sha" ]]; then
+      die "Rollback target ($target_color) has no inspectable running container — the previous release's image tag cannot be recovered, and recreating it with the live tag ($IMAGE_TAG) would just deploy the same faulty release. Restore the previous release manually (see releases/history.log), then re-run --rollback."
+    fi
+    log_warn "$target_color is not currently healthy — attempting to (re)start it from tag=$IMAGE_TAG before giving up."
     compose --profile "$target_color" up -d "api-${target_color}" "web-${target_color}" "workers-${target_color}" || true
     if ! wait_for_healthy "$HEALTH_TIMEOUT_SECONDS" "api-${target_color}" "web-${target_color}" "workers-${target_color}"; then
       die "Rollback target ($target_color) is unhealthy and would not come back up — refusing to flip traffic to something dead. Manual intervention required."
@@ -247,13 +264,9 @@ cmd_rollback() {
   atomic_write "$CURRENT_COLOR_FILE" "$target_color"
   atomic_write "$ROLLBACK_TARGET_FILE" "$current_color"
 
-  local actual_cid actual_image actual_sha
-  actual_cid="$(compose_running_container "api-${target_color}")"
-  if [[ -n "$actual_cid" ]]; then
-    actual_image="$(docker inspect --format='{{index .Config.Image}}' "$actual_cid" 2>/dev/null || echo "")"
-    actual_sha="${actual_image##*:}"
-    [[ -n "$actual_sha" && "$actual_sha" != "$actual_image" ]] && atomic_write "$CURRENT_SHA_FILE" "$actual_sha"
-  fi
+  local recovered_sha
+  recovered_sha="$(running_image_sha "$target_color")"
+  [[ -n "$recovered_sha" ]] && atomic_write "$CURRENT_SHA_FILE" "$recovered_sha"
 
   append_history "rollback color=$target_color outcome=success previous_color=$current_color"
   log_info "Rolled back to $target_color."
@@ -279,6 +292,11 @@ cmd_cleanup() {
   fi
 
   log_info "Tearing down old color: $target"
+  # compose() and the compose file both interpolate ${IMAGE_TAG:?} even for
+  # stop/rm — nothing is (re)created here, so the live sha is a fine
+  # placeholder, it just has to be present for the expansion to succeed.
+  export IMAGE_TAG
+  IMAGE_TAG="$(state_read "$CURRENT_SHA_FILE")"
   compose stop "api-${target}" "web-${target}" "workers-${target}" 2>/dev/null || true
   compose rm -f "api-${target}" "web-${target}" "workers-${target}" 2>/dev/null || true
 
