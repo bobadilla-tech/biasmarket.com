@@ -13,6 +13,7 @@
     "typecheck": "DATABASE_URL=\"${DATABASE_URL:-postgresql://build:build@localhost:5432/build?schema=public}\" turbo run typecheck",
     "db:generate": "turbo run db:generate",
     "env:init": "node scripts/init-env.ts",
+    "kuma:setup": "node scripts/setup-kuma.ts",
     "docker:dev": "docker compose -f infra/docker/docker-compose.dev.yml up --build",
     "docker:dev:down": "docker compose -f infra/docker/docker-compose.dev.yml down",
     "docker:prod": "docker compose -f infra/docker/docker-compose.yml up -d --build",
@@ -29,6 +30,7 @@
     "@types/node": "^26.0.0",
     "concurrently": "^10.0.3",
     "nodemon": "^3.1.10",
+    "socket.io-client": "^4.8.3",
     "turbo": "^2.10.5",
     "typescript": "^7.0.2"
   }
