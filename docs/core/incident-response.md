@@ -168,7 +168,7 @@ To rotate on the **blue/green** stack: `env/shared.env` is checksum-gated
 `blue-green-migrations.md`), so **never** run `pnpm env:init --prod` against it.
 Edit `MONITORING_WEBHOOK_SECRET`'s value in `/opt/biasmarket/env/shared.env` by
 hand, update the recorded baseline
-(`sha256sum /opt/biasmarket/env/shared.env > /opt/biasmarket/state/shared_env.sha256`
+(`sha256sum /opt/biasmarket/env/shared.env | cut -d' ' -f1 > /opt/biasmarket/state/shared_env.sha256`
 — write just the hash, matching the format `deploy.sh` itself writes), then
 restart both running app services that read it:
 `docker compose -f docker-compose.yml restart api-<live-color> workers-<live-color>`.

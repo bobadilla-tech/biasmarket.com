@@ -31,6 +31,9 @@ migration_pre_snapshot() {
   log_info "Taking pre-migration snapshot -> $(basename "$outfile")"
   # Runs against the always-on `db` service directly (not a candidate
   # container) — reads POSTGRES_USER/POSTGRES_DB from its own env_file.
+  # SC2016: $POSTGRES_USER/$POSTGRES_DB are expanded by the container's own
+  # `sh -c`, not by this shell — deliberately kept single-quoted.
+  # shellcheck disable=SC2016
   compose exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' | gzip >"$outfile"
   [[ -s "$outfile" ]] || die "Pre-migration snapshot came back empty — refusing to proceed with migration"
 }

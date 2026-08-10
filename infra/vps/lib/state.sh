@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # State-file paths and atomic (temp-file + rename) read/write helpers.
 # ROOT_DIR must already be set by the sourcing script.
+#
+# SC2034: every $..._DIR/$..._FILE variable below is consumed by deploy.sh and
+# the other libs via `source`, not in this file — unused here is intentional.
+# shellcheck disable=SC2034
 
 STATE_DIR="$ROOT_DIR/state"
 RELEASES_DIR="$ROOT_DIR/releases"
