@@ -46,6 +46,13 @@ jobs:
     needs: gate
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 30
+    # Builds for an older commit are disposable: if a newer main commit
+    # arrives while one is still building, let the newer build replace it.
+    # The deployment job below deliberately uses a separate non-cancelling
+    # concurrency group so an active production cutover is never interrupted.
+    concurrency:
+      group: production-build-${{ matrix.app }}
+      cancel-in-progress: true
     permissions:
       contents: read
       packages: write
