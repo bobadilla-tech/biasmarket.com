@@ -32,8 +32,11 @@ import type {
 // Order-level states that no longer accept a new buyer-submitted proof —
 // mirrors the exact guard `CustomerOrderPaymentsController.submit` enforces
 // server-side (see apps/api's controller), so the form doesn't render only to
-// 400 on submit.
-const CLOSED_PAYMENT_STATUSES = new Set(["CANCELLED", "REJECTED", "VERIFIED"]);
+// 400 on submit. VERIFIED is deliberately absent: the `pendingAmount > 0`
+// check below already closes the form for a settled VERIFIED order, and a
+// VERIFIED order with a residual balance (approved on a deposit) still owes
+// money the buyer must be able to pay.
+const CLOSED_PAYMENT_STATUSES = new Set(["CANCELLED", "REJECTED"]);
 const CLOSED_FULFILLMENT_STATUSES = new Set([
   "IN_TRANSIT",
   "READY",

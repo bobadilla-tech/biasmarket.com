@@ -94,7 +94,14 @@ export class CustomerOrderPaymentsController {
         "No se pueden enviar comprobantes en una orden rechazada",
       );
     }
-    if (order.paymentStatus === "VERIFIED") {
+    // Only a VERIFIED order with its balance settled is closed to new proofs —
+    // a VERIFIED order with a residual balance (approved on a deposit, or a
+    // legacy pre-guard approval) still owes money and must accept the rest.
+    // Mirrors `OrderController.addPayment` and the frontend `paymentsLocked`.
+    if (
+      order.paymentStatus === "VERIFIED" &&
+      Number(order.pendingAmount) <= 0
+    ) {
       throw new BadRequestException("La orden ya está pagada");
     }
     if (

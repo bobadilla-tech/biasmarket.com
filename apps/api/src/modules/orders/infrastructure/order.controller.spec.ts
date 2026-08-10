@@ -173,6 +173,83 @@ describe("OrderController.addPayment", () => {
       "approve",
     );
   });
+
+  it("accepts a payment on an already-VERIFIED order with a residual balance, keeping it VERIFIED", async () => {
+    orders.findRowByIdForStore
+      .mockResolvedValueOnce({
+        currency: "PEN",
+        paymentStatus: "VERIFIED",
+        paidAmount: 0,
+        pendingAmount: 47,
+        requiredAmount: "47.00",
+      })
+      .mockResolvedValueOnce(fullOrderFixture);
+
+    await controller.addPayment(storeId, orderId, session, "27", "YAPE");
+
+    expect(orders.saveStatus).not.toHaveBeenCalled();
+    expect(reviewPayment.execute).not.toHaveBeenCalled();
+    expect(tx.orderPayment.create).toHaveBeenCalledWith({
+      data: {
+        orderId,
+        storeId,
+        amount: 27,
+        currency: "PEN",
+        method: "YAPE",
+        note: undefined,
+      },
+    });
+    expect(tx.auditLog.create).toHaveBeenCalledWith({
+      data: {
+        actorId: userId,
+        storeId,
+        action: "payment.recorded",
+        entityType: "Order",
+        entityId: orderId,
+        metadata: {
+          amount: 27,
+          method: "YAPE",
+          resultingPaymentStatus: "VERIFIED",
+        },
+      },
+    });
+  });
+
+  it("does not route an already-VERIFIED order through ReviewPaymentUseCase even when the payment settles the balance", async () => {
+    orders.findRowByIdForStore
+      .mockResolvedValueOnce({
+        currency: "PEN",
+        paymentStatus: "VERIFIED",
+        paidAmount: 0,
+        pendingAmount: 47,
+        requiredAmount: "47.00",
+      })
+      .mockResolvedValueOnce(fullOrderFixture);
+
+    await controller.addPayment(storeId, orderId, session, "47", "YAPE");
+
+    expect(orders.saveStatus).not.toHaveBeenCalled();
+    expect(reviewPayment.execute).not.toHaveBeenCalled();
+    expect(tx.orderPayment.create).toHaveBeenCalled();
+  });
+
+  it("still rejects a payment on a VERIFIED order with no balance owed", async () => {
+    orders.findRowByIdForStore.mockResolvedValueOnce({
+      currency: "PEN",
+      paymentStatus: "VERIFIED",
+      paidAmount: 47,
+      pendingAmount: 0,
+      requiredAmount: "47.00",
+    });
+
+    await expect(
+      controller.addPayment(storeId, orderId, session, "10", "YAPE"),
+    ).rejects.toThrow("La orden ya está pagada");
+
+    expect(tx.orderPayment.create).not.toHaveBeenCalled();
+    expect(orders.saveStatus).not.toHaveBeenCalled();
+    expect(reviewPayment.execute).not.toHaveBeenCalled();
+  });
 });
 
 describe("OrderController.getPaymentImage", () => {
