@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
@@ -49,6 +49,13 @@ export function ProductSearchPageClient({
   const tCategories = useTranslations("landing.categories");
   const router = useRouter();
   const [draft, setDraft] = useState(initialQuery);
+
+  // The URL query is the source of truth: keep the input in sync when the
+  // query changes while this component stays mounted (e.g. category/sort/pill
+  // clicks and browser back/forward) so the input, URL, and results agree.
+  useEffect(() => {
+    setDraft(initialQuery);
+  }, [initialQuery]);
 
   const category = initialCategory ?? null;
   const sort = initialSort;

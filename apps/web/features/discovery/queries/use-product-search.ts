@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { discoveryApi } from "../api/discovery.api";
+import { apiClient } from "@/lib/api-client";
 
 export function useProductSearch(
   q: string,
@@ -21,9 +21,9 @@ export function useProductSearch(
       opts.sort,
     ] as const,
     queryFn: () =>
-      discoveryApi.searchProducts({
+      apiClient.productSearch.search({
         q: q || undefined,
-        page,
+        page: String(page),
         category: opts.category || undefined,
         sort: opts.sort,
       }),

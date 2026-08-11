@@ -101,14 +101,12 @@ describe('ProductSearchService', () => {
   });
 
   it('ranks bestsellers by verified units sold on the database', async () => {
-    prisma.product.findMany
-      .mockResolvedValueOnce([{ id: 'hot' }, { id: 'cold' }, { id: 'meh' }])
-      .mockResolvedValueOnce([{ id: 'cold' }, { id: 'hot' }]);
     prisma.orderItem.groupBy.mockResolvedValue([
       { productId: 'hot', _sum: { quantity: 5 } },
       { productId: 'cold', _sum: { quantity: 2 } },
     ]);
-    prisma.product.count.mockResolvedValue(3);
+    prisma.product.findMany.mockResolvedValue([{ id: 'cold' }, { id: 'hot' }]);
+    prisma.product.count.mockResolvedValue(2);
 
     const result = await service.search(
       1,
@@ -118,33 +116,42 @@ describe('ProductSearchService', () => {
       'bestseller',
     );
 
-    expect(prisma.product.findMany).toHaveBeenNthCalledWith(
-      1,
-      expect.objectContaining({ select: { id: true } }),
-    );
     expect(prisma.orderItem.groupBy).toHaveBeenCalledWith(
       expect.objectContaining({
         by: ['productId'],
         where: {
-          productId: { in: ['hot', 'cold', 'meh'] },
+          product: {
+            status: 'PUBLISHED',
+            deletedAt: null,
+            discontinued: false,
+            store: { owner: { banned: { not: true } } },
+          },
           order: { paymentStatus: 'VERIFIED' },
         },
-        orderBy: { _sum: { quantity: 'desc' } },
+        orderBy: [{ _sum: { quantity: 'desc' } }, { productId: 'asc' }],
         skip: 0,
         take: 10,
       }),
     );
+    expect(prisma.product.count).toHaveBeenCalledWith({
+      where: {
+        status: 'PUBLISHED',
+        deletedAt: null,
+        discontinued: false,
+        store: { owner: { banned: { not: true } } },
+        orderItems: { some: { order: { paymentStatus: 'VERIFIED' } } },
+      },
+    });
+    expect(prisma.product.findMany).toHaveBeenCalledTimes(1);
     expect(result.products).toEqual([{ id: 'hot' }, { id: 'cold' }]);
-    expect(result.total).toBe(3);
+    expect(result.total).toBe(2);
   });
 
   it("pages bestsellers via the aggregation's skip/take", async () => {
-    prisma.product.findMany
-      .mockResolvedValueOnce([{ id: 'a' }, { id: 'b' }, { id: 'c' }])
-      .mockResolvedValueOnce([{ id: 'b' }]);
     prisma.orderItem.groupBy.mockResolvedValue([
       { productId: 'b', _sum: { quantity: 2 } },
     ]);
+    prisma.product.findMany.mockResolvedValue([{ id: 'b' }]);
     prisma.product.count.mockResolvedValue(3);
 
     const result = await service.search(
@@ -159,10 +166,40 @@ describe('ProductSearchService', () => {
       expect.objectContaining({ skip: 1, take: 1 }),
     );
     expect(result.products).toEqual([{ id: 'b' }]);
+    expect(result.total).toBe(3);
   });
 
-  it('returns no bestsellers when no products are eligible', async () => {
-    prisma.product.findMany.mockResolvedValueOnce([]);
+  it('breaks bestseller ties deterministically by productId across a page boundary', async () => {
+    // Three products sold the same quantity; the tie-breaker orders by
+    // productId asc, so page 2 (limit 2) returns the third product.
+    prisma.orderItem.groupBy.mockResolvedValue([
+      { productId: 'p1', _sum: { quantity: 3 } },
+      { productId: 'p2', _sum: { quantity: 3 } },
+      { productId: 'p3', _sum: { quantity: 3 } },
+    ]);
+    prisma.product.findMany.mockResolvedValue([{ id: 'p3' }]);
+    prisma.product.count.mockResolvedValue(3);
+
+    const result = await service.search(
+      2,
+      2,
+      undefined,
+      undefined,
+      'bestseller',
+    );
+
+    expect(prisma.orderItem.groupBy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: [{ _sum: { quantity: 'desc' } }, { productId: 'asc' }],
+        skip: 2,
+        take: 2,
+      }),
+    );
+    expect(result.products).toEqual([{ id: 'p3' }]);
+  });
+
+  it('returns no bestsellers when no verified sales exist', async () => {
+    prisma.orderItem.groupBy.mockResolvedValue([]);
     prisma.product.count.mockResolvedValue(0);
 
     const result = await service.search(
@@ -174,6 +211,7 @@ describe('ProductSearchService', () => {
     );
 
     expect(result.products).toEqual([]);
-    expect(prisma.orderItem.groupBy).not.toHaveBeenCalled();
+    expect(result.total).toBe(0);
+    expect(prisma.product.findMany).not.toHaveBeenCalled();
   });
 });

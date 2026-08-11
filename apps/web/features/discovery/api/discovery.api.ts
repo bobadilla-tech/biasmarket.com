@@ -12,21 +12,4 @@ export const discoveryApi = {
       page: params.page === undefined ? undefined : String(params.page),
     });
   },
-  searchProducts(
-    params: {
-      q?: string;
-      page?: number;
-      limit?: number;
-      category?: string;
-      sort?: "latest" | "bestseller";
-    } = {},
-  ) {
-    return apiClient.productSearch.search({
-      q: params.q,
-      page: params.page === undefined ? undefined : String(params.page),
-      limit: params.limit === undefined ? undefined : String(params.limit),
-      category: params.category,
-      sort: params.sort,
-    });
-  },
 };

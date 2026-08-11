@@ -6,6 +6,11 @@ import type { ProductSearchResultResponseDto } from "@biasmarket/types";
 import { useLatestProducts } from "@/features/discovery";
 import { ProductGridCard } from "./product-grid-card";
 
+const SKELETON_KEYS = Array.from(
+  { length: 3 },
+  (_, index) => `trend-skeleton-${index}`,
+);
+
 function TrendPanel({
   title,
   sort,
@@ -38,9 +43,9 @@ function TrendPanel({
       </div>
       <div className="mt-4 grid grid-cols-3 gap-2.5 sm:mt-5 sm:gap-5">
         {loading ? (
-          Array.from({ length: 3 }).map((_, index) => (
+          SKELETON_KEYS.map((key) => (
             <div
-              key={index}
+              key={key}
               className="flex flex-col overflow-hidden rounded-[20px] bg-white"
             >
               <div className="aspect-[3/4] w-full animate-pulse bg-muted" />

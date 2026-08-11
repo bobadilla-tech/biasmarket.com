@@ -4,7 +4,7 @@
 // on hundreds of untouched files; this gates only the diff (against BASE_REF,
 // or origin/main locally) so new work can't ship unformatted while existing
 // files stay untouched. Files outside the given package dir are ignored.
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
@@ -13,32 +13,46 @@ import prettier from "prettier";
 const [pkgDir = "apps/api"] = process.argv.slice(2);
 const baseRef = process.env.BASE_REF || "origin/main";
 
-const repoRoot = execSync("git rev-parse --show-toplevel", { encoding: "utf8" }).trim();
+const repoRoot = execFileSync("git", ["rev-parse", "--show-toplevel"], {
+  encoding: "utf8",
+}).trim();
 process.chdir(repoRoot);
 
-function changedFiles() {
-  const worktree = execSync("git status --porcelain", { encoding: "utf8" })
-    .split("\n")
-    .filter(Boolean)
-    .map((line) => line.slice(3).trim());
-
-  let committed = [];
-  try {
-    committed = execSync(`git diff --name-only ${baseRef}...HEAD`, {
-      encoding: "utf8",
-    })
-      .split("\n")
-      .filter(Boolean);
-  } catch {
-    console.warn(
-      `[lint] base '${baseRef}' unavailable; checking worktree changes only`,
-    );
-  }
-
-  return [...new Set([...worktree, ...committed])].filter(Boolean);
+function git(args) {
+  return execFileSync("git", args, { encoding: "utf8" })
+    .split("\0")
+    .filter(Boolean);
 }
 
-const files = changedFiles().filter((file) => file.startsWith(`${pkgDir}/`));
+function changedFiles() {
+  // NUL-delimited name-only lists: `git diff --name-only` already resolves
+  // renames/copies to their new path (no `old -> new` parsing), avoids
+  // quoting issues on paths with special characters, and `-z` keeps paths
+  // containing newlines intact.
+  const committed = git(["diff", "--name-only", "-z", `${baseRef}...HEAD`]);
+  const unstaged = git(["diff", "--name-only", "-z"]);
+  const staged = git(["diff", "--cached", "--name-only", "-z"]);
+  const untracked = git([
+    "ls-files",
+    "--others",
+    "--exclude-standard",
+    "-z",
+  ]);
+
+  return [...new Set([...committed, ...unstaged, ...staged, ...untracked])];
+}
+
+let files;
+try {
+  files = changedFiles().filter((file) => file.startsWith(`${pkgDir}/`));
+} catch (error) {
+  console.error(
+    `[lint] cannot determine changed files: no valid comparison base ` +
+      `('${baseRef}'). Fetch it (e.g. git fetch origin main) or set BASE_REF.`,
+  );
+  console.error(`[lint] ${error.stderr || error.message}`);
+  process.exit(1);
+}
 
 const failing = [];
 for (const file of files) {

@@ -13,7 +13,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Link, useRouter } from "@/i18n/navigation";
 import { authClient } from "@/lib/auth-client";
-import { LanguageToggle } from "@/components/landing/language-toggle";
+import { LanguageToggle } from "@/features/landing";
 import { useMyStores } from "@/features/stores";
 import { StoreLogo } from "@/components/store-logo";
 

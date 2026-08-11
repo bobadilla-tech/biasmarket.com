@@ -40,7 +40,15 @@ export class ProductSearchService {
       }),
     };
 
-    const total = await this.prisma.product.count({ where });
+    const total = await this.prisma.product.count({
+      where:
+        sort === 'bestseller'
+          ? {
+              ...where,
+              orderItems: { some: { order: { paymentStatus: 'VERIFIED' } } },
+            }
+          : where,
+    });
 
     const products = await (sort === 'bestseller'
       ? this.findBestsellers(page, limit, where)
@@ -60,24 +68,17 @@ export class ProductSearchService {
     limit: number,
     where: Prisma.ProductWhereInput,
   ) {
-    // Rank on the database instead of loading every product and sorting in
-    // memory. Restrict the sales aggregation to the eligible product ids (the
-    // same `where` used for the total count), then fetch only the ids that
-    // made this page's ranking.
-    const eligibleIds = (
-      await this.prisma.product.findMany({ where, select: { id: true } })
-    ).map((row) => row.id);
-
-    if (eligibleIds.length === 0) return [];
-
+    // Rank and paginate entirely inside the database. The aggregation's
+    // `product` filter mirrors the search `where`, so eligibility is enforced
+    // by the join itself instead of materializing a catalog-sized id list.
     const rows = await this.prisma.orderItem.groupBy({
       by: ['productId'],
       where: {
-        productId: { in: eligibleIds },
+        product: where,
         order: { paymentStatus: 'VERIFIED' },
       },
       _sum: { quantity: true },
-      orderBy: { _sum: { quantity: 'desc' } },
+      orderBy: [{ _sum: { quantity: 'desc' } }, { productId: 'asc' }],
       skip: (page - 1) * limit,
       take: limit,
     });

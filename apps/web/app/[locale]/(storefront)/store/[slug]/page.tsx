@@ -14,15 +14,18 @@ async function getStore(slug: string) {
     (process.env.NODE_ENV === "development"
       ? "http://localhost:3000"
       : undefined);
-  const res = await fetch(`${apiUrl}/api/stores/${slug}/public`, {
-    cache: "no-store",
-  });
 
-  if (!res.ok) {
-    return null;
-  }
+  if (!apiUrl) return null;
 
   try {
+    const res = await fetch(`${apiUrl}/api/stores/${slug}/public`, {
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      return null;
+    }
+
     return await res.json();
   } catch {
     return null;

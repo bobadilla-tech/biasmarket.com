@@ -7,6 +7,11 @@ import type { ProductSearchResultResponseDto } from "@biasmarket/types";
 import { useLatestProducts } from "@/features/discovery";
 import { ProductGridCard } from "./product-grid-card";
 
+const SKELETON_KEYS = Array.from(
+  { length: 12 },
+  (_, index) => `discover-skeleton-${index}`,
+);
+
 export function DiscoverSection({
   initialData = null,
 }: {
@@ -24,9 +29,9 @@ export function DiscoverSection({
 
       <div className="mt-6 grid grid-cols-2 gap-3 sm:mt-8 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
         {loading ? (
-          Array.from({ length: 12 }).map((_, index) => (
+          SKELETON_KEYS.map((key) => (
             <div
-              key={index}
+              key={key}
               className="flex flex-col overflow-hidden rounded-[10px] border border-landing-graphite bg-white"
             >
               <div className="aspect-[3/4] w-full animate-pulse bg-muted" />

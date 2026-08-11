@@ -13,7 +13,7 @@ import {
 } from "@/features/contact";
 
 const inputClass =
-  "w-full rounded-lg border border-black/15 bg-background px-4 py-2.5 text-sm text-foreground outline-none transition focus:border-brand-pink focus:ring-2 focus:ring-brand-pink/30 placeholder:text-muted-foreground";
+  "w-full rounded-lg border border-black/40 bg-background px-4 py-2.5 text-sm text-foreground transition placeholder:text-muted-foreground focus:border-brand-pink focus:ring-2 focus:ring-brand-pink/60";
 
 export function ContactForm() {
   const t = useTranslations("marketing.contactPage.form");

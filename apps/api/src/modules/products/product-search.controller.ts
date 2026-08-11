@@ -1,4 +1,5 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { ApiQuery } from '@nestjs/swagger';
 import { Public } from '@thallesp/nestjs-better-auth';
 import { ProductSearchService } from './product-search.service.js';
@@ -10,6 +11,8 @@ export class ProductSearchController {
   constructor(private productSearch: ProductSearchService) {}
 
   @Public()
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 60 } })
   @ApiQuery({ name: 'q', required: false, type: String })
   @ApiQuery({ name: 'page', required: false, type: String })
   @ApiQuery({ name: 'limit', required: false, type: String })

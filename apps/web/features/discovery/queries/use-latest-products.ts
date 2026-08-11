@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import type { ProductSearchResultResponseDto } from "@biasmarket/types";
-import { discoveryApi } from "../api/discovery.api";
+import { apiClient } from "@/lib/api-client";
 
 export function useLatestProducts(
   limit = 12,
@@ -16,10 +16,10 @@ export function useLatestProducts(
   const { data, isPending, error } = useQuery({
     queryKey: ["discovery", "latest-products", limit, page, sort] as const,
     queryFn: () =>
-      discoveryApi.searchProducts({
+      apiClient.productSearch.search({
         q: undefined,
-        page,
-        limit,
+        page: String(page),
+        limit: String(limit),
         sort,
       }),
     initialData: opts.initialData ?? undefined,

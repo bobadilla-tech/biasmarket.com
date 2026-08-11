@@ -9,8 +9,19 @@ vi.mock("next/navigation", () => ({
   permanentRedirect: vi.fn(),
 }));
 
-vi.mock("@/features/discovery/api/discovery.api", () => ({
-  discoveryApi: { searchProducts: vi.fn() },
+vi.mock("@/features/discovery/server", () => ({
+  getHomeDiscoveryData: vi.fn().mockResolvedValue({
+    latestTrend: null,
+    bestSellers: null,
+    discoverProducts: null,
+  }),
+}));
+
+vi.mock("@/lib/api-client", () => ({
+  apiClient: {
+    productSearch: { search: vi.fn() },
+    stores: { findFeatured: vi.fn(), findDirectory: vi.fn() },
+  },
 }));
 
 const { default: Page } = await import("../app/[locale]/(marketing)/page");
