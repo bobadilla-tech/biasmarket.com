@@ -16,7 +16,7 @@ test("Page", () => {
   expect(
     screen.getByRole("heading", {
       level: 1,
-      name: /photocards/i,
+      name: /mundo K-Pop/i,
     }),
   ).toBeDefined();
 });

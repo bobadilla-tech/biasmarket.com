@@ -1,80 +1,60 @@
 {
   "languageToggle": { "en": "EN", "es": "ES" },
   "hero": {
-    "badge": "Hecho para GO's de K-pop",
-    "headline": "Maneja GO's, claims de photocards y drops de merch de K-pop sin el caos de las hojas de cálculo",
-    "subheadline": "Dale a tus compradores un solo link, junta comprobantes de pago y controla cada slot desde separado hasta enviado — hecho para cómo realmente vende el mundo K-pop.",
-    "ctaPrimary": "Quiero acceso anticipado",
-    "ctaSecondary": "Montar mi primera tienda K-pop"
+    "title": "Tu mundo K-Pop, todo en un solo lugar",
+    "subtitle": "Descubre álbumes, photocards, lightsticks y mucho mas de tus artistas favoritos",
+    "cta": "Comprar ahora",
+    "releasesTitle": "Nuevos lanzamientos",
+    "releasesSubtitle": "Sé el primero en descubrir lo ultimo del K-pop",
+    "releasesCta": "Ver novedades",
+    "blogTitle": "Biasmarket Blog",
+    "blogSubtitle": "Noticias, guias y todo sobre el mundo del K-pop",
+    "blogCta": "Leer Blog"
   },
-  "problem": {
-    "title": "El mundo K-pop se mueve demasiado rápido para herramientas sueltas",
-    "intro": "Estás combinando:",
+  "products": { "viewStore": "Ver en {name}" },
+  "trends": {
+    "title": "Tendencias",
+    "latestTitle": "Ultimos Productos",
+    "bestSellersTitle": "Más vendidos",
+    "viewAll": "Ver todo"
+  },
+  "categories": {
+    "title": "Categorias",
+    "heading": "Encuentra exactamente lo que amas",
+    "subtitle": "Explora por categoria y descubre tu proxima merch favorita",
+    "explore": "Explorar todo",
     "items": [
-      "Google Forms para GO's de álbumes y claims",
-      "Hojas de cálculo para slots, stock y saldos de compradores",
-      "DMs para confirmar pagos y cambios de dirección",
-      "Capturas para cada photocard, set y comprobante"
-    ],
-    "escalation": "Y empeora con cada pedido.",
-    "painPoints": [
-      "\"¿Ya viste mi pago?\"",
-      "Comprobantes perdidos entre chats",
-      "Revisar cada slot a mano después de cada claim",
-      "Scroll infinito en DMs durante semana de comeback"
-    ],
-    "outro": "Funciona para una tanda chiquita. Se rompe apenas el drop se pone serio."
+      { "key": "photocards", "name": "Photocards" },
+      { "key": "albums", "name": "Albums" },
+      { "key": "lightsticks", "name": "Lightsticks" },
+      { "key": "photobook", "name": "Photobook" },
+      { "key": "magazine", "name": "Magazine" },
+      { "key": "otros", "name": "Otros" }
+    ]
   },
-  "solution": {
-    "title": "Una tienda K-pop limpia para cada drop",
-    "intro": "Con Bias Market tienes:",
-    "items": [
-      "Una tienda para álbumes, photocards, lightsticks y merch fan-made",
-      "Los compradores reservan y piden directo — sin saltar entre formularios",
-      "Comprobantes de pago dentro del pedido, no enterrados en DMs",
-      "Estados para cada pedido, desde pago pendiente hasta enviado"
-    ],
-    "outro": "Maneja el drop desde un solo lugar, incluso cuando todo el fandom llega a la vez."
+  "discover": {
+    "title": "Más por descubrir",
+    "cta": "Ver mas productos"
   },
-  "featuredStores": {
-    "title": "Tiendas destacadas",
-    "subtitle": "Vendedores reales que ya manejan sus GOs en Bias Market."
-  },
-  "features": {
-    "title": "Hecho para el ciclo real del comercio K-pop",
+  "about": {
+    "title": "¿Qué es Biasmarket?",
+    "subtitle": "Conoce la historia detrás del mercado hecho por fans, para fans",
     "items": [
       {
-        "title": "Seguimiento de pedidos",
-        "description": "Cada claim, comprador y pedido en un solo panel. Se acabó excavar en hojas de cálculo."
+        "title": "Una comunidad hecha por fans",
+        "body": "Bias Market nace de la fanaticada K-pop. Conectamos GO'S y tiendas que entienden exactamente lo que buscas: álbumes, photocards, merch oficial y ediciones limitadas."
       },
       {
-        "title": "Comprobantes de pago",
-        "description": "Los compradores suben su captura directo al pedido, así cada comprobante queda pegado al claim correcto."
+        "title": "Apoya a sellers independientes",
+        "body": "Cada tienda dentro de Bias Market es manejada por un fan como tú. No hay bodegas gigantes ni intermediarios fríos, solo personas apasionadas vendiendo lo que aman."
       },
       {
-        "title": "Control del estado del pedido",
-        "description": "Mueve pedidos por Pendiente, Pagado, Verificado, Empacado y Enviado sin perder el hilo."
-      },
-      {
-        "title": "Tu propia página de tienda",
-        "description": "Un solo link para álbumes, photocards, merch y drops de comeback — en vez de cinco formularios sueltos."
+        "title": "Compra con tranquilidad",
+        "body": "Pagos con Yape, Plin y más. Seguimiento de tu pedido en todo momento y soporte real si algo sale mal. Tu bias merch está en buenas manos."
       }
-    ]
-  },
-  "socialProof": {
-    "title": "Pensado desde flujos reales de venta K-pop",
-    "intro": "Hecho especialmente para:",
-    "items": [
-      "Group orders de álbumes",
-      "Claims y venta de slots de photocards",
-      "Drops de merch fan-made y comeback"
-    ]
-  },
-  "cta": {
-    "title": "¿Lista para un comeback más tranquilo?",
-    "content": "Te ayudamos a montar tu primera tienda K-pop, cargar tu drop y dejar claro dónde deben comprar tus compradores.",
-    "ctaPrimary": "Probarlo en mi próximo drop",
-    "ctaSecondary": "Quiero acceso anticipado"
+    ],
+    "helpTitle": "¿Alguna pregunta? Encuentra aquí las respuestas.",
+    "helpCta": "Ir al Centro de ayuda"
   },
   "faq": {
     "title": "Preguntas frecuentes",
@@ -93,9 +73,30 @@
       }
     ]
   },
-  "finalHook": {
-    "title": "Deja de manejar drops desde tus DMs.",
-    "content": "Empieza a darle a tus compradores K-pop una tienda que sí aguanta el ritmo.",
-    "cta": "Quiero acceso anticipado"
+  "footer": {
+    "networks": "Nuestras redes",
+    "columns": [
+      {
+        "heading": "Comprar con Biasmarket",
+        "links": ["Como trabajamos", "Comprador FAQ", "Envios"]
+      },
+      {
+        "heading": "Vender con Biasmarket",
+        "links": ["Hacer una tienda", "Por que vender en Bias market", "Blog Biasmarket"]
+      },
+      {
+        "heading": "Sobre Biasmarket",
+        "links": ["Historia de Biasmarket", "Terminos de uso", "Politica de privacidad"]
+      },
+      {
+        "heading": "Ayuda",
+        "links": ["Centro de ayuda", "Configuracion de Privacidad"]
+      }
+    ],
+    "socials": [
+      { "label": "Facebook", "image": "/landing/social-fb.png" },
+      { "label": "Instagram", "image": "/landing/social-ig.png" },
+      { "label": "X", "image": "/landing/social-x.png" }
+    ]
   }
 }

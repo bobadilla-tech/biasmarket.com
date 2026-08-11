@@ -16,6 +16,11 @@ export async function generateMetadata({
   return { title: t("title") };
 }
 
-export default function ProductSearchPage() {
-  return <ProductSearchPageClient />;
+export default async function ProductSearchPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
+  return <ProductSearchPageClient initialQuery={q ?? ""} />;
 }

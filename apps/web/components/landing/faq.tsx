@@ -18,7 +18,7 @@ export function Faq() {
   const items = t.raw("items") as FaqItem[];
 
   return (
-    <section className="px-6 py-20 sm:px-10">
+    <section className="px-4 py-12 sm:px-10 sm:py-20">
       <div className="mx-auto max-w-2xl">
         <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
           {t("title")}

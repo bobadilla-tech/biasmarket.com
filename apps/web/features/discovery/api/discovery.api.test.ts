@@ -51,5 +51,21 @@ test("searchProducts passes q and stringifies page", async () => {
   expect(productSearchMock.search).toHaveBeenCalledWith({
     q: "album",
     page: "2",
+    limit: undefined,
+  });
+});
+
+test("searchProducts stringifies limit when provided", async () => {
+  productSearchMock.search.mockResolvedValue({
+    products: [],
+    total: 0,
+    page: 1,
+    limit: 12,
+  });
+  await discoveryApi.searchProducts({ page: 1, limit: 12 });
+  expect(productSearchMock.search).toHaveBeenCalledWith({
+    q: undefined,
+    page: "1",
+    limit: "12",
   });
 });

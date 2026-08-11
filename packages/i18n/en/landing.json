@@ -1,101 +1,102 @@
 {
   "languageToggle": { "en": "EN", "es": "ES" },
   "hero": {
-    "badge": "Built for K-pop GOMs",
-    "headline": "Run K-pop group orders, photocard claims, and fan merch drops without spreadsheet chaos",
-    "subheadline": "Give buyers one clean link, collect payment proofs, and track every slot from claimed to shipped — built for the way K-pop sellers actually work.",
-    "ctaPrimary": "Get early access",
-    "ctaSecondary": "Set up my first K-pop store"
+    "title": "Your K-Pop world, all in one place",
+    "subtitle": "Discover albums, photocards, lightsticks and more from your favorite artists",
+    "cta": "Shop now",
+    "releasesTitle": "New arrivals",
+    "releasesSubtitle": "Be the first to discover the latest in K-pop",
+    "releasesCta": "View new arrivals",
+    "blogTitle": "Biasmarket Blog",
+    "blogSubtitle": "News, guides and everything about the K-pop world",
+    "blogCta": "Read blog"
   },
-  "problem": {
-    "title": "K-pop selling moves too fast for scattered tools",
-    "intro": "You're juggling:",
+  "products": { "viewStore": "View in {name}" },
+  "trends": {
+    "title": "Trending",
+    "latestTitle": "Latest Products",
+    "bestSellersTitle": "Best sellers",
+    "viewAll": "View all"
+  },
+  "categories": {
+    "title": "Categories",
+    "heading": "Find exactly what you love",
+    "subtitle": "Explore by category and discover your next favorite merch",
+    "explore": "Explore all",
     "items": [
-      "Google Forms for album GOs and claims",
-      "Spreadsheets for slots, stock, and buyer balances",
-      "DMs for payment confirmations and address changes",
-      "Screenshots for every photocard, set, and proof"
-    ],
-    "escalation": "And it gets worse with every drop.",
-    "painPoints": [
-      "\"Did you get my payment?\"",
-      "Lost proof screenshots",
-      "Manual slot checks after every claim",
-      "Endless DM scrolling during comeback week"
-    ],
-    "outro": "That works for one tiny batch. It breaks the moment a drop gets real."
+      { "key": "photocards", "name": "Photocards" },
+      { "key": "albums", "name": "Albums" },
+      { "key": "lightsticks", "name": "Lightsticks" },
+      { "key": "photobook", "name": "Photobook" },
+      { "key": "magazine", "name": "Magazine" },
+      { "key": "otros", "name": "Others" }
+    ]
   },
-  "solution": {
-    "title": "One clean K-pop storefront for every drop",
-    "intro": "With Bias Market, you get:",
-    "items": [
-      "A storefront for albums, photocards, lightsticks, and fan-made merch",
-      "Buyers claim and order directly — no form juggling",
-      "Payment proofs uploaded on the order, not buried in DMs",
-      "Statuses for every order, from pending payment to shipped"
-    ],
-    "outro": "Run the drop from one place, even when the fandom shows up all at once."
+  "discover": {
+    "title": "More to discover",
+    "cta": "View more products"
   },
-  "featuredStores": {
-    "title": "Featured stores",
-    "subtitle": "Real sellers already running their drops on Bias Market."
-  },
-  "features": {
-    "title": "Built for the K-pop commerce loop",
+  "about": {
+    "title": "What is Biasmarket?",
+    "subtitle": "Meet the story behind the market made by fans, for fans",
     "items": [
       {
-        "title": "Order tracking",
-        "description": "Every claim, buyer, and order in one dashboard. No more spreadsheet archaeology."
+        "title": "A community made by fans",
+        "body": "Bias Market was born from the K-pop fandom. We connect group orders and stores that understand exactly what you're looking for: albums, photocards, official merch and limited editions."
       },
       {
-        "title": "Payment proof collection",
-        "description": "Buyers upload screenshots straight to their order, so proofs stay attached to the right claim."
+        "title": "Support independent sellers",
+        "body": "Every store on Bias Market is run by a fan just like you. No giant warehouses or cold middlemen — just passionate people selling what they love."
       },
       {
-        "title": "Order status control",
-        "description": "Move orders through Pending, Paid, Verified, Packed, and Shipped without losing the thread."
-      },
-      {
-        "title": "Your own store page",
-        "description": "One link for albums, photocards, merch, and comeback drops — instead of five messy forms."
+        "title": "Buy with peace of mind",
+        "body": "Payments with Yape, Plin and more. Order tracking at every step and real support if something goes wrong. Your bias merch is in good hands."
       }
-    ]
-  },
-  "socialProof": {
-    "title": "Shaped around real K-pop selling workflows",
-    "intro": "Designed specifically for:",
-    "items": [
-      "Album group orders",
-      "Photocard claims and slot sales",
-      "Fan merch and comeback drops"
-    ]
-  },
-  "cta": {
-    "title": "Ready for a calmer next comeback?",
-    "content": "We'll help you set up your first K-pop store, import your drop, and make sure buyers know exactly where to order.",
-    "ctaPrimary": "Try it for my next drop",
-    "ctaSecondary": "Get early access"
+    ],
+    "helpTitle": "Any questions? Find the answers here.",
+    "helpCta": "Go to Help Center"
   },
   "faq": {
-    "title": "Questions",
+    "title": "Frequently asked questions",
     "items": [
       {
         "question": "Do I need a payment gateway?",
-        "answer": "No — buyers upload proof of payment manually. Bank transfer, Wise, PayPal, whatever you already use."
+        "answer": "No — buyers upload their proof of payment manually. Bank transfer, Wise, PayPal, whatever you already use."
       },
       {
-        "question": "Can I sell photocards, not just full group orders?",
-        "answer": "Yes — Bias Market is built for album GOs, individual photocard claims, set splits, and fan merch drops."
+        "question": "Can I sell only photocards, not full group orders?",
+        "answer": "Yes — Bias Market works for album group orders, individual photocard claims, set splits and fan-made merch drops."
       },
       {
-        "question": "Is this free?",
-        "answer": "Free for early sellers while we build out the product."
+        "question": "Is it free?",
+        "answer": "Free for early sellers while we keep building the product."
       }
     ]
   },
-  "finalHook": {
-    "title": "Stop running drops from your DMs.",
-    "content": "Start giving your K-pop buyers a store that keeps up.",
-    "cta": "Get early access"
+  "footer": {
+    "networks": "Our socials",
+    "columns": [
+      {
+        "heading": "Buy with Biasmarket",
+        "links": ["How we work", "Buyer FAQ", "Shipping"]
+      },
+      {
+        "heading": "Sell with Biasmarket",
+        "links": ["Open a store", "Why sell on Bias market", "Biasmarket Blog"]
+      },
+      {
+        "heading": "About Biasmarket",
+        "links": ["Biasmarket story", "Terms of use", "Privacy policy"]
+      },
+      {
+        "heading": "Help",
+        "links": ["Help Center", "Privacy Settings"]
+      }
+    ],
+    "socials": [
+      { "label": "Facebook", "image": "/landing/social-fb.png" },
+      { "label": "Instagram", "image": "/landing/social-ig.png" },
+      { "label": "X", "image": "/landing/social-x.png" }
+    ]
   }
 }

@@ -13,10 +13,14 @@ import { useProductSearch } from "@/features/discovery";
 
 const PAGE_SIZE = 24;
 
-export function ProductSearchPageClient() {
+export function ProductSearchPageClient({
+  initialQuery = "",
+}: {
+  initialQuery?: string;
+}) {
   const t = useTranslations("storefront.productSearch");
   const tCommon = useTranslations("common");
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(initialQuery);
   const [page, setPage] = useState(1);
   const { result, loading, error } = useProductSearch(q, page);
 

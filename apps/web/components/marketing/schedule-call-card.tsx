@@ -9,7 +9,7 @@ export function ScheduleCallCard() {
   const t = useTranslations("marketing.scheduleCallCard");
 
   return (
-    <div className="flex flex-col items-start gap-4 rounded-2xl border border-white/10 p-6 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col items-start gap-4 rounded-2xl border border-black/10 p-6 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-3">
         <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-violet/30">
           <Calendar className="size-5 text-white" />

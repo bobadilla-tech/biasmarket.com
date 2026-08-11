@@ -30,7 +30,7 @@ export function EnterprisePage() {
           {features.map((item) => (
             <div
               key={item.title}
-              className="rounded-2xl border border-white/10 p-6"
+              className="rounded-2xl border border-black/10 p-6"
             >
               <h3 className="font-semibold">{item.title}</h3>
               <p className="mt-2 text-sm text-muted-foreground">
@@ -40,7 +40,7 @@ export function EnterprisePage() {
           ))}
         </section>
 
-        <section className="mt-16 rounded-2xl border border-white/10 p-8 text-center">
+        <section className="mt-16 rounded-2xl border border-black/10 p-8 text-center">
           <h2 className="text-2xl font-bold tracking-tight">
             {t("cta.heading")}
           </h2>

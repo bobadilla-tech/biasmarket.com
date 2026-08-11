@@ -3,12 +3,23 @@
     "links": {
       "founder": "Fundadores",
       "enterprise": "Empresas",
-      "contact": "Contacto"
+      "contact": "Contacto",
+      "about": "Acerca de",
+      "help": "Ayuda",
+      "blog": "Blog",
+      "new": "New"
     },
     "logIn": "Iniciar sesión",
     "signUp": "Registrarse",
     "myAccount": "Mi cuenta",
-    "openMenu": "Abrir menú"
+    "openMenu": "Abrir menú",
+    "searchPlaceholder": "Search Items",
+    "search": "Buscar",
+    "cart": "Carrito",
+    "account": "Mi cuenta",
+    "signOut": "Cerrar sesión",
+    "myStores": "Mis tiendas",
+    "createStore": "Crear una tienda"
   },
   "footer": {
     "navHeading": "Sitio",

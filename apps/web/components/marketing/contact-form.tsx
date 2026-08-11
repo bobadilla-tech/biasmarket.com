@@ -13,7 +13,7 @@ import {
 } from "@/features/contact";
 
 const inputClass =
-  "w-full rounded-lg border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-foreground outline-none transition focus:border-brand-pink focus:ring-2 focus:ring-brand-pink/30 placeholder:text-muted-foreground";
+  "w-full rounded-lg border border-black/15 bg-background px-4 py-2.5 text-sm text-foreground outline-none transition focus:border-brand-pink focus:ring-2 focus:ring-brand-pink/30 placeholder:text-muted-foreground";
 
 export function ContactForm() {
   const t = useTranslations("marketing.contactPage.form");
@@ -42,7 +42,7 @@ export function ContactForm() {
 
   if (success) {
     return (
-      <div className="rounded-2xl border border-white/10 p-8 text-center">
+      <div className="rounded-2xl border border-black/10 p-8 text-center">
         <p className="font-semibold">{t("success")}</p>
       </div>
     );
@@ -51,7 +51,7 @@ export function ContactForm() {
   return (
     <form
       onSubmit={onSubmit}
-      className="flex flex-col gap-4 rounded-2xl border border-white/10 p-8"
+      className="flex flex-col gap-4 rounded-2xl border border-black/10 p-8"
     >
       <div>
         <label htmlFor="name" className="mb-2 block text-sm font-medium">
