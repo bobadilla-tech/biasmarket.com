@@ -208,8 +208,11 @@
 }
 
 .store-theme-primary-button {
-  background: linear-gradient(135deg, var(--store-accent) 0%,
-    var(--store-primary) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--store-accent) 0%,
+    var(--store-primary) 100%
+  );
   color: white;
   box-shadow: 0 14px 30px var(--store-shadow);
 }

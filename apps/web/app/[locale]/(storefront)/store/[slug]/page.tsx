@@ -8,40 +8,23 @@ import { ProductCard } from "@/components/storefront/product-card";
 import { StoreSectionRenderer } from "@/components/storefront/section-renderer";
 
 async function getStore(slug: string) {
-  const apiUrl = process.env.INTERNAL_API_URL ??
+  const apiUrl =
+    process.env.INTERNAL_API_URL ??
     process.env.NEXT_PUBLIC_API_URL ??
     (process.env.NODE_ENV === "development"
       ? "http://localhost:3000"
       : undefined);
-  console.log(`[store page] getStore() apiUrl=${apiUrl} slug=${slug}`);
   const res = await fetch(`${apiUrl}/api/stores/${slug}/public`, {
     cache: "no-store",
   });
 
-  console.log(
-    `[store page] fetch -> ${apiUrl}/api/stores/${slug}/public status=${res.status}`,
-  );
-
   if (!res.ok) {
-    try {
-      const text = await res.text();
-      console.log(
-        `[store page] fetch body (truncated): ${text.slice(0, 1000)}`,
-      );
-    } catch (e) {
-      console.log(`[store page] failed to read error body: ${String(e)}`);
-    }
     return null;
   }
 
   try {
-    const json = await res.json();
-    console.log(
-      `[store page] fetched store keys: ${Object.keys(json || {}).join(",")}`,
-    );
-    return json;
-  } catch (e) {
-    console.log(`[store page] failed to parse JSON: ${String(e)}`);
+    return await res.json();
+  } catch {
     return null;
   }
 }
@@ -252,11 +235,13 @@ export default async function StorePage({
         </div>
       </header>
       <main className="max-w-5xl mx-auto px-4 py-8 space-y-10">
-        {visibleSections.length === 0
-          ? soldOutProducts.length > 0
-            ? null
-            : <p className="text-gray-500 text-center">{t("noProducts")}</p>
-          : <StoreSectionRenderer slug={slug} sections={visibleSections} />}
+        {visibleSections.length === 0 ? (
+          soldOutProducts.length > 0 ? null : (
+            <p className="text-gray-500 text-center">{t("noProducts")}</p>
+          )
+        ) : (
+          <StoreSectionRenderer slug={slug} sections={visibleSections} />
+        )}
         {/* Sold-out section rendered after visible sections */}
         {soldOutProducts.length > 0 && (
           <section

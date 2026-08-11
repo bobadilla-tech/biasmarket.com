@@ -8,7 +8,6 @@ dist
 postgres_data/
 .pnpm-store/
 .claude/
-.marscode/
 coverage/
 cookies.txt
 .mailer-dev/

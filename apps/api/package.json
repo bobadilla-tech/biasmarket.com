@@ -14,6 +14,7 @@
     "pretypecheck": "pnpm generate:swagger-metadata",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "lint": "node ../../scripts/lint-changed-files.mjs apps/api",
     "start": "nest start",
     "dev": "nest start --watch",
     "start:dev": "nest start --watch",

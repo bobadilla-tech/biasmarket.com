@@ -38,9 +38,7 @@ export function FounderPage() {
               <p className="mt-1 text-sm text-muted-foreground">
                 {member.role}
               </p>
-              <p className="mt-3 text-sm text-muted-foreground">
-                {member.bio}
-              </p>
+              <p className="mt-3 text-sm text-muted-foreground">{member.bio}</p>
             </div>
           ))}
         </section>

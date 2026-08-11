@@ -2,8 +2,6 @@
 
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { buttonVariants } from "@/components/ui/button";
-import { Link } from "@/i18n/navigation";
 
 interface AboutItem {
   title: string;
@@ -53,22 +51,6 @@ export function AboutSection() {
             </p>
           </div>
         ))}
-      </div>
-
-      <div className="mt-12 flex flex-col items-center gap-5 sm:mt-14 sm:gap-6">
-        <p className="text-center text-lg font-medium sm:text-2xl">
-          {t("helpTitle")}
-        </p>
-        <Link
-          href="/contact"
-          className={buttonVariants({
-            variant: "outline",
-            className:
-              "h-14 w-full rounded-[10px] border-0 bg-landing-gray px-12 text-lg text-foreground hover:bg-landing-gray/80 sm:h-[63px] sm:w-auto sm:text-xl",
-          })}
-        >
-          {t("helpCta")}
-        </Link>
       </div>
     </section>
   );

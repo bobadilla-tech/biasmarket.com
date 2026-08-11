@@ -2,18 +2,26 @@
 
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+import type { ProductSearchResultResponseDto } from "@biasmarket/types";
 import { useLatestProducts } from "@/features/discovery";
 import { ProductGridCard } from "./product-grid-card";
 
 function TrendPanel({
   title,
+  sort,
+  initialData,
   onNavigate,
 }: {
   title: string;
+  sort: "latest" | "bestseller";
+  initialData?: ProductSearchResultResponseDto | null;
   onNavigate: () => void;
 }) {
   const t = useTranslations("landing.trends");
-  const { result, loading } = useLatestProducts(3);
+  const { result, loading, error } = useLatestProducts(3, 1, {
+    sort,
+    initialData,
+  });
   const products = result?.products ?? [];
 
   return (
@@ -29,8 +37,8 @@ function TrendPanel({
         </button>
       </div>
       <div className="mt-4 grid grid-cols-3 gap-2.5 sm:mt-5 sm:gap-5">
-        {loading || products.length === 0
-          ? Array.from({ length: 3 }).map((_, index) => (
+        {loading ? (
+          Array.from({ length: 3 }).map((_, index) => (
             <div
               key={index}
               className="flex flex-col overflow-hidden rounded-[20px] bg-white"
@@ -42,19 +50,31 @@ function TrendPanel({
               </div>
             </div>
           ))
-          : products.map((product) => (
+        ) : error || products.length === 0 ? (
+          <p className="col-span-3 rounded-[20px] bg-white px-6 py-10 text-center text-sm text-muted-foreground">
+            {error ? t("error") : t("empty")}
+          </p>
+        ) : (
+          products.map((product) => (
             <ProductGridCard
               key={product.id}
               product={product}
               className="rounded-[20px] border-transparent"
             />
-          ))}
+          ))
+        )}
       </div>
     </div>
   );
 }
 
-export function TrendsSection() {
+export function TrendsSection({
+  latestInitialData = null,
+  bestSellersInitialData = null,
+}: {
+  latestInitialData?: ProductSearchResultResponseDto | null;
+  bestSellersInitialData?: ProductSearchResultResponseDto | null;
+}) {
   const t = useTranslations("landing.trends");
   const router = useRouter();
 
@@ -66,11 +86,15 @@ export function TrendsSection() {
       <div className="mt-6 grid gap-5 sm:mt-8 sm:gap-8 lg:grid-cols-2">
         <TrendPanel
           title={t("latestTitle")}
+          sort="latest"
+          initialData={latestInitialData}
           onNavigate={() => router.push("/search")}
         />
         <TrendPanel
           title={t("bestSellersTitle")}
-          onNavigate={() => router.push("/search")}
+          sort="bestseller"
+          initialData={bestSellersInitialData}
+          onNavigate={() => router.push("/search?sort=bestseller")}
         />
       </div>
     </section>

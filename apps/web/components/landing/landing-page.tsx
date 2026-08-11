@@ -1,3 +1,4 @@
+import type { ProductSearchResultResponseDto } from "@biasmarket/types";
 import { Footer } from "@/components/marketing/footer";
 import { AboutSection } from "./about-section";
 import { CategoriesSection } from "./categories-section";
@@ -6,13 +7,24 @@ import { Faq } from "./faq";
 import { Hero } from "./hero";
 import { TrendsSection } from "./trends-section";
 
-export function LandingPage() {
+export function LandingPage({
+  latestProducts = null,
+  bestSellers = null,
+  discoverProducts = null,
+}: {
+  latestProducts?: ProductSearchResultResponseDto | null;
+  bestSellers?: ProductSearchResultResponseDto | null;
+  discoverProducts?: ProductSearchResultResponseDto | null;
+}) {
   return (
     <div className="landing-theme min-h-screen bg-background text-foreground">
       <Hero />
-      <TrendsSection />
+      <TrendsSection
+        latestInitialData={latestProducts}
+        bestSellersInitialData={bestSellers}
+      />
       <CategoriesSection />
-      <DiscoverSection />
+      <DiscoverSection initialData={discoverProducts} />
       <AboutSection />
       <Faq />
       <Footer />

@@ -16,7 +16,9 @@
     "title": "Tendencias",
     "latestTitle": "Ultimos Productos",
     "bestSellersTitle": "Más vendidos",
-    "viewAll": "Ver todo"
+    "viewAll": "Ver todo",
+    "empty": "Aún no hay productos.",
+    "error": "Algo salió mal. Inténtalo de nuevo."
   },
   "categories": {
     "title": "Categorias",
@@ -34,7 +36,9 @@
   },
   "discover": {
     "title": "Más por descubrir",
-    "cta": "Ver mas productos"
+    "cta": "Ver mas productos",
+    "empty": "Aún no hay productos.",
+    "error": "Algo salió mal. Inténtalo de nuevo."
   },
   "about": {
     "title": "¿Qué es Biasmarket?",
@@ -52,9 +56,7 @@
         "title": "Compra con tranquilidad",
         "body": "Pagos con Yape, Plin y más. Seguimiento de tu pedido en todo momento y soporte real si algo sale mal. Tu bias merch está en buenas manos."
       }
-    ],
-    "helpTitle": "¿Alguna pregunta? Encuentra aquí las respuestas.",
-    "helpCta": "Ir al Centro de ayuda"
+    ]
   },
   "faq": {
     "title": "Preguntas frecuentes",

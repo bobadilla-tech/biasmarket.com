@@ -33,9 +33,7 @@ export function EnterprisePage() {
               className="rounded-2xl border border-black/10 p-6"
             >
               <h3 className="font-semibold">{item.title}</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {item.body}
-              </p>
+              <p className="mt-2 text-sm text-muted-foreground">{item.body}</p>
             </div>
           ))}
         </section>

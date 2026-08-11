@@ -52,6 +52,29 @@ test("searchProducts passes q and stringifies page", async () => {
     q: "album",
     page: "2",
     limit: undefined,
+    category: undefined,
+    sort: undefined,
+  });
+});
+
+test("searchProducts passes category and sort when provided", async () => {
+  productSearchMock.search.mockResolvedValue({
+    products: [],
+    total: 0,
+    page: 1,
+    limit: 24,
+  });
+  await discoveryApi.searchProducts({
+    page: 1,
+    category: "Photocards",
+    sort: "bestseller",
+  });
+  expect(productSearchMock.search).toHaveBeenCalledWith({
+    q: undefined,
+    page: "1",
+    limit: undefined,
+    category: "Photocards",
+    sort: "bestseller",
   });
 });
 
@@ -67,5 +90,7 @@ test("searchProducts stringifies limit when provided", async () => {
     q: undefined,
     page: "1",
     limit: "12",
+    category: undefined,
+    sort: undefined,
   });
 });

@@ -24,17 +24,17 @@ export function ProductGridCard({
       )}
     >
       <div className="relative aspect-[3/4] w-full overflow-hidden bg-white">
-        {product.images[0]
-          ? (
-            <Image
-              src={product.images[0]}
-              alt={product.name}
-              fill
-              sizes="(min-width: 768px) 200px, 160px"
-              className="object-cover"
-            />
-          )
-          : <div className="size-full bg-muted" />}
+        {product.images[0] ? (
+          <Image
+            src={product.images[0]}
+            alt={product.name}
+            fill
+            sizes="(min-width: 768px) 200px, 160px"
+            className="object-cover"
+          />
+        ) : (
+          <div className="size-full bg-muted" />
+        )}
       </div>
       <div className="flex flex-col gap-0.5 px-2.5 py-2 sm:gap-1 sm:px-3 sm:py-2.5">
         <p className="truncate text-xs font-semibold text-black sm:text-sm">

@@ -9,10 +9,15 @@ vi.mock("next/navigation", () => ({
   permanentRedirect: vi.fn(),
 }));
 
+vi.mock("@/features/discovery/api/discovery.api", () => ({
+  discoveryApi: { searchProducts: vi.fn() },
+}));
+
 const { default: Page } = await import("../app/[locale]/(marketing)/page");
 
-test("Page", () => {
-  renderWithProviders(<Page />);
+test("Page", async () => {
+  const page = await Page();
+  renderWithProviders(page);
   expect(
     screen.getByRole("heading", {
       level: 1,

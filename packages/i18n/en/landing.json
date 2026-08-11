@@ -16,7 +16,9 @@
     "title": "Trending",
     "latestTitle": "Latest Products",
     "bestSellersTitle": "Best sellers",
-    "viewAll": "View all"
+    "viewAll": "View all",
+    "empty": "No products yet.",
+    "error": "Something went wrong. Try again."
   },
   "categories": {
     "title": "Categories",
@@ -34,7 +36,9 @@
   },
   "discover": {
     "title": "More to discover",
-    "cta": "View more products"
+    "cta": "View more products",
+    "empty": "No products yet.",
+    "error": "Something went wrong. Try again."
   },
   "about": {
     "title": "What is Biasmarket?",
@@ -52,9 +56,7 @@
         "title": "Buy with peace of mind",
         "body": "Payments with Yape, Plin and more. Order tracking at every step and real support if something goes wrong. Your bias merch is in good hands."
       }
-    ],
-    "helpTitle": "Any questions? Find the answers here.",
-    "helpCta": "Go to Help Center"
+    ]
   },
   "faq": {
     "title": "Frequently asked questions",

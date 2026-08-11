@@ -73,12 +73,9 @@ export function Hero() {
             <p className="mt-2 max-w-[16rem] text-justify text-sm text-foreground/90 sm:text-base lg:text-lg">
               {t("blogSubtitle")}
             </p>
-            <Link
-              href="/contact"
-              className="mt-5 inline-block text-lg font-medium text-brand-pink hover:underline sm:mt-6 sm:text-xl"
-            >
+            <span className="mt-5 inline-block text-lg font-medium text-brand-pink sm:mt-6 sm:text-xl">
               {t("blogCta")}
-            </Link>
+            </span>
             <Image
               src="/landing/sticker.png"
               alt=""

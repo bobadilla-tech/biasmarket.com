@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { LogOut, Menu, Search, ShoppingCart, User } from "lucide-react";
+import { LogOut, Menu, Search, User } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -17,29 +17,43 @@ import { LanguageToggle } from "@/components/landing/language-toggle";
 import { useMyStores } from "@/features/stores";
 import { StoreLogo } from "@/components/store-logo";
 
-function NavLinks(
-  { onNavigate, className }: { onNavigate?: () => void; className?: string },
-) {
+function NavLinks({
+  onNavigate,
+  className,
+}: {
+  onNavigate?: () => void;
+  className?: string;
+}) {
   const t = useTranslations("marketing.navbar");
   const items = [
     { key: "about", href: "/founder" },
     { key: "help", href: "/contact" },
-    { key: "blog", href: "/contact" },
+    { key: "stores", href: "/stores" },
     { key: "new", href: "/search" },
   ] as const;
 
   return (
     <nav className={className}>
-      {items.map(({ key, href }) => (
-        <Link
-          key={key}
-          href={href}
-          onClick={onNavigate}
-          className="transition-colors hover:text-primary"
-        >
-          {t(`links.${key}`)}
-        </Link>
-      ))}
+      {items.map(({ key, href }) =>
+        key === "help" ? (
+          <span
+            key={key}
+            aria-disabled="true"
+            className="cursor-not-allowed opacity-50"
+          >
+            {t(`links.${key}`)}
+          </span>
+        ) : (
+          <Link
+            key={key}
+            href={href}
+            onClick={onNavigate}
+            className="transition-colors hover:text-primary"
+          >
+            {t(`links.${key}`)}
+          </Link>
+        ),
+      )}
     </nav>
   );
 }
@@ -79,10 +93,9 @@ function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const { data: session, isPending } = authClient.useSession();
-  const {
-    data: stores,
-    isPending: storesPending,
-  } = useMyStores({ enabled: !!session });
+  const { data: stores, isPending: storesPending } = useMyStores({
+    enabled: !!session,
+  });
 
   const closeAndNavigate = () => {
     setOpen(false);
@@ -114,106 +127,100 @@ function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
         }
       />
       <PopoverContent align="end" className="w-64 p-2">
-        {session
-          ? (
-            <div className="flex flex-col">
-              <div className="px-2 pt-1 pb-2">
-                <p className="truncate text-sm font-semibold">
-                  {session.user.name}
-                </p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {session.user.email}
-                </p>
-              </div>
-              <Separator />
-              <div className="pt-1">
-                <p className="px-2 pb-1 text-xs font-medium text-muted-foreground">
-                  {t("myStores")}
-                </p>
-                {storesPending
-                  ? (
-                    <div className="animate-pulse space-y-1 px-2">
-                      <div className="h-8 rounded-lg bg-muted" />
-                      <div className="h-8 rounded-lg bg-muted" />
-                    </div>
-                  )
-                  : stores && stores.length > 0
-                  ? (
-                    <div className="flex flex-col">
-                      {stores.map((store) => (
-                        <Link
-                          key={store.id}
-                          href={`/dashboard/${store.slug}`}
-                          onClick={closeAndNavigate}
-                          className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-muted"
-                        >
-                          <StoreLogo
-                            name={store.name}
-                            logoUrl={store.logoUrl}
-                            size={28}
-                            className="text-xs font-semibold"
-                          />
-                          <span className="min-w-0">
-                            <span className="block truncate text-sm text-foreground">
-                              {store.name}
-                            </span>
-                            <span className="block truncate text-xs text-muted-foreground">
-                              /{store.slug}
-                            </span>
-                          </span>
-                        </Link>
-                      ))}
-                    </div>
-                  )
-                  : (
+        {session ? (
+          <div className="flex flex-col">
+            <div className="px-2 pt-1 pb-2">
+              <p className="truncate text-sm font-semibold">
+                {session.user.name}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">
+                {session.user.email}
+              </p>
+            </div>
+            <Separator />
+            <div className="pt-1">
+              <p className="px-2 pb-1 text-xs font-medium text-muted-foreground">
+                {t("myStores")}
+              </p>
+              {storesPending ? (
+                <div className="animate-pulse space-y-1 px-2">
+                  <div className="h-8 rounded-lg bg-muted" />
+                  <div className="h-8 rounded-lg bg-muted" />
+                </div>
+              ) : stores && stores.length > 0 ? (
+                <div className="flex flex-col">
+                  {stores.map((store) => (
                     <Link
-                      href="/onboarding/create-store"
+                      key={store.id}
+                      href={`/dashboard/${store.slug}`}
                       onClick={closeAndNavigate}
-                      className={itemClassName}
+                      className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-muted"
                     >
-                      {t("createStore")}
+                      <StoreLogo
+                        name={store.name}
+                        logoUrl={store.logoUrl}
+                        size={28}
+                        className="text-xs font-semibold"
+                      />
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm text-foreground">
+                          {store.name}
+                        </span>
+                        <span className="block truncate text-xs text-muted-foreground">
+                          /{store.slug}
+                        </span>
+                      </span>
                     </Link>
-                  )}
-              </div>
-              <Separator className="my-1" />
-              <div className="flex flex-col">
+                  ))}
+                </div>
+              ) : (
                 <Link
-                  href="/account"
+                  href="/onboarding/create-store"
                   onClick={closeAndNavigate}
                   className={itemClassName}
                 >
-                  <User className="size-4" />
-                  {t("myAccount")}
+                  {t("createStore")}
                 </Link>
-                <button
-                  type="button"
-                  onClick={handleSignOut}
-                  className={`${itemClassName} text-red-600 hover:bg-red-50`}
-                >
-                  <LogOut className="size-4" />
-                  {t("signOut")}
-                </button>
-              </div>
+              )}
             </div>
-          )
-          : (
+            <Separator className="my-1" />
             <div className="flex flex-col">
               <Link
-                href="/login"
+                href="/account"
                 onClick={closeAndNavigate}
                 className={itemClassName}
               >
-                {t("logIn")}
+                <User className="size-4" />
+                {t("myAccount")}
               </Link>
-              <Link
-                href="/onboarding"
-                onClick={closeAndNavigate}
-                className={itemClassName}
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className={`${itemClassName} text-red-600 hover:bg-red-50`}
               >
-                {t("signUp")}
-              </Link>
+                <LogOut className="size-4" />
+                {t("signOut")}
+              </button>
             </div>
-          )}
+          </div>
+        ) : (
+          <div className="flex flex-col">
+            <Link
+              href="/login"
+              onClick={closeAndNavigate}
+              className={itemClassName}
+            >
+              {t("logIn")}
+            </Link>
+            <Link
+              href="/onboarding"
+              onClick={closeAndNavigate}
+              className={itemClassName}
+            >
+              {t("signUp")}
+            </Link>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );
@@ -244,14 +251,6 @@ function MobileMenu() {
           />
           <SearchForm onNavigate={close} />
           <div className="flex items-center gap-6">
-            <Link
-              href="/search"
-              onClick={close}
-              aria-label={t("cart")}
-              className="flex size-9 items-center justify-center rounded-full text-foreground hover:bg-muted"
-            >
-              <ShoppingCart className="size-6" />
-            </Link>
             <AccountMenu onNavigate={close} />
             <LanguageToggle />
           </div>
@@ -262,8 +261,6 @@ function MobileMenu() {
 }
 
 export function Navbar() {
-  const t = useTranslations("marketing.navbar");
-
   return (
     <header className="sticky top-0 z-40 border-b border-black/10 bg-white">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-6 px-6 sm:px-10 lg:h-20">
@@ -284,13 +281,6 @@ export function Navbar() {
         </div>
 
         <div className="hidden items-center gap-3 lg:flex">
-          <Link
-            href="/search"
-            aria-label={t("cart")}
-            className="flex size-9 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted"
-          >
-            <ShoppingCart className="size-6" />
-          </Link>
           <AccountMenu />
           <LanguageToggle />
         </div>

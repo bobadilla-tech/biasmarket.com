@@ -3,12 +3,17 @@
 import { useTranslations } from "next-intl";
 import { buttonVariants } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
+import type { ProductSearchResultResponseDto } from "@biasmarket/types";
 import { useLatestProducts } from "@/features/discovery";
 import { ProductGridCard } from "./product-grid-card";
 
-export function DiscoverSection() {
+export function DiscoverSection({
+  initialData = null,
+}: {
+  initialData?: ProductSearchResultResponseDto | null;
+}) {
   const t = useTranslations("landing.discover");
-  const { result, loading } = useLatestProducts(12);
+  const { result, loading, error } = useLatestProducts(12, 1, { initialData });
   const products = result?.products ?? [];
 
   return (
@@ -18,8 +23,8 @@ export function DiscoverSection() {
       </h2>
 
       <div className="mt-6 grid grid-cols-2 gap-3 sm:mt-8 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
-        {loading || products.length === 0
-          ? Array.from({ length: 12 }).map((_, index) => (
+        {loading ? (
+          Array.from({ length: 12 }).map((_, index) => (
             <div
               key={index}
               className="flex flex-col overflow-hidden rounded-[10px] border border-landing-graphite bg-white"
@@ -31,9 +36,15 @@ export function DiscoverSection() {
               </div>
             </div>
           ))
-          : products.map((product) => (
+        ) : error || products.length === 0 ? (
+          <p className="col-span-full rounded-[10px] border border-landing-graphite bg-white px-6 py-14 text-center text-sm text-muted-foreground">
+            {error ? t("error") : t("empty")}
+          </p>
+        ) : (
+          products.map((product) => (
             <ProductGridCard key={product.id} product={product} />
-          ))}
+          ))
+        )}
       </div>
 
       <div className="mt-8 flex justify-center sm:mt-10">
@@ -41,7 +52,8 @@ export function DiscoverSection() {
           href="/search"
           className={buttonVariants({
             variant: "secondary",
-            className: "h-14 w-full rounded-[10px] px-12 text-lg sm:h-[63px] sm:w-auto sm:text-xl",
+            className:
+              "h-14 w-full rounded-[10px] px-12 text-lg sm:h-[63px] sm:w-auto sm:text-xl",
           })}
         >
           {t("cta")}

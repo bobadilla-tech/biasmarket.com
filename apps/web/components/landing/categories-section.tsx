@@ -50,7 +50,7 @@ export function CategoriesSection() {
           {items.map(({ key, name }) => (
             <Link
               key={key}
-              href={`/search?q=${encodeURIComponent(name)}`}
+              href={`/search?category=${encodeURIComponent(name)}`}
               className="group flex items-center gap-3 overflow-hidden rounded-[10px] border border-landing-graphite bg-white px-3 py-4 transition hover:shadow-md sm:gap-4 sm:px-4 sm:py-6"
             >
               <Image
