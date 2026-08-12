@@ -88,12 +88,25 @@ test("clears the cart from localStorage once the order is created", async () => 
     "988888888",
   );
   await user.type(screen.getByPlaceholderText("Email"), "jane@example.com");
-  await user.click(screen.getByRole("button", { name: /Confirmar pedido/i }));
 
-  await waitFor(() => {
-    expect(
-      JSON.parse(globalThis.localStorage.getItem(CART_KEY) ?? "null"),
-    ).toEqual([]);
-    expect(screen.getByText(/pedido creado/i)).toBeTruthy();
-  });
+  const confirmButton = screen.getByRole("button", {
+    name: /Confirmar pedido/i,
+  }) as HTMLButtonElement;
+  // The button stays disabled until the delivery options resolve and the
+  // auto-selected delivery method is set — clicking while disabled is a
+  // no-op that would leave the cart untouched. Wait for it to enable so the
+  // submit reliably fires (avoids a race on slower CI machines).
+  await waitFor(() => expect(confirmButton.disabled).toBe(false));
+
+  await user.click(confirmButton);
+
+  await waitFor(
+    () => {
+      expect(
+        JSON.parse(globalThis.localStorage.getItem(CART_KEY) ?? "null"),
+      ).toEqual([]);
+      expect(screen.getByText(/pedido creado/i)).toBeTruthy();
+    },
+    { timeout: 2000 },
+  );
 });
