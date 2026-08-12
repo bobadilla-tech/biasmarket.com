@@ -1,4 +1,4 @@
-import { afterEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "../../../../../../test-utils/render-with-providers";
@@ -59,9 +59,29 @@ function seedCart() {
   globalThis.localStorage.setItem(CART_KEY, JSON.stringify([cartItem]));
 }
 
+// jsdom under Node 26 doesn't expose a `globalThis.localStorage` for vitest
+// to pick up, so real browser storage can't be relied on here — stub it the
+// same way lib/cart.test.ts and the sidebar tests do (fresh store per test).
+function createMemoryStorage(): Storage {
+  const store = new Map<string, string>();
+  return {
+    getItem: (key) => store.get(key) ?? null,
+    setItem: (key, value) => void store.set(key, value),
+    removeItem: (key) => void store.delete(key),
+    clear: () => store.clear(),
+    key: (index) => Array.from(store.keys())[index] ?? null,
+    get length() {
+      return store.size;
+    },
+  };
+}
+
+beforeEach(() => {
+  vi.stubGlobal("localStorage", createMemoryStorage());
+});
+
 afterEach(() => {
   vi.clearAllMocks();
-  globalThis.localStorage.clear();
 });
 
 test("clears the cart from localStorage once the order is created", async () => {
