@@ -1,4 +1,4 @@
-import { afterEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "../../../../../../test-utils/render-with-providers";
@@ -58,10 +58,26 @@ const cartItem = {
 function seedCart() {
   globalThis.localStorage.setItem(CART_KEY, JSON.stringify([cartItem]));
 }
+function createMemoryStorage(): Storage {
+  const store = new Map<string, string>();
+  return {
+    getItem: (key) => store.get(key) ?? null,
+    setItem: (key, value) => void store.set(key, value),
+    removeItem: (key) => void store.delete(key),
+    clear: () => store.clear(),
+    key: (index) => Array.from(store.keys())[index] ?? null,
+    get length() {
+      return store.size;
+    },
+  };
+}
+
+beforeEach(() => {
+  vi.stubGlobal("localStorage", createMemoryStorage());
+});
 
 afterEach(() => {
   vi.clearAllMocks();
-  globalThis.localStorage.clear();
 });
 
 test("clears the cart from localStorage once the order is created", async () => {
