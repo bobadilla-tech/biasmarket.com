@@ -59,9 +59,6 @@ function seedCart() {
   globalThis.localStorage.setItem(CART_KEY, JSON.stringify([cartItem]));
 }
 
-// jsdom under Node 26 doesn't expose a `globalThis.localStorage` for vitest
-// to pick up, so real browser storage can't be relied on here — stub it the
-// same way lib/cart.test.ts and the sidebar tests do (fresh store per test).
 function createMemoryStorage(): Storage {
   const store = new Map<string, string>();
   return {
