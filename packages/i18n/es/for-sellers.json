@@ -1,0 +1,105 @@
+{
+  "meta": {
+    "title": "Bias Market para vendedores",
+    "description": "Crea tu tienda de K-pop sin hojas de cálculo: GO's, claims de photocards y drops de merch con comprobantes de pago dentro del pedido."
+  },
+  "languageToggle": { "en": "EN", "es": "ES" },
+  "hero": {
+    "badge": "Hecho para GO's de K-pop",
+    "headline": "Maneja GO's, claims de photocards y drops de merch de K-pop sin el caos de las hojas de cálculo",
+    "subheadline": "Dale a tus compradores un solo link, junta comprobantes de pago y controla cada slot desde separado hasta enviado — hecho para cómo realmente vende el mundo K-pop.",
+    "ctaPrimary": "Quiero acceso anticipado",
+    "ctaSecondary": "Montar mi primera tienda K-pop"
+  },
+  "problem": {
+    "title": "El mundo K-pop se mueve demasiado rápido para herramientas sueltas",
+    "intro": "Estás combinando:",
+    "items": [
+      "Google Forms para GO's de álbumes y claims",
+      "Hojas de cálculo para slots, stock y saldos de compradores",
+      "DMs para confirmar pagos y cambios de dirección",
+      "Capturas para cada photocard, set y comprobante"
+    ],
+    "escalation": "Y empeora con cada pedido.",
+    "painPoints": [
+      "\"¿Ya viste mi pago?\"",
+      "Comprobantes perdidos entre chats",
+      "Revisar cada slot a mano después de cada claim",
+      "Scroll infinito en DMs durante semana de comeback"
+    ],
+    "outro": "Funciona para una tanda chiquita. Se rompe apenas el drop se pone serio."
+  },
+  "solution": {
+    "title": "Una tienda K-pop limpia para cada drop",
+    "intro": "Con Bias Market tienes:",
+    "items": [
+      "Una tienda para álbumes, photocards, lightsticks y merch fan-made",
+      "Los compradores reservan y piden directo — sin saltar entre formularios",
+      "Comprobantes de pago dentro del pedido, no enterrados en DMs",
+      "Estados para cada pedido, desde pago pendiente hasta enviado"
+    ],
+    "outro": "Maneja el drop desde un solo lugar, incluso cuando todo el fandom llega a la vez."
+  },
+  "featuredStores": {
+    "title": "Tiendas destacadas",
+    "subtitle": "Vendedores reales que ya manejan sus GOs en Bias Market."
+  },
+  "features": {
+    "title": "Hecho para el ciclo real del comercio K-pop",
+    "items": [
+      {
+        "title": "Seguimiento de pedidos",
+        "description": "Cada claim, comprador y pedido en un solo panel. Se acabó excavar en hojas de cálculo."
+      },
+      {
+        "title": "Comprobantes de pago",
+        "description": "Los compradores suben su captura directo al pedido, así cada comprobante queda pegado al claim correcto."
+      },
+      {
+        "title": "Control del estado del pedido",
+        "description": "Mueve pedidos por Pendiente, Pagado, Verificado, Empacado y Enviado sin perder el hilo."
+      },
+      {
+        "title": "Tu propia página de tienda",
+        "description": "Un solo link para álbumes, photocards, merch y drops de comeback — en vez de cinco formularios sueltos."
+      }
+    ]
+  },
+  "socialProof": {
+    "title": "Pensado desde flujos reales de venta K-pop",
+    "intro": "Hecho especialmente para:",
+    "items": [
+      "Group orders de álbumes",
+      "Claims y venta de slots de photocards",
+      "Drops de merch fan-made y comeback"
+    ]
+  },
+  "cta": {
+    "title": "¿Lista para un comeback más tranquilo?",
+    "content": "Te ayudamos a montar tu primera tienda K-pop, cargar tu drop y dejar claro dónde deben comprar tus compradores.",
+    "ctaPrimary": "Probarlo en mi próximo drop",
+    "ctaSecondary": "Quiero acceso anticipado"
+  },
+  "faq": {
+    "title": "Preguntas frecuentes",
+    "items": [
+      {
+        "question": "¿Necesito una pasarela de pago?",
+        "answer": "No — los compradores suben su comprobante manualmente. Transferencia, Wise, PayPal, lo que ya uses."
+      },
+      {
+        "question": "¿Puedo vender solo photocards, no group orders completos?",
+        "answer": "Sí — Bias Market sirve para GO's de álbumes, claims individuales de photocards, splits de sets y drops de merch fan-made."
+      },
+      {
+        "question": "¿Es gratis?",
+        "answer": "Gratis para las primeras vendedoras mientras seguimos construyendo el producto."
+      }
+    ]
+  },
+  "finalHook": {
+    "title": "Deja de manejar drops desde tus DMs.",
+    "content": "Empieza a darle a tus compradores K-pop una tienda que sí aguanta el ritmo.",
+    "cta": "Quiero acceso anticipado"
+  }
+}

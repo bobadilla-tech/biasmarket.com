@@ -177,6 +177,30 @@
   color-scheme: light;
 }
 
+/* Scoped to the for-sellers page — restores the original dark K-pop/photocard
+   palette the landing page had before the light pastel redesign, since
+   for-sellers keeps the pre-redesign sections and look. */
+.for-sellers-theme {
+  --background: var(--brand-ink);
+  --foreground: oklch(0.97 0.02 300);
+  --card: oklch(0.22 0.05 300);
+  --card-foreground: oklch(0.97 0.02 300);
+  --popover: oklch(0.22 0.05 300);
+  --popover-foreground: oklch(0.97 0.02 300);
+  --primary: var(--brand-pink);
+  --primary-foreground: oklch(0.98 0.01 350);
+  --secondary: var(--brand-violet);
+  --secondary-foreground: oklch(0.98 0.01 300);
+  --muted: oklch(0.27 0.05 300);
+  --muted-foreground: oklch(0.78 0.05 300);
+  --accent: var(--brand-gold);
+  --accent-foreground: oklch(0.2 0.05 85);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: var(--brand-pink);
+  color-scheme: dark;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

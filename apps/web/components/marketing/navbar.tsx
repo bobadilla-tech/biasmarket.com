@@ -29,6 +29,7 @@ function NavLinks({
     { key: "about", href: "/founder" },
     { key: "help", href: "/contact" },
     { key: "stores", href: "/stores" },
+    { key: "forSellers", href: "/for-sellers" },
     { key: "new", href: "/search" },
   ] as const;
 
