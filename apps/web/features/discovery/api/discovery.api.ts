@@ -12,10 +12,4 @@ export const discoveryApi = {
       page: params.page === undefined ? undefined : String(params.page),
     });
   },
-  searchProducts(params: { q?: string; page?: number } = {}) {
-    return apiClient.productSearch.search({
-      q: params.q,
-      page: params.page === undefined ? undefined : String(params.page),
-    });
-  },
 };

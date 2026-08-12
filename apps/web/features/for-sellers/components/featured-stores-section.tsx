@@ -1,13 +1,13 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { StoreCard } from "@/features/discovery";
 import { useFeaturedStores } from "../queries/use-featured-stores";
-import { StoreCard } from "./store-card";
 
 const FEATURED_LIMIT = 6;
 
 export function FeaturedStoresSection() {
-  const t = useTranslations("landing.featuredStores");
+  const t = useTranslations("forSellers.featuredStores");
   const { stores, loading, error } = useFeaturedStores(FEATURED_LIMIT);
 
   if (loading || error || stores.length === 0) {
@@ -25,7 +25,9 @@ export function FeaturedStoresSection() {
         </h2>
         <p className="mt-3 text-muted-foreground">{t("subtitle")}</p>
         <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-6">
-          {stores.map((store) => <StoreCard key={store.id} store={store} />)}
+          {stores.map((store) => (
+            <StoreCard key={store.id} store={store} />
+          ))}
         </div>
       </div>
     </section>

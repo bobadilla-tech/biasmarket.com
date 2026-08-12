@@ -9,14 +9,30 @@ vi.mock("next/navigation", () => ({
   permanentRedirect: vi.fn(),
 }));
 
+vi.mock("@/features/discovery/server", () => ({
+  getHomeDiscoveryData: vi.fn().mockResolvedValue({
+    latestTrend: null,
+    bestSellers: null,
+    discoverProducts: null,
+  }),
+}));
+
+vi.mock("@/lib/api-client", () => ({
+  apiClient: {
+    productSearch: { search: vi.fn() },
+    stores: { findFeatured: vi.fn(), findDirectory: vi.fn() },
+  },
+}));
+
 const { default: Page } = await import("../app/[locale]/(marketing)/page");
 
-test("Page", () => {
-  renderWithProviders(<Page />);
+test("Page", async () => {
+  const page = await Page();
+  renderWithProviders(page);
   expect(
     screen.getByRole("heading", {
       level: 1,
-      name: /photocards/i,
+      name: /mundo K-Pop/i,
     }),
   ).toBeDefined();
 });

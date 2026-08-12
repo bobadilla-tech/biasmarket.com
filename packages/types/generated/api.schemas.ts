@@ -2033,10 +2033,20 @@ export type ProductsControlleruploadImageParams = {
 };
 
 export type ProductSearchControllersearchParams = {
+  sort?: ProductSearchControllersearchSort;
+  category?: string;
   limit?: string;
   page?: string;
   q?: string;
 };
+
+export type ProductSearchControllersearchSort =
+  (typeof ProductSearchControllersearchSort)[keyof typeof ProductSearchControllersearchSort];
+
+export const ProductSearchControllersearchSort = {
+  latest: "latest",
+  bestseller: "bestseller",
+} as const;
 
 export type NotificationsControllerfindAllParams = {
   read?: string;

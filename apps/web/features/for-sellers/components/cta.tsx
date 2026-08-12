@@ -5,7 +5,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 
 export function Cta() {
-  const t = useTranslations("landing.cta");
+  const t = useTranslations("forSellers.cta");
 
   return (
     <section className="border-t border-white/10 bg-gradient-to-br from-brand-violet/40 via-brand-ink to-brand-pink/20 px-6 py-20 text-center sm:px-10">

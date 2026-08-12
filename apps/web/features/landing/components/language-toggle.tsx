@@ -13,7 +13,7 @@ export function LanguageToggle() {
     <Link
       href={pathname}
       locale={target}
-      className="inline-flex h-8 items-center justify-center rounded-lg border border-white/15 bg-white/5 px-3 text-sm font-medium text-foreground transition-colors hover:bg-white/10"
+      className="inline-flex h-8 items-center justify-center rounded-lg border border-black/15 bg-transparent px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
     >
       {t(target)}
     </Link>

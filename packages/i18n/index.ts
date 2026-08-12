@@ -4,6 +4,8 @@ import commonEn from "./en/common.json" with { type: "json" };
 import commonEs from "./es/common.json" with { type: "json" };
 import dashboardEn from "./en/dashboard.json" with { type: "json" };
 import dashboardEs from "./es/dashboard.json" with { type: "json" };
+import forSellersEn from "./en/for-sellers.json" with { type: "json" };
+import forSellersEs from "./es/for-sellers.json" with { type: "json" };
 import landingEn from "./en/landing.json" with { type: "json" };
 import landingEs from "./es/landing.json" with { type: "json" };
 import marketingEn from "./en/marketing.json" with { type: "json" };
@@ -17,6 +19,7 @@ const messages = {
   en: {
     admin: adminEn,
     common: commonEn,
+    forSellers: forSellersEn,
     landing: landingEn,
     marketing: marketingEn,
     dashboard: dashboardEn,
@@ -26,6 +29,7 @@ const messages = {
   es: {
     admin: adminEs,
     common: commonEs,
+    forSellers: forSellersEs,
     landing: landingEs,
     marketing: marketingEs,
     dashboard: dashboardEs,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { discoveryApi } from "../api/discovery.api";
+import { discoveryApi } from "@/features/discovery";
 
 export function useFeaturedStores(limit?: number) {
   const { data, isPending, error } = useQuery({
@@ -13,7 +13,9 @@ export function useFeaturedStores(limit?: number) {
     stores: data ?? [],
     loading: isPending,
     error: error
-      ? (error instanceof Error ? error.message : String(error))
+      ? error instanceof Error
+        ? error.message
+        : String(error)
       : null,
   };
 }

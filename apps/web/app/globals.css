@@ -43,6 +43,16 @@
   --color-brand-violet: var(--brand-violet);
   --color-brand-pink: var(--brand-pink);
   --color-brand-gold: var(--brand-gold);
+  --color-landing-pink: var(--landing-pink);
+  --color-landing-violet: var(--landing-violet);
+  --color-landing-purple: var(--landing-purple);
+  --color-landing-rose: var(--landing-rose);
+  --color-landing-blush: var(--landing-blush);
+  --color-landing-graphite: var(--landing-graphite);
+  --color-landing-footer: var(--landing-footer);
+  --color-landing-gray: var(--landing-gray);
+  --color-landing-link: var(--landing-link);
+  --color-landing-title: var(--landing-title);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -126,12 +136,51 @@
   --brand-violet: oklch(0.52 0.24 300);
   --brand-pink: oklch(0.66 0.25 350);
   --brand-gold: oklch(0.84 0.15 85);
+  --landing-pink: #ffeafe;
+  --landing-violet: #eadaff;
+  --landing-purple: #d7d2fb;
+  --landing-rose: #ffe7f3;
+  --landing-blush: #ffe7f8;
+  --landing-graphite: #8c8c8c;
+  --landing-footer: #e8e8e8;
+  --landing-gray: #d9d9d9;
+  --landing-link: #750edc;
+  --landing-title: #ff00b7;
 }
 
 /* Scoped to the landing page only — remaps shadcn's semantic tokens to the
-   K-pop/photocard palette without touching :root or .dark, so dashboard,
-   login, and storefront (which don't opt in) keep their existing look. */
+   light K-pop/pastel marketplace palette without touching :root or .dark, so
+   dashboard, login, and storefront (which don't opt in) keep their look. */
 .landing-theme {
+  --brand-ink: oklch(0.16 0.04 300);
+  --brand-violet: #8d2feb;
+  --brand-pink: #ff3db1;
+  --brand-gold: oklch(0.84 0.15 85);
+  --background: #ffffff;
+  --foreground: #000000;
+  --card: #ffffff;
+  --card-foreground: #000000;
+  --popover: #ffffff;
+  --popover-foreground: #000000;
+  --primary: var(--brand-pink);
+  --primary-foreground: #ffffff;
+  --secondary: var(--brand-violet);
+  --secondary-foreground: #ffffff;
+  --muted: #f5f5f5;
+  --muted-foreground: #6b7280;
+  --accent: var(--brand-violet);
+  --accent-foreground: #ffffff;
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: var(--landing-graphite);
+  --input: var(--landing-graphite);
+  --ring: var(--brand-pink);
+  color-scheme: light;
+}
+
+/* Scoped to the for-sellers page — restores the original dark K-pop/photocard
+   palette the landing page had before the light pastel redesign, since
+   for-sellers keeps the pre-redesign sections and look. */
+.for-sellers-theme {
   --background: var(--brand-ink);
   --foreground: oklch(0.97 0.02 300);
   --card: oklch(0.22 0.05 300);
@@ -183,8 +232,11 @@
 }
 
 .store-theme-primary-button {
-  background: linear-gradient(135deg, var(--store-accent) 0%,
-    var(--store-primary) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--store-accent) 0%,
+    var(--store-primary) 100%
+  );
   color: white;
   box-shadow: 0 14px 30px var(--store-shadow);
 }

@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 
 export function Problem() {
-  const t = useTranslations("landing.problem");
+  const t = useTranslations("forSellers.problem");
   const items = t.raw("items") as string[];
   const painPoints = t.raw("painPoints") as string[];
 

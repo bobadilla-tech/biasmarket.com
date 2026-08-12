@@ -32,20 +32,18 @@ export function FounderPage() {
           {team.map((member) => (
             <div
               key={member.name}
-              className="rounded-2xl border border-white/10 p-6"
+              className="rounded-2xl border border-black/10 p-6"
             >
               <h3 className="font-semibold">{member.name}</h3>
               <p className="mt-1 text-sm text-muted-foreground">
                 {member.role}
               </p>
-              <p className="mt-3 text-sm text-muted-foreground">
-                {member.bio}
-              </p>
+              <p className="mt-3 text-sm text-muted-foreground">{member.bio}</p>
             </div>
           ))}
         </section>
 
-        <section className="mt-16 rounded-2xl border border-white/10 p-8 text-center">
+        <section className="mt-16 rounded-2xl border border-black/10 p-8 text-center">
           <h2 className="text-2xl font-bold tracking-tight">
             {t("cta.heading")}
           </h2>

@@ -1,0 +1,34 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import type { ProductSearchResultResponseDto } from "@biasmarket/types";
+import { apiClient } from "@/lib/api-client";
+
+export function useLatestProducts(
+  limit = 12,
+  page = 1,
+  opts: {
+    sort?: "latest" | "bestseller";
+    initialData?: ProductSearchResultResponseDto | null;
+  } = {},
+) {
+  const sort = opts.sort ?? "latest";
+  const { data, isPending, error } = useQuery({
+    queryKey: ["discovery", "latest-products", limit, page, sort] as const,
+    queryFn: () =>
+      apiClient.productSearch.search({
+        q: undefined,
+        page: String(page),
+        limit: String(limit),
+        sort,
+      }),
+    initialData: opts.initialData ?? undefined,
+    staleTime: opts.initialData ? 5 * 60 * 1000 : 0,
+  });
+
+  return {
+    result: data ?? null,
+    loading: isPending,
+    error: error !== null,
+  };
+}

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import type { Locale } from "next-intl";
 import { getTranslations } from "next-intl/server";
-import { LandingPage } from "@/components/landing/landing-page";
+import { getHomeDiscoveryData } from "@/features/discovery/server";
+import { LandingPage } from "@/features/landing";
 
 export async function generateMetadata({
   params,
@@ -32,6 +33,15 @@ export async function generateMetadata({
   };
 }
 
-export default function Home() {
-  return <LandingPage />;
+export default async function Home() {
+  const { latestTrend, bestSellers, discoverProducts } =
+    await getHomeDiscoveryData();
+
+  return (
+    <LandingPage
+      latestProducts={latestTrend}
+      bestSellers={bestSellers}
+      discoverProducts={discoverProducts}
+    />
+  );
 }

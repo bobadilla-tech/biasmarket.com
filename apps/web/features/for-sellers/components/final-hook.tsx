@@ -5,7 +5,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 
 export function FinalHook() {
-  const t = useTranslations("landing.finalHook");
+  const t = useTranslations("forSellers.finalHook");
 
   return (
     <footer className="border-t border-white/10 px-6 py-16 text-center sm:px-10">

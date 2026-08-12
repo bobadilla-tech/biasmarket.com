@@ -3,12 +3,24 @@
     "links": {
       "founder": "Founders",
       "enterprise": "Enterprise",
-      "contact": "Contact"
+      "contact": "Contact",
+      "about": "About",
+      "help": "Help",
+      "stores": "Stores",
+      "forSellers": "For sellers",
+      "new": "New"
     },
     "logIn": "Log in",
     "signUp": "Sign up",
     "myAccount": "My account",
-    "openMenu": "Open menu"
+    "openMenu": "Open menu",
+    "searchPlaceholder": "Search Items",
+    "search": "Search",
+    "cart": "Cart",
+    "account": "My account",
+    "signOut": "Sign out",
+    "myStores": "My stores",
+    "createStore": "Create a store"
   },
   "footer": {
     "navHeading": "Site",

@@ -16,6 +16,29 @@ export async function generateMetadata({
   return { title: t("title") };
 }
 
-export default function ProductSearchPage() {
-  return <ProductSearchPageClient />;
+function parsePositiveInt(value: string | undefined): number | null {
+  if (value === undefined) return null;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+export default async function ProductSearchPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    q?: string;
+    category?: string;
+    sort?: string;
+    page?: string;
+  }>;
+}) {
+  const { q, category, sort, page } = await searchParams;
+  return (
+    <ProductSearchPageClient
+      initialQuery={q ?? ""}
+      initialCategory={category}
+      initialSort={sort === "bestseller" ? "bestseller" : "latest"}
+      initialPage={parsePositiveInt(page) ?? 1}
+    />
+  );
 }

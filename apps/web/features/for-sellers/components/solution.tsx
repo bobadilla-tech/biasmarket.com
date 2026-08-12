@@ -4,7 +4,7 @@ import { Check } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 export function Solution() {
-  const t = useTranslations("landing.solution");
+  const t = useTranslations("forSellers.solution");
   const items = t.raw("items") as string[];
 
   return (

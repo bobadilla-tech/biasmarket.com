@@ -14,7 +14,7 @@ interface FaqItem {
 }
 
 export function Faq() {
-  const t = useTranslations("landing.faq");
+  const t = useTranslations("forSellers.faq");
   const items = t.raw("items") as FaqItem[];
 
   return (

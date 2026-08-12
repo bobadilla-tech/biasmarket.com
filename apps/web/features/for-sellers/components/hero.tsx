@@ -7,7 +7,7 @@ import { Link } from "@/i18n/navigation";
 import { PhotocardStack } from "./photocard-stack";
 
 export function Hero() {
-  const t = useTranslations("landing.hero");
+  const t = useTranslations("forSellers.hero");
 
   return (
     <div className="relative overflow-hidden px-6 pt-16 pb-20 sm:px-10">

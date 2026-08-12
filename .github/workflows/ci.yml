@@ -135,6 +135,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+          # `lint-changed-files.mjs` diffs against origin/main; a shallow
+          # checkout has no base ref, which would fail the lint step.
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v6
         with:
@@ -186,6 +189,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+          # `lint-changed-files.mjs` diffs against origin/main; a shallow
+          # checkout has no base ref, which would fail the lint step.
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v6
         with:

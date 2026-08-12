@@ -14,7 +14,7 @@ interface Feature {
 }
 
 export function Features() {
-  const t = useTranslations("landing.features");
+  const t = useTranslations("forSellers.features");
   const items = t.raw("items") as Feature[];
 
   return (

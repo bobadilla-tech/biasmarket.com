@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 
 export function SocialProof() {
-  const t = useTranslations("landing.socialProof");
+  const t = useTranslations("forSellers.socialProof");
   const items = t.raw("items") as string[];
 
   return (
