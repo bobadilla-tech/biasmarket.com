@@ -42,36 +42,32 @@ function TrendPanel({
         </button>
       </div>
       <div className="mt-4 grid grid-cols-3 gap-2.5 sm:mt-5 sm:gap-5">
-        {loading
-          ? (
-            SKELETON_KEYS.map((key) => (
-              <div
-                key={key}
-                className="flex flex-col overflow-hidden rounded-[20px] bg-white"
-              >
-                <div className="aspect-[3/4] w-full animate-pulse bg-muted" />
-                <div className="space-y-2 p-3">
-                  <div className="h-3 w-4/5 animate-pulse rounded bg-muted" />
-                  <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
-                </div>
+        {loading ? (
+          SKELETON_KEYS.map((key) => (
+            <div
+              key={key}
+              className="flex flex-col overflow-hidden rounded-[20px] bg-white"
+            >
+              <div className="aspect-[3/4] w-full animate-pulse bg-muted" />
+              <div className="space-y-2 p-3">
+                <div className="h-3 w-4/5 animate-pulse rounded bg-muted" />
+                <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
               </div>
-            ))
-          )
-          : error || products.length === 0
-          ? (
-            <p className="col-span-3 rounded-[20px] bg-white px-6 py-10 text-center text-sm text-muted-foreground">
-              {error ? t("error") : t("empty")}
-            </p>
-          )
-          : (
-            products.map((product) => (
-              <ProductGridCard
-                key={product.id}
-                product={product}
-                className="rounded-[20px] border-transparent"
-              />
-            ))
-          )}
+            </div>
+          ))
+        ) : error || products.length === 0 ? (
+          <p className="col-span-3 rounded-[20px] bg-white px-6 py-10 text-center text-sm text-muted-foreground">
+            {error ? t("error") : t("empty")}
+          </p>
+        ) : (
+          products.map((product) => (
+            <ProductGridCard
+              key={product.id}
+              product={product}
+              className="rounded-[20px] border-transparent"
+            />
+          ))
+        )}
       </div>
     </div>
   );

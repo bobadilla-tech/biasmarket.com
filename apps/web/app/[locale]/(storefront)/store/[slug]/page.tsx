@@ -8,7 +8,8 @@ import { ProductCard } from "@/components/storefront/product-card";
 import { StoreSectionRenderer } from "@/components/storefront/section-renderer";
 
 async function getStore(slug: string) {
-  const apiUrl = process.env.INTERNAL_API_URL ??
+  const apiUrl =
+    process.env.INTERNAL_API_URL ??
     process.env.NEXT_PUBLIC_API_URL ??
     (process.env.NODE_ENV === "development"
       ? "http://localhost:3000"
@@ -237,13 +238,13 @@ export default async function StorePage({
         </div>
       </header>
       <main className="max-w-5xl mx-auto px-4 py-8 space-y-10">
-        {visibleSections.length === 0
-          ? (
-            soldOutProducts.length > 0
-              ? null
-              : <p className="text-gray-500 text-center">{t("noProducts")}</p>
+        {visibleSections.length === 0 ? (
+          soldOutProducts.length > 0 ? null : (
+            <p className="text-gray-500 text-center">{t("noProducts")}</p>
           )
-          : <StoreSectionRenderer slug={slug} sections={visibleSections} />}
+        ) : (
+          <StoreSectionRenderer slug={slug} sections={visibleSections} />
+        )}
         {/* Sold-out section rendered after visible sections */}
         {soldOutProducts.length > 0 && (
           <section

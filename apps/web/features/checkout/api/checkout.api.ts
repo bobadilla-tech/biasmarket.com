@@ -53,6 +53,9 @@ export const checkoutApi = {
     },
     fallbackErrorMessage?: string,
   ) {
+    if (!/^[a-z0-9-]+$/i.test(slug)) {
+      throw new Error("Invalid store slug");
+    }
     const formData = new FormData();
     formData.append("deliveryMethodType", values.deliveryMethodType);
     if (values.pickupPointId) {

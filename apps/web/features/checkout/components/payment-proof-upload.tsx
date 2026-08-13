@@ -55,33 +55,33 @@ export function PaymentProofUpload({
         )}
       >
         <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white">
-          {value
-            ? <FileText className="size-4 text-[var(--store-primary)]" />
-            : <Upload className="size-4 text-[var(--store-primary)]" />}
+          {value ? (
+            <FileText className="size-4 text-[var(--store-primary)]" />
+          ) : (
+            <Upload className="size-4 text-[var(--store-primary)]" />
+          )}
         </div>
 
         <div className="min-w-0 flex-1">
-          {value
-            ? (
-              <>
-                <p className="truncate text-sm font-semibold text-gray-800">
-                  {value.name}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {t("paymentProofSize", {
-                    size: (value.size / 1024).toFixed(1),
-                  })}
-                </p>
-              </>
-            )
-            : (
-              <>
-                <p className="text-sm font-semibold text-gray-800">
-                  {t("paymentProofLabel")}
-                </p>
-                <p className="text-xs text-gray-500">{t("paymentProofHint")}</p>
-              </>
-            )}
+          {value ? (
+            <>
+              <p className="truncate text-sm font-semibold text-gray-800">
+                {value.name}
+              </p>
+              <p className="text-xs text-gray-500">
+                {t("paymentProofSize", {
+                  size: (value.size / 1024).toFixed(1),
+                })}
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-semibold text-gray-800">
+                {t("paymentProofLabel")}
+              </p>
+              <p className="text-xs text-gray-500">{t("paymentProofHint")}</p>
+            </>
+          )}
         </div>
 
         {!value && (
