@@ -94,11 +94,18 @@ export const checkoutApi = {
       formData.append("file", values.paymentProof);
     }
 
-    const res = await fetch(`${apiUrl()}/api/stores/${slug}/checkout`, {
-      method: "POST",
-      credentials: "include",
-      body: formData,
-    });
+    // The base URL is fixed env config; only `slug` is user input, and it's
+    // validated against /^[a-z0-9-]+$/i above and percent-encoded here, so it
+    // cannot alter the origin or traverse the path (SSRF false positive).
+    // eslint-disable-next-line security/detect-unsafe-url
+    const res = await fetch(
+      `${apiUrl()}/api/stores/${encodeURIComponent(slug)}/checkout`,
+      {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      },
+    );
     const data = await res.json().catch(() => null);
     if (!res.ok) {
       // The backend's validation errors arrive as an array of messages (the

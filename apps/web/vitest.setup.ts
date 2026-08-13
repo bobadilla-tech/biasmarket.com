@@ -23,9 +23,7 @@ if (typeof window !== "undefined" && !globalThis.PointerEvent) {
 // previews. A no-op stub is enough — tests assert the preview <img> mounts
 // (and that a picked file's object URL gets created), never the blob bytes.
 if (typeof URL.createObjectURL !== "function") {
-  URL.createObjectURL = vi.fn(
-    () => `blob:preview-${Math.random().toString(36).slice(2)}`,
-  );
+  URL.createObjectURL = vi.fn(() => `blob:preview-${crypto.randomUUID()}`);
 }
 if (typeof URL.revokeObjectURL !== "function") {
   URL.revokeObjectURL = vi.fn();
