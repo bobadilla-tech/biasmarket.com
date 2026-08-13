@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Menu } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { usePathname } from "@/i18n/navigation";
 
 import { StoreSidebar } from "./store-sidebar";
 import type { DashboardStore } from "@/features/stores";
@@ -15,9 +17,15 @@ export function MobileSidebar({
   store: DashboardStore | null;
 }) {
   const t = useTranslations("dashboard.shell");
+  const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
 
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger
         render={
           <button
