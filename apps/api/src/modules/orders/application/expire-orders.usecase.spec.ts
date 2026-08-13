@@ -1,8 +1,16 @@
 import { Test, type TestingModule } from "@nestjs/testing";
 import { type Mock, vi } from "vitest";
+import { Prisma } from "@biasmarket/db";
 import { ExpireOrdersUseCase } from "./expire-orders.usecase.js";
 import { PrismaService } from "../../../prisma/prisma.service.js";
 import { NotificationsService } from "../../notifications/notifications.service.js";
+
+const order = (overrides: Record<string, unknown> = {}) => ({
+  storeId: "store-1",
+  requiredAmount: new Prisma.Decimal(100),
+  payments: [],
+  ...overrides,
+});
 
 describe("ExpireOrdersUseCase", () => {
   let useCase: ExpireOrdersUseCase;
@@ -44,11 +52,10 @@ describe("ExpireOrdersUseCase", () => {
 
   it("cancels expired PENDING_PAYMENT orders and releases finite-stock holds", async () => {
     prisma.order.findMany.mockResolvedValue([
-      {
+      order({
         id: "order-1",
-        storeId: "store-1",
         items: [{ variantId: "variant-1", quantity: 2 }],
-      },
+      }),
     ]);
     prisma.productVariant.findUnique.mockResolvedValue({
       id: "variant-1",
@@ -62,8 +69,20 @@ describe("ExpireOrdersUseCase", () => {
       data: { reserved: { decrement: 2 } },
     });
     expect(prisma.order.updateMany).toHaveBeenCalledWith({
-      where: { id: "order-1", paymentStatus: "PENDING_PAYMENT" },
-      data: { status: "CANCELLED", paymentStatus: "CANCELLED" },
+      where: {
+        id: "order-1",
+        paymentStatus: {
+          in: ["PENDING_PAYMENT", "PARTIALLY_PAID", "PAYMENT_SUBMITTED"],
+        },
+      },
+      data: {
+        status: "CANCELLED",
+        paymentStatus: "CANCELLED",
+        cancellationResolution: "RETAINED",
+        retainedAmount: new Prisma.Decimal(0),
+        releasedAmount: new Prisma.Decimal(0),
+        releasedResolution: null,
+      },
     });
     expect(prisma.auditLog.create).toHaveBeenCalledWith({
       data: {
@@ -72,7 +91,11 @@ describe("ExpireOrdersUseCase", () => {
         action: "order.expired",
         entityType: "Order",
         entityId: "order-1",
-        metadata: {},
+        metadata: {
+          resolution: "RETAINED",
+          retainedAmount: 0,
+          releasedAmount: 0,
+        },
       },
     });
     expect(result).toEqual({ cancelled: 1 });
@@ -80,7 +103,10 @@ describe("ExpireOrdersUseCase", () => {
 
   it("skips releasing stock for unlimited (null stock) variants", async () => {
     prisma.order.findMany.mockResolvedValue([
-      { id: "order-1", items: [{ variantId: "variant-1", quantity: 1 }] },
+      order({
+        id: "order-1",
+        items: [{ variantId: "variant-1", quantity: 1 }],
+      }),
     ]);
     prisma.productVariant.findUnique.mockResolvedValue({
       id: "variant-1",
@@ -90,6 +116,64 @@ describe("ExpireOrdersUseCase", () => {
     await useCase.execute();
 
     expect(prisma.productVariant.update).not.toHaveBeenCalled();
+  });
+
+  it("releases stock for expired PARTIALLY_PAID orders that were abandoned", async () => {
+    prisma.order.findMany.mockResolvedValue([
+      order({
+        id: "order-2",
+        items: [{ variantId: "variant-1", quantity: 3 }],
+        payments: [
+          {
+            amount: new Prisma.Decimal(30),
+            source: "SELLER_RECORDED",
+            reviewStatus: "N_A",
+          },
+        ],
+      }),
+    ]);
+    prisma.productVariant.findUnique.mockResolvedValue({
+      id: "variant-1",
+      stock: 5,
+    });
+
+    const result = await useCase.execute();
+
+    expect(prisma.productVariant.update).toHaveBeenCalledWith({
+      where: { id: "variant-1" },
+      data: { reserved: { decrement: 3 } },
+    });
+    expect(prisma.order.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: "order-2",
+        paymentStatus: {
+          in: ["PENDING_PAYMENT", "PARTIALLY_PAID", "PAYMENT_SUBMITTED"],
+        },
+      },
+      data: {
+        status: "CANCELLED",
+        paymentStatus: "CANCELLED",
+        cancellationResolution: "RETAINED",
+        retainedAmount: new Prisma.Decimal(30),
+        releasedAmount: new Prisma.Decimal(0),
+        releasedResolution: null,
+      },
+    });
+    expect(prisma.auditLog.create).toHaveBeenCalledWith({
+      data: {
+        actorId: "system",
+        storeId: "store-1",
+        action: "order.expired",
+        entityType: "Order",
+        entityId: "order-2",
+        metadata: {
+          resolution: "RETAINED",
+          retainedAmount: 30,
+          releasedAmount: 0,
+        },
+      },
+    });
+    expect(result).toEqual({ cancelled: 1 });
   });
 
   it("returns cancelled: 0 when nothing has expired", async () => {
@@ -103,7 +187,10 @@ describe("ExpireOrdersUseCase", () => {
 
   it("skips stock mutation when another request already changed the order's status", async () => {
     prisma.order.findMany.mockResolvedValue([
-      { id: "order-1", items: [{ variantId: "variant-1", quantity: 2 }] },
+      order({
+        id: "order-1",
+        items: [{ variantId: "variant-1", quantity: 2 }],
+      }),
     ]);
     prisma.order.updateMany.mockResolvedValue({ count: 0 });
 
