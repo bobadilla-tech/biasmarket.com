@@ -41,6 +41,7 @@ function truncateExcerpt(text: string | null | undefined): string {
 }
 
 export const getBlogPosts = cache(async (): Promise<BlogPostSummary[]> => {
+  if (!client) return [];
   try {
     const posts = await client.fetch(POSTS_QUERY, {}, FETCH_OPTIONS);
     return posts.map((post: BlogPostSummary) => ({
@@ -54,6 +55,7 @@ export const getBlogPosts = cache(async (): Promise<BlogPostSummary[]> => {
 
 export const getBlogPost = cache(
   async (slug: string): Promise<BlogPost | null> => {
+    if (!client) return null;
     try {
       const post: BlogPost | null = await client.fetch(
         POST_QUERY,

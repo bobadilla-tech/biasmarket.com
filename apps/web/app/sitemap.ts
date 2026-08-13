@@ -37,6 +37,7 @@ async function getStoreSlugs(): Promise<{ slug: string; createdAt: string }[]> {
 async function getBlogPostSlugs(): Promise<
   { slug: string; updatedAt: string }[]
 > {
+  if (!client) return [];
   try {
     const posts: { slug: { current: string }; _updatedAt: string }[] =
       await client.fetch(
