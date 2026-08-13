@@ -48,17 +48,18 @@ export function SectionsPageClient() {
 
   const [error, setError] = useState<string | null>(null);
   const [mobileTab, setMobileTab] = useState<"list" | "preview">("list");
-  const [localSections, setLocalSections] = useState<
-    StoreSectionResponseDto[]
-  >([]);
+  const [localSections, setLocalSections] = useState<StoreSectionResponseDto[]>(
+    [],
+  );
 
   // Memoized so the `[]` fallback while `sectionsQuery.data` is still
   // undefined keeps a stable reference across renders — otherwise it's a
   // fresh array every render, the effect below re-fires every commit, and
   // the resulting setState loop pegs the tab until the query resolves.
-  const serverSections = useMemo(() => sectionsQuery.data ?? [], [
-    sectionsQuery.data,
-  ]);
+  const serverSections = useMemo(
+    () => sectionsQuery.data ?? [],
+    [sectionsQuery.data],
+  );
   const collections = collectionsQuery.data ?? [];
 
   // The drag list needs to reorder optimistically without waiting for a
@@ -108,7 +109,7 @@ export function SectionsPageClient() {
   const handleToggleHidden = async (section: StoreSectionResponseDto) => {
     setError(null);
     setLocalSections((items) =>
-      items.map((s) => s.id === section.id ? { ...s, hidden: !s.hidden } : s)
+      items.map((s) => (s.id === section.id ? { ...s, hidden: !s.hidden } : s))
     );
     try {
       await updateSection.mutateAsync({
@@ -168,7 +169,7 @@ export function SectionsPageClient() {
   return (
     <div className="min-h-screen bg-gray-50 px-6 py-10">
       <div className="max-w-6xl mx-auto flex flex-col gap-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-2xl font-bold text-gray-900">
             {t("sections.title")}
           </h1>

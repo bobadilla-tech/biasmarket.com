@@ -92,8 +92,8 @@ export function CollectionsPageClient() {
     index: number,
     direction: -1 | 1,
   ) => {
-    const items = [...collection.products].sort((a, b) =>
-      a.position - b.position
+    const items = [...collection.products].sort(
+      (a, b) => a.position - b.position,
     );
     const target = index + direction;
     if (target < 0 || target >= items.length) return;
@@ -120,7 +120,7 @@ export function CollectionsPageClient() {
   return (
     <div className="min-h-screen bg-gray-50 px-6 py-10">
       <div className="max-w-3xl mx-auto flex flex-col gap-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-2xl font-bold text-gray-900">
             {t("collections.title")}
           </h1>
