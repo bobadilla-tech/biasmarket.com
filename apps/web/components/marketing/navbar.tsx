@@ -27,6 +27,7 @@ function NavLinks({
   const t = useTranslations("marketing.navbar");
   const items = [
     { key: "about", href: "/founder" },
+    { key: "blog", href: "/blog" },
     { key: "help", href: "/contact" },
     { key: "stores", href: "/stores" },
     { key: "forSellers", href: "/for-sellers" },

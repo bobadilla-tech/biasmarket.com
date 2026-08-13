@@ -70,7 +70,7 @@ export function Hero() {
               {t("blogSubtitle")}
             </p>
             <Link
-              href="/search"
+              href="/blog"
               className="mt-5 inline-flex items-center gap-1 self-start text-sm font-medium text-brand-pink underline-offset-4 transition-all hover:underline sm:mt-6 sm:text-base"
             >
               {t("blogCta")}
