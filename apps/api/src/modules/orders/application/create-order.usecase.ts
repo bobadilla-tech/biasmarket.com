@@ -62,7 +62,18 @@ export class CreateOrderUseCase {
     private customerAccounts: CustomerAccountService,
   ) {}
 
-  async execute(slug: string, dto: CreateOrderDto) {
+  // `proof` is the buyer's checkout-time proof-of-payment upload (already
+  // validated + uploaded to the private payment bucket by the controller).
+  // When present, the use case attaches a BUYER_SUBMITTED/PENDING_REVIEW
+  // OrderPayment row for the full order total in the same transaction that
+  // creates the order, so the seller's existing review surface (approve/
+  // reject, see docs/plans/2026-08-08-buyer-proof-of-payment-upload-plan.md)
+  // sees it immediately.
+  async execute(
+    slug: string,
+    dto: CreateOrderDto,
+    proof?: { imageUrl: string },
+  ) {
     const store = await this.prisma.store.findUnique({ where: { slug } });
     if (!store) throw new NotFoundException("Tienda no encontrada");
 
@@ -132,9 +143,7 @@ export class CreateOrderUseCase {
           if (point.closedOverride) {
             // A manually closed point has no future date to offer either —
             // matches getPickupAvailability()'s nextAvailableDay: null case.
-            throw new BadRequestException(
-              "Punto de recojo no disponible",
-            );
+            throw new BadRequestException("Punto de recojo no disponible");
           }
 
           // "Today" means the calendar date in the business timezone
@@ -310,7 +319,10 @@ export class CreateOrderUseCase {
         }
 
         const details = deliveryConfig.details as
-          | Record<string, unknown>
+          | Record<
+            string,
+            unknown
+          >
           | null;
         const deliveryCost = Number(details?.estimatedCost ?? 0);
         // `items` has `@ArrayMinSize(1)` (create-order.dto.ts) — the loop
@@ -335,7 +347,8 @@ export class CreateOrderUseCase {
             paymentMethod: dto.paymentMethod,
             deliveryDetails: pickupPoint
               ? {
-                ...((deliveryConfig.details as Record<string, unknown>) ?? {}),
+                ...((deliveryConfig.details as Record<string, unknown>) ??
+                  {}),
                 pickupPointLabel: pickupPoint.label,
               }
               : dto.deliveryMethodType === "COURIER"
@@ -344,7 +357,7 @@ export class CreateOrderUseCase {
                   {}),
                 shippingAddress: { ...dto.shippingAddress },
               }
-              : deliveryConfig.details ?? {},
+              : (deliveryConfig.details ?? {}),
             pickupPointId: pickupPoint?.id ?? null,
             pickupDate,
             totalAmount: finalAmount,
@@ -355,6 +368,38 @@ export class CreateOrderUseCase {
           },
           include: { items: true },
         });
+
+        // Attach the buyer's proof as a PENDING_REVIEW payment for the full
+        // order total — it does NOT count toward paidAmount until the seller
+        // approves it (common/payment-summary.ts's `countsTowardPaid`). The
+        // seller notification uses the same dedup-as-an-open-notification
+        // helper as the buyer account's later submit-proof endpoint.
+        if (proof?.imageUrl) {
+          await tx.orderPayment.create({
+            data: {
+              orderId: order.id,
+              storeId: store.id,
+              amount: finalAmount,
+              currency: order.currency,
+              method: dto.paymentMethod,
+              imageUrl: proof.imageUrl,
+              source: "BUYER_SUBMITTED",
+              reviewStatus: "PENDING_REVIEW",
+            },
+          });
+          await this.notifications.createIfNotOpen(
+            {
+              storeId: store.id,
+              type: "PAYMENT_PROOF_SUBMITTED",
+              entityType: "Order",
+              entityId: order.id,
+              title: "Comprobante de pago recibido",
+              body:
+                `El comprador envió un comprobante de ${order.currency} ${finalAmount} para revisar.`,
+            },
+            tx,
+          );
+        }
 
         return {
           order,
@@ -377,19 +422,22 @@ export class CreateOrderUseCase {
     const whatsappUrl = store.whatsappNumber
       ? buildWhatsAppUrl(
         store.whatsappNumber,
-        buildWhatsAppOrderMessage({
-          orderId: order.id,
-          storeName: store.name,
-          items: messageItems,
-          totalAmount: order.totalAmount.toNumber(),
-          currency: order.currency,
-          deliveryMethodType: order.deliveryMethodType,
-          pickupPointLabel,
-          pickupDate: order.pickupDate,
-          paymentMethod: order.paymentMethod,
-          customerName: order.customerName,
-          customerPhone: order.customerPhone,
-        }, orderTemplate?.template),
+        buildWhatsAppOrderMessage(
+          {
+            orderId: order.id,
+            storeName: store.name,
+            items: messageItems,
+            totalAmount: order.totalAmount.toNumber(),
+            currency: order.currency,
+            deliveryMethodType: order.deliveryMethodType,
+            pickupPointLabel,
+            pickupDate: order.pickupDate,
+            paymentMethod: order.paymentMethod,
+            customerName: order.customerName,
+            customerPhone: order.customerPhone,
+          },
+          orderTemplate?.template,
+        ),
       )
       : null;
 

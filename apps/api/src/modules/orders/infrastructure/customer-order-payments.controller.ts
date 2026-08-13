@@ -183,8 +183,8 @@ export class CustomerOrderPaymentsController {
       const reservedCents = payments
         .filter((p) => p.reviewStatus === "PENDING_REVIEW")
         .reduce((sum, p) => sum + toCents(Number(p.amount)), 0);
-      const availableCents =
-        toCents(Number(order.requiredAmount)) - creditedCents - reservedCents;
+      const availableCents = toCents(Number(order.requiredAmount)) -
+        creditedCents - reservedCents;
       if (toCents(numericAmount) > availableCents) {
         throw new BadRequestException("El monto excede el saldo pendiente");
       }

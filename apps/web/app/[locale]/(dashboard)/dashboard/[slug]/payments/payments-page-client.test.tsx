@@ -1,7 +1,10 @@
 import { afterEach, expect, test, vi } from "vitest";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { renderWithProviders } from "../../../../../../test-utils/render-with-providers";
-import type { OrderPaymentResponseDto, OrderResponseDto } from "@biasmarket/types";
+import type {
+  OrderPaymentResponseDto,
+  OrderResponseDto,
+} from "@biasmarket/types";
 
 vi.mock("next/navigation", () => ({
   useParams: () => ({ locale: "es", slug: "my-store" }),
@@ -204,7 +207,11 @@ test("rejecting a pending proof calls the proof-review mutation with the proof p
 test("order-level rejection (no pending proof) stays on the order review mutation", async () => {
   paymentConfigFindAll.mockResolvedValue([]);
   review.mockResolvedValue({});
-  findAll.mockResolvedValue([{ ...baseOrder, paymentStatus: "PARTIALLY_PAID", paidAmount: 40 }]);
+  findAll.mockResolvedValue([{
+    ...baseOrder,
+    paymentStatus: "PARTIALLY_PAID",
+    paidAmount: 40,
+  }]);
   renderWithProviders(<PaymentsPageClient />);
 
   fireEvent.click(

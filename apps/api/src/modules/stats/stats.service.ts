@@ -227,7 +227,9 @@ export class StatsService {
             storeId,
             createdAt: { gte: rangeStart, lt: rangeEnd },
             OR: [{ source: "SELLER_RECORDED" }, { reviewStatus: "APPROVED" }],
-            order: { paymentStatus: { in: [...REVENUE_ORDER_PAYMENT_STATUSES] } },
+            order: {
+              paymentStatus: { in: [...REVENUE_ORDER_PAYMENT_STATUSES] },
+            },
           },
           select: { amount: true, createdAt: true },
         }),
@@ -252,7 +254,9 @@ export class StatsService {
       );
 
       const revenue = rangePayments
-        .filter((payment) => payment.createdAt >= start && payment.createdAt < end)
+        .filter((payment) =>
+          payment.createdAt >= start && payment.createdAt < end
+        )
         .reduce(
           (sum, payment) => sum.plus(payment.amount),
           new Prisma.Decimal(0),

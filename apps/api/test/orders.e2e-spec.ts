@@ -159,21 +159,50 @@ describe("orders + checkout (e2e)", () => {
     await app.close();
   });
 
-  async function checkout(customerPhone: string): Promise<string> {
-    const res = await request(app.getHttpServer())
-      .post(`/stores/${storeSlug}/checkout`)
-      .send({
-        deliveryMethodType: "PICKUP",
-        customerPhone,
-        items: [{ productId, variantId: productVariantId, quantity: 1 }],
-      })
-      .expect(201);
+  async function checkout(
+    customerPhone: string,
+    options?: {
+      paymentMethod?: string;
+      proof?: Buffer;
+      proofName?: string;
+    },
+  ): Promise<string> {
+    let req = request(app.getHttpServer()).post(
+      `/stores/${storeSlug}/checkout`,
+    );
+    req = req.field("deliveryMethodType", "PICKUP");
+    req = req.field("customerPhone", customerPhone);
+    req = req.field(
+      "items",
+      JSON.stringify([{ productId, variantId: productVariantId, quantity: 1 }]),
+    );
+    if (options?.paymentMethod) {
+      req = req.field("paymentMethod", options.paymentMethod);
+    }
+    if (options?.proof) {
+      req = req.attach("file", options.proof, options.proofName ?? "proof.png");
+    }
+    const res = await req.expect(201);
     assertMatchesSchema(res.body, checkoutResultSchema, openapi.components);
     expect(typeof res.body.order.totalAmount).toBe("string");
     const orderId = res.body.order.id as string;
     orderIds.push(orderId);
     return orderId;
   }
+
+  // Minimal valid PDF — `%PDF-` magic prefix is all the backend's
+  // proof-format check looks for, and this is the smallest honest buffer
+  // that carries it.
+  const pdfBuffer = Buffer.from(
+    "%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF",
+    "latin1",
+  );
+
+  // 1x1 PNG, smallest valid file that passes the controller's magic-byte check.
+  const pngBuffer = Buffer.from(
+    "89504e470d0a1a0a0000000d4948445200000001000000010802000000907753de0000000c4944415478da6360606060000000050001a5f645400000000049454e44ae426082",
+    "hex",
+  );
 
   it("checkout -> findAll/findOne -> addPayment (full) -> advance fulfillment", async () => {
     const orderId = await checkout("+51911111111");
@@ -198,12 +227,6 @@ describe("orders + checkout (e2e)", () => {
     assertMatchesSchema(findOneRes.body, orderDetailSchema, openapi.components);
     expect(findOneRes.body.paymentStatus).toBe("PENDING_PAYMENT");
     const requiredAmount = findOneRes.body.requiredAmount as string;
-
-    // 1x1 PNG, smallest valid file that passes the controller's magic-byte check.
-    const pngBuffer = Buffer.from(
-      "89504e470d0a1a0a0000000d4948445200000001000000010802000000907753de0000000c4944415478da6360606060000000050001a5f645400000000049454e44ae426082",
-      "hex",
-    );
 
     const paymentRes = await request(app.getHttpServer())
       .post(`/stores/${storeId}/orders/${orderId}/payments`)
@@ -282,11 +305,14 @@ describe("orders + checkout (e2e)", () => {
   it("checkout -> review approve with zero payments registered 400s", async () => {
     const checkoutRes = await request(app.getHttpServer())
       .post(`/stores/${storeSlug}/checkout`)
-      .send({
-        deliveryMethodType: "PICKUP",
-        customerPhone: "+51966666666",
-        items: [{ productId, variantId: productVariantId, quantity: 1 }],
-      })
+      .field("deliveryMethodType", "PICKUP")
+      .field("customerPhone", "+51966666666")
+      .field(
+        "items",
+        JSON.stringify([
+          { productId, variantId: productVariantId, quantity: 1 },
+        ]),
+      )
       .expect(201);
     const orderId = checkoutRes.body.order.id as string;
     orderIds.push(orderId);
@@ -323,11 +349,14 @@ describe("orders + checkout (e2e)", () => {
   it("checkout COURIER without shippingAddress 400s", async () => {
     await request(app.getHttpServer())
       .post(`/stores/${storeSlug}/checkout`)
-      .send({
-        deliveryMethodType: "COURIER",
-        customerPhone: "+51955555511",
-        items: [{ productId, variantId: productVariantId, quantity: 1 }],
-      })
+      .field("deliveryMethodType", "COURIER")
+      .field("customerPhone", "+51955555511")
+      .field(
+        "items",
+        JSON.stringify([
+          { productId, variantId: productVariantId, quantity: 1 },
+        ]),
+      )
       .expect(400);
   });
 
@@ -342,12 +371,15 @@ describe("orders + checkout (e2e)", () => {
     };
     const checkoutRes = await request(app.getHttpServer())
       .post(`/stores/${storeSlug}/checkout`)
-      .send({
-        deliveryMethodType: "COURIER",
-        customerPhone: "+51955555522",
-        items: [{ productId, variantId: productVariantId, quantity: 1 }],
-        shippingAddress,
-      })
+      .field("deliveryMethodType", "COURIER")
+      .field("customerPhone", "+51955555522")
+      .field(
+        "items",
+        JSON.stringify([
+          { productId, variantId: productVariantId, quantity: 1 },
+        ]),
+      )
+      .field("shippingAddress", JSON.stringify(shippingAddress))
       .expect(201);
     assertMatchesSchema(
       checkoutRes.body,
@@ -386,17 +418,18 @@ describe("orders + checkout (e2e)", () => {
 
     const checkoutRes = await request(app.getHttpServer())
       .post(`/stores/${storeSlug}/checkout`)
-      .send({
-        deliveryMethodType: "PICKUP",
-        customerPhone: "+51955555555",
-        items: [
+      .field("deliveryMethodType", "PICKUP")
+      .field("customerPhone", "+51955555555")
+      .field(
+        "items",
+        JSON.stringify([
           {
             productId: precisionProductId,
             variantId: precisionVariantId,
             quantity: 3,
           },
-        ],
-      })
+        ]),
+      )
       .expect(201);
     const orderId = checkoutRes.body.order.id as string;
     orderIds.push(orderId);
@@ -438,6 +471,116 @@ describe("orders + checkout (e2e)", () => {
     await prisma.product.deleteMany({ where: { id: precisionProductId } });
   });
 
+  // Issue #84: the checkout step accepts the buyer's proof-of-payment upload
+  // for manual methods (YAPE/PLIN/TRANSFER) and registers it as a
+  // BUYER_SUBMITTED/PENDING_REVIEW OrderPayment. It must not change
+  // paymentStatus (still PENDING_PAYMENT, paidAmount 0) until the seller
+  // reviews it — the proof is a placeholder the seller can approve/reject
+  // via the same review flow.
+  it("checkout with a manual payment method + proof attaches a PENDING_REVIEW payment", async () => {
+    const orderId = await checkout("+51988888888", {
+      paymentMethod: "YAPE",
+      proof: pdfBuffer,
+      proofName: "proof.pdf",
+    });
+
+    const findOneRes = await request(app.getHttpServer())
+      .get(`/stores/${storeId}/orders/${orderId}`)
+      .set("Cookie", sessionCookie)
+      .expect(200);
+    expect(findOneRes.body.paymentStatus).toBe("PENDING_PAYMENT");
+    expect(findOneRes.body.paidAmount).toBe(0);
+    expect(findOneRes.body.payments).toHaveLength(1);
+    expect(findOneRes.body.payments[0]).toMatchObject({
+      amount: findOneRes.body.totalAmount,
+      method: "YAPE",
+      source: "BUYER_SUBMITTED",
+      reviewStatus: "PENDING_REVIEW",
+    });
+    uploadedPaymentImageUrl = findOneRes.body.payments[0].imageUrl;
+  });
+
+  it("checkout with a PNG proof for a manual method is accepted", async () => {
+    const orderId = await checkout("+51988888887", {
+      paymentMethod: "TRANSFER",
+      proof: pngBuffer,
+      proofName: "proof.png",
+    });
+
+    const findOneRes = await request(app.getHttpServer())
+      .get(`/stores/${storeId}/orders/${orderId}`)
+      .set("Cookie", sessionCookie)
+      .expect(200);
+    expect(findOneRes.body.payments[0].reviewStatus).toBe("PENDING_REVIEW");
+    uploadedPaymentImageUrl = findOneRes.body.payments[0].imageUrl;
+  });
+
+  it("checkout with a manual payment method but no proof 400s", async () => {
+    const res = await request(app.getHttpServer())
+      .post(`/stores/${storeSlug}/checkout`)
+      .field("deliveryMethodType", "PICKUP")
+      .field("customerPhone", "+51988888886")
+      .field("paymentMethod", "PLIN")
+      .field(
+        "items",
+        JSON.stringify([
+          { productId, variantId: productVariantId, quantity: 1 },
+        ]),
+      )
+      .expect(400);
+    expect(res.body.message).toContain("Adjunta un comprobante de pago");
+  });
+
+  it("checkout with a proof in an unsupported format 400s", async () => {
+    const res = await request(app.getHttpServer())
+      .post(`/stores/${storeSlug}/checkout`)
+      .field("deliveryMethodType", "PICKUP")
+      .field("customerPhone", "+51988888885")
+      .field("paymentMethod", "YAPE")
+      .field(
+        "items",
+        JSON.stringify([
+          { productId, variantId: productVariantId, quantity: 1 },
+        ]),
+      )
+      .attach("file", Buffer.from("not an image at all"), "proof.txt")
+      .expect(400);
+    expect(res.body.message).toContain("Solo JPEG, PNG o PDF");
+  });
+
+  it("checkout with an oversized proof 400s", async () => {
+    const oversized = Buffer.alloc(5 * 1024 * 1024 + 1);
+    oversized[0] = 0xff;
+    oversized[1] = 0xd8;
+    const res = await request(app.getHttpServer())
+      .post(`/stores/${storeSlug}/checkout`)
+      .field("deliveryMethodType", "PICKUP")
+      .field("customerPhone", "+51988888884")
+      .field("paymentMethod", "YAPE")
+      .field(
+        "items",
+        JSON.stringify([
+          { productId, variantId: productVariantId, quantity: 1 },
+        ]),
+      )
+      .attach("file", oversized, "proof.jpg")
+      .expect(400);
+    expect(res.body.message).toContain("Máximo 5MB");
+  });
+
+  it("checkout as CASH without a proof succeeds and registers no payment", async () => {
+    const orderId = await checkout("+51988888883", {
+      paymentMethod: "CASH",
+    });
+
+    const findOneRes = await request(app.getHttpServer())
+      .get(`/stores/${storeId}/orders/${orderId}`)
+      .set("Cookie", sessionCookie)
+      .expect(200);
+    expect(findOneRes.body.paymentStatus).toBe("PENDING_PAYMENT");
+    expect(findOneRes.body.payments).toHaveLength(0);
+  });
+
   // Regression coverage for the stock-hold race condition (HIGH severity —
   // see docs/plans/2026-08-08-orders-module-hardening-plan.md Problem 1):
   // create-order.usecase.ts's variant-availability check used to be a plain
@@ -467,13 +610,14 @@ describe("orders + checkout (e2e)", () => {
     const attemptCheckout = (customerPhone: string) =>
       request(app.getHttpServer())
         .post(`/stores/${storeSlug}/checkout`)
-        .send({
-          deliveryMethodType: "PICKUP",
-          customerPhone,
-          items: [
+        .field("deliveryMethodType", "PICKUP")
+        .field("customerPhone", customerPhone)
+        .field(
+          "items",
+          JSON.stringify([
             { productId: raceProductId, variantId: raceVariantId, quantity: 1 },
-          ],
-        });
+          ]),
+        );
 
     const [resA, resB] = await Promise.all([
       attemptCheckout("+51977777771"),

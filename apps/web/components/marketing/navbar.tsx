@@ -36,24 +36,26 @@ function NavLinks({
   return (
     <nav className={className}>
       {items.map(({ key, href }) =>
-        key === "help" ? (
-          <span
-            key={key}
-            aria-disabled="true"
-            className="cursor-not-allowed opacity-50"
-          >
-            {t(`links.${key}`)}
-          </span>
-        ) : (
-          <Link
-            key={key}
-            href={href}
-            onClick={onNavigate}
-            className="transition-colors hover:text-primary"
-          >
-            {t(`links.${key}`)}
-          </Link>
-        ),
+        key === "help"
+          ? (
+            <span
+              key={key}
+              aria-disabled="true"
+              className="cursor-not-allowed opacity-50"
+            >
+              {t(`links.${key}`)}
+            </span>
+          )
+          : (
+            <Link
+              key={key}
+              href={href}
+              onClick={onNavigate}
+              className="transition-colors hover:text-primary"
+            >
+              {t(`links.${key}`)}
+            </Link>
+          )
       )}
     </nav>
   );
@@ -128,100 +130,106 @@ function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
         }
       />
       <PopoverContent align="end" className="w-64 p-2">
-        {session ? (
-          <div className="flex flex-col">
-            <div className="px-2 pt-1 pb-2">
-              <p className="truncate text-sm font-semibold">
-                {session.user.name}
-              </p>
-              <p className="truncate text-xs text-muted-foreground">
-                {session.user.email}
-              </p>
-            </div>
-            <Separator />
-            <div className="pt-1">
-              <p className="px-2 pb-1 text-xs font-medium text-muted-foreground">
-                {t("myStores")}
-              </p>
-              {storesPending ? (
-                <div className="animate-pulse space-y-1 px-2">
-                  <div className="h-8 rounded-lg bg-muted" />
-                  <div className="h-8 rounded-lg bg-muted" />
-                </div>
-              ) : stores && stores.length > 0 ? (
-                <div className="flex flex-col">
-                  {stores.map((store) => (
+        {session
+          ? (
+            <div className="flex flex-col">
+              <div className="px-2 pt-1 pb-2">
+                <p className="truncate text-sm font-semibold">
+                  {session.user.name}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {session.user.email}
+                </p>
+              </div>
+              <Separator />
+              <div className="pt-1">
+                <p className="px-2 pb-1 text-xs font-medium text-muted-foreground">
+                  {t("myStores")}
+                </p>
+                {storesPending
+                  ? (
+                    <div className="animate-pulse space-y-1 px-2">
+                      <div className="h-8 rounded-lg bg-muted" />
+                      <div className="h-8 rounded-lg bg-muted" />
+                    </div>
+                  )
+                  : stores && stores.length > 0
+                  ? (
+                    <div className="flex flex-col">
+                      {stores.map((store) => (
+                        <Link
+                          key={store.id}
+                          href={`/dashboard/${store.slug}`}
+                          onClick={closeAndNavigate}
+                          className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-muted"
+                        >
+                          <StoreLogo
+                            name={store.name}
+                            logoUrl={store.logoUrl}
+                            size={28}
+                            className="text-xs font-semibold"
+                          />
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm text-foreground">
+                              {store.name}
+                            </span>
+                            <span className="block truncate text-xs text-muted-foreground">
+                              /{store.slug}
+                            </span>
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  )
+                  : (
                     <Link
-                      key={store.id}
-                      href={`/dashboard/${store.slug}`}
+                      href="/onboarding/create-store"
                       onClick={closeAndNavigate}
-                      className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-muted"
+                      className={itemClassName}
                     >
-                      <StoreLogo
-                        name={store.name}
-                        logoUrl={store.logoUrl}
-                        size={28}
-                        className="text-xs font-semibold"
-                      />
-                      <span className="min-w-0">
-                        <span className="block truncate text-sm text-foreground">
-                          {store.name}
-                        </span>
-                        <span className="block truncate text-xs text-muted-foreground">
-                          /{store.slug}
-                        </span>
-                      </span>
+                      {t("createStore")}
                     </Link>
-                  ))}
-                </div>
-              ) : (
+                  )}
+              </div>
+              <Separator className="my-1" />
+              <div className="flex flex-col">
                 <Link
-                  href="/onboarding/create-store"
+                  href="/account"
                   onClick={closeAndNavigate}
                   className={itemClassName}
                 >
-                  {t("createStore")}
+                  <User className="size-4" />
+                  {t("myAccount")}
                 </Link>
-              )}
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className={`${itemClassName} text-red-600 hover:bg-red-50`}
+                >
+                  <LogOut className="size-4" />
+                  {t("signOut")}
+                </button>
+              </div>
             </div>
-            <Separator className="my-1" />
+          )
+          : (
             <div className="flex flex-col">
               <Link
-                href="/account"
+                href="/login"
                 onClick={closeAndNavigate}
                 className={itemClassName}
               >
-                <User className="size-4" />
-                {t("myAccount")}
+                {t("logIn")}
               </Link>
-              <button
-                type="button"
-                onClick={handleSignOut}
-                className={`${itemClassName} text-red-600 hover:bg-red-50`}
+              <Link
+                href="/onboarding"
+                onClick={closeAndNavigate}
+                className={itemClassName}
               >
-                <LogOut className="size-4" />
-                {t("signOut")}
-              </button>
+                {t("signUp")}
+              </Link>
             </div>
-          </div>
-        ) : (
-          <div className="flex flex-col">
-            <Link
-              href="/login"
-              onClick={closeAndNavigate}
-              className={itemClassName}
-            >
-              {t("logIn")}
-            </Link>
-            <Link
-              href="/onboarding"
-              onClick={closeAndNavigate}
-              className={itemClassName}
-            >
-              {t("signUp")}
-            </Link>
-          </div>
-        )}
+          )}
       </PopoverContent>
     </Popover>
   );

@@ -91,7 +91,11 @@ export class StorageService {
     buffer: Buffer,
     mimeType: string,
   ): Promise<string> {
-    const ext = mimeType === "image/png" ? "png" : "jpg";
+    const ext = mimeType === "image/png"
+      ? "png"
+      : mimeType === "application/pdf"
+      ? "pdf"
+      : "jpg";
     const key = `${prefix}/${randomUUID()}.${ext}`;
 
     await this.client.send(

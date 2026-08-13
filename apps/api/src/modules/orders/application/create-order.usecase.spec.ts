@@ -38,9 +38,10 @@ describe("CreateOrderUseCase", () => {
     product: { findUnique: Mock };
     productVariant: { findUnique: Mock; update: Mock };
     order: { create: Mock };
+    orderPayment: { create: Mock };
     whatsAppMessageTemplate: { findUnique: Mock };
   };
-  let notifications: { syncStockAlerts: Mock };
+  let notifications: { syncStockAlerts: Mock; createIfNotOpen: Mock };
   let customerAccounts: {
     findOrCreateCustomer: Mock;
     sendVerificationEmail: Mock;
@@ -78,9 +79,10 @@ describe("CreateOrderUseCase", () => {
       product: { findUnique: vi.fn() },
       productVariant: { findUnique: vi.fn(), update: vi.fn() },
       order: { create: vi.fn() },
+      orderPayment: { create: vi.fn() },
       whatsAppMessageTemplate: { findUnique: vi.fn() },
     };
-    notifications = { syncStockAlerts: vi.fn() };
+    notifications = { syncStockAlerts: vi.fn(), createIfNotOpen: vi.fn() };
     customerAccounts = {
       findOrCreateCustomer: vi.fn(),
       sendVerificationEmail: vi.fn(),
@@ -226,13 +228,15 @@ describe("CreateOrderUseCase", () => {
       customerPhone: dto.customerPhone,
     });
     // Simulates the atomic conditional UPDATE ... RETURNING * succeeding.
-    prisma.$queryRaw.mockResolvedValue([{
-      id: "variant-1",
-      productId: "product-1",
-      name: "Large",
-      stock: 5,
-      reserved: 2,
-    }]);
+    prisma.$queryRaw.mockResolvedValue([
+      {
+        id: "variant-1",
+        productId: "product-1",
+        name: "Large",
+        stock: 5,
+        reserved: 2,
+      },
+    ]);
 
     const result = await useCase.execute(slug, {
       ...dto,
@@ -268,6 +272,82 @@ describe("CreateOrderUseCase", () => {
       expect.objectContaining({ id: "product-1" }),
       expect.objectContaining({ id: "variant-1" }),
     );
+  });
+
+  it("attaches a BUYER_SUBMITTED/PENDING_REVIEW payment for the order total when a proof is uploaded", async () => {
+    prisma.product.findUnique.mockResolvedValue({
+      id: "product-1",
+      storeId: store.id,
+      status: "PUBLISHED",
+      deletedAt: null,
+      price: new FakeDecimal(10),
+      currency: "PEN",
+      name: "Widget",
+      variants: [],
+    });
+    prisma.order.create.mockResolvedValue({
+      id: "order-1",
+      totalAmount: new FakeDecimal(20),
+      currency: "PEN",
+      deliveryMethodType: "PICKUP",
+      customerName: "Jane",
+      customerPhone: dto.customerPhone,
+    });
+
+    await useCase.execute(
+      slug,
+      { ...dto, paymentMethod: "YAPE" },
+      { imageUrl: "https://minio/payments/proof.jpg" },
+    );
+
+    expect(prisma.orderPayment.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        orderId: "order-1",
+        storeId: store.id,
+        amount: expect.any(FakeDecimal),
+        currency: "PEN",
+        method: "YAPE",
+        imageUrl: "https://minio/payments/proof.jpg",
+        source: "BUYER_SUBMITTED",
+        reviewStatus: "PENDING_REVIEW",
+      }),
+    });
+    // The seller notification fires inside the same transaction (tx === prisma
+    // under the mocked $transaction), with the same dedup helper the buyer
+    // account's submit-proof endpoint uses.
+    expect(notifications.createIfNotOpen).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "PAYMENT_PROOF_SUBMITTED",
+        entityId: "order-1",
+      }),
+      prisma,
+    );
+  });
+
+  it("does not create a payment row when no proof was uploaded", async () => {
+    prisma.product.findUnique.mockResolvedValue({
+      id: "product-1",
+      storeId: store.id,
+      status: "PUBLISHED",
+      deletedAt: null,
+      price: new FakeDecimal(10),
+      currency: "PEN",
+      name: "Widget",
+      variants: [],
+    });
+    prisma.order.create.mockResolvedValue({
+      id: "order-1",
+      totalAmount: new FakeDecimal(20),
+      currency: "PEN",
+      deliveryMethodType: "PICKUP",
+      customerName: "Jane",
+      customerPhone: dto.customerPhone,
+    });
+
+    await useCase.execute(slug, dto);
+
+    expect(prisma.orderPayment.create).not.toHaveBeenCalled();
+    expect(notifications.createIfNotOpen).not.toHaveBeenCalled();
   });
 
   it("snapshots the submitted shippingAddress into deliveryDetails for a COURIER order", async () => {
@@ -647,9 +727,7 @@ describe("CreateOrderUseCase", () => {
 
     it("throws BadRequestException when the selected point has closedOverride set", async () => {
       prisma.pickupPoint.count.mockResolvedValue(1);
-      prisma.$queryRaw.mockResolvedValue([
-        { ...point, closedOverride: true },
-      ]);
+      prisma.$queryRaw.mockResolvedValue([{ ...point, closedOverride: true }]);
 
       await expect(
         useCase.execute(slug, { ...dto, pickupPointId: point.id }),
@@ -663,9 +741,7 @@ describe("CreateOrderUseCase", () => {
       const closedToday = [0, 1, 2, 3, 4, 5, 6].filter(
         (day) => day !== getBusinessDate().weekday,
       );
-      prisma.$queryRaw.mockResolvedValue([
-        { ...point, openDays: closedToday },
-      ]);
+      prisma.$queryRaw.mockResolvedValue([{ ...point, openDays: closedToday }]);
 
       await expect(
         useCase.execute(slug, { ...dto, pickupPointId: point.id }),
@@ -704,9 +780,7 @@ describe("CreateOrderUseCase", () => {
       const closedToday = [0, 1, 2, 3, 4, 5, 6].filter(
         (day) => day !== getBusinessDate().weekday,
       );
-      prisma.$queryRaw.mockResolvedValue([
-        { ...point, openDays: closedToday },
-      ]);
+      prisma.$queryRaw.mockResolvedValue([{ ...point, openDays: closedToday }]);
 
       await expect(
         useCase.execute(slug, { ...dto, pickupPointId: point.id }),
@@ -846,10 +920,12 @@ describe("CreateOrderUseCase", () => {
       prisma.pickupPoint.count.mockResolvedValue(1);
       // Open every day except via closedOverride — the point itself is
       // irrelevant here, the date must be rejected before weekday checks.
-      prisma.$queryRaw.mockResolvedValue([{
-        ...point,
-        openDays: [0, 1, 2, 3, 4, 5, 6],
-      }]);
+      prisma.$queryRaw.mockResolvedValue([
+        {
+          ...point,
+          openDays: [0, 1, 2, 3, 4, 5, 6],
+        },
+      ]);
 
       await expect(
         useCase.execute(slug, {
@@ -902,9 +978,7 @@ describe("CreateOrderUseCase", () => {
       prisma.pickupPoint.count.mockResolvedValue(1);
       // Open Wednesdays and Fridays — today is one of them, but the buyer
       // may still schedule ahead for a future open day.
-      prisma.$queryRaw.mockResolvedValue([
-        { ...point, openDays: [3, 5] },
-      ]);
+      prisma.$queryRaw.mockResolvedValue([{ ...point, openDays: [3, 5] }]);
 
       const result = await useCase.execute(slug, {
         ...dto,
@@ -928,9 +1002,7 @@ describe("CreateOrderUseCase", () => {
       prisma.pickupPoint.count.mockResolvedValue(1);
       // Open today AND on Fridays — a Thursday date fails the weekday check
       // even though the point isn't closed today.
-      prisma.$queryRaw.mockResolvedValue([
-        { ...point, openDays: [3, 5] },
-      ]);
+      prisma.$queryRaw.mockResolvedValue([{ ...point, openDays: [3, 5] }]);
 
       await expect(
         useCase.execute(slug, {

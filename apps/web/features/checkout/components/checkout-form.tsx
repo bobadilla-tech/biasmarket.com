@@ -23,6 +23,7 @@ import {
   nextDateForWeekday,
 } from "../lib/pickup-availability";
 import { SelectableCard } from "./selectable-card";
+import { PaymentProofUpload } from "./payment-proof-upload";
 import {
   buildCheckoutFormSchema,
   type CheckoutFormInput,
@@ -103,9 +104,11 @@ function paymentMethodLabels(
   };
 }
 
-export function CheckoutForm(
-  { slug, items, onOrderCreated }: CheckoutFormProps,
-) {
+export function CheckoutForm({
+  slug,
+  items,
+  onOrderCreated,
+}: CheckoutFormProps) {
   const t = useTranslations("storefront.checkoutPage");
   const deliveryOptions = useDeliveryOptions(slug);
   const defaultAddress = useDefaultShippingAddress(slug);
@@ -133,9 +136,10 @@ export function CheckoutForm(
   // pick anything when a same-day point exists).
   const pointsAvailableToday = useMemo(
     () =>
-      points.filter((point) =>
-        weekday !== undefined &&
-        getPickupAvailability(point, weekday).availableToday
+      points.filter(
+        (point) =>
+          weekday !== undefined &&
+          getPickupAvailability(point, weekday).availableToday,
       ),
     [points, weekday],
   );
@@ -143,9 +147,10 @@ export function CheckoutForm(
     () =>
       new Set(
         points
-          .filter((point) =>
-            weekday !== undefined &&
-            !getPickupAvailability(point, weekday).availableToday
+          .filter(
+            (point) =>
+              weekday !== undefined &&
+              !getPickupAvailability(point, weekday).availableToday,
           )
           .map((point) => point.id),
       ),
@@ -175,13 +180,15 @@ export function CheckoutForm(
       shippingCity: "",
       shippingRegion: "",
       shippingReference: "",
+      paymentProof: null,
     },
   });
 
   useEffect(() => {
     if (!deliveryOptions.data) return;
     if (
-      deliveryOptions.data.methods[0] && !form.getValues("deliveryMethodType")
+      deliveryOptions.data.methods[0] &&
+      !form.getValues("deliveryMethodType")
     ) {
       form.setValue("deliveryMethodType", deliveryOptions.data.methods[0].type);
     }
@@ -215,6 +222,7 @@ export function CheckoutForm(
   const pickupPointId = form.watch("pickupPointId");
   const pickupDate = form.watch("pickupDate");
   const paymentMethod = form.watch("paymentMethod");
+  const paymentProof = form.watch("paymentProof");
   const shippingRecipientName = form.watch("shippingRecipientName");
   const shippingPhone = form.watch("shippingPhone");
   const shippingLine1 = form.watch("shippingLine1");
@@ -288,10 +296,10 @@ export function CheckoutForm(
       if (!point || weekday === undefined) return true;
       const availability = getPickupAvailability(point, weekday);
       if (availability.nextAvailableDay === null) return true;
-      const selectedWeekday = new Date(`${pickupDate}T00:00:00Z`)
-        .getUTCDay();
-      return point.openDays.length > 0 &&
-        !point.openDays.includes(selectedWeekday);
+      const selectedWeekday = new Date(`${pickupDate}T00:00:00Z`).getUTCDay();
+      return (
+        point.openDays.length > 0 && !point.openDays.includes(selectedWeekday)
+      );
     })();
 
   const onSubmit = form.handleSubmit(async (values) => {
@@ -308,6 +316,7 @@ export function CheckoutForm(
       customerName: values.customerName,
       customerPhone: values.customerPhone,
       customerEmail: values.customerEmail,
+      paymentProof: values.paymentProof,
       shippingAddress: values.deliveryMethodType === "COURIER"
         ? {
           recipientName: values.shippingRecipientName,
@@ -414,10 +423,11 @@ export function CheckoutForm(
               })}
             </div>
 
-            {pickupPointId && pointsRequiringDate.has(pickupPointId) &&
+            {pickupPointId &&
+              pointsRequiringDate.has(pickupPointId) &&
               (() => {
-                const selectedPoint = points.find((p) =>
-                  p.id === pickupPointId
+                const selectedPoint = points.find(
+                  (p) => p.id === pickupPointId,
                 );
                 if (!selectedPoint || weekday === undefined) return null;
                 const availability = getPickupAvailability(
@@ -465,10 +475,12 @@ export function CheckoutForm(
                           {t("pickupDateInvalidWeekday")}
                         </p>
                       )
-                      : form.formState.errors.pickupDate && (
-                        <p className="text-sm text-red-500">
-                          {t("pickupDateRequired")}
-                        </p>
+                      : (
+                        form.formState.errors.pickupDate && (
+                          <p className="text-sm text-red-500">
+                            {t("pickupDateRequired")}
+                          </p>
+                        )
                       )}
                   </div>
                 );
@@ -574,6 +586,34 @@ export function CheckoutForm(
           </div>
         )}
 
+        {paymentMethod && paymentMethod !== "CASH" && (
+          <div className="flex flex-col gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+              {t("paymentProofUploadLabel")}
+            </span>
+            <Controller
+              control={form.control}
+              name="paymentProof"
+              render={({ field }) => (
+                <PaymentProofUpload
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
+            />
+            {form.formState.errors.paymentProof && (
+              <p className="text-sm text-red-500">
+                {form.formState.errors.paymentProof.message === "file too large"
+                  ? t("paymentProofTooLarge")
+                  : form.formState.errors.paymentProof.message ===
+                      "invalid file type"
+                  ? t("paymentProofInvalidFormat")
+                  : t("paymentProofRequired")}
+              </p>
+            )}
+          </div>
+        )}
+
         <input
           placeholder={t("namePlaceholder")}
           className={inputClassName}
@@ -626,12 +666,16 @@ export function CheckoutForm(
           !customerPhone ||
           !deliveryMethodType ||
           mixedCurrencies ||
-          (deliveryMethodType === "PICKUP" && points.length > 0 &&
+          (deliveryMethodType === "PICKUP" &&
+            points.length > 0 &&
             !pickupPointId) ||
           pickupDateBlocking ||
           (paymentMethods.length > 0 && !paymentMethod) ||
+          (paymentMethod !== "" && paymentMethod !== "CASH" && !paymentProof) ||
           (deliveryMethodType === "COURIER" &&
-            (!shippingRecipientName || !shippingPhone || !shippingLine1 ||
+            (!shippingRecipientName ||
+              !shippingPhone ||
+              !shippingLine1 ||
               !shippingCity))}
         className="store-theme-primary-button flex flex-col items-center gap-1 rounded-xl px-5 py-4 transition disabled:opacity-60"
       >

@@ -28,28 +28,32 @@ export function DiscoverSection({
       </h2>
 
       <div className="mt-6 grid grid-cols-2 gap-3 sm:mt-8 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
-        {loading ? (
-          SKELETON_KEYS.map((key) => (
-            <div
-              key={key}
-              className="flex flex-col overflow-hidden rounded-[10px] border border-landing-graphite bg-white"
-            >
-              <div className="aspect-[3/4] w-full animate-pulse bg-muted" />
-              <div className="space-y-2 p-3">
-                <div className="h-3 w-4/5 animate-pulse rounded bg-muted" />
-                <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
+        {loading
+          ? (
+            SKELETON_KEYS.map((key) => (
+              <div
+                key={key}
+                className="flex flex-col overflow-hidden rounded-[10px] border border-landing-graphite bg-white"
+              >
+                <div className="aspect-[3/4] w-full animate-pulse bg-muted" />
+                <div className="space-y-2 p-3">
+                  <div className="h-3 w-4/5 animate-pulse rounded bg-muted" />
+                  <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
+                </div>
               </div>
-            </div>
-          ))
-        ) : error || products.length === 0 ? (
-          <p className="col-span-full rounded-[10px] border border-landing-graphite bg-white px-6 py-14 text-center text-sm text-muted-foreground">
-            {error ? t("error") : t("empty")}
-          </p>
-        ) : (
-          products.map((product) => (
-            <ProductGridCard key={product.id} product={product} />
-          ))
-        )}
+            ))
+          )
+          : error || products.length === 0
+          ? (
+            <p className="col-span-full rounded-[10px] border border-landing-graphite bg-white px-6 py-14 text-center text-sm text-muted-foreground">
+              {error ? t("error") : t("empty")}
+            </p>
+          )
+          : (
+            products.map((product) => (
+              <ProductGridCard key={product.id} product={product} />
+            ))
+          )}
       </div>
 
       <div className="mt-8 flex justify-center sm:mt-10">

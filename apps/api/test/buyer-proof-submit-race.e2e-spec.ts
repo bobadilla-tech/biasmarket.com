@@ -138,7 +138,9 @@ describe("buyer proof submission race (e2e)", () => {
       .send({ phone: customerPhone, password })
       .expect(201);
     const loginCookie = loginRes.headers["set-cookie"] as unknown as string[];
-    const loginRaw = loginCookie?.find((c) => c.includes("bm_customer_session"));
+    const loginRaw = loginCookie?.find((c) =>
+      c.includes("bm_customer_session")
+    );
     if (!loginRaw) throw new Error("login did not return a session cookie");
     customerSessionCookie = loginRaw.split(";")[0]!;
   });

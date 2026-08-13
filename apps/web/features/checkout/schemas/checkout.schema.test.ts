@@ -16,6 +16,14 @@ const validValues = {
   shippingCity: "Lima",
   shippingRegion: "",
   shippingReference: "",
+  paymentProof: null,
+};
+
+const manualMethodValues = {
+  ...validValues,
+  deliveryMethodType: "PICKUP",
+  pickupPointId: "point-1",
+  paymentMethod: "YAPE",
 };
 
 test("accepts valid values with no pickup points or payment methods configured", () => {
@@ -79,7 +87,11 @@ test("does not require a payment method when the store has none configured", () 
 
 test("accepts a selected payment method when the store has payment methods configured", () => {
   const schema = buildCheckoutFormSchema(false, true);
-  const result = schema.safeParse({ ...validValues, paymentMethod: "YAPE" });
+  const result = schema.safeParse({
+    ...validValues,
+    paymentMethod: "YAPE",
+    paymentProof: new File(["x"], "proof.png", { type: "image/png" }),
+  });
   expect(result.success).toBe(true);
 });
 
@@ -137,4 +149,80 @@ test("does not require a pickup date for a point open today", () => {
     pickupDate: "",
   });
   expect(result.success).toBe(true);
+});
+
+test("requires a payment proof for YAPE, PLIN, and TRANSFER", () => {
+  const schema = buildCheckoutFormSchema(true, true);
+  for (const method of ["YAPE", "PLIN", "TRANSFER"]) {
+    const result = schema.safeParse({
+      ...manualMethodValues,
+      paymentMethod: method,
+      paymentProof: null,
+    });
+    expect(result.success).toBe(false);
+  }
+});
+
+test("does not require a payment proof for CASH or when no method is picked", () => {
+  const schema = buildCheckoutFormSchema(true, true);
+  const cash = schema.safeParse({
+    ...manualMethodValues,
+    paymentMethod: "CASH",
+    paymentProof: null,
+  });
+  // A store with no payment methods configured leaves paymentMethod empty —
+  // build with paymentMethodsAvailable=false so the method requirement
+  // itself doesn't fail; the point is the proof refine lets it through.
+  const noMethodSchema = buildCheckoutFormSchema(true, false);
+  const none = noMethodSchema.safeParse({
+    ...manualMethodValues,
+    paymentMethod: "",
+    paymentProof: null,
+  });
+  expect(cash.success).toBe(true);
+  expect(none.success).toBe(true);
+});
+
+test("accepts JPEG, PNG, and PDF proofs for a manual method", () => {
+  const schema = buildCheckoutFormSchema(true, true);
+  const jpeg = new File(["x"], "proof.jpg", { type: "image/jpeg" });
+  const png = new File(["x"], "proof.png", { type: "image/png" });
+  const pdf = new File(["%PDF"], "proof.pdf", { type: "application/pdf" });
+  for (const paymentProof of [jpeg, png, pdf]) {
+    const result = schema.safeParse({
+      ...manualMethodValues,
+      paymentProof,
+    });
+    expect(result.success).toBe(true);
+  }
+});
+
+test("accepts a file with an allowed extension even when its MIME type is blank", () => {
+  const schema = buildCheckoutFormSchema(true, true);
+  const result = schema.safeParse({
+    ...manualMethodValues,
+    paymentProof: new File(["x"], "proof.pdf"),
+  });
+  expect(result.success).toBe(true);
+});
+
+test("rejects a payment proof larger than 5MB", () => {
+  const schema = buildCheckoutFormSchema(true, true);
+  const bigFile = new File([new Uint8Array(6 * 1024 * 1024)], "proof.png", {
+    type: "image/png",
+  });
+  const result = schema.safeParse({
+    ...manualMethodValues,
+    paymentProof: bigFile,
+  });
+  expect(result.success).toBe(false);
+});
+
+test("rejects an unsupported proof type", () => {
+  const schema = buildCheckoutFormSchema(true, true);
+  const result = schema.safeParse({
+    ...manualMethodValues,
+    paymentProof: new File(["x"], "proof.txt", { type: "text/plain" }),
+  });
+  expect(result.success).toBe(false);
 });
