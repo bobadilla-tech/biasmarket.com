@@ -16,7 +16,7 @@ export function Hero() {
             <h1 className="text-3xl font-medium leading-tight text-balance text-landing-title sm:text-4xl lg:text-5xl">
               {t("title")}
             </h1>
-            <p className="text-justify text-base text-foreground sm:text-lg lg:text-xl">
+            <p className="text-base text-foreground sm:text-lg lg:text-xl">
               {t("subtitle")}
             </p>
             <Link
@@ -44,16 +44,12 @@ export function Hero() {
             <h2 className="text-xl font-medium sm:text-3xl">
               {t("releasesTitle")}
             </h2>
-            <p className="mt-2 max-w-[16rem] text-justify text-sm text-foreground/90 sm:text-base lg:text-lg">
+            <p className="mt-2 max-w-[16rem] text-sm text-foreground/90 sm:text-base lg:text-lg">
               {t("releasesSubtitle")}
             </p>
             <Link
               href="/search"
-              className={buttonVariants({
-                variant: "outline",
-                className:
-                  "mt-5 h-10 rounded-[10px] border-brand-pink bg-transparent px-6 text-sm text-brand-pink hover:bg-white/30 sm:mt-6 sm:text-base",
-              })}
+              className="mt-5 inline-flex items-center gap-1 self-start text-sm font-medium text-brand-pink underline-offset-4 transition-all hover:underline sm:mt-6 sm:text-base"
             >
               {t("releasesCta")}
             </Link>
@@ -70,12 +66,15 @@ export function Hero() {
             <h2 className="text-xl font-medium sm:text-3xl">
               {t("blogTitle")}
             </h2>
-            <p className="mt-2 max-w-[16rem] text-justify text-sm text-foreground/90 sm:text-base lg:text-lg">
+            <p className="mt-2 max-w-[16rem] text-sm text-foreground/90 sm:text-base lg:text-lg">
               {t("blogSubtitle")}
             </p>
-            <span className="mt-5 inline-block text-lg font-medium text-brand-pink sm:mt-6 sm:text-xl">
+            <Link
+              href="/search"
+              className="mt-5 inline-flex items-center gap-1 self-start text-sm font-medium text-brand-pink underline-offset-4 transition-all hover:underline sm:mt-6 sm:text-base"
+            >
               {t("blogCta")}
-            </span>
+            </Link>
             <Image
               src="/landing/sticker.png"
               alt=""
