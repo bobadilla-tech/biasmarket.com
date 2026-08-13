@@ -1,4 +1,4 @@
-import MetadataRoute from "next";
+import type { MetadataRoute } from "next";
 import { client } from "@/client/sanity";
 import { POSTS_SITEMAP_QUERY } from "@/client/sanity-queries";
 import { routing } from "@/i18n/routing";

@@ -45,12 +45,14 @@ export default async function BlogPostPage({
   });
 
   return (
-    <div className="landing-theme min-h-screen bg-background text-foreground">
-      <BlogPostView
-        post={post}
-        publishedLabel={publishedLabel}
-        backLabel={t("backToBlog")}
-      />
+    <div className="landing-theme flex min-h-screen flex-col bg-background text-foreground">
+      <div className="flex-1">
+        <BlogPostView
+          post={post}
+          publishedLabel={publishedLabel}
+          backLabel={t("backToBlog")}
+        />
+      </div>
       <Footer />
     </div>
   );

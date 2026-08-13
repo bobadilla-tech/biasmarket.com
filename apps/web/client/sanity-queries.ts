@@ -6,7 +6,7 @@ export const POSTS_QUERY = defineQuery(`
     title,
     slug,
     _createdAt,
-    "excerpt": coalesce(pt::text(body)[0..160], "")
+    "excerpt": coalesce(pt::text(body), "")
   }
 `);
 
@@ -18,7 +18,7 @@ export const POST_QUERY = defineQuery(`
     body,
     _createdAt,
     _updatedAt,
-    "excerpt": coalesce(pt::text(body)[0..160], "")
+    "excerpt": coalesce(pt::text(body), "")
   }
 `);
 

@@ -1,2 +1,2 @@
-export { BlogCard } from "./components/blog-card";
+export { BlogListItem } from "./components/blog-list-item";
 export { BlogPostView } from "./components/blog-post-view";

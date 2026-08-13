@@ -30,9 +30,23 @@ const FETCH_OPTIONS = {
   next: { tags: ["blog"], revalidate: 300 },
 };
 
+// The list teaser / meta description length. GROQ cannot slice strings
+// (`pt::text(body)[0..160]` evaluates to null), so truncation happens here in
+// TS instead of in the query.
+const EXCERPT_LENGTH = 160;
+
+function truncateExcerpt(text: string | null | undefined): string {
+  if (!text) return "";
+  return text.replace(/\s+/g, " ").trim().slice(0, EXCERPT_LENGTH);
+}
+
 export const getBlogPosts = cache(async (): Promise<BlogPostSummary[]> => {
   try {
-    return await client.fetch(POSTS_QUERY, {}, FETCH_OPTIONS);
+    const posts = await client.fetch(POSTS_QUERY, {}, FETCH_OPTIONS);
+    return posts.map((post: BlogPostSummary) => ({
+      ...post,
+      excerpt: truncateExcerpt(post.excerpt),
+    }));
   } catch {
     return [];
   }
@@ -41,7 +55,12 @@ export const getBlogPosts = cache(async (): Promise<BlogPostSummary[]> => {
 export const getBlogPost = cache(
   async (slug: string): Promise<BlogPost | null> => {
     try {
-      return await client.fetch(POST_QUERY, { slug }, FETCH_OPTIONS);
+      const post: BlogPost | null = await client.fetch(
+        POST_QUERY,
+        { slug },
+        FETCH_OPTIONS,
+      );
+      return post ? { ...post, excerpt: truncateExcerpt(post.excerpt) } : null;
     } catch {
       return null;
     }
