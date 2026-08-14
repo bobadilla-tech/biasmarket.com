@@ -109,7 +109,7 @@ export function SectionsPageClient() {
   const handleToggleHidden = async (section: StoreSectionResponseDto) => {
     setError(null);
     setLocalSections((items) =>
-      items.map((s) => (s.id === section.id ? { ...s, hidden: !s.hidden } : s)),
+      items.map((s) => (s.id === section.id ? { ...s, hidden: !s.hidden } : s))
     );
     try {
       await updateSection.mutateAsync({
@@ -229,8 +229,7 @@ export function SectionsPageClient() {
                       savingContent={updateSection.isPending}
                       onToggleHidden={() => handleToggleHidden(section)}
                       onSaveContent={(content) =>
-                        handleSaveContent(section, content)
-                      }
+                        handleSaveContent(section, content)}
                       onDelete={() => handleDelete(section.id)}
                     />
                   ))}
@@ -246,18 +245,20 @@ export function SectionsPageClient() {
               <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
                 {t("sections.preview")}
               </p>
-              {previewSections.length === 0 ? (
-                <p className="text-sm text-gray-400">
-                  {t("sections.emptyPreview")}
-                </p>
-              ) : (
-                <div className="space-y-6 pointer-events-none">
-                  <StoreSectionRenderer
-                    slug={slug}
-                    sections={previewSections}
-                  />
-                </div>
-              )}
+              {previewSections.length === 0
+                ? (
+                  <p className="text-sm text-gray-400">
+                    {t("sections.emptyPreview")}
+                  </p>
+                )
+                : (
+                  <div className="space-y-6 pointer-events-none">
+                    <StoreSectionRenderer
+                      slug={slug}
+                      sections={previewSections}
+                    />
+                  </div>
+                )}
             </div>
           </div>
         </div>

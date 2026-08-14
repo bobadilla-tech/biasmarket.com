@@ -317,9 +317,11 @@ test("selecting a closed-today point reveals a date picker defaulted to the next
   // closedTodayDays excludes only today, so the next open day is tomorrow.
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
-  const expected = `${tomorrow.getFullYear()}-${String(
-    tomorrow.getMonth() + 1,
-  ).padStart(2, "0")}-${String(tomorrow.getDate()).padStart(2, "0")}`;
+  const expected = `${tomorrow.getFullYear()}-${
+    String(
+      tomorrow.getMonth() + 1,
+    ).padStart(2, "0")
+  }-${String(tomorrow.getDate()).padStart(2, "0")}`;
 
   const dateInput = await screen.findByLabelText("Fecha de recojo");
   expect((dateInput as HTMLInputElement).value).toBe(expected);

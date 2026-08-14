@@ -36,7 +36,7 @@ export function BlogListItem({
       {post.excerpt && (
         <p className="mt-3 text-base font-light text-foreground/80">
           {post.excerpt}
-          <span className="text-foreground/80">... </span>
+          <span className="text-foreground/80">...</span>
           <Link
             href={`/blog/${post.slug.current}`}
             className="font-medium text-brand-pink underline underline-offset-4 transition-colors hover:text-brand-pink/80"

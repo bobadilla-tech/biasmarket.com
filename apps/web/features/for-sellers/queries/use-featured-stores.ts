@@ -13,9 +13,7 @@ export function useFeaturedStores(limit?: number) {
     stores: data ?? [],
     loading: isPending,
     error: error
-      ? error instanceof Error
-        ? error.message
-        : String(error)
+      ? error instanceof Error ? error.message : String(error)
       : null,
   };
 }

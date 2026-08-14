@@ -1,11 +1,11 @@
 import { cache } from "react";
 import { client } from "@/features/blog/lib/sanity";
-import { POSTS_QUERY, POST_QUERY } from "@/features/blog/lib/sanity-queries";
+import { POST_QUERY, POSTS_QUERY } from "@/features/blog/lib/sanity-queries";
 import {
-  blogPostSchema,
-  blogPostSummarySchema,
   type BlogPost,
+  blogPostSchema,
   type BlogPostSummary,
+  blogPostSummarySchema,
 } from "./schemas/post.schema";
 
 export type { BlogPost, BlogPostSummary } from "./schemas/post.schema";

@@ -20,8 +20,8 @@ function alternates(path: string) {
 }
 
 async function getStoreSlugs(): Promise<{ slug: string; createdAt: string }[]> {
-  const apiUrl =
-    process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
+  const apiUrl = process.env.INTERNAL_API_URL ??
+    process.env.NEXT_PUBLIC_API_URL;
   if (!apiUrl) return [];
   try {
     const res = await fetch(`${apiUrl}/api/stores/public`, {
@@ -63,7 +63,7 @@ async function getAllEntries(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: path === "" ? ("weekly" as const) : ("monthly" as const),
       priority: path === "" ? 1 : 0.6,
       alternates: alternates(path),
-    })),
+    }))
   );
 
   const stores = await getStoreSlugs();
@@ -86,7 +86,7 @@ async function getAllEntries(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly" as const,
       priority: 0.6,
       alternates: alternates(`/blog/${post.slug}`),
-    })),
+    }))
   );
 
   return [...staticEntries, ...storeEntries, ...blogEntries];

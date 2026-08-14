@@ -14,23 +14,25 @@ pnpm-only, ESM-only, `web` never touches Postgres.
   `@sanity/webhook@4.0.4`
 - `apps/web/features/blog/lib/sanity.ts`:
   `client = createClient({ projectId, dataset, apiVersion: "2026-08-13",
-  useCdn: true })`; `null` when `NEXT_PUBLIC_SANITY_PROJECT_ID`/`DATASET` are
-  missing.
+  useCdn: true })`;
+  `null` when `NEXT_PUBLIC_SANITY_PROJECT_ID`/`DATASET` are missing.
 - `apps/web/features/blog/lib/sanity-queries.ts`: `POSTS_QUERY`, `POST_QUERY`,
   `POSTS_SITEMAP_QUERY` (`defineQuery`).
 - `apps/web/features/blog/schemas/post.schema.ts`: Zod schemas
   (`blogPostSummarySchema`, `blogPostSchema`) + `z.infer` types; validates
   fetched docs at the data boundary (rejects missing `slug.current`/`body`).
 - `apps/web/features/blog/server.ts`: `getBlogPosts()` / `getBlogPost(slug)`
-  with React `cache()`, `client.fetch(query, params, { next: { tags: ["blog"],
-  revalidate: 300 } })`, Zod `safeParse`, and `[]`/`null` fallbacks on error or
-  validation failure.
+  with React `cache()`,
+  `client.fetch(query, params, { next: { tags: ["blog"],
+  revalidate: 300 } })`,
+  Zod `safeParse`, and `[]`/`null` fallbacks on error or validation failure.
 - `apps/web/features/blog/format-date.ts`, `components/blog-list-item.tsx`
   (`BlogListItem`), `components/blog-post-view.tsx` (`BlogPostView`),
   `components/index.ts` barrel.
 - Routes:
   - `apps/web/app/[locale]/(marketing)/blog/page.tsx` — `BlogIndexPage` card
-    list + `generateMetadata` from the `blog.meta` i18n namespace; `params:
+    list + `generateMetadata` from the `blog.meta` i18n namespace;
+    `params:
     Promise<{ locale }>` (Next 16).
   - `apps/web/app/[locale]/(marketing)/blog/[slug]/page.tsx` —
     `generateStaticParams` from `getBlogPosts()`, `dynamicParams` default-true,
@@ -60,13 +62,13 @@ pnpm-only, ESM-only, `web` never touches Postgres.
 
 - Live `post` documents contain only: `title`, `slug.current`, `body`
   (portableText), `_createdAt`/`_updatedAt`. No `language`, `excerpt`,
-  `coverImage`, `publishedAt`, `author` → locale-agnostic posts (same content
-  on `/es/blog` and `/en/blog`); cards are text-only.
+  `coverImage`, `publishedAt`, `author` → locale-agnostic posts (same content on
+  `/es/blog` and `/en/blog`); cards are text-only.
 - `@sanity/client` (re-exported by `next-sanity`)
   `.fetch(query, params, { next: { tags, revalidate } })` → ISR + tag
   revalidation.
-- `next-sanity` re-exports `@portabletext/react` → `PortableText` renders
-  `body` with no extra dependency.
+- `next-sanity` re-exports `@portabletext/react` → `PortableText` renders `body`
+  with no extra dependency.
 - `@sanity/image-url` v2 → `createImageUrlBuilder(client)` (not used yet — no
   images in the schema).
 - Path alias `@/*` → `apps/web/*`, so `@/features/blog/...` resolves.
@@ -76,12 +78,14 @@ pnpm-only, ESM-only, `web` never touches Postgres.
 ## Decisions
 
 - **Queries**: index drops the full `body` and adds a derived `excerpt` using
-  the Sanity pattern `array::join(string::split((pt::text(body)), "")[0..255],
-  "")`; detail adds `_updatedAt`. No runtime excerpt trim in the fetch layer —
-  the query-side slice is authoritative.
+  the Sanity pattern
+  `array::join(string::split((pt::text(body)), "")[0..255],
+  "")`; detail adds
+  `_updatedAt`. No runtime excerpt trim in the fetch layer — the query-side
+  slice is authoritative.
 - **Data boundary validation**: fetched documents are validated with Zod
-  (`features/blog/schemas/post.schema.ts`) before returning, so a malformed
-  post (missing `slug.current` or `body`) can't crash
+  (`features/blog/schemas/post.schema.ts`) before returning, so a malformed post
+  (missing `slug.current` or `body`) can't crash
   `BlogListItem`/`generateStaticParams`/`PortableText`. Validation failures
   degrade to `[]`/`null`, matching the fetch-error posture.
 - **No schema additions** (`coverImage`/`excerpt`/`author`) — minimal
@@ -126,8 +130,8 @@ pnpm-only, ESM-only, `web` never touches Postgres.
 
 ### 4. Components — `apps/web/features/blog/components/`
 
-- `blog-list-item.tsx` (`BlogListItem`: title, published date, excerpt, link
-  to `/blog/{slug}`), `blog-post-view.tsx` (`BlogPostView`: article +
+- `blog-list-item.tsx` (`BlogListItem`: title, published date, excerpt, link to
+  `/blog/{slug}`), `blog-post-view.tsx` (`BlogPostView`: article +
   `PortableText`), `index.ts` barrel. Landing/marketing styling.
 
 ### 5. i18n — `packages/i18n/{en,es}/blog.json` + `packages/i18n/index.ts`
@@ -137,16 +141,18 @@ pnpm-only, ESM-only, `web` never touches Postgres.
 
 ### 6. Surface links
 
-- `features/landing/components/hero.tsx`: blog card `href="/blog"` +
-  `landing` i18n `blogTitle`/`blogSubtitle`/`blogCta`.
+- `features/landing/components/hero.tsx`: blog card `href="/blog"` + `landing`
+  i18n `blogTitle`/`blogSubtitle`/`blogCta`.
 - `components/marketing/navbar.tsx`: `blog` nav item +
   `packages/i18n/{en,es}/marketing.json` `navbar.links.blog`.
 
 ### 7. Revalidation
 
-- `apps/web/app/api/blog/revalidate/route.ts` (POST): `parseBody(request,
-  secret, false)` from `next-sanity/webhook`; 401 when env missing or
-  `isValidSignature !== true`; on success `revalidateTag("blog", { expire: 0 })`
+- `apps/web/app/api/blog/revalidate/route.ts` (POST):
+  `parseBody(request,
+  secret, false)` from `next-sanity/webhook`; 401 when env
+  missing or `isValidSignature !== true`; on success
+  `revalidateTag("blog", { expire: 0 })`
   - `{ revalidated: true, now }`.
 - Env: `SANITY_REVALIDATE_SECRET` (manual-entry, like `RESEND_API_KEY`).
   Configure the Sanity webhook in the Sanity console: URL

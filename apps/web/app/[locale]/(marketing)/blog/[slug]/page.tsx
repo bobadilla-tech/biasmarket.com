@@ -29,14 +29,14 @@ export async function generateMetadata({
     description: post?.excerpt || t("description"),
     ...(ogImage
       ? {
-          openGraph: {
-            images: [{ url: ogImage }],
-          },
-          twitter: {
-            card: "summary_large_image",
-            images: [ogImage],
-          },
-        }
+        openGraph: {
+          images: [{ url: ogImage }],
+        },
+        twitter: {
+          card: "summary_large_image",
+          images: [ogImage],
+        },
+      }
       : {}),
   };
 }

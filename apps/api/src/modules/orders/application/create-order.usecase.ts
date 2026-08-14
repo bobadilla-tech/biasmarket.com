@@ -2,17 +2,17 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
-} from '@nestjs/common';
-import type { PickupPoint, Prisma, ProductVariant } from '@biasmarket/db';
+} from "@nestjs/common";
+import type { PickupPoint, Prisma, ProductVariant } from "@biasmarket/db";
 import {
   buildWhatsAppOrderMessage,
   buildWhatsAppUrl,
-} from '@biasmarket/utils/whatsapp';
-import { PrismaService } from '../../../prisma/prisma.service.js';
-import { getBusinessDate } from '../../../common/business-time.js';
-import type { CreateOrderDto } from '../dto/create-order.dto.js';
-import { NotificationsService } from '../../notifications/notifications.service.js';
-import { CustomerAccountService } from './customer-account.service.js';
+} from "@biasmarket/utils/whatsapp";
+import { PrismaService } from "../../../prisma/prisma.service.js";
+import { getBusinessDate } from "../../../common/business-time.js";
+import type { CreateOrderDto } from "../dto/create-order.dto.js";
+import { NotificationsService } from "../../notifications/notifications.service.js";
+import { CustomerAccountService } from "./customer-account.service.js";
 
 // Parses a `YYYY-MM-DD` date-only string into UTC components, rejecting
 // calendar-invalid values that JS's Date would otherwise silently normalize
@@ -75,7 +75,7 @@ export class CreateOrderUseCase {
     proof?: { imageUrl: string },
   ) {
     const store = await this.prisma.store.findUnique({ where: { slug } });
-    if (!store) throw new NotFoundException('Tienda no encontrada');
+    if (!store) throw new NotFoundException("Tienda no encontrada");
 
     const deliveryConfig = await this.prisma.deliveryMethodConfig.findUnique({
       where: {
@@ -83,7 +83,7 @@ export class CreateOrderUseCase {
       },
     });
     if (!deliveryConfig?.enabled) {
-      throw new BadRequestException('Método de entrega no disponible');
+      throw new BadRequestException("Método de entrega no disponible");
     }
 
     // Whether this store even has enabled pickup points decides if a
@@ -92,13 +92,13 @@ export class CreateOrderUseCase {
     // concurrent seller edit (disable / closedOverride) can't land between
     // validation and order persistence.
     let pickupPointId: string | undefined;
-    if (dto.deliveryMethodType === 'PICKUP') {
+    if (dto.deliveryMethodType === "PICKUP") {
       const hasPoints = await this.prisma.pickupPoint.count({
         where: { storeId: store.id, enabled: true },
       });
       if (hasPoints > 0) {
         if (!dto.pickupPointId) {
-          throw new BadRequestException('Debes seleccionar un punto de recojo');
+          throw new BadRequestException("Debes seleccionar un punto de recojo");
         }
         pickupPointId = dto.pickupPointId;
       }
@@ -110,7 +110,7 @@ export class CreateOrderUseCase {
     // silently dropping a field the client believed it committed to.
     if (dto.pickupDate && !pickupPointId) {
       throw new BadRequestException(
-        'La fecha de recojo solo aplica a pedidos con punto de recojo',
+        "La fecha de recojo solo aplica a pedidos con punto de recojo",
       );
     }
 
@@ -123,8 +123,8 @@ export class CreateOrderUseCase {
     let pickupPoint: { id: string; label: string } | null = null;
     let pickupDate: Date | null = null;
 
-    const { order, pendingVerificationCustomer, pickupPointLabel } =
-      await this.prisma.$transaction(async (tx) => {
+    const { order, pendingVerificationCustomer, pickupPointLabel } = await this
+      .prisma.$transaction(async (tx) => {
         // Defense-in-depth against a stale client cache or a direct API call
         // bypassing whatever the storefront shows — mirrors the zero-payment
         // guard's placement in ReviewPaymentUseCase. Runs inside the
@@ -138,12 +138,12 @@ export class CreateOrderUseCase {
             PickupPoint[]
           >`SELECT * FROM "PickupPoint" WHERE id = ${pickupPointId} FOR UPDATE`;
           if (!point || point.storeId !== store.id || !point.enabled) {
-            throw new BadRequestException('Punto de recojo no disponible');
+            throw new BadRequestException("Punto de recojo no disponible");
           }
           if (point.closedOverride) {
             // A manually closed point has no future date to offer either —
             // matches getPickupAvailability()'s nextAvailableDay: null case.
-            throw new BadRequestException('Punto de recojo no disponible');
+            throw new BadRequestException("Punto de recojo no disponible");
           }
 
           // "Today" means the calendar date in the business timezone
@@ -153,8 +153,7 @@ export class CreateOrderUseCase {
           // `getUTCDay()` can shift the weekday by a day depending on the
           // container's TZ and reject/accept the wrong dates.
           const businessDate = getBusinessDate();
-          const openToday =
-            point.openDays.length === 0 ||
+          const openToday = point.openDays.length === 0 ||
             point.openDays.includes(businessDate.weekday);
 
           // A closed-today point forces a future pickupDate. When the point
@@ -165,12 +164,12 @@ export class CreateOrderUseCase {
             const candidate = parsePickupDate(dto.pickupDate);
             if (!candidate) {
               throw new BadRequestException(
-                'La fecha de recojo seleccionada no es válida',
+                "La fecha de recojo seleccionada no es válida",
               );
             }
             if (!isAfterBusinessDate(candidate, businessDate)) {
               throw new BadRequestException(
-                'La fecha de recojo debe ser posterior a la fecha actual',
+                "La fecha de recojo debe ser posterior a la fecha actual",
               );
             }
             if (
@@ -178,7 +177,7 @@ export class CreateOrderUseCase {
               !point.openDays.includes(candidate.weekday)
             ) {
               throw new BadRequestException(
-                'La fecha de recojo seleccionada no está disponible para este punto',
+                "La fecha de recojo seleccionada no está disponible para este punto",
               );
             }
             pickupDate = new Date(
@@ -186,7 +185,7 @@ export class CreateOrderUseCase {
             );
           } else if (!openToday) {
             throw new BadRequestException(
-              'Debes seleccionar una fecha de recojo para este punto',
+              "Debes seleccionar una fecha de recojo para este punto",
             );
           }
           pickupPoint = { id: point.id, label: point.label };
@@ -194,12 +193,14 @@ export class CreateOrderUseCase {
 
         let customerId: string | undefined;
         let buyerAccountId: string | undefined;
-        let pendingVerificationCustomer: Awaited<
-          ReturnType<CustomerAccountService['findOrCreateCustomer']>
-        > | null = null;
+        let pendingVerificationCustomer:
+          | Awaited<
+            ReturnType<CustomerAccountService["findOrCreateCustomer"]>
+          >
+          | null = null;
         if (dto.customerEmail) {
-          pendingVerificationCustomer =
-            await this.customerAccounts.findOrCreateCustomer(
+          pendingVerificationCustomer = await this.customerAccounts
+            .findOrCreateCustomer(
               tx,
               store.id,
               dto.customerPhone,
@@ -226,7 +227,7 @@ export class CreateOrderUseCase {
           if (
             !product ||
             product.storeId !== store.id ||
-            product.status !== 'PUBLISHED' ||
+            product.status !== "PUBLISHED" ||
             product.deletedAt ||
             product.discontinued
           ) {
@@ -293,7 +294,7 @@ export class CreateOrderUseCase {
 
           if (currency && currency !== product.currency) {
             throw new BadRequestException(
-              'No se pueden combinar productos con distinta moneda en un mismo pedido',
+              "No se pueden combinar productos con distinta moneda en un mismo pedido",
             );
           }
           currency = product.currency;
@@ -317,10 +318,12 @@ export class CreateOrderUseCase {
           });
         }
 
-        const details = deliveryConfig.details as Record<
-          string,
-          unknown
-        > | null;
+        const details = deliveryConfig.details as
+          | Record<
+            string,
+            unknown
+          >
+          | null;
         const deliveryCost = Number(details?.estimatedCost ?? 0);
         // `items` has `@ArrayMinSize(1)` (create-order.dto.ts) — the loop
         // above always runs at least once, so `totalAmount` is always set by
@@ -344,17 +347,17 @@ export class CreateOrderUseCase {
             paymentMethod: dto.paymentMethod,
             deliveryDetails: pickupPoint
               ? {
-                  ...((deliveryConfig.details as Record<string, unknown>) ??
-                    {}),
-                  pickupPointLabel: pickupPoint.label,
-                }
-              : dto.deliveryMethodType === 'COURIER'
-                ? {
-                    ...((deliveryConfig.details as Record<string, unknown>) ??
-                      {}),
-                    shippingAddress: { ...dto.shippingAddress },
-                  }
-                : (deliveryConfig.details ?? {}),
+                ...((deliveryConfig.details as Record<string, unknown>) ??
+                  {}),
+                pickupPointLabel: pickupPoint.label,
+              }
+              : dto.deliveryMethodType === "COURIER"
+              ? {
+                ...((deliveryConfig.details as Record<string, unknown>) ??
+                  {}),
+                shippingAddress: { ...dto.shippingAddress },
+              }
+              : (deliveryConfig.details ?? {}),
             pickupPointId: pickupPoint?.id ?? null,
             pickupDate,
             totalAmount: finalAmount,
@@ -380,18 +383,19 @@ export class CreateOrderUseCase {
               currency: order.currency,
               method: dto.paymentMethod,
               imageUrl: proof.imageUrl,
-              source: 'BUYER_SUBMITTED',
-              reviewStatus: 'PENDING_REVIEW',
+              source: "BUYER_SUBMITTED",
+              reviewStatus: "PENDING_REVIEW",
             },
           });
           await this.notifications.createIfNotOpen(
             {
               storeId: store.id,
-              type: 'PAYMENT_PROOF_SUBMITTED',
-              entityType: 'Order',
+              type: "PAYMENT_PROOF_SUBMITTED",
+              entityType: "Order",
               entityId: order.id,
-              title: 'Comprobante de pago recibido',
-              body: `El comprador envió un comprobante de ${order.currency} ${finalAmount} para revisar.`,
+              title: "Comprobante de pago recibido",
+              body:
+                `El comprador envió un comprobante de ${order.currency} ${finalAmount} para revisar.`,
             },
             tx,
           );
@@ -409,32 +413,32 @@ export class CreateOrderUseCase {
     // buildWhatsAppOrderMessage falls back to the hardcoded default.
     const orderTemplate = store.whatsappNumber
       ? await this.prisma.whatsAppMessageTemplate.findUnique({
-          where: {
-            storeId_type: { storeId: store.id, type: 'NEW_ORDER' },
-          },
-        })
+        where: {
+          storeId_type: { storeId: store.id, type: "NEW_ORDER" },
+        },
+      })
       : null;
 
     const whatsappUrl = store.whatsappNumber
       ? buildWhatsAppUrl(
-          store.whatsappNumber,
-          buildWhatsAppOrderMessage(
-            {
-              orderId: order.id,
-              storeName: store.name,
-              items: messageItems,
-              totalAmount: order.totalAmount.toNumber(),
-              currency: order.currency,
-              deliveryMethodType: order.deliveryMethodType,
-              pickupPointLabel,
-              pickupDate: order.pickupDate,
-              paymentMethod: order.paymentMethod,
-              customerName: order.customerName,
-              customerPhone: order.customerPhone,
-            },
-            orderTemplate?.template,
-          ),
-        )
+        store.whatsappNumber,
+        buildWhatsAppOrderMessage(
+          {
+            orderId: order.id,
+            storeName: store.name,
+            items: messageItems,
+            totalAmount: order.totalAmount.toNumber(),
+            currency: order.currency,
+            deliveryMethodType: order.deliveryMethodType,
+            pickupPointLabel,
+            pickupDate: order.pickupDate,
+            paymentMethod: order.paymentMethod,
+            customerName: order.customerName,
+            customerPhone: order.customerPhone,
+          },
+          orderTemplate?.template,
+        ),
+      )
       : null;
 
     if (

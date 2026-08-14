@@ -39,22 +39,26 @@ export default async function BlogIndexPage({
             {t("subtitle")}
           </p>
 
-          {posts.length === 0 ? (
-            <p className="mt-8 text-base text-muted-foreground">{t("empty")}</p>
-          ) : (
-            <div className="mt-8 sm:mt-10">
-              {posts.map((post) => (
-                <BlogListItem
-                  key={post._id}
-                  post={post}
-                  publishedLabel={t("publishedOn", {
-                    date: formatPublishedDate(post._createdAt, locale),
-                  })}
-                  readMoreLabel={t("readMore")}
-                />
-              ))}
-            </div>
-          )}
+          {posts.length === 0
+            ? (
+              <p className="mt-8 text-base text-muted-foreground">
+                {t("empty")}
+              </p>
+            )
+            : (
+              <div className="mt-8 sm:mt-10">
+                {posts.map((post) => (
+                  <BlogListItem
+                    key={post._id}
+                    post={post}
+                    publishedLabel={t("publishedOn", {
+                      date: formatPublishedDate(post._createdAt, locale),
+                    })}
+                    readMoreLabel={t("readMore")}
+                  />
+                ))}
+              </div>
+            )}
         </div>
       </div>
       <Footer />

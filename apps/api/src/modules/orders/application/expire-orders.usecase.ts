@@ -1,17 +1,17 @@
-import { Injectable, Logger } from '@nestjs/common';
-import type { PaymentStatus } from '@biasmarket/db';
-import { Prisma } from '@biasmarket/db';
-import { computePaymentSummary } from '../../../common/payment-summary.js';
-import { PrismaService } from '../../../prisma/prisma.service.js';
-import { NotificationsService } from '../../notifications/notifications.service.js';
+import { Injectable, Logger } from "@nestjs/common";
+import type { PaymentStatus } from "@biasmarket/db";
+import { Prisma } from "@biasmarket/db";
+import { computePaymentSummary } from "../../../common/payment-summary.js";
+import { PrismaService } from "../../../prisma/prisma.service.js";
+import { NotificationsService } from "../../notifications/notifications.service.js";
 
 // Mirrors CancelOrderUseCase's RESERVED_HOLD_STATUSES: all statuses that keep
 // stock soft-held (reserved). Orders holding stock past expiresAt must release
 // it, regardless of whether the buyer paid a partial deposit.
 const RESERVED_HOLD_STATUSES: PaymentStatus[] = [
-  'PENDING_PAYMENT',
-  'PARTIALLY_PAID',
-  'PAYMENT_SUBMITTED',
+  "PENDING_PAYMENT",
+  "PARTIALLY_PAID",
+  "PAYMENT_SUBMITTED",
 ];
 
 @Injectable()
@@ -55,9 +55,9 @@ export class ExpireOrdersUseCase {
               paymentStatus: { in: RESERVED_HOLD_STATUSES },
             },
             data: {
-              status: 'CANCELLED',
-              paymentStatus: 'CANCELLED',
-              cancellationResolution: 'RETAINED',
+              status: "CANCELLED",
+              paymentStatus: "CANCELLED",
+              cancellationResolution: "RETAINED",
               retainedAmount: new Prisma.Decimal(paidAmount),
               releasedAmount: new Prisma.Decimal(0),
               releasedResolution: null,
@@ -68,13 +68,13 @@ export class ExpireOrdersUseCase {
 
           await tx.auditLog.create({
             data: {
-              actorId: 'system',
+              actorId: "system",
               storeId: order.storeId,
-              action: 'order.expired',
-              entityType: 'Order',
+              action: "order.expired",
+              entityType: "Order",
               entityId: order.id,
               metadata: {
-                resolution: 'RETAINED',
+                resolution: "RETAINED",
                 retainedAmount: paidAmount,
                 releasedAmount: 0,
               },

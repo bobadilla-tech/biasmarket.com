@@ -2,50 +2,50 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-} from '@nestjs/common';
-import { Prisma } from '@biasmarket/db';
+} from "@nestjs/common";
+import { Prisma } from "@biasmarket/db";
 import type {
   FulfillmentStatus,
   PaymentMethodType,
   PaymentStatus,
-} from '@biasmarket/db';
+} from "@biasmarket/db";
 import {
   countsTowardPaid,
   REVENUE_ORDER_PAYMENT_STATUSES,
   withPaymentSummary,
-} from '../../common/payment-summary.js';
-import { PrismaService } from '../../prisma/prisma.service.js';
-import { buildBuckets } from './analytics-buckets.js';
+} from "../../common/payment-summary.js";
+import { PrismaService } from "../../prisma/prisma.service.js";
+import { buildBuckets } from "./analytics-buckets.js";
 import type {
   AnalyticsRange,
   AnalyticsResult,
   PaymentMethodBreakdownRow,
   PaymentMethodsBreakdown,
-} from './analytics.types.js';
+} from "./analytics.types.js";
 
 const TOP_PRODUCTS_LIMIT = 5;
 
 const KNOWN_PAYMENT_METHODS: PaymentMethodType[] = [
-  'YAPE',
-  'PLIN',
-  'TRANSFER',
-  'CASH',
+  "YAPE",
+  "PLIN",
+  "TRANSFER",
+  "CASH",
 ];
 
 const PAYMENT_STATUSES: PaymentStatus[] = [
-  'PENDING_PAYMENT',
-  'PARTIALLY_PAID',
-  'PAYMENT_SUBMITTED',
-  'VERIFIED',
-  'REJECTED',
-  'CANCELLED',
+  "PENDING_PAYMENT",
+  "PARTIALLY_PAID",
+  "PAYMENT_SUBMITTED",
+  "VERIFIED",
+  "REJECTED",
+  "CANCELLED",
 ];
 
 const FULFILLMENT_STATUSES: FulfillmentStatus[] = [
-  'ORDERING',
-  'IN_TRANSIT',
-  'READY',
-  'COMPLETED',
+  "ORDERING",
+  "IN_TRANSIT",
+  "READY",
+  "COMPLETED",
 ];
 
 const RECENT_ORDERS_LIMIT = 10;
@@ -65,9 +65,9 @@ export class StatsService {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
-    if (!store) throw new NotFoundException('Store no encontrada');
+    if (!store) throw new NotFoundException("Store no encontrada");
     if (store.ownerId !== userId) {
-      throw new ForbiddenException('No sos dueño de esta store');
+      throw new ForbiddenException("No sos dueño de esta store");
     }
     return store;
   }
@@ -97,17 +97,17 @@ export class StatsService {
           order: {
             paymentStatus: { in: [...REVENUE_ORDER_PAYMENT_STATUSES] },
           },
-          OR: [{ source: 'SELLER_RECORDED' }, { reviewStatus: 'APPROVED' }],
+          OR: [{ source: "SELLER_RECORDED" }, { reviewStatus: "APPROVED" }],
         },
         _sum: { amount: true },
       }),
       this.prisma.order.groupBy({
-        by: ['paymentStatus'],
+        by: ["paymentStatus"],
         where: { storeId },
         _count: true,
       }),
       this.prisma.order.groupBy({
-        by: ['fulfillmentStatus'],
+        by: ["fulfillmentStatus"],
         where: { storeId },
         _count: true,
       }),
@@ -115,16 +115,16 @@ export class StatsService {
         where: {
           storeId,
           archived: false,
-          type: { in: ['LOW_STOCK', 'OUT_OF_STOCK'] },
+          type: { in: ["LOW_STOCK", "OUT_OF_STOCK"] },
         },
       }),
       this.prisma.order.findMany({
         where: { storeId },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         take: RECENT_ORDERS_LIMIT,
         include: {
           items: { include: { product: true, variant: true } },
-          payments: { orderBy: { createdAt: 'desc' } },
+          payments: { orderBy: { createdAt: "desc" } },
         },
       }),
       // Every order still collecting money, with the same per-order
@@ -139,8 +139,8 @@ export class StatsService {
           storeId,
           paymentStatus: { in: [...REVENUE_ORDER_PAYMENT_STATUSES] },
         },
-        orderBy: { createdAt: 'desc' },
-        include: { payments: { orderBy: { createdAt: 'desc' } } },
+        orderBy: { createdAt: "desc" },
+        include: { payments: { orderBy: { createdAt: "desc" } } },
         take: PARTIAL_PAYMENTS_LIMIT,
       }),
     ]);
@@ -206,13 +206,13 @@ export class StatsService {
           select: { customerId: true, createdAt: true },
         }),
         this.prisma.orderItem.groupBy({
-          by: ['productId'],
+          by: ["productId"],
           where: {
             storeId,
             order: { createdAt: { gte: rangeStart, lt: rangeEnd } },
           },
           _sum: { quantity: true },
-          orderBy: { _sum: { quantity: 'desc' } },
+          orderBy: { _sum: { quantity: "desc" } },
           take: TOP_PRODUCTS_LIMIT,
         }),
         // Revenue follows the payment timestamp, not the order timestamp: a
@@ -226,7 +226,7 @@ export class StatsService {
           where: {
             storeId,
             createdAt: { gte: rangeStart, lt: rangeEnd },
-            OR: [{ source: 'SELLER_RECORDED' }, { reviewStatus: 'APPROVED' }],
+            OR: [{ source: "SELLER_RECORDED" }, { reviewStatus: "APPROVED" }],
             order: {
               paymentStatus: { in: [...REVENUE_ORDER_PAYMENT_STATUSES] },
             },
@@ -299,7 +299,7 @@ export class StatsService {
 
     const topProducts = topProductRows.map((row) => ({
       productId: row.productId,
-      name: productNameById.get(row.productId) ?? '',
+      name: productNameById.get(row.productId) ?? "",
       unitsSold: row._sum.quantity ?? 0,
     }));
 
@@ -315,11 +315,11 @@ export class StatsService {
     await this.assertOwnership(storeId, userId);
 
     const rows = await this.prisma.orderPayment.groupBy({
-      by: ['method'],
+      by: ["method"],
       where: {
         storeId,
         createdAt: { gte: from, lt: to },
-        order: { status: 'ACTIVE' },
+        order: { status: "ACTIVE" },
       },
       _sum: { amount: true },
       _count: true,
