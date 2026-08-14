@@ -95,7 +95,17 @@
     "confirmationStoreInstructionsLabel": "Instrucciones de la tienda",
     "whatsappButton": "Contactar a la tienda por WhatsApp",
     "emptyCart": "Tu carrito está vacío.",
-    "backToStore": "Volver a la tienda"
+    "backToStore": "Volver a la tienda",
+    "paymentProofUploadLabel": "Comprobante de pago",
+    "paymentProofLabel": "Adjunta tu comprobante",
+    "paymentProofHint": "Captura de pantalla o PDF del pago, máx 5MB — JPEG, PNG o PDF",
+    "paymentProofChoose": "Elegir archivo",
+    "paymentProofRemove": "Quitar",
+    "paymentProofSize": "{size} KB",
+    "paymentProofRequired": "Adjunta tu comprobante de pago",
+    "paymentProofInvalidFormat": "Solo JPEG, PNG o PDF",
+    "paymentProofTooLarge": "Máximo 5MB",
+    "paymentProofPreview": "Vista previa"
   },
   "accountConfirmPage": {
     "loading": "Confirmando tu cuenta...",

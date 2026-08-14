@@ -1,7 +1,10 @@
 import { afterEach, expect, test, vi } from "vitest";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { renderWithProviders } from "../../../../../../test-utils/render-with-providers";
-import type { OrderPaymentResponseDto, OrderResponseDto } from "@biasmarket/types";
+import type {
+  OrderPaymentResponseDto,
+  OrderResponseDto,
+} from "@biasmarket/types";
 
 vi.mock("next/navigation", () => ({
   useParams: () => ({ locale: "es", slug: "my-store" }),
@@ -22,8 +25,8 @@ vi.mock("@/features/stats", () => ({
   statsKeys: { overview: (storeId: string) => ["stats", storeId, "overview"] },
 }));
 
-const { findAll, review, reviewPaymentProof, paymentConfigFindAll } = vi
-  .hoisted(() => ({
+const { findAll, review, reviewPaymentProof, paymentConfigFindAll } =
+  vi.hoisted(() => ({
     findAll: vi.fn(),
     review: vi.fn(),
     reviewPaymentProof: vi.fn(),
@@ -122,9 +125,9 @@ test("Aprobar is disabled for an order with zero payment registered", async () =
   findAll.mockResolvedValue([baseOrder]);
   renderWithProviders(<PaymentsPageClient />);
 
-  const approveButton = await screen.findByRole("button", {
+  const approveButton = (await screen.findByRole("button", {
     name: "Aprobar",
-  }) as HTMLButtonElement;
+  })) as HTMLButtonElement;
   expect(approveButton.disabled).toBe(true);
 });
 
@@ -133,28 +136,26 @@ test("Aprobar is enabled once a payment has been registered", async () => {
   findAll.mockResolvedValue([{ ...baseOrder, paidAmount: 40 }]);
   renderWithProviders(<PaymentsPageClient />);
 
-  const approveButton = await screen.findByRole("button", {
+  const approveButton = (await screen.findByRole("button", {
     name: "Aprobar",
-  }) as HTMLButtonElement;
+  })) as HTMLButtonElement;
   expect(approveButton.disabled).toBe(false);
 });
 
 test("approving a pending proof calls the proof-review mutation with the proof paymentId", async () => {
   paymentConfigFindAll.mockResolvedValue([]);
   reviewPaymentProof.mockResolvedValue({});
-  findAll.mockResolvedValue([{
-    ...baseOrder,
-    paymentStatus: "PAYMENT_SUBMITTED",
-    payments: [buyerProof()],
-  }]);
+  findAll.mockResolvedValue([
+    {
+      ...baseOrder,
+      paymentStatus: "PAYMENT_SUBMITTED",
+      payments: [buyerProof()],
+    },
+  ]);
   renderWithProviders(<PaymentsPageClient />);
 
-  fireEvent.click(
-    await screen.findByRole("button", { name: "Aprobar" }),
-  );
-  fireEvent.click(
-    await screen.findByRole("button", { name: "Sí, marcar" }),
-  );
+  fireEvent.click(await screen.findByRole("button", { name: "Aprobar" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Sí, marcar" }));
 
   await waitFor(() =>
     expect(reviewPaymentProof).toHaveBeenCalledWith(
@@ -163,7 +164,7 @@ test("approving a pending proof calls the proof-review mutation with the proof p
       "proof-1",
       { decision: "approve" },
       expect.anything(),
-    )
+    ),
   );
   expect(review).not.toHaveBeenCalled();
 });
@@ -171,23 +172,20 @@ test("approving a pending proof calls the proof-review mutation with the proof p
 test("rejecting a pending proof calls the proof-review mutation with the proof paymentId and the reason", async () => {
   paymentConfigFindAll.mockResolvedValue([]);
   reviewPaymentProof.mockResolvedValue({});
-  findAll.mockResolvedValue([{
-    ...baseOrder,
-    paymentStatus: "PAYMENT_SUBMITTED",
-    payments: [buyerProof()],
-  }]);
+  findAll.mockResolvedValue([
+    {
+      ...baseOrder,
+      paymentStatus: "PAYMENT_SUBMITTED",
+      payments: [buyerProof()],
+    },
+  ]);
   renderWithProviders(<PaymentsPageClient />);
 
-  fireEvent.click(
-    await screen.findByRole("button", { name: "Rechazar" }),
-  );
-  fireEvent.change(
-    await screen.findByPlaceholderText(/Motivo del rechazo/),
-    { target: { value: "El comprobante parece editado" } },
-  );
-  fireEvent.click(
-    await screen.findByRole("button", { name: "Sí, marcar" }),
-  );
+  fireEvent.click(await screen.findByRole("button", { name: "Rechazar" }));
+  fireEvent.change(await screen.findByPlaceholderText(/Motivo del rechazo/), {
+    target: { value: "El comprobante parece editado" },
+  });
+  fireEvent.click(await screen.findByRole("button", { name: "Sí, marcar" }));
 
   await waitFor(() =>
     expect(reviewPaymentProof).toHaveBeenCalledWith(
@@ -196,7 +194,7 @@ test("rejecting a pending proof calls the proof-review mutation with the proof p
       "proof-1",
       { decision: "reject", reason: "El comprobante parece editado" },
       expect.anything(),
-    )
+    ),
   );
   expect(review).not.toHaveBeenCalled();
 });
@@ -204,19 +202,20 @@ test("rejecting a pending proof calls the proof-review mutation with the proof p
 test("order-level rejection (no pending proof) stays on the order review mutation", async () => {
   paymentConfigFindAll.mockResolvedValue([]);
   review.mockResolvedValue({});
-  findAll.mockResolvedValue([{ ...baseOrder, paymentStatus: "PARTIALLY_PAID", paidAmount: 40 }]);
+  findAll.mockResolvedValue([
+    {
+      ...baseOrder,
+      paymentStatus: "PARTIALLY_PAID",
+      paidAmount: 40,
+    },
+  ]);
   renderWithProviders(<PaymentsPageClient />);
 
-  fireEvent.click(
-    await screen.findByRole("button", { name: "Rechazar" }),
-  );
-  fireEvent.change(
-    await screen.findByPlaceholderText(/Motivo del rechazo/),
-    { target: { value: "Razón de nivel de pedido" } },
-  );
-  fireEvent.click(
-    await screen.findByRole("button", { name: "Sí, marcar" }),
-  );
+  fireEvent.click(await screen.findByRole("button", { name: "Rechazar" }));
+  fireEvent.change(await screen.findByPlaceholderText(/Motivo del rechazo/), {
+    target: { value: "Razón de nivel de pedido" },
+  });
+  fireEvent.click(await screen.findByRole("button", { name: "Sí, marcar" }));
 
   await waitFor(() =>
     expect(review).toHaveBeenCalledWith(
@@ -224,20 +223,22 @@ test("order-level rejection (no pending proof) stays on the order review mutatio
       "order-1",
       { decision: "reject", reason: "Razón de nivel de pedido" },
       expect.anything(),
-    )
+    ),
   );
   expect(reviewPaymentProof).not.toHaveBeenCalled();
 });
 
 test("VERIFIED orders with an outstanding balance stay in the payment queue", async () => {
   paymentConfigFindAll.mockResolvedValue([]);
-  findAll.mockResolvedValue([{
-    ...baseOrder,
-    paymentStatus: "VERIFIED",
-    paidAmount: 40,
-    pendingAmount: 60,
-    payments: [sellerPayment()],
-  }]);
+  findAll.mockResolvedValue([
+    {
+      ...baseOrder,
+      paymentStatus: "VERIFIED",
+      paidAmount: 40,
+      pendingAmount: 60,
+      payments: [sellerPayment()],
+    },
+  ]);
   renderWithProviders(<PaymentsPageClient />);
 
   expect(await screen.findByText("Jane")).toBeDefined();
@@ -248,30 +249,30 @@ test("regression: approving a partially paid order keeps it in the queue as VERI
   paymentConfigFindAll.mockResolvedValue([]);
   review.mockResolvedValue({});
   findAll
-    .mockResolvedValueOnce([{
-      ...baseOrder,
-      paymentStatus: "PARTIALLY_PAID",
-      paidAmount: 40,
-      pendingAmount: 60,
-      payments: [sellerPayment()],
-    }])
+    .mockResolvedValueOnce([
+      {
+        ...baseOrder,
+        paymentStatus: "PARTIALLY_PAID",
+        paidAmount: 40,
+        pendingAmount: 60,
+        payments: [sellerPayment()],
+      },
+    ])
     // After the approve mutation invalidates the orders query, the refetch
     // returns the order in its server state: VERIFIED with the residual owed.
-    .mockResolvedValueOnce([{
-      ...baseOrder,
-      paymentStatus: "VERIFIED",
-      paidAmount: 40,
-      pendingAmount: 60,
-      payments: [sellerPayment()],
-    }]);
+    .mockResolvedValueOnce([
+      {
+        ...baseOrder,
+        paymentStatus: "VERIFIED",
+        paidAmount: 40,
+        pendingAmount: 60,
+        payments: [sellerPayment()],
+      },
+    ]);
   renderWithProviders(<PaymentsPageClient />);
 
-  fireEvent.click(
-    await screen.findByRole("button", { name: "Aprobar" }),
-  );
-  fireEvent.click(
-    await screen.findByRole("button", { name: "Sí, marcar" }),
-  );
+  fireEvent.click(await screen.findByRole("button", { name: "Aprobar" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Sí, marcar" }));
 
   await waitFor(() => expect(review).toHaveBeenCalled());
   // The order must not fall out of the queue now that it is VERIFIED — the

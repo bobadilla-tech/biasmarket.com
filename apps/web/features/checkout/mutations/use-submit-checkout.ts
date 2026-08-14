@@ -16,6 +16,7 @@ export function useSubmitCheckout(slug: string, fallbackErrorMessage?: string) {
       customerPhone: string;
       customerEmail?: string;
       shippingAddress?: ShippingAddressDto;
+      paymentProof?: File | null;
       items: CartItem[];
     }) => checkoutApi.submit(slug, values, fallbackErrorMessage),
   });

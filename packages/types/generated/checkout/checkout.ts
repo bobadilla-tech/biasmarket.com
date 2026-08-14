@@ -21,10 +21,37 @@ export const create = async (
   createOrderDto: CreateOrderDto,
   options?: Parameters<typeof customFetch>[1],
 ): Promise<CheckoutResultResponseDto> => {
+  const formData = new FormData();
+  formData.append(`deliveryMethodType`, createOrderDto.deliveryMethodType);
+  if (createOrderDto.pickupPointId !== undefined) {
+    formData.append(`pickupPointId`, createOrderDto.pickupPointId);
+  }
+  if (createOrderDto.pickupDate !== undefined) {
+    formData.append(`pickupDate`, createOrderDto.pickupDate);
+  }
+  if (createOrderDto.paymentMethod !== undefined) {
+    formData.append(`paymentMethod`, createOrderDto.paymentMethod);
+  }
+  formData.append(`customerPhone`, createOrderDto.customerPhone);
+  if (createOrderDto.customerName !== undefined) {
+    formData.append(`customerName`, createOrderDto.customerName);
+  }
+  if (createOrderDto.customerEmail !== undefined) {
+    formData.append(`customerEmail`, createOrderDto.customerEmail);
+  }
+  if (createOrderDto.shippingAddress !== undefined) {
+    formData.append(
+      `shippingAddress`,
+      JSON.stringify(createOrderDto.shippingAddress),
+    );
+  }
+  createOrderDto.items.forEach((value) =>
+    formData.append(`items`, JSON.stringify(value))
+  );
+
   return customFetch<CheckoutResultResponseDto>(getCreateUrl(slug), {
     ...options,
     method: "POST",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(createOrderDto),
+    body: formData,
   });
 };

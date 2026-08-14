@@ -15,9 +15,9 @@ import type {
   StoreDirectoryResponseDto,
   StorePublicDetailResponseDto,
   StoreResponseDto,
-  StoreWithOwnerResponseDto,
   StoresControllerfindDirectoryParams,
   StoresControllerfindFeaturedParams,
+  StoreWithOwnerResponseDto,
   UpdateStoreDto,
 } from "../api.schemas.js";
 

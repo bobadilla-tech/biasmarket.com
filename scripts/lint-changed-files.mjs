@@ -74,8 +74,12 @@ if (failing.length > 0) {
     `\nPrettier: ${failing.length} changed file(s) in ${pkgDir} not formatted:`,
   );
   for (const file of failing) console.error(`  ${file}`);
-  console.error("Run `pnpm --filter <pkg> format` or `pnpm exec prettier --write <file>`.");
+  console.error(
+    "Run `pnpm --filter <pkg> format` or `pnpm exec prettier --write <file>`.",
+  );
   process.exit(1);
 }
 
-console.log(`Prettier: ${files.length} changed file(s) in ${pkgDir} formatted.`);
+console.log(
+  `Prettier: ${files.length} changed file(s) in ${pkgDir} formatted.`,
+);
