@@ -6,7 +6,7 @@ export const POSTS_QUERY = defineQuery(`
     title,
     slug,
     _createdAt,
-    "excerpt": array::join(string::split((pt::text(body)), "")[0..255], "") + "..."
+    "excerpt": array::join(string::split((pt::text(body)), "")[0..255], "")
   }
 `);
 
@@ -18,7 +18,7 @@ export const POST_QUERY = defineQuery(`
     body,
     _createdAt,
     _updatedAt,
-    "excerpt": array::join(string::split((pt::text(body)), "")[0..255], "") + "..."
+    "excerpt": array::join(string::split((pt::text(body)), "")[0..255], "")
   }
 `);
 

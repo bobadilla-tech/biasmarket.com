@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
-import { client } from "@/client/sanity";
-import { POSTS_SITEMAP_QUERY } from "@/client/sanity-queries";
+import { client } from "@/features/blog/lib/sanity";
+import { POSTS_SITEMAP_QUERY } from "@/features/blog/lib/sanity-queries";
 import { routing } from "@/i18n/routing";
 import { SITE_URL } from "@/lib/site-config";
 
