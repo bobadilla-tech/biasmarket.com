@@ -62,8 +62,8 @@ function parsePage(value: unknown): SitemapPage {
     typeof page.total !== "number" ||
     !Number.isSafeInteger(page.total) ||
     page.total < 0 ||
-    page.items.some((item) =>
-      !item || typeof item.slug !== "string" || !item.slug
+    page.items.some(
+      (item) => !item || typeof item.slug !== "string" || !item.slug,
     )
   ) {
     throw new Error("Invalid stores sitemap page envelope");
@@ -101,7 +101,7 @@ export const storesSource: SitemapSource = {
     }
 
     const entries: MetadataRoute.Sitemap = page.items.flatMap(({ slug }) =>
-      routing.locales.map((locale) => storeEntry(locale, slug))
+      routing.locales.map((locale) => storeEntry(locale, slug)),
     );
     return entries.slice(pageSize.sliceStart, pageSize.sliceEnd);
   },

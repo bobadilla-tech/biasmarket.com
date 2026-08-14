@@ -55,6 +55,7 @@ the actual implementation, this is the summary):
    — `deploy.sh` also schedules its own cleanup of it ~30 minutes later (see
    "Scheduled cleanup" below), best-effort and non-fatal to the deploy if
    scheduling itself fails.
+
 9. On any failure at steps 4–8: tear down **only** the candidate; the previous
    color and its Caddy routing are never touched.
 10. Always, on every exit path: write `state/last_deploy_result` (SHA, outcome,
@@ -81,6 +82,7 @@ the actual implementation, this is the summary):
     A stray orphaned `flock` process transiently visible in `ps` shortly after
     one schedule supersedes another is expected (a `kill -TERM` racing a process
     already blocked inside `acquire_deploy_lock`), not a symptom to chase.
+
 12. `deploy.sh --cleanup` (whether fired by step 11's schedule, the hourly
     `cleanup-fallback.yml`, or run manually) always re-reads
     `state/current_color`/`state/rollback_target` fresh at invocation time —
@@ -104,14 +106,14 @@ committed — no GitHub Actions runner sits idle waiting for it. Mechanism
 
 - `schedule_cleanup()` backgrounds a detached
   `setsid bash -c 'sleep 1800;
-  exec "$0" --cleanup' "$ROOT_DIR/deploy.sh"`,
+exec "$0" --cleanup' "$ROOT_DIR/deploy.sh"`,
   closing the inherited deploy-lock file descriptor first (a plain background
   fork would otherwise hold the same `flock` open for the full 30 minutes). The
   30-minute chain always execs into whatever `deploy.sh` is currently on disk
   when it fires, not a stale in-memory copy, and `cmd_cleanup` re-reads
   `current_color`/ `rollback_target` fresh at that point — so an in-window
   `deploy.sh
-  --rollback` needs no special-case cancellation; the scheduled
+--rollback` needs no special-case cancellation; the scheduled
   cleanup just tears down whatever is still recorded as the rollback target when
   it runs.
 - `cancel_scheduled_cleanup()` runs first, superseding any still-pending

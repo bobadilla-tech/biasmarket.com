@@ -92,7 +92,7 @@ before doing anything else:
 - **External down, internal up** → Caddy/DNS/TLS problem. From
   `/opt/biasmarket`, check
   `IMAGE_TAG="$(cat state/current_sha)" docker compose
-  --env-file env/shared.env logs caddy`,
+--env-file env/shared.env logs caddy`,
   confirm DNS still resolves (`dig +short api.biasmarket.com`), and check for an
   expired cert.
 - **Both down** → the app itself. Go straight to the common fixes below.

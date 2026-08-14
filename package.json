@@ -10,6 +10,7 @@
     "dev": "turbo run dev --parallel",
     "build": "DATABASE_URL=\"${DATABASE_URL:-postgresql://build:build@localhost:5432/build?schema=public}\" turbo run build",
     "lint": "turbo run lint",
+    "fix": "node scripts/lint-changed-files.mjs --write && pnpm lint",
     "typecheck": "DATABASE_URL=\"${DATABASE_URL:-postgresql://build:build@localhost:5432/build?schema=public}\" turbo run typecheck",
     "db:generate": "turbo run db:generate",
     "kuma:setup": "node scripts/setup-kuma.ts",

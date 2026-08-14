@@ -19,24 +19,24 @@
 // live `api-<color>` container; see docs/core/admin-access.md. The operation is
 // idempotent, additive-only, and has no destructive mode.
 
-import { createSeedClient } from "./client.ts";
-import { applyStoreFixture } from "./apply.ts";
-import { ensureContactInquiry, ensureUser } from "./helpers.ts";
-import { seedId } from "./ids.ts";
+import { createSeedClient } from './client.ts';
+import { applyStoreFixture } from './apply.ts';
+import { ensureContactInquiry, ensureUser } from './helpers.ts';
+import { seedId } from './ids.ts';
 import {
   buildAppendFixture,
   buildBaseFixtures,
   buildContactInquiries,
-} from "./fixtures.ts";
+} from './fixtures.ts';
 
 const args = process.argv.slice(2);
-const append = args.includes("--append");
-const batch = args.find((a) => a.startsWith("--batch="))?.slice(
-  "--batch=".length,
-);
+const append = args.includes('--append');
+const batch = args
+  .find((a) => a.startsWith('--batch='))
+  ?.slice('--batch='.length);
 
 if (append && !batch) {
-  console.error("Usage: node scripts/seed/run.ts --append --batch=<label>");
+  console.error('Usage: node scripts/seed/run.ts --append --batch=<label>');
   process.exit(1);
 }
 
@@ -56,16 +56,16 @@ if (append) {
     await ensureUser(prisma, {
       email: admin.email,
       name: admin.name,
-      role: "admin",
+      role: 'admin',
     });
   }
   for (const store of stores) {
-    const result = await applyStoreFixture(prisma, "base", store);
+    const result = await applyStoreFixture(prisma, 'base', store);
     unverifiedCustomerLinks.push(...result.unverifiedCustomerLinks);
   }
   for (const inquiry of buildContactInquiries()) {
     await ensureContactInquiry(prisma, {
-      id: seedId("base", "contact-inquiry", inquiry.key),
+      id: seedId('base', 'contact-inquiry', inquiry.key),
       name: inquiry.name,
       email: inquiry.email,
       company: inquiry.company,
@@ -77,7 +77,7 @@ if (append) {
 
 if (unverifiedCustomerLinks.length > 0) {
   console.log(
-    "\nUnverified seeded buyer accounts — confirm links (30-day tokens):",
+    '\nUnverified seeded buyer accounts — confirm links (30-day tokens):',
   );
   for (const link of unverifiedCustomerLinks) {
     console.log(`  ${link.email} -> ${link.url}`);

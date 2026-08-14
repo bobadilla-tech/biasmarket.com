@@ -54,11 +54,9 @@ const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 // favicon changes: `sips -s format png apps/web/app/favicon.ico --out
 // scripts/assets/kuma-status-page-favicon.png` (macOS) or an equivalent
 // ImageMagick/ffmpeg call elsewhere.
-const statusPageLogoDataUrl = `data:image/png;base64,${
-  readFileSync(
-    join(repoRoot, "scripts", "assets", "kuma-status-page-favicon.png"),
-  ).toString("base64")
-}`;
+const statusPageLogoDataUrl = `data:image/png;base64,${readFileSync(
+  join(repoRoot, "scripts", "assets", "kuma-status-page-favicon.png"),
+).toString("base64")}`;
 
 function parseEnvFile(path: string): Record<string, string> {
   if (!existsSync(path)) return {};
@@ -89,8 +87,7 @@ const MONITORING_WEBHOOK_SECRET = requiredEnv(
   vpsSharedEnv.MONITORING_WEBHOOK_SECRET,
 );
 const STATUS_PAGE_SLUG = process.env.STATUS_PAGE_SLUG ?? "status";
-const STATUS_PAGE_TITLE = process.env.STATUS_PAGE_TITLE ??
-  "Bias Market Status";
+const STATUS_PAGE_TITLE = process.env.STATUS_PAGE_TITLE ?? "Bias Market Status";
 
 const NOTIFICATION_NAME = "api-monitoring-webhook";
 const PUSH_MONITOR_NAME = "migration_pending watchdog";
@@ -186,12 +183,9 @@ async function main() {
       for (const m of Object.values(list)) existingMonitors.set(m.name, m.id);
     },
   );
-  socket.on(
-    "notificationList",
-    (list: Array<{ id: number; name: string }>) => {
-      for (const n of list) existingNotifications.set(n.name, n.id);
-    },
-  );
+  socket.on("notificationList", (list: Array<{ id: number; name: string }>) => {
+    for (const n of list) existingNotifications.set(n.name, n.id);
+  });
 
   await new Promise<void>((resolve, reject) => {
     socket.on("connect_error", reject);
@@ -200,7 +194,7 @@ async function main() {
   console.log("Connected.");
 
   const needsSetup = await new Promise<boolean>((resolve) =>
-    socket.emit("needSetup", (res: boolean) => resolve(res))
+    socket.emit("needSetup", (res: boolean) => resolve(res)),
   );
 
   if (needsSetup) {
@@ -214,13 +208,12 @@ async function main() {
     if (!setupRes.ok) throw new Error(`Kuma setup failed: ${setupRes.msg}`);
   }
 
-  const loginRes = await new Promise<{ ok: boolean; msg?: string }>(
-    (resolve) =>
-      socket.emit(
-        "login",
-        { username: KUMA_USERNAME, password: KUMA_PASSWORD },
-        resolve as Cb,
-      ),
+  const loginRes = await new Promise<{ ok: boolean; msg?: string }>((resolve) =>
+    socket.emit(
+      "login",
+      { username: KUMA_USERNAME, password: KUMA_PASSWORD },
+      resolve as Cb,
+    ),
   );
   if (!loginRes.ok) throw new Error(`Kuma login failed: ${loginRes.msg}`);
   console.log("Logged in.");
@@ -279,28 +272,31 @@ async function main() {
       active: true,
       upsideDown: false,
     };
-    const monitor = spec.type === "http"
-      ? {
-        ...base,
-        type: "http",
-        url: spec.url,
-        method: "GET",
-        accepted_statuscodes: ["200-299"],
-      }
-      : {
-        ...base,
-        type: "port",
-        hostname: spec.hostname,
-        port: spec.port,
-        // Server-side validation reads accepted_statuscodes unconditionally
-        // (Array.prototype.every) regardless of monitor type — unused for a
-        // TCP check but required to be present or `add` throws.
-        accepted_statuscodes: ["200-299"],
-      };
+    const monitor =
+      spec.type === "http"
+        ? {
+            ...base,
+            type: "http",
+            url: spec.url,
+            method: "GET",
+            accepted_statuscodes: ["200-299"],
+          }
+        : {
+            ...base,
+            type: "port",
+            hostname: spec.hostname,
+            port: spec.port,
+            // Server-side validation reads accepted_statuscodes unconditionally
+            // (Array.prototype.every) regardless of monitor type — unused for a
+            // TCP check but required to be present or `add` throws.
+            accepted_statuscodes: ["200-299"],
+          };
 
-    const res = await new Promise<
-      { ok: boolean; msg?: string; monitorID: number }
-    >((resolve) => socket.emit("add", monitor, resolve as Cb));
+    const res = await new Promise<{
+      ok: boolean;
+      msg?: string;
+      monitorID: number;
+    }>((resolve) => socket.emit("add", monitor, resolve as Cb));
     if (!res.ok) {
       throw new Error(`add monitor "${spec.name}" failed: ${res.msg}`);
     }
@@ -336,9 +332,11 @@ async function main() {
       upsideDown: false,
       accepted_statuscodes: ["200-299"],
     };
-    const res = await new Promise<
-      { ok: boolean; msg?: string; monitorID: number }
-    >((resolve) => socket.emit("add", pushMonitor, resolve as Cb));
+    const res = await new Promise<{
+      ok: boolean;
+      msg?: string;
+      monitorID: number;
+    }>((resolve) => socket.emit("add", pushMonitor, resolve as Cb));
     if (!res.ok) throw new Error(`add push monitor failed: ${res.msg}`);
     pushMonitorId = res.monitorID;
     console.log(
@@ -346,9 +344,10 @@ async function main() {
     );
   }
 
-  const pushDetail = await new Promise<
-    { ok: boolean; monitor?: { pushToken?: string } }
-  >((resolve) => socket.emit("getMonitor", pushMonitorId, resolve as Cb));
+  const pushDetail = await new Promise<{
+    ok: boolean;
+    monitor?: { pushToken?: string };
+  }>((resolve) => socket.emit("getMonitor", pushMonitorId, resolve as Cb));
   if (pushDetail.ok && pushDetail.monitor?.pushToken) {
     console.log(
       `Push monitor ready. Set KUMA_MIGRATION_PUSH_URL in infra/vps/env/watchdog.env to:\n` +
@@ -391,26 +390,25 @@ async function main() {
     },
   ];
 
-  const saveRes = await new Promise<{ ok: boolean; msg?: string }>(
-    (resolve) =>
-      socket.emit(
-        "saveStatusPage",
-        STATUS_PAGE_SLUG,
-        {
-          slug: STATUS_PAGE_SLUG,
-          title: STATUS_PAGE_TITLE,
-          description: "",
-          theme: "auto",
-          showTags: false,
-          footerText: "",
-          showPoweredBy: false,
-          showCertificateExpiry: false,
-          domainNameList: [],
-        },
-        statusPageLogoDataUrl,
-        publicGroupList,
-        resolve as Cb,
-      ),
+  const saveRes = await new Promise<{ ok: boolean; msg?: string }>((resolve) =>
+    socket.emit(
+      "saveStatusPage",
+      STATUS_PAGE_SLUG,
+      {
+        slug: STATUS_PAGE_SLUG,
+        title: STATUS_PAGE_TITLE,
+        description: "",
+        theme: "auto",
+        showTags: false,
+        footerText: "",
+        showPoweredBy: false,
+        showCertificateExpiry: false,
+        domainNameList: [],
+      },
+      statusPageLogoDataUrl,
+      publicGroupList,
+      resolve as Cb,
+    ),
   );
   if (!saveRes.ok) throw new Error(`saveStatusPage failed: ${saveRes.msg}`);
   console.log(

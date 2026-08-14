@@ -176,7 +176,9 @@ describe('customer account + customer auth (e2e)', () => {
       });
     }
     if (storeBId) {
-      await prisma.customerStoreLink.deleteMany({ where: { storeId: storeBId } });
+      await prisma.customerStoreLink.deleteMany({
+        where: { storeId: storeBId },
+      });
       await prisma.notification.deleteMany({ where: { storeId: storeBId } });
       await prisma.paymentMethodConfig.deleteMany({
         where: { storeId: storeBId },

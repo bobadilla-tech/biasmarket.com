@@ -71,16 +71,17 @@ export function serializeSitemapXml(entries: MetadataRoute.Sitemap): string {
     if (languages) {
       for (const [lang, href] of Object.entries(languages)) {
         if (!href) continue;
-        xml += `<xhtml:link rel="alternate" hreflang="${
-          escapeXml(lang)
-        }" href="${escapeXml(href)}" />\n`;
+        xml += `<xhtml:link rel="alternate" hreflang="${escapeXml(
+          lang,
+        )}" href="${escapeXml(href)}" />\n`;
       }
     }
 
     if (entry.lastModified) {
-      const serialized = entry.lastModified instanceof Date
-        ? entry.lastModified.toISOString()
-        : entry.lastModified;
+      const serialized =
+        entry.lastModified instanceof Date
+          ? entry.lastModified.toISOString()
+          : entry.lastModified;
       xml += `<lastmod>${escapeXml(serialized)}</lastmod>\n`;
     }
     if (entry.changeFrequency) {

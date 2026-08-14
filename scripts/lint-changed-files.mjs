@@ -1,16 +1,20 @@
 #!/usr/bin/env node
-// Lints the files changed in this branch/worktree for one package with Prettier.
+// Checks (or formats with --write) files changed in this branch/worktree with Prettier.
 // The repo predates any formatter, so a whole-package `prettier --check` fails
 // on hundreds of untouched files; this gates only the diff (against BASE_REF,
 // or origin/main locally) so new work can't ship unformatted while existing
-// files stay untouched. Files outside the given package dir are ignored.
+// files stay untouched. Package linting can still scope files to one directory;
+// the root `pnpm fix` command formats all changed files.
 import { execFileSync } from "node:child_process";
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import prettier from "prettier";
 
-const [pkgDir = "apps/api"] = process.argv.slice(2);
+const args = process.argv.slice(2);
+const write = args.includes("--write");
+const pkgDir =
+  args.find((arg) => arg !== "--write") ?? (write ? undefined : "apps/api");
 const baseRef = process.env.BASE_REF || "origin/main";
 
 const repoRoot = execFileSync("git", ["rev-parse", "--show-toplevel"], {
@@ -32,19 +36,16 @@ function changedFiles() {
   const committed = git(["diff", "--name-only", "-z", `${baseRef}...HEAD`]);
   const unstaged = git(["diff", "--name-only", "-z"]);
   const staged = git(["diff", "--cached", "--name-only", "-z"]);
-  const untracked = git([
-    "ls-files",
-    "--others",
-    "--exclude-standard",
-    "-z",
-  ]);
+  const untracked = git(["ls-files", "--others", "--exclude-standard", "-z"]);
 
   return [...new Set([...committed, ...unstaged, ...staged, ...untracked])];
 }
 
 let files;
 try {
-  files = changedFiles().filter((file) => file.startsWith(`${pkgDir}/`));
+  files = changedFiles().filter(
+    (file) => !pkgDir || file.startsWith(`${pkgDir}/`),
+  );
 } catch (error) {
   console.error(
     `[lint] cannot determine changed files: no valid comparison base ` +
@@ -55,6 +56,7 @@ try {
 }
 
 const failing = [];
+let formattedCount = 0;
 for (const file of files) {
   const absolute = path.resolve(repoRoot, file);
   if (!existsSync(absolute)) continue;
@@ -62,14 +64,26 @@ for (const file of files) {
   const info = await prettier.getFileInfo(absolute);
   if (info.ignored || !info.inferredParser) continue;
 
-  const text = await readFile(absolute, "utf8");
   const config = await prettier.resolveConfig(absolute);
-  if (!(await prettier.check(text, { ...config, filepath: absolute }))) {
+  const options = { ...config, filepath: absolute };
+  const text = await readFile(absolute, "utf8");
+
+  if (write) {
+    const formatted = await prettier.format(text, options);
+    if (formatted !== text) {
+      await writeFile(absolute, formatted);
+      formattedCount += 1;
+    }
+  } else if (!(await prettier.check(text, options))) {
     failing.push(file);
   }
 }
 
-if (failing.length > 0) {
+if (write) {
+  console.log(
+    `Prettier: formatted ${formattedCount} of ${files.length} changed file(s)${pkgDir ? ` in ${pkgDir}` : ""}.`,
+  );
+} else if (failing.length > 0) {
   console.error(
     `\nPrettier: ${failing.length} changed file(s) in ${pkgDir} not formatted:`,
   );

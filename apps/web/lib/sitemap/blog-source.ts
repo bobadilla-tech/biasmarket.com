@@ -41,7 +41,7 @@ const localeCount = routing.locales.length;
 export const blogSource: SitemapSource = {
   id: "blog",
   async getChunkCount() {
-    return Math.ceil((await getCount() * localeCount) / CHUNK_SIZE);
+    return Math.ceil(((await getCount()) * localeCount) / CHUNK_SIZE);
   },
   async getChunk(chunkId) {
     const range = chunkEntityRange(chunkId, CHUNK_SIZE, localeCount);
@@ -77,8 +77,8 @@ export const blogSource: SitemapSource = {
 
     const entries: MetadataRoute.Sitemap = posts.flatMap((post) =>
       routing.locales.map((locale) =>
-        blogEntry(locale, post.slug.current, post._updatedAt)
-      )
+        blogEntry(locale, post.slug.current, post._updatedAt),
+      ),
     );
     return entries.slice(range.sliceStart, range.sliceEnd);
   },

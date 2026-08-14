@@ -83,7 +83,7 @@ compose, to isolate each stage):
 - Ran the actual runtime image against the real dev Postgres (attached to the
   dev compose network, real `DATABASE_URL`):
   `pnpm --filter api run
-  admin:create <email>` succeeded end-to-end — account
+admin:create <email>` succeeded end-to-end — account
   created, password printed, exactly reproducing (and confirming the fix for)
   the failure from the live prod attempt. Cleaned up the test account afterward.
 - Test images (`biasmarket-api-buildtest`, `biasmarket-api-runtime-test`)

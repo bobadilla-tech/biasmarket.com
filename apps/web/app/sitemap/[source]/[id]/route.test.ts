@@ -4,9 +4,11 @@ const fakeSources = vi.hoisted(() => [
   {
     id: "static",
     getChunkCount: vi.fn().mockResolvedValue(1),
-    getChunk: vi.fn().mockResolvedValue([{
-      url: "https://example.com/static",
-    }]),
+    getChunk: vi.fn().mockResolvedValue([
+      {
+        url: "https://example.com/static",
+      },
+    ]),
   },
   {
     id: "stores",

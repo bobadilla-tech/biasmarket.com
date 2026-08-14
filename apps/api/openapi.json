@@ -10,9 +10,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "App"
-        ]
+        "tags": ["App"]
       }
     },
     "/stores": {
@@ -41,9 +39,7 @@
             }
           }
         },
-        "tags": [
-          "Stores"
-        ]
+        "tags": ["Stores"]
       },
       "get": {
         "operationId": "StoresController_findAllForAdmin",
@@ -63,9 +59,7 @@
             }
           }
         },
-        "tags": [
-          "Stores"
-        ]
+        "tags": ["Stores"]
       }
     },
     "/stores/by-slug/{slug}": {
@@ -93,9 +87,7 @@
             }
           }
         },
-        "tags": [
-          "Stores"
-        ]
+        "tags": ["Stores"]
       }
     },
     "/stores/{storeId}": {
@@ -133,9 +125,7 @@
             }
           }
         },
-        "tags": [
-          "Stores"
-        ]
+        "tags": ["Stores"]
       },
       "delete": {
         "operationId": "StoresController_delete",
@@ -161,9 +151,7 @@
             }
           }
         },
-        "tags": [
-          "Stores"
-        ]
+        "tags": ["Stores"]
       }
     },
     "/stores/public": {
@@ -185,9 +173,7 @@
             }
           }
         },
-        "tags": [
-          "Stores"
-        ]
+        "tags": ["Stores"]
       }
     },
     "/stores/internal/sitemap/count": {
@@ -215,9 +201,7 @@
             }
           }
         },
-        "tags": [
-          "Stores"
-        ]
+        "tags": ["Stores"]
       }
     },
     "/stores/internal/sitemap": {
@@ -261,9 +245,7 @@
             }
           }
         },
-        "tags": [
-          "Stores"
-        ]
+        "tags": ["Stores"]
       }
     },
     "/stores/collections/public": {
@@ -285,9 +267,7 @@
             }
           }
         },
-        "tags": [
-          "Stores"
-        ]
+        "tags": ["Stores"]
       }
     },
     "/stores/featured": {
@@ -318,9 +298,7 @@
             }
           }
         },
-        "tags": [
-          "Stores"
-        ]
+        "tags": ["Stores"]
       }
     },
     "/stores/directory": {
@@ -364,9 +342,7 @@
             }
           }
         },
-        "tags": [
-          "Stores"
-        ]
+        "tags": ["Stores"]
       }
     },
     "/stores/{slug}/public": {
@@ -394,9 +370,7 @@
             }
           }
         },
-        "tags": [
-          "Stores"
-        ]
+        "tags": ["Stores"]
       }
     },
     "/stores/{slug}/categories/public": {
@@ -427,9 +401,7 @@
             }
           }
         },
-        "tags": [
-          "Stores"
-        ]
+        "tags": ["Stores"]
       }
     },
     "/stores/{slug}/products/{productId}/public": {
@@ -465,9 +437,7 @@
             }
           }
         },
-        "tags": [
-          "Stores"
-        ]
+        "tags": ["Stores"]
       }
     },
     "/stores/{storeId}/logo": {
@@ -495,9 +465,7 @@
             }
           }
         },
-        "tags": [
-          "Stores"
-        ]
+        "tags": ["Stores"]
       }
     },
     "/me/stores": {
@@ -519,9 +487,7 @@
             }
           }
         },
-        "tags": [
-          "MyStores"
-        ]
+        "tags": ["MyStores"]
       }
     },
     "/stores/{storeId}/products": {
@@ -559,9 +525,7 @@
             }
           }
         },
-        "tags": [
-          "Products"
-        ]
+        "tags": ["Products"]
       },
       "get": {
         "operationId": "ProductsController_findAll",
@@ -590,9 +554,7 @@
             }
           }
         },
-        "tags": [
-          "Products"
-        ]
+        "tags": ["Products"]
       }
     },
     "/stores/{storeId}/products/{productId}": {
@@ -628,9 +590,7 @@
             }
           }
         },
-        "tags": [
-          "Products"
-        ]
+        "tags": ["Products"]
       },
       "patch": {
         "operationId": "ProductsController_update",
@@ -674,9 +634,7 @@
             }
           }
         },
-        "tags": [
-          "Products"
-        ]
+        "tags": ["Products"]
       },
       "delete": {
         "operationId": "ProductsController_softDelete",
@@ -710,9 +668,7 @@
             }
           }
         },
-        "tags": [
-          "Products"
-        ]
+        "tags": ["Products"]
       }
     },
     "/stores/{storeId}/products/{productId}/publish": {
@@ -748,9 +704,7 @@
             }
           }
         },
-        "tags": [
-          "Products"
-        ]
+        "tags": ["Products"]
       }
     },
     "/stores/{storeId}/products/{productId}/variants": {
@@ -796,9 +750,7 @@
             }
           }
         },
-        "tags": [
-          "Products"
-        ]
+        "tags": ["Products"]
       },
       "get": {
         "operationId": "ProductsController_listVariants",
@@ -835,9 +787,7 @@
             }
           }
         },
-        "tags": [
-          "Products"
-        ]
+        "tags": ["Products"]
       }
     },
     "/stores/{storeId}/products/{productId}/variants/{variantId}": {
@@ -891,9 +841,7 @@
             }
           }
         },
-        "tags": [
-          "Products"
-        ]
+        "tags": ["Products"]
       },
       "delete": {
         "operationId": "ProductsController_deleteVariant",
@@ -935,9 +883,7 @@
             }
           }
         },
-        "tags": [
-          "Products"
-        ]
+        "tags": ["Products"]
       }
     },
     "/stores/{storeId}/products/{productId}/images": {
@@ -981,9 +927,7 @@
             }
           }
         },
-        "tags": [
-          "Products"
-        ]
+        "tags": ["Products"]
       }
     },
     "/stores/{storeId}/products/{productId}/variants/{variantId}/images": {
@@ -1027,9 +971,7 @@
             }
           }
         },
-        "tags": [
-          "Products"
-        ]
+        "tags": ["Products"]
       }
     },
     "/products/search": {
@@ -1041,10 +983,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "enum": [
-                "latest",
-                "bestseller"
-              ],
+              "enum": ["latest", "bestseller"],
               "type": "string"
             }
           },
@@ -1093,9 +1032,7 @@
             }
           }
         },
-        "tags": [
-          "ProductSearch"
-        ]
+        "tags": ["ProductSearch"]
       }
     },
     "/stores/{storeId}/notifications": {
@@ -1142,9 +1079,7 @@
             }
           }
         },
-        "tags": [
-          "Notifications"
-        ]
+        "tags": ["Notifications"]
       }
     },
     "/stores/{storeId}/notifications/unread-count": {
@@ -1172,9 +1107,7 @@
             }
           }
         },
-        "tags": [
-          "Notifications"
-        ]
+        "tags": ["Notifications"]
       }
     },
     "/stores/{storeId}/notifications/{notificationId}/read": {
@@ -1210,9 +1143,7 @@
             }
           }
         },
-        "tags": [
-          "Notifications"
-        ]
+        "tags": ["Notifications"]
       }
     },
     "/stores/{storeId}/notifications/read-all": {
@@ -1240,9 +1171,7 @@
             }
           }
         },
-        "tags": [
-          "Notifications"
-        ]
+        "tags": ["Notifications"]
       }
     },
     "/stores/{storeId}/notifications/{notificationId}/archive": {
@@ -1278,9 +1207,7 @@
             }
           }
         },
-        "tags": [
-          "Notifications"
-        ]
+        "tags": ["Notifications"]
       }
     },
     "/admin/users/store-counts": {
@@ -1302,9 +1229,7 @@
             }
           }
         },
-        "tags": [
-          "Users"
-        ]
+        "tags": ["Users"]
       }
     },
     "/health": {
@@ -1316,9 +1241,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "Health"
-        ]
+        "tags": ["Health"]
       }
     },
     "/stores/{storeId}/orders": {
@@ -1365,9 +1288,7 @@
             }
           }
         },
-        "tags": [
-          "Order"
-        ]
+        "tags": ["Order"]
       }
     },
     "/stores/{storeId}/orders/{orderId}": {
@@ -1403,9 +1324,7 @@
             }
           }
         },
-        "tags": [
-          "Order"
-        ]
+        "tags": ["Order"]
       }
     },
     "/stores/{storeId}/orders/{orderId}/payments/{paymentId}/image": {
@@ -1456,9 +1375,7 @@
             }
           }
         },
-        "tags": [
-          "Order"
-        ]
+        "tags": ["Order"]
       }
     },
     "/stores/{storeId}/orders/{orderId}/payments": {
@@ -1494,9 +1411,7 @@
             }
           }
         },
-        "tags": [
-          "Order"
-        ]
+        "tags": ["Order"]
       }
     },
     "/stores/{storeId}/orders/{orderId}/payments/{paymentId}/review": {
@@ -1550,9 +1465,7 @@
             }
           }
         },
-        "tags": [
-          "Order"
-        ]
+        "tags": ["Order"]
       }
     },
     "/stores/{storeId}/orders/{orderId}/review": {
@@ -1598,9 +1511,7 @@
             }
           }
         },
-        "tags": [
-          "Order"
-        ]
+        "tags": ["Order"]
       }
     },
     "/stores/{storeId}/orders/{orderId}/fulfillment": {
@@ -1646,9 +1557,7 @@
             }
           }
         },
-        "tags": [
-          "Order"
-        ]
+        "tags": ["Order"]
       }
     },
     "/stores/{storeId}/orders/{orderId}/cancel": {
@@ -1694,9 +1603,7 @@
             }
           }
         },
-        "tags": [
-          "Order"
-        ]
+        "tags": ["Order"]
       }
     },
     "/stores/{slug}/checkout": {
@@ -1734,9 +1641,7 @@
             }
           }
         },
-        "tags": [
-          "Checkout"
-        ]
+        "tags": ["Checkout"]
       }
     },
     "/stores/{slug}/account/confirm": {
@@ -1772,9 +1677,7 @@
             }
           }
         },
-        "tags": [
-          "CustomerAccount"
-        ]
+        "tags": ["CustomerAccount"]
       }
     },
     "/stores/{storeId}/customers": {
@@ -1805,9 +1708,7 @@
             }
           }
         },
-        "tags": [
-          "Customers"
-        ]
+        "tags": ["Customers"]
       }
     },
     "/stores/{storeId}/customers/{customerId}": {
@@ -1843,9 +1744,7 @@
             }
           }
         },
-        "tags": [
-          "Customers"
-        ]
+        "tags": ["Customers"]
       }
     },
     "/stores/{slug}/account/orders/{orderId}/payments": {
@@ -1881,9 +1780,7 @@
             }
           }
         },
-        "tags": [
-          "CustomerOrderPayments"
-        ]
+        "tags": ["CustomerOrderPayments"]
       }
     },
     "/stores/{slug}/account/orders/{orderId}/payments/{paymentId}/image": {
@@ -1934,9 +1831,7 @@
             }
           }
         },
-        "tags": [
-          "CustomerOrderPayments"
-        ]
+        "tags": ["CustomerOrderPayments"]
       }
     },
     "/stores/{storeId}/delivery-methods": {
@@ -1967,9 +1862,7 @@
             }
           }
         },
-        "tags": [
-          "DeliveryConfig"
-        ]
+        "tags": ["DeliveryConfig"]
       },
       "post": {
         "operationId": "DeliveryConfigController_upsert",
@@ -2005,9 +1898,7 @@
             }
           }
         },
-        "tags": [
-          "DeliveryConfig"
-        ]
+        "tags": ["DeliveryConfig"]
       }
     },
     "/stores/{storeId}/delivery-methods/{type}": {
@@ -2043,9 +1934,7 @@
             }
           }
         },
-        "tags": [
-          "DeliveryConfig"
-        ]
+        "tags": ["DeliveryConfig"]
       }
     },
     "/stores/{slug}/public/delivery-methods": {
@@ -2076,9 +1965,7 @@
             }
           }
         },
-        "tags": [
-          "PublicDeliveryConfig"
-        ]
+        "tags": ["PublicDeliveryConfig"]
       }
     },
     "/stores/{storeId}/pickup-points": {
@@ -2109,9 +1996,7 @@
             }
           }
         },
-        "tags": [
-          "PickupPoints"
-        ]
+        "tags": ["PickupPoints"]
       },
       "post": {
         "operationId": "PickupPointsController_create",
@@ -2147,9 +2032,7 @@
             }
           }
         },
-        "tags": [
-          "PickupPoints"
-        ]
+        "tags": ["PickupPoints"]
       }
     },
     "/stores/{storeId}/pickup-points/{pointId}": {
@@ -2195,9 +2078,7 @@
             }
           }
         },
-        "tags": [
-          "PickupPoints"
-        ]
+        "tags": ["PickupPoints"]
       },
       "delete": {
         "operationId": "PickupPointsController_remove",
@@ -2231,9 +2112,7 @@
             }
           }
         },
-        "tags": [
-          "PickupPoints"
-        ]
+        "tags": ["PickupPoints"]
       }
     },
     "/stores/{slug}/public/pickup-points": {
@@ -2261,9 +2140,7 @@
             }
           }
         },
-        "tags": [
-          "PublicPickupPoints"
-        ]
+        "tags": ["PublicPickupPoints"]
       }
     },
     "/stores/{storeId}/payment-methods": {
@@ -2302,9 +2179,7 @@
             }
           }
         },
-        "tags": [
-          "PaymentConfig"
-        ]
+        "tags": ["PaymentConfig"]
       },
       "post": {
         "operationId": "PaymentConfigController_upsert",
@@ -2340,9 +2215,7 @@
             }
           }
         },
-        "tags": [
-          "PaymentConfig"
-        ]
+        "tags": ["PaymentConfig"]
       }
     },
     "/stores/{storeId}/payment-methods/{method}/qr-image": {
@@ -2378,9 +2251,7 @@
             }
           }
         },
-        "tags": [
-          "PaymentConfig"
-        ]
+        "tags": ["PaymentConfig"]
       }
     },
     "/stores/{slug}/public/payment-methods": {
@@ -2411,9 +2282,7 @@
             }
           }
         },
-        "tags": [
-          "PublicPaymentConfig"
-        ]
+        "tags": ["PublicPaymentConfig"]
       }
     },
     "/contact": {
@@ -2442,9 +2311,7 @@
             }
           }
         },
-        "tags": [
-          "Contact"
-        ]
+        "tags": ["Contact"]
       },
       "get": {
         "operationId": "ContactController_findAll",
@@ -2464,9 +2331,7 @@
             }
           }
         },
-        "tags": [
-          "Contact"
-        ]
+        "tags": ["Contact"]
       }
     },
     "/contact/{id}/review": {
@@ -2494,9 +2359,7 @@
             }
           }
         },
-        "tags": [
-          "Contact"
-        ]
+        "tags": ["Contact"]
       }
     },
     "/stores/{storeId}/categories": {
@@ -2534,9 +2397,7 @@
             }
           }
         },
-        "tags": [
-          "Categories"
-        ]
+        "tags": ["Categories"]
       },
       "get": {
         "operationId": "CategoriesController_findAll",
@@ -2565,9 +2426,7 @@
             }
           }
         },
-        "tags": [
-          "Categories"
-        ]
+        "tags": ["Categories"]
       }
     },
     "/stores/{storeId}/categories/{categoryId}": {
@@ -2613,9 +2472,7 @@
             }
           }
         },
-        "tags": [
-          "Categories"
-        ]
+        "tags": ["Categories"]
       },
       "delete": {
         "operationId": "CategoriesController_delete",
@@ -2649,9 +2506,7 @@
             }
           }
         },
-        "tags": [
-          "Categories"
-        ]
+        "tags": ["Categories"]
       }
     },
     "/stores/{storeId}/collections": {
@@ -2689,9 +2544,7 @@
             }
           }
         },
-        "tags": [
-          "Collections"
-        ]
+        "tags": ["Collections"]
       },
       "get": {
         "operationId": "CollectionsController_findAll",
@@ -2720,9 +2573,7 @@
             }
           }
         },
-        "tags": [
-          "Collections"
-        ]
+        "tags": ["Collections"]
       }
     },
     "/stores/{storeId}/collections/{collectionId}": {
@@ -2768,9 +2619,7 @@
             }
           }
         },
-        "tags": [
-          "Collections"
-        ]
+        "tags": ["Collections"]
       },
       "delete": {
         "operationId": "CollectionsController_delete",
@@ -2804,9 +2653,7 @@
             }
           }
         },
-        "tags": [
-          "Collections"
-        ]
+        "tags": ["Collections"]
       }
     },
     "/stores/{storeId}/collections/{collectionId}/products": {
@@ -2852,9 +2699,7 @@
             }
           }
         },
-        "tags": [
-          "Collections"
-        ]
+        "tags": ["Collections"]
       }
     },
     "/stores/{storeId}/collections/{collectionId}/products/{productId}": {
@@ -2898,9 +2743,7 @@
             }
           }
         },
-        "tags": [
-          "Collections"
-        ]
+        "tags": ["Collections"]
       }
     },
     "/stores/{storeId}/collections/{collectionId}/products/reorder": {
@@ -2949,9 +2792,7 @@
             }
           }
         },
-        "tags": [
-          "Collections"
-        ]
+        "tags": ["Collections"]
       }
     },
     "/stores/{storeId}/sections": {
@@ -2989,9 +2830,7 @@
             }
           }
         },
-        "tags": [
-          "StoreSections"
-        ]
+        "tags": ["StoreSections"]
       },
       "get": {
         "operationId": "StoreSectionsController_findAll",
@@ -3020,9 +2859,7 @@
             }
           }
         },
-        "tags": [
-          "StoreSections"
-        ]
+        "tags": ["StoreSections"]
       }
     },
     "/stores/{storeId}/sections/reorder": {
@@ -3063,9 +2900,7 @@
             }
           }
         },
-        "tags": [
-          "StoreSections"
-        ]
+        "tags": ["StoreSections"]
       }
     },
     "/stores/{storeId}/sections/{sectionId}": {
@@ -3111,9 +2946,7 @@
             }
           }
         },
-        "tags": [
-          "StoreSections"
-        ]
+        "tags": ["StoreSections"]
       },
       "delete": {
         "operationId": "StoreSectionsController_delete",
@@ -3147,9 +2980,7 @@
             }
           }
         },
-        "tags": [
-          "StoreSections"
-        ]
+        "tags": ["StoreSections"]
       }
     },
     "/stores/{storeId}/stats/overview": {
@@ -3177,9 +3008,7 @@
             }
           }
         },
-        "tags": [
-          "Stats"
-        ]
+        "tags": ["Stats"]
       }
     },
     "/stores/{storeId}/stats/analytics": {
@@ -3215,9 +3044,7 @@
             }
           }
         },
-        "tags": [
-          "Stats"
-        ]
+        "tags": ["Stats"]
       }
     },
     "/stores/{storeId}/stats/payment-methods": {
@@ -3261,9 +3088,7 @@
             }
           }
         },
-        "tags": [
-          "Stats"
-        ]
+        "tags": ["Stats"]
       }
     },
     "/stores/{storeId}/suggestions": {
@@ -3294,9 +3119,7 @@
             }
           }
         },
-        "tags": [
-          "Suggestions"
-        ]
+        "tags": ["Suggestions"]
       }
     },
     "/stores/{slug}/account/register": {
@@ -3334,9 +3157,7 @@
             }
           }
         },
-        "tags": [
-          "CustomerAuth"
-        ]
+        "tags": ["CustomerAuth"]
       }
     },
     "/stores/{slug}/account/login": {
@@ -3374,9 +3195,7 @@
             }
           }
         },
-        "tags": [
-          "CustomerAuth"
-        ]
+        "tags": ["CustomerAuth"]
       }
     },
     "/stores/{slug}/account/forgot-password": {
@@ -3414,9 +3233,7 @@
             }
           }
         },
-        "tags": [
-          "CustomerAuth"
-        ]
+        "tags": ["CustomerAuth"]
       }
     },
     "/stores/{slug}/account/change-password": {
@@ -3454,9 +3271,7 @@
             }
           }
         },
-        "tags": [
-          "CustomerAuth"
-        ]
+        "tags": ["CustomerAuth"]
       }
     },
     "/stores/{slug}/account/me": {
@@ -3484,9 +3299,7 @@
             }
           }
         },
-        "tags": [
-          "CustomerAuth"
-        ]
+        "tags": ["CustomerAuth"]
       },
       "patch": {
         "operationId": "CustomerAuthController_updateMe",
@@ -3522,9 +3335,7 @@
             }
           }
         },
-        "tags": [
-          "CustomerAuth"
-        ]
+        "tags": ["CustomerAuth"]
       }
     },
     "/stores/{slug}/account/orders/{orderId}": {
@@ -3560,9 +3371,7 @@
             }
           }
         },
-        "tags": [
-          "CustomerAuth"
-        ]
+        "tags": ["CustomerAuth"]
       }
     },
     "/stores/{slug}/account/logout": {
@@ -3590,9 +3399,7 @@
             }
           }
         },
-        "tags": [
-          "CustomerAuth"
-        ]
+        "tags": ["CustomerAuth"]
       }
     },
     "/account/me": {
@@ -3611,9 +3418,7 @@
             }
           }
         },
-        "tags": [
-          "GlobalAccount"
-        ]
+        "tags": ["GlobalAccount"]
       }
     },
     "/account/orders": {
@@ -3635,9 +3440,7 @@
             }
           }
         },
-        "tags": [
-          "GlobalAccount"
-        ]
+        "tags": ["GlobalAccount"]
       }
     },
     "/stores/{slug}/restock-requests": {
@@ -3675,9 +3478,7 @@
             }
           }
         },
-        "tags": [
-          "Restock"
-        ]
+        "tags": ["Restock"]
       }
     },
     "/stores/{storeId}/restock-requests": {
@@ -3708,9 +3509,7 @@
             }
           }
         },
-        "tags": [
-          "Restock"
-        ]
+        "tags": ["Restock"]
       }
     },
     "/stores/{storeId}/restock-requests/count": {
@@ -3738,9 +3537,7 @@
             }
           }
         },
-        "tags": [
-          "Restock"
-        ]
+        "tags": ["Restock"]
       }
     },
     "/stores/{storeId}/whatsapp-templates/{type}": {
@@ -3760,10 +3557,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "enum": [
-                "NEW_ORDER",
-                "PAYMENT_REMINDER"
-              ],
+              "enum": ["NEW_ORDER", "PAYMENT_REMINDER"],
               "type": "string"
             }
           }
@@ -3785,9 +3579,7 @@
             }
           }
         },
-        "tags": [
-          "WhatsappTemplates"
-        ]
+        "tags": ["WhatsappTemplates"]
       },
       "put": {
         "operationId": "WhatsappTemplatesController_upsert",
@@ -3805,10 +3597,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "enum": [
-                "NEW_ORDER",
-                "PAYMENT_REMINDER"
-              ],
+              "enum": ["NEW_ORDER", "PAYMENT_REMINDER"],
               "type": "string"
             }
           }
@@ -3835,9 +3624,7 @@
             }
           }
         },
-        "tags": [
-          "WhatsappTemplates"
-        ]
+        "tags": ["WhatsappTemplates"]
       }
     },
     "/stores/{slug}/account/addresses": {
@@ -3868,9 +3655,7 @@
             }
           }
         },
-        "tags": [
-          "Addresses"
-        ]
+        "tags": ["Addresses"]
       },
       "post": {
         "operationId": "AddressesController_create",
@@ -3906,9 +3691,7 @@
             }
           }
         },
-        "tags": [
-          "Addresses"
-        ]
+        "tags": ["Addresses"]
       }
     },
     "/stores/{slug}/account/addresses/{id}": {
@@ -3954,9 +3737,7 @@
             }
           }
         },
-        "tags": [
-          "Addresses"
-        ]
+        "tags": ["Addresses"]
       },
       "delete": {
         "operationId": "AddressesController_remove",
@@ -3983,9 +3764,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "Addresses"
-        ]
+        "tags": ["Addresses"]
       }
     },
     "/monitoring/webhook": {
@@ -4007,9 +3786,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "Monitoring"
-        ]
+        "tags": ["Monitoring"]
       }
     },
     "/monitoring/incidents": {
@@ -4045,9 +3822,7 @@
             }
           }
         },
-        "tags": [
-          "Monitoring"
-        ]
+        "tags": ["Monitoring"]
       }
     }
   },
@@ -4083,11 +3858,7 @@
             "additionalProperties": true
           }
         },
-        "required": [
-          "name",
-          "slug",
-          "whatsappNumber"
-        ]
+        "required": ["name", "slug", "whatsappNumber"]
       },
       "StoreResponseDto": {
         "type": "object",
@@ -4194,11 +3965,7 @@
             "nullable": true
           }
         },
-        "required": [
-          "id",
-          "email",
-          "name"
-        ]
+        "required": ["id", "email", "name"]
       },
       "StoreWithOwnerResponseDto": {
         "type": "object",
@@ -4360,10 +4127,7 @@
             "format": "date-time"
           }
         },
-        "required": [
-          "slug",
-          "createdAt"
-        ]
+        "required": ["slug", "createdAt"]
       },
       "SitemapStoreCountDto": {
         "type": "object",
@@ -4372,9 +4136,7 @@
             "type": "number"
           }
         },
-        "required": [
-          "total"
-        ]
+        "required": ["total"]
       },
       "SitemapStoreItemDto": {
         "type": "object",
@@ -4383,9 +4145,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "slug"
-        ]
+        "required": ["slug"]
       },
       "SitemapStorePageDto": {
         "type": "object",
@@ -4400,10 +4160,7 @@
             "type": "number"
           }
         },
-        "required": [
-          "items",
-          "total"
-        ]
+        "required": ["items", "total"]
       },
       "PublicCollectionListingResponseDto": {
         "type": "object",
@@ -4419,11 +4176,7 @@
             "format": "date-time"
           }
         },
-        "required": [
-          "storeSlug",
-          "collectionSlug",
-          "createdAt"
-        ]
+        "required": ["storeSlug", "collectionSlug", "createdAt"]
       },
       "FeaturedStoreResponseDto": {
         "type": "object",
@@ -4448,14 +4201,7 @@
             "type": "number"
           }
         },
-        "required": [
-          "id",
-          "name",
-          "slug",
-          "logoUrl",
-          "revenue",
-          "orderCount"
-        ]
+        "required": ["id", "name", "slug", "logoUrl", "revenue", "orderCount"]
       },
       "DirectoryStoreItemResponseDto": {
         "type": "object",
@@ -4474,12 +4220,7 @@
             "nullable": true
           }
         },
-        "required": [
-          "id",
-          "name",
-          "slug",
-          "logoUrl"
-        ]
+        "required": ["id", "name", "slug", "logoUrl"]
       },
       "StoreDirectoryResponseDto": {
         "type": "object",
@@ -4500,12 +4241,7 @@
             "type": "number"
           }
         },
-        "required": [
-          "stores",
-          "total",
-          "page",
-          "limit"
-        ]
+        "required": ["stores", "total", "page", "limit"]
       },
       "PublicProductVariantResponseDto": {
         "type": "object",
@@ -4587,10 +4323,7 @@
             "format": "date-time"
           },
           "status": {
-            "enum": [
-              "DRAFT",
-              "PUBLISHED"
-            ],
+            "enum": ["DRAFT", "PUBLISHED"],
             "type": "string"
           },
           "soldOut": {
@@ -4648,12 +4381,7 @@
             "$ref": "#/components/schemas/PublicProductWithVariantsResponseDto"
           }
         },
-        "required": [
-          "collectionId",
-          "productId",
-          "position",
-          "product"
-        ]
+        "required": ["collectionId", "productId", "position", "product"]
       },
       "SectionCollectionResponseDto": {
         "type": "object",
@@ -4704,11 +4432,7 @@
             "type": "string"
           },
           "type": {
-            "enum": [
-              "COLLECTION",
-              "BANNER",
-              "TEXT_BLOCK"
-            ],
+            "enum": ["COLLECTION", "BANNER", "TEXT_BLOCK"],
             "type": "string"
           },
           "collectionId": {
@@ -4863,11 +4587,7 @@
             "nullable": true
           }
         },
-        "required": [
-          "id",
-          "name",
-          "parentId"
-        ]
+        "required": ["id", "name", "parentId"]
       },
       "PublicProductStoreResponseDto": {
         "type": "object",
@@ -4883,11 +4603,7 @@
             "nullable": true
           }
         },
-        "required": [
-          "name",
-          "slug",
-          "logoUrl"
-        ]
+        "required": ["name", "slug", "logoUrl"]
       },
       "PublicProductPageResponseDto": {
         "type": "object",
@@ -4899,10 +4615,7 @@
             "$ref": "#/components/schemas/PublicProductWithVariantsResponseDto"
           }
         },
-        "required": [
-          "store",
-          "product"
-        ]
+        "required": ["store", "product"]
       },
       "CreateVariantDto": {
         "type": "object",
@@ -4927,9 +4640,7 @@
             }
           }
         },
-        "required": [
-          "name"
-        ]
+        "required": ["name"]
       },
       "CreateProductDto": {
         "type": "object",
@@ -4979,10 +4690,7 @@
             }
           }
         },
-        "required": [
-          "name",
-          "price"
-        ]
+        "required": ["name", "price"]
       },
       "VariantResponseDto": {
         "type": "object",
@@ -5066,10 +4774,7 @@
             "format": "date-time"
           },
           "status": {
-            "enum": [
-              "DRAFT",
-              "PUBLISHED"
-            ],
+            "enum": ["DRAFT", "PUBLISHED"],
             "type": "string"
           },
           "soldOut": {
@@ -5121,10 +4826,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "name"
-        ]
+        "required": ["id", "name"]
       },
       "ProductCategoryResponseDto": {
         "type": "object",
@@ -5139,11 +4841,7 @@
             "$ref": "#/components/schemas/CategoryInProductResponseDto"
           }
         },
-        "required": [
-          "productId",
-          "categoryId",
-          "category"
-        ]
+        "required": ["productId", "categoryId", "category"]
       },
       "ProductDetailResponseDto": {
         "type": "object",
@@ -5178,10 +4876,7 @@
             "format": "date-time"
           },
           "status": {
-            "enum": [
-              "DRAFT",
-              "PUBLISHED"
-            ],
+            "enum": ["DRAFT", "PUBLISHED"],
             "type": "string"
           },
           "soldOut": {
@@ -5311,10 +5006,7 @@
             "format": "date-time"
           },
           "status": {
-            "enum": [
-              "DRAFT",
-              "PUBLISHED"
-            ],
+            "enum": ["DRAFT", "PUBLISHED"],
             "type": "string"
           },
           "soldOut": {
@@ -5386,10 +5078,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "name",
-          "slug"
-        ]
+        "required": ["name", "slug"]
       },
       "SearchProductResponseDto": {
         "type": "object",
@@ -5416,14 +5105,7 @@
             "$ref": "#/components/schemas/SearchProductStoreResponseDto"
           }
         },
-        "required": [
-          "id",
-          "name",
-          "price",
-          "currency",
-          "images",
-          "store"
-        ]
+        "required": ["id", "name", "price", "currency", "images", "store"]
       },
       "ProductSearchResultResponseDto": {
         "type": "object",
@@ -5444,12 +5126,7 @@
             "type": "number"
           }
         },
-        "required": [
-          "products",
-          "total",
-          "page",
-          "limit"
-        ]
+        "required": ["products", "total", "page", "limit"]
       },
       "NotificationResponseDto": {
         "type": "object",
@@ -5461,11 +5138,7 @@
             "type": "string"
           },
           "type": {
-            "enum": [
-              "LOW_STOCK",
-              "OUT_OF_STOCK",
-              "PAYMENT_PROOF_SUBMITTED"
-            ],
+            "enum": ["LOW_STOCK", "OUT_OF_STOCK", "PAYMENT_PROOF_SUBMITTED"],
             "type": "string"
           },
           "entityType": {
@@ -5528,9 +5201,7 @@
             "type": "number"
           }
         },
-        "required": [
-          "count"
-        ]
+        "required": ["count"]
       },
       "UserStoreCountResponseDto": {
         "type": "object",
@@ -5542,10 +5213,7 @@
             "type": "number"
           }
         },
-        "required": [
-          "userId",
-          "storeCount"
-        ]
+        "required": ["userId", "storeCount"]
       },
       "OrderProductResponseDto": {
         "type": "object",
@@ -5580,10 +5248,7 @@
             "format": "date-time"
           },
           "status": {
-            "enum": [
-              "DRAFT",
-              "PUBLISHED"
-            ],
+            "enum": ["DRAFT", "PUBLISHED"],
             "type": "string"
           },
           "soldOut": {
@@ -5744,12 +5409,7 @@
           },
           "method": {
             "nullable": true,
-            "enum": [
-              "YAPE",
-              "PLIN",
-              "TRANSFER",
-              "CASH"
-            ],
+            "enum": ["YAPE", "PLIN", "TRANSFER", "CASH"],
             "type": "string"
           },
           "note": {
@@ -5765,19 +5425,11 @@
             "format": "date-time"
           },
           "source": {
-            "enum": [
-              "SELLER_RECORDED",
-              "BUYER_SUBMITTED"
-            ],
+            "enum": ["SELLER_RECORDED", "BUYER_SUBMITTED"],
             "type": "string"
           },
           "reviewStatus": {
-            "enum": [
-              "N_A",
-              "PENDING_REVIEW",
-              "APPROVED",
-              "REJECTED"
-            ],
+            "enum": ["N_A", "PENDING_REVIEW", "APPROVED", "REJECTED"],
             "type": "string"
           },
           "reviewedAt": {
@@ -5835,10 +5487,7 @@
             "nullable": true
           },
           "deliveryMethodType": {
-            "enum": [
-              "PICKUP",
-              "COURIER"
-            ],
+            "enum": ["PICKUP", "COURIER"],
             "type": "string"
           },
           "deliveryDetails": {
@@ -5857,12 +5506,7 @@
           },
           "paymentMethod": {
             "nullable": true,
-            "enum": [
-              "YAPE",
-              "PLIN",
-              "TRANSFER",
-              "CASH"
-            ],
+            "enum": ["YAPE", "PLIN", "TRANSFER", "CASH"],
             "type": "string"
           },
           "paymentStatus": {
@@ -5881,28 +5525,16 @@
             "nullable": true
           },
           "fulfillmentStatus": {
-            "enum": [
-              "ORDERING",
-              "IN_TRANSIT",
-              "READY",
-              "COMPLETED"
-            ],
+            "enum": ["ORDERING", "IN_TRANSIT", "READY", "COMPLETED"],
             "type": "string"
           },
           "status": {
-            "enum": [
-              "ACTIVE",
-              "CANCELLED"
-            ],
+            "enum": ["ACTIVE", "CANCELLED"],
             "type": "string"
           },
           "cancellationResolution": {
             "nullable": true,
-            "enum": [
-              "REFUNDED",
-              "RETAINED",
-              "STORE_CREDIT"
-            ],
+            "enum": ["REFUNDED", "RETAINED", "STORE_CREDIT"],
             "type": "string"
           },
           "cancellationReason": {
@@ -5919,11 +5551,7 @@
           },
           "releasedResolution": {
             "nullable": true,
-            "enum": [
-              "REFUNDED",
-              "RETAINED",
-              "STORE_CREDIT"
-            ],
+            "enum": ["REFUNDED", "RETAINED", "STORE_CREDIT"],
             "type": "string"
           },
           "totalAmount": {
@@ -6028,10 +5656,7 @@
             "nullable": true
           },
           "deliveryMethodType": {
-            "enum": [
-              "PICKUP",
-              "COURIER"
-            ],
+            "enum": ["PICKUP", "COURIER"],
             "type": "string"
           },
           "deliveryDetails": {
@@ -6050,12 +5675,7 @@
           },
           "paymentMethod": {
             "nullable": true,
-            "enum": [
-              "YAPE",
-              "PLIN",
-              "TRANSFER",
-              "CASH"
-            ],
+            "enum": ["YAPE", "PLIN", "TRANSFER", "CASH"],
             "type": "string"
           },
           "paymentStatus": {
@@ -6074,28 +5694,16 @@
             "nullable": true
           },
           "fulfillmentStatus": {
-            "enum": [
-              "ORDERING",
-              "IN_TRANSIT",
-              "READY",
-              "COMPLETED"
-            ],
+            "enum": ["ORDERING", "IN_TRANSIT", "READY", "COMPLETED"],
             "type": "string"
           },
           "status": {
-            "enum": [
-              "ACTIVE",
-              "CANCELLED"
-            ],
+            "enum": ["ACTIVE", "CANCELLED"],
             "type": "string"
           },
           "cancellationResolution": {
             "nullable": true,
-            "enum": [
-              "REFUNDED",
-              "RETAINED",
-              "STORE_CREDIT"
-            ],
+            "enum": ["REFUNDED", "RETAINED", "STORE_CREDIT"],
             "type": "string"
           },
           "cancellationReason": {
@@ -6112,11 +5720,7 @@
           },
           "releasedResolution": {
             "nullable": true,
-            "enum": [
-              "REFUNDED",
-              "RETAINED",
-              "STORE_CREDIT"
-            ],
+            "enum": ["REFUNDED", "RETAINED", "STORE_CREDIT"],
             "type": "string"
           },
           "totalAmount": {
@@ -6196,10 +5800,7 @@
         "type": "object",
         "properties": {
           "decision": {
-            "enum": [
-              "approve",
-              "reject"
-            ],
+            "enum": ["approve", "reject"],
             "type": "string"
           },
           "reason": {
@@ -6207,9 +5808,7 @@
             "maxLength": 500
           }
         },
-        "required": [
-          "decision"
-        ]
+        "required": ["decision"]
       },
       "OrderStatusResponseDto": {
         "type": "object",
@@ -6240,10 +5839,7 @@
             "nullable": true
           },
           "deliveryMethodType": {
-            "enum": [
-              "PICKUP",
-              "COURIER"
-            ],
+            "enum": ["PICKUP", "COURIER"],
             "type": "string"
           },
           "deliveryDetails": {
@@ -6262,12 +5858,7 @@
           },
           "paymentMethod": {
             "nullable": true,
-            "enum": [
-              "YAPE",
-              "PLIN",
-              "TRANSFER",
-              "CASH"
-            ],
+            "enum": ["YAPE", "PLIN", "TRANSFER", "CASH"],
             "type": "string"
           },
           "paymentStatus": {
@@ -6286,28 +5877,16 @@
             "nullable": true
           },
           "fulfillmentStatus": {
-            "enum": [
-              "ORDERING",
-              "IN_TRANSIT",
-              "READY",
-              "COMPLETED"
-            ],
+            "enum": ["ORDERING", "IN_TRANSIT", "READY", "COMPLETED"],
             "type": "string"
           },
           "status": {
-            "enum": [
-              "ACTIVE",
-              "CANCELLED"
-            ],
+            "enum": ["ACTIVE", "CANCELLED"],
             "type": "string"
           },
           "cancellationResolution": {
             "nullable": true,
-            "enum": [
-              "REFUNDED",
-              "RETAINED",
-              "STORE_CREDIT"
-            ],
+            "enum": ["REFUNDED", "RETAINED", "STORE_CREDIT"],
             "type": "string"
           },
           "cancellationReason": {
@@ -6324,11 +5903,7 @@
           },
           "releasedResolution": {
             "nullable": true,
-            "enum": [
-              "REFUNDED",
-              "RETAINED",
-              "STORE_CREDIT"
-            ],
+            "enum": ["REFUNDED", "RETAINED", "STORE_CREDIT"],
             "type": "string"
           },
           "totalAmount": {
@@ -6383,34 +5958,21 @@
         "properties": {
           "status": {
             "type": "string",
-            "enum": [
-              "IN_TRANSIT",
-              "READY",
-              "COMPLETED"
-            ]
+            "enum": ["IN_TRANSIT", "READY", "COMPLETED"]
           }
         },
-        "required": [
-          "status"
-        ]
+        "required": ["status"]
       },
       "CancelOrderDto": {
         "type": "object",
         "properties": {
           "resolution": {
             "type": "string",
-            "enum": [
-              "REFUNDED",
-              "RETAINED",
-              "STORE_CREDIT"
-            ]
+            "enum": ["REFUNDED", "RETAINED", "STORE_CREDIT"]
           },
           "retainMode": {
             "type": "string",
-            "enum": [
-              "FULL",
-              "PARTIAL"
-            ]
+            "enum": ["FULL", "PARTIAL"]
           },
           "retainedAmount": {
             "type": "number",
@@ -6418,19 +5980,14 @@
           },
           "releasedResolution": {
             "type": "string",
-            "enum": [
-              "REFUNDED",
-              "STORE_CREDIT"
-            ]
+            "enum": ["REFUNDED", "STORE_CREDIT"]
           },
           "reason": {
             "type": "string",
             "maxLength": 500
           }
         },
-        "required": [
-          "resolution"
-        ]
+        "required": ["resolution"]
       },
       "ShippingAddressDto": {
         "type": "object",
@@ -6461,12 +6018,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "recipientName",
-          "phone",
-          "line1",
-          "city"
-        ]
+        "required": ["recipientName", "phone", "line1", "city"]
       },
       "CreateOrderItemDto": {
         "type": "object",
@@ -6482,20 +6034,14 @@
             "minimum": 1
           }
         },
-        "required": [
-          "productId",
-          "quantity"
-        ]
+        "required": ["productId", "quantity"]
       },
       "CreateOrderDto": {
         "type": "object",
         "properties": {
           "deliveryMethodType": {
             "type": "string",
-            "enum": [
-              "PICKUP",
-              "COURIER"
-            ]
+            "enum": ["PICKUP", "COURIER"]
           },
           "pickupPointId": {
             "type": "string"
@@ -6506,12 +6052,7 @@
           },
           "paymentMethod": {
             "type": "string",
-            "enum": [
-              "YAPE",
-              "PLIN",
-              "TRANSFER",
-              "CASH"
-            ]
+            "enum": ["YAPE", "PLIN", "TRANSFER", "CASH"]
           },
           "customerPhone": {
             "type": "string",
@@ -6535,11 +6076,7 @@
             }
           }
         },
-        "required": [
-          "deliveryMethodType",
-          "customerPhone",
-          "items"
-        ]
+        "required": ["deliveryMethodType", "customerPhone", "items"]
       },
       "CheckoutOrderItemResponseDto": {
         "type": "object",
@@ -6615,10 +6152,7 @@
             "nullable": true
           },
           "deliveryMethodType": {
-            "enum": [
-              "PICKUP",
-              "COURIER"
-            ],
+            "enum": ["PICKUP", "COURIER"],
             "type": "string"
           },
           "deliveryDetails": {
@@ -6637,12 +6171,7 @@
           },
           "paymentMethod": {
             "nullable": true,
-            "enum": [
-              "YAPE",
-              "PLIN",
-              "TRANSFER",
-              "CASH"
-            ],
+            "enum": ["YAPE", "PLIN", "TRANSFER", "CASH"],
             "type": "string"
           },
           "paymentStatus": {
@@ -6661,28 +6190,16 @@
             "nullable": true
           },
           "fulfillmentStatus": {
-            "enum": [
-              "ORDERING",
-              "IN_TRANSIT",
-              "READY",
-              "COMPLETED"
-            ],
+            "enum": ["ORDERING", "IN_TRANSIT", "READY", "COMPLETED"],
             "type": "string"
           },
           "status": {
-            "enum": [
-              "ACTIVE",
-              "CANCELLED"
-            ],
+            "enum": ["ACTIVE", "CANCELLED"],
             "type": "string"
           },
           "cancellationResolution": {
             "nullable": true,
-            "enum": [
-              "REFUNDED",
-              "RETAINED",
-              "STORE_CREDIT"
-            ],
+            "enum": ["REFUNDED", "RETAINED", "STORE_CREDIT"],
             "type": "string"
           },
           "cancellationReason": {
@@ -6699,11 +6216,7 @@
           },
           "releasedResolution": {
             "nullable": true,
-            "enum": [
-              "REFUNDED",
-              "RETAINED",
-              "STORE_CREDIT"
-            ],
+            "enum": ["REFUNDED", "RETAINED", "STORE_CREDIT"],
             "type": "string"
           },
           "totalAmount": {
@@ -6771,10 +6284,7 @@
             "nullable": true
           }
         },
-        "required": [
-          "order",
-          "whatsappUrl"
-        ]
+        "required": ["order", "whatsappUrl"]
       },
       "ConfirmAccountCustomerResponseDto": {
         "type": "object",
@@ -6794,12 +6304,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "name",
-          "email",
-          "phone",
-          "hasPassword"
-        ]
+        "required": ["name", "email", "phone", "hasPassword"]
       },
       "AccountOrderResponseDto": {
         "type": "object",
@@ -6819,12 +6324,7 @@
             "type": "string"
           },
           "fulfillmentStatus": {
-            "enum": [
-              "ORDERING",
-              "IN_TRANSIT",
-              "READY",
-              "COMPLETED"
-            ],
+            "enum": ["ORDERING", "IN_TRANSIT", "READY", "COMPLETED"],
             "type": "string"
           },
           "totalAmount": {
@@ -6851,12 +6351,7 @@
         "type": "object",
         "properties": {
           "purpose": {
-            "enum": [
-              "confirm",
-              "reset",
-              "change-email",
-              "change-phone"
-            ],
+            "enum": ["confirm", "reset", "change-email", "change-phone"],
             "type": "string"
           },
           "customer": {
@@ -6869,11 +6364,7 @@
             }
           }
         },
-        "required": [
-          "purpose",
-          "customer",
-          "orders"
-        ]
+        "required": ["purpose", "customer", "orders"]
       },
       "CustomerListItemResponseDto": {
         "type": "object",
@@ -6970,10 +6461,7 @@
             }
           }
         },
-        "required": [
-          "customer",
-          "orders"
-        ]
+        "required": ["customer", "orders"]
       },
       "DeliveryMethodConfigResponseDto": {
         "type": "object",
@@ -6985,10 +6473,7 @@
             "type": "string"
           },
           "type": {
-            "enum": [
-              "PICKUP",
-              "COURIER"
-            ],
+            "enum": ["PICKUP", "COURIER"],
             "type": "string"
           },
           "enabled": {
@@ -7003,24 +6488,14 @@
             "format": "date-time"
           }
         },
-        "required": [
-          "id",
-          "storeId",
-          "type",
-          "enabled",
-          "details",
-          "createdAt"
-        ]
+        "required": ["id", "storeId", "type", "enabled", "details", "createdAt"]
       },
       "UpsertDeliveryMethodDto": {
         "type": "object",
         "properties": {
           "type": {
             "type": "string",
-            "enum": [
-              "PICKUP",
-              "COURIER"
-            ]
+            "enum": ["PICKUP", "COURIER"]
           },
           "enabled": {
             "type": "boolean"
@@ -7030,9 +6505,7 @@
             "additionalProperties": true
           }
         },
-        "required": [
-          "type"
-        ]
+        "required": ["type"]
       },
       "PickupPointResponseDto": {
         "type": "object",
@@ -7103,9 +6576,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "label"
-        ]
+        "required": ["label"]
       },
       "UpdatePickupPointDto": {
         "type": "object",
@@ -7149,10 +6620,7 @@
             }
           }
         },
-        "required": [
-          "weekday",
-          "points"
-        ]
+        "required": ["weekday", "points"]
       },
       "PaymentMethodConfigResponseDto": {
         "type": "object",
@@ -7164,12 +6632,7 @@
             "type": "string"
           },
           "method": {
-            "enum": [
-              "YAPE",
-              "PLIN",
-              "TRANSFER",
-              "CASH"
-            ],
+            "enum": ["YAPE", "PLIN", "TRANSFER", "CASH"],
             "type": "string"
           },
           "enabled": {
@@ -7230,12 +6693,7 @@
         "properties": {
           "method": {
             "type": "string",
-            "enum": [
-              "YAPE",
-              "PLIN",
-              "TRANSFER",
-              "CASH"
-            ]
+            "enum": ["YAPE", "PLIN", "TRANSFER", "CASH"]
           },
           "enabled": {
             "type": "boolean"
@@ -7244,9 +6702,7 @@
             "$ref": "#/components/schemas/PaymentMethodDetailsDto"
           }
         },
-        "required": [
-          "method"
-        ]
+        "required": ["method"]
       },
       "CreateInquiryDto": {
         "type": "object",
@@ -7270,11 +6726,7 @@
             "minLength": 1
           }
         },
-        "required": [
-          "name",
-          "email",
-          "message"
-        ]
+        "required": ["name", "email", "message"]
       },
       "InquiryResponseDto": {
         "type": "object",
@@ -7300,11 +6752,7 @@
             "type": "string"
           },
           "status": {
-            "enum": [
-              "NEW",
-              "REVIEWED",
-              "ARCHIVED"
-            ],
+            "enum": ["NEW", "REVIEWED", "ARCHIVED"],
             "type": "string"
           },
           "createdAt": {
@@ -7334,9 +6782,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "name"
-        ]
+        "required": ["name"]
       },
       "CategoryResponseDto": {
         "type": "object",
@@ -7359,13 +6805,7 @@
             "format": "date-time"
           }
         },
-        "required": [
-          "id",
-          "storeId",
-          "parentId",
-          "name",
-          "createdAt"
-        ]
+        "required": ["id", "storeId", "parentId", "name", "createdAt"]
       },
       "UpdateCategoryDto": {
         "type": "object",
@@ -7390,9 +6830,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "name"
-        ]
+        "required": ["name"]
       },
       "CollectionResponseDto": {
         "type": "object",
@@ -7493,10 +6931,7 @@
             "format": "date-time"
           },
           "status": {
-            "enum": [
-              "DRAFT",
-              "PUBLISHED"
-            ],
+            "enum": ["DRAFT", "PUBLISHED"],
             "type": "string"
           },
           "soldOut": {
@@ -7554,12 +6989,7 @@
             "$ref": "#/components/schemas/ProductInCollectionResponseDto"
           }
         },
-        "required": [
-          "collectionId",
-          "productId",
-          "position",
-          "product"
-        ]
+        "required": ["collectionId", "productId", "position", "product"]
       },
       "CollectionWithProductsResponseDto": {
         "type": "object",
@@ -7622,9 +7052,7 @@
             "type": "number"
           }
         },
-        "required": [
-          "productId"
-        ]
+        "required": ["productId"]
       },
       "CollectionProductResponseDto": {
         "type": "object",
@@ -7639,11 +7067,7 @@
             "type": "number"
           }
         },
-        "required": [
-          "collectionId",
-          "productId",
-          "position"
-        ]
+        "required": ["collectionId", "productId", "position"]
       },
       "ReorderCollectionProductsDto": {
         "type": "object",
@@ -7655,20 +7079,14 @@
             }
           }
         },
-        "required": [
-          "productIds"
-        ]
+        "required": ["productIds"]
       },
       "CreateStoreSectionDto": {
         "type": "object",
         "properties": {
           "type": {
             "type": "string",
-            "enum": [
-              "COLLECTION",
-              "BANNER",
-              "TEXT_BLOCK"
-            ]
+            "enum": ["COLLECTION", "BANNER", "TEXT_BLOCK"]
           },
           "collectionId": {
             "type": "string"
@@ -7684,9 +7102,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "type"
-        ]
+        "required": ["type"]
       },
       "StoreSectionResponseDto": {
         "type": "object",
@@ -7698,11 +7114,7 @@
             "type": "string"
           },
           "type": {
-            "enum": [
-              "COLLECTION",
-              "BANNER",
-              "TEXT_BLOCK"
-            ],
+            "enum": ["COLLECTION", "BANNER", "TEXT_BLOCK"],
             "type": "string"
           },
           "collectionId": {
@@ -7745,20 +7157,14 @@
             }
           }
         },
-        "required": [
-          "sectionIds"
-        ]
+        "required": ["sectionIds"]
       },
       "UpdateStoreSectionDto": {
         "type": "object",
         "properties": {
           "type": {
             "type": "string",
-            "enum": [
-              "COLLECTION",
-              "BANNER",
-              "TEXT_BLOCK"
-            ]
+            "enum": ["COLLECTION", "BANNER", "TEXT_BLOCK"]
           },
           "collectionId": {
             "type": "string"
@@ -7822,12 +7228,7 @@
             "type": "number"
           }
         },
-        "required": [
-          "ORDERING",
-          "IN_TRANSIT",
-          "READY",
-          "COMPLETED"
-        ]
+        "required": ["ORDERING", "IN_TRANSIT", "READY", "COMPLETED"]
       },
       "OutstandingPartialPaymentResponseDto": {
         "type": "object",
@@ -7965,21 +7366,13 @@
             "type": "number"
           }
         },
-        "required": [
-          "productId",
-          "name",
-          "unitsSold"
-        ]
+        "required": ["productId", "name", "unitsSold"]
       },
       "AnalyticsResultResponseDto": {
         "type": "object",
         "properties": {
           "range": {
-            "enum": [
-              "30d",
-              "90d",
-              "12m"
-            ],
+            "enum": ["30d", "90d", "12m"],
             "type": "string"
           },
           "buckets": {
@@ -7995,24 +7388,14 @@
             }
           }
         },
-        "required": [
-          "range",
-          "buckets",
-          "topProducts"
-        ]
+        "required": ["range", "buckets", "topProducts"]
       },
       "PaymentMethodBreakdownRowResponseDto": {
         "type": "object",
         "properties": {
           "method": {
             "nullable": true,
-            "enum": [
-              "YAPE",
-              "PLIN",
-              "TRANSFER",
-              "CASH",
-              null
-            ],
+            "enum": ["YAPE", "PLIN", "TRANSFER", "CASH", null],
             "type": "string"
           },
           "amount": {
@@ -8025,12 +7408,7 @@
             "type": "number"
           }
         },
-        "required": [
-          "method",
-          "amount",
-          "count",
-          "percentage"
-        ]
+        "required": ["method", "amount", "count", "percentage"]
       },
       "PaymentMethodsBreakdownResponseDto": {
         "type": "object",
@@ -8056,13 +7434,7 @@
             }
           }
         },
-        "required": [
-          "from",
-          "to",
-          "totalAmount",
-          "totalCount",
-          "byMethod"
-        ]
+        "required": ["from", "to", "totalAmount", "totalCount", "byMethod"]
       },
       "SuggestionResponseDto": {
         "type": "object",
@@ -8071,11 +7443,7 @@
             "type": "string"
           },
           "severity": {
-            "enum": [
-              "info",
-              "warning",
-              "critical"
-            ],
+            "enum": ["info", "warning", "critical"],
             "type": "string"
           },
           "titleKey": {
@@ -8086,12 +7454,7 @@
             "additionalProperties": true
           }
         },
-        "required": [
-          "id",
-          "severity",
-          "titleKey",
-          "bodyParams"
-        ]
+        "required": ["id", "severity", "titleKey", "bodyParams"]
       },
       "RegisterCustomerDto": {
         "type": "object",
@@ -8105,10 +7468,7 @@
             "minLength": 8
           }
         },
-        "required": [
-          "token",
-          "password"
-        ]
+        "required": ["token", "password"]
       },
       "OkResponseDto": {
         "type": "object",
@@ -8117,9 +7477,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "ok"
-        ]
+        "required": ["ok"]
       },
       "LoginCustomerDto": {
         "type": "object",
@@ -8133,10 +7491,7 @@
             "minLength": 1
           }
         },
-        "required": [
-          "phone",
-          "password"
-        ]
+        "required": ["phone", "password"]
       },
       "ForgotPasswordDto": {
         "type": "object",
@@ -8146,9 +7501,7 @@
             "minLength": 1
           }
         },
-        "required": [
-          "phone"
-        ]
+        "required": ["phone"]
       },
       "ChangeCustomerPasswordDto": {
         "type": "object",
@@ -8162,10 +7515,7 @@
             "minLength": 8
           }
         },
-        "required": [
-          "currentPassword",
-          "newPassword"
-        ]
+        "required": ["currentPassword", "newPassword"]
       },
       "CustomerProfileCustomerResponseDto": {
         "type": "object",
@@ -8215,10 +7565,7 @@
             }
           }
         },
-        "required": [
-          "customer",
-          "orders"
-        ]
+        "required": ["customer", "orders"]
       },
       "UpdateCustomerProfileDto": {
         "type": "object",
@@ -8236,9 +7583,7 @@
             "minLength": 1
           }
         },
-        "required": [
-          "name"
-        ]
+        "required": ["name"]
       },
       "UpdateCustomerProfileResponseDto": {
         "type": "object",
@@ -8256,11 +7601,7 @@
             "nullable": true
           }
         },
-        "required": [
-          "name",
-          "pendingEmail",
-          "pendingPhone"
-        ]
+        "required": ["name", "pendingEmail", "pendingPhone"]
       },
       "LinkedStoreResponseDto": {
         "type": "object",
@@ -8272,10 +7613,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "slug",
-          "name"
-        ]
+        "required": ["slug", "name"]
       },
       "GlobalAccountProfileResponseDto": {
         "type": "object",
@@ -8337,12 +7675,7 @@
             "type": "string"
           },
           "fulfillmentStatus": {
-            "enum": [
-              "ORDERING",
-              "IN_TRANSIT",
-              "READY",
-              "COMPLETED"
-            ],
+            "enum": ["ORDERING", "IN_TRANSIT", "READY", "COMPLETED"],
             "type": "string"
           },
           "totalAmount": {
@@ -8392,11 +7725,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "name",
-          "phone",
-          "productId"
-        ]
+        "required": ["name", "phone", "productId"]
       },
       "RestockRequestResultResponseDto": {
         "type": "object",
@@ -8409,10 +7738,7 @@
             "format": "date-time"
           }
         },
-        "required": [
-          "id",
-          "createdAt"
-        ]
+        "required": ["id", "createdAt"]
       },
       "RestockRequestProductDto": {
         "type": "object",
@@ -8430,11 +7756,7 @@
             }
           }
         },
-        "required": [
-          "id",
-          "name",
-          "images"
-        ]
+        "required": ["id", "name", "images"]
       },
       "RestockRequestVariantDto": {
         "type": "object",
@@ -8446,10 +7768,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "name"
-        ]
+        "required": ["id", "name"]
       },
       "RestockRequestResponseDto": {
         "type": "object",
@@ -8480,14 +7799,7 @@
             ]
           }
         },
-        "required": [
-          "id",
-          "name",
-          "phone",
-          "createdAt",
-          "product",
-          "variant"
-        ]
+        "required": ["id", "name", "phone", "createdAt", "product", "variant"]
       },
       "RestockCountResponseDto": {
         "type": "object",
@@ -8496,9 +7808,7 @@
             "type": "number"
           }
         },
-        "required": [
-          "count"
-        ]
+        "required": ["count"]
       },
       "UpdateWhatsAppTemplateDto": {
         "type": "object",
@@ -8508,9 +7818,7 @@
             "maxLength": 1000
           }
         },
-        "required": [
-          "template"
-        ]
+        "required": ["template"]
       },
       "WhatsAppTemplateResponseDto": {
         "type": "object",
@@ -8522,10 +7830,7 @@
             "type": "string"
           },
           "type": {
-            "enum": [
-              "NEW_ORDER",
-              "PAYMENT_REMINDER"
-            ],
+            "enum": ["NEW_ORDER", "PAYMENT_REMINDER"],
             "type": "string"
           },
           "template": {
@@ -8536,13 +7841,7 @@
             "format": "date-time"
           }
         },
-        "required": [
-          "id",
-          "storeId",
-          "type",
-          "template",
-          "updatedAt"
-        ]
+        "required": ["id", "storeId", "type", "template", "updatedAt"]
       },
       "AddressResponseDto": {
         "type": "object",
@@ -8634,12 +7933,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "recipientName",
-          "phone",
-          "line1",
-          "city"
-        ]
+        "required": ["recipientName", "phone", "line1", "city"]
       },
       "UpdateAddressDto": {
         "type": "object",
@@ -8692,11 +7986,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "monitorID",
-          "status",
-          "important"
-        ]
+        "required": ["monitorID", "status", "important"]
       },
       "KumaMonitorDto": {
         "type": "object",
@@ -8708,9 +7998,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "name"
-        ]
+        "required": ["name"]
       },
       "KumaWebhookDto": {
         "type": "object",
@@ -8725,10 +8013,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "heartbeat",
-          "monitor"
-        ]
+        "required": ["heartbeat", "monitor"]
       },
       "IncidentResponseDto": {
         "type": "object",
@@ -8783,12 +8068,7 @@
             "type": "number"
           }
         },
-        "required": [
-          "incidents",
-          "total",
-          "page",
-          "limit"
-        ]
+        "required": ["incidents", "total", "page", "limit"]
       }
     }
   }

@@ -7,7 +7,7 @@ import { SitemapFixedChunkOutOfRangeError, type SitemapSource } from "./types";
 
 function entries(): MetadataRoute.Sitemap {
   return STATIC_PATHS.flatMap((path) =>
-    routing.locales.map((locale) => staticEntry(locale, path))
+    routing.locales.map((locale) => staticEntry(locale, path)),
   );
 }
 

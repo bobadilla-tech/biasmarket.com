@@ -34,6 +34,7 @@ pnpm install                              # workspace install
 pnpm dev                                  # all apps, parallel (api :3000, web :3001)
 pnpm build                                # turbo run build (respects dependency graph)
 pnpm lint                                 # turbo run lint
+pnpm fix                                  # format changed files, then run lint
 pnpm typecheck                            # turbo run typecheck
 pnpm test                                 # turbo run test, all packages
 pnpm db:generate                          # prisma generate (packages/db)

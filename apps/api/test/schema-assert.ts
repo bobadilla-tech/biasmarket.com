@@ -43,7 +43,9 @@ export async function cleanupBuyerTestData(
       await prisma.orderPayment.deleteMany({
         where: { orderId: { in: orderIds } },
       });
-      await prisma.orderItem.deleteMany({ where: { orderId: { in: orderIds } } });
+      await prisma.orderItem.deleteMany({
+        where: { orderId: { in: orderIds } },
+      });
       await prisma.order.deleteMany({ where: { id: { in: orderIds } } });
     }
     await prisma.customerStoreLink.deleteMany({

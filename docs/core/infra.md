@@ -67,8 +67,8 @@ exists for host mode — everything documented here assumes `docker:dev`.
   connection on `localhost:5432` ahead of the Docker one. Either stop the native
   Postgres, or run Prisma commands via
   `docker compose -f
-  infra/docker/docker-compose.dev.yml exec api pnpm --filter @biasmarket/db
-  exec prisma <command>`
+infra/docker/docker-compose.dev.yml exec api pnpm --filter @biasmarket/db
+exec prisma <command>`
   so they run inside the container against the Docker-internal `db` hostname.
 - ~~Edited `schema.prisma`, API isn't picking it up~~ — fixed: the `api`
   container watches `schema.prisma` and re-runs `prisma generate` automatically,

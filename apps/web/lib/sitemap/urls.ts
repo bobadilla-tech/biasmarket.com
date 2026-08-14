@@ -6,9 +6,9 @@ export function localizedUrl(locale: string, path: string): string {
   return `${SITE_URL}/${locale}${path}`;
 }
 
-export function alternates(path: string): NonNullable<
-  MetadataRoute.Sitemap[number]["alternates"]
-> {
+export function alternates(
+  path: string,
+): NonNullable<MetadataRoute.Sitemap[number]["alternates"]> {
   return {
     languages: Object.fromEntries(
       routing.locales.map((locale) => [locale, localizedUrl(locale, path)]),

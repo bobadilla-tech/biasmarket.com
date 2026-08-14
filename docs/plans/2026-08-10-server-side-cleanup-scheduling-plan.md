@@ -250,10 +250,10 @@ below, not just noted:**
    an explicit trailing positional argument after the string, defaulting to the
    literal word `"bash"` if none is given. Neither shape reaches `cmd_cleanup`.
    Verified empirically during review (`bash -c 'exec "$0"
-   --cleanup'` →
+--cleanup'` →
    `bash: --cleanup: invalid option`; `bash -c 'exec deploy.sh --cleanup'` →
    `bash: line 0: exec: deploy.sh: not
-   found`). Because decision 5 makes
+found`). Because decision 5 makes
    scheduling failures non-fatal to the deploy (by design) and log only to
    `scheduled_cleanup.log` (which nothing polls), this bug would have shipped
    silently — cleanup would still have happened, just via the hourly fallback
@@ -576,7 +576,7 @@ tempting-looking things:
 - **Don't have `cmd_rollback` schedule a fresh 30-minute window of its own.**
   `cmd_rollback`'s own precondition
   (`[[ -n "$current_color" && -n "$target_color" ]] || die "No rollback
-  target recorded"`,
+target recorded"`,
   [deploy.sh:241](../../infra/vps/deploy.sh#L241)) means a rollback is only ever
   reachable while a `rollback_target` still exists — i.e., strictly before some
   cleanup (scheduled or manual) has already run. There is therefore always

@@ -49,7 +49,7 @@ export async function GET() {
       Array.from(
         { length: count },
         (_, chunkId) => `${SITE_URL}/sitemap-${source.id}-${chunkId}.xml`,
-      )
+      ),
     );
     const xml = serializeSitemapIndexXml(urls);
 
