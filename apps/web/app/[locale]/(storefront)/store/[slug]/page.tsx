@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { Locale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { CartLink } from "./cart-link";
 import { isProductOutOfStock } from "@/features/discovery/lib/product-stock";
@@ -8,7 +9,8 @@ import { ProductCard } from "@/components/storefront/product-card";
 import { StoreSectionRenderer } from "@/components/storefront/section-renderer";
 
 async function getStore(slug: string) {
-  const apiUrl = process.env.INTERNAL_API_URL ??
+  const apiUrl =
+    process.env.INTERNAL_API_URL ??
     process.env.NEXT_PUBLIC_API_URL ??
     (process.env.NODE_ENV === "development"
       ? "http://localhost:3000"
@@ -151,7 +153,7 @@ function buildJsonLd(locale: string, slug: string, store: any) {
 export default async function StorePage({
   params,
 }: {
-  params: Promise<{ locale: string; slug: string }>;
+  params: Promise<{ locale: Locale; slug: string }>;
 }) {
   const { locale, slug } = await params;
   const [store, t] = await Promise.all([
@@ -237,13 +239,13 @@ export default async function StorePage({
         </div>
       </header>
       <main className="max-w-5xl mx-auto px-4 py-8 space-y-10">
-        {visibleSections.length === 0
-          ? (
-            soldOutProducts.length > 0
-              ? null
-              : <p className="text-gray-500 text-center">{t("noProducts")}</p>
+        {visibleSections.length === 0 ? (
+          soldOutProducts.length > 0 ? null : (
+            <p className="text-gray-500 text-center">{t("noProducts")}</p>
           )
-          : <StoreSectionRenderer slug={slug} sections={visibleSections} />}
+        ) : (
+          <StoreSectionRenderer slug={slug} sections={visibleSections} />
+        )}
         {/* Sold-out section rendered after visible sections */}
         {soldOutProducts.length > 0 && (
           <section
