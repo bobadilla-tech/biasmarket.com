@@ -109,10 +109,12 @@ export class StoreSectionsService {
       where: { id: sectionId },
       data: {
         ...(dto.type !== undefined && { type: dto.type }),
-        ...(dto.collectionId !== undefined &&
-          { collectionId: dto.collectionId }),
-        ...(dto.content !== undefined &&
-          { content: dto.content as Prisma.InputJsonValue }),
+        ...(dto.collectionId !== undefined && {
+          collectionId: dto.collectionId,
+        }),
+        ...(dto.content !== undefined && {
+          content: dto.content as Prisma.InputJsonValue,
+        }),
         ...(dto.position !== undefined && { position: dto.position }),
         ...(dto.hidden !== undefined && { hidden: dto.hidden }),
       },

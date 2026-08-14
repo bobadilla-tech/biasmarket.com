@@ -234,11 +234,13 @@ describe("ProductsService", () => {
     const dto = {
       name: "Widget",
       price: 10,
-      variants: [{
-        name: "Red / S",
-        stock: 3,
-        attributes: { Color: "Red", Size: "S" },
-      }],
+      variants: [
+        {
+          name: "Red / S",
+          stock: 3,
+          attributes: { Color: "Red", Size: "S" },
+        },
+      ],
     };
 
     const result = await service.create(storeId, ownerId, dto);
@@ -424,10 +426,9 @@ describe("ProductsService", () => {
     });
     prisma.orderItem.count.mockResolvedValue(1);
 
-    await expect(service.deleteVariant(productId, "v1", storeId, ownerId))
-      .rejects.toThrow(
-        BadRequestException,
-      );
+    await expect(
+      service.deleteVariant(productId, "v1", storeId, ownerId),
+    ).rejects.toThrow(BadRequestException);
   });
 
   describe("addVariantImage", () => {

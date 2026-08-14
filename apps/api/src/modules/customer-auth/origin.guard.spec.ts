@@ -35,9 +35,7 @@ describe("OriginGuard", () => {
   it("rejects a cross-origin request", () => {
     expect(() =>
       guard.canActivate(buildContext({ origin: "https://evil.example.com" }))
-    ).toThrow(
-      ForbiddenException,
-    );
+    ).toThrow(ForbiddenException);
   });
 
   it("rejects a request with neither Origin nor Referer", () => {

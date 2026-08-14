@@ -163,9 +163,9 @@ describe("DeliveryConfigService", () => {
     it("throws NotFoundException when the slug does not resolve to a store", async () => {
       prisma.store.findUnique.mockResolvedValue(null);
 
-      await expect(
-        service.findEnabledForSlug("no-such-store"),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.findEnabledForSlug("no-such-store")).rejects.toThrow(
+        NotFoundException,
+      );
       expect(prisma.deliveryMethodConfig.findMany).not.toHaveBeenCalled();
     });
 

@@ -11,9 +11,7 @@ export class MyStoresController {
 
   @UseGuards(AuthGuard)
   @Get()
-  async findMine(
-    @Session() session: UserSession,
-  ): Promise<StoreResponseDto[]> {
+  async findMine(@Session() session: UserSession): Promise<StoreResponseDto[]> {
     const stores = await this.stores.findAllForUser(session.user.id);
     return stores.map(toStoreDto);
   }

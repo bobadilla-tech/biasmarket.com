@@ -244,7 +244,9 @@ export class ProductsService {
       where: { id: variantId },
     });
     if (
-      !variant || variant.productId !== productId || variant.storeId !== storeId
+      !variant ||
+      variant.productId !== productId ||
+      variant.storeId !== storeId
     ) {
       throw new NotFoundException("Variante no encontrada");
     }
@@ -277,7 +279,9 @@ export class ProductsService {
       where: { id: variantId },
     });
     if (
-      !variant || variant.productId !== productId || variant.storeId !== storeId
+      !variant ||
+      variant.productId !== productId ||
+      variant.storeId !== storeId
     ) {
       throw new NotFoundException("Variante no encontrada");
     }
@@ -321,7 +325,9 @@ export class ProductsService {
       where: { id: variantId },
     });
     if (
-      !variant || variant.productId !== productId || variant.storeId !== storeId
+      !variant ||
+      variant.productId !== productId ||
+      variant.storeId !== storeId
     ) {
       throw new NotFoundException("Variante no encontrada");
     }

@@ -34,10 +34,13 @@ describe("PickupPointsService", () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [PickupPointsService, {
-        provide: PrismaService,
-        useValue: prisma,
-      }],
+      providers: [
+        PickupPointsService,
+        {
+          provide: PrismaService,
+          useValue: prisma,
+        },
+      ],
     }).compile();
 
     service = module.get<PickupPointsService>(PickupPointsService);
@@ -159,10 +162,12 @@ describe("PickupPointsService", () => {
         id: storeId,
         slug: "my-store",
       });
-      prisma.pickupPoint.findMany.mockResolvedValue([{
-        id: pointId,
-        enabled: true,
-      }]);
+      prisma.pickupPoint.findMany.mockResolvedValue([
+        {
+          id: pointId,
+          enabled: true,
+        },
+      ]);
 
       const result = await service.findEnabledForSlug("my-store");
 

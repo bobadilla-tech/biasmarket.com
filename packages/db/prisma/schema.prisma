@@ -18,77 +18,120 @@ model User {
   banned        Boolean?  @default(false)
   banReason     String?
   banExpires    DateTime?
+  plan          String    @default("basic")
+  premiumUntil  DateTime?
   createdAt     DateTime
   updatedAt     DateTime
 
-  sessions Session[]
-  accounts Account[]
-  stores   Store[]
+  sessions          Session[]
+  accounts          Account[]
+  stores            Store[]
+  createdCoupons    Coupon[]           @relation("CouponCreatedBy")
+  couponRedemptions CouponRedemption[]
 
   @@map("user")
 }
 
+model Coupon {
+  id           String    @id @default(cuid())
+  code         String    @unique
+  name         String
+  description  String    @default("")
+  plan         String    @default("premium")
+  durationDays Int       @default(30)
+  maxUses      Int       @default(1)
+  isActive     Boolean   @default(true)
+  startsAt     DateTime?
+  expiresAt    DateTime?
+  createdById  String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  createdBy   User?              @relation("CouponCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  redemptions CouponRedemption[]
+
+  @@index([isActive])
+  @@index([plan])
+  @@index([code])
+}
+
+model CouponRedemption {
+  id         String   @id @default(cuid())
+  couponId   String
+  userId     String
+  redeemedAt DateTime @default(now())
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  coupon Coupon @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([couponId, userId])
+  @@index([couponId])
+  @@index([userId])
+}
+
 model Store {
-  id                  String   @id @default(cuid())
-  name                String
-  slug                String   @unique
-  locale              String   @default("es")
-  ownerId             String
-  themeConfig         Json
-  logoUrl             String?
-  paymentInstructions String
-  whatsappNumber      String?
-  instagramUrl        String?
-  facebookUrl         String?
-  tiktokUrl           String?
-  twitterUrl          String?
-  defaultCurrency     String   @default("PEN")
-  holdWindowHours     Int      @default(48)
+  id                    String   @id @default(cuid())
+  name                  String
+  slug                  String   @unique
+  locale                String   @default("es")
+  ownerId               String
+  themeConfig           Json
+  logoUrl               String?
+  paymentInstructions   String
+  whatsappNumber        String?
+  instagramUrl          String?
+  facebookUrl           String?
+  tiktokUrl             String?
+  twitterUrl            String?
+  defaultCurrency       String   @default("PEN")
+  holdWindowHours       Int      @default(48)
   lowStockThreshold     Int      @default(5)
   lowStockAlertsEnabled Boolean  @default(true)
   // Showcased on the public homepage/directory search vs. reachable only by
   // direct link (/store/:slug). Doesn't gate the storefront itself.
-  isPublic            Boolean  @default(true)
-  createdAt           DateTime @default(now())
+  isPublic              Boolean  @default(true)
+  createdAt             DateTime @default(now())
 
-  owner           User                   @relation(fields: [ownerId], references: [id])
-  products        Product[]
-  orders          Order[]
-  categories      Category[]
-  collections     Collection[]
-  sections        StoreSection[]
-  customers       Customer[]
-  paymentMethods  PaymentMethodConfig[]
-  deliveryMethods DeliveryMethodConfig[]
-  pickupPoints    PickupPoint[]
-  notifications   Notification[]
-  restockRequests RestockRequest[]
+  owner             User                      @relation(fields: [ownerId], references: [id])
+  products          Product[]
+  orders            Order[]
+  categories        Category[]
+  collections       Collection[]
+  sections          StoreSection[]
+  customers         Customer[]
+  paymentMethods    PaymentMethodConfig[]
+  deliveryMethods   DeliveryMethodConfig[]
+  pickupPoints      PickupPoint[]
+  notifications     Notification[]
+  restockRequests   RestockRequest[]
   whatsappTemplates WhatsAppMessageTemplate[]
-  buyerLinks      CustomerStoreLink[]
+  buyerLinks        CustomerStoreLink[]
 
   @@index([ownerId])
 }
 
 model Product {
-  id          String        @id @default(cuid())
-  storeId     String
-  name        String
-  description String        @default("")
-  price       Decimal       @db.Decimal(10, 2)
-  currency    String        @default("PEN")
-  images      String[]      @default([])
+  id             String        @id @default(cuid())
+  storeId        String
+  name           String
+  description    String        @default("")
+  price          Decimal       @db.Decimal(10, 2)
+  currency       String        @default("PEN")
+  images         String[]      @default([])
   availableUntil DateTime?
-  status      ProductStatus @default(DRAFT)
-  soldOut     Boolean       @default(false)
-  discontinued Boolean       @default(false)
-  deletedAt   DateTime?
-  createdAt   DateTime      @default(now())
+  status         ProductStatus @default(DRAFT)
+  soldOut        Boolean       @default(false)
+  discontinued   Boolean       @default(false)
+  deletedAt      DateTime?
+  createdAt      DateTime      @default(now())
 
-  store       Store               @relation(fields: [storeId], references: [id])
-  variants    ProductVariant[]
-  orderItems  OrderItem[]
-  categories  ProductCategory[]
-  collections CollectionProduct[]
+  store           Store               @relation(fields: [storeId], references: [id])
+  variants        ProductVariant[]
+  orderItems      OrderItem[]
+  categories      ProductCategory[]
+  collections     CollectionProduct[]
   restockRequests RestockRequest[]
 
   @@index([storeId])
@@ -106,8 +149,8 @@ model ProductVariant {
   imageOverride String?
   attributes    Json     @default("{}")
 
-  product    Product     @relation(fields: [productId], references: [id])
-  orderItems OrderItem[]
+  product         Product          @relation(fields: [productId], references: [id])
+  orderItems      OrderItem[]
   restockRequests RestockRequest[]
 
   @@index([productId])
@@ -123,8 +166,8 @@ model RestockRequest {
   phone     String
   createdAt DateTime @default(now())
 
-  store   Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  product Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  store   Store           @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  product Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
   variant ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
 
   @@index([storeId, createdAt])
@@ -217,41 +260,41 @@ model StoreSection {
 }
 
 model Order {
-  id                 String             @id @default(cuid())
-  storeId            String
-  customerId         String?
+  id                     String                  @id @default(cuid())
+  storeId                String
+  customerId             String?
   // New global buyer identity, added alongside `customerId` rather than
   // replacing it — see docs/plans/2026-08-08-global-buyer-account-plan.md.
   // `customerId` is dropped in a later follow-up migration once the backfill
   // is verified complete.
-  buyerAccountId     String?
-  customerEmail      String?
-  customerPhone      String
-  customerName       String?
-  deliveryMethodType DeliveryMethodType
-  deliveryDetails    Json
-  pickupPointId      String?
+  buyerAccountId         String?
+  customerEmail          String?
+  customerPhone          String
+  customerName           String?
+  deliveryMethodType     DeliveryMethodType
+  deliveryDetails        Json
+  pickupPointId          String?
   // Set only when the buyer chose a pickup point that isn't open today —
   // the future date they committed to, validated against that point's
   // openDays at checkout. Null for same-day pickup (today is implied).
-  pickupDate         DateTime?
+  pickupDate             DateTime?
   // Buyer's chosen payment method at checkout — optional since older
   // orders (created before this field existed) never captured one.
-  paymentMethod      PaymentMethodType?
-  paymentStatus      PaymentStatus      @default(PENDING_PAYMENT)
+  paymentMethod          PaymentMethodType?
+  paymentStatus          PaymentStatus           @default(PENDING_PAYMENT)
   paymentRejectionReason String?
-  fulfillmentStatus  FulfillmentStatus  @default(ORDERING)
-  status             OrderStatus        @default(ACTIVE)
+  fulfillmentStatus      FulfillmentStatus       @default(ORDERING)
+  status                 OrderStatus             @default(ACTIVE)
   cancellationResolution CancellationResolution?
-  cancellationReason String?
-  retainedAmount Decimal? @db.Decimal(10,2)
-  releasedAmount Decimal? @db.Decimal(10,2)
-  releasedResolution CancellationResolution?
-  totalAmount        Decimal            @db.Decimal(10, 2)
-  requiredAmount     Decimal            @db.Decimal(10, 2)
-  currency           String
-  expiresAt          DateTime
-  createdAt          DateTime           @default(now())
+  cancellationReason     String?
+  retainedAmount         Decimal?                @db.Decimal(10, 2)
+  releasedAmount         Decimal?                @db.Decimal(10, 2)
+  releasedResolution     CancellationResolution?
+  totalAmount            Decimal                 @db.Decimal(10, 2)
+  requiredAmount         Decimal                 @db.Decimal(10, 2)
+  currency               String
+  expiresAt              DateTime
+  createdAt              DateTime                @default(now())
 
   store        Store          @relation(fields: [storeId], references: [id])
   customer     Customer?      @relation(fields: [customerId], references: [id])
@@ -286,15 +329,15 @@ model OrderItem {
 }
 
 model OrderPayment {
-  id        String             @id @default(cuid())
-  orderId   String
-  storeId   String
-  amount    Decimal            @db.Decimal(10, 2)
-  currency  String
-  method    PaymentMethodType?
-  note      String?
-  imageUrl  String?
-  createdAt DateTime           @default(now())
+  id           String              @id @default(cuid())
+  orderId      String
+  storeId      String
+  amount       Decimal             @db.Decimal(10, 2)
+  currency     String
+  method       PaymentMethodType?
+  note         String?
+  imageUrl     String?
+  createdAt    DateTime            @default(now())
   // Buyer-submitted proof-of-payment upload — see
   // docs/plans/2026-08-08-buyer-proof-of-payment-upload-plan.md. `source`
   // distinguishes who created the row; `reviewStatus` gates whether it
@@ -344,6 +387,7 @@ enum OrderStatus {
   ACTIVE
   CANCELLED
 }
+
 enum ReleaseResolution {
   REFUNDED
   STORE_CREDIT
@@ -371,11 +415,11 @@ model PaymentMethodConfig {
   id                    String            @id @default(cuid())
   storeId               String
   method                PaymentMethodType
-  enabled               Boolean  @default(true)
+  enabled               Boolean           @default(true)
   details               Json
-  depositPercentPickup  Int      @default(100)
-  depositPercentCourier Int      @default(100)
-  createdAt             DateTime @default(now())
+  depositPercentPickup  Int               @default(100)
+  depositPercentCourier Int               @default(100)
+  createdAt             DateTime          @default(now())
 
   store Store @relation(fields: [storeId], references: [id])
 
@@ -407,11 +451,11 @@ enum WhatsAppMessageType {
 // with no row for a given type falls back to the hardcoded default template
 // in packages/utils/src/whatsapp/index.ts.
 model WhatsAppMessageTemplate {
-  id        String               @id @default(cuid())
+  id        String              @id @default(cuid())
   storeId   String
   type      WhatsAppMessageType
   template  String
-  updatedAt DateTime             @updatedAt
+  updatedAt DateTime            @updatedAt
 
   store Store @relation(fields: [storeId], references: [id])
 
@@ -610,16 +654,16 @@ model PlatformIncident {
 //BETHER AUTH
 
 model Session {
-  id        String   @id
-  expiresAt DateTime
-  token     String   @unique
-  createdAt DateTime
-  updatedAt DateTime
-  ipAddress String?
-  userAgent String?
-  userId    String
+  id             String   @id
+  expiresAt      DateTime
+  token          String   @unique
+  createdAt      DateTime
+  updatedAt      DateTime
+  ipAddress      String?
+  userAgent      String?
+  userId         String
   impersonatedBy String?
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("session")
 }

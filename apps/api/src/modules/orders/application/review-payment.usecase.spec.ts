@@ -27,9 +27,11 @@ describe("ReviewPaymentUseCase", () => {
   let notifications: { syncStockAlerts: Mock };
   let mailer: {
     send: Mock<
-      (
-        params: { to: string; subject: string; html: string },
-      ) => Promise<{ id: string }>
+      (params: {
+        to: string;
+        subject: string;
+        html: string;
+      }) => Promise<{ id: string }>
     >;
   };
 
@@ -79,10 +81,9 @@ describe("ReviewPaymentUseCase", () => {
       ownerId: "someone-else",
     });
 
-    await expect(useCase.execute(orderId, storeId, ownerId, "approve")).rejects
-      .toThrow(
-        ForbiddenException,
-      );
+    await expect(
+      useCase.execute(orderId, storeId, ownerId, "approve"),
+    ).rejects.toThrow(ForbiddenException);
   });
 
   it("throws NotFoundException when the order belongs to a different store", async () => {
@@ -92,10 +93,9 @@ describe("ReviewPaymentUseCase", () => {
       items: [],
     });
 
-    await expect(useCase.execute(orderId, storeId, ownerId, "approve")).rejects
-      .toThrow(
-        NotFoundException,
-      );
+    await expect(
+      useCase.execute(orderId, storeId, ownerId, "approve"),
+    ).rejects.toThrow(NotFoundException);
   });
 
   it("approve() decrements reserved and stock for finite-stock variants and writes an audit log", async () => {
@@ -105,11 +105,13 @@ describe("ReviewPaymentUseCase", () => {
       paymentStatus: "PENDING_PAYMENT",
       fulfillmentStatus: "ORDERING",
       requiredAmount,
-      payments: [{
-        amount: requiredAmount,
-        source: "SELLER_RECORDED",
-        reviewStatus: "N_A",
-      }],
+      payments: [
+        {
+          amount: requiredAmount,
+          source: "SELLER_RECORDED",
+          reviewStatus: "N_A",
+        },
+      ],
       items: [{ variantId: "variant-1", productId: "product-1", quantity: 2 }],
     });
     prisma.productVariant.findUnique.mockResolvedValue({
@@ -198,11 +200,13 @@ describe("ReviewPaymentUseCase", () => {
       paymentStatus: "PENDING_PAYMENT",
       fulfillmentStatus: "ORDERING",
       requiredAmount,
-      payments: [{
-        amount: requiredAmount,
-        source: "SELLER_RECORDED",
-        reviewStatus: "N_A",
-      }],
+      payments: [
+        {
+          amount: requiredAmount,
+          source: "SELLER_RECORDED",
+          reviewStatus: "N_A",
+        },
+      ],
       items: [{ variantId: "variant-1", quantity: 1 }],
     });
     prisma.productVariant.findUnique.mockResolvedValue({
@@ -228,19 +232,20 @@ describe("ReviewPaymentUseCase", () => {
       fulfillmentStatus: "ORDERING",
       customerEmail: "buyer@example.com",
       requiredAmount,
-      payments: [{
-        amount: requiredAmount,
-        source: "SELLER_RECORDED",
-        reviewStatus: "N_A",
-      }],
+      payments: [
+        {
+          amount: requiredAmount,
+          source: "SELLER_RECORDED",
+          reviewStatus: "N_A",
+        },
+      ],
       items: [{ variantId: "variant-1", productId: "product-1", quantity: 1 }],
     });
     prisma.order.updateMany.mockResolvedValue({ count: 0 });
 
-    await expect(useCase.execute(orderId, storeId, ownerId, "approve")).rejects
-      .toThrow(
-        ConflictException,
-      );
+    await expect(
+      useCase.execute(orderId, storeId, ownerId, "approve"),
+    ).rejects.toThrow(ConflictException);
 
     expect(prisma.productVariant.update).not.toHaveBeenCalled();
     expect(mailer.send).not.toHaveBeenCalled();
@@ -254,11 +259,13 @@ describe("ReviewPaymentUseCase", () => {
       fulfillmentStatus: "ORDERING",
       customerEmail: "buyer@example.com",
       requiredAmount,
-      payments: [{
-        amount: requiredAmount,
-        source: "SELLER_RECORDED",
-        reviewStatus: "N_A",
-      }],
+      payments: [
+        {
+          amount: requiredAmount,
+          source: "SELLER_RECORDED",
+          reviewStatus: "N_A",
+        },
+      ],
       items: [],
     });
     prisma.order.findUniqueOrThrow.mockResolvedValue({
@@ -375,10 +382,9 @@ describe("ReviewPaymentUseCase", () => {
       items: [],
     });
 
-    await expect(useCase.execute(orderId, storeId, ownerId, "approve")).rejects
-      .toThrow(
-        InvalidOrderTransitionError,
-      );
+    await expect(
+      useCase.execute(orderId, storeId, ownerId, "approve"),
+    ).rejects.toThrow(InvalidOrderTransitionError);
   });
 
   it("rejects approving an order with zero payment registered", async () => {
@@ -392,10 +398,9 @@ describe("ReviewPaymentUseCase", () => {
       items: [],
     });
 
-    await expect(useCase.execute(orderId, storeId, ownerId, "approve")).rejects
-      .toThrow(
-        BadRequestException,
-      );
+    await expect(
+      useCase.execute(orderId, storeId, ownerId, "approve"),
+    ).rejects.toThrow(BadRequestException);
 
     expect(prisma.order.updateMany).not.toHaveBeenCalled();
     expect(prisma.productVariant.update).not.toHaveBeenCalled();
@@ -408,18 +413,19 @@ describe("ReviewPaymentUseCase", () => {
       paymentStatus: "PENDING_PAYMENT",
       fulfillmentStatus: "ORDERING",
       requiredAmount,
-      payments: [{
-        amount: requiredAmount,
-        source: "BUYER_SUBMITTED",
-        reviewStatus: "PENDING_REVIEW",
-      }],
+      payments: [
+        {
+          amount: requiredAmount,
+          source: "BUYER_SUBMITTED",
+          reviewStatus: "PENDING_REVIEW",
+        },
+      ],
       items: [],
     });
 
-    await expect(useCase.execute(orderId, storeId, ownerId, "approve")).rejects
-      .toThrow(
-        BadRequestException,
-      );
+    await expect(
+      useCase.execute(orderId, storeId, ownerId, "approve"),
+    ).rejects.toThrow(BadRequestException);
 
     expect(prisma.order.updateMany).not.toHaveBeenCalled();
   });
@@ -431,11 +437,13 @@ describe("ReviewPaymentUseCase", () => {
       paymentStatus: "PENDING_PAYMENT",
       fulfillmentStatus: "ORDERING",
       requiredAmount,
-      payments: [{
-        amount: new Prisma.Decimal("30.00"),
-        source: "SELLER_RECORDED",
-        reviewStatus: "N_A",
-      }],
+      payments: [
+        {
+          amount: new Prisma.Decimal("30.00"),
+          source: "SELLER_RECORDED",
+          reviewStatus: "N_A",
+        },
+      ],
       items: [],
     });
     prisma.order.findUniqueOrThrow.mockResolvedValue({
@@ -443,7 +451,8 @@ describe("ReviewPaymentUseCase", () => {
       paymentStatus: "VERIFIED",
     });
 
-    await expect(useCase.execute(orderId, storeId, ownerId, "approve"))
-      .resolves.toBeDefined();
+    await expect(
+      useCase.execute(orderId, storeId, ownerId, "approve"),
+    ).resolves.toBeDefined();
   });
 });

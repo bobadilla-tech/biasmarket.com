@@ -52,9 +52,7 @@ export class ContactController {
   @UseGuards(AuthGuard)
   @Roles(["admin"])
   @Patch(":id/review")
-  async markReviewed(
-    @Param("id") id: string,
-  ): Promise<InquiryResponseDto> {
+  async markReviewed(@Param("id") id: string): Promise<InquiryResponseDto> {
     const inquiry = await this.contact.markReviewed(id);
     return toInquiryDto(inquiry);
   }

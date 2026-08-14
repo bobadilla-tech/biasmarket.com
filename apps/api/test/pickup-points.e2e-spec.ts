@@ -136,8 +136,9 @@ describe("pickup-points (e2e)", () => {
     expect(typeof publicRes.body.weekday).toBe("number");
     expect(publicRes.body.weekday).toBeGreaterThanOrEqual(0);
     expect(publicRes.body.weekday).toBeLessThanOrEqual(6);
-    expect(publicRes.body.points.some((p: { id: string }) => p.id === pointId))
-      .toBe(true);
+    expect(
+      publicRes.body.points.some((p: { id: string }) => p.id === pointId),
+    ).toBe(true);
     for (const point of publicRes.body.points) {
       assertMatchesSchema(point, pickupPointSchema, openapi.components);
     }

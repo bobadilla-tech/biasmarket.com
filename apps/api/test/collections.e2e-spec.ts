@@ -123,9 +123,7 @@ describe("collections (e2e)", () => {
       .expect(200);
 
     expect(Array.isArray(res.body)).toBe(true);
-    const created = res.body.find(
-      (c: { id: string }) => c.id === collectionId,
-    );
+    const created = res.body.find((c: { id: string }) => c.id === collectionId);
     expect(created).toBeDefined();
 
     for (const collection of res.body) {

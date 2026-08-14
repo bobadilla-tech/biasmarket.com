@@ -119,8 +119,9 @@ export class OrderRepository {
     const where = {
       storeId,
       ...(filters.paymentStatus && { paymentStatus: filters.paymentStatus }),
-      ...(filters.fulfillmentStatus &&
-        { fulfillmentStatus: filters.fulfillmentStatus }),
+      ...(filters.fulfillmentStatus && {
+        fulfillmentStatus: filters.fulfillmentStatus,
+      }),
     } as const;
 
     const includeWithPayments = {
@@ -151,14 +152,12 @@ export class OrderRepository {
     }
   }
 
-  toDomainEntity(
-    row: {
-      id: string;
-      storeId: string;
-      paymentStatus: PaymentStatus;
-      fulfillmentStatus: FulfillmentStatus;
-    },
-  ): Order {
+  toDomainEntity(row: {
+    id: string;
+    storeId: string;
+    paymentStatus: PaymentStatus;
+    fulfillmentStatus: FulfillmentStatus;
+  }): Order {
     return new Order(
       row.id,
       row.storeId,

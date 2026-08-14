@@ -76,9 +76,7 @@ describe("WhatsappTemplatesService", () => {
       })
       .catch((e: Error) => e);
     expect(error).toBeInstanceOf(BadRequestException);
-    expect((error as BadRequestException).message).toContain(
-      "{{orderRef}}",
-    );
+    expect((error as BadRequestException).message).toContain("{{orderRef}}");
   });
 
   it("rejects a PAYMENT_REMINDER template missing pendingAmount", async () => {

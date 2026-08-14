@@ -61,12 +61,10 @@ export function toAccountOrderDto(
 ): AccountOrderResponseDto {
   return {
     id: order.id,
-    paymentStatus: order.paymentStatus as AccountOrderResponseDto[
-      "paymentStatus"
-    ],
-    fulfillmentStatus: order.fulfillmentStatus as AccountOrderResponseDto[
-      "fulfillmentStatus"
-    ],
+    paymentStatus: order
+      .paymentStatus as AccountOrderResponseDto["paymentStatus"],
+    fulfillmentStatus: order
+      .fulfillmentStatus as AccountOrderResponseDto["fulfillmentStatus"],
     totalAmount: order.totalAmount.toString(),
     currency: order.currency,
     createdAt: order.createdAt.toISOString(),

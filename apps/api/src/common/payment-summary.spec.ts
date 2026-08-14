@@ -44,9 +44,7 @@ describe("countsTowardPaid", () => {
 
 describe("computePaymentSummary", () => {
   it("computes exact pendingAmount for the 99.99/40.00 float-trap case", () => {
-    const summary = computePaymentSummary(d("99.99"), [
-      sellerPayment("40.00"),
-    ]);
+    const summary = computePaymentSummary(d("99.99"), [sellerPayment("40.00")]);
     expect(summary.paidAmount).toBe(40);
     expect(summary.pendingAmount).toBe(59.99);
   });
@@ -63,9 +61,7 @@ describe("computePaymentSummary", () => {
   });
 
   it("clamps pendingAmount to 0 and paidPercentage to 100 on overpayment", () => {
-    const summary = computePaymentSummary(d("50.00"), [
-      sellerPayment("60.00"),
-    ]);
+    const summary = computePaymentSummary(d("50.00"), [sellerPayment("60.00")]);
     expect(summary.pendingAmount).toBe(0);
     expect(summary.paidPercentage).toBe(100);
   });

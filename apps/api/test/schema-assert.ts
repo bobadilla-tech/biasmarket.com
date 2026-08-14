@@ -73,7 +73,9 @@ export function assertMatchesSchema(
       }
     }
     for (
-      const [key, propValue] of Object.entries(value as Record<string, unknown>)
+      const [key, propValue] of Object.entries(
+        value as Record<string, unknown>,
+      )
     ) {
       const propSchema = properties[key];
       if (!propSchema) {
@@ -121,8 +123,8 @@ export function resolveSchema(
   const ref = schema.$ref as string | undefined;
   if (ref) {
     const name = ref.replace("#/components/schemas/", "");
-    const schemas =
-      (components as { schemas: Record<string, unknown> }).schemas;
+    const schemas = (components as { schemas: Record<string, unknown> })
+      .schemas;
     return schemas[name] as Record<string, unknown>;
   }
   // A `nullable` class-typed property (`@ApiProperty({ type: SomeDto,

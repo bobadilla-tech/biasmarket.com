@@ -39,8 +39,9 @@ export class DeliveryConfigService {
       },
       update: {
         ...(dto.enabled !== undefined && { enabled: dto.enabled }),
-        ...(dto.details !== undefined &&
-          { details: dto.details as Prisma.InputJsonValue }),
+        ...(dto.details !== undefined && {
+          details: dto.details as Prisma.InputJsonValue,
+        }),
       },
     });
   }

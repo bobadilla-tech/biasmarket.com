@@ -31,14 +31,12 @@ describe("MonitoringController", () => {
   beforeEach(async () => {
     service = {
       recordEvent: vi.fn().mockResolvedValue(incidentRow),
-      findAll: vi
-        .fn()
-        .mockResolvedValue({
-          incidents: [incidentRow],
-          total: 1,
-          page: 1,
-          limit: 24,
-        }),
+      findAll: vi.fn().mockResolvedValue({
+        incidents: [incidentRow],
+        total: 1,
+        page: 1,
+        limit: 24,
+      }),
     };
 
     const module: TestingModule = await Test.createTestingModule({

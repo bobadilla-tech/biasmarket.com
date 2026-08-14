@@ -39,9 +39,7 @@ describe("assertPaymentTransition", () => {
 
   it("rejects PAYMENT_SUBMITTED -> CANCELLED", () => {
     expect(() => assertPaymentTransition("PAYMENT_SUBMITTED", "CANCELLED"))
-      .toThrow(
-        InvalidOrderTransitionError,
-      );
+      .toThrow(InvalidOrderTransitionError);
   });
 
   it("rejects re-approving an already VERIFIED order", () => {

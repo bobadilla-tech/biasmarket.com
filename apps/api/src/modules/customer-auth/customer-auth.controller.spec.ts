@@ -189,11 +189,7 @@ describe("CustomerAuthController", () => {
     };
     service.getOrderDetail.mockResolvedValue(row);
 
-    const result = await controller.orderDetail(
-      "my-store",
-      "order-1",
-      session,
-    );
+    const result = await controller.orderDetail("my-store", "order-1", session);
 
     expect(service.getOrderDetail).toHaveBeenCalledWith(
       "my-store",

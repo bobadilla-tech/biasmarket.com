@@ -60,9 +60,9 @@ describe("StoreSectionsService", () => {
     it("throws NotFoundException when the store does not exist", async () => {
       prisma.store.findUnique.mockResolvedValue(null);
 
-      await expect(
-        service.findAllForStore(storeId, ownerId),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.findAllForStore(storeId, ownerId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it("throws ForbiddenException when the user does not own the store", async () => {
@@ -71,9 +71,9 @@ describe("StoreSectionsService", () => {
         ownerId: "someone-else",
       });
 
-      await expect(
-        service.findAllForStore(storeId, ownerId),
-      ).rejects.toThrow(ForbiddenException);
+      await expect(service.findAllForStore(storeId, ownerId)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 

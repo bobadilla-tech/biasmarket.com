@@ -105,13 +105,11 @@ export class CustomerAccountService {
     phone: string,
     email: string,
     name: string | undefined,
-  ): Promise<
-    {
-      customer: Customer | null;
-      buyerAccount: BuyerAccount | null;
-      needsVerificationEmail: boolean;
-    }
-  > {
+  ): Promise<{
+    customer: Customer | null;
+    buyerAccount: BuyerAccount | null;
+    needsVerificationEmail: boolean;
+  }> {
     const normalizedPhone = normalizePhone(phone);
     const existing = await tx.buyerAccount.findUnique({
       where: { phone: normalizedPhone },
@@ -325,7 +323,8 @@ export class CustomerAccountService {
         data: { emailVerified: true },
       });
     } else if (
-      verified.purpose === "change-email" && buyerAccount.pendingEmail
+      verified.purpose === "change-email" &&
+      buyerAccount.pendingEmail
     ) {
       buyerAccount = await this.prisma.buyerAccount.update({
         where: { id: buyerAccount.id },
@@ -336,7 +335,8 @@ export class CustomerAccountService {
         },
       });
     } else if (
-      verified.purpose === "change-phone" && buyerAccount.pendingPhone
+      verified.purpose === "change-phone" &&
+      buyerAccount.pendingPhone
     ) {
       const normalizedPhone = normalizePhone(buyerAccount.pendingPhone);
       const existing = await this.prisma.buyerAccount.findUnique({

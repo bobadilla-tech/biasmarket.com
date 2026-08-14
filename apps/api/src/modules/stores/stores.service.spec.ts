@@ -145,10 +145,9 @@ describe("StoresService", () => {
     it("throws NotFoundException when no store has that slug", async () => {
       prisma.store.findUnique.mockResolvedValue(null);
 
-      await expect(service.findBySlugForOwner("missing", ownerId)).rejects
-        .toThrow(
-          NotFoundException,
-        );
+      await expect(
+        service.findBySlugForOwner("missing", ownerId),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it("throws ForbiddenException when the user does not own the store", async () => {
@@ -157,10 +156,9 @@ describe("StoresService", () => {
         ownerId: "someone-else",
       });
 
-      await expect(service.findBySlugForOwner("my-store", ownerId)).rejects
-        .toThrow(
-          ForbiddenException,
-        );
+      await expect(
+        service.findBySlugForOwner("my-store", ownerId),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it("returns the store when the user owns it", async () => {
@@ -304,9 +302,9 @@ describe("StoresService", () => {
         include: { variants: true },
       });
       expect(result.sections).toHaveLength(1);
-      const productIds = result.sections[0].collection?.products.map((
-        cp: { productId: string },
-      ) => cp.productId);
+      const productIds = result.sections[0].collection?.products.map(
+        (cp: { productId: string }) => cp.productId,
+      );
       expect(productIds).toEqual([productA.id, productB.id]);
     });
 
@@ -319,12 +317,14 @@ describe("StoresService", () => {
           collection: {
             id: "collection-1",
             name: "Destacados",
-            products: [{
-              collectionId: "collection-1",
-              productId: productA.id,
-              position: 0,
-              product: productA,
-            }],
+            products: [
+              {
+                collectionId: "collection-1",
+                productId: productA.id,
+                position: 0,
+                product: productA,
+              },
+            ],
           },
         },
       ]);
@@ -345,12 +345,10 @@ describe("StoresService", () => {
       expect(result.sections).toHaveLength(2);
       expect(result.sections[0].collection?.name).toBe("Destacados");
       expect(
-        result.sections[1].collection?.products.map((
-          cp: { productId: string },
-        ) => cp.productId),
-      ).toEqual([
-        productB.id,
-      ]);
+        result.sections[1].collection?.products.map(
+          (cp: { productId: string }) => cp.productId,
+        ),
+      ).toEqual([productB.id]);
     });
 
     it("excludes hidden sections from the public query", async () => {
@@ -375,12 +373,14 @@ describe("StoresService", () => {
           collection: {
             id: "collection-1",
             name: "Destacados",
-            products: [{
-              collectionId: "collection-1",
-              productId: productA.id,
-              position: 0,
-              product: productA,
-            }],
+            products: [
+              {
+                collectionId: "collection-1",
+                productId: productA.id,
+                position: 0,
+                product: productA,
+              },
+            ],
           },
         },
       ]);
@@ -438,12 +438,10 @@ describe("StoresService", () => {
       const result = await service.findPublicBySlug("my-store");
 
       expect(
-        result.sections[0].collection?.products.map((
-          cp: { productId: string },
-        ) => cp.productId),
-      ).toEqual([
-        productA.id,
-      ]);
+        result.sections[0].collection?.products.map(
+          (cp: { productId: string }) => cp.productId,
+        ),
+      ).toEqual([productA.id]);
     });
   });
 
@@ -455,19 +453,23 @@ describe("StoresService", () => {
       prisma.order.findMany.mockResolvedValue([
         {
           storeId: "store-1",
-          payments: [{
-            amount: 500,
-            source: "SELLER_RECORDED",
-            reviewStatus: "N_A",
-          }],
+          payments: [
+            {
+              amount: 500,
+              source: "SELLER_RECORDED",
+              reviewStatus: "N_A",
+            },
+          ],
         },
         {
           storeId: "store-1",
-          payments: [{
-            amount: 200,
-            source: "SELLER_RECORDED",
-            reviewStatus: "N_A",
-          }],
+          payments: [
+            {
+              amount: 200,
+              source: "SELLER_RECORDED",
+              reviewStatus: "N_A",
+            },
+          ],
         },
       ]);
 
@@ -493,11 +495,14 @@ describe("StoresService", () => {
           storeId: "store-1",
           // A PENDING_REVIEW buyer submission on top of the counted 50 —
           // must not inflate this store's public ranking revenue.
-          payments: [sellerPayment(50), {
-            amount: 1000,
-            source: "BUYER_SUBMITTED" as const,
-            reviewStatus: "PENDING_REVIEW" as const,
-          }],
+          payments: [
+            sellerPayment(50),
+            {
+              amount: 1000,
+              source: "BUYER_SUBMITTED" as const,
+              reviewStatus: "PENDING_REVIEW" as const,
+            },
+          ],
         },
         { storeId: "store-2", payments: [sellerPayment(100)] },
         { storeId: "store-2", payments: [sellerPayment(100)] },
@@ -533,12 +538,14 @@ describe("StoresService", () => {
 
   describe("findDirectory", () => {
     it("paginates and filters by name when q is provided", async () => {
-      prisma.store.findMany.mockResolvedValue([{
-        id: "store-1",
-        name: "Kpop Shop",
-        slug: "kpop",
-        logoUrl: null,
-      }]);
+      prisma.store.findMany.mockResolvedValue([
+        {
+          id: "store-1",
+          name: "Kpop Shop",
+          slug: "kpop",
+          logoUrl: null,
+        },
+      ]);
       prisma.store.count.mockResolvedValue(1);
 
       const result = await service.findDirectory(2, 24, "kpop");
@@ -553,12 +560,14 @@ describe("StoresService", () => {
         }),
       );
       expect(result).toEqual({
-        stores: [{
-          id: "store-1",
-          name: "Kpop Shop",
-          slug: "kpop",
-          logoUrl: null,
-        }],
+        stores: [
+          {
+            id: "store-1",
+            name: "Kpop Shop",
+            slug: "kpop",
+            logoUrl: null,
+          },
+        ],
         total: 1,
         page: 2,
         limit: 24,
@@ -592,10 +601,9 @@ describe("StoresService", () => {
   describe("findPublicProduct", () => {
     it("throws NotFoundException when the store does not exist", async () => {
       prisma.store.findUnique.mockResolvedValue(null);
-      await expect(service.findPublicProduct("missing", "product-1")).rejects
-        .toThrow(
-          NotFoundException,
-        );
+      await expect(
+        service.findPublicProduct("missing", "product-1"),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it("throws NotFoundException when the product belongs to a different store", async () => {
@@ -612,10 +620,9 @@ describe("StoresService", () => {
         deletedAt: null,
       });
 
-      await expect(service.findPublicProduct("my-store", "product-1")).rejects
-        .toThrow(
-          NotFoundException,
-        );
+      await expect(
+        service.findPublicProduct("my-store", "product-1"),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it("throws NotFoundException for a DRAFT or soft-deleted product", async () => {
@@ -632,10 +639,9 @@ describe("StoresService", () => {
         deletedAt: null,
       });
 
-      await expect(service.findPublicProduct("my-store", "product-1")).rejects
-        .toThrow(
-          NotFoundException,
-        );
+      await expect(
+        service.findPublicProduct("my-store", "product-1"),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it("returns the store summary and product for a published, owned product", async () => {

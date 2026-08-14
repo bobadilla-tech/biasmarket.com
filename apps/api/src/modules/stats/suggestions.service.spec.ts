@@ -27,10 +27,13 @@ describe("SuggestionsService", () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [SuggestionsService, {
-        provide: PrismaService,
-        useValue: prisma,
-      }],
+      providers: [
+        SuggestionsService,
+        {
+          provide: PrismaService,
+          useValue: prisma,
+        },
+      ],
     }).compile();
 
     service = module.get(SuggestionsService);
@@ -77,10 +80,12 @@ describe("SuggestionsService", () => {
     it("surfaces the low-stock, stale-orders, and top-seller suggestions together", async () => {
       prisma.notification.count.mockResolvedValue(2);
       prisma.order.count.mockResolvedValueOnce(3).mockResolvedValueOnce(5);
-      prisma.orderItem.groupBy.mockResolvedValue([{
-        productId: "product-1",
-        _sum: { quantity: 20 },
-      }]);
+      prisma.orderItem.groupBy.mockResolvedValue([
+        {
+          productId: "product-1",
+          _sum: { quantity: 20 },
+        },
+      ]);
       prisma.product.findUnique.mockResolvedValue({ name: "Widget" });
 
       const result = await service.getSuggestions(storeId, ownerId);

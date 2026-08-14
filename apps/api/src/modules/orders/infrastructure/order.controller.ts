@@ -423,9 +423,9 @@ export class OrderController {
         throw new BadRequestException("Máximo 5MB");
       }
       const isJpeg = file.buffer[0] === 0xff && file.buffer[1] === 0xd8;
-      const isPng = file.buffer.subarray(0, 8).equals(
-        Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-      );
+      const isPng = file.buffer
+        .subarray(0, 8)
+        .equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
       if (!isJpeg && !isPng) throw new BadRequestException("Solo JPEG o PNG");
       imageUrl = await this.storage.uploadPaymentImage(
         file.buffer,
@@ -494,9 +494,7 @@ export class OrderController {
         }
       });
     } catch (e) {
-      throw new BadRequestException(
-        e instanceof Error ? e.message : String(e),
-      );
+      throw new BadRequestException(e instanceof Error ? e.message : String(e));
     }
 
     if (!alreadyVerified && nextStatus === "VERIFIED") {

@@ -53,8 +53,9 @@ describe("WhatsappTemplatesController", () => {
     service.findForStore.mockResolvedValue(null);
     const session = { user: { id: "user-1" } } as never;
 
-    expect(await controller.findOne("store-1", "NEW_ORDER", session))
-      .toBeNull();
+    expect(
+      await controller.findOne("store-1", "NEW_ORDER", session),
+    ).toBeNull();
   });
 
   it("upsert() delegates to service.upsert and serializes dates", async () => {

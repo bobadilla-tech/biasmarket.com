@@ -30,10 +30,12 @@ describe("UsersController", () => {
   });
 
   it("getStoreCounts delegates to UsersService", async () => {
-    users.getStoreCounts.mockResolvedValue([{
-      userId: "user-1",
-      storeCount: 2,
-    }]);
+    users.getStoreCounts.mockResolvedValue([
+      {
+        userId: "user-1",
+        storeCount: 2,
+      },
+    ]);
 
     const result = await controller.getStoreCounts();
 

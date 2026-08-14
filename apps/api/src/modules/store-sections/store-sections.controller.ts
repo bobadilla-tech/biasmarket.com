@@ -68,11 +68,7 @@ export class StoreSectionsController {
     @Session() session: UserSession,
     @Body() dto: ReorderStoreSectionsDto,
   ): Promise<StoreSectionResponseDto[]> {
-    const sections = await this.sections.reorder(
-      storeId,
-      session.user.id,
-      dto,
-    );
+    const sections = await this.sections.reorder(storeId, session.user.id, dto);
     return sections.map(toSectionDto);
   }
 

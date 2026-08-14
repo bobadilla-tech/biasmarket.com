@@ -55,11 +55,7 @@ export class DeliveryConfigController {
     @Session() session: UserSession,
     @Body() dto: UpsertDeliveryMethodDto,
   ): Promise<DeliveryMethodConfigResponseDto> {
-    const row = await this.deliveryConfig.upsert(
-      storeId,
-      session.user.id,
-      dto,
-    );
+    const row = await this.deliveryConfig.upsert(storeId, session.user.id, dto);
     return toDeliveryMethodDto(row);
   }
 

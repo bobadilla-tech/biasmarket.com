@@ -43,7 +43,9 @@ export function getBusinessDate(now: Date = new Date()): BusinessDate {
   // Intl.DateTimeFormat (there's no numeric `weekday` option).
   const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
   const isoDate = `${year}-${String(month).padStart(2, "0")}-${
-    String(day).padStart(2, "0")
+    String(
+      day,
+    ).padStart(2, "0")
   }`;
   return { year, month, day, weekday, isoDate };
 }

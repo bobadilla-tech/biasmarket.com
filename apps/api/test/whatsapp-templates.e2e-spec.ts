@@ -260,11 +260,13 @@ describe("whatsapp-templates (e2e)", () => {
         .send({
           deliveryMethodType: "PICKUP",
           customerPhone: "+51922222222",
-          items: [{
-            productId: productRes.body.id,
-            variantId: productRes.body.variants[0].id,
-            quantity: 1,
-          }],
+          items: [
+            {
+              productId: productRes.body.id,
+              variantId: productRes.body.variants[0].id,
+              quantity: 1,
+            },
+          ],
         })
         .expect(201);
       const whatsappUrl = checkoutRes.body.whatsappUrl as string;

@@ -65,7 +65,9 @@ function assertMatchesSchema(
       }
     }
     for (
-      const [key, propValue] of Object.entries(value as Record<string, unknown>)
+      const [key, propValue] of Object.entries(
+        value as Record<string, unknown>,
+      )
     ) {
       const propSchema = properties[key];
       if (!propSchema) {
@@ -211,9 +213,7 @@ describe("notifications (e2e)", () => {
       .expect(200);
 
     expect(Array.isArray(res.body)).toBe(true);
-    const found = res.body.find(
-      (n: { id: string }) => n.id === notificationId,
-    );
+    const found = res.body.find((n: { id: string }) => n.id === notificationId);
     expect(found).toBeDefined();
     for (const notification of res.body) {
       assertMatchesSchema(notification, notificationSchema, openapi.components);

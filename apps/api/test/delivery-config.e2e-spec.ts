@@ -108,8 +108,9 @@ describe("delivery-config (e2e)", () => {
       .set("Cookie", sessionCookie)
       .expect(200);
     expect(Array.isArray(listRes.body)).toBe(true);
-    expect(listRes.body.some((m: { type: string }) => m.type === "PICKUP"))
-      .toBe(true);
+    expect(
+      listRes.body.some((m: { type: string }) => m.type === "PICKUP"),
+    ).toBe(true);
     for (const method of listRes.body) {
       assertMatchesSchema(method, deliveryMethodSchema, openapi.components);
     }

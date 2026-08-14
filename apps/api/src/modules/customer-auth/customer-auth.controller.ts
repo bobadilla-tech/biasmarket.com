@@ -140,11 +140,7 @@ export class CustomerAuthController {
     @Param("orderId") orderId: string,
     @CustomerSession() session: { buyerAccountId: string },
   ): Promise<OrderDetailResponseDto> {
-    const row = await this.customerAuth.getOrderDetail(
-      slug,
-      session,
-      orderId,
-    );
+    const row = await this.customerAuth.getOrderDetail(slug, session, orderId);
     return toOrderDto(row);
   }
 

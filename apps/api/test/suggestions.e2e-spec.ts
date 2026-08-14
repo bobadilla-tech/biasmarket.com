@@ -61,7 +61,9 @@ function assertMatchesSchema(
       }
     }
     for (
-      const [key, propValue] of Object.entries(value as Record<string, unknown>)
+      const [key, propValue] of Object.entries(
+        value as Record<string, unknown>,
+      )
     ) {
       const propSchema = properties[key];
       if (!propSchema) {

@@ -16,20 +16,12 @@ export class CancelOrderDto {
   @IsIn(["FULL", "PARTIAL"])
   retainMode?: "FULL" | "PARTIAL";
 
-  @ValidateIf(
-    (o) =>
-      o.resolution === "RETAINED" &&
-      o.retainMode === "PARTIAL",
-  )
+  @ValidateIf((o) => o.resolution === "RETAINED" && o.retainMode === "PARTIAL")
   @IsNumber()
   @Min(0)
   retainedAmount?: number;
 
-  @ValidateIf(
-    (o) =>
-      o.resolution === "RETAINED" &&
-      o.retainMode === "PARTIAL",
-  )
+  @ValidateIf((o) => o.resolution === "RETAINED" && o.retainMode === "PARTIAL")
   @IsIn(["REFUNDED", "STORE_CREDIT"])
   releasedResolution?: "REFUNDED" | "STORE_CREDIT";
 

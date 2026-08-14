@@ -48,9 +48,7 @@ export class CancelOrderUseCase {
           dto.retainedAmount === undefined ||
           dto.retainedAmount > paidAmount
         ) {
-          throw new BadRequestException(
-            "Monto retenido inválido",
-          );
+          throw new BadRequestException("Monto retenido inválido");
         }
 
         retainedAmount = dto.retainedAmount;
@@ -58,7 +56,8 @@ export class CancelOrderUseCase {
         releasedResolution = dto.releasedResolution ?? null;
       }
     } else if (
-      dto.resolution === "REFUNDED" || dto.resolution === "STORE_CREDIT"
+      dto.resolution === "REFUNDED" ||
+      dto.resolution === "STORE_CREDIT"
     ) {
       releasedAmount = paidAmount;
       releasedResolution = dto.resolution;

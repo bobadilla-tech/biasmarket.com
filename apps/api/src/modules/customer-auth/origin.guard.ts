@@ -20,8 +20,9 @@ import type { Request } from "express";
 export class OriginGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const req = context.switchToHttp().getRequest<Request>();
-    const allowedOrigin =
-      new URL(process.env.WEB_URL ?? "http://localhost:3001").origin;
+    const allowedOrigin = new URL(
+      process.env.WEB_URL ?? "http://localhost:3001",
+    ).origin;
     const source = req.headers.origin ?? req.headers.referer;
     if (!source) throw new ForbiddenException("Missing origin");
 

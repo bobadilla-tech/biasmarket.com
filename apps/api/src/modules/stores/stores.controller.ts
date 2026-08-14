@@ -81,27 +81,23 @@ interface SectionRow {
   content: unknown;
   position: number;
   createdAt: Date;
-  collection:
-    | {
-      id: string;
-      storeId: string;
-      name: string;
-      slug: string;
-      description: string;
-      createdAt: Date;
-      products: {
-        collectionId: string;
-        productId: string;
-        position: number;
-        product: PublicProductRow;
-      }[];
-    }
-    | null;
+  collection: {
+    id: string;
+    storeId: string;
+    name: string;
+    slug: string;
+    description: string;
+    createdAt: Date;
+    products: {
+      collectionId: string;
+      productId: string;
+      position: number;
+      product: PublicProductRow;
+    }[];
+  } | null;
 }
 
-function toVariantDto(
-  variant: VariantRow,
-): PublicProductVariantResponseDto {
+function toVariantDto(variant: VariantRow): PublicProductVariantResponseDto {
   return {
     ...variant,
     priceOverride: variant.priceOverride?.toString() ?? null,
@@ -218,9 +214,7 @@ export class StoresController {
 
   @Public()
   @Get("collections/public")
-  async findCollectionsPublic(): Promise<
-    PublicCollectionListingResponseDto[]
-  > {
+  async findCollectionsPublic(): Promise<PublicCollectionListingResponseDto[]> {
     const rows = await this.stores.findCollectionsPublic();
     return rows.map((row) => ({
       ...row,
@@ -297,9 +291,9 @@ export class StoresController {
     }
 
     const isJpeg = file.buffer[0] === 0xff && file.buffer[1] === 0xd8;
-    const isPng = file.buffer.subarray(0, 8).equals(
-      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-    );
+    const isPng = file.buffer
+      .subarray(0, 8)
+      .equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
     if (!isJpeg && !isPng) throw new BadRequestException("Solo JPEG o PNG");
 
     const url = await this.storage.uploadLogo(

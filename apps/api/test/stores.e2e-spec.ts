@@ -237,8 +237,7 @@ describe("stores + my-stores (e2e)", () => {
       .expect(200);
     expect(
       allPublicRes.body.some((s: { slug: string }) => s.slug === storeSlug),
-    )
-      .toBe(true);
+    ).toBe(true);
     for (const entry of allPublicRes.body) {
       assertMatchesSchema(entry, publicStoreListingSchema, openapi.components);
     }

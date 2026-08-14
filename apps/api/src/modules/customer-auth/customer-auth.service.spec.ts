@@ -99,9 +99,7 @@ describe("CustomerAuthService", () => {
     it("rejects an invalid or expired token", async () => {
       await expect(
         service.register("my-store", "not-a-token", "super-secret-1"),
-      ).rejects.toBeInstanceOf(
-        BadRequestException,
-      );
+      ).rejects.toBeInstanceOf(BadRequestException);
       expect(prisma.buyerAccount.update).not.toHaveBeenCalled();
     });
 
@@ -109,10 +107,9 @@ describe("CustomerAuthService", () => {
       const token = createCustomerAccountToken("buyer-1", "test-secret");
       prisma.buyerAccount.findUnique.mockResolvedValue(null);
 
-      await expect(service.register("my-store", token, "super-secret-1"))
-        .rejects.toBeInstanceOf(
-          BadRequestException,
-        );
+      await expect(
+        service.register("my-store", token, "super-secret-1"),
+      ).rejects.toBeInstanceOf(BadRequestException);
     });
 
     it("rejects re-registration once a password is already set (single-use)", async () => {
@@ -122,10 +119,9 @@ describe("CustomerAuthService", () => {
         passwordHash: "already-set",
       });
 
-      await expect(service.register("my-store", token, "super-secret-1"))
-        .rejects.toBeInstanceOf(
-          ConflictException,
-        );
+      await expect(
+        service.register("my-store", token, "super-secret-1"),
+      ).rejects.toBeInstanceOf(ConflictException);
       expect(prisma.buyerAccount.update).not.toHaveBeenCalled();
     });
 
@@ -134,9 +130,7 @@ describe("CustomerAuthService", () => {
 
       await expect(
         service.register("missing-store", "any-token", "super-secret-1"),
-      ).rejects.toBeInstanceOf(
-        NotFoundException,
-      );
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
 
     it("allows a 'reset'-purpose token to overwrite an existing password", async () => {
@@ -173,8 +167,9 @@ describe("CustomerAuthService", () => {
         "change-email",
       );
 
-      await expect(service.register("my-store", token, "super-secret-1"))
-        .rejects.toBeInstanceOf(BadRequestException);
+      await expect(
+        service.register("my-store", token, "super-secret-1"),
+      ).rejects.toBeInstanceOf(BadRequestException);
       expect(prisma.buyerAccount.update).not.toHaveBeenCalled();
     });
   });
@@ -199,8 +194,9 @@ describe("CustomerAuthService", () => {
     it("silently no-ops when the phone doesn't match any account", async () => {
       prisma.buyerAccount.findUnique.mockResolvedValue(null);
 
-      await expect(service.forgotPassword("my-store", "+51900000000"))
-        .resolves.toBeUndefined();
+      await expect(
+        service.forgotPassword("my-store", "+51900000000"),
+      ).resolves.toBeUndefined();
       expect(customerAccount.sendPasswordResetEmail).not.toHaveBeenCalled();
     });
 
@@ -276,19 +272,17 @@ describe("CustomerAuthService", () => {
         passwordVersion: 0,
       });
 
-      await expect(service.login("my-store", "+51988888888", "wrong-password"))
-        .rejects.toBeInstanceOf(
-          UnauthorizedException,
-        );
+      await expect(
+        service.login("my-store", "+51988888888", "wrong-password"),
+      ).rejects.toBeInstanceOf(UnauthorizedException);
     });
 
     it("rejects an unknown phone with the same generic error as a wrong password", async () => {
       prisma.buyerAccount.findUnique.mockResolvedValue(null);
 
-      await expect(service.login("my-store", "+51900000000", "super-secret-1"))
-        .rejects.toBeInstanceOf(
-          UnauthorizedException,
-        );
+      await expect(
+        service.login("my-store", "+51900000000", "super-secret-1"),
+      ).rejects.toBeInstanceOf(UnauthorizedException);
     });
 
     it("rejects an account that has never set a password (magic-link only)", async () => {
@@ -298,10 +292,9 @@ describe("CustomerAuthService", () => {
         passwordVersion: 0,
       });
 
-      await expect(service.login("my-store", "+51988888888", "anything"))
-        .rejects.toBeInstanceOf(
-          UnauthorizedException,
-        );
+      await expect(
+        service.login("my-store", "+51988888888", "anything"),
+      ).rejects.toBeInstanceOf(UnauthorizedException);
     });
 
     it("logs in with a differently-formatted but equivalent phone (no leading +, no dial code)", async () => {
@@ -367,9 +360,7 @@ describe("CustomerAuthService", () => {
           "not-the-current-one",
           "new-password-1",
         ),
-      ).rejects.toBeInstanceOf(
-        BadRequestException,
-      );
+      ).rejects.toBeInstanceOf(BadRequestException);
       expect(prisma.buyerAccount.update).not.toHaveBeenCalled();
     });
 
@@ -382,9 +373,7 @@ describe("CustomerAuthService", () => {
 
       await expect(
         service.changePassword("buyer-1", "anything", "new-password-1"),
-      ).rejects.toBeInstanceOf(
-        UnauthorizedException,
-      );
+      ).rejects.toBeInstanceOf(UnauthorizedException);
     });
   });
 
@@ -399,11 +388,13 @@ describe("CustomerAuthService", () => {
         phone: "+51988888888",
         emailVerified: true,
       });
-      const orders = [{
-        id: "order-1",
-        paymentStatus: "VERIFIED",
-        fulfillmentStatus: "READY",
-      }];
+      const orders = [
+        {
+          id: "order-1",
+          paymentStatus: "VERIFIED",
+          fulfillmentStatus: "READY",
+        },
+      ];
       prisma.order.findMany.mockResolvedValue(orders);
 
       const result = await service.getProfile("my-store", session);
@@ -427,8 +418,9 @@ describe("CustomerAuthService", () => {
     it("rejects when the store does not exist", async () => {
       prisma.store.findUnique.mockResolvedValue(null);
 
-      await expect(service.getProfile("missing-store", session)).rejects
-        .toBeInstanceOf(NotFoundException);
+      await expect(
+        service.getProfile("missing-store", session),
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 

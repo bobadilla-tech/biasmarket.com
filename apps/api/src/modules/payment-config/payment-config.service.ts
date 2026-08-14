@@ -12,7 +12,10 @@ import type { PaymentMethodDetailsDto } from "./dto/payment-method-details.dto.j
 
 @Injectable()
 export class PaymentConfigService {
-  constructor(private prisma: PrismaService, private storage: StorageService) {}
+  constructor(
+    private prisma: PrismaService,
+    private storage: StorageService,
+  ) {}
 
   private async assertOwnership(storeId: string, userId: string) {
     const store = await this.prisma.store.findUnique({
@@ -50,8 +53,9 @@ export class PaymentConfigService {
       },
       update: {
         ...(dto.enabled !== undefined && { enabled: dto.enabled }),
-        ...(dto.details !== undefined &&
-          { details: details as Prisma.InputJsonValue }),
+        ...(dto.details !== undefined && {
+          details: details as Prisma.InputJsonValue,
+        }),
       },
     });
   }

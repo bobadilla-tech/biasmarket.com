@@ -279,11 +279,13 @@ describe("StatsService", () => {
         {
           id: "order-1",
           requiredAmount: new Prisma.Decimal(100),
-          payments: [{
-            amount: new Prisma.Decimal(40),
-            source: "SELLER_RECORDED",
-            reviewStatus: "N_A",
-          }],
+          payments: [
+            {
+              amount: new Prisma.Decimal(40),
+              source: "SELLER_RECORDED",
+              reviewStatus: "N_A",
+            },
+          ],
         },
       ]);
 
@@ -521,18 +523,22 @@ describe("StatsService", () => {
       prisma.orderItem.groupBy.mockResolvedValue([
         { productId: "product-1", _sum: { quantity: 12 } },
       ]);
-      prisma.product.findMany.mockResolvedValue([{
-        id: "product-1",
-        name: "Widget",
-      }]);
+      prisma.product.findMany.mockResolvedValue([
+        {
+          id: "product-1",
+          name: "Widget",
+        },
+      ]);
 
       const result = await service.getAnalytics(storeId, ownerId, "30d");
 
-      expect(result.topProducts).toEqual([{
-        productId: "product-1",
-        name: "Widget",
-        unitsSold: 12,
-      }]);
+      expect(result.topProducts).toEqual([
+        {
+          productId: "product-1",
+          name: "Widget",
+          unitsSold: 12,
+        },
+      ]);
     });
   });
 

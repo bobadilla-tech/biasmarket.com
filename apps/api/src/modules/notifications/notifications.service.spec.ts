@@ -40,10 +40,13 @@ describe("NotificationsService", () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [NotificationsService, {
-        provide: PrismaService,
-        useValue: prisma,
-      }],
+      providers: [
+        NotificationsService,
+        {
+          provide: PrismaService,
+          useValue: prisma,
+        },
+      ],
     }).compile();
 
     service = module.get(NotificationsService);
@@ -53,10 +56,9 @@ describe("NotificationsService", () => {
     it("throws NotFoundException when the store does not exist", async () => {
       prisma.store.findUnique.mockResolvedValue(null);
 
-      await expect(service.findAllForStore(storeId, ownerId, {})).rejects
-        .toThrow(
-          NotFoundException,
-        );
+      await expect(
+        service.findAllForStore(storeId, ownerId, {}),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it("throws ForbiddenException when the user does not own the store", async () => {
@@ -99,10 +101,9 @@ describe("NotificationsService", () => {
         storeId: "other-store",
       });
 
-      await expect(service.markRead(notificationId, storeId, ownerId)).rejects
-        .toThrow(
-          NotFoundException,
-        );
+      await expect(
+        service.markRead(notificationId, storeId, ownerId),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -187,10 +188,12 @@ describe("NotificationsService", () => {
 
     it("creates OUT_OF_STOCK when available stock is zero or negative", async () => {
       prisma.notification.findFirst.mockResolvedValue(null);
-      prisma.productVariant.findMany.mockResolvedValue([{
-        stock: 5,
-        reserved: 5,
-      }]);
+      prisma.productVariant.findMany.mockResolvedValue([
+        {
+          stock: 5,
+          reserved: 5,
+        },
+      ]);
 
       await service.syncStockAlerts(
         prisma as any,
@@ -211,10 +214,12 @@ describe("NotificationsService", () => {
 
     it("creates LOW_STOCK when available stock is at or below the threshold", async () => {
       prisma.notification.findFirst.mockResolvedValue(null);
-      prisma.productVariant.findMany.mockResolvedValue([{
-        stock: 5,
-        reserved: 3,
-      }]);
+      prisma.productVariant.findMany.mockResolvedValue([
+        {
+          stock: 5,
+          reserved: 3,
+        },
+      ]);
 
       await service.syncStockAlerts(
         prisma as any,
@@ -234,10 +239,12 @@ describe("NotificationsService", () => {
     });
 
     it("resolves open alerts when available stock rises above the threshold", async () => {
-      prisma.productVariant.findMany.mockResolvedValue([{
-        stock: 20,
-        reserved: 0,
-      }]);
+      prisma.productVariant.findMany.mockResolvedValue([
+        {
+          stock: 20,
+          reserved: 0,
+        },
+      ]);
 
       await service.syncStockAlerts(
         prisma as any,
@@ -257,10 +264,12 @@ describe("NotificationsService", () => {
     });
 
     it("only resolves (never creates) for unlimited-stock variants", async () => {
-      prisma.productVariant.findMany.mockResolvedValue([{
-        stock: null,
-        reserved: 0,
-      }]);
+      prisma.productVariant.findMany.mockResolvedValue([
+        {
+          stock: null,
+          reserved: 0,
+        },
+      ]);
 
       await service.syncStockAlerts(
         prisma as any,

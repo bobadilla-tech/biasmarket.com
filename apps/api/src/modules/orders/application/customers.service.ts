@@ -97,9 +97,10 @@ export class CustomersService {
       orderGroups.map((group) => [group.customerId as string, group._count]),
     );
     const lastOrderAtByCustomer = new Map(
-      orderGroups.map((
-        group,
-      ) => [group.customerId as string, group._max.createdAt]),
+      orderGroups.map((group) => [
+        group.customerId as string,
+        group._max.createdAt,
+      ]),
     );
     const spendByCustomer = new Map<string, Prisma.Decimal>();
     for (const payment of payments) {
@@ -170,8 +171,9 @@ export class CustomersService {
       emailVerified: customer.emailVerified,
       createdAt: customer.createdAt,
       orderCount: orderCountByCustomer.get(customer.id) ?? 0,
-      lifetimeSpend: (spendByCustomer.get(customer.id) ?? new Prisma.Decimal(0))
-        .toNumber(),
+      lifetimeSpend: (
+        spendByCustomer.get(customer.id) ?? new Prisma.Decimal(0)
+      ).toNumber(),
       lastOrderAt: lastOrderAtByCustomer.get(customer.id) ?? null,
     }));
 
@@ -202,9 +204,7 @@ export class CustomersService {
       });
     }
 
-    return rows.sort(
-      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
-    );
+    return rows.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
   async findOneForStore(customerId: string, storeId: string, userId: string) {

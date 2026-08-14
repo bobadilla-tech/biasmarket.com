@@ -39,10 +39,7 @@ export class CategoriesService {
     return category;
   }
 
-  private async assertParentInStore(
-    parentId: string,
-    storeId: string,
-  ) {
+  private async assertParentInStore(parentId: string, storeId: string) {
     const parent = await this.prisma.category.findUnique({
       where: { id: parentId },
     });

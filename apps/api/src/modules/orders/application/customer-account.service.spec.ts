@@ -292,27 +292,24 @@ describe("CustomerAccountService", () => {
 
   describe("confirmAccount", () => {
     it("throws BadRequestException when no token is given", async () => {
-      await expect(service.confirmAccount(store.slug, undefined)).rejects
-        .toThrow(
-          BadRequestException,
-        );
+      await expect(
+        service.confirmAccount(store.slug, undefined),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it("throws NotFoundException when the store does not exist", async () => {
       prisma.store.findUnique.mockResolvedValue(null);
       const token = createCustomerAccountToken("buyer-1", "test-secret");
 
-      await expect(service.confirmAccount("missing-store", token)).rejects
-        .toThrow(
-          NotFoundException,
-        );
+      await expect(
+        service.confirmAccount("missing-store", token),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it("throws BadRequestException for an invalid token signature", async () => {
-      await expect(service.confirmAccount(store.slug, "garbage-token")).rejects
-        .toThrow(
-          BadRequestException,
-        );
+      await expect(
+        service.confirmAccount(store.slug, "garbage-token"),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it("marks the buyer account verified and returns their orders for this store", async () => {

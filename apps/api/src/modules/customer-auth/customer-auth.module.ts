@@ -8,10 +8,7 @@ import { CustomerSessionGuard } from "./customer-session.guard.js";
 import { OriginGuard } from "./origin.guard.js";
 
 @Module({
-  imports: [
-    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 5 }]),
-    OrdersModule,
-  ],
+  imports: [ThrottlerModule.forRoot([{ ttl: 60_000, limit: 5 }]), OrdersModule],
   controllers: [CustomerAuthController, GlobalAccountController],
   providers: [CustomerAuthService, CustomerSessionGuard, OriginGuard],
 })

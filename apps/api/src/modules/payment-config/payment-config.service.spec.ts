@@ -72,10 +72,12 @@ describe("PaymentConfigService", () => {
   describe("findEnabledForStore", () => {
     it("only returns enabled methods", async () => {
       prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
-      prisma.paymentMethodConfig.findMany.mockResolvedValue([{
-        method: "YAPE",
-        enabled: true,
-      }]);
+      prisma.paymentMethodConfig.findMany.mockResolvedValue([
+        {
+          method: "YAPE",
+          enabled: true,
+        },
+      ]);
 
       const result = await service.findEnabledForStore(storeId, ownerId);
 

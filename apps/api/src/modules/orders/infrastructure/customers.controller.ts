@@ -18,10 +18,7 @@ export class CustomersController {
     @Param("storeId") storeId: string,
     @Session() session: UserSession,
   ): Promise<CustomerListItemResponseDto[]> {
-    const rows = await this.customers.findAllForStore(
-      storeId,
-      session.user.id,
-    );
+    const rows = await this.customers.findAllForStore(storeId, session.user.id);
     return rows.map((row) => ({
       ...row,
       createdAt: row.createdAt.toISOString(),

@@ -186,10 +186,9 @@ export class StoresService {
       // review (e.g. re-submitted after the seller already recorded the
       // balance manually) — exclude it, same as every other revenue
       // aggregate. See common/payment-summary.ts's `countsTowardPaid`.
-      const revenue = order.payments.filter(countsTowardPaid).reduce(
-        (sum, p) => sum + Number(p.amount),
-        0,
-      );
+      const revenue = order.payments
+        .filter(countsTowardPaid)
+        .reduce((sum, p) => sum + Number(p.amount), 0);
       revenueByStore.set(
         order.storeId,
         (revenueByStore.get(order.storeId) ?? 0) + revenue,

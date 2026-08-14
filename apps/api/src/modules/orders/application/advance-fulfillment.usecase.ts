@@ -6,7 +6,10 @@ import { Order } from "../domain/order.entity.js";
 
 @Injectable()
 export class AdvanceFulfillmentUseCase {
-  constructor(private prisma: PrismaService, private orders: OrderRepository) {}
+  constructor(
+    private prisma: PrismaService,
+    private orders: OrderRepository,
+  ) {}
 
   async execute(
     orderId: string,

@@ -78,15 +78,17 @@ export class AddressesService {
         where: { id: addressId },
         data: {
           ...(dto.label !== undefined && { label: dto.label ?? null }),
-          ...(dto.recipientName !== undefined &&
-            { recipientName: dto.recipientName }),
+          ...(dto.recipientName !== undefined && {
+            recipientName: dto.recipientName,
+          }),
           ...(dto.phone !== undefined && { phone: dto.phone }),
           ...(dto.line1 !== undefined && { line1: dto.line1 }),
           ...(dto.line2 !== undefined && { line2: dto.line2 ?? null }),
           ...(dto.city !== undefined && { city: dto.city }),
           ...(dto.region !== undefined && { region: dto.region ?? null }),
-          ...(dto.reference !== undefined &&
-            { reference: dto.reference ?? null }),
+          ...(dto.reference !== undefined && {
+            reference: dto.reference ?? null,
+          }),
           ...(dto.isDefault !== undefined && { isDefault: dto.isDefault }),
         },
       });

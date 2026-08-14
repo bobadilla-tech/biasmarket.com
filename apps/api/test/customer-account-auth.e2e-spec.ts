@@ -298,11 +298,7 @@ describe("customer account + customer auth (e2e)", () => {
         .set("Origin", "http://localhost:3001")
         .send({ currentPassword: password, newPassword })
         .expect(201);
-      assertMatchesSchema(
-        changePasswordRes.body,
-        okSchema,
-        openapi.components,
-      );
+      assertMatchesSchema(changePasswordRes.body, okSchema, openapi.components);
 
       // CustomerAuth.logout — same no-`@Param("slug")` shape as
       // changePassword.
@@ -452,11 +448,13 @@ describe("customer account + customer auth (e2e)", () => {
           customerPhone: crossStorePhone,
           customerEmail: crossStoreEmail,
           customerName: "Cross Store Buyer",
-          items: [{
-            productId: productBId,
-            variantId: productBVariantId,
-            quantity: 1,
-          }],
+          items: [
+            {
+              productId: productBId,
+              variantId: productBVariantId,
+              quantity: 1,
+            },
+          ],
         })
         .expect(201);
       orderBId = checkoutBRes.body.order.id as string;

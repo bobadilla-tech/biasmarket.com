@@ -30,10 +30,13 @@ describe("CustomersService", () => {
     prisma.order.findMany.mockResolvedValue([]);
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [CustomersService, {
-        provide: PrismaService,
-        useValue: prisma,
-      }],
+      providers: [
+        CustomersService,
+        {
+          provide: PrismaService,
+          useValue: prisma,
+        },
+      ],
     }).compile();
 
     service = module.get(CustomersService);
@@ -171,11 +174,13 @@ describe("CustomersService", () => {
           customerEmail: null,
           paymentStatus: "VERIFIED",
           createdAt: new Date("2026-03-01"),
-          payments: [{
-            amount: new Prisma.Decimal(40),
-            source: "SELLER_RECORDED",
-            reviewStatus: "N_A",
-          }],
+          payments: [
+            {
+              amount: new Prisma.Decimal(40),
+              source: "SELLER_RECORDED",
+              reviewStatus: "N_A",
+            },
+          ],
         },
         {
           customerPhone: "51987654321",
@@ -191,11 +196,13 @@ describe("CustomersService", () => {
           customerEmail: null,
           paymentStatus: "VERIFIED",
           createdAt: new Date("2026-02-01"),
-          payments: [{
-            amount: new Prisma.Decimal(10),
-            source: "SELLER_RECORDED",
-            reviewStatus: "N_A",
-          }],
+          payments: [
+            {
+              amount: new Prisma.Decimal(10),
+              source: "SELLER_RECORDED",
+              reviewStatus: "N_A",
+            },
+          ],
         },
       ]);
 
@@ -326,23 +333,27 @@ describe("CustomersService", () => {
           customerEmail: null,
           paymentStatus: "VERIFIED",
           createdAt: new Date("2026-06-01"),
-          payments: [{
-            amount: new Prisma.Decimal(20),
-            source: "SELLER_RECORDED",
-            reviewStatus: "N_A",
-          }],
+          payments: [
+            {
+              amount: new Prisma.Decimal(20),
+              source: "SELLER_RECORDED",
+              reviewStatus: "N_A",
+            },
+          ],
         },
       ]);
 
       const result = await service.findAllForStore(storeId, ownerId);
 
       expect(result).toHaveLength(1);
-      expect(result[0]).toEqual(expect.objectContaining({
-        id: "customer-1",
-        orderCount: 2,
-        lifetimeSpend: 50,
-        lastOrderAt: new Date("2026-06-01"),
-      }));
+      expect(result[0]).toEqual(
+        expect.objectContaining({
+          id: "customer-1",
+          orderCount: 2,
+          lifetimeSpend: 50,
+          lastOrderAt: new Date("2026-06-01"),
+        }),
+      );
     });
   });
 
@@ -354,10 +365,9 @@ describe("CustomersService", () => {
         id: "customer-1",
         storeId: "other-store",
       });
-      await expect(service.findOneForStore("customer-1", storeId, ownerId))
-        .rejects.toThrow(
-          NotFoundException,
-        );
+      await expect(
+        service.findOneForStore("customer-1", storeId, ownerId),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it("returns the customer plus their order history with payment summaries", async () => {
@@ -374,11 +384,13 @@ describe("CustomersService", () => {
         {
           id: "order-1",
           requiredAmount: new Prisma.Decimal(100),
-          payments: [{
-            amount: new Prisma.Decimal(40),
-            source: "SELLER_RECORDED",
-            reviewStatus: "N_A",
-          }],
+          payments: [
+            {
+              amount: new Prisma.Decimal(40),
+              source: "SELLER_RECORDED",
+              reviewStatus: "N_A",
+            },
+          ],
         },
       ]);
 
@@ -413,11 +425,13 @@ describe("CustomersService", () => {
           customerEmail: "ana@example.com",
           requiredAmount: new Prisma.Decimal(100),
           createdAt: new Date("2026-03-01"),
-          payments: [{
-            amount: new Prisma.Decimal(40),
-            source: "SELLER_RECORDED",
-            reviewStatus: "N_A",
-          }],
+          payments: [
+            {
+              amount: new Prisma.Decimal(40),
+              source: "SELLER_RECORDED",
+              reviewStatus: "N_A",
+            },
+          ],
         },
         {
           id: "order-g2",
@@ -478,8 +492,7 @@ describe("CustomersService", () => {
 
       await expect(
         service.findOneForStore("guest_51987654321", storeId, ownerId),
-      )
-        .rejects.toThrow(NotFoundException);
+      ).rejects.toThrow(NotFoundException);
     });
 
     it("falls through to the real customer when an account now exists for the guest phone", async () => {
@@ -496,11 +509,13 @@ describe("CustomersService", () => {
         {
           id: "order-1",
           requiredAmount: new Prisma.Decimal(100),
-          payments: [{
-            amount: new Prisma.Decimal(40),
-            source: "SELLER_RECORDED",
-            reviewStatus: "N_A",
-          }],
+          payments: [
+            {
+              amount: new Prisma.Decimal(40),
+              source: "SELLER_RECORDED",
+              reviewStatus: "N_A",
+            },
+          ],
         },
       ]);
 
