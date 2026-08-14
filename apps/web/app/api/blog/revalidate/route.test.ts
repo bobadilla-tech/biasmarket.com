@@ -14,7 +14,7 @@ function postWithSecret(secret: string | null): Request {
   if (secret !== null) {
     headers["x-sanity-webhook-secret"] = secret;
   }
-  return new Request("http://localhost/api/revalidate", {
+  return new Request("http://localhost/api/blog/revalidate", {
     method: "POST",
     headers,
   });
