@@ -9,6 +9,7 @@ export const post = defineType({
       name: 'title',
       title: 'Title',
       type: 'string',
+      validation: (Rule) => Rule.required(),
     }),
     defineField({
       name: 'slug',
@@ -17,6 +18,7 @@ export const post = defineType({
       options: {
         source: 'title',
       },
+      validation: (Rule) => Rule.required(),
     }),
     defineField({
       name: 'body',
