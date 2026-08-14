@@ -13,7 +13,10 @@ export async function generateMetadata({
     locale,
     namespace: "onboarding.verifyEmail",
   });
-  return { title: t("successTitle") };
+  return {
+    title: t("successTitle"),
+    robots: { index: false, follow: false },
+  };
 }
 
 export default async function VerifyEmailPage({

@@ -1,7 +1,13 @@
 # De-index authenticated pages + add client-side auth guard
 
-**Status:** Reviewed (4 rounds, multi-agent), ready for implementation. Not yet
-implemented.
+**Status:** Rollout step 1 implemented (noindex meta + robots.txt disallow for
+the non-`/account` pages + `useRequireAuth()` guard). **Follow-up required:**
+add `"/en/account$"` and `"/es/account$"` to `apps/web/app/robots.ts`'s
+`disallow` list — but only after confirming via Search Console / a
+`site:biasmarket.com` search that `/account` has actually dropped from the index
+(see "Rollout order" step 2/3 below). Do not add those two lines until that's
+confirmed, or `/account` becomes uncrawlable-and-therefore-un-deindexable per
+the ordering bug this plan documents.
 
 **Source:** User report — `site:biasmarket.com` shows `/en/account` (and its
 `/es/` translation) indexed by Google despite it being a signed-in-only
