@@ -2,16 +2,16 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
-} from "@nestjs/common";
-import { CancelOrderDto } from "../dto/cancel-order.dto.js";
-import { PrismaService } from "../../../prisma/prisma.service.js";
-import { OrderRepository } from "../infrastructure/order.repository.js";
-import { NotificationsService } from "../../notifications/notifications.service.js";
+} from '@nestjs/common';
+import { CancelOrderDto } from '../dto/cancel-order.dto.js';
+import { PrismaService } from '../../../prisma/prisma.service.js';
+import { OrderRepository } from '../infrastructure/order.repository.js';
+import { NotificationsService } from '../../notifications/notifications.service.js';
 
 const RESERVED_HOLD_STATUSES = new Set([
-  "PENDING_PAYMENT",
-  "PARTIALLY_PAID",
-  "PAYMENT_SUBMITTED",
+  'PENDING_PAYMENT',
+  'PARTIALLY_PAID',
+  'PAYMENT_SUBMITTED',
 ]);
 
 @Injectable()
@@ -35,22 +35,20 @@ export class CancelOrderUseCase {
 
     let retainedAmount = 0;
     let releasedAmount = 0;
-    let releasedResolution: "REFUNDED" | "STORE_CREDIT" | null = null;
+    let releasedResolution: 'REFUNDED' | 'STORE_CREDIT' | null = null;
 
-    if (dto.resolution === "RETAINED") {
-      if (dto.retainMode === "FULL") {
+    if (dto.resolution === 'RETAINED') {
+      if (dto.retainMode === 'FULL') {
         retainedAmount = paidAmount;
         releasedAmount = 0;
       }
 
-      if (dto.retainMode === "PARTIAL") {
+      if (dto.retainMode === 'PARTIAL') {
         if (
           dto.retainedAmount === undefined ||
           dto.retainedAmount > paidAmount
         ) {
-          throw new BadRequestException(
-            "Monto retenido inválido",
-          );
+          throw new BadRequestException('Monto retenido inválido');
         }
 
         retainedAmount = dto.retainedAmount;
@@ -58,25 +56,26 @@ export class CancelOrderUseCase {
         releasedResolution = dto.releasedResolution ?? null;
       }
     } else if (
-      dto.resolution === "REFUNDED" || dto.resolution === "STORE_CREDIT"
+      dto.resolution === 'REFUNDED' ||
+      dto.resolution === 'STORE_CREDIT'
     ) {
       releasedAmount = paidAmount;
       releasedResolution = dto.resolution;
     }
 
-    if (row.paymentStatus === "CANCELLED") {
-      throw new BadRequestException("La orden ya está cancelada");
+    if (row.paymentStatus === 'CANCELLED') {
+      throw new BadRequestException('La orden ya está cancelada');
     }
 
-    if (row.paymentStatus === "REJECTED") {
+    if (row.paymentStatus === 'REJECTED') {
       throw new BadRequestException(
-        "No se puede cancelar una orden con pago rechazado",
+        'No se puede cancelar una orden con pago rechazado',
       );
     }
 
-    if (row.fulfillmentStatus === "COMPLETED") {
+    if (row.fulfillmentStatus === 'COMPLETED') {
       throw new BadRequestException(
-        "No se puede cancelar una orden ya entregada",
+        'No se puede cancelar una orden ya entregada',
       );
     }
 
@@ -87,10 +86,10 @@ export class CancelOrderUseCase {
       // proceed if the row is still ACTIVE, same pattern as
       // ReviewPaymentUseCase's updateMany guard.
       const guard = await tx.order.updateMany({
-        where: { id: orderId, status: "ACTIVE" },
+        where: { id: orderId, status: 'ACTIVE' },
         data: {
-          status: "CANCELLED",
-          paymentStatus: "CANCELLED",
+          status: 'CANCELLED',
+          paymentStatus: 'CANCELLED',
           cancellationResolution: dto.resolution,
           cancellationReason: dto.reason ?? null,
           retainedAmount,
@@ -100,7 +99,7 @@ export class CancelOrderUseCase {
       });
       if (guard.count === 0) {
         throw new ConflictException(
-          "Este pedido ya fue actualizado por otra solicitud.",
+          'Este pedido ya fue actualizado por otra solicitud.',
         );
       }
 
@@ -136,8 +135,8 @@ export class CancelOrderUseCase {
         data: {
           actorId: userId,
           storeId,
-          action: "order.cancelled",
-          entityType: "Order",
+          action: 'order.cancelled',
+          entityType: 'Order',
           entityId: orderId,
           metadata: {
             resolution: dto.resolution,

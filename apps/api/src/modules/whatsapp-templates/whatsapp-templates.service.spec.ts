@@ -1,18 +1,18 @@
-import { Test, TestingModule } from "@nestjs/testing";
-import { BadRequestException, ForbiddenException } from "@nestjs/common";
-import { type Mock, vi } from "vitest";
-import { WhatsappTemplatesService } from "./whatsapp-templates.service.js";
-import { PrismaService } from "../../prisma/prisma.service.js";
+import { Test, TestingModule } from '@nestjs/testing';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { type Mock, vi } from 'vitest';
+import { WhatsappTemplatesService } from './whatsapp-templates.service.js';
+import { PrismaService } from '../../prisma/prisma.service.js';
 
-describe("WhatsappTemplatesService", () => {
+describe('WhatsappTemplatesService', () => {
   let service: WhatsappTemplatesService;
   let prisma: {
     store: { findUnique: Mock };
     whatsAppMessageTemplate: { findUnique: Mock; upsert: Mock };
   };
 
-  const storeId = "store-1";
-  const userId = "user-1";
+  const storeId = 'store-1';
+  const userId = 'user-1';
 
   beforeEach(async () => {
     prisma = {
@@ -34,89 +34,87 @@ describe("WhatsappTemplatesService", () => {
     });
   });
 
-  it("throws NotFoundException when the store does not exist", async () => {
+  it('throws NotFoundException when the store does not exist', async () => {
     prisma.store.findUnique.mockResolvedValue(null);
 
     await expect(
-      service.findForStore(storeId, userId, "NEW_ORDER"),
+      service.findForStore(storeId, userId, 'NEW_ORDER'),
     ).rejects.toThrow();
   });
 
-  it("throws ForbiddenException when the user does not own the store", async () => {
+  it('throws ForbiddenException when the user does not own the store', async () => {
     await expect(
-      service.findForStore(storeId, "other-user", "NEW_ORDER"),
+      service.findForStore(storeId, 'other-user', 'NEW_ORDER'),
     ).rejects.toThrow(ForbiddenException);
   });
 
-  it("rejects an unknown message type", async () => {
+  it('rejects an unknown message type', async () => {
     await expect(
-      service.findForStore(storeId, userId, "ORDER_INQUIRY"),
+      service.findForStore(storeId, userId, 'ORDER_INQUIRY'),
     ).rejects.toThrow(BadRequestException);
   });
 
-  it("returns the stored template or null when no override exists", async () => {
+  it('returns the stored template or null when no override exists', async () => {
     prisma.whatsAppMessageTemplate.findUnique.mockResolvedValue(null);
-    expect(await service.findForStore(storeId, userId, "NEW_ORDER")).toBeNull();
+    expect(await service.findForStore(storeId, userId, 'NEW_ORDER')).toBeNull();
 
     const row = {
-      id: "tmpl-1",
+      id: 'tmpl-1',
       storeId,
-      type: "NEW_ORDER",
-      template: "Hola {{customerName}}",
+      type: 'NEW_ORDER',
+      template: 'Hola {{customerName}}',
       updatedAt: new Date(),
     };
     prisma.whatsAppMessageTemplate.findUnique.mockResolvedValue(row);
-    expect(await service.findForStore(storeId, userId, "NEW_ORDER")).toBe(row);
+    expect(await service.findForStore(storeId, userId, 'NEW_ORDER')).toBe(row);
   });
 
-  it("rejects a NEW_ORDER template missing a required token, naming the missing ones", async () => {
+  it('rejects a NEW_ORDER template missing a required token, naming the missing ones', async () => {
     const error = await service
-      .upsert(storeId, userId, "NEW_ORDER", {
-        template: "Solo {{items}}",
+      .upsert(storeId, userId, 'NEW_ORDER', {
+        template: 'Solo {{items}}',
+      })
+      .catch((e: Error) => e);
+    expect(error).toBeInstanceOf(BadRequestException);
+    expect((error as BadRequestException).message).toContain('{{orderRef}}');
+  });
+
+  it('rejects a PAYMENT_REMINDER template missing pendingAmount', async () => {
+    const error = await service
+      .upsert(storeId, userId, 'PAYMENT_REMINDER', {
+        template: 'Pedido {{orderRef}}',
       })
       .catch((e: Error) => e);
     expect(error).toBeInstanceOf(BadRequestException);
     expect((error as BadRequestException).message).toContain(
-      "{{orderRef}}",
+      '{{pendingAmount}}',
     );
   });
 
-  it("rejects a PAYMENT_REMINDER template missing pendingAmount", async () => {
-    const error = await service
-      .upsert(storeId, userId, "PAYMENT_REMINDER", {
-        template: "Pedido {{orderRef}}",
-      })
-      .catch((e: Error) => e);
-    expect(error).toBeInstanceOf(BadRequestException);
-    expect((error as BadRequestException).message).toContain(
-      "{{pendingAmount}}",
-    );
-  });
-
-  it("accepts a template containing all required tokens", async () => {
+  it('accepts a template containing all required tokens', async () => {
     prisma.whatsAppMessageTemplate.upsert.mockResolvedValue({
-      id: "tmpl-1",
+      id: 'tmpl-1',
       storeId,
-      type: "NEW_ORDER",
-      template: "Hola {{customerName}}, pedido {{orderRef}}, items {{items}}",
+      type: 'NEW_ORDER',
+      template: 'Hola {{customerName}}, pedido {{orderRef}}, items {{items}}',
       updatedAt: new Date(),
     });
 
-    const result = await service.upsert(storeId, userId, "NEW_ORDER", {
-      template: "Hola {{customerName}}, pedido {{orderRef}}, items {{items}}",
+    const result = await service.upsert(storeId, userId, 'NEW_ORDER', {
+      template: 'Hola {{customerName}}, pedido {{orderRef}}, items {{items}}',
     });
 
     expect(prisma.whatsAppMessageTemplate.upsert).toHaveBeenCalledWith({
-      where: { storeId_type: { storeId, type: "NEW_ORDER" } },
+      where: { storeId_type: { storeId, type: 'NEW_ORDER' } },
       create: {
         storeId,
-        type: "NEW_ORDER",
-        template: "Hola {{customerName}}, pedido {{orderRef}}, items {{items}}",
+        type: 'NEW_ORDER',
+        template: 'Hola {{customerName}}, pedido {{orderRef}}, items {{items}}',
       },
       update: {
-        template: "Hola {{customerName}}, pedido {{orderRef}}, items {{items}}",
+        template: 'Hola {{customerName}}, pedido {{orderRef}}, items {{items}}',
       },
     });
-    expect(result.type).toBe("NEW_ORDER");
+    expect(result.type).toBe('NEW_ORDER');
   });
 });

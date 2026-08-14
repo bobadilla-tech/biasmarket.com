@@ -3,24 +3,27 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-} from "@nestjs/common";
-import type { PaymentMethodType, Prisma } from "@biasmarket/db";
-import { PrismaService } from "../../prisma/prisma.service.js";
-import { StorageService } from "../../storage/storage.service.js";
-import type { UpsertPaymentMethodDto } from "./dto/upsert-payment-method.dto.js";
-import type { PaymentMethodDetailsDto } from "./dto/payment-method-details.dto.js";
+} from '@nestjs/common';
+import type { PaymentMethodType, Prisma } from '@biasmarket/db';
+import { PrismaService } from '../../prisma/prisma.service.js';
+import { StorageService } from '../../storage/storage.service.js';
+import type { UpsertPaymentMethodDto } from './dto/upsert-payment-method.dto.js';
+import type { PaymentMethodDetailsDto } from './dto/payment-method-details.dto.js';
 
 @Injectable()
 export class PaymentConfigService {
-  constructor(private prisma: PrismaService, private storage: StorageService) {}
+  constructor(
+    private prisma: PrismaService,
+    private storage: StorageService,
+  ) {}
 
   private async assertOwnership(storeId: string, userId: string) {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
-    if (!store) throw new NotFoundException("Store no encontrada");
+    if (!store) throw new NotFoundException('Store no encontrada');
     if (store.ownerId !== userId) {
-      throw new ForbiddenException("No sos dueño de esta store");
+      throw new ForbiddenException('No sos dueño de esta store');
     }
     return store;
   }
@@ -50,8 +53,9 @@ export class PaymentConfigService {
       },
       update: {
         ...(dto.enabled !== undefined && { enabled: dto.enabled }),
-        ...(dto.details !== undefined &&
-          { details: details as Prisma.InputJsonValue }),
+        ...(dto.details !== undefined && {
+          details: details as Prisma.InputJsonValue,
+        }),
       },
     });
   }
@@ -66,13 +70,13 @@ export class PaymentConfigService {
     details: PaymentMethodDetailsDto | undefined,
   ): Record<string, unknown> {
     if (!details) return {};
-    if (method === "CASH") return {};
+    if (method === 'CASH') return {};
 
-    if (method === "TRANSFER") {
+    if (method === 'TRANSFER') {
       const { bankName, accountNumber, accountHolder, accountType } = details;
       if (!bankName || !accountNumber || !accountHolder) {
         throw new BadRequestException(
-          "bankName, accountNumber y accountHolder son requeridos para TRANSFER",
+          'bankName, accountNumber y accountHolder son requeridos para TRANSFER',
         );
       }
       return {
@@ -87,7 +91,7 @@ export class PaymentConfigService {
     const { phoneNumber, accountHolder, qrImageUrl } = details;
     if (!phoneNumber || !accountHolder) {
       throw new BadRequestException(
-        "phoneNumber y accountHolder son requeridos para YAPE/PLIN",
+        'phoneNumber y accountHolder son requeridos para YAPE/PLIN',
       );
     }
     return {
@@ -109,8 +113,8 @@ export class PaymentConfigService {
     mimeType: string,
   ) {
     await this.assertOwnership(storeId, userId);
-    if (method !== "YAPE" && method !== "PLIN") {
-      throw new BadRequestException("QR solo aplica a YAPE o PLIN");
+    if (method !== 'YAPE' && method !== 'PLIN') {
+      throw new BadRequestException('QR solo aplica a YAPE o PLIN');
     }
 
     const existing = await this.prisma.paymentMethodConfig.findUnique({
@@ -140,7 +144,7 @@ export class PaymentConfigService {
       },
     });
 
-    if (typeof previousQrUrl === "string" && previousQrUrl) {
+    if (typeof previousQrUrl === 'string' && previousQrUrl) {
       await this.storage.deleteImage(previousQrUrl);
     }
 
@@ -153,7 +157,7 @@ export class PaymentConfigService {
     });
 
     if (!store) {
-      throw new NotFoundException("Store no encontrada");
+      throw new NotFoundException('Store no encontrada');
     }
 
     return this.prisma.paymentMethodConfig.findMany({

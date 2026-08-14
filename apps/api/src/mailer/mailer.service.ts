@@ -1,18 +1,16 @@
-import { Injectable } from "@nestjs/common";
-import { InjectQueue } from "@nestjs/bullmq";
-import type { Queue } from "bullmq";
+import { Injectable } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import type { Queue } from 'bullmq';
 import {
   MAILER_JOB_NAME,
   QUEUE_NAMES,
   type SendEmailParams,
   sendEmailParamsSchema,
-} from "@biasmarket/queue";
+} from '@biasmarket/queue';
 
 @Injectable()
 export class MailerService {
-  constructor(
-    @InjectQueue(QUEUE_NAMES.MAILER) private queue: Queue,
-  ) {}
+  constructor(@InjectQueue(QUEUE_NAMES.MAILER) private queue: Queue) {}
 
   // Signature stays identical to the old direct-send version — every call
   // site (7 of them, see the migration plan) depends on `{ id: string }`

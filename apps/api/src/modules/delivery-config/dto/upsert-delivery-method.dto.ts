@@ -1,8 +1,8 @@
-import { IsBoolean, IsIn, IsObject, IsOptional } from "class-validator";
+import { IsBoolean, IsIn, IsObject, IsOptional } from 'class-validator';
 
 export class UpsertDeliveryMethodDto {
-  @IsIn(["PICKUP", "COURIER"])
-  type: "PICKUP" | "COURIER";
+  @IsIn(['PICKUP', 'COURIER'])
+  type: 'PICKUP' | 'COURIER';
 
   @IsOptional()
   @IsBoolean()

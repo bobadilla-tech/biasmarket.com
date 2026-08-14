@@ -1,11 +1,11 @@
-import { Global, Module } from "@nestjs/common";
-import { BullModule } from "@nestjs/bullmq";
+import { Global, Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bullmq';
 import {
   buildRedisConnection,
   defaultJobOptions,
   mailerJobOptions,
   QUEUE_NAMES,
-} from "@biasmarket/queue";
+} from '@biasmarket/queue';
 
 @Global() // same rationale as MailerModule/StorageModule — no per-module import needed
 @Module({

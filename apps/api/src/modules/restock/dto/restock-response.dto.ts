@@ -1,4 +1,4 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty } from '@nestjs/swagger';
 
 // Restock request dates serialize as ISO strings (same Date-as-string
 // convention as the notifications module — see
@@ -10,7 +10,7 @@ export class RestockRequestResultResponseDto {
   @ApiProperty()
   id: string;
 
-  @ApiProperty({ type: String, format: "date-time" })
+  @ApiProperty({ type: String, format: 'date-time' })
   createdAt: string;
 }
 
@@ -43,7 +43,7 @@ export class RestockRequestResponseDto {
   @ApiProperty()
   phone: string;
 
-  @ApiProperty({ type: String, format: "date-time" })
+  @ApiProperty({ type: String, format: 'date-time' })
   createdAt: string;
 
   @ApiProperty({ type: RestockRequestProductDto })

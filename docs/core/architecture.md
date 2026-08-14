@@ -380,91 +380,23 @@ apps/web/app/
 
 ---
 
-## 8. Docker / Deployment Improvements
+## 8. Docker / Deployment
 
-**Target**: single Hetzner VPS, three app images (`web`, `api`, `db`) behind
-Caddy. No subdomain routing at MVP (§3), so no wildcard cert needed — Caddy
-still gets automatic HTTPS for the single domain via Let's Encrypt with zero
-extra config, which is the main reason to pick it over nginx here (no certbot
-sidecar, no manual renew cron).
+Production runs on one Oracle Cloud VM using the immutable blue/green stack in
+`infra/vps/docker-compose.yml`. CI builds `api`, `web`, and `workers` images for
+the exact commit SHA and pushes them to GHCR. The VPS pulls those images;
+production never builds from a source checkout.
 
-```yaml
-services:
-  caddy:
-    image: caddy:2-alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - api
-      - web
+The stack has shared `db`, `redis`, `minio`, `uptime-kuma`, and `caddy`
+services, plus blue/green pairs for `api`, `web`, and `workers`. Caddy
+terminates TLS for `biasmarket.com`, `api.biasmarket.com`, `cdn.biasmarket.com`,
+and `status.biasmarket.com`. `deploy.sh` runs migrations once against the
+candidate, waits for Docker health, smoke-tests it, canary-switches Caddy, and
+keeps the previous color for rollback.
 
-  api:
-    build: ./apps/api
-    image: biasmarket/api
-    env_file: .env
-    expose:
-      - "3000" # not published to host — only Caddy reaches it
-    depends_on:
-      - db
-
-  web:
-    build: ./apps/web
-    image: biasmarket/web
-    env_file: .env
-    expose:
-      - "3001"
-    depends_on:
-      - api
-
-  db:
-    image: postgres:18
-    restart: always
-    environment:
-      POSTGRES_USER: biasmarket
-      POSTGRES_PASSWORD: ${DB_PASSWORD} # never hardcode in compose file
-      POSTGRES_DB: biasmarket
-    expose:
-      - "5432" # not published — only api reaches it
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-volumes:
-  postgres_data:
-  caddy_data:
-  caddy_config:
-```
-
-`infra/caddy/Caddyfile`:
-
-```
-biasmarket.example.com {
-  handle /api/* {
-    reverse_proxy api:3000
-  }
-  handle {
-    reverse_proxy web:3001
-  }
-}
-```
-
-- `expose` not `ports` for `api`/`db`/`web` — reachable on the Docker network by
-  Caddy but not bound to the host's public interface. Only Caddy publishes
-  80/443.
-- Caddy does TLS termination + auto-renewal (no certbot needed) and routes
-  `/api/*` → `api`, everything else → `web`.
-- `DB_PASSWORD` from `.env`, never committed, never hardcoded in the compose
-  file — the original spec's `biasmarket`/`biasmarket` is a placeholder to
-  replace before anything touches real data.
-- R2 stays external (S3-compatible API, no container) — object storage isn't
-  something you self-host on the VPS. **Not what's actually deployed today:**
-  the MVP runs self-hosted MinIO instead (`docker-compose.yml`'s `minio`
-  service), a deliberate shortcut — see
-  [deploy.md](deploy.md#image-uploads-minio).
+See [deploy.md](deploy.md) for the operator runbook and
+[blue-green-migrations.md](blue-green-migrations.md) for provisioning, migration
+discipline, and recovery.
 
 ---
 

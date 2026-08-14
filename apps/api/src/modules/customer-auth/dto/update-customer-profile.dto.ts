@@ -1,4 +1,4 @@
-import { IsEmail, IsOptional, IsString, MinLength } from "class-validator";
+import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
 
 // `email`/`phone` are staged (see `CustomerAuthService.updateProfile`), not
 // applied immediately — a confirmation link must be clicked before either

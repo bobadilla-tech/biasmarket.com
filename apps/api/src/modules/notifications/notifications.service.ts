@@ -2,15 +2,15 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-} from "@nestjs/common";
+} from '@nestjs/common';
 import type {
   NotificationType,
   Prisma,
   Product,
   ProductVariant,
   Store,
-} from "@biasmarket/db";
-import { PrismaService } from "../../prisma/prisma.service.js";
+} from '@biasmarket/db';
+import { PrismaService } from '../../prisma/prisma.service.js';
 
 type Client = Prisma.TransactionClient | PrismaService;
 
@@ -22,9 +22,9 @@ export class NotificationsService {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
-    if (!store) throw new NotFoundException("Store no encontrada");
+    if (!store) throw new NotFoundException('Store no encontrada');
     if (store.ownerId !== userId) {
-      throw new ForbiddenException("No sos dueño de esta store");
+      throw new ForbiddenException('No sos dueño de esta store');
     }
     return store;
   }
@@ -41,7 +41,7 @@ export class NotificationsService {
         ...(filters.archived !== undefined && { archived: filters.archived }),
         ...(filters.read !== undefined && { read: filters.read }),
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
     });
   }
 
@@ -59,7 +59,7 @@ export class NotificationsService {
       where: { id: notificationId },
     });
     if (!notification || notification.storeId !== storeId) {
-      throw new NotFoundException("Notificación no encontrada");
+      throw new NotFoundException('Notificación no encontrada');
     }
     return this.prisma.notification.update({
       where: { id: notificationId },
@@ -81,7 +81,7 @@ export class NotificationsService {
       where: { id: notificationId },
     });
     if (!notification || notification.storeId !== storeId) {
-      throw new NotFoundException("Notificación no encontrada");
+      throw new NotFoundException('Notificación no encontrada');
     }
     return this.prisma.notification.update({
       where: { id: notificationId },
@@ -118,7 +118,7 @@ export class NotificationsService {
         entityType: params.entityType,
         entityId: params.entityId,
         title: params.title,
-        body: params.body ?? "",
+        body: params.body ?? '',
         metadata: (params.metadata ?? {}) as Prisma.InputJsonValue,
       },
     });
@@ -136,7 +136,7 @@ export class NotificationsService {
         entityType,
         entityId,
         archived: false,
-        type: { in: ["LOW_STOCK", "OUT_OF_STOCK"] },
+        type: { in: ['LOW_STOCK', 'OUT_OF_STOCK'] },
       },
       data: { archived: true, archivedAt: new Date() },
     });
@@ -153,7 +153,7 @@ export class NotificationsService {
     await this.syncEntityStockAlert(
       client,
       store,
-      "ProductVariant",
+      'ProductVariant',
       variant.id,
       variant.stock === null ? null : variant.stock - variant.reserved,
       variant.name,
@@ -163,15 +163,17 @@ export class NotificationsService {
       where: { productId: product.id },
     });
     const hasUnlimited = siblingVariants.some((v) => v.stock === null);
-    const productAvailable = hasUnlimited ? null : siblingVariants.reduce(
-      (sum, v) => sum + (v.stock ?? 0) - v.reserved,
-      0,
-    );
+    const productAvailable = hasUnlimited
+      ? null
+      : siblingVariants.reduce(
+          (sum, v) => sum + (v.stock ?? 0) - v.reserved,
+          0,
+        );
 
     await this.syncEntityStockAlert(
       client,
       store,
-      "Product",
+      'Product',
       product.id,
       productAvailable,
       product.name,
@@ -181,7 +183,7 @@ export class NotificationsService {
   private async syncEntityStockAlert(
     client: Client,
     store: Store,
-    entityType: "ProductVariant" | "Product",
+    entityType: 'ProductVariant' | 'Product',
     entityId: string,
     available: number | null,
     name: string,
@@ -194,7 +196,7 @@ export class NotificationsService {
       await this.createIfNotOpen(
         {
           storeId: store.id,
-          type: "OUT_OF_STOCK",
+          type: 'OUT_OF_STOCK',
           entityType,
           entityId,
           title: `Sin stock: ${name}`,
@@ -208,7 +210,7 @@ export class NotificationsService {
       await this.createIfNotOpen(
         {
           storeId: store.id,
-          type: "LOW_STOCK",
+          type: 'LOW_STOCK',
           entityType,
           entityId,
           title: `Stock bajo: ${name}`,

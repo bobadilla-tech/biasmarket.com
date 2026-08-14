@@ -10,10 +10,10 @@ import {
   Min,
   MinLength,
   ValidateNested,
-} from "class-validator";
-import { SUPPORTED_CURRENCIES } from "@biasmarket/utils/currency";
-import { Type } from "class-transformer";
-import { CreateVariantDto } from "./create-variant.dto.js";
+} from 'class-validator';
+import { SUPPORTED_CURRENCIES } from '@biasmarket/utils/currency';
+import { Type } from 'class-transformer';
+import { CreateVariantDto } from './create-variant.dto.js';
 
 export class CreateProductDto {
   @IsOptional()

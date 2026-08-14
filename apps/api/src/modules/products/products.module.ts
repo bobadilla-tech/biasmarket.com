@@ -1,10 +1,10 @@
-import { Module } from "@nestjs/common";
-import { ThrottlerModule } from "@nestjs/throttler";
-import { ProductsController } from "./products.controller.js";
-import { ProductsService } from "./products.service.js";
-import { ProductSearchController } from "./product-search.controller.js";
-import { ProductSearchService } from "./product-search.service.js";
-import { NotificationsModule } from "../notifications/notifications.module.js";
+import { Module } from '@nestjs/common';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { ProductsController } from './products.controller.js';
+import { ProductsService } from './products.service.js';
+import { ProductSearchController } from './product-search.controller.js';
+import { ProductSearchService } from './product-search.service.js';
+import { NotificationsModule } from '../notifications/notifications.module.js';
 
 @Module({
   imports: [

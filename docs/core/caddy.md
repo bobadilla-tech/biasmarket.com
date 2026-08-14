@@ -1,14 +1,17 @@
-# infra/caddy
+# Production Caddy
 
-Reverse proxy config used only by the prod stack
-(`infra/docker/docker-compose.yml`). Three subdomains, one service each —
-`api.biasmarket.com` → `api`, `biasmarket.com` → `web`, `cdn.biasmarket.com` →
-`minio` (public-read bucket for product images/store logos, S3 API port 9000
-only — the admin console on 9001 is never routed here). Each gets its own
-automatic Let's Encrypt cert. The API still serves every route under `/api`
-internally (`app.setGlobalPrefix('api')` in `apps/api/src/main.ts`, including
-better-auth's routes at `/api/auth/*`) — that's just no longer something Caddy
-needs to know about, since routing is by subdomain, not by path.
+Production Caddy is part of the blue/green VPS stack and is defined by
+`infra/vps/Caddyfile`. The live upstream fragments are generated in
+`infra/vps/caddy/active/` by `deploy.sh`; they are never hand-edited or synced
+from Git.
 
-Not used in dev — `docker-compose.dev.yml` exposes `api` (3000) and `web` (3001)
-directly on separate host ports instead.
+The stable domains are:
+
+- `api.biasmarket.com` → `api-blue` or `api-green` on port 3000
+- `biasmarket.com` → `web-blue` or `web-green` on port 3001
+- `cdn.biasmarket.com` → `minio` on port 9000
+- `status.biasmarket.com` → `uptime-kuma`
+
+Deploys atomically replace the active fragments and reload Caddy without
+restarting it. Development uses `infra/docker/docker-compose.dev.yml` and does
+not use Caddy.

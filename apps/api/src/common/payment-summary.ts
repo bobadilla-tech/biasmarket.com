@@ -1,9 +1,9 @@
-import { Prisma } from "@biasmarket/db";
+import { Prisma } from '@biasmarket/db';
 import type {
   PaymentReviewStatus,
   PaymentSource,
   PaymentStatus,
-} from "@biasmarket/db";
+} from '@biasmarket/db';
 
 export interface PaymentSummary {
   paidAmount: number;
@@ -25,8 +25,9 @@ export interface SummablePayment {
 // docs/plans/2026-08-08-buyer-proof-of-payment-upload-plan.md's "Critical
 // invariant" section.
 export function countsTowardPaid(payment: SummablePayment): boolean {
-  return payment.source === "SELLER_RECORDED" ||
-    payment.reviewStatus === "APPROVED";
+  return (
+    payment.source === 'SELLER_RECORDED' || payment.reviewStatus === 'APPROVED'
+  );
 }
 
 // The order payment statuses that carry money actually collected and verified
@@ -39,8 +40,8 @@ export function countsTowardPaid(payment: SummablePayment): boolean {
 // overview + analytics, customer lifetimeSpend, guest spend) applies the same
 // rule instead of each hard-coding its own status set.
 export const REVENUE_ORDER_PAYMENT_STATUSES: readonly PaymentStatus[] = [
-  "VERIFIED",
-  "PARTIALLY_PAID",
+  'VERIFIED',
+  'PARTIALLY_PAID',
 ] as const;
 
 export function countsTowardRevenue(paymentStatus: PaymentStatus): boolean {
@@ -54,10 +55,9 @@ export function computePaymentSummary(
   requiredAmount: Prisma.Decimal,
   payments: SummablePayment[],
 ): PaymentSummary {
-  const paid = payments.filter(countsTowardPaid).reduce(
-    (sum, payment) => sum.plus(payment.amount),
-    new Prisma.Decimal(0),
-  );
+  const paid = payments
+    .filter(countsTowardPaid)
+    .reduce((sum, payment) => sum.plus(payment.amount), new Prisma.Decimal(0));
   const pending = Prisma.Decimal.max(requiredAmount.minus(paid), 0);
   const paidPercentage = requiredAmount.greaterThan(0)
     ? Prisma.Decimal.min(paid.dividedBy(requiredAmount).times(100), 100)

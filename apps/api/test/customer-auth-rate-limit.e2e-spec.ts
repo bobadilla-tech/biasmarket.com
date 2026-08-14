@@ -1,7 +1,7 @@
-import { Test, type TestingModule } from "@nestjs/testing";
-import type { INestApplication } from "@nestjs/common";
-import request from "supertest";
-import { AppModule } from "./../src/app.module.js";
+import { Test, type TestingModule } from '@nestjs/testing';
+import type { INestApplication } from '@nestjs/common';
+import request from 'supertest';
+import { AppModule } from './../src/app.module.js';
 
 // Exercises the two throttle rules the buyer-accounts follow-ups doc flagged
 // as untested: the buyer-side Nest `ThrottlerGuard` (5 req/min, see
@@ -9,9 +9,9 @@ import { AppModule } from "./../src/app.module.js";
 // req/10s, forced on in every env via `rateLimit.enabled: true` in
 // auth.config.ts — a Nest guard can never see those requests, since
 // better-auth mounts as raw Express middleware ahead of Nest's router).
-describe("rate limiting (e2e)", () => {
+describe('rate limiting (e2e)', () => {
   let app: INestApplication;
-  const origin = process.env.WEB_URL ?? "http://localhost:3001";
+  const origin = process.env.WEB_URL ?? 'http://localhost:3001';
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -26,13 +26,13 @@ describe("rate limiting (e2e)", () => {
     await app.close();
   });
 
-  it("throttles buyer login after 5 requests/min", async () => {
+  it('throttles buyer login after 5 requests/min', async () => {
     const server = app.getHttpServer();
     const attempt = () =>
       request(server)
-        .post("/stores/rate-limit-test-store/account/login")
-        .set("Origin", origin)
-        .send({ phone: "+51900000000", password: "wrong-password" });
+        .post('/stores/rate-limit-test-store/account/login')
+        .set('Origin', origin)
+        .send({ phone: '+51900000000', password: 'wrong-password' });
 
     const responses: number[] = [];
     for (let i = 0; i < 6; i++) {
@@ -47,13 +47,13 @@ describe("rate limiting (e2e)", () => {
     expect(responses[5]).toBe(429);
   });
 
-  it("throttles better-auth sign-in after 3 requests/10s", async () => {
+  it('throttles better-auth sign-in after 3 requests/10s', async () => {
     const server = app.getHttpServer();
     const attempt = () =>
       request(server)
-        .post("/api/auth/sign-in/email")
-        .set("Origin", origin)
-        .send({ email: "nobody@example.com", password: "wrong-password" });
+        .post('/api/auth/sign-in/email')
+        .set('Origin', origin)
+        .send({ email: 'nobody@example.com', password: 'wrong-password' });
 
     const responses: number[] = [];
     for (let i = 0; i < 4; i++) {

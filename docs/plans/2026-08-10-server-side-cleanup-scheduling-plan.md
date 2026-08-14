@@ -77,31 +77,31 @@ longer exist at all — deleted per task item 5 — so any citation into that ra
 now points past the end of the `sync-and-deploy` job instead. Read the files
 directly rather than trusting a specific line number anywhere in this doc.
 
-**Post-merge addendum (2026-08-14):** this plan was implemented independently
-on two branches (this one and `main`, merged together after the fact) —
+**Post-merge addendum (2026-08-14):** this plan was implemented independently on
+two branches (this one and `main`, merged together after the fact) —
 functionally identical, differing only in exact wording of comments, with one
-exception: this branch's actual `lib/cleanup_schedule.sh` had drifted from
-what decision 2 above already documents — it still wrote
+exception: this branch's actual `lib/cleanup_schedule.sh` had drifted from what
+decision 2 above already documents — it still wrote
 `candidate_color_at_schedule=$candidate_color` (the NEW color) instead of the
 `rollback_target_at_schedule=$current_color` (the OLD, about-to-be-torn-down
 color) the doc text itself already called correct. `main`'s independent
 implementation had it right; the merge took `main`'s code for this field,
-bringing this branch's `lib/cleanup_schedule.sh` back in sync with what
-decision 2 was already describing.
+bringing this branch's `lib/cleanup_schedule.sh` back in sync with what decision
+2 was already describing.
 
 A separate, real gap found post-merge (not caught by either original
 implementation): `cmd_cleanup` had no age check at all — it tore down
-`rollback_target` unconditionally whenever invoked, so
-`cleanup-fallback.yml`'s hourly tick landing shortly after a deploy would
-erase the rollback safety net well before the 30-minute window this whole
-design promises. Fixed by adding `state/rollback_target_set_at` (written
-atomically alongside `state/rollback_target` everywhere the latter is set or
-cleared) and a `CLEANUP_MIN_AGE_SECONDS` (1800, matching the self-scheduled
-delay) guard at the top of `cmd_cleanup` — a caller-agnostic fix: the
-self-scheduled fire always satisfies it by construction (it only ever fires
-at/after 1800s), so this only actually changes behavior for the fallback
-path firing early. See `docs/core/blue-green-migrations.md`'s "Scheduled
-cleanup" section for the operator-facing writeup.
+`rollback_target` unconditionally whenever invoked, so `cleanup-fallback.yml`'s
+hourly tick landing shortly after a deploy would erase the rollback safety net
+well before the 30-minute window this whole design promises. Fixed by adding
+`state/rollback_target_set_at` (written atomically alongside
+`state/rollback_target` everywhere the latter is set or cleared) and a
+`CLEANUP_MIN_AGE_SECONDS` (1800, matching the self-scheduled delay) guard at the
+top of `cmd_cleanup` — a caller-agnostic fix: the self-scheduled fire always
+satisfies it by construction (it only ever fires at/after 1800s), so this only
+actually changes behavior for the fallback path firing early. See
+`docs/core/blue-green-migrations.md`'s "Scheduled cleanup" section for the
+operator-facing writeup.
 
 ## Context
 
@@ -250,10 +250,10 @@ below, not just noted:**
    an explicit trailing positional argument after the string, defaulting to the
    literal word `"bash"` if none is given. Neither shape reaches `cmd_cleanup`.
    Verified empirically during review (`bash -c 'exec "$0"
-   --cleanup'` →
+--cleanup'` →
    `bash: --cleanup: invalid option`; `bash -c 'exec deploy.sh --cleanup'` →
    `bash: line 0: exec: deploy.sh: not
-   found`). Because decision 5 makes
+found`). Because decision 5 makes
    scheduling failures non-fatal to the deploy (by design) and log only to
    `scheduled_cleanup.log` (which nothing polls), this bug would have shipped
    silently — cleanup would still have happened, just via the hourly fallback
@@ -576,7 +576,7 @@ tempting-looking things:
 - **Don't have `cmd_rollback` schedule a fresh 30-minute window of its own.**
   `cmd_rollback`'s own precondition
   (`[[ -n "$current_color" && -n "$target_color" ]] || die "No rollback
-  target recorded"`,
+target recorded"`,
   [deploy.sh:241](../../infra/vps/deploy.sh#L241)) means a rollback is only ever
   reachable while a `rollback_target` still exists — i.e., strictly before some
   cleanup (scheduled or manual) has already run. There is therefore always

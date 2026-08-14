@@ -7,15 +7,15 @@ import {
   Patch,
   Post,
   UseGuards,
-} from "@nestjs/common";
-import { AuthGuard, Public, Session } from "@thallesp/nestjs-better-auth";
-import type { UserSession } from "@thallesp/nestjs-better-auth";
-import { PickupPointsService } from "./pickup-points.service.js";
-import { getBusinessDate } from "../../common/business-time.js";
-import { CreatePickupPointDto } from "./dto/create-pickup-point.dto.js";
-import { UpdatePickupPointDto } from "./dto/update-pickup-point.dto.js";
-import type { PickupPointResponseDto } from "./dto/pickup-point-response.dto.js";
-import { PublicPickupPointsResponseDto } from "./dto/public-pickup-points-response.dto.js";
+} from '@nestjs/common';
+import { AuthGuard, Public, Session } from '@thallesp/nestjs-better-auth';
+import type { UserSession } from '@thallesp/nestjs-better-auth';
+import { PickupPointsService } from './pickup-points.service.js';
+import { getBusinessDate } from '../../common/business-time.js';
+import { CreatePickupPointDto } from './dto/create-pickup-point.dto.js';
+import { UpdatePickupPointDto } from './dto/update-pickup-point.dto.js';
+import type { PickupPointResponseDto } from './dto/pickup-point-response.dto.js';
+import { PublicPickupPointsResponseDto } from './dto/public-pickup-points-response.dto.js';
 
 interface PickupPointRow {
   id: string;
@@ -32,14 +32,14 @@ function toPickupPointDto(row: PickupPointRow): PickupPointResponseDto {
   return { ...row, createdAt: row.createdAt.toISOString() };
 }
 
-@Controller("stores/:storeId/pickup-points")
+@Controller('stores/:storeId/pickup-points')
 @UseGuards(AuthGuard)
 export class PickupPointsController {
   constructor(private pickupPoints: PickupPointsService) {}
 
   @Get()
   async findAll(
-    @Param("storeId") storeId: string,
+    @Param('storeId') storeId: string,
     @Session() session: UserSession,
   ): Promise<PickupPointResponseDto[]> {
     const rows = await this.pickupPoints.findAllForStore(
@@ -51,7 +51,7 @@ export class PickupPointsController {
 
   @Post()
   async create(
-    @Param("storeId") storeId: string,
+    @Param('storeId') storeId: string,
     @Session() session: UserSession,
     @Body() dto: CreatePickupPointDto,
   ): Promise<PickupPointResponseDto> {
@@ -59,10 +59,10 @@ export class PickupPointsController {
     return toPickupPointDto(row);
   }
 
-  @Patch(":pointId")
+  @Patch(':pointId')
   async update(
-    @Param("storeId") storeId: string,
-    @Param("pointId") pointId: string,
+    @Param('storeId') storeId: string,
+    @Param('pointId') pointId: string,
     @Session() session: UserSession,
     @Body() dto: UpdatePickupPointDto,
   ): Promise<PickupPointResponseDto> {
@@ -75,10 +75,10 @@ export class PickupPointsController {
     return toPickupPointDto(row);
   }
 
-  @Delete(":pointId")
+  @Delete(':pointId')
   async remove(
-    @Param("storeId") storeId: string,
-    @Param("pointId") pointId: string,
+    @Param('storeId') storeId: string,
+    @Param('pointId') pointId: string,
     @Session() session: UserSession,
   ): Promise<PickupPointResponseDto> {
     const row = await this.pickupPoints.remove(
@@ -90,14 +90,14 @@ export class PickupPointsController {
   }
 }
 
-@Controller("stores/:slug/public/pickup-points")
+@Controller('stores/:slug/public/pickup-points')
 export class PublicPickupPointsController {
   constructor(private pickupPoints: PickupPointsService) {}
 
   @Public()
   @Get()
   async findEnabled(
-    @Param("slug") slug: string,
+    @Param('slug') slug: string,
   ): Promise<PublicPickupPointsResponseDto> {
     const rows = await this.pickupPoints.findEnabledForSlug(slug);
     return {

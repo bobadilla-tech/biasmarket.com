@@ -2,9 +2,9 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-} from "@nestjs/common";
-import { PrismaService } from "../../prisma/prisma.service.js";
-import { CreateRestockRequestDto } from "./dto/create-restock-request.dto.js";
+} from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service.js';
+import { CreateRestockRequestDto } from './dto/create-restock-request.dto.js';
 
 @Injectable()
 export class RestockService {
@@ -12,7 +12,7 @@ export class RestockService {
 
   async create(slug: string, dto: CreateRestockRequestDto) {
     const store = await this.prisma.store.findUnique({ where: { slug } });
-    if (!store) throw new NotFoundException("Tienda no encontrada");
+    if (!store) throw new NotFoundException('Tienda no encontrada');
 
     const product = await this.prisma.product.findUnique({
       where: { id: dto.productId },
@@ -20,10 +20,10 @@ export class RestockService {
     if (
       !product ||
       product.storeId !== store.id ||
-      product.status !== "PUBLISHED" ||
+      product.status !== 'PUBLISHED' ||
       product.deletedAt !== null
     ) {
-      throw new NotFoundException("Producto no encontrado");
+      throw new NotFoundException('Producto no encontrado');
     }
 
     if (dto.variantId) {
@@ -35,7 +35,7 @@ export class RestockService {
         variant.productId !== product.id ||
         variant.storeId !== store.id
       ) {
-        throw new NotFoundException("Variante no encontrada");
+        throw new NotFoundException('Variante no encontrada');
       }
     }
 
@@ -55,14 +55,14 @@ export class RestockService {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
-    if (!store) throw new NotFoundException("Store no encontrada");
+    if (!store) throw new NotFoundException('Store no encontrada');
     if (store.ownerId !== userId) {
-      throw new ForbiddenException("No sos dueño de esta store");
+      throw new ForbiddenException('No sos dueño de esta store');
     }
 
     return this.prisma.restockRequest.findMany({
       where: { storeId },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
       select: {
         id: true,
         name: true,
@@ -78,9 +78,9 @@ export class RestockService {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
-    if (!store) throw new NotFoundException("Store no encontrada");
+    if (!store) throw new NotFoundException('Store no encontrada');
     if (store.ownerId !== userId) {
-      throw new ForbiddenException("No sos dueño de esta store");
+      throw new ForbiddenException('No sos dueño de esta store');
     }
 
     const count = await this.prisma.restockRequest.count({

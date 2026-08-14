@@ -7,19 +7,19 @@ import {
   Patch,
   Post,
   UseGuards,
-} from "@nestjs/common";
-import { AuthGuard, Session } from "@thallesp/nestjs-better-auth";
-import type { UserSession } from "@thallesp/nestjs-better-auth";
-import { StoreSectionsService } from "./store-sections.service.js";
-import { CreateStoreSectionDto } from "./dto/create-store-section.dto.js";
-import { UpdateStoreSectionDto } from "./dto/update-store-section.dto.js";
-import { ReorderStoreSectionsDto } from "./dto/reorder-store-sections.dto.js";
-import type { StoreSectionResponseDto } from "./dto/store-section-response.dto.js";
+} from '@nestjs/common';
+import { AuthGuard, Session } from '@thallesp/nestjs-better-auth';
+import type { UserSession } from '@thallesp/nestjs-better-auth';
+import { StoreSectionsService } from './store-sections.service.js';
+import { CreateStoreSectionDto } from './dto/create-store-section.dto.js';
+import { UpdateStoreSectionDto } from './dto/update-store-section.dto.js';
+import { ReorderStoreSectionsDto } from './dto/reorder-store-sections.dto.js';
+import type { StoreSectionResponseDto } from './dto/store-section-response.dto.js';
 
 interface StoreSectionRow {
   id: string;
   storeId: string;
-  type: "COLLECTION" | "BANNER" | "TEXT_BLOCK";
+  type: 'COLLECTION' | 'BANNER' | 'TEXT_BLOCK';
   collectionId: string | null;
   content: unknown;
   position: number;
@@ -35,14 +35,14 @@ function toSectionDto(section: StoreSectionRow): StoreSectionResponseDto {
   };
 }
 
-@Controller("stores/:storeId/sections")
+@Controller('stores/:storeId/sections')
 @UseGuards(AuthGuard)
 export class StoreSectionsController {
   constructor(private sections: StoreSectionsService) {}
 
   @Post()
   async create(
-    @Param("storeId") storeId: string,
+    @Param('storeId') storeId: string,
     @Session() session: UserSession,
     @Body() dto: CreateStoreSectionDto,
   ): Promise<StoreSectionResponseDto> {
@@ -52,7 +52,7 @@ export class StoreSectionsController {
 
   @Get()
   async findAll(
-    @Param("storeId") storeId: string,
+    @Param('storeId') storeId: string,
     @Session() session: UserSession,
   ): Promise<StoreSectionResponseDto[]> {
     const sections = await this.sections.findAllForStore(
@@ -62,24 +62,20 @@ export class StoreSectionsController {
     return sections.map(toSectionDto);
   }
 
-  @Patch("reorder")
+  @Patch('reorder')
   async reorder(
-    @Param("storeId") storeId: string,
+    @Param('storeId') storeId: string,
     @Session() session: UserSession,
     @Body() dto: ReorderStoreSectionsDto,
   ): Promise<StoreSectionResponseDto[]> {
-    const sections = await this.sections.reorder(
-      storeId,
-      session.user.id,
-      dto,
-    );
+    const sections = await this.sections.reorder(storeId, session.user.id, dto);
     return sections.map(toSectionDto);
   }
 
-  @Patch(":sectionId")
+  @Patch(':sectionId')
   async update(
-    @Param("storeId") storeId: string,
-    @Param("sectionId") sectionId: string,
+    @Param('storeId') storeId: string,
+    @Param('sectionId') sectionId: string,
     @Session() session: UserSession,
     @Body() dto: UpdateStoreSectionDto,
   ): Promise<StoreSectionResponseDto> {
@@ -92,10 +88,10 @@ export class StoreSectionsController {
     return toSectionDto(section);
   }
 
-  @Delete(":sectionId")
+  @Delete(':sectionId')
   async delete(
-    @Param("storeId") storeId: string,
-    @Param("sectionId") sectionId: string,
+    @Param('storeId') storeId: string,
+    @Param('sectionId') sectionId: string,
     @Session() session: UserSession,
   ): Promise<StoreSectionResponseDto> {
     const section = await this.sections.delete(

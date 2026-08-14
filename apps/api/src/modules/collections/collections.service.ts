@@ -4,13 +4,13 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-} from "@nestjs/common";
-import { PrismaService } from "../../prisma/prisma.service.js";
-import { slugify } from "@biasmarket/utils/strings";
-import type { CreateCollectionDto } from "./dto/create-collection.dto.js";
-import type { UpdateCollectionDto } from "./dto/update-collection.dto.js";
-import type { AddCollectionProductDto } from "./dto/add-collection-product.dto.js";
-import type { ReorderCollectionProductsDto } from "./dto/reorder-collection-products.dto.js";
+} from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service.js';
+import { slugify } from '@biasmarket/utils/strings';
+import type { CreateCollectionDto } from './dto/create-collection.dto.js';
+import type { UpdateCollectionDto } from './dto/update-collection.dto.js';
+import type { AddCollectionProductDto } from './dto/add-collection-product.dto.js';
+import type { ReorderCollectionProductsDto } from './dto/reorder-collection-products.dto.js';
 
 @Injectable()
 export class CollectionsService {
@@ -20,9 +20,9 @@ export class CollectionsService {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
-    if (!store) throw new NotFoundException("Store no encontrada");
+    if (!store) throw new NotFoundException('Store no encontrada');
     if (store.ownerId !== userId) {
-      throw new ForbiddenException("No sos dueño de esta store");
+      throw new ForbiddenException('No sos dueño de esta store');
     }
     return store;
   }
@@ -37,7 +37,7 @@ export class CollectionsService {
       where: { id: collectionId },
     });
     if (!collection || collection.storeId !== storeId) {
-      throw new NotFoundException("Colección no encontrada");
+      throw new NotFoundException('Colección no encontrada');
     }
     return collection;
   }
@@ -47,7 +47,7 @@ export class CollectionsService {
       where: { id: productId },
     });
     if (!product || product.storeId !== storeId) {
-      throw new NotFoundException("Producto no encontrado");
+      throw new NotFoundException('Producto no encontrado');
     }
     return product;
   }
@@ -59,12 +59,12 @@ export class CollectionsService {
       where: { storeId_slug: { storeId, slug } },
     });
     if (existing) {
-      throw new ConflictException("Ya existe una colección con ese nombre");
+      throw new ConflictException('Ya existe una colección con ese nombre');
     }
     return this.prisma.collection.create({
       data: {
         name: dto.name,
-        description: dto.description ?? "",
+        description: dto.description ?? '',
         slug,
         storeId,
       },
@@ -77,7 +77,7 @@ export class CollectionsService {
       where: { storeId },
       include: {
         products: {
-          orderBy: { position: "asc" },
+          orderBy: { position: 'asc' },
           include: { product: { include: { variants: true } } },
         },
       },
@@ -110,7 +110,8 @@ export class CollectionsService {
   ) {
     await this.findOwnedCollection(collectionId, storeId, userId);
     await this.findOwnedProduct(dto.productId, storeId);
-    const position = dto.position ??
+    const position =
+      dto.position ??
       (await this.prisma.collectionProduct.count({ where: { collectionId } }));
     return this.prisma.collectionProduct.upsert({
       where: {
@@ -154,14 +155,14 @@ export class CollectionsService {
         });
         if (result.count !== 1) {
           throw new BadRequestException(
-            "Uno o más productos no pertenecen a esta colección",
+            'Uno o más productos no pertenecen a esta colección',
           );
         }
       }
 
       return tx.collectionProduct.findMany({
         where: { ...scopedWhere, productId: { in: dto.productIds } },
-        orderBy: { position: "asc" },
+        orderBy: { position: 'asc' },
       });
     });
   }

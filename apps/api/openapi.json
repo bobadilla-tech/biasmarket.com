@@ -176,6 +176,78 @@
         "tags": ["Stores"]
       }
     },
+    "/stores/internal/sitemap/count": {
+      "get": {
+        "operationId": "StoresController_findPublicSitemapCount",
+        "parameters": [
+          {
+            "name": "X-Internal-Sitemap-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SitemapStoreCountDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Stores"]
+      }
+    },
+    "/stores/internal/sitemap": {
+      "get": {
+        "operationId": "StoresController_findPublicSitemapPage",
+        "parameters": [
+          {
+            "name": "offset",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Internal-Sitemap-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SitemapStorePageDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Stores"]
+      }
+    },
     "/stores/collections/public": {
       "get": {
         "operationId": "StoresController_findCollectionsPublic",
@@ -4057,6 +4129,39 @@
         },
         "required": ["slug", "createdAt"]
       },
+      "SitemapStoreCountDto": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": ["total"]
+      },
+      "SitemapStoreItemDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          }
+        },
+        "required": ["slug"]
+      },
+      "SitemapStorePageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SitemapStoreItemDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": ["items", "total"]
+      },
       "PublicCollectionListingResponseDto": {
         "type": "object",
         "properties": {
@@ -4341,6 +4446,9 @@
           "position": {
             "type": "number"
           },
+          "hidden": {
+            "type": "boolean"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -4362,6 +4470,7 @@
           "collectionId",
           "content",
           "position",
+          "hidden",
           "createdAt",
           "collection"
         ]
@@ -5362,6 +5471,10 @@
             "type": "string",
             "nullable": true
           },
+          "buyerAccountId": {
+            "type": "string",
+            "nullable": true
+          },
           "customerEmail": {
             "type": "string",
             "nullable": true
@@ -5484,6 +5597,7 @@
           "id",
           "storeId",
           "customerId",
+          "buyerAccountId",
           "customerEmail",
           "customerPhone",
           "customerName",
@@ -5526,6 +5640,10 @@
             "type": "string",
             "nullable": true
           },
+          "buyerAccountId": {
+            "type": "string",
+            "nullable": true
+          },
           "customerEmail": {
             "type": "string",
             "nullable": true
@@ -5648,6 +5766,7 @@
           "id",
           "storeId",
           "customerId",
+          "buyerAccountId",
           "customerEmail",
           "customerPhone",
           "customerName",
@@ -5704,6 +5823,10 @@
             "type": "string",
             "nullable": true
           },
+          "buyerAccountId": {
+            "type": "string",
+            "nullable": true
+          },
           "customerEmail": {
             "type": "string",
             "nullable": true
@@ -5805,6 +5928,7 @@
           "id",
           "storeId",
           "customerId",
+          "buyerAccountId",
           "customerEmail",
           "customerPhone",
           "customerName",
@@ -6012,6 +6136,10 @@
             "type": "string",
             "nullable": true
           },
+          "buyerAccountId": {
+            "type": "string",
+            "nullable": true
+          },
           "customerEmail": {
             "type": "string",
             "nullable": true
@@ -6119,6 +6247,7 @@
           "id",
           "storeId",
           "customerId",
+          "buyerAccountId",
           "customerEmail",
           "customerPhone",
           "customerName",

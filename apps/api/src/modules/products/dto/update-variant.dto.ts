@@ -6,7 +6,7 @@ import {
   IsString,
   MinLength,
   ValidateIf,
-} from "class-validator";
+} from 'class-validator';
 
 export class UpdateVariantDto {
   @IsOptional()

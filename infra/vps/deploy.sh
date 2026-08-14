@@ -91,6 +91,33 @@ teardown_candidate() {
   compose rm -f "api-${color}" "web-${color}" "workers-${color}" 2>/dev/null || true
 }
 
+# Production has one Compose project and one shared network. The retired
+# single-color stack used the same project name, so letting it run can attach
+# db/redis/etc. to the wrong network and make an otherwise healthy candidate
+# fail Docker's healthcheck. Refuse that topology instead of deploying into a
+# split-brain container graph.
+assert_production_topology() {
+  local service cid networks
+
+  for service in api web workers; do
+    cid="$(docker ps -q \
+      --filter label=com.docker.compose.project=biasmarket \
+      --filter label=com.docker.compose.service="$service" | head -n1)"
+    [[ -z "$cid" ]] || die "Unsupported uncolored service '$service' is running. Stop the retired production stack's $service container before deploying."
+  done
+
+  docker network inspect biasmarket_stack >/dev/null 2>&1 \
+    || die "Production network biasmarket_stack is missing. Start shared services with infra/vps/docker-compose.yml before deploying."
+
+  for service in db redis minio caddy; do
+    cid="$(compose_running_container "$service" 2>/dev/null || true)"
+    [[ -n "$cid" ]] || die "Shared service '$service' has no running container in the blue/green Compose project. Start it with infra/vps/docker-compose.yml before deploying."
+    networks="$(docker inspect --format='{{range $name, $_ := .NetworkSettings.Networks}}{{$name}}{{"\n"}}{{end}}' "$cid")"
+    grep -qx 'biasmarket_stack' <<<"$networks" \
+      || die "Shared service '$service' is not attached to biasmarket_stack. Reconcile it with infra/vps/docker-compose.yml before deploying."
+  done
+}
+
 # State/reality reconciliation at the very start of every run: before
 # trusting state/current_color for anything, assert it matches the actual
 # live content of caddy/active/api.caddy. Closes the gap where a crash
@@ -112,11 +139,11 @@ reconcile_state_with_reality() {
 }
 
 # Owns the env/shared.env checksum assertion on every invocation — an
-# accidental future regeneration (e.g. someone runs `pnpm env:init --prod`
-# against this file by mistake) fails loud immediately instead of only
+# accidental unreviewed regeneration of this file fails loudly immediately
+# instead of only
 # being caught once. First run with no recorded baseline records one.
 assert_shared_env_checksum() {
-  [[ -f "$ENV_DIR/shared.env" ]] || die "env/shared.env is missing — copy it from a real production infra/docker/.env first, see env/shared.env.example."
+  [[ -f "$ENV_DIR/shared.env" ]] || die "env/shared.env is missing — provision the reviewed production secrets first, see env/shared.env.example."
   local actual
   actual="$(sha256sum "$ENV_DIR/shared.env" | cut -d' ' -f1)"
   if [[ ! -f "$SHARED_ENV_CHECKSUM_FILE" ]]; then
@@ -127,7 +154,7 @@ assert_shared_env_checksum() {
   local expected
   expected="$(cat "$SHARED_ENV_CHECKSUM_FILE")"
   if [[ "$actual" != "$expected" ]]; then
-    die "env/shared.env checksum mismatch (expected $expected, got $actual). It changed since the last recorded baseline. NEVER regenerate this file via 'pnpm env:init --prod' — see env/shared.env.example. If this is a reviewed, intentional secret rotation, update state/shared_env.sha256 by hand after confirming the new value, then re-run. Refusing to deploy."
+    die "env/shared.env checksum mismatch (expected $expected, got $actual). It changed since the last recorded baseline. If this is a reviewed, intentional secret rotation, update state/shared_env.sha256 by hand after confirming the new value, then re-run. Refusing to deploy."
   fi
 }
 
@@ -184,6 +211,7 @@ cmd_deploy() {
   # the candidate's image, whose tag resolves via ${IMAGE_TAG} in the compose
   # file — exporting only below would fatally exit at the first compose call.
   export IMAGE_TAG="$sha"
+  assert_production_topology
   run_migration_phase "$candidate_color" "$sha" "$allow_destructive"
   phase "migrated"
 
@@ -345,8 +373,8 @@ cmd_cleanup() {
   # caller (the self-scheduled fire, which by construction only ever fires
   # at/after the window anyway, or the fallback cron) invoked --cleanup.
   # A missing set_at file (state from before this check existed) is treated
-  # as old enough to clean up, matching this function's pre-existing
-  # unconditional behavior for that legacy case.
+  # as old enough to clean up, preserving compatibility with state created
+  # before the age-check file existed.
   local set_at now age
   set_at="$(state_read "$ROLLBACK_TARGET_SET_AT_FILE")"
   if [[ -n "$set_at" ]]; then

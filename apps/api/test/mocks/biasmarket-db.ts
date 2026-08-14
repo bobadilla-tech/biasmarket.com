@@ -14,4 +14,4 @@ export class PrismaClient {}
 // doesn't need a `DATABASE_URL` or hit the ESM-loader issue above; unit
 // tests doing real Decimal arithmetic (see `payment-summary.ts`) need the
 // genuine decimal.js-backed implementation, not a fake.
-export { Prisma } from "../../../../packages/db/index.ts";
+export { Prisma } from '../../../../packages/db/index.ts';

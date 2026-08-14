@@ -66,19 +66,13 @@ a `main.js` that momentarily doesn't exist.
 Data persists in the `db_data` named volume across `docker compose down`; use
 `down -v` to wipe it.
 
-## Prod
+## Production
 
-```bash
-cd infra/docker
-cp .env.example .env   # then fill in real secrets
-docker compose -f docker-compose.yml up -d --build
-```
+Production is not run from `infra/docker/`. The only supported production path
+is the immutable blue/green VPS stack in [`deploy.md`](deploy.md), using
+`infra/vps/docker-compose.yml` and `infra/vps/deploy.sh`.
 
-Builds multi-stage production images for `api` and `web` (code baked in, no bind
-mounts) and fronts everything with `caddy`, which is the only service that
-publishes ports to the host. `api`, `web`, and `db` are reachable only on the
-internal Docker network — never expose them directly in production.
-
-`NEXT_PUBLIC_API_URL` is a Next.js build-time value (inlined into the client
-bundle), so it's passed as a Docker build `arg` rather than only a runtime env
-var.
+Application images are built in CI, pushed to GHCR with the commit SHA as the
+tag, and pulled by the VPS deploy. See
+[`blue-green-migrations.md`](blue-green-migrations.md) for manual bootstrap and
+recovery.

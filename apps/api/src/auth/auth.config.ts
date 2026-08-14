@@ -1,18 +1,18 @@
-import { betterAuth } from "better-auth";
-import { admin } from "better-auth/plugins/admin";
-import { prismaAdapter } from "better-auth/adapters/prisma";
-import { Logger } from "@nestjs/common";
-import type { Auth } from "@thallesp/nestjs-better-auth";
-import { escapeHtml } from "@biasmarket/utils/strings";
-import { PrismaService } from "../prisma/prisma.service.js";
-import type { MailerService } from "../mailer/mailer.service.js";
+import { betterAuth } from 'better-auth';
+import { admin } from 'better-auth/plugins/admin';
+import { prismaAdapter } from 'better-auth/adapters/prisma';
+import { Logger } from '@nestjs/common';
+import type { Auth } from '@thallesp/nestjs-better-auth';
+import { escapeHtml } from '@biasmarket/utils/strings';
+import { PrismaService } from '../prisma/prisma.service.js';
+import type { MailerService } from '../mailer/mailer.service.js';
 
-const logger = new Logger("auth");
+const logger = new Logger('auth');
 
 // Matches the admin plugin's `defaultRole` below — kept in sync so a
 // duplicate-signup synthetic user (see `customSyntheticUser`) carries the
 // same `role` a genuine new signup would get.
-const DEFAULT_SELLER_ROLE = "seller";
+const DEFAULT_SELLER_ROLE = 'seller';
 
 function buildVerificationEmailHtml(url: string): string {
   const safeUrl = escapeHtml(url);
@@ -40,7 +40,7 @@ export const createAuth = (
   betterAuth({
     url: process.env.BETTER_AUTH_URL,
     secret: process.env.BETTER_AUTH_SECRET,
-    database: prismaAdapter(prisma, { provider: "postgresql" }),
+    database: prismaAdapter(prisma, { provider: 'postgresql' }),
     emailAndPassword: {
       enabled: true,
       // sendOnSignUp implicitly follows this (better-auth: `sendOnSignUp ??
@@ -69,7 +69,7 @@ export const createAuth = (
       sendVerificationEmail: async ({ user, url }) => {
         await mailer.send({
           to: user.email,
-          subject: "Verifica tu cuenta — Bias Market / Verify your account",
+          subject: 'Verifica tu cuenta — Bias Market / Verify your account',
           html: buildVerificationEmailHtml(url),
         });
       },
@@ -86,10 +86,10 @@ export const createAuth = (
     plugins: [
       admin({
         defaultRole: DEFAULT_SELLER_ROLE,
-        adminRoles: ["admin"],
+        adminRoles: ['admin'],
       }),
     ],
-    trustedOrigins: [process.env.WEB_URL ?? "http://localhost:3001"],
+    trustedOrigins: [process.env.WEB_URL ?? 'http://localhost:3001'],
     // Better-auth mounts its handler via `httpAdapter.use()` inside its own
     // module's `onModuleInit` (raw Express middleware, before Nest's router
     // even runs) — so a Nest `@nestjs/throttler` guard can never reach
@@ -112,7 +112,7 @@ export const createAuth = (
       // for backgrounding those sends — not a queue we built.
       backgroundTasks: {
         handler: (promise) => {
-          promise.catch((err) => logger.error("Background task failed", err));
+          promise.catch((err) => logger.error('Background task failed', err));
         },
       },
     },

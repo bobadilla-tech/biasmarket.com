@@ -13,7 +13,10 @@ export async function generateMetadata({
     locale,
     namespace: "storefront.productSearch",
   });
-  return { title: t("title") };
+  return {
+    title: t("title"),
+    robots: { index: false, follow: true },
+  };
 }
 
 function parsePositiveInt(value: string | undefined): number | null {

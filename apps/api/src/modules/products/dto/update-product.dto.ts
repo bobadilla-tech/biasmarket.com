@@ -7,8 +7,8 @@ import {
   IsOptional,
   IsString,
   MinLength,
-} from "class-validator";
-import { SUPPORTED_CURRENCIES } from "@biasmarket/utils/currency";
+} from 'class-validator';
+import { SUPPORTED_CURRENCIES } from '@biasmarket/utils/currency';
 
 export class UpdateProductDto {
   @IsOptional()

@@ -1,13 +1,12 @@
 # Blue/green deploys, VPS provisioning, and migration discipline
 
-Covers the production deploy flow that replaced `git pull && pnpm docker:prod`
-(see [`deploy.md`](deploy.md) for that superseded flow, kept for anyone not yet
-cut over): GitHub push to `main` → `ci.yml` → `cd.yml` builds and pushes images
-to GHCR → SSHes to the VPS → `infra/vps/deploy.sh` deploys the inactive color,
-health-checks it, smoke-tests it, canary-switches Caddy, verifies, then fully
-switches — leaving the previous color running as a fast rollback target until a
-later scheduled cleanup. Full design rationale (7-lens multi-agent review, every
-HIGH finding and how it was resolved) lives in
+Covers the only supported production deploy flow: GitHub push to `main` →
+`ci.yml` → `cd.yml` builds and pushes images to GHCR → SSHes to the VPS →
+`infra/vps/deploy.sh` deploys the inactive color, health-checks it, smoke-tests
+it, canary-switches Caddy, verifies, then fully switches — leaving the previous
+color running as a fast rollback target until a later scheduled cleanup. Full
+design rationale (7-lens multi-agent review, every HIGH finding and how it was
+resolved) lives in
 [`docs/plans/2026-08-10-bluegreen-zero-downtime-deploy-plan.md`](../plans/2026-08-10-bluegreen-zero-downtime-deploy-plan.md)
 — this doc is the operator-facing "how it actually works and how to run it"
 companion, not a restatement of that plan's reasoning.
@@ -56,6 +55,7 @@ the actual implementation, this is the summary):
    — `deploy.sh` also schedules its own cleanup of it ~30 minutes later (see
    "Scheduled cleanup" below), best-effort and non-fatal to the deploy if
    scheduling itself fails.
+
 9. On any failure at steps 4–8: tear down **only** the candidate; the previous
    color and its Caddy routing are never touched.
 10. Always, on every exit path: write `state/last_deploy_result` (SHA, outcome,
@@ -82,6 +82,7 @@ the actual implementation, this is the summary):
     A stray orphaned `flock` process transiently visible in `ps` shortly after
     one schedule supersedes another is expected (a `kill -TERM` racing a process
     already blocked inside `acquire_deploy_lock`), not a symptom to chase.
+
 12. `deploy.sh --cleanup` (whether fired by step 11's schedule, the hourly
     `cleanup-fallback.yml`, or run manually) always re-reads
     `state/current_color`/`state/rollback_target` fresh at invocation time —
@@ -105,14 +106,14 @@ committed — no GitHub Actions runner sits idle waiting for it. Mechanism
 
 - `schedule_cleanup()` backgrounds a detached
   `setsid bash -c 'sleep 1800;
-  exec "$0" --cleanup' "$ROOT_DIR/deploy.sh"`,
+exec "$0" --cleanup' "$ROOT_DIR/deploy.sh"`,
   closing the inherited deploy-lock file descriptor first (a plain background
   fork would otherwise hold the same `flock` open for the full 30 minutes). The
   30-minute chain always execs into whatever `deploy.sh` is currently on disk
   when it fires, not a stale in-memory copy, and `cmd_cleanup` re-reads
   `current_color`/ `rollback_target` fresh at that point — so an in-window
   `deploy.sh
-  --rollback` needs no special-case cancellation; the scheduled
+--rollback` needs no special-case cancellation; the scheduled
   cleanup just tears down whatever is still recorded as the rollback target when
   it runs.
 - `cancel_scheduled_cleanup()` runs first, superseding any still-pending
@@ -152,12 +153,12 @@ same as `deploy.lock.meta`):
 `state/rollback_target` every time the latter is set (`cmd_deploy`,
 `cmd_rollback`) or cleared (`cmd_cleanup`, `cmd_bootstrap`). `cmd_cleanup`
 checks it before tearing anything down: if the recorded target is younger than
-`CLEANUP_MIN_AGE_SECONDS` (1800, matching the self-scheduled delay), it logs
-and no-ops instead of proceeding. This is what actually keeps the
-30-minute-rollback-window promise regardless of caller — the self-scheduled
-fire above only ever runs at/after the window by construction, but the hourly
-fallback below has no such guarantee and would otherwise erase a fresh
-rollback target on whichever tick happens to land first after a deploy.
+`CLEANUP_MIN_AGE_SECONDS` (1800, matching the self-scheduled delay), it logs and
+no-ops instead of proceeding. This is what actually keeps the
+30-minute-rollback-window promise regardless of caller — the self-scheduled fire
+above only ever runs at/after the window by construction, but the hourly
+fallback below has no such guarantee and would otherwise erase a fresh rollback
+target on whichever tick happens to land first after a deploy.
 
 Backstop:
 [`.github/workflows/cleanup-fallback.yml`](../../.github/workflows/cleanup-fallback.yml)
@@ -483,8 +484,8 @@ Then, on the VPS as `deploy` (`sudo -iu deploy`, from `/opt/biasmarket`):
 chmod +x bin/ssh-deploy-dispatcher.sh bin/migration-watchdog.sh deploy.sh
 
 # populate real env files — see each .example's header comment for what
-# goes in it. shared.env in particular: copy every secret BYTE-FOR-BYTE from
-# infra/docker/.env, never regenerate.
+# goes in it. These are production secrets and must be provisioned securely;
+# they are never committed or synced by CD.
 cp env/shared.env.example env/shared.env       # then edit
 cp env/blue.runtime.env.example env/blue.runtime.env
 cp env/green.runtime.env.example env/green.runtime.env
@@ -536,11 +537,9 @@ first real end-to-end validation of the mechanism against production data.
 
 Gate on all of (VPS provisioning Steps 1–8 above, in order):
 
-- [ ] `env/shared.env` populated by **verbatim byte-for-byte copy** of every
-      secret value from the current `infra/docker/.env` — never
-      `pnpm env:init --prod` against this file. See
-      `infra/vps/env/shared.env.example`'s header comment for why
-      (`CUSTOMER_ACCOUNT_TOKEN_SECRET` specifically).
+- [ ] `env/shared.env` populated with the reviewed production secrets. See
+      `infra/vps/env/shared.env.example`'s header comment; never generate or
+      commit production secrets from a local dev env file.
 - [ ] `infra/vps/docker-compose.yml`'s first line is `name: biasmarket` (verify
       you haven't accidentally edited this).
 - [ ] Two SSH keys provisioned, `known_hosts` pinned, GitHub secrets/variables
@@ -565,7 +564,7 @@ it can run, since `uptime-kuma` only just came up.
 Verify:
 
 ```bash
-docker volume ls | grep '^local\s*biasmarket_'   # same volume set as the old infra/docker/ stack
+  docker volume ls | grep '^local\s*biasmarket_'   # production volumes
 curl -I https://biasmarket.com                    # 200
 curl https://api.biasmarket.com/api/health         # {"status":"ok",...}
 ```
@@ -589,24 +588,21 @@ The first OCI bootstrap exposed a few details worth making explicit:
   commits, or issue reports; rotate any key that was exposed.
 - `env/shared.env`, `env/blue.runtime.env`, `env/green.runtime.env`, and
   `env/watchdog.env` are intentionally absent from rsync and must be created on
-  the VPS before bootstrap. `shared.env` must be copied byte-for-byte from the
-  real production `infra/docker/.env`.
+  the VPS before bootstrap from the reviewed production secret values.
 - An apt lock held by another `apt-get` process is not fixed by deleting the
   lock file. Wait for the package operation to finish and retry if needed.
-- Compose's `Found orphan containers` warning can appear when migrating from the
-  old single-color stack. It is informational unless old containers must be
-  deliberately removed after confirming they are no longer serving traffic.
+- A `Found orphan containers` warning means an unexpected Compose project is
+  present. Stop and investigate it; do not use `--remove-orphans` blindly.
 
 `deploy.sh` reports each phase with phase and total elapsed seconds. Health
 waits also emit a bounded progress line every 15 seconds, so image pulls,
 migrations, and container health checks are visibly active without inventing a
 misleading percentage.
 
-Keep the old `infra/docker/docker-compose.yml` stack's containers
-**stopped-but-not-removed**, volumes untouched, for a defined grace period — the
-full-mechanism fallback if something about the new stack itself turns out to be
-broken in a way blue/green's own rollback can't address (e.g. a Caddy config
-issue affecting both colors).
+There is no supported legacy production stack. If blue/green rollback is not
+enough, recover manually using the same `infra/vps/docker-compose.yml`,
+`infra/vps/Caddyfile`, and `deploy.sh` files used by CD. Never start a second
+Compose project against the production volumes.
 
 ## Manual operations reference
 

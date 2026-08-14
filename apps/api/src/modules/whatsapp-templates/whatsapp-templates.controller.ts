@@ -1,21 +1,21 @@
-import { Body, Controller, Get, Param, Put, UseGuards } from "@nestjs/common";
-import { ApiOkResponse, ApiParam, getSchemaPath } from "@nestjs/swagger";
-import { AuthGuard, Session } from "@thallesp/nestjs-better-auth";
-import type { UserSession } from "@thallesp/nestjs-better-auth";
-import { WhatsappTemplatesService } from "./whatsapp-templates.service.js";
-import { UpdateWhatsAppTemplateDto } from "./dto/update-whatsapp-template.dto.js";
-import { WhatsAppTemplateResponseDto } from "./dto/whatsapp-template-response.dto.js";
+import { Body, Controller, Get, Param, Put, UseGuards } from '@nestjs/common';
+import { ApiOkResponse, ApiParam, getSchemaPath } from '@nestjs/swagger';
+import { AuthGuard, Session } from '@thallesp/nestjs-better-auth';
+import type { UserSession } from '@thallesp/nestjs-better-auth';
+import { WhatsappTemplatesService } from './whatsapp-templates.service.js';
+import { UpdateWhatsAppTemplateDto } from './dto/update-whatsapp-template.dto.js';
+import { WhatsAppTemplateResponseDto } from './dto/whatsapp-template-response.dto.js';
 
 const WHATSAPP_MESSAGE_TYPE_PARAM = {
-  name: "type",
+  name: 'type',
   type: String,
-  enum: ["NEW_ORDER", "PAYMENT_REMINDER"],
+  enum: ['NEW_ORDER', 'PAYMENT_REMINDER'],
 };
 
 interface WhatsAppTemplateRow {
   id: string;
   storeId: string;
-  type: "NEW_ORDER" | "PAYMENT_REMINDER";
+  type: 'NEW_ORDER' | 'PAYMENT_REMINDER';
   template: string;
   updatedAt: Date;
 }
@@ -26,7 +26,7 @@ function toWhatsAppTemplateDto(
   return { ...row, updatedAt: row.updatedAt.toISOString() };
 }
 
-@Controller("stores/:storeId/whatsapp-templates")
+@Controller('stores/:storeId/whatsapp-templates')
 @UseGuards(AuthGuard)
 export class WhatsappTemplatesController {
   constructor(private whatsappTemplates: WhatsappTemplatesService) {}
@@ -43,10 +43,10 @@ export class WhatsappTemplatesController {
     },
   })
   @ApiParam(WHATSAPP_MESSAGE_TYPE_PARAM)
-  @Get(":type")
+  @Get(':type')
   async findOne(
-    @Param("storeId") storeId: string,
-    @Param("type") type: string,
+    @Param('storeId') storeId: string,
+    @Param('type') type: string,
     @Session() session: UserSession,
   ): Promise<WhatsAppTemplateResponseDto | null> {
     const row = await this.whatsappTemplates.findForStore(
@@ -58,10 +58,10 @@ export class WhatsappTemplatesController {
   }
 
   @ApiParam(WHATSAPP_MESSAGE_TYPE_PARAM)
-  @Put(":type")
+  @Put(':type')
   async upsert(
-    @Param("storeId") storeId: string,
-    @Param("type") type: string,
+    @Param('storeId') storeId: string,
+    @Param('type') type: string,
     @Session() session: UserSession,
     @Body() dto: UpdateWhatsAppTemplateDto,
   ): Promise<WhatsAppTemplateResponseDto> {

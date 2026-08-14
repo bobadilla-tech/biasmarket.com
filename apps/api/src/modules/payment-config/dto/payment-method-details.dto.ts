@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsUrl } from "class-validator";
+import { IsOptional, IsString, IsUrl } from 'class-validator';
 
 // Structural union of the three method-shapes this plan defines (see
 // docs/plans/2026-08-08-buyer-post-checkout-payment-instructions-plan.md's

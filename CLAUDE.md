@@ -34,6 +34,7 @@ pnpm install                              # workspace install
 pnpm dev                                  # all apps, parallel (api :3000, web :3001)
 pnpm build                                # turbo run build (respects dependency graph)
 pnpm lint                                 # turbo run lint
+pnpm fix                                  # format changed files, then run lint
 pnpm typecheck                            # turbo run typecheck
 pnpm test                                 # turbo run test, all packages
 pnpm db:generate                          # prisma generate (packages/db)
@@ -85,8 +86,11 @@ Docker (from repo root):
 
 ```bash
 pnpm docker:dev                           # infra/docker/docker-compose.dev.yml
-pnpm docker:prod                          # infra/docker/docker-compose.yml, prod stack
 ```
+
+Production is deployed only by the blue/green CI/CD flow described in
+`docs/core/deploy.md`; use `infra/vps/deploy.sh` for a supervised manual
+deployment or recovery.
 
 CI (`.github/workflows/ci.yml`) path-filters per package and runs
 lint/typecheck/build/test independently for `api`, `web`, `db`, `i18n`, `types`,
@@ -184,16 +188,14 @@ checks against `Store.ownerId`), not global middleware. Slug strategy is
 
 ### Deployment
 
-Single Oracle Cloud VM, containers for `api`, `web`, `db`, `minio`
-(S3-compatible object storage — product/logo/payment-proof images, see
-`apps/api/src/storage/storage.service.ts`), and `caddy`
-(`infra/docker/docker-compose.yml`, `infra/caddy/Caddyfile`). Caddy does TLS
-termination for two subdomains: `biasmarket.com` (web) and `api.biasmarket.com`
-(api). `api` container runs `prisma migrate deploy` automatically on boot. Full
-runbook: `docs/core/deploy.md`. Known gaps called out there: buyer and seller
-login/register/forgot-password surfaces are throttled (`@nestjs/throttler` +
-better-auth's native rate limiter), but there's still no CSRF/`helmet`, no
-startup env-var validation.
+Single Oracle Cloud VM, blue/green containers for `api`, `web`, and `workers`,
+plus shared `db`, `redis`, `minio`, `uptime-kuma`, and `caddy` (S3-compatible
+object storage — product/logo/payment-proof images, see
+`apps/api/src/storage/storage.service.ts`). Production definitions live in
+`infra/vps/docker-compose.yml`; Caddy does TLS termination for `biasmarket.com`,
+`api.biasmarket.com`, `cdn.biasmarket.com`, and `status.biasmarket.com`.
+Migrations run in the explicit candidate phase of `infra/vps/deploy.sh`, never
+automatically on container boot. Full runbook: `docs/core/deploy.md`.
 
 ## Docs worth reading before large changes
 
