@@ -13,7 +13,10 @@ export async function generateMetadata({
     locale,
     namespace: "storefront.accountPage",
   });
-  return { title: t("orderDetail.title") };
+  return {
+    title: t("orderDetail.title"),
+    robots: { index: false, follow: false },
+  };
 }
 
 export default function OrderDetailPage() {

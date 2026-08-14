@@ -6,7 +6,11 @@
 # (decision 3's polkit story, same one in ssh-deploy-dispatcher.sh's
 # launch()), why the fired cleanup re-reads state fresh instead of trusting
 # anything captured at schedule time (decision 4), and why `cmd_rollback`
-# deliberately does not touch this schedule (decision 6).
+# deliberately does not touch this schedule (decision 6). cmd_cleanup itself
+# additionally refuses to act on a rollback target younger than
+# CLEANUP_MIN_AGE_SECONDS (deploy.sh) — that age check, not this schedule's
+# timing alone, is what actually guarantees the promised window even when
+# cleanup-fallback.yml's hourly cron fires early.
 #
 # Both functions are called from cmd_deploy, which reads $sha and
 # $current_color as its own locals — deliberately relied on here via bash's
@@ -26,13 +30,21 @@
 schedule_cleanup() {
   local pid
   : >"$SCHEDULED_CLEANUP_LOG_FILE"
+  # $DEPLOY_LOCK_FD (lib/lock.sh) is interpolated here, at schedule time in
+  # THIS (parent) shell — the surrounding quotes are split around it
+  # specifically so this happens while everything else in the child script
+  # stays single-quoted and unexpanded, most importantly "$0" a few lines
+  # down, which must NOT resolve until the `exec` inside the child, at fire
+  # time (decision 3 of the design doc). Keeps the fd number a single
+  # source of truth (lib/lock.sh) instead of a bare literal repeated here.
   setsid bash -c '
-    exec 9>&-              # close the inherited deploy-lock fd — a plain
-                            # backgrounded fork duplicates all open fds,
-                            # including the flock fd cmd_deploy holds open
-                            # for its whole lifetime (lib/lock.sh) — without
-                            # this close, the sleeping process would hold
-                            # the deploy lock for the full 30 minutes.
+    exec '"$DEPLOY_LOCK_FD"'>&-  # close the inherited deploy-lock fd — a
+                            # plain backgrounded fork duplicates all open
+                            # fds, including the flock fd cmd_deploy holds
+                            # open for its whole lifetime (lib/lock.sh) —
+                            # without this close, the sleeping process
+                            # would hold the deploy lock for the full 30
+                            # minutes.
     sleep 1800
     exec "$0" --cleanup
   ' "$ROOT_DIR/deploy.sh" </dev/null >"$SCHEDULED_CLEANUP_LOG_FILE" 2>&1 &
@@ -74,10 +86,23 @@ cancel_scheduled_cleanup() {
   [[ -f "$SCHEDULED_CLEANUP_PID_FILE" ]] || return 0
   local pid
   pid="$(cat "$SCHEDULED_CLEANUP_PID_FILE" 2>/dev/null)" || pid=""
+  # PID-reuse guard: scheduled_cleanup.pid is left in place, unmodified,
+  # until the next cmd_deploy call — which per decision 6 can be well over
+  # 30 minutes later if the only intervening activity is a --rollback. A
+  # bare `kill -0 "$pid"` would treat "some unrelated process now has this
+  # PID" as "the scheduled cleanup is still pending"; the cmdline check
+  # closes that realistic case (not bulletproof, but cheap). Matched against
+  # the exact deploy.sh path, not a bare "sleep" substring: schedule_cleanup
+  # always passes "$ROOT_DIR/deploy.sh" as bash -c's positional $0 argument,
+  # so it's present in /proc/$pid/cmdline for the whole chain's lifetime —
+  # during the sleep (as that positional arg) and after the exec into
+  # --cleanup (as argv[0]) alike — without the false-positive surface of
+  # matching any unrelated process that merely happens to run `sleep`.
   if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null \
-     && grep -qE 'sleep|deploy\.sh' "/proc/$pid/cmdline" 2>/dev/null; then
+     && grep -qF "$ROOT_DIR/deploy.sh" "/proc/$pid/cmdline" 2>/dev/null; then
     log_info "Cancelling previously scheduled cleanup (pid=$pid)."
     kill -TERM "$pid" 2>/dev/null || true
   fi
   rm -f "$SCHEDULED_CLEANUP_PID_FILE" "$SCHEDULED_CLEANUP_META_FILE"
+  return 0
 }

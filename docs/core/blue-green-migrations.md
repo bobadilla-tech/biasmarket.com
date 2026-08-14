@@ -27,12 +27,12 @@ push to main
          rsync infra/vps/  -> /opt/biasmarket/ (key A, rrsync-restricted)
          deploy.sh <sha>   launched detached via the SSH dispatcher (key B),
                             polled for completion over a second SSH call
-                            (deploy.sh itself self-schedules the 30-min
-                            old-color cleanup on success — see below)
-cleanup-fallback.yml   hourly cron backstop, runs deploy.sh --cleanup
-                        unconditionally (idempotent, safe no-op the
-                        overwhelming majority of runs) — closes the gap
-                        where a VPS reboot loses the self-scheduled cleanup
+                            -> deploy.sh schedules its own old-color cleanup,
+                               ~30 min later (see "Scheduled cleanup" below)
+cleanup-fallback.yml   hourly cron backstop: deploy.sh --cleanup, idempotent
+                        no-op unless the schedule above was lost (e.g. reboot),
+                        and a no-op regardless if the rollback target isn't
+                        yet 30 minutes old (cmd_cleanup's own age check)
 ```
 
 `deploy.sh`'s own phases (see `infra/vps/deploy.sh` and `infra/vps/lib/*.sh` for
@@ -52,7 +52,10 @@ the actual implementation, this is the summary):
    briefly, re-run smoke tests against the **public** domain, 3x retry.
 
    `state/current_color`/`current_sha`/`rollback_target`, append to
-   `releases/history.log`. Previous color is left running.
+   `releases/history.log`. Previous color is left running as the rollback target
+   — `deploy.sh` also schedules its own cleanup of it ~30 minutes later (see
+   "Scheduled cleanup" below), best-effort and non-fatal to the deploy if
+   scheduling itself fails.
 9. On any failure at steps 4–8: tear down **only** the candidate; the previous
    color and its Caddy routing are never touched.
 10. Always, on every exit path: write `state/last_deploy_result` (SHA, outcome,
@@ -92,6 +95,87 @@ the actual implementation, this is the summary):
 Full design, including the state-machine edge cases (VPS reboot mid-window, two
 deploys landing in rapid succession, `deploy.sh` itself being rsynced
 mid-window) and why this isn't built on `systemd-run`/a systemd timer:
+[`2026-08-10-server-side-cleanup-scheduling-plan.md`](../plans/2026-08-10-server-side-cleanup-scheduling-plan.md).
+
+### Scheduled cleanup
+
+`cmd_deploy` schedules the old color's teardown itself, right after state is
+committed — no GitHub Actions runner sits idle waiting for it. Mechanism
+(`infra/vps/lib/cleanup_schedule.sh`):
+
+- `schedule_cleanup()` backgrounds a detached
+  `setsid bash -c 'sleep 1800;
+  exec "$0" --cleanup' "$ROOT_DIR/deploy.sh"`,
+  closing the inherited deploy-lock file descriptor first (a plain background
+  fork would otherwise hold the same `flock` open for the full 30 minutes). The
+  30-minute chain always execs into whatever `deploy.sh` is currently on disk
+  when it fires, not a stale in-memory copy, and `cmd_cleanup` re-reads
+  `current_color`/ `rollback_target` fresh at that point — so an in-window
+  `deploy.sh
+  --rollback` needs no special-case cancellation; the scheduled
+  cleanup just tears down whatever is still recorded as the rollback target when
+  it runs.
+- `cancel_scheduled_cleanup()` runs first, superseding any still-pending
+  schedule from a previous deploy (relevant on a manual `--force` deploy into an
+  already-pending slot) — it `kill -TERM`s the previous chain's PID after
+  confirming via `/proc/$pid/cmdline` that the PID hasn't been recycled by an
+  unrelated process in the meantime.
+- Both calls are best-effort and guarded (`|| log_warn ... || true`): scheduling
+  failure never turns an already-successful cutover into a reported deploy
+  failure. A stray, short-lived orphaned `flock` process transiently visible in
+  `ps` shortly after a supersede is expected — not a symptom to chase — since a
+  `kill -TERM` on the chain's `bash -c` parent doesn't reach a child `flock`
+  that has already forked to wait on the lock.
+
+Three new state files, same "never synced/committed" treatment as the rest of
+`state/`, left in place after firing as a breadcrumb (not deleted on completion,
+same as `deploy.lock.meta`):
+
+- `state/scheduled_cleanup.pid` — PID of the detached chain. A stale PID left
+  behind after its process has long exited is the normal steady state, not an
+  error.
+- `state/scheduled_cleanup.meta` — `pid=`, `scheduled_by=<sha>`,
+  `scheduled_at=`/`fires_at=` (UTC), `rollback_target_at_schedule=<blue|green>`.
+  **`rollback_target_at_schedule` is a snapshot of what was benched when this
+  was scheduled, not authoritative at fire time** — `cmd_cleanup` always
+  re-reads `state/rollback_target` fresh when it actually runs, and that value
+  can differ if a `--rollback` happened in between. Answers "is a cleanup
+  pending, for what, and when" for an operator SSHed into the VPS, without
+  reconstructing it from `releases/history.log` by hand.
+- `state/scheduled_cleanup.log` — stdout/stderr of the detached chain,
+  overwritten fresh on every new schedule. The only place a crash inside the
+  backgrounded process (e.g. a version-mismatched `lib/*.sh` sourced mid-rsync
+  of a concurrent deploy) is visible — it isn't wired into
+  `state/last_deploy_result` or `releases/history.log`.
+
+`state/rollback_target_set_at` (epoch seconds) is written atomically alongside
+`state/rollback_target` every time the latter is set (`cmd_deploy`,
+`cmd_rollback`) or cleared (`cmd_cleanup`, `cmd_bootstrap`). `cmd_cleanup`
+checks it before tearing anything down: if the recorded target is younger than
+`CLEANUP_MIN_AGE_SECONDS` (1800, matching the self-scheduled delay), it logs
+and no-ops instead of proceeding. This is what actually keeps the
+30-minute-rollback-window promise regardless of caller — the self-scheduled
+fire above only ever runs at/after the window by construction, but the hourly
+fallback below has no such guarantee and would otherwise erase a fresh
+rollback target on whichever tick happens to land first after a deploy.
+
+Backstop:
+[`.github/workflows/cleanup-fallback.yml`](../../.github/workflows/cleanup-fallback.yml)
+runs `deploy.sh --cleanup` on an hourly `schedule:` cron (plus
+`workflow_dispatch:` for a manual run), declaring `environment: production` so
+the `DEPLOY_SSH_*` secrets are visible to it. No concurrency group needed —
+`cmd_cleanup`'s own `flock` already serializes it against everything else. This
+closes the one gap the server-side schedule doesn't cover on its own: a VPS
+reboot (or OOM kill) during the 30-minute window loses the scheduled process
+silently, same as a GitHub Actions outage lost the old `sleep
+1800`-based job —
+the fallback catches it within roughly an hour instead of never, and the age
+check above means an early fallback tick is always a safe no-op rather than a
+premature teardown.
+
+Full design rationale, including every edge case above (rollback mid-window,
+`deploy.sh` itself being rsynced mid-window, why this isn't built on
+`systemd-run`/a systemd timer):
 [`2026-08-10-server-side-cleanup-scheduling-plan.md`](../plans/2026-08-10-server-side-cleanup-scheduling-plan.md).
 
 ## Migration discipline (expand/contract)
@@ -327,7 +411,7 @@ the `DEPLOY_SSH_KNOWN_HOSTS` GitHub secret (Step 6).
 Create the environment first — Settings → Environments → New environment → name
 it `production`
 ([GitHub docs](https://docs.github.com/en/actions/how-tos/manage-environments/create-environment)).
-`cd.yml`'s `sync-and-deploy`/`scheduled-cleanup` jobs declare
+`cd.yml`'s `sync-and-deploy` job and `cleanup-fallback.yml`'s job both declare
 `environment: production`, which is what makes environment-scoped secrets the
 right place (and gives you an optional required-reviewers approval gate for free
 if you want one later).

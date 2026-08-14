@@ -4,19 +4,104 @@ Written before execution, at the user's explicit request, to allow a review pass
 before any code is written — same deliberate deviation from this directory's
 normal "record after the work lands" convention already used by
 [`2026-08-10-bluegreen-zero-downtime-deploy-plan.md`](2026-08-10-bluegreen-zero-downtime-deploy-plan.md).
+Originally a planning-only record with no code changed; see the Status section
+below for what has since landed.
 
-## Status: implemented (2026-08-14)
+## Status: implemented (task list items 1-8), not run against the real VPS
 
-All 8 task-list items landed as written: `lib/state.sh`'s new path constants,
-`lib/cleanup_schedule.sh` (`schedule_cleanup`/`cancel_scheduled_cleanup`,
-verbatim from decision 3's canonical code block), `cmd_deploy`'s guarded calls
-right after `phase "state_committed"`, `cd.yml`'s `scheduled-cleanup` job
-removed and `--delay-updates --delete-delay` added to the rsync step, the new
-`.github/workflows/cleanup-fallback.yml`, the stale `systemd-run` sentence in
-the blue/green plan's decision 8 fixed, and
-[`docs/core/blue-green-migrations.md`](../core/blue-green-migrations.md) updated
-with the new state files and pipeline shape. No deviations from the plan as
-reviewed.
+All eight task-list items landed as designed. No behavior described in the
+"Design decisions" section above was changed during implementation — the
+canonical `schedule_cleanup()`/`cancel_scheduled_cleanup()` code block in
+decision 3 was copied essentially verbatim into
+[`infra/vps/lib/cleanup_schedule.sh`](../../infra/vps/lib/cleanup_schedule.sh).
+Four judgment calls made where this doc didn't fully specify the literal code,
+none changing behavior on the success path:
+
+- Both functions end with an explicit `return 0` (the canonical block relies on
+  `rm -f`'s/`log_info`'s incidental exit status for this, which decision 5
+  itself calls out as working "only by accident" for
+  `cancel_scheduled_cleanup`). Making it explicit removes that
+  accident-dependency without changing what either function returns on success.
+- The call site in `cmd_deploy` uses `X || log_warn "..." || true`, not just
+  `X || log_warn "..."` as decision 5's illustrative snippet shows — the
+  trailing `|| true` is defense-in-depth against `log_warn`'s own `printf` ever
+  failing (e.g. a closed stderr) under `set -e`, consistent with, not a reversal
+  of, decision 5's "must never fail the deploy" requirement.
+- `cd.yml`'s rsync step gained both `--delay-updates` **and** `--delete-delay`,
+  not just `--delay-updates` as decision 9 recommends — `--delete-delay` extends
+  the same single-final-pass atomicity to the deletion side of `--delete`, for
+  the same narrowing-not-closing reason decision 9 gives for `--delay-updates`
+  on the update side.
+- `cancel_scheduled_cleanup`'s `/proc/$pid/cmdline` identity check matches only
+  `"$ROOT_DIR/deploy.sh"` (a fixed-string `grep -qF`), not decision 3's literal
+  `grep -qE 'sleep|deploy\.sh'`. Narrowed post-review: `schedule_cleanup` passes
+  `"$ROOT_DIR/deploy.sh"` as `bash -c`'s positional `$0` argument, so that path
+  string is present in `/proc/$pid/cmdline` for the chain's entire lifetime — as
+  the positional arg during the `sleep`, as `argv[0]` after the `exec` into
+  `--cleanup` — making the bare `sleep` alternative both redundant (the path
+  already matches during that phase) and needlessly broad (it would also match
+  any unrelated process that happens to invoke `sleep` for its own reasons).
+  Same detection coverage, smaller false-positive surface.
+
+**Not run against the real VPS** — per the task brief, `infra/vps/deploy.sh` is
+synced to production and there is no test environment for it. Verification was
+static: `shellcheck` clean on both
+[`lib/cleanup_schedule.sh`](../../infra/vps/lib/cleanup_schedule.sh) (one
+intentional `SC2016` info-level note — the canonical `bash -c '...'` string is
+single-quoted on purpose, decision 3's whole point is that `$0` must NOT expand
+until the `exec` inside the child, at fire time) and the modified `deploy.sh`
+via `shellcheck -x deploy.sh` (which follows the real source chain and resolves
+`cleanup_schedule.sh`'s apparent-unassigned
+`$sha`/`$current_color`/`$candidate_color` references against `cmd_deploy`'s
+locals — clean, 0 warnings); both new/changed GitHub Actions YAML files parse
+correctly (`yaml.safe_load`, `actionlint`/`yamllint` not available in this
+environment). Same bar as the blue-green plan's own T1-T10: typecheck/build/
+test plus manual script review, not a live cutover (that plan's own T11 still
+hasn't run either, per its Status section).
+
+**This doc's inline `file:line` citations are not re-numbered
+post-implementation.** They were accurate when this plan was authored (per the
+task brief's own warning) and describe two kinds of thing: (a) pre-existing
+`deploy.sh`/`cd.yml` behavior this plan didn't touch, still accurate in content
+even where line numbers have since shifted; (b) the exact insertion/removal
+points this plan specifies, which by definition moved once implemented. For (b),
+the current locations are: `cmd_deploy`'s
+`cancel_scheduled_cleanup`/`schedule_cleanup` calls sit at `deploy.sh:234-235`,
+immediately after `phase "state_committed"` at `deploy.sh:227` (was
+`deploy.sh:225` pre-implementation — the file grew by
+`lib/cleanup_schedule.sh`'s new `source` line plus the two guarded calls and
+their explanatory comment). `cd.yml`'s `scheduled-cleanup` job and
+`production-cleanup` concurrency group (previously `cd.yml:203-233`,
+`cd.yml:205-233`-ish depending on which citation in this doc you're reading) no
+longer exist at all — deleted per task item 5 — so any citation into that range
+now points past the end of the `sync-and-deploy` job instead. Read the files
+directly rather than trusting a specific line number anywhere in this doc.
+
+**Post-merge addendum (2026-08-14):** this plan was implemented independently
+on two branches (this one and `main`, merged together after the fact) —
+functionally identical, differing only in exact wording of comments, with one
+exception: this branch's actual `lib/cleanup_schedule.sh` had drifted from
+what decision 2 above already documents — it still wrote
+`candidate_color_at_schedule=$candidate_color` (the NEW color) instead of the
+`rollback_target_at_schedule=$current_color` (the OLD, about-to-be-torn-down
+color) the doc text itself already called correct. `main`'s independent
+implementation had it right; the merge took `main`'s code for this field,
+bringing this branch's `lib/cleanup_schedule.sh` back in sync with what
+decision 2 was already describing.
+
+A separate, real gap found post-merge (not caught by either original
+implementation): `cmd_cleanup` had no age check at all — it tore down
+`rollback_target` unconditionally whenever invoked, so
+`cleanup-fallback.yml`'s hourly tick landing shortly after a deploy would
+erase the rollback safety net well before the 30-minute window this whole
+design promises. Fixed by adding `state/rollback_target_set_at` (written
+atomically alongside `state/rollback_target` everywhere the latter is set or
+cleared) and a `CLEANUP_MIN_AGE_SECONDS` (1800, matching the self-scheduled
+delay) guard at the top of `cmd_cleanup` — a caller-agnostic fix: the
+self-scheduled fire always satisfies it by construction (it only ever fires
+at/after 1800s), so this only actually changes behavior for the fallback
+path firing early. See `docs/core/blue-green-migrations.md`'s "Scheduled
+cleanup" section for the operator-facing writeup.
 
 ## Context
 
@@ -64,6 +149,17 @@ transient unit **spawned from inside a forced-command SSH session** — that's t
 specific combination that hits polkit. Decision 3 below explains why this plan
 still doesn't reuse that pattern for cleanup scheduling, even though it would
 solve the reboot-survival edge case for free.
+
+**This Context section describes the pre-implementation state, as originally
+written** — at the time this section was drafted, `cd.yml`'s `scheduled-cleanup`
+job (the literal 30-minute-`sleep` runner job described above) still existed and
+was the only mechanism for old-color cleanup; it has since been deleted as part
+of implementing this plan. See the "Status" section above for what actually
+landed: the job is gone, replaced by `deploy.sh`'s own
+`schedule_cleanup()`/`cancel_scheduled_cleanup()` plus the hourly
+`cleanup-fallback.yml` backstop. Same convention as
+[`2026-08-10-bluegreen-zero-downtime-deploy-plan.md`](2026-08-10-bluegreen-zero-downtime-deploy-plan.md)'s
+own Context section.
 
 ## Design decisions
 
