@@ -3,31 +3,31 @@
   "hero": {
     "title1": "Tu mundo K-Pop",
     "title2": "Todo en un solo lugar",
-    "subtitle": "Descubre álbumes, photocards, lightsticks y mucho mas de tus artistas favoritos",
+    "subtitle": "Descubre álbumes, photocards, lightsticks y mucho más de tus artistas favoritos",
     "cta": "Comprar ahora",
     "releasesBadge": "Nuevo",
     "releasesTitle": "Nuevos lanzamientos",
-    "releasesSubtitle": "Sé el primero en descubrir lo ultimo del K-pop",
+    "releasesSubtitle": "Sé el primero en descubrir lo último del K-pop",
     "releasesCta": "Ver novedades",
     "blogBadge": "Blog",
     "blogTitle": "Biasmarket Blog",
-    "blogSubtitle": "Noticias, guias y todo sobre el mundo del K-pop",
+    "blogSubtitle": "Noticias, guías y todo sobre el mundo del K-pop",
     "blogCta": "Leer Blog"
   },
   "products": { "viewStore": "Ver en {name}" },
   "trends": {
     "title": "Tendencias",
-    "latestTitle": "Ultimos Productos",
+    "latestTitle": "Últimos Productos",
     "bestSellersTitle": "Más vendidos",
     "viewAll": "Ver todo",
     "empty": "Aún no hay productos.",
     "error": "Algo salió mal. Inténtalo de nuevo."
   },
   "categories": {
-    "title": "Categorias",
+    "title": "Categorías",
     "heading1": "Tu Bias",
     "heading2": "Te espera",
-    "subtitle": "Explora por categoria y descubre tu proxima merch favorita",
+    "subtitle": "Explora por categoría y descubre tu próxima merch favorita",
     "explore": "Explorar todo",
     "items": [
       { "key": "photocards", "name": "Photocards" },
@@ -40,7 +40,7 @@
   },
   "discover": {
     "title": "Más por descubrir",
-    "cta": "Ver mas productos",
+    "cta": "Ver más productos",
     "empty": "Aún no hay productos.",
     "error": "Algo salió mal. Inténtalo de nuevo."
   },
@@ -90,10 +90,10 @@
       {
         "heading": "Comprar con Biasmarket",
         "links": [
-          "Como funciona",
+          "Cómo funciona",
           "Explorar productos",
-          "Categorias",
-          "Envios",
+          "Categorías",
+          "Envíos",
           "Preguntas frecuentes"
         ]
       },
@@ -101,9 +101,9 @@
         "heading": "Vender con Biasmarket",
         "links": [
           "Crear mi tienda",
-          "Como vender",
+          "Cómo vender",
           "¿Por qué vender en Biasmarket?",
-          "Guia para sellers",
+          "Guía para sellers",
           "FAQ para sellers"
         ]
       },
@@ -113,7 +113,7 @@
           "Nuestra historia",
           "Sobre nosotros",
           "Tiendas verificadas",
-          "Terminos de uso",
+          "Términos de uso",
           "Politica de privacidad"
         ]
       },
@@ -124,7 +124,7 @@
           "Preguntas frecuentes",
           "Problemas con mi pedido",
           "Contacto",
-          "Configuracion de Privacidad"
+          "Configuración de Privacidad"
         ]
       }
     ],
