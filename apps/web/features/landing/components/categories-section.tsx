@@ -31,26 +31,23 @@ export function CategoriesSection() {
             background:
               "linear-gradient(114.26deg, #FFEEFA 16.34%, #FEE2F6 41.95%, #F1E4EF 52.63%, #FFDBFB 73.33%, #E9D1E7 94.02%)",
           }}
-          className="relative h-[360px] overflow-hidden rounded-[20px]"
+          className="relative h-[300px] overflow-hidden rounded-[20px] sm:h-[360px]"
         >
-          <h3
-            style={{ fontWeight: 700, fontSize: 48, lineHeight: "58px" }}
-            className="absolute top-[64px] left-[40px] max-w-[283px]"
-          >
+          <h3 className="absolute top-[56px] left-5 z-10 max-w-[283px] text-[30px] leading-[36px] font-bold sm:top-[64px] sm:left-[40px] sm:text-[48px] sm:leading-[58px]">
             <span className="text-[#FF3DB1]">{t("heading1")}</span>
             <br />
             <span className="text-black">{t("heading2")}</span>
           </h3>
           <p
             style={{ fontWeight: 400, fontSize: 13, lineHeight: "16px" }}
-            className="absolute top-[190px] left-[40px] w-[237px] text-black"
+            className="absolute top-[150px] left-5 z-10 w-[237px] text-black sm:top-[190px] sm:left-[40px]"
           >
             {t("subtitle")}
           </p>
           <Link
             href="/search"
             style={{ fontWeight: 500, fontSize: 20, lineHeight: "24px" }}
-            className="absolute top-[234px] left-[40px] flex h-[41px] w-[154px] items-center justify-center rounded-[10px] border border-[#FF3DB1] text-[#FF3DB1] transition-colors hover:bg-[#FF3DB1] hover:text-white"
+            className="absolute top-[196px] left-5 z-10 flex h-[41px] w-[154px] items-center justify-center rounded-[10px] border border-[#FF3DB1] text-[#FF3DB1] transition-colors hover:bg-[#FF3DB1] hover:text-white sm:top-[234px] sm:left-[40px]"
           >
             {t("explore")}
           </Link>
@@ -59,7 +56,7 @@ export function CategoriesSection() {
             alt=""
             width={305}
             height={368}
-            className="pointer-events-none absolute top-[-8px] left-[260px] w-[305px] select-none object-contain"
+            className="pointer-events-none absolute top-[-8px] right-0 hidden w-[305px] select-none object-contain sm:block"
           />
         </div>
 
@@ -70,16 +67,16 @@ export function CategoriesSection() {
               <Link
                 key={key}
                 href={`/search?category=${encodeURIComponent(name)}`}
-                className="group flex items-center gap-3 overflow-hidden rounded-[10px] border border-landing-graphite bg-white px-3 py-3 transition hover:shadow-md sm:gap-4 sm:px-4 sm:py-4"
+                className="group flex items-center gap-2 overflow-hidden rounded-[10px] border border-landing-graphite bg-white px-2.5 py-2.5 transition hover:shadow-md sm:gap-4 sm:px-4 sm:py-4"
               >
                 <Image
                   src={img.src}
                   alt={name}
                   width={img.width}
                   height={img.height}
-                  className="h-12 w-12 shrink-0 object-contain sm:h-20 sm:w-20"
+                  className="h-10 w-10 shrink-0 object-contain sm:h-20 sm:w-20"
                 />
-                <span className="min-w-0 text-2xl leading-tight font-semibold text-black break-words">
+                <span className="min-w-0 text-lg leading-tight font-semibold text-black break-words sm:text-2xl">
                   {name}
                 </span>
               </Link>

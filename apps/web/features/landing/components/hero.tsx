@@ -24,13 +24,10 @@ export function Hero() {
             background:
               "linear-gradient(114.27deg, #FFFFFF 4.68%, #EDDAFF 31.56%, #FFD7EB 89.06%)",
           }}
-          className="relative min-h-[525px] overflow-hidden rounded-[10px]"
+          className="relative min-h-[460px] overflow-hidden rounded-[10px] sm:min-h-[525px]"
         >
-          <div className="relative z-10 flex h-full w-[488px] max-w-full flex-col justify-center gap-[42px] pr-4 pl-[55.5px]">
-            <h1
-              style={{ fontWeight: 800, fontSize: 48, lineHeight: "58px" }}
-              className="text-balance"
-            >
+          <div className="relative z-10 flex h-full w-[488px] max-w-full flex-col justify-center gap-7 pr-4 pl-5 sm:gap-[42px] sm:pr-4 sm:pl-[55.5px]">
+            <h1 className="text-balance text-[30px] leading-[38px] font-extrabold sm:text-[48px] sm:leading-[58px]">
               <span className="text-[#170A14]">{t("title1")}</span>
               <br />
               <span className="text-[#FF3DB1]">{t("title2")}</span>
@@ -61,7 +58,7 @@ export function Hero() {
             alt=""
             width={346}
             height={429}
-            className="pointer-events-none absolute top-[43px] left-[408px] hidden w-[346px] h-[429px] select-none object-contain sm:block"
+            className="pointer-events-none absolute top-[43px] right-0 hidden w-[346px] h-[429px] select-none object-contain sm:block"
           />
         </div>
 
@@ -91,7 +88,7 @@ export function Hero() {
               alt=""
               width={228}
               height={228}
-              className="pointer-events-none absolute top-[22px] left-[277.5px] hidden w-[228px] select-none object-contain sm:block"
+              className="pointer-events-none absolute top-[22px] right-0 hidden w-[228px] select-none object-contain sm:block"
             />
           </div>
 
@@ -120,7 +117,7 @@ export function Hero() {
               alt=""
               width={251}
               height={222}
-              className="pointer-events-none absolute top-[26px] left-[231.5px] hidden w-[251px] select-none object-contain sm:block"
+              className="pointer-events-none absolute top-[26px] right-0 hidden w-[251px] select-none object-contain sm:block"
             />
           </div>
         </div>

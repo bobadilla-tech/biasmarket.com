@@ -36,15 +36,19 @@ export function AboutSection() {
           {t("subtitle")}
         </p>
 
-        <div className="mt-8 flex items-center justify-center gap-8 sm:mt-10 sm:gap-12 lg:gap-24">
-          {ILLUSTRATIONS.map(({ src, alt, width, height }) => (
+        <div className="mx-auto mt-8 grid w-fit grid-cols-2 items-center justify-items-center gap-6 sm:mt-10 sm:flex sm:gap-12 lg:gap-24">
+          {ILLUSTRATIONS.map(({ src, alt, width, height }, index) => (
             <Image
               key={src}
               src={src}
               alt={alt}
               width={width}
               height={height}
-              className="w-auto object-contain"
+              className={
+                index === ILLUSTRATIONS.length - 1
+                  ? "h-auto w-36 object-contain sm:w-auto col-span-2 sm:col-span-1"
+                  : "h-auto w-36 object-contain sm:w-auto"
+              }
             />
           ))}
         </div>
