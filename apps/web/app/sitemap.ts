@@ -1,8 +1,10 @@
 import type { MetadataRoute } from "next";
+import { client } from "@/features/blog/lib/sanity";
+import { POSTS_SITEMAP_QUERY } from "@/features/blog/lib/sanity-queries";
 import { routing } from "@/i18n/routing";
 import { SITE_URL } from "@/lib/site-config";
 
-const STATIC_PATHS = ["", "/founder", "/enterprise"];
+const STATIC_PATHS = ["", "/blog", "/founder", "/enterprise"];
 const CHUNK_SIZE = 50000;
 
 function localizedUrl(locale: string, path: string) {
@@ -18,8 +20,8 @@ function alternates(path: string) {
 }
 
 async function getStoreSlugs(): Promise<{ slug: string; createdAt: string }[]> {
-  const apiUrl = process.env.INTERNAL_API_URL ??
-    process.env.NEXT_PUBLIC_API_URL;
+  const apiUrl =
+    process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
   if (!apiUrl) return [];
   try {
     const res = await fetch(`${apiUrl}/api/stores/public`, {
@@ -32,6 +34,28 @@ async function getStoreSlugs(): Promise<{ slug: string; createdAt: string }[]> {
   }
 }
 
+async function getBlogPostSlugs(): Promise<
+  { slug: string; updatedAt: string }[]
+> {
+  if (!client) return [];
+  try {
+    const posts: { slug: { current: string }; _updatedAt: string }[] =
+      await client.fetch(
+        POSTS_SITEMAP_QUERY,
+        {},
+        {
+          next: { tags: ["blog"], revalidate: 3600 },
+        },
+      );
+    return posts.map((post) => ({
+      slug: post.slug.current,
+      updatedAt: post._updatedAt,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 async function getAllEntries(): Promise<MetadataRoute.Sitemap> {
   const staticEntries: MetadataRoute.Sitemap = STATIC_PATHS.flatMap((path) =>
     routing.locales.map((locale) => ({
@@ -39,23 +63,33 @@ async function getAllEntries(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: path === "" ? ("weekly" as const) : ("monthly" as const),
       priority: path === "" ? 1 : 0.6,
       alternates: alternates(path),
-    }))
+    })),
   );
 
   const stores = await getStoreSlugs();
-  const storeEntries: MetadataRoute.Sitemap = stores.flatMap((
-    { slug, createdAt },
-  ) =>
-    routing.locales.map((locale) => ({
-      url: localizedUrl(locale, `/store/${slug}`),
-      lastModified: createdAt,
-      changeFrequency: "daily" as const,
-      priority: 0.8,
-      alternates: alternates(`/store/${slug}`),
-    }))
+  const storeEntries: MetadataRoute.Sitemap = stores.flatMap(
+    ({ slug, createdAt }) =>
+      routing.locales.map((locale) => ({
+        url: localizedUrl(locale, `/store/${slug}`),
+        lastModified: createdAt,
+        changeFrequency: "daily" as const,
+        priority: 0.8,
+        alternates: alternates(`/store/${slug}`),
+      })),
   );
 
-  return [...staticEntries, ...storeEntries];
+  const blogPosts = await getBlogPostSlugs();
+  const blogEntries: MetadataRoute.Sitemap = blogPosts.flatMap((post) =>
+    routing.locales.map((locale) => ({
+      url: localizedUrl(locale, `/blog/${post.slug}`),
+      lastModified: post.updatedAt,
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+      alternates: alternates(`/blog/${post.slug}`),
+    })),
+  );
+
+  return [...staticEntries, ...storeEntries, ...blogEntries];
 }
 
 // Splits the sitemap into multiple files of at most CHUNK_SIZE URLs each —

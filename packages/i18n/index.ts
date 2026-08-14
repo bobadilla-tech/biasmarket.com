@@ -1,5 +1,7 @@
 import adminEn from "./en/admin.json" with { type: "json" };
 import adminEs from "./es/admin.json" with { type: "json" };
+import blogEn from "./en/blog.json" with { type: "json" };
+import blogEs from "./es/blog.json" with { type: "json" };
 import commonEn from "./en/common.json" with { type: "json" };
 import commonEs from "./es/common.json" with { type: "json" };
 import dashboardEn from "./en/dashboard.json" with { type: "json" };
@@ -18,6 +20,7 @@ import storefrontEs from "./es/storefront.json" with { type: "json" };
 const messages = {
   en: {
     admin: adminEn,
+    blog: blogEn,
     common: commonEn,
     forSellers: forSellersEn,
     landing: landingEn,
@@ -28,6 +31,7 @@ const messages = {
   },
   es: {
     admin: adminEs,
+    blog: blogEs,
     common: commonEs,
     forSellers: forSellersEs,
     landing: landingEs,

@@ -1,0 +1,13 @@
+{
+  "meta": {
+    "title": "Blog — Bias Market",
+    "description": "News, guides and everything about the K-pop world."
+  },
+  "title": "Biasmarket Blog",
+  "subtitle": "News, guides and everything about the K-pop world",
+  "readMore": "Read more",
+  "publishedOn": "Published {date}",
+  "backToBlog": "Back to blog",
+  "notFound": "Post not found",
+  "empty": "No posts yet."
+}

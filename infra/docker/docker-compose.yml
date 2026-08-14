@@ -21,7 +21,7 @@ services:
       - redis_data:/data
     command: sh -c 'redis-server --requirepass "$$REDIS_PASSWORD" --appendonly yes'
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep PONG"]
+      test: ["CMD-SHELL", 'redis-cli -a "$$REDIS_PASSWORD" ping | grep PONG']
       interval: 5s
       timeout: 5s
       retries: 5
@@ -64,13 +64,14 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: [
-        "CMD",
-        "node",
-        "/app/infra/docker/api-healthcheck.ts",
-        "3002",
-        "/health",
-      ]
+      test:
+        [
+          "CMD",
+          "node",
+          "/app/infra/docker/api-healthcheck.ts",
+          "3002",
+          "/health",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -83,6 +84,8 @@ services:
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
         NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN}
+        NEXT_PUBLIC_SANITY_PROJECT_ID: ${NEXT_PUBLIC_SANITY_PROJECT_ID}
+        NEXT_PUBLIC_SANITY_DATASET: ${NEXT_PUBLIC_SANITY_DATASET}
     restart: unless-stopped
     env_file: .env
     environment:

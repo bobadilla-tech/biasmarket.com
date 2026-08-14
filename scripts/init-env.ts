@@ -76,5 +76,5 @@ console.log(
   "Generated: POSTGRES_PASSWORD, DATABASE_URL, REDIS_PASSWORD, REDIS_URL, BETTER_AUTH_SECRET, CUSTOMER_ACCOUNT_TOKEN_SECRET, INTERNAL_JOBS_SECRET, MONITORING_WEBHOOK_SECRET, S3_ACCESS_KEY, S3_SECRET_KEY",
 );
 console.log(
-  "Still needs manual entry in infra/docker/.env: RESEND_API_KEY, RESEND_FROM_EMAIL (see infra/docker/.env.example comments)",
+  "Still needs manual entry in infra/docker/.env: RESEND_API_KEY, RESEND_FROM_EMAIL, SANITY_REVALIDATE_SECRET (see infra/docker/.env.example comments)",
 );

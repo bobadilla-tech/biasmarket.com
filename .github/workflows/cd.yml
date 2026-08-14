@@ -73,10 +73,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # NEXT_PUBLIC_API_URL/NEXT_PUBLIC_SENTRY_DSN are GitHub Variables, not
-      # Secrets (T8) — they're already public, baked into every shipped
-      # browser bundle. Harmless no-op build args for api/workers (unused
-      # ARGs, at most a benign buildx warning, never a failure).
+      # Public frontend-only values are GitHub Variables, not Secrets (T8) —
+      # they're already public, baked into every shipped browser bundle.
+      # Harmless no-op build args for api/workers (unused ARGs, at most a
+      # benign buildx warning, never a failure).
       - name: Build & push
         uses: docker/build-push-action@v6
         with:
@@ -89,6 +89,8 @@ jobs:
           build-args: |
             NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
             NEXT_PUBLIC_SENTRY_DSN=${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
+            NEXT_PUBLIC_SANITY_PROJECT_ID=${{ vars.NEXT_PUBLIC_SANITY_PROJECT_ID }}
+            NEXT_PUBLIC_SANITY_DATASET=${{ vars.NEXT_PUBLIC_SANITY_DATASET }}
         env:
           BUILDKIT_PROGRESS: plain
 

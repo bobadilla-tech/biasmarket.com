@@ -16,6 +16,7 @@ const nextConfig: NextConfig = {
       { protocol: "http", hostname: "localhost", port: "9000" },
       { protocol: "https", hostname: "cdn.biasmarket.com" },
       { protocol: "https", hostname: "placehold.co" },
+      { protocol: "https", hostname: "cdn.sanity.io" },
     ],
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
