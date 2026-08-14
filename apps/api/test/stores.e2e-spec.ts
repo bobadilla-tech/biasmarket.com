@@ -37,8 +37,7 @@ const storeWithOwnerSchema =
   openapi.components.schemas.StoreWithOwnerResponseDto;
 const publicStoreListingSchema =
   openapi.components.schemas.PublicStoreListingResponseDto;
-const sitemapStoreCountSchema =
-  openapi.components.schemas.SitemapStoreCountDto;
+const sitemapStoreCountSchema = openapi.components.schemas.SitemapStoreCountDto;
 const sitemapStorePageSchema = openapi.components.schemas.SitemapStorePageDto;
 const publicCollectionListingSchema =
   openapi.components.schemas.PublicCollectionListingResponseDto;
@@ -252,14 +251,22 @@ describe("stores + my-stores (e2e)", () => {
       .get("/stores/internal/sitemap/count")
       .set("X-Internal-Sitemap-Token", sitemapToken!)
       .expect(200);
-    assertMatchesSchema(countRes.body, sitemapStoreCountSchema, openapi.components);
+    assertMatchesSchema(
+      countRes.body,
+      sitemapStoreCountSchema,
+      openapi.components,
+    );
     expect(countRes.body.total).toBeGreaterThanOrEqual(1);
 
     const pageRes = await request(app.getHttpServer())
       .get("/stores/internal/sitemap?limit=1&offset=0")
       .set("X-Internal-Sitemap-Token", sitemapToken!)
       .expect(200);
-    assertMatchesSchema(pageRes.body, sitemapStorePageSchema, openapi.components);
+    assertMatchesSchema(
+      pageRes.body,
+      sitemapStorePageSchema,
+      openapi.components,
+    );
     expect(pageRes.body.items).toEqual([{ slug: expect.any(String) }]);
     expect(pageRes.body.total).toBe(countRes.body.total);
 

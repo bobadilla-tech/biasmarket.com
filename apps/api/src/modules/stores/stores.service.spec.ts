@@ -155,10 +155,12 @@ describe("StoresService", () => {
       prisma.store.findMany.mockResolvedValue([{ slug: "first" }]);
       prisma.store.count.mockResolvedValue(8);
 
-      await expect(service.findPublicSitemapPage(50_000, 100)).resolves.toEqual({
-        items: [{ slug: "first" }],
-        total: 8,
-      });
+      await expect(service.findPublicSitemapPage(50_000, 100)).resolves.toEqual(
+        {
+          items: [{ slug: "first" }],
+          total: 8,
+        },
+      );
       expect(prisma.store.findMany).toHaveBeenCalledWith({
         where: { isPublic: true },
         select: { slug: true },

@@ -20,7 +20,9 @@ export class SitemapInternalTokenGuard implements CanActivate {
     const provided = request.headers[SITEMAP_INTERNAL_TOKEN_HEADER];
     const expected = requiredEnv("SITEMAP_INTERNAL_TOKEN");
 
-    if (typeof provided !== "string" || !constantTimeEquals(provided, expected)) {
+    if (
+      typeof provided !== "string" || !constantTimeEquals(provided, expected)
+    ) {
       this.logger.warn(
         `Rejected sitemap request with invalid or missing ${SITEMAP_INTERNAL_TOKEN_HEADER}`,
       );

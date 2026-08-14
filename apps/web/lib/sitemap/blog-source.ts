@@ -8,7 +8,7 @@ import {
 import { CHUNK_SIZE } from "./constants";
 import { chunkEntityRange } from "./chunk-range";
 import { blogEntry } from "./urls";
-import { SitemapStaleChunkError, type SitemapSource } from "./types";
+import { type SitemapSource, SitemapStaleChunkError } from "./types";
 
 const FETCH_OPTIONS = {
   next: { tags: ["blog"], revalidate: 3600 },
@@ -49,7 +49,10 @@ export const blogSource: SitemapSource = {
       getCount(),
       requireClient().fetch<BlogSitemapPost[]>(
         POSTS_SITEMAP_PAGE_QUERY,
-        { start: range.entityOffset, end: range.entityOffset + range.entityLimit },
+        {
+          start: range.entityOffset,
+          end: range.entityOffset + range.entityLimit,
+        },
         FETCH_OPTIONS,
       ),
     ]);
@@ -74,8 +77,8 @@ export const blogSource: SitemapSource = {
 
     const entries: MetadataRoute.Sitemap = posts.flatMap((post) =>
       routing.locales.map((locale) =>
-        blogEntry(locale, post.slug.current, post._updatedAt),
-      ),
+        blogEntry(locale, post.slug.current, post._updatedAt)
+      )
     );
     return entries.slice(range.sliceStart, range.sliceEnd);
   },

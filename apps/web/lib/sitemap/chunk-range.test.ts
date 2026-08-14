@@ -35,6 +35,8 @@ describe("chunkEntityRange", () => {
     [0, 10, 0],
     [Number.MAX_SAFE_INTEGER, 50_000, 2],
   ])("rejects invalid range %j", (chunkId, chunkSize, locales) => {
-    expect(() => chunkEntityRange(chunkId, chunkSize, locales)).toThrow(RangeError);
+    expect(() => chunkEntityRange(chunkId, chunkSize, locales)).toThrow(
+      RangeError,
+    );
   });
 });

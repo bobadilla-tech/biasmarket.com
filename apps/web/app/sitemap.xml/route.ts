@@ -30,7 +30,9 @@ export async function GET() {
             count < 0 ||
             count > MAX_SITEMAP_INDEX_ENTRIES
           ) {
-            throw new Error(`Invalid ${source.id} sitemap chunk count: ${count}`);
+            throw new Error(
+              `Invalid ${source.id} sitemap chunk count: ${count}`,
+            );
           }
           return { source, count };
         } catch (error) {
@@ -47,7 +49,7 @@ export async function GET() {
       Array.from(
         { length: count },
         (_, chunkId) => `${SITE_URL}/sitemap-${source.id}-${chunkId}.xml`,
-      ),
+      )
     );
     const xml = serializeSitemapIndexXml(urls);
 

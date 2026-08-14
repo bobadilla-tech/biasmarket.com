@@ -10,12 +10,16 @@ function parseSafeInteger(
   value: string | undefined,
 ): number {
   if (value === undefined || !INTEGER_PATTERN.test(value)) {
-    throw new BadRequestException(`${name} must be a safe non-negative integer`);
+    throw new BadRequestException(
+      `${name} must be a safe non-negative integer`,
+    );
   }
 
   const parsed = Number(value);
   if (!Number.isSafeInteger(parsed)) {
-    throw new BadRequestException(`${name} must be a safe non-negative integer`);
+    throw new BadRequestException(
+      `${name} must be a safe non-negative integer`,
+    );
   }
   return parsed;
 }

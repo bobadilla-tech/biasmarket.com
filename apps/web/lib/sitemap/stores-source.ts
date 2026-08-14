@@ -3,7 +3,7 @@ import { routing } from "@/i18n/routing";
 import { CHUNK_SIZE } from "./constants";
 import { chunkEntityRange } from "./chunk-range";
 import { storeEntry } from "./urls";
-import { SitemapStaleChunkError, type SitemapSource } from "./types";
+import { type SitemapSource, SitemapStaleChunkError } from "./types";
 
 const SITEMAP_INTERNAL_TOKEN_HEADER = "x-internal-sitemap-token";
 
@@ -32,7 +32,9 @@ async function fetchSitemapJson<T>(path: string): Promise<T> {
     headers: { [SITEMAP_INTERNAL_TOKEN_HEADER]: token() },
   });
   if (!response.ok) {
-    throw new Error(`Sitemap stores API returned ${response.status} for ${path}`);
+    throw new Error(
+      `Sitemap stores API returned ${response.status} for ${path}`,
+    );
   }
   return response.json() as Promise<T>;
 }
@@ -60,7 +62,9 @@ function parsePage(value: unknown): SitemapPage {
     typeof page.total !== "number" ||
     !Number.isSafeInteger(page.total) ||
     page.total < 0 ||
-    page.items.some((item) => !item || typeof item.slug !== "string" || !item.slug)
+    page.items.some((item) =>
+      !item || typeof item.slug !== "string" || !item.slug
+    )
   ) {
     throw new Error("Invalid stores sitemap page envelope");
   }
@@ -75,7 +79,9 @@ const localeCount = routing.locales.length;
 export const storesSource: SitemapSource = {
   id: "stores",
   async getChunkCount() {
-    const response = await fetchSitemapJson<SitemapCount>("internal/sitemap/count");
+    const response = await fetchSitemapJson<SitemapCount>(
+      "internal/sitemap/count",
+    );
     return Math.ceil((parseCount(response) * localeCount) / CHUNK_SIZE);
   },
   async getChunk(chunkId) {
@@ -87,13 +93,15 @@ export const storesSource: SitemapSource = {
     const page = parsePage(
       await fetchSitemapJson<SitemapPage>(`internal/sitemap?${query}`),
     );
-    const currentChunkCount = Math.ceil((page.total * localeCount) / CHUNK_SIZE);
+    const currentChunkCount = Math.ceil(
+      (page.total * localeCount) / CHUNK_SIZE,
+    );
     if (chunkId >= currentChunkCount) {
       throw new SitemapStaleChunkError("stores", chunkId);
     }
 
     const entries: MetadataRoute.Sitemap = page.items.flatMap(({ slug }) =>
-      routing.locales.map((locale) => storeEntry(locale, slug)),
+      routing.locales.map((locale) => storeEntry(locale, slug))
     );
     return entries.slice(pageSize.sliceStart, pageSize.sliceEnd);
   },

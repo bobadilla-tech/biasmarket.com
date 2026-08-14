@@ -47,7 +47,9 @@ function assertSerializedSize(xml: string, label: string): string {
 // Mirrors Next's sitemap metadata serializer for the fields used by the app.
 export function serializeSitemapXml(entries: MetadataRoute.Sitemap): string {
   if (entries.length > CHUNK_SIZE) {
-    throw new SitemapOutputError(`A sitemap child cannot contain more than ${CHUNK_SIZE} URLs`);
+    throw new SitemapOutputError(
+      `A sitemap child cannot contain more than ${CHUNK_SIZE} URLs`,
+    );
   }
 
   const hasAlternates = entries.some(
@@ -69,15 +71,16 @@ export function serializeSitemapXml(entries: MetadataRoute.Sitemap): string {
     if (languages) {
       for (const [lang, href] of Object.entries(languages)) {
         if (!href) continue;
-        xml += `<xhtml:link rel="alternate" hreflang="${escapeXml(lang)}" href="${escapeXml(href)}" />\n`;
+        xml += `<xhtml:link rel="alternate" hreflang="${
+          escapeXml(lang)
+        }" href="${escapeXml(href)}" />\n`;
       }
     }
 
     if (entry.lastModified) {
-      const serialized =
-        entry.lastModified instanceof Date
-          ? entry.lastModified.toISOString()
-          : entry.lastModified;
+      const serialized = entry.lastModified instanceof Date
+        ? entry.lastModified.toISOString()
+        : entry.lastModified;
       xml += `<lastmod>${escapeXml(serialized)}</lastmod>\n`;
     }
     if (entry.changeFrequency) {

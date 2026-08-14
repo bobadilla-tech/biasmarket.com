@@ -8,9 +8,15 @@ describe("static sitemap source", () => {
     expect(await staticSource.getChunkCount()).toBe(1);
     const entries = await staticSource.getChunk(0);
     expect(entries).toHaveLength(STATIC_PATHS.length * routing.locales.length);
-    expect(entries.map((entry) => entry.url)).toContain("https://biasmarket.com/es/contact");
-    expect(entries.map((entry) => entry.url)).toContain("https://biasmarket.com/en/for-sellers");
-    expect(entries.map((entry) => entry.url)).not.toContain("https://biasmarket.com/es/search");
+    expect(entries.map((entry) => entry.url)).toContain(
+      "https://biasmarket.com/es/contact",
+    );
+    expect(entries.map((entry) => entry.url)).toContain(
+      "https://biasmarket.com/en/for-sellers",
+    );
+    expect(entries.map((entry) => entry.url)).not.toContain(
+      "https://biasmarket.com/es/search",
+    );
   });
 
   it("never emits an out-of-range fixed chunk", async () => {

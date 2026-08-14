@@ -6,8 +6,7 @@ import { StoreLogo } from "@/components/store-logo";
 import { ProductDetailView } from "./product-detail-view";
 
 async function getPublicProduct(slug: string, productId: string) {
-  const apiUrl =
-    process.env.INTERNAL_API_URL ??
+  const apiUrl = process.env.INTERNAL_API_URL ??
     process.env.NEXT_PUBLIC_API_URL ??
     (process.env.NODE_ENV === "development"
       ? "http://localhost:3000"

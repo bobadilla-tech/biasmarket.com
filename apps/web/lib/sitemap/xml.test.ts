@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("./constants", async () => {
-  const actual = await vi.importActual<typeof import("./constants")>("./constants");
+  const actual = await vi.importActual<typeof import("./constants")>(
+    "./constants",
+  );
   return { ...actual, MAX_SITEMAP_BYTES: 10_000 };
 });
 
@@ -32,8 +34,9 @@ describe("sitemap XML serializers", () => {
     expect(() => serializeSitemapXml(entries)).toThrow(SitemapOutputError);
     expect(() =>
       serializeSitemapIndexXml(
-        Array.from({ length: CHUNK_SIZE + 1 }, (_, i) => `https://example.com/${i}`),
-      ),
+        Array.from({ length: CHUNK_SIZE + 1 }, (_, i) =>
+          `https://example.com/${i}`),
+      )
     ).toThrow(SitemapOutputError);
   });
 
@@ -46,10 +49,10 @@ describe("sitemap XML serializers", () => {
   it("enforces the UTF-8 byte limit at runtime", () => {
     const oversizedPath = "x".repeat(MAX_SITEMAP_BYTES);
     expect(() =>
-      serializeSitemapXml([{ url: `https://example.com/${oversizedPath}` }]),
+      serializeSitemapXml([{ url: `https://example.com/${oversizedPath}` }])
     ).toThrow(SitemapOutputError);
     expect(() =>
-      serializeSitemapIndexXml([`https://example.com/${oversizedPath}`]),
+      serializeSitemapIndexXml([`https://example.com/${oversizedPath}`])
     ).toThrow(SitemapOutputError);
   });
 });

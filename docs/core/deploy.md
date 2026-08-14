@@ -51,6 +51,11 @@ for Docker health, runs direct smoke tests, canary-switches Caddy, checks the
 public domains, and then commits the new color as live. The previous color
 remains available for the rollback window.
 
+Before doing any migration, it verifies that no retired uncolored `api`, `web`,
+or `workers` containers are running and that the shared services are attached to
+the `biasmarket_stack` network. A topology mismatch stops the deployment with
+the current live color untouched.
+
 Useful supervised operations:
 
 ```bash

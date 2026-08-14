@@ -20,10 +20,11 @@ looks wrong that the deploy's own automated smoke tests didn't catch:
 Health-checks the sidelined color **before** flipping traffic back to it —
 refuses loudly instead of blindly restoring service to something that silently
 degraded while benched. If it refuses, the sidelined color itself needs manual
-attention (check its logs: `IMAGE_TAG="$(cat state/current_sha)" docker compose
---env-file env/shared.env logs api-<color>` from
-`/opt/biasmarket`) before a rollback is possible; at that point you're choosing
-between fixing the sidelined color or rolling forward with another
+attention (check its logs:
+`IMAGE_TAG="$(cat state/current_sha)" docker compose
+--env-file env/shared.env logs api-<color>`
+from `/opt/biasmarket`) before a rollback is possible; at that point you're
+choosing between fixing the sidelined color or rolling forward with another
 `deploy.sh <sha>` deploy.
 
 Rollback does **not** undo an already-applied database migration — Prisma
@@ -52,8 +53,8 @@ On this alert: SSH to the VPS, check `state/deploy.lock.meta` (who/what was
 running and at what phase) and `state/migration_pending`'s contents (which
 SHA/color), then
 `IMAGE_TAG="$(cat state/current_sha)" docker compose --env-file env/shared.env
-logs api-<candidate-color>` from
-`/opt/biasmarket` to see what actually happened. Do not blindly re-run
+logs api-<candidate-color>`
+from `/opt/biasmarket` to see what actually happened. Do not blindly re-run
 `deploy.sh <sha>` against a stuck lock — check `state/deploy.lock.meta` first;
 if the previous process is genuinely dead (not just slow), the flock releases on
 its own once that process's file descriptor closes.
@@ -89,9 +90,11 @@ Every critical surface has an external and an internal monitor. Check both
 before doing anything else:
 
 - **External down, internal up** → Caddy/DNS/TLS problem. From
-  `/opt/biasmarket`, check `IMAGE_TAG="$(cat state/current_sha)" docker compose
-  --env-file env/shared.env logs caddy`, confirm DNS still
-  resolves (`dig +short api.biasmarket.com`), and check for an expired cert.
+  `/opt/biasmarket`, check
+  `IMAGE_TAG="$(cat state/current_sha)" docker compose
+  --env-file env/shared.env logs caddy`,
+  confirm DNS still resolves (`dig +short api.biasmarket.com`), and check for an
+  expired cert.
 - **Both down** → the app itself. Go straight to the common fixes below.
 - **DB down** → almost always cascades into both API monitors going down too;
   fix DB first.

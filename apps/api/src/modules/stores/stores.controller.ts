@@ -19,7 +19,12 @@ import {
   Session,
 } from "@thallesp/nestjs-better-auth";
 import type { UserSession } from "@thallesp/nestjs-better-auth";
-import { ApiConsumes, ApiHeader, ApiOkResponse, ApiQuery } from "@nestjs/swagger";
+import {
+  ApiConsumes,
+  ApiHeader,
+  ApiOkResponse,
+  ApiQuery,
+} from "@nestjs/swagger";
 import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
 import { StoresService } from "./stores.service.js";
 import { UpdateStoreDto } from "./dto/update-store.dto.js";

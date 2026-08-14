@@ -7,7 +7,7 @@ import { SitemapFixedChunkOutOfRangeError, type SitemapSource } from "./types";
 
 function entries(): MetadataRoute.Sitemap {
   return STATIC_PATHS.flatMap((path) =>
-    routing.locales.map((locale) => staticEntry(locale, path)),
+    routing.locales.map((locale) => staticEntry(locale, path))
   );
 }
 
@@ -17,7 +17,9 @@ function chunkCount(): number {
 
 export const staticSource: SitemapSource = {
   id: "static",
-  async getChunkCount() { return chunkCount(); },
+  async getChunkCount() {
+    return chunkCount();
+  },
   async getChunk(chunkId) {
     const count = chunkCount();
     if (!Number.isSafeInteger(chunkId) || chunkId < 0 || chunkId >= count) {

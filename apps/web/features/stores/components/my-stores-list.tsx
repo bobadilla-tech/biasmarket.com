@@ -50,15 +50,17 @@ export function MyStoresList() {
         </div>
       </CardHeader>
       <CardContent className="space-y-3 px-5 pb-5">
-        {isPending ? (
-          <p className="text-sm text-white/70">{tCommon("loading")}</p>
-        ) : null}
+        {isPending
+          ? <p className="text-sm text-white/70">{tCommon("loading")}</p>
+          : null}
 
-        {!isPending && stores.length === 0 ? (
-          <div className="rounded-[22px] border border-dashed border-white/14 bg-white/5 p-4 text-sm text-white/68">
-            {t("empty")}
-          </div>
-        ) : null}
+        {!isPending && stores.length === 0
+          ? (
+            <div className="rounded-[22px] border border-dashed border-white/14 bg-white/5 p-4 text-sm text-white/68">
+              {t("empty")}
+            </div>
+          )
+          : null}
 
         {stores.map((store) => (
           <Card
