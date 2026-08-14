@@ -39,6 +39,8 @@ source "$ROOT_DIR/lib/health.sh"
 source "$ROOT_DIR/lib/smoke.sh"
 # shellcheck source=lib/migrate.sh
 source "$ROOT_DIR/lib/migrate.sh"
+# shellcheck source=lib/cleanup_schedule.sh
+source "$ROOT_DIR/lib/cleanup_schedule.sh"
 
 HEALTH_TIMEOUT_SECONDS=120
 CANARY_WEIGHT=1        # out of 10, i.e. candidate gets 10% during the hold
@@ -223,6 +225,18 @@ cmd_deploy() {
   atomic_write "$CURRENT_SHA_FILE" "$sha"
   atomic_write "$ROLLBACK_TARGET_FILE" "$current_color"
   phase "state_committed"
+
+  # Server-side 30-minute cleanup delay, replacing cd.yml's old `sleep
+  # 1800` runner-side wait — see
+  # docs/plans/2026-08-10-server-side-cleanup-scheduling-plan.md decisions
+  # 1, 3, 5. Both guarded: a failure here (e.g. disk full) must never turn
+  # this already-successful cutover into a reported deploy failure — the
+  # trailing `|| true` is required, not decorative (decision 5): without
+  # it, a double-failure (both the call AND log_warn's own printf failing,
+  # e.g. on the same full disk) would abort this function under set -e
+  # before append_history's success line below ever runs.
+  cancel_scheduled_cleanup || log_warn "Failed to cancel a previously scheduled cleanup — it may fire redundantly later; cmd_cleanup's own idempotent guards make this safe, not silently wrong." || true
+  schedule_cleanup || log_warn "Failed to schedule automatic cleanup — old color ($current_color) must be cleaned up manually via deploy.sh --cleanup." || true
 
   append_history "deploy sha=$sha color=$candidate_color outcome=success previous_color=$current_color"
   log_info "Deploy complete. Live color=$candidate_color sha=$sha."

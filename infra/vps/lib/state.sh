@@ -20,6 +20,9 @@ LOCK_FILE="$STATE_DIR/deploy.lock"
 LOCK_META_FILE="$STATE_DIR/deploy.lock.meta"
 SHARED_ENV_CHECKSUM_FILE="$STATE_DIR/shared_env.sha256"
 HISTORY_LOG="$RELEASES_DIR/history.log"
+SCHEDULED_CLEANUP_PID_FILE="$STATE_DIR/scheduled_cleanup.pid"
+SCHEDULED_CLEANUP_META_FILE="$STATE_DIR/scheduled_cleanup.meta"
+SCHEDULED_CLEANUP_LOG_FILE="$STATE_DIR/scheduled_cleanup.log"
 
 mkdir -p "$STATE_DIR" "$RELEASES_DIR"
 
