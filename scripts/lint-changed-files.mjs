@@ -81,7 +81,9 @@ for (const file of files) {
 
 if (write) {
   console.log(
-    `Prettier: formatted ${formattedCount} of ${files.length} changed file(s)${pkgDir ? ` in ${pkgDir}` : ""}.`,
+    `Prettier: formatted ${formattedCount} of ${files.length} changed file(s)${
+      pkgDir ? ` in ${pkgDir}` : ""
+    }.`,
   );
 } else if (failing.length > 0) {
   console.error(
