@@ -5,9 +5,9 @@ import {schemaTypes} from './schemaTypes'
 
 export default defineConfig({
   name: 'default',
-  title: 'project-cerise-globe',
+  title: 'biasmarket-blog',
 
-  projectId: 'n5geyqv5',
+  projectId: '4uy4cjfe',
   dataset: 'production',
 
   plugins: [structureTool(), visionTool()],
