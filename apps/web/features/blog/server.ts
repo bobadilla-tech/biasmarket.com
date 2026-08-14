@@ -1,31 +1,15 @@
 import { cache } from "react";
-import type { PortableTextBlock } from "next-sanity";
 import { client } from "@/features/blog/lib/sanity";
 import { POSTS_QUERY, POST_QUERY } from "@/features/blog/lib/sanity-queries";
+import {
+  blogPostSchema,
+  blogPostSummarySchema,
+  type BlogPost,
+  type BlogPostSummary,
+} from "./schemas/post.schema";
 
-export interface BlogPostSummary {
-  _id: string;
-  title: string;
-  slug: { current: string };
-  _createdAt: string;
-  excerpt: string;
-}
+export type { BlogPost, BlogPostSummary } from "./schemas/post.schema";
 
-export interface BlogPost {
-  _id: string;
-  title: string;
-  slug: { current: string };
-  body: PortableTextBlock[];
-  _createdAt: string;
-  _updatedAt: string;
-  excerpt: string;
-}
-
-// Time-based ISR as a safety net plus the "blog" tag for the Sanity webhook
-// (app/api/revalidate) to invalidate on publish/update/delete. Both fetches
-// swallow errors and degrade to empty/null so blog pages (and the build-time
-// generateStaticParams) still render when Sanity is unreachable — same posture
-// as getHomeDiscoveryData on the landing page.
 const FETCH_OPTIONS = {
   next: { tags: ["blog"], revalidate: 300 },
 };
@@ -33,7 +17,9 @@ const FETCH_OPTIONS = {
 export const getBlogPosts = cache(async (): Promise<BlogPostSummary[]> => {
   if (!client) return [];
   try {
-    return await client.fetch(POSTS_QUERY, {}, FETCH_OPTIONS);
+    const data = await client.fetch(POSTS_QUERY, {}, FETCH_OPTIONS);
+    const parsed = blogPostSummarySchema.array().safeParse(data);
+    return parsed.success ? parsed.data : [];
   } catch {
     return [];
   }
@@ -43,7 +29,10 @@ export const getBlogPost = cache(
   async (slug: string): Promise<BlogPost | null> => {
     if (!client) return null;
     try {
-      return await client.fetch(POST_QUERY, { slug }, FETCH_OPTIONS);
+      const data = await client.fetch(POST_QUERY, { slug }, FETCH_OPTIONS);
+      if (!data) return null;
+      const parsed = blogPostSchema.safeParse(data);
+      return parsed.success ? parsed.data : null;
     } catch {
       return null;
     }
