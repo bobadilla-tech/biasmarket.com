@@ -112,11 +112,11 @@ reconcile_state_with_reality() {
 }
 
 # Owns the env/shared.env checksum assertion on every invocation — an
-# accidental future regeneration (e.g. someone runs `pnpm env:init --prod`
-# against this file by mistake) fails loud immediately instead of only
+# accidental unreviewed regeneration of this file fails loudly immediately
+# instead of only
 # being caught once. First run with no recorded baseline records one.
 assert_shared_env_checksum() {
-  [[ -f "$ENV_DIR/shared.env" ]] || die "env/shared.env is missing — copy it from a real production infra/docker/.env first, see env/shared.env.example."
+  [[ -f "$ENV_DIR/shared.env" ]] || die "env/shared.env is missing — provision the reviewed production secrets first, see env/shared.env.example."
   local actual
   actual="$(sha256sum "$ENV_DIR/shared.env" | cut -d' ' -f1)"
   if [[ ! -f "$SHARED_ENV_CHECKSUM_FILE" ]]; then
@@ -127,7 +127,7 @@ assert_shared_env_checksum() {
   local expected
   expected="$(cat "$SHARED_ENV_CHECKSUM_FILE")"
   if [[ "$actual" != "$expected" ]]; then
-    die "env/shared.env checksum mismatch (expected $expected, got $actual). It changed since the last recorded baseline. NEVER regenerate this file via 'pnpm env:init --prod' — see env/shared.env.example. If this is a reviewed, intentional secret rotation, update state/shared_env.sha256 by hand after confirming the new value, then re-run. Refusing to deploy."
+    die "env/shared.env checksum mismatch (expected $expected, got $actual). It changed since the last recorded baseline. If this is a reviewed, intentional secret rotation, update state/shared_env.sha256 by hand after confirming the new value, then re-run. Refusing to deploy."
   fi
 }
 
@@ -345,8 +345,8 @@ cmd_cleanup() {
   # caller (the self-scheduled fire, which by construction only ever fires
   # at/after the window anyway, or the fallback cron) invoked --cleanup.
   # A missing set_at file (state from before this check existed) is treated
-  # as old enough to clean up, matching this function's pre-existing
-  # unconditional behavior for that legacy case.
+  # as old enough to clean up, preserving compatibility with state created
+  # before the age-check file existed.
   local set_at now age
   set_at="$(state_read "$ROLLBACK_TARGET_SET_AT_FILE")"
   if [[ -n "$set_at" ]]; then

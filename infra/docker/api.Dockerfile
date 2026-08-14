@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1
 #
-# Single Dockerfile for api, dev and prod share the `base`/`deps` stages.
-# docker-compose.dev.yml builds target `dev`, docker-compose.yml (prod)
-# builds the default final target `runtime`.
+# Single Dockerfile for api, dev and blue/green production share the
+# `base`/`deps` stages. docker-compose.dev.yml builds target `dev`; the VPS
+# blue/green stack builds the default final target `runtime`.
 
 # node:26-slim no longer bundles corepack, install it pinned (not @latest)
 # so pnpm resolution is reproducible across builds.
@@ -12,7 +12,8 @@ ENV COREPACK_HOME=/usr/local/share/corepack \
 RUN npm install -g corepack@0.35.0 && corepack enable && corepack prepare pnpm@10.11.0 --activate
 WORKDIR /app
 # Kept at its repo-relative path so it resolves the same way whether it got
-# here via this COPY (prod) or the docker-compose.dev.yml bind mount (dev).
+# here via this COPY (production) or the docker-compose.dev.yml bind mount
+# (dev).
 COPY infra/docker/api-healthcheck.ts ./infra/docker/api-healthcheck.ts
 
 # ---------------------------------------------------------------------------
@@ -95,12 +96,8 @@ COPY --from=build --chown=nestjs:nestjs /app/pnpm-workspace.yaml ./pnpm-workspac
 
 USER nestjs
 EXPOSE 3000
-# Migrations do NOT run here, on any stack that builds this image.
-# infra/docker/docker-compose.yml (local/pre-cutover prod) needs a manual
-# `prisma migrate deploy` run after pulling in a new migration — see
-# docs/core/deploy.md's note on this. infra/vps/ (blue/green prod) runs it
-# as its own explicit, logged deploy.sh phase against the candidate image
-# BEFORE starting this container — see docs/core/blue-green-migrations.md —
-# so migrations there are gated by health checks/smoke tests, not tied to
-# every container start.
+# Migrations do NOT run here. The VPS blue/green deploy runs them as its own
+# explicit, logged deploy.sh phase against the candidate image BEFORE starting
+# this container — see docs/core/blue-green-migrations.md — so migrations are
+# gated by health checks/smoke tests, not tied to every container start.
 CMD ["node", "apps/api/dist/main.js"]
