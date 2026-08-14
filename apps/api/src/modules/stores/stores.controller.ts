@@ -92,6 +92,7 @@ interface SectionRow {
   collectionId: string | null;
   content: unknown;
   position: number;
+  hidden: boolean;
   createdAt: Date;
   collection:
     | {

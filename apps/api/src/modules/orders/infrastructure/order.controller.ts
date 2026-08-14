@@ -126,6 +126,7 @@ export interface OrderRow {
   id: string;
   storeId: string;
   customerId: string | null;
+  buyerAccountId: string | null;
   customerEmail: string | null;
   customerPhone: string;
   customerName: string | null;
@@ -159,6 +160,7 @@ interface OrderStatusRow {
   id: string;
   storeId: string;
   customerId: string | null;
+  buyerAccountId: string | null;
   customerEmail: string | null;
   customerPhone: string;
   customerName: string | null;

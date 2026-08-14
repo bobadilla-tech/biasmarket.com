@@ -39,6 +39,7 @@ interface CheckoutOrderRow {
   id: string;
   storeId: string;
   customerId: string | null;
+  buyerAccountId: string | null;
   customerEmail: string | null;
   customerPhone: string;
   customerName: string | null;

@@ -141,6 +141,9 @@ describe("customer account + customer auth (e2e)", () => {
       await prisma.customer.deleteMany({ where: { id: customerId } });
     }
     if (productId) {
+      await prisma.orderPayment.deleteMany({ where: { storeId } });
+      await prisma.orderItem.deleteMany({ where: { storeId } });
+      await prisma.order.deleteMany({ where: { storeId } });
       await prisma.productVariant.deleteMany({ where: { productId } });
       await prisma.product.deleteMany({ where: { id: productId } });
     }
@@ -150,6 +153,9 @@ describe("customer account + customer auth (e2e)", () => {
       await prisma.order.deleteMany({ where: { id: orderBId } });
     }
     if (productBId) {
+      await prisma.orderPayment.deleteMany({ where: { storeId: storeBId! } });
+      await prisma.orderItem.deleteMany({ where: { storeId: storeBId! } });
+      await prisma.order.deleteMany({ where: { storeId: storeBId! } });
       await prisma.productVariant.deleteMany({
         where: { productId: productBId },
       });

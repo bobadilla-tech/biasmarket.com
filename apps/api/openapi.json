@@ -4722,6 +4722,9 @@
           "position": {
             "type": "number"
           },
+          "hidden": {
+            "type": "boolean"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -4743,6 +4746,7 @@
           "collectionId",
           "content",
           "position",
+          "hidden",
           "createdAt",
           "collection"
         ]
@@ -5815,6 +5819,10 @@
             "type": "string",
             "nullable": true
           },
+          "buyerAccountId": {
+            "type": "string",
+            "nullable": true
+          },
           "customerEmail": {
             "type": "string",
             "nullable": true
@@ -5961,6 +5969,7 @@
           "id",
           "storeId",
           "customerId",
+          "buyerAccountId",
           "customerEmail",
           "customerPhone",
           "customerName",
@@ -6003,6 +6012,10 @@
             "type": "string",
             "nullable": true
           },
+          "buyerAccountId": {
+            "type": "string",
+            "nullable": true
+          },
           "customerEmail": {
             "type": "string",
             "nullable": true
@@ -6149,6 +6162,7 @@
           "id",
           "storeId",
           "customerId",
+          "buyerAccountId",
           "customerEmail",
           "customerPhone",
           "customerName",
@@ -6210,6 +6224,10 @@
             "type": "string",
             "nullable": true
           },
+          "buyerAccountId": {
+            "type": "string",
+            "nullable": true
+          },
           "customerEmail": {
             "type": "string",
             "nullable": true
@@ -6335,6 +6353,7 @@
           "id",
           "storeId",
           "customerId",
+          "buyerAccountId",
           "customerEmail",
           "customerPhone",
           "customerName",
@@ -6580,6 +6599,10 @@
             "type": "string",
             "nullable": true
           },
+          "buyerAccountId": {
+            "type": "string",
+            "nullable": true
+          },
           "customerEmail": {
             "type": "string",
             "nullable": true
@@ -6711,6 +6734,7 @@
           "id",
           "storeId",
           "customerId",
+          "buyerAccountId",
           "customerEmail",
           "customerPhone",
           "customerName",

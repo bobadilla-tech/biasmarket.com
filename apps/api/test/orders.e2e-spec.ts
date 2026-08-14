@@ -54,6 +54,12 @@ describe("orders + checkout (e2e)", () => {
 
   const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const email = `orders-e2e-${runId}@example.com`;
+  let checkoutIpCounter = 0;
+
+  function nextCheckoutIp(): string {
+    checkoutIpCounter += 1;
+    return `198.51.100.${checkoutIpCounter}`;
+  }
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -61,6 +67,9 @@ describe("orders + checkout (e2e)", () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    // Keep each independent attempt below the production checkout limit while
+    // preserving the real throttler in this contract suite.
+    app.getHttpAdapter().getInstance().set("trust proxy", true);
     await app.init();
     prisma = moduleFixture.get(PrismaService);
     storage = moduleFixture.get(StorageService);
@@ -146,6 +155,13 @@ describe("orders + checkout (e2e)", () => {
       await prisma.order.deleteMany({ where: { id: { in: orderIds } } });
     }
     if (productId) {
+      // A failed assertion or a checkout that completed before the test saw
+      // its response can leave an order outside `orderIds`. Clear every
+      // dependent row for this isolated store before deleting its products;
+      // OrderItem.productId is RESTRICT by design.
+      await prisma.orderPayment.deleteMany({ where: { storeId } });
+      await prisma.orderItem.deleteMany({ where: { storeId } });
+      await prisma.order.deleteMany({ where: { storeId } });
       await prisma.productVariant.deleteMany({ where: { productId } });
       await prisma.product.deleteMany({ where: { id: productId } });
     }
@@ -170,6 +186,7 @@ describe("orders + checkout (e2e)", () => {
     let req = request(app.getHttpServer()).post(
       `/stores/${storeSlug}/checkout`,
     );
+    req = req.set("X-Forwarded-For", nextCheckoutIp());
     req = req.field("deliveryMethodType", "PICKUP");
     req = req.field("customerPhone", customerPhone);
     req = req.field(
@@ -305,6 +322,7 @@ describe("orders + checkout (e2e)", () => {
   it("checkout -> review approve with zero payments registered 400s", async () => {
     const checkoutRes = await request(app.getHttpServer())
       .post(`/stores/${storeSlug}/checkout`)
+      .set("X-Forwarded-For", nextCheckoutIp())
       .field("deliveryMethodType", "PICKUP")
       .field("customerPhone", "+51966666666")
       .field(
@@ -349,6 +367,7 @@ describe("orders + checkout (e2e)", () => {
   it("checkout COURIER without shippingAddress 400s", async () => {
     await request(app.getHttpServer())
       .post(`/stores/${storeSlug}/checkout`)
+      .set("X-Forwarded-For", nextCheckoutIp())
       .field("deliveryMethodType", "COURIER")
       .field("customerPhone", "+51955555511")
       .field(
@@ -371,6 +390,7 @@ describe("orders + checkout (e2e)", () => {
     };
     const checkoutRes = await request(app.getHttpServer())
       .post(`/stores/${storeSlug}/checkout`)
+      .set("X-Forwarded-For", nextCheckoutIp())
       .field("deliveryMethodType", "COURIER")
       .field("customerPhone", "+51955555522")
       .field(
@@ -418,6 +438,7 @@ describe("orders + checkout (e2e)", () => {
 
     const checkoutRes = await request(app.getHttpServer())
       .post(`/stores/${storeSlug}/checkout`)
+      .set("X-Forwarded-For", nextCheckoutIp())
       .field("deliveryMethodType", "PICKUP")
       .field("customerPhone", "+51955555555")
       .field(
@@ -518,6 +539,7 @@ describe("orders + checkout (e2e)", () => {
   it("checkout with a manual payment method but no proof 400s", async () => {
     const res = await request(app.getHttpServer())
       .post(`/stores/${storeSlug}/checkout`)
+      .set("X-Forwarded-For", nextCheckoutIp())
       .field("deliveryMethodType", "PICKUP")
       .field("customerPhone", "+51988888886")
       .field("paymentMethod", "PLIN")
@@ -534,6 +556,7 @@ describe("orders + checkout (e2e)", () => {
   it("checkout with a proof in an unsupported format 400s", async () => {
     const res = await request(app.getHttpServer())
       .post(`/stores/${storeSlug}/checkout`)
+      .set("X-Forwarded-For", nextCheckoutIp())
       .field("deliveryMethodType", "PICKUP")
       .field("customerPhone", "+51988888885")
       .field("paymentMethod", "YAPE")
@@ -554,6 +577,7 @@ describe("orders + checkout (e2e)", () => {
     oversized[1] = 0xd8;
     const res = await request(app.getHttpServer())
       .post(`/stores/${storeSlug}/checkout`)
+      .set("X-Forwarded-For", nextCheckoutIp())
       .field("deliveryMethodType", "PICKUP")
       .field("customerPhone", "+51988888884")
       .field("paymentMethod", "YAPE")
@@ -610,6 +634,7 @@ describe("orders + checkout (e2e)", () => {
     const attemptCheckout = (customerPhone: string) =>
       request(app.getHttpServer())
         .post(`/stores/${storeSlug}/checkout`)
+        .set("X-Forwarded-For", nextCheckoutIp())
         .field("deliveryMethodType", "PICKUP")
         .field("customerPhone", customerPhone)
         .field(
