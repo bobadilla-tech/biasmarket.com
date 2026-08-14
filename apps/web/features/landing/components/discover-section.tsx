@@ -29,14 +29,14 @@ export function DiscoverSection({
       <div className="mt-6 grid grid-cols-2 gap-3 sm:mt-8 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
         {loading || error || products.length === 0
           ? PLACEHOLDER_KEYS.map((key) => (
-            <div
-              key={key}
-              className="aspect-[3/4] w-full rounded-[10px] border border-landing-graphite bg-white"
-            />
-          ))
+              <div
+                key={key}
+                className="aspect-[3/4] w-full rounded-[10px] border border-landing-graphite bg-white"
+              />
+            ))
           : products.map((product) => (
-            <ProductGridCard key={product.id} product={product} />
-          ))}
+              <ProductGridCard key={product.id} product={product} />
+            ))}
       </div>
 
       <div className="mt-8 flex justify-center sm:mt-10">
