@@ -5,21 +5,25 @@ import { adminCouponsApi } from "../api/admin-coupons.api";
 import { adminCouponsKeys } from "../queries/use-admin-coupons";
 import type { CouponFormValues } from "../schemas/coupon.schema";
 
-export function useCreateCoupon(fallbackErrorMessage?: string) {
+export function useUpdateCoupon(fallbackErrorMessage?: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (values: CouponFormValues) =>
-      adminCouponsApi.create(
+    mutationFn: ({
+      couponId,
+      values,
+    }: {
+      couponId: string;
+      values: CouponFormValues;
+    }) =>
+      adminCouponsApi.update(
+        couponId,
         {
-          code: values.code.toUpperCase(),
+          code: values.code,
           name: values.name,
           description: values.description || undefined,
-          durationDays: 30,
-          maxUses: values.maxUses,
           startsAt: values.startsAt || undefined,
           expiresAt: values.expiresAt || undefined,
-          isActive: true,
         },
         fallbackErrorMessage,
       ),

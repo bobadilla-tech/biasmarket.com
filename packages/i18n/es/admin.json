@@ -77,8 +77,8 @@
       "description": "Descripción",
       "durationDays": "Duración (días)",
       "maxUses": "Máximo de usos",
-      "startsAt": "Comienza el",
-      "expiresAt": "Caduca el",
+      "startsAt": "Fecha de inicio",
+      "expiresAt": "Fecha de fin",
       "active": "Activo",
       "submit": "Crear cupón"
     },
@@ -93,7 +93,8 @@
     },
     "status": {
       "active": "Activo",
-      "inactive": "Inactivo"
+      "inactive": "Inactivo",
+      "expired": "Vencido"
     },
     "redemptions": {
       "title": "Canjes",

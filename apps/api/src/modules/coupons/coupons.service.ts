@@ -3,65 +3,61 @@ import {
   Injectable,
   NotFoundException,
   UnauthorizedException,
-} from "@nestjs/common";
-import type { UserSession } from "@thallesp/nestjs-better-auth";
-import { PrismaService } from "../../prisma/prisma.service.js";
+} from '@nestjs/common';
+import type { UserSession } from '@thallesp/nestjs-better-auth';
+import { PrismaService } from '../../prisma/prisma.service.js';
 import type {
   CouponRedemptionResponseDto,
   CouponResponseDto,
   CreateCouponDto,
   RedeemCouponDto,
-} from "./dto/coupon.dto.js";
+} from './dto/coupon.dto.js';
 
 function normalizeCode(code: string): string {
   return code.trim().toUpperCase();
 }
 
+const PREMIUM_DURATION_DAYS = 30;
+
 @Injectable()
 export class CouponsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createCoupon(
-    dto: CreateCouponDto,
-    adminUserId?: string,
-  ): Promise<CouponResponseDto> {
-    const code = normalizeCode(dto.code);
-
-    if (!code) {
-      throw new BadRequestException("Coupon code is required");
+  private getCouponStatus(coupon: {
+    isActive: boolean;
+    startsAt: Date | null;
+    expiresAt: Date | null;
+  }): 'active' | 'inactive' | 'expired' {
+    if (!coupon.isActive) {
+      return 'inactive';
     }
 
-    const existing = await this.prisma.coupon.findUnique({
-      where: { code },
-    });
-
-    if (existing) {
-      throw new BadRequestException("Coupon code already exists");
+    const now = new Date();
+    if (coupon.expiresAt && now > coupon.expiresAt) {
+      return 'expired';
     }
 
-    if (dto.durationDays <= 0) {
-      throw new BadRequestException("durationDays must be greater than 0");
-    }
+    return 'active';
+  }
 
-    if (dto.maxUses <= 0) {
-      throw new BadRequestException("maxUses must be greater than 0");
-    }
-
-    const coupon = await this.prisma.coupon.create({
-      data: {
-        code,
-        name: dto.name,
-        description: dto.description ?? "",
-        plan: dto.plan ?? "premium",
-        durationDays: dto.durationDays,
-        maxUses: dto.maxUses,
-        isActive: dto.isActive ?? true,
-        startsAt: dto.startsAt ? new Date(dto.startsAt) : null,
-        expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
-        createdById: adminUserId ?? null,
-      },
-    });
-
+  private toCouponResponse(
+    coupon: {
+      id: string;
+      code: string;
+      name: string;
+      description: string;
+      plan: string;
+      durationDays: number;
+      maxUses: number;
+      isActive: boolean;
+      startsAt: Date | null;
+      expiresAt: Date | null;
+      createdAt: Date;
+      updatedAt: Date;
+      _count?: { redemptions: number };
+    },
+    redemptionCount?: number,
+  ): CouponResponseDto {
     return {
       id: coupon.id,
       code: coupon.code,
@@ -71,37 +67,170 @@ export class CouponsService {
       durationDays: coupon.durationDays,
       maxUses: coupon.maxUses,
       isActive: coupon.isActive,
+      status: this.getCouponStatus(coupon),
       startsAt: coupon.startsAt?.toISOString() ?? null,
       expiresAt: coupon.expiresAt?.toISOString() ?? null,
       createdAt: coupon.createdAt.toISOString(),
       updatedAt: coupon.updatedAt.toISOString(),
-      redemptionCount: 0,
+      redemptionCount: redemptionCount ?? coupon._count?.redemptions ?? 0,
     };
+  }
+
+  async createCoupon(
+    dto: CreateCouponDto,
+    adminUserId?: string,
+  ): Promise<CouponResponseDto> {
+    const code = normalizeCode(dto.code);
+
+    if (!/^[A-Z0-9]{4,8}$/.test(code)) {
+      throw new BadRequestException(
+        'Coupon code must be 4 to 8 alphanumeric characters',
+      );
+    }
+
+    const existing = await this.prisma.coupon.findUnique({
+      where: { code },
+    });
+
+    if (existing) {
+      throw new BadRequestException('Coupon code already exists');
+    }
+
+    const startsAt = dto.startsAt ? new Date(dto.startsAt) : null;
+    const expiresAt = dto.expiresAt ? new Date(dto.expiresAt) : null;
+
+    if (startsAt && expiresAt && expiresAt < startsAt) {
+      throw new BadRequestException(
+        'Coupon end date must be after the start date',
+      );
+    }
+
+    const coupon = await this.prisma.coupon.create({
+      data: {
+        code,
+        name: dto.name,
+        description: dto.description ?? '',
+        plan: dto.plan ?? 'premium',
+        durationDays: dto.durationDays ?? PREMIUM_DURATION_DAYS,
+        maxUses: dto.maxUses ?? 1,
+        isActive: dto.isActive ?? true,
+        startsAt,
+        expiresAt,
+        createdById: adminUserId ?? null,
+      },
+    });
+
+    return this.toCouponResponse(coupon);
   }
 
   async listCoupons(): Promise<CouponResponseDto[]> {
     const coupons = await this.prisma.coupon.findMany({
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
       include: {
         _count: { select: { redemptions: true } },
       },
     });
 
-    return coupons.map((coupon) => ({
-      id: coupon.id,
-      code: coupon.code,
-      name: coupon.name,
-      description: coupon.description,
-      plan: coupon.plan,
-      durationDays: coupon.durationDays,
-      maxUses: coupon.maxUses,
-      isActive: coupon.isActive,
-      startsAt: coupon.startsAt?.toISOString() ?? null,
-      expiresAt: coupon.expiresAt?.toISOString() ?? null,
-      createdAt: coupon.createdAt.toISOString(),
-      updatedAt: coupon.updatedAt.toISOString(),
-      redemptionCount: coupon._count.redemptions,
-    }));
+    return coupons.map((coupon) =>
+      this.toCouponResponse(coupon, coupon._count.redemptions),
+    );
+  }
+
+  async updateCoupon(
+    couponId: string,
+    dto: Partial<CreateCouponDto>,
+  ): Promise<CouponResponseDto> {
+    const existing = await this.prisma.coupon.findUnique({
+      where: { id: couponId },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('Coupon not found');
+    }
+
+    const nextCode = dto.code ? normalizeCode(dto.code) : existing.code;
+    if (!/^[A-Z0-9]{4,8}$/.test(nextCode)) {
+      throw new BadRequestException(
+        'Coupon code must be 4 to 8 alphanumeric characters',
+      );
+    }
+
+    if (dto.code && nextCode !== existing.code) {
+      const duplicate = await this.prisma.coupon.findUnique({
+        where: { code: nextCode },
+      });
+      if (duplicate) {
+        throw new BadRequestException('Coupon code already exists');
+      }
+    }
+
+    const startsAt =
+      dto.startsAt !== undefined
+        ? dto.startsAt
+          ? new Date(dto.startsAt)
+          : null
+        : existing.startsAt;
+    const expiresAt =
+      dto.expiresAt !== undefined
+        ? dto.expiresAt
+          ? new Date(dto.expiresAt)
+          : null
+        : existing.expiresAt;
+
+    if (startsAt && expiresAt && expiresAt < startsAt) {
+      throw new BadRequestException(
+        'Coupon end date must be after the start date',
+      );
+    }
+
+    const updated = await this.prisma.coupon.update({
+      where: { id: couponId },
+      data: {
+        ...(dto.code ? { code: nextCode } : {}),
+        ...(dto.name ? { name: dto.name } : {}),
+        ...(dto.description !== undefined
+          ? { description: dto.description ?? '' }
+          : {}),
+        ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
+        startsAt,
+        expiresAt,
+        durationDays: existing.durationDays || PREMIUM_DURATION_DAYS,
+      },
+      include: { _count: { select: { redemptions: true } } },
+    });
+
+    return this.toCouponResponse(updated, updated._count.redemptions);
+  }
+
+  async toggleCouponStatus(couponId: string): Promise<CouponResponseDto> {
+    const coupon = await this.prisma.coupon.findUnique({
+      where: { id: couponId },
+    });
+
+    if (!coupon) {
+      throw new NotFoundException('Coupon not found');
+    }
+
+    const updated = await this.prisma.coupon.update({
+      where: { id: couponId },
+      data: { isActive: !coupon.isActive },
+      include: { _count: { select: { redemptions: true } } },
+    });
+
+    return this.toCouponResponse(updated, updated._count.redemptions);
+  }
+
+  async deleteCoupon(couponId: string): Promise<{ deleted: boolean }> {
+    const coupon = await this.prisma.coupon.findUnique({
+      where: { id: couponId },
+    });
+
+    if (!coupon) {
+      throw new NotFoundException('Coupon not found');
+    }
+
+    await this.prisma.coupon.delete({ where: { id: couponId } });
+    return { deleted: true };
   }
 
   async getRedemptions(
@@ -112,13 +241,13 @@ export class CouponsService {
     });
 
     if (!coupon) {
-      throw new NotFoundException("Coupon not found");
+      throw new NotFoundException('Coupon not found');
     }
 
     const rows = await this.prisma.couponRedemption.findMany({
       where: { couponId },
       include: { user: true },
-      orderBy: { redeemedAt: "desc" },
+      orderBy: { redeemedAt: 'desc' },
     });
 
     return rows.map((row) => ({
@@ -126,7 +255,7 @@ export class CouponsService {
       couponId: row.couponId,
       userId: row.userId,
       userEmail: row.user.email,
-      userName: row.user.name ?? "",
+      userName: row.user.name ?? '',
       redeemedAt: row.redeemedAt.toISOString(),
       expiresAt: row.expiresAt.toISOString(),
     }));
@@ -143,21 +272,21 @@ export class CouponsService {
     });
 
     if (!coupon) {
-      throw new NotFoundException("Coupon not found");
+      throw new NotFoundException('Coupon not found');
     }
 
     if (!coupon.isActive) {
-      throw new BadRequestException("Coupon is inactive");
+      throw new BadRequestException('Coupon is inactive');
     }
 
     const now = new Date();
 
     if (coupon.startsAt && now < coupon.startsAt) {
-      throw new BadRequestException("Coupon is not available yet");
+      throw new BadRequestException('Coupon is not available yet');
     }
 
     if (coupon.expiresAt && now > coupon.expiresAt) {
-      throw new BadRequestException("Coupon has expired");
+      throw new BadRequestException('Coupon has expired');
     }
 
     const userId = session.user.id;
@@ -166,11 +295,11 @@ export class CouponsService {
     });
 
     if (existingRedemption) {
-      throw new BadRequestException("This user already redeemed this coupon");
+      throw new BadRequestException('This user already redeemed this coupon');
     }
 
     if (coupon.redemptions.length >= coupon.maxUses) {
-      throw new BadRequestException("Coupon has reached its maximum uses");
+      throw new BadRequestException('Coupon has reached its maximum uses');
     }
 
     const user = await this.prisma.user.findUnique({
@@ -179,7 +308,7 @@ export class CouponsService {
     });
 
     if (!user) {
-      throw new UnauthorizedException("User not found");
+      throw new UnauthorizedException('User not found');
     }
 
     const premiumUntil = new Date(
@@ -199,7 +328,7 @@ export class CouponsService {
       await tx.user.update({
         where: { id: userId },
         data: {
-          plan: "premium",
+          plan: 'premium',
           premiumUntil,
         },
       });
@@ -212,7 +341,7 @@ export class CouponsService {
       couponId: redemption.couponId,
       userId: redemption.userId,
       userEmail: redemption.user.email,
-      userName: redemption.user.name ?? "",
+      userName: redemption.user.name ?? '',
       redeemedAt: redemption.redeemedAt.toISOString(),
       expiresAt: redemption.expiresAt.toISOString(),
     };

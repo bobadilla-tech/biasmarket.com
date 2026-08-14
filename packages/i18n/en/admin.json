@@ -78,7 +78,7 @@
       "durationDays": "Duration (days)",
       "maxUses": "Max uses",
       "startsAt": "Starts at",
-      "expiresAt": "Expires at",
+      "expiresAt": "Ends at",
       "active": "Active",
       "submit": "Create coupon"
     },
@@ -93,7 +93,8 @@
     },
     "status": {
       "active": "Active",
-      "inactive": "Inactive"
+      "inactive": "Inactive",
+      "expired": "Expired"
     },
     "redemptions": {
       "title": "Redemptions",

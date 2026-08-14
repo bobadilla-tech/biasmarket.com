@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { Locale } from "next-intl";
 import { getTranslations } from "next-intl/server";
-import { AdminCouponsPageClient } from "./coupons-page-client.tsx";
+import { AdminCouponsPageClient } from "./coupons-page-client";
 
 export async function generateMetadata({
   params,

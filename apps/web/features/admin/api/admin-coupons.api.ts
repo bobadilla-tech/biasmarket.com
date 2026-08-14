@@ -24,6 +24,7 @@ export const adminCouponsApi = {
         durationDays: number;
         maxUses: number;
         isActive: boolean;
+        status: "active" | "inactive" | "expired";
         startsAt: string | null;
         expiresAt: string | null;
         createdAt: string;
@@ -38,8 +39,8 @@ export const adminCouponsApi = {
       code: string;
       name: string;
       description?: string;
-      durationDays: number;
-      maxUses: number;
+      durationDays?: number;
+      maxUses?: number;
       startsAt?: string;
       expiresAt?: string;
       isActive?: boolean;
@@ -54,6 +55,69 @@ export const adminCouponsApi = {
         Accept: "application/json",
       },
       body: JSON.stringify(values),
+    }).then(async (res) => {
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(
+          data?.message ?? fallbackErrorMessage ?? "Network error",
+        );
+      }
+      return data;
+    });
+  },
+
+  update(
+    couponId: string,
+    values: {
+      code?: string;
+      name?: string;
+      description?: string;
+      startsAt?: string;
+      expiresAt?: string;
+      isActive?: boolean;
+    },
+    fallbackErrorMessage?: string,
+  ) {
+    return fetch(`${apiUrl()}/api/admin/coupons/${couponId}`, {
+      method: "PATCH",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(values),
+    }).then(async (res) => {
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(
+          data?.message ?? fallbackErrorMessage ?? "Network error",
+        );
+      }
+      return data;
+    });
+  },
+
+  toggleStatus(couponId: string, fallbackErrorMessage?: string) {
+    return fetch(`${apiUrl()}/api/admin/coupons/${couponId}/status`, {
+      method: "PATCH",
+      credentials: "include",
+      headers: { Accept: "application/json" },
+    }).then(async (res) => {
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(
+          data?.message ?? fallbackErrorMessage ?? "Network error",
+        );
+      }
+      return data;
+    });
+  },
+
+  delete(couponId: string, fallbackErrorMessage?: string) {
+    return fetch(`${apiUrl()}/api/admin/coupons/${couponId}`, {
+      method: "DELETE",
+      credentials: "include",
+      headers: { Accept: "application/json" },
     }).then(async (res) => {
       const data = await res.json().catch(() => null);
       if (!res.ok) {

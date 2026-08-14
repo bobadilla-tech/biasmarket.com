@@ -15,6 +15,9 @@ export { useMarkInquiryReviewed } from "./mutations/use-mark-inquiry-reviewed";
 export { useImpersonateStore } from "./mutations/use-impersonate-store";
 export { useToggleUserBan } from "./mutations/use-toggle-user-ban";
 export { useCreateCoupon } from "./mutations/use-create-coupon";
+export { useUpdateCoupon } from "./mutations/use-update-coupon";
+export { useToggleCouponStatus } from "./mutations/use-toggle-coupon-status";
+export { useDeleteCoupon } from "./mutations/use-delete-coupon";
 
 export { InquiriesTable } from "./components/inquiries-table";
 export { AdminStoresTable } from "./components/admin-stores-table";
