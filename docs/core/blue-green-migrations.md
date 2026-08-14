@@ -30,7 +30,9 @@ push to main
                             -> deploy.sh schedules its own old-color cleanup,
                                ~30 min later (see "Scheduled cleanup" below)
 cleanup-fallback.yml   hourly cron backstop: deploy.sh --cleanup, idempotent
-                        no-op unless the schedule above was lost (e.g. reboot)
+                        no-op unless the schedule above was lost (e.g. reboot),
+                        and a no-op regardless if the rollback target isn't
+                        yet 30 minutes old (cmd_cleanup's own age check)
 ```
 
 `deploy.sh`'s own phases (see `infra/vps/deploy.sh` and `infra/vps/lib/*.sh` for
@@ -58,6 +60,42 @@ the actual implementation, this is the summary):
    color and its Caddy routing are never touched.
 10. Always, on every exit path: write `state/last_deploy_result` (SHA, outcome,
     phase, timestamp — nothing from `env/*.env`).
+11. On success only, right after committing state (step 8): self-schedule the
+    old color's cleanup 30 minutes out — `setsid`-detached, same shape as the
+    SSH dispatcher's own `launch()` (`lib/cleanup_schedule.sh`'s
+    `schedule_cleanup`), superseding (`cancel_scheduled_cleanup`) any
+    still-pending schedule from a prior deploy first. Never fatal to the deploy
+    itself if scheduling fails — see the plan doc referenced below. Three state
+    files, same "who/what/since when" spirit as `state/deploy.lock.meta`, none
+    of them secret, none deleted on normal completion (left as a breadcrumb):
+    - `state/scheduled_cleanup.pid` — the backgrounded process's PID.
+    - `state/scheduled_cleanup.meta` — `pid=`, `scheduled_by=<sha>`,
+      `scheduled_at=`/`fires_at=` (UTC), and
+      `rollback_target_at_schedule=<blue|green>`, the color this schedule
+      intends to tear down. **This last field is a snapshot, not authoritative**
+      — the cleanup that actually fires re-reads `state/rollback_target` fresh
+      (step 12), so if a `--rollback` happened in between, the real target can
+      differ from what's recorded here.
+    - `state/scheduled_cleanup.log` — the backgrounded process's own
+      stdout/stderr, overwritten fresh on every new schedule.
+
+    A stray orphaned `flock` process transiently visible in `ps` shortly after
+    one schedule supersedes another is expected (a `kill -TERM` racing a process
+    already blocked inside `acquire_deploy_lock`), not a symptom to chase.
+12. `deploy.sh --cleanup` (whether fired by step 11's schedule, the hourly
+    `cleanup-fallback.yml`, or run manually) always re-reads
+    `state/current_color`/`state/rollback_target` fresh at invocation time —
+    never trusts anything captured when it was scheduled — and no-ops safely if
+    there's nothing to clean up. This is what makes an in-window manual
+    `--rollback` safe without any bespoke cancellation logic: it rewrites
+    `rollback_target` to whatever's now correctly benched, and whichever cleanup
+    eventually fires tears down the right color regardless of what was true when
+    it was scheduled.
+
+Full design, including the state-machine edge cases (VPS reboot mid-window, two
+deploys landing in rapid succession, `deploy.sh` itself being rsynced
+mid-window) and why this isn't built on `systemd-run`/a systemd timer:
+[`2026-08-10-server-side-cleanup-scheduling-plan.md`](../plans/2026-08-10-server-side-cleanup-scheduling-plan.md).
 
 ### Scheduled cleanup
 
@@ -97,18 +135,29 @@ same as `deploy.lock.meta`):
   behind after its process has long exited is the normal steady state, not an
   error.
 - `state/scheduled_cleanup.meta` — `pid=`, `scheduled_by=<sha>`,
-  `scheduled_at=`/`fires_at=` (UTC), `candidate_color_at_schedule=<blue|green>`.
-  **`candidate_color_at_schedule` is a snapshot of what was live when this was
-  scheduled, not authoritative at fire time** — `cmd_cleanup` always re-reads
-  `state/rollback_target` fresh when it actually runs, and that value can differ
-  if a `--rollback` happened in between. Answers "is a cleanup pending, for
-  what, and when" for an operator SSHed into the VPS, without reconstructing it
-  from `releases/history.log` by hand.
+  `scheduled_at=`/`fires_at=` (UTC), `rollback_target_at_schedule=<blue|green>`.
+  **`rollback_target_at_schedule` is a snapshot of what was benched when this
+  was scheduled, not authoritative at fire time** — `cmd_cleanup` always
+  re-reads `state/rollback_target` fresh when it actually runs, and that value
+  can differ if a `--rollback` happened in between. Answers "is a cleanup
+  pending, for what, and when" for an operator SSHed into the VPS, without
+  reconstructing it from `releases/history.log` by hand.
 - `state/scheduled_cleanup.log` — stdout/stderr of the detached chain,
   overwritten fresh on every new schedule. The only place a crash inside the
   backgrounded process (e.g. a version-mismatched `lib/*.sh` sourced mid-rsync
   of a concurrent deploy) is visible — it isn't wired into
   `state/last_deploy_result` or `releases/history.log`.
+
+`state/rollback_target_set_at` (epoch seconds) is written atomically alongside
+`state/rollback_target` every time the latter is set (`cmd_deploy`,
+`cmd_rollback`) or cleared (`cmd_cleanup`, `cmd_bootstrap`). `cmd_cleanup`
+checks it before tearing anything down: if the recorded target is younger than
+`CLEANUP_MIN_AGE_SECONDS` (1800, matching the self-scheduled delay), it logs
+and no-ops instead of proceeding. This is what actually keeps the
+30-minute-rollback-window promise regardless of caller — the self-scheduled
+fire above only ever runs at/after the window by construction, but the hourly
+fallback below has no such guarantee and would otherwise erase a fresh
+rollback target on whichever tick happens to land first after a deploy.
 
 Backstop:
 [`.github/workflows/cleanup-fallback.yml`](../../.github/workflows/cleanup-fallback.yml)
@@ -120,7 +169,9 @@ closes the one gap the server-side schedule doesn't cover on its own: a VPS
 reboot (or OOM kill) during the 30-minute window loses the scheduled process
 silently, same as a GitHub Actions outage lost the old `sleep
 1800`-based job —
-the fallback catches it within roughly an hour instead of never.
+the fallback catches it within roughly an hour instead of never, and the age
+check above means an early fallback tick is always a safe no-op rather than a
+premature teardown.
 
 Full design rationale, including every edge case above (rollback mid-window,
 `deploy.sh` itself being rsynced mid-window, why this isn't built on

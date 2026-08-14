@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { client } from "@/features/blog/lib/sanity";
 import { POSTS_SITEMAP_QUERY } from "@/features/blog/lib/sanity-queries";
 import { routing } from "@/i18n/routing";
+import { reportServerError } from "@/lib/report-server-error";
 import { SITE_URL } from "@/lib/site-config";
 
 const STATIC_PATHS = ["", "/blog", "/founder", "/enterprise"];
@@ -29,7 +30,8 @@ async function getStoreSlugs(): Promise<{ slug: string; createdAt: string }[]> {
     });
     if (!res.ok) return [];
     return await res.json();
-  } catch {
+  } catch (error) {
+    await reportServerError(error, { fn: "getStoreSlugs" });
     return [];
   }
 }
@@ -51,7 +53,8 @@ async function getBlogPostSlugs(): Promise<
       slug: post.slug.current,
       updatedAt: post._updatedAt,
     }));
-  } catch {
+  } catch (error) {
+    await reportServerError(error, { fn: "getBlogPostSlugs" });
     return [];
   }
 }

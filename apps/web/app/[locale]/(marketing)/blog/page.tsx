@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { Locale } from "next-intl";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Footer } from "@/components/marketing/footer";
 import { BlogListItem } from "@/features/blog";
 import { formatPublishedDate } from "@/features/blog/format-date";
@@ -12,6 +12,7 @@ export async function generateMetadata({
   params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
   const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "blog.meta" });
   return {
     title: t("title"),
@@ -25,6 +26,7 @@ export default async function BlogIndexPage({
   params: Promise<{ locale: Locale }>;
 }) {
   const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "blog" });
   const posts = await getBlogPosts();
 

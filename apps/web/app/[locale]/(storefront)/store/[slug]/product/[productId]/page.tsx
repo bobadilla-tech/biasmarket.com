@@ -38,10 +38,10 @@ export default async function ProductDetailPage({
 }: {
   params: Promise<{ locale: string; slug: string; productId: string }>;
 }) {
-  const { slug, productId } = await params;
+  const { locale, slug, productId } = await params;
   const [data, t] = await Promise.all([
     getPublicProduct(slug, productId),
-    getTranslations("storefront"),
+    getTranslations({ locale, namespace: "storefront" }),
   ]);
 
   if (!data || data.product?.discontinued) {

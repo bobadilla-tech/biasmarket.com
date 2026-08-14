@@ -156,12 +156,18 @@ jobs:
       # (real secrets, generated Caddy active-config, deploy state, release
       # history/snapshots) — see infra/vps/docker-compose.yml's header
       # comment and .gitignore.
-      # --delay-updates --delete-delay stage the whole transfer and apply it
-      # as one final rename/delete pass, narrowing (not closing) the window
-      # where a previous deploy's server-side scheduled cleanup could fire
-      # mid-sync and source a version-mismatched mix of old/new lib/*.sh
-      # files — see docs/plans/2026-08-10-server-side-cleanup-scheduling-
-      # plan.md decision 9.
+      #
+      # --delay-updates --delete-delay: stages all transferred files and
+      # performs renames/deletes as a single final pass instead of
+      # incrementally mid-transfer. Narrows (doesn't fully close) a race
+      # where a self-scheduled cleanup (or cleanup-fallback.yml's hourly
+      # tick) execs deploy.sh at the exact moment a concurrent deploy's
+      # rsync has replaced deploy.sh but not yet one of its sourced
+      # lib/*.sh files (or vice versa), sourcing a version-mismatched mix
+      # that can crash with an unbound-variable error. See
+      # docs/plans/2026-08-10-server-side-cleanup-scheduling-plan.md
+      # decision 9 for the full analysis — it only applies to commits that
+      # change infra/vps/lib/*.sh content.
       - name: Sync infra/vps/ to the VPS
         run: |
           # The deploy key is forced through `rrsync /opt/biasmarket/`.

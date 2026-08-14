@@ -351,23 +351,30 @@ unsafe in bash — script read is by byte offset, not a snapshot).
 (`state/deploy.lock.meta`: PID/phase/timestamp/actor) rather than an indefinite
 wait with no operator-visible signal.
 
-- `deploy.sh` runs **detached from the SSH transport** (`setsid`), not directly
-  under the invoking SSH session — an ordinary network blip between the GitHub
-  runner and the VPS could otherwise SIGHUP-kill the script at any phase,
-  including mid-migration or mid-Caddy-switch, turning routine connectivity
-  flakiness into a stuck-state incident. **One concrete completion-signal
-  mechanism, not left as an open choice**: `deploy.sh`'s final action, on every
-  exit path (success or failure), is an atomic temp-file-plus-rename write to
-  `state/last_deploy_result` — a small, deliberately secret-free file (fields:
-  SHA, outcome, phase reached, timestamp, nothing from `env/*.env`) consistent
-  with the H8 no-secrets-in-output rule. The CD workflow's SSH step polls this
-  file
+- `deploy.sh` runs **detached from the SSH transport** (`setsid`, backgrounded
+  by `ssh-deploy-dispatcher.sh`'s `launch()`), not directly under the invoking
+  SSH session — an ordinary network blip between the GitHub runner and the VPS
+  could otherwise SIGHUP-kill the script at any phase, including mid-migration
+  or mid-Caddy-switch, turning routine connectivity flakiness into a stuck-state
+  incident. (An earlier draft of this decision used
+  `systemd-run --scope --unit=biasmarket-deploy` instead of `setsid` — dropped
+  after implementation hit polkit's "Interactive authentication required" over
+  this VPS's non-interactive forced-command SSH sessions; see
+  `ssh-deploy-dispatcher.sh`'s `launch()` header comment for the full story.
+  `systemd-run` was never load-bearing for anything beyond the SSH-transport
+  detachment `setsid` already provides on its own.) **One concrete
+  completion-signal mechanism, not left as an open choice**: `deploy.sh`'s final
+  action, on every exit path (success or failure), is an atomic
+  temp-file-plus-rename write to `state/last_deploy_result` — a small,
+  deliberately secret-free file (fields: SHA, outcome, phase reached, timestamp,
+  nothing from `env/*.env`) consistent with the H8 no-secrets-in- output rule.
+  The CD workflow's SSH step polls this file
   (`ssh ... 'while ! grep -q "$SHA" state/last_deploy_result;
   do sleep 5; done; cat state/last_deploy_result'`,
-  bounded by the job's own `timeout-minutes`) rather than blocking on `setsid`'s
-  own attached output or reading anything from `releases/history.log` (which may
-  contain more verbose phase detail and isn't guaranteed secret-free by the same
-  strict standard).
+  bounded by the job's own `timeout-minutes`) rather than blocking on the
+  launching SSH session's own output or reading anything from
+  `releases/history.log` (which may contain more verbose phase detail and isn't
+  guaranteed secret-free by the same strict standard).
 - **State/reality reconciliation at the very start of every run**: before
   trusting `state/current_color` for anything, `deploy.sh` reads the actual live
   content of `caddy/active/api.caddy` and asserts it matches; aborts loudly on

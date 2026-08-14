@@ -14,6 +14,12 @@ CADDY_ACTIVE_DIR="$ROOT_DIR/caddy/active"
 CURRENT_COLOR_FILE="$STATE_DIR/current_color"
 CURRENT_SHA_FILE="$STATE_DIR/current_sha"
 ROLLBACK_TARGET_FILE="$STATE_DIR/rollback_target"
+# Epoch-seconds timestamp, written atomically alongside ROLLBACK_TARGET_FILE
+# every time it's set — lets cmd_cleanup refuse to tear down a rollback
+# target before its promised 30-minute window has actually elapsed,
+# regardless of which caller (self-scheduled fire or cleanup-fallback.yml's
+# hourly tick) invoked it.
+ROLLBACK_TARGET_SET_AT_FILE="$STATE_DIR/rollback_target_set_at"
 MIGRATION_PENDING_FILE="$STATE_DIR/migration_pending"
 LAST_DEPLOY_RESULT_FILE="$STATE_DIR/last_deploy_result"
 LOCK_FILE="$STATE_DIR/deploy.lock"
