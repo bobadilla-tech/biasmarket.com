@@ -3,6 +3,7 @@
     "admin": "Admin",
     "inquiries": "Consultas",
     "stores": "Tiendas",
+    "coupons": "Cupones",
     "users": "Usuarios",
     "comingSoon": "Pronto",
     "signOut": "Cerrar sesión"
@@ -64,6 +65,43 @@
     "actions": {
       "ban": "Suspender",
       "unban": "Reactivar"
+    }
+  },
+  "coupons": {
+    "title": "Cupones premium",
+    "empty": "Todavía no hay cupones creados.",
+    "createTitle": "Crear cupón",
+    "form": {
+      "code": "Código",
+      "name": "Nombre",
+      "description": "Descripción",
+      "durationDays": "Duración (días)",
+      "maxUses": "Máximo de usos",
+      "startsAt": "Comienza el",
+      "expiresAt": "Caduca el",
+      "active": "Activo",
+      "submit": "Crear cupón"
+    },
+    "table": {
+      "code": "Código",
+      "name": "Nombre",
+      "status": "Estado",
+      "duration": "Duración",
+      "uses": "Usos",
+      "created": "Creado",
+      "actions": "Acciones"
+    },
+    "status": {
+      "active": "Activo",
+      "inactive": "Inactivo"
+    },
+    "redemptions": {
+      "title": "Canjes",
+      "empty": "Todavía no hay canjes para este cupón.",
+      "user": "Usuario",
+      "email": "Correo",
+      "redeemedAt": "Canjeado",
+      "expiresAt": "Premium hasta"
     }
   }
 }

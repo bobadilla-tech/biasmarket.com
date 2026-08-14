@@ -20,7 +20,7 @@ import {
 
 interface NavItem {
   href: string;
-  labelKey: "inquiries" | "stores" | "users";
+  labelKey: "inquiries" | "stores" | "coupons" | "users";
   icon: React.ComponentType<{ className?: string }>;
   disabled?: boolean;
 }
@@ -28,6 +28,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { href: "/admin/inquiries", labelKey: "inquiries", icon: Inbox },
   { href: "/admin/stores", labelKey: "stores", icon: Store },
+  { href: "/admin/coupons", labelKey: "coupons", icon: Store },
   { href: "/admin/users", labelKey: "users", icon: Users },
 ];
 
@@ -97,9 +98,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <div className="flex flex-col gap-0.5 px-2 py-1.5 text-xs">
-              <span className="truncate font-medium">
-                {session?.user.name}
-              </span>
+              <span className="truncate font-medium">{session?.user.name}</span>
               <span className="truncate text-muted-foreground">
                 {session?.user.email}
               </span>
