@@ -5,6 +5,7 @@ import { useSession } from "./use-session";
 
 export function useRequireAuth() {
   const router = useRouter();
+
   const { isPending, isAuthenticated } = useSession();
 
   useEffect(() => {
