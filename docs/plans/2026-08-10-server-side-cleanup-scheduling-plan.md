@@ -4,15 +4,24 @@ Written before execution, at the user's explicit request, to allow a review pass
 before any code is written — same deliberate deviation from this directory's
 normal "record after the work lands" convention already used by
 [`2026-08-10-bluegreen-zero-downtime-deploy-plan.md`](2026-08-10-bluegreen-zero-downtime-deploy-plan.md).
-This file is a planning record only; no `deploy.sh`/`ssh-deploy-dispatcher.sh`/
-`cd.yml` code has changed as of this commit.
 
-## Status: plan only, not implemented
+## Status: implemented (2026-08-14)
+
+All 8 task-list items landed as written: `lib/state.sh`'s new path constants,
+`lib/cleanup_schedule.sh` (`schedule_cleanup`/`cancel_scheduled_cleanup`,
+verbatim from decision 3's canonical code block), `cmd_deploy`'s guarded calls
+right after `phase "state_committed"`, `cd.yml`'s `scheduled-cleanup` job
+removed and `--delay-updates --delete-delay` added to the rsync step, the new
+`.github/workflows/cleanup-fallback.yml`, the stale `systemd-run` sentence in
+the blue/green plan's decision 8 fixed, and
+[`docs/core/blue-green-migrations.md`](../core/blue-green-migrations.md) updated
+with the new state files and pipeline shape. No deviations from the plan as
+reviewed.
 
 ## Context
 
 `.github/workflows/cd.yml`'s `scheduled-cleanup` job
-([lines 203–233](../../.github/workflows/cd.yml#L203-L233) as of this writing)
+([lines 205–234](../../.github/workflows/cd.yml#L205-L234) as of this writing)
 holds a GitHub Actions runner open for 30 minutes via a literal `sleep 1800`
 before SSHing in to run `deploy.sh --cleanup`. This burns a GHA concurrency slot
 and CI minutes for a job that does nothing but wait, and if GitHub Actions has
@@ -36,7 +45,7 @@ sessions hits polkit's "Interactive authentication required" (see the full story
 in `ssh-deploy-dispatcher.sh`'s header comment,
 [lines 36-45](../../infra/vps/bin/ssh-deploy-dispatcher.sh#L36-L45)). Note this
 means decision 8 in the blue/green plan doc
-([2026-08-10-bluegreen-zero-downtime-deploy-plan.md:354-355](2026-08-10-bluegreen-zero-downtime-deploy-plan.md#L350-L387))
+([2026-08-10-bluegreen-zero-downtime-deploy-plan.md:350-387](2026-08-10-bluegreen-zero-downtime-deploy-plan.md#L350-L387))
 is now stale where it still says `deploy.sh` runs detached via
 `systemd-run --scope --unit=biasmarket-deploy` — the implemented mechanism is
 `setsid`, not `systemd-run`. That plan's Status section already documents this
@@ -78,7 +87,7 @@ not an oversight — see decision 6.
 
 Two new files under `infra/vps/state/` (added to the existing `state/` exclusion
 in `cd.yml`'s rsync `--delete` step
-([cd.yml:164](../../.github/workflows/cd.yml#L164)), same as
+([cd.yml:166](../../.github/workflows/cd.yml#L166)), same as
 `current_color`/`rollback_target`/etc. — this needs no rsync-exclude change,
 `state/` is already excluded wholesale):
 
@@ -89,18 +98,30 @@ in `cd.yml`'s rsync `--delete` step
   `deploy.lock.meta`'s "who/what holds this and since when" property (decision 8
   of the blue/green plan): `pid=`, `scheduled_by=<sha>`,
   `scheduled_at=<UTC timestamp>`, `fires_at=<UTC timestamp>`,
-  `candidate_color_at_schedule=<blue|green>`. This is what lets an operator
-  SSHed into a stuck-looking VPS answer "is a cleanup pending, for what, and
-  when does it fire" without guessing — the same property the blue/green plan's
-  decision 8 called load-bearing for `deploy.lock.meta`, extended to this new
-  piece of scheduled state. `candidate_color_at_schedule` is explicitly a
-  snapshot, not authoritative at fire time — decision 4 re-reads
-  `state/rollback_target` fresh when the cleanup actually runs, and that value
-  can differ (e.g. after an in-window `--rollback`, decision 6). The field
-  exists purely so an operator doesn't have to reconstruct "what was true when
-  this was scheduled" from `releases/history.log` by hand; the doc update in
-  task item 8 must state this caveat explicitly next to the field, not just
-  imply it here.
+  `rollback_target_at_schedule=<blue|green>` — a snapshot of
+  `state/current_color` at the moment `cmd_deploy` committed the cutover, i.e.
+  the color this schedule intends to tear down (the OLD, just-benched color,
+  matching what gets written to `state/rollback_target` a couple of lines
+  earlier in `cmd_deploy`, not the NEW, just-deployed color). **Named
+  deliberately as `rollback_target_at_schedule`, not
+  `candidate_color_at_schedule`** — an earlier draft of this decision used the
+  latter name and, in decision 3's code block, actually assigned it
+  `$candidate_color` (the new color) instead of `$current_color` (the old one);
+  two independent round-4 reviewers caught the same bug from different angles —
+  the value was backwards, and the name itself was inviting the mistake, since
+  `candidate_color` unambiguously means "the newly deploying color" everywhere
+  else in this codebase (`candidate_started`, `candidate_healthy`, etc.). Both
+  the name and the value are corrected here and in decision 3's code block. This
+  is what lets an operator SSHed into a stuck-looking VPS answer "is a cleanup
+  pending, for what, and when does it fire" without guessing — the same property
+  the blue/green plan's decision 8 called load-bearing for `deploy.lock.meta`,
+  extended to this new piece of scheduled state. It's explicitly a snapshot, not
+  authoritative at fire time — decision 4 re-reads `state/rollback_target` fresh
+  when the cleanup actually runs, and that value can differ (e.g. after an
+  in-window `--rollback`, decision 6). The field exists purely so an operator
+  doesn't have to reconstruct "what was true when this was scheduled" from
+  `releases/history.log` by hand; the doc update in task item 8 must state this
+  caveat explicitly next to the field, not just imply it here.
 - `state/scheduled_cleanup.log` — stderr/stdout capture for the backgrounded
   process, same reasoning as `ssh-deploy-dispatcher.sh`'s
   `state/last_launch.log`: a still-running detached process writing to a
@@ -166,9 +187,9 @@ below, not just noted:**
    the lock-holding process is a materially different situation and needs an
    explicit `9>&-` close.
 
-New function `cancel_scheduled_cleanup()` and `schedule_cleanup()` in
-`deploy.sh` (or a new `lib/cleanup_schedule.sh`, mirroring the existing
-one-concern-per-file split in `infra/vps/lib/`):
+New functions `cancel_scheduled_cleanup()` and `schedule_cleanup()`, in a new
+`lib/cleanup_schedule.sh` (task item 2), mirroring the existing
+one-concern-per-file split in `infra/vps/lib/`:
 
 ```bash
 # Canonical launch shape — the only place this command is written out.
@@ -196,10 +217,11 @@ pid=$pid
 scheduled_by=$sha
 scheduled_at=$(date -u +%FT%TZ)
 fires_at=$(date -u -d '+1800 seconds' +%FT%TZ)
-candidate_color_at_schedule=$candidate_color
+rollback_target_at_schedule=$current_color
 EOF
 )" || { log_warn "Failed to record scheduled_cleanup.meta (pid=$pid still running, untracked)."; return 1; }
   log_info "Scheduled cleanup of $current_color in 1800s (pid=$pid)."
+  return 0
 }
 
 cancel_scheduled_cleanup() {
@@ -248,16 +270,25 @@ itself blocked inside `acquire_deploy_lock`'s own `flock -w 300 9` call, that
 `flock` is a genuinely forked external command (`lib/lock.sh:10`) — killing its
 parent can leave a short-lived orphaned `flock` process still waiting on the
 lock for up to its own 300s, harmless but potentially confusing to an operator
-inspecting `ps` shortly after a supersede; (b) `setsid CMD &` run
-non-interactively is assumed here to fork exactly once, so that `$!` captures
-the actual long-running process rather than a short-lived intermediate —
-util-linux `setsid` only double-forks when it detects it's already a
-process-group leader, which shouldn't be the case inside a non-interactive
-forced-command SSH session with job control off, but this hasn't been confirmed
-against the real VPS either. Neither caveat threatens correctness: decision 4's
-fresh-state-read backstop inside `cmd_cleanup` is what correctness actually
-depends on; `kill` here is a best-effort optimization to avoid a needless future
-lock wait and a spurious no-op `history.log` line.
+inspecting `ps` shortly after a supersede. This is the likely real-world trigger
+for that caveat, not just a remote edge case worth naming abstractly — a round-2
+reviewer traced it through the "manual `--force` deploy lands into the
+still-pending slot" row of the edge-case table below and found it's exactly this
+situation whenever the _previous_ schedule has already fired and is concurrently
+mid-teardown (or lock-blocked) on the same color the forced redeploy is about to
+reuse. Still safe by construction either way: the shared `flock` fully
+serializes the two, and even if the stale cleanup wins the race and tears the
+color down first, the new deploy just starts fresh containers into it as part of
+its normal `candidate_started` phase; (b) `setsid CMD &` run non-interactively
+is assumed here to fork exactly once, so that `$!` captures the actual
+long-running process rather than a short-lived intermediate — util-linux
+`setsid` only double-forks when it detects it's already a process-group leader,
+which shouldn't be the case inside a non-interactive forced-command SSH session
+with job control off, but this hasn't been confirmed against the real VPS
+either. Neither caveat threatens correctness: decision 4's fresh-state-read
+backstop inside `cmd_cleanup` is what correctness actually depends on; `kill`
+here is a best-effort optimization to avoid a needless future lock wait and a
+spurious no-op `history.log` line.
 
 **Why not the migration-watchdog's systemd-timer-plus-timestamp-file pattern
 instead** (this was seriously considered, given the working precedent noted
@@ -293,7 +324,7 @@ schedule time. `cmd_cleanup` already:
   302-309).
 
 This is deliberate and preserves the exact guarantee `cd.yml`'s current comment
-already documents ([cd.yml:193-202](../../.github/workflows/cd.yml#L193-L202)):
+already documents ([cd.yml:195-204](../../.github/workflows/cd.yml#L195-L204)):
 "no explicit cancellation logic is needed for an in-window
 `deploy.sh --rollback`: rollback rewrites `state/rollback_target` to whatever
 color is now correctly benched, so this job's plain `deploy.sh --cleanup` call
@@ -315,12 +346,19 @@ one extra idempotent no-op invocation of `cmd_cleanup`, not incorrect teardown.
 `cmd_deploy` currently ends its success path at
 [deploy.sh:227-229](../../infra/vps/deploy.sh#L227-L229) after
 `state_committed`. The whole file runs under `set -euo pipefail`
-([deploy.sh:22](../../infra/vps/deploy.sh#L22)), so any unguarded failing
-command inside a new `schedule_cleanup()` call — a `setsid` binary missing, a
-disk-full `atomic_write`, whatever — would abort the entire script and, via
-`on_exit`'s trap, report the just-completed cutover as `outcome=failure`. That
-would be a strictly worse failure mode than today: the cutover genuinely
-succeeded; only the cleanup scheduling failed.
+([deploy.sh:22](../../infra/vps/deploy.sh#L22)), so an unguarded failing command
+that runs in the _foreground_ inside a new `schedule_cleanup()` call — a
+disk-full `atomic_write`, chiefly — would abort the entire script and, via
+`on_exit`'s trap, report the just-completed cutover as `outcome=failure`. (A
+missing `setsid` binary specifically would not itself hit this path — the launch
+command is backgrounded with `&`, and a background job's own launch failure
+doesn't synchronously propagate into the parent's `set -e` handling; it would
+instead surface as `scheduled_cleanup.log` staying empty and no PID ever
+appearing alive, a silent-but-different failure `atomic_write`'s guard doesn't
+help with. This is a pre-existing dependency shared with
+`ssh-deploy-dispatcher.sh`'s own `launch()`, not new risk introduced here.) An
+unguarded foreground failure would be a strictly worse failure mode than today:
+the cutover genuinely succeeded; only the cleanup scheduling failed.
 
 Both `cancel_scheduled_cleanup` and `schedule_cleanup` must therefore be called
 guarded, not just the latter — a round-1 reviewer caught that an earlier draft
@@ -355,14 +393,35 @@ essentially never fails — not because the function was designed against this
 pitfall, just because of where it happens to end.
 
 ```bash
-cancel_scheduled_cleanup || log_warn "Failed to cancel a previously scheduled cleanup — it may fire redundantly later; cmd_cleanup's own idempotent guards (decision 4) make this safe, not silently wrong."
-schedule_cleanup || log_warn "Failed to schedule automatic cleanup — old color ($current_color) must be cleaned up manually via deploy.sh --cleanup."
+cancel_scheduled_cleanup || log_warn "Failed to cancel a previously scheduled cleanup — it may fire redundantly later; cmd_cleanup's own idempotent guards (decision 4) make this safe, not silently wrong." || true
+schedule_cleanup || log_warn "Failed to schedule automatic cleanup — old color ($current_color) must be cleaned up manually via deploy.sh --cleanup." || true
 ```
 
-Internally, both functions avoid `die` (which calls `exit 1`) in favor of
-`log_warn` + `return 1` on every failure branch. `append_history` should still
-record a `deploy sha=... outcome=success` line as today; a separate `log_warn`
-(not a second history line) is enough for either failure, since
+**The trailing `|| true` on each line is required, not decorative** — a round-3
+reviewer caught that `log_warn` itself (a `printf ... >&2` in `lib/log.sh`) can
+fail, and the two calls it guards against failing are guarded by exactly the
+kind of failure (disk-full) most likely to _also_ make `printf` to a now-full
+disk fail. Without the trailing `|| true`, the whole `A || B` statement's own
+exit status would be nonzero when both `A` and `B` fail, and since it sits
+unguarded in `cmd_deploy`'s body under `set -euo pipefail`, that would abort
+`cmd_deploy` before it reaches `append_history`'s success line — reintroducing,
+one layer down, the exact "already-successful cutover reported as
+`outcome=failure`" regression this whole decision exists to prevent. This
+mirrors the `|| true` pattern already used elsewhere in this codebase for the
+same reason (e.g. `cancel_scheduled_cleanup`'s own
+`kill -TERM "$pid" 2>/dev/null || true`).
+
+Internally, `schedule_cleanup` explicitly avoids `die` (which calls `exit 1`) in
+favor of `log_warn` + `return 1` on each of its two `atomic_write` failure
+branches (decision 3's code block). `cancel_scheduled_cleanup` reaches the same
+never-`die` outcome without needing equivalent explicit branches — its
+failure-prone steps are already individually guarded (`cat ... || pid=""`,
+`kill ... || true`) such that nothing inside it can itself raise a nonzero exit
+under `set -e`; its own `|| log_warn || true` at the call site is therefore
+closing a theoretical gap rather than one either function's observed behavior
+actually depends on today. Either way, `append_history` should still record a
+`deploy sha=... outcome=success` line as today; a separate `log_warn` (not a
+second history line) is enough for either failure, since
 `releases/history.log`'s existing shape
 (`deploy sha=... color=... outcome=... previous_color=...`) has no field for
 this and shouldn't grow one for a best-effort side channel.
@@ -378,6 +437,33 @@ finds no PID file and no-ops) and invisible to an operator reading
 `scheduled_cleanup.meta`. Narrow enough (requires a write failure in the
 few-millisecond window right after a successful fork) not to warrant additional
 machinery.
+
+**A second, related accepted gap, one level deeper — deliberately not chased
+with a fourth layer of guarding**: a round-4 reviewer traced the same
+errexit-suppression mechanism (round 2's finding) one call deeper and found it
+recurs inside `lib/state.sh`'s shared `atomic_write()` helper itself.
+`atomic_write`'s last statement is `mv -f "$tmp" "$target"` — a same-filesystem
+rename, which is a metadata operation that succeeds even if the preceding
+`printf '%s' "$content" >"$tmp"` partially failed (e.g. hit `ENOSPC` mid-write).
+Called plainly, an unguarded `printf` failure would normally abort under
+`set -e` before `mv` ever runs — but `schedule_cleanup` calls `atomic_write` as
+`atomic_write ... || { log_warn ...; return 1; }` (this decision's own fix), and
+that `||` suppresses `errexit` for `atomic_write`'s entire body exactly as it
+does for `schedule_cleanup`'s. So in the specific case where `printf` fails but
+the subsequent `mv` of a truncated/empty temp file still succeeds,
+`atomic_write` returns 0, the guard never fires, and `schedule_cleanup` can log
+a false "Scheduled cleanup of ... " success line while having written a
+corrupted or empty `scheduled_cleanup.pid`/`.meta` file. This is deliberately
+left as an accepted gap rather than fixed with e.g. a post-write readback check:
+`atomic_write` is a small, shared, unmodified helper already used throughout
+`deploy.sh` (`cmd_deploy`, `cmd_rollback`, `cmd_cleanup`, `lib/lock.sh`) with
+this exact same latent property, predating this plan entirely — redesigning it
+is out of scope for a plan whose job is scheduling, not hardening a shared
+primitive. The blast radius is identical to the first gap above (observability
+only; decision 4's fresh-state-read makes correctness independent of whether
+this write succeeded), and each additional guard layer chasing this class of bug
+has so far surfaced a narrower, less probable failure than the one before it —
+this is treated as the point of diminishing returns, not another round to fix.
 
 ### 6. `cmd_rollback` does not touch the schedule
 
@@ -471,7 +557,7 @@ gap from decision 7 (reboot during the window) within, at worst, the fallback's
 polling interval — something outright deleting the job would not do. Concretely:
 
 - Remove the existing `scheduled-cleanup` job
-  ([cd.yml:203-233](../../.github/workflows/cd.yml#L203-L233)) in full,
+  ([cd.yml:205-234](../../.github/workflows/cd.yml#L205-L234)) in full,
   including the `production-cleanup` concurrency group (no longer needed — there
   is nothing left in `cd.yml` for it to serialize against; the supersede
   guarantee now lives entirely in `deploy.sh` via decision 3).
@@ -490,7 +576,12 @@ polling interval — something outright deleting the job would not do. Concretel
   reintroducing the "no retry, nobody notices" failure mode this plan exists to
   close, just one layer up. Steps: checkout (for the composite action), reuse
   `./.github/actions/deploy-ssh-setup` exactly as today's job does, one SSH call
-  running `deploy.sh --cleanup`. No `sleep`, no 30-minute `timeout-minutes`, no
+  running `deploy.sh --cleanup`. No `sleep`, and a short `timeout-minutes`
+  (5-10, not the old job's 30-35 — see the task list) rather than none at all,
+  since nothing else bounds a silently-dropped SSH connection attempt (a round-
+  2 reviewer's finding: `deploy-ssh-setup`'s `~/.ssh/config` only sets
+  `ServerAliveInterval`/`ServerAliveCountMax`, which detect a stalled
+  _established_ connection, not a hung initial TCP handshake). No
   `production-cleanup` concurrency group — **not** because GitHub queues
   same-workflow runs by default (it doesn't; an earlier draft of this bullet
   claimed this and it's factually wrong, corrected here — concurrent `schedule:`
@@ -523,7 +614,7 @@ polling interval — something outright deleting the job would not do. Concretel
 ### 9. `deploy.sh` being rsynced mid-window
 
 `cd.yml`'s sync step (`rsync -az --delete ... infra/vps/`,
-[cd.yml:157-168](../../.github/workflows/cd.yml#L157-L168)) overwrites
+[cd.yml:159-170](../../.github/workflows/cd.yml#L159-L170)) overwrites
 `/opt/biasmarket/deploy.sh`'s bytes on every deploy, and per decision 7 of the
 blue/green plan this is already guarded against clobbering a _running_
 `deploy.sh` process (same remote `flock`, GHA's `production-deploy` concurrency
@@ -561,19 +652,22 @@ mid-read. Between them, `deploy.sh` itself is never read as a torn file.
 
 **What this does _not_ cover, and what does need to be named explicitly**: a
 single file's atomicity says nothing about the **set** of files `deploy.sh`
-sources at startup — 8 separate `lib/*.sh` files, each `source`d individually
-([deploy.sh:26-41](../../infra/vps/deploy.sh#L26-L41)), all _before_
-`cmd_cleanup` ever calls `acquire_deploy_lock`. `rsync`ing a whole directory
-tree updates its files one at a time, not as a single atomic unit. A normal
-CD-triggered deploy never has to worry about this, because the rsync step fully
-completes before `launch()` ever execs `deploy.sh` in the same job run — there's
-a real ordering dependency, not just a race. The scheduled cleanup's `exec`, by
-contrast, fires on an independent ~1800s timer with **no ordering relationship**
-to any _other_ deploy's concurrent rsync, and decision 9's own single-file
-argument doesn't extend to it. Concretely: if a second deploy's rsync is caught
-mid-transfer — `deploy.sh` already replaced with a new version, `lib/state.sh`
-not yet replaced (or vice versa) — at the exact moment a first deploy's
-scheduled cleanup fires its `exec`, the resulting process sources a
+sources at startup — 8 separate `lib/*.sh` files today, soon 9 once task list
+item 2's new `lib/cleanup_schedule.sh` is added (subject to the exact same race
+described here — a round-3 reviewer caught that this decision's file count would
+go stale the moment this plan's own task list executes), each `source`d
+individually ([deploy.sh:26-41](../../infra/vps/deploy.sh#L26-L41)), all
+_before_ `cmd_cleanup` ever calls `acquire_deploy_lock`. `rsync`ing a whole
+directory tree updates its files one at a time, not as a single atomic unit. A
+normal CD-triggered deploy never has to worry about this, because the rsync step
+fully completes before `launch()` ever execs `deploy.sh` in the same job run —
+there's a real ordering dependency, not just a race. The scheduled cleanup's
+`exec`, by contrast, fires on an independent ~1800s timer with **no ordering
+relationship** to any _other_ deploy's concurrent rsync, and decision 9's own
+single-file argument doesn't extend to it. Concretely: if a second deploy's
+rsync is caught mid-transfer — `deploy.sh` already replaced with a new version,
+`lib/state.sh` not yet replaced (or vice versa) — at the exact moment a first
+deploy's scheduled cleanup fires its `exec`, the resulting process sources a
 version-mismatched combination of old and new lib code. Under
 `set -euo pipefail`, a newer `deploy.sh` referencing a constant a not-yet-synced
 `lib/state.sh` doesn't define yet would abort with an unbound- variable error
@@ -584,17 +678,40 @@ This window is narrower than it first sounds — it only exists for commits that
 change `infra/vps/lib/*.sh` content in a way that lands during another deploy's
 active rsync (rsync only re-transfers files whose content actually changed, so a
 deploy that doesn't touch `lib/*.sh` poses no risk to a concurrently-firing
-cleanup) — but it's real and this plan doesn't fully close it. **Recommended
-mitigation, added to the task list**: add `--delay-updates` to `cd.yml`'s rsync
-invocation ([cd.yml:162](../../.github/workflows/cd.yml#L162)), which stages all
-transferred files in a hidden temp directory and performs the renames as a
+cleanup) — but it's real and this plan doesn't fully close it. **A round-2
+reviewer pointed out the exposure is actually broader than this decision
+originally scoped it**: it's not just the self-scheduled 30-minute cleanup
+that's at risk — decision 8's new `cleanup-fallback.yml` invokes
+`deploy.sh --cleanup` (via `ssh-deploy-dispatcher.sh`'s `launch()`, sourcing the
+same `lib/*.sh` files fresh — 8 today, soon 9, per the count noted above) on an
+hourly cron with the exact same "no ordering relationship to any deploy's rsync"
+property — and it does so roughly hourly, indefinitely, rather than once per
+deploy within a bounded 30-minute window. The fallback workflow is arguably the
+_larger_ long-run exposure surface for this specific race, not an afterthought
+to it.
+
+**Recommended mitigation, added to the task list** (covers both triggers, since
+it's applied at the shared rsync step both paths depend on): add
+`--delay-updates --delete-delay` to `cd.yml`'s rsync invocation
+([cd.yml:164](../../.github/workflows/cd.yml#L164)). `--delay-updates` stages
+all transferred files in a hidden temp directory and performs the renames as a
 single final pass — this meaningfully narrows the window (from "however long the
 whole transfer takes" to "the brief instant of the final rename pass") without
-closing it to zero. Treating full closure as out of scope for this plan: it
-would require either quiescing scheduled-cleanup fires during an active rsync
-(new coordination this plan's whole point was to avoid needing) or a stricter
-multi-file atomicity mechanism (e.g. syncing to a versioned directory and
-swapping a symlink) that's a larger change than this plan's stated goal.
+closing it to zero. `--delete-delay` is paired with it specifically because
+`--delay-updates` alone only delays _content_ updates — `--delete` (already in
+use, [cd.yml:164](../../.github/workflows/cd.yml#L164)) still removes files
+eagerly mid-transfer by default; if a future refactor ever removes one of the 8
+sourced lib files (e.g. merging two of them), an unpaired `--delay-updates`
+would leave a window where a fired `exec`/`launch()` sources a tree with that
+file already gone but its replacement not yet renamed in — a missing-file crash,
+strictly worse than the stale-content race this mitigation targets.
+`--delete-delay` folds deletions into the same final-pass timing as the renames,
+closing that specific gap at negligible cost. Treating full closure of the
+underlying race as out of scope for this plan: it would require either quiescing
+both cleanup triggers during an active rsync (new coordination this plan's whole
+point was to avoid needing) or a stricter multi-file atomicity mechanism (e.g.
+syncing to a versioned directory and swapping a symlink) that's a larger change
+than this plan's stated goal.
 
 ### 10. `PID`-file tracking does not need its own version/generation field
 
@@ -627,15 +744,15 @@ point it contends for the lock exactly like any other caller.
 
 ## Edge cases summary (cross-reference)
 
-| Scenario                                                                                                                                 | Outcome                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Decision                            |
-| ---------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
-| Second CD-triggered deploy lands before first's 30-min window elapses                                                                    | Blocked by the existing `rollback_target == candidate_color` guard (`deploy.sh:167-169`) unless `--force` is passed — `cd.yml` never passes `--force`, so this is unreachable via normal CD                                                                                                                                                                                                                                                              | n/a (pre-existing guard, unchanged) |
-| Manual `--force` deploy lands into the still-pending slot                                                                                | Runs the same `cmd_deploy` as any other invocation, so it **actively** calls `cancel_scheduled_cleanup` then `schedule_cleanup` itself — the old schedule is killed and replaced, not left to fire-and-no-op later. (An earlier draft of this table row described the wrong mechanism — "left to no-op" — corrected here; the end state is the same either way, backstopped by decision 4, but the actual sequence of events is cancel-then-reschedule.) | 1, 3, 4                             |
-| `--rollback` run manually during the window                                                                                              | Pending schedule fires later against the fresh (rolled-back) `rollback_target`, tearing down the correct (bad candidate) color — unchanged from today's `cd.yml`-comment-documented behavior                                                                                                                                                                                                                                                             | 4, 6                                |
-| VPS reboot during the window                                                                                                             | Scheduled cleanup lost silently, with no exception for a reboot that fully recovers within the window (unlike today's GHA-side `sleep`, which does tolerate a brief VPS outage) — net still a narrower loss window than today's, closed within roughly the fallback's polling interval, GitHub scheduling latency permitting                                                                                                                             | 7, 8                                |
-| `deploy.sh` rsynced mid-window (next deploy's sync step)                                                                                 | Safe for `deploy.sh` itself — the chain resolves `$0` at fire time via `exec`, always running the current on-disk `deploy.sh`, never a torn single-file read                                                                                                                                                                                                                                                                                             | 9                                   |
-| A commit changing `infra/vps/lib/*.sh` is being rsynced by a second deploy at the exact instant a first deploy's scheduled cleanup fires | Not fully closed by this plan — the fired process can source a version-mismatched mix of old/new lib files and crash with an unbound-variable error inside the backgrounded process (visible only in `scheduled_cleanup.log`); narrowed by recommending `rsync --delay-updates`, not eliminated                                                                                                                                                          | 9                                   |
-| Two deploys' schedules racing each other                                                                                                 | Cannot happen — both `cancel_scheduled_cleanup`/`schedule_cleanup` calls run under `cmd_deploy`'s own `flock`, and (once decision 3's fd-9 fix is in place) the background process itself holds no lock while sleeping                                                                                                                                                                                                                                   | 3, 10                               |
+| Scenario                                                                                                                                                                 | Outcome                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Decision                            |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| Second CD-triggered deploy lands before first's 30-min window elapses                                                                                                    | Blocked by the existing `rollback_target == candidate_color` guard (`deploy.sh:167-169`) unless `--force` is passed — `cd.yml` never passes `--force`, so this is unreachable via normal CD                                                                                                                                                                                                                                                              | n/a (pre-existing guard, unchanged) |
+| Manual `--force` deploy lands into the still-pending slot                                                                                                                | Runs the same `cmd_deploy` as any other invocation, so it **actively** calls `cancel_scheduled_cleanup` then `schedule_cleanup` itself — the old schedule is killed and replaced, not left to fire-and-no-op later. (An earlier draft of this table row described the wrong mechanism — "left to no-op" — corrected here; the end state is the same either way, backstopped by decision 4, but the actual sequence of events is cancel-then-reschedule.) | 1, 3, 4                             |
+| `--rollback` run manually during the window                                                                                                                              | Pending schedule fires later against the fresh (rolled-back) `rollback_target`, tearing down the correct (bad candidate) color — unchanged from today's `cd.yml`-comment-documented behavior                                                                                                                                                                                                                                                             | 4, 6                                |
+| VPS reboot during the window                                                                                                                                             | Scheduled cleanup lost silently, with no exception for a reboot that fully recovers within the window (unlike today's GHA-side `sleep`, which does tolerate a brief VPS outage) — net still a narrower loss window than today's, closed within roughly the fallback's polling interval, GitHub scheduling latency permitting                                                                                                                             | 7, 8                                |
+| `deploy.sh` rsynced mid-window (next deploy's sync step)                                                                                                                 | Safe for `deploy.sh` itself — the chain resolves `$0` at fire time via `exec`, always running the current on-disk `deploy.sh`, never a torn single-file read                                                                                                                                                                                                                                                                                             | 9                                   |
+| A commit changing `infra/vps/lib/*.sh` is being rsynced while either the self-scheduled cleanup fires or `cleanup-fallback.yml`'s hourly tick runs `deploy.sh --cleanup` | Not fully closed by this plan — the fired process can source a version-mismatched mix of old/new lib files and crash with an unbound-variable error; narrowed by recommending `rsync --delay-updates --delete-delay`, not eliminated. The hourly fallback is the larger long-run exposure surface here, not the bounded 30-minute self-schedule                                                                                                          | 9                                   |
+| Two deploys' schedules racing each other                                                                                                                                 | Cannot happen — both `cancel_scheduled_cleanup`/`schedule_cleanup` calls run under `cmd_deploy`'s own `flock`, and (once decision 3's fd-9 fix is in place) the background process itself holds no lock while sleeping                                                                                                                                                                                                                                   | 3, 10                               |
 
 ## Task list
 
@@ -647,27 +764,30 @@ point it contends for the lock exactly like any other caller.
    2, 3, 5 — including the `exec 9>&-` fd close and the `$0` passed as an
    explicit `bash -c` positional argument; see decision 3's corrected code
    block, the canonical shape, not to be restated differently elsewhere).
-3. `cmd_deploy`: call `cancel_scheduled_cleanup || log_warn ...` then
-   `schedule_cleanup || log_warn ...` (both guarded, decision 5) right after the
-   `state_committed` phase's `phase "state_committed"` call (i.e. _after_ line
-   225, not interleaved before it — an earlier draft placed this before the
-   `phase` call, which would have left `deploy.lock.meta`'s live `phase=` field
-   reading `full_switch` during scheduling instead of accurately reflecting
-   `state_committed`).
+3. `cmd_deploy`: call `cancel_scheduled_cleanup || log_warn ... || true` then
+   `schedule_cleanup || log_warn ... || true` (both guarded, including the
+   trailing `|| true`, per decision 5) right after the `state_committed` phase's
+   `phase "state_committed"` call (i.e. _after_ line 225, not interleaved before
+   it — an earlier draft placed this before the `phase` call, which would have
+   left `deploy.lock.meta`'s live `phase=` field reading `full_switch` during
+   scheduling instead of accurately reflecting `state_committed`).
 4. No changes to `cmd_cleanup`, `cmd_rollback`, or `ssh-deploy-dispatcher.sh`
    (decisions 4, 6 — `--cleanup` is already reachable through the existing
    dispatcher allowlist, which is all the fallback workflow needs).
 5. `.github/workflows/cd.yml`: delete the `scheduled-cleanup` job and the
-   `production-cleanup` concurrency group (decision 8); add `--delay-updates` to
-   the existing rsync step's flags (decision 9's mitigation for the multi-file
-   lib-sourcing race — a small, independent hardening that also benefits every
-   other consumer of that rsync step, not just this plan).
+   `production-cleanup` concurrency group (decision 8); add
+   `--delay-updates --delete-delay` to the existing rsync step's flags (decision
+   9's mitigation for the multi-file lib-sourcing race — a small, independent
+   hardening that also benefits every other consumer of that rsync step, not
+   just this plan).
 6. New `.github/workflows/cleanup-fallback.yml`: `schedule:` (hourly cron) +
    `workflow_dispatch:`, **`environment: production`** (decision 8 — easy to
    miss, called out explicitly because two reviewers independently flagged its
-   absence as implementation-blocking), reusing
-   `./.github/actions/deploy-ssh-setup`, one SSH call to `deploy.sh --cleanup`
-   (decision 8).
+   absence as implementation-blocking), an explicit `timeout-minutes` (5-10 — a
+   round-2 reviewer noted the job has nothing else bounding a silently- dropped
+   SSH connection attempt, unlike every other substantive job in `cd.yml`, which
+   all set one), reusing `./.github/actions/deploy-ssh-setup`, one SSH call to
+   `deploy.sh --cleanup` (decision 8).
 7. Fix the stale `systemd-run --scope --unit=biasmarket-deploy` sentence in
    `2026-08-10-bluegreen-zero-downtime-deploy-plan.md`'s decision 8 to say
    `setsid`, matching what's actually implemented (called out in Context above).
@@ -675,7 +795,7 @@ point it contends for the lock exactly like any other caller.
    `scheduled_cleanup.{pid,meta,log}` state files and the fallback workflow
    alongside the existing state-file documentation, so an operator debugging the
    VPS has a reference for what these are — explicitly including the caveat that
-   `candidate_color_at_schedule` in `scheduled_cleanup.meta` is a snapshot, not
+   `rollback_target_at_schedule` in `scheduled_cleanup.meta` is a snapshot, not
    authoritative at fire time (decision 2), and that a stray orphaned `flock`
    process transiently visible in `ps` shortly after a supersede is expected,
    not a symptom to chase (decision 3).
@@ -685,7 +805,7 @@ point it contends for the lock exactly like any other caller.
 Noted here per the review brief's instruction to surface related bugs/risks seen
 in surrounding code, not silently drop them — none of these block or require
 changes for this plan to land; they're independent, pre-existing observations
-from round-1 review.
+from review (round 1 unless noted otherwise).
 
 - **`cmd_cleanup` never calls `phase "reconciled"`** after
   `reconcile_state_with_reality()`
@@ -716,3 +836,30 @@ from round-1 review.
   plan's own `schedule_cleanup` inherits the same blind spot (decision 2 and 5's
   log-based observability is the only visibility into a fired cleanup's actual
   outcome).
+- **(round 3) `ssh-deploy-dispatcher.sh`'s `launch()` truncates a single fixed
+  log path (`state/last_launch.log`) at the start of every dispatcher-routed
+  launch**
+  ([ssh-deploy-dispatcher.sh:61-63](../../infra/vps/bin/ssh-deploy-dispatcher.sh#L61-L63)),
+  then holds it open via redirection for that launched process's entire
+  lifetime. If a second `launch()` call arrives while an earlier one is still
+  running, the second call's truncation zeroes the file out from under the first
+  process, which keeps writing at its old (now-invalid) offset — producing a
+  corrupted or interleaved log. Always theoretically possible, but this plan
+  concretely raises how often it can happen: `cleanup-fallback.yml` (decision 8)
+  is a new, hourly, dispatcher-routed caller with, by design, no ordering
+  relationship to any other deploy/rollback/manual-cleanup activity — exactly
+  the kind of recurring, uncoordinated trigger most likely to land its
+  `launch()` call while an operator-initiated action is still executing.
+  Concretely: an operator runs `--rollback` at 14:00:00; the hourly fallback
+  happens to fire at 14:00:30 and dispatches `--cleanup`; both route through
+  `launch()`, and the second truncates `last_launch.log` mid-write by the first,
+  leaving an operator debugging a stuck rollback moments later looking at a
+  corrupted or misleadingly-truncated log. Not a correctness issue (no
+  downstream logic reads this file programmatically — confirmed), purely
+  observability, and pre-existing in the dispatcher's design rather than
+  introduced by this plan — but this plan is what makes it meaningfully more
+  likely to actually occur in practice, so it's flagged here rather than left
+  for someone to rediscover later. Out of scope to fix as part of this plan (a
+  real fix — e.g. a per-launch unique log path, or an flock around `launch()`
+  itself — is its own small, independent change to `ssh-deploy-dispatcher.sh`,
+  not something this plan's task list should absorb).

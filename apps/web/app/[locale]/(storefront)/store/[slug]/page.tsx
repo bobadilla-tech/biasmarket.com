@@ -156,7 +156,7 @@ export default async function StorePage({
   const { locale, slug } = await params;
   const [store, t] = await Promise.all([
     getStore(slug),
-    getTranslations("storefront"),
+    getTranslations({ locale, namespace: "storefront" }),
   ]);
 
   if (!store) {
