@@ -14,7 +14,7 @@ All eight task-list items landed as designed. No behavior described in the
 canonical `schedule_cleanup()`/`cancel_scheduled_cleanup()` code block in
 decision 3 was copied essentially verbatim into
 [`infra/vps/lib/cleanup_schedule.sh`](../../infra/vps/lib/cleanup_schedule.sh).
-Three judgment calls made where this doc didn't fully specify the literal code,
+Four judgment calls made where this doc didn't fully specify the literal code,
 none changing behavior on the success path:
 
 - Both functions end with an explicit `return 0` (the canonical block relies on
@@ -32,6 +32,16 @@ none changing behavior on the success path:
   the same single-final-pass atomicity to the deletion side of `--delete`, for
   the same narrowing-not-closing reason decision 9 gives for `--delay-updates`
   on the update side.
+- `cancel_scheduled_cleanup`'s `/proc/$pid/cmdline` identity check matches only
+  `"$ROOT_DIR/deploy.sh"` (a fixed-string `grep -qF`), not decision 3's literal
+  `grep -qE 'sleep|deploy\.sh'`. Narrowed post-review: `schedule_cleanup` passes
+  `"$ROOT_DIR/deploy.sh"` as `bash -c`'s positional `$0` argument, so that path
+  string is present in `/proc/$pid/cmdline` for the chain's entire lifetime — as
+  the positional arg during the `sleep`, as `argv[0]` after the `exec` into
+  `--cleanup` — making the bare `sleep` alternative both redundant (the path
+  already matches during that phase) and needlessly broad (it would also match
+  any unrelated process that happens to invoke `sleep` for its own reasons).
+  Same detection coverage, smaller false-positive surface.
 
 **Not run against the real VPS** — per the task brief, `infra/vps/deploy.sh` is
 synced to production and there is no test environment for it. Verification was
@@ -113,6 +123,17 @@ transient unit **spawned from inside a forced-command SSH session** — that's t
 specific combination that hits polkit. Decision 3 below explains why this plan
 still doesn't reuse that pattern for cleanup scheduling, even though it would
 solve the reboot-survival edge case for free.
+
+**This Context section describes the pre-implementation state, as originally
+written** — at the time this section was drafted, `cd.yml`'s `scheduled-cleanup`
+job (the literal 30-minute-`sleep` runner job described above) still existed and
+was the only mechanism for old-color cleanup; it has since been deleted as part
+of implementing this plan. See the "Status" section above for what actually
+landed: the job is gone, replaced by `deploy.sh`'s own
+`schedule_cleanup()`/`cancel_scheduled_cleanup()` plus the hourly
+`cleanup-fallback.yml` backstop. Same convention as
+[`2026-08-10-bluegreen-zero-downtime-deploy-plan.md`](2026-08-10-bluegreen-zero-downtime-deploy-plan.md)'s
+own Context section.
 
 ## Design decisions
 

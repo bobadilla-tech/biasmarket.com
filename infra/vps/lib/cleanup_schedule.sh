@@ -70,9 +70,15 @@ cancel_scheduled_cleanup() {
   # 30 minutes later if the only intervening activity is a --rollback. A
   # bare `kill -0 "$pid"` would treat "some unrelated process now has this
   # PID" as "the scheduled cleanup is still pending"; the cmdline check
-  # closes that realistic case (not bulletproof, but cheap).
+  # closes that realistic case (not bulletproof, but cheap). Matched against
+  # the exact deploy.sh path, not a bare "sleep" substring: schedule_cleanup
+  # always passes "$ROOT_DIR/deploy.sh" as bash -c's positional $0 argument,
+  # so it's present in /proc/$pid/cmdline for the whole chain's lifetime —
+  # during the sleep (as that positional arg) and after the exec into
+  # --cleanup (as argv[0]) alike — without the false-positive surface of
+  # matching any unrelated process that merely happens to run `sleep`.
   if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null \
-     && grep -qE 'sleep|deploy\.sh' "/proc/$pid/cmdline" 2>/dev/null; then
+     && grep -qF "$ROOT_DIR/deploy.sh" "/proc/$pid/cmdline" 2>/dev/null; then
     log_info "Cancelling previously scheduled cleanup (pid=$pid)."
     kill -TERM "$pid" 2>/dev/null || true
   fi
