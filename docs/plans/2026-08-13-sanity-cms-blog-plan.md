@@ -35,7 +35,11 @@ Postgres.
 ## Decisions
 
 - **Queries adjusted**: index drops the full `body` and adds a derived
-  `excerpt` (`coalesce(pt::text(body)[0..160], "")`); detail adds `_updatedAt`.
+  `excerpt` using the recommended Sanity pattern
+  `array::join(string::split((pt::text(body)), "")[0..255], "") + "..."`;
+  detail adds `_updatedAt`.
+  The fetch layer still normalizes/trimmed output for card/meta copy, matching
+  the current implementation in `apps/web/features/blog/server.ts`.
 - **No schema additions** (`coverImage`/`excerpt`/`author`) — minimal
   implementation first.
 - **Revalidation**: a webhook route handler in `apps/web` + `revalidateTag`.
@@ -47,16 +51,23 @@ Postgres.
 
 - `POSTS_QUERY`:
   `*[_type == "post"] | order(_createdAt desc) { _id, title, slug, _createdAt,
-  "excerpt": coalesce(pt::text(body)[0..160], "") }`
+  "excerpt": array::join(string::split((pt::text(body)), "")[0..255], "") + "..." }`
 - `POST_QUERY`:
   `*[_type == "post" && slug.current == $slug][0] { _id, title, slug, body,
-  _updatedAt }`
+  _createdAt, _updatedAt, "excerpt": array::join(string::split((pt::text(body)), "")[0..255], "") + "..." }`
+
+  This follows the recommended Sanity excerpt pattern and keeps the query
+  deterministic for the current Portable Text payloads.
 
 ### 2. Data layer — `apps/web/features/blog/server.ts`
 
 - `getBlogPosts()` / `getBlogPost(slug)`: call `client.fetch(query, params, {
   next: { tags: ["blog"], revalidate: 300 } })`, wrapped in React `cache()` for
   per-render dedupe. Export the query-result types.
+- Both fetchers normalize `excerpt` from the query value and then apply a final
+  160-character whitespace-collapsed trim in TypeScript, because the current Sanity
+  data shape and GROQ behavior make the runtime truncation more reliable than a
+  single query-side slice for the existing Portable Text content.
 
 ### 3. Routes
 
@@ -87,14 +98,15 @@ Postgres.
 
 ### 7. Revalidation
 
-- `apps/web/app/api/revalidate/route.ts` (POST): constant-time compare
-  (`crypto.timingSafeEqual`) of the `x-sanity-webhook-secret` header against
-  `SANITY_REVALIDATE_SECRET`; fail closed (401) when env is missing or the
-  header mismatches; on success `revalidateTag("blog", { expire: 0 })` +
+- `apps/web/app/api/blog/revalidate/route.ts` (POST): compare the
+  `x-sanity-webhook-secret` header against `SANITY_REVALIDATE_SECRET` using a
+  hash-based constant-time comparison (`createHash("sha256")` +
+  `timingSafeEqual`), fail closed (401) when env is missing or the header
+  mismatches, and on success call `revalidateTag("blog", { expire: 0 })` +
   `{ revalidated: true, now }`.
 - Env: add `SANITY_REVALIDATE_SECRET` to `infra/docker/.env.example`
   (manual-entry, like `RESEND_API_KEY`). Configure the Sanity webhook in the
-  Sanity console: URL `https://biasmarket.com/api/revalidate`, secret set,
+  Sanity console: URL `https://biasmarket.com/api/blog/revalidate`, secret set,
   triggers on `post` create/update/delete.
 
 ### 8. Sitemap — `apps/web/app/sitemap.ts`
