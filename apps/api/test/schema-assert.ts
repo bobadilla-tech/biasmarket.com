@@ -1,6 +1,7 @@
 import { mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
+import type { PrismaService } from '../src/prisma/prisma.service.js';
 
 // MAIL_DRIVER=file (see infra/docker/.env.example) makes apps/workers write
 // outgoing emails to apps/workers/.mailer-dev instead of sending them — used
@@ -17,6 +18,46 @@ export const mailerDevDir = join(
   '.mailer-dev',
 );
 mkdirSync(mailerDevDir, { recursive: true });
+
+// E2E specs intentionally use stable phone numbers so they can assert the
+// normalized seller/customer projections. If a prior run is interrupted after
+// checkout, those global BuyerAccount rows otherwise make the next run look
+// like a real identity/email mismatch. Remove only the explicitly-owned test
+// identities and every dependent row, in FK order.
+export async function cleanupBuyerTestData(
+  prisma: PrismaService,
+  phones: string[],
+): Promise<void> {
+  const accounts = await prisma.buyerAccount.findMany({
+    where: { phone: { in: phones } },
+    select: { id: true },
+  });
+  const accountIds = accounts.map(({ id }) => id);
+  if (accountIds.length > 0) {
+    const orders = await prisma.order.findMany({
+      where: { buyerAccountId: { in: accountIds } },
+      select: { id: true },
+    });
+    const orderIds = orders.map(({ id }) => id);
+    if (orderIds.length > 0) {
+      await prisma.orderPayment.deleteMany({
+        where: { orderId: { in: orderIds } },
+      });
+      await prisma.orderItem.deleteMany({ where: { orderId: { in: orderIds } } });
+      await prisma.order.deleteMany({ where: { id: { in: orderIds } } });
+    }
+    await prisma.customerStoreLink.deleteMany({
+      where: { buyerAccountId: { in: accountIds } },
+    });
+    await prisma.address.deleteMany({
+      where: { buyerAccountId: { in: accountIds } },
+    });
+  }
+  await prisma.customer.deleteMany({ where: { phone: { in: phones } } });
+  if (accountIds.length > 0) {
+    await prisma.buyerAccount.deleteMany({ where: { id: { in: accountIds } } });
+  }
+}
 
 // `vitest.config.e2e.ts` sets `fileParallelism: false`, so specs run
 // sequentially — but within a single spec's own concurrent operations (or a

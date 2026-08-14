@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { AppModule } from './../src/app.module.js';
 import {
   assertMatchesSchema,
+  cleanupBuyerTestData,
   mailerDevDir,
   waitForNewMailerFile,
 } from './schema-assert.js';
@@ -71,6 +72,7 @@ describe('customer account + customer auth (e2e)', () => {
     app = moduleFixture.createNestApplication();
     await app.init();
     prisma = moduleFixture.get(PrismaService);
+    await cleanupBuyerTestData(prisma, [customerPhone, crossStorePhone]);
 
     const existingMailerFiles = new Set(readdirSync(mailerDevDir));
 
@@ -174,6 +176,7 @@ describe('customer account + customer auth (e2e)', () => {
       });
     }
     if (storeBId) {
+      await prisma.customerStoreLink.deleteMany({ where: { storeId: storeBId } });
       await prisma.notification.deleteMany({ where: { storeId: storeBId } });
       await prisma.paymentMethodConfig.deleteMany({
         where: { storeId: storeBId },
@@ -185,6 +188,7 @@ describe('customer account + customer auth (e2e)', () => {
     }
 
     if (storeId) {
+      await prisma.customerStoreLink.deleteMany({ where: { storeId } });
       await prisma.notification.deleteMany({ where: { storeId } });
       await prisma.paymentMethodConfig.deleteMany({ where: { storeId } });
       await prisma.deliveryMethodConfig.deleteMany({ where: { storeId } });
