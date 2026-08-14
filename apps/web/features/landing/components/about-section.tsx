@@ -46,8 +46,8 @@ export function AboutSection() {
               height={height}
               className={
                 index === ILLUSTRATIONS.length - 1
-                  ? "h-auto w-36 object-contain sm:w-auto col-span-2 sm:col-span-1"
-                  : "h-auto w-36 object-contain sm:w-auto"
+                  ? "h-auto w-32 object-contain sm:w-auto col-span-2 sm:col-span-1"
+                  : "h-auto w-32 object-contain sm:w-auto"
               }
             />
           ))}

@@ -1,0 +1,66 @@
+name: Cleanup fallback
+
+# Backstop for infra/vps/deploy.sh's own self-scheduled 30-minute old-color
+# cleanup (see cmd_deploy's call to schedule_cleanup, lib/cleanup_schedule.sh)
+# — closes the gap where that schedule is lost silently (a VPS reboot
+# mid-window; see docs/plans/2026-08-10-server-side-cleanup-scheduling-
+# plan.md decision 7). Runs `deploy.sh --cleanup` unconditionally on a
+# low-frequency cron; cheap because cmd_cleanup is idempotent and safe to
+# call at any time (decision 4: it re-reads state/current_color and
+# state/rollback_target fresh and no-ops if there's nothing to tear down) —
+# the overwhelming majority of runs are a no-op, not a duplicate of the
+# 30-minute path.
+#
+# "Unconditional" above means unconditional on deploy activity, not on
+# timing: cmd_cleanup itself also refuses to tear down a rollback_target
+# younger than the promised 30-minute window (see its age check against
+# state/rollback_target_set_at) — otherwise an hourly tick landing shortly
+# after a deploy would erase the rollback safety net before the window it
+# was promised for had actually elapsed.
+#
+# GitHub's `schedule:` trigger is documented as best-effort and can slip by
+# tens of minutes under platform load — "hourly" is a target interval, not a
+# guarantee. No concurrency group: `deploy.sh --cleanup`'s own `flock`
+# (acquire_deploy_lock, lib/lock.sh) already serializes any two overlapping
+# invocations of it on the VPS side, so concurrent fallback runs (or a
+# fallback run landing during an active deploy's lock-held window) are
+# harmless — the losing side just waits on flock or times out and the next
+# tick tries again.
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup-fallback:
+    name: Run deploy.sh --cleanup
+    runs-on: ubuntu-latest
+    # Must be declared — this is what makes the DEPLOY_SSH_* secrets
+    # (environment-scoped, same as sync-and-deploy) visible to this job.
+    # Missing this makes deploy-ssh-setup fail on every run, silently
+    # reintroducing the "no retry, nobody notices" failure mode this
+    # workflow exists to close.
+    environment: production
+    timeout-minutes: 10
+    steps:
+      # `uses: ./...` below resolves the composite action from the checked-
+      # out workspace, so a checkout has to happen even though this job
+      # doesn't otherwise need repo contents.
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/deploy-ssh-setup
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          user: ${{ secrets.DEPLOY_SSH_USER }}
+          known_hosts: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
+          key_rsync: ${{ secrets.DEPLOY_SSH_KEY_RSYNC }}
+          key_dispatch: ${{ secrets.DEPLOY_SSH_KEY_DISPATCH }}
+
+      - name: Clean up the previous color, if any
+        run: |
+          ssh -i ~/.ssh/deploy_dispatch_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'deploy.sh --cleanup'

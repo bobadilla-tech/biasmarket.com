@@ -13,7 +13,7 @@ export async function generateMetadata({
     locale,
     namespace: "storefront.forgotPasswordPage",
   });
-  return { title: t("title") };
+  return { title: t("title"), robots: { index: false, follow: false } };
 }
 
 export default function ForgotPasswordPage() {

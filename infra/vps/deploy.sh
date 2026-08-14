@@ -39,10 +39,17 @@ source "$ROOT_DIR/lib/health.sh"
 source "$ROOT_DIR/lib/smoke.sh"
 # shellcheck source=lib/migrate.sh
 source "$ROOT_DIR/lib/migrate.sh"
+# shellcheck source=lib/cleanup_schedule.sh
+source "$ROOT_DIR/lib/cleanup_schedule.sh"
 
 HEALTH_TIMEOUT_SECONDS=120
 CANARY_WEIGHT=1        # out of 10, i.e. candidate gets 10% during the hold
 CANARY_HOLD_SECONDS=30
+# Must match the `sleep 1800` in lib/cleanup_schedule.sh's schedule_cleanup —
+# cmd_cleanup below refuses to tear down a rollback target younger than this,
+# so the two are the same promised window by two different mechanisms (one
+# self-scheduled, one an age check any caller has to pass).
+CLEANUP_MIN_AGE_SECONDS=1800
 
 CURRENT_SHA_FOR_RESULT=""
 LAST_PHASE="init"
@@ -222,7 +229,25 @@ cmd_deploy() {
   atomic_write "$CURRENT_COLOR_FILE" "$candidate_color"
   atomic_write "$CURRENT_SHA_FILE" "$sha"
   atomic_write "$ROLLBACK_TARGET_FILE" "$current_color"
+  # Paired with ROLLBACK_TARGET_FILE above, always written together — this
+  # is what lets cmd_cleanup refuse to tear down a rollback target younger
+  # than CLEANUP_MIN_AGE_SECONDS, regardless of which caller (the
+  # self-scheduled fire below or cleanup-fallback.yml's hourly tick) invoked
+  # it. See cmd_cleanup's age check for the full rationale.
+  atomic_write "$ROLLBACK_TARGET_SET_AT_FILE" "$(date -u +%s)"
   phase "state_committed"
+
+  # Server-side 30-minute cleanup delay, replacing cd.yml's old `sleep
+  # 1800` runner-side wait — see
+  # docs/plans/2026-08-10-server-side-cleanup-scheduling-plan.md decisions
+  # 1, 3, 5. Both guarded: a failure here (e.g. disk full) must never turn
+  # this already-successful cutover into a reported deploy failure — the
+  # trailing `|| true` is required, not decorative (decision 5): without
+  # it, a double-failure (both the call AND log_warn's own printf failing,
+  # e.g. on the same full disk) would abort this function under set -e
+  # before append_history's success line below ever runs.
+  cancel_scheduled_cleanup || log_warn "Failed to cancel a previously scheduled cleanup — it may fire redundantly later; cmd_cleanup's own idempotent guards make this safe, not silently wrong." || true
+  schedule_cleanup || log_warn "Failed to schedule automatic cleanup — old color ($current_color) must be cleaned up manually via deploy.sh --cleanup." || true
 
   append_history "deploy sha=$sha color=$candidate_color outcome=success previous_color=$current_color"
   log_info "Deploy complete. Live color=$candidate_color sha=$sha."
@@ -280,6 +305,10 @@ cmd_rollback() {
 
   atomic_write "$CURRENT_COLOR_FILE" "$target_color"
   atomic_write "$ROLLBACK_TARGET_FILE" "$current_color"
+  # Fresh target, fresh window — without this, a missing/stale set_at would
+  # make cmd_cleanup's age check treat this brand-new rollback target as
+  # already old enough to tear down on the very next fallback tick.
+  atomic_write "$ROLLBACK_TARGET_SET_AT_FILE" "$(date -u +%s)"
 
   local recovered_sha
   recovered_sha="$(running_image_sha "$target_color")"
@@ -308,6 +337,27 @@ cmd_cleanup() {
     return 0
   fi
 
+  # Refuse to tear down a rollback target before its promised
+  # CLEANUP_MIN_AGE_SECONDS window has elapsed. Without this, cleanup-
+  # fallback.yml's hourly cron tick landing shortly after a deploy would
+  # erase the rollback safety net well before the window operators were
+  # told they had — this check is what makes that safe regardless of which
+  # caller (the self-scheduled fire, which by construction only ever fires
+  # at/after the window anyway, or the fallback cron) invoked --cleanup.
+  # A missing set_at file (state from before this check existed) is treated
+  # as old enough to clean up, matching this function's pre-existing
+  # unconditional behavior for that legacy case.
+  local set_at now age
+  set_at="$(state_read "$ROLLBACK_TARGET_SET_AT_FILE")"
+  if [[ -n "$set_at" ]]; then
+    now="$(date +%s)"
+    age=$((now - set_at))
+    if ((age < CLEANUP_MIN_AGE_SECONDS)); then
+      log_info "rollback_target ($target) is only ${age}s old (< ${CLEANUP_MIN_AGE_SECONDS}s) — too soon, leaving it in place for now."
+      return 0
+    fi
+  fi
+
   log_info "Tearing down old color: $target"
   # compose() and the compose file both interpolate ${IMAGE_TAG:?} even for
   # stop/rm — nothing is (re)created here, so the live sha is a fine
@@ -318,6 +368,7 @@ cmd_cleanup() {
   compose rm -f "api-${target}" "web-${target}" "workers-${target}" 2>/dev/null || true
 
   atomic_write "$ROLLBACK_TARGET_FILE" ""
+  atomic_write "$ROLLBACK_TARGET_SET_AT_FILE" ""
   append_history "cleanup color=$target outcome=success"
   log_info "Cleanup complete. $target stopped and removed. No rollback target recorded until the next deploy."
 }
@@ -370,6 +421,7 @@ cmd_bootstrap() {
   atomic_write "$CURRENT_COLOR_FILE" "$color"
   atomic_write "$CURRENT_SHA_FILE" "$sha"
   atomic_write "$ROLLBACK_TARGET_FILE" ""
+  atomic_write "$ROLLBACK_TARGET_SET_AT_FILE" ""
 
   append_history "bootstrap sha=$sha color=$color outcome=success"
   log_info "Bootstrap complete. Live color=$color sha=$sha. The other color ($(other_color "$color")) is not running yet — the next normal deploy starts it."

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { hasLocale, type Locale, NextIntlClientProvider } from "next-intl";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import { routing } from "@/i18n/routing";
@@ -34,6 +34,7 @@ export async function generateMetadata({
   params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
   const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "common.meta" });
   const title = t("title");
   const description = t("description");
@@ -66,6 +67,7 @@ export default async function RootLayout({
   params: Promise<{ locale: Locale }>;
 }) {
   const { locale } = await params;
+  setRequestLocale(locale);
   if (!hasLocale(routing.locales, locale)) notFound();
 
   return (
