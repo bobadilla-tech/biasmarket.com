@@ -17,6 +17,7 @@ const REQUIRED = [
   "S3_SECRET_KEY",
   "INTERNAL_JOBS_SECRET",
   "MONITORING_WEBHOOK_SECRET",
+  "SITEMAP_INTERNAL_TOKEN",
 ];
 
 const OPTIONAL = ["NODE_ENV"];
@@ -110,6 +111,13 @@ describe("validateEnv", () => {
     delete process.env.MONITORING_WEBHOOK_SECRET;
     expect(() => validateEnv()).toThrow(
       "Missing required env var: MONITORING_WEBHOOK_SECRET",
+    );
+  });
+
+  it("refuses to boot when SITEMAP_INTERNAL_TOKEN is missing", () => {
+    delete process.env.SITEMAP_INTERNAL_TOKEN;
+    expect(() => validateEnv()).toThrow(
+      "Missing required env var: SITEMAP_INTERNAL_TOKEN",
     );
   });
 });

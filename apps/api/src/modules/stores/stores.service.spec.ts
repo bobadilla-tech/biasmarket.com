@@ -141,6 +141,37 @@ describe("StoresService", () => {
     });
   });
 
+  describe("sitemap queries", () => {
+    it("counts only public stores", async () => {
+      prisma.store.count.mockResolvedValue(4);
+
+      await expect(service.findPublicSitemapCount()).resolves.toBe(4);
+      expect(prisma.store.count).toHaveBeenCalledWith({
+        where: { isPublic: true },
+      });
+    });
+
+    it("pages public stores with deterministic createdAt/id ordering", async () => {
+      prisma.store.findMany.mockResolvedValue([{ slug: "first" }]);
+      prisma.store.count.mockResolvedValue(8);
+
+      await expect(service.findPublicSitemapPage(50_000, 100)).resolves.toEqual({
+        items: [{ slug: "first" }],
+        total: 8,
+      });
+      expect(prisma.store.findMany).toHaveBeenCalledWith({
+        where: { isPublic: true },
+        select: { slug: true },
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        skip: 100,
+        take: 50_000,
+      });
+      expect(prisma.store.count).toHaveBeenCalledWith({
+        where: { isPublic: true },
+      });
+    });
+  });
+
   describe("findBySlugForOwner()", () => {
     it("throws NotFoundException when no store has that slug", async () => {
       prisma.store.findUnique.mockResolvedValue(null);

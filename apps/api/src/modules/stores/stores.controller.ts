@@ -19,7 +19,8 @@ import {
   Session,
 } from "@thallesp/nestjs-better-auth";
 import type { UserSession } from "@thallesp/nestjs-better-auth";
-import { ApiConsumes, ApiQuery } from "@nestjs/swagger";
+import { ApiConsumes, ApiHeader, ApiOkResponse, ApiQuery } from "@nestjs/swagger";
+import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
 import { StoresService } from "./stores.service.js";
 import { UpdateStoreDto } from "./dto/update-store.dto.js";
 import { CreateStoreDto } from "./dto/create-store.dto.js";
@@ -27,6 +28,12 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import { StorageService } from "../../storage/storage.service.js";
 import { parsePublicListQuery } from "../../common/public-list-query.js";
 import { toStoreDto } from "./stores.mapper.js";
+import { SitemapInternalTokenGuard } from "./sitemap-internal-token.guard.js";
+import { parseSitemapPagination } from "./sitemap-pagination.js";
+import {
+  SitemapStoreCountDto,
+  SitemapStorePageDto,
+} from "./dto/sitemap-response.dto.js";
 import type {
   FeaturedStoreResponseDto,
   PublicCategoryResponseDto,
@@ -214,6 +221,32 @@ export class StoresController {
       ...row,
       createdAt: row.createdAt.toISOString(),
     }));
+  }
+
+  @Public()
+  @UseGuards(SitemapInternalTokenGuard, ThrottlerGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 60 } })
+  @ApiHeader({ name: "X-Internal-Sitemap-Token", required: true })
+  @ApiOkResponse({ type: SitemapStoreCountDto })
+  @Get("internal/sitemap/count")
+  async findPublicSitemapCount(): Promise<SitemapStoreCountDto> {
+    return { total: await this.stores.findPublicSitemapCount() };
+  }
+
+  @Public()
+  @UseGuards(SitemapInternalTokenGuard, ThrottlerGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 60 } })
+  @ApiHeader({ name: "X-Internal-Sitemap-Token", required: true })
+  @ApiQuery({ name: "limit", required: true, type: String })
+  @ApiQuery({ name: "offset", required: true, type: String })
+  @ApiOkResponse({ type: SitemapStorePageDto })
+  @Get("internal/sitemap")
+  async findPublicSitemapPage(
+    @Query("limit") limit: string | undefined,
+    @Query("offset") offset: string | undefined,
+  ): Promise<SitemapStorePageDto> {
+    const parsed = parseSitemapPagination(limit, offset);
+    return this.stores.findPublicSitemapPage(parsed.limit, parsed.offset);
   }
 
   @Public()

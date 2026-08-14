@@ -9,9 +9,8 @@
 // Idempotent: re-running skips monitors/the notification that already exist
 // by name, and re-saves the status page (safe to update repeatedly).
 //
-// Usage (run on the VM, from the repo root, after the infra/vps/ stack —
-// or, pre-cutover, infra/docker/docker-compose.yml — has brought
-// `uptime-kuma` up):
+// Usage (run on the VM, from the repo root, after the infra/vps stack has
+// brought `uptime-kuma` up):
 //   KUMA_USERNAME=admin KUMA_PASSWORD=... node scripts/setup-kuma.ts
 //
 // Env vars:
@@ -21,19 +20,14 @@
 //   KUMA_PASSWORD  required, same as above
 //   API_URL        default https://api.biasmarket.com — where the durable-
 //                  history webhook notification posts to
-//   MONITORING_WEBHOOK_SECRET  read from infra/docker/.env, falling back to
-//                  infra/vps/env/shared.env, if not set in the environment
-//                  (whichever of those two files is the live one on the VPS
-//                  at the time this script runs — see docs/core/deploy.md)
+//   MONITORING_WEBHOOK_SECRET  read from infra/vps/env/shared.env if not set
+//                  in the environment
 //   STATUS_PAGE_SLUG   default "status"
 //   STATUS_PAGE_TITLE  default "Bias Market Status"
 //
-// Blue/green note (see docs/core/blue-green-migrations.md): the two former
-// bare-hostname internal monitors ("API (internal)" @ http://api:3000,
-// "Web (internal)" @ http://web:3001) stop resolving entirely once only
-// `api-blue`/`api-green`/`web-blue`/`web-green` exist — this script now
-// creates 4 static per-color internal monitors instead. Re-run this script
-// before/at the first blue/green cutover (T11), not just once. Also creates
+// Production exposes only `api-blue`/`api-green`/`web-blue`/`web-green`, so
+// this script creates 4 static per-color internal monitors. Re-run this
+// script before/at the first blue/green cutover (T11), not just once. Also creates
 // a Kuma "push" monitor backing the `migration_pending` stuck-deploy alert
 // (see the systemd timer in infra/vps/systemd/ +
 // infra/vps/bin/migration-watchdog.sh) — deliberately NOT wired through
@@ -76,11 +70,6 @@ function parseEnvFile(path: string): Record<string, string> {
   return out;
 }
 
-// infra/docker/.env is checked first (still the live file pre-cutover, and
-// per docs/core/deploy.md kept in place post-cutover too, stopped-but-not-
-// removed, as the T11 fallback), infra/vps/env/shared.env second (the
-// blue/green stack's real secrets file, once cutover has happened).
-const dockerEnv = parseEnvFile(join(repoRoot, "infra", "docker", ".env"));
 const vpsSharedEnv = parseEnvFile(
   join(repoRoot, "infra", "vps", "env", "shared.env"),
 );
@@ -97,7 +86,7 @@ const KUMA_PASSWORD = requiredEnv("KUMA_PASSWORD");
 const API_URL = process.env.API_URL ?? "https://api.biasmarket.com";
 const MONITORING_WEBHOOK_SECRET = requiredEnv(
   "MONITORING_WEBHOOK_SECRET",
-  dockerEnv.MONITORING_WEBHOOK_SECRET ?? vpsSharedEnv.MONITORING_WEBHOOK_SECRET,
+  vpsSharedEnv.MONITORING_WEBHOOK_SECRET,
 );
 const STATUS_PAGE_SLUG = process.env.STATUS_PAGE_SLUG ?? "status";
 const STATUS_PAGE_TITLE = process.env.STATUS_PAGE_TITLE ??

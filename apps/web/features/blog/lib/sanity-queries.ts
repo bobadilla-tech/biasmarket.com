@@ -24,6 +24,14 @@ export const POST_QUERY = defineQuery(`
   }
 `);
 
-export const POSTS_SITEMAP_QUERY = defineQuery(`
-  *[_type == "post"] { slug, _updatedAt }
+export const POSTS_SITEMAP_COUNT_QUERY = defineQuery(`
+  count(*[_type == "post" && defined(slug.current)])
+`);
+
+export const POSTS_SITEMAP_PAGE_QUERY = defineQuery(`
+  *[_type == "post" && defined(slug.current)]
+    | order(_createdAt asc, _id asc) [$start...$end] {
+      slug,
+      _updatedAt
+    }
 `);

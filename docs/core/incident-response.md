@@ -20,7 +20,8 @@ looks wrong that the deploy's own automated smoke tests didn't catch:
 Health-checks the sidelined color **before** flipping traffic back to it —
 refuses loudly instead of blindly restoring service to something that silently
 degraded while benched. If it refuses, the sidelined color itself needs manual
-attention (check its logs: `docker compose logs api-<color>` from
+attention (check its logs: `IMAGE_TAG="$(cat state/current_sha)" docker compose
+--env-file env/shared.env logs api-<color>` from
 `/opt/biasmarket`) before a rollback is possible; at that point you're choosing
 between fixing the sidelined color or rolling forward with another
 `deploy.sh <sha>` deploy.
@@ -50,7 +51,8 @@ same real-time Slack/Discord alert the existing HTTP/TCP monitors already use.
 On this alert: SSH to the VPS, check `state/deploy.lock.meta` (who/what was
 running and at what phase) and `state/migration_pending`'s contents (which
 SHA/color), then
-`docker compose -f docker-compose.yml logs api-<candidate-color>` from
+`IMAGE_TAG="$(cat state/current_sha)" docker compose --env-file env/shared.env
+logs api-<candidate-color>` from
 `/opt/biasmarket` to see what actually happened. Do not blindly re-run
 `deploy.sh <sha>` against a stuck lock — check `state/deploy.lock.meta` first;
 if the previous process is genuinely dead (not just slow), the flock releases on
@@ -87,7 +89,8 @@ Every critical surface has an external and an internal monitor. Check both
 before doing anything else:
 
 - **External down, internal up** → Caddy/DNS/TLS problem. From
-  `/opt/biasmarket`, check `docker compose logs caddy`, confirm DNS still
+  `/opt/biasmarket`, check `IMAGE_TAG="$(cat state/current_sha)" docker compose
+  --env-file env/shared.env logs caddy`, confirm DNS still
   resolves (`dig +short api.biasmarket.com`), and check for an expired cert.
 - **Both down** → the app itself. Go straight to the common fixes below.
 - **DB down** → almost always cascades into both API monitors going down too;
@@ -98,8 +101,8 @@ before doing anything else:
 
 ## Common fixes
 
-On the blue/green stack (from `/opt/biasmarket` — **never** a bare
-`docker compose down`, see `infra/vps/docker-compose.yml`'s header comment):
+On the blue/green stack (from `/opt/biasmarket` — **never** run a bare
+`docker compose down`):
 
 ```bash
 # which color is live right now
@@ -107,8 +110,8 @@ cat state/current_color
 
 # tail logs / restart ONE service — always name it explicitly, api-blue or
 # api-green, never bare `api` (that service doesn't exist in this stack)
-docker compose -f docker-compose.yml logs -f api-<color>
-docker compose -f docker-compose.yml restart api-<color>
+IMAGE_TAG="$(cat state/current_sha)" docker compose --env-file env/shared.env logs -f api-<color>
+IMAGE_TAG="$(cat state/current_sha)" docker compose --env-file env/shared.env restart api-<color>
 ```
 
 If `api-<color>` is unhealthy, it is **not** mid-migration — migrations run in
@@ -150,8 +153,8 @@ To rotate on the blue/green stack: `env/shared.env` is checksum-gated
 — write just the hash, matching the format `deploy.sh` itself writes), then
 restart both running app services that read it, explicitly naming the live
 color:
-`docker compose -f docker-compose.yml restart api-<live-color>
-workers-<live-color>`.
+`IMAGE_TAG="$(cat state/current_sha)" docker compose --env-file env/shared.env
+restart api-<live-color> workers-<live-color>`.
 
 Then manually copy the new value into Kuma's webhook notification-provider
 config. Until you do, Kuma's webhook calls 401 — the Slack/Discord path is

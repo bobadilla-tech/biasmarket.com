@@ -44,6 +44,7 @@ const REQUIRED_ENV_VARS = [
   // Gates POST /monitoring/webhook (see MonitoringWebhookSecretGuard) —
   // Uptime Kuma's shared secret for the durable-incident-history path.
   "MONITORING_WEBHOOK_SECRET",
+  "SITEMAP_INTERNAL_TOKEN",
 ];
 
 // Boot-time assertion of every env var the app actually depends on at

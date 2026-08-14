@@ -15,9 +15,9 @@
 // on top of the base fixtures without touching them. Rerunning with the same
 // label repairs that batch in place; a new label adds a separate batch.
 //
-// Reachable in prod via `pnpm seed:base:prod` / `pnpm seed:append:prod --
-// --batch=<label>` — same idempotent, additive-only guarantee as dev, no
-// destructive operations.
+// Reachable in production by running the seed command inside the currently
+// live `api-<color>` container; see docs/core/admin-access.md. The operation is
+// idempotent, additive-only, and has no destructive mode.
 
 import { createSeedClient } from "./client.ts";
 import { applyStoreFixture } from "./apply.ts";

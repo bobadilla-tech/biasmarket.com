@@ -41,7 +41,7 @@ async function bootstrap() {
   // /internal/* (the internal-jobs endpoint apps/workers dispatches to)
   // stays off the "api" prefix entirely — kept as its own top-level path so
   // Caddy can block the whole prefix in one rule instead of enumerating
-  // individual excluded routes under /api/*, see infra/caddy/Caddyfile.
+  // individual excluded routes under /api/*, see infra/vps/Caddyfile.
   app.setGlobalPrefix("api", {
     exclude: [{ path: "internal/*splat", method: RequestMethod.ALL }],
   });

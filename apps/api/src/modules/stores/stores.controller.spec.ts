@@ -4,6 +4,11 @@ import { StoresController } from "./stores.controller.js";
 import { StoresService } from "./stores.service.js";
 import { StorageService } from "../../storage/storage.service.js";
 
+vi.mock("@nestjs/throttler", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@nestjs/throttler")>();
+  return { ...actual, ThrottlerGuard: class ThrottlerGuard {} };
+});
+
 vi.mock("@thallesp/nestjs-better-auth", () => ({
   AuthGuard: class AuthGuard {},
   Session: () => () => undefined,

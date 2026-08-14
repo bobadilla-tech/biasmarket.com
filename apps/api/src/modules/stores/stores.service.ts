@@ -142,6 +142,26 @@ export class StoresService {
     });
   }
 
+  async findPublicSitemapCount() {
+    return this.prisma.store.count({ where: { isPublic: true } });
+  }
+
+  async findPublicSitemapPage(limit: number, offset: number) {
+    const where = { isPublic: true };
+    const [items, total] = await Promise.all([
+      this.prisma.store.findMany({
+        where,
+        select: { slug: true },
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        skip: offset,
+        take: limit,
+      }),
+      this.prisma.store.count({ where }),
+    ]);
+
+    return { items, total };
+  }
+
   // v1 ranking: minimum order-count floor (>=3 VERIFIED orders in the
   // trailing 30-day window) before ranking by revenue within that eligible
   // set, tie-broken by order count — plain revenue-only ranking would let a

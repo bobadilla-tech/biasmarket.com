@@ -37,6 +37,9 @@ const storeWithOwnerSchema =
   openapi.components.schemas.StoreWithOwnerResponseDto;
 const publicStoreListingSchema =
   openapi.components.schemas.PublicStoreListingResponseDto;
+const sitemapStoreCountSchema =
+  openapi.components.schemas.SitemapStoreCountDto;
+const sitemapStorePageSchema = openapi.components.schemas.SitemapStorePageDto;
 const publicCollectionListingSchema =
   openapi.components.schemas.PublicCollectionListingResponseDto;
 const featuredStoreSchema = openapi.components.schemas.FeaturedStoreResponseDto;
@@ -67,6 +70,7 @@ describe("stores + my-stores (e2e)", () => {
   const email = `stores-e2e-${runId}@example.com`;
 
   beforeAll(async () => {
+    process.env.SITEMAP_INTERNAL_TOKEN ??= "e2e-sitemap-token";
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -242,6 +246,30 @@ describe("stores + my-stores (e2e)", () => {
     for (const entry of allPublicRes.body) {
       assertMatchesSchema(entry, publicStoreListingSchema, openapi.components);
     }
+
+    const sitemapToken = process.env.SITEMAP_INTERNAL_TOKEN;
+    const countRes = await request(app.getHttpServer())
+      .get("/stores/internal/sitemap/count")
+      .set("X-Internal-Sitemap-Token", sitemapToken!)
+      .expect(200);
+    assertMatchesSchema(countRes.body, sitemapStoreCountSchema, openapi.components);
+    expect(countRes.body.total).toBeGreaterThanOrEqual(1);
+
+    const pageRes = await request(app.getHttpServer())
+      .get("/stores/internal/sitemap?limit=1&offset=0")
+      .set("X-Internal-Sitemap-Token", sitemapToken!)
+      .expect(200);
+    assertMatchesSchema(pageRes.body, sitemapStorePageSchema, openapi.components);
+    expect(pageRes.body.items).toEqual([{ slug: expect.any(String) }]);
+    expect(pageRes.body.total).toBe(countRes.body.total);
+
+    await request(app.getHttpServer())
+      .get("/stores/internal/sitemap?limit=1&offset=0")
+      .expect(401);
+    await request(app.getHttpServer())
+      .get("/stores/internal/sitemap?limit=50001&offset=0")
+      .set("X-Internal-Sitemap-Token", sitemapToken!)
+      .expect(400);
 
     const collectionsPublicRes = await request(app.getHttpServer())
       .get("/stores/collections/public")
