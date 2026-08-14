@@ -61,38 +61,36 @@ the actual implementation, this is the summary):
     old color's cleanup 30 minutes out — `setsid`-detached, same shape as the
     SSH dispatcher's own `launch()` (`lib/cleanup_schedule.sh`'s
     `schedule_cleanup`), superseding (`cancel_scheduled_cleanup`) any
-    still-pending schedule from a prior deploy first. Never fatal to the
-    deploy itself if scheduling fails — see the plan doc referenced below.
-    Three state files, same "who/what/since when" spirit as
-    `state/deploy.lock.meta`, none of them secret, none deleted on normal
-    completion (left as a breadcrumb):
+    still-pending schedule from a prior deploy first. Never fatal to the deploy
+    itself if scheduling fails — see the plan doc referenced below. Three state
+    files, same "who/what/since when" spirit as `state/deploy.lock.meta`, none
+    of them secret, none deleted on normal completion (left as a breadcrumb):
     - `state/scheduled_cleanup.pid` — the backgrounded process's PID.
     - `state/scheduled_cleanup.meta` — `pid=`, `scheduled_by=<sha>`,
       `scheduled_at=`/`fires_at=` (UTC), and
       `rollback_target_at_schedule=<blue|green>`, the color this schedule
-      intends to tear down. **This last field is a snapshot, not
-      authoritative** — the cleanup that actually fires re-reads
-      `state/rollback_target` fresh (step 12), so if a `--rollback` happened
-      in between, the real target can differ from what's recorded here.
+      intends to tear down. **This last field is a snapshot, not authoritative**
+      — the cleanup that actually fires re-reads `state/rollback_target` fresh
+      (step 12), so if a `--rollback` happened in between, the real target can
+      differ from what's recorded here.
     - `state/scheduled_cleanup.log` — the backgrounded process's own
       stdout/stderr, overwritten fresh on every new schedule.
 
-    A stray orphaned `flock` process transiently visible in `ps` shortly
-    after one schedule supersedes another is expected (a `kill -TERM` racing
-    a process already blocked inside `acquire_deploy_lock`), not a symptom to
-    chase.
+    A stray orphaned `flock` process transiently visible in `ps` shortly after
+    one schedule supersedes another is expected (a `kill -TERM` racing a process
+    already blocked inside `acquire_deploy_lock`), not a symptom to chase.
 12. `deploy.sh --cleanup` (whether fired by step 11's schedule, the hourly
     `cleanup-fallback.yml`, or run manually) always re-reads
     `state/current_color`/`state/rollback_target` fresh at invocation time —
-    never trusts anything captured when it was scheduled — and no-ops safely
-    if there's nothing to clean up. This is what makes an in-window manual
+    never trusts anything captured when it was scheduled — and no-ops safely if
+    there's nothing to clean up. This is what makes an in-window manual
     `--rollback` safe without any bespoke cancellation logic: it rewrites
-    `rollback_target` to whatever's now correctly benched, and whichever
-    cleanup eventually fires tears down the right color regardless of what
-    was true when it was scheduled.
+    `rollback_target` to whatever's now correctly benched, and whichever cleanup
+    eventually fires tears down the right color regardless of what was true when
+    it was scheduled.
 
-Full design, including the state-machine edge cases (VPS reboot mid-window,
-two deploys landing in rapid succession, `deploy.sh` itself being rsynced
+Full design, including the state-machine edge cases (VPS reboot mid-window, two
+deploys landing in rapid succession, `deploy.sh` itself being rsynced
 mid-window) and why this isn't built on `systemd-run`/a systemd timer:
 [`2026-08-10-server-side-cleanup-scheduling-plan.md`](../plans/2026-08-10-server-side-cleanup-scheduling-plan.md).
 

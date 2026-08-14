@@ -14,9 +14,9 @@ right after `phase "state_committed"`, `cd.yml`'s `scheduled-cleanup` job
 removed and `--delay-updates --delete-delay` added to the rsync step, the new
 `.github/workflows/cleanup-fallback.yml`, the stale `systemd-run` sentence in
 the blue/green plan's decision 8 fixed, and
-[`docs/core/blue-green-migrations.md`](../core/blue-green-migrations.md)
-updated with the new state files and pipeline shape. No deviations from the
-plan as reviewed.
+[`docs/core/blue-green-migrations.md`](../core/blue-green-migrations.md) updated
+with the new state files and pipeline shape. No deviations from the plan as
+reviewed.
 
 ## Context
 

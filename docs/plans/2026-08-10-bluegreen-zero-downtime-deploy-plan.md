@@ -355,20 +355,20 @@ wait with no operator-visible signal.
   by `ssh-deploy-dispatcher.sh`'s `launch()`), not directly under the invoking
   SSH session — an ordinary network blip between the GitHub runner and the VPS
   could otherwise SIGHUP-kill the script at any phase, including mid-migration
-  or mid-Caddy-switch, turning routine connectivity flakiness into a
-  stuck-state incident. (An earlier draft of this decision used
+  or mid-Caddy-switch, turning routine connectivity flakiness into a stuck-state
+  incident. (An earlier draft of this decision used
   `systemd-run --scope --unit=biasmarket-deploy` instead of `setsid` — dropped
   after implementation hit polkit's "Interactive authentication required" over
   this VPS's non-interactive forced-command SSH sessions; see
   `ssh-deploy-dispatcher.sh`'s `launch()` header comment for the full story.
   `systemd-run` was never load-bearing for anything beyond the SSH-transport
   detachment `setsid` already provides on its own.) **One concrete
-  completion-signal mechanism, not left as an open choice**: `deploy.sh`'s
-  final action, on every exit path (success or failure), is an atomic
+  completion-signal mechanism, not left as an open choice**: `deploy.sh`'s final
+  action, on every exit path (success or failure), is an atomic
   temp-file-plus-rename write to `state/last_deploy_result` — a small,
-  deliberately secret-free file (fields: SHA, outcome, phase reached,
-  timestamp, nothing from `env/*.env`) consistent with the H8 no-secrets-in-
-  output rule. The CD workflow's SSH step polls this file
+  deliberately secret-free file (fields: SHA, outcome, phase reached, timestamp,
+  nothing from `env/*.env`) consistent with the H8 no-secrets-in- output rule.
+  The CD workflow's SSH step polls this file
   (`ssh ... 'while ! grep -q "$SHA" state/last_deploy_result;
   do sleep 5; done; cat state/last_deploy_result'`,
   bounded by the job's own `timeout-minutes`) rather than blocking on the
@@ -474,9 +474,9 @@ static gate plus automated pre-migration backup are the real mitigations).
 4. **T4** — Per-color `INTERNAL_API_URL` env wiring (no application code changes
    needed — pure env, both `apps/web` and `apps/workers` already read this var).
 5. **T5** — `deploy.sh` and helpers: full hardened state machine (lock with
-   owner metadata, detached execution via `setsid`,
-   reconciliation-at-start, rollback-target tracking, canary switch, retrying
-   smoke tests, audit log, atomic state writes including the final secret-free
+   owner metadata, detached execution via `setsid`, reconciliation-at-start,
+   rollback-target tracking, canary switch, retrying smoke tests, audit log,
+   atomic state writes including the final secret-free
    `state/last_deploy_result` completion signal the CD workflow polls for).
    **Owns the `env/shared.env` checksum assertion** (compares against a
    known-good snapshot recorded at T11's first run) on every invocation, not
