@@ -84,11 +84,19 @@
       },
       {
         "heading": "Vender con Biasmarket",
-        "links": ["Hacer una tienda", "Por que vender en Bias market", "Blog Biasmarket"]
+        "links": [
+          "Hacer una tienda",
+          "Por que vender en Bias market",
+          "Blog Biasmarket"
+        ]
       },
       {
         "heading": "Sobre Biasmarket",
-        "links": ["Historia de Biasmarket", "Terminos de uso", "Politica de privacidad"]
+        "links": [
+          "Historia de Biasmarket",
+          "Terminos de uso",
+          "Politica de privacidad"
+        ]
       },
       {
         "heading": "Ayuda",

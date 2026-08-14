@@ -1,5 +1,24 @@
 import { z } from "zod";
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const ACCEPTED_MIME_TYPES = ["image/jpeg", "image/png", "application/pdf"];
+const ACCEPTED_EXTENSION = /\.(jpe?g|png|pdf)$/i;
+
+// Mirrors the backend's checkout proof rules (see checkout.controller.ts):
+// required only for manual methods (YAPE/PLIN/TRANSFER — the buyer uploads
+// it at checkout), ≤5MB, JPEG/PNG/PDF. `file.type` is empty for some
+// oddball browsers/extensions, so the filename extension is accepted as a
+// fallback, same spirit as register-payment's MIME-only check but without
+// rejecting a valid PDF whose MIME the platform left blank.
+function isValidProofFile(file: File): boolean {
+  return (
+    ACCEPTED_MIME_TYPES.includes(file.type) ||
+    ACCEPTED_EXTENSION.test(file.name)
+  );
+}
+
+const MANUAL_METHODS = ["YAPE", "PLIN", "TRANSFER"];
+
 // Pickup point / payment method are only required when the store actually
 // has that option configured — built per-load since that depends on the
 // fetched list, same shape as orders' buildRegisterPaymentSchema(maxAmount).
@@ -29,28 +48,45 @@ export function buildCheckoutFormSchema(
       shippingCity: z.string(),
       shippingRegion: z.string(),
       shippingReference: z.string(),
+      paymentProof: z
+        .custom<File | null>(() => true)
+        .nullable()
+        .refine((file) => !file || file.size <= MAX_FILE_SIZE, "file too large")
+        .refine((file) => !file || isValidProofFile(file), "invalid file type"),
     })
     .refine(
       (data) =>
-        !(data.deliveryMethodType === "PICKUP" && pickupPointsAvailable &&
-          !data.pickupPointId),
+        !(
+          data.deliveryMethodType === "PICKUP" &&
+          pickupPointsAvailable &&
+          !data.pickupPointId
+        ),
       { message: "pickup point required", path: ["pickupPointId"] },
     )
     .refine(
       (data) =>
-        !(data.deliveryMethodType === "PICKUP" &&
+        !(
+          data.deliveryMethodType === "PICKUP" &&
           pointsRequiringDate.has(data.pickupPointId) &&
-          !data.pickupDate),
+          !data.pickupDate
+        ),
       { message: "pickup date required", path: ["pickupDate"] },
     )
+    .refine((data) => !(paymentMethodsAvailable && !data.paymentMethod), {
+      message: "payment method required",
+      path: ["paymentMethod"],
+    })
     .refine(
-      (data) => !(paymentMethodsAvailable && !data.paymentMethod),
-      { message: "payment method required", path: ["paymentMethod"] },
+      (data) =>
+        // The upload field is only rendered for a picked manual method, but
+        // validate unconditionally so a cleared file can't sneak through.
+        !(MANUAL_METHODS as readonly string[]).includes(data.paymentMethod) ||
+        !!data.paymentProof,
+      { message: "proof required", path: ["paymentProof"] },
     )
     .refine(
       (data) =>
-        !(data.deliveryMethodType === "COURIER" &&
-          !data.shippingRecipientName),
+        !(data.deliveryMethodType === "COURIER" && !data.shippingRecipientName),
       {
         message: "shipping recipient name required",
         path: ["shippingRecipientName"],

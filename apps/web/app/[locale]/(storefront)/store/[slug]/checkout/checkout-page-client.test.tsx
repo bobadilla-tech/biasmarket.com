@@ -39,6 +39,13 @@ vi.mock("@/lib/api-client", () => ({
   },
 }));
 
+// CheckoutForm.submit is a multipart carve-out on raw fetch/FormData (see
+// checkout.api.ts) — mock it so a successful submit resolves and the page's
+// onOrderCreated (which clears the cart) fires, instead of a real network
+// call to the API.
+const fetchMock = vi.fn();
+vi.stubGlobal("fetch", fetchMock);
+
 findStorePublic.mockResolvedValue({ paymentInstructions: "" });
 
 const { CheckoutPageClient } = await import("./checkout-page-client");
@@ -58,7 +65,6 @@ const cartItem = {
 function seedCart() {
   globalThis.localStorage.setItem(CART_KEY, JSON.stringify([cartItem]));
 }
-
 function createMemoryStorage(): Storage {
   const store = new Map<string, string>();
   return {
@@ -90,9 +96,18 @@ test("clears the cart from localStorage once the order is created", async () => 
     points: [],
   });
   findEnabledPaymentConfig.mockResolvedValue([]);
-  createCheckout.mockResolvedValue({
-    order: { id: "order-1", paymentMethod: null, currency: "PEN" },
-    whatsappUrl: null,
+  // Persistent, not `mockResolvedValueOnce`: the submit races the rest of the
+  // mount under CI load, and a `...Once` queue can be consumed (or miss) so a
+  // later checkout fetch falls through to a real network call (ECONNREFUSED)
+  // or resolves `undefined`, leaving the cart uncleared. Always resolving an
+  // ok response for every fetch keeps the submit deterministic.
+  fetchMock.mockResolvedValue({
+    ok: true,
+    json: () =>
+      Promise.resolve({
+        order: { id: "order-1", paymentMethod: null, currency: "PEN" },
+        whatsappUrl: null,
+      }),
   });
 
   seedCart();

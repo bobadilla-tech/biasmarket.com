@@ -99,7 +99,17 @@
     "confirmationStoreInstructionsLabel": "Store instructions",
     "whatsappButton": "Contact the store on WhatsApp",
     "emptyCart": "Your cart is empty.",
-    "backToStore": "Back to the store"
+    "backToStore": "Back to the store",
+    "paymentProofUploadLabel": "Payment proof",
+    "paymentProofLabel": "Attach your proof",
+    "paymentProofHint": "Screenshot or PDF of the payment, max 5MB — JPEG, PNG or PDF",
+    "paymentProofChoose": "Choose file",
+    "paymentProofRemove": "Remove",
+    "paymentProofSize": "{size} KB",
+    "paymentProofRequired": "Attach your payment proof",
+    "paymentProofInvalidFormat": "Only JPEG, PNG or PDF",
+    "paymentProofTooLarge": "Max 5MB",
+    "paymentProofPreview": "Preview"
   },
   "accountConfirmPage": {
     "loading": "Confirming your account...",

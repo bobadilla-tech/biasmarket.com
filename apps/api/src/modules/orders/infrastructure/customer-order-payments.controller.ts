@@ -11,32 +11,32 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
-} from "@nestjs/common";
-import { FileInterceptor } from "@nestjs/platform-express";
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiConsumes,
   ApiOkResponse,
   ApiParam,
   ApiProduces,
-} from "@nestjs/swagger";
-import { Public } from "@thallesp/nestjs-better-auth";
-import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
-import type { PaymentMethodType } from "@biasmarket/db";
-import { CustomerSessionGuard } from "../../customer-auth/customer-session.guard.js";
-import { CustomerSession } from "../../customer-auth/customer-session.decorator.js";
-import { OrderRepository } from "./order.repository.js";
-import { PrismaService } from "../../../prisma/prisma.service.js";
-import { StorageService } from "../../../storage/storage.service.js";
-import { NotificationsService } from "../../notifications/notifications.service.js";
-import { toOrderPaymentDto } from "./order.controller.js";
-import { countsTowardPaid } from "../../../common/payment-summary.js";
-import type { OrderPaymentResponseDto } from "../dto/order-response.dto.js";
+} from '@nestjs/swagger';
+import { Public } from '@thallesp/nestjs-better-auth';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import type { PaymentMethodType } from '@biasmarket/db';
+import { CustomerSessionGuard } from '../../customer-auth/customer-session.guard.js';
+import { CustomerSession } from '../../customer-auth/customer-session.decorator.js';
+import { OrderRepository } from './order.repository.js';
+import { PrismaService } from '../../../prisma/prisma.service.js';
+import { StorageService } from '../../../storage/storage.service.js';
+import { NotificationsService } from '../../notifications/notifications.service.js';
+import { toOrderPaymentDto } from './order.controller.js';
+import { countsTowardPaid } from '../../../common/payment-summary.js';
+import type { OrderPaymentResponseDto } from '../dto/order-response.dto.js';
 
 const PAYMENT_METHODS: PaymentMethodType[] = [
-  "YAPE",
-  "PLIN",
-  "TRANSFER",
-  "CASH",
+  'YAPE',
+  'PLIN',
+  'TRANSFER',
+  'CASH',
 ];
 
 // Buyer-initiated counterpart to `OrderController.addPayment` — see
@@ -47,7 +47,7 @@ const PAYMENT_METHODS: PaymentMethodType[] = [
 // this — `slug` isn't read directly (it resolves the store the order must
 // belong to), but every `{slug}` path segment needs `@ApiParam` or Orval's
 // spec validator rejects the route.
-@Controller("stores/:slug/account/orders/:orderId/payments")
+@Controller('stores/:slug/account/orders/:orderId/payments')
 export class CustomerOrderPaymentsController {
   constructor(
     private orders: OrderRepository,
@@ -58,24 +58,24 @@ export class CustomerOrderPaymentsController {
 
   private async findStoreBySlug(slug: string) {
     const store = await this.prisma.store.findUnique({ where: { slug } });
-    if (!store) throw new NotFoundException("Store no encontrada");
+    if (!store) throw new NotFoundException('Store no encontrada');
     return store;
   }
 
-  @ApiParam({ name: "slug", type: String })
-  @ApiConsumes("multipart/form-data")
+  @ApiParam({ name: 'slug', type: String })
+  @ApiConsumes('multipart/form-data')
   @Public()
   @UseGuards(CustomerSessionGuard, ThrottlerGuard)
   @Throttle({ default: { ttl: 60_000, limit: 20 } })
-  @UseInterceptors(FileInterceptor("file"))
+  @UseInterceptors(FileInterceptor('file'))
   @Post()
   async submit(
-    @Param("slug") slug: string,
-    @Param("orderId") orderId: string,
+    @Param('slug') slug: string,
+    @Param('orderId') orderId: string,
     @CustomerSession() session: { buyerAccountId: string },
-    @Body("amount") amount: string,
-    @Body("method") method: string,
-    @Body("note") note: string | undefined,
+    @Body('amount') amount: string,
+    @Body('method') method: string,
+    @Body('note') note: string | undefined,
     @UploadedFile() file: Express.Multer.File | undefined,
   ): Promise<OrderPaymentResponseDto> {
     const store = await this.findStoreBySlug(slug);
@@ -85,14 +85,14 @@ export class CustomerOrderPaymentsController {
       session.buyerAccountId,
     );
 
-    if (order.paymentStatus === "CANCELLED") {
+    if (order.paymentStatus === 'CANCELLED') {
       throw new BadRequestException(
-        "No se pueden enviar comprobantes en una orden cancelada",
+        'No se pueden enviar comprobantes en una orden cancelada',
       );
     }
-    if (order.paymentStatus === "REJECTED") {
+    if (order.paymentStatus === 'REJECTED') {
       throw new BadRequestException(
-        "No se pueden enviar comprobantes en una orden rechazada",
+        'No se pueden enviar comprobantes en una orden rechazada',
       );
     }
     // Only a VERIFIED order with its balance settled is closed to new proofs —
@@ -100,24 +100,24 @@ export class CustomerOrderPaymentsController {
     // legacy pre-guard approval) still owes money and must accept the rest.
     // Mirrors `OrderController.addPayment` and the frontend `paymentsLocked`.
     if (
-      order.paymentStatus === "VERIFIED" &&
+      order.paymentStatus === 'VERIFIED' &&
       Number(order.pendingAmount) <= 0
     ) {
-      throw new BadRequestException("La orden ya está pagada");
+      throw new BadRequestException('La orden ya está pagada');
     }
     if (
-      order.fulfillmentStatus === "IN_TRANSIT" ||
-      order.fulfillmentStatus === "READY" ||
-      order.fulfillmentStatus === "COMPLETED"
+      order.fulfillmentStatus === 'IN_TRANSIT' ||
+      order.fulfillmentStatus === 'READY' ||
+      order.fulfillmentStatus === 'COMPLETED'
     ) {
       throw new BadRequestException(
-        "No se pueden enviar comprobantes en una orden enviada",
+        'No se pueden enviar comprobantes en una orden enviada',
       );
     }
 
     const numericAmount = Number(amount);
     if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
-      throw new BadRequestException("Monto inválido");
+      throw new BadRequestException('Monto inválido');
     }
     const toCents = (n: number) => Math.round(n * 100);
     // Enforce the remaining balance against BOTH already-credited amounts
@@ -128,29 +128,29 @@ export class CustomerOrderPaymentsController {
     // below is the authoritative, atomic guard; this pre-check just rejects
     // the obvious sequential case early.
     const reservedCents = (order.payments ?? [])
-      .filter((p) => p.reviewStatus === "PENDING_REVIEW")
+      .filter((p) => p.reviewStatus === 'PENDING_REVIEW')
       .reduce((sum, p) => sum + toCents(Number(p.amount)), 0);
     if (toCents(numericAmount) > toCents(order.pendingAmount) - reservedCents) {
-      throw new BadRequestException("El monto excede el saldo pendiente");
+      throw new BadRequestException('El monto excede el saldo pendiente');
     }
     if (!method || !PAYMENT_METHODS.includes(method as PaymentMethodType)) {
-      throw new BadRequestException("Selecciona un método de pago");
+      throw new BadRequestException('Selecciona un método de pago');
     }
     if (!file) {
-      throw new BadRequestException("Adjunta un comprobante de pago");
+      throw new BadRequestException('Adjunta un comprobante de pago');
     }
     if (file.size > 5 * 1024 * 1024) {
-      throw new BadRequestException("Máximo 5MB");
+      throw new BadRequestException('Máximo 5MB');
     }
     const isJpeg = file.buffer[0] === 0xff && file.buffer[1] === 0xd8;
-    const isPng = file.buffer.subarray(0, 8).equals(
-      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-    );
-    if (!isJpeg && !isPng) throw new BadRequestException("Solo JPEG o PNG");
+    const isPng = file.buffer
+      .subarray(0, 8)
+      .equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+    if (!isJpeg && !isPng) throw new BadRequestException('Solo JPEG o PNG');
 
     const imageUrl = await this.storage.uploadPaymentImage(
       file.buffer,
-      isPng ? "image/png" : "image/jpeg",
+      isPng ? 'image/png' : 'image/jpeg',
     );
 
     const payment = await this.prisma.$transaction(async (tx) => {
@@ -167,7 +167,7 @@ export class CustomerOrderPaymentsController {
         Array<{ id: string }>
       >`SELECT id FROM "Order" WHERE id = ${orderId} FOR UPDATE`;
       if (!locked) {
-        throw new NotFoundException("Orden no encontrada");
+        throw new NotFoundException('Orden no encontrada');
       }
 
       // Re-check the balance inside the transaction. Under the lock this read
@@ -181,12 +181,12 @@ export class CustomerOrderPaymentsController {
         .filter(countsTowardPaid)
         .reduce((sum, p) => sum + toCents(Number(p.amount)), 0);
       const reservedCents = payments
-        .filter((p) => p.reviewStatus === "PENDING_REVIEW")
+        .filter((p) => p.reviewStatus === 'PENDING_REVIEW')
         .reduce((sum, p) => sum + toCents(Number(p.amount)), 0);
       const availableCents =
         toCents(Number(order.requiredAmount)) - creditedCents - reservedCents;
       if (toCents(numericAmount) > availableCents) {
-        throw new BadRequestException("El monto excede el saldo pendiente");
+        throw new BadRequestException('El monto excede el saldo pendiente');
       }
 
       const created = await tx.orderPayment.create({
@@ -198,8 +198,8 @@ export class CustomerOrderPaymentsController {
           method: method as PaymentMethodType,
           note,
           imageUrl,
-          source: "BUYER_SUBMITTED",
-          reviewStatus: "PENDING_REVIEW",
+          source: 'BUYER_SUBMITTED',
+          reviewStatus: 'PENDING_REVIEW',
         },
       });
       // Dedups against an already-open notification for this order (see
@@ -209,12 +209,11 @@ export class CustomerOrderPaymentsController {
       await this.notifications.createIfNotOpen(
         {
           storeId: store.id,
-          type: "PAYMENT_PROOF_SUBMITTED",
-          entityType: "Order",
+          type: 'PAYMENT_PROOF_SUBMITTED',
+          entityType: 'Order',
           entityId: orderId,
-          title: "Comprobante de pago recibido",
-          body:
-            `El comprador envió un comprobante de ${order.currency} ${numericAmount} para revisar.`,
+          title: 'Comprobante de pago recibido',
+          body: `El comprador envió un comprobante de ${order.currency} ${numericAmount} para revisar.`,
         },
         tx,
       );
@@ -228,23 +227,23 @@ export class CustomerOrderPaymentsController {
   // same private-bucket streaming pattern as the seller's
   // `OrderController.getPaymentImage`, gated by `findPaymentForBuyer`'s
   // compound ownership query instead of `assertOwnership`.
-  @ApiParam({ name: "slug", type: String })
-  @ApiOkResponse({ schema: { type: "string", format: "binary" } })
-  @ApiProduces("image/jpeg", "image/png")
+  @ApiParam({ name: 'slug', type: String })
+  @ApiOkResponse({ schema: { type: 'string', format: 'binary' } })
+  @ApiProduces('image/jpeg', 'image/png')
   // Helmet's default CORP (`same-origin`) makes the browser block this image
   // from being embedded by the web app's cross-origin `<img>` tags
   // (`ERR_BLOCKED_BY_RESPONSE.NotSameOrigin`) — the web frontend
   // (`biasmarket.com`) and the API (`api.biasmarket.com`) are different
   // origins. The stream is still auth-gated, so `cross-origin` only widens
   // embedding to the session holder, which is exactly the intended consumer.
-  @Header("Cross-Origin-Resource-Policy", "cross-origin")
+  @Header('Cross-Origin-Resource-Policy', 'cross-origin')
   @Public()
   @UseGuards(CustomerSessionGuard)
-  @Get(":paymentId/image")
+  @Get(':paymentId/image')
   async getImage(
-    @Param("slug") slug: string,
-    @Param("orderId") orderId: string,
-    @Param("paymentId") paymentId: string,
+    @Param('slug') slug: string,
+    @Param('orderId') orderId: string,
+    @Param('paymentId') paymentId: string,
     @CustomerSession() session: { buyerAccountId: string },
   ): Promise<StreamableFile> {
     await this.findStoreBySlug(slug);
@@ -254,7 +253,7 @@ export class CustomerOrderPaymentsController {
       session.buyerAccountId,
     );
     if (!payment.imageUrl) {
-      throw new NotFoundException("Este pago no tiene comprobante");
+      throw new NotFoundException('Este pago no tiene comprobante');
     }
     const { body, contentType } = await this.storage.getPaymentImageStream(
       payment.imageUrl,
