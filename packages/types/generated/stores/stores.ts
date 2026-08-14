@@ -12,11 +12,14 @@ import type {
   PublicCollectionListingResponseDto,
   PublicProductPageResponseDto,
   PublicStoreListingResponseDto,
+  SitemapStoreCountDto,
+  SitemapStorePageDto,
   StoreDirectoryResponseDto,
   StorePublicDetailResponseDto,
   StoreResponseDto,
   StoresControllerfindDirectoryParams,
   StoresControllerfindFeaturedParams,
+  StoresControllerfindPublicSitemapPageParams,
   StoreWithOwnerResponseDto,
   UpdateStoreDto,
 } from "../api.schemas.js";
@@ -105,6 +108,47 @@ export const findAllPublic = async (
   options?: Parameters<typeof customFetch>[1],
 ): Promise<PublicStoreListingResponseDto[]> => {
   return customFetch<PublicStoreListingResponseDto[]>(getFindAllPublicUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getFindPublicSitemapCountUrl = () => {
+  return `/stores/internal/sitemap/count`;
+};
+
+export const findPublicSitemapCount = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<SitemapStoreCountDto> => {
+  return customFetch<SitemapStoreCountDto>(getFindPublicSitemapCountUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getFindPublicSitemapPageUrl = (
+  params: StoresControllerfindPublicSitemapPageParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/stores/internal/sitemap?${stringifiedParams}`
+    : `/stores/internal/sitemap`;
+};
+
+export const findPublicSitemapPage = async (
+  params: StoresControllerfindPublicSitemapPageParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<SitemapStorePageDto> => {
+  return customFetch<SitemapStorePageDto>(getFindPublicSitemapPageUrl(params), {
     ...options,
     method: "GET",
   });
