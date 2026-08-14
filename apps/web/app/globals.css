@@ -152,6 +152,7 @@
    light K-pop/pastel marketplace palette without touching :root or .dark, so
    dashboard, login, and storefront (which don't opt in) keep their look. */
 .landing-theme {
+  font-family: var(--font-inter), var(--font-geist-sans), sans-serif;
   --brand-ink: oklch(0.16 0.04 300);
   --brand-violet: #8d2feb;
   --brand-pink: #ff3db1;
