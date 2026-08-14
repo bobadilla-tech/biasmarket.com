@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
+import type { Locale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { StoreLogo } from "@/components/store-logo";
 import { ProductDetailView } from "./product-detail-view";
 
 async function getPublicProduct(slug: string, productId: string) {
-  const apiUrl = process.env.INTERNAL_API_URL ??
+  const apiUrl =
+    process.env.INTERNAL_API_URL ??
     process.env.NEXT_PUBLIC_API_URL ??
     (process.env.NODE_ENV === "development"
       ? "http://localhost:3000"
@@ -36,7 +38,7 @@ export async function generateMetadata({
 export default async function ProductDetailPage({
   params,
 }: {
-  params: Promise<{ locale: string; slug: string; productId: string }>;
+  params: Promise<{ locale: Locale; slug: string; productId: string }>;
 }) {
   const { locale, slug, productId } = await params;
   const [data, t] = await Promise.all([
