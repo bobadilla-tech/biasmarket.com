@@ -1,15 +1,15 @@
 # infra
 
-Docker-based dev and prod setup for biasmarket-app, mirroring the pattern used
-in `requiems-api`.
+Docker-based development plus the immutable blue/green VPS production stack.
 
-- `infra/docker/` — dev and prod Docker Compose files, Dockerfiles, and env
-  defaults. See [readme.md](readme.md).
-- `infra/caddy/` — reverse proxy config used only by the prod stack. See
-  [caddy.md](caddy.md).
+- `infra/docker/` — development Compose file, Dockerfiles, healthcheck, and safe
+  local env defaults. See [readme.md](readme.md).
+- `infra/vps/` — the only production Compose file, deploy state machine, Caddy,
+  runtime env templates, and operational scripts. See [deploy.md](deploy.md).
 
-Deploying to production on Oracle Cloud? See [deploy.md](deploy.md) for the full
-walkthrough (VM provisioning, firewall gotchas, secrets, DNS, verification).
+Deploying to production on Oracle Cloud? See [deploy.md](deploy.md) and
+[blue-green-migrations.md](blue-green-migrations.md) for provisioning, secrets,
+DNS, deployment, and verification.
 
 ## Quick start (dev)
 

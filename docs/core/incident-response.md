@@ -86,11 +86,9 @@ internal monitor's down state as a problem.
 Every critical surface has an external and an internal monitor. Check both
 before doing anything else:
 
-- **External down, internal up** → Caddy/DNS/TLS problem. Check
-  `docker compose logs caddy` (from `/opt/biasmarket`, or
-  `infra/docker/docker-compose.yml`'s directory on the pre-cutover stack),
-  confirm DNS still resolves (`dig +short api.biasmarket.com`), check for an
-  expired cert.
+- **External down, internal up** → Caddy/DNS/TLS problem. From
+  `/opt/biasmarket`, check `docker compose logs caddy`, confirm DNS still
+  resolves (`dig +short api.biasmarket.com`), and check for an expired cert.
 - **Both down** → the app itself. Go straight to the common fixes below.
 - **DB down** → almost always cascades into both API monitors going down too;
   fix DB first.
@@ -113,18 +111,10 @@ docker compose -f docker-compose.yml logs -f api-<color>
 docker compose -f docker-compose.yml restart api-<color>
 ```
 
-On the pre-cutover `infra/docker/docker-compose.yml` stack (see `deploy.md`):
-
-```bash
-docker compose -f infra/docker/docker-compose.yml logs -f <service>
-docker compose -f infra/docker/docker-compose.yml restart <service>
-```
-
-If `api`/`api-<color>` is unhealthy, it is **not** mid-migration — migrations no
-longer run on container boot on either stack (see `deploy.md`'s note and
-`blue-green-migrations.md`), so an unhealthy `api` past its healthcheck's
-`start_period` is a real problem, not a "still migrating, give it a second"
-false alarm the way it used to be.
+If `api-<color>` is unhealthy, it is **not** mid-migration — migrations run in
+the explicit deploy phase, not on container boot. An unhealthy API past its
+healthcheck's `start_period` is a real problem, not a "still migrating, give it
+a second" false alarm.
 
 ## What happens automatically when a monitor fires
 
@@ -147,36 +137,26 @@ further (see the plan doc's "Decision" sections for why).
 
 The secret lives in two places that don't sync automatically:
 
-1. `infra/docker/.env` (pre-cutover stack) or `/opt/biasmarket/env/shared.env`
-   (blue/green stack) — whichever is live, read by `api`/`api-<color>`.
+1. `/opt/biasmarket/env/shared.env`, read by the live `api-<color>` services.
 2. Kuma's own Webhook notification-provider config (Settings → Notifications →
    the webhook provider → edit the `X-Webhook-Secret` header value), stored in
    Kuma's SQLite.
 
-To rotate on the **pre-cutover** stack:
-
-```bash
-cd ~/biasmarket
-pnpm env:init --prod --force   # generates a fresh MONITORING_WEBHOOK_SECRET
-                                # among other secrets — see deploy.md's
-                                # "Reset" section for what else this rotates
-docker compose -f infra/docker/docker-compose.yml restart api
-```
-
-To rotate on the **blue/green** stack: `env/shared.env` is checksum-gated
+To rotate on the blue/green stack: `env/shared.env` is checksum-gated
 (`deploy.sh` refuses to deploy if it changes unexpectedly — see
-`blue-green-migrations.md`), so **never** run `pnpm env:init --prod` against it.
-Edit `MONITORING_WEBHOOK_SECRET`'s value in `/opt/biasmarket/env/shared.env` by
-hand, update the recorded baseline
+`blue-green-migrations.md`). Edit `MONITORING_WEBHOOK_SECRET`'s value in
+`/opt/biasmarket/env/shared.env` by hand, update the recorded baseline
 (`sha256sum /opt/biasmarket/env/shared.env | cut -d' ' -f1 > /opt/biasmarket/state/shared_env.sha256`
 — write just the hash, matching the format `deploy.sh` itself writes), then
-restart both running app services that read it:
-`docker compose -f docker-compose.yml restart api-<live-color> workers-<live-color>`.
+restart both running app services that read it, explicitly naming the live
+color:
+`docker compose -f docker-compose.yml restart api-<live-color>
+workers-<live-color>`.
 
-Then, on either stack, manually copy the new value into Kuma's webhook
-notification-provider config. Until you do, Kuma's webhook calls 401 — the
-Slack/Discord path is unaffected, so this doesn't create a blind spot, just a
-gap in the durable incident history until the values match again.
+Then manually copy the new value into Kuma's webhook notification-provider
+config. Until you do, Kuma's webhook calls 401 — the Slack/Discord path is
+unaffected, so this doesn't create a blind spot, just a gap in the durable
+incident history until the values match again.
 
 ## Accepted limitations (blue/green)
 
