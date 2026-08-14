@@ -76,10 +76,10 @@ merge creates push -> normal CI + API E2E -> CI Success
 
 This avoids a second workflow and keeps the existing CD trigger chain intact.
 The push trigger is the post-merge event in this repository. Enforce protected
-`main` with no direct pushes so that “push to main” means a merged change in
-normal operation. Emergency administrator bypasses are outside the normal
-deployment path and must be disabled by the branch rule; if temporarily
-authorized for recovery, the same checks still run and the event is audited.
+`main` with pull-request-only merges and no direct pushes so that “push to
+main” means a merged change. Configure `enforce_admins: true`, no bypass
+actors, required approvals/status checks, and no emergency exception; this
+deployment gate must not be bypassable by administrators or any other actor.
 
 Remove the current `paths-ignore` entries from the `pull_request` and `push`
 triggers. A skipped workflow can leave a required `CI Success` check pending on
@@ -102,9 +102,18 @@ trusted policy workflow. The exact event matrix is:
 | `push` to protected `main`              | required and successful | yes          |
 | `workflow_dispatch` with `run_e2e=true` | required and successful | no           |
 
-The CI merge-group path must use an explicit base/ref or full history if path
-detection needs it. The resulting push created by the merge still requires
+The CI merge-group path must check out with `fetch-depth: 0` and configure
+`dorny/paths-filter` with `base: ${{ github.event.merge_group.base_sha }}`;
+the resulting push created by the merge still requires
 `e2e == success` before CD.
+
+The final `ci.yml` trigger set is exactly `push` on `main`, `pull_request` to
+`main`, `merge_group`, and `workflow_dispatch`; only the `e2e` job is
+conditional within those events. The separate `merge-policy.yml` uses only
+`pull_request_target` with the listed activity types plus `merge_group`, and
+has `contents: read` and `pull-requests: read` permissions. This separation
+keeps untrusted PR code out of the trusted policy workflow while preserving
+the push-only E2E rule.
 
 Add boolean `workflow_dispatch` inputs `run_e2e` and `force_e2e_failure` for
 controlled CI verification. The E2E condition may run for a push to `main` or
@@ -114,7 +123,8 @@ continue to require `workflow_run.event == 'push'`; a manual run can never
 authorize deployment.
 
 Add a separate required `.github/workflows/merge-policy.yml` triggered by
-`pull_request_target` and `merge_group` events that runs from the
+`pull_request_target` types `[opened, synchronize, reopened, edited]` and
+`merge_group` that runs from the
 trusted base revision, inspects the PR title/body and all proposed commit
 messages through the GitHub API, and fails on `[skip ci]`, `[ci skip]`,
 `[no ci]`, `[skip actions]`, `[actions skip]`, or `skip-checks: true`. GitHub
@@ -386,10 +396,19 @@ The job should start with an explicit `timeout-minutes: 30`, then record actual
 runtime after the first few main pushes. A timeout is a failed E2E gate, not a
 warning or an automatic deploy bypass.
 
-Before the non-blocking baseline, resolve and commit immutable `sha256` image
-digests for PostgreSQL, Redis, MinIO, and `mc` in the workflow or its helper.
-The gate cannot be enabled while any service image uses an unpinned floating
-tag.
+Before the non-blocking baseline, use these immutable service references in the
+workflow/helper (resolved from Docker Hub on this plan revision):
+
+| Service | Immutable image reference |
+| --- | --- |
+| PostgreSQL | `docker.io/library/postgres@sha256:7157393f508fd8eb46119937fab39813783fe3e7d4c6316c45c12ce2ea25e61d` |
+| Redis | `docker.io/library/redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2` |
+| MinIO | `docker.io/minio/minio@sha256:640c22768ed5dbc92eacc14502a1b06a1c708fa60431345c78dfc22917062e93` |
+| MinIO client | `docker.io/minio/mc@sha256:95b5f3f7969a5c5a9f3a700ba72d5c84172819e13385aaf916e237cf111ab868` |
+
+Record the human-readable tags used to resolve these digests in workflow
+comments, and re-resolve only through a reviewed plan/workflow change. The
+gate cannot be enabled while any service image uses an unpinned floating tag.
 
 ## CD and security invariants
 
@@ -474,10 +493,10 @@ must be separately called out with its severity and rationale.
    does not.
 5. Merge the test PR: confirm exactly one E2E run starts for the resulting
    `main` SHA, all 22 API spec files run, and `CI Success` waits for it.
-6. Use the explicit `workflow_dispatch` E2E failure mode by temporarily
-   forcing a test-only bootstrap failure. Confirm the manual run fails its CI
-   gate but CD does not build, push, SSH, or deploy because its
-   `workflow_run.event` is not `push`. Restore the test path.
+6. Use `workflow_dispatch` with `run_e2e=true` and
+   `force_e2e_failure=true` to intentionally fail the E2E helper. Confirm the
+   manual run fails its CI gate but CD does not build, push, SSH, or deploy
+   because its `workflow_run.event` is not `push`. Restore the test path.
 7. Restore the test and merge a passing commit: confirm CD starts only after
    the successful CI run, and that its checkout/image tags equal the tested
    merge SHA.
@@ -559,7 +578,8 @@ or non-blocking polish.
   specify exact log paths and a configured report format, or describe only
   stdout/stderr artifacts.
 - **Low:** Floating service-image versions would make the gate non-reproducible.
-  Resolution: pin and record the versions/digests used by the implementation.
+  Resolution: pin the four immutable image references recorded above before
+  the baseline and keep tag updates reviewable.
 - **High:** The worker's scheduled expiration processor calls an HTTP API, but
   the test harness's in-process Nest app does not listen on port 3000.
   Resolution: start the built API process, poll `/api/health`, and point the
@@ -582,8 +602,8 @@ or non-blocking polish.
   the host-side API.
 - **Medium:** Worker `/health` is liveness-only and the scheduled expiration
   callback was not otherwise exercised. Resolution: poll health, verify the
-  scheduler-registration log, and probe the authenticated internal endpoint
-  against the real disposable API process.
+  mandatory scheduler-disabled log, enqueue the existing processor job, and
+  observe its callback against the real disposable API process.
 - **High:** Workflow and deployment files could be changed in a PR while
   preserving the required check name. Resolution: require trusted CODEOWNER
   approval and branch-rule enforcement for workflow/action/infrastructure
@@ -594,12 +614,10 @@ or non-blocking polish.
 - **Medium:** The prior failure test offered alternatives. Resolution: choose
   the explicit manual-dispatch mode, which CD rejects by event type.
 - **Medium:** The worker's five-minute scheduler can touch test data while a
-  long serial suite is running. Resolution: use a fresh isolated database,
-  run-scoped fixtures, verify the scheduler callback target, and document that
-  existing tests must not create unrelated past-expired rows; if the measured
-  suite crosses a scheduler interval and interference is observed, add a
-  test-only scheduler-disable switch as a separately reviewed application
-  change rather than weakening the gate.
+  long serial suite is running. Resolution: make the test-only scheduler
+  disable guard mandatory for this job, keep the processor enabled, and verify
+  the callback by manually enqueueing the existing job against the disposable
+  API.
 - **High:** The API startup environment omitted `S3_LOGO_BUCKET`, which the
   real process requires. Resolution: set `S3_LOGO_BUCKET=logos` and use the
   same MinIO credentials/bucket names in API and `mc` setup.
@@ -617,8 +635,36 @@ or non-blocking polish.
 
 ### Subagent review rounds
 
-Subagents must review this draft after it is written. Each round must record
-findings under this section using the high/medium/low classification, apply
-corrections to the plan, and run another review until a round reports no
-actionable findings. The final round must state “no actionable findings” and
-include the agent names/roles and the reviewed revision.
+The plan was iterated through these subagent rounds; findings are recorded
+above by severity and were applied before the next round:
+
+1. **Copernicus — repository/CI archaeology:** HIGH findings established that
+   API E2E, real infrastructure, and CD dependency were missing; MEDIUM/LOW
+   findings established the suite inventory, serialism, mailer filesystem, and
+   absent web/workers/sanity E2E suites.
+2. **Ptolemy — Actions/CD semantics; Parfit — runtime dependencies; Boyle —
+   scope/rollout:** HIGH findings added strict CI result handling, release-input
+   validation, clean-runner baseline, and same-SHA gating; MEDIUM/LOW findings
+   added exact services, cleanup, artifacts, branch protection, and failure
+   verification.
+3. **Leibniz — workflow security; Socrates — API/worker runtime; Cicero —
+   request completeness:** HIGH findings added OpenAPI verification, workflow
+   CODEOWNER protection, and explicit environment/startup requirements;
+   MEDIUM/LOW findings added MinIO networking, worker callback execution,
+   scheduler isolation, and manual event behavior.
+4. **Jason — workflow/runtime; Einstein — scope:** HIGH findings corrected
+   release filters, result mapping, administrator bypass, and policy-check
+   details; MEDIUM/LOW findings corrected process cleanup and immutable image
+   pinning.
+5. **Averroes — workflow/release; Ohm — application runtime:** HIGH/MEDIUM
+   findings made the merge-group base explicit, required the scheduler-disable
+   mode, and tightened the process/trap ordering.
+6. **Meitner — CI/CD; Archimedes — user-scope:** HIGH/MEDIUM findings removed
+   all administrator bypass language, fixed exact trigger separation, and made
+   the manual forced-failure path explicit.
+7. **Boole — final consistency:** HIGH/MEDIUM/LOW findings were resolved by
+   making the scheduler guard mandatory, pinning the four immutable image
+   digests, and adding this review history.
+
+Each round classified findings as HIGH, MEDIUM, or LOW, corrected this plan,
+and triggered another review. The final revision-9 audit is recorded below.
