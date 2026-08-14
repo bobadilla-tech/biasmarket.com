@@ -5,26 +5,52 @@ import { useTranslations } from "next-intl";
 import { buttonVariants } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 
+function Badge({ label }: { label: string }) {
+  return (
+    <span className="inline-flex h-6 w-[70px] items-center justify-center rounded-[10px] bg-[#A64AE9] text-[13px] font-medium text-white">
+      {label}
+    </span>
+  );
+}
+
 export function Hero() {
   const t = useTranslations("landing.hero");
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-6 sm:px-10 sm:py-10">
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1.62fr_1fr]">
-        <div className="relative overflow-hidden rounded-[10px] bg-landing-pink px-5 py-10 sm:px-12 sm:py-12 lg:min-h-[525px]">
-          <div className="relative z-10 flex max-w-md flex-col items-start gap-5 sm:gap-6">
-            <h1 className="text-3xl font-medium leading-tight text-balance text-landing-title sm:text-4xl lg:text-5xl">
-              {t("title")}
+        <div
+          style={{
+            background:
+              "linear-gradient(114.27deg, #FFFFFF 4.68%, #EDDAFF 31.56%, #FFD7EB 89.06%)",
+          }}
+          className="relative min-h-[525px] overflow-hidden rounded-[10px]"
+        >
+          <div className="relative z-10 flex h-full w-[488px] max-w-full flex-col justify-center gap-[42px] pr-4 pl-[55.5px]">
+            <h1
+              style={{ fontWeight: 800, fontSize: 48, lineHeight: "58px" }}
+              className="text-balance"
+            >
+              <span className="text-[#170A14]">{t("title1")}</span>
+              <br />
+              <span className="text-[#FF3DB1]">{t("title2")}</span>
             </h1>
-            <p className="text-base text-foreground sm:text-lg lg:text-xl">
+            <p
+              style={{
+                fontWeight: 400,
+                fontSize: 16,
+                lineHeight: "19px",
+                letterSpacing: "0%",
+              }}
+              className="max-w-[381px] text-black"
+            >
               {t("subtitle")}
             </p>
             <Link
               href="/search"
               className={buttonVariants({
                 size: "lg",
-                className:
-                  "h-[53px] w-full rounded-[10px] px-8 text-lg sm:w-auto sm:text-xl",
+                className: "w-fit rounded-[10px] px-8 text-[20px] font-medium",
               })}
             >
               {t("cta")}
@@ -33,54 +59,68 @@ export function Hero() {
           <Image
             src="/landing/wand.png"
             alt=""
-            width={292}
-            height={363}
-            className="pointer-events-none absolute right-4 bottom-0 hidden h-auto w-56 select-none object-contain sm:block lg:w-72"
+            width={346}
+            height={429}
+            className="pointer-events-none absolute top-[43px] left-[408px] hidden w-[346px] h-[429px] select-none object-contain sm:block"
           />
         </div>
 
         <div className="flex flex-col gap-4 sm:gap-6">
-          <div className="relative overflow-hidden rounded-[10px] bg-landing-violet px-5 py-7 sm:px-10 sm:py-8">
-            <h2 className="text-xl font-medium sm:text-3xl">
+          <div
+            style={{
+              background:
+                "linear-gradient(90.61deg, #EADAFF 0.59%, #E0BEFF 50.08%, #CDA7FF 99.57%)",
+            }}
+            className="relative flex h-[257px] flex-col overflow-hidden rounded-[10px] px-5 py-7 sm:px-10 sm:py-8"
+          >
+            <Badge label={t("releasesBadge")} />
+            <h2 className="mt-3 text-[24px] leading-[29px] font-semibold text-black">
               {t("releasesTitle")}
             </h2>
-            <p className="mt-2 max-w-[16rem] text-sm text-foreground/90 sm:text-base lg:text-lg">
+            <p className="mt-2 max-w-[16rem] text-[13px] leading-4 text-black">
               {t("releasesSubtitle")}
             </p>
             <Link
               href="/search"
-              className="mt-5 inline-flex items-center gap-1 self-start text-sm font-medium text-brand-pink underline-offset-4 transition-all hover:underline sm:mt-6 sm:text-base"
+              className="mt-5 inline-flex items-center gap-1 self-start text-[13px] leading-4 font-medium text-[#933BE7] underline-offset-4 transition-all hover:underline sm:mt-6"
             >
-              {t("releasesCta")}
+              {t("releasesCta")} →
             </Link>
             <Image
               src="/landing/bag.png"
               alt=""
-              width={222}
-              height={222}
-              className="pointer-events-none absolute -right-2 bottom-0 hidden h-40 w-auto object-contain sm:block"
+              width={228}
+              height={228}
+              className="pointer-events-none absolute top-[22px] left-[277.5px] hidden w-[228px] select-none object-contain sm:block"
             />
           </div>
 
-          <div className="relative flex-1 overflow-hidden rounded-[10px] bg-landing-purple px-5 py-7 sm:px-10 sm:py-8">
-            <h2 className="text-xl font-medium sm:text-3xl">
+          <div
+            style={{
+              background:
+                "linear-gradient(89.6deg, #E2DEFF 1.73%, #D7CFF9 50.68%, #B6A3FB 99.63%)",
+            }}
+            className="relative flex h-[257px] flex-col overflow-hidden rounded-[10px] px-5 py-7 sm:px-10 sm:py-8"
+          >
+            <Badge label={t("blogBadge")} />
+            <h2 className="mt-3 text-[24px] leading-[29px] font-semibold text-black">
               {t("blogTitle")}
             </h2>
-            <p className="mt-2 max-w-[16rem] text-sm text-foreground/90 sm:text-base lg:text-lg">
+            <p className="mt-2 max-w-[16rem] text-[13px] leading-4 text-black">
               {t("blogSubtitle")}
             </p>
             <Link
-              href="/blog"
-              className="mt-5 inline-flex items-center gap-1 self-start text-sm font-medium text-brand-pink underline-offset-4 transition-all hover:underline sm:mt-6 sm:text-base"
+              href="/search"
+              className="mt-5 inline-flex items-center gap-1 self-start text-[13px] leading-4 font-medium text-[#933BE7] underline-offset-4 transition-all hover:underline sm:mt-6"
             >
-              {t("blogCta")}
+              {t("blogCta")} →
             </Link>
             <Image
               src="/landing/sticker.png"
               alt=""
               width={251}
               height={222}
-              className="pointer-events-none absolute right-0 bottom-0 hidden h-40 w-auto object-contain sm:block"
+              className="pointer-events-none absolute top-[26px] left-[231.5px] hidden w-[251px] select-none object-contain sm:block"
             />
           </div>
         </div>

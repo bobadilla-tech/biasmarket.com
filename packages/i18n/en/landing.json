@@ -1,12 +1,15 @@
 {
   "languageToggle": { "en": "EN", "es": "ES" },
   "hero": {
-    "title": "Your K-Pop world, all in one place",
+    "title1": "Your K-Pop world",
+    "title2": "All in one place",
     "subtitle": "Discover albums, photocards, lightsticks and more from your favorite artists",
     "cta": "Shop now",
+    "releasesBadge": "New",
     "releasesTitle": "New arrivals",
     "releasesSubtitle": "Be the first to discover the latest in K-pop",
     "releasesCta": "View new arrivals",
+    "blogBadge": "Blog",
     "blogTitle": "Biasmarket Blog",
     "blogSubtitle": "News, guides and everything about the K-pop world",
     "blogCta": "Read blog"
@@ -22,14 +25,15 @@
   },
   "categories": {
     "title": "Categories",
-    "heading": "Find exactly what you love",
+    "heading1": "Your bias",
+    "heading2": "is waiting",
     "subtitle": "Explore by category and discover your next favorite merch",
     "explore": "Explore all",
     "items": [
       { "key": "photocards", "name": "Photocards" },
       { "key": "albums", "name": "Albums" },
       { "key": "lightsticks", "name": "Lightsticks" },
-      { "key": "photobook", "name": "Photobook" },
+      { "key": "concert", "name": "Concert" },
       { "key": "magazine", "name": "Magazine" },
       { "key": "otros", "name": "Others" }
     ]
@@ -43,18 +47,23 @@
   "about": {
     "title": "What is Biasmarket?",
     "subtitle": "Meet the story behind the market made by fans, for fans",
+    "helpTitle": "Any questions? Find the answers here.",
+    "helpCta": "Go to help center",
     "items": [
       {
         "title": "A community made by fans",
-        "body": "Bias Market was born from the K-pop fandom. We connect group orders and stores that understand exactly what you're looking for: albums, photocards, official merch and limited editions."
+        "body": "Bias Market was born from the K-pop fandom. We connect group orders and stores that understand exactly what you're looking for: albums, photocards, official merch and limited editions.",
+        "width": 313
       },
       {
         "title": "Support independent sellers",
-        "body": "Every store on Bias Market is run by a fan just like you. No giant warehouses or cold middlemen — just passionate people selling what they love."
+        "body": "Every store on Bias Market is run by a fan just like you. No giant warehouses or cold middlemen — just passionate people selling what they love.",
+        "width": 323
       },
       {
         "title": "Buy with peace of mind",
-        "body": "Payments with Yape, Plin and more. Order tracking at every step and real support if something goes wrong. Your bias merch is in good hands."
+        "body": "Payments with Yape, Plin and more. Order tracking at every step and real support if something goes wrong. Your bias merch is in good hands.",
+        "width": 239
       }
     ]
   },
@@ -80,19 +89,43 @@
     "columns": [
       {
         "heading": "Buy with Biasmarket",
-        "links": ["How we work", "Buyer FAQ", "Shipping"]
+        "links": [
+          "How it works",
+          "Explore products",
+          "Categories",
+          "Shipping",
+          "FAQ"
+        ]
       },
       {
         "heading": "Sell with Biasmarket",
-        "links": ["Open a store", "Why sell on Bias market", "Biasmarket Blog"]
+        "links": [
+          "Create my store",
+          "How to sell",
+          "Why sell on Biasmarket?",
+          "Sellers guide",
+          "Sellers FAQ"
+        ]
       },
       {
         "heading": "About Biasmarket",
-        "links": ["Biasmarket story", "Terms of use", "Privacy policy"]
+        "links": [
+          "Our story",
+          "About us",
+          "Verified stores",
+          "Terms of use",
+          "Privacy policy"
+        ]
       },
       {
         "heading": "Help",
-        "links": ["Help Center", "Privacy Settings"]
+        "links": [
+          "Help Center",
+          "FAQ",
+          "Issues with my order",
+          "Contact",
+          "Privacy Settings"
+        ]
       }
     ],
     "socials": [

@@ -1,10 +1,10 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useRouter } from "@/i18n/navigation";
 import type { ProductSearchResultResponseDto } from "@biasmarket/types";
 import { useLatestProducts } from "@/features/discovery";
 import { ProductGridCard } from "./product-grid-card";
+import { SectionHeading } from "./section-heading";
 
 const SKELETON_KEYS = Array.from(
   { length: 3 },
@@ -15,12 +15,10 @@ function TrendPanel({
   title,
   sort,
   initialData,
-  onNavigate,
 }: {
   title: string;
   sort: "latest" | "bestseller";
   initialData?: ProductSearchResultResponseDto | null;
-  onNavigate: () => void;
 }) {
   const t = useTranslations("landing.trends");
   const { result, loading, error } = useLatestProducts(3, 1, {
@@ -30,17 +28,8 @@ function TrendPanel({
   const products = result?.products ?? [];
 
   return (
-    <div className="flex flex-col rounded-[20px] bg-landing-rose px-4 pt-5 pb-5 sm:px-8 sm:pt-6 sm:pb-7">
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="text-base font-medium sm:text-2xl">{title}</h3>
-        <button
-          type="button"
-          onClick={onNavigate}
-          className="shrink-0 text-sm font-medium text-landing-link hover:underline sm:text-base"
-        >
-          {t("viewAll")}
-        </button>
-      </div>
+    <div className="flex flex-col rounded-[20px] bg-landing-rose px-4 py-5 sm:px-6">
+      <h3 className="text-center text-lg font-semibold sm:text-2xl">{title}</h3>
       <div className="mt-4 grid grid-cols-3 gap-2.5 sm:mt-5 sm:gap-5">
         {loading
           ? (
@@ -85,25 +74,20 @@ export function TrendsSection({
   bestSellersInitialData?: ProductSearchResultResponseDto | null;
 }) {
   const t = useTranslations("landing.trends");
-  const router = useRouter();
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-10 sm:px-10 sm:py-14">
-      <h2 className="text-center text-3xl font-medium sm:text-5xl">
-        {t("title")}
-      </h2>
+      <SectionHeading title={t("title")} />
       <div className="mt-6 grid gap-5 sm:mt-8 sm:gap-8 lg:grid-cols-2">
         <TrendPanel
           title={t("latestTitle")}
           sort="latest"
           initialData={latestInitialData}
-          onNavigate={() => router.push("/search")}
         />
         <TrendPanel
           title={t("bestSellersTitle")}
           sort="bestseller"
           initialData={bestSellersInitialData}
-          onNavigate={() => router.push("/search?sort=bestseller")}
         />
       </div>
     </section>

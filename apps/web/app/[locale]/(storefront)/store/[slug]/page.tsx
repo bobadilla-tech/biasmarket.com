@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { type Locale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { CartLink } from "./cart-link";
 import { isProductOutOfStock } from "@/features/discovery/lib/product-stock";
@@ -151,12 +152,12 @@ function buildJsonLd(locale: string, slug: string, store: any) {
 export default async function StorePage({
   params,
 }: {
-  params: Promise<{ locale: string; slug: string }>;
+  params: Promise<{ locale: Locale; slug: string }>;
 }) {
   const { locale, slug } = await params;
   const [store, t] = await Promise.all([
     getStore(slug),
-    getTranslations("storefront"),
+    getTranslations({ locale, namespace: "storefront" }),
   ]);
 
   if (!store) {

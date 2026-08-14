@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { type Locale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { StoreLogo } from "@/components/store-logo";
@@ -36,12 +37,12 @@ export async function generateMetadata({
 export default async function ProductDetailPage({
   params,
 }: {
-  params: Promise<{ locale: string; slug: string; productId: string }>;
+  params: Promise<{ locale: Locale; slug: string; productId: string }>;
 }) {
-  const { slug, productId } = await params;
+  const { slug, productId, locale } = await params;
   const [data, t] = await Promise.all([
     getPublicProduct(slug, productId),
-    getTranslations("storefront"),
+    getTranslations({ locale, namespace: "storefront" }),
   ]);
 
   if (!data || data.product?.discontinued) {

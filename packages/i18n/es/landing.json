@@ -1,12 +1,15 @@
 {
   "languageToggle": { "en": "EN", "es": "ES" },
   "hero": {
-    "title": "Tu mundo K-Pop, todo en un solo lugar",
+    "title1": "Tu mundo K-Pop",
+    "title2": "Todo en un solo lugar",
     "subtitle": "Descubre álbumes, photocards, lightsticks y mucho mas de tus artistas favoritos",
     "cta": "Comprar ahora",
+    "releasesBadge": "Nuevo",
     "releasesTitle": "Nuevos lanzamientos",
     "releasesSubtitle": "Sé el primero en descubrir lo ultimo del K-pop",
     "releasesCta": "Ver novedades",
+    "blogBadge": "Blog",
     "blogTitle": "Biasmarket Blog",
     "blogSubtitle": "Noticias, guias y todo sobre el mundo del K-pop",
     "blogCta": "Leer Blog"
@@ -22,14 +25,15 @@
   },
   "categories": {
     "title": "Categorias",
-    "heading": "Encuentra exactamente lo que amas",
+    "heading1": "Tu Bias",
+    "heading2": "Te espera",
     "subtitle": "Explora por categoria y descubre tu proxima merch favorita",
     "explore": "Explorar todo",
     "items": [
       { "key": "photocards", "name": "Photocards" },
       { "key": "albums", "name": "Albums" },
       { "key": "lightsticks", "name": "Lightsticks" },
-      { "key": "photobook", "name": "Photobook" },
+      { "key": "concert", "name": "Concert" },
       { "key": "magazine", "name": "Magazine" },
       { "key": "otros", "name": "Otros" }
     ]
@@ -43,18 +47,23 @@
   "about": {
     "title": "¿Qué es Biasmarket?",
     "subtitle": "Conoce la historia detrás del mercado hecho por fans, para fans",
+    "helpTitle": "¿Alguna pregunta? Encuentra aquí las respuestas.",
+    "helpCta": "Ir al Centro de ayuda",
     "items": [
       {
         "title": "Una comunidad hecha por fans",
-        "body": "Bias Market nace de la fanaticada K-pop. Conectamos GO'S y tiendas que entienden exactamente lo que buscas: álbumes, photocards, merch oficial y ediciones limitadas."
+        "body": "Bias Market nace de la fanaticada K-pop. Conectamos GO'S y tiendas que entienden exactamente lo que buscas: álbumes, photocards, merch oficial y ediciones limitadas.",
+        "width": 313
       },
       {
         "title": "Apoya a sellers independientes",
-        "body": "Cada tienda dentro de Bias Market es manejada por un fan como tú. No hay bodegas gigantes ni intermediarios fríos, solo personas apasionadas vendiendo lo que aman."
+        "body": "Cada tienda dentro de Bias Market es manejada por un fan como tú. No hay bodegas gigantes ni intermediarios fríos, solo personas apasionadas vendiendo lo que aman.",
+        "width": 323
       },
       {
         "title": "Compra con tranquilidad",
-        "body": "Pagos con Yape, Plin y más. Seguimiento de tu pedido en todo momento y soporte real si algo sale mal. Tu bias merch está en buenas manos."
+        "body": "Pagos con Yape, Plin y más. Seguimiento de tu pedido en todo momento y soporte real si algo sale mal. Tu bias merch está en buenas manos.",
+        "width": 239
       }
     ]
   },
@@ -80,27 +89,43 @@
     "columns": [
       {
         "heading": "Comprar con Biasmarket",
-        "links": ["Como trabajamos", "Comprador FAQ", "Envios"]
+        "links": [
+          "Como funciona",
+          "Explorar productos",
+          "Categorias",
+          "Envios",
+          "Preguntas frecuentes"
+        ]
       },
       {
         "heading": "Vender con Biasmarket",
         "links": [
-          "Hacer una tienda",
-          "Por qué vender en Bias market",
-          "Blog Biasmarket"
+          "Crear mi tienda",
+          "Como vender",
+          "¿Por qué vender en Biasmarket?",
+          "Guia para sellers",
+          "FAQ para sellers"
         ]
       },
       {
         "heading": "Sobre Biasmarket",
         "links": [
-          "Historia de Biasmarket",
-          "Términos de uso",
-          "Política de privacidad"
+          "Nuestra historia",
+          "Sobre nosotros",
+          "Tiendas verificadas",
+          "Terminos de uso",
+          "Politica de privacidad"
         ]
       },
       {
         "heading": "Ayuda",
-        "links": ["Centro de ayuda", "Configuracion de Privacidad"]
+        "links": [
+          "Centro de ayuda",
+          "Preguntas frecuentes",
+          "Problemas con mi pedido",
+          "Contacto",
+          "Configuracion de Privacidad"
+        ]
       }
     ],
     "socials": [
