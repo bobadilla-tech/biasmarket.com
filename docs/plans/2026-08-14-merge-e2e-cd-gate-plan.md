@@ -364,28 +364,31 @@ parallel jobs unless the suite is later made data- and rate-limit-isolated.
 
 ### 7. Make background-process cleanup and diagnostics reliable
 
-Use one committed CI helper (or one Bash step) that installs
-`trap cleanup EXIT INT TERM` before provisioning any service, exports the test
-environment, starts the named MinIO container, runs `mc`, starts the API as
+Use one committed CI helper (or one Bash step) that executes this exact order:
+install `trap cleanup EXIT INT TERM` before provisioning any service; export the
+test environment; start the named MinIO container and run `mc`; wait for
+services; run migrations and the OpenAPI trackedness/drift check; build
+API/workers; start the API as
 `(cd "$GITHUB_WORKSPACE" && exec node apps/api/dist/main.js) >.ci/e2e-api.log
 2>&1 & API_PID=$!`,
 starts workers as
 `(cd "$GITHUB_WORKSPACE" && exec node apps/workers/dist/main.js) >.ci/e2e-workers.log
 2>&1 & WORKER_PID=$!`,
-runs migrations and tests, and cleans up the API PID, worker PID, MinIO
-container, Docker network, and generated mail directory from that same helper
-using `trap cleanup EXIT INT TERM`. Starting the actual Node entrypoints makes
-the tracked PIDs the process groups to stop; cleanup must still terminate,
-`wait`, and verify both processes before removing the mail directory or network.
-A trap in a setup step does not survive into a later Actions step. The cleanup
-may remove only the generated `apps/workers/.mailer-dev` directory in the
-disposable checkout. Capture MinIO setup, migration, and test stdout/stderr to
-named log files. On failure, upload a short-lived private artifact with those
-exact log paths and a machine-readable Vitest report only if a reporter/path is
-explicitly configured; otherwise call it a captured stdout/stderr artifact and
-do not imply that a report file exists. Do not upload the mailer directory: it
-contains verification and password-reset links, even though they are test
-values. Set `retention-days: 1` on the failure artifact.
+runs the health checks, enqueues/probes the callback, runs the unchanged E2E
+command, and cleans up the API PID, worker PID, MinIO container, Docker network,
+and generated mail directory from that same helper. Starting the actual Node
+entrypoints makes the tracked PIDs the process groups to stop; cleanup must
+still terminate, `wait`, and verify both processes before removing the mail
+directory or network. A trap in a setup step does not survive into a later
+Actions step. The cleanup may remove only the generated
+`apps/workers/.mailer-dev` directory in the disposable checkout. Capture MinIO
+setup, migration, and test stdout/stderr to named log files. On failure, upload
+a short-lived private artifact with those exact log paths and a machine-readable
+Vitest report only if a reporter/path is explicitly configured; otherwise call
+it a captured stdout/stderr artifact and do not imply that a report file exists.
+Do not upload the mailer directory: it contains verification and password-reset
+links, even though they are test values. Set `retention-days: 1` on the failure
+artifact.
 
 The job should start with an explicit `timeout-minutes: 30`, then record actual
 runtime after the first few main pushes. A timeout is a failed E2E gate, not a
@@ -658,4 +661,12 @@ by severity and were applied before the next round:
    digests, and adding this review history.
 
 Each round classified findings as HIGH, MEDIUM, or LOW, corrected this plan, and
-triggered another review. The final revision-9 audit is recorded below.
+triggered another review. Beauvoir's revision-9 audit found the helper-order
+contradiction and missing final log entry; both were corrected before the final
+revision-10 audit.
+
+### Final revision-10 audit
+
+**Herschel — final independent plan/runtime audit:** The helper order is now
+explicit as trap → services → migrations/OpenAPI → build → process
+startup/readiness → callback probe → E2E → cleanup. **NO ACTIONABLE FINDINGS.**

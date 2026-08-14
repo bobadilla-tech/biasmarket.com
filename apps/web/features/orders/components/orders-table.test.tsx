@@ -13,6 +13,7 @@ const baseOrder: OrderResponseDto = {
   id: "order-1",
   storeId: "store-1",
   customerId: null,
+  buyerAccountId: null,
   customerEmail: null,
   customerName: "Jane",
   customerPhone: "+51987654321",
@@ -57,10 +58,9 @@ test("disables Aprobar for an order with zero payment registered", () => {
     />,
   );
 
-  const approveButton = screen.getByRole(
-    "button",
-    { name: "Aprobar" },
-  ) as HTMLButtonElement;
+  const approveButton = screen.getByRole("button", {
+    name: "Aprobar",
+  }) as HTMLButtonElement;
   expect(approveButton.disabled).toBe(true);
 });
 
@@ -77,9 +77,8 @@ test("enables Aprobar once a payment has been registered", () => {
     />,
   );
 
-  const approveButton = screen.getByRole(
-    "button",
-    { name: "Aprobar" },
-  ) as HTMLButtonElement;
+  const approveButton = screen.getByRole("button", {
+    name: "Aprobar",
+  }) as HTMLButtonElement;
   expect(approveButton.disabled).toBe(false);
 });

@@ -14,12 +14,12 @@ vi.mock("sonner", () => ({ toast: (...args: unknown[]) => toast(...args) }));
 
 // Silences "not configured to support act(...)" — RTL sets this once it
 // renders something, but this file drives updates via `act` directly.
-(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean })
-  .IS_REACT_ACT_ENVIRONMENT = true;
+(
+  globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
+).IS_REACT_ACT_ENVIRONMENT = true;
 
-const { useOptimisticStatusChange } = await import(
-  "./use-optimistic-status-change"
-);
+const { useOptimisticStatusChange } =
+  await import("./use-optimistic-status-change");
 
 const t = ((key: string) => key) as unknown as Parameters<
   typeof useOptimisticStatusChange
@@ -37,6 +37,7 @@ const order: OrderResponseDto = {
   id: "o1",
   storeId: "store-1",
   customerId: null,
+  buyerAccountId: null,
   customerEmail: null,
   customerName: "Jane",
   customerPhone: "+51987654321",
