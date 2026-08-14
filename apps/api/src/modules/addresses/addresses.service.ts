@@ -1,7 +1,7 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { PrismaService } from "../../prisma/prisma.service.js";
-import type { CreateAddressDto } from "./dto/create-address.dto.js";
-import type { UpdateAddressDto } from "./dto/update-address.dto.js";
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service.js';
+import type { CreateAddressDto } from './dto/create-address.dto.js';
+import type { UpdateAddressDto } from './dto/update-address.dto.js';
 
 @Injectable()
 export class AddressesService {
@@ -10,7 +10,7 @@ export class AddressesService {
   async findAllByBuyerAccount(buyerAccountId: string) {
     const addresses = await this.prisma.address.findMany({
       where: { buyerAccountId },
-      orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
+      orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
     });
     return addresses.map((a) => ({
       ...a,
@@ -63,7 +63,7 @@ export class AddressesService {
       where: { id: addressId },
     });
     if (!address || address.buyerAccountId !== buyerAccountId) {
-      throw new NotFoundException("Dirección no encontrada");
+      throw new NotFoundException('Dirección no encontrada');
     }
 
     return this.prisma.$transaction(async (tx) => {
@@ -78,15 +78,17 @@ export class AddressesService {
         where: { id: addressId },
         data: {
           ...(dto.label !== undefined && { label: dto.label ?? null }),
-          ...(dto.recipientName !== undefined &&
-            { recipientName: dto.recipientName }),
+          ...(dto.recipientName !== undefined && {
+            recipientName: dto.recipientName,
+          }),
           ...(dto.phone !== undefined && { phone: dto.phone }),
           ...(dto.line1 !== undefined && { line1: dto.line1 }),
           ...(dto.line2 !== undefined && { line2: dto.line2 ?? null }),
           ...(dto.city !== undefined && { city: dto.city }),
           ...(dto.region !== undefined && { region: dto.region ?? null }),
-          ...(dto.reference !== undefined &&
-            { reference: dto.reference ?? null }),
+          ...(dto.reference !== undefined && {
+            reference: dto.reference ?? null,
+          }),
           ...(dto.isDefault !== undefined && { isDefault: dto.isDefault }),
         },
       });
@@ -103,7 +105,7 @@ export class AddressesService {
       where: { id: addressId },
     });
     if (!address || address.buyerAccountId !== buyerAccountId) {
-      throw new NotFoundException("Dirección no encontrada");
+      throw new NotFoundException('Dirección no encontrada');
     }
 
     return this.prisma.$transaction(async (tx) => {
@@ -112,7 +114,7 @@ export class AddressesService {
       if (address.isDefault) {
         const remainingFirst = await tx.address.findFirst({
           where: { buyerAccountId },
-          orderBy: { createdAt: "desc" },
+          orderBy: { createdAt: 'desc' },
         });
         if (remainingFirst) {
           await tx.address.update({

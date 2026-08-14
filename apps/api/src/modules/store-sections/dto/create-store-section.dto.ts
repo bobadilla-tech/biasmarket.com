@@ -5,12 +5,12 @@ import {
   IsObject,
   IsOptional,
   IsString,
-} from "class-validator";
+} from 'class-validator';
 
 export enum StoreSectionTypeDto {
-  COLLECTION = "COLLECTION",
-  BANNER = "BANNER",
-  TEXT_BLOCK = "TEXT_BLOCK",
+  COLLECTION = 'COLLECTION',
+  BANNER = 'BANNER',
+  TEXT_BLOCK = 'TEXT_BLOCK',
 }
 
 export class CreateStoreSectionDto {

@@ -9,7 +9,7 @@ import {
   Min,
   MinLength,
   ValidateIf,
-} from "class-validator";
+} from 'class-validator';
 
 export class UpdatePickupPointDto {
   @IsOptional()

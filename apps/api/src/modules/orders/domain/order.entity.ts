@@ -1,9 +1,9 @@
-import type { FulfillmentStatus, PaymentStatus } from "@biasmarket/db";
+import type { FulfillmentStatus, PaymentStatus } from '@biasmarket/db';
 import {
   assertFulfillmentTransition,
   assertPaymentTransition,
-} from "./order-status.vo.js";
-import { BadRequestException } from "@nestjs/common";
+} from './order-status.vo.js';
+import { BadRequestException } from '@nestjs/common';
 
 export class Order {
   constructor(
@@ -22,24 +22,24 @@ export class Order {
   }
 
   approvePayment(): void {
-    assertPaymentTransition(this.paymentStatus, "VERIFIED");
-    this.paymentStatus = "VERIFIED";
+    assertPaymentTransition(this.paymentStatus, 'VERIFIED');
+    this.paymentStatus = 'VERIFIED';
   }
 
   rejectPayment(): void {
-    assertPaymentTransition(this.paymentStatus, "REJECTED");
-    this.paymentStatus = "REJECTED";
+    assertPaymentTransition(this.paymentStatus, 'REJECTED');
+    this.paymentStatus = 'REJECTED';
   }
 
   expire(): void {
-    assertPaymentTransition(this.paymentStatus, "CANCELLED");
-    this.paymentStatus = "CANCELLED";
+    assertPaymentTransition(this.paymentStatus, 'CANCELLED');
+    this.paymentStatus = 'CANCELLED';
   }
 
   advanceFulfillment(next: FulfillmentStatus): void {
-    if (this.paymentStatus !== "VERIFIED") {
+    if (this.paymentStatus !== 'VERIFIED') {
       throw new BadRequestException(
-        "Order must be VERIFIED before fulfillment can advance",
+        'Order must be VERIFIED before fulfillment can advance',
       );
     }
     assertFulfillmentTransition(this.fulfillmentStatus, next);

@@ -3,20 +3,20 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-} from "@nestjs/common";
-import type { WhatsAppMessageType } from "@biasmarket/db";
-import { PrismaService } from "../../prisma/prisma.service.js";
-import { getMissingRequiredTokens } from "@biasmarket/utils/whatsapp";
-import type { UpdateWhatsAppTemplateDto } from "./dto/update-whatsapp-template.dto.js";
+} from '@nestjs/common';
+import type { WhatsAppMessageType } from '@biasmarket/db';
+import { PrismaService } from '../../prisma/prisma.service.js';
+import { getMissingRequiredTokens } from '@biasmarket/utils/whatsapp';
+import type { UpdateWhatsAppTemplateDto } from './dto/update-whatsapp-template.dto.js';
 
 const WHATSAPP_MESSAGE_TYPES: WhatsAppMessageType[] = [
-  "NEW_ORDER",
-  "PAYMENT_REMINDER",
+  'NEW_ORDER',
+  'PAYMENT_REMINDER',
 ];
 
 function parseType(type: string): WhatsAppMessageType {
   if (!WHATSAPP_MESSAGE_TYPES.includes(type as WhatsAppMessageType)) {
-    throw new BadRequestException("Tipo de mensaje no válido");
+    throw new BadRequestException('Tipo de mensaje no válido');
   }
   return type as WhatsAppMessageType;
 }
@@ -29,9 +29,9 @@ export class WhatsappTemplatesService {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
-    if (!store) throw new NotFoundException("Store no encontrada");
+    if (!store) throw new NotFoundException('Store no encontrada');
     if (store.ownerId !== userId) {
-      throw new ForbiddenException("No sos dueño de esta store");
+      throw new ForbiddenException('No sos dueño de esta store');
     }
     return store;
   }
@@ -58,7 +58,7 @@ export class WhatsappTemplatesService {
 
     const missing = getMissingRequiredTokens(messageType, dto.template);
     if (missing.length > 0) {
-      const missingTokens = missing.map((token) => `{{${token}}}`).join(", ");
+      const missingTokens = missing.map((token) => `{{${token}}}`).join(', ');
       throw new BadRequestException(
         `Faltan las variables requeridas: ${missingTokens}`,
       );

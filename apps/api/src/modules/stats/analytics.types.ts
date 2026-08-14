@@ -1,4 +1,4 @@
-export type AnalyticsRange = "30d" | "90d" | "12m";
+export type AnalyticsRange = '30d' | '90d' | '12m';
 
 export interface AnalyticsBucket {
   start: string;
@@ -22,7 +22,7 @@ export interface AnalyticsResult {
 }
 
 export interface PaymentMethodBreakdownRow {
-  method: "YAPE" | "PLIN" | "TRANSFER" | "CASH" | null;
+  method: 'YAPE' | 'PLIN' | 'TRANSFER' | 'CASH' | null;
   amount: number;
   count: number;
   percentage: number;

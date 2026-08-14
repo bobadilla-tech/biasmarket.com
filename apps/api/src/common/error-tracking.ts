@@ -1,5 +1,5 @@
-import { Logger } from "@nestjs/common";
-import * as Sentry from "@sentry/node";
+import { Logger } from '@nestjs/common';
+import * as Sentry from '@sentry/node';
 
 // Environment-gated error tracking (GlitchTip is Sentry-protocol-compatible,
 // see docs/core/deploy.md / the observability plan). No-op unless a DSN is
@@ -7,7 +7,7 @@ import * as Sentry from "@sentry/node";
 export function initErrorTracking(): void {
   const dsn = process.env.SENTRY_DSN;
   if (!dsn) {
-    Logger.log("SENTRY_DSN not set — error tracking disabled", "ErrorTracking");
+    Logger.log('SENTRY_DSN not set — error tracking disabled', 'ErrorTracking');
     return;
   }
 

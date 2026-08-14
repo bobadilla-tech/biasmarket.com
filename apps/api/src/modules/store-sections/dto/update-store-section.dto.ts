@@ -5,8 +5,8 @@ import {
   IsObject,
   IsOptional,
   IsString,
-} from "class-validator";
-import { StoreSectionTypeDto } from "./create-store-section.dto.js";
+} from 'class-validator';
+import { StoreSectionTypeDto } from './create-store-section.dto.js';
 
 export class UpdateStoreSectionDto {
   @IsOptional()

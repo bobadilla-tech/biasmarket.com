@@ -1,4 +1,4 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty } from '@nestjs/swagger';
 
 // Money/Decimal convention doesn't apply here (no Decimal fields), but the
 // Date-as-string convention still does — see
@@ -16,6 +16,6 @@ export class CategoryResponseDto {
   @ApiProperty()
   name: string;
 
-  @ApiProperty({ type: String, format: "date-time" })
+  @ApiProperty({ type: String, format: 'date-time' })
   createdAt: string;
 }

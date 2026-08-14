@@ -1,4 +1,4 @@
-import { BadRequestException } from "@nestjs/common";
+import { BadRequestException } from '@nestjs/common';
 
 export const SITEMAP_PAGE_LIMIT = 50_000;
 export const SITEMAP_MAX_OFFSET = 10_000_000;
@@ -6,7 +6,7 @@ export const SITEMAP_MAX_OFFSET = 10_000_000;
 const INTEGER_PATTERN = /^(0|[1-9][0-9]*)$/;
 
 function parseSafeInteger(
-  name: "limit" | "offset",
+  name: 'limit' | 'offset',
   value: string | undefined,
 ): number {
   if (value === undefined || !INTEGER_PATTERN.test(value)) {
@@ -28,8 +28,8 @@ export function parseSitemapPagination(
   limit: string | undefined,
   offset: string | undefined,
 ): { limit: number; offset: number } {
-  const parsedLimit = parseSafeInteger("limit", limit);
-  const parsedOffset = parseSafeInteger("offset", offset);
+  const parsedLimit = parseSafeInteger('limit', limit);
+  const parsedOffset = parseSafeInteger('offset', offset);
 
   if (parsedLimit < 1 || parsedLimit > SITEMAP_PAGE_LIMIT) {
     throw new BadRequestException(

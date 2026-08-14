@@ -1,15 +1,15 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty } from '@nestjs/swagger';
 
 export class SuggestionResponseDto {
   @ApiProperty()
   id: string;
 
-  @ApiProperty({ enum: ["info", "warning", "critical"] })
-  severity: "info" | "warning" | "critical";
+  @ApiProperty({ enum: ['info', 'warning', 'critical'] })
+  severity: 'info' | 'warning' | 'critical';
 
   @ApiProperty()
   titleKey: string;
 
-  @ApiProperty({ type: "object", additionalProperties: true })
+  @ApiProperty({ type: 'object', additionalProperties: true })
   bodyParams: Record<string, string | number>;
 }

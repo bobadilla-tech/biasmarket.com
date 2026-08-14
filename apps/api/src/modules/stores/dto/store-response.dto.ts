@@ -1,4 +1,4 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty } from '@nestjs/swagger';
 
 // Money/Decimal and Date-as-ISO-string conventions — see
 // collections/dto/collection-response.dto.ts for the full rationale.
@@ -21,7 +21,7 @@ export class StoreResponseDto {
   @ApiProperty()
   ownerId: string;
 
-  @ApiProperty({ type: "object", additionalProperties: true })
+  @ApiProperty({ type: 'object', additionalProperties: true })
   themeConfig: Record<string, unknown>;
 
   @ApiProperty({ type: String, nullable: true })
@@ -60,7 +60,7 @@ export class StoreResponseDto {
   @ApiProperty()
   isPublic: boolean;
 
-  @ApiProperty({ type: String, format: "date-time" })
+  @ApiProperty({ type: String, format: 'date-time' })
   createdAt: string;
 }
 
@@ -87,7 +87,7 @@ export class PublicStoreListingResponseDto {
   @ApiProperty()
   slug: string;
 
-  @ApiProperty({ type: String, format: "date-time" })
+  @ApiProperty({ type: String, format: 'date-time' })
   createdAt: string;
 }
 
@@ -99,7 +99,7 @@ export class PublicCollectionListingResponseDto {
   @ApiProperty()
   collectionSlug: string;
 
-  @ApiProperty({ type: String, format: "date-time" })
+  @ApiProperty({ type: String, format: 'date-time' })
   createdAt: string;
 }
 
@@ -202,7 +202,7 @@ export class PublicProductVariantResponseDto {
   @ApiProperty({ type: String, nullable: true })
   imageOverride: string | null;
 
-  @ApiProperty({ type: "object", additionalProperties: true })
+  @ApiProperty({ type: 'object', additionalProperties: true })
   attributes: Record<string, unknown>;
 }
 
@@ -228,11 +228,11 @@ export class PublicProductWithVariantsResponseDto {
   @ApiProperty({ type: [String] })
   images: string[];
 
-  @ApiProperty({ type: String, format: "date-time", nullable: true })
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
   availableUntil: string | null;
 
-  @ApiProperty({ enum: ["DRAFT", "PUBLISHED"] })
-  status: "DRAFT" | "PUBLISHED";
+  @ApiProperty({ enum: ['DRAFT', 'PUBLISHED'] })
+  status: 'DRAFT' | 'PUBLISHED';
 
   @ApiProperty()
   soldOut: boolean;
@@ -240,10 +240,10 @@ export class PublicProductWithVariantsResponseDto {
   @ApiProperty()
   discontinued: boolean;
 
-  @ApiProperty({ type: String, format: "date-time", nullable: true })
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
   deletedAt: string | null;
 
-  @ApiProperty({ type: String, format: "date-time" })
+  @ApiProperty({ type: String, format: 'date-time' })
   createdAt: string;
 
   @ApiProperty({ type: [PublicProductVariantResponseDto] })
@@ -307,7 +307,7 @@ export class SectionCollectionResponseDto {
   @ApiProperty()
   description: string;
 
-  @ApiProperty({ type: String, format: "date-time" })
+  @ApiProperty({ type: String, format: 'date-time' })
   createdAt: string;
 
   @ApiProperty({ type: [SectionCollectionProductResponseDto] })
@@ -321,13 +321,13 @@ export class StoreSectionWithCollectionResponseDto {
   @ApiProperty()
   storeId: string;
 
-  @ApiProperty({ enum: ["COLLECTION", "BANNER", "TEXT_BLOCK"] })
-  type: "COLLECTION" | "BANNER" | "TEXT_BLOCK";
+  @ApiProperty({ enum: ['COLLECTION', 'BANNER', 'TEXT_BLOCK'] })
+  type: 'COLLECTION' | 'BANNER' | 'TEXT_BLOCK';
 
   @ApiProperty({ type: String, nullable: true })
   collectionId: string | null;
 
-  @ApiProperty({ type: "object", additionalProperties: true })
+  @ApiProperty({ type: 'object', additionalProperties: true })
   content: Record<string, unknown>;
 
   @ApiProperty()
@@ -336,7 +336,7 @@ export class StoreSectionWithCollectionResponseDto {
   @ApiProperty()
   hidden: boolean;
 
-  @ApiProperty({ type: String, format: "date-time" })
+  @ApiProperty({ type: String, format: 'date-time' })
   createdAt: string;
 
   @ApiProperty({ type: SectionCollectionResponseDto, nullable: true })

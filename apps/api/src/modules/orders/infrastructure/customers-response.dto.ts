@@ -1,5 +1,5 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { OrderResponseDto } from "../dto/order-response.dto.js";
+import { ApiProperty } from '@nestjs/swagger';
+import { OrderResponseDto } from '../dto/order-response.dto.js';
 
 // Money/Decimal, Date-as-ISO-string, and literal-union conventions — see
 // collections/dto/collection-response.dto.ts for the full rationale.
@@ -21,7 +21,7 @@ export class CustomerListItemResponseDto {
   @ApiProperty()
   emailVerified: boolean;
 
-  @ApiProperty({ type: String, format: "date-time" })
+  @ApiProperty({ type: String, format: 'date-time' })
   createdAt: string;
 
   @ApiProperty()
@@ -30,7 +30,7 @@ export class CustomerListItemResponseDto {
   @ApiProperty()
   lifetimeSpend: number;
 
-  @ApiProperty({ type: String, format: "date-time", nullable: true })
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
   lastOrderAt: string | null;
 }
 
@@ -50,7 +50,7 @@ export class CustomerDetailCustomerResponseDto {
   @ApiProperty()
   emailVerified: boolean;
 
-  @ApiProperty({ type: String, format: "date-time" })
+  @ApiProperty({ type: String, format: 'date-time' })
   createdAt: string;
 }
 

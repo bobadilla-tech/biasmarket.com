@@ -1,4 +1,4 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty } from '@nestjs/swagger';
 
 // Shared between `CustomerAuth` (this module — `me`) and `CustomerAccount`
 // (`orders/infrastructure/customer-account.controller.ts` — `confirm`):
@@ -13,24 +13,24 @@ export class AccountOrderResponseDto {
 
   @ApiProperty({
     enum: [
-      "PENDING_PAYMENT",
-      "PARTIALLY_PAID",
-      "PAYMENT_SUBMITTED",
-      "VERIFIED",
-      "REJECTED",
-      "CANCELLED",
+      'PENDING_PAYMENT',
+      'PARTIALLY_PAID',
+      'PAYMENT_SUBMITTED',
+      'VERIFIED',
+      'REJECTED',
+      'CANCELLED',
     ],
   })
   paymentStatus:
-    | "PENDING_PAYMENT"
-    | "PARTIALLY_PAID"
-    | "PAYMENT_SUBMITTED"
-    | "VERIFIED"
-    | "REJECTED"
-    | "CANCELLED";
+    | 'PENDING_PAYMENT'
+    | 'PARTIALLY_PAID'
+    | 'PAYMENT_SUBMITTED'
+    | 'VERIFIED'
+    | 'REJECTED'
+    | 'CANCELLED';
 
-  @ApiProperty({ enum: ["ORDERING", "IN_TRANSIT", "READY", "COMPLETED"] })
-  fulfillmentStatus: "ORDERING" | "IN_TRANSIT" | "READY" | "COMPLETED";
+  @ApiProperty({ enum: ['ORDERING', 'IN_TRANSIT', 'READY', 'COMPLETED'] })
+  fulfillmentStatus: 'ORDERING' | 'IN_TRANSIT' | 'READY' | 'COMPLETED';
 
   @ApiProperty({ type: String })
   totalAmount: string;
@@ -38,7 +38,7 @@ export class AccountOrderResponseDto {
   @ApiProperty()
   currency: string;
 
-  @ApiProperty({ type: String, format: "date-time" })
+  @ApiProperty({ type: String, format: 'date-time' })
   createdAt: string;
 }
 
@@ -61,12 +61,10 @@ export function toAccountOrderDto(
 ): AccountOrderResponseDto {
   return {
     id: order.id,
-    paymentStatus: order.paymentStatus as AccountOrderResponseDto[
-      "paymentStatus"
-    ],
-    fulfillmentStatus: order.fulfillmentStatus as AccountOrderResponseDto[
-      "fulfillmentStatus"
-    ],
+    paymentStatus:
+      order.paymentStatus as AccountOrderResponseDto['paymentStatus'],
+    fulfillmentStatus:
+      order.fulfillmentStatus as AccountOrderResponseDto['fulfillmentStatus'],
     totalAmount: order.totalAmount.toString(),
     currency: order.currency,
     createdAt: order.createdAt.toISOString(),

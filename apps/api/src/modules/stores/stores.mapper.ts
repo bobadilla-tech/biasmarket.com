@@ -1,4 +1,4 @@
-import type { StoreResponseDto } from "./dto/store-response.dto.js";
+import type { StoreResponseDto } from './dto/store-response.dto.js';
 
 // Shared by StoresController and MyStoresController — both map a raw
 // Store row to StoreResponseDto (Decimal/Date convention, see

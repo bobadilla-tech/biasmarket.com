@@ -1,11 +1,11 @@
-import { Test, type TestingModule } from "@nestjs/testing";
-import { ForbiddenException, NotFoundException } from "@nestjs/common";
-import { type Mock, vi } from "vitest";
-import { Prisma } from "@biasmarket/db";
-import { StatsService } from "./stats.service.js";
-import { PrismaService } from "../../prisma/prisma.service.js";
+import { Test, type TestingModule } from '@nestjs/testing';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { type Mock, vi } from 'vitest';
+import { Prisma } from '@biasmarket/db';
+import { StatsService } from './stats.service.js';
+import { PrismaService } from '../../prisma/prisma.service.js';
 
-describe("StatsService", () => {
+describe('StatsService', () => {
   let service: StatsService;
   let prisma: {
     store: { findUnique: Mock };
@@ -16,8 +16,8 @@ describe("StatsService", () => {
     product: { findMany: Mock };
   };
 
-  const ownerId = "user-1";
-  const storeId = "store-1";
+  const ownerId = 'user-1';
+  const storeId = 'store-1';
 
   beforeEach(async () => {
     prisma = {
@@ -44,8 +44,8 @@ describe("StatsService", () => {
     prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
   }
 
-  describe("ownership checks", () => {
-    it("throws NotFoundException when the store does not exist", async () => {
+  describe('ownership checks', () => {
+    it('throws NotFoundException when the store does not exist', async () => {
       prisma.store.findUnique.mockResolvedValue(null);
 
       await expect(service.getOverview(storeId, ownerId)).rejects.toThrow(
@@ -53,10 +53,10 @@ describe("StatsService", () => {
       );
     });
 
-    it("throws ForbiddenException when the user does not own the store", async () => {
+    it('throws ForbiddenException when the user does not own the store', async () => {
       prisma.store.findUnique.mockResolvedValue({
         id: storeId,
-        ownerId: "someone-else",
+        ownerId: 'someone-else',
       });
 
       await expect(service.getOverview(storeId, ownerId)).rejects.toThrow(
@@ -65,7 +65,7 @@ describe("StatsService", () => {
     });
   });
 
-  describe("getOverview", () => {
+  describe('getOverview', () => {
     beforeEach(() => {
       stubOwnedStore();
       prisma.orderPayment.aggregate.mockResolvedValue({
@@ -76,22 +76,22 @@ describe("StatsService", () => {
       prisma.order.findMany.mockResolvedValue([]);
     });
 
-    it("scopes the revenue aggregate to VERIFIED/PARTIALLY_PAID payments for the store", async () => {
+    it('scopes the revenue aggregate to VERIFIED/PARTIALLY_PAID payments for the store', async () => {
       await service.getOverview(storeId, ownerId);
 
       expect(prisma.orderPayment.aggregate).toHaveBeenCalledWith({
         where: {
           storeId,
           order: {
-            paymentStatus: { in: ["VERIFIED", "PARTIALLY_PAID"] },
+            paymentStatus: { in: ['VERIFIED', 'PARTIALLY_PAID'] },
           },
-          OR: [{ source: "SELLER_RECORDED" }, { reviewStatus: "APPROVED" }],
+          OR: [{ source: 'SELLER_RECORDED' }, { reviewStatus: 'APPROVED' }],
         },
         _sum: { amount: true },
       });
     });
 
-    it("sums the verified amount of PARTIALLY_PAID orders into revenue, never the full order total", async () => {
+    it('sums the verified amount of PARTIALLY_PAID orders into revenue, never the full order total', async () => {
       prisma.orderPayment.aggregate.mockResolvedValue({
         _sum: { amount: 30 },
       });
@@ -104,7 +104,7 @@ describe("StatsService", () => {
       expect(result.revenue).toBe(30);
     });
 
-    it("exposes PARTIALLY_PAID orders with their paid/total/remaining summary", async () => {
+    it('exposes PARTIALLY_PAID orders with their paid/total/remaining summary', async () => {
       prisma.orderPayment.aggregate.mockResolvedValue({
         _sum: { amount: 30 },
       });
@@ -112,18 +112,18 @@ describe("StatsService", () => {
         .mockResolvedValueOnce([]) // recentOrders
         .mockResolvedValueOnce([
           {
-            id: "order-partial",
-            customerName: "Ana",
-            customerPhone: "+51987654321",
-            currency: "PEN",
+            id: 'order-partial',
+            customerName: 'Ana',
+            customerPhone: '+51987654321',
+            currency: 'PEN',
             totalAmount: new Prisma.Decimal(100),
             requiredAmount: new Prisma.Decimal(100),
-            createdAt: new Date("2026-08-10T10:00:00Z"),
+            createdAt: new Date('2026-08-10T10:00:00Z'),
             payments: [
               {
                 amount: new Prisma.Decimal(30),
-                source: "SELLER_RECORDED",
-                reviewStatus: "N_A",
+                source: 'SELLER_RECORDED',
+                reviewStatus: 'N_A',
               },
             ],
           },
@@ -137,13 +137,13 @@ describe("StatsService", () => {
             storeId,
             // PARTIALLY_PAID + VERIFIED are both money-carrying — a VERIFIED
             // deposit order with a residual still belongs in the card.
-            paymentStatus: { in: ["VERIFIED", "PARTIALLY_PAID"] },
+            paymentStatus: { in: ['VERIFIED', 'PARTIALLY_PAID'] },
           },
         }),
       );
       expect(result.partialPaymentOrders).toEqual([
         expect.objectContaining({
-          id: "order-partial",
+          id: 'order-partial',
           paidAmount: 30,
           pendingAmount: 70,
           paidPercentage: 30,
@@ -156,23 +156,23 @@ describe("StatsService", () => {
         .mockResolvedValueOnce([]) // recentOrders
         .mockResolvedValueOnce([
           {
-            id: "order-partial",
+            id: 'order-partial',
             customerName: null,
-            customerPhone: "+51987654321",
-            currency: "PEN",
+            customerPhone: '+51987654321',
+            currency: 'PEN',
             totalAmount: new Prisma.Decimal(100),
             requiredAmount: new Prisma.Decimal(100),
-            createdAt: new Date("2026-08-10T10:00:00Z"),
+            createdAt: new Date('2026-08-10T10:00:00Z'),
             payments: [
               {
                 amount: new Prisma.Decimal(40),
-                source: "SELLER_RECORDED",
-                reviewStatus: "N_A",
+                source: 'SELLER_RECORDED',
+                reviewStatus: 'N_A',
               },
               {
                 amount: new Prisma.Decimal(1000),
-                source: "BUYER_SUBMITTED",
-                reviewStatus: "PENDING_REVIEW",
+                source: 'BUYER_SUBMITTED',
+                reviewStatus: 'PENDING_REVIEW',
               },
             ],
           },
@@ -184,39 +184,39 @@ describe("StatsService", () => {
       expect(result.partialPaymentOrders[0].pendingAmount).toBe(60);
     });
 
-    it("keeps VERIFIED orders with a residual balance but drops settled VERIFIED orders from the outstanding card", async () => {
+    it('keeps VERIFIED orders with a residual balance but drops settled VERIFIED orders from the outstanding card', async () => {
       prisma.order.findMany
         .mockResolvedValueOnce([]) // recentOrders
         .mockResolvedValueOnce([
           {
-            id: "order-verified-residual",
-            customerName: "Ana",
-            customerPhone: "+51987654321",
-            currency: "PEN",
+            id: 'order-verified-residual',
+            customerName: 'Ana',
+            customerPhone: '+51987654321',
+            currency: 'PEN',
             totalAmount: new Prisma.Decimal(100),
             requiredAmount: new Prisma.Decimal(100),
-            createdAt: new Date("2026-08-10T10:00:00Z"),
+            createdAt: new Date('2026-08-10T10:00:00Z'),
             payments: [
               {
                 amount: new Prisma.Decimal(40),
-                source: "SELLER_RECORDED",
-                reviewStatus: "N_A",
+                source: 'SELLER_RECORDED',
+                reviewStatus: 'N_A',
               },
             ],
           },
           {
-            id: "order-verified-settled",
-            customerName: "Luis",
-            customerPhone: "+51987654322",
-            currency: "PEN",
+            id: 'order-verified-settled',
+            customerName: 'Luis',
+            customerPhone: '+51987654322',
+            currency: 'PEN',
             totalAmount: new Prisma.Decimal(100),
             requiredAmount: new Prisma.Decimal(100),
-            createdAt: new Date("2026-08-10T11:00:00Z"),
+            createdAt: new Date('2026-08-10T11:00:00Z'),
             payments: [
               {
                 amount: new Prisma.Decimal(100),
-                source: "SELLER_RECORDED",
-                reviewStatus: "N_A",
+                source: 'SELLER_RECORDED',
+                reviewStatus: 'N_A',
               },
             ],
           },
@@ -228,18 +228,18 @@ describe("StatsService", () => {
       // one falls out of the card entirely.
       expect(result.partialPaymentOrders).toEqual([
         expect.objectContaining({
-          id: "order-verified-residual",
+          id: 'order-verified-residual',
           pendingAmount: 60,
         }),
       ]);
     });
 
-    it("zero-fills every PaymentStatus and FulfillmentStatus bucket", async () => {
+    it('zero-fills every PaymentStatus and FulfillmentStatus bucket', async () => {
       prisma.order.groupBy.mockImplementation(({ by }: { by: string[] }) => {
-        if (by[0] === "paymentStatus") {
-          return Promise.resolve([{ paymentStatus: "VERIFIED", _count: 3 }]);
+        if (by[0] === 'paymentStatus') {
+          return Promise.resolve([{ paymentStatus: 'VERIFIED', _count: 3 }]);
         }
-        return Promise.resolve([{ fulfillmentStatus: "COMPLETED", _count: 3 }]);
+        return Promise.resolve([{ fulfillmentStatus: 'COMPLETED', _count: 3 }]);
       });
 
       const result = await service.getOverview(storeId, ownerId);
@@ -261,29 +261,31 @@ describe("StatsService", () => {
       expect(result.totalOrders).toBe(3);
     });
 
-    it("counts open low-stock/out-of-stock notifications", async () => {
+    it('counts open low-stock/out-of-stock notifications', async () => {
       const result = await service.getOverview(storeId, ownerId);
 
       expect(prisma.notification.count).toHaveBeenCalledWith({
         where: {
           storeId,
           archived: false,
-          type: { in: ["LOW_STOCK", "OUT_OF_STOCK"] },
+          type: { in: ['LOW_STOCK', 'OUT_OF_STOCK'] },
         },
       });
       expect(result.lowStockCount).toBe(2);
     });
 
-    it("computes paidAmount/pendingAmount/paidPercentage for recent orders", async () => {
+    it('computes paidAmount/pendingAmount/paidPercentage for recent orders', async () => {
       prisma.order.findMany.mockResolvedValue([
         {
-          id: "order-1",
+          id: 'order-1',
           requiredAmount: new Prisma.Decimal(100),
-          payments: [{
-            amount: new Prisma.Decimal(40),
-            source: "SELLER_RECORDED",
-            reviewStatus: "N_A",
-          }],
+          payments: [
+            {
+              amount: new Prisma.Decimal(40),
+              source: 'SELLER_RECORDED',
+              reviewStatus: 'N_A',
+            },
+          ],
         },
       ]);
 
@@ -291,7 +293,7 @@ describe("StatsService", () => {
 
       expect(result.recentOrders).toEqual([
         expect.objectContaining({
-          id: "order-1",
+          id: 'order-1',
           paidAmount: 40,
           pendingAmount: 60,
           paidPercentage: 40,
@@ -299,60 +301,60 @@ describe("StatsService", () => {
       ]);
     });
 
-    it("limits recent orders to the 10 most recent, ordered by createdAt desc", async () => {
+    it('limits recent orders to the 10 most recent, ordered by createdAt desc', async () => {
       await service.getOverview(storeId, ownerId);
 
       expect(prisma.order.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { storeId },
-          orderBy: { createdAt: "desc" },
+          orderBy: { createdAt: 'desc' },
           take: 10,
         }),
       );
     });
   });
 
-  describe("getAnalytics", () => {
+  describe('getAnalytics', () => {
     beforeEach(() => {
       stubOwnedStore();
       prisma.orderPayment.findMany.mockResolvedValue([]);
     });
 
-    it("buckets revenue from VERIFIED orders only, and order count from every order", async () => {
-      const now = new Date("2026-08-15T12:00:00Z");
+    it('buckets revenue from VERIFIED orders only, and order count from every order', async () => {
+      const now = new Date('2026-08-15T12:00:00Z');
       vi.useFakeTimers();
       vi.setSystemTime(now);
 
       prisma.order.findMany
         .mockResolvedValueOnce([
           {
-            customerId: "customer-1",
-            createdAt: new Date("2026-08-15T01:00:00Z"),
+            customerId: 'customer-1',
+            createdAt: new Date('2026-08-15T01:00:00Z'),
           },
           {
-            customerId: "customer-2",
-            createdAt: new Date("2026-08-15T02:00:00Z"),
+            customerId: 'customer-2',
+            createdAt: new Date('2026-08-15T02:00:00Z'),
           },
         ])
         .mockResolvedValueOnce([
           {
-            customerId: "customer-1",
-            createdAt: new Date("2026-08-15T01:00:00Z"),
+            customerId: 'customer-1',
+            createdAt: new Date('2026-08-15T01:00:00Z'),
           },
           {
-            customerId: "customer-2",
-            createdAt: new Date("2026-08-15T02:00:00Z"),
+            customerId: 'customer-2',
+            createdAt: new Date('2026-08-15T02:00:00Z'),
           },
         ]);
       // Revenue rows come from the orderPayment query — the VERIFIED order's
       // seller-recorded 40 (the PENDING_PAYMENT order contributes no rows).
       prisma.orderPayment.findMany.mockResolvedValue([
-        { amount: 40, createdAt: new Date("2026-08-15T01:00:00Z") },
+        { amount: 40, createdAt: new Date('2026-08-15T01:00:00Z') },
       ]);
       prisma.orderItem.groupBy.mockResolvedValue([]);
       prisma.product.findMany.mockResolvedValue([]);
 
-      const result = await service.getAnalytics(storeId, ownerId, "30d");
+      const result = await service.getAnalytics(storeId, ownerId, '30d');
 
       const todayBucket = result.buckets[result.buckets.length - 1];
       expect(todayBucket.revenue).toBe(40);
@@ -361,33 +363,33 @@ describe("StatsService", () => {
       vi.useRealTimers();
     });
 
-    it("excludes a PENDING_REVIEW buyer-submitted payment from bucket revenue", async () => {
-      const now = new Date("2026-08-15T12:00:00Z");
+    it('excludes a PENDING_REVIEW buyer-submitted payment from bucket revenue', async () => {
+      const now = new Date('2026-08-15T12:00:00Z');
       vi.useFakeTimers();
       vi.setSystemTime(now);
 
       prisma.order.findMany
         .mockResolvedValueOnce([
           {
-            customerId: "customer-1",
-            createdAt: new Date("2026-08-15T01:00:00Z"),
+            customerId: 'customer-1',
+            createdAt: new Date('2026-08-15T01:00:00Z'),
           },
         ])
         .mockResolvedValueOnce([
           {
-            customerId: "customer-1",
-            createdAt: new Date("2026-08-15T01:00:00Z"),
+            customerId: 'customer-1',
+            createdAt: new Date('2026-08-15T01:00:00Z'),
           },
         ]);
       // The PENDING_REVIEW 1000 never reaches the query — the WHERE only
       // admits SELLER_RECORDED / APPROVED rows — so only the 40 counts.
       prisma.orderPayment.findMany.mockResolvedValue([
-        { amount: 40, createdAt: new Date("2026-08-15T01:00:00Z") },
+        { amount: 40, createdAt: new Date('2026-08-15T01:00:00Z') },
       ]);
       prisma.orderItem.groupBy.mockResolvedValue([]);
       prisma.product.findMany.mockResolvedValue([]);
 
-      const result = await service.getAnalytics(storeId, ownerId, "30d");
+      const result = await service.getAnalytics(storeId, ownerId, '30d');
 
       const todayBucket = result.buckets[result.buckets.length - 1];
       expect(todayBucket.revenue).toBe(40);
@@ -395,40 +397,40 @@ describe("StatsService", () => {
       vi.useRealTimers();
     });
 
-    it("includes the verified amount of PARTIALLY_PAID orders in bucket revenue", async () => {
-      const now = new Date("2026-08-15T12:00:00Z");
+    it('includes the verified amount of PARTIALLY_PAID orders in bucket revenue', async () => {
+      const now = new Date('2026-08-15T12:00:00Z');
       vi.useFakeTimers();
       vi.setSystemTime(now);
 
       prisma.order.findMany
         .mockResolvedValueOnce([
           {
-            customerId: "customer-1",
-            createdAt: new Date("2026-08-15T01:00:00Z"),
+            customerId: 'customer-1',
+            createdAt: new Date('2026-08-15T01:00:00Z'),
           },
           {
-            customerId: "customer-2",
-            createdAt: new Date("2026-08-15T02:00:00Z"),
+            customerId: 'customer-2',
+            createdAt: new Date('2026-08-15T02:00:00Z'),
           },
         ])
         .mockResolvedValueOnce([
           {
-            customerId: "customer-1",
-            createdAt: new Date("2026-08-15T01:00:00Z"),
+            customerId: 'customer-1',
+            createdAt: new Date('2026-08-15T01:00:00Z'),
           },
           {
-            customerId: "customer-2",
-            createdAt: new Date("2026-08-15T02:00:00Z"),
+            customerId: 'customer-2',
+            createdAt: new Date('2026-08-15T02:00:00Z'),
           },
         ]);
       // The 100 order's 30 deposit is the only revenue row in range.
       prisma.orderPayment.findMany.mockResolvedValue([
-        { amount: 30, createdAt: new Date("2026-08-15T01:00:00Z") },
+        { amount: 30, createdAt: new Date('2026-08-15T01:00:00Z') },
       ]);
       prisma.orderItem.groupBy.mockResolvedValue([]);
       prisma.product.findMany.mockResolvedValue([]);
 
-      const result = await service.getAnalytics(storeId, ownerId, "30d");
+      const result = await service.getAnalytics(storeId, ownerId, '30d');
 
       const todayBucket = result.buckets[result.buckets.length - 1];
       // The 100 order's 30 deposit counts; the unpaid 70 does not, and the
@@ -440,7 +442,7 @@ describe("StatsService", () => {
     });
 
     it("buckets revenue by the payment's createdAt, not the order's", async () => {
-      const now = new Date("2026-08-15T12:00:00Z");
+      const now = new Date('2026-08-15T12:00:00Z');
       vi.useFakeTimers();
       vi.setSystemTime(now);
 
@@ -448,47 +450,47 @@ describe("StatsService", () => {
         .mockResolvedValueOnce([
           // Order placed earlier in the range than its payment arrived.
           {
-            customerId: "customer-1",
-            createdAt: new Date("2026-08-10T01:00:00Z"),
+            customerId: 'customer-1',
+            createdAt: new Date('2026-08-10T01:00:00Z'),
           },
         ])
         .mockResolvedValueOnce([
           {
-            customerId: "customer-1",
-            createdAt: new Date("2026-08-10T01:00:00Z"),
+            customerId: 'customer-1',
+            createdAt: new Date('2026-08-10T01:00:00Z'),
           },
         ]);
       // Payment collected today, five days after the order was placed —
       // must land in today's bucket, not the order's day.
       prisma.orderPayment.findMany.mockResolvedValue([
-        { amount: 100, createdAt: new Date("2026-08-15T10:00:00Z") },
+        { amount: 100, createdAt: new Date('2026-08-15T10:00:00Z') },
       ]);
       prisma.orderItem.groupBy.mockResolvedValue([]);
       prisma.product.findMany.mockResolvedValue([]);
 
-      const result = await service.getAnalytics(storeId, ownerId, "30d");
+      const result = await service.getAnalytics(storeId, ownerId, '30d');
 
       const todayBucket = result.buckets[result.buckets.length - 1];
       expect(todayBucket.revenue).toBe(100);
       const orderDayBucket = result.buckets.find((b) =>
-        b.start.startsWith("2026-08-10")
+        b.start.startsWith('2026-08-10'),
       );
       expect(orderDayBucket?.revenue).toBe(0);
 
       vi.useRealTimers();
     });
 
-    it("classifies a customer as new only in the bucket containing their first-ever order", async () => {
-      const now = new Date("2026-08-15T12:00:00Z");
+    it('classifies a customer as new only in the bucket containing their first-ever order', async () => {
+      const now = new Date('2026-08-15T12:00:00Z');
       vi.useFakeTimers();
       vi.setSystemTime(now);
 
       prisma.order.findMany
         .mockResolvedValueOnce([
           {
-            customerId: "customer-1",
-            createdAt: new Date("2026-08-15T01:00:00Z"),
-            paymentStatus: "VERIFIED",
+            customerId: 'customer-1',
+            createdAt: new Date('2026-08-15T01:00:00Z'),
+            paymentStatus: 'VERIFIED',
             payments: [],
           },
         ])
@@ -496,18 +498,18 @@ describe("StatsService", () => {
           // This customer's first-ever order was before the visible range —
           // they must still be "returning", not "new", inside the range.
           {
-            customerId: "customer-1",
-            createdAt: new Date("2026-01-01T00:00:00Z"),
+            customerId: 'customer-1',
+            createdAt: new Date('2026-01-01T00:00:00Z'),
           },
           {
-            customerId: "customer-1",
-            createdAt: new Date("2026-08-15T01:00:00Z"),
+            customerId: 'customer-1',
+            createdAt: new Date('2026-08-15T01:00:00Z'),
           },
         ]);
       prisma.orderItem.groupBy.mockResolvedValue([]);
       prisma.product.findMany.mockResolvedValue([]);
 
-      const result = await service.getAnalytics(storeId, ownerId, "30d");
+      const result = await service.getAnalytics(storeId, ownerId, '30d');
 
       const todayBucket = result.buckets[result.buckets.length - 1];
       expect(todayBucket.newCustomers).toBe(0);
@@ -516,38 +518,42 @@ describe("StatsService", () => {
       vi.useRealTimers();
     });
 
-    it("resolves top product names from the aggregated orderItem groupBy", async () => {
+    it('resolves top product names from the aggregated orderItem groupBy', async () => {
       prisma.order.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
       prisma.orderItem.groupBy.mockResolvedValue([
-        { productId: "product-1", _sum: { quantity: 12 } },
+        { productId: 'product-1', _sum: { quantity: 12 } },
       ]);
-      prisma.product.findMany.mockResolvedValue([{
-        id: "product-1",
-        name: "Widget",
-      }]);
+      prisma.product.findMany.mockResolvedValue([
+        {
+          id: 'product-1',
+          name: 'Widget',
+        },
+      ]);
 
-      const result = await service.getAnalytics(storeId, ownerId, "30d");
+      const result = await service.getAnalytics(storeId, ownerId, '30d');
 
-      expect(result.topProducts).toEqual([{
-        productId: "product-1",
-        name: "Widget",
-        unitsSold: 12,
-      }]);
+      expect(result.topProducts).toEqual([
+        {
+          productId: 'product-1',
+          name: 'Widget',
+          unitsSold: 12,
+        },
+      ]);
     });
   });
 
-  describe("getPaymentMethodsBreakdown", () => {
-    const from = new Date("2026-08-01T00:00:00.000Z");
-    const to = new Date("2026-08-16T00:00:00.000Z");
+  describe('getPaymentMethodsBreakdown', () => {
+    const from = new Date('2026-08-01T00:00:00.000Z');
+    const to = new Date('2026-08-16T00:00:00.000Z');
 
     beforeEach(() => {
       stubOwnedStore();
     });
 
-    it("aggregates active-order payments scoped to store and date range, zero-filling known methods", async () => {
+    it('aggregates active-order payments scoped to store and date range, zero-filling known methods', async () => {
       prisma.orderPayment.groupBy.mockResolvedValue([
-        { method: "YAPE", _sum: { amount: 60 }, _count: 2 },
-        { method: "CASH", _sum: { amount: 40 }, _count: 1 },
+        { method: 'YAPE', _sum: { amount: 60 }, _count: 2 },
+        { method: 'CASH', _sum: { amount: 40 }, _count: 1 },
       ]);
 
       const result = await service.getPaymentMethodsBreakdown(
@@ -558,11 +564,11 @@ describe("StatsService", () => {
       );
 
       expect(prisma.orderPayment.groupBy).toHaveBeenCalledWith({
-        by: ["method"],
+        by: ['method'],
         where: {
           storeId,
           createdAt: { gte: from, lt: to },
-          order: { status: "ACTIVE" },
+          order: { status: 'ACTIVE' },
         },
         _sum: { amount: true },
         _count: true,
@@ -571,14 +577,14 @@ describe("StatsService", () => {
       expect(result.totalAmount).toBe(100);
       expect(result.totalCount).toBe(3);
       expect(result.byMethod).toEqual([
-        { method: "YAPE", amount: 60, count: 2, percentage: 60 },
-        { method: "PLIN", amount: 0, count: 0, percentage: 0 },
-        { method: "TRANSFER", amount: 0, count: 0, percentage: 0 },
-        { method: "CASH", amount: 40, count: 1, percentage: 40 },
+        { method: 'YAPE', amount: 60, count: 2, percentage: 60 },
+        { method: 'PLIN', amount: 0, count: 0, percentage: 0 },
+        { method: 'TRANSFER', amount: 0, count: 0, percentage: 0 },
+        { method: 'CASH', amount: 40, count: 1, percentage: 40 },
       ]);
     });
 
-    it("returns zero totals when there are no payments in the range", async () => {
+    it('returns zero totals when there are no payments in the range', async () => {
       prisma.orderPayment.groupBy.mockResolvedValue([]);
 
       const result = await service.getPaymentMethodsBreakdown(
@@ -593,7 +599,7 @@ describe("StatsService", () => {
       expect(result.byMethod.every((row) => row.amount === 0)).toBe(true);
     });
 
-    it("keeps legacy rows whose method is outside the known set", async () => {
+    it('keeps legacy rows whose method is outside the known set', async () => {
       prisma.orderPayment.groupBy.mockResolvedValue([
         { method: null, _sum: { amount: 25 }, _count: 1 },
       ]);
@@ -606,10 +612,10 @@ describe("StatsService", () => {
       );
 
       expect(result.byMethod).toEqual([
-        { method: "YAPE", amount: 0, count: 0, percentage: 0 },
-        { method: "PLIN", amount: 0, count: 0, percentage: 0 },
-        { method: "TRANSFER", amount: 0, count: 0, percentage: 0 },
-        { method: "CASH", amount: 0, count: 0, percentage: 0 },
+        { method: 'YAPE', amount: 0, count: 0, percentage: 0 },
+        { method: 'PLIN', amount: 0, count: 0, percentage: 0 },
+        { method: 'TRANSFER', amount: 0, count: 0, percentage: 0 },
+        { method: 'CASH', amount: 0, count: 0, percentage: 0 },
         { method: null, amount: 25, count: 1, percentage: 100 },
       ]);
     });

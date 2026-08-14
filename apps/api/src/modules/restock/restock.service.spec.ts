@@ -1,10 +1,10 @@
-import { Test, TestingModule } from "@nestjs/testing";
-import { ForbiddenException, NotFoundException } from "@nestjs/common";
-import { type Mock, vi } from "vitest";
-import { RestockService } from "./restock.service.js";
-import { PrismaService } from "../../prisma/prisma.service.js";
+import { Test, TestingModule } from '@nestjs/testing';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { type Mock, vi } from 'vitest';
+import { RestockService } from './restock.service.js';
+import { PrismaService } from '../../prisma/prisma.service.js';
 
-describe("RestockService", () => {
+describe('RestockService', () => {
   let service: RestockService;
   let prisma: {
     store: { findUnique: Mock };
@@ -13,17 +13,17 @@ describe("RestockService", () => {
     restockRequest: { create: Mock; findMany: Mock; count: Mock };
   };
 
-  const store = { id: "store-1", slug: "myshop", ownerId: "user-1" };
+  const store = { id: 'store-1', slug: 'myshop', ownerId: 'user-1' };
   const product = {
-    id: "product-1",
-    storeId: "store-1",
-    status: "PUBLISHED",
+    id: 'product-1',
+    storeId: 'store-1',
+    status: 'PUBLISHED',
     deletedAt: null,
   };
   const variant = {
-    id: "variant-1",
-    productId: "product-1",
-    storeId: "store-1",
+    id: 'variant-1',
+    productId: 'product-1',
+    storeId: 'store-1',
   };
 
   beforeEach(async () => {
@@ -41,122 +41,122 @@ describe("RestockService", () => {
     service = module.get<RestockService>(RestockService);
   });
 
-  describe("create()", () => {
+  describe('create()', () => {
     const dto = {
-      name: "Jane",
-      phone: "+51999000111",
-      productId: "product-1",
-      variantId: "variant-1",
+      name: 'Jane',
+      phone: '+51999000111',
+      productId: 'product-1',
+      variantId: 'variant-1',
     };
 
-    it("persists a request scoped to the resolved store", async () => {
+    it('persists a request scoped to the resolved store', async () => {
       prisma.store.findUnique.mockResolvedValue(store);
       prisma.product.findUnique.mockResolvedValue(product);
       prisma.productVariant.findUnique.mockResolvedValue(variant);
-      prisma.restockRequest.create.mockResolvedValue({ id: "req-1" });
+      prisma.restockRequest.create.mockResolvedValue({ id: 'req-1' });
 
-      const result = await service.create("myshop", dto);
+      const result = await service.create('myshop', dto);
 
       expect(prisma.store.findUnique).toHaveBeenCalledWith({
-        where: { slug: "myshop" },
+        where: { slug: 'myshop' },
       });
       expect(prisma.restockRequest.create).toHaveBeenCalledWith({
         data: {
-          storeId: "store-1",
-          productId: "product-1",
-          variantId: "variant-1",
-          name: "Jane",
-          phone: "+51999000111",
+          storeId: 'store-1',
+          productId: 'product-1',
+          variantId: 'variant-1',
+          name: 'Jane',
+          phone: '+51999000111',
         },
         select: { id: true, createdAt: true },
       });
-      expect(result).toEqual({ id: "req-1" });
+      expect(result).toEqual({ id: 'req-1' });
     });
 
-    it("throws NotFoundException when the store slug is unknown", async () => {
+    it('throws NotFoundException when the store slug is unknown', async () => {
       prisma.store.findUnique.mockResolvedValue(null);
 
-      await expect(service.create("nope", dto)).rejects.toThrow(
+      await expect(service.create('nope', dto)).rejects.toThrow(
         NotFoundException,
       );
     });
 
-    it("throws NotFoundException when the product is not published or not in the store", async () => {
+    it('throws NotFoundException when the product is not published or not in the store', async () => {
       prisma.store.findUnique.mockResolvedValue(store);
       prisma.product.findUnique.mockResolvedValue({
         ...product,
-        status: "DRAFT",
+        status: 'DRAFT',
       });
 
-      await expect(service.create("myshop", dto)).rejects.toThrow(
+      await expect(service.create('myshop', dto)).rejects.toThrow(
         NotFoundException,
       );
     });
 
-    it("throws NotFoundException when the variant does not belong to the product", async () => {
+    it('throws NotFoundException when the variant does not belong to the product', async () => {
       prisma.store.findUnique.mockResolvedValue(store);
       prisma.product.findUnique.mockResolvedValue(product);
       prisma.productVariant.findUnique.mockResolvedValue({
-        id: "variant-1",
-        productId: "other-product",
-        storeId: "store-1",
+        id: 'variant-1',
+        productId: 'other-product',
+        storeId: 'store-1',
       });
 
-      await expect(service.create("myshop", dto)).rejects.toThrow(
+      await expect(service.create('myshop', dto)).rejects.toThrow(
         NotFoundException,
       );
     });
 
-    it("persists a request without a variant when variantId is omitted", async () => {
+    it('persists a request without a variant when variantId is omitted', async () => {
       prisma.store.findUnique.mockResolvedValue(store);
       prisma.product.findUnique.mockResolvedValue(product);
 
-      await service.create("myshop", {
-        name: "Jane",
-        phone: "+51999000111",
-        productId: "product-1",
+      await service.create('myshop', {
+        name: 'Jane',
+        phone: '+51999000111',
+        productId: 'product-1',
       });
 
       expect(prisma.productVariant.findUnique).not.toHaveBeenCalled();
       expect(prisma.restockRequest.create).toHaveBeenCalledWith({
         data: {
-          storeId: "store-1",
-          productId: "product-1",
+          storeId: 'store-1',
+          productId: 'product-1',
           variantId: null,
-          name: "Jane",
-          phone: "+51999000111",
+          name: 'Jane',
+          phone: '+51999000111',
         },
         select: { id: true, createdAt: true },
       });
     });
   });
 
-  describe("listForStore()", () => {
-    it("throws NotFoundException when the store does not exist", async () => {
+  describe('listForStore()', () => {
+    it('throws NotFoundException when the store does not exist', async () => {
       prisma.store.findUnique.mockResolvedValue(null);
 
-      await expect(service.listForStore("store-1", "user-1")).rejects.toThrow(
+      await expect(service.listForStore('store-1', 'user-1')).rejects.toThrow(
         NotFoundException,
       );
     });
 
-    it("throws ForbiddenException when the user is not the owner", async () => {
+    it('throws ForbiddenException when the user is not the owner', async () => {
       prisma.store.findUnique.mockResolvedValue(store);
 
-      await expect(service.listForStore("store-1", "intruder")).rejects.toThrow(
+      await expect(service.listForStore('store-1', 'intruder')).rejects.toThrow(
         ForbiddenException,
       );
     });
 
-    it("lists requests newest first with product and variant names", async () => {
+    it('lists requests newest first with product and variant names', async () => {
       prisma.store.findUnique.mockResolvedValue(store);
-      prisma.restockRequest.findMany.mockResolvedValue([{ id: "req-1" }]);
+      prisma.restockRequest.findMany.mockResolvedValue([{ id: 'req-1' }]);
 
-      const result = await service.listForStore("store-1", "user-1");
+      const result = await service.listForStore('store-1', 'user-1');
 
       expect(prisma.restockRequest.findMany).toHaveBeenCalledWith({
-        where: { storeId: "store-1" },
-        orderBy: { createdAt: "desc" },
+        where: { storeId: 'store-1' },
+        orderBy: { createdAt: 'desc' },
         select: {
           id: true,
           name: true,
@@ -166,35 +166,35 @@ describe("RestockService", () => {
           variant: { select: { id: true, name: true } },
         },
       });
-      expect(result).toEqual([{ id: "req-1" }]);
+      expect(result).toEqual([{ id: 'req-1' }]);
     });
   });
 
-  describe("count()", () => {
-    it("returns the total number of restock requests for the store", async () => {
+  describe('count()', () => {
+    it('returns the total number of restock requests for the store', async () => {
       prisma.store.findUnique.mockResolvedValue(store);
       prisma.restockRequest.count.mockResolvedValue(7);
 
-      const result = await service.count("store-1", "user-1");
+      const result = await service.count('store-1', 'user-1');
 
       expect(prisma.restockRequest.count).toHaveBeenCalledWith({
-        where: { storeId: "store-1" },
+        where: { storeId: 'store-1' },
       });
       expect(result).toEqual({ count: 7 });
     });
 
-    it("throws NotFoundException when the store does not exist", async () => {
+    it('throws NotFoundException when the store does not exist', async () => {
       prisma.store.findUnique.mockResolvedValue(null);
 
-      await expect(service.count("store-1", "user-1")).rejects.toThrow(
+      await expect(service.count('store-1', 'user-1')).rejects.toThrow(
         NotFoundException,
       );
     });
 
-    it("throws ForbiddenException when the user is not the owner", async () => {
+    it('throws ForbiddenException when the user is not the owner', async () => {
       prisma.store.findUnique.mockResolvedValue(store);
 
-      await expect(service.count("store-1", "intruder")).rejects.toThrow(
+      await expect(service.count('store-1', 'intruder')).rejects.toThrow(
         ForbiddenException,
       );
     });

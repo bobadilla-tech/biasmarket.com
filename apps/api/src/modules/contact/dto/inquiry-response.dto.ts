@@ -1,4 +1,4 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty } from '@nestjs/swagger';
 
 export class InquiryResponseDto {
   @ApiProperty()
@@ -19,9 +19,9 @@ export class InquiryResponseDto {
   @ApiProperty()
   message: string;
 
-  @ApiProperty({ enum: ["NEW", "REVIEWED", "ARCHIVED"] })
-  status: "NEW" | "REVIEWED" | "ARCHIVED";
+  @ApiProperty({ enum: ['NEW', 'REVIEWED', 'ARCHIVED'] })
+  status: 'NEW' | 'REVIEWED' | 'ARCHIVED';
 
-  @ApiProperty({ type: String, format: "date-time" })
+  @ApiProperty({ type: String, format: 'date-time' })
   createdAt: string;
 }

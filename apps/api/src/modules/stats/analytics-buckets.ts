@@ -1,4 +1,4 @@
-import type { AnalyticsRange } from "./analytics.types.js";
+import type { AnalyticsRange } from './analytics.types.js';
 
 export interface DateBucket {
   start: Date;
@@ -57,7 +57,7 @@ export function buildBuckets(
   range: AnalyticsRange,
   now: Date = new Date(),
 ): DateBucket[] {
-  if (range === "30d") return dailyBuckets(30, now);
-  if (range === "90d") return weeklyBuckets(13, now);
+  if (range === '30d') return dailyBuckets(30, now);
+  if (range === '90d') return weeklyBuckets(13, now);
   return monthlyBuckets(12, now);
 }

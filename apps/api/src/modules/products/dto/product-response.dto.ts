@@ -1,4 +1,4 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty } from '@nestjs/swagger';
 
 // Money/Decimal + Date/enum convention (repo-wide, see the fuller comment in
 // collections/dto/collection-response.dto.ts): Prisma `Decimal` serializes
@@ -57,7 +57,7 @@ export class VariantResponseDto {
   // service writes it, but the column itself has no schema. Typed as a plain
   // object (not `Prisma.JsonValue`) to stay out of the metadata-generator's
   // Prisma-type-resolution failure mode described above.
-  @ApiProperty({ type: "object", additionalProperties: { type: "string" } })
+  @ApiProperty({ type: 'object', additionalProperties: { type: 'string' } })
   attributes: Record<string, string>;
 }
 
@@ -83,11 +83,11 @@ export class ProductResponseDto {
   @ApiProperty({ type: [String] })
   images: string[];
 
-  @ApiProperty({ type: String, format: "date-time", nullable: true })
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
   availableUntil: string | null;
 
-  @ApiProperty({ enum: ["DRAFT", "PUBLISHED"] })
-  status: "DRAFT" | "PUBLISHED";
+  @ApiProperty({ enum: ['DRAFT', 'PUBLISHED'] })
+  status: 'DRAFT' | 'PUBLISHED';
 
   @ApiProperty()
   soldOut: boolean;
@@ -95,10 +95,10 @@ export class ProductResponseDto {
   @ApiProperty()
   discontinued: boolean;
 
-  @ApiProperty({ type: String, format: "date-time", nullable: true })
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
   deletedAt: string | null;
 
-  @ApiProperty({ type: String, format: "date-time" })
+  @ApiProperty({ type: String, format: 'date-time' })
   createdAt: string;
 }
 

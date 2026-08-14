@@ -7,28 +7,28 @@ import {
   Patch,
   Post,
   UseGuards,
-} from "@nestjs/common";
-import { AuthGuard, Session } from "@thallesp/nestjs-better-auth";
-import type { UserSession } from "@thallesp/nestjs-better-auth";
-import { CollectionsService } from "./collections.service.js";
-import { CreateCollectionDto } from "./dto/create-collection.dto.js";
-import { UpdateCollectionDto } from "./dto/update-collection.dto.js";
-import { AddCollectionProductDto } from "./dto/add-collection-product.dto.js";
-import { ReorderCollectionProductsDto } from "./dto/reorder-collection-products.dto.js";
+} from '@nestjs/common';
+import { AuthGuard, Session } from '@thallesp/nestjs-better-auth';
+import type { UserSession } from '@thallesp/nestjs-better-auth';
+import { CollectionsService } from './collections.service.js';
+import { CreateCollectionDto } from './dto/create-collection.dto.js';
+import { UpdateCollectionDto } from './dto/update-collection.dto.js';
+import { AddCollectionProductDto } from './dto/add-collection-product.dto.js';
+import { ReorderCollectionProductsDto } from './dto/reorder-collection-products.dto.js';
 import type {
   CollectionProductResponseDto,
   CollectionResponseDto,
   CollectionWithProductsResponseDto,
-} from "./dto/collection-response.dto.js";
+} from './dto/collection-response.dto.js';
 
-@Controller("stores/:storeId/collections")
+@Controller('stores/:storeId/collections')
 @UseGuards(AuthGuard)
 export class CollectionsController {
   constructor(private collections: CollectionsService) {}
 
   @Post()
   create(
-    @Param("storeId") storeId: string,
+    @Param('storeId') storeId: string,
     @Session() session: UserSession,
     @Body() dto: CreateCollectionDto,
   ): Promise<CollectionResponseDto> {
@@ -37,7 +37,7 @@ export class CollectionsController {
 
   @Get()
   async findAll(
-    @Param("storeId") storeId: string,
+    @Param('storeId') storeId: string,
     @Session() session: UserSession,
   ): Promise<CollectionWithProductsResponseDto[]> {
     const collections = await this.collections.findAllForStore(
@@ -72,29 +72,29 @@ export class CollectionsController {
     }));
   }
 
-  @Patch(":collectionId")
+  @Patch(':collectionId')
   update(
-    @Param("storeId") storeId: string,
-    @Param("collectionId") collectionId: string,
+    @Param('storeId') storeId: string,
+    @Param('collectionId') collectionId: string,
     @Session() session: UserSession,
     @Body() dto: UpdateCollectionDto,
   ): Promise<CollectionResponseDto> {
     return this.collections.update(collectionId, storeId, session.user.id, dto);
   }
 
-  @Delete(":collectionId")
+  @Delete(':collectionId')
   delete(
-    @Param("storeId") storeId: string,
-    @Param("collectionId") collectionId: string,
+    @Param('storeId') storeId: string,
+    @Param('collectionId') collectionId: string,
     @Session() session: UserSession,
   ): Promise<CollectionResponseDto> {
     return this.collections.delete(collectionId, storeId, session.user.id);
   }
 
-  @Post(":collectionId/products")
+  @Post(':collectionId/products')
   addProduct(
-    @Param("storeId") storeId: string,
-    @Param("collectionId") collectionId: string,
+    @Param('storeId') storeId: string,
+    @Param('collectionId') collectionId: string,
     @Session() session: UserSession,
     @Body() dto: AddCollectionProductDto,
   ): Promise<CollectionProductResponseDto> {
@@ -106,11 +106,11 @@ export class CollectionsController {
     );
   }
 
-  @Delete(":collectionId/products/:productId")
+  @Delete(':collectionId/products/:productId')
   removeProduct(
-    @Param("storeId") storeId: string,
-    @Param("collectionId") collectionId: string,
-    @Param("productId") productId: string,
+    @Param('storeId') storeId: string,
+    @Param('collectionId') collectionId: string,
+    @Param('productId') productId: string,
     @Session() session: UserSession,
   ): Promise<CollectionProductResponseDto> {
     return this.collections.removeProduct(
@@ -121,10 +121,10 @@ export class CollectionsController {
     );
   }
 
-  @Patch(":collectionId/products/reorder")
+  @Patch(':collectionId/products/reorder')
   reorderProducts(
-    @Param("storeId") storeId: string,
-    @Param("collectionId") collectionId: string,
+    @Param('storeId') storeId: string,
+    @Param('collectionId') collectionId: string,
     @Session() session: UserSession,
     @Body() dto: ReorderCollectionProductsDto,
   ): Promise<CollectionProductResponseDto[]> {

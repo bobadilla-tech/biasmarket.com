@@ -4,17 +4,17 @@ import {
   Injectable,
   NotFoundException,
   UnauthorizedException,
-} from "@nestjs/common";
-import { hashPassword, verifyPassword } from "better-auth/crypto";
+} from '@nestjs/common';
+import { hashPassword, verifyPassword } from 'better-auth/crypto';
 import {
   createCustomerSessionToken,
   verifyCustomerAccountToken,
-} from "@biasmarket/utils/customer-account-token";
-import { normalizePhone } from "@biasmarket/utils/phone-country";
-import { PrismaService } from "../../prisma/prisma.service.js";
-import { CustomerAccountService } from "../orders/application/customer-account.service.js";
-import { OrderRepository } from "../orders/infrastructure/order.repository.js";
-import { requiredEnv } from "../../config/env.validation.js";
+} from '@biasmarket/utils/customer-account-token';
+import { normalizePhone } from '@biasmarket/utils/phone-country';
+import { PrismaService } from '../../prisma/prisma.service.js';
+import { CustomerAccountService } from '../orders/application/customer-account.service.js';
+import { OrderRepository } from '../orders/infrastructure/order.repository.js';
+import { requiredEnv } from '../../config/env.validation.js';
 
 @Injectable()
 export class CustomerAuthService {
@@ -26,7 +26,7 @@ export class CustomerAuthService {
 
   private async findStoreBySlug(slug: string) {
     const store = await this.prisma.store.findUnique({ where: { slug } });
-    if (!store) throw new NotFoundException("Store no encontrada");
+    if (!store) throw new NotFoundException('Store no encontrada');
     return store;
   }
 
@@ -34,7 +34,7 @@ export class CustomerAuthService {
     buyerAccountId: string,
     passwordVersion: number,
   ): string {
-    const secret = requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET");
+    const secret = requiredEnv('CUSTOMER_ACCOUNT_TOKEN_SECRET');
     return createCustomerSessionToken(buyerAccountId, passwordVersion, secret);
   }
 
@@ -60,20 +60,20 @@ export class CustomerAuthService {
   ): Promise<{ ok: true }> {
     await this.findStoreBySlug(slug);
 
-    const secret = requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET");
+    const secret = requiredEnv('CUSTOMER_ACCOUNT_TOKEN_SECRET');
     const verified = verifyCustomerAccountToken(token, secret);
     if (
       !verified ||
-      (verified.purpose !== "confirm" && verified.purpose !== "reset")
+      (verified.purpose !== 'confirm' && verified.purpose !== 'reset')
     ) {
-      throw new BadRequestException("Enlace inválido o expirado");
+      throw new BadRequestException('Enlace inválido o expirado');
     }
 
     const buyerAccount = await this.prisma.buyerAccount.findUnique({
       where: { id: verified.buyerAccountId },
     });
     if (!buyerAccount) {
-      throw new BadRequestException("Enlace inválido o expirado");
+      throw new BadRequestException('Enlace inválido o expirado');
     }
 
     // The magic-link token itself is the "verified proof of email ownership"
@@ -85,22 +85,23 @@ export class CustomerAuthService {
     // "reset"-purpose token is exempt — that's the whole point of forgot
     // password — and gets a much shorter TTL to bound the risk (see
     // `ttlForPurpose` in the token util).
-    if (verified.purpose === "confirm" && buyerAccount.passwordHash) {
+    if (verified.purpose === 'confirm' && buyerAccount.passwordHash) {
       throw new ConflictException(
-        "Esta cuenta ya tiene una contraseña configurada",
+        'Esta cuenta ya tiene una contraseña configurada',
       );
     }
 
     const passwordHash = await hashPassword(password);
     await this.prisma.buyerAccount.update({
       where: { id: buyerAccount.id },
-      data: verified.purpose === "confirm"
-        ? {
-          passwordHash,
-          emailVerified: true,
-          passwordVersion: { increment: 1 },
-        }
-        : { passwordHash, passwordVersion: { increment: 1 } },
+      data:
+        verified.purpose === 'confirm'
+          ? {
+              passwordHash,
+              emailVerified: true,
+              passwordVersion: { increment: 1 },
+            }
+          : { passwordHash, passwordVersion: { increment: 1 } },
     });
 
     return { ok: true };
@@ -128,7 +129,7 @@ export class CustomerAuthService {
     // Same generic error whether the phone doesn't exist or the password is
     // wrong — never leak which one it was.
     if (!buyerAccount?.passwordHash) {
-      throw new UnauthorizedException("Teléfono o contraseña inválidos");
+      throw new UnauthorizedException('Teléfono o contraseña inválidos');
     }
 
     const valid = await verifyPassword({
@@ -136,7 +137,7 @@ export class CustomerAuthService {
       password,
     });
     if (!valid) {
-      throw new UnauthorizedException("Teléfono o contraseña inválidos");
+      throw new UnauthorizedException('Teléfono o contraseña inválidos');
     }
 
     await this.ensureStoreLink(buyerAccount.id, store.id);
@@ -156,14 +157,14 @@ export class CustomerAuthService {
       where: { id: buyerAccountId },
     });
     if (!buyerAccount?.passwordHash) {
-      throw new UnauthorizedException("No autenticado");
+      throw new UnauthorizedException('No autenticado');
     }
 
     const valid = await verifyPassword({
       hash: buyerAccount.passwordHash,
       password: currentPassword,
     });
-    if (!valid) throw new BadRequestException("Contraseña actual incorrecta");
+    if (!valid) throw new BadRequestException('Contraseña actual incorrecta');
 
     const passwordHash = await hashPassword(newPassword);
     const updated = await this.prisma.buyerAccount.update({
@@ -182,7 +183,7 @@ export class CustomerAuthService {
     });
     const orders = await this.prisma.order.findMany({
       where: { buyerAccountId: buyerAccount.id, storeId: store.id },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
       select: {
         id: true,
         paymentStatus: true,
@@ -221,7 +222,7 @@ export class CustomerAuthService {
       store.id,
     );
     if (row.buyerAccountId !== session.buyerAccountId) {
-      throw new NotFoundException("Orden no encontrada");
+      throw new NotFoundException('Orden no encontrada');
     }
     return row;
   }
@@ -255,7 +256,7 @@ export class CustomerAuthService {
           NOT: { id: buyerAccount.id },
         },
       });
-      if (clash) throw new ConflictException("Este correo ya está en uso");
+      if (clash) throw new ConflictException('Este correo ya está en uso');
 
       data.pendingEmail = dto.email;
       sendEmailChangeTo = dto.email;
@@ -265,13 +266,13 @@ export class CustomerAuthService {
     if (normalizedPhone && normalizedPhone !== buyerAccount.phone) {
       if (!buyerAccount.emailVerified) {
         throw new BadRequestException(
-          "Verifica tu correo antes de cambiar tu teléfono",
+          'Verifica tu correo antes de cambiar tu teléfono',
         );
       }
       const clash = await this.prisma.buyerAccount.findUnique({
         where: { phone: normalizedPhone },
       });
-      if (clash) throw new ConflictException("Este teléfono ya está en uso");
+      if (clash) throw new ConflictException('Este teléfono ya está en uso');
 
       data.pendingPhone = normalizedPhone;
       sendPhoneChange = true;
@@ -329,7 +330,7 @@ export class CustomerAuthService {
   async getGlobalOrders(buyerAccountId: string) {
     const orders = await this.prisma.order.findMany({
       where: { buyerAccountId },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
       select: {
         id: true,
         paymentStatus: true,

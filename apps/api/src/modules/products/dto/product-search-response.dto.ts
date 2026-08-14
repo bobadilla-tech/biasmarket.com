@@ -1,4 +1,4 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty } from '@nestjs/swagger';
 
 // Money/Decimal, Date-as-ISO-string, and literal-union conventions — see
 // collections/dto/collection-response.dto.ts for the full rationale.

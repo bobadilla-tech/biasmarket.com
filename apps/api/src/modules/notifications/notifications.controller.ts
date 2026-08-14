@@ -6,25 +6,25 @@ import {
   Post,
   Query,
   UseGuards,
-} from "@nestjs/common";
-import { ApiQuery } from "@nestjs/swagger";
-import { AuthGuard, Session } from "@thallesp/nestjs-better-auth";
-import type { UserSession } from "@thallesp/nestjs-better-auth";
-import { NotificationsService } from "./notifications.service.js";
+} from '@nestjs/common';
+import { ApiQuery } from '@nestjs/swagger';
+import { AuthGuard, Session } from '@thallesp/nestjs-better-auth';
+import type { UserSession } from '@thallesp/nestjs-better-auth';
+import { NotificationsService } from './notifications.service.js';
 import type {
   NotificationCountResponseDto,
   NotificationResponseDto,
-} from "./dto/notification-response.dto.js";
+} from './dto/notification-response.dto.js';
 
 function toBoolean(value: string | undefined): boolean | undefined {
   if (value === undefined) return undefined;
-  return value === "true";
+  return value === 'true';
 }
 
 interface NotificationRow {
   id: string;
   storeId: string;
-  type: "LOW_STOCK" | "OUT_OF_STOCK" | "PAYMENT_PROOF_SUBMITTED";
+  type: 'LOW_STOCK' | 'OUT_OF_STOCK' | 'PAYMENT_PROOF_SUBMITTED';
   entityType: string;
   entityId: string;
   title: string;
@@ -49,19 +49,19 @@ function toNotificationDto(
   };
 }
 
-@Controller("stores/:storeId/notifications")
+@Controller('stores/:storeId/notifications')
 @UseGuards(AuthGuard)
 export class NotificationsController {
   constructor(private notifications: NotificationsService) {}
 
-  @ApiQuery({ name: "archived", required: false, type: String })
-  @ApiQuery({ name: "read", required: false, type: String })
+  @ApiQuery({ name: 'archived', required: false, type: String })
+  @ApiQuery({ name: 'read', required: false, type: String })
   @Get()
   async findAll(
-    @Param("storeId") storeId: string,
+    @Param('storeId') storeId: string,
     @Session() session: UserSession,
-    @Query("archived") archived: string | undefined,
-    @Query("read") read: string | undefined,
+    @Query('archived') archived: string | undefined,
+    @Query('read') read: string | undefined,
   ): Promise<NotificationResponseDto[]> {
     const notifications = await this.notifications.findAllForStore(
       storeId,
@@ -71,18 +71,18 @@ export class NotificationsController {
     return notifications.map(toNotificationDto);
   }
 
-  @Get("unread-count")
+  @Get('unread-count')
   unreadCount(
-    @Param("storeId") storeId: string,
+    @Param('storeId') storeId: string,
     @Session() session: UserSession,
   ): Promise<NotificationCountResponseDto> {
     return this.notifications.unreadCount(storeId, session.user.id);
   }
 
-  @Patch(":notificationId/read")
+  @Patch(':notificationId/read')
   async markRead(
-    @Param("storeId") storeId: string,
-    @Param("notificationId") notificationId: string,
+    @Param('storeId') storeId: string,
+    @Param('notificationId') notificationId: string,
     @Session() session: UserSession,
   ): Promise<NotificationResponseDto> {
     const notification = await this.notifications.markRead(
@@ -93,18 +93,18 @@ export class NotificationsController {
     return toNotificationDto(notification);
   }
 
-  @Post("read-all")
+  @Post('read-all')
   markAllRead(
-    @Param("storeId") storeId: string,
+    @Param('storeId') storeId: string,
     @Session() session: UserSession,
   ): Promise<NotificationCountResponseDto> {
     return this.notifications.markAllRead(storeId, session.user.id);
   }
 
-  @Patch(":notificationId/archive")
+  @Patch(':notificationId/archive')
   async archive(
-    @Param("storeId") storeId: string,
-    @Param("notificationId") notificationId: string,
+    @Param('storeId') storeId: string,
+    @Param('notificationId') notificationId: string,
     @Session() session: UserSession,
   ): Promise<NotificationResponseDto> {
     const notification = await this.notifications.archive(

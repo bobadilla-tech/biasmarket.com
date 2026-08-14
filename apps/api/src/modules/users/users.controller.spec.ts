@@ -1,16 +1,16 @@
-import { Test, type TestingModule } from "@nestjs/testing";
-import { type Mock, vi } from "vitest";
+import { Test, type TestingModule } from '@nestjs/testing';
+import { type Mock, vi } from 'vitest';
 
-vi.mock("@thallesp/nestjs-better-auth", () => ({
+vi.mock('@thallesp/nestjs-better-auth', () => ({
   AuthGuard: class AuthGuard {},
   Roles: () => () => undefined,
   Session: () => () => undefined,
 }));
 
-import { UsersController } from "./users.controller.js";
-import { UsersService } from "./users.service.js";
+import { UsersController } from './users.controller.js';
+import { UsersService } from './users.service.js';
 
-describe("UsersController", () => {
+describe('UsersController', () => {
   let controller: UsersController;
   let users: { getStoreCounts: Mock };
 
@@ -25,19 +25,21 @@ describe("UsersController", () => {
     controller = module.get<UsersController>(UsersController);
   });
 
-  it("should be defined", () => {
+  it('should be defined', () => {
     expect(controller).toBeDefined();
   });
 
-  it("getStoreCounts delegates to UsersService", async () => {
-    users.getStoreCounts.mockResolvedValue([{
-      userId: "user-1",
-      storeCount: 2,
-    }]);
+  it('getStoreCounts delegates to UsersService', async () => {
+    users.getStoreCounts.mockResolvedValue([
+      {
+        userId: 'user-1',
+        storeCount: 2,
+      },
+    ]);
 
     const result = await controller.getStoreCounts();
 
     expect(users.getStoreCounts).toHaveBeenCalled();
-    expect(result).toEqual([{ userId: "user-1", storeCount: 2 }]);
+    expect(result).toEqual([{ userId: 'user-1', storeCount: 2 }]);
   });
 });

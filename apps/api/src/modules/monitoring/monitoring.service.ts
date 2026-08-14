@@ -1,9 +1,9 @@
-import { Injectable } from "@nestjs/common";
-import { PrismaService } from "../../prisma/prisma.service.js";
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service.js';
 import {
   KUMA_STATUS_DOWN,
   type KumaWebhookDto,
-} from "./dto/kuma-webhook.dto.js";
+} from './dto/kuma-webhook.dto.js';
 
 @Injectable()
 export class MonitoringService {
@@ -26,7 +26,7 @@ export class MonitoringService {
         data: {
           monitorId,
           monitorName: monitor.name,
-          message: heartbeat.msg ?? dto.msg ?? "",
+          message: heartbeat.msg ?? dto.msg ?? '',
         },
       });
     }
@@ -47,7 +47,7 @@ export class MonitoringService {
   async findAll(page: number, limit: number) {
     const [incidents, total] = await Promise.all([
       this.prisma.platformIncident.findMany({
-        orderBy: { startedAt: "desc" },
+        orderBy: { startedAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
       }),

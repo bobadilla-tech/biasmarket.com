@@ -1,5 +1,5 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { OrderResponseDto } from "../../orders/dto/order-response.dto.js";
+import { ApiProperty } from '@nestjs/swagger';
+import { OrderResponseDto } from '../../orders/dto/order-response.dto.js';
 
 // Money/Decimal, Date-as-ISO-string, and literal-union conventions — see
 // collections/dto/collection-response.dto.ts for the full rationale.
@@ -73,7 +73,7 @@ export class OutstandingPartialPaymentResponseDto {
   @ApiProperty()
   paidPercentage: number;
 
-  @ApiProperty({ type: String, format: "date-time" })
+  @ApiProperty({ type: String, format: 'date-time' })
   createdAt: string;
 }
 
@@ -108,10 +108,10 @@ export class StatsOverviewResponseDto {
 }
 
 export class AnalyticsBucketResponseDto {
-  @ApiProperty({ type: String, format: "date-time" })
+  @ApiProperty({ type: String, format: 'date-time' })
   start: string;
 
-  @ApiProperty({ type: String, format: "date-time" })
+  @ApiProperty({ type: String, format: 'date-time' })
   end: string;
 
   @ApiProperty()
@@ -140,8 +140,8 @@ export class AnalyticsTopProductResponseDto {
 
 // `getAnalytics`'s shape (`StatsService.getAnalytics`).
 export class AnalyticsResultResponseDto {
-  @ApiProperty({ enum: ["30d", "90d", "12m"] })
-  range: "30d" | "90d" | "12m";
+  @ApiProperty({ enum: ['30d', '90d', '12m'] })
+  range: '30d' | '90d' | '12m';
 
   @ApiProperty({ type: [AnalyticsBucketResponseDto] })
   buckets: AnalyticsBucketResponseDto[];
@@ -155,10 +155,10 @@ export class PaymentMethodBreakdownRowResponseDto {
   // Unknown/legacy methods surface as `null` (kept in the breakdown rather than
   // dropped) — see `KNOWN_PAYMENT_METHODS` handling in the service.
   @ApiProperty({
-    enum: ["YAPE", "PLIN", "TRANSFER", "CASH", null],
+    enum: ['YAPE', 'PLIN', 'TRANSFER', 'CASH', null],
     nullable: true,
   })
-  method: "YAPE" | "PLIN" | "TRANSFER" | "CASH" | null;
+  method: 'YAPE' | 'PLIN' | 'TRANSFER' | 'CASH' | null;
 
   @ApiProperty()
   amount: number;
@@ -172,10 +172,10 @@ export class PaymentMethodBreakdownRowResponseDto {
 
 // `getPaymentMethodsBreakdown`'s shape (`StatsService.getPaymentMethodsBreakdown`).
 export class PaymentMethodsBreakdownResponseDto {
-  @ApiProperty({ type: String, format: "date-time" })
+  @ApiProperty({ type: String, format: 'date-time' })
   from: string;
 
-  @ApiProperty({ type: String, format: "date-time" })
+  @ApiProperty({ type: String, format: 'date-time' })
   to: string;
 
   @ApiProperty()

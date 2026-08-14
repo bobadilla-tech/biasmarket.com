@@ -1,4 +1,4 @@
-export const CUSTOMER_SESSION_COOKIE = "bm_customer_session";
+export const CUSTOMER_SESSION_COOKIE = 'bm_customer_session';
 
 // Mirrors SESSION_TOKEN_TTL_MS in @biasmarket/utils/customer-account-token —
 // kept in sync manually since the cookie's `maxAge` (set here, in Express)

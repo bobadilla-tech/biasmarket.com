@@ -2,16 +2,16 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-} from "@nestjs/common";
-import { Prisma } from "@biasmarket/db";
-import { normalizePhone } from "@biasmarket/utils/phone-country";
-import { PrismaService } from "../../../prisma/prisma.service.js";
+} from '@nestjs/common';
+import { Prisma } from '@biasmarket/db';
+import { normalizePhone } from '@biasmarket/utils/phone-country';
+import { PrismaService } from '../../../prisma/prisma.service.js';
 import {
   countsTowardPaid,
   countsTowardRevenue,
   REVENUE_ORDER_PAYMENT_STATUSES,
   withPaymentSummary,
-} from "../../../common/payment-summary.js";
+} from '../../../common/payment-summary.js';
 
 // Orders without a linked `Customer` (guest checkout — no email, or a phone
 // that matched an existing account's number with a different email on file)
@@ -20,10 +20,10 @@ import {
 // recorded order appears there, not just registered accounts. A guest's
 // synthetic id is the normalized phone, so `findOneForStore` can resolve it
 // back to its orders; it can never collide with a real customer cuid.
-const GUEST_ID_PREFIX = "guest_";
+const GUEST_ID_PREFIX = 'guest_';
 
 function guestIdForPhone(phone: string): string {
-  return `${GUEST_ID_PREFIX}${normalizePhone(phone).replace(/\D/g, "")}`;
+  return `${GUEST_ID_PREFIX}${normalizePhone(phone).replace(/\D/g, '')}`;
 }
 
 function phoneFromGuestId(customerId: string): string | null {
@@ -41,9 +41,9 @@ export class CustomersService {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
-    if (!store) throw new NotFoundException("Store no encontrada");
+    if (!store) throw new NotFoundException('Store no encontrada');
     if (store.ownerId !== userId) {
-      throw new ForbiddenException("No sos dueño de esta store");
+      throw new ForbiddenException('No sos dueño de esta store');
     }
     return store;
   }
@@ -54,10 +54,10 @@ export class CustomersService {
     const [customers, orderGroups, payments, guestOrders] = await Promise.all([
       this.prisma.customer.findMany({
         where: { storeId },
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
       }),
       this.prisma.order.groupBy({
-        by: ["customerId"],
+        by: ['customerId'],
         where: { storeId, customerId: { not: null } },
         _count: true,
         _max: { createdAt: true },
@@ -74,7 +74,7 @@ export class CustomersService {
           },
           // Excludes a buyer-submitted proof still awaiting seller review —
           // see common/payment-summary.ts's `countsTowardPaid`.
-          OR: [{ source: "SELLER_RECORDED" }, { reviewStatus: "APPROVED" }],
+          OR: [{ source: 'SELLER_RECORDED' }, { reviewStatus: 'APPROVED' }],
         },
         select: { amount: true, order: { select: { customerId: true } } },
       }),
@@ -97,9 +97,10 @@ export class CustomersService {
       orderGroups.map((group) => [group.customerId as string, group._count]),
     );
     const lastOrderAtByCustomer = new Map(
-      orderGroups.map((
-        group,
-      ) => [group.customerId as string, group._max.createdAt]),
+      orderGroups.map((group) => [
+        group.customerId as string,
+        group._max.createdAt,
+      ]),
     );
     const spendByCustomer = new Map<string, Prisma.Decimal>();
     for (const payment of payments) {
@@ -170,8 +171,9 @@ export class CustomersService {
       emailVerified: customer.emailVerified,
       createdAt: customer.createdAt,
       orderCount: orderCountByCustomer.get(customer.id) ?? 0,
-      lifetimeSpend: (spendByCustomer.get(customer.id) ?? new Prisma.Decimal(0))
-        .toNumber(),
+      lifetimeSpend: (
+        spendByCustomer.get(customer.id) ?? new Prisma.Decimal(0)
+      ).toNumber(),
       lastOrderAt: lastOrderAtByCustomer.get(customer.id) ?? null,
     }));
 
@@ -202,9 +204,7 @@ export class CustomersService {
       });
     }
 
-    return rows.sort(
-      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
-    );
+    return rows.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
   async findOneForStore(customerId: string, storeId: string, userId: string) {
@@ -221,17 +221,17 @@ export class CustomersService {
       if (!existing) {
         const orders = await this.prisma.order.findMany({
           where: { storeId, customerId: null },
-          orderBy: { createdAt: "desc" },
+          orderBy: { createdAt: 'desc' },
           include: {
             items: { include: { product: true, variant: true } },
-            payments: { orderBy: { createdAt: "desc" } },
+            payments: { orderBy: { createdAt: 'desc' } },
           },
         });
         const guestOrders = orders.filter(
           (order) => normalizePhone(order.customerPhone) === guestPhone,
         );
         if (guestOrders.length === 0) {
-          throw new NotFoundException("Cliente no encontrado");
+          throw new NotFoundException('Cliente no encontrado');
         }
         const newest = guestOrders[0];
         return {
@@ -257,15 +257,15 @@ export class CustomersService {
       where: { id: customerId },
     });
     if (!customer || customer.storeId !== storeId) {
-      throw new NotFoundException("Cliente no encontrado");
+      throw new NotFoundException('Cliente no encontrado');
     }
 
     const orders = await this.prisma.order.findMany({
       where: { storeId, customerId },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
       include: {
         items: { include: { product: true, variant: true } },
-        payments: { orderBy: { createdAt: "desc" } },
+        payments: { orderBy: { createdAt: 'desc' } },
       },
     });
 

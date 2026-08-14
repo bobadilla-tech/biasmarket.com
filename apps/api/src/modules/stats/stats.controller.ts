@@ -5,21 +5,21 @@ import {
   Param,
   Query,
   UseGuards,
-} from "@nestjs/common";
-import { ApiQuery } from "@nestjs/swagger";
-import { AuthGuard, Session } from "@thallesp/nestjs-better-auth";
-import type { UserSession } from "@thallesp/nestjs-better-auth";
-import { StatsService } from "./stats.service.js";
-import type { AnalyticsRange } from "./analytics.types.js";
+} from '@nestjs/common';
+import { ApiQuery } from '@nestjs/swagger';
+import { AuthGuard, Session } from '@thallesp/nestjs-better-auth';
+import type { UserSession } from '@thallesp/nestjs-better-auth';
+import { StatsService } from './stats.service.js';
+import type { AnalyticsRange } from './analytics.types.js';
 import {
   AnalyticsResultResponseDto,
   OutstandingPartialPaymentResponseDto,
   PaymentMethodsBreakdownResponseDto,
   StatsOverviewResponseDto,
-} from "./dto/stats-response.dto.js";
-import { toOrderDto } from "../orders/infrastructure/order.controller.js";
+} from './dto/stats-response.dto.js';
+import { toOrderDto } from '../orders/infrastructure/order.controller.js';
 
-const ANALYTICS_RANGES: AnalyticsRange[] = ["30d", "90d", "12m"];
+const ANALYTICS_RANGES: AnalyticsRange[] = ['30d', '90d', '12m'];
 
 // Row shape of `StatsService.getOverview`'s `partialPaymentOrders` — the raw
 // Prisma order run through `withPaymentSummary` (Decimal money fields still
@@ -54,14 +54,14 @@ function toPartialPaymentOrderDto(
   };
 }
 
-@Controller("stores/:storeId/stats")
+@Controller('stores/:storeId/stats')
 @UseGuards(AuthGuard)
 export class StatsController {
   constructor(private stats: StatsService) {}
 
-  @Get("overview")
+  @Get('overview')
   async overview(
-    @Param("storeId") storeId: string,
+    @Param('storeId') storeId: string,
     @Session() session: UserSession,
   ): Promise<StatsOverviewResponseDto> {
     const result = await this.stats.getOverview(storeId, session.user.id);
@@ -74,28 +74,28 @@ export class StatsController {
     };
   }
 
-  @ApiQuery({ name: "range", required: false, type: String })
-  @Get("analytics")
+  @ApiQuery({ name: 'range', required: false, type: String })
+  @Get('analytics')
   analytics(
-    @Param("storeId") storeId: string,
+    @Param('storeId') storeId: string,
     @Session() session: UserSession,
-    @Query("range") range: string | undefined,
+    @Query('range') range: string | undefined,
   ): Promise<AnalyticsResultResponseDto> {
-    const resolvedRange = (range ?? "30d") as AnalyticsRange;
+    const resolvedRange = (range ?? '30d') as AnalyticsRange;
     if (!ANALYTICS_RANGES.includes(resolvedRange)) {
-      throw new BadRequestException("Rango inválido");
+      throw new BadRequestException('Rango inválido');
     }
     return this.stats.getAnalytics(storeId, session.user.id, resolvedRange);
   }
 
-  @ApiQuery({ name: "from", required: false, type: String })
-  @ApiQuery({ name: "to", required: false, type: String })
-  @Get("payment-methods")
+  @ApiQuery({ name: 'from', required: false, type: String })
+  @ApiQuery({ name: 'to', required: false, type: String })
+  @Get('payment-methods')
   paymentMethods(
-    @Param("storeId") storeId: string,
+    @Param('storeId') storeId: string,
     @Session() session: UserSession,
-    @Query("from") from: string | undefined,
-    @Query("to") to: string | undefined,
+    @Query('from') from: string | undefined,
+    @Query('to') to: string | undefined,
   ): Promise<PaymentMethodsBreakdownResponseDto> {
     const now = new Date();
     const resolvedFrom = from
@@ -106,10 +106,10 @@ export class StatsController {
       Number.isNaN(resolvedFrom.getTime()) ||
       Number.isNaN(resolvedTo.getTime())
     ) {
-      throw new BadRequestException("Fechas inválidas");
+      throw new BadRequestException('Fechas inválidas');
     }
     if (resolvedFrom >= resolvedTo) {
-      throw new BadRequestException("Rango inválido");
+      throw new BadRequestException('Rango inválido');
     }
     return this.stats.getPaymentMethodsBreakdown(
       storeId,
