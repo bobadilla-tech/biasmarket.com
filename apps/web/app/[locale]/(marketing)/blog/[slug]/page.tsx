@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { Footer } from "@/components/marketing/footer";
 import { BlogPostView } from "@/features/blog";
 import { formatPublishedDate } from "@/features/blog/format-date";
+import { urlForImage } from "@/features/blog/lib/sanity";
 import { getBlogPost, getBlogPosts } from "@/features/blog/server";
 
 export async function generateStaticParams() {
@@ -21,9 +22,22 @@ export async function generateMetadata({
   const t = await getTranslations({ locale, namespace: "blog.meta" });
   const post = await getBlogPost(slug);
 
+  const ogImage = post ? urlForImage(post.coverImage, 1200) : null;
+
   return {
     title: post ? `${post.title} — Bias Market` : t("title"),
     description: post?.excerpt || t("description"),
+    ...(ogImage
+      ? {
+          openGraph: {
+            images: [{ url: ogImage }],
+          },
+          twitter: {
+            card: "summary_large_image",
+            images: [ogImage],
+          },
+        }
+      : {}),
   };
 }
 

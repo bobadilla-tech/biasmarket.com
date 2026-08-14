@@ -5,6 +5,7 @@ export const POSTS_QUERY = defineQuery(`
     _id,
     title,
     slug,
+    coverImage,
     _createdAt,
     "excerpt": array::join(string::split((pt::text(body)), "")[0..255], "")
   }
@@ -15,6 +16,7 @@ export const POST_QUERY = defineQuery(`
     _id,
     title,
     slug,
+    coverImage,
     body,
     _createdAt,
     _updatedAt,

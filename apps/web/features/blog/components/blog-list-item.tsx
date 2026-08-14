@@ -1,5 +1,6 @@
 import { Link } from "@/i18n/navigation";
 import type { BlogPostSummary } from "../server";
+import { BlogCoverImage } from "./blog-cover-image";
 
 export function BlogListItem({
   post,
@@ -12,6 +13,15 @@ export function BlogListItem({
 }) {
   return (
     <article className="border-b border-black/10 py-8 first:pt-0 last:border-b-0">
+      {post.coverImage && (
+        <Link href={`/blog/${post.slug.current}`} className="mb-5 block">
+          <BlogCoverImage
+            image={post.coverImage}
+            title={post.title}
+            className="rounded-xl"
+          />
+        </Link>
+      )}
       <p className="text-xs font-medium text-muted-foreground">
         {publishedLabel}
       </p>

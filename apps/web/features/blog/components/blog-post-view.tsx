@@ -1,6 +1,7 @@
 import { PortableText } from "next-sanity";
 import { Link } from "@/i18n/navigation";
 import type { BlogPost } from "../server";
+import { BlogCoverImage } from "./blog-cover-image";
 
 export function BlogPostView({
   post,
@@ -19,6 +20,14 @@ export function BlogPostView({
       >
         {backLabel}
       </Link>
+      {post.coverImage && (
+        <BlogCoverImage
+          image={post.coverImage}
+          title={post.title}
+          priority
+          className="mt-6 rounded-xl"
+        />
+      )}
       <h1 className="mt-4 text-3xl font-medium text-balance text-foreground sm:text-4xl lg:text-5xl">
         {post.title}
       </h1>
