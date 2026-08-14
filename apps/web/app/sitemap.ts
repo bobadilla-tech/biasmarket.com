@@ -44,7 +44,7 @@ async function getBlogPostSlugs(): Promise<
         POSTS_SITEMAP_QUERY,
         {},
         {
-          next: { revalidate: 3600 },
+          next: { tags: ["blog"], revalidate: 3600 },
         },
       );
     return posts.map((post) => ({
