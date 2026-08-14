@@ -39,6 +39,8 @@ source "$ROOT_DIR/lib/health.sh"
 source "$ROOT_DIR/lib/smoke.sh"
 # shellcheck source=lib/migrate.sh
 source "$ROOT_DIR/lib/migrate.sh"
+# shellcheck source=lib/cleanup_schedule.sh
+source "$ROOT_DIR/lib/cleanup_schedule.sh"
 
 HEALTH_TIMEOUT_SECONDS=120
 CANARY_WEIGHT=1        # out of 10, i.e. candidate gets 10% during the hold
@@ -223,6 +225,14 @@ cmd_deploy() {
   atomic_write "$CURRENT_SHA_FILE" "$sha"
   atomic_write "$ROLLBACK_TARGET_FILE" "$current_color"
   phase "state_committed"
+
+  # Best-effort, never fatal to an already-successful cutover (decision 5) —
+  # see lib/cleanup_schedule.sh. The trailing `|| true` on each line isn't
+  # decorative: it stops `set -e` from aborting the whole script if log_warn
+  # itself were ever to fail (e.g. stderr closed), which would otherwise
+  # turn a successful deploy into a falsely-reported failure.
+  cancel_scheduled_cleanup || log_warn "Failed to cancel a previously scheduled cleanup — it may fire redundantly later; cmd_cleanup's own idempotent guards (decision 4) make this safe, not silently wrong." || true
+  schedule_cleanup || log_warn "Failed to schedule automatic cleanup — old color ($current_color) must be cleaned up manually via deploy.sh --cleanup." || true
 
   append_history "deploy sha=$sha color=$candidate_color outcome=success previous_color=$current_color"
   log_info "Deploy complete. Live color=$candidate_color sha=$sha."

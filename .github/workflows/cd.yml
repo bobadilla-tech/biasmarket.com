@@ -156,12 +156,18 @@ jobs:
       # (real secrets, generated Caddy active-config, deploy state, release
       # history/snapshots) — see infra/vps/docker-compose.yml's header
       # comment and .gitignore.
+      # --delay-updates --delete-delay stage the whole transfer and apply it
+      # as one final rename/delete pass, narrowing (not closing) the window
+      # where a previous deploy's server-side scheduled cleanup could fire
+      # mid-sync and source a version-mismatched mix of old/new lib/*.sh
+      # files — see docs/plans/2026-08-10-server-side-cleanup-scheduling-
+      # plan.md decision 9.
       - name: Sync infra/vps/ to the VPS
         run: |
           # The deploy key is forced through `rrsync /opt/biasmarket/`.
           # Use a relative remote path so rrsync maps it to that directory;
           # an absolute /opt/biasmarket/ would be prefixed again.
-          rsync -az --delete \
+          rsync -az --delete --delay-updates --delete-delay \
             --exclude 'env/*.env' \
             --exclude 'state/' \
             --exclude 'caddy/active/*.caddy' \
@@ -191,44 +197,3 @@ jobs:
           STATUS=$?
           echo "$OUTPUT"
           exit "$STATUS"
-
-  # Old-color cleanup, scheduled ~30 minutes after a successful cutover —
-  # not "operator confirmation," a concrete mechanism. No explicit
-  # cancellation logic is needed for an in-window `deploy.sh --rollback`:
-  # rollback rewrites state/rollback_target to whatever color is now
-  # correctly benched, so this job's plain `deploy.sh --cleanup` call
-  # (state-driven, checked against current_color server-side) tears down
-  # the right color regardless of whether a rollback happened in between.
-  # The `production-cleanup` concurrency group instead protects against the
-  # OTHER case: a second deploy landing before this 30-minute window
-  # elapses cancels the first deploy's now-stale cleanup schedule outright.
-  scheduled-cleanup:
-    name: Scheduled old-color cleanup
-    needs: [gate, sync-and-deploy]
-    runs-on: ubuntu-latest
-    environment: production
-    timeout-minutes: 35
-    concurrency:
-      group: production-cleanup
-      cancel-in-progress: true
-    steps:
-      # `uses: ./...` below resolves the composite action from the checked-
-      # out workspace, so a checkout has to happen here too even though
-      # this job doesn't otherwise need repo contents.
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ needs.gate.outputs.head_sha }}
-          persist-credentials: false
-
-      - uses: ./.github/actions/deploy-ssh-setup
-        with:
-          host: ${{ secrets.DEPLOY_SSH_HOST }}
-          user: ${{ secrets.DEPLOY_SSH_USER }}
-          known_hosts: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
-          key_rsync: ${{ secrets.DEPLOY_SSH_KEY_RSYNC }}
-          key_dispatch: ${{ secrets.DEPLOY_SSH_KEY_DISPATCH }}
-
-      - name: Wait 30 minutes, then clean up the previous color
-        run: |
-          sleep 1800
-          ssh -i ~/.ssh/deploy_dispatch_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'deploy.sh --cleanup'

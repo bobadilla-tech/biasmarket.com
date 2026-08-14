@@ -351,24 +351,23 @@ unsafe in bash — script read is by byte offset, not a snapshot).
 (`state/deploy.lock.meta`: PID/phase/timestamp/actor) rather than an indefinite
 wait with no operator-visible signal.
 
-- `deploy.sh` runs **detached from the SSH transport**
-  (`systemd-run --scope --unit=biasmarket-deploy`), not directly under the
-  invoking SSH session — an ordinary network blip between the GitHub runner and
-  the VPS could otherwise SIGHUP-kill the script at any phase, including
-  mid-migration or mid-Caddy-switch, turning routine connectivity flakiness into
-  a stuck-state incident. **One concrete completion-signal mechanism, not left
-  as an open choice**: `deploy.sh`'s final action, on every exit path (success
-  or failure), is an atomic temp-file-plus-rename write to
+- `deploy.sh` runs **detached from the SSH transport** (`setsid`), not directly
+  under the invoking SSH session — an ordinary network blip between the GitHub
+  runner and the VPS could otherwise SIGHUP-kill the script at any phase,
+  including mid-migration or mid-Caddy-switch, turning routine connectivity
+  flakiness into a stuck-state incident. **One concrete completion-signal
+  mechanism, not left as an open choice**: `deploy.sh`'s final action, on every
+  exit path (success or failure), is an atomic temp-file-plus-rename write to
   `state/last_deploy_result` — a small, deliberately secret-free file (fields:
   SHA, outcome, phase reached, timestamp, nothing from `env/*.env`) consistent
   with the H8 no-secrets-in-output rule. The CD workflow's SSH step polls this
   file
   (`ssh ... 'while ! grep -q "$SHA" state/last_deploy_result;
   do sleep 5; done; cat state/last_deploy_result'`,
-  bounded by the job's own `timeout-minutes`) rather than blocking on
-  `systemd-run`'s own attached output or reading anything from
-  `releases/history.log` (which may contain more verbose phase detail and isn't
-  guaranteed secret-free by the same strict standard).
+  bounded by the job's own `timeout-minutes`) rather than blocking on `setsid`'s
+  own attached output or reading anything from `releases/history.log` (which may
+  contain more verbose phase detail and isn't guaranteed secret-free by the same
+  strict standard).
 - **State/reality reconciliation at the very start of every run**: before
   trusting `state/current_color` for anything, `deploy.sh` reads the actual live
   content of `caddy/active/api.caddy` and asserts it matches; aborts loudly on
@@ -468,9 +467,9 @@ static gate plus automated pre-migration backup are the real mitigations).
 4. **T4** — Per-color `INTERNAL_API_URL` env wiring (no application code changes
    needed — pure env, both `apps/web` and `apps/workers` already read this var).
 5. **T5** — `deploy.sh` and helpers: full hardened state machine (lock with
-   owner metadata, detached execution via `systemd-run --scope`,
-   reconciliation-at-start, rollback-target tracking, canary switch, retrying
-   smoke tests, audit log, atomic state writes including the final secret-free
+   owner metadata, detached execution via `setsid`, reconciliation-at-start,
+   rollback-target tracking, canary switch, retrying smoke tests, audit log,
+   atomic state writes including the final secret-free
    `state/last_deploy_result` completion signal the CD workflow polls for).
    **Owns the `env/shared.env` checksum assertion** (compares against a
    known-good snapshot recorded at T11's first run) on every invocation, not

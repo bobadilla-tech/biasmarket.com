@@ -1,0 +1,58 @@
+name: Cleanup fallback
+
+# Backstop for infra/vps/deploy.sh's own server-side scheduled cleanup (see
+# lib/cleanup_schedule.sh and docs/plans/2026-08-10-server-side-cleanup-
+# scheduling-plan.md decision 8). That schedule is a plain OS process with no
+# persistence — lost silently on a VPS reboot (decision 7) — so this workflow
+# runs `deploy.sh --cleanup` on a low-frequency clock regardless of deploy
+# activity. `cmd_cleanup` is idempotent and safe to call at any time
+# (decision 4: it re-reads state/current_color and state/rollback_target
+# fresh and no-ops if there's nothing to tear down), so this is a cheap no-op
+# the overwhelming majority of runs, not a duplicate of the 30-minute path.
+#
+# GitHub's `schedule:` trigger is documented as best-effort and can slip by
+# tens of minutes under platform load — "hourly" is a target interval, not a
+# guarantee. No concurrency group: `deploy.sh --cleanup`'s own `flock`
+# (acquire_deploy_lock, lib/lock.sh) already serializes any two overlapping
+# invocations of it on the VPS side, so concurrent fallback runs (or a
+# fallback run landing during an active deploy's lock-held window) are
+# harmless — the losing side just waits on flock or times out and the next
+# tick tries again.
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup-fallback:
+    name: Cleanup fallback
+    runs-on: ubuntu-latest
+    # Must be declared — this is what makes the DEPLOY_SSH_* secrets
+    # (environment-scoped, same as sync-and-deploy) visible to this job.
+    # Missing this makes deploy-ssh-setup fail on every run, silently
+    # reintroducing the "no retry, nobody notices" failure mode this
+    # workflow exists to close.
+    environment: production
+    timeout-minutes: 10
+    steps:
+      # `uses: ./...` below resolves the composite action from the checked-
+      # out workspace, so a checkout has to happen here too even though this
+      # job doesn't otherwise need repo contents.
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/deploy-ssh-setup
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          user: ${{ secrets.DEPLOY_SSH_USER }}
+          known_hosts: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
+          key_rsync: ${{ secrets.DEPLOY_SSH_KEY_RSYNC }}
+          key_dispatch: ${{ secrets.DEPLOY_SSH_KEY_DISPATCH }}
+
+      - name: Run deploy.sh --cleanup
+        run: |
+          ssh -i ~/.ssh/deploy_dispatch_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'deploy.sh --cleanup'

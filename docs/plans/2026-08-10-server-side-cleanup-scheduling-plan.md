@@ -4,10 +4,68 @@ Written before execution, at the user's explicit request, to allow a review pass
 before any code is written — same deliberate deviation from this directory's
 normal "record after the work lands" convention already used by
 [`2026-08-10-bluegreen-zero-downtime-deploy-plan.md`](2026-08-10-bluegreen-zero-downtime-deploy-plan.md).
-This file is a planning record only; no `deploy.sh`/`ssh-deploy-dispatcher.sh`/
-`cd.yml` code has changed as of this commit.
+Originally a planning-only record with no code changed; see the Status section
+below for what has since landed.
 
-## Status: plan only, not implemented
+## Status: implemented (task list items 1-8), not run against the real VPS
+
+All eight task-list items landed as designed. No behavior described in the
+"Design decisions" section above was changed during implementation — the
+canonical `schedule_cleanup()`/`cancel_scheduled_cleanup()` code block in
+decision 3 was copied essentially verbatim into
+[`infra/vps/lib/cleanup_schedule.sh`](../../infra/vps/lib/cleanup_schedule.sh).
+Three judgment calls made where this doc didn't fully specify the literal code,
+none changing behavior on the success path:
+
+- Both functions end with an explicit `return 0` (the canonical block relies on
+  `rm -f`'s/`log_info`'s incidental exit status for this, which decision 5
+  itself calls out as working "only by accident" for
+  `cancel_scheduled_cleanup`). Making it explicit removes that
+  accident-dependency without changing what either function returns on success.
+- The call site in `cmd_deploy` uses `X || log_warn "..." || true`, not just
+  `X || log_warn "..."` as decision 5's illustrative snippet shows — the
+  trailing `|| true` is defense-in-depth against `log_warn`'s own `printf` ever
+  failing (e.g. a closed stderr) under `set -e`, consistent with, not a reversal
+  of, decision 5's "must never fail the deploy" requirement.
+- `cd.yml`'s rsync step gained both `--delay-updates` **and** `--delete-delay`,
+  not just `--delay-updates` as decision 9 recommends — `--delete-delay` extends
+  the same single-final-pass atomicity to the deletion side of `--delete`, for
+  the same narrowing-not-closing reason decision 9 gives for `--delay-updates`
+  on the update side.
+
+**Not run against the real VPS** — per the task brief, `infra/vps/deploy.sh` is
+synced to production and there is no test environment for it. Verification was
+static: `shellcheck` clean on both
+[`lib/cleanup_schedule.sh`](../../infra/vps/lib/cleanup_schedule.sh) (one
+intentional `SC2016` info-level note — the canonical `bash -c '...'` string is
+single-quoted on purpose, decision 3's whole point is that `$0` must NOT expand
+until the `exec` inside the child, at fire time) and the modified `deploy.sh`
+via `shellcheck -x deploy.sh` (which follows the real source chain and resolves
+`cleanup_schedule.sh`'s apparent-unassigned
+`$sha`/`$current_color`/`$candidate_color` references against `cmd_deploy`'s
+locals — clean, 0 warnings); both new/changed GitHub Actions YAML files parse
+correctly (`yaml.safe_load`, `actionlint`/`yamllint` not available in this
+environment). Same bar as the blue-green plan's own T1-T10: typecheck/build/
+test plus manual script review, not a live cutover (that plan's own T11 still
+hasn't run either, per its Status section).
+
+**This doc's inline `file:line` citations are not re-numbered
+post-implementation.** They were accurate when this plan was authored (per the
+task brief's own warning) and describe two kinds of thing: (a) pre-existing
+`deploy.sh`/`cd.yml` behavior this plan didn't touch, still accurate in content
+even where line numbers have since shifted; (b) the exact insertion/removal
+points this plan specifies, which by definition moved once implemented. For (b),
+the current locations are: `cmd_deploy`'s
+`cancel_scheduled_cleanup`/`schedule_cleanup` calls sit at `deploy.sh:234-235`,
+immediately after `phase "state_committed"` at `deploy.sh:227` (was
+`deploy.sh:225` pre-implementation — the file grew by
+`lib/cleanup_schedule.sh`'s new `source` line plus the two guarded calls and
+their explanatory comment). `cd.yml`'s `scheduled-cleanup` job and
+`production-cleanup` concurrency group (previously `cd.yml:203-233`,
+`cd.yml:205-233`-ish depending on which citation in this doc you're reading) no
+longer exist at all — deleted per task item 5 — so any citation into that range
+now points past the end of the `sync-and-deploy` job instead. Read the files
+directly rather than trusting a specific line number anywhere in this doc.
 
 ## Context
 
