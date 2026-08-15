@@ -11,11 +11,13 @@ describe('CouponsService', () => {
       findUnique: Mock;
       create: Mock;
       findMany: Mock;
+      update: Mock;
     };
     couponRedemption: {
       findUnique: Mock;
       create: Mock;
       findMany: Mock;
+      delete: Mock;
     };
     user: {
       findUnique: Mock;
@@ -30,11 +32,13 @@ describe('CouponsService', () => {
         findUnique: vi.fn(),
         create: vi.fn(),
         findMany: vi.fn(),
+        update: vi.fn(),
       },
       couponRedemption: {
         findUnique: vi.fn(),
         create: vi.fn(),
         findMany: vi.fn(),
+        delete: vi.fn(),
       },
       user: {
         findUnique: vi.fn(),
@@ -97,7 +101,12 @@ describe('CouponsService', () => {
       userId: 'user-1',
       redeemedAt: new Date('2026-08-14T00:00:00.000Z'),
       expiresAt: new Date('2026-09-12T00:00:00.000Z'),
-      user: { id: 'user-1', email: 'demo@example.com', name: 'Demo User' },
+      user: {
+        id: 'user-1',
+        email: 'demo@example.com',
+        name: 'Demo User',
+        stores: [],
+      },
     });
 
     prisma.$transaction.mockImplementation(async (callback) =>
@@ -160,8 +169,22 @@ describe('CouponsService', () => {
       updatedAt: new Date('2026-01-01T00:00:00.000Z'),
     };
 
-    prisma.coupon.findUnique.mockResolvedValue(coupon);
-    prisma.coupon.create.mockResolvedValue(coupon);
+    prisma.coupon.findUnique.mockImplementation(async (args) => {
+      // Only treat the by-id lookup as the existing coupon; a by-code lookup
+      // must return null (no duplicate code exists).
+      if (args.where.id) return coupon;
+      return null;
+    });
+
+    prisma.coupon.update = vi.fn().mockResolvedValue({
+      ...coupon,
+      code: 'VIP30',
+      name: 'VIP 30 days',
+      startsAt: new Date('2026-08-20T00:00:00.000Z'),
+      expiresAt: new Date('2026-09-20T00:00:00.000Z'),
+      durationDays: 30,
+      _count: { redemptions: 0 },
+    });
 
     const result = await service.updateCoupon('coupon-1', {
       code: 'VIP30',
@@ -193,6 +216,17 @@ describe('CouponsService', () => {
     prisma.coupon.update = vi.fn().mockResolvedValue({
       id: 'coupon-1',
       isActive: false,
+      code: 'PREMIUM30',
+      name: 'Premium 30 days',
+      description: '',
+      plan: 'premium',
+      durationDays: 30,
+      maxUses: 1,
+      startsAt: null,
+      expiresAt: null,
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+      _count: { redemptions: 0 },
     });
 
     const result = await service.toggleCouponStatus('coupon-1');
@@ -208,5 +242,105 @@ describe('CouponsService', () => {
         user: { id: 'user-1' },
       } as never),
     ).rejects.toThrow(NotFoundException);
+  });
+
+  it('lists redemptions with the user store slug', async () => {
+    prisma.coupon.findUnique.mockResolvedValue({ id: 'coupon-1' });
+    prisma.couponRedemption.findMany.mockResolvedValue([
+      {
+        id: 'redemption-1',
+        couponId: 'coupon-1',
+        userId: 'user-1',
+        redeemedAt: new Date('2026-08-14T00:00:00.000Z'),
+        expiresAt: new Date('2026-09-13T00:00:00.000Z'),
+        user: {
+          email: 'demo@example.com',
+          name: 'Demo User',
+          stores: [{ slug: 'demo-store' }],
+        },
+      },
+    ]);
+
+    const result = await service.getRedemptions('coupon-1');
+
+    expect(result[0].userEmail).toBe('demo@example.com');
+    expect(result[0].storeSlug).toBe('demo-store');
+  });
+
+  it('unredeems a coupon and resets premium when the window matches', async () => {
+    const expiresAt = new Date('2026-09-13T00:00:00.000Z');
+    prisma.couponRedemption.findUnique.mockResolvedValue({
+      id: 'redemption-1',
+      couponId: 'coupon-1',
+      userId: 'user-1',
+      expiresAt,
+      coupon: { id: 'coupon-1' },
+    });
+
+    const txCouponRedemptionDelete = vi.fn().mockResolvedValue({});
+    const txUserFindUnique = vi
+      .fn()
+      .mockResolvedValue({ plan: 'premium', premiumUntil: expiresAt });
+    const txUserUpdate = vi.fn().mockResolvedValue({});
+
+    prisma.$transaction.mockImplementation(async (callback) =>
+      callback({
+        couponRedemption: { delete: txCouponRedemptionDelete },
+        user: {
+          findUnique: txUserFindUnique,
+          update: txUserUpdate,
+        },
+      }),
+    );
+
+    const result = await service.unredeemCoupon('redemption-1');
+
+    expect(result.unredeemed).toBe(true);
+    expect(txCouponRedemptionDelete).toHaveBeenCalledWith({
+      where: { id: 'redemption-1' },
+    });
+    expect(txUserUpdate).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      data: { plan: 'basic', premiumUntil: null },
+    });
+  });
+
+  it('unredeems a coupon but leaves premium intact when the window differs', async () => {
+    prisma.couponRedemption.findUnique.mockResolvedValue({
+      id: 'redemption-1',
+      couponId: 'coupon-1',
+      userId: 'user-1',
+      expiresAt: new Date('2026-09-13T00:00:00.000Z'),
+      coupon: { id: 'coupon-1' },
+    });
+
+    const txCouponRedemptionDelete = vi.fn().mockResolvedValue({});
+    const txUserFindUnique = vi.fn().mockResolvedValue({
+      plan: 'premium',
+      premiumUntil: new Date('2026-12-01T00:00:00.000Z'),
+    });
+    const txUserUpdate = vi.fn().mockResolvedValue({});
+
+    prisma.$transaction.mockImplementation(async (callback) =>
+      callback({
+        couponRedemption: { delete: txCouponRedemptionDelete },
+        user: {
+          findUnique: txUserFindUnique,
+          update: txUserUpdate,
+        },
+      }),
+    );
+
+    await service.unredeemCoupon('redemption-1');
+
+    expect(txUserUpdate).not.toHaveBeenCalled();
+  });
+
+  it('throws when a redemption is not found', async () => {
+    prisma.couponRedemption.findUnique.mockResolvedValue(null);
+
+    await expect(service.unredeemCoupon('missing')).rejects.toThrow(
+      NotFoundException,
+    );
   });
 });

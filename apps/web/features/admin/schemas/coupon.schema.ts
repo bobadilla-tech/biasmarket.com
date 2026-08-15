@@ -39,6 +39,7 @@ export interface CouponRedemption {
   userId: string;
   userEmail: string;
   userName: string;
+  storeSlug: string | null;
   redeemedAt: string;
   expiresAt: string;
 }

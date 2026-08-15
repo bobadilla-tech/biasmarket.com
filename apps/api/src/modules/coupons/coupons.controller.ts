@@ -78,6 +78,16 @@ export class CouponsController {
   }
 
   @UseGuards(AuthGuard)
+  @Roles(['admin'])
+  @Post('admin/coupons/:couponId/redemptions/:redemptionId/unredeem')
+  async unredeemCoupon(
+    @Param('couponId') _couponId: string,
+    @Param('redemptionId') redemptionId: string,
+  ): Promise<{ unredeemed: boolean }> {
+    return this.coupons.unredeemCoupon(redemptionId);
+  }
+
+  @UseGuards(AuthGuard)
   @Post('coupons/redeem')
   async redeemCoupon(
     @Session() session: UserSession,

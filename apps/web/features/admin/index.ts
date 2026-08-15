@@ -18,11 +18,13 @@ export { useCreateCoupon } from "./mutations/use-create-coupon";
 export { useUpdateCoupon } from "./mutations/use-update-coupon";
 export { useToggleCouponStatus } from "./mutations/use-toggle-coupon-status";
 export { useDeleteCoupon } from "./mutations/use-delete-coupon";
+export { useUnredeemCoupon } from "./mutations/use-unredeem-coupon";
 
 export { InquiriesTable } from "./components/inquiries-table";
 export { AdminStoresTable } from "./components/admin-stores-table";
 export { AdminUsersTable } from "./components/admin-users-table";
 export { AdminCouponsTable } from "./components/admin-coupons-table";
+export { CouponRedemptionsDialog } from "./components/coupon-redemptions-dialog";
 
 export { type AdminUser } from "./schemas/admin-user.schema";
 export type {

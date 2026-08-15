@@ -147,9 +147,33 @@ export const adminCouponsApi = {
         userId: string;
         userEmail: string;
         userName: string;
+        storeSlug: string | null;
         redeemedAt: string;
         expiresAt: string;
       }>;
+    });
+  },
+
+  unredeem(
+    couponId: string,
+    redemptionId: string,
+    fallbackErrorMessage?: string,
+  ) {
+    return fetch(
+      `${apiUrl()}/api/admin/coupons/${couponId}/redemptions/${redemptionId}/unredeem`,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: { Accept: "application/json" },
+      },
+    ).then(async (res) => {
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(
+          data?.message ?? fallbackErrorMessage ?? "Network error",
+        );
+      }
+      return data as { unredeemed: boolean };
     });
   },
 };

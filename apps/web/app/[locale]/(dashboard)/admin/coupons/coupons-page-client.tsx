@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import {
   AdminCouponsTable,
+  CouponRedemptionsDialog,
   useAdminCoupons,
   useCouponRedemptions,
   useCreateCoupon,
@@ -98,6 +99,21 @@ export function AdminCouponsPageClient() {
 
   const handleToggleStatus = async (couponId: string) => {
     await toggleCouponStatus.mutateAsync(couponId);
+  };
+
+  const selectedCoupon = selectedCouponId
+    ? (coupons.find((c) => c.id === selectedCouponId) ?? null)
+    : null;
+
+  const handleUnredeemed = (redemptionId: string) => {
+    // Refetch handled by the mutation's query cache invalidation. If the
+    // dialog is showing the last remaining redemption, there is nothing to
+    // list — close it.
+    const remaining =
+      redemptionsQuery.data?.filter((r) => r.id !== redemptionId) ?? [];
+    if (remaining.length === 0) {
+      setSelectedCouponId(null);
+    }
   };
 
   const error =
@@ -251,71 +267,14 @@ export function AdminCouponsPageClient() {
               onDelete={handleDelete}
             />
 
-            {selectedCouponId && (
-              <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                <h2 className="mb-4 text-lg font-semibold text-gray-900">
-                  {t("redemptions.title")}
-                </h2>
-                {redemptionsQuery.isPending && (
-                  <p className="text-sm text-gray-500">{tCommon("loading")}</p>
-                )}
-                {redemptionsQuery.error instanceof Error && (
-                  <p className="text-sm text-red-500">
-                    {redemptionsQuery.error.message}
-                  </p>
-                )}
-                {!redemptionsQuery.isPending &&
-                  !redemptionsQuery.error &&
-                  (!redemptionsQuery.data ||
-                    redemptionsQuery.data.length === 0) && (
-                    <p className="text-sm text-gray-500">
-                      {t("redemptions.empty")}
-                    </p>
-                  )}
-                {redemptionsQuery.data && redemptionsQuery.data.length > 0 && (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-gray-100 bg-gray-50 text-left text-gray-500">
-                          <th className="px-4 py-3 font-medium">
-                            {t("redemptions.user")}
-                          </th>
-                          <th className="px-4 py-3 font-medium">
-                            {t("redemptions.email")}
-                          </th>
-                          <th className="px-4 py-3 font-medium">
-                            {t("redemptions.redeemedAt")}
-                          </th>
-                          <th className="px-4 py-3 font-medium">
-                            {t("redemptions.expiresAt")}
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {redemptionsQuery.data.map((row) => (
-                          <tr
-                            key={row.id}
-                            className="border-b border-gray-100 last:border-0"
-                          >
-                            <td className="px-4 py-3 text-gray-900">
-                              {row.userName || "—"}
-                            </td>
-                            <td className="px-4 py-3 text-gray-600">
-                              {row.userEmail}
-                            </td>
-                            <td className="px-4 py-3 text-gray-600">
-                              {new Date(row.redeemedAt).toLocaleString()}
-                            </td>
-                            <td className="px-4 py-3 text-gray-600">
-                              {new Date(row.expiresAt).toLocaleString()}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </section>
+            {selectedCoupon && selectedCouponId && redemptionsQuery.data && (
+              <CouponRedemptionsDialog
+                couponId={selectedCouponId}
+                couponName={selectedCoupon.name}
+                redemptions={redemptionsQuery.data}
+                onClose={() => setSelectedCouponId(null)}
+                onUnredeemed={handleUnredeemed}
+              />
             )}
           </>
         )}

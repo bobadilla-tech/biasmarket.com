@@ -246,7 +246,13 @@ export class CouponsService {
 
     const rows = await this.prisma.couponRedemption.findMany({
       where: { couponId },
-      include: { user: true },
+      include: {
+        user: {
+          include: {
+            stores: { select: { slug: true }, orderBy: { createdAt: 'asc' } },
+          },
+        },
+      },
       orderBy: { redeemedAt: 'desc' },
     });
 
@@ -256,9 +262,48 @@ export class CouponsService {
       userId: row.userId,
       userEmail: row.user.email,
       userName: row.user.name ?? '',
+      storeSlug: row.user.stores[0]?.slug ?? null,
       redeemedAt: row.redeemedAt.toISOString(),
       expiresAt: row.expiresAt.toISOString(),
     }));
+  }
+
+  async unredeemCoupon(redemptionId: string): Promise<{ unredeemed: boolean }> {
+    const redemption = await this.prisma.couponRedemption.findUnique({
+      where: { id: redemptionId },
+      include: { coupon: true },
+    });
+
+    if (!redemption) {
+      throw new NotFoundException('Redemption not found');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.couponRedemption.delete({ where: { id: redemptionId } });
+
+      // The redemption is what granted premium access. If the user's premium
+      // window matches this redemption's grant, reset them back to the base
+      // plan. If their premium window has been extended or changed since,
+      // leave the current premium state intact.
+      const user = await tx.user.findUnique({
+        where: { id: redemption.userId },
+        select: { plan: true, premiumUntil: true },
+      });
+
+      if (
+        user &&
+        user.plan === 'premium' &&
+        user.premiumUntil &&
+        user.premiumUntil.getTime() === redemption.expiresAt.getTime()
+      ) {
+        await tx.user.update({
+          where: { id: redemption.userId },
+          data: { plan: 'basic', premiumUntil: null },
+        });
+      }
+    });
+
+    return { unredeemed: true };
   }
 
   async redeemCoupon(
@@ -322,7 +367,16 @@ export class CouponsService {
           userId,
           expiresAt: premiumUntil,
         },
-        include: { user: true },
+        include: {
+          user: {
+            include: {
+              stores: {
+                select: { slug: true },
+                orderBy: { createdAt: 'asc' },
+              },
+            },
+          },
+        },
       });
 
       await tx.user.update({
@@ -342,6 +396,7 @@ export class CouponsService {
       userId: redemption.userId,
       userEmail: redemption.user.email,
       userName: redemption.user.name ?? '',
+      storeSlug: redemption.user.stores[0]?.slug ?? null,
       redeemedAt: redemption.redeemedAt.toISOString(),
       expiresAt: redemption.expiresAt.toISOString(),
     };

@@ -1,6 +1,12 @@
 "use client";
 
+import { MoreHorizontal } from "lucide-react";
 import { useTranslations } from "next-intl";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import type { AdminCoupon, CouponRedemption } from "../schemas/coupon.schema";
 
 interface AdminCouponsTableProps {
@@ -91,36 +97,45 @@ export function AdminCouponsTable({
                   {new Date(coupon.createdAt).toLocaleDateString()}
                 </td>
                 <td className="px-6 py-3">
-                  <div className="flex flex-wrap gap-2">
-                    <button
+                  <Popover>
+                    <PopoverTrigger
                       type="button"
-                      onClick={() => onSelectCoupon(coupon.id)}
-                      className="rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-gray-700"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-600 transition hover:bg-gray-50"
+                      aria-label="Open actions menu"
                     >
-                      {isSelected ? tCommon("loading") : "View redemptions"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onEdit(coupon)}
-                      className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-50"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onToggleStatus(coupon.id)}
-                      className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-50"
-                    >
-                      {coupon.status === "active" ? "Deactivate" : "Activate"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onDelete(coupon.id)}
-                      className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-50"
-                    >
-                      Delete
-                    </button>
-                  </div>
+                      <MoreHorizontal className="h-4 w-4" />
+                    </PopoverTrigger>
+                    <PopoverContent align="end" className="w-44 p-1">
+                      <button
+                        type="button"
+                        onClick={() => onSelectCoupon(coupon.id)}
+                        className="w-full rounded-md px-3 py-2 text-left text-xs font-semibold text-gray-700 transition hover:bg-gray-50"
+                      >
+                        {isSelected ? tCommon("loading") : "View redemptions"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onEdit(coupon)}
+                        className="w-full rounded-md px-3 py-2 text-left text-xs font-semibold text-gray-700 transition hover:bg-gray-50"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onToggleStatus(coupon.id)}
+                        className="w-full rounded-md px-3 py-2 text-left text-xs font-semibold text-gray-700 transition hover:bg-gray-50"
+                      >
+                        {coupon.status === "active" ? "Deactivate" : "Activate"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDelete(coupon.id)}
+                        className="w-full rounded-md px-3 py-2 text-left text-xs font-semibold text-red-700 transition hover:bg-red-50"
+                      >
+                        Delete
+                      </button>
+                    </PopoverContent>
+                  </Popover>
                 </td>
               </tr>
             );
