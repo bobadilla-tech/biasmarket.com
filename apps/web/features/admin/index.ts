@@ -29,7 +29,7 @@ export { CouponFormDialog } from "./components/coupon-form-dialog";
 
 export { type AdminUser } from "./schemas/admin-user.schema";
 export type {
-  CouponFormValues,
   AdminCoupon,
+  CouponFormValues,
   CouponRedemption,
 } from "./schemas/coupon.schema";

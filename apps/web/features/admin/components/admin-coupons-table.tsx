@@ -52,17 +52,18 @@ export function AdminCouponsTable({
           {coupons.map((coupon) => {
             const isSelected = selectedCouponId === coupon.id;
             const redemptions = redemptionsByCoupon[coupon.id] ?? [];
-            const statusLabel =
-              coupon.status === "expired"
-                ? t("status.expired")
-                : coupon.status === "active"
-                  ? t("status.active")
-                  : t("status.inactive");
+            const statusLabel = coupon.status === "expired"
+              ? t("status.expired")
+              : coupon.status === "active"
+              ? t("status.active")
+              : t("status.inactive");
 
             return (
               <tr
                 key={coupon.id}
-                className={`border-b border-gray-100 align-top last:border-0 ${isSelected ? "bg-amber-50/50" : ""}`}
+                className={`border-b border-gray-100 align-top last:border-0 ${
+                  isSelected ? "bg-amber-50/50" : ""
+                }`}
               >
                 <td className="px-6 py-3 font-semibold uppercase tracking-wide text-gray-900">
                   {coupon.code}
@@ -76,19 +77,23 @@ export function AdminCouponsTable({
                   )}
                 </td>
                 <td className="px-6 py-3">
-                  {coupon.status === "active" ? (
-                    <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-                      {statusLabel}
-                    </span>
-                  ) : coupon.status === "expired" ? (
-                    <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
-                      {statusLabel}
-                    </span>
-                  ) : (
-                    <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">
-                      {statusLabel}
-                    </span>
-                  )}
+                  {coupon.status === "active"
+                    ? (
+                      <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                        {statusLabel}
+                      </span>
+                    )
+                    : coupon.status === "expired"
+                    ? (
+                      <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                        {statusLabel}
+                      </span>
+                    )
+                    : (
+                      <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">
+                        {statusLabel}
+                      </span>
+                    )}
                 </td>
                 <td className="px-6 py-3 text-gray-600">
                   {coupon.durationDays}d
@@ -103,8 +108,7 @@ export function AdminCouponsTable({
                   <Popover
                     open={openMenuCouponId === coupon.id}
                     onOpenChange={(open) =>
-                      setOpenMenuCouponId(open ? coupon.id : null)
-                    }
+                      setOpenMenuCouponId(open ? coupon.id : null)}
                   >
                     <PopoverTrigger
                       type="button"

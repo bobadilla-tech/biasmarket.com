@@ -52,17 +52,17 @@ export function AdminCouponsPageClient() {
 
   const formInitialValues: CouponFormValues | undefined = editingCoupon
     ? {
-        code: editingCoupon.code,
-        name: editingCoupon.name,
-        description: editingCoupon.description ?? "",
-        maxUses: editingCoupon.maxUses,
-        startsAt: editingCoupon.startsAt
-          ? editingCoupon.startsAt.slice(0, 10)
-          : "",
-        expiresAt: editingCoupon.expiresAt
-          ? editingCoupon.expiresAt.slice(0, 10)
-          : "",
-      }
+      code: editingCoupon.code,
+      name: editingCoupon.name,
+      description: editingCoupon.description ?? "",
+      maxUses: editingCoupon.maxUses,
+      startsAt: editingCoupon.startsAt
+        ? editingCoupon.startsAt.slice(0, 10)
+        : "",
+      expiresAt: editingCoupon.expiresAt
+        ? editingCoupon.expiresAt.slice(0, 10)
+        : "",
+    }
     : undefined;
 
   const openCreateForm = () => {
@@ -120,18 +120,17 @@ export function AdminCouponsPageClient() {
     }
   };
 
-  const error =
-    couponsQuery.error instanceof Error
-      ? couponsQuery.error.message
-      : createCoupon.error instanceof Error
-        ? createCoupon.error.message
-        : updateCoupon.error instanceof Error
-          ? updateCoupon.error.message
-          : toggleCouponStatus.error instanceof Error
-            ? toggleCouponStatus.error.message
-            : deleteCoupon.error instanceof Error
-              ? deleteCoupon.error.message
-              : null;
+  const error = couponsQuery.error instanceof Error
+    ? couponsQuery.error.message
+    : createCoupon.error instanceof Error
+    ? createCoupon.error.message
+    : updateCoupon.error instanceof Error
+    ? updateCoupon.error.message
+    : toggleCouponStatus.error instanceof Error
+    ? toggleCouponStatus.error.message
+    : deleteCoupon.error instanceof Error
+    ? deleteCoupon.error.message
+    : null;
 
   if (couponsQuery.isPending) {
     return (
@@ -189,12 +188,12 @@ export function AdminCouponsPageClient() {
                 {!redemptionsQuery.isPending &&
                   !redemptionsQuery.error &&
                   redemptionsQuery.data && (
-                    <CouponRedemptionsTable
-                      couponId={selectedCouponId}
-                      redemptions={redemptionsQuery.data}
-                      onUnredeemed={handleUnredeemed}
-                    />
-                  )}
+                  <CouponRedemptionsTable
+                    couponId={selectedCouponId}
+                    redemptions={redemptionsQuery.data}
+                    onUnredeemed={handleUnredeemed}
+                  />
+                )}
               </section>
             )}
           </>

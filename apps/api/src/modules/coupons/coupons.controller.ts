@@ -7,25 +7,25 @@ import {
   Patch,
   Post,
   UseGuards,
-} from '@nestjs/common';
-import { AuthGuard, Roles, Session } from '@thallesp/nestjs-better-auth';
-import type { UserSession } from '@thallesp/nestjs-better-auth';
-import { CouponsService } from './coupons.service.js';
+} from "@nestjs/common";
+import { AuthGuard, Roles, Session } from "@thallesp/nestjs-better-auth";
+import type { UserSession } from "@thallesp/nestjs-better-auth";
+import { CouponsService } from "./coupons.service.js";
 import {
   type CouponRedemptionResponseDto,
   type CouponResponseDto,
   CreateCouponDto,
   RedeemCouponDto,
   UpdateCouponDto,
-} from './dto/coupon.dto.js';
+} from "./dto/coupon.dto.js";
 
 @Controller()
 export class CouponsController {
   constructor(private readonly coupons: CouponsService) {}
 
   @UseGuards(AuthGuard)
-  @Roles(['admin'])
-  @Post('admin/coupons')
+  @Roles(["admin"])
+  @Post("admin/coupons")
   async createCoupon(
     @Session() session: UserSession,
     @Body() dto: CreateCouponDto,
@@ -34,61 +34,61 @@ export class CouponsController {
   }
 
   @UseGuards(AuthGuard)
-  @Roles(['admin'])
-  @Get('admin/coupons')
+  @Roles(["admin"])
+  @Get("admin/coupons")
   async listCoupons(): Promise<CouponResponseDto[]> {
     return this.coupons.listCoupons();
   }
 
   @UseGuards(AuthGuard)
-  @Roles(['admin'])
-  @Get('admin/coupons/:couponId/redemptions')
+  @Roles(["admin"])
+  @Get("admin/coupons/:couponId/redemptions")
   async getRedemptions(
-    @Param('couponId') couponId: string,
+    @Param("couponId") couponId: string,
   ): Promise<CouponRedemptionResponseDto[]> {
     return this.coupons.getRedemptions(couponId);
   }
 
   @UseGuards(AuthGuard)
-  @Roles(['admin'])
-  @Patch('admin/coupons/:couponId')
+  @Roles(["admin"])
+  @Patch("admin/coupons/:couponId")
   async updateCoupon(
-    @Param('couponId') couponId: string,
+    @Param("couponId") couponId: string,
     @Body() dto: UpdateCouponDto,
   ): Promise<CouponResponseDto> {
     return this.coupons.updateCoupon(couponId, dto);
   }
 
   @UseGuards(AuthGuard)
-  @Roles(['admin'])
-  @Delete('admin/coupons/:couponId')
+  @Roles(["admin"])
+  @Delete("admin/coupons/:couponId")
   async deleteCoupon(
-    @Param('couponId') couponId: string,
+    @Param("couponId") couponId: string,
   ): Promise<{ deleted: boolean }> {
     return this.coupons.deleteCoupon(couponId);
   }
 
   @UseGuards(AuthGuard)
-  @Roles(['admin'])
-  @Patch('admin/coupons/:couponId/status')
+  @Roles(["admin"])
+  @Patch("admin/coupons/:couponId/status")
   async toggleCouponStatus(
-    @Param('couponId') couponId: string,
+    @Param("couponId") couponId: string,
   ): Promise<CouponResponseDto> {
     return this.coupons.toggleCouponStatus(couponId);
   }
 
   @UseGuards(AuthGuard)
-  @Roles(['admin'])
-  @Post('admin/coupons/:couponId/redemptions/:redemptionId/unredeem')
+  @Roles(["admin"])
+  @Post("admin/coupons/:couponId/redemptions/:redemptionId/unredeem")
   async unredeemCoupon(
-    @Param('couponId') _couponId: string,
-    @Param('redemptionId') redemptionId: string,
+    @Param("couponId") _couponId: string,
+    @Param("redemptionId") redemptionId: string,
   ): Promise<{ unredeemed: boolean }> {
     return this.coupons.unredeemCoupon(redemptionId);
   }
 
   @UseGuards(AuthGuard)
-  @Post('coupons/redeem')
+  @Post("coupons/redeem")
   async redeemCoupon(
     @Session() session: UserSession,
     @Body() dto: RedeemCouponDto,

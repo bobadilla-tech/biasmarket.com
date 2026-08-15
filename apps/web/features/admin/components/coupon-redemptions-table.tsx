@@ -85,8 +85,8 @@ export function CouponRedemptionsTable({
         </thead>
         <tbody>
           {redemptions.map((row) => {
-            const pendingUnredeem =
-              unredeem.isPending && unredeem.variables?.redemptionId === row.id;
+            const pendingUnredeem = unredeem.isPending &&
+              unredeem.variables?.redemptionId === row.id;
 
             return (
               <tr

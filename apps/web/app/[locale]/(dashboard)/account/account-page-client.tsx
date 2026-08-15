@@ -77,37 +77,37 @@ export function AccountPageClient() {
           </CardContent>
         </Card>
 
-        {storesLoading ? (
-          <LoadingState />
-        ) : storesError ? (
-          <ErrorState message={tCommon("networkError")} />
-        ) : stores && stores.length === 1 ? (
-          <SingleStoreSummary storeId={stores[0].id} slug={stores[0].slug} />
-        ) : (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-[#2d1649]">
-                {t("yourStores")}
-              </h2>
-              <Link
-                href="/onboarding/create-store"
-                className="flex items-center gap-1.5 text-sm font-semibold text-[#6d28d9] hover:underline"
-              >
-                <Plus className="size-4" />
-                {t("addStore")}
-              </Link>
-            </div>
-            {stores && stores.length > 0 ? (
-              <div className="grid gap-4 sm:grid-cols-2">
-                {stores.map((store) => (
-                  <StoreLinkCard key={store.id} store={store} />
-                ))}
+        {storesLoading
+          ? <LoadingState />
+          : storesError
+          ? <ErrorState message={tCommon("networkError")} />
+          : stores && stores.length === 1
+          ? <SingleStoreSummary storeId={stores[0].id} slug={stores[0].slug} />
+          : (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-[#2d1649]">
+                  {t("yourStores")}
+                </h2>
+                <Link
+                  href="/onboarding/create-store"
+                  className="flex items-center gap-1.5 text-sm font-semibold text-[#6d28d9] hover:underline"
+                >
+                  <Plus className="size-4" />
+                  {t("addStore")}
+                </Link>
               </div>
-            ) : (
-              <EmptyState message={t("yourStores")} />
-            )}
-          </div>
-        )}
+              {stores && stores.length > 0
+                ? (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {stores.map((store) => (
+                      <StoreLinkCard key={store.id} store={store} />
+                    ))}
+                  </div>
+                )
+                : <EmptyState message={t("yourStores")} />}
+            </div>
+          )}
 
         <ChangePasswordForm />
       </div>
@@ -129,8 +129,7 @@ function SingleStoreSummary({
   if (loading) return <LoadingState />;
   if (error || !stats) return <ErrorState message={error ?? ""} />;
 
-  const pendingReview =
-    stats.paymentStatusCounts.PENDING_PAYMENT +
+  const pendingReview = stats.paymentStatusCounts.PENDING_PAYMENT +
     stats.paymentStatusCounts.PARTIALLY_PAID +
     stats.paymentStatusCounts.PAYMENT_SUBMITTED;
 
