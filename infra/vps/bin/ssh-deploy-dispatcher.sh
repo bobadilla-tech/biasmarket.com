@@ -64,14 +64,20 @@ launch() {
   # Catches deploy.sh failing, or failing to even exec (missing/
   # non-executable file), near-instantly — e.g. an early die() before the
   # lock is attempted — instead of silently vanishing until
-  # --wait-for-result's own 1500s timeout.
+  # --wait-for-result's own 1500s timeout. A valid command such as an
+  # idempotent --cleanup can also finish inside this probe, so propagate its
+  # actual exit status instead of treating every quick exit as a failure.
   sleep 2
   if ! kill -0 "$bg_pid" 2>/dev/null; then
-    wait "$bg_pid"
-    local rc=$?
-    echo "launch failed immediately (rc=$rc) for $label:" >&2
+    local rc=0
+    wait "$bg_pid" || rc=$?
+    if ((rc != 0)); then
+      echo "launch failed immediately (rc=$rc) for $label:" >&2
+      cat "$errfile" >&2
+      return 1
+    fi
     cat "$errfile" >&2
-    exit 1
+    return 0
   fi
 }
 
