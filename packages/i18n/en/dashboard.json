@@ -690,7 +690,11 @@
       "submitting": "Updating...",
       "saved": "Password updated"
     },
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "redeemCoupon": {
+      "title": "Redeem a coupon",
+      "description": "Have a promo code? Redeem it here to activate your premium plan."
+    }
   },
   "restock": {
     "title": "Restock interest",
