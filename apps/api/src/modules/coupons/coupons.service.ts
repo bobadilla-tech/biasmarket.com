@@ -40,7 +40,7 @@ export class CouponsService {
     isActive: boolean;
     startsAt: Date | null;
     expiresAt: Date | null;
-  }): 'active' | 'inactive' | 'expired' {
+  }): 'active' | 'inactive' | 'expired' | 'scheduled' {
     if (!coupon.isActive) {
       return 'inactive';
     }
@@ -48,6 +48,10 @@ export class CouponsService {
     const now = new Date();
     if (coupon.expiresAt && now > coupon.expiresAt) {
       return 'expired';
+    }
+
+    if (coupon.startsAt && now < coupon.startsAt) {
+      return 'scheduled';
     }
 
     return 'active';

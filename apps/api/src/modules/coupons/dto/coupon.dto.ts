@@ -109,7 +109,7 @@ export class CouponResponseDto {
   durationDays!: number;
   maxUses!: number;
   isActive!: boolean;
-  status!: 'active' | 'inactive' | 'expired';
+  status!: 'active' | 'inactive' | 'expired' | 'scheduled';
   startsAt!: string | null;
   expiresAt!: string | null;
   createdAt!: string;

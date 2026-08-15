@@ -54,7 +54,9 @@ export function AdminCouponsTable({
                 ? t("status.expired")
                 : coupon.status === "active"
                   ? t("status.active")
-                  : t("status.inactive");
+                  : coupon.status === "scheduled"
+                    ? t("status.scheduled")
+                    : t("status.inactive");
 
             return (
               <tr
