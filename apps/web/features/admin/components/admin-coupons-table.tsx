@@ -8,11 +8,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import type { AdminCoupon, CouponRedemption } from "../schemas/coupon.schema";
+import type { AdminCoupon } from "../schemas/coupon.schema";
 
 interface AdminCouponsTableProps {
   coupons: AdminCoupon[];
-  redemptionsByCoupon: Record<string, CouponRedemption[]>;
   onSelectCoupon: (couponId: string) => void;
   selectedCouponId: string | null;
   onEdit: (coupon: AdminCoupon) => void;
@@ -22,7 +21,6 @@ interface AdminCouponsTableProps {
 
 export function AdminCouponsTable({
   coupons,
-  redemptionsByCoupon,
   onSelectCoupon,
   selectedCouponId,
   onEdit,
@@ -51,12 +49,12 @@ export function AdminCouponsTable({
         <tbody>
           {coupons.map((coupon) => {
             const isSelected = selectedCouponId === coupon.id;
-            const redemptions = redemptionsByCoupon[coupon.id] ?? [];
-            const statusLabel = coupon.status === "expired"
-              ? t("status.expired")
-              : coupon.status === "active"
-              ? t("status.active")
-              : t("status.inactive");
+            const statusLabel =
+              coupon.status === "expired"
+                ? t("status.expired")
+                : coupon.status === "active"
+                  ? t("status.active")
+                  : t("status.inactive");
 
             return (
               <tr
@@ -77,29 +75,25 @@ export function AdminCouponsTable({
                   )}
                 </td>
                 <td className="px-6 py-3">
-                  {coupon.status === "active"
-                    ? (
-                      <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-                        {statusLabel}
-                      </span>
-                    )
-                    : coupon.status === "expired"
-                    ? (
-                      <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
-                        {statusLabel}
-                      </span>
-                    )
-                    : (
-                      <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">
-                        {statusLabel}
-                      </span>
-                    )}
+                  {coupon.status === "active" ? (
+                    <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                      {statusLabel}
+                    </span>
+                  ) : coupon.status === "expired" ? (
+                    <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                      {statusLabel}
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">
+                      {statusLabel}
+                    </span>
+                  )}
                 </td>
                 <td className="px-6 py-3 text-gray-600">
                   {coupon.durationDays}d
                 </td>
                 <td className="px-6 py-3 text-gray-600">
-                  {redemptions.length}/{coupon.maxUses}
+                  {coupon.redemptionCount}/{coupon.maxUses}
                 </td>
                 <td className="px-6 py-3 text-gray-600">
                   {new Date(coupon.createdAt).toLocaleDateString()}
@@ -108,7 +102,8 @@ export function AdminCouponsTable({
                   <Popover
                     open={openMenuCouponId === coupon.id}
                     onOpenChange={(open) =>
-                      setOpenMenuCouponId(open ? coupon.id : null)}
+                      setOpenMenuCouponId(open ? coupon.id : null)
+                    }
                   >
                     <PopoverTrigger
                       type="button"

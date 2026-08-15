@@ -2958,6 +2958,10 @@ export default async () => {
             },
           },
         ],
+        [
+          import('./modules/coupons/internal-premium-jobs.controller.js'),
+          { InternalPremiumJobsController: { expireSweep: {} } },
+        ],
       ],
     },
   };

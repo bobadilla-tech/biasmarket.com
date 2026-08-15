@@ -71,6 +71,7 @@
     "title": "Cupones premium",
     "empty": "Todavía no hay cupones creados.",
     "createTitle": "Crear cupón",
+    "confirmDelete": "¿Eliminar este cupón? Su historial de canjes también se eliminará permanentemente y no se puede deshacer.",
     "form": {
       "code": "Código",
       "name": "Nombre",

@@ -18,3 +18,8 @@ export {
   EXPIRE_ORDERS_SCHEDULER_ID,
   INTERNAL_JOBS_SECRET_HEADER,
 } from "./jobs/orders.jobs.js";
+export {
+  EXPIRE_PREMIUM_CRON_PATTERN,
+  EXPIRE_PREMIUM_JOB_NAME,
+  EXPIRE_PREMIUM_SCHEDULER_ID,
+} from "./jobs/premium.jobs.js";

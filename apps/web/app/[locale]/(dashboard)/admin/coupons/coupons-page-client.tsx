@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   AdminCouponsTable,
@@ -13,10 +13,7 @@ import {
   useToggleCouponStatus,
   useUpdateCoupon,
 } from "@/features/admin";
-import type {
-  CouponFormValues,
-  CouponRedemption,
-} from "@/features/admin/schemas/coupon.schema";
+import type { CouponFormValues } from "@/features/admin/schemas/coupon.schema";
 
 export function AdminCouponsPageClient() {
   const t = useTranslations("admin.coupons");
@@ -36,15 +33,6 @@ export function AdminCouponsPageClient() {
   );
 
   const coupons = couponsQuery.data ?? [];
-  const redemptionsByCoupon = useMemo<
-    Record<string, CouponRedemption[]>
-  >(() => {
-    const map: Record<string, CouponRedemption[]> = {};
-    if (selectedCouponId && redemptionsQuery.data) {
-      map[selectedCouponId] = redemptionsQuery.data;
-    }
-    return map;
-  }, [redemptionsQuery.data, selectedCouponId]);
 
   const editingCoupon = editingCouponId
     ? (coupons.find((c) => c.id === editingCouponId) ?? null)
@@ -52,17 +40,17 @@ export function AdminCouponsPageClient() {
 
   const formInitialValues: CouponFormValues | undefined = editingCoupon
     ? {
-      code: editingCoupon.code,
-      name: editingCoupon.name,
-      description: editingCoupon.description ?? "",
-      maxUses: editingCoupon.maxUses,
-      startsAt: editingCoupon.startsAt
-        ? editingCoupon.startsAt.slice(0, 10)
-        : "",
-      expiresAt: editingCoupon.expiresAt
-        ? editingCoupon.expiresAt.slice(0, 10)
-        : "",
-    }
+        code: editingCoupon.code,
+        name: editingCoupon.name,
+        description: editingCoupon.description ?? "",
+        maxUses: editingCoupon.maxUses,
+        startsAt: editingCoupon.startsAt
+          ? editingCoupon.startsAt.slice(0, 10)
+          : "",
+        expiresAt: editingCoupon.expiresAt
+          ? editingCoupon.expiresAt.slice(0, 10)
+          : "",
+      }
     : undefined;
 
   const openCreateForm = () => {
@@ -100,6 +88,10 @@ export function AdminCouponsPageClient() {
   };
 
   const handleDelete = async (couponId: string) => {
+    // Deleting a coupon cascades away every CouponRedemption row for it (see
+    // the schema's onDelete: Cascade) — there's no soft-delete, so this is
+    // the only guard against losing that audit trail by accident.
+    if (!window.confirm(t("confirmDelete"))) return;
     await deleteCoupon.mutateAsync(couponId);
     if (selectedCouponId === couponId) {
       setSelectedCouponId(null);
@@ -120,17 +112,18 @@ export function AdminCouponsPageClient() {
     }
   };
 
-  const error = couponsQuery.error instanceof Error
-    ? couponsQuery.error.message
-    : createCoupon.error instanceof Error
-    ? createCoupon.error.message
-    : updateCoupon.error instanceof Error
-    ? updateCoupon.error.message
-    : toggleCouponStatus.error instanceof Error
-    ? toggleCouponStatus.error.message
-    : deleteCoupon.error instanceof Error
-    ? deleteCoupon.error.message
-    : null;
+  const error =
+    couponsQuery.error instanceof Error
+      ? couponsQuery.error.message
+      : createCoupon.error instanceof Error
+        ? createCoupon.error.message
+        : updateCoupon.error instanceof Error
+          ? updateCoupon.error.message
+          : toggleCouponStatus.error instanceof Error
+            ? toggleCouponStatus.error.message
+            : deleteCoupon.error instanceof Error
+              ? deleteCoupon.error.message
+              : null;
 
   if (couponsQuery.isPending) {
     return (
@@ -164,7 +157,6 @@ export function AdminCouponsPageClient() {
           <>
             <AdminCouponsTable
               coupons={coupons}
-              redemptionsByCoupon={redemptionsByCoupon}
               selectedCouponId={selectedCouponId}
               onSelectCoupon={handleSelectCoupon}
               onEdit={handleEdit}
@@ -188,12 +180,12 @@ export function AdminCouponsPageClient() {
                 {!redemptionsQuery.isPending &&
                   !redemptionsQuery.error &&
                   redemptionsQuery.data && (
-                  <CouponRedemptionsTable
-                    couponId={selectedCouponId}
-                    redemptions={redemptionsQuery.data}
-                    onUnredeemed={handleUnredeemed}
-                  />
-                )}
+                    <CouponRedemptionsTable
+                      couponId={selectedCouponId}
+                      redemptions={redemptionsQuery.data}
+                      onUnredeemed={handleUnredeemed}
+                    />
+                  )}
               </section>
             )}
           </>
