@@ -73,6 +73,102 @@ describe('CouponsService', () => {
     ).rejects.toThrow(BadRequestException);
   });
 
+  it('rejects a coupon before its start window', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-01T00:00:00.000Z'));
+
+    prisma.coupon.findUnique.mockResolvedValue({
+      id: 'coupon-1',
+      code: 'PREMIUM30',
+      isActive: true,
+      startsAt: new Date('2026-08-15T00:00:00.000Z'),
+      expiresAt: new Date('2026-09-15T00:00:00.000Z'),
+      redemptions: [],
+      maxUses: 1,
+      durationDays: 30,
+    });
+
+    try {
+      await expect(
+        service.redeemCoupon({ code: 'PREMIUM30' }, {
+          user: { id: 'user-1' },
+        } as never),
+      ).rejects.toThrow(BadRequestException);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('rejects a coupon after its expiry window', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-01T00:00:00.000Z'));
+
+    prisma.coupon.findUnique.mockResolvedValue({
+      id: 'coupon-1',
+      code: 'PREMIUM30',
+      isActive: true,
+      startsAt: new Date('2026-08-01T00:00:00.000Z'),
+      expiresAt: new Date('2026-09-15T00:00:00.000Z'),
+      redemptions: [],
+      maxUses: 1,
+      durationDays: 30,
+    });
+
+    try {
+      await expect(
+        service.redeemCoupon({ code: 'PREMIUM30' }, {
+          user: { id: 'user-1' },
+        } as never),
+      ).rejects.toThrow(BadRequestException);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('rejects a coupon that has reached its maximum uses', async () => {
+    prisma.coupon.findUnique.mockResolvedValue({
+      id: 'coupon-1',
+      code: 'PREMIUM30',
+      isActive: true,
+      startsAt: null,
+      expiresAt: null,
+      redemptions: [{ id: 'r1' }, { id: 'r2' }],
+      maxUses: 2,
+      durationDays: 30,
+    });
+    prisma.couponRedemption.findUnique.mockResolvedValue(null);
+
+    await expect(
+      service.redeemCoupon({ code: 'PREMIUM30' }, {
+        user: { id: 'user-1' },
+      } as never),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('rejects a coupon the user already redeemed', async () => {
+    prisma.coupon.findUnique.mockResolvedValue({
+      id: 'coupon-1',
+      code: 'PREMIUM30',
+      isActive: true,
+      startsAt: null,
+      expiresAt: null,
+      redemptions: [{ id: 'r1' }],
+      maxUses: 10,
+      durationDays: 30,
+    });
+    prisma.couponRedemption.findUnique.mockResolvedValue({
+      id: 'r1',
+      couponId: 'coupon-1',
+      userId: 'user-1',
+    });
+
+    await expect(
+      service.redeemCoupon({ code: 'PREMIUM30' }, {
+        user: { id: 'user-1' },
+      } as never),
+    ).rejects.toThrow(BadRequestException);
+  });
+
   it('redeems a valid coupon and grants premium access', async () => {
     const coupon = {
       id: 'coupon-1',
