@@ -22,6 +22,7 @@ export function useUpdateCoupon(fallbackErrorMessage?: string) {
           code: values.code,
           name: values.name,
           description: values.description || undefined,
+          maxUses: values.maxUses,
           startsAt: values.startsAt || undefined,
           expiresAt: values.expiresAt || undefined,
         },

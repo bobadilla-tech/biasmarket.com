@@ -189,6 +189,7 @@ describe('CouponsService', () => {
     const result = await service.updateCoupon('coupon-1', {
       code: 'VIP30',
       name: 'VIP 30 days',
+      maxUses: 5,
       startsAt: '2026-08-20T00:00:00.000Z',
       expiresAt: '2026-09-20T00:00:00.000Z',
     });
@@ -196,6 +197,11 @@ describe('CouponsService', () => {
     expect(result.code).toBe('VIP30');
     expect(result.durationDays).toBe(30);
     expect(result.plan).toBe('premium');
+    expect(prisma.coupon.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ maxUses: 5 }),
+      }),
+    );
   });
 
   it('toggles a coupon active state', async () => {

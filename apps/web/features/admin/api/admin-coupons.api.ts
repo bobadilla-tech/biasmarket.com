@@ -72,6 +72,7 @@ export const adminCouponsApi = {
       code?: string;
       name?: string;
       description?: string;
+      maxUses?: number;
       startsAt?: string;
       expiresAt?: string;
       isActive?: boolean;

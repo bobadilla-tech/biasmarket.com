@@ -191,6 +191,7 @@ export class CouponsService {
         ...(dto.description !== undefined
           ? { description: dto.description ?? '' }
           : {}),
+        ...(dto.maxUses !== undefined ? { maxUses: dto.maxUses } : {}),
         ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
         startsAt,
         expiresAt,

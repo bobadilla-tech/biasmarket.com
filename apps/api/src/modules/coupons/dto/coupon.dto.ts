@@ -74,6 +74,12 @@ export class UpdateCouponDto {
   description?: string;
 
   @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Transform(({ value }) => Number(value))
+  maxUses?: number;
+
+  @IsOptional()
   @IsDateString()
   startsAt?: string;
 
