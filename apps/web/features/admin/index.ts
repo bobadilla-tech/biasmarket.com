@@ -24,7 +24,8 @@ export { InquiriesTable } from "./components/inquiries-table";
 export { AdminStoresTable } from "./components/admin-stores-table";
 export { AdminUsersTable } from "./components/admin-users-table";
 export { AdminCouponsTable } from "./components/admin-coupons-table";
-export { CouponRedemptionsDialog } from "./components/coupon-redemptions-dialog";
+export { CouponRedemptionsTable } from "./components/coupon-redemptions-table";
+export { CouponFormDialog } from "./components/coupon-form-dialog";
 
 export { type AdminUser } from "./schemas/admin-user.schema";
 export type {

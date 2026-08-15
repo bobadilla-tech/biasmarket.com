@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { MoreHorizontal } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
@@ -29,7 +30,9 @@ export function AdminCouponsTable({
   onDelete,
 }: AdminCouponsTableProps) {
   const t = useTranslations("admin.coupons");
-  const tCommon = useTranslations("common");
+  const [openMenuCouponId, setOpenMenuCouponId] = useState<string | null>(null);
+
+  const closeMenu = () => setOpenMenuCouponId(null);
 
   return (
     <div className="overflow-x-auto rounded-2xl border border-gray-100 bg-white shadow-sm">
@@ -97,7 +100,12 @@ export function AdminCouponsTable({
                   {new Date(coupon.createdAt).toLocaleDateString()}
                 </td>
                 <td className="px-6 py-3">
-                  <Popover>
+                  <Popover
+                    open={openMenuCouponId === coupon.id}
+                    onOpenChange={(open) =>
+                      setOpenMenuCouponId(open ? coupon.id : null)
+                    }
+                  >
                     <PopoverTrigger
                       type="button"
                       className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-600 transition hover:bg-gray-50"
@@ -108,28 +116,40 @@ export function AdminCouponsTable({
                     <PopoverContent align="end" className="w-44 p-1">
                       <button
                         type="button"
-                        onClick={() => onSelectCoupon(coupon.id)}
+                        onClick={() => {
+                          onSelectCoupon(coupon.id);
+                          closeMenu();
+                        }}
                         className="w-full rounded-md px-3 py-2 text-left text-xs font-semibold text-gray-700 transition hover:bg-gray-50"
                       >
-                        {isSelected ? tCommon("loading") : "View redemptions"}
+                        {isSelected ? "Hide redemptions" : "View redemptions"}
                       </button>
                       <button
                         type="button"
-                        onClick={() => onEdit(coupon)}
+                        onClick={() => {
+                          onEdit(coupon);
+                          closeMenu();
+                        }}
                         className="w-full rounded-md px-3 py-2 text-left text-xs font-semibold text-gray-700 transition hover:bg-gray-50"
                       >
                         Edit
                       </button>
                       <button
                         type="button"
-                        onClick={() => onToggleStatus(coupon.id)}
+                        onClick={() => {
+                          onToggleStatus(coupon.id);
+                          closeMenu();
+                        }}
                         className="w-full rounded-md px-3 py-2 text-left text-xs font-semibold text-gray-700 transition hover:bg-gray-50"
                       >
                         {coupon.status === "active" ? "Deactivate" : "Activate"}
                       </button>
                       <button
                         type="button"
-                        onClick={() => onDelete(coupon.id)}
+                        onClick={() => {
+                          onDelete(coupon.id);
+                          closeMenu();
+                        }}
                         className="w-full rounded-md px-3 py-2 text-left text-xs font-semibold text-red-700 transition hover:bg-red-50"
                       >
                         Delete
