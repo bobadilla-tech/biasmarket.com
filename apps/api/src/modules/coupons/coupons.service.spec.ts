@@ -1,6 +1,7 @@
 import { Test, type TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { type Mock, vi } from 'vitest';
+import { Prisma } from '@biasmarket/db';
 import { CouponsService } from './coupons.service.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 
@@ -401,6 +402,20 @@ describe('CouponsService', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('maps a P2002 unique-constraint violation on create to a 400 instead of an unhandled 500 (L7)', async () => {
+    prisma.coupon.findUnique.mockResolvedValue(null);
+    prisma.coupon.create = vi.fn().mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+        code: 'P2002',
+        clientVersion: '7.9.1',
+      }),
+    );
+
+    await expect(
+      service.createCoupon({ code: 'RACE1', name: 'Race' }),
+    ).rejects.toThrow(BadRequestException);
   });
 
   it('lists coupons with redemption counts', async () => {
