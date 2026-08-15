@@ -29,8 +29,8 @@ Adds a minimal premium-entitlement system, per the original
   (`fix: validate coupon and redemption id before interpolating into url`,
   `fix: move validation for maxUses in database transaction`,
   `fix: stack
-multiple coupons premiumUntil`) — the DTO/URL-injection issue
-  and the maxUses-outside-transaction issue were already caught and fixed before
+multiple coupons premiumUntil`) — the DTO/URL-injection issue and
+  the maxUses-outside-transaction issue were already caught and fixed before
   this audit.
 - Branch was merged with `main` at `834a411` (merge base `064f2ca` == current
   `main` HEAD, so the branch is otherwise up to date).
