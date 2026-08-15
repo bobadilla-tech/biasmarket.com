@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { MoreHorizontal } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import {
   Popover,
@@ -27,9 +29,12 @@ export function CouponRedemptionsTable({
   redemptions,
   onUnredeemed,
 }: CouponRedemptionsTableProps) {
+  const t = useTranslations("admin.coupons");
+  const tCommon = useTranslations("common");
   const router = useRouter();
   const queryClient = useQueryClient();
-  const unredeem = useUnredeemCoupon();
+  const unredeem = useUnredeemCoupon(tCommon("networkError"));
+  const [unredeemError, setUnredeemError] = useState<string | null>(null);
 
   const handleImpersonate = async (row: CouponRedemption) => {
     // Impersonate the user account itself (not a store) and land on that
@@ -60,26 +65,40 @@ export function CouponRedemptionsTable({
   };
 
   const handleUnredeem = async (row: CouponRedemption) => {
-    await unredeem.mutateAsync({
-      couponId,
-      redemptionId: row.id,
-    });
-    onUnredeemed(row.id);
+    setUnredeemError(null);
+    try {
+      await unredeem.mutateAsync({
+        couponId,
+        redemptionId: row.id,
+      });
+      onUnredeemed(row.id);
+    } catch (err) {
+      setUnredeemError(
+        err instanceof Error ? err.message : tCommon("networkError"),
+      );
+    }
   };
 
   if (redemptions.length === 0) {
-    return <p className="text-sm text-gray-500">No redemptions yet.</p>;
+    return <p className="text-sm text-gray-500">{t("redemptions.empty")}</p>;
   }
 
   return (
     <div className="overflow-x-auto">
+      {unredeemError && (
+        <p className="mb-2 text-sm text-red-500">{unredeemError}</p>
+      )}
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-gray-100 bg-gray-50 text-left text-gray-500">
-            <th className="px-4 py-3 font-medium">User</th>
-            <th className="px-4 py-3 font-medium">Email</th>
-            <th className="px-4 py-3 font-medium">Redeemed</th>
-            <th className="px-4 py-3 font-medium">Premium until</th>
+            <th className="px-4 py-3 font-medium">{t("redemptions.user")}</th>
+            <th className="px-4 py-3 font-medium">{t("redemptions.email")}</th>
+            <th className="px-4 py-3 font-medium">
+              {t("redemptions.redeemedAt")}
+            </th>
+            <th className="px-4 py-3 font-medium">
+              {t("redemptions.expiresAt")}
+            </th>
             <th className="px-4 py-3 font-medium">Actions</th>
           </tr>
         </thead>

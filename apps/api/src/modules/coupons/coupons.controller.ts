@@ -82,10 +82,10 @@ export class CouponsController {
   @Roles(['admin'])
   @Post('admin/coupons/:couponId/redemptions/:redemptionId/unredeem')
   async unredeemCoupon(
-    @Param('couponId') _couponId: string,
+    @Param('couponId') couponId: string,
     @Param('redemptionId') redemptionId: string,
   ): Promise<{ unredeemed: boolean }> {
-    return this.coupons.unredeemCoupon(redemptionId);
+    return this.coupons.unredeemCoupon(couponId, redemptionId);
   }
 
   @UseGuards(AuthGuard, ThrottlerGuard)

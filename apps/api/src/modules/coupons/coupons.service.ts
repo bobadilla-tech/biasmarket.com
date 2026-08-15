@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import type { UserSession } from '@thallesp/nestjs-better-auth';
+import { Prisma } from '@biasmarket/db';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import type {
   CouponRedemptionResponseDto,
@@ -15,6 +16,18 @@ import type {
 
 function normalizeCode(code: string): string {
   return code.trim().toUpperCase();
+}
+
+// The findUnique pre-check below is a fast-path (friendly 400 without a raw
+// DB round-trip for the common case) — this is the actual guard against two
+// concurrent requests for the same code both passing that pre-check and one
+// hitting the @unique constraint at the DB level (P2002), which would
+// otherwise surface as an unhandled 500 instead of the intended message.
+function isUniqueCodeConflict(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === 'P2002'
+  );
 }
 
 const PREMIUM_DURATION_DAYS = 30;
@@ -105,20 +118,28 @@ export class CouponsService {
       );
     }
 
-    const coupon = await this.prisma.coupon.create({
-      data: {
-        code,
-        name: dto.name,
-        description: dto.description ?? '',
-        plan: dto.plan ?? 'premium',
-        durationDays: dto.durationDays ?? PREMIUM_DURATION_DAYS,
-        maxUses: dto.maxUses ?? 1,
-        isActive: dto.isActive ?? true,
-        startsAt,
-        expiresAt,
-        createdById: adminUserId ?? null,
-      },
-    });
+    let coupon;
+    try {
+      coupon = await this.prisma.coupon.create({
+        data: {
+          code,
+          name: dto.name,
+          description: dto.description ?? '',
+          plan: dto.plan ?? 'premium',
+          durationDays: dto.durationDays ?? PREMIUM_DURATION_DAYS,
+          maxUses: dto.maxUses ?? 1,
+          isActive: dto.isActive ?? true,
+          startsAt,
+          expiresAt,
+          createdById: adminUserId ?? null,
+        },
+      });
+    } catch (error) {
+      if (isUniqueCodeConflict(error)) {
+        throw new BadRequestException('Coupon code already exists');
+      }
+      throw error;
+    }
 
     return this.toCouponResponse(coupon);
   }
@@ -183,22 +204,30 @@ export class CouponsService {
       );
     }
 
-    const updated = await this.prisma.coupon.update({
-      where: { id: couponId },
-      data: {
-        ...(dto.code ? { code: nextCode } : {}),
-        ...(dto.name ? { name: dto.name } : {}),
-        ...(dto.description !== undefined
-          ? { description: dto.description ?? '' }
-          : {}),
-        ...(dto.maxUses !== undefined ? { maxUses: dto.maxUses } : {}),
-        ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
-        startsAt,
-        expiresAt,
-        durationDays: existing.durationDays || PREMIUM_DURATION_DAYS,
-      },
-      include: { _count: { select: { redemptions: true } } },
-    });
+    let updated;
+    try {
+      updated = await this.prisma.coupon.update({
+        where: { id: couponId },
+        data: {
+          ...(dto.code ? { code: nextCode } : {}),
+          ...(dto.name ? { name: dto.name } : {}),
+          ...(dto.description !== undefined
+            ? { description: dto.description ?? '' }
+            : {}),
+          ...(dto.maxUses !== undefined ? { maxUses: dto.maxUses } : {}),
+          ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
+          startsAt,
+          expiresAt,
+          durationDays: existing.durationDays || PREMIUM_DURATION_DAYS,
+        },
+        include: { _count: { select: { redemptions: true } } },
+      });
+    } catch (error) {
+      if (isUniqueCodeConflict(error)) {
+        throw new BadRequestException('Coupon code already exists');
+      }
+      throw error;
+    }
 
     return this.toCouponResponse(updated, updated._count.redemptions);
   }
@@ -269,12 +298,15 @@ export class CouponsService {
     }));
   }
 
-  async unredeemCoupon(redemptionId: string): Promise<{ unredeemed: boolean }> {
+  async unredeemCoupon(
+    couponId: string,
+    redemptionId: string,
+  ): Promise<{ unredeemed: boolean }> {
     const redemption = await this.prisma.couponRedemption.findUnique({
       where: { id: redemptionId },
     });
 
-    if (!redemption) {
+    if (!redemption || redemption.couponId !== couponId) {
       throw new NotFoundException('Redemption not found');
     }
 

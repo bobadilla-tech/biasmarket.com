@@ -8,6 +8,14 @@ export interface UserPlanInfo {
   isPremium: boolean;
 }
 
+// Reads plan/premiumUntil off the cached better-auth session — fine today
+// because nothing here is a real authorization decision (the backend
+// re-verifies premiumUntil from the DB on every write, never trusts a
+// cached session value) and no cookie-cache/JWT plugin is configured, so
+// session reads hit the DB fresh too. If a future feature gates access on
+// this hook client-side without a server-side re-check, or cookie caching
+// gets enabled later, this becomes a real staleness/bypass path — re-check
+// this assumption before doing either.
 export function useUserPlan(): UserPlanInfo {
   const { data: session } = authClient.useSession();
   const user = session?.user as

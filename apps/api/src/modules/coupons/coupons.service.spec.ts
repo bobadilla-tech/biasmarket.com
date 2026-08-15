@@ -568,7 +568,7 @@ describe('CouponsService', () => {
       }),
     );
 
-    const result = await service.unredeemCoupon('redemption-1');
+    const result = await service.unredeemCoupon('coupon-1', 'redemption-1');
 
     expect(result.unredeemed).toBe(true);
     expect(txDeleteMany).toHaveBeenCalledWith({
@@ -616,7 +616,7 @@ describe('CouponsService', () => {
       }),
     );
 
-    await service.unredeemCoupon('redemption-earlier');
+    await service.unredeemCoupon('coupon-a', 'redemption-earlier');
 
     // Must be recomputed to the remaining coupon's own expiry, not left at
     // the stale stacked total and not wiped to basic.
@@ -658,7 +658,7 @@ describe('CouponsService', () => {
       }),
     );
 
-    await service.unredeemCoupon('redemption-later');
+    await service.unredeemCoupon('coupon-b', 'redemption-later');
 
     expect(txUserUpdate).toHaveBeenCalledWith({
       where: { id: 'user-1' },
@@ -669,8 +669,21 @@ describe('CouponsService', () => {
   it('throws when a redemption is not found', async () => {
     prisma.couponRedemption.findUnique.mockResolvedValue(null);
 
-    await expect(service.unredeemCoupon('missing')).rejects.toThrow(
+    await expect(service.unredeemCoupon('coupon-1', 'missing')).rejects.toThrow(
       NotFoundException,
     );
+  });
+
+  it('throws (L1) when the redemption exists but belongs to a different coupon', async () => {
+    prisma.couponRedemption.findUnique.mockResolvedValue({
+      id: 'redemption-1',
+      couponId: 'coupon-a',
+      userId: 'user-1',
+      expiresAt: new Date('2026-09-13T00:00:00.000Z'),
+    });
+
+    await expect(
+      service.unredeemCoupon('coupon-b', 'redemption-1'),
+    ).rejects.toThrow(NotFoundException);
   });
 });

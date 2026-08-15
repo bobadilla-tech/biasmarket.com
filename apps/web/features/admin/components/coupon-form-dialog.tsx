@@ -66,13 +66,13 @@ export function CouponFormDialog({
       >
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-gray-900">
-            {initialValues ? "Edit coupon" : t("createTitle")}
+            {initialValues ? t("editTitle") : t("createTitle")}
           </h2>
           <button
             type="button"
             onClick={onClose}
             className="rounded-lg px-2 py-1 text-gray-500 transition hover:bg-gray-100"
-            aria-label="Close"
+            aria-label={t("close")}
           >
             ✕
           </button>

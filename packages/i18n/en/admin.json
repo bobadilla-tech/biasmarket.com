@@ -71,6 +71,8 @@
     "title": "Premium coupons",
     "empty": "No coupons created yet.",
     "createTitle": "Create coupon",
+    "editTitle": "Edit coupon",
+    "close": "Close",
     "confirmDelete": "Delete this coupon? Its redemption history will be permanently deleted too — this can't be undone.",
     "form": {
       "code": "Code",
