@@ -2066,6 +2066,7 @@ export const CouponResponseDtoStatus = {
   active: "active",
   inactive: "inactive",
   expired: "expired",
+  scheduled: "scheduled",
 } as const;
 
 export interface CouponResponseDto {

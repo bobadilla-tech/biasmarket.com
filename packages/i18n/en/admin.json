@@ -97,7 +97,8 @@
     "status": {
       "active": "Active",
       "inactive": "Inactive",
-      "expired": "Expired"
+      "expired": "Expired",
+      "scheduled": "Scheduled"
     },
     "redemptions": {
       "title": "Redemptions",

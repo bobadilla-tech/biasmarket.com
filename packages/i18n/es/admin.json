@@ -97,7 +97,8 @@
     "status": {
       "active": "Activo",
       "inactive": "Inactivo",
-      "expired": "Vencido"
+      "expired": "Vencido",
+      "scheduled": "Programado"
     },
     "redemptions": {
       "title": "Canjes",

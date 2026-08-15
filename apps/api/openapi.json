@@ -8360,7 +8360,7 @@
             "type": "boolean"
           },
           "status": {
-            "enum": ["active", "inactive", "expired"],
+            "enum": ["active", "inactive", "expired", "scheduled"],
             "type": "string"
           },
           "startsAt": {

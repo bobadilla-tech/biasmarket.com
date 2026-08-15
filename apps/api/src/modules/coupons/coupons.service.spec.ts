@@ -418,6 +418,36 @@ describe('CouponsService', () => {
     ).rejects.toThrow(BadRequestException);
   });
 
+  it('reports "scheduled" instead of "active" for a coupon whose startsAt is in the future (L8)', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-01T00:00:00.000Z'));
+
+    prisma.coupon.findMany.mockResolvedValue([
+      {
+        id: 'coupon-1',
+        code: 'FUTURE30',
+        name: 'Future coupon',
+        description: '',
+        plan: 'premium',
+        durationDays: 30,
+        maxUses: 1,
+        isActive: true,
+        startsAt: new Date('2026-09-01T00:00:00.000Z'),
+        expiresAt: null,
+        createdAt: new Date('2026-01-01T00:00:00.000Z'),
+        updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+        _count: { redemptions: 0 },
+      },
+    ]);
+
+    try {
+      const result = await service.listCoupons();
+      expect(result[0].status).toBe('scheduled');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('lists coupons with redemption counts', async () => {
     prisma.coupon.findMany.mockResolvedValue([
       {
