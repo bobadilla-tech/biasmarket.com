@@ -16,6 +16,8 @@ import onboardingEn from "./en/onboarding.json" with { type: "json" };
 import onboardingEs from "./es/onboarding.json" with { type: "json" };
 import storefrontEn from "./en/storefront.json" with { type: "json" };
 import storefrontEs from "./es/storefront.json" with { type: "json" };
+import couponsEn from "./en/coupons.json" with { type: "json" };
+import couponsEs from "./es/coupons.json" with { type: "json" };
 
 const messages = {
   en: {
@@ -28,6 +30,7 @@ const messages = {
     dashboard: dashboardEn,
     onboarding: onboardingEn,
     storefront: storefrontEn,
+    coupons: couponsEn,
   },
   es: {
     admin: adminEs,
@@ -39,6 +42,7 @@ const messages = {
     dashboard: dashboardEs,
     onboarding: onboardingEs,
     storefront: storefrontEs,
+    coupons: couponsEs,
   },
 } as const;
 

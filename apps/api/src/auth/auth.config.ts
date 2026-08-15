@@ -89,6 +89,25 @@ export const createAuth = (
         adminRoles: ['admin'],
       }),
     ],
+    user: {
+      additionalFields: {
+        // Expose the coupon-granted plan/expiry on the session so the
+        // frontend can show premium status (e.g. "You're premium until …").
+        // Read-only from the client's perspective — always updated server-side
+        // by coupon redemption, never accepted from signup/patch requests.
+        plan: {
+          type: 'string',
+          required: false,
+          defaultValue: 'basic',
+          input: false,
+        },
+        premiumUntil: {
+          type: 'string',
+          required: false,
+          input: false,
+        },
+      },
+    },
     trustedOrigins: [process.env.WEB_URL ?? 'http://localhost:3001'],
     // Better-auth mounts its handler via `httpAdapter.use()` inside its own
     // module's `onModuleInit` (raw Express middleware, before Nest's router

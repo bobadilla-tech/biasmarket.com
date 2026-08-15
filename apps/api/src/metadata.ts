@@ -65,6 +65,8 @@ export default async () => {
       await import('./modules/whatsapp-templates/dto/whatsapp-template-response.dto.js'),
     ['./modules/addresses/dto/address-response.dto.js']:
       await import('./modules/addresses/dto/address-response.dto.js'),
+    ['./modules/coupons/dto/coupon.dto.js']:
+      await import('./modules/coupons/dto/coupon.dto.js'),
   };
   return {
     '@nestjs/swagger': {
@@ -2145,6 +2147,86 @@ export default async () => {
             },
           },
         ],
+        [
+          import('./modules/coupons/dto/coupon.dto.js'),
+          {
+            CreateCouponDto: {
+              code: {
+                required: true,
+                type: () => String,
+                minLength: 4,
+                maxLength: 8,
+                pattern: '^[A-Za-z0-9]+$',
+              },
+              name: { required: true, type: () => String },
+              description: { required: false, type: () => String },
+              plan: { required: false, type: () => String },
+              durationDays: { required: false, type: () => Number, minimum: 1 },
+              maxUses: {
+                required: false,
+                type: () => Number,
+                default: 1,
+                minimum: 1,
+              },
+              isActive: { required: false, type: () => Boolean },
+              startsAt: { required: false, type: () => String },
+              expiresAt: { required: false, type: () => String },
+            },
+            UpdateCouponDto: {
+              code: {
+                required: false,
+                type: () => String,
+                minLength: 4,
+                maxLength: 8,
+                pattern: '^[A-Za-z0-9]+$',
+              },
+              name: { required: false, type: () => String },
+              description: { required: false, type: () => String },
+              maxUses: { required: false, type: () => Number, minimum: 1 },
+              startsAt: { required: false, type: () => String },
+              expiresAt: { required: false, type: () => String },
+              isActive: { required: false, type: () => Boolean },
+            },
+            RedeemCouponDto: {
+              code: {
+                required: true,
+                type: () => String,
+                minLength: 4,
+                maxLength: 8,
+                pattern: '^[A-Za-z0-9]+$',
+              },
+            },
+            CouponResponseDto: {
+              id: { required: true, type: () => String },
+              code: { required: true, type: () => String },
+              name: { required: true, type: () => String },
+              description: { required: true, type: () => String },
+              plan: { required: true, type: () => String },
+              durationDays: { required: true, type: () => Number },
+              maxUses: { required: true, type: () => Number },
+              isActive: { required: true, type: () => Boolean },
+              status: {
+                required: true,
+                enum: ['active', 'inactive', 'expired', 'scheduled'],
+              },
+              startsAt: { required: true, type: () => String, nullable: true },
+              expiresAt: { required: true, type: () => String, nullable: true },
+              createdAt: { required: true, type: () => String },
+              updatedAt: { required: true, type: () => String },
+              redemptionCount: { required: true, type: () => Number },
+            },
+            CouponRedemptionResponseDto: {
+              id: { required: true, type: () => String },
+              couponId: { required: true, type: () => String },
+              userId: { required: true, type: () => String },
+              userEmail: { required: true, type: () => String },
+              userName: { required: true, type: () => String },
+              storeSlug: { required: true, type: () => String, nullable: true },
+              redeemedAt: { required: true, type: () => String },
+              expiresAt: { required: true, type: () => String },
+            },
+          },
+        ],
       ],
       controllers: [
         [import('./app.controller.js'), { AppController: { root: {} } }],
@@ -2839,6 +2921,46 @@ export default async () => {
               },
             },
           },
+        ],
+        [
+          import('./modules/coupons/coupons.controller.js'),
+          {
+            CouponsController: {
+              createCoupon: {
+                type: t['./modules/coupons/dto/coupon.dto.js']
+                  .CouponResponseDto,
+              },
+              listCoupons: {
+                type: [
+                  t['./modules/coupons/dto/coupon.dto.js'].CouponResponseDto,
+                ],
+              },
+              getRedemptions: {
+                type: [
+                  t['./modules/coupons/dto/coupon.dto.js']
+                    .CouponRedemptionResponseDto,
+                ],
+              },
+              updateCoupon: {
+                type: t['./modules/coupons/dto/coupon.dto.js']
+                  .CouponResponseDto,
+              },
+              deleteCoupon: {},
+              toggleCouponStatus: {
+                type: t['./modules/coupons/dto/coupon.dto.js']
+                  .CouponResponseDto,
+              },
+              unredeemCoupon: {},
+              redeemCoupon: {
+                type: t['./modules/coupons/dto/coupon.dto.js']
+                  .CouponRedemptionResponseDto,
+              },
+            },
+          },
+        ],
+        [
+          import('./modules/coupons/internal-premium-jobs.controller.js'),
+          { InternalPremiumJobsController: { expireSweep: {} } },
         ],
       ],
     },

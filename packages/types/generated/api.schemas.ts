@@ -2040,6 +2040,91 @@ export interface IncidentListResponseDto {
   limit: number;
 }
 
+export interface CreateCouponDto {
+  /**
+   * @minLength 4
+   * @maxLength 8
+   * @pattern ^[A-Za-z0-9]+$
+   */
+  code: string;
+  name: string;
+  description?: string;
+  plan?: string;
+  /** @minimum 1 */
+  durationDays?: number;
+  /** @minimum 1 */
+  maxUses?: number;
+  isActive?: boolean;
+  startsAt?: string;
+  expiresAt?: string;
+}
+
+export type CouponResponseDtoStatus =
+  (typeof CouponResponseDtoStatus)[keyof typeof CouponResponseDtoStatus];
+
+export const CouponResponseDtoStatus = {
+  active: "active",
+  inactive: "inactive",
+  expired: "expired",
+  scheduled: "scheduled",
+} as const;
+
+export interface CouponResponseDto {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  plan: string;
+  durationDays: number;
+  maxUses: number;
+  isActive: boolean;
+  status: CouponResponseDtoStatus;
+  /** @nullable */
+  startsAt: string | null;
+  /** @nullable */
+  expiresAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  redemptionCount: number;
+}
+
+export interface CouponRedemptionResponseDto {
+  id: string;
+  couponId: string;
+  userId: string;
+  userEmail: string;
+  userName: string;
+  /** @nullable */
+  storeSlug: string | null;
+  redeemedAt: string;
+  expiresAt: string;
+}
+
+export interface UpdateCouponDto {
+  /**
+   * @minLength 4
+   * @maxLength 8
+   * @pattern ^[A-Za-z0-9]+$
+   */
+  code?: string;
+  name?: string;
+  description?: string;
+  /** @minimum 1 */
+  maxUses?: number;
+  startsAt?: string;
+  expiresAt?: string;
+  isActive?: boolean;
+}
+
+export interface RedeemCouponDto {
+  /**
+   * @minLength 4
+   * @maxLength 8
+   * @pattern ^[A-Za-z0-9]+$
+   */
+  code: string;
+}
+
 export type StoresControllerfindPublicSitemapPageParams = {
   offset: string;
   limit: string;

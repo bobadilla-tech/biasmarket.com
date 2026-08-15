@@ -1,0 +1,18 @@
+{
+  "redeem": {
+    "placeholder": "Código de cupón",
+    "redeem": "Canjear cupón",
+    "redeeming": "Canjeando...",
+    "success": "¡Premium activado! Serás premium hasta el {date}.",
+    "premiumUntil": "Eres miembro premium hasta el {date}.",
+    "errors": {
+      "notFound": "Ese cupón no existe.",
+      "inactive": "Este cupón ya no está activo.",
+      "notAvailable": "Este cupón aún no está disponible. Revisa la fecha de inicio.",
+      "expired": "Este cupón ha vencido.",
+      "alreadyRedeemed": "Ya usaste este cupón.",
+      "maxUses": "Este cupón alcanzó su límite de usos.",
+      "generic": "Ocurrió un error al canjear el cupón. Inténtalo de nuevo."
+    }
+  }
+}

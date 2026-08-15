@@ -690,7 +690,11 @@
       "submitting": "Actualizando...",
       "saved": "Contraseña actualizada"
     },
-    "signOut": "Cerrar sesión"
+    "signOut": "Cerrar sesión",
+    "redeemCoupon": {
+      "title": "Canjear un cupón",
+      "description": "¿Tienes un código promocional? Cánjéalo aquí para activar tu plan premium."
+    }
   },
   "restock": {
     "title": "Interesados en reposición",

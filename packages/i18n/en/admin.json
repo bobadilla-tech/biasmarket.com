@@ -3,6 +3,7 @@
     "admin": "Admin",
     "inquiries": "Inquiries",
     "stores": "Stores",
+    "coupons": "Coupons",
     "users": "Users",
     "comingSoon": "Soon",
     "signOut": "Sign out"
@@ -64,6 +65,48 @@
     "actions": {
       "ban": "Ban",
       "unban": "Unban"
+    }
+  },
+  "coupons": {
+    "title": "Premium coupons",
+    "empty": "No coupons created yet.",
+    "createTitle": "Create coupon",
+    "editTitle": "Edit coupon",
+    "close": "Close",
+    "confirmDelete": "Delete this coupon? Its redemption history will be permanently deleted too — this can't be undone.",
+    "form": {
+      "code": "Code",
+      "name": "Name",
+      "description": "Description",
+      "durationDays": "Duration (days)",
+      "maxUses": "Max uses",
+      "startsAt": "Starts at",
+      "expiresAt": "Ends at",
+      "active": "Active",
+      "submit": "Create coupon"
+    },
+    "table": {
+      "code": "Code",
+      "name": "Name",
+      "status": "Status",
+      "duration": "Duration",
+      "uses": "Uses",
+      "created": "Created",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "expired": "Expired",
+      "scheduled": "Scheduled"
+    },
+    "redemptions": {
+      "title": "Redemptions",
+      "empty": "No redemptions yet for this coupon.",
+      "user": "User",
+      "email": "Email",
+      "redeemedAt": "Redeemed",
+      "expiresAt": "Premium until"
     }
   }
 }

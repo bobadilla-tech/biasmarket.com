@@ -24,6 +24,7 @@ import { RestockModule } from './modules/restock/restock.module.js';
 import { WhatsappTemplatesModule } from './modules/whatsapp-templates/whatsapp-templates.module.js';
 import { AddressesModule } from './modules/addresses/addresses.module.js';
 import { MonitoringModule } from './modules/monitoring/monitoring.module.js';
+import { CouponsModule } from './modules/coupons/coupons.module.js';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { MonitoringModule } from './modules/monitoring/monitoring.module.js';
     WhatsappTemplatesModule,
     AddressesModule,
     MonitoringModule,
+    CouponsModule,
   ],
   controllers: [AppController],
 })

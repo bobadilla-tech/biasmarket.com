@@ -1,0 +1,18 @@
+{
+  "redeem": {
+    "placeholder": "Coupon code",
+    "redeem": "Redeem coupon",
+    "redeeming": "Redeeming...",
+    "success": "Premium activated! You're premium until {date}.",
+    "premiumUntil": "You're a premium member until {date}.",
+    "errors": {
+      "notFound": "That coupon doesn't exist.",
+      "inactive": "This coupon is no longer active.",
+      "notAvailable": "This coupon isn't available yet. Check the start date.",
+      "expired": "This coupon has expired.",
+      "alreadyRedeemed": "You've already used this coupon.",
+      "maxUses": "This coupon has reached its usage limit.",
+      "generic": "Something went wrong redeeming the coupon. Try again."
+    }
+  }
+}

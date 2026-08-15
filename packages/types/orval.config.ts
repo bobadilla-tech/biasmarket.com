@@ -54,6 +54,7 @@ export default defineConfig({
           "WhatsappTemplates",
           "Addresses",
           "Monitoring",
+          "Coupons",
         ],
       },
     },
