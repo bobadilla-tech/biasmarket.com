@@ -70,7 +70,10 @@ phase=$phase
 timestamp=$(date -u +%FT%TZ)
 EOF
 )
-  atomic_write "$LAST_DEPLOY_RESULT_FILE" "$content"
+  # Keep each field on its own line.  atomic_write intentionally preserves
+  # the supplied bytes, and command substitution strips the heredoc's final
+  # newline, so add it explicitly for the line-oriented waiter/grep below.
+  atomic_write "$LAST_DEPLOY_RESULT_FILE" "${content}"$'\n'
 }
 
 append_history() {
