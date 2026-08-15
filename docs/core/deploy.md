@@ -21,6 +21,11 @@ push/merge to main
 The CD workflow only deploys successful `push` runs from this repository's
 `main` branch. Pull requests and fork workflow runs cannot deploy.
 
+Automated CD passes `--force` to the restricted deploy command so rapid
+successive merges do not wait for the older benched release's 30-minute cleanup
+window. The currently live color remains the rollback target after a
+successful cutover; only the older benched release is discarded.
+
 Required production configuration is in the GitHub `production` environment:
 
 - `DEPLOY_SSH_HOST`

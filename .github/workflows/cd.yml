@@ -185,10 +185,14 @@ jobs:
       # returns immediately, so this step finishes in seconds regardless of
       # how long the actual deploy takes — see
       # infra/vps/bin/ssh-deploy-dispatcher.sh.
+      # --force is intentional for automated blue/green releases: a rapid
+      # successive merge may arrive while the older benched release is still
+      # inside its 30-minute cleanup window. The current live color remains
+      # the rollback target after a successful cutover.
       - name: Launch deploy (detached)
         run: |
           ssh -i ~/.ssh/deploy_dispatch_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" \
-            "deploy.sh ${{ needs.gate.outputs.head_sha }}"
+            "deploy.sh ${{ needs.gate.outputs.head_sha }} --force"
 
       # A SEPARATE SSH call from the one above, polling
       # state/last_deploy_result (deploy.sh's secret-free completion

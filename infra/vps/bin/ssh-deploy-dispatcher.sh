@@ -7,7 +7,7 @@
 #
 # $SSH_ORIGINAL_COMMAND is matched against a strict, anchored allowlist
 # below and NEVER eval'd:
-#   - `deploy.sh <40-hex-sha>` / `--rollback` / `--cleanup` — the three
+#   - `deploy.sh <40-hex-sha> [--force]` / `--rollback` / `--cleanup` — the three
 #     deploy-triggering shapes from the plan, launched detached (see
 #     launch() below).
 #   - `deploy.sh --print-current-sha` — read-only, synchronous, no lock/
@@ -21,11 +21,9 @@
 #     arbitrary polling shell loop over the launching SSH call — cd.yml
 #     instead opens a SEPARATE SSH call for this after the (detached)
 #     deploy has been launched.
-# Anything else is rejected outright. Manual
-# break-glass operations (--force, --i-understand-this-is-destructive,
-# --bootstrap) are deliberately NOT reachable through this dispatcher — an
-# operator wanting those runs deploy.sh directly from an interactive shell
-# on the VPS, not over this restricted key.
+# Anything else is rejected outright. The dispatcher exposes only the
+# narrowly-scoped --force needed by automated rapid successive deployments;
+# destructive migration override and bootstrap remain manual-only.
 #
 # Launches deploy.sh detached from this SSH session (setsid, backgrounded,
 # dispatcher exits immediately) so an ordinary network blip between the
@@ -77,9 +75,15 @@ launch() {
   fi
 }
 
-if [[ "$cmd" =~ ^deploy\.sh\ ([0-9a-f]{40})$ ]]; then
+if [[ "$cmd" =~ ^deploy\.sh\ ([0-9a-f]{40})(\ --force)?$ ]]; then
   sha="${BASH_REMATCH[1]}"
-  launch "deploy sha=$sha" "$sha"
+  args=("$sha")
+  label="deploy sha=$sha"
+  if [[ -n "${BASH_REMATCH[2]}" ]]; then
+    args+=(--force)
+    label+=" --force"
+  fi
+  launch "$label" "${args[@]}"
 elif [[ "$cmd" == "deploy.sh --rollback" ]]; then
   launch "rollback" --rollback
 elif [[ "$cmd" == "deploy.sh --cleanup" ]]; then
@@ -92,7 +96,7 @@ elif [[ "$cmd" =~ ^deploy\.sh\ --wait-for-result\ ([0-9a-f]{40})\ ([0-9]{1,5})$ 
   # deploy launched by a prior call finishes or the timeout elapses.
   exec "$DEPLOY_ROOT/deploy.sh" --wait-for-result "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}"
 else
-  echo "rejected: '\$SSH_ORIGINAL_COMMAND' does not match the allowlist (deploy.sh <40-hex-sha> | --rollback | --cleanup | --print-current-sha | --wait-for-result <sha> <seconds>)" >&2
+  echo "rejected: '\$SSH_ORIGINAL_COMMAND' does not match the allowlist (deploy.sh <40-hex-sha> [--force] | --rollback | --cleanup | --print-current-sha | --wait-for-result <sha> <seconds>)" >&2
   exit 1
 fi
 
