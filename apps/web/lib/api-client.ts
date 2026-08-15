@@ -5,6 +5,7 @@ import {
   collections,
   configureApiClient,
   contact,
+  coupons,
   customerAccount,
   customerAuth,
   customers,
@@ -32,7 +33,8 @@ import {
 // browser-reachable fallback. During local development we default to
 // http://localhost:3000 so the `api` app can be run separately without
 // setting env vars.
-const API_URL = process.env.INTERNAL_API_URL ??
+const API_URL =
+  process.env.INTERNAL_API_URL ??
   process.env.NEXT_PUBLIC_API_URL ??
   (process.env.NODE_ENV === "development"
     ? "http://localhost:3000"
@@ -73,4 +75,5 @@ export const apiClient = {
   restock,
   whatsappTemplates,
   addresses,
+  coupons,
 };

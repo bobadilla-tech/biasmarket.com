@@ -1,52 +1,56 @@
 import { afterEach, expect, test, vi } from "vitest";
 
-const fetchMock = vi.fn();
-vi.stubGlobal("fetch", fetchMock);
+const couponsMock = {
+  listCoupons: vi.fn(),
+  createCoupon: vi.fn(),
+  updateCoupon: vi.fn(),
+  toggleCouponStatus: vi.fn(),
+  deleteCoupon: vi.fn(),
+  getRedemptions: vi.fn(),
+  unredeemCoupon: vi.fn(),
+};
+
+vi.mock("@/lib/api-client", () => ({
+  apiClient: { coupons: couponsMock },
+}));
 
 const { adminCouponsApi } = await import("./admin-coupons.api");
 
 afterEach(() => {
-  fetchMock.mockReset();
+  vi.clearAllMocks();
 });
-
-function okResponse(body: unknown = {}) {
-  return {
-    ok: true,
-    json: () => Promise.resolve(body),
-  };
-}
 
 function malformedId(): string {
   // Deliberately inject path segments / query params to probe traversal.
   return "coupon-1/../../admin/users?x=1";
 }
 
-test("update rejects a non-alphanumeric couponId without fetching", async () => {
+test("update rejects a non-alphanumeric couponId without calling the client", async () => {
   await expect(
     adminCouponsApi.update(malformedId(), { name: "X" }),
   ).rejects.toThrow("Invalid coupon id");
-  expect(fetchMock).not.toHaveBeenCalled();
+  expect(couponsMock.updateCoupon).not.toHaveBeenCalled();
 });
 
-test("toggleStatus rejects a non-alphanumeric couponId without fetching", async () => {
+test("toggleStatus rejects a non-alphanumeric couponId without calling the client", async () => {
   await expect(adminCouponsApi.toggleStatus(malformedId())).rejects.toThrow(
     "Invalid coupon id",
   );
-  expect(fetchMock).not.toHaveBeenCalled();
+  expect(couponsMock.toggleCouponStatus).not.toHaveBeenCalled();
 });
 
-test("delete rejects a non-alphanumeric couponId without fetching", async () => {
+test("delete rejects a non-alphanumeric couponId without calling the client", async () => {
   await expect(adminCouponsApi.delete(malformedId())).rejects.toThrow(
     "Invalid coupon id",
   );
-  expect(fetchMock).not.toHaveBeenCalled();
+  expect(couponsMock.deleteCoupon).not.toHaveBeenCalled();
 });
 
-test("listRedemptions rejects a non-alphanumeric couponId without fetching", async () => {
+test("listRedemptions rejects a non-alphanumeric couponId without calling the client", async () => {
   await expect(adminCouponsApi.listRedemptions(malformedId())).rejects.toThrow(
     "Invalid coupon id",
   );
-  expect(fetchMock).not.toHaveBeenCalled();
+  expect(couponsMock.getRedemptions).not.toHaveBeenCalled();
 });
 
 test("unredeem rejects a non-alphanumeric couponId or redemptionId", async () => {
@@ -56,27 +60,28 @@ test("unredeem rejects a non-alphanumeric couponId or redemptionId", async () =>
   await expect(
     adminCouponsApi.unredeem("validcouponid", malformedId()),
   ).rejects.toThrow("Invalid redemption id");
-  expect(fetchMock).not.toHaveBeenCalled();
+  expect(couponsMock.unredeemCoupon).not.toHaveBeenCalled();
 });
 
 test("unredeem forwards a valid alphanumeric coupon and redemption id", async () => {
-  fetchMock.mockResolvedValueOnce(okResponse({ unredeemed: true }));
+  couponsMock.unredeemCoupon.mockResolvedValueOnce(undefined);
 
-  const result = await adminCouponsApi.unredeem("coupon1A", "redemption1B");
+  await adminCouponsApi.unredeem("coupon1A", "redemption1B");
 
-  expect(fetchMock).toHaveBeenCalledTimes(1);
-  const [url] = fetchMock.mock.calls[0];
-  expect(url).toContain("/coupons/coupon1A/redemptions/redemption1B/unredeem");
-  expect(result).toEqual({ unredeemed: true });
+  expect(couponsMock.unredeemCoupon).toHaveBeenCalledWith(
+    "coupon1A",
+    "redemption1B",
+    { fallbackErrorMessage: undefined },
+  );
 });
 
-test("list forwards a valid alphanumeric coupon id", async () => {
-  fetchMock.mockResolvedValueOnce(okResponse([]));
+test("list forwards to the generated client", async () => {
+  couponsMock.listCoupons.mockResolvedValueOnce([]);
 
   const result = await adminCouponsApi.list();
 
-  expect(fetchMock).toHaveBeenCalledTimes(1);
-  const [url] = fetchMock.mock.calls[0];
-  expect(url).toContain("/api/admin/coupons");
+  expect(couponsMock.listCoupons).toHaveBeenCalledWith({
+    fallbackErrorMessage: undefined,
+  });
   expect(result).toEqual([]);
 });

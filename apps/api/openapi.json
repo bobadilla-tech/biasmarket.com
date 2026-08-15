@@ -3824,6 +3824,229 @@
         },
         "tags": ["Monitoring"]
       }
+    },
+    "/admin/coupons": {
+      "post": {
+        "operationId": "CouponsController_createCoupon",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCouponDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CouponResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Coupons"]
+      },
+      "get": {
+        "operationId": "CouponsController_listCoupons",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CouponResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Coupons"]
+      }
+    },
+    "/admin/coupons/{couponId}/redemptions": {
+      "get": {
+        "operationId": "CouponsController_getRedemptions",
+        "parameters": [
+          {
+            "name": "couponId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CouponRedemptionResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Coupons"]
+      }
+    },
+    "/admin/coupons/{couponId}": {
+      "patch": {
+        "operationId": "CouponsController_updateCoupon",
+        "parameters": [
+          {
+            "name": "couponId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCouponDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CouponResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Coupons"]
+      },
+      "delete": {
+        "operationId": "CouponsController_deleteCoupon",
+        "parameters": [
+          {
+            "name": "couponId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": ["Coupons"]
+      }
+    },
+    "/admin/coupons/{couponId}/status": {
+      "patch": {
+        "operationId": "CouponsController_toggleCouponStatus",
+        "parameters": [
+          {
+            "name": "couponId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CouponResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Coupons"]
+      }
+    },
+    "/admin/coupons/{couponId}/redemptions/{redemptionId}/unredeem": {
+      "post": {
+        "operationId": "CouponsController_unredeemCoupon",
+        "parameters": [
+          {
+            "name": "couponId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "redemptionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": ["Coupons"]
+      }
+    },
+    "/coupons/redeem": {
+      "post": {
+        "operationId": "CouponsController_redeemCoupon",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RedeemCouponDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CouponRedemptionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Coupons"]
+      }
     }
   },
   "info": {
@@ -8069,6 +8292,193 @@
           }
         },
         "required": ["incidents", "total", "page", "limit"]
+      },
+      "CreateCouponDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 4,
+            "maxLength": 8,
+            "pattern": "^[A-Za-z0-9]+$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "plan": {
+            "type": "string"
+          },
+          "durationDays": {
+            "type": "number",
+            "minimum": 1
+          },
+          "maxUses": {
+            "type": "number",
+            "default": 1,
+            "minimum": 1
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "startsAt": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string"
+          }
+        },
+        "required": ["code", "name"]
+      },
+      "CouponResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "plan": {
+            "type": "string"
+          },
+          "durationDays": {
+            "type": "number"
+          },
+          "maxUses": {
+            "type": "number"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "status": {
+            "enum": ["active", "inactive", "expired"],
+            "type": "string"
+          },
+          "startsAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "expiresAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          },
+          "redemptionCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "description",
+          "plan",
+          "durationDays",
+          "maxUses",
+          "isActive",
+          "status",
+          "startsAt",
+          "expiresAt",
+          "createdAt",
+          "updatedAt",
+          "redemptionCount"
+        ]
+      },
+      "CouponRedemptionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "couponId": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "userEmail": {
+            "type": "string"
+          },
+          "userName": {
+            "type": "string"
+          },
+          "storeSlug": {
+            "type": "string",
+            "nullable": true
+          },
+          "redeemedAt": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "couponId",
+          "userId",
+          "userEmail",
+          "userName",
+          "storeSlug",
+          "redeemedAt",
+          "expiresAt"
+        ]
+      },
+      "UpdateCouponDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 4,
+            "maxLength": 8,
+            "pattern": "^[A-Za-z0-9]+$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "maxUses": {
+            "type": "number",
+            "minimum": 1
+          },
+          "startsAt": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        }
+      },
+      "RedeemCouponDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 4,
+            "maxLength": 8,
+            "pattern": "^[A-Za-z0-9]+$"
+          }
+        },
+        "required": ["code"]
       }
     }
   }

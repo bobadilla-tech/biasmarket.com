@@ -91,7 +91,7 @@ export function AdminCouponsPageClient() {
     // Deleting a coupon cascades away every CouponRedemption row for it (see
     // the schema's onDelete: Cascade) — there's no soft-delete, so this is
     // the only guard against losing that audit trail by accident.
-    if (!window.confirm(t("confirmDelete"))) return;
+    if (!globalThis.confirm(t("confirmDelete"))) return;
     await deleteCoupon.mutateAsync(couponId);
     if (selectedCouponId === couponId) {
       setSelectedCouponId(null);
