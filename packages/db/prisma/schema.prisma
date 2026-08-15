@@ -52,7 +52,6 @@ model Coupon {
 
   @@index([isActive])
   @@index([plan])
-  @@index([code])
 }
 
 model CouponRedemption {
@@ -66,8 +65,10 @@ model CouponRedemption {
   coupon Coupon @relation(fields: [couponId], references: [id], onDelete: Cascade)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // couponId-only lookups (e.g. redeemCoupon's count()) are already served by
+  // @@unique([couponId, userId])'s leftmost-prefix index — no standalone
+  // @@index([couponId]) needed (L6).
   @@unique([couponId, userId])
-  @@index([couponId])
   @@index([userId])
 }
 
