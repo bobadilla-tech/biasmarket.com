@@ -23,8 +23,8 @@ The CD workflow only deploys successful `push` runs from this repository's
 
 Automated CD passes `--force` to the restricted deploy command so rapid
 successive merges do not wait for the older benched release's 30-minute cleanup
-window. The currently live color remains the rollback target after a
-successful cutover; only the older benched release is discarded.
+window. The currently live color remains the rollback target after a successful
+cutover; only the older benched release is discarded.
 
 Required production configuration is in the GitHub `production` environment:
 
