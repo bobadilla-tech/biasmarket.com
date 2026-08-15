@@ -129,6 +129,84 @@ describe('CouponsService', () => {
     expect(txUserUpdate).toHaveBeenCalled();
   });
 
+  it('stacks the new duration on top of remaining premium time', async () => {
+    const coupon = {
+      id: 'coupon-1',
+      code: 'PREMIUM30',
+      name: 'Premium 30 days',
+      description: '',
+      plan: 'premium',
+      durationDays: 30,
+      maxUses: 2,
+      isActive: true,
+      startsAt: null,
+      expiresAt: null,
+      redemptions: [],
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+    };
+
+    // User already has premium active until Sep 12, 2026 (10 days from now on
+    // the mocked "now"). Redeeming a 30-day coupon should extend to Oct 12,
+    // stacking on the remaining window rather than resetting from today.
+    const existingUntil = new Date('2026-09-12T00:00:00.000Z');
+    const expectedExpiry = new Date(
+      existingUntil.getTime() + 30 * 24 * 60 * 60 * 1000,
+    );
+    const expectedExpiryIso = expectedExpiry.toISOString();
+
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-02T00:00:00.000Z'));
+
+    prisma.coupon.findUnique.mockResolvedValue(coupon);
+    prisma.couponRedemption.findUnique.mockResolvedValue(null);
+    prisma.user.findUnique.mockResolvedValue({ premiumUntil: existingUntil });
+
+    const txCouponRedemptionCreate = vi.fn().mockResolvedValue({
+      id: 'redemption-2',
+      couponId: 'coupon-1',
+      userId: 'user-1',
+      redeemedAt: new Date('2026-09-02T00:00:00.000Z'),
+      expiresAt: expectedExpiry,
+      user: {
+        id: 'user-1',
+        email: 'demo@example.com',
+        name: 'Demo User',
+        stores: [],
+      },
+    });
+    const txUserUpdate = vi.fn().mockResolvedValue({ id: 'user-1' });
+
+    prisma.$transaction.mockImplementation(async (callback) =>
+      callback({
+        couponRedemption: {
+          create: txCouponRedemptionCreate,
+        },
+        user: {
+          update: txUserUpdate,
+        },
+      }),
+    );
+
+    try {
+      const result = await service.redeemCoupon({ code: 'premium30' }, {
+        user: { id: 'user-1' },
+      } as never);
+
+      expect(result.expiresAt).toBe(expectedExpiryIso);
+      // The user update must stack on the existing premium window, not reset.
+      expect(txUserUpdate).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: {
+          plan: 'premium',
+          premiumUntil: expectedExpiry,
+        },
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('lists coupons with redemption counts', async () => {
     prisma.coupon.findMany.mockResolvedValue([
       {

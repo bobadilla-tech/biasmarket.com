@@ -357,8 +357,17 @@ export class CouponsService {
       throw new UnauthorizedException('User not found');
     }
 
+    // Stack the new duration on top of any remaining premium time instead of
+    // resetting the window from now. If the user already has an active plan
+    // (premiumUntil in the future), the new expiry is extended from there;
+    // otherwise it runs from the current time.
+    const existingUntil = user.premiumUntil;
+    const base =
+      existingUntil && existingUntil.getTime() > now.getTime()
+        ? existingUntil.getTime()
+        : now.getTime();
     const premiumUntil = new Date(
-      now.getTime() + coupon.durationDays * 24 * 60 * 60 * 1000,
+      base + coupon.durationDays * 24 * 60 * 60 * 1000,
     );
 
     const redemption = await this.prisma.$transaction(async (tx) => {
