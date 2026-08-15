@@ -1,12 +1,12 @@
-import { Injectable } from "@nestjs/common";
-import { InjectQueue } from "@nestjs/bullmq";
-import type { Queue } from "bullmq";
+import { Injectable } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import type { Queue } from 'bullmq';
 import {
   MAILER_JOB_NAME,
   QUEUE_NAMES,
   type SendEmailParams,
   sendEmailParamsSchema,
-} from "@biasmarket/queue";
+} from '@biasmarket/queue';
 
 @Injectable()
 export class MailerService {

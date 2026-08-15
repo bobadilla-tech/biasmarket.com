@@ -6,17 +6,17 @@ import {
   Param,
   Post,
   UseGuards,
-} from "@nestjs/common";
-import { AuthGuard, Public, Session } from "@thallesp/nestjs-better-auth";
-import type { UserSession } from "@thallesp/nestjs-better-auth";
-import { DeliveryConfigService } from "./delivery-config.service.js";
-import { UpsertDeliveryMethodDto } from "./dto/upsert-delivery-method.dto.js";
-import type { DeliveryMethodConfigResponseDto } from "./dto/delivery-method-response.dto.js";
+} from '@nestjs/common';
+import { AuthGuard, Public, Session } from '@thallesp/nestjs-better-auth';
+import type { UserSession } from '@thallesp/nestjs-better-auth';
+import { DeliveryConfigService } from './delivery-config.service.js';
+import { UpsertDeliveryMethodDto } from './dto/upsert-delivery-method.dto.js';
+import type { DeliveryMethodConfigResponseDto } from './dto/delivery-method-response.dto.js';
 
 interface DeliveryMethodConfigRow {
   id: string;
   storeId: string;
-  type: "PICKUP" | "COURIER";
+  type: 'PICKUP' | 'COURIER';
   enabled: boolean;
   details: unknown;
   createdAt: Date;
@@ -32,14 +32,14 @@ function toDeliveryMethodDto(
   };
 }
 
-@Controller("stores/:storeId/delivery-methods")
+@Controller('stores/:storeId/delivery-methods')
 @UseGuards(AuthGuard)
 export class DeliveryConfigController {
   constructor(private deliveryConfig: DeliveryConfigService) {}
 
   @Get()
   async findAll(
-    @Param("storeId") storeId: string,
+    @Param('storeId') storeId: string,
     @Session() session: UserSession,
   ): Promise<DeliveryMethodConfigResponseDto[]> {
     const rows = await this.deliveryConfig.findAllForStore(
@@ -51,7 +51,7 @@ export class DeliveryConfigController {
 
   @Post()
   async upsert(
-    @Param("storeId") storeId: string,
+    @Param('storeId') storeId: string,
     @Session() session: UserSession,
     @Body() dto: UpsertDeliveryMethodDto,
   ): Promise<DeliveryMethodConfigResponseDto> {
@@ -59,10 +59,10 @@ export class DeliveryConfigController {
     return toDeliveryMethodDto(row);
   }
 
-  @Delete(":type")
+  @Delete(':type')
   async remove(
-    @Param("storeId") storeId: string,
-    @Param("type") type: "PICKUP" | "COURIER",
+    @Param('storeId') storeId: string,
+    @Param('type') type: 'PICKUP' | 'COURIER',
     @Session() session: UserSession,
   ): Promise<DeliveryMethodConfigResponseDto> {
     const row = await this.deliveryConfig.remove(
@@ -74,14 +74,14 @@ export class DeliveryConfigController {
   }
 }
 
-@Controller("stores/:slug/public/delivery-methods")
+@Controller('stores/:slug/public/delivery-methods')
 export class PublicDeliveryConfigController {
   constructor(private deliveryConfig: DeliveryConfigService) {}
 
   @Public()
   @Get()
   async findEnabled(
-    @Param("slug") slug: string,
+    @Param('slug') slug: string,
   ): Promise<DeliveryMethodConfigResponseDto[]> {
     const rows = await this.deliveryConfig.findEnabledForSlug(slug);
     return rows.map(toDeliveryMethodDto);

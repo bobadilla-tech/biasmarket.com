@@ -27,6 +27,26 @@ const nextConfig: NextConfig = {
     // is the source of truth instead.
     ignoreBuildErrors: true,
   },
+  async rewrites() {
+    return [
+      {
+        source: "/sitemap/:id.xml",
+        destination: "/sitemap-legacy/:id.xml",
+      },
+      {
+        source: "/sitemap-static-:id.xml",
+        destination: "/sitemap/static/:id.xml",
+      },
+      {
+        source: "/sitemap-stores-:id.xml",
+        destination: "/sitemap/stores/:id.xml",
+      },
+      {
+        source: "/sitemap-blog-:id.xml",
+        destination: "/sitemap/blog/:id.xml",
+      },
+    ];
+  },
 };
 
 export default withNextIntl(nextConfig);

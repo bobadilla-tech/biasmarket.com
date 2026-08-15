@@ -1,10 +1,10 @@
-import { Test, type TestingModule } from "@nestjs/testing";
-import { ForbiddenException, NotFoundException } from "@nestjs/common";
-import { type Mock, vi } from "vitest";
-import { PickupPointsService } from "./pickup-points.service.js";
-import { PrismaService } from "../../prisma/prisma.service.js";
+import { Test, type TestingModule } from '@nestjs/testing';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { type Mock, vi } from 'vitest';
+import { PickupPointsService } from './pickup-points.service.js';
+import { PrismaService } from '../../prisma/prisma.service.js';
 
-describe("PickupPointsService", () => {
+describe('PickupPointsService', () => {
   let service: PickupPointsService;
   let prisma: {
     store: { findUnique: Mock };
@@ -17,9 +17,9 @@ describe("PickupPointsService", () => {
     };
   };
 
-  const ownerId = "user-1";
-  const storeId = "store-1";
-  const pointId = "point-1";
+  const ownerId = 'user-1';
+  const storeId = 'store-1';
+  const pointId = 'point-1';
 
   beforeEach(async () => {
     prisma = {
@@ -46,8 +46,8 @@ describe("PickupPointsService", () => {
     service = module.get<PickupPointsService>(PickupPointsService);
   });
 
-  describe("ownership checks", () => {
-    it("throws NotFoundException when the store does not exist", async () => {
+  describe('ownership checks', () => {
+    it('throws NotFoundException when the store does not exist', async () => {
       prisma.store.findUnique.mockResolvedValue(null);
 
       await expect(service.findAllForStore(storeId, ownerId)).rejects.toThrow(
@@ -55,10 +55,10 @@ describe("PickupPointsService", () => {
       );
     });
 
-    it("throws ForbiddenException when the user does not own the store", async () => {
+    it('throws ForbiddenException when the user does not own the store', async () => {
       prisma.store.findUnique.mockResolvedValue({
         id: storeId,
-        ownerId: "someone-else",
+        ownerId: 'someone-else',
       });
 
       await expect(service.findAllForStore(storeId, ownerId)).rejects.toThrow(
@@ -66,33 +66,33 @@ describe("PickupPointsService", () => {
       );
     });
 
-    it("throws NotFoundException when updating a point that belongs to a different store", async () => {
+    it('throws NotFoundException when updating a point that belongs to a different store', async () => {
       prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
       prisma.pickupPoint.findUnique.mockResolvedValue({
         id: pointId,
-        storeId: "other-store",
+        storeId: 'other-store',
       });
 
       await expect(
-        service.update(pointId, storeId, ownerId, { label: "New label" }),
+        service.update(pointId, storeId, ownerId, { label: 'New label' }),
       ).rejects.toThrow(NotFoundException);
     });
   });
 
-  describe("CRUD", () => {
+  describe('CRUD', () => {
     beforeEach(() => {
       prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
     });
 
-    it("creates a pickup point scoped to the store", async () => {
+    it('creates a pickup point scoped to the store', async () => {
       prisma.pickupPoint.create.mockResolvedValue({ id: pointId });
 
-      await service.create(storeId, ownerId, { label: "Plaza Norte" });
+      await service.create(storeId, ownerId, { label: 'Plaza Norte' });
 
       expect(prisma.pickupPoint.create).toHaveBeenCalledWith({
         data: {
           storeId,
-          label: "Plaza Norte",
+          label: 'Plaza Norte',
           enabled: true,
           sortOrder: 0,
           openDays: [],
@@ -101,11 +101,11 @@ describe("PickupPointsService", () => {
       });
     });
 
-    it("creates a pickup point with explicit openDays and closedOverride", async () => {
+    it('creates a pickup point with explicit openDays and closedOverride', async () => {
       prisma.pickupPoint.create.mockResolvedValue({ id: pointId });
 
       await service.create(storeId, ownerId, {
-        label: "Plaza Norte",
+        label: 'Plaza Norte',
         openDays: [1, 2, 3, 4, 5],
         closedOverride: true,
       });
@@ -113,7 +113,7 @@ describe("PickupPointsService", () => {
       expect(prisma.pickupPoint.create).toHaveBeenCalledWith({
         data: {
           storeId,
-          label: "Plaza Norte",
+          label: 'Plaza Norte',
           enabled: true,
           sortOrder: 0,
           openDays: [1, 2, 3, 4, 5],
@@ -137,7 +137,7 @@ describe("PickupPointsService", () => {
       });
     });
 
-    it("removes an owned point", async () => {
+    it('removes an owned point', async () => {
       prisma.pickupPoint.findUnique.mockResolvedValue({ id: pointId, storeId });
 
       await service.remove(pointId, storeId, ownerId);
@@ -148,19 +148,19 @@ describe("PickupPointsService", () => {
     });
   });
 
-  describe("findEnabledForSlug", () => {
-    it("throws NotFoundException when the store does not exist", async () => {
+  describe('findEnabledForSlug', () => {
+    it('throws NotFoundException when the store does not exist', async () => {
       prisma.store.findUnique.mockResolvedValue(null);
 
-      await expect(service.findEnabledForSlug("missing-slug")).rejects.toThrow(
+      await expect(service.findEnabledForSlug('missing-slug')).rejects.toThrow(
         NotFoundException,
       );
     });
 
-    it("only returns enabled points, ordered by sortOrder", async () => {
+    it('only returns enabled points, ordered by sortOrder', async () => {
       prisma.store.findUnique.mockResolvedValue({
         id: storeId,
-        slug: "my-store",
+        slug: 'my-store',
       });
       prisma.pickupPoint.findMany.mockResolvedValue([
         {
@@ -169,11 +169,11 @@ describe("PickupPointsService", () => {
         },
       ]);
 
-      const result = await service.findEnabledForSlug("my-store");
+      const result = await service.findEnabledForSlug('my-store');
 
       expect(prisma.pickupPoint.findMany).toHaveBeenCalledWith({
         where: { storeId, enabled: true },
-        orderBy: { sortOrder: "asc" },
+        orderBy: { sortOrder: 'asc' },
       });
       expect(result).toEqual([{ id: pointId, enabled: true }]);
     });

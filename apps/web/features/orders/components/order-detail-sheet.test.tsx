@@ -13,6 +13,7 @@ const baseOrder: OrderResponseDto = {
   id: "order-1",
   storeId: "store-1",
   customerId: null,
+  buyerAccountId: null,
   customerEmail: null,
   customerName: "Jane",
   customerPhone: "+51987654321",
@@ -68,20 +69,18 @@ function renderSheet(order: OrderResponseDto) {
 test("disables Aprobar for an order with zero payment registered", () => {
   renderSheet(baseOrder);
 
-  const approveButton = screen.getByRole(
-    "button",
-    { name: "Aprobar" },
-  ) as HTMLButtonElement;
+  const approveButton = screen.getByRole("button", {
+    name: "Aprobar",
+  }) as HTMLButtonElement;
   expect(approveButton.disabled).toBe(true);
 });
 
 test("enables Aprobar once a payment has been registered", () => {
   renderSheet({ ...baseOrder, paidAmount: 40 });
 
-  const approveButton = screen.getByRole(
-    "button",
-    { name: "Aprobar" },
-  ) as HTMLButtonElement;
+  const approveButton = screen.getByRole("button", {
+    name: "Aprobar",
+  }) as HTMLButtonElement;
   expect(approveButton.disabled).toBe(false);
 });
 
@@ -94,10 +93,9 @@ test("renders Aprobar enabled for a PARTIALLY_PAID order with a registered payme
     paidPercentage: 40,
   });
 
-  const approveButton = screen.getByRole(
-    "button",
-    { name: "Aprobar" },
-  ) as HTMLButtonElement;
+  const approveButton = screen.getByRole("button", {
+    name: "Aprobar",
+  }) as HTMLButtonElement;
   expect(approveButton.disabled).toBe(false);
 });
 

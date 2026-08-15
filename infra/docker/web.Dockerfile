@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1
 #
-# Single Dockerfile for web, dev and prod share the `base`/`deps` stages.
-# docker-compose.dev.yml builds target `dev`, docker-compose.yml (prod)
-# builds the default final target `runtime`.
+# Single Dockerfile for web, dev and blue/green production share the
+# `base`/`deps` stages. docker-compose.dev.yml builds target `dev`; the VPS
+# blue/green stack builds the default final target `runtime`.
 
 # node:26-slim no longer bundles corepack, install it pinned (not @latest)
 # so pnpm resolution is reproducible across builds.

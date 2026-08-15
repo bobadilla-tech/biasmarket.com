@@ -1,6 +1,7 @@
-import { mkdirSync, readdirSync, readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { join } from "node:path";
+import { mkdirSync, readdirSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
+import type { PrismaService } from '../src/prisma/prisma.service.js';
 
 // MAIL_DRIVER=file (see infra/docker/.env.example) makes apps/workers write
 // outgoing emails to apps/workers/.mailer-dev instead of sending them — used
@@ -10,13 +11,55 @@ import { join } from "node:path";
 // matching MailerCoreService's own `apps/workers/.mailer-dev` (its comment
 // explains the cwd-independence trick).
 export const mailerDevDir = join(
-  fileURLToPath(new URL(".", import.meta.url)),
-  "..",
-  "..",
-  "workers",
-  ".mailer-dev",
+  fileURLToPath(new URL('.', import.meta.url)),
+  '..',
+  '..',
+  'workers',
+  '.mailer-dev',
 );
 mkdirSync(mailerDevDir, { recursive: true });
+
+// E2E specs intentionally use stable phone numbers so they can assert the
+// normalized seller/customer projections. If a prior run is interrupted after
+// checkout, those global BuyerAccount rows otherwise make the next run look
+// like a real identity/email mismatch. Remove only the explicitly-owned test
+// identities and every dependent row, in FK order.
+export async function cleanupBuyerTestData(
+  prisma: PrismaService,
+  phones: string[],
+): Promise<void> {
+  const accounts = await prisma.buyerAccount.findMany({
+    where: { phone: { in: phones } },
+    select: { id: true },
+  });
+  const accountIds = accounts.map(({ id }) => id);
+  if (accountIds.length > 0) {
+    const orders = await prisma.order.findMany({
+      where: { buyerAccountId: { in: accountIds } },
+      select: { id: true },
+    });
+    const orderIds = orders.map(({ id }) => id);
+    if (orderIds.length > 0) {
+      await prisma.orderPayment.deleteMany({
+        where: { orderId: { in: orderIds } },
+      });
+      await prisma.orderItem.deleteMany({
+        where: { orderId: { in: orderIds } },
+      });
+      await prisma.order.deleteMany({ where: { id: { in: orderIds } } });
+    }
+    await prisma.customerStoreLink.deleteMany({
+      where: { buyerAccountId: { in: accountIds } },
+    });
+    await prisma.address.deleteMany({
+      where: { buyerAccountId: { in: accountIds } },
+    });
+  }
+  await prisma.customer.deleteMany({ where: { phone: { in: phones } } });
+  if (accountIds.length > 0) {
+    await prisma.buyerAccount.deleteMany({ where: { id: { in: accountIds } } });
+  }
+}
 
 // `vitest.config.e2e.ts` sets `fileParallelism: false`, so specs run
 // sequentially — but within a single spec's own concurrent operations (or a
@@ -36,12 +79,12 @@ export async function waitForNewMailerFile(
     // — so concurrent specs are disambiguated by the "To:" header written
     // inside each file instead.
     const added = current.find((f) =>
-      readFileSync(join(mailerDevDir, f), "utf-8").includes(`To: ${recipient}`)
+      readFileSync(join(mailerDevDir, f), 'utf-8').includes(`To: ${recipient}`),
     );
     if (added) return join(mailerDevDir, added);
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
-  throw new Error("Timed out waiting for verification email to be written");
+  throw new Error('Timed out waiting for verification email to be written');
 }
 
 // Minimal dependency-free schema check — good enough for these e2e tests'
@@ -51,7 +94,7 @@ export function assertMatchesSchema(
   value: unknown,
   schema: Record<string, unknown>,
   components: Record<string, unknown>,
-  path = "$",
+  path = '$',
 ): void {
   const resolved = resolveSchema(schema, components);
   // Checked before any type-specific branch below, not just the primitive
@@ -61,8 +104,8 @@ export function assertMatchesSchema(
   // `"array"` branches throw on `null` before ever reaching the nullable
   // check that used to live only after them.
   if (resolved.nullable && value === null) return;
-  if (resolved.type === "object") {
-    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+  if (resolved.type === 'object') {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) {
       throw new Error(`${path}: expected object, got ${JSON.stringify(value)}`);
     }
     const properties = (resolved.properties ?? {}) as Record<string, unknown>;
@@ -72,11 +115,9 @@ export function assertMatchesSchema(
         throw new Error(`${path}: missing required property "${key}"`);
       }
     }
-    for (
-      const [key, propValue] of Object.entries(
-        value as Record<string, unknown>,
-      )
-    ) {
+    for (const [key, propValue] of Object.entries(
+      value as Record<string, unknown>,
+    )) {
       const propSchema = properties[key];
       if (!propSchema) {
         if (resolved.additionalProperties) continue;
@@ -91,7 +132,7 @@ export function assertMatchesSchema(
     }
     return;
   }
-  if (resolved.type === "array") {
+  if (resolved.type === 'array') {
     if (!Array.isArray(value)) {
       throw new Error(`${path}: expected array, got ${JSON.stringify(value)}`);
     }
@@ -101,17 +142,17 @@ export function assertMatchesSchema(
         resolved.items as Record<string, unknown>,
         components,
         `${path}[${i}]`,
-      )
+      ),
     );
     return;
   }
-  if (resolved.type === "string" && typeof value !== "string") {
+  if (resolved.type === 'string' && typeof value !== 'string') {
     throw new Error(`${path}: expected string, got ${JSON.stringify(value)}`);
   }
-  if (resolved.type === "number" && typeof value !== "number") {
+  if (resolved.type === 'number' && typeof value !== 'number') {
     throw new Error(`${path}: expected number, got ${JSON.stringify(value)}`);
   }
-  if (resolved.type === "boolean" && typeof value !== "boolean") {
+  if (resolved.type === 'boolean' && typeof value !== 'boolean') {
     throw new Error(`${path}: expected boolean, got ${JSON.stringify(value)}`);
   }
 }
@@ -122,7 +163,7 @@ export function resolveSchema(
 ): Record<string, unknown> {
   const ref = schema.$ref as string | undefined;
   if (ref) {
-    const name = ref.replace("#/components/schemas/", "");
+    const name = ref.replace('#/components/schemas/', '');
     const schemas = (components as { schemas: Record<string, unknown> })
       .schemas;
     return schemas[name] as Record<string, unknown>;

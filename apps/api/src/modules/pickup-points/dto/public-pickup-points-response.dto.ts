@@ -1,5 +1,5 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { PickupPointResponseDto } from "./pickup-point-response.dto.js";
+import { ApiProperty } from '@nestjs/swagger';
+import { PickupPointResponseDto } from './pickup-point-response.dto.js';
 
 // The public pickup-points endpoint returns the enabled points *and* the
 // server-computed weekday (0=Sunday..6=Saturday) the server uses for
@@ -12,7 +12,7 @@ import { PickupPointResponseDto } from "./pickup-point-response.dto.js";
 export class PublicPickupPointsResponseDto {
   @ApiProperty({
     description:
-      "Server-computed weekday (0=Sunday..6=Saturday) used for openDays validation — storefronts must use this, not their own local date.",
+      'Server-computed weekday (0=Sunday..6=Saturday) used for openDays validation — storefronts must use this, not their own local date.',
     example: 3,
   })
   weekday: number;

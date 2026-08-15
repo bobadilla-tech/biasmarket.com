@@ -1,8 +1,8 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty } from '@nestjs/swagger';
 import {
   AccountOrderResponseDto,
   type AccountOrderRow,
-} from "./account-order-response.dto.js";
+} from './account-order-response.dto.js';
 
 export class LinkedStoreResponseDto {
   @ApiProperty()
@@ -57,10 +57,10 @@ export function toGlobalAccountOrderDto(
 ): GlobalAccountOrderResponseDto {
   return {
     id: order.id,
-    paymentStatus: order
-      .paymentStatus as GlobalAccountOrderResponseDto["paymentStatus"],
-    fulfillmentStatus: order
-      .fulfillmentStatus as GlobalAccountOrderResponseDto["fulfillmentStatus"],
+    paymentStatus:
+      order.paymentStatus as GlobalAccountOrderResponseDto['paymentStatus'],
+    fulfillmentStatus:
+      order.fulfillmentStatus as GlobalAccountOrderResponseDto['fulfillmentStatus'],
     totalAmount: order.totalAmount.toString(),
     currency: order.currency,
     createdAt: order.createdAt.toISOString(),

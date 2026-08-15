@@ -3,13 +3,13 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-} from "@nestjs/common";
-import { PrismaService } from "../../prisma/prisma.service.js";
-import type { CreateProductDto } from "./dto/create-product.dto.js";
-import type { UpdateProductDto } from "./dto/update-product.dto.js";
-import type { CreateVariantDto } from "./dto/create-variant.dto.js";
-import type { UpdateVariantDto } from "./dto/update-variant.dto.js";
-import { NotificationsService } from "../notifications/notifications.service.js";
+} from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service.js';
+import type { CreateProductDto } from './dto/create-product.dto.js';
+import type { UpdateProductDto } from './dto/update-product.dto.js';
+import type { CreateVariantDto } from './dto/create-variant.dto.js';
+import type { UpdateVariantDto } from './dto/update-variant.dto.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 
 @Injectable()
 export class ProductsService {
@@ -31,9 +31,9 @@ export class ProductsService {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
-    if (!store) throw new NotFoundException("Store no encontrada");
+    if (!store) throw new NotFoundException('Store no encontrada');
     if (store.ownerId !== userId) {
-      throw new ForbiddenException("No sos dueño de esta store");
+      throw new ForbiddenException('No sos dueño de esta store');
     }
     return store;
   }
@@ -48,7 +48,7 @@ export class ProductsService {
       where: { id: productId },
     });
     if (!product || product.storeId !== storeId) {
-      throw new NotFoundException("Producto no encontrado");
+      throw new NotFoundException('Producto no encontrado');
     }
     return product;
   }
@@ -62,7 +62,7 @@ export class ProductsService {
       where: { id: { in: categoryIds }, storeId },
     });
     if (count !== categoryIds.length) {
-      throw new BadRequestException("Categoría inválida");
+      throw new BadRequestException('Categoría inválida');
     }
   }
 
@@ -88,7 +88,7 @@ export class ProductsService {
                 productId: product.id,
                 storeId,
               },
-            })
+            }),
           ),
         );
       } else if (stock !== undefined) {
@@ -96,7 +96,7 @@ export class ProductsService {
           data: {
             productId: product.id,
             storeId,
-            name: "Default",
+            name: 'Default',
             stock,
           },
         });
@@ -126,7 +126,7 @@ export class ProductsService {
     if (products.length === 0) return [];
 
     const sold = await this.prisma.orderItem.groupBy({
-      by: ["productId"],
+      by: ['productId'],
       where: { storeId, productId: { in: products.map((p) => p.id) } },
       _sum: { quantity: true },
     });
@@ -156,7 +156,7 @@ export class ProductsService {
     });
 
     if (!product || product.storeId !== storeId || product.deletedAt) {
-      throw new NotFoundException("Producto no encontrado");
+      throw new NotFoundException('Producto no encontrado');
     }
 
     const sold = await this.prisma.orderItem.aggregate({
@@ -177,7 +177,7 @@ export class ProductsService {
     await this.findOwnedProduct(productId, storeId, userId);
     return this.prisma.product.update({
       where: { id: productId },
-      data: { status: "PUBLISHED" },
+      data: { status: 'PUBLISHED' },
     });
   }
 
@@ -211,7 +211,7 @@ export class ProductsService {
     await this.findOwnedProduct(productId, storeId, userId);
     return this.prisma.product.update({
       where: { id: productId },
-      data: { deletedAt: new Date(), status: "DRAFT", discontinued: false },
+      data: { deletedAt: new Date(), status: 'DRAFT', discontinued: false },
     });
   }
 
@@ -248,7 +248,7 @@ export class ProductsService {
       variant.productId !== productId ||
       variant.storeId !== storeId
     ) {
-      throw new NotFoundException("Variante no encontrada");
+      throw new NotFoundException('Variante no encontrada');
     }
     const updated = await this.prisma.productVariant.update({
       where: { id: variantId },
@@ -283,14 +283,14 @@ export class ProductsService {
       variant.productId !== productId ||
       variant.storeId !== storeId
     ) {
-      throw new NotFoundException("Variante no encontrada");
+      throw new NotFoundException('Variante no encontrada');
     }
     const usedCount = await this.prisma.orderItem.count({
       where: { variantId },
     });
     if (usedCount > 0) {
       throw new BadRequestException(
-        "No se puede eliminar una variante con ventas",
+        'No se puede eliminar una variante con ventas',
       );
     }
     return this.prisma.productVariant.delete({ where: { id: variantId } });
@@ -305,7 +305,9 @@ export class ProductsService {
   ) {
     const product = await this.findOwnedProduct(productId, storeId, userId);
     const images = replace
-      ? product.images.length ? [url, ...product.images.slice(1)] : [url]
+      ? product.images.length
+        ? [url, ...product.images.slice(1)]
+        : [url]
       : [...product.images, url];
     return this.prisma.product.update({
       where: { id: productId },
@@ -329,7 +331,7 @@ export class ProductsService {
       variant.productId !== productId ||
       variant.storeId !== storeId
     ) {
-      throw new NotFoundException("Variante no encontrada");
+      throw new NotFoundException('Variante no encontrada');
     }
     return this.prisma.productVariant.update({
       where: { id: variantId },

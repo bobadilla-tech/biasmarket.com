@@ -1,5 +1,5 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { AccountOrderResponseDto } from "../../customer-auth/dto/account-order-response.dto.js";
+import { ApiProperty } from '@nestjs/swagger';
+import { AccountOrderResponseDto } from '../../customer-auth/dto/account-order-response.dto.js';
 
 // `confirm`'s shape (`CustomerAccountService.confirmAccount`). Reuses
 // `AccountOrderResponseDto` from the `customer-auth` module — see that file's
@@ -22,8 +22,8 @@ export class ConfirmAccountCustomerResponseDto {
 }
 
 export class ConfirmAccountResponseDto {
-  @ApiProperty({ enum: ["confirm", "reset", "change-email", "change-phone"] })
-  purpose: "confirm" | "reset" | "change-email" | "change-phone";
+  @ApiProperty({ enum: ['confirm', 'reset', 'change-email', 'change-phone'] })
+  purpose: 'confirm' | 'reset' | 'change-email' | 'change-phone';
 
   @ApiProperty({ type: ConfirmAccountCustomerResponseDto })
   customer: ConfirmAccountCustomerResponseDto;

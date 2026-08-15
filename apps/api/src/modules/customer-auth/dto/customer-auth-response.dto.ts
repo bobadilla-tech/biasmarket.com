@@ -1,5 +1,5 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { AccountOrderResponseDto } from "./account-order-response.dto.js";
+import { ApiProperty } from '@nestjs/swagger';
+import { AccountOrderResponseDto } from './account-order-response.dto.js';
 
 // Money/Decimal, Date-as-ISO-string, and literal-union conventions — see
 // collections/dto/collection-response.dto.ts for the full rationale.

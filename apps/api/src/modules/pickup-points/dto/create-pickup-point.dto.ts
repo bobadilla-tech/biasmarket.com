@@ -8,7 +8,7 @@ import {
   Max,
   Min,
   MinLength,
-} from "class-validator";
+} from 'class-validator';
 
 export class CreatePickupPointDto {
   @IsString()

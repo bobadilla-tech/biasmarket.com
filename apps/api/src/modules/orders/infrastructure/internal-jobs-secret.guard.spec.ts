@@ -1,9 +1,9 @@
-import type { ExecutionContext } from "@nestjs/common";
-import { UnauthorizedException } from "@nestjs/common";
-import { InternalJobsSecretGuard } from "./internal-jobs-secret.guard.js";
-import { INTERNAL_JOBS_SECRET_HEADER } from "@biasmarket/queue";
+import type { ExecutionContext } from '@nestjs/common';
+import { UnauthorizedException } from '@nestjs/common';
+import { InternalJobsSecretGuard } from './internal-jobs-secret.guard.js';
+import { INTERNAL_JOBS_SECRET_HEADER } from '@biasmarket/queue';
 
-const REAL_SECRET = "correct-secret-value";
+const REAL_SECRET = 'correct-secret-value';
 
 function buildContext(headerValue: string | undefined): ExecutionContext {
   const req = { headers: { [INTERNAL_JOBS_SECRET_HEADER]: headerValue } };
@@ -12,7 +12,7 @@ function buildContext(headerValue: string | undefined): ExecutionContext {
   } as unknown as ExecutionContext;
 }
 
-describe("InternalJobsSecretGuard", () => {
+describe('InternalJobsSecretGuard', () => {
   let guard: InternalJobsSecretGuard;
 
   beforeEach(() => {
@@ -20,25 +20,26 @@ describe("InternalJobsSecretGuard", () => {
     guard = new InternalJobsSecretGuard();
   });
 
-  it("allows a request carrying the correct secret", () => {
+  it('allows a request carrying the correct secret', () => {
     expect(guard.canActivate(buildContext(REAL_SECRET))).toBe(true);
   });
 
-  it("rejects a missing secret header", () => {
+  it('rejects a missing secret header', () => {
     expect(() => guard.canActivate(buildContext(undefined))).toThrow(
       UnauthorizedException,
     );
   });
 
-  it("rejects a wrong secret of a different length", () => {
-    expect(() => guard.canActivate(buildContext("nope"))).toThrow(
+  it('rejects a wrong secret of a different length', () => {
+    expect(() => guard.canActivate(buildContext('nope'))).toThrow(
       UnauthorizedException,
     );
   });
 
-  it("rejects a wrong secret of the same length (exercises timingSafeEqual, not just the length check)", () => {
-    const sameLengthWrongSecret = "x".repeat(REAL_SECRET.length);
-    expect(() => guard.canActivate(buildContext(sameLengthWrongSecret)))
-      .toThrow(UnauthorizedException);
+  it('rejects a wrong secret of the same length (exercises timingSafeEqual, not just the length check)', () => {
+    const sameLengthWrongSecret = 'x'.repeat(REAL_SECRET.length);
+    expect(() =>
+      guard.canActivate(buildContext(sameLengthWrongSecret)),
+    ).toThrow(UnauthorizedException);
   });
 });

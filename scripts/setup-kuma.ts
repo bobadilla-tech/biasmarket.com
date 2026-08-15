@@ -9,9 +9,8 @@
 // Idempotent: re-running skips monitors/the notification that already exist
 // by name, and re-saves the status page (safe to update repeatedly).
 //
-// Usage (run on the VM, from the repo root, after the infra/vps/ stack —
-// or, pre-cutover, infra/docker/docker-compose.yml — has brought
-// `uptime-kuma` up):
+// Usage (run on the VM, from the repo root, after the infra/vps stack has
+// brought `uptime-kuma` up):
 //   KUMA_USERNAME=admin KUMA_PASSWORD=... node scripts/setup-kuma.ts
 //
 // Env vars:
@@ -21,19 +20,14 @@
 //   KUMA_PASSWORD  required, same as above
 //   API_URL        default https://api.biasmarket.com — where the durable-
 //                  history webhook notification posts to
-//   MONITORING_WEBHOOK_SECRET  read from infra/docker/.env, falling back to
-//                  infra/vps/env/shared.env, if not set in the environment
-//                  (whichever of those two files is the live one on the VPS
-//                  at the time this script runs — see docs/core/deploy.md)
+//   MONITORING_WEBHOOK_SECRET  read from infra/vps/env/shared.env if not set
+//                  in the environment
 //   STATUS_PAGE_SLUG   default "status"
 //   STATUS_PAGE_TITLE  default "Bias Market Status"
 //
-// Blue/green note (see docs/core/blue-green-migrations.md): the two former
-// bare-hostname internal monitors ("API (internal)" @ http://api:3000,
-// "Web (internal)" @ http://web:3001) stop resolving entirely once only
-// `api-blue`/`api-green`/`web-blue`/`web-green` exist — this script now
-// creates 4 static per-color internal monitors instead. Re-run this script
-// before/at the first blue/green cutover (T11), not just once. Also creates
+// Production exposes only `api-blue`/`api-green`/`web-blue`/`web-green`, so
+// this script creates 4 static per-color internal monitors. Re-run this
+// script before/at the first blue/green cutover (T11), not just once. Also creates
 // a Kuma "push" monitor backing the `migration_pending` stuck-deploy alert
 // (see the systemd timer in infra/vps/systemd/ +
 // infra/vps/bin/migration-watchdog.sh) — deliberately NOT wired through
@@ -60,11 +54,9 @@ const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 // favicon changes: `sips -s format png apps/web/app/favicon.ico --out
 // scripts/assets/kuma-status-page-favicon.png` (macOS) or an equivalent
 // ImageMagick/ffmpeg call elsewhere.
-const statusPageLogoDataUrl = `data:image/png;base64,${
-  readFileSync(
-    join(repoRoot, "scripts", "assets", "kuma-status-page-favicon.png"),
-  ).toString("base64")
-}`;
+const statusPageLogoDataUrl = `data:image/png;base64,${readFileSync(
+  join(repoRoot, "scripts", "assets", "kuma-status-page-favicon.png"),
+).toString("base64")}`;
 
 function parseEnvFile(path: string): Record<string, string> {
   if (!existsSync(path)) return {};
@@ -76,11 +68,6 @@ function parseEnvFile(path: string): Record<string, string> {
   return out;
 }
 
-// infra/docker/.env is checked first (still the live file pre-cutover, and
-// per docs/core/deploy.md kept in place post-cutover too, stopped-but-not-
-// removed, as the T11 fallback), infra/vps/env/shared.env second (the
-// blue/green stack's real secrets file, once cutover has happened).
-const dockerEnv = parseEnvFile(join(repoRoot, "infra", "docker", ".env"));
 const vpsSharedEnv = parseEnvFile(
   join(repoRoot, "infra", "vps", "env", "shared.env"),
 );
@@ -97,11 +84,10 @@ const KUMA_PASSWORD = requiredEnv("KUMA_PASSWORD");
 const API_URL = process.env.API_URL ?? "https://api.biasmarket.com";
 const MONITORING_WEBHOOK_SECRET = requiredEnv(
   "MONITORING_WEBHOOK_SECRET",
-  dockerEnv.MONITORING_WEBHOOK_SECRET ?? vpsSharedEnv.MONITORING_WEBHOOK_SECRET,
+  vpsSharedEnv.MONITORING_WEBHOOK_SECRET,
 );
 const STATUS_PAGE_SLUG = process.env.STATUS_PAGE_SLUG ?? "status";
-const STATUS_PAGE_TITLE = process.env.STATUS_PAGE_TITLE ??
-  "Bias Market Status";
+const STATUS_PAGE_TITLE = process.env.STATUS_PAGE_TITLE ?? "Bias Market Status";
 
 const NOTIFICATION_NAME = "api-monitoring-webhook";
 const PUSH_MONITOR_NAME = "migration_pending watchdog";
@@ -197,12 +183,9 @@ async function main() {
       for (const m of Object.values(list)) existingMonitors.set(m.name, m.id);
     },
   );
-  socket.on(
-    "notificationList",
-    (list: Array<{ id: number; name: string }>) => {
-      for (const n of list) existingNotifications.set(n.name, n.id);
-    },
-  );
+  socket.on("notificationList", (list: Array<{ id: number; name: string }>) => {
+    for (const n of list) existingNotifications.set(n.name, n.id);
+  });
 
   await new Promise<void>((resolve, reject) => {
     socket.on("connect_error", reject);
@@ -211,7 +194,7 @@ async function main() {
   console.log("Connected.");
 
   const needsSetup = await new Promise<boolean>((resolve) =>
-    socket.emit("needSetup", (res: boolean) => resolve(res))
+    socket.emit("needSetup", (res: boolean) => resolve(res)),
   );
 
   if (needsSetup) {
@@ -225,13 +208,12 @@ async function main() {
     if (!setupRes.ok) throw new Error(`Kuma setup failed: ${setupRes.msg}`);
   }
 
-  const loginRes = await new Promise<{ ok: boolean; msg?: string }>(
-    (resolve) =>
-      socket.emit(
-        "login",
-        { username: KUMA_USERNAME, password: KUMA_PASSWORD },
-        resolve as Cb,
-      ),
+  const loginRes = await new Promise<{ ok: boolean; msg?: string }>((resolve) =>
+    socket.emit(
+      "login",
+      { username: KUMA_USERNAME, password: KUMA_PASSWORD },
+      resolve as Cb,
+    ),
   );
   if (!loginRes.ok) throw new Error(`Kuma login failed: ${loginRes.msg}`);
   console.log("Logged in.");
@@ -290,28 +272,31 @@ async function main() {
       active: true,
       upsideDown: false,
     };
-    const monitor = spec.type === "http"
-      ? {
-        ...base,
-        type: "http",
-        url: spec.url,
-        method: "GET",
-        accepted_statuscodes: ["200-299"],
-      }
-      : {
-        ...base,
-        type: "port",
-        hostname: spec.hostname,
-        port: spec.port,
-        // Server-side validation reads accepted_statuscodes unconditionally
-        // (Array.prototype.every) regardless of monitor type — unused for a
-        // TCP check but required to be present or `add` throws.
-        accepted_statuscodes: ["200-299"],
-      };
+    const monitor =
+      spec.type === "http"
+        ? {
+            ...base,
+            type: "http",
+            url: spec.url,
+            method: "GET",
+            accepted_statuscodes: ["200-299"],
+          }
+        : {
+            ...base,
+            type: "port",
+            hostname: spec.hostname,
+            port: spec.port,
+            // Server-side validation reads accepted_statuscodes unconditionally
+            // (Array.prototype.every) regardless of monitor type — unused for a
+            // TCP check but required to be present or `add` throws.
+            accepted_statuscodes: ["200-299"],
+          };
 
-    const res = await new Promise<
-      { ok: boolean; msg?: string; monitorID: number }
-    >((resolve) => socket.emit("add", monitor, resolve as Cb));
+    const res = await new Promise<{
+      ok: boolean;
+      msg?: string;
+      monitorID: number;
+    }>((resolve) => socket.emit("add", monitor, resolve as Cb));
     if (!res.ok) {
       throw new Error(`add monitor "${spec.name}" failed: ${res.msg}`);
     }
@@ -347,9 +332,11 @@ async function main() {
       upsideDown: false,
       accepted_statuscodes: ["200-299"],
     };
-    const res = await new Promise<
-      { ok: boolean; msg?: string; monitorID: number }
-    >((resolve) => socket.emit("add", pushMonitor, resolve as Cb));
+    const res = await new Promise<{
+      ok: boolean;
+      msg?: string;
+      monitorID: number;
+    }>((resolve) => socket.emit("add", pushMonitor, resolve as Cb));
     if (!res.ok) throw new Error(`add push monitor failed: ${res.msg}`);
     pushMonitorId = res.monitorID;
     console.log(
@@ -357,9 +344,10 @@ async function main() {
     );
   }
 
-  const pushDetail = await new Promise<
-    { ok: boolean; monitor?: { pushToken?: string } }
-  >((resolve) => socket.emit("getMonitor", pushMonitorId, resolve as Cb));
+  const pushDetail = await new Promise<{
+    ok: boolean;
+    monitor?: { pushToken?: string };
+  }>((resolve) => socket.emit("getMonitor", pushMonitorId, resolve as Cb));
   if (pushDetail.ok && pushDetail.monitor?.pushToken) {
     console.log(
       `Push monitor ready. Set KUMA_MIGRATION_PUSH_URL in infra/vps/env/watchdog.env to:\n` +
@@ -402,26 +390,25 @@ async function main() {
     },
   ];
 
-  const saveRes = await new Promise<{ ok: boolean; msg?: string }>(
-    (resolve) =>
-      socket.emit(
-        "saveStatusPage",
-        STATUS_PAGE_SLUG,
-        {
-          slug: STATUS_PAGE_SLUG,
-          title: STATUS_PAGE_TITLE,
-          description: "",
-          theme: "auto",
-          showTags: false,
-          footerText: "",
-          showPoweredBy: false,
-          showCertificateExpiry: false,
-          domainNameList: [],
-        },
-        statusPageLogoDataUrl,
-        publicGroupList,
-        resolve as Cb,
-      ),
+  const saveRes = await new Promise<{ ok: boolean; msg?: string }>((resolve) =>
+    socket.emit(
+      "saveStatusPage",
+      STATUS_PAGE_SLUG,
+      {
+        slug: STATUS_PAGE_SLUG,
+        title: STATUS_PAGE_TITLE,
+        description: "",
+        theme: "auto",
+        showTags: false,
+        footerText: "",
+        showPoweredBy: false,
+        showCertificateExpiry: false,
+        domainNameList: [],
+      },
+      statusPageLogoDataUrl,
+      publicGroupList,
+      resolve as Cb,
+    ),
   );
   if (!saveRes.ok) throw new Error(`saveStatusPage failed: ${saveRes.msg}`);
   console.log(

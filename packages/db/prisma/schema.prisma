@@ -110,6 +110,7 @@ model Store {
   buyerLinks        CustomerStoreLink[]
 
   @@index([ownerId])
+  @@index([isPublic, createdAt, id])
 }
 
 model Product {

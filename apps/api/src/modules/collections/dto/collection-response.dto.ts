@@ -1,4 +1,4 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty } from '@nestjs/swagger';
 
 // Money/Decimal convention (applies repo-wide, not just here): Prisma
 // `Decimal` fields serialize over HTTP as JSON strings, not numbers — a
@@ -58,7 +58,7 @@ export class ProductInCollectionResponseDto {
   @ApiProperty({ type: [String] })
   images: string[];
 
-  @ApiProperty({ type: String, format: "date-time", nullable: true })
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
   availableUntil: string | null;
 
   // Literal union, not the Prisma-generated `ProductStatus` type: importing
@@ -68,8 +68,8 @@ export class ProductInCollectionResponseDto {
   // "DRAFT" | "PUBLISHED" is structurally identical to Prisma's `ProductStatus`
   // (itself `(typeof ProductStatus)[keyof typeof ProductStatus]`), so this
   // stays honest to the real return type without re-triggering the bug.
-  @ApiProperty({ enum: ["DRAFT", "PUBLISHED"] })
-  status: "DRAFT" | "PUBLISHED";
+  @ApiProperty({ enum: ['DRAFT', 'PUBLISHED'] })
+  status: 'DRAFT' | 'PUBLISHED';
 
   @ApiProperty()
   soldOut: boolean;
@@ -80,10 +80,10 @@ export class ProductInCollectionResponseDto {
   @ApiProperty({ type: [ProductVariantInCollectionResponseDto] })
   variants: ProductVariantInCollectionResponseDto[];
 
-  @ApiProperty({ type: String, format: "date-time", nullable: true })
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
   deletedAt: string | null;
 
-  @ApiProperty({ type: String, format: "date-time" })
+  @ApiProperty({ type: String, format: 'date-time' })
   createdAt: string;
 }
 
@@ -98,8 +98,7 @@ export class CollectionProductResponseDto {
   position: number;
 }
 
-export class CollectionProductWithProductResponseDto
-  extends CollectionProductResponseDto {
+export class CollectionProductWithProductResponseDto extends CollectionProductResponseDto {
   @ApiProperty({ type: ProductInCollectionResponseDto })
   product: ProductInCollectionResponseDto;
 }
@@ -120,7 +119,7 @@ export class CollectionResponseDto {
   @ApiProperty()
   description: string;
 
-  @ApiProperty({ type: String, format: "date-time" })
+  @ApiProperty({ type: String, format: 'date-time' })
   createdAt: Date;
 }
 

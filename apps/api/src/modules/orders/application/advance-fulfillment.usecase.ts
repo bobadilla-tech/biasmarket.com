@@ -1,8 +1,8 @@
-import { Injectable } from "@nestjs/common";
-import type { FulfillmentStatus } from "@biasmarket/db";
-import { PrismaService } from "../../../prisma/prisma.service.js";
-import { OrderRepository } from "../infrastructure/order.repository.js";
-import { Order } from "../domain/order.entity.js";
+import { Injectable } from '@nestjs/common';
+import type { FulfillmentStatus } from '@biasmarket/db';
+import { PrismaService } from '../../../prisma/prisma.service.js';
+import { OrderRepository } from '../infrastructure/order.repository.js';
+import { Order } from '../domain/order.entity.js';
 
 @Injectable()
 export class AdvanceFulfillmentUseCase {
@@ -42,8 +42,8 @@ export class AdvanceFulfillmentUseCase {
         data: {
           actorId: userId,
           storeId,
-          action: "fulfillment.advanced",
-          entityType: "Order",
+          action: 'fulfillment.advanced',
+          entityType: 'Order',
           entityId: orderId,
           metadata: { fromStatus, toStatus },
         },

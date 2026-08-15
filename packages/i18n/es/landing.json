@@ -1,60 +1,69 @@
 {
   "languageToggle": { "en": "EN", "es": "ES" },
   "hero": {
-    "title": "Tu mundo K-Pop, todo en un solo lugar",
-    "subtitle": "Descubre álbumes, photocards, lightsticks y mucho mas de tus artistas favoritos",
+    "title1": "Tu mundo K-Pop",
+    "title2": "Todo en un solo lugar",
+    "subtitle": "Descubre álbumes, photocards, lightsticks y mucho más de tus artistas favoritos",
     "cta": "Comprar ahora",
+    "releasesBadge": "Nuevo",
     "releasesTitle": "Nuevos lanzamientos",
-    "releasesSubtitle": "Sé el primero en descubrir lo ultimo del K-pop",
+    "releasesSubtitle": "Sé el primero en descubrir lo último del K-pop",
     "releasesCta": "Ver novedades",
+    "blogBadge": "Blog",
     "blogTitle": "Biasmarket Blog",
-    "blogSubtitle": "Noticias, guias y todo sobre el mundo del K-pop",
+    "blogSubtitle": "Noticias, guías y todo sobre el mundo del K-pop",
     "blogCta": "Leer Blog"
   },
   "products": { "viewStore": "Ver en {name}" },
   "trends": {
     "title": "Tendencias",
-    "latestTitle": "Ultimos Productos",
+    "latestTitle": "Últimos Productos",
     "bestSellersTitle": "Más vendidos",
     "viewAll": "Ver todo",
     "empty": "Aún no hay productos.",
     "error": "Algo salió mal. Inténtalo de nuevo."
   },
   "categories": {
-    "title": "Categorias",
-    "heading": "Encuentra exactamente lo que amas",
-    "subtitle": "Explora por categoria y descubre tu proxima merch favorita",
+    "title": "Categorías",
+    "heading1": "Tu Bias",
+    "heading2": "Te espera",
+    "subtitle": "Explora por categoría y descubre tu próxima merch favorita",
     "explore": "Explorar todo",
     "items": [
       { "key": "photocards", "name": "Photocards" },
       { "key": "albums", "name": "Albums" },
       { "key": "lightsticks", "name": "Lightsticks" },
-      { "key": "photobook", "name": "Photobook" },
+      { "key": "concert", "name": "Concert" },
       { "key": "magazine", "name": "Magazine" },
       { "key": "otros", "name": "Otros" }
     ]
   },
   "discover": {
     "title": "Más por descubrir",
-    "cta": "Ver mas productos",
+    "cta": "Ver más productos",
     "empty": "Aún no hay productos.",
     "error": "Algo salió mal. Inténtalo de nuevo."
   },
   "about": {
     "title": "¿Qué es Biasmarket?",
     "subtitle": "Conoce la historia detrás del mercado hecho por fans, para fans",
+    "helpTitle": "¿Alguna pregunta? Encuentra aquí las respuestas.",
+    "helpCta": "Ir al Centro de ayuda",
     "items": [
       {
         "title": "Una comunidad hecha por fans",
-        "body": "Bias Market nace de la fanaticada K-pop. Conectamos GO'S y tiendas que entienden exactamente lo que buscas: álbumes, photocards, merch oficial y ediciones limitadas."
+        "body": "Bias Market nace de la fanaticada K-pop. Conectamos GO'S y tiendas que entienden exactamente lo que buscas: álbumes, photocards, merch oficial y ediciones limitadas.",
+        "width": 323
       },
       {
         "title": "Apoya a sellers independientes",
-        "body": "Cada tienda dentro de Bias Market es manejada por un fan como tú. No hay bodegas gigantes ni intermediarios fríos, solo personas apasionadas vendiendo lo que aman."
+        "body": "Cada tienda dentro de Bias Market es manejada por un fan como tú. No hay bodegas gigantes ni intermediarios fríos, solo personas apasionadas vendiendo lo que aman.",
+        "width": 323
       },
       {
         "title": "Compra con tranquilidad",
-        "body": "Pagos con Yape, Plin y más. Seguimiento de tu pedido en todo momento y soporte real si algo sale mal. Tu bias merch está en buenas manos."
+        "body": "Pagos con Yape, Plin y más. Seguimiento de tu pedido en todo momento y soporte real si algo sale mal. Tu bias merch está en buenas manos.",
+        "width": 323
       }
     ]
   },
@@ -80,27 +89,43 @@
     "columns": [
       {
         "heading": "Comprar con Biasmarket",
-        "links": ["Como trabajamos", "Comprador FAQ", "Envios"]
+        "links": [
+          "Cómo funciona",
+          "Explorar productos",
+          "Categorías",
+          "Envíos",
+          "Preguntas frecuentes"
+        ]
       },
       {
         "heading": "Vender con Biasmarket",
         "links": [
-          "Hacer una tienda",
-          "Por qué vender en Bias market",
-          "Blog Biasmarket"
+          "Crear mi tienda",
+          "Cómo vender",
+          "¿Por qué vender en Biasmarket?",
+          "Guía para sellers",
+          "FAQ para sellers"
         ]
       },
       {
         "heading": "Sobre Biasmarket",
         "links": [
-          "Historia de Biasmarket",
+          "Nuestra historia",
+          "Sobre nosotros",
+          "Tiendas verificadas",
           "Términos de uso",
-          "Política de privacidad"
+          "Politica de privacidad"
         ]
       },
       {
         "heading": "Ayuda",
-        "links": ["Centro de ayuda", "Configuracion de Privacidad"]
+        "links": [
+          "Centro de ayuda",
+          "Preguntas frecuentes",
+          "Problemas con mi pedido",
+          "Contacto",
+          "Configuración de Privacidad"
+        ]
       }
     ],
     "socials": [

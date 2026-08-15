@@ -4,17 +4,17 @@ import {
   Injectable,
   Logger,
   NotFoundException,
-} from "@nestjs/common";
-import type { BuyerAccount, Customer, Prisma, Store } from "@biasmarket/db";
-import { escapeHtml } from "@biasmarket/utils/strings";
-import { normalizePhone } from "@biasmarket/utils/phone-country";
+} from '@nestjs/common';
+import type { BuyerAccount, Customer, Prisma, Store } from '@biasmarket/db';
+import { escapeHtml } from '@biasmarket/utils/strings';
+import { normalizePhone } from '@biasmarket/utils/phone-country';
 import {
   createCustomerAccountToken,
   verifyCustomerAccountToken,
-} from "@biasmarket/utils/customer-account-token";
-import { PrismaService } from "../../../prisma/prisma.service.js";
-import { MailerService } from "../../../mailer/mailer.service.js";
-import { requiredEnv } from "../../../config/env.validation.js";
+} from '@biasmarket/utils/customer-account-token';
+import { PrismaService } from '../../../prisma/prisma.service.js';
+import { MailerService } from '../../../mailer/mailer.service.js';
+import { requiredEnv } from '../../../config/env.validation.js';
 
 function buildCustomerVerificationEmailHtml(
   url: string,
@@ -160,18 +160,18 @@ export class CustomerAccountService {
     });
     const customer = existingCustomer
       ? await tx.customer.update({
-        where: { id: existingCustomer.id },
-        data: { email, name, emailVerified: buyerAccount.emailVerified },
-      })
+          where: { id: existingCustomer.id },
+          data: { email, name, emailVerified: buyerAccount.emailVerified },
+        })
       : await tx.customer.create({
-        data: {
-          storeId,
-          phone: normalizedPhone,
-          email,
-          name,
-          emailVerified: buyerAccount.emailVerified,
-        },
-      });
+          data: {
+            storeId,
+            phone: normalizedPhone,
+            email,
+            name,
+            emailVerified: buyerAccount.emailVerified,
+          },
+        });
 
     return { customer, buyerAccount, needsVerificationEmail };
   }
@@ -183,17 +183,17 @@ export class CustomerAccountService {
     if (!buyerAccount.email) return;
 
     try {
-      const secret = requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET");
+      const secret = requiredEnv('CUSTOMER_ACCOUNT_TOKEN_SECRET');
       const token = createCustomerAccountToken(
         buyerAccount.id,
         secret,
-        "confirm",
+        'confirm',
       );
       const url = this.confirmUrl(store.slug, token);
 
       await this.mailer.send({
         to: buyerAccount.email,
-        subject: "Confirma tu cuenta — Bias Market / Confirm your account",
+        subject: 'Confirma tu cuenta — Bias Market / Confirm your account',
         html: buildCustomerVerificationEmailHtml(url, store.name),
       });
     } catch (err) {
@@ -211,17 +211,17 @@ export class CustomerAccountService {
     if (!buyerAccount.email) return;
 
     try {
-      const secret = requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET");
+      const secret = requiredEnv('CUSTOMER_ACCOUNT_TOKEN_SECRET');
       const token = createCustomerAccountToken(
         buyerAccount.id,
         secret,
-        "reset",
+        'reset',
       );
       const url = this.confirmUrl(store.slug, token);
 
       await this.mailer.send({
         to: buyerAccount.email,
-        subject: "Restablece tu contraseña — Bias Market / Reset your password",
+        subject: 'Restablece tu contraseña — Bias Market / Reset your password',
         html: buildPasswordResetEmailHtml(url, store.name),
       });
     } catch (err) {
@@ -239,18 +239,18 @@ export class CustomerAccountService {
     newEmail: string,
   ): Promise<void> {
     try {
-      const secret = requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET");
+      const secret = requiredEnv('CUSTOMER_ACCOUNT_TOKEN_SECRET');
       const token = createCustomerAccountToken(
         buyerAccount.id,
         secret,
-        "change-email",
+        'change-email',
       );
       const url = this.confirmUrl(store.slug, token);
 
       await this.mailer.send({
         to: newEmail,
         subject:
-          "Confirma tu nuevo correo — Bias Market / Confirm your new email",
+          'Confirma tu nuevo correo — Bias Market / Confirm your new email',
         html: buildEmailChangeEmailHtml(url, store.name),
       });
     } catch (err) {
@@ -271,18 +271,18 @@ export class CustomerAccountService {
     if (!buyerAccount.email) return;
 
     try {
-      const secret = requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET");
+      const secret = requiredEnv('CUSTOMER_ACCOUNT_TOKEN_SECRET');
       const token = createCustomerAccountToken(
         buyerAccount.id,
         secret,
-        "change-phone",
+        'change-phone',
       );
       const url = this.confirmUrl(store.slug, token);
 
       await this.mailer.send({
         to: buyerAccount.email,
         subject:
-          "Confirma tu nuevo teléfono — Bias Market / Confirm your new phone",
+          'Confirma tu nuevo teléfono — Bias Market / Confirm your new phone',
         html: buildPhoneChangeEmailHtml(url, store.name),
       });
     } catch (err) {
@@ -294,36 +294,36 @@ export class CustomerAccountService {
   }
 
   private confirmUrl(storeSlug: string, token: string): string {
-    const webUrl = process.env.WEB_URL ?? "http://localhost:3001";
+    const webUrl = process.env.WEB_URL ?? 'http://localhost:3001';
     return `${webUrl}/store/${storeSlug}/account/confirm?token=${token}`;
   }
 
   async confirmAccount(storeSlug: string, token: string | undefined) {
-    if (!token) throw new BadRequestException("Enlace inválido o expirado");
+    if (!token) throw new BadRequestException('Enlace inválido o expirado');
 
     const store = await this.prisma.store.findUnique({
       where: { slug: storeSlug },
     });
-    if (!store) throw new NotFoundException("Store no encontrada");
+    if (!store) throw new NotFoundException('Store no encontrada');
 
-    const secret = requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET");
+    const secret = requiredEnv('CUSTOMER_ACCOUNT_TOKEN_SECRET');
     const verified = verifyCustomerAccountToken(token, secret);
-    if (!verified) throw new BadRequestException("Enlace inválido o expirado");
+    if (!verified) throw new BadRequestException('Enlace inválido o expirado');
 
     let buyerAccount = await this.prisma.buyerAccount.findUnique({
       where: { id: verified.buyerAccountId },
     });
     if (!buyerAccount) {
-      throw new BadRequestException("Enlace inválido o expirado");
+      throw new BadRequestException('Enlace inválido o expirado');
     }
 
-    if (verified.purpose === "confirm" && !buyerAccount.emailVerified) {
+    if (verified.purpose === 'confirm' && !buyerAccount.emailVerified) {
       buyerAccount = await this.prisma.buyerAccount.update({
         where: { id: buyerAccount.id },
         data: { emailVerified: true },
       });
     } else if (
-      verified.purpose === "change-email" &&
+      verified.purpose === 'change-email' &&
       buyerAccount.pendingEmail
     ) {
       buyerAccount = await this.prisma.buyerAccount.update({
@@ -335,7 +335,7 @@ export class CustomerAccountService {
         },
       });
     } else if (
-      verified.purpose === "change-phone" &&
+      verified.purpose === 'change-phone' &&
       buyerAccount.pendingPhone
     ) {
       const normalizedPhone = normalizePhone(buyerAccount.pendingPhone);
@@ -344,7 +344,7 @@ export class CustomerAccountService {
       });
       if (existing && existing.id !== buyerAccount.id) {
         throw new ConflictException(
-          "Ya existe un comprador con ese número de teléfono",
+          'Ya existe un comprador con ese número de teléfono',
         );
       }
       buyerAccount = await this.prisma.buyerAccount.update({
@@ -358,7 +358,7 @@ export class CustomerAccountService {
 
     const orders = await this.prisma.order.findMany({
       where: { buyerAccountId: buyerAccount.id, storeId: store.id },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
       select: {
         id: true,
         paymentStatus: true,

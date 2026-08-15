@@ -3,15 +3,15 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-} from "@nestjs/common";
-import type { Prisma } from "@biasmarket/db";
-import { PrismaService } from "../../prisma/prisma.service.js";
-import { countsTowardPaid } from "../../common/payment-summary.js";
-import { slugify } from "@biasmarket/utils/strings";
-import type { UpdateStoreDto } from "./dto/update-store.dto.js";
-import type { CreateStoreDto } from "./dto/create-store.dto.js";
+} from '@nestjs/common';
+import type { Prisma } from '@biasmarket/db';
+import { PrismaService } from '../../prisma/prisma.service.js';
+import { countsTowardPaid } from '../../common/payment-summary.js';
+import { slugify } from '@biasmarket/utils/strings';
+import type { UpdateStoreDto } from './dto/update-store.dto.js';
+import type { CreateStoreDto } from './dto/create-store.dto.js';
 
-const RESERVED_SLUGS = ["www", "api", "admin", "app"];
+const RESERVED_SLUGS = ['www', 'api', 'admin', 'app'];
 
 @Injectable()
 export class StoresService {
@@ -21,13 +21,13 @@ export class StoresService {
     const slug = slugify(dto.slug);
 
     if (RESERVED_SLUGS.includes(slug)) {
-      throw new BadRequestException("This slug is reserved");
+      throw new BadRequestException('This slug is reserved');
     }
 
     const existing = await this.prisma.store.findUnique({ where: { slug } });
 
     if (existing) {
-      throw new BadRequestException("This slug is not avaible");
+      throw new BadRequestException('This slug is not avaible');
     }
 
     return this.prisma.$transaction(async (tx) => {
@@ -37,16 +37,16 @@ export class StoresService {
           slug,
           ownerId,
           themeConfig: (dto.themeConfig ?? {}) as Prisma.InputJsonValue,
-          paymentInstructions: "",
+          paymentInstructions: '',
           whatsappNumber: dto.whatsappNumber,
           ...(dto.defaultCurrency && { defaultCurrency: dto.defaultCurrency }),
         },
       });
       await tx.deliveryMethodConfig.create({
-        data: { storeId: store.id, type: "PICKUP", enabled: true, details: {} },
+        data: { storeId: store.id, type: 'PICKUP', enabled: true, details: {} },
       });
       await tx.paymentMethodConfig.createMany({
-        data: (["YAPE", "PLIN", "TRANSFER", "CASH"] as const).map((method) => ({
+        data: (['YAPE', 'PLIN', 'TRANSFER', 'CASH'] as const).map((method) => ({
           storeId: store.id,
           method,
           enabled: true,
@@ -66,7 +66,7 @@ export class StoresService {
   async findAllForAdmin() {
     return this.prisma.store.findMany({
       include: { owner: { select: { id: true, email: true, name: true } } },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
     });
   }
 
@@ -74,9 +74,9 @@ export class StoresService {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
-    if (!store) throw new NotFoundException("Store no encontrada");
+    if (!store) throw new NotFoundException('Store no encontrada');
     if (store.ownerId !== userId) {
-      throw new ForbiddenException("No sos dueño de esta store");
+      throw new ForbiddenException('No sos dueño de esta store');
     }
     const {
       themeConfig,
@@ -113,24 +113,24 @@ export class StoresService {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
-    if (!store) throw new NotFoundException("Store no encontrada");
+    if (!store) throw new NotFoundException('Store no encontrada');
     if (store.ownerId !== userId) {
-      throw new ForbiddenException("No eres dueño de esta store");
+      throw new ForbiddenException('No eres dueño de esta store');
     }
     try {
       return await this.prisma.store.delete({ where: { id: storeId } });
     } catch {
       throw new BadRequestException(
-        "No se puede eliminar: la tienda tiene productos u órdenes asociadas",
+        'No se puede eliminar: la tienda tiene productos u órdenes asociadas',
       );
     }
   }
 
   async findBySlugForOwner(slug: string, userId: string) {
     const store = await this.prisma.store.findUnique({ where: { slug } });
-    if (!store) throw new NotFoundException("Store no encontrada");
+    if (!store) throw new NotFoundException('Store no encontrada');
     if (store.ownerId !== userId) {
-      throw new ForbiddenException("No sos dueño de esta store");
+      throw new ForbiddenException('No sos dueño de esta store');
     }
     return store;
   }
@@ -140,6 +140,26 @@ export class StoresService {
       where: { isPublic: true },
       select: { slug: true, createdAt: true },
     });
+  }
+
+  async findPublicSitemapCount() {
+    return this.prisma.store.count({ where: { isPublic: true } });
+  }
+
+  async findPublicSitemapPage(limit: number, offset: number) {
+    const where = { isPublic: true };
+    const [items, total] = await Promise.all([
+      this.prisma.store.findMany({
+        where,
+        select: { slug: true },
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+        skip: offset,
+        take: limit,
+      }),
+      this.prisma.store.count({ where }),
+    ]);
+
+    return { items, total };
   }
 
   // v1 ranking: minimum order-count floor (>=3 VERIFIED orders in the
@@ -157,7 +177,7 @@ export class StoresService {
       where: {
         isPublic: true,
         products: {
-          some: { status: "PUBLISHED", deletedAt: null, discontinued: false },
+          some: { status: 'PUBLISHED', deletedAt: null, discontinued: false },
         },
         owner: { banned: { not: true } },
       },
@@ -168,7 +188,7 @@ export class StoresService {
     const orders = await this.prisma.order.findMany({
       where: {
         storeId: { in: candidates.map((c) => c.id) },
-        paymentStatus: "VERIFIED",
+        paymentStatus: 'VERIFIED',
         createdAt: { gte: since },
       },
       select: {
@@ -214,17 +234,17 @@ export class StoresService {
     const where: Prisma.StoreWhereInput = {
       isPublic: true,
       products: {
-        some: { status: "PUBLISHED", deletedAt: null, discontinued: false },
+        some: { status: 'PUBLISHED', deletedAt: null, discontinued: false },
       },
       owner: { banned: { not: true } },
-      ...(q && { name: { contains: q, mode: "insensitive" as const } }),
+      ...(q && { name: { contains: q, mode: 'insensitive' as const } }),
     };
 
     const [stores, total] = await Promise.all([
       this.prisma.store.findMany({
         where,
         select: { id: true, name: true, slug: true, logoUrl: true },
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
       }),
@@ -236,16 +256,16 @@ export class StoresService {
 
   async findPublicBySlug(slug: string) {
     const store = await this.prisma.store.findUnique({ where: { slug } });
-    if (!store) throw new NotFoundException("Tienda no encontrada");
+    if (!store) throw new NotFoundException('Tienda no encontrada');
 
     const rawSections = await this.prisma.storeSection.findMany({
       where: { storeId: store.id, hidden: false },
-      orderBy: { position: "asc" },
+      orderBy: { position: 'asc' },
       include: {
         collection: {
           include: {
             products: {
-              orderBy: { position: "asc" },
+              orderBy: { position: 'asc' },
               include: { product: { include: { variants: true } } },
             },
           },
@@ -262,7 +282,7 @@ export class StoresService {
         ...section.collection,
         products: section.collection.products.filter(
           (cp) =>
-            cp.product.status === "PUBLISHED" &&
+            cp.product.status === 'PUBLISHED' &&
             cp.product.deletedAt === null &&
             cp.product.discontinued === false,
         ),
@@ -282,7 +302,7 @@ export class StoresService {
     const orphanProducts = await this.prisma.product.findMany({
       where: {
         storeId: store.id,
-        status: "PUBLISHED",
+        status: 'PUBLISHED',
         deletedAt: null,
         discontinued: false,
         id: { notIn: coveredProductIds },
@@ -292,9 +312,9 @@ export class StoresService {
 
     if (orphanProducts.length > 0) {
       sections.push({
-        id: "default",
+        id: 'default',
         storeId: store.id,
-        type: "COLLECTION" as const,
+        type: 'COLLECTION' as const,
         collectionId: null,
         content: {},
         position: sections.length,
@@ -303,9 +323,9 @@ export class StoresService {
         collection: {
           id: null as unknown as string,
           storeId: store.id,
-          name: "",
-          slug: "",
-          description: "",
+          name: '',
+          slug: '',
+          description: '',
           createdAt: new Date(),
           products: orphanProducts.map((product, position) => ({
             collectionId: null as unknown as string,
@@ -338,10 +358,10 @@ export class StoresService {
       .filter((c) =>
         c.products.some(
           (cp) =>
-            cp.product.status === "PUBLISHED" &&
+            cp.product.status === 'PUBLISHED' &&
             cp.product.deletedAt === null &&
             cp.product.discontinued === false,
-        )
+        ),
       )
       .map((c) => ({
         storeSlug: c.store.slug,
@@ -352,7 +372,7 @@ export class StoresService {
 
   async findCategoriesPublic(slug: string) {
     const store = await this.prisma.store.findUnique({ where: { slug } });
-    if (!store) throw new NotFoundException("Tienda no encontrada");
+    if (!store) throw new NotFoundException('Tienda no encontrada');
     return this.prisma.category.findMany({
       where: { storeId: store.id },
       select: { id: true, name: true, parentId: true },
@@ -361,7 +381,7 @@ export class StoresService {
 
   async findPublicProduct(slug: string, productId: string) {
     const store = await this.prisma.store.findUnique({ where: { slug } });
-    if (!store) throw new NotFoundException("Tienda no encontrada");
+    if (!store) throw new NotFoundException('Tienda no encontrada');
 
     const product = await this.prisma.product.findUnique({
       where: { id: productId },
@@ -370,11 +390,11 @@ export class StoresService {
     if (
       !product ||
       product.storeId !== store.id ||
-      product.status !== "PUBLISHED" ||
+      product.status !== 'PUBLISHED' ||
       product.deletedAt !== null ||
       product.discontinued
     ) {
-      throw new NotFoundException("Producto no encontrado");
+      throw new NotFoundException('Producto no encontrado');
     }
 
     return {
@@ -387,9 +407,9 @@ export class StoresService {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
-    if (!store) throw new NotFoundException("Store no encontrada");
+    if (!store) throw new NotFoundException('Store no encontrada');
     if (store.ownerId !== userId) {
-      throw new ForbiddenException("No eres dueño de esta store");
+      throw new ForbiddenException('No eres dueño de esta store');
     }
     return this.prisma.store.update({
       where: { id: storeId },

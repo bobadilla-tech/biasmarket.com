@@ -1,4 +1,4 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty } from '@nestjs/swagger';
 
 export class PickupPointResponseDto {
   @ApiProperty()
@@ -22,6 +22,6 @@ export class PickupPointResponseDto {
   @ApiProperty()
   closedOverride: boolean;
 
-  @ApiProperty({ type: String, format: "date-time" })
+  @ApiProperty({ type: String, format: 'date-time' })
   createdAt: string;
 }

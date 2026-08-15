@@ -2,11 +2,11 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-} from "@nestjs/common";
-import type { FulfillmentStatus, PaymentStatus, Prisma } from "@biasmarket/db";
-import { PrismaService } from "../../../prisma/prisma.service.js";
-import { Order } from "../domain/order.entity.js";
-import { withPaymentSummary } from "../../../common/payment-summary.js";
+} from '@nestjs/common';
+import type { FulfillmentStatus, PaymentStatus, Prisma } from '@biasmarket/db';
+import { PrismaService } from '../../../prisma/prisma.service.js';
+import { Order } from '../domain/order.entity.js';
+import { withPaymentSummary } from '../../../common/payment-summary.js';
 
 @Injectable()
 export class OrderRepository {
@@ -16,9 +16,9 @@ export class OrderRepository {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
-    if (!store) throw new NotFoundException("Store no encontrada");
+    if (!store) throw new NotFoundException('Store no encontrada');
     if (store.ownerId !== userId) {
-      throw new ForbiddenException("No sos dueño de esta store");
+      throw new ForbiddenException('No sos dueño de esta store');
     }
     return store;
   }
@@ -26,7 +26,7 @@ export class OrderRepository {
   async findRowByIdForStore(orderId: string, storeId: string) {
     const includeWithPayments = {
       items: { include: { product: true, variant: true } },
-      payments: { orderBy: { createdAt: "desc" } },
+      payments: { orderBy: { createdAt: 'desc' } },
     } as const;
 
     const includeWithoutPayments = {
@@ -49,7 +49,7 @@ export class OrderRepository {
       }
     }
     if (!order || order.storeId !== storeId) {
-      throw new NotFoundException("Orden no encontrada");
+      throw new NotFoundException('Orden no encontrada');
     }
     return withPaymentSummary(order);
   }
@@ -63,7 +63,7 @@ export class OrderRepository {
       where: { id: paymentId, orderId, storeId },
     });
     if (!payment) {
-      throw new NotFoundException("Pago no encontrado");
+      throw new NotFoundException('Pago no encontrado');
     }
     return payment;
   }
@@ -83,9 +83,9 @@ export class OrderRepository {
     const order = await this.findRowByIdForStore(orderId, storeId);
     if (
       (order as { buyerAccountId: string | null }).buyerAccountId !==
-        buyerAccountId
+      buyerAccountId
     ) {
-      throw new NotFoundException("Orden no encontrada");
+      throw new NotFoundException('Orden no encontrada');
     }
     return order;
   }
@@ -104,7 +104,7 @@ export class OrderRepository {
       where: { id: paymentId, orderId, order: { buyerAccountId } },
     });
     if (!payment) {
-      throw new NotFoundException("Pago no encontrado");
+      throw new NotFoundException('Pago no encontrado');
     }
     return payment;
   }
@@ -126,7 +126,7 @@ export class OrderRepository {
 
     const includeWithPayments = {
       items: { include: { product: true, variant: true } },
-      payments: { orderBy: { createdAt: "desc" } },
+      payments: { orderBy: { createdAt: 'desc' } },
     } as const;
 
     const includeWithoutPayments = {
@@ -137,17 +137,17 @@ export class OrderRepository {
       const orders = await this.prisma.order.findMany({
         where,
         include: includeWithPayments,
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
       });
       return orders.map((order) => withPaymentSummary(order));
     } catch {
       const orders = await this.prisma.order.findMany({
         where,
         include: includeWithoutPayments,
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
       });
       return orders.map((order) =>
-        withPaymentSummary({ ...order, payments: [] })
+        withPaymentSummary({ ...order, payments: [] }),
       );
     }
   }

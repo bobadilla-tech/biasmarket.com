@@ -10,6 +10,7 @@ const baseOrder: OrderResponseDto = {
   id: "o1",
   storeId: "store-1",
   customerId: null,
+  buyerAccountId: null,
   customerEmail: null,
   customerName: "Jane",
   customerPhone: "+51987654321",
@@ -40,11 +41,14 @@ const baseOrder: OrderResponseDto = {
 };
 
 test("getOrderStatus: REJECTED wins over everything else", () => {
-  const status = getOrderStatus({
-    ...baseOrder,
-    paymentStatus: "REJECTED",
-    fulfillmentStatus: "COMPLETED",
-  }, t);
+  const status = getOrderStatus(
+    {
+      ...baseOrder,
+      paymentStatus: "REJECTED",
+      fulfillmentStatus: "COMPLETED",
+    },
+    t,
+  );
   expect(status.label).toBe("status.rejected");
 });
 
@@ -61,29 +65,38 @@ test("getOrderStatus: not-yet-VERIFIED shows toConfirm regardless of fulfillment
 });
 
 test("getOrderStatus: VERIFIED + ORDERING is pending", () => {
-  const status = getOrderStatus({
-    ...baseOrder,
-    paymentStatus: "VERIFIED",
-    fulfillmentStatus: "ORDERING",
-  }, t);
+  const status = getOrderStatus(
+    {
+      ...baseOrder,
+      paymentStatus: "VERIFIED",
+      fulfillmentStatus: "ORDERING",
+    },
+    t,
+  );
   expect(status.label).toBe("status.pending");
 });
 
 test("getOrderStatus: VERIFIED + IN_TRANSIT/READY is inTransit", () => {
-  const status = getOrderStatus({
-    ...baseOrder,
-    paymentStatus: "VERIFIED",
-    fulfillmentStatus: "READY",
-  }, t);
+  const status = getOrderStatus(
+    {
+      ...baseOrder,
+      paymentStatus: "VERIFIED",
+      fulfillmentStatus: "READY",
+    },
+    t,
+  );
   expect(status.label).toBe("status.inTransit");
 });
 
 test("getOrderStatus: VERIFIED + COMPLETED is delivered", () => {
-  const status = getOrderStatus({
-    ...baseOrder,
-    paymentStatus: "VERIFIED",
-    fulfillmentStatus: "COMPLETED",
-  }, t);
+  const status = getOrderStatus(
+    {
+      ...baseOrder,
+      paymentStatus: "VERIFIED",
+      fulfillmentStatus: "COMPLETED",
+    },
+    t,
+  );
   expect(status.label).toBe("status.delivered");
 });
 
@@ -110,30 +123,35 @@ test("matchesTab: 'pending' means needs-attention, not literally payment-pending
 
 test("matchesTab: 'transit' requires VERIFIED and IN_TRANSIT or READY", () => {
   expect(
-    matchesTab({
-      ...baseOrder,
-      paymentStatus: "VERIFIED",
-      fulfillmentStatus: "IN_TRANSIT",
-    }, "transit"),
-  ).toBe(
-    true,
-  );
-  expect(
-    matchesTab({
-      ...baseOrder,
-      paymentStatus: "VERIFIED",
-      fulfillmentStatus: "READY",
-    }, "transit"),
+    matchesTab(
+      {
+        ...baseOrder,
+        paymentStatus: "VERIFIED",
+        fulfillmentStatus: "IN_TRANSIT",
+      },
+      "transit",
+    ),
   ).toBe(true);
   expect(
-    matchesTab({
-      ...baseOrder,
-      paymentStatus: "VERIFIED",
-      fulfillmentStatus: "ORDERING",
-    }, "transit"),
-  ).toBe(
-    false,
-  );
+    matchesTab(
+      {
+        ...baseOrder,
+        paymentStatus: "VERIFIED",
+        fulfillmentStatus: "READY",
+      },
+      "transit",
+    ),
+  ).toBe(true);
+  expect(
+    matchesTab(
+      {
+        ...baseOrder,
+        paymentStatus: "VERIFIED",
+        fulfillmentStatus: "ORDERING",
+      },
+      "transit",
+    ),
+  ).toBe(false);
 });
 
 test("paymentsLocked: locked for CANCELLED", () => {
@@ -184,17 +202,23 @@ test("paymentsLocked: not locked for a plain PENDING_PAYMENT order", () => {
 
 test("matchesTab: 'delivered' requires VERIFIED and COMPLETED", () => {
   expect(
-    matchesTab({
-      ...baseOrder,
-      paymentStatus: "VERIFIED",
-      fulfillmentStatus: "COMPLETED",
-    }, "delivered"),
+    matchesTab(
+      {
+        ...baseOrder,
+        paymentStatus: "VERIFIED",
+        fulfillmentStatus: "COMPLETED",
+      },
+      "delivered",
+    ),
   ).toBe(true);
   expect(
-    matchesTab({
-      ...baseOrder,
-      paymentStatus: "VERIFIED",
-      fulfillmentStatus: "READY",
-    }, "delivered"),
+    matchesTab(
+      {
+        ...baseOrder,
+        paymentStatus: "VERIFIED",
+        fulfillmentStatus: "READY",
+      },
+      "delivered",
+    ),
   ).toBe(false);
 });

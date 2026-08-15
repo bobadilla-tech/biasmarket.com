@@ -1,15 +1,15 @@
-import { Test, type TestingModule } from "@nestjs/testing";
+import { Test, type TestingModule } from '@nestjs/testing';
 import {
   BadRequestException,
   ForbiddenException,
   NotFoundException,
-} from "@nestjs/common";
-import { type Mock, vi } from "vitest";
-import { PaymentConfigService } from "./payment-config.service.js";
-import { PrismaService } from "../../prisma/prisma.service.js";
-import { StorageService } from "../../storage/storage.service.js";
+} from '@nestjs/common';
+import { type Mock, vi } from 'vitest';
+import { PaymentConfigService } from './payment-config.service.js';
+import { PrismaService } from '../../prisma/prisma.service.js';
+import { StorageService } from '../../storage/storage.service.js';
 
-describe("PaymentConfigService", () => {
+describe('PaymentConfigService', () => {
   let service: PaymentConfigService;
   let prisma: {
     store: { findUnique: Mock };
@@ -20,8 +20,8 @@ describe("PaymentConfigService", () => {
     deleteImage: Mock;
   };
 
-  const ownerId = "user-1";
-  const storeId = "store-1";
+  const ownerId = 'user-1';
+  const storeId = 'store-1';
 
   beforeEach(async () => {
     prisma = {
@@ -48,8 +48,8 @@ describe("PaymentConfigService", () => {
     service = module.get<PaymentConfigService>(PaymentConfigService);
   });
 
-  describe("ownership checks", () => {
-    it("throws NotFoundException when the store does not exist", async () => {
+  describe('ownership checks', () => {
+    it('throws NotFoundException when the store does not exist', async () => {
       prisma.store.findUnique.mockResolvedValue(null);
 
       await expect(service.findAllForStore(storeId, ownerId)).rejects.toThrow(
@@ -57,10 +57,10 @@ describe("PaymentConfigService", () => {
       );
     });
 
-    it("throws ForbiddenException when the user does not own the store", async () => {
+    it('throws ForbiddenException when the user does not own the store', async () => {
       prisma.store.findUnique.mockResolvedValue({
         id: storeId,
-        ownerId: "someone-else",
+        ownerId: 'someone-else',
       });
 
       await expect(service.findAllForStore(storeId, ownerId)).rejects.toThrow(
@@ -69,12 +69,12 @@ describe("PaymentConfigService", () => {
     });
   });
 
-  describe("findEnabledForStore", () => {
-    it("only returns enabled methods", async () => {
+  describe('findEnabledForStore', () => {
+    it('only returns enabled methods', async () => {
       prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
       prisma.paymentMethodConfig.findMany.mockResolvedValue([
         {
-          method: "YAPE",
+          method: 'YAPE',
           enabled: true,
         },
       ]);
@@ -84,44 +84,44 @@ describe("PaymentConfigService", () => {
       expect(prisma.paymentMethodConfig.findMany).toHaveBeenCalledWith({
         where: { storeId, enabled: true },
       });
-      expect(result).toEqual([{ method: "YAPE", enabled: true }]);
+      expect(result).toEqual([{ method: 'YAPE', enabled: true }]);
     });
   });
 
-  describe("upsert", () => {
+  describe('upsert', () => {
     beforeEach(() => {
       prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
     });
 
-    it("creates a new method config with details defaulted to {}", async () => {
+    it('creates a new method config with details defaulted to {}', async () => {
       prisma.paymentMethodConfig.upsert.mockResolvedValue({});
 
-      await service.upsert(storeId, ownerId, { method: "YAPE", enabled: true });
+      await service.upsert(storeId, ownerId, { method: 'YAPE', enabled: true });
 
       expect(prisma.paymentMethodConfig.upsert).toHaveBeenCalledWith({
-        where: { storeId_method: { storeId, method: "YAPE" } },
-        create: { storeId, method: "YAPE", enabled: true, details: {} },
+        where: { storeId_method: { storeId, method: 'YAPE' } },
+        create: { storeId, method: 'YAPE', enabled: true, details: {} },
         update: { enabled: true },
       });
     });
 
-    it("defaults enabled to true when omitted on create", async () => {
+    it('defaults enabled to true when omitted on create', async () => {
       prisma.paymentMethodConfig.upsert.mockResolvedValue({});
 
-      await service.upsert(storeId, ownerId, { method: "CASH" });
+      await service.upsert(storeId, ownerId, { method: 'CASH' });
 
       expect(prisma.paymentMethodConfig.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
-          create: { storeId, method: "CASH", enabled: true, details: {} },
+          create: { storeId, method: 'CASH', enabled: true, details: {} },
         }),
       );
     });
 
-    it("toggles enabled on an existing method without touching details", async () => {
+    it('toggles enabled on an existing method without touching details', async () => {
       prisma.paymentMethodConfig.upsert.mockResolvedValue({});
 
       await service.upsert(storeId, ownerId, {
-        method: "PLIN",
+        method: 'PLIN',
         enabled: false,
       });
 
@@ -130,15 +130,15 @@ describe("PaymentConfigService", () => {
       );
     });
 
-    it("persists TRANSFER details when all required fields are present", async () => {
+    it('persists TRANSFER details when all required fields are present', async () => {
       prisma.paymentMethodConfig.upsert.mockResolvedValue({});
 
       await service.upsert(storeId, ownerId, {
-        method: "TRANSFER",
+        method: 'TRANSFER',
         details: {
-          bankName: "BCP",
-          accountNumber: "123456789",
-          accountHolder: "Store Owner",
+          bankName: 'BCP',
+          accountNumber: '123456789',
+          accountHolder: 'Store Owner',
         },
       });
 
@@ -146,67 +146,67 @@ describe("PaymentConfigService", () => {
         expect.objectContaining({
           create: expect.objectContaining({
             details: {
-              bankName: "BCP",
-              accountNumber: "123456789",
-              accountHolder: "Store Owner",
+              bankName: 'BCP',
+              accountNumber: '123456789',
+              accountHolder: 'Store Owner',
             },
           }),
           update: expect.objectContaining({
             details: {
-              bankName: "BCP",
-              accountNumber: "123456789",
-              accountHolder: "Store Owner",
+              bankName: 'BCP',
+              accountNumber: '123456789',
+              accountHolder: 'Store Owner',
             },
           }),
         }),
       );
     });
 
-    it("rejects TRANSFER details missing a required field", async () => {
+    it('rejects TRANSFER details missing a required field', async () => {
       await expect(
         service.upsert(storeId, ownerId, {
-          method: "TRANSFER",
-          details: { bankName: "BCP" },
+          method: 'TRANSFER',
+          details: { bankName: 'BCP' },
         }),
       ).rejects.toThrow(BadRequestException);
       expect(prisma.paymentMethodConfig.upsert).not.toHaveBeenCalled();
     });
 
-    it("persists YAPE details when all required fields are present", async () => {
+    it('persists YAPE details when all required fields are present', async () => {
       prisma.paymentMethodConfig.upsert.mockResolvedValue({});
 
       await service.upsert(storeId, ownerId, {
-        method: "YAPE",
-        details: { phoneNumber: "+51999999999", accountHolder: "Store Owner" },
+        method: 'YAPE',
+        details: { phoneNumber: '+51999999999', accountHolder: 'Store Owner' },
       });
 
       expect(prisma.paymentMethodConfig.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
           update: expect.objectContaining({
             details: {
-              phoneNumber: "+51999999999",
-              accountHolder: "Store Owner",
+              phoneNumber: '+51999999999',
+              accountHolder: 'Store Owner',
             },
           }),
         }),
       );
     });
 
-    it("rejects YAPE/PLIN details missing a required field", async () => {
+    it('rejects YAPE/PLIN details missing a required field', async () => {
       await expect(
         service.upsert(storeId, ownerId, {
-          method: "PLIN",
-          details: { phoneNumber: "+51999999999" },
+          method: 'PLIN',
+          details: { phoneNumber: '+51999999999' },
         }),
       ).rejects.toThrow(BadRequestException);
     });
 
-    it("drops any submitted details for CASH", async () => {
+    it('drops any submitted details for CASH', async () => {
       prisma.paymentMethodConfig.upsert.mockResolvedValue({});
 
       await service.upsert(storeId, ownerId, {
-        method: "CASH",
-        details: { bankName: "should be ignored" },
+        method: 'CASH',
+        details: { bankName: 'should be ignored' },
       });
 
       expect(prisma.paymentMethodConfig.upsert).toHaveBeenCalledWith(
@@ -218,48 +218,48 @@ describe("PaymentConfigService", () => {
     });
   });
 
-  describe("uploadQrImage", () => {
+  describe('uploadQrImage', () => {
     beforeEach(() => {
       prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
     });
 
-    it("rejects TRANSFER/CASH — no QR concept for those methods", async () => {
+    it('rejects TRANSFER/CASH — no QR concept for those methods', async () => {
       await expect(
         service.uploadQrImage(
           storeId,
           ownerId,
-          "TRANSFER",
-          Buffer.from("x"),
-          "image/png",
+          'TRANSFER',
+          Buffer.from('x'),
+          'image/png',
         ),
       ).rejects.toThrow(BadRequestException);
       expect(storage.uploadPaymentQrImage).not.toHaveBeenCalled();
     });
 
-    it("uploads and merges qrImageUrl into existing details for YAPE", async () => {
+    it('uploads and merges qrImageUrl into existing details for YAPE', async () => {
       prisma.paymentMethodConfig.findUnique.mockResolvedValue({
-        details: { phoneNumber: "+51999999999", accountHolder: "Owner" },
+        details: { phoneNumber: '+51999999999', accountHolder: 'Owner' },
       });
       storage.uploadPaymentQrImage.mockResolvedValue(
-        "https://cdn.test/payment-qr/new.png",
+        'https://cdn.test/payment-qr/new.png',
       );
       prisma.paymentMethodConfig.upsert.mockResolvedValue({});
 
       await service.uploadQrImage(
         storeId,
         ownerId,
-        "YAPE",
-        Buffer.from("x"),
-        "image/png",
+        'YAPE',
+        Buffer.from('x'),
+        'image/png',
       );
 
       expect(prisma.paymentMethodConfig.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
           update: {
             details: {
-              phoneNumber: "+51999999999",
-              accountHolder: "Owner",
-              qrImageUrl: "https://cdn.test/payment-qr/new.png",
+              phoneNumber: '+51999999999',
+              accountHolder: 'Owner',
+              qrImageUrl: 'https://cdn.test/payment-qr/new.png',
             },
           },
         }),
@@ -267,29 +267,29 @@ describe("PaymentConfigService", () => {
       expect(storage.deleteImage).not.toHaveBeenCalled();
     });
 
-    it("deletes the previous QR object when replacing an existing one", async () => {
+    it('deletes the previous QR object when replacing an existing one', async () => {
       prisma.paymentMethodConfig.findUnique.mockResolvedValue({
         details: {
-          phoneNumber: "+51999999999",
-          accountHolder: "Owner",
-          qrImageUrl: "https://cdn.test/payment-qr/old.png",
+          phoneNumber: '+51999999999',
+          accountHolder: 'Owner',
+          qrImageUrl: 'https://cdn.test/payment-qr/old.png',
         },
       });
       storage.uploadPaymentQrImage.mockResolvedValue(
-        "https://cdn.test/payment-qr/new.png",
+        'https://cdn.test/payment-qr/new.png',
       );
       prisma.paymentMethodConfig.upsert.mockResolvedValue({});
 
       await service.uploadQrImage(
         storeId,
         ownerId,
-        "PLIN",
-        Buffer.from("x"),
-        "image/png",
+        'PLIN',
+        Buffer.from('x'),
+        'image/png',
       );
 
       expect(storage.deleteImage).toHaveBeenCalledWith(
-        "https://cdn.test/payment-qr/old.png",
+        'https://cdn.test/payment-qr/old.png',
       );
     });
   });

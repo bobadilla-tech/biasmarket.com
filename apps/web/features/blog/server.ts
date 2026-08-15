@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { client } from "@/features/blog/lib/sanity";
 import { POST_QUERY, POSTS_QUERY } from "@/features/blog/lib/sanity-queries";
+import { reportServerError } from "@/lib/report-server-error";
 import {
   type BlogPost,
   blogPostSchema,
@@ -20,7 +21,8 @@ export const getBlogPosts = cache(async (): Promise<BlogPostSummary[]> => {
     const data = await client.fetch(POSTS_QUERY, {}, FETCH_OPTIONS);
     const parsed = blogPostSummarySchema.array().safeParse(data);
     return parsed.success ? parsed.data : [];
-  } catch {
+  } catch (error) {
+    await reportServerError(error, { fn: "getBlogPosts" });
     return [];
   }
 });
@@ -33,7 +35,8 @@ export const getBlogPost = cache(
       if (!data) return null;
       const parsed = blogPostSchema.safeParse(data);
       return parsed.success ? parsed.data : null;
-    } catch {
+    } catch (error) {
+      await reportServerError(error, { fn: "getBlogPost", slug });
       return null;
     }
   },

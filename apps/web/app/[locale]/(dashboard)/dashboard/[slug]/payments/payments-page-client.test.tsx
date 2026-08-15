@@ -25,8 +25,8 @@ vi.mock("@/features/stats", () => ({
   statsKeys: { overview: (storeId: string) => ["stats", storeId, "overview"] },
 }));
 
-const { findAll, review, reviewPaymentProof, paymentConfigFindAll } = vi
-  .hoisted(() => ({
+const { findAll, review, reviewPaymentProof, paymentConfigFindAll } =
+  vi.hoisted(() => ({
     findAll: vi.fn(),
     review: vi.fn(),
     reviewPaymentProof: vi.fn(),
@@ -43,6 +43,7 @@ const baseOrder: OrderResponseDto = {
   id: "order-1",
   storeId: "store-1",
   customerId: null,
+  buyerAccountId: null,
   customerEmail: null,
   customerName: "Jane",
   customerPhone: "+51987654321",
@@ -164,7 +165,7 @@ test("approving a pending proof calls the proof-review mutation with the proof p
       "proof-1",
       { decision: "approve" },
       expect.anything(),
-    )
+    ),
   );
   expect(review).not.toHaveBeenCalled();
 });
@@ -194,7 +195,7 @@ test("rejecting a pending proof calls the proof-review mutation with the proof p
       "proof-1",
       { decision: "reject", reason: "El comprobante parece editado" },
       expect.anything(),
-    )
+    ),
   );
   expect(review).not.toHaveBeenCalled();
 });
@@ -223,7 +224,7 @@ test("order-level rejection (no pending proof) stays on the order review mutatio
       "order-1",
       { decision: "reject", reason: "Razón de nivel de pedido" },
       expect.anything(),
-    )
+    ),
   );
   expect(reviewPaymentProof).not.toHaveBeenCalled();
 });

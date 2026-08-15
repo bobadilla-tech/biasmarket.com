@@ -1,4 +1,4 @@
-import { Type } from "class-transformer";
+import { Type } from 'class-transformer';
 import {
   IsBoolean,
   IsDefined,
@@ -6,7 +6,7 @@ import {
   IsOptional,
   IsString,
   ValidateNested,
-} from "class-validator";
+} from 'class-validator';
 
 // Kuma's own status codes (extra/util-common.js in the Kuma source) — only
 // DOWN/UP matter to recordEvent(), PENDING/MAINTENANCE fall through as a

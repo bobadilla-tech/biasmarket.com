@@ -1,4 +1,4 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty } from '@nestjs/swagger';
 
 // Same conventions as delivery-config/dto/delivery-method-response.dto.ts —
 // literal union instead of the Prisma-generated `PaymentMethodType`,
@@ -10,13 +10,13 @@ export class PaymentMethodConfigResponseDto {
   @ApiProperty()
   storeId: string;
 
-  @ApiProperty({ enum: ["YAPE", "PLIN", "TRANSFER", "CASH"] })
-  method: "YAPE" | "PLIN" | "TRANSFER" | "CASH";
+  @ApiProperty({ enum: ['YAPE', 'PLIN', 'TRANSFER', 'CASH'] })
+  method: 'YAPE' | 'PLIN' | 'TRANSFER' | 'CASH';
 
   @ApiProperty()
   enabled: boolean;
 
-  @ApiProperty({ type: "object", additionalProperties: true })
+  @ApiProperty({ type: 'object', additionalProperties: true })
   details: Record<string, unknown>;
 
   @ApiProperty()
@@ -25,6 +25,6 @@ export class PaymentMethodConfigResponseDto {
   @ApiProperty()
   depositPercentCourier: number;
 
-  @ApiProperty({ type: String, format: "date-time" })
+  @ApiProperty({ type: String, format: 'date-time' })
   createdAt: string;
 }

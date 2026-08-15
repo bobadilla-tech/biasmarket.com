@@ -156,12 +156,24 @@ jobs:
       # (real secrets, generated Caddy active-config, deploy state, release
       # history/snapshots) — see infra/vps/docker-compose.yml's header
       # comment and .gitignore.
+      #
+      # --delay-updates --delete-delay: stages all transferred files and
+      # performs renames/deletes as a single final pass instead of
+      # incrementally mid-transfer. Narrows (doesn't fully close) a race
+      # where a self-scheduled cleanup (or cleanup-fallback.yml's hourly
+      # tick) execs deploy.sh at the exact moment a concurrent deploy's
+      # rsync has replaced deploy.sh but not yet one of its sourced
+      # lib/*.sh files (or vice versa), sourcing a version-mismatched mix
+      # that can crash with an unbound-variable error. See
+      # docs/plans/2026-08-10-server-side-cleanup-scheduling-plan.md
+      # decision 9 for the full analysis — it only applies to commits that
+      # change infra/vps/lib/*.sh content.
       - name: Sync infra/vps/ to the VPS
         run: |
           # The deploy key is forced through `rrsync /opt/biasmarket/`.
           # Use a relative remote path so rrsync maps it to that directory;
           # an absolute /opt/biasmarket/ would be prefixed again.
-          rsync -az --delete \
+          rsync -az --delete --delay-updates --delete-delay \
             --exclude 'env/*.env' \
             --exclude 'state/' \
             --exclude 'caddy/active/*.caddy' \
@@ -173,10 +185,14 @@ jobs:
       # returns immediately, so this step finishes in seconds regardless of
       # how long the actual deploy takes — see
       # infra/vps/bin/ssh-deploy-dispatcher.sh.
+      # --force is intentional for automated blue/green releases: a rapid
+      # successive merge may arrive while the older benched release is still
+      # inside its 30-minute cleanup window. The current live color remains
+      # the rollback target after a successful cutover.
       - name: Launch deploy (detached)
         run: |
           ssh -i ~/.ssh/deploy_dispatch_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" \
-            "deploy.sh ${{ needs.gate.outputs.head_sha }}"
+            "deploy.sh ${{ needs.gate.outputs.head_sha }} --force"
 
       # A SEPARATE SSH call from the one above, polling
       # state/last_deploy_result (deploy.sh's secret-free completion
@@ -186,49 +202,13 @@ jobs:
       - name: Wait for deploy result
         run: |
           set -uo pipefail
+          # GitHub runs this script with `bash -e`; temporarily disable errexit
+          # so a failed remote deploy's secret-free result is printed before
+          # this step returns the deploy's status to Actions.
+          set +e
           OUTPUT="$(ssh -i ~/.ssh/deploy_dispatch_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" \
             "deploy.sh --wait-for-result ${{ needs.gate.outputs.head_sha }} 1500")"
           STATUS=$?
+          set -e
           echo "$OUTPUT"
           exit "$STATUS"
-
-  # Old-color cleanup, scheduled ~30 minutes after a successful cutover —
-  # not "operator confirmation," a concrete mechanism. No explicit
-  # cancellation logic is needed for an in-window `deploy.sh --rollback`:
-  # rollback rewrites state/rollback_target to whatever color is now
-  # correctly benched, so this job's plain `deploy.sh --cleanup` call
-  # (state-driven, checked against current_color server-side) tears down
-  # the right color regardless of whether a rollback happened in between.
-  # The `production-cleanup` concurrency group instead protects against the
-  # OTHER case: a second deploy landing before this 30-minute window
-  # elapses cancels the first deploy's now-stale cleanup schedule outright.
-  scheduled-cleanup:
-    name: Scheduled old-color cleanup
-    needs: [gate, sync-and-deploy]
-    runs-on: ubuntu-latest
-    environment: production
-    timeout-minutes: 35
-    concurrency:
-      group: production-cleanup
-      cancel-in-progress: true
-    steps:
-      # `uses: ./...` below resolves the composite action from the checked-
-      # out workspace, so a checkout has to happen here too even though
-      # this job doesn't otherwise need repo contents.
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ needs.gate.outputs.head_sha }}
-          persist-credentials: false
-
-      - uses: ./.github/actions/deploy-ssh-setup
-        with:
-          host: ${{ secrets.DEPLOY_SSH_HOST }}
-          user: ${{ secrets.DEPLOY_SSH_USER }}
-          known_hosts: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
-          key_rsync: ${{ secrets.DEPLOY_SSH_KEY_RSYNC }}
-          key_dispatch: ${{ secrets.DEPLOY_SSH_KEY_DISPATCH }}
-
-      - name: Wait 30 minutes, then clean up the previous color
-        run: |
-          sleep 1800
-          ssh -i ~/.ssh/deploy_dispatch_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'deploy.sh --cleanup'

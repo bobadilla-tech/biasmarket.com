@@ -1,8 +1,9 @@
 # syntax=docker/dockerfile:1
 #
-# Single Dockerfile for workers, dev and prod share the `base`/`deps` stages.
-# docker-compose.dev.yml builds target `dev`, docker-compose.yml (prod)
-# builds the default final target `runtime`. Mirrors api.Dockerfile's shape —
+# Single Dockerfile for workers, dev and blue/green production share the
+# `base`/`deps` stages. docker-compose.dev.yml builds target `dev`; the VPS
+# blue/green stack builds the default final target `runtime`. Mirrors
+# api.Dockerfile's shape —
 # see that file's comments for the rationale behind each stage.
 
 # node:26-slim no longer bundles corepack, install it pinned (not @latest)

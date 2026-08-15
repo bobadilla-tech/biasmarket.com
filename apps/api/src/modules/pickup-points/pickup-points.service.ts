@@ -2,10 +2,10 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-} from "@nestjs/common";
-import { PrismaService } from "../../prisma/prisma.service.js";
-import type { CreatePickupPointDto } from "./dto/create-pickup-point.dto.js";
-import type { UpdatePickupPointDto } from "./dto/update-pickup-point.dto.js";
+} from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service.js';
+import type { CreatePickupPointDto } from './dto/create-pickup-point.dto.js';
+import type { UpdatePickupPointDto } from './dto/update-pickup-point.dto.js';
 
 @Injectable()
 export class PickupPointsService {
@@ -15,9 +15,9 @@ export class PickupPointsService {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
-    if (!store) throw new NotFoundException("Store no encontrada");
+    if (!store) throw new NotFoundException('Store no encontrada');
     if (store.ownerId !== userId) {
-      throw new ForbiddenException("No sos dueño de esta store");
+      throw new ForbiddenException('No sos dueño de esta store');
     }
     return store;
   }
@@ -32,7 +32,7 @@ export class PickupPointsService {
       where: { id: pointId },
     });
     if (!point || point.storeId !== storeId) {
-      throw new NotFoundException("Punto de recojo no encontrado");
+      throw new NotFoundException('Punto de recojo no encontrado');
     }
     return point;
   }
@@ -41,7 +41,7 @@ export class PickupPointsService {
     await this.assertOwnership(storeId, userId);
     return this.prisma.pickupPoint.findMany({
       where: { storeId },
-      orderBy: { sortOrder: "asc" },
+      orderBy: { sortOrder: 'asc' },
     });
   }
 
@@ -79,10 +79,10 @@ export class PickupPointsService {
 
   async findEnabledForSlug(slug: string) {
     const store = await this.prisma.store.findUnique({ where: { slug } });
-    if (!store) throw new NotFoundException("Tienda no encontrada");
+    if (!store) throw new NotFoundException('Tienda no encontrada');
     return this.prisma.pickupPoint.findMany({
       where: { storeId: store.id, enabled: true },
-      orderBy: { sortOrder: "asc" },
+      orderBy: { sortOrder: 'asc' },
     });
   }
 }

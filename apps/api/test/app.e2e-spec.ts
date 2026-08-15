@@ -1,9 +1,9 @@
-import { Test, type TestingModule } from "@nestjs/testing";
-import type { INestApplication } from "@nestjs/common";
-import request from "supertest";
-import { AppModule } from "./../src/app.module.js";
+import { Test, type TestingModule } from '@nestjs/testing';
+import type { INestApplication } from '@nestjs/common';
+import request from 'supertest';
+import { AppModule } from './../src/app.module.js';
 
-describe("AppController (e2e)", () => {
+describe('AppController (e2e)', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
@@ -15,18 +15,18 @@ describe("AppController (e2e)", () => {
     await app.init();
   });
 
-  it("/ (GET) redirects to WEB_URL without requiring auth", () => {
+  it('/ (GET) redirects to WEB_URL without requiring auth', () => {
     return request(app.getHttpServer())
-      .get("/")
+      .get('/')
       .expect(302)
-      .expect("Location", process.env.WEB_URL ?? "http://localhost:3001");
+      .expect('Location', process.env.WEB_URL ?? 'http://localhost:3001');
   });
 
-  it("/health (GET) reports db status without requiring auth", () => {
+  it('/health (GET) reports db status without requiring auth', () => {
     return request(app.getHttpServer())
-      .get("/health")
+      .get('/health')
       .expect(200)
-      .expect({ status: "ok", db: "ok" });
+      .expect({ status: 'ok', db: 'ok' });
   });
 
   afterEach(async () => {

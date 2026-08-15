@@ -11,15 +11,17 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useRouter } from "@/i18n/navigation";
+import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useMyStores } from "../queries/use-my-stores";
 import { useDeleteStore } from "../mutations/use-delete-store";
 
 export function MyStoresList() {
+  const { isReady } = useRequireAuth();
   const t = useTranslations("onboarding.createStore");
   const tCommon = useTranslations("common");
   const router = useRouter();
 
-  const { data: stores = [], isPending } = useMyStores();
+  const { data: stores = [], isPending } = useMyStores({ enabled: isReady });
   const deleteStore = useDeleteStore();
 
   const handleDelete = (storeId: string) => {
@@ -29,6 +31,8 @@ export function MyStoresList() {
         alert(error instanceof Error ? error.message : t("deleteError")),
     });
   };
+
+  if (!isReady) return null;
 
   return (
     <Card className="rounded-[30px] border-white/10 bg-[#2a0d50] py-0 text-white ring-white/10">
@@ -46,17 +50,15 @@ export function MyStoresList() {
         </div>
       </CardHeader>
       <CardContent className="space-y-3 px-5 pb-5">
-        {isPending
-          ? <p className="text-sm text-white/70">{tCommon("loading")}</p>
-          : null}
+        {isPending ? (
+          <p className="text-sm text-white/70">{tCommon("loading")}</p>
+        ) : null}
 
-        {!isPending && stores.length === 0
-          ? (
-            <div className="rounded-[22px] border border-dashed border-white/14 bg-white/5 p-4 text-sm text-white/68">
-              {t("empty")}
-            </div>
-          )
-          : null}
+        {!isPending && stores.length === 0 ? (
+          <div className="rounded-[22px] border border-dashed border-white/14 bg-white/5 p-4 text-sm text-white/68">
+            {t("empty")}
+          </div>
+        ) : null}
 
         {stores.map((store) => (
           <Card

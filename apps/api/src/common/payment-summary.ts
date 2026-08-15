@@ -1,9 +1,9 @@
-import { Prisma } from "@biasmarket/db";
+import { Prisma } from '@biasmarket/db';
 import type {
   PaymentReviewStatus,
   PaymentSource,
   PaymentStatus,
-} from "@biasmarket/db";
+} from '@biasmarket/db';
 
 export interface PaymentSummary {
   paidAmount: number;
@@ -26,7 +26,7 @@ export interface SummablePayment {
 // invariant" section.
 export function countsTowardPaid(payment: SummablePayment): boolean {
   return (
-    payment.source === "SELLER_RECORDED" || payment.reviewStatus === "APPROVED"
+    payment.source === 'SELLER_RECORDED' || payment.reviewStatus === 'APPROVED'
   );
 }
 
@@ -40,8 +40,8 @@ export function countsTowardPaid(payment: SummablePayment): boolean {
 // overview + analytics, customer lifetimeSpend, guest spend) applies the same
 // rule instead of each hard-coding its own status set.
 export const REVENUE_ORDER_PAYMENT_STATUSES: readonly PaymentStatus[] = [
-  "VERIFIED",
-  "PARTIALLY_PAID",
+  'VERIFIED',
+  'PARTIALLY_PAID',
 ] as const;
 
 export function countsTowardRevenue(paymentStatus: PaymentStatus): boolean {

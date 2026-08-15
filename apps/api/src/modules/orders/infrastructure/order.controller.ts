@@ -13,31 +13,31 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
-} from "@nestjs/common";
-import { AuthGuard, Session } from "@thallesp/nestjs-better-auth";
-import type { UserSession } from "@thallesp/nestjs-better-auth";
-import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
+} from '@nestjs/common';
+import { AuthGuard, Session } from '@thallesp/nestjs-better-auth';
+import type { UserSession } from '@thallesp/nestjs-better-auth';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import type {
   FulfillmentStatus,
   PaymentMethodType,
   PaymentStatus,
-} from "@biasmarket/db";
+} from '@biasmarket/db';
 import {
   ApiConsumes,
   ApiOkResponse,
   ApiProduces,
   ApiQuery,
-} from "@nestjs/swagger";
-import { OrderRepository } from "./order.repository.js";
-import { ReviewPaymentUseCase } from "../application/review-payment.usecase.js";
-import { AdvanceFulfillmentUseCase } from "../application/advance-fulfillment.usecase.js";
-import { CancelOrderUseCase } from "../application/cancel-order.usecase.js";
-import { ReviewPaymentDto } from "../dto/review-payment.dto.js";
-import { AdvanceFulfillmentDto } from "../dto/advance-fulfillment.dto.js";
-import { CancelOrderDto } from "../dto/cancel-order.dto.js";
-import { PrismaService } from "../../../prisma/prisma.service.js";
-import { FileInterceptor } from "@nestjs/platform-express";
-import { StorageService } from "../../../storage/storage.service.js";
+} from '@nestjs/swagger';
+import { OrderRepository } from './order.repository.js';
+import { ReviewPaymentUseCase } from '../application/review-payment.usecase.js';
+import { AdvanceFulfillmentUseCase } from '../application/advance-fulfillment.usecase.js';
+import { CancelOrderUseCase } from '../application/cancel-order.usecase.js';
+import { ReviewPaymentDto } from '../dto/review-payment.dto.js';
+import { AdvanceFulfillmentDto } from '../dto/advance-fulfillment.dto.js';
+import { CancelOrderDto } from '../dto/cancel-order.dto.js';
+import { PrismaService } from '../../../prisma/prisma.service.js';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { StorageService } from '../../../storage/storage.service.js';
 import type {
   OrderDetailResponseDto,
   OrderItemResponseDto,
@@ -46,23 +46,20 @@ import type {
   OrderResponseDto,
   OrderStatusResponseDto,
   OrderVariantResponseDto,
-} from "../dto/order-response.dto.js";
+} from '../dto/order-response.dto.js';
 
 type PaymentStatusLiteral =
-  | "PENDING_PAYMENT"
-  | "PARTIALLY_PAID"
-  | "PAYMENT_SUBMITTED"
-  | "VERIFIED"
-  | "REJECTED"
-  | "CANCELLED";
+  | 'PENDING_PAYMENT'
+  | 'PARTIALLY_PAID'
+  | 'PAYMENT_SUBMITTED'
+  | 'VERIFIED'
+  | 'REJECTED'
+  | 'CANCELLED';
 type FulfillmentStatusLiteral =
-  | "ORDERING"
-  | "IN_TRANSIT"
-  | "READY"
-  | "COMPLETED";
-type DeliveryMethodTypeLiteral = "PICKUP" | "COURIER";
-type CancellationResolutionLiteral = "REFUNDED" | "RETAINED" | "STORE_CREDIT";
-type PaymentMethodLiteral = "YAPE" | "PLIN" | "TRANSFER" | "CASH";
+  'ORDERING' | 'IN_TRANSIT' | 'READY' | 'COMPLETED';
+type DeliveryMethodTypeLiteral = 'PICKUP' | 'COURIER';
+type CancellationResolutionLiteral = 'REFUNDED' | 'RETAINED' | 'STORE_CREDIT';
+type PaymentMethodLiteral = 'YAPE' | 'PLIN' | 'TRANSFER' | 'CASH';
 
 export interface OrderProductRow {
   id: string;
@@ -73,7 +70,7 @@ export interface OrderProductRow {
   currency: string;
   images: string[];
   availableUntil: Date | null;
-  status: "DRAFT" | "PUBLISHED";
+  status: 'DRAFT' | 'PUBLISHED';
   soldOut: boolean;
   discontinued: boolean;
   deletedAt: Date | null;
@@ -116,8 +113,8 @@ export interface OrderPaymentRow {
   note: string | null;
   imageUrl: string | null;
   createdAt: Date;
-  source: "SELLER_RECORDED" | "BUYER_SUBMITTED";
-  reviewStatus: "N_A" | "PENDING_REVIEW" | "APPROVED" | "REJECTED";
+  source: 'SELLER_RECORDED' | 'BUYER_SUBMITTED';
+  reviewStatus: 'N_A' | 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED';
   reviewedAt: Date | null;
   reviewedBy: string | null;
 }
@@ -126,6 +123,7 @@ export interface OrderRow {
   id: string;
   storeId: string;
   customerId: string | null;
+  buyerAccountId: string | null;
   customerEmail: string | null;
   customerPhone: string;
   customerName: string | null;
@@ -137,7 +135,7 @@ export interface OrderRow {
   paymentStatus: PaymentStatusLiteral;
   paymentRejectionReason: string | null;
   fulfillmentStatus: FulfillmentStatusLiteral;
-  status: "ACTIVE" | "CANCELLED";
+  status: 'ACTIVE' | 'CANCELLED';
   cancellationResolution: CancellationResolutionLiteral | null;
   cancellationReason: string | null;
   retainedAmount: { toString(): string } | null;
@@ -159,6 +157,7 @@ interface OrderStatusRow {
   id: string;
   storeId: string;
   customerId: string | null;
+  buyerAccountId: string | null;
   customerEmail: string | null;
   customerPhone: string;
   customerName: string | null;
@@ -170,7 +169,7 @@ interface OrderStatusRow {
   paymentStatus: PaymentStatusLiteral;
   paymentRejectionReason: string | null;
   fulfillmentStatus: FulfillmentStatusLiteral;
-  status: "ACTIVE" | "CANCELLED";
+  status: 'ACTIVE' | 'CANCELLED';
   cancellationResolution: CancellationResolutionLiteral | null;
   cancellationReason: string | null;
   retainedAmount: { toString(): string } | null;
@@ -259,7 +258,7 @@ function toOrderStatusDto(row: OrderStatusRow): OrderStatusResponseDto {
   };
 }
 
-@Controller("stores/:storeId/orders")
+@Controller('stores/:storeId/orders')
 @UseGuards(AuthGuard)
 export class OrderController {
   constructor(
@@ -271,16 +270,15 @@ export class OrderController {
     private storage: StorageService,
   ) {}
 
-  @ApiQuery({ name: "paymentStatus", required: false, type: String })
-  @ApiQuery({ name: "fulfillmentStatus", required: false, type: String })
+  @ApiQuery({ name: 'paymentStatus', required: false, type: String })
+  @ApiQuery({ name: 'fulfillmentStatus', required: false, type: String })
   @Get()
   async findAll(
-    @Param("storeId") storeId: string,
+    @Param('storeId') storeId: string,
     @Session() session: UserSession,
-    @Query("paymentStatus") paymentStatus: PaymentStatus | undefined,
-    @Query("fulfillmentStatus") fulfillmentStatus:
-      | FulfillmentStatus
-      | undefined,
+    @Query('paymentStatus') paymentStatus: PaymentStatus | undefined,
+    @Query('fulfillmentStatus')
+    fulfillmentStatus: FulfillmentStatus | undefined,
   ): Promise<OrderResponseDto[]> {
     await this.orders.assertOwnership(storeId, session.user.id);
     const rows = await this.orders.findManyForStore(storeId, {
@@ -290,10 +288,10 @@ export class OrderController {
     return rows.map(toOrderDto);
   }
 
-  @Get(":orderId")
+  @Get(':orderId')
   async findOne(
-    @Param("storeId") storeId: string,
-    @Param("orderId") orderId: string,
+    @Param('storeId') storeId: string,
+    @Param('orderId') orderId: string,
     @Session() session: UserSession,
   ): Promise<OrderDetailResponseDto> {
     await this.orders.assertOwnership(storeId, session.user.id);
@@ -306,19 +304,19 @@ export class OrderController {
   // docs/plans/2026-08-08-payment-proof-image-access-control-plan.md): the
   // payment bucket is private, so `OrderPayment.imageUrl` alone is no longer
   // fetchable by anyone who obtains it, only via this ownership-gated route.
-  @Get(":orderId/payments/:paymentId/image")
-  @ApiOkResponse({ schema: { type: "string", format: "binary" } })
-  @ApiProduces("image/jpeg", "image/png")
+  @Get(':orderId/payments/:paymentId/image')
+  @ApiOkResponse({ schema: { type: 'string', format: 'binary' } })
+  @ApiProduces('image/jpeg', 'image/png')
   // Helmet's default CORP (`same-origin`) makes the browser block this image
   // from being embedded by the web app's cross-origin `<img>` tags
   // (`ERR_BLOCKED_BY_RESPONSE.NotSameOrigin`) — the web frontend
   // (`biasmarket.com`) and the API (`api.biasmarket.com`) are different
   // origins. Same reasoning as `CustomerOrderPaymentsController.getImage`.
-  @Header("Cross-Origin-Resource-Policy", "cross-origin")
+  @Header('Cross-Origin-Resource-Policy', 'cross-origin')
   async getPaymentImage(
-    @Param("storeId") storeId: string,
-    @Param("orderId") orderId: string,
-    @Param("paymentId") paymentId: string,
+    @Param('storeId') storeId: string,
+    @Param('orderId') orderId: string,
+    @Param('paymentId') paymentId: string,
     @Session() session: UserSession,
   ): Promise<StreamableFile> {
     await this.orders.assertOwnership(storeId, session.user.id);
@@ -328,7 +326,7 @@ export class OrderController {
       storeId,
     );
     if (!payment.imageUrl) {
-      throw new NotFoundException("Este pago no tiene comprobante");
+      throw new NotFoundException('Este pago no tiene comprobante');
     }
     const { body, contentType } = await this.storage.getPaymentImageStream(
       payment.imageUrl,
@@ -336,30 +334,30 @@ export class OrderController {
     return new StreamableFile(body, { type: contentType });
   }
 
-  @Post(":orderId/payments")
-  @ApiConsumes("multipart/form-data")
-  @UseInterceptors(FileInterceptor("file"))
+  @Post(':orderId/payments')
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('file'))
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { ttl: 60_000, limit: 20 } })
   async addPayment(
-    @Param("storeId") storeId: string,
-    @Param("orderId") orderId: string,
+    @Param('storeId') storeId: string,
+    @Param('orderId') orderId: string,
     @Session() session: UserSession,
-    @Body("amount") amount: string,
-    @Body("method") method: string,
-    @Body("note") note?: string,
+    @Body('amount') amount: string,
+    @Body('method') method: string,
+    @Body('note') note?: string,
     @UploadedFile() file?: Express.Multer.File,
   ): Promise<OrderDetailResponseDto> {
     await this.orders.assertOwnership(storeId, session.user.id);
     const order = await this.orders.findRowByIdForStore(orderId, storeId);
-    if (order.paymentStatus === "CANCELLED") {
+    if (order.paymentStatus === 'CANCELLED') {
       throw new BadRequestException(
-        "No se pueden registrar abonos en una orden cancelada",
+        'No se pueden registrar abonos en una orden cancelada',
       );
     }
-    if (order.paymentStatus === "REJECTED") {
+    if (order.paymentStatus === 'REJECTED') {
       throw new BadRequestException(
-        "No se pueden registrar abonos en una orden rechazada",
+        'No se pueden registrar abonos en una orden rechazada',
       );
     }
     // A VERIFIED order only closes to further payments once its balance is
@@ -368,23 +366,23 @@ export class OrderController {
     // must be able to keep registering the remainder — mirrors the frontend
     // `paymentsLocked` rule (features/orders/lib/order-status.ts).
     if (
-      order.paymentStatus === "VERIFIED" &&
+      order.paymentStatus === 'VERIFIED' &&
       Number(order.pendingAmount) <= 0
     ) {
-      throw new BadRequestException("La orden ya está pagada");
+      throw new BadRequestException('La orden ya está pagada');
     }
     if (
-      order.fulfillmentStatus === "IN_TRANSIT" ||
-      order.fulfillmentStatus === "READY" ||
-      order.fulfillmentStatus === "COMPLETED"
+      order.fulfillmentStatus === 'IN_TRANSIT' ||
+      order.fulfillmentStatus === 'READY' ||
+      order.fulfillmentStatus === 'COMPLETED'
     ) {
       throw new BadRequestException(
-        "No se pueden registrar abonos en una orden enviada",
+        'No se pueden registrar abonos en una orden enviada',
       );
     }
     const numericAmount = Number(amount);
     if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
-      throw new BadRequestException("Monto inválido");
+      throw new BadRequestException('Monto inválido');
     }
     // Belt-and-suspenders on top of the Decimal-space fix in
     // `computePaymentSummary`: money boundary comparisons compare in cents,
@@ -393,43 +391,43 @@ export class OrderController {
     // that's actually exact to the cent.
     const toCents = (n: number) => Math.round(n * 100);
     if (toCents(numericAmount) > toCents(order.pendingAmount)) {
-      throw new BadRequestException("El abono excede el saldo pendiente");
+      throw new BadRequestException('El abono excede el saldo pendiente');
     }
     const PAYMENT_METHODS: PaymentMethodType[] = [
-      "YAPE",
-      "PLIN",
-      "TRANSFER",
-      "CASH",
+      'YAPE',
+      'PLIN',
+      'TRANSFER',
+      'CASH',
     ];
     if (!method || !PAYMENT_METHODS.includes(method as PaymentMethodType)) {
-      throw new BadRequestException("Selecciona un método de pago");
+      throw new BadRequestException('Selecciona un método de pago');
     }
 
     const nextPaid = order.paidAmount + numericAmount;
     const nextStatus: PaymentStatus =
       toCents(nextPaid) >= toCents(Number(order.requiredAmount))
-        ? "VERIFIED"
-        : "PARTIALLY_PAID";
+        ? 'VERIFIED'
+        : 'PARTIALLY_PAID';
 
     // Already-VERIFIED orders with a residual balance stay VERIFIED no matter
     // what this payment brings them to: VERIFIED is terminal (order-status.vo
     // has no outgoing transitions), stock was already decremented at approval,
     // and routing through ReviewPaymentUseCase would throw VERIFIED -> VERIFIED.
-    const alreadyVerified = order.paymentStatus === "VERIFIED";
+    const alreadyVerified = order.paymentStatus === 'VERIFIED';
 
     let imageUrl: string | null = null;
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        throw new BadRequestException("Máximo 5MB");
+        throw new BadRequestException('Máximo 5MB');
       }
       const isJpeg = file.buffer[0] === 0xff && file.buffer[1] === 0xd8;
       const isPng = file.buffer
         .subarray(0, 8)
         .equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
-      if (!isJpeg && !isPng) throw new BadRequestException("Solo JPEG o PNG");
+      if (!isJpeg && !isPng) throw new BadRequestException('Solo JPEG o PNG');
       imageUrl = await this.storage.uploadPaymentImage(
         file.buffer,
-        isPng ? "image/png" : "image/jpeg",
+        isPng ? 'image/png' : 'image/jpeg',
       );
     }
 
@@ -461,17 +459,17 @@ export class OrderController {
             data: {
               actorId: session.user.id,
               storeId,
-              action: "payment.recorded",
-              entityType: "Order",
+              action: 'payment.recorded',
+              entityType: 'Order',
               entityId: orderId,
               metadata: {
                 amount: numericAmount,
                 method,
-                resultingPaymentStatus: "VERIFIED",
+                resultingPaymentStatus: 'VERIFIED',
               },
             },
           });
-        } else if (nextStatus === "PARTIALLY_PAID") {
+        } else if (nextStatus === 'PARTIALLY_PAID') {
           await this.orders.saveStatus(
             orderId,
             { paymentStatus: nextStatus },
@@ -481,8 +479,8 @@ export class OrderController {
             data: {
               actorId: session.user.id,
               storeId,
-              action: "payment.partial",
-              entityType: "Order",
+              action: 'payment.partial',
+              entityType: 'Order',
               entityId: orderId,
               metadata: {
                 amount: numericAmount,
@@ -497,12 +495,12 @@ export class OrderController {
       throw new BadRequestException(e instanceof Error ? e.message : String(e));
     }
 
-    if (!alreadyVerified && nextStatus === "VERIFIED") {
+    if (!alreadyVerified && nextStatus === 'VERIFIED') {
       await this.reviewPayment.execute(
         orderId,
         storeId,
         session.user.id,
-        "approve",
+        'approve',
       );
     }
 
@@ -519,11 +517,11 @@ export class OrderController {
   // `addPayment` above already runs for a seller-recorded payment, so a
   // buyer's approved submission reaches the same end state a seller manually
   // recording that amount would.
-  @Patch(":orderId/payments/:paymentId/review")
+  @Patch(':orderId/payments/:paymentId/review')
   async reviewPaymentProof(
-    @Param("storeId") storeId: string,
-    @Param("orderId") orderId: string,
-    @Param("paymentId") paymentId: string,
+    @Param('storeId') storeId: string,
+    @Param('orderId') orderId: string,
+    @Param('paymentId') paymentId: string,
     @Session() session: UserSession,
     @Body() dto: ReviewPaymentDto,
   ): Promise<OrderDetailResponseDto> {
@@ -533,16 +531,16 @@ export class OrderController {
       orderId,
       storeId,
     );
-    if (payment.source !== "BUYER_SUBMITTED") {
+    if (payment.source !== 'BUYER_SUBMITTED') {
       throw new BadRequestException(
-        "Solo se pueden revisar comprobantes enviados por el comprador",
+        'Solo se pueden revisar comprobantes enviados por el comprador',
       );
     }
-    if (payment.reviewStatus !== "PENDING_REVIEW") {
-      throw new BadRequestException("Este comprobante ya fue revisado");
+    if (payment.reviewStatus !== 'PENDING_REVIEW') {
+      throw new BadRequestException('Este comprobante ya fue revisado');
     }
 
-    const reviewStatus = dto.decision === "approve" ? "APPROVED" : "REJECTED";
+    const reviewStatus = dto.decision === 'approve' ? 'APPROVED' : 'REJECTED';
     await this.prisma.$transaction(async (tx) => {
       await tx.orderPayment.update({
         where: { id: paymentId },
@@ -556,17 +554,18 @@ export class OrderController {
         data: {
           actorId: session.user.id,
           storeId,
-          action: dto.decision === "approve"
-            ? "payment_proof.approved"
-            : "payment_proof.rejected",
-          entityType: "OrderPayment",
+          action:
+            dto.decision === 'approve'
+              ? 'payment_proof.approved'
+              : 'payment_proof.rejected',
+          entityType: 'OrderPayment',
           entityId: paymentId,
           metadata: { reason: dto.reason ?? null },
         },
       });
     });
 
-    if (dto.decision === "approve") {
+    if (dto.decision === 'approve') {
       const order = await this.orders.findRowByIdForStore(orderId, storeId);
       const toCents = (n: number) => Math.round(n * 100);
       // Only auto-advance status from the two "still collecting money" states
@@ -577,8 +576,8 @@ export class OrderController {
       // record, it just doesn't try to re-drive an order that can no longer
       // legally change state.
       if (
-        order.paymentStatus === "PENDING_PAYMENT" ||
-        order.paymentStatus === "PARTIALLY_PAID"
+        order.paymentStatus === 'PENDING_PAYMENT' ||
+        order.paymentStatus === 'PARTIALLY_PAID'
       ) {
         if (
           toCents(order.paidAmount) >= toCents(Number(order.requiredAmount))
@@ -587,11 +586,11 @@ export class OrderController {
             orderId,
             storeId,
             session.user.id,
-            "approve",
+            'approve',
           );
         } else if (order.paidAmount > 0) {
           await this.orders.saveStatus(orderId, {
-            paymentStatus: "PARTIALLY_PAID",
+            paymentStatus: 'PARTIALLY_PAID',
           });
         }
       }
@@ -601,10 +600,10 @@ export class OrderController {
     return toOrderDetailDto(updated);
   }
 
-  @Patch(":orderId/review")
+  @Patch(':orderId/review')
   async review(
-    @Param("storeId") storeId: string,
-    @Param("orderId") orderId: string,
+    @Param('storeId') storeId: string,
+    @Param('orderId') orderId: string,
     @Session() session: UserSession,
     @Body() dto: ReviewPaymentDto,
   ): Promise<OrderStatusResponseDto> {
@@ -618,10 +617,10 @@ export class OrderController {
     return toOrderStatusDto(row);
   }
 
-  @Patch(":orderId/fulfillment")
+  @Patch(':orderId/fulfillment')
   async advance(
-    @Param("storeId") storeId: string,
-    @Param("orderId") orderId: string,
+    @Param('storeId') storeId: string,
+    @Param('orderId') orderId: string,
     @Session() session: UserSession,
     @Body() dto: AdvanceFulfillmentDto,
   ): Promise<OrderStatusResponseDto> {
@@ -634,10 +633,10 @@ export class OrderController {
     return toOrderStatusDto(row);
   }
 
-  @Patch(":orderId/cancel")
+  @Patch(':orderId/cancel')
   async cancel(
-    @Param("storeId") storeId: string,
-    @Param("orderId") orderId: string,
+    @Param('storeId') storeId: string,
+    @Param('orderId') orderId: string,
     @Session() session: UserSession,
     @Body() dto: CancelOrderDto,
   ): Promise<OrderStatusResponseDto> {

@@ -39,10 +39,17 @@ source "$ROOT_DIR/lib/health.sh"
 source "$ROOT_DIR/lib/smoke.sh"
 # shellcheck source=lib/migrate.sh
 source "$ROOT_DIR/lib/migrate.sh"
+# shellcheck source=lib/cleanup_schedule.sh
+source "$ROOT_DIR/lib/cleanup_schedule.sh"
 
 HEALTH_TIMEOUT_SECONDS=120
 CANARY_WEIGHT=1        # out of 10, i.e. candidate gets 10% during the hold
 CANARY_HOLD_SECONDS=30
+# Must match the `sleep 1800` in lib/cleanup_schedule.sh's schedule_cleanup —
+# cmd_cleanup below refuses to tear down a rollback target younger than this,
+# so the two are the same promised window by two different mechanisms (one
+# self-scheduled, one an age check any caller has to pass).
+CLEANUP_MIN_AGE_SECONDS=1800
 
 CURRENT_SHA_FOR_RESULT=""
 LAST_PHASE="init"
@@ -84,6 +91,33 @@ teardown_candidate() {
   compose rm -f "api-${color}" "web-${color}" "workers-${color}" 2>/dev/null || true
 }
 
+# Production has one Compose project and one shared network. The retired
+# single-color stack used the same project name, so letting it run can attach
+# db/redis/etc. to the wrong network and make an otherwise healthy candidate
+# fail Docker's healthcheck. Refuse that topology instead of deploying into a
+# split-brain container graph.
+assert_production_topology() {
+  local service cid networks
+
+  for service in api web workers; do
+    cid="$(docker ps -q \
+      --filter label=com.docker.compose.project=biasmarket \
+      --filter label=com.docker.compose.service="$service" | head -n1)"
+    [[ -z "$cid" ]] || die "Unsupported uncolored service '$service' is running. Stop the retired production stack's $service container before deploying."
+  done
+
+  docker network inspect biasmarket_stack >/dev/null 2>&1 \
+    || die "Production network biasmarket_stack is missing. Start shared services with infra/vps/docker-compose.yml before deploying."
+
+  for service in db redis minio caddy; do
+    cid="$(compose_running_container "$service" 2>/dev/null || true)"
+    [[ -n "$cid" ]] || die "Shared service '$service' has no running container in the blue/green Compose project. Start it with infra/vps/docker-compose.yml before deploying."
+    networks="$(docker inspect --format='{{range $name, $_ := .NetworkSettings.Networks}}{{$name}}{{"\n"}}{{end}}' "$cid")"
+    grep -qx 'biasmarket_stack' <<<"$networks" \
+      || die "Shared service '$service' is not attached to biasmarket_stack. Reconcile it with infra/vps/docker-compose.yml before deploying."
+  done
+}
+
 # State/reality reconciliation at the very start of every run: before
 # trusting state/current_color for anything, assert it matches the actual
 # live content of caddy/active/api.caddy. Closes the gap where a crash
@@ -105,11 +139,11 @@ reconcile_state_with_reality() {
 }
 
 # Owns the env/shared.env checksum assertion on every invocation — an
-# accidental future regeneration (e.g. someone runs `pnpm env:init --prod`
-# against this file by mistake) fails loud immediately instead of only
+# accidental unreviewed regeneration of this file fails loudly immediately
+# instead of only
 # being caught once. First run with no recorded baseline records one.
 assert_shared_env_checksum() {
-  [[ -f "$ENV_DIR/shared.env" ]] || die "env/shared.env is missing — copy it from a real production infra/docker/.env first, see env/shared.env.example."
+  [[ -f "$ENV_DIR/shared.env" ]] || die "env/shared.env is missing — provision the reviewed production secrets first, see env/shared.env.example."
   local actual
   actual="$(sha256sum "$ENV_DIR/shared.env" | cut -d' ' -f1)"
   if [[ ! -f "$SHARED_ENV_CHECKSUM_FILE" ]]; then
@@ -120,7 +154,7 @@ assert_shared_env_checksum() {
   local expected
   expected="$(cat "$SHARED_ENV_CHECKSUM_FILE")"
   if [[ "$actual" != "$expected" ]]; then
-    die "env/shared.env checksum mismatch (expected $expected, got $actual). It changed since the last recorded baseline. NEVER regenerate this file via 'pnpm env:init --prod' — see env/shared.env.example. If this is a reviewed, intentional secret rotation, update state/shared_env.sha256 by hand after confirming the new value, then re-run. Refusing to deploy."
+    die "env/shared.env checksum mismatch (expected $expected, got $actual). It changed since the last recorded baseline. If this is a reviewed, intentional secret rotation, update state/shared_env.sha256 by hand after confirming the new value, then re-run. Refusing to deploy."
   fi
 }
 
@@ -177,6 +211,7 @@ cmd_deploy() {
   # the candidate's image, whose tag resolves via ${IMAGE_TAG} in the compose
   # file — exporting only below would fatally exit at the first compose call.
   export IMAGE_TAG="$sha"
+  assert_production_topology
   run_migration_phase "$candidate_color" "$sha" "$allow_destructive"
   phase "migrated"
 
@@ -222,7 +257,25 @@ cmd_deploy() {
   atomic_write "$CURRENT_COLOR_FILE" "$candidate_color"
   atomic_write "$CURRENT_SHA_FILE" "$sha"
   atomic_write "$ROLLBACK_TARGET_FILE" "$current_color"
+  # Paired with ROLLBACK_TARGET_FILE above, always written together — this
+  # is what lets cmd_cleanup refuse to tear down a rollback target younger
+  # than CLEANUP_MIN_AGE_SECONDS, regardless of which caller (the
+  # self-scheduled fire below or cleanup-fallback.yml's hourly tick) invoked
+  # it. See cmd_cleanup's age check for the full rationale.
+  atomic_write "$ROLLBACK_TARGET_SET_AT_FILE" "$(date -u +%s)"
   phase "state_committed"
+
+  # Server-side 30-minute cleanup delay, replacing cd.yml's old `sleep
+  # 1800` runner-side wait — see
+  # docs/plans/2026-08-10-server-side-cleanup-scheduling-plan.md decisions
+  # 1, 3, 5. Both guarded: a failure here (e.g. disk full) must never turn
+  # this already-successful cutover into a reported deploy failure — the
+  # trailing `|| true` is required, not decorative (decision 5): without
+  # it, a double-failure (both the call AND log_warn's own printf failing,
+  # e.g. on the same full disk) would abort this function under set -e
+  # before append_history's success line below ever runs.
+  cancel_scheduled_cleanup || log_warn "Failed to cancel a previously scheduled cleanup — it may fire redundantly later; cmd_cleanup's own idempotent guards make this safe, not silently wrong." || true
+  schedule_cleanup || log_warn "Failed to schedule automatic cleanup — old color ($current_color) must be cleaned up manually via deploy.sh --cleanup." || true
 
   append_history "deploy sha=$sha color=$candidate_color outcome=success previous_color=$current_color"
   log_info "Deploy complete. Live color=$candidate_color sha=$sha."
@@ -280,6 +333,10 @@ cmd_rollback() {
 
   atomic_write "$CURRENT_COLOR_FILE" "$target_color"
   atomic_write "$ROLLBACK_TARGET_FILE" "$current_color"
+  # Fresh target, fresh window — without this, a missing/stale set_at would
+  # make cmd_cleanup's age check treat this brand-new rollback target as
+  # already old enough to tear down on the very next fallback tick.
+  atomic_write "$ROLLBACK_TARGET_SET_AT_FILE" "$(date -u +%s)"
 
   local recovered_sha
   recovered_sha="$(running_image_sha "$target_color")"
@@ -308,6 +365,27 @@ cmd_cleanup() {
     return 0
   fi
 
+  # Refuse to tear down a rollback target before its promised
+  # CLEANUP_MIN_AGE_SECONDS window has elapsed. Without this, cleanup-
+  # fallback.yml's hourly cron tick landing shortly after a deploy would
+  # erase the rollback safety net well before the window operators were
+  # told they had — this check is what makes that safe regardless of which
+  # caller (the self-scheduled fire, which by construction only ever fires
+  # at/after the window anyway, or the fallback cron) invoked --cleanup.
+  # A missing set_at file (state from before this check existed) is treated
+  # as old enough to clean up, preserving compatibility with state created
+  # before the age-check file existed.
+  local set_at now age
+  set_at="$(state_read "$ROLLBACK_TARGET_SET_AT_FILE")"
+  if [[ -n "$set_at" ]]; then
+    now="$(date +%s)"
+    age=$((now - set_at))
+    if ((age < CLEANUP_MIN_AGE_SECONDS)); then
+      log_info "rollback_target ($target) is only ${age}s old (< ${CLEANUP_MIN_AGE_SECONDS}s) — too soon, leaving it in place for now."
+      return 0
+    fi
+  fi
+
   log_info "Tearing down old color: $target"
   # compose() and the compose file both interpolate ${IMAGE_TAG:?} even for
   # stop/rm — nothing is (re)created here, so the live sha is a fine
@@ -318,6 +396,7 @@ cmd_cleanup() {
   compose rm -f "api-${target}" "web-${target}" "workers-${target}" 2>/dev/null || true
 
   atomic_write "$ROLLBACK_TARGET_FILE" ""
+  atomic_write "$ROLLBACK_TARGET_SET_AT_FILE" ""
   append_history "cleanup color=$target outcome=success"
   log_info "Cleanup complete. $target stopped and removed. No rollback target recorded until the next deploy."
 }
@@ -370,6 +449,7 @@ cmd_bootstrap() {
   atomic_write "$CURRENT_COLOR_FILE" "$color"
   atomic_write "$CURRENT_SHA_FILE" "$sha"
   atomic_write "$ROLLBACK_TARGET_FILE" ""
+  atomic_write "$ROLLBACK_TARGET_SET_AT_FILE" ""
 
   append_history "bootstrap sha=$sha color=$color outcome=success"
   log_info "Bootstrap complete. Live color=$color sha=$sha. The other color ($(other_color "$color")) is not running yet — the next normal deploy starts it."

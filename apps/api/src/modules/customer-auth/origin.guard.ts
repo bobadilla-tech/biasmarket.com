@@ -3,8 +3,8 @@ import {
   type ExecutionContext,
   ForbiddenException,
   Injectable,
-} from "@nestjs/common";
-import type { Request } from "express";
+} from '@nestjs/common';
+import type { Request } from 'express';
 
 // The codebase's "CSRF out of scope" deployment note (see
 // docs/core/deploy.md) doesn't cover these routes — buyer
@@ -21,20 +21,20 @@ export class OriginGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const req = context.switchToHttp().getRequest<Request>();
     const allowedOrigin = new URL(
-      process.env.WEB_URL ?? "http://localhost:3001",
+      process.env.WEB_URL ?? 'http://localhost:3001',
     ).origin;
     const source = req.headers.origin ?? req.headers.referer;
-    if (!source) throw new ForbiddenException("Missing origin");
+    if (!source) throw new ForbiddenException('Missing origin');
 
     let sourceOrigin: string;
     try {
       sourceOrigin = new URL(source).origin;
     } catch {
-      throw new ForbiddenException("Invalid origin");
+      throw new ForbiddenException('Invalid origin');
     }
 
     if (sourceOrigin !== allowedOrigin) {
-      throw new ForbiddenException("Cross-origin request blocked");
+      throw new ForbiddenException('Cross-origin request blocked');
     }
     return true;
   }

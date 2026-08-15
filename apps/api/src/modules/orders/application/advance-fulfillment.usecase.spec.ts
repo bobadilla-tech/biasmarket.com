@@ -1,13 +1,13 @@
-import { Test, type TestingModule } from "@nestjs/testing";
-import { BadRequestException, ForbiddenException } from "@nestjs/common";
-import { type Mock, vi } from "vitest";
-import { Prisma } from "@biasmarket/db";
-import { AdvanceFulfillmentUseCase } from "./advance-fulfillment.usecase.js";
-import { OrderRepository } from "../infrastructure/order.repository.js";
-import { InvalidOrderTransitionError } from "../domain/order-status.vo.js";
-import { PrismaService } from "../../../prisma/prisma.service.js";
+import { Test, type TestingModule } from '@nestjs/testing';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { type Mock, vi } from 'vitest';
+import { Prisma } from '@biasmarket/db';
+import { AdvanceFulfillmentUseCase } from './advance-fulfillment.usecase.js';
+import { OrderRepository } from '../infrastructure/order.repository.js';
+import { InvalidOrderTransitionError } from '../domain/order-status.vo.js';
+import { PrismaService } from '../../../prisma/prisma.service.js';
 
-describe("AdvanceFulfillmentUseCase", () => {
+describe('AdvanceFulfillmentUseCase', () => {
   let useCase: AdvanceFulfillmentUseCase;
   let prisma: {
     store: { findUnique: Mock };
@@ -16,10 +16,10 @@ describe("AdvanceFulfillmentUseCase", () => {
     $transaction: Mock;
   };
 
-  const ownerId = "user-1";
-  const storeId = "store-1";
-  const orderId = "order-1";
-  const requiredAmount = new Prisma.Decimal("100.00");
+  const ownerId = 'user-1';
+  const storeId = 'store-1';
+  const orderId = 'order-1';
+  const requiredAmount = new Prisma.Decimal('100.00');
 
   beforeEach(async () => {
     prisma = {
@@ -41,76 +41,76 @@ describe("AdvanceFulfillmentUseCase", () => {
     prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
   });
 
-  it("throws ForbiddenException when the user does not own the store", async () => {
+  it('throws ForbiddenException when the user does not own the store', async () => {
     prisma.store.findUnique.mockResolvedValue({
       id: storeId,
-      ownerId: "someone-else",
+      ownerId: 'someone-else',
     });
 
     await expect(
-      useCase.execute(orderId, storeId, ownerId, "IN_TRANSIT"),
+      useCase.execute(orderId, storeId, ownerId, 'IN_TRANSIT'),
     ).rejects.toThrow(ForbiddenException);
   });
 
-  it("throws BadRequestException when payment is not yet VERIFIED", async () => {
+  it('throws BadRequestException when payment is not yet VERIFIED', async () => {
     prisma.order.findUnique.mockResolvedValue({
       id: orderId,
       storeId,
-      paymentStatus: "PENDING_PAYMENT",
-      fulfillmentStatus: "ORDERING",
+      paymentStatus: 'PENDING_PAYMENT',
+      fulfillmentStatus: 'ORDERING',
       requiredAmount,
       items: [],
     });
 
     await expect(
-      useCase.execute(orderId, storeId, ownerId, "IN_TRANSIT"),
+      useCase.execute(orderId, storeId, ownerId, 'IN_TRANSIT'),
     ).rejects.toThrow(BadRequestException);
   });
 
-  it("advances fulfillment when payment is VERIFIED", async () => {
+  it('advances fulfillment when payment is VERIFIED', async () => {
     prisma.order.findUnique.mockResolvedValue({
       id: orderId,
       storeId,
-      paymentStatus: "VERIFIED",
-      fulfillmentStatus: "ORDERING",
+      paymentStatus: 'VERIFIED',
+      fulfillmentStatus: 'ORDERING',
       requiredAmount,
       items: [],
     });
     prisma.order.update.mockResolvedValue({
       id: orderId,
-      fulfillmentStatus: "IN_TRANSIT",
+      fulfillmentStatus: 'IN_TRANSIT',
     });
 
-    await useCase.execute(orderId, storeId, ownerId, "IN_TRANSIT");
+    await useCase.execute(orderId, storeId, ownerId, 'IN_TRANSIT');
 
     expect(prisma.order.update).toHaveBeenCalledWith({
       where: { id: orderId },
-      data: { fulfillmentStatus: "IN_TRANSIT" },
+      data: { fulfillmentStatus: 'IN_TRANSIT' },
     });
     expect(prisma.auditLog.create).toHaveBeenCalledWith({
       data: {
         actorId: ownerId,
         storeId,
-        action: "fulfillment.advanced",
-        entityType: "Order",
+        action: 'fulfillment.advanced',
+        entityType: 'Order',
         entityId: orderId,
-        metadata: { fromStatus: "ORDERING", toStatus: "IN_TRANSIT" },
+        metadata: { fromStatus: 'ORDERING', toStatus: 'IN_TRANSIT' },
       },
     });
   });
 
-  it("rejects skipping a fulfillment state", async () => {
+  it('rejects skipping a fulfillment state', async () => {
     prisma.order.findUnique.mockResolvedValue({
       id: orderId,
       storeId,
-      paymentStatus: "VERIFIED",
-      fulfillmentStatus: "ORDERING",
+      paymentStatus: 'VERIFIED',
+      fulfillmentStatus: 'ORDERING',
       requiredAmount,
       items: [],
     });
 
     await expect(
-      useCase.execute(orderId, storeId, ownerId, "COMPLETED"),
+      useCase.execute(orderId, storeId, ownerId, 'COMPLETED'),
     ).rejects.toThrow(InvalidOrderTransitionError);
   });
 });

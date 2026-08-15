@@ -1,5 +1,6 @@
 import type { ProductSearchResultResponseDto } from "@biasmarket/types";
 import { apiClient } from "@/lib/api-client";
+import { reportServerError } from "@/lib/report-server-error";
 
 async function fetchProducts(
   limit: number,
@@ -10,9 +11,10 @@ async function fetchProducts(
       limit: String(limit),
       sort,
     });
-  } catch {
+  } catch (error) {
     // The landing page must render even when the API is down — the sections
     // surface their own error/empty states client-side.
+    await reportServerError(error, { fn: "fetchProducts", limit, sort });
     return null;
   }
 }

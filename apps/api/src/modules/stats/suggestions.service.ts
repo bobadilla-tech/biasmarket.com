@@ -2,15 +2,15 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-} from "@nestjs/common";
-import { PrismaService } from "../../prisma/prisma.service.js";
+} from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service.js';
 import {
   lowStockRule,
   noRecentOrdersRule,
   staleOrdersRule,
   topSellerRule,
-} from "./suggestion-rules.js";
-import type { Suggestion } from "./suggestions.types.js";
+} from './suggestion-rules.js';
+import type { Suggestion } from './suggestions.types.js';
 
 const RECENT_ORDERS_WINDOW_DAYS = 7;
 
@@ -22,9 +22,9 @@ export class SuggestionsService {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
-    if (!store) throw new NotFoundException("Store no encontrada");
+    if (!store) throw new NotFoundException('Store no encontrada');
     if (store.ownerId !== userId) {
-      throw new ForbiddenException("No sos dueño de esta store");
+      throw new ForbiddenException('No sos dueño de esta store');
     }
     return store;
   }
@@ -45,13 +45,13 @@ export class SuggestionsService {
           where: {
             storeId,
             archived: false,
-            type: { in: ["LOW_STOCK", "OUT_OF_STOCK"] },
+            type: { in: ['LOW_STOCK', 'OUT_OF_STOCK'] },
           },
         }),
         this.prisma.order.count({
           where: {
             storeId,
-            paymentStatus: { in: ["PENDING_PAYMENT", "PARTIALLY_PAID"] },
+            paymentStatus: { in: ['PENDING_PAYMENT', 'PARTIALLY_PAID'] },
             createdAt: { lte: staleCutoff },
           },
         }),
@@ -59,10 +59,10 @@ export class SuggestionsService {
           where: { storeId, createdAt: { gte: recentCutoff } },
         }),
         this.prisma.orderItem.groupBy({
-          by: ["productId"],
+          by: ['productId'],
           where: { storeId },
           _sum: { quantity: true },
-          orderBy: { _sum: { quantity: "desc" } },
+          orderBy: { _sum: { quantity: 'desc' } },
           take: 1,
         }),
       ]);

@@ -1,11 +1,11 @@
-import { BadRequestException } from "@nestjs/common";
+import { BadRequestException } from '@nestjs/common';
 
 const DEFAULT_LIMIT = 24;
 const MAX_LIMIT = 50;
 const MAX_QUERY_LENGTH = 100;
 const MAX_CATEGORY_LENGTH = 100;
 
-const VALID_SORTS = ["latest", "bestseller"] as const;
+const VALID_SORTS = ['latest', 'bestseller'] as const;
 export type ProductSort = (typeof VALID_SORTS)[number];
 
 export interface PublicListQuery {
@@ -33,7 +33,7 @@ export function parsePublicListQuery(
   if (rawLimit !== undefined) {
     limit = Number(rawLimit);
     if (!Number.isInteger(limit) || limit < 1 || limit > MAX_LIMIT) {
-      throw new BadRequestException("limit inválido");
+      throw new BadRequestException('limit inválido');
     }
   }
 
@@ -41,7 +41,7 @@ export function parsePublicListQuery(
   if (rawPage !== undefined) {
     page = Number(rawPage);
     if (!Number.isInteger(page) || page < 1) {
-      throw new BadRequestException("page inválido");
+      throw new BadRequestException('page inválido');
     }
   }
 
@@ -49,7 +49,7 @@ export function parsePublicListQuery(
   if (rawQ !== undefined) {
     const trimmed = rawQ.trim();
     if (trimmed.length > MAX_QUERY_LENGTH) {
-      throw new BadRequestException("q demasiado largo");
+      throw new BadRequestException('q demasiado largo');
     }
     q = trimmed.length > 0 ? trimmed : undefined;
   }
@@ -58,15 +58,15 @@ export function parsePublicListQuery(
   if (rawCategory !== undefined) {
     const trimmed = rawCategory.trim();
     if (trimmed.length > MAX_CATEGORY_LENGTH) {
-      throw new BadRequestException("category demasiado largo");
+      throw new BadRequestException('category demasiado largo');
     }
     category = trimmed.length > 0 ? trimmed : undefined;
   }
 
-  let sort: ProductSort = "latest";
+  let sort: ProductSort = 'latest';
   if (rawSort !== undefined) {
     if (!VALID_SORTS.includes(rawSort as ProductSort)) {
-      throw new BadRequestException("sort inválido");
+      throw new BadRequestException('sort inválido');
     }
     sort = rawSort as ProductSort;
   }

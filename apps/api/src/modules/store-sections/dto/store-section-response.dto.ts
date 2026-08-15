@@ -1,4 +1,4 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty } from '@nestjs/swagger';
 
 // Date-as-string convention — see
 // `../../collections/dto/collection-response.dto.ts`.
@@ -9,13 +9,13 @@ export class StoreSectionResponseDto {
   @ApiProperty()
   storeId: string;
 
-  @ApiProperty({ enum: ["COLLECTION", "BANNER", "TEXT_BLOCK"] })
-  type: "COLLECTION" | "BANNER" | "TEXT_BLOCK";
+  @ApiProperty({ enum: ['COLLECTION', 'BANNER', 'TEXT_BLOCK'] })
+  type: 'COLLECTION' | 'BANNER' | 'TEXT_BLOCK';
 
   @ApiProperty({ type: String, nullable: true })
   collectionId: string | null;
 
-  @ApiProperty({ type: "object", additionalProperties: true })
+  @ApiProperty({ type: 'object', additionalProperties: true })
   content: Record<string, unknown>;
 
   @ApiProperty()
@@ -24,6 +24,6 @@ export class StoreSectionResponseDto {
   @ApiProperty()
   hidden: boolean;
 
-  @ApiProperty({ type: String, format: "date-time" })
+  @ApiProperty({ type: String, format: 'date-time' })
   createdAt: string;
 }

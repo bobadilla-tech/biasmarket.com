@@ -11,23 +11,23 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
-} from "@nestjs/common";
-import { ApiConsumes, ApiQuery } from "@nestjs/swagger";
-import { AuthGuard, Session } from "@thallesp/nestjs-better-auth";
-import type { UserSession } from "@thallesp/nestjs-better-auth";
-import { ProductsService } from "./products.service.js";
-import { CreateProductDto } from "./dto/create-product.dto.js";
-import { UpdateProductDto } from "./dto/update-product.dto.js";
-import { CreateVariantDto } from "./dto/create-variant.dto.js";
-import { UpdateVariantDto } from "./dto/update-variant.dto.js";
-import { FileInterceptor } from "@nestjs/platform-express";
-import { StorageService } from "../../storage/storage.service.js";
+} from '@nestjs/common';
+import { ApiConsumes, ApiQuery } from '@nestjs/swagger';
+import { AuthGuard, Session } from '@thallesp/nestjs-better-auth';
+import type { UserSession } from '@thallesp/nestjs-better-auth';
+import { ProductsService } from './products.service.js';
+import { CreateProductDto } from './dto/create-product.dto.js';
+import { UpdateProductDto } from './dto/update-product.dto.js';
+import { CreateVariantDto } from './dto/create-variant.dto.js';
+import { UpdateVariantDto } from './dto/update-variant.dto.js';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { StorageService } from '../../storage/storage.service.js';
 import type {
   ProductDetailResponseDto,
   ProductResponseDto,
   ProductWithVariantsResponseDto,
   VariantResponseDto,
-} from "./dto/product-response.dto.js";
+} from './dto/product-response.dto.js';
 
 // Structural, not `Prisma.Product`/`Prisma.ProductVariant` — importing the
 // Prisma-generated types here would reproduce the metadata-generator bug the
@@ -42,7 +42,7 @@ type ProductRow = {
   currency: string;
   images: string[];
   availableUntil: Date | null;
-  status: "DRAFT" | "PUBLISHED";
+  status: 'DRAFT' | 'PUBLISHED';
   soldOut: boolean;
   discontinued: boolean;
   deletedAt: Date | null;
@@ -123,7 +123,7 @@ function toProductDetailDto(
   };
 }
 
-@Controller("stores/:storeId/products")
+@Controller('stores/:storeId/products')
 @UseGuards(AuthGuard)
 export class ProductsController {
   constructor(
@@ -133,7 +133,7 @@ export class ProductsController {
 
   @Post()
   async create(
-    @Param("storeId") storeId: string,
+    @Param('storeId') storeId: string,
     @Session() session: UserSession,
     @Body() dto: CreateProductDto,
   ): Promise<ProductWithVariantsResponseDto> {
@@ -146,7 +146,7 @@ export class ProductsController {
 
   @Get()
   async findAll(
-    @Param("storeId") storeId: string,
+    @Param('storeId') storeId: string,
     @Session() session: UserSession,
   ): Promise<ProductDetailResponseDto[]> {
     const products = await this.products.findAllForStore(
@@ -156,10 +156,10 @@ export class ProductsController {
     return products.map(toProductDetailDto);
   }
 
-  @Get(":productId")
+  @Get(':productId')
   async findOne(
-    @Param("storeId") storeId: string,
-    @Param("productId") productId: string,
+    @Param('storeId') storeId: string,
+    @Param('productId') productId: string,
     @Session() session: UserSession,
   ): Promise<ProductDetailResponseDto> {
     const product = await this.products.findOne(
@@ -170,10 +170,10 @@ export class ProductsController {
     return toProductDetailDto(product);
   }
 
-  @Patch(":productId")
+  @Patch(':productId')
   async update(
-    @Param("storeId") storeId: string,
-    @Param("productId") productId: string,
+    @Param('storeId') storeId: string,
+    @Param('productId') productId: string,
     @Session() session: UserSession,
     @Body() dto: UpdateProductDto,
   ): Promise<ProductResponseDto> {
@@ -186,10 +186,10 @@ export class ProductsController {
     return toProductDto(product);
   }
 
-  @Patch(":productId/publish")
+  @Patch(':productId/publish')
   async publish(
-    @Param("storeId") storeId: string,
-    @Param("productId") productId: string,
+    @Param('storeId') storeId: string,
+    @Param('productId') productId: string,
     @Session() session: UserSession,
   ): Promise<ProductResponseDto> {
     const product = await this.products.publish(
@@ -200,10 +200,10 @@ export class ProductsController {
     return toProductDto(product);
   }
 
-  @Delete(":productId")
+  @Delete(':productId')
   async softDelete(
-    @Param("storeId") storeId: string,
-    @Param("productId") productId: string,
+    @Param('storeId') storeId: string,
+    @Param('productId') productId: string,
     @Session() session: UserSession,
   ): Promise<ProductResponseDto> {
     const product = await this.products.softDelete(
@@ -214,10 +214,10 @@ export class ProductsController {
     return toProductDto(product);
   }
 
-  @Post(":productId/variants")
+  @Post(':productId/variants')
   async addVariant(
-    @Param("storeId") storeId: string,
-    @Param("productId") productId: string,
+    @Param('storeId') storeId: string,
+    @Param('productId') productId: string,
     @Session() session: UserSession,
     @Body() dto: CreateVariantDto,
   ): Promise<VariantResponseDto> {
@@ -230,10 +230,10 @@ export class ProductsController {
     return toVariantDto(variant);
   }
 
-  @Get(":productId/variants")
+  @Get(':productId/variants')
   async listVariants(
-    @Param("storeId") storeId: string,
-    @Param("productId") productId: string,
+    @Param('storeId') storeId: string,
+    @Param('productId') productId: string,
     @Session() session: UserSession,
   ): Promise<VariantResponseDto[]> {
     const variants = await this.products.listVariants(
@@ -244,11 +244,11 @@ export class ProductsController {
     return variants.map(toVariantDto);
   }
 
-  @Patch(":productId/variants/:variantId")
+  @Patch(':productId/variants/:variantId')
   async updateVariant(
-    @Param("storeId") storeId: string,
-    @Param("productId") productId: string,
-    @Param("variantId") variantId: string,
+    @Param('storeId') storeId: string,
+    @Param('productId') productId: string,
+    @Param('variantId') variantId: string,
     @Session() session: UserSession,
     @Body() dto: UpdateVariantDto,
   ): Promise<VariantResponseDto> {
@@ -262,11 +262,11 @@ export class ProductsController {
     return toVariantDto(variant);
   }
 
-  @Delete(":productId/variants/:variantId")
+  @Delete(':productId/variants/:variantId')
   async deleteVariant(
-    @Param("storeId") storeId: string,
-    @Param("productId") productId: string,
-    @Param("variantId") variantId: string,
+    @Param('storeId') storeId: string,
+    @Param('productId') productId: string,
+    @Param('variantId') variantId: string,
     @Session() session: UserSession,
   ): Promise<VariantResponseDto> {
     const variant = await this.products.deleteVariant(
@@ -278,62 +278,62 @@ export class ProductsController {
     return toVariantDto(variant);
   }
 
-  @Post(":productId/images")
-  @ApiConsumes("multipart/form-data")
-  @ApiQuery({ name: "replace", required: false, type: String })
-  @UseInterceptors(FileInterceptor("file"))
+  @Post(':productId/images')
+  @ApiConsumes('multipart/form-data')
+  @ApiQuery({ name: 'replace', required: false, type: String })
+  @UseInterceptors(FileInterceptor('file'))
   async uploadImage(
-    @Param("storeId") storeId: string,
-    @Param("productId") productId: string,
+    @Param('storeId') storeId: string,
+    @Param('productId') productId: string,
     @Session() session: UserSession,
     @UploadedFile() file: Express.Multer.File,
-    @Query("replace") replace?: string,
+    @Query('replace') replace?: string,
   ): Promise<ProductResponseDto> {
-    if (!file) throw new BadRequestException("Missing File");
-    if (file.size > 5 * 1024 * 1024) throw new BadRequestException("Max 5MB");
+    if (!file) throw new BadRequestException('Missing File');
+    if (file.size > 5 * 1024 * 1024) throw new BadRequestException('Max 5MB');
 
     const isJpeg = file.buffer[0] === 0xff && file.buffer[1] === 0xd8;
     const isPng = file.buffer
       .subarray(0, 8)
       .equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
-    if (!isJpeg && !isPng) throw new BadRequestException("Just JPEG or PNG");
+    if (!isJpeg && !isPng) throw new BadRequestException('Just JPEG or PNG');
 
     const url = await this.storage.uploadImage(
       file.buffer,
-      isPng ? "image/png" : "image/jpeg",
+      isPng ? 'image/png' : 'image/jpeg',
     );
     const product = await this.products.addImage(
       productId,
       storeId,
       session.user.id,
       url,
-      replace === "1" || replace === "true",
+      replace === '1' || replace === 'true',
     );
     return toProductDto(product);
   }
 
-  @Post(":productId/variants/:variantId/images")
-  @ApiConsumes("multipart/form-data")
-  @UseInterceptors(FileInterceptor("file"))
+  @Post(':productId/variants/:variantId/images')
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('file'))
   async uploadVariantImage(
-    @Param("storeId") storeId: string,
-    @Param("productId") productId: string,
-    @Param("variantId") variantId: string,
+    @Param('storeId') storeId: string,
+    @Param('productId') productId: string,
+    @Param('variantId') variantId: string,
     @Session() session: UserSession,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<VariantResponseDto> {
-    if (!file) throw new BadRequestException("Missing File");
-    if (file.size > 5 * 1024 * 1024) throw new BadRequestException("Max 5MB");
+    if (!file) throw new BadRequestException('Missing File');
+    if (file.size > 5 * 1024 * 1024) throw new BadRequestException('Max 5MB');
 
     const isJpeg = file.buffer[0] === 0xff && file.buffer[1] === 0xd8;
     const isPng = file.buffer
       .subarray(0, 8)
       .equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
-    if (!isJpeg && !isPng) throw new BadRequestException("Just JPEG or PNG");
+    if (!isJpeg && !isPng) throw new BadRequestException('Just JPEG or PNG');
 
     const url = await this.storage.uploadImage(
       file.buffer,
-      isPng ? "image/png" : "image/jpeg",
+      isPng ? 'image/png' : 'image/jpeg',
     );
     const variant = await this.products.addVariantImage(
       variantId,

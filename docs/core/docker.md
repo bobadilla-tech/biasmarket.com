@@ -2,8 +2,8 @@
 
 Research + fixes from an audit of `infra/docker/api.Dockerfile` and
 `web.Dockerfile` — what was already cached well, what wasn't, and a real bug
-found while testing the fix. For the day-to-day compose commands, see
-[infra.md](infra.md); for prod deploy steps, see [deploy.md](deploy.md).
+found while testing the fix. For day-to-day development Compose commands, see
+[infra.md](infra.md); for production deploy steps, see [deploy.md](deploy.md).
 
 ## What was already caching well
 
@@ -21,10 +21,9 @@ found while testing the fix. For the day-to-day compose commands, see
 - **Shared `base` stage** — `api.Dockerfile` and `web.Dockerfile` both start
   with an identical `FROM node:26-slim` + corepack-install block, so BuildKit
   reuses that layer across both images on the same builder.
-- CI (`.github/workflows/ci.yml`) never builds Docker images at all — it's pure
-  `turbo lint/build/test` per changed package on GitHub runners, path- filtered
-  per package. Docker images only ever get built at deploy time, on the VM
-  itself (`pnpm docker:prod`).
+- CI runs the application checks. CD builds the three production images on an
+  arm64 GitHub runner, pushes immutable SHA-tagged images to GHCR, and the VPS
+  pulls them during `deploy.sh`; the VPS does not build application images.
 
 ## Gap found: Turbo's own cache wasn't persisted
 
@@ -63,9 +62,8 @@ COPY --from=build --chown=nestjs:nestjs /app/apps/api/package.json ./apps/api/pa
 This was invisible in dev because `docker-compose.dev.yml` bind-mounts the whole
 repo (`../..:/app`) — `scripts/` is always present on disk there regardless of
 what any Dockerfile `COPY`s. Prod's `runtime` stage is copy-only (no bind
-mount), so `promote-admin.ts`/`create-admin.ts` (and by extension
-`pnpm admin:create:prod`/`admin:promote:prod`, see
-[admin-access.md](admin-access.md)) could never have worked in prod — the
+mount), so `promote-admin.ts`/`create-admin.ts` (see
+[admin-access.md](admin-access.md)) could not have worked in production — the
 scripts existed in the `build` stage but were never copied into the final image.
 
 **Fix:** added the missing `COPY`:
@@ -85,7 +83,7 @@ compose, to isolate each stage):
 - Ran the actual runtime image against the real dev Postgres (attached to the
   dev compose network, real `DATABASE_URL`):
   `pnpm --filter api run
-  admin:create <email>` succeeded end-to-end — account
+admin:create <email>` succeeded end-to-end — account
   created, password printed, exactly reproducing (and confirming the fix for)
   the failure from the live prod attempt. Cleaned up the test account afterward.
 - Test images (`biasmarket-api-buildtest`, `biasmarket-api-runtime-test`)
@@ -96,8 +94,7 @@ compose, to isolate each stage):
 Both fixes are in `infra/docker/api.Dockerfile` (Turbo cache mount + scripts
 copy) and `infra/docker/web.Dockerfile` (Turbo cache mount only — `web`'s
 runtime stage doesn't need any api-scripts-style fix, it copies Next's
-standalone output wholesale). Next real prod deploy (`pnpm docker:prod` on the
-VM) picks up both.
+standalone output wholesale). The next CD run picks up both.
 
 ## Not done (bigger lift, optional)
 
