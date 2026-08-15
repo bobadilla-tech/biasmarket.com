@@ -226,6 +226,32 @@ export class StoresController {
   }
 
   @Public()
+  @UseGuards(SitemapInternalTokenGuard, ThrottlerGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 60 } })
+  @ApiHeader({ name: 'X-Internal-Sitemap-Token', required: true })
+  @ApiOkResponse({ type: SitemapStoreCountDto })
+  @Get('internal/sitemap/count')
+  async findPublicSitemapCount(): Promise<SitemapStoreCountDto> {
+    return { total: await this.stores.findPublicSitemapCount() };
+  }
+
+  @Public()
+  @UseGuards(SitemapInternalTokenGuard, ThrottlerGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 60 } })
+  @ApiHeader({ name: 'X-Internal-Sitemap-Token', required: true })
+  @ApiQuery({ name: 'limit', required: true, type: String })
+  @ApiQuery({ name: 'offset', required: true, type: String })
+  @ApiOkResponse({ type: SitemapStorePageDto })
+  @Get('internal/sitemap')
+  async findPublicSitemapPage(
+    @Query('limit') limit: string | undefined,
+    @Query('offset') offset: string | undefined,
+  ): Promise<SitemapStorePageDto> {
+    const parsed = parseSitemapPagination(limit, offset);
+    return this.stores.findPublicSitemapPage(parsed.limit, parsed.offset);
+  }
+
+  @Public()
   @Get('collections/public')
   async findCollectionsPublic(): Promise<PublicCollectionListingResponseDto[]> {
     const rows = await this.stores.findCollectionsPublic();
