@@ -198,8 +198,13 @@ jobs:
       - name: Wait for deploy result
         run: |
           set -uo pipefail
+          # GitHub runs this script with `bash -e`; temporarily disable errexit
+          # so a failed remote deploy's secret-free result is printed before
+          # this step returns the deploy's status to Actions.
+          set +e
           OUTPUT="$(ssh -i ~/.ssh/deploy_dispatch_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" \
             "deploy.sh --wait-for-result ${{ needs.gate.outputs.head_sha }} 1500")"
           STATUS=$?
+          set -e
           echo "$OUTPUT"
           exit "$STATUS"
