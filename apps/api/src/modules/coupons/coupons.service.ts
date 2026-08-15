@@ -3,15 +3,15 @@ import {
   Injectable,
   NotFoundException,
   UnauthorizedException,
-} from "@nestjs/common";
-import type { UserSession } from "@thallesp/nestjs-better-auth";
-import { PrismaService } from "../../prisma/prisma.service.js";
+} from '@nestjs/common';
+import type { UserSession } from '@thallesp/nestjs-better-auth';
+import { PrismaService } from '../../prisma/prisma.service.js';
 import type {
   CouponRedemptionResponseDto,
   CouponResponseDto,
   CreateCouponDto,
   RedeemCouponDto,
-} from "./dto/coupon.dto.js";
+} from './dto/coupon.dto.js';
 
 function normalizeCode(code: string): string {
   return code.trim().toUpperCase();
@@ -27,17 +27,17 @@ export class CouponsService {
     isActive: boolean;
     startsAt: Date | null;
     expiresAt: Date | null;
-  }): "active" | "inactive" | "expired" {
+  }): 'active' | 'inactive' | 'expired' {
     if (!coupon.isActive) {
-      return "inactive";
+      return 'inactive';
     }
 
     const now = new Date();
     if (coupon.expiresAt && now > coupon.expiresAt) {
-      return "expired";
+      return 'expired';
     }
 
-    return "active";
+    return 'active';
   }
 
   private toCouponResponse(
@@ -84,7 +84,7 @@ export class CouponsService {
 
     if (!/^[A-Z0-9]{4,8}$/.test(code)) {
       throw new BadRequestException(
-        "Coupon code must be 4 to 8 alphanumeric characters",
+        'Coupon code must be 4 to 8 alphanumeric characters',
       );
     }
 
@@ -93,7 +93,7 @@ export class CouponsService {
     });
 
     if (existing) {
-      throw new BadRequestException("Coupon code already exists");
+      throw new BadRequestException('Coupon code already exists');
     }
 
     const startsAt = dto.startsAt ? new Date(dto.startsAt) : null;
@@ -101,7 +101,7 @@ export class CouponsService {
 
     if (startsAt && expiresAt && expiresAt < startsAt) {
       throw new BadRequestException(
-        "Coupon end date must be after the start date",
+        'Coupon end date must be after the start date',
       );
     }
 
@@ -109,8 +109,8 @@ export class CouponsService {
       data: {
         code,
         name: dto.name,
-        description: dto.description ?? "",
-        plan: dto.plan ?? "premium",
+        description: dto.description ?? '',
+        plan: dto.plan ?? 'premium',
         durationDays: dto.durationDays ?? PREMIUM_DURATION_DAYS,
         maxUses: dto.maxUses ?? 1,
         isActive: dto.isActive ?? true,
@@ -125,14 +125,14 @@ export class CouponsService {
 
   async listCoupons(): Promise<CouponResponseDto[]> {
     const coupons = await this.prisma.coupon.findMany({
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
       include: {
         _count: { select: { redemptions: true } },
       },
     });
 
     return coupons.map((coupon) =>
-      this.toCouponResponse(coupon, coupon._count.redemptions)
+      this.toCouponResponse(coupon, coupon._count.redemptions),
     );
   }
 
@@ -145,13 +145,13 @@ export class CouponsService {
     });
 
     if (!existing) {
-      throw new NotFoundException("Coupon not found");
+      throw new NotFoundException('Coupon not found');
     }
 
     const nextCode = dto.code ? normalizeCode(dto.code) : existing.code;
     if (!/^[A-Z0-9]{4,8}$/.test(nextCode)) {
       throw new BadRequestException(
-        "Coupon code must be 4 to 8 alphanumeric characters",
+        'Coupon code must be 4 to 8 alphanumeric characters',
       );
     }
 
@@ -160,20 +160,26 @@ export class CouponsService {
         where: { code: nextCode },
       });
       if (duplicate) {
-        throw new BadRequestException("Coupon code already exists");
+        throw new BadRequestException('Coupon code already exists');
       }
     }
 
-    const startsAt = dto.startsAt !== undefined
-      ? dto.startsAt ? new Date(dto.startsAt) : null
-      : existing.startsAt;
-    const expiresAt = dto.expiresAt !== undefined
-      ? dto.expiresAt ? new Date(dto.expiresAt) : null
-      : existing.expiresAt;
+    const startsAt =
+      dto.startsAt !== undefined
+        ? dto.startsAt
+          ? new Date(dto.startsAt)
+          : null
+        : existing.startsAt;
+    const expiresAt =
+      dto.expiresAt !== undefined
+        ? dto.expiresAt
+          ? new Date(dto.expiresAt)
+          : null
+        : existing.expiresAt;
 
     if (startsAt && expiresAt && expiresAt < startsAt) {
       throw new BadRequestException(
-        "Coupon end date must be after the start date",
+        'Coupon end date must be after the start date',
       );
     }
 
@@ -183,7 +189,7 @@ export class CouponsService {
         ...(dto.code ? { code: nextCode } : {}),
         ...(dto.name ? { name: dto.name } : {}),
         ...(dto.description !== undefined
-          ? { description: dto.description ?? "" }
+          ? { description: dto.description ?? '' }
           : {}),
         ...(dto.maxUses !== undefined ? { maxUses: dto.maxUses } : {}),
         ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
@@ -203,7 +209,7 @@ export class CouponsService {
     });
 
     if (!coupon) {
-      throw new NotFoundException("Coupon not found");
+      throw new NotFoundException('Coupon not found');
     }
 
     const updated = await this.prisma.coupon.update({
@@ -221,7 +227,7 @@ export class CouponsService {
     });
 
     if (!coupon) {
-      throw new NotFoundException("Coupon not found");
+      throw new NotFoundException('Coupon not found');
     }
 
     await this.prisma.coupon.delete({ where: { id: couponId } });
@@ -236,7 +242,7 @@ export class CouponsService {
     });
 
     if (!coupon) {
-      throw new NotFoundException("Coupon not found");
+      throw new NotFoundException('Coupon not found');
     }
 
     const rows = await this.prisma.couponRedemption.findMany({
@@ -244,11 +250,11 @@ export class CouponsService {
       include: {
         user: {
           include: {
-            stores: { select: { slug: true }, orderBy: { createdAt: "asc" } },
+            stores: { select: { slug: true }, orderBy: { createdAt: 'asc' } },
           },
         },
       },
-      orderBy: { redeemedAt: "desc" },
+      orderBy: { redeemedAt: 'desc' },
     });
 
     return rows.map((row) => ({
@@ -256,7 +262,7 @@ export class CouponsService {
       couponId: row.couponId,
       userId: row.userId,
       userEmail: row.user.email,
-      userName: row.user.name ?? "",
+      userName: row.user.name ?? '',
       storeSlug: row.user.stores[0]?.slug ?? null,
       redeemedAt: row.redeemedAt.toISOString(),
       expiresAt: row.expiresAt.toISOString(),
@@ -266,36 +272,64 @@ export class CouponsService {
   async unredeemCoupon(redemptionId: string): Promise<{ unredeemed: boolean }> {
     const redemption = await this.prisma.couponRedemption.findUnique({
       where: { id: redemptionId },
-      include: { coupon: true },
     });
 
     if (!redemption) {
-      throw new NotFoundException("Redemption not found");
+      throw new NotFoundException('Redemption not found');
     }
 
     await this.prisma.$transaction(async (tx) => {
-      await tx.couponRedemption.delete({ where: { id: redemptionId } });
+      // Lock the user row before touching entitlement state so a concurrent
+      // redeem/unredeem for the same user can't interleave with the
+      // recompute below.
+      const [lockedUser] = await tx.$queryRaw<
+        Array<{ id: string }>
+      >`SELECT id FROM "user" WHERE id = ${redemption.userId} FOR UPDATE`;
 
-      // The redemption is what granted premium access. If the user's premium
-      // window matches this redemption's grant, reset them back to the base
-      // plan. If their premium window has been extended or changed since,
-      // leave the current premium state intact.
-      const user = await tx.user.findUnique({
-        where: { id: redemption.userId },
-        select: { plan: true, premiumUntil: true },
+      if (!lockedUser) {
+        return;
+      }
+
+      const deleted = await tx.couponRedemption.deleteMany({
+        where: { id: redemptionId },
       });
 
-      if (
-        user &&
-        user.plan === "premium" &&
-        user.premiumUntil &&
-        user.premiumUntil.getTime() === redemption.expiresAt.getTime()
-      ) {
+      if (deleted.count === 0) {
+        // Already unredeemed by a concurrent request; nothing left to do.
+        return;
+      }
+
+      // The aggregate User.premiumUntil can't be decomposed back into what a
+      // single redemption contributed once coupons are stacked: an earlier
+      // redemption's own expiresAt is smaller than the stacked total (so it
+      // never matches user.premiumUntil and a stale equality check would
+      // no-op, leaving the revoked coupon's time granted), while a later
+      // one's expiresAt does match the stacked total (so a stale equality
+      // check would wipe out other still-valid redemptions). Recompute the
+      // user's entitlement from their remaining, non-revoked redemptions
+      // instead of comparing a single stored timestamp.
+      const remaining = await tx.couponRedemption.findMany({
+        where: { userId: redemption.userId },
+        select: { expiresAt: true, coupon: { select: { plan: true } } },
+      });
+
+      if (remaining.length === 0) {
         await tx.user.update({
           where: { id: redemption.userId },
-          data: { plan: "basic", premiumUntil: null },
+          data: { plan: 'basic', premiumUntil: null },
         });
+        return;
       }
+
+      const winner = remaining.reduce(
+        (max, r) => (r.expiresAt > max.expiresAt ? r : max),
+        remaining[0]!,
+      );
+
+      await tx.user.update({
+        where: { id: redemption.userId },
+        data: { plan: winner.coupon.plan, premiumUntil: winner.expiresAt },
+      });
     });
 
     return { unredeemed: true };
@@ -311,40 +345,53 @@ export class CouponsService {
     });
 
     if (!coupon) {
-      throw new NotFoundException("Coupon not found");
+      throw new NotFoundException('Coupon not found');
     }
 
     if (!coupon.isActive) {
-      throw new BadRequestException("Coupon is inactive");
+      throw new BadRequestException('Coupon is inactive');
     }
 
     const now = new Date();
 
     if (coupon.startsAt && now < coupon.startsAt) {
-      throw new BadRequestException("Coupon is not available yet");
+      throw new BadRequestException('Coupon is not available yet');
     }
 
     if (coupon.expiresAt && now > coupon.expiresAt) {
-      throw new BadRequestException("Coupon has expired");
+      throw new BadRequestException('Coupon has expired');
     }
 
     const userId = session.user.id;
 
-    // All validation that depends on mutable state (maxUses usage, duplicate
-    // redemption, premium window) runs inside the transaction so the check
-    // reads live state in the same transaction that performs the write —
-    // a redemption can't slip past based on a count read before the write
-    // began. (This is a guard against the stale pre-transaction read; under
-    // Postgres' default READ COMMITTED isolation a fully serialized guarantee
-    // would additionally require SERIALIZABLE, not needed for this admin-flow
-    // limit.)
+    // Row-lock the coupon and the user before reading any mutable state.
+    // Without the lock, two concurrent redemptions of the *same* coupon by
+    // different users can both count() before either commits its create —
+    // both see count < maxUses under READ COMMITTED and both succeed,
+    // letting total redemptions exceed maxUses (H2). The FOR UPDATE lock
+    // makes the second transaction block until the first commits, so its
+    // count() re-read is guaranteed to see the first's committed row.
+    // Likewise, two concurrent redemptions by the *same* user (different
+    // coupons) would otherwise both read the same pre-write premiumUntil and
+    // each write their own computed stack, silently losing whichever commits
+    // first (M1) — locking the user row serializes those against each other
+    // too. Coupon is always locked before user, in that fixed order, so
+    // concurrent calls can't deadlock on each other.
     const redemption = await this.prisma.$transaction(async (tx) => {
+      const [lockedCoupon] = await tx.$queryRaw<
+        Array<{ id: string }>
+      >`SELECT id FROM "Coupon" WHERE id = ${coupon.id} FOR UPDATE`;
+
+      if (!lockedCoupon) {
+        throw new NotFoundException('Coupon not found');
+      }
+
       const existingRedemption = await tx.couponRedemption.findUnique({
         where: { couponId_userId: { couponId: coupon.id, userId } },
       });
 
       if (existingRedemption) {
-        throw new BadRequestException("This user already redeemed this coupon");
+        throw new BadRequestException('This user already redeemed this coupon');
       }
 
       const redemptionCount = await tx.couponRedemption.count({
@@ -352,26 +399,26 @@ export class CouponsService {
       });
 
       if (redemptionCount >= coupon.maxUses) {
-        throw new BadRequestException("Coupon has reached its maximum uses");
+        throw new BadRequestException('Coupon has reached its maximum uses');
       }
 
-      const user = await tx.user.findUnique({
-        where: { id: userId },
-        select: { premiumUntil: true },
-      });
+      const [lockedUser] = await tx.$queryRaw<
+        Array<{ id: string; premiumUntil: Date | null }>
+      >`SELECT id, "premiumUntil" FROM "user" WHERE id = ${userId} FOR UPDATE`;
 
-      if (!user) {
-        throw new UnauthorizedException("User not found");
+      if (!lockedUser) {
+        throw new UnauthorizedException('User not found');
       }
 
       // Stack the new duration on top of any remaining premium time instead of
       // resetting the window from now. If the user already has an active plan
       // (premiumUntil in the future), the new expiry is extended from there;
       // otherwise it runs from the current time.
-      const existingUntil = user.premiumUntil;
-      const base = existingUntil && existingUntil.getTime() > now.getTime()
-        ? existingUntil.getTime()
-        : now.getTime();
+      const existingUntil = lockedUser.premiumUntil;
+      const base =
+        existingUntil && existingUntil.getTime() > now.getTime()
+          ? existingUntil.getTime()
+          : now.getTime();
       const premiumUntil = new Date(
         base + coupon.durationDays * 24 * 60 * 60 * 1000,
       );
@@ -387,7 +434,7 @@ export class CouponsService {
             include: {
               stores: {
                 select: { slug: true },
-                orderBy: { createdAt: "asc" },
+                orderBy: { createdAt: 'asc' },
               },
             },
           },
@@ -397,7 +444,7 @@ export class CouponsService {
       await tx.user.update({
         where: { id: userId },
         data: {
-          plan: "premium",
+          plan: coupon.plan,
           premiumUntil,
         },
       });
@@ -410,7 +457,7 @@ export class CouponsService {
       couponId: redemption.couponId,
       userId: redemption.userId,
       userEmail: redemption.user.email,
-      userName: redemption.user.name ?? "",
+      userName: redemption.user.name ?? '',
       storeSlug: redemption.user.stores[0]?.slug ?? null,
       redeemedAt: redemption.redeemedAt.toISOString(),
       expiresAt: redemption.expiresAt.toISOString(),

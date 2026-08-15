@@ -3,6 +3,8 @@ export default async () => {
   const t = {
     ['./modules/stores/dto/store-response.dto.js']:
       await import('./modules/stores/dto/store-response.dto.js'),
+    ['./modules/stores/dto/sitemap-response.dto.js']:
+      await import('./modules/stores/dto/sitemap-response.dto.js'),
     ['./modules/products/dto/create-variant.dto.js']:
       await import('./modules/products/dto/create-variant.dto.js'),
     ['./modules/products/dto/product-response.dto.js']:
@@ -346,6 +348,7 @@ export default async () => {
                 additionalProperties: true,
               },
               position: { required: true, type: () => Number },
+              hidden: { required: true, type: () => Boolean },
               createdAt: { required: true, type: () => String },
               collection: {
                 required: true,
@@ -363,6 +366,27 @@ export default async () => {
                     .StoreSectionWithCollectionResponseDto,
                 ],
               },
+            },
+          },
+        ],
+        [
+          import('./modules/stores/dto/sitemap-response.dto.js'),
+          {
+            SitemapStoreItemDto: {
+              slug: { required: true, type: () => String },
+            },
+            SitemapStorePageDto: {
+              items: {
+                required: true,
+                type: () => [
+                  t['./modules/stores/dto/sitemap-response.dto.js']
+                    .SitemapStoreItemDto,
+                ],
+              },
+              total: { required: true, type: () => Number },
+            },
+            SitemapStoreCountDto: {
+              total: { required: true, type: () => Number },
             },
           },
         ],
@@ -761,6 +785,11 @@ export default async () => {
                 type: () => String,
                 nullable: true,
               },
+              buyerAccountId: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
               customerEmail: {
                 required: true,
                 type: () => String,
@@ -871,6 +900,11 @@ export default async () => {
               id: { required: true, type: () => String },
               storeId: { required: true, type: () => String },
               customerId: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              buyerAccountId: {
                 required: true,
                 type: () => String,
                 nullable: true,
@@ -1047,6 +1081,11 @@ export default async () => {
               id: { required: true, type: () => String },
               storeId: { required: true, type: () => String },
               customerId: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              buyerAccountId: {
                 required: true,
                 type: () => String,
                 nullable: true,
@@ -2148,7 +2187,15 @@ export default async () => {
               expiresAt: { required: false, type: () => String },
               isActive: { required: false, type: () => Boolean },
             },
-            RedeemCouponDto: { code: { required: true, type: () => String } },
+            RedeemCouponDto: {
+              code: {
+                required: true,
+                type: () => String,
+                minLength: 4,
+                maxLength: 8,
+                pattern: '^[A-Za-z0-9]+$',
+              },
+            },
             CouponResponseDto: {
               id: { required: true, type: () => String },
               code: { required: true, type: () => String },
@@ -2214,6 +2261,14 @@ export default async () => {
                   t['./modules/stores/dto/store-response.dto.js']
                     .PublicStoreListingResponseDto,
                 ],
+              },
+              findPublicSitemapCount: {
+                type: t['./modules/stores/dto/sitemap-response.dto.js']
+                  .SitemapStoreCountDto,
+              },
+              findPublicSitemapPage: {
+                type: t['./modules/stores/dto/sitemap-response.dto.js']
+                  .SitemapStorePageDto,
               },
               findCollectionsPublic: {
                 type: [

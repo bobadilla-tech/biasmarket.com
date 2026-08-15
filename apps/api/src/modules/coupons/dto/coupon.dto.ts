@@ -1,4 +1,4 @@
-import { Transform } from "class-transformer";
+import { Transform } from 'class-transformer';
 import {
   IsBoolean,
   IsDateString,
@@ -9,7 +9,7 @@ import {
   Length,
   Matches,
   Min,
-} from "class-validator";
+} from 'class-validator';
 
 const PREMIUM_DURATION_DAYS = 30;
 
@@ -45,7 +45,7 @@ export class CreateCouponDto {
 
   @IsOptional()
   @IsBoolean()
-  @Transform(({ value }) => value === true || value === "true")
+  @Transform(({ value }) => value === true || value === 'true')
   isActive?: boolean;
 
   @IsOptional()
@@ -89,13 +89,14 @@ export class UpdateCouponDto {
 
   @IsOptional()
   @IsBoolean()
-  @Transform(({ value }) => value === true || value === "true")
+  @Transform(({ value }) => value === true || value === 'true')
   isActive?: boolean;
 }
 
 export class RedeemCouponDto {
   @IsString()
-  @IsNotEmpty()
+  @Length(4, 8)
+  @Matches(/^[A-Za-z0-9]+$/)
   code!: string;
 }
 
@@ -108,7 +109,7 @@ export class CouponResponseDto {
   durationDays!: number;
   maxUses!: number;
   isActive!: boolean;
-  status!: "active" | "inactive" | "expired";
+  status!: 'active' | 'inactive' | 'expired';
   startsAt!: string | null;
   expiresAt!: string | null;
   createdAt!: string;
