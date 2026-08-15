@@ -18,6 +18,7 @@ describe('CouponsService', () => {
       create: Mock;
       findMany: Mock;
       delete: Mock;
+      count: Mock;
     };
     user: {
       findUnique: Mock;
@@ -39,6 +40,7 @@ describe('CouponsService', () => {
         create: vi.fn(),
         findMany: vi.fn(),
         delete: vi.fn(),
+        count: vi.fn(),
       },
       user: {
         findUnique: vi.fn(),
@@ -132,11 +134,23 @@ describe('CouponsService', () => {
       isActive: true,
       startsAt: null,
       expiresAt: null,
-      redemptions: [{ id: 'r1' }, { id: 'r2' }],
       maxUses: 2,
       durationDays: 30,
     });
-    prisma.couponRedemption.findUnique.mockResolvedValue(null);
+
+    // The maxUses check runs inside the transaction against a live count, so
+    // no redemptions are kept on the coupon lookup (they're no longer loaded).
+    prisma.$transaction.mockImplementation(async (callback) =>
+      callback({
+        couponRedemption: {
+          findUnique: vi.fn().mockResolvedValue(null),
+          count: vi.fn().mockResolvedValue(2),
+        },
+        user: {
+          findUnique: vi.fn().mockResolvedValue({ premiumUntil: null }),
+        },
+      }),
+    );
 
     await expect(
       service.redeemCoupon({ code: 'PREMIUM30' }, {
@@ -152,15 +166,26 @@ describe('CouponsService', () => {
       isActive: true,
       startsAt: null,
       expiresAt: null,
-      redemptions: [{ id: 'r1' }],
       maxUses: 10,
       durationDays: 30,
     });
-    prisma.couponRedemption.findUnique.mockResolvedValue({
-      id: 'r1',
-      couponId: 'coupon-1',
-      userId: 'user-1',
-    });
+
+    // The duplicate check runs inside the transaction via findUnique on the
+    // tx client.
+    prisma.$transaction.mockImplementation(async (callback) =>
+      callback({
+        couponRedemption: {
+          findUnique: vi.fn().mockResolvedValue({
+            id: 'r1',
+            couponId: 'coupon-1',
+            userId: 'user-1',
+          }),
+        },
+        user: {
+          findUnique: vi.fn().mockResolvedValue({ premiumUntil: null }),
+        },
+      }),
+    );
 
     await expect(
       service.redeemCoupon({ code: 'PREMIUM30' }, {
@@ -187,8 +212,6 @@ describe('CouponsService', () => {
     };
 
     prisma.coupon.findUnique.mockResolvedValue(coupon);
-    prisma.couponRedemption.findUnique.mockResolvedValue(null);
-    prisma.user.findUnique.mockResolvedValue({ premiumUntil: null });
 
     const txUserUpdate = vi.fn().mockResolvedValue({ id: 'user-1' });
     const txCouponRedemptionCreate = vi.fn().mockResolvedValue({
@@ -208,9 +231,12 @@ describe('CouponsService', () => {
     prisma.$transaction.mockImplementation(async (callback) =>
       callback({
         couponRedemption: {
+          findUnique: vi.fn().mockResolvedValue(null),
+          count: vi.fn().mockResolvedValue(0),
           create: txCouponRedemptionCreate,
         },
         user: {
+          findUnique: vi.fn().mockResolvedValue({ premiumUntil: null }),
           update: txUserUpdate,
         },
       }),
@@ -255,8 +281,6 @@ describe('CouponsService', () => {
     vi.setSystemTime(new Date('2026-09-02T00:00:00.000Z'));
 
     prisma.coupon.findUnique.mockResolvedValue(coupon);
-    prisma.couponRedemption.findUnique.mockResolvedValue(null);
-    prisma.user.findUnique.mockResolvedValue({ premiumUntil: existingUntil });
 
     const txCouponRedemptionCreate = vi.fn().mockResolvedValue({
       id: 'redemption-2',
@@ -276,9 +300,14 @@ describe('CouponsService', () => {
     prisma.$transaction.mockImplementation(async (callback) =>
       callback({
         couponRedemption: {
+          findUnique: vi.fn().mockResolvedValue(null),
+          count: vi.fn().mockResolvedValue(0),
           create: txCouponRedemptionCreate,
         },
         user: {
+          findUnique: vi
+            .fn()
+            .mockResolvedValue({ premiumUntil: existingUntil }),
           update: txUserUpdate,
         },
       }),

@@ -314,7 +314,6 @@ export class CouponsService {
     const code = normalizeCode(dto.code);
     const coupon = await this.prisma.coupon.findUnique({
       where: { code },
-      include: { redemptions: true },
     });
 
     if (!coupon) {
@@ -336,41 +335,54 @@ export class CouponsService {
     }
 
     const userId = session.user.id;
-    const existingRedemption = await this.prisma.couponRedemption.findUnique({
-      where: { couponId_userId: { couponId: coupon.id, userId } },
-    });
 
-    if (existingRedemption) {
-      throw new BadRequestException('This user already redeemed this coupon');
-    }
-
-    if (coupon.redemptions.length >= coupon.maxUses) {
-      throw new BadRequestException('Coupon has reached its maximum uses');
-    }
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { premiumUntil: true },
-    });
-
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
-
-    // Stack the new duration on top of any remaining premium time instead of
-    // resetting the window from now. If the user already has an active plan
-    // (premiumUntil in the future), the new expiry is extended from there;
-    // otherwise it runs from the current time.
-    const existingUntil = user.premiumUntil;
-    const base =
-      existingUntil && existingUntil.getTime() > now.getTime()
-        ? existingUntil.getTime()
-        : now.getTime();
-    const premiumUntil = new Date(
-      base + coupon.durationDays * 24 * 60 * 60 * 1000,
-    );
-
+    // All validation that depends on mutable state (maxUses usage, duplicate
+    // redemption, premium window) runs inside the transaction so the check
+    // reads live state in the same transaction that performs the write —
+    // a redemption can't slip past based on a count read before the write
+    // began. (This is a guard against the stale pre-transaction read; under
+    // Postgres' default READ COMMITTED isolation a fully serialized guarantee
+    // would additionally require SERIALIZABLE, not needed for this admin-flow
+    // limit.)
     const redemption = await this.prisma.$transaction(async (tx) => {
+      const existingRedemption = await tx.couponRedemption.findUnique({
+        where: { couponId_userId: { couponId: coupon.id, userId } },
+      });
+
+      if (existingRedemption) {
+        throw new BadRequestException('This user already redeemed this coupon');
+      }
+
+      const redemptionCount = await tx.couponRedemption.count({
+        where: { couponId: coupon.id },
+      });
+
+      if (redemptionCount >= coupon.maxUses) {
+        throw new BadRequestException('Coupon has reached its maximum uses');
+      }
+
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        select: { premiumUntil: true },
+      });
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      // Stack the new duration on top of any remaining premium time instead of
+      // resetting the window from now. If the user already has an active plan
+      // (premiumUntil in the future), the new expiry is extended from there;
+      // otherwise it runs from the current time.
+      const existingUntil = user.premiumUntil;
+      const base =
+        existingUntil && existingUntil.getTime() > now.getTime()
+          ? existingUntil.getTime()
+          : now.getTime();
+      const premiumUntil = new Date(
+        base + coupon.durationDays * 24 * 60 * 60 * 1000,
+      );
+
       const created = await tx.couponRedemption.create({
         data: {
           couponId: coupon.id,
