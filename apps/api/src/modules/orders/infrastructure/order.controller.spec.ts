@@ -30,8 +30,15 @@ describe('OrderController.addPayment', () => {
   };
   let reviewPayment: { execute: Mock };
   let storage: { uploadPaymentImage: Mock; getPaymentImageStream: Mock };
-  let prisma: { $transaction: Mock; orderPayment: { create: Mock } };
-  let tx: { orderPayment: { create: Mock }; auditLog: { create: Mock } };
+  let prisma: {
+    $transaction: Mock;
+    orderPayment: { create: Mock };
+  };
+  let tx: {
+    order: { findUniqueOrThrow: Mock };
+    orderPayment: { create: Mock; aggregate: Mock };
+    auditLog: { create: Mock };
+  };
 
   const storeId = 'store-1';
   const orderId = 'order-1';
@@ -68,7 +75,8 @@ describe('OrderController.addPayment', () => {
 
   beforeEach(async () => {
     tx = {
-      orderPayment: { create: vi.fn() },
+      order: { findUniqueOrThrow: vi.fn() },
+      orderPayment: { create: vi.fn(), aggregate: vi.fn() },
       auditLog: { create: vi.fn() },
     };
     prisma = {
@@ -109,6 +117,15 @@ describe('OrderController.addPayment', () => {
       })
       .mockResolvedValueOnce(fullOrderFixture);
 
+    tx.order.findUniqueOrThrow.mockResolvedValueOnce({
+      paymentStatus: 'PARTIALLY_PAID',
+      requiredAmount: '100.00',
+      currency: 'PEN',
+    });
+    tx.orderPayment.aggregate.mockResolvedValueOnce({
+      _sum: { amount: 0 },
+    });
+
     await controller.addPayment(storeId, orderId, session, '40', 'YAPE');
 
     expect(orders.saveStatus).toHaveBeenCalledWith(
@@ -143,6 +160,15 @@ describe('OrderController.addPayment', () => {
       })
       .mockResolvedValueOnce(fullOrderFixture);
 
+    tx.order.findUniqueOrThrow.mockResolvedValueOnce({
+      paymentStatus: 'PARTIALLY_PAID',
+      requiredAmount: '100.00',
+      currency: 'PEN',
+    });
+    tx.orderPayment.aggregate.mockResolvedValueOnce({
+      _sum: { amount: 60 },
+    });
+
     await controller.addPayment(storeId, orderId, session, '40', 'YAPE');
 
     expect(orders.saveStatus).not.toHaveBeenCalled();
@@ -164,6 +190,15 @@ describe('OrderController.addPayment', () => {
       })
       .mockResolvedValueOnce(fullOrderFixture);
 
+    tx.order.findUniqueOrThrow.mockResolvedValueOnce({
+      paymentStatus: 'PARTIALLY_PAID',
+      requiredAmount: '99.99',
+      currency: 'PEN',
+    });
+    tx.orderPayment.aggregate.mockResolvedValueOnce({
+      _sum: { amount: 40 },
+    });
+
     await controller.addPayment(storeId, orderId, session, '59.99', 'YAPE');
 
     expect(reviewPayment.execute).toHaveBeenCalledWith(
@@ -184,6 +219,15 @@ describe('OrderController.addPayment', () => {
         requiredAmount: '47.00',
       })
       .mockResolvedValueOnce(fullOrderFixture);
+
+    tx.order.findUniqueOrThrow.mockResolvedValueOnce({
+      paymentStatus: 'VERIFIED',
+      requiredAmount: '47.00',
+      currency: 'PEN',
+    });
+    tx.orderPayment.aggregate.mockResolvedValueOnce({
+      _sum: { amount: 0 },
+    });
 
     await controller.addPayment(storeId, orderId, session, '27', 'YAPE');
 
@@ -225,6 +269,15 @@ describe('OrderController.addPayment', () => {
         requiredAmount: '47.00',
       })
       .mockResolvedValueOnce(fullOrderFixture);
+
+    tx.order.findUniqueOrThrow.mockResolvedValueOnce({
+      paymentStatus: 'VERIFIED',
+      requiredAmount: '47.00',
+      currency: 'PEN',
+    });
+    tx.orderPayment.aggregate.mockResolvedValueOnce({
+      _sum: { amount: 0 },
+    });
 
     await controller.addPayment(storeId, orderId, session, '47', 'YAPE');
 

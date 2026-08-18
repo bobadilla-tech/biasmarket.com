@@ -6,6 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { type Mock, vi } from 'vitest';
+import { Prisma } from '@biasmarket/db';
 import { hashPassword } from 'better-auth/crypto';
 import {
   createCustomerAccountToken,
@@ -393,21 +394,38 @@ describe('CustomerAuthService', () => {
           id: 'order-1',
           paymentStatus: 'VERIFIED',
           fulfillmentStatus: 'READY',
+          totalAmount: new Prisma.Decimal('100.00'),
+          requiredAmount: new Prisma.Decimal('100.00'),
+          currency: 'PEN',
+          createdAt: new Date('2026-01-01'),
+          payments: [
+            {
+              amount: new Prisma.Decimal('100.00'),
+              source: 'SELLER_RECORDED',
+              reviewStatus: 'N_A',
+            },
+          ],
         },
       ];
       prisma.order.findMany.mockResolvedValue(orders);
 
       const result = await service.getProfile('my-store', session);
 
-      expect(result).toEqual({
-        customer: {
-          name: 'Jane',
-          email: 'jane@example.com',
-          phone: '+51988888888',
-          emailVerified: true,
-        },
-        orders,
+      expect(result.customer).toEqual({
+        name: 'Jane',
+        email: 'jane@example.com',
+        phone: '+51988888888',
+        emailVerified: true,
       });
+      expect(result.orders).toHaveLength(1);
+      expect(result.orders[0]).toEqual(
+        expect.objectContaining({
+          id: 'order-1',
+          paidAmount: 100,
+          pendingAmount: 0,
+          paidPercentage: 100,
+        }),
+      );
       expect(prisma.order.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { buyerAccountId: 'buyer-1', storeId: store.id },
@@ -644,10 +662,12 @@ describe('CustomerAuthService', () => {
           id: 'order-1',
           paymentStatus: 'VERIFIED',
           fulfillmentStatus: 'READY',
-          totalAmount: { toString: () => '100.00' },
+          totalAmount: new Prisma.Decimal('100.00'),
+          requiredAmount: new Prisma.Decimal('100.00'),
           currency: 'PEN',
           createdAt: new Date('2026-01-01'),
           store: { slug: 'store-a', name: 'Store A' },
+          payments: [],
         },
       ]);
 
@@ -657,7 +677,13 @@ describe('CustomerAuthService', () => {
         expect.objectContaining({ where: { buyerAccountId: 'buyer-1' } }),
       );
       expect(result).toEqual([
-        expect.objectContaining({ id: 'order-1', storeSlug: 'store-a' }),
+        expect.objectContaining({
+          id: 'order-1',
+          storeSlug: 'store-a',
+          paidAmount: 0,
+          pendingAmount: 100,
+          paidPercentage: 0,
+        }),
       ]);
     });
   });

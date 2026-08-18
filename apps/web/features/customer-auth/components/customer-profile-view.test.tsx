@@ -45,6 +45,9 @@ const profile = {
       totalAmount: "100.00",
       currency: "PEN",
       createdAt: "2026-01-01T00:00:00.000Z",
+      paidAmount: 100,
+      pendingAmount: 0,
+      paidPercentage: 100,
     },
   ],
 };
@@ -95,7 +98,7 @@ test("keeps logout and back-to-store reachable at the mobile breakpoint", () => 
   expect(backLinks).toHaveLength(2);
   expect(
     backLinks.every((link) =>
-      link.getAttribute("href")?.includes("/store/my-store")
+      link.getAttribute("href")?.includes("/store/my-store"),
     ),
   ).toBe(true);
 });

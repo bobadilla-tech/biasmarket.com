@@ -15,6 +15,8 @@ import {
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { MailerService } from '../../../mailer/mailer.service.js';
 import { requiredEnv } from '../../../config/env.validation.js';
+import { withPaymentSummary } from '../../../common/payment-summary.js';
+import { toAccountOrderDto } from '../../customer-auth/dto/account-order-response.dto.js';
 
 function buildCustomerVerificationEmailHtml(
   url: string,
@@ -364,8 +366,12 @@ export class CustomerAccountService {
         paymentStatus: true,
         fulfillmentStatus: true,
         totalAmount: true,
+        requiredAmount: true,
         currency: true,
         createdAt: true,
+        payments: {
+          select: { amount: true, source: true, reviewStatus: true },
+        },
       },
     });
 
@@ -377,7 +383,9 @@ export class CustomerAccountService {
         phone: buyerAccount.phone,
         hasPassword: Boolean(buyerAccount.passwordHash),
       },
-      orders,
+      orders: orders.map((order) =>
+        toAccountOrderDto(withPaymentSummary(order)),
+      ),
     };
   }
 }

@@ -3,10 +3,9 @@ import { ApiProperty } from '@nestjs/swagger';
 // Shared between `CustomerAuth` (this module — `me`) and `CustomerAccount`
 // (`orders/infrastructure/customer-account.controller.ts` — `confirm`):
 // `CustomerAuthService.getProfile` and `CustomerAccountService.confirmAccount`
-// both select the exact same narrow order projection (id/paymentStatus/
-// fulfillmentStatus/totalAmount/currency/createdAt — no items/payments/
-// payment-summary fields, unlike `Order`'s own response DTOs), so this is
-// modeled once and imported by both controllers rather than duplicated.
+// both select the same order projection and run it through
+// `withPaymentSummary`, so this is modeled once and imported by both
+// controllers rather than duplicated.
 export class AccountOrderResponseDto {
   @ApiProperty()
   id: string;
@@ -40,6 +39,15 @@ export class AccountOrderResponseDto {
 
   @ApiProperty({ type: String, format: 'date-time' })
   createdAt: string;
+
+  @ApiProperty({ type: Number })
+  paidAmount: number;
+
+  @ApiProperty({ type: Number })
+  pendingAmount: number;
+
+  @ApiProperty({ type: Number })
+  paidPercentage: number;
 }
 
 // Structural, not `Prisma.Order` — both call sites select this exact field
@@ -52,12 +60,22 @@ export interface AccountOrderRow {
   paymentStatus: string;
   fulfillmentStatus: string;
   totalAmount: { toString(): string };
+  requiredAmount: { toString(): string };
   currency: string;
   createdAt: Date;
+  payments?: Array<{
+    amount: { plus(n: number): unknown; toString(): string };
+    source: string;
+    reviewStatus: string;
+  }>;
 }
 
 export function toAccountOrderDto(
-  order: AccountOrderRow,
+  order: AccountOrderRow & {
+    paidAmount: number;
+    pendingAmount: number;
+    paidPercentage: number;
+  },
 ): AccountOrderResponseDto {
   return {
     id: order.id,
@@ -68,5 +86,8 @@ export function toAccountOrderDto(
     totalAmount: order.totalAmount.toString(),
     currency: order.currency,
     createdAt: order.createdAt.toISOString(),
+    paidAmount: order.paidAmount,
+    pendingAmount: order.pendingAmount,
+    paidPercentage: order.paidPercentage,
   };
 }

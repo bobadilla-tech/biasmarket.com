@@ -32,6 +32,7 @@ export {
 export { OrdersTabs } from "./components/orders-tabs";
 export { OrdersTable } from "./components/orders-table";
 export { OrderStatusBadge } from "./components/order-status-badge";
+export { FulfillmentTimeline } from "./components/fulfillment-timeline";
 export { OrderDetailSheet } from "./components/order-detail-sheet";
 export { RegisterPaymentForm } from "./components/register-payment-form";
 export { PaymentHistoryList } from "./components/payment-history-list";

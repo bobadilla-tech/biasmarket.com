@@ -53,7 +53,11 @@ export interface GlobalAccountOrderRow extends AccountOrderRow {
 }
 
 export function toGlobalAccountOrderDto(
-  order: GlobalAccountOrderRow,
+  order: GlobalAccountOrderRow & {
+    paidAmount: number;
+    pendingAmount: number;
+    paidPercentage: number;
+  },
 ): GlobalAccountOrderResponseDto {
   return {
     id: order.id,
@@ -64,6 +68,9 @@ export function toGlobalAccountOrderDto(
     totalAmount: order.totalAmount.toString(),
     currency: order.currency,
     createdAt: order.createdAt.toISOString(),
+    paidAmount: order.paidAmount,
+    pendingAmount: order.pendingAmount,
+    paidPercentage: order.paidPercentage,
     storeSlug: order.storeSlug,
     storeName: order.storeName,
   };

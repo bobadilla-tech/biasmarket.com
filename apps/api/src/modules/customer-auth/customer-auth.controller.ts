@@ -30,7 +30,6 @@ import {
   OkResponseDto,
   UpdateCustomerProfileResponseDto,
 } from './dto/customer-auth-response.dto.js';
-import { toAccountOrderDto } from './dto/account-order-response.dto.js';
 import { toOrderDto } from '../orders/infrastructure/order.controller.js';
 import type { OrderDetailResponseDto } from '../orders/dto/order-response.dto.js';
 
@@ -122,7 +121,7 @@ export class CustomerAuthController {
     const profile = await this.customerAuth.getProfile(slug, session);
     return {
       customer: profile.customer,
-      orders: profile.orders.map(toAccountOrderDto),
+      orders: profile.orders,
     };
   }
 

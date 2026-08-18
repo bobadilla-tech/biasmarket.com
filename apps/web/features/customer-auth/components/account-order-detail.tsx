@@ -9,6 +9,7 @@ import { Link } from "@/i18n/navigation";
 import { EmptyState } from "@/components/shared/empty-state";
 import {
   formatOrderDate,
+  FulfillmentTimeline,
   getOrderNumber,
   OrderStatusBadge,
   PaymentProofLightbox,
@@ -43,12 +44,13 @@ const CLOSED_FULFILLMENT_STATUSES = new Set([
   "COMPLETED",
 ]);
 
-function ProofReviewBadge(
-  { reviewStatus, t }: {
-    reviewStatus: OrderPaymentResponseDto["reviewStatus"];
-    t: ReturnType<typeof useTranslations<"storefront.accountPage">>;
-  },
-) {
+function ProofReviewBadge({
+  reviewStatus,
+  t,
+}: {
+  reviewStatus: OrderPaymentResponseDto["reviewStatus"];
+  t: ReturnType<typeof useTranslations<"storefront.accountPage">>;
+}) {
   if (reviewStatus === "PENDING_REVIEW") {
     return (
       <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-600">
@@ -73,9 +75,13 @@ function ProofReviewBadge(
   return null;
 }
 
-export function AccountOrderDetail(
-  { slug, order }: { slug: string; order: OrderDetailResponseDto },
-) {
+export function AccountOrderDetail({
+  slug,
+  order,
+}: {
+  slug: string;
+  order: OrderDetailResponseDto;
+}) {
   // Reuses `dashboard.orders`' formatting copy (delivery/date labels, payment
   // method names) — the same underlying concepts as the seller-facing sheet,
   // not seller-only actions, so sharing the translation namespace avoids
@@ -90,7 +96,8 @@ export function AccountOrderDetail(
   const submitProof = useSubmitPaymentProof(slug, order.id);
   const enabledMethods = usePublicPaymentMethods(slug);
 
-  const canSubmitProof = order.pendingAmount > 0 &&
+  const canSubmitProof =
+    order.pendingAmount > 0 &&
     !CLOSED_PAYMENT_STATUSES.has(order.paymentStatus) &&
     !CLOSED_FULFILLMENT_STATUSES.has(order.fulfillmentStatus);
 
@@ -126,6 +133,13 @@ export function AccountOrderDetail(
           {t("details.title", { number: getOrderNumber(order.id) })}
         </h1>
         <OrderStatusBadge order={order} />
+      </div>
+
+      <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+        <h2 className="mb-3 text-sm font-semibold text-gray-900">
+          {tAccount("orderDetail.fulfillmentProgress")}
+        </h2>
+        <FulfillmentTimeline fulfillmentStatus={order.fulfillmentStatus} />
       </div>
 
       <div className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
@@ -232,89 +246,84 @@ export function AccountOrderDetail(
         <h2 className="text-sm font-semibold text-gray-900">
           {t("details.paymentHistory")}
         </h2>
-        {order.payments.length === 0
-          ? (
-            <p className="text-sm text-gray-500">
-              {tAccount("orderDetail.noPayments")}
-            </p>
-          )
-          : (
-            <div className="flex flex-col gap-2">
-              {order.payments.map((payment) => (
-                <div
-                  key={payment.id}
-                  className="flex items-center justify-between rounded-xl border border-gray-100 px-4 py-3 text-sm"
-                >
-                  <div>
-                    <p className="flex flex-wrap items-center gap-1.5 font-semibold text-gray-900">
-                      {order.currency} {payment.amount}
-                      {payment.method
-                        ? (
-                          <span className="font-medium text-gray-500">
-                            · {labels[payment.method] ?? payment.method}
-                          </span>
-                        )
-                        : null}
-                      {payment.source === "BUYER_SUBMITTED" && (
-                        <ProofReviewBadge
-                          reviewStatus={payment.reviewStatus}
-                          t={tAccount}
-                        />
-                      )}
-                    </p>
-                    {payment.note
-                      ? <p className="text-xs text-gray-500">{payment.note}</p>
-                      : null}
-                  </div>
-                  <span className="shrink-0 text-xs font-medium text-gray-500">
-                    {formatOrderDate(payment.createdAt, locale, t)}
-                  </span>
+        {order.payments.length === 0 ? (
+          <p className="text-sm text-gray-500">
+            {tAccount("orderDetail.noPayments")}
+          </p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {order.payments.map((payment) => (
+              <div
+                key={payment.id}
+                className="flex items-center justify-between rounded-xl border border-gray-100 px-4 py-3 text-sm"
+              >
+                <div>
+                  <p className="flex flex-wrap items-center gap-1.5 font-semibold text-gray-900">
+                    {order.currency} {payment.amount}
+                    {payment.method ? (
+                      <span className="font-medium text-gray-500">
+                        · {labels[payment.method] ?? payment.method}
+                      </span>
+                    ) : null}
+                    {payment.source === "BUYER_SUBMITTED" && (
+                      <ProofReviewBadge
+                        reviewStatus={payment.reviewStatus}
+                        t={tAccount}
+                      />
+                    )}
+                  </p>
+                  {payment.note ? (
+                    <p className="text-xs text-gray-500">{payment.note}</p>
+                  ) : null}
                 </div>
-              ))}
-            </div>
-          )}
+                <span className="shrink-0 text-xs font-medium text-gray-500">
+                  {formatOrderDate(payment.createdAt, locale, t)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
         <h2 className="text-sm font-semibold text-gray-900">
           {tAccount("orderDetail.screenshots")}
         </h2>
-        {submittedProofs.length === 0
-          ? (
-            <EmptyState
-              icon={Receipt}
-              message={tAccount("orderDetail.screenshotsEmpty")}
-            />
-          )
-          : (
-            <div className="flex flex-wrap gap-3">
-              {submittedProofs.map((payment) => (
-                <button
-                  key={payment.id}
-                  type="button"
-                  onClick={() =>
-                    setPreviewUrl(
-                      orderPaymentsApi.paymentImageUrl(
-                        slug,
-                        order.id,
-                        payment.id,
-                      ),
-                    )}
-                  className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-100 bg-gray-50"
-                >
-                  <img
-                    src={orderPaymentsApi.paymentImageUrl(
+        {submittedProofs.length === 0 ? (
+          <EmptyState
+            icon={Receipt}
+            message={tAccount("orderDetail.screenshotsEmpty")}
+          />
+        ) : (
+          <div className="flex flex-wrap gap-3">
+            {submittedProofs.map((payment) => (
+              <button
+                key={payment.id}
+                type="button"
+                onClick={() =>
+                  setPreviewUrl(
+                    orderPaymentsApi.paymentImageUrl(
                       slug,
                       order.id,
                       payment.id,
-                    )}
-                    alt=""
-                    className="h-full w-full object-cover"
-                  />
-                </button>
-              ))}
-            </div>
-          )}
+                    ),
+                  )
+                }
+                className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-100 bg-gray-50"
+              >
+                <img
+                  src={orderPaymentsApi.paymentImageUrl(
+                    slug,
+                    order.id,
+                    payment.id,
+                  )}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
