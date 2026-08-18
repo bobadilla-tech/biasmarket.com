@@ -185,6 +185,8 @@
     "goToLogin": "Log in",
     "contactSeller": "Contact the store",
     "backToOrders": "Back to my orders",
+    "pendingBalance": "Pending balance: {currency} {amount}",
+    "paidPercent": "{percentage}% paid",
     "nav": {
       "orders": "Orders",
       "addresses": "Addresses",
@@ -210,7 +212,8 @@
       "submitProofSuccess": "Your proof was submitted — the seller will review it soon.",
       "proofPending": "Pending review",
       "proofApproved": "Approved",
-      "proofRejected": "Rejected"
+      "proofRejected": "Rejected",
+      "fulfillmentProgress": "Order status"
     },
     "addresses": {
       "title": "Your addresses",
@@ -308,5 +311,11 @@
     "successBody": "We'll reach out on WhatsApp as soon as this item is back in stock.",
     "close": "Close",
     "error": "Something went wrong. Try again."
+  },
+  "fulfillmentTimeline": {
+    "received": "Order received",
+    "inTransit": "In transit",
+    "ready": "Ready for pickup",
+    "delivered": "Delivered"
   }
 }

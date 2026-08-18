@@ -6,7 +6,6 @@ import { CustomerSession } from './customer-session.decorator.js';
 import {
   GlobalAccountOrderResponseDto,
   GlobalAccountProfileResponseDto,
-  toGlobalAccountOrderDto,
 } from './dto/global-account-response.dto.js';
 
 // Slug-independent — the buyer identity is global, so these routes don't
@@ -34,9 +33,6 @@ export class GlobalAccountController {
   async orders(
     @CustomerSession() session: { buyerAccountId: string },
   ): Promise<GlobalAccountOrderResponseDto[]> {
-    const orders = await this.customerAuth.getGlobalOrders(
-      session.buyerAccountId,
-    );
-    return orders.map(toGlobalAccountOrderDto);
+    return this.customerAuth.getGlobalOrders(session.buyerAccountId);
   }
 }

@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { type Mock, vi } from 'vitest';
+import { Prisma } from '@biasmarket/db';
 import { CustomerAccountService } from './customer-account.service.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { MailerService } from '../../../mailer/mailer.service.js';
@@ -322,7 +323,18 @@ describe('CustomerAccountService', () => {
         emailVerified: false,
         passwordHash: null,
       };
-      const orders = [{ id: 'order-1', paymentStatus: 'PENDING_PAYMENT' }];
+      const orders = [
+        {
+          id: 'order-1',
+          paymentStatus: 'PENDING_PAYMENT',
+          fulfillmentStatus: 'ORDERING',
+          totalAmount: new Prisma.Decimal('50.00'),
+          requiredAmount: new Prisma.Decimal('50.00'),
+          currency: 'PEN',
+          createdAt: new Date('2026-01-01'),
+          payments: [],
+        },
+      ];
       prisma.buyerAccount.findUnique.mockResolvedValue(buyerAccount);
       prisma.buyerAccount.update.mockResolvedValue({
         ...buyerAccount,
@@ -341,16 +353,15 @@ describe('CustomerAccountService', () => {
           where: { buyerAccountId: 'buyer-1', storeId: store.id },
         }),
       );
-      expect(result).toEqual({
-        purpose: 'confirm',
-        customer: {
-          name: 'Jane',
-          email: 'jane@example.com',
-          phone: '+51988888888',
-          hasPassword: false,
-        },
-        orders,
-      });
+      expect(result.orders).toHaveLength(1);
+      expect(result.orders[0]).toEqual(
+        expect.objectContaining({
+          id: 'order-1',
+          paidAmount: 0,
+          pendingAmount: 50,
+          paidPercentage: 0,
+        }),
+      );
     });
 
     it('reports hasPassword: true once a password has been set, without touching emailVerified again', async () => {

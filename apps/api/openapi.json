@@ -6559,6 +6559,15 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "paidAmount": {
+            "type": "number"
+          },
+          "pendingAmount": {
+            "type": "number"
+          },
+          "paidPercentage": {
+            "type": "number"
           }
         },
         "required": [
@@ -6567,7 +6576,10 @@
           "fulfillmentStatus",
           "totalAmount",
           "currency",
-          "createdAt"
+          "createdAt",
+          "paidAmount",
+          "pendingAmount",
+          "paidPercentage"
         ]
       },
       "ConfirmAccountResponseDto": {
@@ -7911,6 +7923,15 @@
             "type": "string",
             "format": "date-time"
           },
+          "paidAmount": {
+            "type": "number"
+          },
+          "pendingAmount": {
+            "type": "number"
+          },
+          "paidPercentage": {
+            "type": "number"
+          },
           "storeSlug": {
             "type": "string"
           },
@@ -7925,6 +7946,9 @@
           "totalAmount",
           "currency",
           "createdAt",
+          "paidAmount",
+          "pendingAmount",
+          "paidPercentage",
           "storeSlug",
           "storeName"
         ]

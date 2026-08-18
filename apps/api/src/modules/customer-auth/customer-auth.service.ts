@@ -15,6 +15,8 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 import { CustomerAccountService } from '../orders/application/customer-account.service.js';
 import { OrderRepository } from '../orders/infrastructure/order.repository.js';
 import { requiredEnv } from '../../config/env.validation.js';
+import { withPaymentSummary } from '../../common/payment-summary.js';
+import { toAccountOrderDto } from './dto/account-order-response.dto.js';
 
 @Injectable()
 export class CustomerAuthService {
@@ -189,8 +191,12 @@ export class CustomerAuthService {
         paymentStatus: true,
         fulfillmentStatus: true,
         totalAmount: true,
+        requiredAmount: true,
         currency: true,
         createdAt: true,
+        payments: {
+          select: { amount: true, source: true, reviewStatus: true },
+        },
       },
     });
 
@@ -203,7 +209,9 @@ export class CustomerAuthService {
         pendingEmail: buyerAccount.pendingEmail,
         pendingPhone: buyerAccount.pendingPhone,
       },
-      orders,
+      orders: orders.map((order) =>
+        toAccountOrderDto(withPaymentSummary(order)),
+      ),
     };
   }
 
@@ -336,21 +344,31 @@ export class CustomerAuthService {
         paymentStatus: true,
         fulfillmentStatus: true,
         totalAmount: true,
+        requiredAmount: true,
         currency: true,
         createdAt: true,
         store: { select: { slug: true, name: true } },
+        payments: {
+          select: { amount: true, source: true, reviewStatus: true },
+        },
       },
     });
 
-    return orders.map((order) => ({
-      id: order.id,
-      paymentStatus: order.paymentStatus,
-      fulfillmentStatus: order.fulfillmentStatus,
-      totalAmount: order.totalAmount,
-      currency: order.currency,
-      createdAt: order.createdAt,
-      storeSlug: order.store.slug,
-      storeName: order.store.name,
-    }));
+    return orders.map((order) => {
+      const summary = withPaymentSummary(order);
+      return {
+        id: summary.id,
+        paymentStatus: summary.paymentStatus,
+        fulfillmentStatus: summary.fulfillmentStatus,
+        totalAmount: summary.totalAmount.toString(),
+        currency: summary.currency,
+        createdAt: summary.createdAt.toISOString(),
+        paidAmount: summary.paidAmount,
+        pendingAmount: summary.pendingAmount,
+        paidPercentage: summary.paidPercentage,
+        storeSlug: order.store.slug,
+        storeName: order.store.name,
+      };
+    });
   }
 }

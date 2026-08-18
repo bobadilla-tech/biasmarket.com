@@ -1,11 +1,18 @@
 import { ChevronRight } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { OrderStatusBadge } from "@/features/orders";
 import type { AccountOrderResponseDto } from "@biasmarket/types";
 
-export function AccountOrderCard(
-  { slug, order }: { slug: string; order: AccountOrderResponseDto },
-) {
+export function AccountOrderCard({
+  slug,
+  order,
+}: {
+  slug: string;
+  order: AccountOrderResponseDto;
+}) {
+  const t = useTranslations("storefront.accountPage");
+
   return (
     <Link
       href={`/store/${slug}/account/orders/${order.id}`}
@@ -22,6 +29,21 @@ export function AccountOrderCard(
       <div className="flex items-center gap-3 sm:gap-4">
         <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-1.5">
           <OrderStatusBadge order={order} />
+          {order.pendingAmount > 0 && (
+            <p className="text-xs text-rose-600">
+              {t("pendingBalance", {
+                currency: order.currency,
+                amount: order.pendingAmount.toFixed(2),
+              })}
+            </p>
+          )}
+          {order.paidPercentage > 0 && order.paidPercentage < 100 && (
+            <p className="text-xs text-gray-500">
+              {t("paidPercent", {
+                percentage: Math.round(order.paidPercentage),
+              })}
+            </p>
+          )}
           <p className="text-sm font-semibold text-gray-900">
             {order.currency} {order.totalAmount}
           </p>

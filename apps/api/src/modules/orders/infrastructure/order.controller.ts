@@ -403,18 +403,6 @@ export class OrderController {
       throw new BadRequestException('Selecciona un método de pago');
     }
 
-    const nextPaid = order.paidAmount + numericAmount;
-    const nextStatus: PaymentStatus =
-      toCents(nextPaid) >= toCents(Number(order.requiredAmount))
-        ? 'VERIFIED'
-        : 'PARTIALLY_PAID';
-
-    // Already-VERIFIED orders with a residual balance stay VERIFIED no matter
-    // what this payment brings them to: VERIFIED is terminal (order-status.vo
-    // has no outgoing transitions), stock was already decremented at approval,
-    // and routing through ReviewPaymentUseCase would throw VERIFIED -> VERIFIED.
-    const alreadyVerified = order.paymentStatus === 'VERIFIED';
-
     let imageUrl: string | null = null;
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
@@ -431,19 +419,68 @@ export class OrderController {
       );
     }
 
+    // Re-fetch the order inside the transaction to get the latest state and
+    // avoid race conditions where two concurrent requests both pass the
+    // balance check against a stale snapshot.
+    let nextStatus: PaymentStatus | undefined;
+    let alreadyVerified = false;
+
     try {
       await this.prisma.$transaction(async (tx) => {
+        // Re-read the order under the transaction's snapshot so concurrent
+        // requests serialize on this row.
+        const current = await tx.order.findUniqueOrThrow({
+          where: { id: orderId },
+          select: {
+            paymentStatus: true,
+            requiredAmount: true,
+            currency: true,
+          },
+        });
+
+        // Belt-and-suspenders on top of the Decimal-space fix in
+        // `computePaymentSummary`: money boundary comparisons compare in cents,
+        // not raw floats, so a residual float-conversion artifact in
+        // `numericAmount`/`pendingAmount` can never reject (or accept) a payment
+        // that's actually exact to the cent.
+        const paidSummary = await tx.orderPayment.aggregate({
+          _sum: { amount: true },
+          where: {
+            orderId,
+            reviewStatus: { notIn: ['REJECTED'] },
+          },
+        });
+        const currentPaid = Number(paidSummary._sum.amount ?? 0);
+        const currentPending = Number(current.requiredAmount) - currentPaid;
+        if (toCents(numericAmount) > toCents(currentPending)) {
+          throw new Error('El abono excede el saldo pendiente');
+        }
+
+        // Already-VERIFIED orders with a residual balance stay VERIFIED no
+        // matter what this payment brings them to: VERIFIED is terminal
+        // (order-status.vo has no outgoing transitions), stock was already
+        // decremented at approval, and routing through ReviewPaymentUseCase
+        // would throw VERIFIED -> VERIFIED.
+        alreadyVerified = current.paymentStatus === 'VERIFIED';
+
+        const nextPaid = currentPaid + numericAmount;
+        nextStatus =
+          toCents(nextPaid) >= toCents(Number(current.requiredAmount))
+            ? 'VERIFIED'
+            : 'PARTIALLY_PAID';
+
         await tx.orderPayment.create({
           data: {
             orderId,
             storeId,
             amount: numericAmount,
-            currency: order.currency,
+            currency: current.currency,
             method: method as PaymentMethodType,
             note,
             ...(imageUrl && { imageUrl }),
           },
         });
+
         // A payment that reaches the required amount here must go through
         // ReviewPaymentUseCase (below, outside this transaction) instead of a
         // direct status write — that's the only path that decrements real

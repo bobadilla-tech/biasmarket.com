@@ -181,6 +181,8 @@
     "goToLogin": "Ingresar",
     "contactSeller": "Contactar a la tienda",
     "backToOrders": "Volver a mis pedidos",
+    "pendingBalance": "Saldo pendiente: {currency} {amount}",
+    "paidPercent": "{percentage}% pagado",
     "nav": {
       "orders": "Pedidos",
       "addresses": "Direcciones",
@@ -206,7 +208,8 @@
       "submitProofSuccess": "Tu comprobante fue enviado — la tienda lo revisará pronto.",
       "proofPending": "Pendiente de revisión",
       "proofApproved": "Aprobado",
-      "proofRejected": "Rechazado"
+      "proofRejected": "Rechazado",
+      "fulfillmentProgress": "Estado del pedido"
     },
     "addresses": {
       "title": "Tus direcciones",
@@ -308,5 +311,11 @@
   "comingSoonSection": {
     "title": "Próximamente disponibles",
     "subtitle": "Estos productos están agotados por ahora. Deja tu número y te avisamos cuando vuelvan."
+  },
+  "fulfillmentTimeline": {
+    "received": "Pedido recibido",
+    "inTransit": "En camino",
+    "ready": "Listo para recojo",
+    "delivered": "Entregado"
   }
 }

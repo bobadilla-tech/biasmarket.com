@@ -1340,6 +1340,9 @@ export interface AccountOrderResponseDto {
   totalAmount: string;
   currency: string;
   createdAt: string;
+  paidAmount: number;
+  pendingAmount: number;
+  paidPercentage: number;
 }
 
 export interface ConfirmAccountResponseDto {
