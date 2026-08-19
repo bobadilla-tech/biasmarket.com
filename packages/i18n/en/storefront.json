@@ -66,6 +66,10 @@
       "5": "Fri",
       "6": "Sat"
     },
+    "paymentDetailsTitle": "Payment details",
+    "cashPaymentNote": "Coordinate cash payment directly with the store (WhatsApp or in person).",
+    "paymentDetailsNotConfigured": "The store hasn't set up this payment method yet — contact them to coordinate.",
+    "copyPaymentDetail": "Copy {field}",
     "paymentMethodLabel": "Payment method",
     "paymentMethodLabels": {
       "YAPE": "Yape",
@@ -78,7 +82,7 @@
     "emailPlaceholder": "Email",
     "invalidEmail": "Enter a valid email",
     "submit": "Confirm order",
-    "submitSubtext": "You'll see the payment details once your order is confirmed.",
+    "submitSubtext": "Attach your payment proof and confirm.",
     "submitting": "Sending...",
     "noDeliveryMethod": "The store hasn't set up a delivery method yet — contact the seller.",
     "mixedCurrencyWarning": "You can't check out products in different currencies in the same order. Remove one from your cart.",
