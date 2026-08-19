@@ -62,6 +62,9 @@
       "5": "Vie",
       "6": "Sáb"
     },
+    "paymentDetailsTitle": "Datos de pago",
+    "cashPaymentNote": "Coordina el pago en efectivo directamente con la tienda (por WhatsApp o en persona).",
+    "paymentDetailsNotConfigured": "La tienda todavía no configuró este método de pago — contáctala para coordinar.",
     "paymentMethodLabel": "Método de pago",
     "paymentMethodLabels": {
       "YAPE": "Yape",
@@ -74,7 +77,7 @@
     "emailPlaceholder": "Email",
     "invalidEmail": "Ingresa un email válido",
     "submit": "Confirmar pedido",
-    "submitSubtext": "Verás los datos para completar el pago apenas confirmes tu pedido.",
+    "submitSubtext": "Al confirmar, sube tu comprobante de pago y envía.",
     "submitting": "Enviando...",
     "noDeliveryMethod": "La tienda todavía no configuró un método de entrega — contacta al vendedor.",
     "mixedCurrencyWarning": "No puedes pagar productos en distintas monedas en el mismo pedido. Quita alguno del carrito.",

@@ -125,22 +125,22 @@ export class PaymentConfigService {
     const previousQrUrl = previousDetails.qrImageUrl;
 
     const url = await this.storage.uploadPaymentQrImage(buffer, mimeType);
+    const mergedDetails = {
+      phoneNumber: '',
+      accountHolder: '',
+      ...previousDetails,
+      qrImageUrl: url,
+    };
     const row = await this.prisma.paymentMethodConfig.upsert({
       where: { storeId_method: { storeId, method } },
       create: {
         storeId,
         method,
         enabled: true,
-        details: {
-          ...previousDetails,
-          qrImageUrl: url,
-        } as Prisma.InputJsonValue,
+        details: mergedDetails as Prisma.InputJsonValue,
       },
       update: {
-        details: {
-          ...previousDetails,
-          qrImageUrl: url,
-        } as Prisma.InputJsonValue,
+        details: mergedDetails as Prisma.InputJsonValue,
       },
     });
 

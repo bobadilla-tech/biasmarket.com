@@ -196,6 +196,14 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
           1800,
         );
       },
+      onError: (error) => {
+        setDetailsError((prev) => ({
+          ...prev,
+          [method]: error instanceof Error
+            ? error.message
+            : t("payments.detailsInvalid"),
+        }));
+      },
     });
   }
 
