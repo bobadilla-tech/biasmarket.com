@@ -10,9 +10,14 @@ interface PaymentMethodDetailsProps {
   method: PaymentMethodConfigResponseDto;
 }
 
+function getDetail(details: Record<string, unknown>, key: string): string {
+  const val = details[key];
+  return typeof val === "string" && val ? val : "";
+}
+
 export function PaymentMethodDetails({ method }: PaymentMethodDetailsProps) {
   const t = useTranslations("storefront.checkoutPage");
-  const details = method.details ?? {};
+  const details = (method.details ?? {}) as Record<string, unknown>;
 
   if (method.method === "CASH") {
     return (
@@ -23,75 +28,65 @@ export function PaymentMethodDetails({ method }: PaymentMethodDetailsProps) {
     );
   }
 
-  const hasTransferDetails =
-    method.method === "TRANSFER" &&
-    typeof details.bankName === "string" &&
-    details.bankName;
-
-  const hasWalletDetails =
-    (method.method === "YAPE" || method.method === "PLIN") &&
-    typeof details.phoneNumber === "string" &&
-    details.phoneNumber;
-
-  if (!hasTransferDetails && !hasWalletDetails) {
-    return (
-      <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
-        <AlertTriangle className="size-5 shrink-0" />
-        <p>{t("paymentDetailsNotConfigured")}</p>
-      </div>
-    );
-  }
-
-  if (hasTransferDetails) {
+  if (method.method === "TRANSFER") {
+    const bankName = getDetail(details, "bankName");
+    if (!bankName) {
+      return <NotConfiguredBanner />;
+    }
     return (
       <div className="flex flex-col gap-2 rounded-2xl border border-gray-100 bg-gray-50 p-4">
-        <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-          {t("paymentDetailsTitle")}
-        </span>
+        <SectionTitle>{t("paymentDetailsTitle")}</SectionTitle>
         <dl className="flex flex-col gap-1 text-sm text-gray-600">
-          <DetailRow
-            label={t("confirmationBankName")}
-            value={String(details.bankName)}
-          />
+          <DetailRow label={t("confirmationBankName")} value={bankName} />
           <DetailRow
             label={t("confirmationAccountNumber")}
-            value={String(details.accountNumber)}
+            value={getDetail(details, "accountNumber")}
             copyable
           />
           <DetailRow
             label={t("confirmationAccountHolder")}
-            value={String(details.accountHolder)}
+            value={getDetail(details, "accountHolder")}
           />
-          {typeof details.accountType === "string" && details.accountType && (
-            <DetailRow
-              label={t("confirmationAccountType")}
-              value={String(details.accountType)}
-            />
-          )}
+          <OptionalDetailRow
+            label={t("confirmationAccountType")}
+            details={details}
+            field="accountType"
+          />
         </dl>
       </div>
     );
   }
 
+  // YAPE | PLIN — show if phone OR qr is configured
+  const phoneNumber = getDetail(details, "phoneNumber");
+  const accountHolder = getDetail(details, "accountHolder");
+  const qrImageUrl = getDetail(details, "qrImageUrl");
+
+  if (!phoneNumber && !qrImageUrl) {
+    return <NotConfiguredBanner />;
+  }
+
   return (
     <div className="flex flex-col gap-2 rounded-2xl border border-gray-100 bg-gray-50 p-4">
-      <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-        {t("paymentDetailsTitle")}
-      </span>
+      <SectionTitle>{t("paymentDetailsTitle")}</SectionTitle>
       <dl className="flex flex-col gap-1 text-sm text-gray-600">
-        <DetailRow
-          label={t("confirmationPhoneNumber")}
-          value={String(details.phoneNumber)}
-          copyable
-        />
-        <DetailRow
-          label={t("confirmationAccountHolder")}
-          value={String(details.accountHolder)}
-        />
+        {phoneNumber && (
+          <DetailRow
+            label={t("confirmationPhoneNumber")}
+            value={phoneNumber}
+            copyable
+          />
+        )}
+        {accountHolder && (
+          <DetailRow
+            label={t("confirmationAccountHolder")}
+            value={accountHolder}
+          />
+        )}
       </dl>
-      {typeof details.qrImageUrl === "string" && details.qrImageUrl && (
+      {qrImageUrl && (
         <Image
-          src={details.qrImageUrl}
+          src={qrImageUrl}
           alt={t("confirmationQrAlt")}
           width={160}
           height={160}
@@ -100,6 +95,38 @@ export function PaymentMethodDetails({ method }: PaymentMethodDetailsProps) {
       )}
     </div>
   );
+}
+
+function NotConfiguredBanner() {
+  const t = useTranslations("storefront.checkoutPage");
+  return (
+    <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
+      <AlertTriangle className="size-5 shrink-0" />
+      <p>{t("paymentDetailsNotConfigured")}</p>
+    </div>
+  );
+}
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+      {children}
+    </span>
+  );
+}
+
+function OptionalDetailRow({
+  label,
+  details,
+  field,
+}: {
+  label: string;
+  details: Record<string, unknown>;
+  field: string;
+}) {
+  const value = getDetail(details, field);
+  if (!value) return null;
+  return <DetailRow label={label} value={value} />;
 }
 
 function DetailRow({
@@ -111,6 +138,7 @@ function DetailRow({
   value: string;
   copyable?: boolean;
 }) {
+  const t = useTranslations("storefront.checkoutPage");
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -129,7 +157,7 @@ function DetailRow({
             type="button"
             onClick={handleCopy}
             className="rounded p-0.5 text-gray-400 transition hover:text-gray-600"
-            aria-label={`Copiar ${label}`}
+            aria-label={t("copyPaymentDetail", { field: label })}
           >
             {copied ? (
               <Check className="size-3.5 text-green-500" />

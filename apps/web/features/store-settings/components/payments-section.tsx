@@ -69,7 +69,7 @@ const DEFAULT_ENABLED: Record<string, boolean> = {
 // Methods that carry structured `details` at all — CASH doesn't, so it never
 // gets an expand affordance.
 const METHODS_WITH_DETAILS = ["TRANSFER", "YAPE", "PLIN"] as const;
-type MethodWithDetails = typeof METHODS_WITH_DETAILS[number];
+type MethodWithDetails = (typeof METHODS_WITH_DETAILS)[number];
 
 type DetailsFormRow = {
   bankName: string;
@@ -97,9 +97,8 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
   const saveDetails = useSavePaymentMethodDetails(storeId);
   const uploadQr = useUploadPaymentQrImage(storeId, tCommon("networkError"));
 
-  const [enabledByMethod, setEnabledByMethod] = useState<
-    Record<string, boolean>
-  >(DEFAULT_ENABLED);
+  const [enabledByMethod, setEnabledByMethod] =
+    useState<Record<string, boolean>>(DEFAULT_ENABLED);
   const [detailsForm, setDetailsForm] = useState<
     Record<MethodWithDetails, DetailsFormRow>
   >({
@@ -107,15 +106,13 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
     YAPE: EMPTY_DETAILS_ROW,
     PLIN: EMPTY_DETAILS_ROW,
   });
-  const [expandedMethod, setExpandedMethod] = useState<
-    MethodWithDetails | null
-  >(null);
+  const [expandedMethod, setExpandedMethod] =
+    useState<MethodWithDetails | null>(null);
   const [detailsError, setDetailsError] = useState<
     Partial<Record<MethodWithDetails, string>>
   >({});
-  const [savedDetailsMethod, setSavedDetailsMethod] = useState<
-    MethodWithDetails | null
-  >(null);
+  const [savedDetailsMethod, setSavedDetailsMethod] =
+    useState<MethodWithDetails | null>(null);
 
   useEffect(() => {
     if (!methods) return;
@@ -133,21 +130,20 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
       const details = row.details as Record<string, unknown>;
       nextDetails[row.method as MethodWithDetails] = {
         bankName: typeof details.bankName === "string" ? details.bankName : "",
-        accountNumber: typeof details.accountNumber === "string"
-          ? details.accountNumber
-          : "",
-        accountHolder: typeof details.accountHolder === "string"
-          ? details.accountHolder
-          : "",
-        accountType: typeof details.accountType === "string"
-          ? details.accountType
-          : "",
-        phoneNumber: typeof details.phoneNumber === "string"
-          ? details.phoneNumber
-          : "",
-        qrImageUrl: typeof details.qrImageUrl === "string"
-          ? details.qrImageUrl
-          : "",
+        accountNumber:
+          typeof details.accountNumber === "string"
+            ? details.accountNumber
+            : "",
+        accountHolder:
+          typeof details.accountHolder === "string"
+            ? details.accountHolder
+            : "",
+        accountType:
+          typeof details.accountType === "string" ? details.accountType : "",
+        phoneNumber:
+          typeof details.phoneNumber === "string" ? details.phoneNumber : "",
+        qrImageUrl:
+          typeof details.qrImageUrl === "string" ? details.qrImageUrl : "",
       };
     }
     setEnabledByMethod(nextEnabled);
@@ -169,9 +165,8 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
 
   function handleSaveDetails(method: MethodWithDetails) {
     const row = detailsForm[method];
-    const schema = method === "TRANSFER"
-      ? transferDetailsSchema
-      : walletDetailsSchema;
+    const schema =
+      method === "TRANSFER" ? transferDetailsSchema : walletDetailsSchema;
     const parsed = schema.safeParse({
       ...row,
       accountType: row.accountType || undefined,
@@ -185,32 +180,34 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
       return;
     }
     setDetailsError((prev) => ({ ...prev, [method]: undefined }));
-    saveDetails.mutate({ method, details: parsed.data }, {
-      onSuccess: () => {
-        setSavedDetailsMethod(method);
-        globalThis.setTimeout(
-          () =>
-            setSavedDetailsMethod((current) =>
-              current === method ? null : current
-            ),
-          1800,
-        );
+    saveDetails.mutate(
+      { method, details: parsed.data },
+      {
+        onSuccess: () => {
+          setSavedDetailsMethod(method);
+          globalThis.setTimeout(
+            () =>
+              setSavedDetailsMethod((current) =>
+                current === method ? null : current,
+              ),
+            1800,
+          );
+        },
+        onError: (error) => {
+          setSavedDetailsMethod(null);
+          setDetailsError((prev) => ({
+            ...prev,
+            [method]:
+              error instanceof Error
+                ? error.message
+                : t("payments.detailsInvalid"),
+          }));
+        },
       },
-      onError: (error) => {
-        setDetailsError((prev) => ({
-          ...prev,
-          [method]: error instanceof Error
-            ? error.message
-            : t("payments.detailsInvalid"),
-        }));
-      },
-    });
+    );
   }
 
-  function handleQrFileChange(
-    method: "YAPE" | "PLIN",
-    file: File | undefined,
-  ) {
+  function handleQrFileChange(method: "YAPE" | "PLIN", file: File | undefined) {
     if (!file) return;
     uploadQr.mutate({ method, file });
   }
@@ -235,26 +232,24 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
             >
               <div className="flex items-center justify-between px-4 py-3">
                 <div className="flex items-center gap-3">
-                  {"logo" in method
-                    ? (
-                      <Image
-                        src={method.logo}
-                        alt={t(`payments.items.${method.key}.label`)}
-                        width={32}
-                        height={32}
-                        className="size-8 shrink-0 object-contain"
-                      />
-                    )
-                    : (
-                      <Badge
-                        className={cn(
-                          "rounded-2xl px-2.5 py-1.5 text-xs font-semibold",
-                          method.color,
-                        )}
-                      >
-                        {t(`payments.items.${method.key}.short`)}
-                      </Badge>
-                    )}
+                  {"logo" in method ? (
+                    <Image
+                      src={method.logo}
+                      alt={t(`payments.items.${method.key}.label`)}
+                      width={32}
+                      height={32}
+                      className="size-8 shrink-0 object-contain"
+                    />
+                  ) : (
+                    <Badge
+                      className={cn(
+                        "rounded-2xl px-2.5 py-1.5 text-xs font-semibold",
+                        method.color,
+                      )}
+                    >
+                      {t(`payments.items.${method.key}.short`)}
+                    </Badge>
+                  )}
                   <div>
                     <p className="text-sm font-medium text-[#341b55]">
                       {t(`payments.items.${method.key}.label`)}
@@ -293,15 +288,18 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
                           isExpanded
                             ? null
                             : (method.method as MethodWithDetails),
-                        )}
+                        )
+                      }
                       className="h-8 px-2 text-xs text-[#8f7da8]"
                     >
                       {isExpanded
                         ? t("payments.hideDetails")
                         : t("payments.editDetails")}
-                      {isExpanded
-                        ? <ChevronUp className="ml-1 size-3.5" />
-                        : <ChevronDown className="ml-1 size-3.5" />}
+                      {isExpanded ? (
+                        <ChevronUp className="ml-1 size-3.5" />
+                      ) : (
+                        <ChevronDown className="ml-1 size-3.5" />
+                      )}
                     </Button>
                   )}
                   <Switch
@@ -310,111 +308,117 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
                       setEnabledByMethod((prev) => ({
                         ...prev,
                         [method.method]: checked,
-                      }))}
+                      }))
+                    }
                   />
                 </div>
               </div>
 
               {hasDetails && isExpanded && (
                 <div className="space-y-3 border-t border-[#f0e7f8] px-4 py-4">
-                  {method.method === "TRANSFER"
-                    ? (
-                      <>
-                        <Input
-                          placeholder={t("payments.fields.bankName")}
-                          value={detailsForm.TRANSFER.bankName}
-                          onChange={(e) =>
-                            updateDetailField(
-                              "TRANSFER",
-                              "bankName",
-                              e.target.value,
-                            )}
-                        />
-                        <Input
-                          placeholder={t("payments.fields.accountNumber")}
-                          value={detailsForm.TRANSFER.accountNumber}
-                          onChange={(e) =>
-                            updateDetailField(
-                              "TRANSFER",
-                              "accountNumber",
-                              e.target.value,
-                            )}
-                        />
-                        <Input
-                          placeholder={t("payments.fields.accountHolder")}
-                          value={detailsForm.TRANSFER.accountHolder}
-                          onChange={(e) =>
-                            updateDetailField(
-                              "TRANSFER",
-                              "accountHolder",
-                              e.target.value,
-                            )}
-                        />
-                        <Input
-                          placeholder={t("payments.fields.accountType")}
-                          value={detailsForm.TRANSFER.accountType}
-                          onChange={(e) =>
-                            updateDetailField(
-                              "TRANSFER",
-                              "accountType",
-                              e.target.value,
-                            )}
-                        />
-                      </>
-                    )
-                    : (
-                      <>
-                        <Input
-                          placeholder={t("payments.fields.phoneNumber")}
-                          value={detailsForm[method.method].phoneNumber}
-                          onChange={(e) =>
-                            updateDetailField(
-                              method.method as "YAPE" | "PLIN",
-                              "phoneNumber",
-                              e.target.value,
-                            )}
-                        />
-                        <Input
-                          placeholder={t("payments.fields.accountHolder")}
-                          value={detailsForm[method.method].accountHolder}
-                          onChange={(e) =>
-                            updateDetailField(
-                              method.method as "YAPE" | "PLIN",
-                              "accountHolder",
-                              e.target.value,
-                            )}
-                        />
-                        <div className="flex items-center gap-3">
-                          {detailsForm[method.method].qrImageUrl && (
-                            <Image
-                              src={detailsForm[method.method].qrImageUrl}
-                              alt="QR"
-                              width={64}
-                              height={64}
-                              className="size-16 rounded-lg border border-[#f0e7f8] object-contain"
-                            />
-                          )}
-                          <label className="cursor-pointer text-xs font-medium text-[#7540d9]">
-                            {t("payments.uploadQr")}
-                            <input
-                              type="file"
-                              accept="image/png,image/jpeg"
-                              className="hidden"
-                              onChange={(e) =>
-                                handleQrFileChange(
-                                  method.method as "YAPE" | "PLIN",
-                                  e.target.files?.[0],
-                                )}
-                            />
-                          </label>
-                          {uploadQr.isPending && (
-                            <span className="text-xs text-[#9582ad]">
-                              {t("payments.uploading")}
-                            </span>
-                          )}
-                        </div>
-                      </>
-                    )}
+                  {method.method === "TRANSFER" ? (
+                    <>
+                      <Input
+                        placeholder={t("payments.fields.bankName")}
+                        value={detailsForm.TRANSFER.bankName}
+                        onChange={(e) =>
+                          updateDetailField(
+                            "TRANSFER",
+                            "bankName",
+                            e.target.value,
+                          )
+                        }
+                      />
+                      <Input
+                        placeholder={t("payments.fields.accountNumber")}
+                        value={detailsForm.TRANSFER.accountNumber}
+                        onChange={(e) =>
+                          updateDetailField(
+                            "TRANSFER",
+                            "accountNumber",
+                            e.target.value,
+                          )
+                        }
+                      />
+                      <Input
+                        placeholder={t("payments.fields.accountHolder")}
+                        value={detailsForm.TRANSFER.accountHolder}
+                        onChange={(e) =>
+                          updateDetailField(
+                            "TRANSFER",
+                            "accountHolder",
+                            e.target.value,
+                          )
+                        }
+                      />
+                      <Input
+                        placeholder={t("payments.fields.accountType")}
+                        value={detailsForm.TRANSFER.accountType}
+                        onChange={(e) =>
+                          updateDetailField(
+                            "TRANSFER",
+                            "accountType",
+                            e.target.value,
+                          )
+                        }
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <Input
+                        placeholder={t("payments.fields.phoneNumber")}
+                        value={detailsForm[method.method].phoneNumber}
+                        onChange={(e) =>
+                          updateDetailField(
+                            method.method as "YAPE" | "PLIN",
+                            "phoneNumber",
+                            e.target.value,
+                          )
+                        }
+                      />
+                      <Input
+                        placeholder={t("payments.fields.accountHolder")}
+                        value={detailsForm[method.method].accountHolder}
+                        onChange={(e) =>
+                          updateDetailField(
+                            method.method as "YAPE" | "PLIN",
+                            "accountHolder",
+                            e.target.value,
+                          )
+                        }
+                      />
+                      <div className="flex items-center gap-3">
+                        {detailsForm[method.method].qrImageUrl && (
+                          <Image
+                            src={detailsForm[method.method].qrImageUrl}
+                            alt="QR"
+                            width={64}
+                            height={64}
+                            className="size-16 rounded-lg border border-[#f0e7f8] object-contain"
+                          />
+                        )}
+                        <label className="cursor-pointer text-xs font-medium text-[#7540d9]">
+                          {t("payments.uploadQr")}
+                          <input
+                            type="file"
+                            accept="image/png,image/jpeg"
+                            className="hidden"
+                            onChange={(e) =>
+                              handleQrFileChange(
+                                method.method as "YAPE" | "PLIN",
+                                e.target.files?.[0],
+                              )
+                            }
+                          />
+                        </label>
+                        {uploadQr.isPending && (
+                          <span className="text-xs text-[#9582ad]">
+                            {t("payments.uploading")}
+                          </span>
+                        )}
+                      </div>
+                    </>
+                  )}
 
                   {detailsError[method.method as MethodWithDetails] && (
                     <p className="text-xs text-[#b24368]">
@@ -426,15 +430,16 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
                     type="button"
                     size="sm"
                     onClick={() =>
-                      handleSaveDetails(method.method as MethodWithDetails)}
+                      handleSaveDetails(method.method as MethodWithDetails)
+                    }
                     disabled={saveDetails.isPending}
                     className="store-theme-primary-button h-9 rounded-xl px-4 text-xs font-semibold hover:opacity-100"
                   >
                     {savedDetailsMethod === method.method
                       ? t("saved")
                       : saveDetails.isPending
-                      ? t("saving")
-                      : t("payments.saveDetails")}
+                        ? t("saving")
+                        : t("payments.saveDetails")}
                   </Button>
                 </div>
               )}
@@ -443,15 +448,13 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
         })}
       </div>
 
-      {saveMethods.isError
-        ? (
-          <p className="mt-4 text-sm text-[#b24368]">
-            {saveMethods.error instanceof Error
-              ? saveMethods.error.message
-              : String(saveMethods.error)}
-          </p>
-        )
-        : null}
+      {saveMethods.isError ? (
+        <p className="mt-4 text-sm text-[#b24368]">
+          {saveMethods.error instanceof Error
+            ? saveMethods.error.message
+            : String(saveMethods.error)}
+        </p>
+      ) : null}
 
       <Separator className="my-5 bg-[#f0e7f8]" />
 
@@ -465,8 +468,8 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
           {saveMethods.isSuccess
             ? t("saved")
             : saveMethods.isPending
-            ? t("saving")
-            : t("save")}
+              ? t("saving")
+              : t("save")}
         </Button>
       </div>
     </SectionCard>
