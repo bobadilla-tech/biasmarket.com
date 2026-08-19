@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Bell, Clock } from "lucide-react";
+import { Link } from "@/i18n/navigation";
 import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { addToCart } from "@/lib/cart";
@@ -30,35 +31,42 @@ interface Product {
   images: string[];
 }
 
-export function ProductCard(
-  { slug, product }: { slug: string; product: Product },
-) {
+export function ProductCard({
+  slug,
+  product,
+}: {
+  slug: string;
+  product: Product;
+}) {
   const t = useTranslations("storefront");
   const availableStock = (v: Variant) =>
     v.stock === null ? Infinity : v.stock - v.reserved;
   const [variantId, setVariantId] = useState(
     () =>
       product.variants.find((v) => availableStock(v) > 0)?.id ??
-        product.variants[0]?.id ?? "",
+      product.variants[0]?.id ??
+      "",
   );
   const [added, setAdded] = useState(false);
   const [restockOpen, setRestockOpen] = useState(false);
 
   const selectedVariant = product.variants.find((v) => v.id === variantId);
   const effectivePrices = product.variants.map((v) =>
-    Number(v.priceOverride ?? product.price)
+    Number(v.priceOverride ?? product.price),
   );
 
-  const minPrice = effectivePrices.length > 0
-    ? Math.min(...effectivePrices)
-    : Number(product.price);
+  const minPrice =
+    effectivePrices.length > 0
+      ? Math.min(...effectivePrices)
+      : Number(product.price);
 
-  const maxPrice = effectivePrices.length > 0
-    ? Math.max(...effectivePrices)
-    : Number(product.price);
+  const maxPrice =
+    effectivePrices.length > 0
+      ? Math.max(...effectivePrices)
+      : Number(product.price);
 
-  const hasDifferentVariantPrices = product.variants.length > 1 &&
-    minPrice !== maxPrice;
+  const hasDifferentVariantPrices =
+    product.variants.length > 1 && minPrice !== maxPrice;
 
   const hasSelectedVariant = Boolean(selectedVariant);
 
@@ -67,7 +75,8 @@ export function ProductCard(
     : minPrice;
 
   const showFromPrice = hasDifferentVariantPrices && !hasSelectedVariant;
-  const outOfStock = isProductOutOfStock(product) ||
+  const outOfStock =
+    isProductOutOfStock(product) ||
     (selectedVariant ? availableStock(selectedVariant) <= 0 : false);
 
   const handleAddToCart = () => {
@@ -87,10 +96,11 @@ export function ProductCard(
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4">
-      {(() => {
-        const imageUrl = selectedVariant?.imageOverride ?? product.images?.[0];
-        return imageUrl
-          ? (
+      <Link href={`/store/${slug}/product/${product.id}`}>
+        {(() => {
+          const imageUrl =
+            selectedVariant?.imageOverride ?? product.images?.[0];
+          return imageUrl ? (
             <div className="relative aspect-square w-full overflow-hidden rounded-lg mb-3">
               <Image
                 src={imageUrl}
@@ -110,21 +120,23 @@ export function ProductCard(
                 </div>
               )}
             </div>
-          )
-          : <div className="aspect-square bg-gray-100 rounded-lg mb-3" />;
-      })()}
-      <p className="font-semibold text-gray-900 text-sm">{product.name}</p>
-      <p className="store-theme-active-text font-bold text-sm">
-        {showFromPrice ? `${t("fromPrice")} ` : ""}
-        {price} {product.currency}
-      </p>
-      {product.availableUntil && (
-        <p className="text-xs text-gray-500">
-          {t("availableUntil", {
-            date: new Date(product.availableUntil).toLocaleDateString(),
-          })}
+          ) : (
+            <div className="aspect-square bg-gray-100 rounded-lg mb-3" />
+          );
+        })()}
+        <p className="font-semibold text-gray-900 text-sm">{product.name}</p>
+        <p className="store-theme-active-text font-bold text-sm">
+          {showFromPrice ? `${t("fromPrice")} ` : ""}
+          {price} {product.currency}
         </p>
-      )}
+        {product.availableUntil && (
+          <p className="text-xs text-gray-500">
+            {t("availableUntil", {
+              date: new Date(product.availableUntil).toLocaleDateString(),
+            })}
+          </p>
+        )}
+      </Link>
 
       {product.variants.length > 1 && (
         <Select
@@ -142,25 +154,23 @@ export function ProductCard(
         </Select>
       )}
 
-      {outOfStock
-        ? (
-          <button
-            type="button"
-            onClick={() => setRestockOpen(true)}
-            className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-50"
-          >
-            <Bell className="size-3.5" />
-            {t("registerInterest")}
-          </button>
-        )
-        : (
-          <button
-            onClick={handleAddToCart}
-            className="store-theme-primary-button mt-2 w-full rounded-lg px-3 py-1.5 text-xs font-semibold transition"
-          >
-            {added ? t("addedToCart") : t("addToCart")}
-          </button>
-        )}
+      {outOfStock ? (
+        <button
+          type="button"
+          onClick={() => setRestockOpen(true)}
+          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-50"
+        >
+          <Bell className="size-3.5" />
+          {t("registerInterest")}
+        </button>
+      ) : (
+        <button
+          onClick={handleAddToCart}
+          className="store-theme-primary-button mt-2 w-full rounded-lg px-3 py-1.5 text-xs font-semibold transition"
+        >
+          {added ? t("addedToCart") : t("addToCart")}
+        </button>
+      )}
 
       <RestockInterestDialog
         open={restockOpen}

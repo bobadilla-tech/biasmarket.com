@@ -36,17 +36,16 @@ export function ProductDetailsPageClient() {
   const productQuery = useProduct(storeId, productId, tCommon("networkError"));
   const product = productQuery.data ?? null;
   const variants = product?.variants ?? [];
-  const error = productQuery.error instanceof Error
-    ? productQuery.error.message
-    : null;
+  const error =
+    productQuery.error instanceof Error ? productQuery.error.message : null;
 
   const publishProduct = usePublishProduct(storeId, tCommon("networkError"));
 
   const categoryNames = useMemo(
     () =>
-      (product?.categories ?? []).map((row) => row.category.name).filter(
-        Boolean,
-      ),
+      (product?.categories ?? [])
+        .map((row) => row.category.name)
+        .filter(Boolean),
     [product],
   );
   const categoryLabel = useMemo(() => {
@@ -186,22 +185,15 @@ export function ProductDetailsPageClient() {
     product.availableStock,
     store?.lowStockThreshold,
   );
-  const imageContent = image
-    ? (
-      <div className="relative mx-auto aspect-square w-full overflow-hidden rounded-[22px] shadow-sm">
-        <Image
-          src={image}
-          alt={product.name}
-          fill
-          className="object-cover"
-        />
-      </div>
-    )
-    : (
-      <div className="mx-auto flex aspect-square w-full items-center justify-center rounded-[22px] bg-white/70 text-2xl font-semibold text-[#2d1649]">
-        {product.name.slice(0, 1).toUpperCase()}
-      </div>
-    );
+  const imageContent = image ? (
+    <div className="relative mx-auto aspect-square w-full overflow-hidden rounded-[22px] bg-gray-50 shadow-sm">
+      <Image src={image} alt={product.name} fill className="object-contain" />
+    </div>
+  ) : (
+    <div className="mx-auto flex aspect-square w-full items-center justify-center rounded-[22px] bg-white/70 text-2xl font-semibold text-[#2d1649]">
+      {product.name.slice(0, 1).toUpperCase()}
+    </div>
+  );
 
   return (
     <div className="min-h-screen px-5 py-6 lg:px-8 lg:py-8">
@@ -227,18 +219,16 @@ export function ProductDetailsPageClient() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {product.status === "DRAFT"
-              ? (
-                <Button
-                  type="button"
-                  onClick={handlePublish}
-                  disabled={publishProduct.isPending}
-                  className="store-theme-primary-button h-10 rounded-2xl px-4 text-sm font-semibold hover:opacity-100"
-                >
-                  {t("products.actions.publish")}
-                </Button>
-              )
-              : null}
+            {product.status === "DRAFT" ? (
+              <Button
+                type="button"
+                onClick={handlePublish}
+                disabled={publishProduct.isPending}
+                className="store-theme-primary-button h-10 rounded-2xl px-4 text-sm font-semibold hover:opacity-100"
+              >
+                {t("products.actions.publish")}
+              </Button>
+            ) : null}
             {statusBadge}
             {availabilityBadge}
             <Badge
@@ -271,24 +261,22 @@ export function ProductDetailsPageClient() {
               <div className="mt-5 space-y-3">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    {categoryNames.length === 0
-                      ? (
-                        <Badge className="store-theme-soft-badge rounded-full px-3 py-1 text-xs font-semibold">
+                    {categoryNames.length === 0 ? (
+                      <Badge className="store-theme-soft-badge rounded-full px-3 py-1 text-xs font-semibold">
+                        <Tag className="size-3.5" />
+                        {categoryLabel}
+                      </Badge>
+                    ) : (
+                      categoryNames.map((name) => (
+                        <Badge
+                          key={name}
+                          className="store-theme-soft-badge rounded-full px-3 py-1 text-xs font-semibold"
+                        >
                           <Tag className="size-3.5" />
-                          {categoryLabel}
+                          {name}
                         </Badge>
-                      )
-                      : (
-                        categoryNames.map((name) => (
-                          <Badge
-                            key={name}
-                            className="store-theme-soft-badge rounded-full px-3 py-1 text-xs font-semibold"
-                          >
-                            <Tag className="size-3.5" />
-                            {name}
-                          </Badge>
-                        ))
-                      )}
+                      ))
+                    )}
                   </div>
                   <p className="text-lg font-semibold text-[#d11d52]">
                     {product.currency} {product.price}
@@ -368,77 +356,69 @@ export function ProductDetailsPageClient() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 px-6 pb-6">
-                {variants.length === 0
-                  ? (
-                    <p className="text-sm text-[#8f7da8]">
-                      {t("products.details.noVariants")}
-                    </p>
-                  )
-                  : (
-                    variants.map((variant) => (
-                      <div
-                        key={variant.id}
-                        className="rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3"
-                      >
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-semibold text-[#2d1649]">
-                              {variant.name}
-                            </p>
-                            <p className="text-xs text-[#8f7da8]">
-                              {variant.id}
-                            </p>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-2">
+                {variants.length === 0 ? (
+                  <p className="text-sm text-[#8f7da8]">
+                    {t("products.details.noVariants")}
+                  </p>
+                ) : (
+                  variants.map((variant) => (
+                    <div
+                      key={variant.id}
+                      className="rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-[#2d1649]">
+                            {variant.name}
+                          </p>
+                          <p className="text-xs text-[#8f7da8]">{variant.id}</p>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "rounded-full border-[#eadcf7] px-3 py-1 text-xs",
+                              stockTone(
+                                variant.stock,
+                                store?.lowStockThreshold,
+                              ),
+                            )}
+                          >
+                            {variant.stock === null
+                              ? t("products.stockUnlimited")
+                              : variant.stock}
+                          </Badge>
+                          {variant.priceOverride ? (
                             <Badge
                               variant="outline"
-                              className={cn(
-                                "rounded-full border-[#eadcf7] px-3 py-1 text-xs",
-                                stockTone(
-                                  variant.stock,
-                                  store?.lowStockThreshold,
-                                ),
-                              )}
+                              className="rounded-full border-[#eadcf7] px-3 py-1 text-xs text-[#d11d52]"
                             >
-                              {variant.stock === null
-                                ? t("products.stockUnlimited")
-                                : variant.stock}
+                              {t("products.details.priceOverride", {
+                                value: variant.priceOverride,
+                              })}
                             </Badge>
-                            {variant.priceOverride
-                              ? (
-                                <Badge
-                                  variant="outline"
-                                  className="rounded-full border-[#eadcf7] px-3 py-1 text-xs text-[#d11d52]"
-                                >
-                                  {t("products.details.priceOverride", {
-                                    value: variant.priceOverride,
-                                  })}
-                                </Badge>
-                              )
-                              : null}
-                          </div>
+                          ) : null}
                         </div>
-
-                        {Object.keys(variant.attributes ?? {}).length > 0
-                          ? (
-                            <div className="mt-3 flex flex-wrap gap-2">
-                              {Object.entries(variant.attributes).map((
-                                [key, value],
-                              ) => (
-                                <Badge
-                                  key={`${variant.id}-${key}`}
-                                  variant="outline"
-                                  className="rounded-full border-[#eadcf7] bg-white px-3 py-1 text-xs text-[#8f7da8]"
-                                >
-                                  {key}: {value}
-                                </Badge>
-                              ))}
-                            </div>
-                          )
-                          : null}
                       </div>
-                    ))
-                  )}
+
+                      {Object.keys(variant.attributes ?? {}).length > 0 ? (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {Object.entries(variant.attributes).map(
+                            ([key, value]) => (
+                              <Badge
+                                key={`${variant.id}-${key}`}
+                                variant="outline"
+                                className="rounded-full border-[#eadcf7] bg-white px-3 py-1 text-xs text-[#8f7da8]"
+                              >
+                                {key}: {value}
+                              </Badge>
+                            ),
+                          )}
+                        </div>
+                      ) : null}
+                    </div>
+                  ))
+                )}
               </CardContent>
             </Card>
           </div>
