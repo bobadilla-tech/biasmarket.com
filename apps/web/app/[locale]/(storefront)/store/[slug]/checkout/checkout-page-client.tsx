@@ -31,6 +31,8 @@ export function CheckoutPageClient() {
   const { slug } = useParams<{ slug: string }>();
   const [items, setItems] = useState<CartItem[]>([]);
   const [order, setOrder] = useState<OrderCreatedResult | null>(null);
+  const [paymentType, setPaymentType] = useState<"FULL" | "PARTIAL">("FULL");
+  const [depositPercent, setDepositPercent] = useState(100);
   // Same query key CheckoutForm's own useDeliveryOptions call already
   // populated — reads the cached result (methods + their structured
   // `details`, plus the store's paymentInstructions) instead of firing a
@@ -51,15 +53,23 @@ export function CheckoutPageClient() {
     setOrder(result);
   };
 
+  const handlePaymentTypeChange = (
+    newPaymentType: "FULL" | "PARTIAL",
+    newDepositPercent: number,
+  ) => {
+    setPaymentType(newPaymentType);
+    setDepositPercent(newDepositPercent);
+  };
+
   if (order) {
     const methodConfig = deliveryOptions.data?.paymentMethods.find(
       (m) => m.method === order.paymentMethod,
     );
     const details = methodConfig?.details ?? {};
-    const hasTransferDetails = typeof details.bankName === "string" &&
-      details.bankName;
-    const hasWalletDetails = typeof details.phoneNumber === "string" &&
-      details.phoneNumber;
+    const hasTransferDetails =
+      typeof details.bankName === "string" && details.bankName;
+    const hasWalletDetails =
+      typeof details.phoneNumber === "string" && details.phoneNumber;
 
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6 py-10">
@@ -75,14 +85,36 @@ export function CheckoutPageClient() {
           )}
 
           <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-gray-100 bg-white p-6 text-left shadow-sm">
+            {order.requiredAmount !== order.totalAmount && (
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>{t("paymentSummaryTotal")}</span>
+                <span>
+                  {order.totalAmount} {order.currency}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between text-sm">
               <span className="font-semibold text-gray-900">
-                {t("confirmationAmountLabel")}
+                {order.requiredAmount !== order.totalAmount
+                  ? t("paymentSummaryPayNow")
+                  : t("confirmationAmountLabel")}
               </span>
               <span className="text-gray-700">
                 {order.requiredAmount} {order.currency}
               </span>
             </div>
+            {order.requiredAmount !== order.totalAmount && (
+              <div className="flex justify-between text-sm text-gray-500">
+                <span>{t("paymentSummaryPending")}</span>
+                <span>
+                  {(
+                    parseFloat(order.totalAmount) -
+                    parseFloat(order.requiredAmount)
+                  ).toFixed(2)}{" "}
+                  {order.currency}
+                </span>
+              </div>
+            )}
 
             {order.paymentMethod && (
               <div className="flex flex-col gap-2 border-t border-gray-100 pt-4">
@@ -100,29 +132,28 @@ export function CheckoutPageClient() {
                 )}
 
                 {order.paymentMethod === "TRANSFER" &&
-                  (hasTransferDetails
-                    ? (
-                      <dl className="flex flex-col gap-1 text-sm text-gray-600">
-                        <div className="flex justify-between">
-                          <dt>{t("confirmationBankName")}</dt>
-                          <dd className="font-medium text-gray-900">
-                            {String(details.bankName)}
-                          </dd>
-                        </div>
-                        <div className="flex justify-between">
-                          <dt>{t("confirmationAccountNumber")}</dt>
-                          <dd className="font-medium text-gray-900">
-                            {String(details.accountNumber)}
-                          </dd>
-                        </div>
-                        <div className="flex justify-between">
-                          <dt>{t("confirmationAccountHolder")}</dt>
-                          <dd className="font-medium text-gray-900">
-                            {String(details.accountHolder)}
-                          </dd>
-                        </div>
-                        {typeof details.accountType === "string" &&
-                          details.accountType && (
+                  (hasTransferDetails ? (
+                    <dl className="flex flex-col gap-1 text-sm text-gray-600">
+                      <div className="flex justify-between">
+                        <dt>{t("confirmationBankName")}</dt>
+                        <dd className="font-medium text-gray-900">
+                          {String(details.bankName)}
+                        </dd>
+                      </div>
+                      <div className="flex justify-between">
+                        <dt>{t("confirmationAccountNumber")}</dt>
+                        <dd className="font-medium text-gray-900">
+                          {String(details.accountNumber)}
+                        </dd>
+                      </div>
+                      <div className="flex justify-between">
+                        <dt>{t("confirmationAccountHolder")}</dt>
+                        <dd className="font-medium text-gray-900">
+                          {String(details.accountHolder)}
+                        </dd>
+                      </div>
+                      {typeof details.accountType === "string" &&
+                        details.accountType && (
                           <div className="flex justify-between">
                             <dt>{t("confirmationAccountType")}</dt>
                             <dd className="font-medium text-gray-900">
@@ -130,35 +161,33 @@ export function CheckoutPageClient() {
                             </dd>
                           </div>
                         )}
-                      </dl>
-                    )
-                    : (
-                      <p className="text-sm text-amber-600">
-                        {t("confirmationNoDetails")}
-                      </p>
-                    ))}
+                    </dl>
+                  ) : (
+                    <p className="text-sm text-amber-600">
+                      {t("confirmationNoDetails")}
+                    </p>
+                  ))}
 
                 {(order.paymentMethod === "YAPE" ||
                   order.paymentMethod === "PLIN") &&
-                  (hasWalletDetails
-                    ? (
-                      <div className="flex flex-col items-start gap-2">
-                        <dl className="flex flex-col gap-1 text-sm text-gray-600">
-                          <div className="flex justify-between gap-4">
-                            <dt>{t("confirmationPhoneNumber")}</dt>
-                            <dd className="font-medium text-gray-900">
-                              {String(details.phoneNumber)}
-                            </dd>
-                          </div>
-                          <div className="flex justify-between gap-4">
-                            <dt>{t("confirmationAccountHolder")}</dt>
-                            <dd className="font-medium text-gray-900">
-                              {String(details.accountHolder)}
-                            </dd>
-                          </div>
-                        </dl>
-                        {typeof details.qrImageUrl === "string" &&
-                          details.qrImageUrl && (
+                  (hasWalletDetails ? (
+                    <div className="flex flex-col items-start gap-2">
+                      <dl className="flex flex-col gap-1 text-sm text-gray-600">
+                        <div className="flex justify-between gap-4">
+                          <dt>{t("confirmationPhoneNumber")}</dt>
+                          <dd className="font-medium text-gray-900">
+                            {String(details.phoneNumber)}
+                          </dd>
+                        </div>
+                        <div className="flex justify-between gap-4">
+                          <dt>{t("confirmationAccountHolder")}</dt>
+                          <dd className="font-medium text-gray-900">
+                            {String(details.accountHolder)}
+                          </dd>
+                        </div>
+                      </dl>
+                      {typeof details.qrImageUrl === "string" &&
+                        details.qrImageUrl && (
                           <Image
                             src={details.qrImageUrl}
                             alt={t("confirmationQrAlt")}
@@ -167,13 +196,12 @@ export function CheckoutPageClient() {
                             className="mx-auto size-40 rounded-lg border border-gray-100 object-contain"
                           />
                         )}
-                      </div>
-                    )
-                    : (
-                      <p className="text-sm text-amber-600">
-                        {t("confirmationNoDetails")}
-                      </p>
-                    ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-amber-600">
+                      {t("confirmationNoDetails")}
+                    </p>
+                  ))}
               </div>
             )}
 
@@ -234,10 +262,15 @@ export function CheckoutPageClient() {
     <div className="min-h-screen bg-gray-50 px-6 py-10">
       <div className="max-w-md mx-auto flex flex-col gap-6">
         <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
-        <CheckoutSummary items={items} />
+        <CheckoutSummary
+          items={items}
+          paymentType={paymentType}
+          depositPercent={depositPercent}
+        />
         <CheckoutForm
           slug={slug}
           items={items}
+          onPaymentTypeChange={handlePaymentTypeChange}
           onOrderCreated={handleOrderCreated}
         />
       </div>

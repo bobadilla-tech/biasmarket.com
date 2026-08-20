@@ -27,8 +27,7 @@ interface PaymentMethodConfigRow {
   method: 'YAPE' | 'PLIN' | 'TRANSFER' | 'CASH';
   enabled: boolean;
   details: unknown;
-  depositPercentPickup: number;
-  depositPercentCourier: number;
+  depositPercent: number;
   createdAt: Date;
 }
 

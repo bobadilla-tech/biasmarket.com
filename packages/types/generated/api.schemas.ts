@@ -1480,8 +1480,7 @@ export interface PaymentMethodConfigResponseDto {
   method: PaymentMethodConfigResponseDtoMethod;
   enabled: boolean;
   details: PaymentMethodConfigResponseDtoDetails;
-  depositPercentPickup: number;
-  depositPercentCourier: number;
+  depositPercent: number;
   createdAt: string;
 }
 

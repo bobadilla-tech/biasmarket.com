@@ -6877,10 +6877,7 @@
             "type": "object",
             "additionalProperties": true
           },
-          "depositPercentPickup": {
-            "type": "number"
-          },
-          "depositPercentCourier": {
+          "depositPercent": {
             "type": "number"
           },
           "createdAt": {
@@ -6894,8 +6891,7 @@
           "method",
           "enabled",
           "details",
-          "depositPercentPickup",
-          "depositPercentCourier",
+          "depositPercent",
           "createdAt"
         ]
       },

@@ -58,7 +58,7 @@ export const settingsApi = {
             sortOrder: point.sortOrder,
             openDays: point.openDays,
             closedOverride: point.closedOverride,
-          })
+          }),
         ),
       ...input.points
         .filter((point) => !isNewPickupPoint(point.id))
@@ -69,10 +69,10 @@ export const settingsApi = {
             sortOrder: point.sortOrder,
             openDays: point.openDays,
             closedOverride: point.closedOverride,
-          })
+          }),
         ),
       ...input.deletedPointIds.map((id) =>
-        apiClient.pickupPoints.remove(storeId, id)
+        apiClient.pickupPoints.remove(storeId, id),
       ),
     ]),
 
@@ -103,7 +103,7 @@ export const settingsApi = {
         apiClient.paymentConfig.upsert(storeId, {
           method,
           enabled: enabledByMethod[method] ?? true,
-        })
+        }),
       ),
     ),
 
@@ -112,6 +112,28 @@ export const settingsApi = {
     method: "YAPE" | "PLIN" | "TRANSFER" | "CASH",
     details: Record<string, unknown>,
   ) => apiClient.paymentConfig.upsert(storeId, { method, details }),
+
+  saveDepositPercent: async (
+    storeId: string,
+    method: string,
+    depositPercent: number,
+  ) => {
+    // Until openapi.json is regenerated with the new fields, use raw fetch
+    // to pass them through — same pattern as the multipart carve-outs.
+    const apiUrl =
+      process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
+    const res = await fetch(`${apiUrl}/api/stores/${storeId}/payment-methods`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ method, depositPercent }),
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      throw new Error(data?.message ?? "Network error");
+    }
+    return data;
+  },
 
   // Multipart — same carve-out as products' image uploads / stores'
   // uploadLogo (see apps/web/AGENTS.md's OpenAPI note).
@@ -124,8 +146,8 @@ export const settingsApi = {
     const formData = new FormData();
     formData.append("file", file);
 
-    const apiUrl = process.env.INTERNAL_API_URL ??
-      process.env.NEXT_PUBLIC_API_URL;
+    const apiUrl =
+      process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
     const res = await fetch(
       `${apiUrl}/api/stores/${storeId}/payment-methods/${method}/qr-image`,
       { method: "POST", credentials: "include", body: formData },
