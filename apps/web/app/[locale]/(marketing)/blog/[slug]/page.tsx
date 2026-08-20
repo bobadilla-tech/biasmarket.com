@@ -32,14 +32,14 @@ export async function generateMetadata({
     alternates: { canonical: canonicalUrl(locale, `/blog/${slug}`) },
     ...(ogImage
       ? {
-        openGraph: {
-          images: [{ url: ogImage }],
-        },
-        twitter: {
-          card: "summary_large_image",
-          images: [ogImage],
-        },
-      }
+          openGraph: {
+            images: [{ url: ogImage }],
+          },
+          twitter: {
+            card: "summary_large_image",
+            images: [ogImage],
+          },
+        }
       : {}),
   };
 }

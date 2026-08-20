@@ -9,6 +9,17 @@ api.biasmarket.com {
 		respond 404
 	}
 
+	# The API has no content Google should ever index (see
+	# docs/plans/2026-08-20-seo-strategy-review-plan.md Phase 3) — a bare
+	# GET / 404s under Nest's global 'api' route prefix, but nothing stopped
+	# it from being crawled in the first place. Served at the Caddy layer,
+	# not from Nest, since the global prefix would otherwise put this at
+	# /api/robots.txt instead of /robots.txt.
+	handle /robots.txt {
+		header Content-Type "text/plain; charset=utf-8"
+		respond "User-agent: *\nDisallow: /\n" 200
+	}
+
 	# active/api.caddy is deploy.sh's live switch target: a one-line (or,
 	# during a canary window, two-line weighted) reverse_proxy block,
 	# atomically replaced (temp file + `mv`) and picked up by `docker

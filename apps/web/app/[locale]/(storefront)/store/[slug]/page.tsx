@@ -3,7 +3,7 @@ import type { Locale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { CartLink } from "./cart-link";
 import { isProductOutOfStock } from "@/features/discovery/lib/product-stock";
-import { SITE_URL, canonicalUrl } from "@/lib/site-config";
+import { canonicalUrl, SITE_URL } from "@/lib/site-config";
 import { StoreLogo } from "@/components/store-logo";
 import { ProductCard } from "@/components/storefront/product-card";
 import { StoreSectionRenderer } from "@/components/storefront/section-renderer";
