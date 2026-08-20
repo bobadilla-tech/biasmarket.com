@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Bell, Clock } from "lucide-react";
 import { Select } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
+import { ImageGallery } from "@/components/ui/image-gallery";
 import { addToCart } from "@/lib/cart";
 import { RestockInterestDialog } from "@/features/restock";
 
@@ -50,7 +49,6 @@ export function ProductDetailView({
 
   const selectedVariant = product.variants.find((v) => v.id === variantId);
   const price = Number(selectedVariant?.priceOverride ?? product.price);
-  const imageUrl = selectedVariant?.imageOverride ?? product.images?.[0];
   const outOfStock =
     product.soldOut ||
     (selectedVariant ? availableStock(selectedVariant) <= 0 : false);
@@ -72,29 +70,21 @@ export function ProductDetailView({
 
   return (
     <div className="grid gap-8 sm:grid-cols-2">
-      {imageUrl ? (
-        <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-gray-50">
-          <Image
-            src={imageUrl}
-            alt={product.name}
-            fill
-            className={cn(
-              "object-contain",
-              outOfStock && "opacity-70 grayscale",
-            )}
-          />
-          {outOfStock && (
-            <div className="absolute inset-x-0 top-3 flex justify-center">
-              <span className="flex items-center gap-1.5 rounded-full border border-gray-300 bg-white/90 px-4 py-1.5 text-sm font-semibold text-gray-500">
-                <Clock className="size-4" />
-                {t("soldOut")}
-              </span>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="aspect-square w-full rounded-2xl bg-gray-100" />
-      )}
+      <div className="relative">
+        <ImageGallery
+          images={product.images ?? []}
+          alt={product.name}
+          outOfStock={outOfStock}
+        />
+        {outOfStock && (
+          <div className="absolute inset-x-0 top-3 flex justify-center">
+            <span className="flex items-center gap-1.5 rounded-full border border-gray-300 bg-white/90 px-4 py-1.5 text-sm font-semibold text-gray-500">
+              <Clock className="size-4" />
+              {t("soldOut")}
+            </span>
+          </div>
+        )}
+      </div>
 
       <div>
         <h1 className="text-2xl font-bold text-gray-900">{product.name}</h1>

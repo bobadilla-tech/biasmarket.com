@@ -20,7 +20,8 @@ export function useCreateProduct(storeId: string | undefined) {
       stock: string;
       categoryId: string;
       availability: "AVAILABLE" | "OUT_OF_STOCK" | "DISCONTINUED";
-      imageFile: File | null;
+      imageFiles: File[];
+      existingImages: string[];
       variants: VariantDraft[];
       variantImages: Record<string, File | null>;
       fallbackErrorMessage?: string;
@@ -36,17 +37,18 @@ export function useCreateProduct(storeId: string | undefined) {
           currency: input.currency,
           soldOut,
           discontinued,
-          stock: input.variants.length === 0 && input.stock
-            ? Number(input.stock)
-            : undefined,
+          stock:
+            input.variants.length === 0 && input.stock
+              ? Number(input.stock)
+              : undefined,
           variants: input.variants.length > 0 ? input.variants : undefined,
           categoryIds: input.categoryId ? [input.categoryId] : undefined,
         },
         { fallbackErrorMessage: input.fallbackErrorMessage },
       );
 
-      if (input.imageFile) {
-        await productsApi.uploadImage(sid, created.id, input.imageFile, {
+      for (const file of input.imageFiles) {
+        await productsApi.uploadImage(sid, created.id, file, {
           fallbackErrorMessage: input.fallbackErrorMessage,
         });
       }
@@ -58,7 +60,7 @@ export function useCreateProduct(storeId: string | undefined) {
         const match = createdVariants.find(
           (variant) =>
             keyForAttributes(variant.attributes) ===
-              keyForAttributes(draft.attributes),
+            keyForAttributes(draft.attributes),
         );
         if (!match) continue;
         await productsApi.uploadVariantImage(

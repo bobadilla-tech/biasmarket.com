@@ -34,7 +34,8 @@ export function useUpdateProduct(storeId: string | undefined) {
       stock: string;
       categoryId: string;
       availability: "AVAILABLE" | "OUT_OF_STOCK" | "DISCONTINUED";
-      imageFile: File | null;
+      imageFiles: File[];
+      existingImages: string[];
       variants: VariantDraft[];
       variantImages: Record<string, File | null>;
       fallbackErrorMessage?: string;
@@ -57,11 +58,9 @@ export function useUpdateProduct(storeId: string | undefined) {
         { fallbackErrorMessage: input.fallbackErrorMessage },
       );
 
-      const current = await apiClient.products.findOne(
-        sid,
-        input.productId,
-        { fallbackErrorMessage: input.fallbackErrorMessage },
-      );
+      const current = await apiClient.products.findOne(sid, input.productId, {
+        fallbackErrorMessage: input.fallbackErrorMessage,
+      });
       const currentVariants = current.variants ?? [];
 
       if (input.variants.length > 0) {
@@ -86,9 +85,10 @@ export function useUpdateProduct(storeId: string | undefined) {
                 {
                   name: draft.name,
                   stock: draft.stock === undefined ? null : draft.stock,
-                  priceOverride: draft.priceOverride === undefined
-                    ? null
-                    : draft.priceOverride,
+                  priceOverride:
+                    draft.priceOverride === undefined
+                      ? null
+                      : draft.priceOverride,
                   attributes: draft.attributes ?? {},
                 },
                 { fallbackErrorMessage: input.fallbackErrorMessage },
@@ -131,11 +131,10 @@ export function useUpdateProduct(storeId: string | undefined) {
         );
         if (failures.length > 0) {
           const message = failures
-            .map((
-              failure,
-            ) => (failure.reason instanceof Error
-              ? failure.reason.message
-              : String(failure.reason))
+            .map((failure) =>
+              failure.reason instanceof Error
+                ? failure.reason.message
+                : String(failure.reason),
             )
             .join("; ");
           throw new Error(message || input.fallbackErrorMessage);
@@ -143,23 +142,24 @@ export function useUpdateProduct(storeId: string | undefined) {
 
         await Promise.all(
           currentVariants
-            .filter((variant) =>
-              !desiredKeys.has(keyForAttributes(variant.attributes))
+            .filter(
+              (variant) =>
+                !desiredKeys.has(keyForAttributes(variant.attributes)),
             )
             .map((variant) =>
               apiClient.products.deleteVariant(
                 sid,
                 input.productId,
                 variant.id,
-              )
+              ),
             ),
         );
       } else {
         const desiredStock = input.stock ? Number(input.stock) : null;
-        const baseVariant = currentVariants.find((variant) =>
-          Object.keys(variant.attributes ?? {}).length === 0
-        ) ??
-          currentVariants[0];
+        const baseVariant =
+          currentVariants.find(
+            (variant) => Object.keys(variant.attributes ?? {}).length === 0,
+          ) ?? currentVariants[0];
 
         if (baseVariant) {
           await apiClient.products.updateVariant(
@@ -182,35 +182,72 @@ export function useUpdateProduct(storeId: string | undefined) {
           if (desiredStock !== null) {
             payload.stock = desiredStock;
           }
-          await apiClient.products.addVariant(
-            sid,
-            input.productId,
-            payload,
-            { fallbackErrorMessage: input.fallbackErrorMessage },
-          );
+          await apiClient.products.addVariant(sid, input.productId, payload, {
+            fallbackErrorMessage: input.fallbackErrorMessage,
+          });
         }
 
         const baseId = baseVariant?.id;
         await Promise.all(
           currentVariants
-            .filter((variant) =>
-              variant.id !== baseId
-            )
+            .filter((variant) => variant.id !== baseId)
             .map((variant) =>
               apiClient.products.deleteVariant(
                 sid,
                 input.productId,
                 variant.id,
-              )
+              ),
             ),
         );
       }
 
-      if (input.imageFile) {
-        await productsApi.uploadImage(sid, input.productId, input.imageFile, {
-          replace: true,
+      // Sync product images: remove deleted, upload new, reorder
+      const currentProduct = await apiClient.products.findOne(
+        sid,
+        input.productId,
+        { fallbackErrorMessage: input.fallbackErrorMessage },
+      );
+      const currentImages = currentProduct.images ?? [];
+
+      // 1. Remove images that were deleted by the user (iterate in reverse so indices stay valid)
+      const imagesToKeep = new Set(input.existingImages);
+      for (let i = currentImages.length - 1; i >= 0; i--) {
+        if (!imagesToKeep.has(currentImages[i])) {
+          await productsApi.removeImage(
+            sid,
+            input.productId,
+            i,
+            input.fallbackErrorMessage,
+          );
+        }
+      }
+
+      // 2. Upload new files
+      for (const file of input.imageFiles) {
+        await productsApi.uploadImage(sid, input.productId, file, {
           fallbackErrorMessage: input.fallbackErrorMessage,
         });
+      }
+
+      // 3. Reorder: existing kept images first, then newly uploaded ones
+      const freshProduct = await apiClient.products.findOne(
+        sid,
+        input.productId,
+      );
+      const serverImages = freshProduct.images ?? [];
+      const existingSet = new Set(input.existingImages);
+      const newImages = serverImages.filter((u) => !existingSet.has(u));
+      const desiredImages = [...input.existingImages, ...newImages];
+      if (
+        desiredImages.length === serverImages.length &&
+        desiredImages.some((url, i) => url !== serverImages[i])
+      ) {
+        await productsApi.reorderImages(
+          sid,
+          input.productId,
+          desiredImages,
+          input.fallbackErrorMessage,
+        );
       }
     },
     onSuccess: (_data, input) => {

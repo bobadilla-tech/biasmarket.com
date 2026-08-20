@@ -185,15 +185,45 @@ export function ProductDetailsPageClient() {
     product.availableStock,
     store?.lowStockThreshold,
   );
-  const imageContent = image ? (
-    <div className="relative mx-auto aspect-square w-full overflow-hidden rounded-[22px] bg-gray-50 shadow-sm">
-      <Image src={image} alt={product.name} fill className="object-contain" />
-    </div>
-  ) : (
-    <div className="mx-auto flex aspect-square w-full items-center justify-center rounded-[22px] bg-white/70 text-2xl font-semibold text-[#2d1649]">
-      {product.name.slice(0, 1).toUpperCase()}
-    </div>
-  );
+  const imageContent =
+    product.images?.length > 0 ? (
+      <div className="space-y-3">
+        <div className="relative mx-auto aspect-square w-full overflow-hidden rounded-[22px] bg-gray-50 shadow-sm">
+          <Image
+            src={product.images[0]}
+            alt={product.name}
+            fill
+            className="object-contain"
+          />
+        </div>
+        {product.images.length > 1 && (
+          <div className="grid grid-cols-3 gap-2">
+            {product.images.map((img, index) => (
+              <div
+                key={img}
+                className="relative aspect-square overflow-hidden rounded-xl bg-gray-50"
+              >
+                <Image
+                  src={img}
+                  alt={`${product.name} ${index + 1}`}
+                  fill
+                  className="object-cover"
+                />
+                {index === 0 && (
+                  <span className="absolute left-1 top-1 rounded-full bg-[#2d1649] px-1.5 py-0.5 text-[9px] font-semibold text-white">
+                    1
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    ) : (
+      <div className="mx-auto flex aspect-square w-full items-center justify-center rounded-[22px] bg-white/70 text-2xl font-semibold text-[#2d1649]">
+        {product.name.slice(0, 1).toUpperCase()}
+      </div>
+    );
 
   return (
     <div className="min-h-screen px-5 py-6 lg:px-8 lg:py-8">

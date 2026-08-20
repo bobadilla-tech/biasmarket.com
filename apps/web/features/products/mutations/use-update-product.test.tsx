@@ -9,8 +9,18 @@ const productsMock = {
   updateVariant: vi.fn(),
   addVariant: vi.fn(),
   deleteVariant: vi.fn(),
+  removeImage: vi.fn(),
+  reorderImages: vi.fn(),
 };
 vi.mock("@/lib/api-client", () => ({ apiClient: { products: productsMock } }));
+
+const productsApiMock = {
+  uploadImage: vi.fn(),
+  uploadVariantImage: vi.fn(),
+  removeImage: vi.fn(),
+  reorderImages: vi.fn(),
+};
+vi.mock("../api/products.api", () => ({ productsApi: productsApiMock }));
 
 const { useUpdateProduct } = await import("./use-update-product");
 
@@ -60,6 +70,9 @@ afterEach(() => {
   productsMock.updateVariant.mockReset();
   productsMock.addVariant.mockReset();
   productsMock.deleteVariant.mockReset();
+  productsApiMock.uploadImage.mockReset();
+  productsApiMock.removeImage.mockReset();
+  productsApiMock.reorderImages.mockReset();
 });
 
 test("upserts matched and new variants against a fresh baseline, then deletes stale ones", async () => {
@@ -76,6 +89,8 @@ test("upserts matched and new variants against a fresh baseline, then deletes st
     attributes: { size: "L" },
   });
   productsMock.deleteVariant.mockResolvedValue({});
+  productsApiMock.removeImage.mockResolvedValue({});
+  productsApiMock.reorderImages.mockResolvedValue({});
 
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -93,7 +108,8 @@ test("upserts matched and new variants against a fresh baseline, then deletes st
     stock: "",
     categoryId: "",
     availability: "AVAILABLE",
-    imageFile: null,
+    imageFiles: [],
+    existingImages: [],
     variants: [
       { name: "Small", attributes: { size: "S" } },
       { name: "Large", attributes: { size: "L" } },
@@ -116,8 +132,10 @@ test("aggregates a failed upsert into one error and skips the delete pass", asyn
   productsMock.updateVariant.mockImplementation((_sid, _pid, variantId) =>
     variantId === "v-existing"
       ? Promise.reject(new Error("network blip"))
-      : Promise.resolve({})
+      : Promise.resolve({}),
   );
+  productsApiMock.removeImage.mockResolvedValue({});
+  productsApiMock.reorderImages.mockResolvedValue({});
 
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -135,7 +153,8 @@ test("aggregates a failed upsert into one error and skips the delete pass", asyn
     stock: "",
     categoryId: "",
     availability: "AVAILABLE",
-    imageFile: null,
+    imageFiles: [],
+    existingImages: [],
     variants: [{ name: "Small", attributes: { size: "S" } }],
     variantImages: {},
   });

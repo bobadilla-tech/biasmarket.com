@@ -26,6 +26,36 @@ async function uploadMultipart(
   return data;
 }
 
+async function apiDelete(url: string, fallbackErrorMessage?: string) {
+  const res = await fetch(url, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(data?.message ?? fallbackErrorMessage ?? "Network error");
+  }
+  return data;
+}
+
+async function apiPatch(
+  url: string,
+  body: unknown,
+  fallbackErrorMessage?: string,
+) {
+  const res = await fetch(url, {
+    method: "PATCH",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(data?.message ?? fallbackErrorMessage ?? "Network error");
+  }
+  return data;
+}
+
 export const productsApi = {
   uploadImage(
     storeId: string,
@@ -51,6 +81,31 @@ export const productsApi = {
     return uploadMultipart(
       `${apiUrl()}/api/stores/${storeId}/products/${productId}/variants/${variantId}/images`,
       file,
+      fallbackErrorMessage,
+    );
+  },
+
+  removeImage(
+    storeId: string,
+    productId: string,
+    index: number,
+    fallbackErrorMessage?: string,
+  ) {
+    return apiDelete(
+      `${apiUrl()}/api/stores/${storeId}/products/${productId}/images/${index}`,
+      fallbackErrorMessage,
+    );
+  },
+
+  reorderImages(
+    storeId: string,
+    productId: string,
+    images: string[],
+    fallbackErrorMessage?: string,
+  ) {
+    return apiPatch(
+      `${apiUrl()}/api/stores/${storeId}/products/${productId}/images/reorder`,
+      { images },
       fallbackErrorMessage,
     );
   },

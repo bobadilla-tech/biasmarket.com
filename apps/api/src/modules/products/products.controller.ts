@@ -5,6 +5,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Query,
@@ -308,6 +309,64 @@ export class ProductsController {
       session.user.id,
       url,
       replace === '1' || replace === 'true',
+    );
+    return toProductDto(product);
+  }
+
+  @Delete(':productId/images/:index')
+  async removeImage(
+    @Param('storeId') storeId: string,
+    @Param('productId') productId: string,
+    @Param('index', ParseIntPipe) index: number,
+    @Session() session: UserSession,
+  ): Promise<ProductResponseDto> {
+    const { removed } = await this.products.removeImage(
+      productId,
+      storeId,
+      session.user.id,
+      index,
+    );
+    await this.storage.deleteImage(removed);
+    const product = await this.products.findOne(
+      storeId,
+      productId,
+      session.user.id,
+    );
+    return toProductDto(product);
+  }
+
+  @Patch(':productId/images/reorder')
+  async reorderImages(
+    @Param('storeId') storeId: string,
+    @Param('productId') productId: string,
+    @Session() session: UserSession,
+    @Body() body: { images: string[] },
+  ): Promise<ProductResponseDto> {
+    const product = await this.products.reorderImages(
+      productId,
+      storeId,
+      session.user.id,
+      body.images,
+    );
+    return toProductDto(product);
+  }
+
+  @Delete(':productId/images')
+  async clearImages(
+    @Param('storeId') storeId: string,
+    @Param('productId') productId: string,
+    @Session() session: UserSession,
+  ): Promise<ProductResponseDto> {
+    const { removed } = await this.products.clearImages(
+      productId,
+      storeId,
+      session.user.id,
+    );
+    await Promise.all(removed.map((url) => this.storage.deleteImage(url)));
+    const product = await this.products.findOne(
+      storeId,
+      productId,
+      session.user.id,
     );
     return toProductDto(product);
   }
