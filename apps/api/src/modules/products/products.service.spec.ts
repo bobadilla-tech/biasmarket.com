@@ -540,7 +540,7 @@ describe('ProductsService', () => {
       prisma.product.findUnique.mockResolvedValue({
         id: productId,
         storeId,
-        images: ['a.png'],
+        images: ['a.png', 'b.png'],
       });
 
       await expect(
@@ -551,23 +551,27 @@ describe('ProductsService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('throws BadRequestException when more images than max', async () => {
+    it('throws BadRequestException when submitted list has a different length', async () => {
       prisma.product.findUnique.mockResolvedValue({
         id: productId,
         storeId,
-        images: [],
+        images: ['a.png', 'b.png'],
       });
 
       await expect(
-        service.reorderImages(productId, storeId, ownerId, [
-          '1.png',
-          '2.png',
-          '3.png',
-          '4.png',
-          '5.png',
-          '6.png',
-          '7.png',
-        ]),
+        service.reorderImages(productId, storeId, ownerId, ['a.png']),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('throws BadRequestException when submitted list has duplicates', async () => {
+      prisma.product.findUnique.mockResolvedValue({
+        id: productId,
+        storeId,
+        images: ['a.png', 'b.png'],
+      });
+
+      await expect(
+        service.reorderImages(productId, storeId, ownerId, ['a.png', 'a.png']),
       ).rejects.toThrow(BadRequestException);
     });
   });

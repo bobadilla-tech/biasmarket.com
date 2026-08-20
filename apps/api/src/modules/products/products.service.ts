@@ -348,13 +348,17 @@ export class ProductsService {
     images: string[],
   ) {
     const product = await this.findOwnedProduct(productId, storeId, userId);
-    if (images.length > ProductsService.MAX_IMAGES) {
+    if (images.length !== product.images.length) {
       throw new BadRequestException(
-        `Máximo ${ProductsService.MAX_IMAGES} imágenes por producto`,
+        `Se esperaban ${product.images.length} imágenes`,
       );
     }
     const currentSet = new Set(product.images);
-    if (!images.every((url) => currentSet.has(url))) {
+    const dedup = new Set(images);
+    if (
+      dedup.size !== images.length ||
+      !images.every((url) => currentSet.has(url))
+    ) {
       throw new BadRequestException('URLs de imagen inválidas');
     }
     return this.prisma.product.update({

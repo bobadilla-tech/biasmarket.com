@@ -75,9 +75,8 @@ export function ProductSheet({
       defaultValues,
     });
 
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [draftImages, setDraftImages] = useState<(string | File)[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
-  const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const [hasVariants, setHasVariants] = useState(false);
   const [options, setOptions] = useState<OptionTypeDraft[]>([]);
   const [newOptionName, setNewOptionName] = useState("");
@@ -130,7 +129,7 @@ export function ProductSheet({
     setNewCategoryName("");
     setCategoryTab("default");
     setCategorySearch("");
-    setImageFiles([]);
+    setDraftImages([...existingImages]);
     setVariantImageFiles({});
 
     const hasStructuredVariants =
@@ -190,18 +189,6 @@ export function ProductSheet({
   }, [defaultValues, initialVariants, reset]);
 
   useEffect(() => {
-    if (imageFiles.length === 0) {
-      setImagePreviewUrls([]);
-      return;
-    }
-    const urls = imageFiles.map((file) => URL.createObjectURL(file));
-    setImagePreviewUrls(urls);
-    return () => {
-      urls.forEach((url) => URL.revokeObjectURL(url));
-    };
-  }, [imageFiles]);
-
-  useEffect(() => {
     const entries = Object.entries(variantImageFiles).filter(
       (entry): entry is [string, File] => entry[1] !== null,
     );
@@ -213,6 +200,34 @@ export function ProductSheet({
       Object.values(nextPreviews).forEach((url) => URL.revokeObjectURL(url));
     };
   }, [variantImageFiles]);
+
+  const filePreviewCache = useRef(new Map<File, string>());
+  useEffect(() => {
+    const cache = filePreviewCache.current;
+    const currentFiles = draftImages.filter(
+      (item): item is File => item instanceof File,
+    );
+    for (const [file, url] of cache) {
+      if (!currentFiles.includes(file)) {
+        URL.revokeObjectURL(url);
+        cache.delete(file);
+      }
+    }
+    for (const file of currentFiles) {
+      if (!cache.has(file)) {
+        cache.set(file, URL.createObjectURL(file));
+      }
+    }
+    return () => {
+      for (const url of cache.values()) URL.revokeObjectURL(url);
+      cache.clear();
+    };
+  }, [draftImages]);
+
+  function draftSrc(item: string | File): string {
+    if (typeof item === "string") return item;
+    return filePreviewCache.current.get(item) ?? URL.createObjectURL(item);
+  }
 
   const variantsPreview = useMemo(() => {
     const readyOptions = options
@@ -326,11 +341,17 @@ export function ProductSheet({
   };
 
   const submit = handleSubmit((values) => {
+    const keptExisting = draftImages.filter(
+      (item): item is string => typeof item === "string",
+    );
+    const newFiles = draftImages.filter(
+      (item): item is File => item instanceof File,
+    );
     onSubmit({
       ...values,
       stock: hasVariants ? "" : values.stock,
-      imageFiles,
-      existingImages,
+      imageFiles: newFiles,
+      existingImages: keptExisting,
       variants: hasVariants ? variantsPreview.map((v) => v.draft) : [],
       variantImages: hasVariants ? variantImageFiles : {},
     });
@@ -798,7 +819,7 @@ export function ProductSheet({
               className="hidden"
               onChange={(event) => {
                 const files = Array.from(event.target.files ?? []);
-                setImageFiles((prev) => {
+                setDraftImages((prev) => {
                   const remaining = 6 - prev.length;
                   return [...prev, ...files.slice(0, remaining)];
                 });
@@ -806,62 +827,33 @@ export function ProductSheet({
               }}
             />
             <div className="grid grid-cols-3 gap-2">
-              {existingImages.map((url, index) => (
+              {draftImages.map((item, index) => (
                 <div
-                  key={`existing-${index}`}
+                  key={`draft-${index}`}
                   className="group relative aspect-square overflow-hidden rounded-2xl border border-[#f0e7f8] bg-white"
                 >
                   <img
-                    src={url}
+                    src={draftSrc(item)}
                     alt=""
                     className="h-full w-full object-cover"
                   />
-                  {index === 0 && (
-                    <span className="absolute left-1 top-1 rounded-full bg-[#2d1649] px-1.5 py-0.5 text-[9px] font-semibold text-white">
-                      1
-                    </span>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const newFiles = imageFiles.filter(
-                        (_, i) => i !== index - existingImages.length,
-                      );
-                      setImageFiles(newFiles);
-                    }}
-                    className="absolute right-1 top-1 hidden rounded-full bg-black/50 p-0.5 text-white group-hover:block"
-                  >
-                    <X className="size-3" />
-                  </button>
-                </div>
-              ))}
-              {imagePreviewUrls.map((url, index) => (
-                <div
-                  key={`new-${index}`}
-                  className="group relative aspect-square overflow-hidden rounded-2xl border border-[#f0e7f8] bg-white"
-                >
-                  <img
-                    src={url}
-                    alt=""
-                    className="h-full w-full object-cover"
-                  />
-                  <span className="absolute left-1 top-1 rounded-full bg-[#927fac] px-1.5 py-0.5 text-[9px] font-semibold text-white">
-                    {existingImages.length + index + 1}
+                  <span className="absolute left-1 top-1 rounded-full bg-[#2d1649] px-1.5 py-0.5 text-[9px] font-semibold text-white">
+                    {index + 1}
                   </span>
                   <button
                     type="button"
-                    onClick={() => {
-                      setImageFiles((prev) =>
+                    onClick={() =>
+                      setDraftImages((prev) =>
                         prev.filter((_, i) => i !== index),
-                      );
-                    }}
+                      )
+                    }
                     className="absolute right-1 top-1 hidden rounded-full bg-black/50 p-0.5 text-white group-hover:block"
                   >
                     <X className="size-3" />
                   </button>
                 </div>
               ))}
-              {existingImages.length + imageFiles.length < 6 && (
+              {draftImages.length < 6 && (
                 <button
                   type="button"
                   onClick={() => fileRef.current?.click()}

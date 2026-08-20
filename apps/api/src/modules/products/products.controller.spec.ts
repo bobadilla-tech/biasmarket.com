@@ -80,7 +80,10 @@ describe('ProductsController', () => {
         { provide: ProductsService, useValue: service },
         {
           provide: StorageService,
-          useValue: { uploadImage: vi.fn(), deleteImage: vi.fn() },
+          useValue: {
+            uploadImage: vi.fn(),
+            deleteImage: vi.fn().mockResolvedValue(undefined),
+          },
         },
       ],
     }).compile();

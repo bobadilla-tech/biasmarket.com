@@ -2194,3 +2194,10 @@ export type MonitoringControllerfindAllParams = {
   limit?: string;
   page?: string;
 };
+
+// Manually added — OpenAPI pipeline cannot regenerate (pre-existing
+// ERR_UNKNOWN_FILE_EXTENSION in generate-swagger-metadata.ts).
+// Remove once the pipeline is fixed and a full regenerate lands.
+export type ReorderImagesDto = {
+  images: string[];
+};

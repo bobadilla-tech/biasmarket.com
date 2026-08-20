@@ -21,6 +21,7 @@ import { CreateProductDto } from './dto/create-product.dto.js';
 import { UpdateProductDto } from './dto/update-product.dto.js';
 import { CreateVariantDto } from './dto/create-variant.dto.js';
 import { UpdateVariantDto } from './dto/update-variant.dto.js';
+import { ReorderImagesDto } from './dto/reorder-images.dto.js';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { StorageService } from '../../storage/storage.service.js';
 import type {
@@ -303,14 +304,19 @@ export class ProductsController {
       file.buffer,
       isPng ? 'image/png' : 'image/jpeg',
     );
-    const product = await this.products.addImage(
-      productId,
-      storeId,
-      session.user.id,
-      url,
-      replace === '1' || replace === 'true',
-    );
-    return toProductDto(product);
+    try {
+      const product = await this.products.addImage(
+        productId,
+        storeId,
+        session.user.id,
+        url,
+        replace === '1' || replace === 'true',
+      );
+      return toProductDto(product);
+    } catch (error) {
+      await this.storage.deleteImage(url).catch(() => {});
+      throw error;
+    }
   }
 
   @Delete(':productId/images/:index')
@@ -326,7 +332,7 @@ export class ProductsController {
       session.user.id,
       index,
     );
-    await this.storage.deleteImage(removed);
+    await this.storage.deleteImage(removed).catch(() => {});
     const product = await this.products.findOne(
       storeId,
       productId,
@@ -340,13 +346,13 @@ export class ProductsController {
     @Param('storeId') storeId: string,
     @Param('productId') productId: string,
     @Session() session: UserSession,
-    @Body() body: { images: string[] },
+    @Body() dto: ReorderImagesDto,
   ): Promise<ProductResponseDto> {
     const product = await this.products.reorderImages(
       productId,
       storeId,
       session.user.id,
-      body.images,
+      dto.images,
     );
     return toProductDto(product);
   }
@@ -362,7 +368,9 @@ export class ProductsController {
       storeId,
       session.user.id,
     );
-    await Promise.all(removed.map((url) => this.storage.deleteImage(url)));
+    await Promise.allSettled(
+      removed.map((url) => this.storage.deleteImage(url)),
+    );
     const product = await this.products.findOne(
       storeId,
       productId,

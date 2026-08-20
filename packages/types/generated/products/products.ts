@@ -12,6 +12,7 @@ import type {
   ProductResponseDto,
   ProductsControlleruploadImageParams,
   ProductWithVariantsResponseDto,
+  ReorderImagesDto,
   UpdateProductDto,
   UpdateVariantDto,
   VariantResponseDto,
@@ -255,6 +256,72 @@ export const uploadVariantImage = async (
     {
       ...options,
       method: "POST",
+    },
+  );
+};
+
+// Manually added — OpenAPI pipeline cannot regenerate (pre-existing
+// ERR_UNKNOWN_FILE_EXTENSION in generate-swagger-metadata.ts).
+// Remove once the pipeline is fixed and a full regenerate lands.
+
+export const getRemoveImageUrl = (
+  storeId: string,
+  productId: string,
+  index: number,
+) => {
+  return `/stores/${storeId}/products/${productId}/images/${index}`;
+};
+
+export const removeImage = async (
+  storeId: string,
+  productId: string,
+  index: number,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ProductResponseDto> => {
+  return customFetch<ProductResponseDto>(
+    getRemoveImageUrl(storeId, productId, index),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getReorderImagesUrl = (storeId: string, productId: string) => {
+  return `/stores/${storeId}/products/${productId}/images/reorder`;
+};
+
+export const reorderImages = async (
+  storeId: string,
+  productId: string,
+  reorderImagesDto: ReorderImagesDto,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ProductResponseDto> => {
+  return customFetch<ProductResponseDto>(
+    getReorderImagesUrl(storeId, productId),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(reorderImagesDto),
+    },
+  );
+};
+
+export const getClearImagesUrl = (storeId: string, productId: string) => {
+  return `/stores/${storeId}/products/${productId}/images`;
+};
+
+export const clearImages = async (
+  storeId: string,
+  productId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ProductResponseDto> => {
+  return customFetch<ProductResponseDto>(
+    getClearImagesUrl(storeId, productId),
+    {
+      ...options,
+      method: "DELETE",
     },
   );
 };

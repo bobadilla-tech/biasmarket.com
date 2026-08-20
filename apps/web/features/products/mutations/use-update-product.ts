@@ -213,12 +213,9 @@ export function useUpdateProduct(storeId: string | undefined) {
       const imagesToKeep = new Set(input.existingImages);
       for (let i = currentImages.length - 1; i >= 0; i--) {
         if (!imagesToKeep.has(currentImages[i])) {
-          await productsApi.removeImage(
-            sid,
-            input.productId,
-            i,
-            input.fallbackErrorMessage,
-          );
+          await apiClient.products.removeImage(sid, input.productId, i, {
+            fallbackErrorMessage: input.fallbackErrorMessage,
+          });
         }
       }
 
@@ -242,15 +239,15 @@ export function useUpdateProduct(storeId: string | undefined) {
         desiredImages.length === serverImages.length &&
         desiredImages.some((url, i) => url !== serverImages[i])
       ) {
-        await productsApi.reorderImages(
+        await apiClient.products.reorderImages(
           sid,
           input.productId,
-          desiredImages,
-          input.fallbackErrorMessage,
+          { images: desiredImages },
+          { fallbackErrorMessage: input.fallbackErrorMessage },
         );
       }
     },
-    onSuccess: (_data, input) => {
+    onSettled: (_data, _error, input) => {
       if (!storeId) return;
       queryClient.invalidateQueries({
         queryKey: productsKeys.byStore(storeId),

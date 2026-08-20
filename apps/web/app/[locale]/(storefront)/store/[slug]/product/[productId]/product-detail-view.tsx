@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Bell, Clock } from "lucide-react";
 import { Select } from "@/components/ui/select";
-import { ImageGallery } from "@/components/ui/image-gallery";
+import { ImageGallery } from "@/features/products/components/image-gallery";
 import { addToCart } from "@/lib/cart";
 import { RestockInterestDialog } from "@/features/restock";
 
@@ -53,6 +53,17 @@ export function ProductDetailView({
     product.soldOut ||
     (selectedVariant ? availableStock(selectedVariant) <= 0 : false);
 
+  const galleryImages = (() => {
+    const override = selectedVariant?.imageOverride;
+    if (override && !product.images.includes(override)) {
+      return [override, ...product.images];
+    }
+    if (override) {
+      return [override, ...product.images.filter((img) => img !== override)];
+    }
+    return product.images ?? [];
+  })();
+
   const handleAddToCart = () => {
     addToCart(slug, {
       productId: product.id,
@@ -72,7 +83,7 @@ export function ProductDetailView({
     <div className="grid gap-8 sm:grid-cols-2">
       <div className="relative">
         <ImageGallery
-          images={product.images ?? []}
+          images={galleryImages}
           alt={product.name}
           outOfStock={outOfStock}
         />
