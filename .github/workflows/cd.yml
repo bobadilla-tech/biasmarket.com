@@ -88,6 +88,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=${{ matrix.app }}
           build-args: |
             NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
+            NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL }}
             NEXT_PUBLIC_SENTRY_DSN=${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
             NEXT_PUBLIC_SANITY_PROJECT_ID=${{ vars.NEXT_PUBLIC_SANITY_PROJECT_ID }}
             NEXT_PUBLIC_SANITY_DATASET=${{ vars.NEXT_PUBLIC_SANITY_DATASET }}

@@ -4,6 +4,60 @@
 strategy/completeness pass). Revised below with their findings folded in — see
 "Review findings" at the bottom for the raw classified list.
 
+**Implementation status (2026-08-20):** Phases 0–4 implemented and verified
+(build + `pnpm --filter web test` + manual `<head>`/`robots.txt` inspection).
+Phase 5 explicitly not started — it needs its own follow-up plan doc, not inline
+work here.
+
+- **Phase 0** — confirmed: GSC property is a **Domain property** (user-checked
+  in the GSC dashboard). No migration needed.
+- **Phase 1** — done. `canonicalUrl(locale, path)` helper added to
+  `lib/site-config.ts`; self-referential `alternates.canonical` wired into every
+  indexable page's `generateMetadata` (home, `/founder`, `/enterprise`,
+  `/contact`, `/for-sellers`, `/stores`, `/blog`, `/blog/[slug]`, `/search`,
+  `/store/[slug]`, `/store/[slug]/product/[productId]`, and — found only while
+  writing the Phase 4 regression test, not in the original plan's scope —
+  `/store/[slug]/account` and `/store/[slug]/account/login`, both missed by the
+  plan's own `-maxdepth 4` file search). The two dynamic storefront
+  `generateMetadata` functions now type `locale` on `params`. `/search` resolved
+  via self-canonical to its query-less base path (kept `noindex` meta, did
+  **not** robots.txt-disallow it — disallowing would block Google from ever
+  seeing the noindex tag). `x-default` hreflang added in `lib/sitemap/urls.ts`.
+  `/account` robots.txt disallow shipped (`/en/account$`/`/es/account$`) — user
+  confirmed recrawl via GSC.
+- **Phase 2** — audit only, per product decision (`/es` stays canonical root, no
+  routing change). Verified live: `http://biasmarket.com/` →
+  `https://biasmarket.com/` (308) → `https://biasmarket.com/es` (307) — exactly
+  the two documented hops, nothing longer. `www.biasmarket.com` is NXDOMAIN
+  (intentionally unregistered, not a hidden second redirect chain).
+- **Phase 3** — done. `api.biasmarket.com/robots.txt` now served at the Caddy
+  layer (`infra/vps/Caddyfile`, `Disallow: /`) — not via Nest, since the global
+  `api` prefix would otherwise put it at `/api/robots.txt`. Link-
+  discoverability audit: `api.biasmarket.com` only appears in `apps/web` via
+  `NEXT_PUBLIC_API_URL`, necessarily inlined into the client bundle for the
+  browser to call the API — expected, not fixable without breaking the app; the
+  robots.txt fix is the actual mitigation.
+- **Phase 4 (mechanical parts)** — done. `Organization`/`WebSite` JSON-LD added
+  to `app/[locale]/layout.tsx`. `NEXT_PUBLIC_SITE_URL` wired as a build ARG
+  (`infra/docker/web.Dockerfile`) and through `cd.yml`'s build-args (**needs a
+  `NEXT_PUBLIC_SITE_URL` repo/environment Variable added in GitHub settings
+  before the next deploy — not done here, no CI/CD credentials in this
+  session**); documented in `infra/vps/env/shared.env.example`.
+  Canonical-regression test added:
+  `apps/web/__tests__/canonical-regression.test.ts` walks every
+  `app/[locale]/**/page.tsx`, excludes anything actually disallowed by
+  `robots.ts` (derived from `robots.ts` itself, not hand-duplicated), and
+  asserts every remaining page exports either `alternates.canonical` or
+  `robots: { index: false }`. **This test caught a real, pre-existing bug while
+  being written**: `robots.ts`'s `"/*/login"` entry used Google's actual
+  wildcard semantics (`*` matches across `/`) and was unintentionally also
+  disallowing `/store/[slug]/account/login` — the storefront buyer login page
+  the 2026-08-14 plan explicitly wanted indexed. Fixed the same way that plan
+  already fixed the identical collision class for `/account`: replaced the
+  wildcard with explicit anchored `/en/login$`/`/es/login$` entries.
+- **Phase 5** — not started, per plan's own framing. Flagged back to whoever
+  prioritizes growth work rather than started inline.
+
 ## Business framing (added post-review — was missing from the first draft)
 
 This plan started as root-causing three Search Console issues, all on

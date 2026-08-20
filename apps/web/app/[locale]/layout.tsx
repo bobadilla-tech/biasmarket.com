@@ -28,6 +28,28 @@ export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
 
+function buildOrganizationJsonLd() {
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": `${SITE_URL}/#organization`,
+        name: "Bias Market",
+        url: SITE_URL,
+        logo: `${SITE_URL}/og-image.png`,
+      },
+      {
+        "@type": "WebSite",
+        "@id": `${SITE_URL}/#website`,
+        name: "Bias Market",
+        url: SITE_URL,
+        publisher: { "@id": `${SITE_URL}/#organization` },
+      },
+    ],
+  };
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -76,6 +98,15 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(buildOrganizationJsonLd()).replace(
+              /</g,
+              "\\u003c",
+            ),
+          }}
+        />
         <NextIntlClientProvider locale={locale}>
           <QueryProvider>{children}</QueryProvider>
         </NextIntlClientProvider>
