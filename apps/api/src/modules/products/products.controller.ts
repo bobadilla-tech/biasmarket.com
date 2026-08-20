@@ -5,6 +5,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Query,
@@ -20,6 +21,7 @@ import { CreateProductDto } from './dto/create-product.dto.js';
 import { UpdateProductDto } from './dto/update-product.dto.js';
 import { CreateVariantDto } from './dto/create-variant.dto.js';
 import { UpdateVariantDto } from './dto/update-variant.dto.js';
+import { ReorderImagesDto } from './dto/reorder-images.dto.js';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { StorageService } from '../../storage/storage.service.js';
 import type {
@@ -302,12 +304,77 @@ export class ProductsController {
       file.buffer,
       isPng ? 'image/png' : 'image/jpeg',
     );
-    const product = await this.products.addImage(
+    try {
+      const product = await this.products.addImage(
+        productId,
+        storeId,
+        session.user.id,
+        url,
+        replace === '1' || replace === 'true',
+      );
+      return toProductDto(product);
+    } catch (error) {
+      await this.storage.deleteImage(url).catch(() => {});
+      throw error;
+    }
+  }
+
+  @Delete(':productId/images/:index')
+  async removeImage(
+    @Param('storeId') storeId: string,
+    @Param('productId') productId: string,
+    @Param('index', ParseIntPipe) index: number,
+    @Session() session: UserSession,
+  ): Promise<ProductResponseDto> {
+    const { removed } = await this.products.removeImage(
       productId,
       storeId,
       session.user.id,
-      url,
-      replace === '1' || replace === 'true',
+      index,
+    );
+    await this.storage.deleteImage(removed).catch(() => {});
+    const product = await this.products.findOne(
+      storeId,
+      productId,
+      session.user.id,
+    );
+    return toProductDto(product);
+  }
+
+  @Patch(':productId/images/reorder')
+  async reorderImages(
+    @Param('storeId') storeId: string,
+    @Param('productId') productId: string,
+    @Session() session: UserSession,
+    @Body() dto: ReorderImagesDto,
+  ): Promise<ProductResponseDto> {
+    const product = await this.products.reorderImages(
+      productId,
+      storeId,
+      session.user.id,
+      dto.images,
+    );
+    return toProductDto(product);
+  }
+
+  @Delete(':productId/images')
+  async clearImages(
+    @Param('storeId') storeId: string,
+    @Param('productId') productId: string,
+    @Session() session: UserSession,
+  ): Promise<ProductResponseDto> {
+    const { removed } = await this.products.clearImages(
+      productId,
+      storeId,
+      session.user.id,
+    );
+    await Promise.allSettled(
+      removed.map((url) => this.storage.deleteImage(url)),
+    );
+    const product = await this.products.findOne(
+      storeId,
+      productId,
+      session.user.id,
     );
     return toProductDto(product);
   }

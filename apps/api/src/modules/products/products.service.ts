@@ -296,6 +296,8 @@ export class ProductsService {
     return this.prisma.productVariant.delete({ where: { id: variantId } });
   }
 
+  private static readonly MAX_IMAGES = 6;
+
   async addImage(
     productId: string,
     storeId: string,
@@ -304,6 +306,11 @@ export class ProductsService {
     replace?: boolean,
   ) {
     const product = await this.findOwnedProduct(productId, storeId, userId);
+    if (!replace && product.images.length >= ProductsService.MAX_IMAGES) {
+      throw new BadRequestException(
+        `Máximo ${ProductsService.MAX_IMAGES} imágenes por producto`,
+      );
+    }
     const images = replace
       ? product.images.length
         ? [url, ...product.images.slice(1)]
@@ -313,6 +320,61 @@ export class ProductsService {
       where: { id: productId },
       data: { images },
     });
+  }
+
+  async removeImage(
+    productId: string,
+    storeId: string,
+    userId: string,
+    index: number,
+  ) {
+    const product = await this.findOwnedProduct(productId, storeId, userId);
+    if (index < 0 || index >= product.images.length) {
+      throw new BadRequestException('Índice de imagen inválido');
+    }
+    const removed = product.images[index];
+    const images = product.images.filter((_, i) => i !== index);
+    await this.prisma.product.update({
+      where: { id: productId },
+      data: { images },
+    });
+    return { removed };
+  }
+
+  async reorderImages(
+    productId: string,
+    storeId: string,
+    userId: string,
+    images: string[],
+  ) {
+    const product = await this.findOwnedProduct(productId, storeId, userId);
+    if (images.length !== product.images.length) {
+      throw new BadRequestException(
+        `Se esperaban ${product.images.length} imágenes`,
+      );
+    }
+    const currentSet = new Set(product.images);
+    const dedup = new Set(images);
+    if (
+      dedup.size !== images.length ||
+      !images.every((url) => currentSet.has(url))
+    ) {
+      throw new BadRequestException('URLs de imagen inválidas');
+    }
+    return this.prisma.product.update({
+      where: { id: productId },
+      data: { images },
+    });
+  }
+
+  async clearImages(productId: string, storeId: string, userId: string) {
+    const product = await this.findOwnedProduct(productId, storeId, userId);
+    const urls = product.images;
+    await this.prisma.product.update({
+      where: { id: productId },
+      data: { images: [] },
+    });
+    return { removed: urls };
   }
 
   async addVariantImage(

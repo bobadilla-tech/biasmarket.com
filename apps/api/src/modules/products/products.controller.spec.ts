@@ -14,11 +14,15 @@ describe('ProductsController', () => {
   let service: {
     create: Mock;
     findAllForStore: Mock;
+    findOne: Mock;
     update: Mock;
     publish: Mock;
     softDelete: Mock;
     addVariant: Mock;
     listVariants: Mock;
+    removeImage: Mock;
+    reorderImages: Mock;
+    clearImages: Mock;
   };
 
   const storeId = 'store-1';
@@ -59,18 +63,28 @@ describe('ProductsController', () => {
     service = {
       create: vi.fn(),
       findAllForStore: vi.fn(),
+      findOne: vi.fn(),
       update: vi.fn(),
       publish: vi.fn(),
       softDelete: vi.fn(),
       addVariant: vi.fn(),
       listVariants: vi.fn(),
+      removeImage: vi.fn(),
+      reorderImages: vi.fn(),
+      clearImages: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ProductsController],
       providers: [
         { provide: ProductsService, useValue: service },
-        { provide: StorageService, useValue: { uploadImage: vi.fn() } },
+        {
+          provide: StorageService,
+          useValue: {
+            uploadImage: vi.fn(),
+            deleteImage: vi.fn().mockResolvedValue(undefined),
+          },
+        },
       ],
     }).compile();
 
@@ -191,5 +205,69 @@ describe('ProductsController', () => {
       storeId,
       'user-1',
     );
+  });
+
+  it('removeImage() removes the image and deletes from storage', async () => {
+    service.removeImage.mockResolvedValue({ removed: 'old.png' });
+    service.findOne.mockResolvedValue({
+      ...productRow,
+      images: [],
+      variants: [],
+      categories: [],
+      soldUnits: 0,
+      availableStock: null,
+    });
+
+    const result = await controller.removeImage(storeId, productId, 0, session);
+
+    expect(service.removeImage).toHaveBeenCalledWith(
+      productId,
+      storeId,
+      'user-1',
+      0,
+    );
+    expect(result.images).toEqual([]);
+  });
+
+  it('reorderImages() delegates to service.reorderImages', async () => {
+    service.reorderImages.mockResolvedValue({
+      ...productRow,
+      images: ['b.png', 'a.png'],
+    });
+
+    const result = await controller.reorderImages(storeId, productId, session, {
+      images: ['b.png', 'a.png'],
+    });
+
+    expect(service.reorderImages).toHaveBeenCalledWith(
+      productId,
+      storeId,
+      'user-1',
+      ['b.png', 'a.png'],
+    );
+    expect(result.images).toEqual(['b.png', 'a.png']);
+  });
+
+  it('clearImages() clears all images and deletes from storage', async () => {
+    service.clearImages.mockResolvedValue({
+      removed: ['a.png', 'b.png'],
+    });
+    service.findOne.mockResolvedValue({
+      ...productRow,
+      images: [],
+      variants: [],
+      categories: [],
+      soldUnits: 0,
+      availableStock: null,
+    });
+
+    const result = await controller.clearImages(storeId, productId, session);
+
+    expect(service.clearImages).toHaveBeenCalledWith(
+      productId,
+      storeId,
+      'user-1',
+    );
+    expect(result.images).toEqual([]);
   });
 });

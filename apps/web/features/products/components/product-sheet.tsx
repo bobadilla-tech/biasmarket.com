@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Upload } from "lucide-react";
+import { Plus, Upload, X, ChevronUp, ChevronDown } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { SUPPORTED_CURRENCIES } from "@biasmarket/utils/currency";
@@ -40,6 +40,7 @@ export function ProductSheet({
   submitLabel,
   defaultValues,
   initialVariants,
+  existingImages,
   categories,
   onEnsureCategory,
   onSubmit,
@@ -52,11 +53,13 @@ export function ProductSheet({
   submitLabel: string;
   defaultValues: ProductFormInput;
   initialVariants: VariantResponseDto[];
+  existingImages: string[];
   categories: CategoryResponseDto[];
   onEnsureCategory: (name: string) => Promise<CategoryResponseDto>;
   onSubmit: (
     values: ProductFormInput & {
-      imageFile: File | null;
+      imageFiles: File[];
+      existingImages: string[];
       variants: VariantDraft[];
       variantImages: Record<string, File | null>;
     },
@@ -66,20 +69,14 @@ export function ProductSheet({
   const t = useTranslations("dashboard");
   const { locale } = useParams<{ locale: string }>();
 
-  const {
-    register,
-    watch,
-    setValue,
-    reset,
-    handleSubmit,
-  } = useForm<ProductFormInput>({
-    resolver: zodResolver(productFormSchema),
-    defaultValues,
-  });
+  const { register, watch, setValue, reset, handleSubmit } =
+    useForm<ProductFormInput>({
+      resolver: zodResolver(productFormSchema),
+      defaultValues,
+    });
 
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [draftImages, setDraftImages] = useState<(string | File)[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
-  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [hasVariants, setHasVariants] = useState(false);
   const [options, setOptions] = useState<OptionTypeDraft[]>([]);
   const [newOptionName, setNewOptionName] = useState("");
@@ -91,9 +88,7 @@ export function ProductSheet({
   const [categorySearch, setCategorySearch] = useState("");
   const [variantOverrides, setVariantOverrides] = useState<
     Record<string, { stock: string; price: string }>
-  >(
-    {},
-  );
+  >({});
   const [variantExistingImages, setVariantExistingImages] = useState<
     Record<string, string | null>
   >({});
@@ -117,13 +112,13 @@ export function ProductSheet({
     const isSpanish = (locale ?? "").startsWith("es");
     return isSpanish
       ? [
-        "Ropa",
-        "Accesorios",
-        "Coleccionables",
-        "Decoración",
-        "Digital",
-        "Otros",
-      ]
+          "Ropa",
+          "Accesorios",
+          "Coleccionables",
+          "Decoración",
+          "Digital",
+          "Otros",
+        ]
       : ["Clothing", "Accessories", "Collectibles", "Home", "Digital", "Other"];
   }, [locale]);
 
@@ -134,13 +129,13 @@ export function ProductSheet({
     setNewCategoryName("");
     setCategoryTab("default");
     setCategorySearch("");
-    setImageFile(null);
-    setImagePreviewUrl(null);
+    setDraftImages([...existingImages]);
     setVariantImageFiles({});
 
-    const hasStructuredVariants = initialVariants.length > 1 ||
-      initialVariants.some((variant) =>
-        Object.keys(variant.attributes ?? {}).length > 0
+    const hasStructuredVariants =
+      initialVariants.length > 1 ||
+      initialVariants.some(
+        (variant) => Object.keys(variant.attributes ?? {}).length > 0,
       );
 
     if (!hasStructuredVariants) {
@@ -184,23 +179,14 @@ export function ProductSheet({
     );
     setVariantExistingImages(
       Object.fromEntries(
-        initialVariants.map((
-          variant,
-        ) => [keyForAttributes(variant.attributes), variant.imageOverride]),
+        initialVariants.map((variant) => [
+          keyForAttributes(variant.attributes),
+          variant.imageOverride,
+        ]),
       ),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultValues, initialVariants, reset]);
-
-  useEffect(() => {
-    if (!imageFile) {
-      setImagePreviewUrl(null);
-      return;
-    }
-    const nextUrl = URL.createObjectURL(imageFile);
-    setImagePreviewUrl(nextUrl);
-    return () => URL.revokeObjectURL(nextUrl);
-  }, [imageFile]);
 
   useEffect(() => {
     const entries = Object.entries(variantImageFiles).filter(
@@ -214,6 +200,34 @@ export function ProductSheet({
       Object.values(nextPreviews).forEach((url) => URL.revokeObjectURL(url));
     };
   }, [variantImageFiles]);
+
+  const filePreviewCache = useRef(new Map<File, string>());
+  useEffect(() => {
+    const cache = filePreviewCache.current;
+    const currentFiles = draftImages.filter(
+      (item): item is File => item instanceof File,
+    );
+    for (const [file, url] of cache) {
+      if (!currentFiles.includes(file)) {
+        URL.revokeObjectURL(url);
+        cache.delete(file);
+      }
+    }
+    for (const file of currentFiles) {
+      if (!cache.has(file)) {
+        cache.set(file, URL.createObjectURL(file));
+      }
+    }
+    return () => {
+      for (const url of cache.values()) URL.revokeObjectURL(url);
+      cache.clear();
+    };
+  }, [draftImages]);
+
+  function draftSrc(item: string | File): string {
+    if (typeof item === "string") return item;
+    return filePreviewCache.current.get(item) ?? URL.createObjectURL(item);
+  }
 
   const variantsPreview = useMemo(() => {
     const readyOptions = options
@@ -277,22 +291,24 @@ export function ProductSheet({
     if (!optName || values.length === 0) return;
     const normalized = optName.toLowerCase();
     setOptions((prev) => {
-      const existingIndex = prev.findIndex((option) =>
-        option.name.trim().toLowerCase() === normalized
+      const existingIndex = prev.findIndex(
+        (option) => option.name.trim().toLowerCase() === normalized,
       );
       if (existingIndex === -1) {
-        return [...prev, {
-          id: `${Date.now()}-${Math.random()}`,
-          name: optName,
-          values,
-        }];
+        return [
+          ...prev,
+          {
+            id: `${Date.now()}-${Math.random()}`,
+            name: optName,
+            values,
+          },
+        ];
       }
       const existing = prev[existingIndex];
       const merged = Array.from(new Set([...existing.values, ...values]));
-      return prev.map((
-        option,
-        index,
-      ) => (index === existingIndex ? { ...option, values: merged } : option));
+      return prev.map((option, index) =>
+        index === existingIndex ? { ...option, values: merged } : option,
+      );
     });
     setNewOptionName("");
     setNewOptionValues("");
@@ -303,7 +319,7 @@ export function ProductSheet({
     const existing = categories.find(
       (category) =>
         category.name.trim().toLowerCase() ===
-          categoryName.trim().toLowerCase(),
+        categoryName.trim().toLowerCase(),
     );
     if (existing) {
       setValue("categoryId", existing.id);
@@ -325,10 +341,17 @@ export function ProductSheet({
   };
 
   const submit = handleSubmit((values) => {
+    const keptExisting = draftImages.filter(
+      (item): item is string => typeof item === "string",
+    );
+    const newFiles = draftImages.filter(
+      (item): item is File => item instanceof File,
+    );
     onSubmit({
       ...values,
       stock: hasVariants ? "" : values.stock,
-      imageFile,
+      imageFiles: newFiles,
+      existingImages: keptExisting,
       variants: hasVariants ? variantsPreview.map((v) => v.draft) : [],
       variantImages: hasVariants ? variantImageFiles : {},
     });
@@ -430,25 +453,23 @@ export function ProductSheet({
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#927fac]">
               {t("products.form.stockLabel")}
             </p>
-            {hasVariants
-              ? (
-                <div className="rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3 text-xs text-[#8f7da8]">
-                  {t("products.form.stockPerVariant")}
-                </div>
-              )
-              : (
-                <>
-                  <Input
-                    {...register("stock")}
-                    inputMode="numeric"
-                    placeholder={t("products.form.stockPlaceholder")}
-                    className="store-theme-input h-11 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] shadow-none"
-                  />
-                  <p className="text-xs text-[#8f7da8]">
-                    {t("products.form.stockHelp")}
-                  </p>
-                </>
-              )}
+            {hasVariants ? (
+              <div className="rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3 text-xs text-[#8f7da8]">
+                {t("products.form.stockPerVariant")}
+              </div>
+            ) : (
+              <>
+                <Input
+                  {...register("stock")}
+                  inputMode="numeric"
+                  placeholder={t("products.form.stockPlaceholder")}
+                  className="store-theme-input h-11 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] shadow-none"
+                />
+                <p className="text-xs text-[#8f7da8]">
+                  {t("products.form.stockHelp")}
+                </p>
+              </>
+            )}
           </div>
 
           <div className="space-y-3">
@@ -468,178 +489,170 @@ export function ProductSheet({
               </Button>
             </div>
 
-            {hasVariants
-              ? (
-                <div className="space-y-3 rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] p-4">
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <Input
-                      value={newOptionName}
-                      onChange={(event) => setNewOptionName(event.target.value)}
-                      placeholder={t("products.form.variantTypePlaceholder")}
-                      className="store-theme-input h-11 rounded-2xl border-[#e7dcf3] bg-white shadow-none"
-                    />
-                    <Input
-                      value={newOptionValues}
-                      onChange={(event) =>
-                        setNewOptionValues(event.target.value)}
-                      placeholder={t("products.form.variantValuesPlaceholder")}
-                      className="store-theme-input h-11 rounded-2xl border-[#e7dcf3] bg-white shadow-none"
-                    />
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleAddOption}
-                    className="store-theme-secondary-button h-10 rounded-2xl border bg-white px-4 text-sm font-semibold shadow-none"
-                  >
-                    <Plus className="size-4" />
-                    {t("products.form.addVariantType")}
-                  </Button>
-
-                  {options.length > 0
-                    ? (
-                      <div className="flex flex-wrap gap-2">
-                        {options.map((option) => (
-                          <Badge
-                            key={option.id}
-                            variant="outline"
-                            className="rounded-full border-[#eadcf7] bg-white px-3 py-1 text-xs text-[#8f7da8]"
-                          >
-                            {option.name}: {option.values.join(", ")}
-                            <button
-                              type="button"
-                              className="ml-2 text-[#d11d52]"
-                              onClick={() =>
-                                setOptions((prev) =>
-                                  prev.filter((o) => o.id !== option.id)
-                                )}
-                            >
-                              ×
-                            </button>
-                          </Badge>
-                        ))}
-                      </div>
-                    )
-                    : null}
-
-                  {variantsPreview.length > 0
-                    ? (
-                      <div className="space-y-2">
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#927fac]">
-                          {t("products.form.variantsPreview")}
-                        </p>
-                        <input
-                          ref={variantFileRef}
-                          type="file"
-                          accept="image/png,image/jpeg"
-                          className="hidden"
-                          onChange={(event) => {
-                            const file = event.target.files?.[0] ?? null;
-                            if (activeVariantImageKey) {
-                              setVariantImageFiles((prev) => ({
-                                ...prev,
-                                [activeVariantImageKey]: file,
-                              }));
-                            }
-                            event.target.value = "";
-                          }}
-                        />
-                        <div className="space-y-2">
-                          {variantsPreview.map(({ key, draft }) => {
-                            const previewUrl = variantImagePreviews[key] ??
-                              variantExistingImages[key] ?? null;
-                            return (
-                              <div
-                                key={key}
-                                className="space-y-2 rounded-2xl border border-[#f0e7f8] bg-white px-3 py-3"
-                              >
-                                <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_110px_110px]">
-                                  <div>
-                                    <p className="text-sm font-semibold text-[#2d1649]">
-                                      {draft.name}
-                                    </p>
-                                    <p className="text-xs text-[#8f7da8]">
-                                      {Object.entries(draft.attributes ?? {})
-                                        .map(([k, v]) => `${k}: ${v}`)
-                                        .join(" · ")}
-                                    </p>
-                                  </div>
-                                  <Input
-                                    value={variantOverrides[key]?.stock ?? ""}
-                                    onChange={(event) =>
-                                      setVariantOverrides((prev) => ({
-                                        ...prev,
-                                        [key]: {
-                                          stock: event.target.value,
-                                          price: prev[key]?.price ?? "",
-                                        },
-                                      }))}
-                                    inputMode="numeric"
-                                    placeholder={t(
-                                      "products.form.variantStock",
-                                    )}
-                                    className="store-theme-input h-10 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] shadow-none"
-                                  />
-                                  <Input
-                                    value={variantOverrides[key]?.price ?? ""}
-                                    onChange={(event) =>
-                                      setVariantOverrides((prev) => ({
-                                        ...prev,
-                                        [key]: {
-                                          stock: prev[key]?.stock ?? "",
-                                          price: event.target.value,
-                                        },
-                                      }))}
-                                    inputMode="decimal"
-                                    placeholder={t(
-                                      "products.form.variantPrice",
-                                    )}
-                                    className="store-theme-input h-10 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] shadow-none"
-                                  />
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  {previewUrl
-                                    ? (
-                                      <img
-                                        src={previewUrl}
-                                        alt=""
-                                        className="size-10 rounded-lg object-cover"
-                                      />
-                                    )
-                                    : (
-                                      <div className="size-10 rounded-lg bg-[#fbf8fe]" />
-                                    )}
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => {
-                                      setActiveVariantImageKey(key);
-                                      variantFileRef.current?.click();
-                                    }}
-                                    className="store-theme-secondary-button h-9 rounded-xl border bg-white px-3 text-xs font-semibold shadow-none"
-                                  >
-                                    <Upload className="size-3.5" />
-                                    {t("products.form.variantImageUpload")}
-                                  </Button>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )
-                    : (
-                      <p className="text-xs text-[#8f7da8]">
-                        {t("products.form.noVariantsYet")}
-                      </p>
-                    )}
+            {hasVariants ? (
+              <div className="space-y-3 rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] p-4">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Input
+                    value={newOptionName}
+                    onChange={(event) => setNewOptionName(event.target.value)}
+                    placeholder={t("products.form.variantTypePlaceholder")}
+                    className="store-theme-input h-11 rounded-2xl border-[#e7dcf3] bg-white shadow-none"
+                  />
+                  <Input
+                    value={newOptionValues}
+                    onChange={(event) => setNewOptionValues(event.target.value)}
+                    placeholder={t("products.form.variantValuesPlaceholder")}
+                    className="store-theme-input h-11 rounded-2xl border-[#e7dcf3] bg-white shadow-none"
+                  />
                 </div>
-              )
-              : (
-                <p className="text-xs text-[#8f7da8]">
-                  {t("products.form.variantsHelp")}
-                </p>
-              )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleAddOption}
+                  className="store-theme-secondary-button h-10 rounded-2xl border bg-white px-4 text-sm font-semibold shadow-none"
+                >
+                  <Plus className="size-4" />
+                  {t("products.form.addVariantType")}
+                </Button>
+
+                {options.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {options.map((option) => (
+                      <Badge
+                        key={option.id}
+                        variant="outline"
+                        className="rounded-full border-[#eadcf7] bg-white px-3 py-1 text-xs text-[#8f7da8]"
+                      >
+                        {option.name}: {option.values.join(", ")}
+                        <button
+                          type="button"
+                          className="ml-2 text-[#d11d52]"
+                          onClick={() =>
+                            setOptions((prev) =>
+                              prev.filter((o) => o.id !== option.id),
+                            )
+                          }
+                        >
+                          ×
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                ) : null}
+
+                {variantsPreview.length > 0 ? (
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#927fac]">
+                      {t("products.form.variantsPreview")}
+                    </p>
+                    <input
+                      ref={variantFileRef}
+                      type="file"
+                      accept="image/png,image/jpeg"
+                      className="hidden"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0] ?? null;
+                        if (activeVariantImageKey) {
+                          setVariantImageFiles((prev) => ({
+                            ...prev,
+                            [activeVariantImageKey]: file,
+                          }));
+                        }
+                        event.target.value = "";
+                      }}
+                    />
+                    <div className="space-y-2">
+                      {variantsPreview.map(({ key, draft }) => {
+                        const previewUrl =
+                          variantImagePreviews[key] ??
+                          variantExistingImages[key] ??
+                          null;
+                        return (
+                          <div
+                            key={key}
+                            className="space-y-2 rounded-2xl border border-[#f0e7f8] bg-white px-3 py-3"
+                          >
+                            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_110px_110px]">
+                              <div>
+                                <p className="text-sm font-semibold text-[#2d1649]">
+                                  {draft.name}
+                                </p>
+                                <p className="text-xs text-[#8f7da8]">
+                                  {Object.entries(draft.attributes ?? {})
+                                    .map(([k, v]) => `${k}: ${v}`)
+                                    .join(" · ")}
+                                </p>
+                              </div>
+                              <Input
+                                value={variantOverrides[key]?.stock ?? ""}
+                                onChange={(event) =>
+                                  setVariantOverrides((prev) => ({
+                                    ...prev,
+                                    [key]: {
+                                      stock: event.target.value,
+                                      price: prev[key]?.price ?? "",
+                                    },
+                                  }))
+                                }
+                                inputMode="numeric"
+                                placeholder={t("products.form.variantStock")}
+                                className="store-theme-input h-10 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] shadow-none"
+                              />
+                              <Input
+                                value={variantOverrides[key]?.price ?? ""}
+                                onChange={(event) =>
+                                  setVariantOverrides((prev) => ({
+                                    ...prev,
+                                    [key]: {
+                                      stock: prev[key]?.stock ?? "",
+                                      price: event.target.value,
+                                    },
+                                  }))
+                                }
+                                inputMode="decimal"
+                                placeholder={t("products.form.variantPrice")}
+                                className="store-theme-input h-10 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] shadow-none"
+                              />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {previewUrl ? (
+                                <img
+                                  src={previewUrl}
+                                  alt=""
+                                  className="size-10 rounded-lg object-cover"
+                                />
+                              ) : (
+                                <div className="size-10 rounded-lg bg-[#fbf8fe]" />
+                              )}
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                  setActiveVariantImageKey(key);
+                                  variantFileRef.current?.click();
+                                }}
+                                className="store-theme-secondary-button h-9 rounded-xl border bg-white px-3 text-xs font-semibold shadow-none"
+                              >
+                                <Upload className="size-3.5" />
+                                {t("products.form.variantImageUpload")}
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-[#8f7da8]">
+                    {t("products.form.noVariantsYet")}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-[#8f7da8]">
+                {t("products.form.variantsHelp")}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -655,24 +668,22 @@ export function ProductSheet({
                   </p>
                   <p className="truncate text-sm font-semibold text-[#2d1649]">
                     {categoryId
-                      ? categories.find((category) =>
-                        category.id === categoryId
-                      )?.name ?? "—"
+                      ? (categories.find(
+                          (category) => category.id === categoryId,
+                        )?.name ?? "—")
                       : "—"}
                   </p>
                 </div>
-                {categoryId
-                  ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setValue("categoryId", "")}
-                      className="store-theme-secondary-button h-9 rounded-full border bg-white px-4 text-xs font-semibold shadow-none"
-                    >
-                      {t("products.form.clearCategory")}
-                    </Button>
-                  )
-                  : null}
+                {categoryId ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setValue("categoryId", "")}
+                    className="store-theme-secondary-button h-9 rounded-full border bg-white px-4 text-xs font-semibold shadow-none"
+                  >
+                    {t("products.form.clearCategory")}
+                  </Button>
+                ) : null}
               </div>
 
               <div className="flex items-center gap-2 rounded-2xl border border-[#eadcf7] bg-white p-1">
@@ -704,99 +715,95 @@ export function ProductSheet({
                 </Button>
               </div>
 
-              {categoryTab === "default"
-                ? (
-                  <div className="flex flex-wrap gap-2">
-                    {defaultCategories.map((categoryName) => {
-                      const isSelected = categoryId &&
-                        categories.some(
-                          (category) =>
-                            category.id === categoryId &&
-                            category.name.trim().toLowerCase() ===
-                              categoryName.trim().toLowerCase(),
-                        );
-                      return (
-                        <Button
-                          key={categoryName}
-                          type="button"
-                          variant="outline"
-                          onClick={() => handleSelectCategory(categoryName)}
-                          className={cn(
-                            "h-9 rounded-full border px-4 text-xs font-semibold shadow-none",
-                            isSelected
-                              ? "store-theme-soft-badge border-transparent"
-                              : "border-[#eadcf7] bg-white text-[#8f7da8] hover:bg-[#fcf9ff]",
-                          )}
-                        >
-                          {categoryName}
-                        </Button>
+              {categoryTab === "default" ? (
+                <div className="flex flex-wrap gap-2">
+                  {defaultCategories.map((categoryName) => {
+                    const isSelected =
+                      categoryId &&
+                      categories.some(
+                        (category) =>
+                          category.id === categoryId &&
+                          category.name.trim().toLowerCase() ===
+                            categoryName.trim().toLowerCase(),
                       );
-                    })}
-                  </div>
-                )
-                : (
-                  <div className="space-y-3">
-                    <Input
-                      value={categorySearch}
-                      onChange={(event) =>
-                        setCategorySearch(event.target.value)}
-                      placeholder={t("products.form.categorySearchPlaceholder")}
-                      className="store-theme-input h-11 rounded-2xl border-[#e7dcf3] bg-white shadow-none"
-                    />
-
-                    {categories.length === 0
-                      ? (
-                        <p className="text-xs text-[#8f7da8]">
-                          {t("products.form.noCategories")}
-                        </p>
-                      )
-                      : (
-                        <div className="flex flex-wrap gap-2">
-                          {categories
-                            .filter((category) =>
-                              category.name.toLowerCase().includes(
-                                categorySearch.trim().toLowerCase(),
-                              )
-                            )
-                            .map((category) => (
-                              <Button
-                                key={category.id}
-                                type="button"
-                                variant="outline"
-                                onClick={() =>
-                                  setValue("categoryId", category.id)}
-                                className={cn(
-                                  "h-9 rounded-full border px-4 text-xs font-semibold shadow-none",
-                                  categoryId === category.id
-                                    ? "store-theme-soft-badge border-transparent"
-                                    : "border-[#eadcf7] bg-white text-[#8f7da8] hover:bg-[#fcf9ff]",
-                                )}
-                              >
-                                {category.name}
-                              </Button>
-                            ))}
-                        </div>
-                      )}
-
-                    <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_120px]">
-                      <Input
-                        value={newCategoryName}
-                        onChange={(event) =>
-                          setNewCategoryName(event.target.value)}
-                        placeholder={t("products.form.newCategoryPlaceholder")}
-                        className="store-theme-input h-11 rounded-2xl border-[#e7dcf3] bg-white shadow-none"
-                      />
+                    return (
                       <Button
+                        key={categoryName}
                         type="button"
                         variant="outline"
-                        onClick={handleCreateCustomCategory}
-                        className="store-theme-secondary-button h-11 rounded-2xl border bg-white text-sm font-semibold shadow-none"
+                        onClick={() => handleSelectCategory(categoryName)}
+                        className={cn(
+                          "h-9 rounded-full border px-4 text-xs font-semibold shadow-none",
+                          isSelected
+                            ? "store-theme-soft-badge border-transparent"
+                            : "border-[#eadcf7] bg-white text-[#8f7da8] hover:bg-[#fcf9ff]",
+                        )}
                       >
-                        {t("products.form.addCategory")}
+                        {categoryName}
                       </Button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <Input
+                    value={categorySearch}
+                    onChange={(event) => setCategorySearch(event.target.value)}
+                    placeholder={t("products.form.categorySearchPlaceholder")}
+                    className="store-theme-input h-11 rounded-2xl border-[#e7dcf3] bg-white shadow-none"
+                  />
+
+                  {categories.length === 0 ? (
+                    <p className="text-xs text-[#8f7da8]">
+                      {t("products.form.noCategories")}
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {categories
+                        .filter((category) =>
+                          category.name
+                            .toLowerCase()
+                            .includes(categorySearch.trim().toLowerCase()),
+                        )
+                        .map((category) => (
+                          <Button
+                            key={category.id}
+                            type="button"
+                            variant="outline"
+                            onClick={() => setValue("categoryId", category.id)}
+                            className={cn(
+                              "h-9 rounded-full border px-4 text-xs font-semibold shadow-none",
+                              categoryId === category.id
+                                ? "store-theme-soft-badge border-transparent"
+                                : "border-[#eadcf7] bg-white text-[#8f7da8] hover:bg-[#fcf9ff]",
+                            )}
+                          >
+                            {category.name}
+                          </Button>
+                        ))}
                     </div>
+                  )}
+
+                  <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_120px]">
+                    <Input
+                      value={newCategoryName}
+                      onChange={(event) =>
+                        setNewCategoryName(event.target.value)
+                      }
+                      placeholder={t("products.form.newCategoryPlaceholder")}
+                      className="store-theme-input h-11 rounded-2xl border-[#e7dcf3] bg-white shadow-none"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleCreateCustomCategory}
+                      className="store-theme-secondary-button h-11 rounded-2xl border bg-white text-sm font-semibold shadow-none"
+                    >
+                      {t("products.form.addCategory")}
+                    </Button>
                   </div>
-                )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -808,30 +815,60 @@ export function ProductSheet({
               ref={fileRef}
               type="file"
               accept="image/png,image/jpeg"
+              multiple
               className="hidden"
-              onChange={(event) =>
-                setImageFile(event.target.files?.[0] ?? null)}
+              onChange={(event) => {
+                const files = Array.from(event.target.files ?? []);
+                setDraftImages((prev) => {
+                  const remaining = 6 - prev.length;
+                  return [...prev, ...files.slice(0, remaining)];
+                });
+                event.target.value = "";
+              }}
             />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => fileRef.current?.click()}
-              className="store-theme-secondary-button h-11 w-full rounded-2xl border bg-white text-sm font-semibold shadow-none"
-            >
-              <Upload className="size-4" />
-              {imageFile ? imageFile.name : t("products.form.imageUpload")}
-            </Button>
-            {imagePreviewUrl
-              ? (
-                <div className="overflow-hidden rounded-2xl border border-[#f0e7f8] bg-white">
+            <div className="grid grid-cols-3 gap-2">
+              {draftImages.map((item, index) => (
+                <div
+                  key={`draft-${index}`}
+                  className="group relative aspect-square overflow-hidden rounded-2xl border border-[#f0e7f8] bg-white"
+                >
                   <img
-                    src={imagePreviewUrl}
+                    src={draftSrc(item)}
                     alt=""
-                    className="h-36 w-full object-cover"
+                    className="h-full w-full object-cover"
                   />
+                  <span className="absolute left-1 top-1 rounded-full bg-[#2d1649] px-1.5 py-0.5 text-[9px] font-semibold text-white">
+                    {index + 1}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setDraftImages((prev) =>
+                        prev.filter((_, i) => i !== index),
+                      )
+                    }
+                    className="absolute right-1 top-1 hidden rounded-full bg-black/50 p-0.5 text-white group-hover:block"
+                  >
+                    <X className="size-3" />
+                  </button>
                 </div>
-              )
-              : null}
+              ))}
+              {draftImages.length < 6 && (
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  className="flex aspect-square flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-[#e7dcf3] text-[#927fac] transition hover:border-[#927fac] hover:bg-[#fcf9ff]"
+                >
+                  <Plus className="size-5" />
+                  <span className="text-[10px] font-medium">
+                    {t("products.form.addImage")}
+                  </span>
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-[#8f7da8]">
+              {t("products.form.imagesMax", { count: 6 })}
+            </p>
           </div>
         </div>
 

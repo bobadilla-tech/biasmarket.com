@@ -68,8 +68,11 @@
       "addCategory": "Agregar",
       "clearCategory": "Quitar categoría",
       "noCategories": "Crea categorías primero para poder asignarlas.",
-      "imageLabel": "Imagen",
+      "imageLabel": "Imágenes",
       "imageUpload": "Subir imagen",
+      "addImage": "Agregar imagen",
+      "imagesMax": "Máx. {count} imágenes",
+      "removeImage": "Quitar",
       "create": "Crear",
       "save": "Guardar",
       "submitting": "Guardando..."

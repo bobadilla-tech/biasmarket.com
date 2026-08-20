@@ -379,23 +379,6 @@ describe('ProductsService', () => {
       where: { productId },
     });
   });
-  it('addImage() replaces the first image when replace is true', async () => {
-    prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
-    prisma.product.findUnique.mockResolvedValue({
-      id: productId,
-      storeId,
-      images: ['old.png', '2.png'],
-    });
-    prisma.product.update.mockResolvedValue({});
-
-    await service.addImage(productId, storeId, ownerId, 'new.png', true);
-
-    expect(prisma.product.update).toHaveBeenCalledWith({
-      where: { id: productId },
-      data: { images: ['new.png', '2.png'] },
-    });
-  });
-
   it('updateVariant() updates a variant scoped to the owned product', async () => {
     prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
     prisma.product.findUnique.mockResolvedValue({ id: productId, storeId });
@@ -429,6 +412,204 @@ describe('ProductsService', () => {
     await expect(
       service.deleteVariant(productId, 'v1', storeId, ownerId),
     ).rejects.toThrow(BadRequestException);
+  });
+
+  describe('addImage', () => {
+    beforeEach(() => {
+      prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
+    });
+
+    it('appends a new image to the array', async () => {
+      prisma.product.findUnique.mockResolvedValue({
+        id: productId,
+        storeId,
+        images: ['a.png'],
+      });
+      prisma.product.update.mockResolvedValue({});
+
+      await service.addImage(productId, storeId, ownerId, 'b.png');
+
+      expect(prisma.product.update).toHaveBeenCalledWith({
+        where: { id: productId },
+        data: { images: ['a.png', 'b.png'] },
+      });
+    });
+
+    it('replaces the first image when replace is true', async () => {
+      prisma.product.findUnique.mockResolvedValue({
+        id: productId,
+        storeId,
+        images: ['old.png', '2.png'],
+      });
+      prisma.product.update.mockResolvedValue({});
+
+      await service.addImage(productId, storeId, ownerId, 'new.png', true);
+
+      expect(prisma.product.update).toHaveBeenCalledWith({
+        where: { id: productId },
+        data: { images: ['new.png', '2.png'] },
+      });
+    });
+
+    it('throws BadRequestException when max images reached without replace', async () => {
+      prisma.product.findUnique.mockResolvedValue({
+        id: productId,
+        storeId,
+        images: ['1.png', '2.png', '3.png', '4.png', '5.png', '6.png'],
+      });
+
+      await expect(
+        service.addImage(productId, storeId, ownerId, '7.png'),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('removeImage', () => {
+    beforeEach(() => {
+      prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
+    });
+
+    it('removes the image at the given index and returns the removed URL', async () => {
+      prisma.product.findUnique.mockResolvedValue({
+        id: productId,
+        storeId,
+        images: ['a.png', 'b.png', 'c.png'],
+      });
+      prisma.product.update.mockResolvedValue({});
+
+      const result = await service.removeImage(productId, storeId, ownerId, 1);
+
+      expect(result).toEqual({ removed: 'b.png' });
+      expect(prisma.product.update).toHaveBeenCalledWith({
+        where: { id: productId },
+        data: { images: ['a.png', 'c.png'] },
+      });
+    });
+
+    it('throws BadRequestException for out-of-range index', async () => {
+      prisma.product.findUnique.mockResolvedValue({
+        id: productId,
+        storeId,
+        images: ['a.png'],
+      });
+
+      await expect(
+        service.removeImage(productId, storeId, ownerId, 5),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('throws BadRequestException for negative index', async () => {
+      prisma.product.findUnique.mockResolvedValue({
+        id: productId,
+        storeId,
+        images: ['a.png'],
+      });
+
+      await expect(
+        service.removeImage(productId, storeId, ownerId, -1),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('reorderImages', () => {
+    beforeEach(() => {
+      prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
+    });
+
+    it('replaces the images array with the new order', async () => {
+      prisma.product.findUnique.mockResolvedValue({
+        id: productId,
+        storeId,
+        images: ['a.png', 'b.png', 'c.png'],
+      });
+      prisma.product.update.mockResolvedValue({});
+
+      await service.reorderImages(productId, storeId, ownerId, [
+        'c.png',
+        'a.png',
+        'b.png',
+      ]);
+
+      expect(prisma.product.update).toHaveBeenCalledWith({
+        where: { id: productId },
+        data: { images: ['c.png', 'a.png', 'b.png'] },
+      });
+    });
+
+    it('throws BadRequestException when URLs are not in the current set', async () => {
+      prisma.product.findUnique.mockResolvedValue({
+        id: productId,
+        storeId,
+        images: ['a.png', 'b.png'],
+      });
+
+      await expect(
+        service.reorderImages(productId, storeId, ownerId, [
+          'a.png',
+          'foreign.png',
+        ]),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('throws BadRequestException when submitted list has a different length', async () => {
+      prisma.product.findUnique.mockResolvedValue({
+        id: productId,
+        storeId,
+        images: ['a.png', 'b.png'],
+      });
+
+      await expect(
+        service.reorderImages(productId, storeId, ownerId, ['a.png']),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('throws BadRequestException when submitted list has duplicates', async () => {
+      prisma.product.findUnique.mockResolvedValue({
+        id: productId,
+        storeId,
+        images: ['a.png', 'b.png'],
+      });
+
+      await expect(
+        service.reorderImages(productId, storeId, ownerId, ['a.png', 'a.png']),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('clearImages', () => {
+    beforeEach(() => {
+      prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
+    });
+
+    it('empties the images array and returns removed URLs', async () => {
+      prisma.product.findUnique.mockResolvedValue({
+        id: productId,
+        storeId,
+        images: ['a.png', 'b.png'],
+      });
+      prisma.product.update.mockResolvedValue({});
+
+      const result = await service.clearImages(productId, storeId, ownerId);
+
+      expect(result).toEqual({ removed: ['a.png', 'b.png'] });
+      expect(prisma.product.update).toHaveBeenCalledWith({
+        where: { id: productId },
+        data: { images: [] },
+      });
+    });
+
+    it('returns empty removed array when product has no images', async () => {
+      prisma.product.findUnique.mockResolvedValue({
+        id: productId,
+        storeId,
+        images: [],
+      });
+      prisma.product.update.mockResolvedValue({});
+
+      const result = await service.clearImages(productId, storeId, ownerId);
+
+      expect(result).toEqual({ removed: [] });
+    });
   });
 
   describe('addVariantImage', () => {

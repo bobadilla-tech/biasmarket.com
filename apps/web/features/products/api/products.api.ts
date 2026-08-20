@@ -1,6 +1,6 @@
 // Multipart upload is the one exception to the generated-client migration
 // (see the OpenAPI note in apps/web/AGENTS.md): file uploads don't fit a
-// JSON request body, so these two calls stay on plain `fetch` + `FormData`,
+// JSON request body, so these calls stay on plain `fetch` + `FormData`,
 // exactly as they did before `apiClient.products.*` replaced the rest of
 // this file's methods.
 function apiUrl() {
