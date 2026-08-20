@@ -65,6 +65,11 @@ interface CheckoutFormProps {
     paymentType: "FULL" | "PARTIAL",
     depositPercent: number,
   ) => void;
+  // Server-equivalent delivery cost of the selected method — the summary's
+  // pay-now/pending math must add it before applying the deposit percentage,
+  // exactly like CreateOrderUseCase does with
+  // deliveryConfig.details.estimatedCost.
+  onDeliveryCostChange?: (deliveryCost: number) => void;
   onOrderCreated: (result: {
     orderId: string;
     customerEmail: string;
@@ -115,6 +120,7 @@ export function CheckoutForm({
   slug,
   items,
   onPaymentTypeChange,
+  onDeliveryCostChange,
   onOrderCreated,
 }: CheckoutFormProps) {
   const t = useTranslations("storefront.checkoutPage");
@@ -249,8 +255,22 @@ export function CheckoutForm({
       : 100;
   }, [selectedPaymentConfig]);
 
-  // Whether partial payment is available (percent < 100)
-  const partialAvailable = depositPercent < 100;
+  // Server-equivalent delivery cost for the selected method — same
+  // `Number(details?.estimatedCost ?? 0)` the use case applies before
+  // computing requiredAmount.
+  const deliveryCost = useMemo(() => {
+    const selectedDelivery = methods.find((m) => m.type === deliveryMethodType);
+    return Number(selectedDelivery?.details?.estimatedCost ?? 0);
+  }, [methods, deliveryMethodType]);
+
+  // Whether partial payment is available: only a non-CASH electronic method
+  // with an existing configuration that explicitly lowers the deposit below
+  // 100 — the same rule CreateOrderUseCase enforces server-side (a PARTIAL
+  // order on CASH or an ineligible config is rejected there).
+  const partialAvailable =
+    paymentMethod !== "CASH" &&
+    selectedPaymentConfig != null &&
+    depositPercent < 100;
 
   // Reset payment type to FULL when partial is not available
   useEffect(() => {
@@ -265,6 +285,10 @@ export function CheckoutForm({
       onPaymentTypeChange(paymentType, depositPercent);
     }
   }, [paymentType, depositPercent, onPaymentTypeChange]);
+
+  useEffect(() => {
+    onDeliveryCostChange?.(deliveryCost);
+  }, [deliveryCost, onDeliveryCostChange]);
 
   // Prefill from the buyer's saved default address the moment it loads —
   // guests/logged-out buyers just get `null` back (query never throws into
@@ -639,7 +663,7 @@ export function CheckoutForm({
           </div>
         )}
 
-        {paymentMethod && paymentMethod !== "CASH" && partialAvailable && (
+        {partialAvailable && (
           <div className="flex flex-col gap-2">
             <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
               {t("paymentTypeLabel")}

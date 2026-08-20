@@ -419,7 +419,7 @@ model PaymentMethodConfig {
   method         PaymentMethodType
   enabled        Boolean           @default(true)
   details        Json
-  depositPercent Int               @default(20)
+  depositPercent Int               @default(100)
   createdAt      DateTime          @default(now())
 
   store Store @relation(fields: [storeId], references: [id])

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { settingsApi } from "../api/settings.api";
+import { apiClient } from "@/lib/api-client";
 import { paymentMethodsKeys } from "../queries/use-payment-methods";
 
 export function useUploadPaymentQrImage(
@@ -12,11 +12,11 @@ export function useUploadPaymentQrImage(
 
   return useMutation({
     mutationFn: ({ method, file }: { method: "YAPE" | "PLIN"; file: File }) =>
-      settingsApi.uploadPaymentQrImage(
+      apiClient.paymentConfig.uploadQrImage(
         storeId as string,
         method,
-        file,
-        fallbackErrorMessage,
+        { file },
+        { fallbackErrorMessage },
       ),
     onSuccess: () => {
       if (!storeId) return;

@@ -329,25 +329,38 @@ export class CreateOrderUseCase {
         // satisfy the loop's own incremental-accumulation pattern.
         const finalAmount = totalAmount!.plus(deliveryCost);
 
-        // Calculate requiredAmount based on paymentType and deposit percentage
+        // Calculate requiredAmount based on paymentType and deposit percentage.
+        // PARTIAL is only honored for an enabled, non-CASH method whose config
+        // explicitly sets a deposit below 100 — anything else means the client
+        // offered a partial option it shouldn't have, so reject instead of
+        // silently re-pricing the order as FULL.
         let requiredAmount = finalAmount;
-        if (dto.paymentType === 'PARTIAL' && dto.paymentMethod) {
-          // Fetch the deposit percentage from PaymentMethodConfig
-          const paymentConfig = await tx.paymentMethodConfig.findUnique({
-            where: {
-              storeId_method: {
-                storeId: store.id,
-                method: dto.paymentMethod,
-              },
-            },
-          });
-          if (paymentConfig && paymentConfig.depositPercent < 100) {
-            requiredAmount = finalAmount
-              .times(paymentConfig.depositPercent)
-              .div(100);
-            // Round to 2 decimal places to avoid floating point issues
-            requiredAmount = new Prisma.Decimal(requiredAmount.toFixed(2));
+        if (dto.paymentType === 'PARTIAL') {
+          const paymentConfig = dto.paymentMethod
+            ? await tx.paymentMethodConfig.findUnique({
+                where: {
+                  storeId_method: {
+                    storeId: store.id,
+                    method: dto.paymentMethod,
+                  },
+                },
+              })
+            : null;
+          if (
+            !paymentConfig ||
+            !paymentConfig.enabled ||
+            paymentConfig.method === 'CASH' ||
+            paymentConfig.depositPercent >= 100
+          ) {
+            throw new BadRequestException(
+              'Este método de pago no soporta pago parcial',
+            );
           }
+          requiredAmount = finalAmount
+            .times(paymentConfig.depositPercent)
+            .div(100);
+          // Round to 2 decimal places to avoid floating point issues
+          requiredAmount = new Prisma.Decimal(requiredAmount.toFixed(2));
         }
 
         const expiresAt = new Date(

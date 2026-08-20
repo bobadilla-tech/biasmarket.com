@@ -33,6 +33,10 @@ export function CheckoutPageClient() {
   const [order, setOrder] = useState<OrderCreatedResult | null>(null);
   const [paymentType, setPaymentType] = useState<"FULL" | "PARTIAL">("FULL");
   const [depositPercent, setDepositPercent] = useState(100);
+  // Reported up by CheckoutForm from the selected delivery method — the
+  // summary adds it to the item total before applying the deposit percentage,
+  // mirroring what the API charges.
+  const [deliveryCost, setDeliveryCost] = useState(0);
   // Same query key CheckoutForm's own useDeliveryOptions call already
   // populated — reads the cached result (methods + their structured
   // `details`, plus the store's paymentInstructions) instead of firing a
@@ -59,6 +63,10 @@ export function CheckoutPageClient() {
   ) => {
     setPaymentType(newPaymentType);
     setDepositPercent(newDepositPercent);
+  };
+
+  const handleDeliveryCostChange = (newDeliveryCost: number) => {
+    setDeliveryCost(newDeliveryCost);
   };
 
   if (order) {
@@ -266,11 +274,13 @@ export function CheckoutPageClient() {
           items={items}
           paymentType={paymentType}
           depositPercent={depositPercent}
+          deliveryCost={deliveryCost}
         />
         <CheckoutForm
           slug={slug}
           items={items}
           onPaymentTypeChange={handlePaymentTypeChange}
+          onDeliveryCostChange={handleDeliveryCostChange}
           onOrderCreated={handleOrderCreated}
         />
       </div>

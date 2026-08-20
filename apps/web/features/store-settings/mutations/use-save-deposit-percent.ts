@@ -1,7 +1,8 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { settingsApi } from "../api/settings.api";
+import { apiClient } from "@/lib/api-client";
+import type { UpsertPaymentMethodDtoMethod } from "@biasmarket/types";
 import { paymentMethodsKeys } from "../queries/use-payment-methods";
 
 export function useSaveDepositPercent(storeId: string | undefined) {
@@ -12,10 +13,13 @@ export function useSaveDepositPercent(storeId: string | undefined) {
       method,
       depositPercent,
     }: {
-      method: string;
+      method: UpsertPaymentMethodDtoMethod;
       depositPercent: number;
     }) =>
-      settingsApi.saveDepositPercent(storeId as string, method, depositPercent),
+      apiClient.paymentConfig.upsert(storeId as string, {
+        method,
+        depositPercent,
+      }),
     onSuccess: () => {
       if (!storeId) return;
       queryClient.invalidateQueries({

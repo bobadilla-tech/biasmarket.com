@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { AuthGuard, Public, Session } from '@thallesp/nestjs-better-auth';
 import type { UserSession } from '@thallesp/nestjs-better-auth';
-import { ApiConsumes, ApiQuery } from '@nestjs/swagger';
+import { ApiBody, ApiConsumes, ApiQuery } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { PaymentConfigService } from './payment-config.service.js';
 import {
@@ -72,6 +72,13 @@ export class PaymentConfigController {
 
   @Post(':method/qr-image')
   @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { file: { type: 'string', format: 'binary' } },
+      required: ['file'],
+    },
+  })
   @UseInterceptors(FileInterceptor('file'))
   async uploadQrImage(
     @Param('storeId') storeId: string,

@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
+import type { UpsertPaymentMethodDtoMethod } from "@biasmarket/types";
 import { usePaymentMethods } from "../queries/use-payment-methods";
 import { useSavePaymentMethods } from "../mutations/use-save-payment-methods";
 import { useSavePaymentMethodDetails } from "../mutations/use-save-payment-method-details";
@@ -127,7 +128,7 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
     for (const row of methods) {
       nextEnabled[row.method] = row.enabled;
       nextDeposit[row.method] =
-        typeof row.depositPercent === "number" ? row.depositPercent : 20;
+        typeof row.depositPercent === "number" ? row.depositPercent : 100;
       if (!METHODS_WITH_DETAILS.includes(row.method as MethodWithDetails)) {
         continue;
       }
@@ -226,7 +227,7 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
     setDepositError((prev) => ({ ...prev, [method]: null }));
   }
 
-  function handleSaveDepositPercent(method: string) {
+  function handleSaveDepositPercent(method: UpsertPaymentMethodDtoMethod) {
     const pct = depositPercents[method];
     if (pct === undefined || pct < 1 || pct > 100) {
       setDepositError((prev) => ({
@@ -496,8 +497,8 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
                     type="number"
                     min={1}
                     max={100}
-                    placeholder="20"
-                    value={depositPercents[method.method] ?? 20}
+                    placeholder="100"
+                    value={depositPercents[method.method] ?? 100}
                     onChange={(e) =>
                       updateDepositPercent(method.method, e.target.value)
                     }

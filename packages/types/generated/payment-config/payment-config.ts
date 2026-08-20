@@ -7,6 +7,7 @@
  */
 import type {
   PaymentConfigControllerfindAllParams,
+  PaymentConfigControlleruploadQrImageBody,
   PaymentMethodConfigResponseDto,
   UpsertPaymentMethodDto,
 } from "../api.schemas.js";
@@ -70,13 +71,18 @@ export const getUploadQrImageUrl = (storeId: string, method: string) => {
 export const uploadQrImage = async (
   storeId: string,
   method: string,
+  paymentConfigControlleruploadQrImageBody: PaymentConfigControlleruploadQrImageBody,
   options?: Parameters<typeof customFetch>[1],
 ): Promise<PaymentMethodConfigResponseDto> => {
+  const formData = new FormData();
+  formData.append(`file`, paymentConfigControlleruploadQrImageBody.file);
+
   return customFetch<PaymentMethodConfigResponseDto>(
     getUploadQrImageUrl(storeId, method),
     {
       ...options,
       method: "POST",
+      body: formData,
     },
   );
 };

@@ -8,16 +8,21 @@ interface CheckoutSummaryProps {
   items: CartItem[];
   paymentType?: "FULL" | "PARTIAL";
   depositPercent?: number;
+  // Server-equivalent delivery cost of the selected method — CreateOrderUseCase
+  // adds it to the item total before applying the deposit percentage, so the
+  // displayed pay-now/pending must include it too.
+  deliveryCost?: number;
 }
 
 export function CheckoutSummary({
   items,
   paymentType = "FULL",
   depositPercent = 100,
+  deliveryCost = 0,
 }: CheckoutSummaryProps) {
   const t = useTranslations("storefront.checkoutPage");
 
-  const total = cartTotal(items);
+  const total = cartTotal(items) + deliveryCost;
   const isPartial = paymentType === "PARTIAL" && depositPercent < 100;
   const payNow = isPartial ? total * (depositPercent / 100) : total;
   const pending = isPartial ? total - payNow : 0;

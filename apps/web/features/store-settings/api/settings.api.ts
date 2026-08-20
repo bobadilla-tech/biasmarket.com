@@ -113,52 +113,6 @@ export const settingsApi = {
     details: Record<string, unknown>,
   ) => apiClient.paymentConfig.upsert(storeId, { method, details }),
 
-  saveDepositPercent: async (
-    storeId: string,
-    method: string,
-    depositPercent: number,
-  ) => {
-    // Until openapi.json is regenerated with the new fields, use raw fetch
-    // to pass them through — same pattern as the multipart carve-outs.
-    const apiUrl =
-      process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
-    const res = await fetch(`${apiUrl}/api/stores/${storeId}/payment-methods`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ method, depositPercent }),
-    });
-    const data = await res.json().catch(() => null);
-    if (!res.ok) {
-      throw new Error(data?.message ?? "Network error");
-    }
-    return data;
-  },
-
-  // Multipart — same carve-out as products' image uploads / stores'
-  // uploadLogo (see apps/web/AGENTS.md's OpenAPI note).
-  async uploadPaymentQrImage(
-    storeId: string,
-    method: "YAPE" | "PLIN",
-    file: File,
-    fallbackErrorMessage?: string,
-  ) {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const apiUrl =
-      process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
-    const res = await fetch(
-      `${apiUrl}/api/stores/${storeId}/payment-methods/${method}/qr-image`,
-      { method: "POST", credentials: "include", body: formData },
-    );
-    const data = await res.json().catch(() => null);
-    if (!res.ok) {
-      throw new Error(data?.message ?? fallbackErrorMessage ?? "Network error");
-    }
-    return data as { details: { qrImageUrl?: string } };
-  },
-
   // A type with no override row resolves to null — callers fall back to the
   // hardcoded default template.
   async getWhatsAppTemplates(storeId: string) {
