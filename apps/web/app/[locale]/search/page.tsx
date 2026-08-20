@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { Locale } from "next-intl";
 import { getTranslations } from "next-intl/server";
+import { canonicalUrl } from "@/lib/site-config";
 import { ProductSearchPageClient } from "./search-page-client";
 
 export async function generateMetadata({
@@ -16,6 +17,7 @@ export async function generateMetadata({
   return {
     title: t("title"),
     robots: { index: false, follow: true },
+    alternates: { canonical: canonicalUrl(locale, "/search") },
   };
 }
 

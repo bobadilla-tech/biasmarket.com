@@ -7,7 +7,15 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
       disallow: [
-        "/*/login",
+        "/en/account$",
+        "/es/account$",
+        // Anchored+literal, not "/*/login": Google's robots.txt "*" matches
+        // any sequence including "/", so a wildcarded "/*/login" also
+        // matches /store/[slug]/account/login (the storefront buyer login
+        // page, which the 2026-08-14 plan explicitly kept indexable). Same
+        // collision class already fixed once for /account above.
+        "/en/login$",
+        "/es/login$",
         "/*/onboarding",
         "/*/onboarding/*",
         "/*/dashboard",

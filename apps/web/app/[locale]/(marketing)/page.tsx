@@ -3,6 +3,7 @@ import type { Locale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { getHomeDiscoveryData } from "@/features/discovery/server";
 import { LandingPage } from "@/features/landing";
+import { canonicalUrl } from "@/lib/site-config";
 
 export async function generateMetadata({
   params,
@@ -16,6 +17,7 @@ export async function generateMetadata({
   return {
     title,
     description,
+    alternates: { canonical: canonicalUrl(locale, "") },
     openGraph: {
       title,
       description,

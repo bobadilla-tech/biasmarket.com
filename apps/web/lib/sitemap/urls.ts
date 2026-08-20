@@ -1,18 +1,21 @@
 import type { MetadataRoute } from "next";
 import { routing } from "@/i18n/routing";
-import { SITE_URL } from "@/lib/site-config";
+import { canonicalUrl } from "@/lib/site-config";
 
 export function localizedUrl(locale: string, path: string): string {
-  return `${SITE_URL}/${locale}${path}`;
+  return canonicalUrl(locale, path);
 }
 
 export function alternates(
   path: string,
 ): NonNullable<MetadataRoute.Sitemap[number]["alternates"]> {
   return {
-    languages: Object.fromEntries(
-      routing.locales.map((locale) => [locale, localizedUrl(locale, path)]),
-    ),
+    languages: {
+      ...Object.fromEntries(
+        routing.locales.map((locale) => [locale, localizedUrl(locale, path)]),
+      ),
+      "x-default": localizedUrl(routing.defaultLocale, path),
+    },
   };
 }
 
