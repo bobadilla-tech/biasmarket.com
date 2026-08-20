@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { Locale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { canonicalUrl } from "@/lib/site-config";
 import { StoreLogo } from "@/components/store-logo";
 import { ProductDetailView } from "./product-detail-view";
 
@@ -27,12 +28,17 @@ async function getPublicProduct(slug: string, productId: string) {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string; productId: string }>;
+  params: Promise<{ locale: Locale; slug: string; productId: string }>;
 }): Promise<Metadata> {
-  const { slug, productId } = await params;
+  const { locale, slug, productId } = await params;
   const data = await getPublicProduct(slug, productId);
   if (!data || data.product?.discontinued) return {};
-  return { title: data.product.name };
+  return {
+    title: data.product.name,
+    alternates: {
+      canonical: canonicalUrl(locale, `/store/${slug}/product/${productId}`),
+    },
+  };
 }
 
 export default async function ProductDetailPage({

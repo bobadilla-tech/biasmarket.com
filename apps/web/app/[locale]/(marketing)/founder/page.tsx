@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { Locale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { FounderPage } from "@/components/marketing/founder-page";
+import { canonicalUrl } from "@/lib/site-config";
 
 export async function generateMetadata({
   params,
@@ -16,6 +17,7 @@ export async function generateMetadata({
   return {
     title: t("meta.title"),
     description: t("meta.description"),
+    alternates: { canonical: canonicalUrl(locale, "/founder") },
   };
 }
 

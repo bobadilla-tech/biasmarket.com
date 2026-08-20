@@ -3,7 +3,7 @@ import type { Locale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { CartLink } from "./cart-link";
 import { isProductOutOfStock } from "@/features/discovery/lib/product-stock";
-import { SITE_URL } from "@/lib/site-config";
+import { SITE_URL, canonicalUrl } from "@/lib/site-config";
 import { StoreLogo } from "@/components/store-logo";
 import { ProductCard } from "@/components/storefront/product-card";
 import { StoreSectionRenderer } from "@/components/storefront/section-renderer";
@@ -95,9 +95,9 @@ function StoreSocialLinks({ store }: { store: any }) {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ locale: Locale; slug: string }>;
 }): Promise<Metadata> {
-  const { slug } = await params;
+  const { locale, slug } = await params;
   const store = await getStore(slug);
 
   if (!store) return { robots: { index: false, follow: false } };
@@ -110,6 +110,7 @@ export async function generateMetadata({
   return {
     title: store.name,
     description,
+    alternates: { canonical: canonicalUrl(locale, `/store/${slug}`) },
     openGraph: {
       title: store.name,
       description,
