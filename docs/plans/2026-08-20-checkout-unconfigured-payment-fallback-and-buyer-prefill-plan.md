@@ -19,11 +19,12 @@ Confirmed by reading the live code, not assumed:
 
 - `PaymentMethodConfig` (`packages/db/prisma/schema.prisma:416-430`) has
   `enabled: Boolean` and `details: Json`. **`enabled` does not mean "configured
-  with real account info"** — `PaymentConfigService.upsert`
-  (`apps/api/src/modules/payment-config/payment-config.service.ts:46-52`)
-  defaults `details` to `{}` on create whenever the seller's request omits
-  `details` (i.e. a plain enable/disable toggle), so a row can be
-  `enabled: true` with an empty `details: {}`.
+  with real account info"** — `PaymentConfigService.normalizeDetails`
+  (`apps/api/src/modules/payment-config/payment-config.service.ts:68-102`, the
+  `if (!details) return {}` branch around line 72) defaults `details` to `{}` on
+  create whenever the seller's request omits `details` (i.e. a plain
+  enable/disable toggle), so a row can be `enabled: true` with an empty
+  `details: {}`.
 - The storefront already detects this per-method, but only to render a warning
   banner. `PaymentMethodDetails`
   (`apps/web/features/checkout/components/payment-method-details.tsx`): TRANSFER
@@ -155,7 +156,12 @@ into a shared, pure function so client and server (and any future call site)
 agree on one definition:
 
 ```ts
-// packages/utils/src/payment-methods.ts (new file)
+// packages/utils/src/payment-methods/index.ts (new file — not a flat file:
+// every existing module in this package is a directory with an index.ts,
+// e.g. src/whatsapp/, src/phone-country/ — package.json's `exports` map
+// ("./*": "./dist/*/index.js") only resolves that shape. A flat
+// src/payment-methods.ts would compile to dist/payment-methods.js, which
+// `@biasmarket/utils/payment-methods` cannot resolve.)
 export type CheckoutPaymentMethod = "YAPE" | "PLIN" | "TRANSFER" | "CASH";
 
 export function isPaymentMethodConfigured(
@@ -186,6 +192,14 @@ already the shared-pure-functions package per `CLAUDE.md`, importable from both
 **Backend**
 (`apps/api/src/modules/orders/infrastructure/checkout.controller.ts`):
 
+0. **`OrdersModule` does not import `PaymentConfigModule` today** — confirmed:
+   `apps/api/src/modules/orders/orders.module.ts`'s `imports` array is only
+   `[ThrottlerModule.forRoot(...), NotificationsModule]`, and
+   `PaymentConfigService` is not `@Global()` (only exported from
+   `PaymentConfigModule`). Add `PaymentConfigModule` to `OrdersModule.imports`
+   before injecting the service, or Nest throws a DI resolution error at
+   bootstrap. `PaymentConfigModule` itself imports nothing, so this creates no
+   circular-dependency risk.
 1. Inject `PaymentConfigService`
    (`apps/api/src/modules/payment-config/payment-config.service.ts`) into
    `CheckoutController` — it already exposes `findEnabledForSlug(slug)` (used
@@ -196,6 +210,17 @@ already the shared-pure-functions package per `CLAUDE.md`, importable from both
    `dto.paymentMethod`, and compute
    `configured = row ?
 isPaymentMethodConfigured(row.method, row.details) : false`.
+   **Deliberate decision on timing**: this read happens in the controller,
+   before `CreateOrderUseCase.execute()`'s transaction, not inside it — unlike
+   the `PickupPoint` `FOR UPDATE` lock pattern documented inside that
+   transaction. This is a conscious deviation, not an oversight: the
+   payment-config check only gates whether a proof upload is required, never
+   money or inventory, so the narrow race (seller finishes configuring the
+   method in the few hundred ms between this read and order creation) has
+   near-zero blast radius — worst case, one order goes through without a proof
+   that could technically have been collected, which is exactly the experience
+   this plan is building anyway for the general unconfigured case. Moving it
+   inside the transaction is not worth the added complexity here.
 3. Replace `REQUIRES_PROOF(dto.paymentMethod)` with
    `REQUIRES_PROOF(dto.paymentMethod) && configured`. An order for an
    unconfigured (or, defensively, no-longer-enabled) method now creates
@@ -213,37 +238,61 @@ isPaymentMethodConfigured(row.method, row.details) : false`.
 1. In `checkout-form.tsx`, compute
    `const selectedMethodConfigured = selectedPaymentConfig ? isPaymentMethodConfigured(selectedPaymentConfig.method, selectedPaymentConfig.details) : true;`
    right after the existing `selectedPaymentConfig` derivation (line 227-229).
+   1a. **Default-selection should prefer a configured method.** The existing
+   auto-select effect (`checkout-form.tsx:208-210`,
+   `if (paymentMethods[0] && !form.getValues("paymentMethod")) form.setValue("paymentMethod", paymentMethods[0].method)`)
+   picks purely by array order today — once unconfigured methods can be selected
+   and submitted, a store listing YAPE (unconfigured) before TRANSFER
+   (configured) would silently default new buyers into the WhatsApp-coordination
+   path even though an in-app-trackable method exists. Change the default to
+   `paymentMethods.find((m) => isPaymentMethodConfigured(m.method, m.details)) ?? paymentMethods[0]`
+   so a configured method wins when one exists, falling back to the first method
+   (whatever it is) only when none are configured.
 2. Only mount the `PaymentProofUpload` block (`checkout-form.tsx:611-637`) when
    `paymentMethod && paymentMethod !==
-"CASH" && selectedMethodConfigured`.
-   When a method is selected but unconfigured, the block simply doesn't render —
-   the `NotConfiguredBanner` from `PaymentMethodDetails` right above it (already
+"CASH" && selectedMethodConfigured`. When
+   a method is selected but unconfigured, the block simply doesn't render — the
+   `NotConfiguredBanner` from `PaymentMethodDetails` right above it (already
    rendering, line 607-609) is the only messaging needed; don't add a second,
    redundant notice.
 3. Update `buildCheckoutFormSchema`'s proof-required `.refine`
    (`checkout.schema.ts:79-86`) to take a new parameter —
-   `unconfiguredManualMethods: ReadonlySet<CheckoutPaymentMethod>` (computed in
-   `checkout-form.tsx` from `paymentMethods` + `isPaymentMethodConfigured`,
-   passed into `buildCheckoutFormSchema(...)` alongside the two existing
-   booleans) — and skip the "proof required" rule when
-   `unconfiguredManualMethods.has(data.paymentMethod)`.
+   `unconfiguredManualMethods: ReadonlySet<CheckoutPaymentMethod> = new Set()`
+   (computed in `checkout-form.tsx` from `paymentMethods` +
+   `isPaymentMethodConfigured`, passed into `buildCheckoutFormSchema(...)`
+   alongside the two existing booleans) — and skip the "proof required" rule
+   when `unconfiguredManualMethods.has(data.paymentMethod)`. **Give it a
+   default, same as `pointsRequiringDate`'s existing `= new Set()`**:
+   `checkout.schema.test.ts` calls this function with 2-3 positional args in
+   roughly 18 places today; a required 4th parameter would break every one of
+   those call sites with `TS2554` (verified — a parameter after a defaulted one
+   is still required unless it also has a default). Add
+   `checkout.schema.test.ts` to "Files likely touched" below — it directly
+   exercises this signature and needs new cases even with the default in place.
 4. Update the submit button's `disabled` proof check (`checkout-form.tsx:697`)
    the same way: replace
    `(paymentMethod !== "" && paymentMethod !== "CASH" && !paymentProof)` with
    `(paymentMethod !== "" && paymentMethod !== "CASH" &&
 selectedMethodConfigured && !paymentProof)`.
-5. **CTA copy**: when a method is selected but unconfigured, the button
-   text/subtext should stop implying a proof upload. Add two new i18n keys (es +
-   en) — e.g. `submitCoordinate` ("Confirmar pedido") and
-   `submitSubtextCoordinate` ("Te contactaremos por WhatsApp para coordinar el
-   pago.") — and pick between them and the existing `submit`/ `submitSubtext`
-   based on `selectedMethodConfigured` (or `paymentMethod ===
-"CASH"`, which
-   already needs no proof and keeps its current copy — decide final wording per
-   method type, but the unconfigured-manual-method case is the one that must
-   change). Keep the existing `MessageCircle` icon; no new icon needed. Do not
-   add a second button — one CTA, its label/subtext adapts, exactly matching how
-   the disabled logic already adapts.
+5. **CTA copy**: the button _label_ (`submit`/`submitting`) doesn't need to
+   change — only the _subtext_ below it is wrong for two cases today. Only the
+   subtext branches three ways now:
+   - Configured manual method (YAPE/PLIN/TRANSFER with real details): keep
+     existing `submitSubtext` ("Adjunta tu comprobante y confirma el pedido.").
+   - Unconfigured manual method (this plan's new case): new
+     `submitSubtextCoordinate` key, e.g. "Te contactaremos por WhatsApp para
+     coordinar el pago." (es + en).
+   - CASH: **also currently wrong** — `submitSubtext` renders unconditionally
+     today, including for CASH, which never requires a proof; since this step is
+     already branching the subtext by proof-requirement state, fixing this in
+     the same pass is cheap. New `submitSubtextCash` key, or reuse existing
+     pickup/cash-note copy if one already fits (check `cashPaymentNote` in
+     `storefront.json` for reusable wording first). Do not add a
+     `submitCoordinate` label key — it would be character-for-character
+     identical to the existing `submit` value ("Confirmar pedido"), so only the
+     subtext needs a new key per branch. Keep the existing `MessageCircle` icon;
+     no new icon needed. Do not add a second button — one CTA, its subtext
+     adapts, exactly matching how the disabled logic already adapts.
 6. The order is still created normally through the existing `useSubmitCheckout`
    mutation and `onOrderCreated` callback — no new pre-submit WhatsApp deep link
    is needed here. The buyer's post-submit path (in-app confirmation screen +
@@ -283,15 +332,28 @@ selectedMethodConfigured && !paymentProof)`.
 3. Fields stay fully editable — this is a `setValue` prefill, not a
    `disabled`/read-only field, satisfying the "buyer can still use a different
    contact for this one order" requirement directly.
-4. **Verify before assuming compatible formats**: `Customer.phone`
-   (`packages/db/prisma/schema.prisma:489-506`) is stored in whatever format
-   `customer-auth`'s registration flow normalizes it to; `customerPhone` is
-   rendered through `PhoneInput` (`apps/web/components/ui/phone-input.tsx` — not
-   read during this investigation). Confirm `PhoneInput`'s expected `value`
-   shape matches `Customer.phone`'s stored format before wiring this up; if they
-   differ (e.g. one includes a country-code prefix the other doesn't), a small
-   normalization step is needed at the prefill site — don't assume a silent
-   match.
+4. **Phone-format compatibility — resolved, no normalization needed.** Verified:
+   `PhoneInput` (`apps/web/components/ui/phone-input.tsx`) always
+   produces/consumes `${dialCode}${nationalNumber}` (e.g. `+51987654321`) via
+   `parsePhoneValue` (`packages/utils/src/phone-country/index.ts`).
+   `Customer.phone` is always written through `normalizePhone()`
+   (`apps/api/src/modules/orders/application/customer-account.service.ts:171`,
+   called from `findOrCreateCustomer`), which produces the exact same shape via
+   the same `parsePhoneValue` helper.
+   `form.setValue("customerPhone",
+   customer.phone)` is safe as-is — no extra
+   normalization step needed at the prefill site.
+5. `apps/web/features/checkout/components/checkout-form.test.tsx`'s
+   `vi.mock("@/lib/api-client", ...)` currently stubs `publicDeliveryConfig`,
+   `publicPickupPoints`, `publicPaymentConfig`, `addresses`, `stores` — no
+   `customerAuth` entry. Once `CheckoutForm` calls `useCustomerProfile` (step 1
+   above), every existing test in this file renders a component calling
+   `apiClient.customerAuth.me`, which is `undefined` on the current mock and
+   will throw. Add a
+   `customerAuth: { me: vi.fn().mockRejectedValue(new Error("not authenticated")) }`
+   entry to the mock — the file already has this exact pattern for
+   `findAddresses` (explicitly commented as matching "a real guest/logged-out
+   buyer's 401"), so mirror it rather than inventing a new convention.
 
 ## Feature — payment-method setup nudge
 
@@ -340,27 +402,40 @@ selectedMethodConfigured && !paymentProof)`.
 
 ## Files likely touched
 
-- `packages/utils/src/payment-methods.ts` (new) + its barrel export
+- `packages/utils/src/payment-methods/index.ts` (new, directory form — see
+  Decision above) + its barrel export
 - `apps/web/features/checkout/components/payment-method-details.tsx` (use the
   extracted function instead of inline checks)
 - `apps/web/features/checkout/components/checkout-form.tsx`
+- `apps/web/features/checkout/components/checkout-form.test.tsx` (add
+  `customerAuth.me` mock entry, add default-selection-prefers-configured case,
+  add unconfigured-method-skips-proof case)
 - `apps/web/features/checkout/schemas/checkout.schema.ts`
+- `apps/web/features/checkout/schemas/checkout.schema.test.ts` (new cases for
+  `unconfiguredManualMethods`; existing 2-3 arg call sites keep compiling once
+  the new param has a default)
+- `apps/api/src/modules/orders/orders.module.ts` (add `PaymentConfigModule` to
+  `imports`)
 - `apps/api/src/modules/orders/infrastructure/checkout.controller.ts`
 - `apps/web/features/store-settings/components/payments-section.tsx`
 - i18n: `packages/i18n/es/storefront.json`, `packages/i18n/en/storefront.json`
   (submit/subtext keys), `packages/i18n/es/dashboard.json`,
   `packages/i18n/en/dashboard.json` (settings banner keys)
-- Existing tests likely needing updates:
-  `apps/web/features/checkout/components/checkout-form.test.tsx` (or
-  equivalent),
-  `apps/api/src/modules/orders/infrastructure/checkout.controller.spec.ts` or
-  `.e2e-spec.ts` — check both before assuming file names/paths.
 - Optional doc-drift cleanup: `docs/core/security-payments.md` §9,
   `apps/api/src/modules/orders/domain/order-status.vo.ts:9-11` comment.
 
+**No existing test currently covers `CheckoutController`/`REQUIRES_PROOF` at
+all** — confirmed, there is no unit spec or e2e-spec for this controller today.
+This plan needs a from-scratch test, not an update to an existing one. Write it
+as an **e2e-spec** (`checkout.e2e-spec.ts`, real `AppModule`, real DB, per
+`vitest.config.e2e.ts`), not a unit spec — `CreateOrderUseCase.execute` uses
+`$transaction` plus a raw `$queryRaw` row lock for the pickup-point path, which
+is impractical to fully mock through this repo's stubbed-`PrismaService`
+unit-test convention.
+
 ## Verification
 
-- `pnpm --filter api test` — new/updated checkout controller cases: proof not
+- `pnpm --filter api test:e2e` — new `checkout.e2e-spec.ts` cases: proof not
   required when method enabled-but-unconfigured; still required when configured;
   unaffected for CASH and for no-method-selected.
 - `pnpm exec vitest run features/checkout features/store-settings` (from
