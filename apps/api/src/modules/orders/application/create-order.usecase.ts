@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@biasmarket/db';
-import type { PickupPoint, ProductVariant } from '@biasmarket/db';
+import type { CourierConfig, PickupPoint, ProductVariant } from '@biasmarket/db';
 import {
   buildWhatsAppOrderMessage,
   buildWhatsAppUrl,
@@ -85,6 +85,45 @@ export class CreateOrderUseCase {
     });
     if (!deliveryConfig?.enabled) {
       throw new BadRequestException('Método de entrega no disponible');
+    }
+
+    // COURIER orders now require a seller-defined courier name and modality
+    // (issue #99). Look up the courier + modality config outside the
+    // transaction to validate; the actual price is read inside the tx with a
+    // lock to prevent a stale read.
+    let courierConfig: CourierConfig | null = null;
+    if (dto.deliveryMethodType === "COURIER") {
+      if (!dto.courierName) {
+        throw new BadRequestException(
+          "Debes seleccionar un courier para envío a domicilio",
+        );
+      }
+      if (!dto.courierModality) {
+        throw new BadRequestException(
+          "Debes seleccionar una modalidad (Agencia o Domicilio)",
+        );
+      }
+      const courier = await this.prisma.courier.findFirst({
+        where: {
+          storeId: store.id,
+          name: dto.courierName,
+          enabled: true,
+        },
+        include: {
+          configs: {
+            where: {
+              modality: dto.courierModality,
+              enabled: true,
+            },
+          },
+        },
+      });
+      if (!courier || courier.configs.length === 0) {
+        throw new BadRequestException(
+          "El courier seleccionado no está disponible para esta tienda",
+        );
+      }
+      courierConfig = courier.configs[0];
     }
 
     // Whether this store even has enabled pickup points decides if a
@@ -318,11 +357,15 @@ export class CreateOrderUseCase {
           });
         }
 
-        const details = deliveryConfig.details as Record<
-          string,
-          unknown
-        > | null;
-        const deliveryCost = Number(details?.estimatedCost ?? 0);
+        // Delivery cost comes from the courier's modality config (issue #99)
+        // when available, falling back to the legacy estimatedCost in
+        // DeliveryMethodConfig.details for backward compatibility.
+        const deliveryCost = courierConfig
+          ? Number(courierConfig.price)
+          : Number(
+            (deliveryConfig.details as Record<string, unknown> | null)
+              ?.estimatedCost ?? 0,
+          );
         // `items` has `@ArrayMinSize(1)` (create-order.dto.ts) — the loop
         // above always runs at least once, so `totalAmount` is always set by
         // this point; the `| undefined` in its declared type only exists to
@@ -385,13 +428,16 @@ export class CreateOrderUseCase {
                 }
               : dto.deliveryMethodType === 'COURIER'
                 ? {
-                    ...((deliveryConfig.details as Record<string, unknown>) ??
-                      {}),
+                    ...(courierConfig
+                      ? { courierName: dto.courierName, courierModality: dto.courierModality, deliveryCost: Number(courierConfig.price) }
+                      : (deliveryConfig.details as Record<string, unknown>) ?? {}),
                     shippingAddress: { ...dto.shippingAddress },
                   }
                 : (deliveryConfig.details ?? {}),
             pickupPointId: pickupPoint?.id ?? null,
             pickupDate,
+            courierName: dto.courierName ?? null,
+            courierModality: dto.courierModality ?? null,
             totalAmount: finalAmount,
             requiredAmount,
             currency: currency!,

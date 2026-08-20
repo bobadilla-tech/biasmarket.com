@@ -105,6 +105,7 @@ model Store {
   paymentMethods    PaymentMethodConfig[]
   deliveryMethods   DeliveryMethodConfig[]
   pickupPoints      PickupPoint[]
+  couriers          Courier[]
   notifications     Notification[]
   restockRequests   RestockRequest[]
   whatsappTemplates WhatsAppMessageTemplate[]
@@ -276,6 +277,14 @@ model Order {
   deliveryMethodType     DeliveryMethodType
   deliveryDetails        Json
   pickupPointId          String?
+  // Snapshot of the courier name at order-creation time (seller-defined,
+  // e.g. "Olva"). Null for PICKUP orders or legacy COURIER orders created
+  // before this field existed.
+  courierName            String?
+  // Snapshot of the selected courier modality: AGENCY (recojo en agencia)
+  // or HOME (envío a domicilio). Null for PICKUP orders or legacy COURIER
+  // orders.
+  courierModality        CourierModalityType?
   // Set only when the buyer chose a pickup point that isn't open today —
   // the future date they committed to, validated against that point's
   // openDays at checkout. Null for same-day pickup (today is implied).
@@ -440,6 +449,44 @@ model DeliveryMethodConfig {
 
   @@unique([storeId, type])
   @@index([storeId])
+}
+
+// Per-store courier (seller-defined name, e.g. "Olva", "Shalom").
+// Each courier has 1-2 CourierConfig rows (AGENCY and/or HOME) defining
+// price per modality. See issue #99.
+model Courier {
+  id        String   @id @default(cuid())
+  storeId   String
+  name      String
+  enabled   Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  store     Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  configs   CourierConfig[]
+
+  @@unique([storeId, name])
+  @@index([storeId])
+}
+
+enum CourierModalityType {
+  AGENCY
+  HOME
+}
+
+// Per-courier modality pricing: AGENCY = recojo en agencia, HOME = envío a
+// domicilio. A courier may have one or both modalities.
+model CourierConfig {
+  id        String             @id @default(cuid())
+  courierId String
+  modality  CourierModalityType
+  price     Decimal            @db.Decimal(10, 2)
+  enabled   Boolean            @default(true)
+
+  courier Courier @relation(fields: [courierId], references: [id], onDelete: Cascade)
+
+  @@unique([courierId, modality])
+  @@index([courierId])
 }
 
 enum WhatsAppMessageType {
