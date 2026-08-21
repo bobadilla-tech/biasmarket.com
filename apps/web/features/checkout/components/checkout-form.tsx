@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 import {
   Banknote,
   Check,
+  Home,
   Landmark,
   MessageCircle,
   Percent,
@@ -131,6 +132,7 @@ export function CheckoutForm({
   const methods = deliveryOptions.data?.methods ?? [];
   const points = deliveryOptions.data?.points ?? [];
   const paymentMethods = deliveryOptions.data?.paymentMethods ?? [];
+  const couriers = deliveryOptions.data?.couriers ?? [];
   const deliveryMethodsLoaded = !deliveryOptions.isPending;
   const mixedCurrencies = hasMixedCurrencies(items);
 
@@ -188,13 +190,22 @@ export function CheckoutForm({
       pickupDate: "",
       paymentMethod: "",
       paymentType: "FULL",
+      courierName: "",
+      courierModality: "",
       shippingRecipientName: "",
+      shippingRecipientSurnames: "",
       shippingPhone: "",
+      shippingDocumentType: "",
+      shippingDocumentNumber: "",
+      shippingDepartment: "",
+      shippingProvince: "",
+      shippingDistrict: "",
       shippingLine1: "",
       shippingLine2: "",
       shippingCity: "",
       shippingRegion: "",
       shippingReference: "",
+      shippingAgencyName: "",
       paymentProof: null,
     },
   });
@@ -234,6 +245,8 @@ export function CheckoutForm({
 
   const customerPhone = form.watch("customerPhone");
   const deliveryMethodType = form.watch("deliveryMethodType");
+  const courierName = form.watch("courierName");
+  const courierModality = form.watch("courierModality");
   const pickupPointId = form.watch("pickupPointId");
   const pickupDate = form.watch("pickupDate");
   const paymentMethod = form.watch("paymentMethod");
@@ -246,6 +259,7 @@ export function CheckoutForm({
   const shippingPhone = form.watch("shippingPhone");
   const shippingLine1 = form.watch("shippingLine1");
   const shippingCity = form.watch("shippingCity");
+  const shippingAgencyName = form.watch("shippingAgencyName");
 
   // Compute the deposit percentage for the selected payment method
   const depositPercent = useMemo(() => {
@@ -259,9 +273,16 @@ export function CheckoutForm({
   // `Number(details?.estimatedCost ?? 0)` the use case applies before
   // computing requiredAmount.
   const deliveryCost = useMemo(() => {
+    if (deliveryMethodType === "COURIER" && courierName && courierModality) {
+      const courier = couriers.find((c) => c.name === courierName);
+      const modality = courier?.modalities.find(
+        (m) => m.modality === courierModality,
+      );
+      return Number(modality?.price ?? 0);
+    }
     const selectedDelivery = methods.find((m) => m.type === deliveryMethodType);
     return Number(selectedDelivery?.details?.estimatedCost ?? 0);
-  }, [methods, deliveryMethodType]);
+  }, [methods, deliveryMethodType, couriers, courierName, courierModality]);
 
   // Whether partial payment is available: only a non-CASH electronic method
   // with an existing configuration that explicitly lowers the deposit below
@@ -383,14 +404,36 @@ export function CheckoutForm({
       customerPhone: values.customerPhone,
       customerEmail: values.customerEmail,
       paymentProof: values.paymentProof,
+      courierName:
+        values.deliveryMethodType === "COURIER"
+          ? values.courierName
+          : undefined,
+      courierModality:
+        values.deliveryMethodType === "COURIER"
+          ? (values.courierModality as "AGENCY" | "HOME")
+          : undefined,
       shippingAddress:
         values.deliveryMethodType === "COURIER"
           ? {
               recipientName: values.shippingRecipientName,
+              recipientSurnames: values.shippingRecipientSurnames || undefined,
               phone: values.shippingPhone,
-              line1: values.shippingLine1,
+              documentType: (values.shippingDocumentType || undefined) as
+                "DNI" | "PASSPORT" | undefined,
+              documentNumber: values.shippingDocumentNumber || undefined,
+              department: values.shippingDepartment || undefined,
+              province: values.shippingProvince || undefined,
+              district: values.shippingDistrict || undefined,
+              agencyName:
+                values.courierModality === "AGENCY"
+                  ? values.shippingAgencyName
+                  : undefined,
+              line1:
+                values.courierModality === "HOME"
+                  ? values.shippingLine1
+                  : undefined,
               line2: values.shippingLine2 || undefined,
-              city: values.shippingCity,
+              city: values.shippingCity || undefined,
               region: values.shippingRegion || undefined,
               reference: values.shippingReference || undefined,
             }
@@ -566,25 +609,138 @@ export function CheckoutForm({
 
         {deliveryMethodType === "COURIER" && (
           <div className="flex flex-col gap-3">
-            <div className="flex items-start gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
-              <Truck className="store-theme-active-text size-5 shrink-0" />
-              <p>{t("courierNote")}</p>
-            </div>
+            {couriers.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  {t("courierSelectLabel")}
+                </span>
+                <select
+                  className={inputClassName}
+                  aria-label={t("courierSelectLabel")}
+                  value={courierName}
+                  onChange={(e) => {
+                    form.setValue("courierName", e.target.value, {
+                      shouldValidate: true,
+                    });
+                    form.setValue("courierModality", "", {
+                      shouldValidate: true,
+                    });
+                  }}
+                >
+                  <option value="">{t("courierSelectPlaceholder")}</option>
+                  {couriers.map((c) => (
+                    <option key={c.name} value={c.name}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+                {form.formState.errors.courierName && (
+                  <p className="text-sm text-red-500">
+                    {t("courierSelectRequired")}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {courierName &&
+              (() => {
+                const courier = couriers.find((c) => c.name === courierName);
+                const modalities = courier?.modalities ?? [];
+                if (modalities.length === 0) return null;
+                return (
+                  <div className="flex flex-col gap-2">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                      {t("courierModalityLabel")}
+                    </span>
+                    <div className="grid grid-cols-2 gap-3">
+                      {modalities.some((m) => m.modality === "AGENCY") && (
+                        <SelectableCard
+                          selected={courierModality === "AGENCY"}
+                          onSelect={() =>
+                            form.setValue("courierModality", "AGENCY", {
+                              shouldValidate: true,
+                            })
+                          }
+                          icon={<Store className="size-5" />}
+                          title={t("courierModalityAgency")}
+                        />
+                      )}
+                      {modalities.some((m) => m.modality === "HOME") && (
+                        <SelectableCard
+                          selected={courierModality === "HOME"}
+                          onSelect={() =>
+                            form.setValue("courierModality", "HOME", {
+                              shouldValidate: true,
+                            })
+                          }
+                          icon={<Home className="size-5" />}
+                          title={t("courierModalityHome")}
+                        />
+                      )}
+                    </div>
+                    {form.formState.errors.courierModality && (
+                      <p className="text-sm text-red-500">
+                        {t("courierModalityRequired")}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
+
+            {courierModality === "AGENCY" && (
+              <>
+                <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  {t("courierAgencyNote")}
+                </span>
+                <input
+                  placeholder={t("shippingAgencyNamePlaceholder")}
+                  className={inputClassName}
+                  {...form.register("shippingAgencyName")}
+                />
+                {form.formState.errors.shippingAgencyName && (
+                  <p className="text-sm text-red-500">
+                    {t("courierAgencyNameRequired")}
+                  </p>
+                )}
+              </>
+            )}
 
             <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-              {t("shippingAddressLabel")}
+              {courierModality === "HOME"
+                ? t("shippingAddressLabel")
+                : t("courierModalityAgency")}
             </span>
 
-            <input
-              placeholder={t("shippingRecipientNamePlaceholder")}
-              className={inputClassName}
-              {...form.register("shippingRecipientName")}
-            />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <input
+                placeholder={t("shippingRecipientNamePlaceholder")}
+                className={inputClassName}
+                {...form.register("shippingRecipientName")}
+              />
+              <input
+                placeholder={t("shippingRecipientSurnamesPlaceholder")}
+                className={inputClassName}
+                {...form.register("shippingRecipientSurnames")}
+              />
+            </div>
             {form.formState.errors.shippingRecipientName && (
               <p className="text-sm text-red-500">
                 {t("shippingRecipientNameRequired")}
               </p>
             )}
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <input
+                placeholder={t("shippingDocumentTypePlaceholder")}
+                className={inputClassName}
+                {...form.register("shippingDocumentType")}
+              />
+              <input
+                placeholder={t("shippingDocumentNumberPlaceholder")}
+                className={inputClassName}
+                {...form.register("shippingDocumentNumber")}
+              />
+            </div>
 
             <input
               placeholder={t("shippingPhonePlaceholder")}
@@ -597,46 +753,68 @@ export function CheckoutForm({
               </p>
             )}
 
-            <input
-              placeholder={t("shippingLine1Placeholder")}
-              className={inputClassName}
-              {...form.register("shippingLine1")}
-            />
-            {form.formState.errors.shippingLine1 && (
-              <p className="text-sm text-red-500">
-                {t("shippingLine1Required")}
-              </p>
-            )}
-
-            <input
-              placeholder={t("shippingLine2Placeholder")}
-              className={inputClassName}
-              {...form.register("shippingLine2")}
-            />
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <input
-                placeholder={t("shippingCityPlaceholder")}
+                placeholder={t("shippingDepartmentPlaceholder")}
                 className={inputClassName}
-                {...form.register("shippingCity")}
+                {...form.register("shippingDepartment")}
               />
               <input
-                placeholder={t("shippingRegionPlaceholder")}
+                placeholder={t("shippingProvincePlaceholder")}
                 className={inputClassName}
-                {...form.register("shippingRegion")}
+                {...form.register("shippingProvince")}
+              />
+              <input
+                placeholder={t("shippingDistrictPlaceholder")}
+                className={inputClassName}
+                {...form.register("shippingDistrict")}
               />
             </div>
-            {form.formState.errors.shippingCity && (
-              <p className="text-sm text-red-500">
-                {t("shippingCityRequired")}
-              </p>
-            )}
 
-            <input
-              placeholder={t("shippingReferencePlaceholder")}
-              className={inputClassName}
-              {...form.register("shippingReference")}
-            />
+            {courierModality === "HOME" && (
+              <>
+                <input
+                  placeholder={t("shippingLine1Placeholder")}
+                  className={inputClassName}
+                  {...form.register("shippingLine1")}
+                />
+                {form.formState.errors.shippingLine1 && (
+                  <p className="text-sm text-red-500">
+                    {t("shippingAddressRequired")}
+                  </p>
+                )}
+
+                <input
+                  placeholder={t("shippingLine2Placeholder")}
+                  className={inputClassName}
+                  {...form.register("shippingLine2")}
+                />
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <input
+                    placeholder={t("shippingCityPlaceholder")}
+                    className={inputClassName}
+                    {...form.register("shippingCity")}
+                  />
+                  <input
+                    placeholder={t("shippingRegionPlaceholder")}
+                    className={inputClassName}
+                    {...form.register("shippingRegion")}
+                  />
+                </div>
+                {form.formState.errors.shippingCity && (
+                  <p className="text-sm text-red-500">
+                    {t("shippingCityRequired")}
+                  </p>
+                )}
+
+                <input
+                  placeholder={t("shippingReferencePlaceholder")}
+                  className={inputClassName}
+                  {...form.register("shippingReference")}
+                />
+              </>
+            )}
           </div>
         )}
 
@@ -789,10 +967,13 @@ export function CheckoutForm({
           (paymentMethods.length > 0 && !paymentMethod) ||
           (paymentMethod !== "" && paymentMethod !== "CASH" && !paymentProof) ||
           (deliveryMethodType === "COURIER" &&
-            (!shippingRecipientName ||
+            (!courierName ||
+              !courierModality ||
+              !shippingRecipientName ||
               !shippingPhone ||
-              !shippingLine1 ||
-              !shippingCity))
+              (courierModality === "HOME" &&
+                (!shippingLine1 || !shippingCity)) ||
+              (courierModality === "AGENCY" && !shippingAgencyName)))
         }
         className="store-theme-primary-button flex flex-col items-center gap-1 rounded-xl px-5 py-4 transition disabled:opacity-60"
       >

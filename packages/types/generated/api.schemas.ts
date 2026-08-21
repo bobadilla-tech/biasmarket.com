@@ -1119,15 +1119,20 @@ export const CreateOrderDtoPaymentType = {
 export interface ShippingAddressDto {
   /** @minLength 1 */
   recipientName: string;
+  recipientSurnames?: string;
   /** @minLength 6 */
   phone: string;
-  /** @minLength 1 */
-  line1: string;
+  documentType?: "DNI" | "PASSPORT";
+  documentNumber?: string;
+  department?: string;
+  province?: string;
+  district?: string;
+  line1?: string;
   line2?: string;
-  /** @minLength 1 */
-  city: string;
+  city?: string;
   region?: string;
   reference?: string;
+  agencyName?: string;
 }
 
 export interface CreateOrderItemDto {
@@ -1148,6 +1153,8 @@ export interface CreateOrderDto {
   customerPhone: string;
   customerName?: string;
   customerEmail?: string;
+  courierName?: string;
+  courierModality?: string;
   shippingAddress?: ShippingAddressDto;
   /** @minItems 1 */
   items: CreateOrderItemDto[];
