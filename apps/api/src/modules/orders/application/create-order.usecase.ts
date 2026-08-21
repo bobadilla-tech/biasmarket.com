@@ -3,7 +3,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { PickupPoint, Prisma, ProductVariant } from '@biasmarket/db';
+import { Prisma } from '@biasmarket/db';
+import type { PickupPoint, ProductVariant } from '@biasmarket/db';
 import {
   buildWhatsAppOrderMessage,
   buildWhatsAppUrl,
@@ -328,6 +329,40 @@ export class CreateOrderUseCase {
         // satisfy the loop's own incremental-accumulation pattern.
         const finalAmount = totalAmount!.plus(deliveryCost);
 
+        // Calculate requiredAmount based on paymentType and deposit percentage.
+        // PARTIAL is only honored for an enabled, non-CASH method whose config
+        // explicitly sets a deposit below 100 — anything else means the client
+        // offered a partial option it shouldn't have, so reject instead of
+        // silently re-pricing the order as FULL.
+        let requiredAmount = finalAmount;
+        if (dto.paymentType === 'PARTIAL') {
+          const paymentConfig = dto.paymentMethod
+            ? await tx.paymentMethodConfig.findUnique({
+                where: {
+                  storeId_method: {
+                    storeId: store.id,
+                    method: dto.paymentMethod,
+                  },
+                },
+              })
+            : null;
+          if (
+            !paymentConfig ||
+            !paymentConfig.enabled ||
+            paymentConfig.method === 'CASH' ||
+            paymentConfig.depositPercent >= 100
+          ) {
+            throw new BadRequestException(
+              'Este método de pago no soporta pago parcial',
+            );
+          }
+          requiredAmount = finalAmount
+            .times(paymentConfig.depositPercent)
+            .div(100);
+          // Round to 2 decimal places to avoid floating point issues
+          requiredAmount = new Prisma.Decimal(requiredAmount.toFixed(2));
+        }
+
         const expiresAt = new Date(
           Date.now() + store.holdWindowHours * 60 * 60 * 1000,
         );
@@ -358,7 +393,7 @@ export class CreateOrderUseCase {
             pickupPointId: pickupPoint?.id ?? null,
             pickupDate,
             totalAmount: finalAmount,
-            requiredAmount: finalAmount,
+            requiredAmount,
             currency: currency!,
             expiresAt,
             items: { create: itemsData },
@@ -366,17 +401,18 @@ export class CreateOrderUseCase {
           include: { items: true },
         });
 
-        // Attach the buyer's proof as a PENDING_REVIEW payment for the full
-        // order total — it does NOT count toward paidAmount until the seller
-        // approves it (common/payment-summary.ts's `countsTowardPaid`). The
-        // seller notification uses the same dedup-as-an-open-notification
-        // helper as the buyer account's later submit-proof endpoint.
+        // Attach the buyer's proof as a PENDING_REVIEW payment for the
+        // required amount (or full amount if no partial). It does NOT count
+        // toward paidAmount until the seller approves it
+        // (common/payment-summary.ts's `countsTowardPaid`). The seller
+        // notification uses the same dedup-as-an-open-notification helper
+        // as the buyer account's later submit-proof endpoint.
         if (proof?.imageUrl) {
           await tx.orderPayment.create({
             data: {
               orderId: order.id,
               storeId: store.id,
-              amount: finalAmount,
+              amount: requiredAmount,
               currency: order.currency,
               method: dto.paymentMethod,
               imageUrl: proof.imageUrl,
@@ -391,7 +427,7 @@ export class CreateOrderUseCase {
               entityType: 'Order',
               entityId: order.id,
               title: 'Comprobante de pago recibido',
-              body: `El comprador envió un comprobante de ${order.currency} ${finalAmount} para revisar.`,
+              body: `El comprador envió un comprobante de ${order.currency} ${requiredAmount} para revisar.`,
             },
             tx,
           );

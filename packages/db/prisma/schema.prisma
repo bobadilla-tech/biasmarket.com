@@ -414,14 +414,13 @@ enum PaymentMethodType {
 }
 
 model PaymentMethodConfig {
-  id                    String            @id @default(cuid())
-  storeId               String
-  method                PaymentMethodType
-  enabled               Boolean           @default(true)
-  details               Json
-  depositPercentPickup  Int               @default(100)
-  depositPercentCourier Int               @default(100)
-  createdAt             DateTime          @default(now())
+  id             String            @id @default(cuid())
+  storeId        String
+  method         PaymentMethodType
+  enabled        Boolean           @default(true)
+  details        Json
+  depositPercent Int               @default(100)
+  createdAt      DateTime          @default(now())
 
   store Store @relation(fields: [storeId], references: [id])
 

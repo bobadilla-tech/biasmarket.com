@@ -314,6 +314,11 @@
         "accountHolder": "Account holder",
         "accountType": "Account type (optional)",
         "phoneNumber": "Phone number"
+      },
+      "depositPercent": {
+        "label": "Advance percentage",
+        "help": "Percentage the buyer pays upfront at checkout. 20 = pays 20% now, the rest later. 100 = full payment only.",
+        "invalid": "Percentage must be between 1 and 100."
       }
     },
     "delivery": {

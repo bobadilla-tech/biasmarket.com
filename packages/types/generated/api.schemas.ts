@@ -1108,6 +1108,14 @@ export const CreateOrderDtoPaymentMethod = {
   CASH: "CASH",
 } as const;
 
+export type CreateOrderDtoPaymentType =
+  (typeof CreateOrderDtoPaymentType)[keyof typeof CreateOrderDtoPaymentType];
+
+export const CreateOrderDtoPaymentType = {
+  FULL: "FULL",
+  PARTIAL: "PARTIAL",
+} as const;
+
 export interface ShippingAddressDto {
   /** @minLength 1 */
   recipientName: string;
@@ -1135,6 +1143,7 @@ export interface CreateOrderDto {
   /** @pattern ^\d{4}-\d{2}-\d{2}$ */
   pickupDate?: string;
   paymentMethod?: CreateOrderDtoPaymentMethod;
+  paymentType?: CreateOrderDtoPaymentType;
   /** @minLength 6 */
   customerPhone: string;
   customerName?: string;
@@ -1480,8 +1489,7 @@ export interface PaymentMethodConfigResponseDto {
   method: PaymentMethodConfigResponseDtoMethod;
   enabled: boolean;
   details: PaymentMethodConfigResponseDtoDetails;
-  depositPercentPickup: number;
-  depositPercentCourier: number;
+  depositPercent: number;
   createdAt: string;
 }
 
@@ -1505,6 +1513,12 @@ export interface PaymentMethodDetailsDto {
 }
 
 export interface UpsertPaymentMethodDto {
+  /**
+   * Porcentaje de adelanto que el comprador paga al hacer el pedido (1-100). 20 = paga 20% ahora.
+   * @minimum 1
+   * @maximum 100
+   */
+  depositPercent?: number;
   method: UpsertPaymentMethodDtoMethod;
   enabled?: boolean;
   details?: PaymentMethodDetailsDto;
@@ -2179,6 +2193,10 @@ export type CustomerAccountControllerconfirmParams = {
 
 export type PaymentConfigControllerfindAllParams = {
   enabled?: string;
+};
+
+export type PaymentConfigControlleruploadQrImageBody = {
+  file: Blob;
 };
 
 export type StatsControlleranalyticsParams = {

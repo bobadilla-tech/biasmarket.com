@@ -11,9 +11,11 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
+import type { UpsertPaymentMethodDtoMethod } from "@biasmarket/types";
 import { usePaymentMethods } from "../queries/use-payment-methods";
 import { useSavePaymentMethods } from "../mutations/use-save-payment-methods";
 import { useSavePaymentMethodDetails } from "../mutations/use-save-payment-method-details";
+import { useSaveDepositPercent } from "../mutations/use-save-deposit-percent";
 import { useUploadPaymentQrImage } from "../mutations/use-upload-payment-qr-image";
 import {
   transferDetailsSchema,
@@ -38,11 +40,6 @@ const PAYMENT_METHODS = [
   { key: "cash", method: "CASH", color: "bg-[#ebf9ef] text-[#27965e]" },
 ] as const;
 
-// Decorative "we support these banks" hint for the generic bank-transfer row —
-// no selected-bank data exists yet (see plan), so these are brand logos, not
-// config-driven. Each logo gets its own max-width + object-contain container:
-// bcp.png (~2.9:1) and interbank-horizontal-logo.webp (~5.26:1) have very
-// different aspect ratios and a shared fixed height would let one overflow.
 const TRANSFER_BANKS = [
   {
     src: "/logos/integrations/bcp.png",
@@ -67,8 +64,6 @@ const DEFAULT_ENABLED: Record<string, boolean> = {
   CASH: true,
 };
 
-// Methods that carry structured `details` at all — CASH doesn't, so it never
-// gets an expand affordance.
 const METHODS_WITH_DETAILS = ["TRANSFER", "YAPE", "PLIN"] as const;
 type MethodWithDetails = (typeof METHODS_WITH_DETAILS)[number];
 
@@ -96,6 +91,7 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
   const { data: methods } = usePaymentMethods(storeId);
   const saveMethods = useSavePaymentMethods(storeId);
   const saveDetails = useSavePaymentMethodDetails(storeId);
+  const saveDeposit = useSaveDepositPercent(storeId);
   const uploadQr = useUploadPaymentQrImage(storeId, tCommon("networkError"));
 
   const [enabledByMethod, setEnabledByMethod] =
@@ -114,6 +110,12 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
   >({});
   const [savedDetailsMethod, setSavedDetailsMethod] =
     useState<MethodWithDetails | null>(null);
+  const [depositPercents, setDepositPercents] = useState<
+    Record<string, number>
+  >({});
+  const [depositError, setDepositError] = useState<
+    Record<string, string | null>
+  >({});
 
   useEffect(() => {
     if (!methods) return;
@@ -123,8 +125,11 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
       YAPE: EMPTY_DETAILS_ROW,
       PLIN: EMPTY_DETAILS_ROW,
     };
+    const nextDeposit: Record<string, number> = {};
     for (const row of methods) {
       nextEnabled[row.method] = row.enabled;
+      nextDeposit[row.method] =
+        typeof row.depositPercent === "number" ? row.depositPercent : 100;
       if (!METHODS_WITH_DETAILS.includes(row.method as MethodWithDetails)) {
         continue;
       }
@@ -149,6 +154,7 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
     }
     setEnabledByMethod(nextEnabled);
     setDetailsForm(nextDetails);
+    setDepositPercents(nextDeposit);
   }, [methods]);
 
   useSavedFlash(saveMethods.isSuccess, saveMethods.reset);
@@ -222,6 +228,42 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
       m.enabled &&
       isPaymentMethodConfigured(m.method, m.details),
   );
+  function updateDepositPercent(method: string, value: string) {
+    const num = parseInt(value, 10);
+    setDepositPercents((prev) => ({
+      ...prev,
+      [method]: isNaN(num) ? 0 : num,
+    }));
+    setDepositError((prev) => ({ ...prev, [method]: null }));
+  }
+
+  function handleSaveDepositPercent(method: UpsertPaymentMethodDtoMethod) {
+    const pct = depositPercents[method];
+    if (pct === undefined || pct < 1 || pct > 100) {
+      setDepositError((prev) => ({
+        ...prev,
+        [method]: t("payments.depositPercent.invalid"),
+      }));
+      return;
+    }
+    saveDeposit.mutate(
+      { method, depositPercent: pct },
+      {
+        onSuccess: () => {
+          setDepositError((prev) => ({ ...prev, [method]: null }));
+        },
+        onError: (error) => {
+          setDepositError((prev) => ({
+            ...prev,
+            [method]:
+              error instanceof Error
+                ? error.message
+                : t("payments.depositPercent.invalid"),
+          }));
+        },
+      },
+    );
+  }
 
   return (
     <SectionCard
@@ -464,6 +506,45 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
                       : saveDetails.isPending
                         ? t("saving")
                         : t("payments.saveDetails")}
+                  </Button>
+
+                  <Separator className="my-3 bg-[#f0e7f8]" />
+
+                  <p className="text-xs font-medium text-[#341b55]">
+                    {t("payments.depositPercent.label")}
+                  </p>
+                  <p className="text-xs text-[#9582ad]">
+                    {t("payments.depositPercent.help")}
+                  </p>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={100}
+                    placeholder="100"
+                    value={depositPercents[method.method] ?? 100}
+                    onChange={(e) =>
+                      updateDepositPercent(method.method, e.target.value)
+                    }
+                  />
+
+                  {depositError[method.method] && (
+                    <p className="text-xs text-[#b24368]">
+                      {depositError[method.method]}
+                    </p>
+                  )}
+
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => handleSaveDepositPercent(method.method)}
+                    disabled={saveDeposit.isPending}
+                    className="store-theme-primary-button h-9 rounded-xl px-4 text-xs font-semibold hover:opacity-100"
+                  >
+                    {saveDeposit.isSuccess
+                      ? t("saved")
+                      : saveDeposit.isPending
+                        ? t("saving")
+                        : t("save")}
                   </Button>
                 </div>
               )}

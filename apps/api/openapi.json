@@ -2239,6 +2239,23 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": ["file"]
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": "",
@@ -6277,6 +6294,10 @@
             "type": "string",
             "enum": ["YAPE", "PLIN", "TRANSFER", "CASH"]
           },
+          "paymentType": {
+            "type": "string",
+            "enum": ["FULL", "PARTIAL"]
+          },
           "customerPhone": {
             "type": "string",
             "minLength": 6
@@ -6877,10 +6898,7 @@
             "type": "object",
             "additionalProperties": true
           },
-          "depositPercentPickup": {
-            "type": "number"
-          },
-          "depositPercentCourier": {
+          "depositPercent": {
             "type": "number"
           },
           "createdAt": {
@@ -6894,8 +6912,7 @@
           "method",
           "enabled",
           "details",
-          "depositPercentPickup",
-          "depositPercentCourier",
+          "depositPercent",
           "createdAt"
         ]
       },
@@ -6918,14 +6935,19 @@
             "type": "string"
           },
           "qrImageUrl": {
-            "type": "string",
-            "format": "uri"
+            "type": "string"
           }
         }
       },
       "UpsertPaymentMethodDto": {
         "type": "object",
         "properties": {
+          "depositPercent": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 100,
+            "description": "Porcentaje de adelanto que el comprador paga al hacer el pedido (1-100). 20 = paga 20% ahora."
+          },
           "method": {
             "type": "string",
             "enum": ["YAPE", "PLIN", "TRANSFER", "CASH"]

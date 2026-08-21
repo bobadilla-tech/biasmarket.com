@@ -2,22 +2,24 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
+import type { UpsertPaymentMethodDtoMethod } from "@biasmarket/types";
 import { paymentMethodsKeys } from "../queries/use-payment-methods";
 
-export function useUploadPaymentQrImage(
-  storeId: string | undefined,
-  fallbackErrorMessage?: string,
-) {
+export function useSaveDepositPercent(storeId: string | undefined) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ method, file }: { method: "YAPE" | "PLIN"; file: File }) =>
-      apiClient.paymentConfig.uploadQrImage(
-        storeId as string,
+    mutationFn: ({
+      method,
+      depositPercent,
+    }: {
+      method: UpsertPaymentMethodDtoMethod;
+      depositPercent: number;
+    }) =>
+      apiClient.paymentConfig.upsert(storeId as string, {
         method,
-        { file },
-        { fallbackErrorMessage },
-      ),
+        depositPercent,
+      }),
     onSuccess: () => {
       if (!storeId) return;
       queryClient.invalidateQueries({

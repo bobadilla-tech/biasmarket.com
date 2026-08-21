@@ -10,8 +10,10 @@ import {
   Check,
   Landmark,
   MessageCircle,
+  Percent,
   Store,
   Truck,
+  Wallet,
 } from "lucide-react";
 import { isPaymentMethodConfigured } from "@biasmarket/utils/payment-methods";
 import type { CheckoutPaymentMethod } from "@biasmarket/utils/payment-methods";
@@ -62,6 +64,15 @@ const PAYMENT_METHOD_ICONS: Record<string, React.ReactNode> = {
 interface CheckoutFormProps {
   slug: string;
   items: CartItem[];
+  onPaymentTypeChange?: (
+    paymentType: "FULL" | "PARTIAL",
+    depositPercent: number,
+  ) => void;
+  // Server-equivalent delivery cost of the selected method — the summary's
+  // pay-now/pending math must add it before applying the deposit percentage,
+  // exactly like CreateOrderUseCase does with
+  // deliveryConfig.details.estimatedCost.
+  onDeliveryCostChange?: (deliveryCost: number) => void;
   onOrderCreated: (result: {
     orderId: string;
     customerEmail: string;
@@ -111,6 +122,8 @@ function paymentMethodLabels(
 export function CheckoutForm({
   slug,
   items,
+  onPaymentTypeChange,
+  onDeliveryCostChange,
   onOrderCreated,
 }: CheckoutFormProps) {
   const t = useTranslations("storefront.checkoutPage");
@@ -196,6 +209,7 @@ export function CheckoutForm({
       pickupPointId: "",
       pickupDate: "",
       paymentMethod: "",
+      paymentType: "FULL",
       shippingRecipientName: "",
       shippingPhone: "",
       shippingLine1: "",
@@ -257,6 +271,7 @@ export function CheckoutForm({
   const pickupPointId = form.watch("pickupPointId");
   const pickupDate = form.watch("pickupDate");
   const paymentMethod = form.watch("paymentMethod");
+  const paymentType = form.watch("paymentType");
   const paymentProof = form.watch("paymentProof");
   const selectedPaymentConfig = paymentMethods.find(
     (m) => m.method === paymentMethod,
@@ -271,6 +286,49 @@ export function CheckoutForm({
   const shippingPhone = form.watch("shippingPhone");
   const shippingLine1 = form.watch("shippingLine1");
   const shippingCity = form.watch("shippingCity");
+
+  // Compute the deposit percentage for the selected payment method
+  const depositPercent = useMemo(() => {
+    if (!selectedPaymentConfig) return 100;
+    return typeof selectedPaymentConfig.depositPercent === "number"
+      ? selectedPaymentConfig.depositPercent
+      : 100;
+  }, [selectedPaymentConfig]);
+
+  // Server-equivalent delivery cost for the selected method — same
+  // `Number(details?.estimatedCost ?? 0)` the use case applies before
+  // computing requiredAmount.
+  const deliveryCost = useMemo(() => {
+    const selectedDelivery = methods.find((m) => m.type === deliveryMethodType);
+    return Number(selectedDelivery?.details?.estimatedCost ?? 0);
+  }, [methods, deliveryMethodType]);
+
+  // Whether partial payment is available: only a non-CASH electronic method
+  // with an existing configuration that explicitly lowers the deposit below
+  // 100 — the same rule CreateOrderUseCase enforces server-side (a PARTIAL
+  // order on CASH or an ineligible config is rejected there).
+  const partialAvailable =
+    paymentMethod !== "CASH" &&
+    selectedPaymentConfig != null &&
+    depositPercent < 100;
+
+  // Reset payment type to FULL when partial is not available
+  useEffect(() => {
+    if (!partialAvailable && paymentType === "PARTIAL") {
+      form.setValue("paymentType", "FULL");
+    }
+  }, [partialAvailable, paymentType, form.setValue]);
+
+  // Notify parent of payment type changes for summary display
+  useEffect(() => {
+    if (onPaymentTypeChange) {
+      onPaymentTypeChange(paymentType, depositPercent);
+    }
+  }, [paymentType, depositPercent, onPaymentTypeChange]);
+
+  useEffect(() => {
+    onDeliveryCostChange?.(deliveryCost);
+  }, [deliveryCost, onDeliveryCostChange]);
 
   // Prefill from the buyer's saved default address the moment it loads —
   // guests/logged-out buyers just get `null` back (query never throws into
@@ -381,6 +439,7 @@ export function CheckoutForm({
           ? values.pickupDate
           : undefined,
       paymentMethod: values.paymentMethod || undefined,
+      paymentType: values.paymentType,
       customerName: values.customerName,
       customerPhone: values.customerPhone,
       customerEmail: values.customerEmail,
@@ -661,6 +720,40 @@ export function CheckoutForm({
                   title={paymentLabels[method.method] ?? method.method}
                 />
               ))}
+            </div>
+          </div>
+        )}
+
+        {partialAvailable && (
+          <div className="flex flex-col gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+              {t("paymentTypeLabel")}
+            </span>
+            <div className="grid grid-cols-2 gap-3">
+              <SelectableCard
+                selected={paymentType === "FULL"}
+                onSelect={() =>
+                  form.setValue("paymentType", "FULL", {
+                    shouldValidate: true,
+                  })
+                }
+                icon={<Wallet className="size-5" />}
+                title={t("paymentTypeFull")}
+                subtitle={t("paymentTypeFullSubtext")}
+              />
+              <SelectableCard
+                selected={paymentType === "PARTIAL"}
+                onSelect={() =>
+                  form.setValue("paymentType", "PARTIAL", {
+                    shouldValidate: true,
+                  })
+                }
+                icon={<Percent className="size-5" />}
+                title={t("paymentTypePartial")}
+                subtitle={t("paymentTypePartialSubtext", {
+                  percent: depositPercent,
+                })}
+              />
             </div>
           </div>
         )}

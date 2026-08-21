@@ -50,11 +50,17 @@ export class PaymentConfigService {
         method: dto.method,
         enabled: dto.enabled ?? true,
         details: details as Prisma.InputJsonValue,
+        ...(dto.depositPercent !== undefined && {
+          depositPercent: dto.depositPercent,
+        }),
       },
       update: {
         ...(dto.enabled !== undefined && { enabled: dto.enabled }),
         ...(dto.details !== undefined && {
           details: details as Prisma.InputJsonValue,
+        }),
+        ...(dto.depositPercent !== undefined && {
+          depositPercent: dto.depositPercent,
         }),
       },
     });

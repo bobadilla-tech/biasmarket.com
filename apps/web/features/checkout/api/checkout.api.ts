@@ -44,6 +44,7 @@ export const checkoutApi = {
       pickupPointId?: string;
       pickupDate?: string;
       paymentMethod?: string;
+      paymentType?: "FULL" | "PARTIAL";
       customerName?: string;
       customerPhone: string;
       customerEmail?: string;
@@ -66,6 +67,9 @@ export const checkoutApi = {
     }
     if (values.paymentMethod) {
       formData.append("paymentMethod", values.paymentMethod);
+    }
+    if (values.paymentType) {
+      formData.append("paymentType", values.paymentType);
     }
     formData.append("customerPhone", values.customerPhone);
     if (values.customerName) {

@@ -12,6 +12,7 @@ export function useSubmitCheckout(slug: string, fallbackErrorMessage?: string) {
       pickupPointId?: string;
       pickupDate?: string;
       paymentMethod?: string;
+      paymentType?: "FULL" | "PARTIAL";
       customerName?: string;
       customerPhone: string;
       customerEmail?: string;
