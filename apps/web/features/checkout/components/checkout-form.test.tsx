@@ -101,19 +101,19 @@ test("submits the delivery type, pickup point, and manual payment method with an
   fetchMock
     .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) })
     .mockResolvedValueOnce({
-    ok: true,
-    json: () =>
-      Promise.resolve({
-        order: {
-          id: "order-1",
-          paymentMethod: "TRANSFER",
-          requiredAmount: "15.00",
-          totalAmount: "15.00",
-          currency: "PEN",
-        },
-        whatsappUrl: null,
-      }),
-  });
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          order: {
+            id: "order-1",
+            paymentMethod: "TRANSFER",
+            requiredAmount: "15.00",
+            totalAmount: "15.00",
+            currency: "PEN",
+          },
+          whatsappUrl: null,
+        }),
+    });
 
   const onOrderCreated = vi.fn();
   const user = userEvent.setup();
@@ -320,11 +320,9 @@ test("selecting a closed-today point reveals a date picker defaulted to the next
   // closedTodayDays excludes only today, so the next open day is tomorrow.
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
-  const expected = `${tomorrow.getFullYear()}-${
-    String(
-      tomorrow.getMonth() + 1,
-    ).padStart(2, "0")
-  }-${String(tomorrow.getDate()).padStart(2, "0")}`;
+  const expected = `${tomorrow.getFullYear()}-${String(
+    tomorrow.getMonth() + 1,
+  ).padStart(2, "0")}-${String(tomorrow.getDate()).padStart(2, "0")}`;
 
   const dateInput = await screen.findByLabelText("Fecha de recojo");
   expect((dateInput as HTMLInputElement).value).toBe(expected);
@@ -433,9 +431,7 @@ test("switching to courier shows the courier selection UI instead of pickup card
   await user.click(screen.getByText("Envío por courier"));
 
   await waitFor(() => {
-    expect(
-      screen.getByText(/Selecciona un courier/i),
-    ).toBeDefined();
+    expect(screen.getByText(/Selecciona un courier/i)).toBeDefined();
     expect(screen.queryByText("Alameda 28 de Julio")).toBeNull();
   });
 });
@@ -503,9 +499,7 @@ test("submits the inline shippingAddress fields for a COURIER HOME order without
     expect(body.get("deliveryMethodType")).toBe("COURIER");
     expect(body.get("courierName")).toBe("Olva");
     expect(body.get("courierModality")).toBe("HOME");
-    const shippingAddress = JSON.parse(
-      body.get("shippingAddress") as string,
-    );
+    const shippingAddress = JSON.parse(body.get("shippingAddress") as string);
     expect(shippingAddress.recipientName).toBe("Jane Doe");
     expect(shippingAddress.phone).toBe("988888888");
     expect(shippingAddress.line1).toBe("Av. Principal 123");
@@ -566,9 +560,7 @@ test("prefills the shippingAddress fields from the buyer's saved default address
 
   await waitFor(() => {
     const nameInputs = screen.getAllByPlaceholderText("Nombre");
-    expect(
-      (nameInputs[0] as HTMLInputElement).value,
-    ).toBe("Jane Doe");
+    expect((nameInputs[0] as HTMLInputElement).value).toBe("Jane Doe");
   });
   expect(
     (screen.getByPlaceholderText("Ciudad") as HTMLInputElement).value,
