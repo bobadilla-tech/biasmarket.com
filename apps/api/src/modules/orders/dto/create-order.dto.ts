@@ -54,8 +54,8 @@ export class ShippingAddressDto {
   phone: string;
 
   @IsOptional()
-  @IsEnum(['DNI', 'PASSPORT'] as const)
-  documentType?: 'DNI' | 'PASSPORT';
+  @IsEnum(['DNI', 'CE', 'RUC', 'PASSPORT'] as const)
+  documentType?: 'DNI' | 'CE' | 'RUC' | 'PASSPORT';
 
   @IsOptional()
   @IsString()

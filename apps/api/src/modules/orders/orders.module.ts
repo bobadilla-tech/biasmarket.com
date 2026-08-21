@@ -16,11 +16,13 @@ import { CancelOrderUseCase } from './application/cancel-order.usecase.js';
 import { ExpireOrdersUseCase } from './application/expire-orders.usecase.js';
 import { CustomerAccountService } from './application/customer-account.service.js';
 import { NotificationsModule } from '../notifications/notifications.module.js';
+import { PaymentConfigModule } from '../payment-config/payment-config.module.js';
 
 @Module({
   imports: [
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 5 }]),
     NotificationsModule,
+    PaymentConfigModule,
   ],
   controllers: [
     OrderController,

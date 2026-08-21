@@ -58,6 +58,7 @@ buyer upload in the MVP):
 
   - image/jpeg
   - image/png
+
 - Virus scan (optional future)
 - The image is attached to an `OrderPayment` row that carries `orderId` +
   `storeId`, and reads go through an authenticated, ownership-checked endpoint
@@ -125,13 +126,18 @@ as a confirmed sale at each step.
 
 ### 9.2 Flow (what's actually live)
 
-> **Buyer-proof-upload caveat:** the MVP does **not** collect an in-app payment
-> proof from the buyer. The old schema-only `PaymentProof` model (with its
-> `PENDING_REVIEW | APPROVED | REJECTED` state) was deleted in migration
-> `20260808192135_delete_payment_proof` — no such model exists today. What
-> actually ships is a **WhatsApp handoff** plus the **seller manually
-> recording** what came in — see below. In-app buyer proof upload is a possible
-> future addition, not current behavior (§9.4).
+> **Buyer-proof-upload caveat (stale as of this note, kept for history):** this
+> caveat used to say the MVP does not collect an in-app payment proof — that's
+> no longer true. Checkout now collects a buyer-submitted proof (uploaded
+> straight through `CheckoutController`) and records it as an `OrderPayment` row
+> with `source: 'BUYER_SUBMITTED'`/`reviewStatus: 'PENDING_REVIEW'` — see
+> `create-order.usecase.ts`, the block right before its `whatsappUrl`
+> construction. A proof upload is required only when the buyer's chosen manual
+> payment method (YAPE/PLIN/TRANSFER) is both selected and the store has
+> actually configured real account details for it (`isPaymentMethodConfigured`,
+> `packages/utils/src/payment-methods/index.ts`); for CASH, no method selected,
+> or a method the store enabled but never finished configuring, checkout still
+> falls back to the **WhatsApp handoff** described below.
 
 1. **Order created** → `paymentStatus PENDING_PAYMENT`
    - Created as soon as buyer completes checkout (before any payment evidence

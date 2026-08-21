@@ -16,10 +16,13 @@ import {
   Truck,
   Wallet,
 } from "lucide-react";
+import { isPaymentMethodConfigured } from "@biasmarket/utils/payment-methods";
+import type { CheckoutPaymentMethod } from "@biasmarket/utils/payment-methods";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { type CartItem, hasMixedCurrencies } from "@/lib/cart";
 import { useDeliveryOptions } from "../queries/use-delivery-options";
 import { useDefaultShippingAddress } from "../queries/use-default-shipping-address";
+import { useCustomerProfile } from "@/features/customer-auth";
 import { useSubmitCheckout } from "../mutations/use-submit-checkout";
 import {
   getPickupAvailability,
@@ -127,6 +130,7 @@ export function CheckoutForm({
   const t = useTranslations("storefront.checkoutPage");
   const deliveryOptions = useDeliveryOptions(slug);
   const defaultAddress = useDefaultShippingAddress(slug);
+  const customerProfile = useCustomerProfile(slug);
   const submitCheckout = useSubmitCheckout(slug);
 
   const methods = deliveryOptions.data?.methods ?? [];
@@ -173,12 +177,30 @@ export function CheckoutForm({
     [points, weekday],
   );
 
+  // A method the store enabled but never finished configuring (empty
+  // details) can't collect a real proof of payment against — checkout falls
+  // back to WhatsApp coordination for it instead of blocking on an upload.
+  const unconfiguredManualMethods = useMemo(
+    () =>
+      new Set(
+        paymentMethods
+          .filter(
+            (m) =>
+              m.method !== "CASH" &&
+              !isPaymentMethodConfigured(m.method, m.details),
+          )
+          .map((m) => m.method as CheckoutPaymentMethod),
+      ),
+    [paymentMethods],
+  );
+
   const form = useForm<CheckoutFormInput>({
     resolver: zodResolver(
       buildCheckoutFormSchema(
         points.length > 0,
         paymentMethods.length > 0,
         pointsRequiringDate,
+        unconfiguredManualMethods,
       ),
     ),
     defaultValues: {
@@ -230,8 +252,20 @@ export function CheckoutForm({
     } else if (!points.some((point) => point.id === currentPointId)) {
       form.setValue("pickupPointId", pointsAvailableToday[0]?.id ?? "");
     }
-    if (paymentMethods[0] && !form.getValues("paymentMethod")) {
-      form.setValue("paymentMethod", paymentMethods[0].method);
+    // Prefer a genuinely-configured method when one exists, so a store
+    // listing an unconfigured YAPE before a configured TRANSFER doesn't
+    // silently default new buyers into WhatsApp coordination. CASH is
+    // excluded from this preference — it's seeded enabled on every store
+    // and always counts as "configured" (needs no details), so without the
+    // exclusion it would win `.find()` on every store and this would
+    // become "prefer CASH" instead of "prefer configured".
+    const preferredMethod =
+      paymentMethods.find(
+        (m) =>
+          m.method !== "CASH" && isPaymentMethodConfigured(m.method, m.details),
+      ) ?? paymentMethods[0];
+    if (preferredMethod && !form.getValues("paymentMethod")) {
+      form.setValue("paymentMethod", preferredMethod.method);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -255,6 +289,12 @@ export function CheckoutForm({
   const selectedPaymentConfig = paymentMethods.find(
     (m) => m.method === paymentMethod,
   );
+  const selectedMethodConfigured = selectedPaymentConfig
+    ? isPaymentMethodConfigured(
+        selectedPaymentConfig.method,
+        selectedPaymentConfig.details,
+      )
+    : true;
   const shippingRecipientName = form.watch("shippingRecipientName");
   const shippingPhone = form.watch("shippingPhone");
   const shippingLine1 = form.watch("shippingLine1");
@@ -347,6 +387,27 @@ export function CheckoutForm({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultAddress.data, deliveryMethodType]);
+
+  // Prefill a logged-in buyer's saved contact info the moment it loads —
+  // guests get a failed/undefined query (never thrown into the UI, see
+  // useCustomerProfile) so nothing changes for guest checkout. Only fills
+  // fields the buyer hasn't already typed into, same "only fill if empty"
+  // guard as the shipping-address effect above — fields stay fully
+  // editable, this is a one-time setValue, not a disabled/read-only field.
+  useEffect(() => {
+    const customer = customerProfile.data?.customer;
+    if (!customer) return;
+    if (!form.getValues("customerName") && customer.name) {
+      form.setValue("customerName", customer.name);
+    }
+    if (!form.getValues("customerPhone") && customer.phone) {
+      form.setValue("customerPhone", customer.phone);
+    }
+    if (!form.getValues("customerEmail") && customer.email) {
+      form.setValue("customerEmail", customer.email);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customerProfile.data]);
 
   // Defaults the date field to the point's next open day the moment a
   // date-requiring point becomes selected (or the pickupDate was cleared by
@@ -687,29 +748,22 @@ export function CheckoutForm({
                 );
               })()}
 
-            {courierModality === "AGENCY" && (
-              <>
-                <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  {t("courierAgencyNote")}
-                </span>
-                <input
-                  placeholder={t("shippingAgencyNamePlaceholder")}
-                  className={inputClassName}
-                  {...form.register("shippingAgencyName")}
-                />
-                {form.formState.errors.shippingAgencyName && (
-                  <p className="text-sm text-red-500">
-                    {t("courierAgencyNameRequired")}
-                  </p>
-                )}
-              </>
-            )}
-
             <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-              {courierModality === "HOME"
-                ? t("shippingAddressLabel")
-                : t("courierModalityAgency")}
+              {t("shippingAddressLabel")}
             </span>
+
+            {courierModality === "AGENCY" && (
+              <input
+                placeholder={t("shippingAgencyNamePlaceholder")}
+                className={inputClassName}
+                {...form.register("shippingAgencyName")}
+              />
+            )}
+            {form.formState.errors.shippingAgencyName && (
+              <p className="text-sm text-red-500">
+                {t("courierAgencyNameRequired")}
+              </p>
+            )}
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <input
@@ -730,11 +784,17 @@ export function CheckoutForm({
             )}
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <input
-                placeholder={t("shippingDocumentTypePlaceholder")}
+              <select
                 className={inputClassName}
+                aria-label={t("shippingDocumentTypePlaceholder")}
                 {...form.register("shippingDocumentType")}
-              />
+              >
+                <option value="">{t("shippingDocumentTypePlaceholder")}</option>
+                <option value="DNI">DNI</option>
+                <option value="CE">Carnet de Extranjería</option>
+                <option value="RUC">RUC</option>
+                <option value="PASSPORT">Pasaporte</option>
+              </select>
               <input
                 placeholder={t("shippingDocumentNumberPlaceholder")}
                 className={inputClassName}
@@ -783,12 +843,6 @@ export function CheckoutForm({
                     {t("shippingAddressRequired")}
                   </p>
                 )}
-
-                <input
-                  placeholder={t("shippingLine2Placeholder")}
-                  className={inputClassName}
-                  {...form.register("shippingLine2")}
-                />
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <input
@@ -879,33 +933,36 @@ export function CheckoutForm({
           <PaymentMethodDetails method={selectedPaymentConfig} />
         )}
 
-        {paymentMethod && paymentMethod !== "CASH" && (
-          <div className="flex flex-col gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-              {t("paymentProofUploadLabel")}
-            </span>
-            <Controller
-              control={form.control}
-              name="paymentProof"
-              render={({ field }) => (
-                <PaymentProofUpload
-                  value={field.value}
-                  onChange={field.onChange}
-                />
+        {paymentMethod &&
+          paymentMethod !== "CASH" &&
+          selectedMethodConfigured && (
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                {t("paymentProofUploadLabel")}
+              </span>
+              <Controller
+                control={form.control}
+                name="paymentProof"
+                render={({ field }) => (
+                  <PaymentProofUpload
+                    value={field.value}
+                    onChange={field.onChange}
+                  />
+                )}
+              />
+              {form.formState.errors.paymentProof && (
+                <p className="text-sm text-red-500">
+                  {form.formState.errors.paymentProof.message ===
+                  "file too large"
+                    ? t("paymentProofTooLarge")
+                    : form.formState.errors.paymentProof.message ===
+                        "invalid file type"
+                      ? t("paymentProofInvalidFormat")
+                      : t("paymentProofRequired")}
+                </p>
               )}
-            />
-            {form.formState.errors.paymentProof && (
-              <p className="text-sm text-red-500">
-                {form.formState.errors.paymentProof.message === "file too large"
-                  ? t("paymentProofTooLarge")
-                  : form.formState.errors.paymentProof.message ===
-                      "invalid file type"
-                    ? t("paymentProofInvalidFormat")
-                    : t("paymentProofRequired")}
-              </p>
-            )}
-          </div>
-        )}
+            </div>
+          )}
 
         <input
           placeholder={t("namePlaceholder")}
@@ -965,7 +1022,10 @@ export function CheckoutForm({
             !pickupPointId) ||
           pickupDateBlocking ||
           (paymentMethods.length > 0 && !paymentMethod) ||
-          (paymentMethod !== "" && paymentMethod !== "CASH" && !paymentProof) ||
+          (paymentMethod !== "" &&
+            paymentMethod !== "CASH" &&
+            selectedMethodConfigured &&
+            !paymentProof) ||
           (deliveryMethodType === "COURIER" &&
             (!courierName ||
               !courierModality ||
@@ -982,7 +1042,11 @@ export function CheckoutForm({
           {submitCheckout.isPending ? t("submitting") : t("submit")}
         </span>
         <span className="text-xs font-normal opacity-80">
-          {t("submitSubtext")}
+          {paymentMethod === "CASH"
+            ? t("submitSubtextCash")
+            : paymentMethod !== "" && !selectedMethodConfigured
+              ? t("submitSubtextCoordinate")
+              : t("submitSubtext")}
         </span>
       </button>
     </form>

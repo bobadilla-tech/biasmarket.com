@@ -7,10 +7,13 @@ export class InvalidOrderTransitionError extends Error {
   }
 }
 
-// MVP checkout redirects the buyer to WhatsApp instead of collecting an
-// in-app payment proof, so there is no guaranteed PAYMENT_SUBMITTED step —
-// sellers may approve/reject directly from PENDING_PAYMENT based on the
-// WhatsApp conversation.
+// Checkout collects an in-app payment proof for a configured manual method,
+// but only when one is required — CASH, no method selected, or a method the
+// store enabled but never finished configuring all skip straight to the
+// post-order WhatsApp handoff instead. So there's still no *guaranteed*
+// PAYMENT_SUBMITTED step: sellers may approve/reject directly from
+// PENDING_PAYMENT based on the WhatsApp conversation whenever no proof was
+// collected.
 const PAYMENT_TRANSITIONS: Record<PaymentStatus, PaymentStatus[]> = {
   PENDING_PAYMENT: [
     'PARTIALLY_PAID',

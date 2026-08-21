@@ -541,6 +541,21 @@ describe('orders + checkout (e2e)', () => {
   });
 
   it('checkout with a manual payment method but no proof 400s', async () => {
+    // The suite never configures real payment-method details elsewhere, so
+    // every method (including PLIN) is enabled-but-unconfigured by default —
+    // exactly the case checkout now lets through without a proof. Configure
+    // real PLIN details first so this still exercises the "configured
+    // method, missing proof" 400 path it was written for.
+    await request(app.getHttpServer())
+      .post(`/stores/${storeId}/payment-methods`)
+      .set('Cookie', sessionCookie)
+      .send({
+        method: 'PLIN',
+        enabled: true,
+        details: { phoneNumber: '+51988888886', accountHolder: 'E2E Seller' },
+      })
+      .expect(201);
+
     const res = await request(app.getHttpServer())
       .post(`/stores/${storeSlug}/checkout`)
       .set('X-Forwarded-For', nextCheckoutIp())
@@ -555,6 +570,20 @@ describe('orders + checkout (e2e)', () => {
       )
       .expect(400);
     expect(res.body.message).toContain('Adjunta un comprobante de pago');
+  });
+
+  it('checkout with an unconfigured (enabled but no real details) manual payment method succeeds without a proof', async () => {
+    const orderId = await checkout('+51988888882', {
+      paymentMethod: 'YAPE',
+    });
+
+    const findOneRes = await request(app.getHttpServer())
+      .get(`/stores/${storeId}/orders/${orderId}`)
+      .set('Cookie', sessionCookie)
+      .expect(200);
+    expect(findOneRes.body.paymentMethod).toBe('YAPE');
+    expect(findOneRes.body.paymentStatus).toBe('PENDING_PAYMENT');
+    expect(findOneRes.body.payments).toHaveLength(0);
   });
 
   it('checkout with a proof in an unsupported format 400s', async () => {

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { CheckoutPaymentMethod } from "@biasmarket/utils/payment-methods";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ACCEPTED_MIME_TYPES = ["image/jpeg", "image/png", "application/pdf"];
@@ -17,6 +18,7 @@ export function buildCheckoutFormSchema(
   pickupPointsAvailable: boolean,
   paymentMethodsAvailable: boolean,
   pointsRequiringDate: ReadonlySet<string> = new Set(),
+  unconfiguredManualMethods: ReadonlySet<CheckoutPaymentMethod> = new Set(),
 ) {
   return (
     z
@@ -35,7 +37,7 @@ export function buildCheckoutFormSchema(
         shippingRecipientName: z.string(),
         shippingRecipientSurnames: z.string(),
         shippingPhone: z.string(),
-        shippingDocumentType: z.enum(["", "DNI", "PASSPORT"]),
+        shippingDocumentType: z.enum(["", "DNI", "CE", "RUC", "PASSPORT"]),
         shippingDocumentNumber: z.string(),
         shippingDepartment: z.string(),
         shippingProvince: z.string(),
@@ -85,6 +87,9 @@ export function buildCheckoutFormSchema(
       .refine(
         (data) =>
           !(MANUAL_METHODS as readonly string[]).includes(data.paymentMethod) ||
+          unconfiguredManualMethods.has(
+            data.paymentMethod as CheckoutPaymentMethod,
+          ) ||
           !!data.paymentProof,
         { message: "proof required", path: ["paymentProof"] },
       )

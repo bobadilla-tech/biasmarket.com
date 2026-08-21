@@ -106,6 +106,8 @@
     "invalidEmail": "Ingresa un email válido",
     "submit": "Confirmar pedido",
     "submitSubtext": "Adjunta tu comprobante y confirma el pedido.",
+    "submitSubtextCoordinate": "Te contactaremos por WhatsApp para coordinar el pago.",
+    "submitSubtextCash": "Coordina el pago en efectivo con la tienda al recibir tu pedido.",
     "submitting": "Enviando...",
     "noDeliveryMethod": "La tienda todavía no configuró un método de entrega — contacta al vendedor.",
     "mixedCurrencyWarning": "No puedes pagar productos en distintas monedas en el mismo pedido. Quita alguno del carrito.",

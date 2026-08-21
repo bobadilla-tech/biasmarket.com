@@ -14,9 +14,11 @@ import { Public } from '@thallesp/nestjs-better-auth';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
+import { isPaymentMethodConfigured } from '@biasmarket/utils/payment-methods';
 import { CreateOrderUseCase } from '../application/create-order.usecase.js';
 import { CreateOrderDto } from '../dto/create-order.dto.js';
 import { StorageService } from '../../../storage/storage.service.js';
+import { PaymentConfigService } from '../../payment-config/payment-config.service.js';
 import type {
   CheckoutOrderItemResponseDto,
   CheckoutOrderResponseDto,
@@ -170,6 +172,7 @@ export class CheckoutController {
   constructor(
     private createOrder: CreateOrderUseCase,
     private storage: StorageService,
+    private paymentConfig: PaymentConfigService,
   ) {}
 
   @Public()
@@ -191,7 +194,19 @@ export class CheckoutController {
   ): Promise<CheckoutResultResponseDto> {
     const dto = await buildValidatedDto(body ?? {});
 
-    if (REQUIRES_PROOF(dto.paymentMethod) && !file) {
+    let configured = false;
+    if (dto.paymentMethod && dto.paymentMethod !== 'CASH') {
+      const enabledMethods = await this.paymentConfig.findEnabledForSlug(slug);
+      const row = enabledMethods.find((m) => m.method === dto.paymentMethod);
+      configured = row
+        ? isPaymentMethodConfigured(
+            row.method,
+            row.details as Record<string, unknown> | null,
+          )
+        : false;
+    }
+
+    if (REQUIRES_PROOF(dto.paymentMethod) && configured && !file) {
       throw new BadRequestException('Adjunta un comprobante de pago');
     }
 

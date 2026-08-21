@@ -369,13 +369,15 @@ describe('CreateOrderUseCase', () => {
     });
     // The use case now reads the courier config inside the tx via $queryRaw
     // with FOR UPDATE. Mock $queryRaw to return the courier config row only
-    // when the query matches the expected courier + modality combination.
+    // when the query matches the expected store, courier name, and modality.
     prisma.$queryRaw.mockImplementation(
       async (strings: TemplateStringsArray, ...values: unknown[]) => {
         const sql = strings.join('');
         if (sql.includes('"CourierConfig"')) {
-          const modalityIdx = values.findIndex((v) => v === 'HOME');
-          if (modalityIdx !== -1) {
+          const hasStore = values.includes('store-1');
+          const hasName = values.includes('Olva');
+          const hasModality = values.includes('HOME');
+          if (hasStore && hasName && hasModality) {
             return [
               {
                 id: 'config-1',
