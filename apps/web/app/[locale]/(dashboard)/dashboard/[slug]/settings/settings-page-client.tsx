@@ -15,6 +15,7 @@ import {
   useWhatsAppTemplates,
   WhatsAppMessagesSection,
 } from "@/features/store-settings";
+import { CouriersSection } from "@/features/couriers";
 
 export function SettingsPageClient() {
   const t = useTranslations("dashboard.settings");
@@ -69,19 +70,22 @@ export function SettingsPageClient() {
             <PaymentsSection storeId={store.id} />
             <WhatsAppMessagesSection
               storeId={store.id}
-              templates={whatsappTemplates
-                ? {
-                  newOrder: whatsappTemplates.newOrder?.template ?? null,
-                  paymentReminder:
-                    whatsappTemplates.paymentReminder?.template ?? null,
-                }
-                : undefined}
+              templates={
+                whatsappTemplates
+                  ? {
+                      newOrder: whatsappTemplates.newOrder?.template ?? null,
+                      paymentReminder:
+                        whatsappTemplates.paymentReminder?.template ?? null,
+                    }
+                  : undefined
+              }
               loading={whatsappLoading}
             />
           </div>
 
           <div className="space-y-6">
             <DeliverySection storeId={store.id} />
+            <CouriersSection storeId={store.id} />
             <DefaultsSection store={store} />
             <NotificationsSection store={store} />
           </div>
