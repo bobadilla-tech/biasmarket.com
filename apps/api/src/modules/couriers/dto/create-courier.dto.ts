@@ -1,5 +1,5 @@
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { Type } from "class-transformer";
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
@@ -12,15 +12,18 @@ import {
   IsString,
   Min,
   ValidateNested,
-} from "class-validator";
+} from 'class-validator';
 
 export class CourierModalityDto {
-  @ApiProperty({ enum: ["AGENCY", "HOME"] })
-  @IsEnum(["AGENCY", "HOME"] as const)
-  modality: "AGENCY" | "HOME";
+  @ApiProperty({ enum: ['AGENCY', 'HOME'] })
+  @IsEnum(['AGENCY', 'HOME'] as const)
+  modality: 'AGENCY' | 'HOME';
 
-  @ApiProperty({ type: Number, description: "Price in the store's currency" })
-  @IsInt()
+  @ApiProperty({
+    type: Number,
+    description: "Price in the store's currency (max 2 decimal places)",
+  })
+  @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   price: number;
 
@@ -31,7 +34,7 @@ export class CourierModalityDto {
 }
 
 export class CreateCourierDto {
-  @ApiProperty({ description: "Seller-defined courier name (e.g. Olva)" })
+  @ApiProperty({ description: 'Seller-defined courier name (e.g. Olva)' })
   @IsString()
   @IsNotEmpty()
   name: string;
@@ -49,7 +52,7 @@ export class CreateCourierDto {
 
   @ApiProperty({
     type: [CourierModalityDto],
-    description: "At least one modality (AGENCY or HOME)",
+    description: 'At least one modality (AGENCY or HOME)',
   })
   @IsArray()
   @ArrayMinSize(1)

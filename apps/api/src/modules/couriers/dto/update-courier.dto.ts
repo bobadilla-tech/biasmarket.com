@@ -1,5 +1,5 @@
-import { ApiPropertyOptional } from "@nestjs/swagger";
-import { Type } from "class-transformer";
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
@@ -7,21 +7,22 @@ import {
   IsEnum,
   IsInt,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   Min,
   ValidateNested,
-} from "class-validator";
+} from 'class-validator';
 
 export class UpdateCourierModalityDto {
-  @ApiPropertyOptional({ enum: ["AGENCY", "HOME"] })
+  @ApiPropertyOptional({ enum: ['AGENCY', 'HOME'] })
   @IsOptional()
-  @IsEnum(["AGENCY", "HOME"] as const)
-  modality?: "AGENCY" | "HOME";
+  @IsEnum(['AGENCY', 'HOME'] as const)
+  modality?: 'AGENCY' | 'HOME';
 
   @ApiPropertyOptional({ type: Number })
   @IsOptional()
-  @IsInt()
+  @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   price?: number;
 
@@ -51,7 +52,8 @@ export class UpdateCourierDto {
 
   @ApiPropertyOptional({
     type: [UpdateCourierModalityDto],
-    description: "Full replacement of modalities. Provide all modalities the courier should have.",
+    description:
+      'Full replacement of modalities. Provide all modalities the courier should have.',
   })
   @IsOptional()
   @IsArray()

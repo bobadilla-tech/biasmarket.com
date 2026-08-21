@@ -4,7 +4,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@biasmarket/db';
-import type { CourierConfig, PickupPoint, ProductVariant } from '@biasmarket/db';
+import type {
+  CourierConfig,
+  PickupPoint,
+  ProductVariant,
+} from '@biasmarket/db';
 import {
   buildWhatsAppOrderMessage,
   buildWhatsAppUrl,
@@ -92,15 +96,15 @@ export class CreateOrderUseCase {
     // transaction to validate; the actual price is read inside the tx with a
     // lock to prevent a stale read.
     let courierConfig: CourierConfig | null = null;
-    if (dto.deliveryMethodType === "COURIER") {
+    if (dto.deliveryMethodType === 'COURIER') {
       if (!dto.courierName) {
         throw new BadRequestException(
-          "Debes seleccionar un courier para envío a domicilio",
+          'Debes seleccionar un courier para envío a domicilio',
         );
       }
       if (!dto.courierModality) {
         throw new BadRequestException(
-          "Debes seleccionar una modalidad (Agencia o Domicilio)",
+          'Debes seleccionar una modalidad (Agencia o Domicilio)',
         );
       }
       const courier = await this.prisma.courier.findFirst({
@@ -120,10 +124,30 @@ export class CreateOrderUseCase {
       });
       if (!courier || courier.configs.length === 0) {
         throw new BadRequestException(
-          "El courier seleccionado no está disponible para esta tienda",
+          'El courier seleccionado no está disponible para esta tienda',
         );
       }
       courierConfig = courier.configs[0];
+
+      // Validate modality-specific shipping fields
+      const addr = dto.shippingAddress;
+      if (dto.courierModality === 'HOME') {
+        if (!addr?.line1) {
+          throw new BadRequestException(
+            'HOME delivery requires a shipping address (line1)',
+          );
+        }
+        if (!addr?.city) {
+          throw new BadRequestException(
+            'HOME delivery requires a city/district',
+          );
+        }
+      }
+      if (dto.courierModality === 'AGENCY' && !addr?.agencyName) {
+        throw new BadRequestException(
+          'AGENCY delivery requires an agency name',
+        );
+      }
     }
 
     // Whether this store even has enabled pickup points decides if a
@@ -363,9 +387,9 @@ export class CreateOrderUseCase {
         const deliveryCost = courierConfig
           ? Number(courierConfig.price)
           : Number(
-            (deliveryConfig.details as Record<string, unknown> | null)
-              ?.estimatedCost ?? 0,
-          );
+              (deliveryConfig.details as Record<string, unknown> | null)
+                ?.estimatedCost ?? 0,
+            );
         // `items` has `@ArrayMinSize(1)` (create-order.dto.ts) — the loop
         // above always runs at least once, so `totalAmount` is always set by
         // this point; the `| undefined` in its declared type only exists to
@@ -429,8 +453,13 @@ export class CreateOrderUseCase {
               : dto.deliveryMethodType === 'COURIER'
                 ? {
                     ...(courierConfig
-                      ? { courierName: dto.courierName, courierModality: dto.courierModality, deliveryCost: Number(courierConfig.price) }
-                      : (deliveryConfig.details as Record<string, unknown>) ?? {}),
+                      ? {
+                          courierName: dto.courierName,
+                          courierModality: dto.courierModality,
+                          deliveryCost: Number(courierConfig.price),
+                        }
+                      : ((deliveryConfig.details as Record<string, unknown>) ??
+                        {})),
                     shippingAddress: { ...dto.shippingAddress },
                   }
                 : (deliveryConfig.details ?? {}),
