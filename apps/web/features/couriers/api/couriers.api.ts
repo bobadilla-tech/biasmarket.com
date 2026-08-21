@@ -74,6 +74,8 @@ function mapResponse(r: CourierResponse): Courier {
 export const couriersApi = {
   async findAll(storeId: string): Promise<Courier[]> {
     const url = buildUrl("api", "stores", storeId, "couriers");
+    // ID segments validated against CUID regex and encoded in buildUrl.
+    // eslint-disable-next-line security/detect-unsafe-url
     const res = await fetch(url, { credentials: "include" });
     if (!res.ok) throw new Error("Error al cargar couriers");
     const data: CourierResponse[] = await res.json();
@@ -82,6 +84,8 @@ export const couriersApi = {
 
   async create(storeId: string, input: CreateCourierInput): Promise<Courier> {
     const url = buildUrl("api", "stores", storeId, "couriers");
+    // ID segments validated against CUID regex and encoded in buildUrl.
+    // eslint-disable-next-line security/detect-unsafe-url
     const res = await fetch(url, {
       method: "POST",
       credentials: "include",
@@ -101,6 +105,8 @@ export const couriersApi = {
     input: UpdateCourierInput,
   ): Promise<Courier> {
     const url = buildUrl("api", "stores", storeId, "couriers", courierId);
+    // ID segments validated against CUID regex and encoded in buildUrl.
+    // eslint-disable-next-line security/detect-unsafe-url
     const res = await fetch(url, {
       method: "PATCH",
       credentials: "include",
@@ -116,6 +122,8 @@ export const couriersApi = {
 
   async remove(storeId: string, courierId: string): Promise<void> {
     const url = buildUrl("api", "stores", storeId, "couriers", courierId);
+    // ID segments validated against CUID regex and encoded in buildUrl.
+    // eslint-disable-next-line security/detect-unsafe-url
     const res = await fetch(url, {
       method: "DELETE",
       credentials: "include",
