@@ -3,8 +3,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { couriersApi, type CreateCourierInput } from "../api/couriers.api";
 import { couriersKeys } from "../queries/use-couriers";
-import type { Courier, CourierModality } from "../schemas/courier.schema";
-import { isNewCourier } from "../schemas/courier.schema";
+import type { Courier } from "../schemas/courier.schema";
+import { courierSchema, isNewCourier } from "../schemas/courier.schema";
 
 export function useSaveCouriers(storeId: string | undefined) {
   const queryClient = useQueryClient();
@@ -16,44 +16,29 @@ export function useSaveCouriers(storeId: string | undefined) {
     }) => {
       if (!storeId) throw new Error("Store ID requerido");
 
-      // Delete removed couriers
-      await Promise.all(
-        input.deletedIds.map((id) => couriersApi.remove(storeId, id)),
-      );
+      // Validate all couriers before sending
+      for (const c of input.couriers) {
+        courierSchema.parse(c);
+      }
 
-      // Update existing couriers (name, enabled, modalities)
-      const updates = input.couriers
-        .filter((c) => !isNewCourier(c.id))
-        .map((c) =>
-          couriersApi.update(storeId, c.id, {
-            name: c.name,
-            enabled: c.enabled,
-            sortOrder: c.sortOrder,
-            modalities: c.modalities.map((m) => ({
-              modality: m.modality,
-              price: m.price,
-              enabled: m.enabled,
-            })),
-          }),
-        );
+      const payload: {
+        couriers: CreateCourierInput[];
+        deletedIds: string[];
+      } = {
+        couriers: input.couriers.map((c) => ({
+          name: c.name,
+          enabled: c.enabled,
+          sortOrder: c.sortOrder,
+          modalities: c.modalities.map((m) => ({
+            modality: m.modality,
+            price: m.price,
+            enabled: m.enabled,
+          })),
+        })),
+        deletedIds: input.deletedIds,
+      };
 
-      // Create new couriers
-      const creates = input.couriers
-        .filter((c) => isNewCourier(c.id))
-        .map((c) =>
-          couriersApi.create(storeId, {
-            name: c.name,
-            enabled: c.enabled,
-            sortOrder: c.sortOrder,
-            modalities: c.modalities.map((m) => ({
-              modality: m.modality,
-              price: m.price,
-              enabled: m.enabled,
-            })),
-          }),
-        );
-
-      await Promise.all([...updates, ...creates]);
+      return couriersApi.bulkSave(storeId, payload);
     },
     onSuccess: () => {
       if (!storeId) return;

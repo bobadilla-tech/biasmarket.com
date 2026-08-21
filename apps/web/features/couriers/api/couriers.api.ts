@@ -50,8 +50,8 @@ export interface UpdateCourierInput {
   enabled?: boolean;
   sortOrder?: number;
   modalities?: {
-    modality?: "AGENCY" | "HOME";
-    price?: number;
+    modality: "AGENCY" | "HOME";
+    price: number;
     enabled?: boolean;
   }[];
 }
@@ -132,5 +132,26 @@ export const couriersApi = {
       const err = await res.json().catch(() => null);
       throw new Error(err?.message ?? "Error al eliminar courier");
     }
+  },
+
+  async bulkSave(
+    storeId: string,
+    input: { couriers: CreateCourierInput[]; deletedIds: string[] },
+  ): Promise<Courier[]> {
+    const url = buildUrl("api", "stores", storeId, "couriers", "bulk-save");
+    // ID segments validated against CUID regex and encoded in buildUrl.
+    // eslint-disable-next-line security/detect-unsafe-url
+    const res = await fetch(url, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => null);
+      throw new Error(err?.message ?? "Error al guardar couriers");
+    }
+    const data: CourierResponse[] = await res.json();
+    return data.map(mapResponse);
   },
 };
