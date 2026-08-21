@@ -32,6 +32,9 @@ export const create = async (
   if (createOrderDto.paymentMethod !== undefined) {
     formData.append(`paymentMethod`, createOrderDto.paymentMethod);
   }
+  if (createOrderDto.paymentType !== undefined) {
+    formData.append(`paymentType`, createOrderDto.paymentType);
+  }
   formData.append(`customerPhone`, createOrderDto.customerPhone);
   if (createOrderDto.customerName !== undefined) {
     formData.append(`customerName`, createOrderDto.customerName);
@@ -46,7 +49,7 @@ export const create = async (
     );
   }
   createOrderDto.items.forEach((value) =>
-    formData.append(`items`, JSON.stringify(value))
+    formData.append(`items`, JSON.stringify(value)),
   );
 
   return customFetch<CheckoutResultResponseDto>(getCreateUrl(slug), {

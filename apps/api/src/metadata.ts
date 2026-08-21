@@ -1035,6 +1035,7 @@ export default async () => {
                 required: false,
                 enum: ['YAPE', 'PLIN', 'TRANSFER', 'CASH'],
               },
+              paymentType: { required: false, enum: ['FULL', 'PARTIAL'] },
               customerPhone: {
                 required: true,
                 type: () => String,
@@ -1060,6 +1061,35 @@ export default async () => {
                 ],
                 minItems: 1,
               },
+            },
+          },
+        ],
+        [
+          import('./modules/customer-auth/dto/account-order-response.dto.js'),
+          {
+            AccountOrderResponseDto: {
+              id: { required: true, type: () => String },
+              paymentStatus: {
+                required: true,
+                enum: [
+                  'PENDING_PAYMENT',
+                  'PARTIALLY_PAID',
+                  'PAYMENT_SUBMITTED',
+                  'VERIFIED',
+                  'REJECTED',
+                  'CANCELLED',
+                ],
+              },
+              fulfillmentStatus: {
+                required: true,
+                enum: ['ORDERING', 'IN_TRANSIT', 'READY', 'COMPLETED'],
+              },
+              totalAmount: { required: true, type: () => String },
+              currency: { required: true, type: () => String },
+              createdAt: { required: true, type: () => String },
+              paidAmount: { required: true, type: () => Number },
+              pendingAmount: { required: true, type: () => Number },
+              paidPercentage: { required: true, type: () => Number },
             },
           },
         ],
@@ -1197,32 +1227,6 @@ export default async () => {
                 type: () => String,
                 nullable: true,
               },
-            },
-          },
-        ],
-        [
-          import('./modules/customer-auth/dto/account-order-response.dto.js'),
-          {
-            AccountOrderResponseDto: {
-              id: { required: true, type: () => String },
-              paymentStatus: {
-                required: true,
-                enum: [
-                  'PENDING_PAYMENT',
-                  'PARTIALLY_PAID',
-                  'PAYMENT_SUBMITTED',
-                  'VERIFIED',
-                  'REJECTED',
-                  'CANCELLED',
-                ],
-              },
-              fulfillmentStatus: {
-                required: true,
-                enum: ['ORDERING', 'IN_TRANSIT', 'READY', 'COMPLETED'],
-              },
-              totalAmount: { required: true, type: () => String },
-              currency: { required: true, type: () => String },
-              createdAt: { required: true, type: () => String },
             },
           },
         ],
@@ -1406,11 +1410,7 @@ export default async () => {
               accountHolder: { required: false, type: () => String },
               accountType: { required: false, type: () => String },
               phoneNumber: { required: false, type: () => String },
-              qrImageUrl: {
-                required: false,
-                type: () => String,
-                format: 'uri',
-              },
+              qrImageUrl: { required: false, type: () => String },
             },
           },
         ],
@@ -1429,6 +1429,12 @@ export default async () => {
                   t[
                     './modules/payment-config/dto/payment-method-details.dto.js'
                   ].PaymentMethodDetailsDto,
+              },
+              depositPercent: {
+                required: false,
+                type: () => Number,
+                minimum: 1,
+                maximum: 100,
               },
             },
           },
@@ -1449,8 +1455,7 @@ export default async () => {
                 type: 'object',
                 additionalProperties: true,
               },
-              depositPercentPickup: { required: true, type: () => Number },
-              depositPercentCourier: { required: true, type: () => Number },
+              depositPercent: { required: true, type: () => Number },
               createdAt: { required: true, type: () => String },
             },
           },

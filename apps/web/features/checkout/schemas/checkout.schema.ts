@@ -39,6 +39,7 @@ export function buildCheckoutFormSchema(
       pickupPointId: z.string(),
       pickupDate: z.string(),
       paymentMethod: z.string(),
+      paymentType: z.enum(["FULL", "PARTIAL"]),
       // Only required for COURIER (validated below) — inline fields, no
       // addressId picker, see the plan doc referenced above.
       shippingRecipientName: z.string(),

@@ -83,6 +83,10 @@ export class CreateOrderDto {
   @IsIn(['YAPE', 'PLIN', 'TRANSFER', 'CASH'])
   paymentMethod?: 'YAPE' | 'PLIN' | 'TRANSFER' | 'CASH';
 
+  @IsOptional()
+  @IsIn(['FULL', 'PARTIAL'])
+  paymentType?: 'FULL' | 'PARTIAL';
+
   @IsString()
   @MinLength(6)
   customerPhone: string;

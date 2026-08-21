@@ -20,10 +20,7 @@ export class PaymentMethodConfigResponseDto {
   details: Record<string, unknown>;
 
   @ApiProperty()
-  depositPercentPickup: number;
-
-  @ApiProperty()
-  depositPercentCourier: number;
+  depositPercent: number;
 
   @ApiProperty({ type: String, format: 'date-time' })
   createdAt: string;

@@ -17,6 +17,7 @@ const validValues = {
   shippingRegion: "",
   shippingReference: "",
   paymentProof: null,
+  paymentType: "FULL",
 };
 
 const manualMethodValues = {
