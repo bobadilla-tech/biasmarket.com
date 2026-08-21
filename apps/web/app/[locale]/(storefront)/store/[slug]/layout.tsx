@@ -1,8 +1,10 @@
 import { getStoreThemeStyle } from "@/lib/store-theme";
 import { AccountNavLink } from "@/features/customer-auth";
+import { CartLink } from "./cart-link";
 
 async function getStoreThemeConfig(slug: string) {
-  const apiUrl = process.env.INTERNAL_API_URL ??
+  const apiUrl =
+    process.env.INTERNAL_API_URL ??
     process.env.NEXT_PUBLIC_API_URL ??
     (process.env.NODE_ENV === "development"
       ? "http://localhost:3000"
@@ -29,7 +31,10 @@ export default async function StoreLayout({
 
   return (
     <div style={getStoreThemeStyle(themeConfig)}>
-      <AccountNavLink slug={slug} />
+      <div className="fixed top-4 right-4 z-10 flex items-center gap-2">
+        <CartLink slug={slug} />
+        <AccountNavLink slug={slug} />
+      </div>
       {children}
     </div>
   );
