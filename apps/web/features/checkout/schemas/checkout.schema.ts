@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { CheckoutPaymentMethod } from "@biasmarket/utils/payment-methods";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ACCEPTED_MIME_TYPES = ["image/jpeg", "image/png", "application/pdf"];
@@ -29,6 +30,7 @@ export function buildCheckoutFormSchema(
   pickupPointsAvailable: boolean,
   paymentMethodsAvailable: boolean,
   pointsRequiringDate: ReadonlySet<string> = new Set(),
+  unconfiguredManualMethods: ReadonlySet<CheckoutPaymentMethod> = new Set(),
 ) {
   return z
     .object({
@@ -80,7 +82,13 @@ export function buildCheckoutFormSchema(
       (data) =>
         // The upload field is only rendered for a picked manual method, but
         // validate unconditionally so a cleared file can't sneak through.
+        // Skipped for a method the store enabled but never finished
+        // configuring — there's no real account to prove payment against,
+        // so checkout falls back to WhatsApp coordination instead.
         !(MANUAL_METHODS as readonly string[]).includes(data.paymentMethod) ||
+        unconfiguredManualMethods.has(
+          data.paymentMethod as CheckoutPaymentMethod,
+        ) ||
         !!data.paymentProof,
       { message: "proof required", path: ["paymentProof"] },
     )

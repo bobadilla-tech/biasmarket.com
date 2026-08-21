@@ -83,6 +83,8 @@
     "invalidEmail": "Enter a valid email",
     "submit": "Confirm order",
     "submitSubtext": "Attach your payment proof and confirm.",
+    "submitSubtextCoordinate": "We'll contact you on WhatsApp to coordinate payment.",
+    "submitSubtextCash": "Coordinate cash payment with the store when your order arrives.",
     "submitting": "Sending...",
     "noDeliveryMethod": "The store hasn't set up a delivery method yet — contact the seller.",
     "mixedCurrencyWarning": "You can't check out products in different currencies in the same order. Remove one from your cart.",

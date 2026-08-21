@@ -300,6 +300,8 @@
         }
       },
       "footer": "Los métodos habilitados se muestran al registrar abonos de pedidos.",
+      "setupNudgeTitle": "Configura un método de pago para hacer seguimiento automático",
+      "setupNudgeDescription": "Al configurar los datos reales de un método (Yape, Plin o transferencia), Bias Market puede vincular cada abono con su pedido y mantener el estado sincronizado mientras lo revisas. Tu tienda funciona igual sin esto — puedes seguir coordinando todos los pedidos por WhatsApp, nada se bloquea.",
       "editDetails": "Editar datos",
       "hideDetails": "Ocultar",
       "saveDetails": "Guardar datos",

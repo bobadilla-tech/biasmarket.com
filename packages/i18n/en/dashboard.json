@@ -300,6 +300,8 @@
         }
       },
       "footer": "Enabled methods are shown when registering order payments.",
+      "setupNudgeTitle": "Configure a payment method to track payments automatically",
+      "setupNudgeDescription": "Once you set real details for a method (Yape, Plin, or bank transfer), Bias Market can link each payment to its order and keep the status in sync as you review it. Your store works exactly the same without this — you can keep coordinating every order over WhatsApp, nothing gets blocked.",
       "editDetails": "Edit details",
       "hideDetails": "Hide",
       "saveDetails": "Save details",

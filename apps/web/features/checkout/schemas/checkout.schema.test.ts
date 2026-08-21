@@ -226,3 +226,33 @@ test("rejects an unsupported proof type", () => {
   });
   expect(result.success).toBe(false);
 });
+
+test("does not require a payment proof for a method the store enabled but never configured", () => {
+  const schema = buildCheckoutFormSchema(
+    true,
+    true,
+    new Set(),
+    new Set(["YAPE"]),
+  );
+  const result = schema.safeParse({
+    ...manualMethodValues,
+    paymentMethod: "YAPE",
+    paymentProof: null,
+  });
+  expect(result.success).toBe(true);
+});
+
+test("still requires a payment proof for a configured manual method not in the unconfigured set", () => {
+  const schema = buildCheckoutFormSchema(
+    true,
+    true,
+    new Set(),
+    new Set(["YAPE"]),
+  );
+  const result = schema.safeParse({
+    ...manualMethodValues,
+    paymentMethod: "TRANSFER",
+    paymentProof: null,
+  });
+  expect(result.success).toBe(false);
+});

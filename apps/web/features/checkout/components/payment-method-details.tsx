@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { AlertTriangle, Banknote, Check, Copy } from "lucide-react";
 import type { PaymentMethodConfigResponseDto } from "@biasmarket/types";
+import { isPaymentMethodConfigured } from "@biasmarket/utils/payment-methods";
 
 interface PaymentMethodDetailsProps {
   method: PaymentMethodConfigResponseDto;
@@ -30,7 +31,7 @@ export function PaymentMethodDetails({ method }: PaymentMethodDetailsProps) {
 
   if (method.method === "TRANSFER") {
     const bankName = getDetail(details, "bankName");
-    if (!bankName) {
+    if (!isPaymentMethodConfigured("TRANSFER", details)) {
       return <NotConfiguredBanner />;
     }
     return (
@@ -62,7 +63,7 @@ export function PaymentMethodDetails({ method }: PaymentMethodDetailsProps) {
   const accountHolder = getDetail(details, "accountHolder");
   const qrImageUrl = getDetail(details, "qrImageUrl");
 
-  if (!phoneNumber && !qrImageUrl) {
+  if (!isPaymentMethodConfigured(method.method, details)) {
     return <NotConfiguredBanner />;
   }
 
