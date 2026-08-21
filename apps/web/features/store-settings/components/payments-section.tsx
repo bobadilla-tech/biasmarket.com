@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { ChevronDown, ChevronUp, CreditCard } from "lucide-react";
+import { ChevronDown, ChevronUp, CreditCard, Info } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { isPaymentMethodConfigured } from "@biasmarket/utils/payment-methods";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -218,6 +219,15 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
     uploadQr.mutate({ method, file });
   }
 
+  // CASH is seeded enabled on every store and always counts as "configured"
+  // (it needs no details) — excluded here so the nudge targets sellers who
+  // haven't set up a real trackable method yet, not every store by default.
+  const anyConfigured = methods?.some(
+    (m) =>
+      m.method !== "CASH" &&
+      m.enabled &&
+      isPaymentMethodConfigured(m.method, m.details),
+  );
   function updateDepositPercent(method: string, value: string) {
     const num = parseInt(value, 10);
     setDepositPercents((prev) => ({
@@ -261,6 +271,19 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
       title={t("payments.title")}
       description={t("payments.description")}
     >
+      {methods && !anyConfigured && (
+        <div className="mb-4 flex items-start gap-3 rounded-2xl border border-[#e4e0fb] bg-[#f7f5ff] p-4 text-sm text-[#5b4b8a]">
+          <Info className="mt-0.5 size-5 shrink-0 text-[#7540d9]" />
+          <div>
+            <p className="font-medium text-[#341b55]">
+              {t("payments.setupNudgeTitle")}
+            </p>
+            <p className="mt-1 text-xs text-[#8f7da8]">
+              {t("payments.setupNudgeDescription")}
+            </p>
+          </div>
+        </div>
+      )}
       <div className="space-y-3">
         {PAYMENT_METHODS.map((method) => {
           const hasDetails = METHODS_WITH_DETAILS.includes(

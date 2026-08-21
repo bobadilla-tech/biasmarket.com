@@ -8,6 +8,7 @@ const {
   findEnabledPickupPoints,
   findEnabledPaymentConfig,
   findAddresses,
+  findCustomerProfile,
   findStorePublic,
   fetchMock,
 } = vi.hoisted(() => ({
@@ -18,6 +19,11 @@ const {
   // logged-out buyer's 401, and the hook (useDefaultShippingAddress) never
   // surfaces that as a UI error, only as an empty prefill.
   findAddresses: vi.fn().mockRejectedValue(new Error("not authenticated")),
+  // Same "unauthenticated by default" shape as findAddresses above — a
+  // guest checkout gets a failed useCustomerProfile query, never a UI error.
+  findCustomerProfile: vi
+    .fn()
+    .mockRejectedValue(new Error("not authenticated")),
   findStorePublic: vi.fn(),
   fetchMock: vi.fn(),
 }));
@@ -28,6 +34,7 @@ vi.mock("@/lib/api-client", () => ({
     publicPickupPoints: { findEnabled: findEnabledPickupPoints },
     publicPaymentConfig: { findEnabled: findEnabledPaymentConfig },
     addresses: { findAll: findAddresses },
+    customerAuth: { me: findCustomerProfile },
     stores: { findPublic: findStorePublic },
   },
 }));
@@ -95,7 +102,11 @@ test("submits the delivery type, pickup point, and manual payment method with an
   });
   findEnabledPaymentConfig.mockResolvedValue([
     { method: "YAPE", enabled: true, details: {} },
-    { method: "TRANSFER", enabled: true, details: {} },
+    {
+      method: "TRANSFER",
+      enabled: true,
+      details: { bankName: "BCP", accountNumber: "123", accountHolder: "Jane" },
+    },
   ]);
   fetchMock.mockResolvedValueOnce({
     ok: true,
@@ -176,7 +187,7 @@ test("keeps the submit button disabled for a manual method until a proof is atta
     ],
   });
   findEnabledPaymentConfig.mockResolvedValue([
-    { method: "YAPE", enabled: true, details: {} },
+    { method: "YAPE", enabled: true, details: { phoneNumber: "987654321" } },
   ]);
 
   const user = userEvent.setup();
@@ -224,7 +235,7 @@ test("a PDF proof renders without a preview but still unlocks submit", async () 
     ],
   });
   findEnabledPaymentConfig.mockResolvedValue([
-    { method: "YAPE", enabled: true, details: {} },
+    { method: "YAPE", enabled: true, details: { phoneNumber: "987654321" } },
   ]);
 
   const user = userEvent.setup();
@@ -317,11 +328,9 @@ test("selecting a closed-today point reveals a date picker defaulted to the next
   // closedTodayDays excludes only today, so the next open day is tomorrow.
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
-  const expected = `${tomorrow.getFullYear()}-${
-    String(
-      tomorrow.getMonth() + 1,
-    ).padStart(2, "0")
-  }-${String(tomorrow.getDate()).padStart(2, "0")}`;
+  const expected = `${tomorrow.getFullYear()}-${String(
+    tomorrow.getMonth() + 1,
+  ).padStart(2, "0")}-${String(tomorrow.getDate()).padStart(2, "0")}`;
 
   const dateInput = await screen.findByLabelText("Fecha de recojo");
   expect((dateInput as HTMLInputElement).value).toBe(expected);
@@ -514,5 +523,120 @@ test("prefills the shippingAddress fields from the buyer's saved default address
     expect(
       (screen.getByPlaceholderText("Ciudad") as HTMLInputElement).value,
     ).toBe("Lima");
+  });
+});
+
+test("prefills name/phone/email from a logged-in buyer's saved profile, editable afterwards", async () => {
+  findEnabledDeliveryConfig.mockResolvedValue([
+    { type: "PICKUP", enabled: true, details: {} },
+  ]);
+  findEnabledPickupPoints.mockResolvedValue({ weekday: today, points: [] });
+  findEnabledPaymentConfig.mockResolvedValue([]);
+  findCustomerProfile.mockResolvedValueOnce({
+    customer: {
+      name: "Jane Doe",
+      email: "jane@example.com",
+      phone: "+51988888888",
+      emailVerified: true,
+      pendingEmail: null,
+      pendingPhone: null,
+    },
+    orders: [],
+  });
+
+  const user = userEvent.setup();
+  renderWithProviders(
+    <CheckoutForm slug="my-store" items={cartItems} onOrderCreated={vi.fn()} />,
+  );
+
+  await waitFor(() => {
+    expect(
+      (screen.getByPlaceholderText("Nombre") as HTMLInputElement).value,
+    ).toBe("Jane Doe");
+    expect(
+      (screen.getByPlaceholderText("Email") as HTMLInputElement).value,
+    ).toBe("jane@example.com");
+  });
+
+  const nameInput = screen.getByPlaceholderText("Nombre") as HTMLInputElement;
+  await user.clear(nameInput);
+  await user.type(nameInput, "John Doe");
+  expect(nameInput.value).toBe("John Doe");
+});
+
+test("prefers a genuinely-configured payment method over an earlier unconfigured one when auto-selecting", async () => {
+  findEnabledDeliveryConfig.mockResolvedValue([
+    { type: "PICKUP", enabled: true, details: {} },
+  ]);
+  findEnabledPickupPoints.mockResolvedValue({ weekday: today, points: [] });
+  findEnabledPaymentConfig.mockResolvedValue([
+    { method: "YAPE", enabled: true, details: {} },
+    {
+      method: "TRANSFER",
+      enabled: true,
+      details: { bankName: "BCP", accountNumber: "123", accountHolder: "Jane" },
+    },
+  ]);
+
+  renderWithProviders(
+    <CheckoutForm slug="my-store" items={cartItems} onOrderCreated={vi.fn()} />,
+  );
+
+  const transferCard = await screen.findByText("Transferencia bancaria");
+  const yapeCard = screen.getByText("Yape");
+  await waitFor(() => {
+    expect(transferCard.closest("button")?.getAttribute("aria-pressed")).toBe(
+      "true",
+    );
+    expect(yapeCard.closest("button")?.getAttribute("aria-pressed")).toBe(
+      "false",
+    );
+  });
+});
+
+test("checking out with a method the store enabled but never configured skips the proof upload and coordinates via WhatsApp", async () => {
+  findEnabledDeliveryConfig.mockResolvedValue([
+    { type: "PICKUP", enabled: true, details: {} },
+  ]);
+  findEnabledPickupPoints.mockResolvedValue({ weekday: today, points: [] });
+  findEnabledPaymentConfig.mockResolvedValue([
+    { method: "YAPE", enabled: true, details: {} },
+  ]);
+  fetchMock.mockResolvedValueOnce(okResponse());
+
+  const user = userEvent.setup();
+  const onOrderCreated = vi.fn();
+  renderWithProviders(
+    <CheckoutForm
+      slug="my-store"
+      items={cartItems}
+      onOrderCreated={onOrderCreated}
+    />,
+  );
+
+  await screen.findByText(/todavía no configuró este método de pago/i);
+  expect(screen.queryByLabelText(proofUploadLabel)).toBeNull();
+  expect(
+    screen.getByText(/Te contactaremos por WhatsApp para coordinar el pago/i),
+  ).toBeDefined();
+
+  await user.type(
+    screen.getByPlaceholderText("Teléfono (WhatsApp)"),
+    "988888888",
+  );
+  await user.type(screen.getByPlaceholderText("Email"), "jane@example.com");
+  const submitButton = screen.getByRole("button", {
+    name: /Confirmar pedido/i,
+  }) as HTMLButtonElement;
+  expect(submitButton.disabled).toBe(false);
+
+  await user.click(submitButton);
+
+  await waitFor(() => {
+    const [, options] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const body = options.body as FormData;
+    expect(body.get("paymentMethod")).toBe("YAPE");
+    expect(body.has("file")).toBe(false);
+    expect(onOrderCreated).toHaveBeenCalled();
   });
 });
