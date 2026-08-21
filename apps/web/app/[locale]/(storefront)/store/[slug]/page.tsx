@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import type { Locale } from "next-intl";
 import { getTranslations } from "next-intl/server";
-import { CartLink } from "./cart-link";
 import { isProductOutOfStock } from "@/features/discovery/lib/product-stock";
 import { canonicalUrl, SITE_URL } from "@/lib/site-config";
 import { StoreLogo } from "@/components/store-logo";
@@ -209,7 +208,6 @@ export default async function StorePage({
         <main className="max-w-5xl mx-auto px-4 py-8">
           <p className="text-gray-500 text-center">{t("noProducts")}</p>
         </main>
-        <CartLink slug={slug} />
       </div>
     );
   }
@@ -267,7 +265,6 @@ export default async function StorePage({
           </section>
         )}
       </main>
-      <CartLink slug={slug} />
     </div>
   );
 }

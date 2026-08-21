@@ -9,6 +9,11 @@ export interface CartItem {
   quantity: number;
 }
 
+// Fired on window after every cart mutation so mounted UI (e.g. the header
+// CartLink badge) can re-read localStorage without waiting for a remount or
+// a window focus.
+export const CART_UPDATED_EVENT = "biasmarket:cart-updated";
+
 const cartKey = (slug: string) => `biasmarket:cart:${slug}`;
 
 const itemKey = (item: Pick<CartItem, "productId" | "variantId">) =>
@@ -26,6 +31,9 @@ export function getCart(slug: string): CartItem[] {
 
 function saveCart(slug: string, items: CartItem[]) {
   globalThis.localStorage.setItem(cartKey(slug), JSON.stringify(items));
+  globalThis.dispatchEvent(
+    new CustomEvent(CART_UPDATED_EVENT, { detail: { slug } }),
+  );
 }
 
 export function addToCart(slug: string, item: CartItem): CartItem[] {
@@ -33,10 +41,10 @@ export function addToCart(slug: string, item: CartItem): CartItem[] {
   const existing = items.find((i) => itemKey(i) === itemKey(item));
   const next = existing
     ? items.map((i) =>
-      itemKey(i) === itemKey(item)
-        ? { ...i, quantity: i.quantity + item.quantity }
-        : i
-    )
+        itemKey(i) === itemKey(item)
+          ? { ...i, quantity: i.quantity + item.quantity }
+          : i,
+      )
     : [...items, item];
   saveCart(slug, next);
   return next;
@@ -48,11 +56,12 @@ export function updateQuantity(
   quantity: number,
 ): CartItem[] {
   const items = getCart(slug);
-  const next = quantity <= 0
-    ? items.filter((i) => itemKey(i) !== itemKey(target))
-    : items.map((
-      i,
-    ) => (itemKey(i) === itemKey(target) ? { ...i, quantity } : i));
+  const next =
+    quantity <= 0
+      ? items.filter((i) => itemKey(i) !== itemKey(target))
+      : items.map((i) =>
+          itemKey(i) === itemKey(target) ? { ...i, quantity } : i,
+        );
   saveCart(slug, next);
   return next;
 }

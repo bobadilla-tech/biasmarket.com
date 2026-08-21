@@ -10,7 +10,8 @@ import { useCustomerProfile } from "../queries/use-customer-profile";
 // (components/dashboard/store-sidebar.tsx). Driven entirely by the buyer
 // Customer session cookie via GET .../account/me — a 401 there just means
 // "not logged in", not an error, so nothing is shown while that's loading
-// to avoid a login/logout flash on every page load.
+// to avoid a login/logout flash on every page load. Positioned by the fixed
+// nav cluster in store/[slug]/layout.tsx, next to CartLink.
 export function AccountNavLink({ slug }: { slug: string }) {
   const t = useTranslations("storefront.accountNav");
   const { data, isPending } = useCustomerProfile(slug);
@@ -20,7 +21,7 @@ export function AccountNavLink({ slug }: { slug: string }) {
   return (
     <Link
       href={data ? `/store/${slug}/account` : `/store/${slug}/account/login`}
-      className="fixed top-4 right-4 z-10 rounded-full bg-white px-4 py-2 text-xs font-semibold text-gray-700 shadow-sm border border-gray-100 transition hover:bg-gray-50"
+      className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-gray-700 shadow-sm border border-gray-100 transition hover:bg-gray-50"
     >
       {data ? t("myAccount") : t("login")}
     </Link>
