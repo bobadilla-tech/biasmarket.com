@@ -208,8 +208,14 @@ already the shared-pure-functions package per `CLAUDE.md`, importable from both
 2. In `create()`, before the `REQUIRES_PROOF` check: if `dto.paymentMethod` is
    set and isn't `CASH`, call `findEnabledForSlug(slug)`, find the row matching
    `dto.paymentMethod`, and compute
-   `configured = row ?
-isPaymentMethodConfigured(row.method, row.details) : false`.
+   `configured = row ? isPaymentMethodConfigured(row.method, row.details as Record<string, unknown> | null) : false`
+   — `PaymentMethodConfig.details` is a non-nullable Prisma `Json` field
+   (`schema.prisma:421`), typed by the Prisma client as `JsonValue`, not
+   assignable to `isPaymentMethodConfigured`'s
+   `Record<string, unknown> |
+   null | undefined` parameter without a cast;
+   `payment-config.service.ts:124` already does the same cast for the same
+   field, mirror it here rather than widening the shared function's signature.
    **Deliberate decision on timing**: this read happens in the controller,
    before `CreateOrderUseCase.execute()`'s transaction, not inside it — unlike
    the `PickupPoint` `FOR UPDATE` lock pattern documented inside that
@@ -245,9 +251,17 @@ isPaymentMethodConfigured(row.method, row.details) : false`.
    and submitted, a store listing YAPE (unconfigured) before TRANSFER
    (configured) would silently default new buyers into the WhatsApp-coordination
    path even though an in-app-trackable method exists. Change the default to
-   `paymentMethods.find((m) => isPaymentMethodConfigured(m.method, m.details)) ?? paymentMethods[0]`
-   so a configured method wins when one exists, falling back to the first method
-   (whatever it is) only when none are configured.
+   `paymentMethods.find((m) => m.method !== "CASH" && isPaymentMethodConfigured(m.method, m.details)) ?? paymentMethods[0]`
+   so a genuinely-configured YAPE/PLIN/TRANSFER wins when one exists, falling
+   back to the first method (whatever it is) only when none are configured.
+   **Exclude CASH from this preference check deliberately**: every store is
+   seeded with CASH `enabled: true` by default at store creation
+   (`apps/api/src/modules/stores/stores.service.ts:48-55`), and
+   `isPaymentMethodConfigured` always returns `true` for CASH (it needs no
+   details) — without the `m.method !== "CASH"` guard, CASH would satisfy
+   `.find()` on literally every store and this "prefer configured" change would
+   silently become "prefer CASH", never actually preferring a configured
+   YAPE/PLIN/TRANSFER over an unconfigured one.
 2. Only mount the `PaymentProofUpload` block (`checkout-form.tsx:611-637`) when
    `paymentMethod && paymentMethod !==
 "CASH" && selectedMethodConfigured`. When
@@ -336,10 +350,11 @@ selectedMethodConfigured && !paymentProof)`.
    `PhoneInput` (`apps/web/components/ui/phone-input.tsx`) always
    produces/consumes `${dialCode}${nationalNumber}` (e.g. `+51987654321`) via
    `parsePhoneValue` (`packages/utils/src/phone-country/index.ts`).
-   `Customer.phone` is always written through `normalizePhone()`
-   (`apps/api/src/modules/orders/application/customer-account.service.ts:171`,
-   called from `findOrCreateCustomer`), which produces the exact same shape via
-   the same `parsePhoneValue` helper.
+   `Customer.phone` is always written through `normalizePhone()` (called at
+   `apps/api/src/modules/orders/application/customer-account.service.ts:115`
+   inside `findOrCreateCustomer`; line 171 is the later `tx.customer.create`
+   consuming the already-normalized value), which produces the exact same shape
+   via the same `parsePhoneValue` helper.
    `form.setValue("customerPhone",
    customer.phone)` is safe as-is — no extra
    normalization step needed at the prefill site.
@@ -360,10 +375,17 @@ selectedMethodConfigured && !paymentProof)`.
 `apps/web/features/store-settings/components/payments-section.tsx`:
 
 1. Compute
-   `const anyConfigured = paymentMethods.data?.some((m) => m.enabled && isPaymentMethodConfigured(m.method, m.details))`
+   `const anyConfigured = paymentMethods.data?.some((m) => m.method !== "CASH" && m.enabled && isPaymentMethodConfigured(m.method, m.details))`
    (adjust to whatever shape `usePaymentMethods()` already returns — check its
    query before wiring, likely the same `PaymentMethodConfigResponseDto[]` used
-   elsewhere).
+   elsewhere). **The `m.method !== "CASH"` exclusion is required, not
+   optional**: `apps/api/src/modules/stores/stores.service.ts:48-55` seeds every
+   new store with CASH `enabled: true` at creation, and
+   `isPaymentMethodConfigured` always returns `true` for CASH. Without this
+   exclusion, `anyConfigured` would be `true` for every store from the moment
+   it's created — the banner would never render for the exact seller this
+   feature targets (one who has never configured an actual trackable method),
+   directly defeating Definition of Done #3.
 2. When `!anyConfigured` (and the query has loaded), render a single
    informational banner above the method list — reuse the existing card/banner
    visual language in this file (e.g. the same rounded/border/icon treatment
@@ -417,6 +439,10 @@ selectedMethodConfigured && !paymentProof)`.
 - `apps/api/src/modules/orders/orders.module.ts` (add `PaymentConfigModule` to
   `imports`)
 - `apps/api/src/modules/orders/infrastructure/checkout.controller.ts`
+- `apps/api/test/orders.e2e-spec.ts` (fix the now-breaking
+  `'checkout with a
+  manual payment method but no proof 400s'` case per the
+  note above, add new unconfigured-method-skips-proof and CASH-unaffected cases)
 - `apps/web/features/store-settings/components/payments-section.tsx`
 - i18n: `packages/i18n/es/storefront.json`, `packages/i18n/en/storefront.json`
   (submit/subtext keys), `packages/i18n/es/dashboard.json`,
@@ -424,20 +450,43 @@ selectedMethodConfigured && !paymentProof)`.
 - Optional doc-drift cleanup: `docs/core/security-payments.md` §9,
   `apps/api/src/modules/orders/domain/order-status.vo.ts:9-11` comment.
 
-**No existing test currently covers `CheckoutController`/`REQUIRES_PROOF` at
-all** — confirmed, there is no unit spec or e2e-spec for this controller today.
-This plan needs a from-scratch test, not an update to an existing one. Write it
-as an **e2e-spec** (`checkout.e2e-spec.ts`, real `AppModule`, real DB, per
-`vitest.config.e2e.ts`), not a unit spec — `CreateOrderUseCase.execute` uses
-`$transaction` plus a raw `$queryRaw` row lock for the pickup-point path, which
-is impractical to fully mock through this repo's stubbed-`PrismaService`
-unit-test convention.
+**Correction: `apps/api/test/orders.e2e-spec.ts` already covers
+`CheckoutController`/`REQUIRES_PROOF` today** — it has a `checkout()` helper
+(line 182) and existing cases including
+`'checkout with a manual payment
+method but no proof 400s'` (lines 543-558) and
+`'checkout as CASH without a
+proof succeeds'` (line 599). Add new cases to this
+existing file (e2e specs live flat under `apps/api/test/`, not colocated under
+`src/modules/orders/`) rather than inventing an unlisted new file — a
+from-scratch spec was the original (wrong) plan here.
+
+**This existing test will break once `REQUIRES_PROOF && configured` ships, and
+the plan must fix it, not just add to it.** `stores.service.ts:48-55` seeds
+every new store with all four payment methods `enabled: true, details:
+{}` on
+creation, and this e2e suite never configures real `details` for any method
+(confirmed: no `/payment-methods` or `paymentMethodConfig.upsert` calls anywhere
+in the file). So the suite's test store's PLIN row is exactly the "enabled but
+unconfigured" case this plan targets — once the fix ships, `configured` will be
+`false` for it, and the existing
+`'checkout with a
+manual payment method but no proof 400s'` test (lines 543-558)
+will start getting `201` instead of the `400` it currently asserts. Before
+adding new cases, either (a) make that existing test explicitly configure real
+PLIN `details` first (via the payment-config upsert endpoint or a direct Prisma
+write in the test setup) so it still exercises the "configured but no proof" 400
+path, or (b) rename/repurpose it to assert the new unconfigured-method 201
+behavior and add a separate case with real details for the 400 path — pick (a),
+since the original test's intent (configured method, missing proof, 400) is
+still a real case this plan must keep passing.
 
 ## Verification
 
-- `pnpm --filter api test:e2e` — new `checkout.e2e-spec.ts` cases: proof not
-  required when method enabled-but-unconfigured; still required when configured;
-  unaffected for CASH and for no-method-selected.
+- `pnpm --filter api test:e2e` — `orders.e2e-spec.ts`: fixed
+  configured-but-no-proof case (now explicitly configures PLIN details first,
+  see above) still 400s; new unconfigured-method case succeeds without a proof;
+  CASH and no-method-selected stay unaffected.
 - `pnpm exec vitest run features/checkout features/store-settings` (from
   `apps/web`) — schema + form tests for the new unconfigured-method path,
   prefill effect test (mock `useCustomerProfile` returning a profile, assert
