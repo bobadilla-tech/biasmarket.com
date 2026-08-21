@@ -20,6 +20,7 @@ import type {
   CourierModalityResponseDto,
 } from './dto/courier-response.dto.js';
 import type { PublicCourierDto } from './dto/public-courier-response.dto.js';
+import { BulkSaveCouriersBodyDto } from './dto/bulk-save-couriers.dto.js';
 
 type CourierWithConfigs = Prisma.CourierGetPayload<{
   include: { configs: true };
@@ -82,6 +83,16 @@ export class CouriersController {
   ): Promise<CourierResponseDto> {
     const row = await this.couriers.create(storeId, session.user.id, dto);
     return toCourierDto(row);
+  }
+
+  @Post('bulk-save')
+  async bulkSave(
+    @Param('storeId') storeId: string,
+    @Session() session: UserSession,
+    @Body() dto: BulkSaveCouriersBodyDto,
+  ): Promise<CourierResponseDto[]> {
+    const rows = await this.couriers.bulkSave(storeId, session.user.id, dto);
+    return rows.map(toCourierDto);
   }
 
   @Patch(':courierId')
