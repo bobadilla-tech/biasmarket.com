@@ -1,4 +1,4 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
@@ -15,16 +15,14 @@ import {
 } from 'class-validator';
 
 export class UpdateCourierModalityDto {
-  @ApiPropertyOptional({ enum: ['AGENCY', 'HOME'] })
-  @IsOptional()
+  @ApiProperty({ enum: ['AGENCY', 'HOME'] })
   @IsEnum(['AGENCY', 'HOME'] as const)
-  modality?: 'AGENCY' | 'HOME';
+  modality: 'AGENCY' | 'HOME';
 
-  @ApiPropertyOptional({ type: Number })
-  @IsOptional()
+  @ApiProperty({ type: Number })
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  price?: number;
+  price: number;
 
   @ApiPropertyOptional()
   @IsOptional()

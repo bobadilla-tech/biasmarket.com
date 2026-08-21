@@ -92,10 +92,9 @@ export class CreateOrderUseCase {
     }
 
     // COURIER orders now require a seller-defined courier name and modality
-    // (issue #99). Look up the courier + modality config outside the
-    // transaction to validate; the actual price is read inside the tx with a
-    // lock to prevent a stale read.
-    let courierConfig: CourierConfig | null = null;
+    // (issue #99). Validate DTO fields here; the actual courier lookup + lock
+    // happens inside the transaction to prevent stale reads.
+    let courierModalityType: 'AGENCY' | 'HOME' | null = null;
     if (dto.deliveryMethodType === 'COURIER') {
       if (!dto.courierName) {
         throw new BadRequestException(
@@ -107,27 +106,7 @@ export class CreateOrderUseCase {
           'Debes seleccionar una modalidad (Agencia o Domicilio)',
         );
       }
-      const courier = await this.prisma.courier.findFirst({
-        where: {
-          storeId: store.id,
-          name: dto.courierName,
-          enabled: true,
-        },
-        include: {
-          configs: {
-            where: {
-              modality: dto.courierModality,
-              enabled: true,
-            },
-          },
-        },
-      });
-      if (!courier || courier.configs.length === 0) {
-        throw new BadRequestException(
-          'El courier seleccionado no está disponible para esta tienda',
-        );
-      }
-      courierConfig = courier.configs[0];
+      courierModalityType = dto.courierModality;
 
       // Validate modality-specific shipping fields
       const addr = dto.shippingAddress;
@@ -254,6 +233,30 @@ export class CreateOrderUseCase {
             );
           }
           pickupPoint = { id: point.id, label: point.label };
+        }
+
+        // Lock the courier config row inside the transaction so a concurrent
+        // seller edit (disable / price change) can't land between validation
+        // and order persistence. Same FOR UPDATE pattern as PickupPoint.
+        let courierConfig: CourierConfig | null = null;
+        if (courierModalityType && dto.courierName) {
+          const [lockedConfig] = await tx.$queryRaw<
+            CourierConfig[]
+          >`SELECT cc.* FROM "CourierConfig" cc
+             JOIN "Courier" c ON c.id = cc."courierId"
+             WHERE c."storeId" = ${store.id}
+               AND c.name = ${dto.courierName}
+               AND c.enabled = true
+               AND cc.modality = ${courierModalityType}
+               AND cc.enabled = true
+             LIMIT 1
+             FOR UPDATE`;
+          if (!lockedConfig) {
+            throw new BadRequestException(
+              'El courier seleccionado no está disponible para esta tienda',
+            );
+          }
+          courierConfig = lockedConfig;
         }
 
         let customerId: string | undefined;

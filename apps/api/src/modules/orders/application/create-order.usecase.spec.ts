@@ -367,23 +367,26 @@ describe('CreateOrderUseCase', () => {
       type: 'COURIER',
       details: { estimatedCost: 15 },
     });
-    prisma.courier.findFirst.mockResolvedValue({
-      id: 'courier-1',
-      storeId: store.id,
-      name: 'Olva',
-      enabled: true,
-      sortOrder: 0,
-      createdAt: new Date(),
-      configs: [
-        {
-          id: 'config-1',
-          courierId: 'courier-1',
-          modality: 'HOME',
-          price: new FakeDecimal(12),
-          enabled: true,
-        },
-      ],
-    });
+    // The use case now reads the courier config inside the tx via $queryRaw
+    // with FOR UPDATE. Mock $queryRaw to return the courier config row when
+    // the query string includes "CourierConfig".
+    prisma.$queryRaw.mockImplementation(
+      async (strings: TemplateStringsArray, ...values: unknown[]) => {
+        const sql = strings.join('');
+        if (sql.includes('"CourierConfig"')) {
+          return [
+            {
+              id: 'config-1',
+              courierId: 'courier-1',
+              modality: 'HOME',
+              price: new FakeDecimal(12),
+              enabled: true,
+            },
+          ];
+        }
+        return [];
+      },
+    );
     prisma.product.findUnique.mockResolvedValue({
       id: 'product-1',
       storeId: store.id,
