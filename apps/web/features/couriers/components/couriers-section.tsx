@@ -142,7 +142,14 @@ export function CouriersSection({ storeId }: { storeId: string }) {
   };
 
   const handleSave = () => {
-    saveCouriers.mutate({ couriers, deletedIds });
+    saveCouriers.mutate(
+      { couriers, deletedIds },
+      {
+        onSuccess: () => {
+          setDeletedIds([]);
+        },
+      },
+    );
   };
 
   if (isLoading) return null;

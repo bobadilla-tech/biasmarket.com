@@ -4,6 +4,12 @@ function apiUrl() {
   return process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
 }
 
+function buildUrl(...segments: string[]): string {
+  const base = apiUrl() ?? "";
+  const path = segments.map(encodeURIComponent).join("/");
+  return new URL(path, base.includes("://") ? base : `https://${base}`).href;
+}
+
 export interface CourierResponse {
   id: string;
   storeId: string;
@@ -58,25 +64,21 @@ function mapResponse(r: CourierResponse): Courier {
 
 export const couriersApi = {
   async findAll(storeId: string): Promise<Courier[]> {
-    const res = await fetch(
-      `${apiUrl()}/api/stores/${encodeURIComponent(storeId)}/couriers`,
-      { credentials: "include" },
-    );
+    const url = buildUrl("api", "stores", storeId, "couriers");
+    const res = await fetch(url, { credentials: "include" });
     if (!res.ok) throw new Error("Error al cargar couriers");
     const data: CourierResponse[] = await res.json();
     return data.map(mapResponse);
   },
 
   async create(storeId: string, input: CreateCourierInput): Promise<Courier> {
-    const res = await fetch(
-      `${apiUrl()}/api/stores/${encodeURIComponent(storeId)}/couriers`,
-      {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(input),
-      },
-    );
+    const url = buildUrl("api", "stores", storeId, "couriers");
+    const res = await fetch(url, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
     if (!res.ok) {
       const err = await res.json().catch(() => null);
       throw new Error(err?.message ?? "Error al crear courier");
@@ -89,15 +91,13 @@ export const couriersApi = {
     courierId: string,
     input: UpdateCourierInput,
   ): Promise<Courier> {
-    const res = await fetch(
-      `${apiUrl()}/api/stores/${encodeURIComponent(storeId)}/couriers/${encodeURIComponent(courierId)}`,
-      {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(input),
-      },
-    );
+    const url = buildUrl("api", "stores", storeId, "couriers", courierId);
+    const res = await fetch(url, {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
     if (!res.ok) {
       const err = await res.json().catch(() => null);
       throw new Error(err?.message ?? "Error al actualizar courier");
@@ -106,13 +106,11 @@ export const couriersApi = {
   },
 
   async remove(storeId: string, courierId: string): Promise<void> {
-    const res = await fetch(
-      `${apiUrl()}/api/stores/${encodeURIComponent(storeId)}/couriers/${encodeURIComponent(courierId)}`,
-      {
-        method: "DELETE",
-        credentials: "include",
-      },
-    );
+    const url = buildUrl("api", "stores", storeId, "couriers", courierId);
+    const res = await fetch(url, {
+      method: "DELETE",
+      credentials: "include",
+    });
     if (!res.ok) {
       const err = await res.json().catch(() => null);
       throw new Error(err?.message ?? "Error al eliminar courier");
