@@ -3,11 +3,11 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-} from "@nestjs/common";
-import { Prisma } from "@biasmarket/db";
-import { PrismaService } from "../../prisma/prisma.service.js";
-import type { CreateCourierDto } from "./dto/create-courier.dto.js";
-import type { UpdateCourierDto } from "./dto/update-courier.dto.js";
+} from '@nestjs/common';
+import { Prisma } from '@biasmarket/db';
+import { PrismaService } from '../../prisma/prisma.service.js';
+import type { CreateCourierDto } from './dto/create-courier.dto.js';
+import type { UpdateCourierDto } from './dto/update-courier.dto.js';
 
 @Injectable()
 export class CouriersService {
@@ -17,9 +17,9 @@ export class CouriersService {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
-    if (!store) throw new NotFoundException("Store no encontrada");
+    if (!store) throw new NotFoundException('Store no encontrada');
     if (store.ownerId !== userId) {
-      throw new ForbiddenException("No sos dueño de esta store");
+      throw new ForbiddenException('No sos dueño de esta store');
     }
     return store;
   }
@@ -28,8 +28,8 @@ export class CouriersService {
     await this.assertOwnership(storeId, userId);
     return this.prisma.courier.findMany({
       where: { storeId },
-      orderBy: { sortOrder: "asc" },
-      include: { configs: { orderBy: { modality: "asc" } } },
+      orderBy: { sortOrder: 'asc' },
+      include: { configs: { orderBy: { modality: 'asc' } } },
     });
   }
 
@@ -40,7 +40,7 @@ export class CouriersService {
     const modalities = dto.modalities.map((m) => m.modality);
     if (new Set(modalities).size !== modalities.length) {
       throw new BadRequestException(
-        "No se pueden repetir modalidades en un mismo courier",
+        'No se pueden repetir modalidades en un mismo courier',
       );
     }
 
@@ -58,7 +58,7 @@ export class CouriersService {
           })),
         },
       },
-      include: { configs: { orderBy: { modality: "asc" } } },
+      include: { configs: { orderBy: { modality: 'asc' } } },
     });
   }
 
@@ -73,7 +73,7 @@ export class CouriersService {
       where: { id: courierId },
     });
     if (!existing || existing.storeId !== storeId) {
-      throw new NotFoundException("Courier no encontrado");
+      throw new NotFoundException('Courier no encontrado');
     }
 
     const modalities = dto.modalities;
@@ -81,7 +81,7 @@ export class CouriersService {
       const modList = modalities.map((m) => m.modality!);
       if (new Set(modList).size !== modList.length) {
         throw new BadRequestException(
-          "No se pueden repetir modalidades en un mismo courier",
+          'No se pueden repetir modalidades en un mismo courier',
         );
       }
 
@@ -104,7 +104,7 @@ export class CouriersService {
             ...(dto.enabled !== undefined && { enabled: dto.enabled }),
             ...(dto.sortOrder !== undefined && { sortOrder: dto.sortOrder }),
           },
-          include: { configs: { orderBy: { modality: "asc" } } },
+          include: { configs: { orderBy: { modality: 'asc' } } },
         });
       });
     }
@@ -116,7 +116,7 @@ export class CouriersService {
         ...(dto.enabled !== undefined && { enabled: dto.enabled }),
         ...(dto.sortOrder !== undefined && { sortOrder: dto.sortOrder }),
       },
-      include: { configs: { orderBy: { modality: "asc" } } },
+      include: { configs: { orderBy: { modality: 'asc' } } },
     });
   }
 
@@ -126,28 +126,28 @@ export class CouriersService {
       where: { id: courierId },
     });
     if (!existing || existing.storeId !== storeId) {
-      throw new NotFoundException("Courier no encontrado");
+      throw new NotFoundException('Courier no encontrado');
     }
     return this.prisma.courier.delete({
       where: { id: courierId },
-      include: { configs: { orderBy: { modality: "asc" } } },
+      include: { configs: { orderBy: { modality: 'asc' } } },
     });
   }
 
   async findEnabledForSlug(slug: string) {
     const store = await this.prisma.store.findUnique({ where: { slug } });
-    if (!store) throw new NotFoundException("Tienda no encontrada");
+    if (!store) throw new NotFoundException('Tienda no encontrada');
     return this.prisma.courier.findMany({
       where: {
         storeId: store.id,
         enabled: true,
         configs: { some: { enabled: true } },
       },
-      orderBy: { sortOrder: "asc" },
+      orderBy: { sortOrder: 'asc' },
       include: {
         configs: {
           where: { enabled: true },
-          orderBy: { modality: "asc" },
+          orderBy: { modality: 'asc' },
         },
       },
     });

@@ -1,13 +1,13 @@
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CourierModalityResponseDto {
   @ApiProperty()
   id: string;
 
-  @ApiProperty({ enum: ["AGENCY", "HOME"] })
-  modality: "AGENCY" | "HOME";
+  @ApiProperty({ enum: ['AGENCY', 'HOME'] })
+  modality: 'AGENCY' | 'HOME';
 
-  @ApiProperty({ type: String, description: "Decimal price as string" })
+  @ApiProperty({ type: String, description: 'Decimal price as string' })
   price: string;
 
   @ApiProperty()
@@ -30,7 +30,7 @@ export class CourierResponseDto {
   @ApiProperty()
   sortOrder: number;
 
-  @ApiProperty({ type: String, format: "date-time" })
+  @ApiProperty({ type: String, format: 'date-time' })
   createdAt: string;
 
   @ApiProperty({ type: [CourierModalityResponseDto] })

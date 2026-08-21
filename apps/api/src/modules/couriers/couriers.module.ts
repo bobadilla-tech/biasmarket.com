@@ -1,9 +1,9 @@
-import { Module } from "@nestjs/common";
+import { Module } from '@nestjs/common';
 import {
   CouriersController,
   PublicCouriersController,
-} from "./couriers.controller.js";
-import { CouriersService } from "./couriers.service.js";
+} from './couriers.controller.js';
+import { CouriersService } from './couriers.service.js';
 
 @Module({
   controllers: [CouriersController, PublicCouriersController],

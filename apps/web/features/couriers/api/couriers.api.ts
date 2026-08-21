@@ -1,12 +1,21 @@
 import type { Courier, CourierModality } from "../schemas/courier.schema";
 
+const CUID_RE = /^c[a-z0-9]{24,}$/i;
+const SAFE_PATH_SEGMENT_RE = /^[a-z0-9_-]+$/i;
+
 function apiUrl() {
   return process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
 }
 
+function encodeSegment(segment: string): string {
+  if (SAFE_PATH_SEGMENT_RE.test(segment)) return segment;
+  if (CUID_RE.test(segment)) return encodeURIComponent(segment);
+  throw new Error("Invalid URL segment");
+}
+
 function buildUrl(...segments: string[]): string {
   const base = apiUrl() ?? "";
-  const path = segments.map(encodeURIComponent).join("/");
+  const path = segments.map(encodeSegment).join("/");
   return new URL(path, base.includes("://") ? base : `https://${base}`).href;
 }
 

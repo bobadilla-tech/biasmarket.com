@@ -1,10 +1,10 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty } from '@nestjs/swagger';
 
 export class PublicCourierModalityDto {
-  @ApiProperty({ enum: ["AGENCY", "HOME"] })
-  modality: "AGENCY" | "HOME";
+  @ApiProperty({ enum: ['AGENCY', 'HOME'] })
+  modality: 'AGENCY' | 'HOME';
 
-  @ApiProperty({ type: String, description: "Decimal price as string" })
+  @ApiProperty({ type: String, description: 'Decimal price as string' })
   price: string;
 }
 
