@@ -3,6 +3,7 @@ import {
   ArrayMinSize,
   IsDefined,
   IsEmail,
+  IsEnum,
   IsIn,
   IsInt,
   IsOptional,
@@ -33,26 +34,60 @@ export class CreateOrderItemDto {
 // docs/plans/2026-08-08-buyer-shipping-addresses-plan.md's "Important
 // correction" section for why a saved-address FK reference was dropped from
 // this DTO.
+//
+// Peru-specific fields (issue #99): surnames, document type/number,
+// department/province/district, and modality-conditional agencyName or
+// address lines. Legacy fields (city, region, line1, line2, reference) are
+// kept for backward compatibility and filled from the Peru fields by the
+// web checkout form.
 export class ShippingAddressDto {
   @IsString()
   @MinLength(1)
   recipientName: string;
 
+  @IsOptional()
+  @IsString()
+  recipientSurnames?: string;
+
   @IsString()
   @MinLength(6)
   phone: string;
 
+  @IsOptional()
+  @IsEnum(['DNI', 'CE', 'RUC', 'PASSPORT'] as const)
+  documentType?: 'DNI' | 'CE' | 'RUC' | 'PASSPORT';
+
+  @IsOptional()
   @IsString()
-  @MinLength(1)
-  line1: string;
+  documentNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  department?: string;
+
+  @IsOptional()
+  @IsString()
+  province?: string;
+
+  @IsOptional()
+  @IsString()
+  district?: string;
+
+  // Required for HOME; for AGENCY the web form snapshots agencyName here
+  // for display compatibility. Validated per-modality in CreateOrderUseCase.
+  @IsOptional()
+  @IsString()
+  line1?: string;
 
   @IsOptional()
   @IsString()
   line2?: string;
 
+  // Filled from district by the Peru checkout form. Optional at this layer
+  // so AGENCY orders aren't forced to invent a street-level "city".
+  @IsOptional()
   @IsString()
-  @MinLength(1)
-  city: string;
+  city?: string;
 
   @IsOptional()
   @IsString()
@@ -61,6 +96,10 @@ export class ShippingAddressDto {
   @IsOptional()
   @IsString()
   reference?: string;
+
+  @IsOptional()
+  @IsString()
+  agencyName?: string;
 }
 
 export class CreateOrderDto {
@@ -99,13 +138,25 @@ export class CreateOrderDto {
   @IsEmail()
   customerEmail?: string;
 
-  // Required when deliveryMethodType is COURIER (validated below), unused
-  // for PICKUP — see the plan doc referenced on ShippingAddressDto.
+  // Required when deliveryMethodType is COURIER (validated in use case),
+  // unused for PICKUP — see the plan doc referenced on ShippingAddressDto.
   @ValidateIf((o) => o.deliveryMethodType === 'COURIER')
   @IsDefined()
   @ValidateNested()
   @Type(() => ShippingAddressDto)
   shippingAddress?: ShippingAddressDto;
+
+  // Seller-defined courier name, required when deliveryMethodType is COURIER
+  // (validated in use case). Snapshot into Order.courierName.
+  @IsOptional()
+  @IsString()
+  courierName?: string;
+
+  // AGENCY or HOME, required when deliveryMethodType is COURIER (validated in
+  // use case). Snapshot into Order.courierModality.
+  @IsOptional()
+  @IsIn(['AGENCY', 'HOME'])
+  courierModality?: 'AGENCY' | 'HOME';
 
   @ArrayMinSize(1)
   @ValidateNested({ each: true })

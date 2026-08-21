@@ -55,6 +55,8 @@ export default defineConfig({
           "Addresses",
           "Monitoring",
           "Coupons",
+          "Couriers",
+          "PublicCouriers",
         ],
       },
     },

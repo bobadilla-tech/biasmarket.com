@@ -1,6 +1,6 @@
 import { apiClient } from "@/lib/api-client";
 import type { CartItem } from "@/lib/cart";
-import type { ShippingAddressDto } from "@biasmarket/types";
+import type { PublicCourierDto, ShippingAddressDto } from "@biasmarket/types";
 
 function apiUrl() {
   return process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
@@ -8,24 +8,21 @@ function apiUrl() {
 
 export const checkoutApi = {
   async getDeliveryOptions(slug: string) {
-    const [methods, pickupPoints, paymentMethods, store] = await Promise.all([
-      apiClient.publicDeliveryConfig.findEnabled(slug),
-      apiClient.publicPickupPoints.findEnabled(slug),
-      // Already carries each method's structured `details` (bank account /
-      // Yape-Plin number + QR) — the checkout confirmation screen reads this
-      // same cached query instead of doing a second fetch.
-      apiClient.publicPaymentConfig.findEnabled(slug),
-      apiClient.stores.findPublic(slug),
-    ]);
+    const [methods, pickupPoints, paymentMethods, store, courierRows] =
+      await Promise.all([
+        apiClient.publicDeliveryConfig.findEnabled(slug),
+        apiClient.publicPickupPoints.findEnabled(slug),
+        apiClient.publicPaymentConfig.findEnabled(slug),
+        apiClient.stores.findPublic(slug),
+        fetchPublicCouriers(slug),
+      ]);
     return {
       methods,
       points: pickupPoints.points,
-      // Server-computed weekday for openDays validation — the checkout form
-      // must use this instead of `new Date().getDay()` so pickup availability
-      // never diverges between browser and API.
       weekday: pickupPoints.weekday,
       paymentMethods,
       storePaymentInstructions: store.paymentInstructions,
+      couriers: courierRows,
     };
   },
 
@@ -49,6 +46,8 @@ export const checkoutApi = {
       customerPhone: string;
       customerEmail?: string;
       shippingAddress?: ShippingAddressDto;
+      courierName?: string;
+      courierModality?: "AGENCY" | "HOME";
       paymentProof?: File | null;
       items: CartItem[];
     },
@@ -83,6 +82,12 @@ export const checkoutApi = {
         "shippingAddress",
         JSON.stringify(values.shippingAddress),
       );
+    }
+    if (values.courierName) {
+      formData.append("courierName", values.courierName);
+    }
+    if (values.courierModality) {
+      formData.append("courierModality", values.courierModality);
     }
     formData.append(
       "items",
@@ -123,3 +128,11 @@ export const checkoutApi = {
     return data;
   },
 };
+
+async function fetchPublicCouriers(slug: string): Promise<PublicCourierDto[]> {
+  try {
+    return await apiClient.publicCouriers.findEnabled(slug);
+  } catch {
+    return [];
+  }
+}

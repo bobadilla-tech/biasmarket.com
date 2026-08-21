@@ -10,6 +10,7 @@ const {
   findAddresses,
   findCustomerProfile,
   findStorePublic,
+  findEnabledPublicCouriers,
   fetchMock,
 } = vi.hoisted(() => ({
   findEnabledDeliveryConfig: vi.fn(),
@@ -25,6 +26,7 @@ const {
     .fn()
     .mockRejectedValue(new Error("not authenticated")),
   findStorePublic: vi.fn(),
+  findEnabledPublicCouriers: vi.fn().mockResolvedValue([]),
   fetchMock: vi.fn(),
 }));
 
@@ -36,6 +38,7 @@ vi.mock("@/lib/api-client", () => ({
     addresses: { findAll: findAddresses },
     customerAuth: { me: findCustomerProfile },
     stores: { findPublic: findStorePublic },
+    publicCouriers: { findEnabled: findEnabledPublicCouriers },
   },
 }));
 
@@ -108,6 +111,7 @@ test("submits the delivery type, pickup point, and manual payment method with an
       details: { bankName: "BCP", accountNumber: "123", accountHolder: "Jane" },
     },
   ]);
+  // checkout submit (multipart carve-out on raw fetch)
   fetchMock.mockResolvedValueOnce({
     ok: true,
     json: () =>
@@ -362,6 +366,7 @@ test("submits with the chosen pickupDate when a closed-today point was selected"
     ],
   });
   findEnabledPaymentConfig.mockResolvedValue([]);
+  // checkout submit (multipart carve-out on raw fetch)
   fetchMock.mockResolvedValueOnce(okResponse());
 
   const user = userEvent.setup();
@@ -394,7 +399,7 @@ test("submits with the chosen pickupDate when a closed-today point was selected"
   });
 });
 
-test("switching to courier shows the WhatsApp coordination note instead of pickup cards", async () => {
+test("switching to courier shows the courier selection UI instead of pickup cards", async () => {
   findEnabledDeliveryConfig.mockResolvedValue([
     { type: "PICKUP", enabled: true, details: {} },
     { type: "COURIER", enabled: true, details: {} },
@@ -412,6 +417,16 @@ test("switching to courier shows the WhatsApp coordination note instead of picku
     ],
   });
   findEnabledPaymentConfig.mockResolvedValue([]);
+  findEnabledPublicCouriers.mockResolvedValue([
+    {
+      id: "c1",
+      name: "Olva",
+      modalities: [
+        { modality: "AGENCY", price: "5.00" },
+        { modality: "HOME", price: "8.00" },
+      ],
+    },
+  ]);
 
   const user = userEvent.setup();
   renderWithProviders(
@@ -422,19 +437,28 @@ test("switching to courier shows the WhatsApp coordination note instead of picku
   await user.click(screen.getByText("Envío por courier"));
 
   await waitFor(() => {
-    expect(
-      screen.getByText(/costo de envío se coordina por WhatsApp/i),
-    ).toBeDefined();
+    expect(screen.getByText(/Selecciona un courier/i)).toBeDefined();
     expect(screen.queryByText("Alameda 28 de Julio")).toBeNull();
   });
 });
 
-test("submits the inline shippingAddress fields for a COURIER order without a proof", async () => {
+test("submits the inline shippingAddress fields for a COURIER HOME order without a proof", async () => {
   findEnabledDeliveryConfig.mockResolvedValue([
     { type: "COURIER", enabled: true, details: {} },
   ]);
   findEnabledPickupPoints.mockResolvedValue({ weekday: today, points: [] });
   findEnabledPaymentConfig.mockResolvedValue([]);
+  findEnabledPublicCouriers.mockResolvedValue([
+    {
+      id: "c1",
+      name: "Olva",
+      modalities: [
+        { modality: "AGENCY", price: "5.00" },
+        { modality: "HOME", price: "8.00" },
+      ],
+    },
+  ]);
+  // checkout submit (multipart carve-out on raw fetch)
   fetchMock.mockResolvedValueOnce(okResponse());
 
   const user = userEvent.setup();
@@ -442,12 +466,19 @@ test("submits the inline shippingAddress fields for a COURIER order without a pr
     <CheckoutForm slug="my-store" items={cartItems} onOrderCreated={vi.fn()} />,
   );
 
-  await screen.findByText(/costo de envío se coordina por WhatsApp/i);
-
-  await user.type(
-    screen.getByPlaceholderText("Nombre de quien recibe"),
-    "Jane Doe",
+  // Wait for courier data to load, then select courier + modality
+  await screen.findByRole("combobox", { name: /Selecciona un courier/i });
+  await user.selectOptions(
+    screen.getByRole("combobox", { name: /Selecciona un courier/i }),
+    "Olva",
   );
+  // Select HOME modality
+  await user.click(screen.getByText("Envío a domicilio"));
+
+  const nameInputs = screen.getAllByPlaceholderText("Nombre");
+  // First "Nombre" is shippingRecipientName (in the COURIER section),
+  // second is customerName (below the payment section).
+  await user.type(nameInputs[0], "Jane Doe");
   await user.type(
     screen.getByPlaceholderText("Teléfono de contacto"),
     "988888888",
@@ -468,17 +499,13 @@ test("submits the inline shippingAddress fields for a COURIER order without a pr
     const [, options] = fetchMock.mock.calls[0] as [string, RequestInit];
     const body = options.body as FormData;
     expect(body.get("deliveryMethodType")).toBe("COURIER");
-    expect(body.get("shippingAddress")).toBe(
-      JSON.stringify({
-        recipientName: "Jane Doe",
-        phone: "988888888",
-        line1: "Av. Principal 123",
-        line2: undefined,
-        city: "Lima",
-        region: undefined,
-        reference: undefined,
-      }),
-    );
+    expect(body.get("courierName")).toBe("Olva");
+    expect(body.get("courierModality")).toBe("HOME");
+    const shippingAddress = JSON.parse(body.get("shippingAddress") as string);
+    expect(shippingAddress.recipientName).toBe("Jane Doe");
+    expect(shippingAddress.phone).toBe("988888888");
+    expect(shippingAddress.line1).toBe("Av. Principal 123");
+    expect(shippingAddress.city).toBe("Lima");
     expect(body.has("file")).toBe(false);
   });
 });
@@ -489,6 +516,16 @@ test("prefills the shippingAddress fields from the buyer's saved default address
   ]);
   findEnabledPickupPoints.mockResolvedValue({ weekday: today, points: [] });
   findEnabledPaymentConfig.mockResolvedValue([]);
+  findEnabledPublicCouriers.mockResolvedValue([
+    {
+      id: "c1",
+      name: "Olva",
+      modalities: [
+        { modality: "AGENCY", price: "5.00" },
+        { modality: "HOME", price: "8.00" },
+      ],
+    },
+  ]);
   findAddresses.mockResolvedValue([
     {
       id: "addr-1",
@@ -506,24 +543,26 @@ test("prefills the shippingAddress fields from the buyer's saved default address
     },
   ]);
 
+  const user = userEvent.setup();
   renderWithProviders(
     <CheckoutForm slug="my-store" items={cartItems} onOrderCreated={vi.fn()} />,
   );
 
-  await screen.findByText(/costo de envío se coordina por WhatsApp/i);
+  // Select courier + modality so address fields are visible
+  await screen.findByRole("combobox", { name: /Selecciona un courier/i });
+  await user.selectOptions(
+    screen.getByRole("combobox", { name: /Selecciona un courier/i }),
+    "Olva",
+  );
+  await user.click(screen.getByText("Envío a domicilio"));
 
   await waitFor(() => {
-    expect(
-      (
-        screen.getByPlaceholderText(
-          "Nombre de quien recibe",
-        ) as HTMLInputElement
-      ).value,
-    ).toBe("Jane Doe");
-    expect(
-      (screen.getByPlaceholderText("Ciudad") as HTMLInputElement).value,
-    ).toBe("Lima");
+    const nameInputs = screen.getAllByPlaceholderText("Nombre");
+    expect((nameInputs[0] as HTMLInputElement).value).toBe("Jane Doe");
   });
+  expect(
+    (screen.getByPlaceholderText("Ciudad") as HTMLInputElement).value,
+  ).toBe("Lima");
 });
 
 test("prefills name/phone/email from a logged-in buyer's saved profile, editable afterwards", async () => {

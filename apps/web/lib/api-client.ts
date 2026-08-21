@@ -6,6 +6,7 @@ import {
   configureApiClient,
   contact,
   coupons,
+  couriers,
   customerAccount,
   customerAuth,
   customers,
@@ -17,6 +18,7 @@ import {
   pickupPoints,
   products,
   productSearch,
+  publicCouriers,
   publicDeliveryConfig,
   publicPaymentConfig,
   publicPickupPoints,
@@ -76,4 +78,6 @@ export const apiClient = {
   whatsappTemplates,
   addresses,
   coupons,
+  couriers,
+  publicCouriers,
 };

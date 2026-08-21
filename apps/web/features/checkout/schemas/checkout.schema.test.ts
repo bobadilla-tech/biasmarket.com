@@ -9,13 +9,22 @@ const validValues = {
   pickupPointId: "",
   pickupDate: "",
   paymentMethod: "",
+  courierName: "Olva",
+  courierModality: "HOME",
   shippingRecipientName: "Jane Doe",
+  shippingRecipientSurnames: "",
   shippingPhone: "+51999999999",
+  shippingDocumentType: "",
+  shippingDocumentNumber: "",
+  shippingDepartment: "",
+  shippingProvince: "",
+  shippingDistrict: "",
   shippingLine1: "Av. Principal 123",
   shippingLine2: "",
   shippingCity: "Lima",
   shippingRegion: "",
   shippingReference: "",
+  shippingAgencyName: "",
   paymentProof: null,
   paymentType: "FULL",
 };
@@ -118,12 +127,24 @@ test("accepts a pickup date when the selected point isn't open today and a date 
   expect(result.success).toBe(true);
 });
 
-test("requires a shipping address when COURIER is selected", () => {
+test("requires a shipping address when COURIER HOME is selected", () => {
   const schema = buildCheckoutFormSchema(false, false);
   const result = schema.safeParse({
     ...validValues,
     deliveryMethodType: "COURIER",
+    courierModality: "HOME",
     shippingLine1: "",
+  });
+  expect(result.success).toBe(false);
+});
+
+test("requires an agency name when COURIER AGENCY is selected", () => {
+  const schema = buildCheckoutFormSchema(false, false);
+  const result = schema.safeParse({
+    ...validValues,
+    deliveryMethodType: "COURIER",
+    courierModality: "AGENCY",
+    shippingAgencyName: "",
   });
   expect(result.success).toBe(false);
 });
@@ -133,6 +154,8 @@ test("does not require a shipping address when PICKUP is selected", () => {
   const result = schema.safeParse({
     ...validValues,
     deliveryMethodType: "PICKUP",
+    courierName: "",
+    courierModality: "",
     shippingRecipientName: "",
     shippingPhone: "",
     shippingLine1: "",

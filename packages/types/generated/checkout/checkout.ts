@@ -48,6 +48,12 @@ export const create = async (
       JSON.stringify(createOrderDto.shippingAddress),
     );
   }
+  if (createOrderDto.courierName !== undefined) {
+    formData.append(`courierName`, createOrderDto.courierName);
+  }
+  if (createOrderDto.courierModality !== undefined) {
+    formData.append(`courierModality`, createOrderDto.courierModality);
+  }
   createOrderDto.items.forEach((value) =>
     formData.append(`items`, JSON.stringify(value)),
   );

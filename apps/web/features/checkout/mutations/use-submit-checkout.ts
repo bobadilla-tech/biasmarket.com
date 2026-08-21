@@ -16,6 +16,8 @@ export function useSubmitCheckout(slug: string, fallbackErrorMessage?: string) {
       customerName?: string;
       customerPhone: string;
       customerEmail?: string;
+      courierName?: string;
+      courierModality?: "AGENCY" | "HOME";
       shippingAddress?: ShippingAddressDto;
       paymentProof?: File | null;
       items: CartItem[];

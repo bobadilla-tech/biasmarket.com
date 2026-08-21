@@ -22,7 +22,16 @@ class FakeDecimal {
       this.value + (n instanceof FakeDecimal ? n.value : n),
     );
   }
+  div(n: number) {
+    return new FakeDecimal(this.value / n);
+  }
   toNumber() {
+    return this.value;
+  }
+  toString() {
+    return String(this.value);
+  }
+  valueOf() {
     return this.value;
   }
 }
@@ -33,6 +42,7 @@ describe('CreateOrderUseCase', () => {
     store: { findUnique: Mock };
     deliveryMethodConfig: { findUnique: Mock };
     pickupPoint: { count: Mock };
+    courier: { findFirst: Mock };
     $transaction: Mock;
     $queryRaw: Mock;
     product: { findUnique: Mock };
@@ -74,6 +84,7 @@ describe('CreateOrderUseCase', () => {
       store: { findUnique: vi.fn() },
       deliveryMethodConfig: { findUnique: vi.fn() },
       pickupPoint: { count: vi.fn() },
+      courier: { findFirst: vi.fn() },
       $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(prisma)),
       $queryRaw: vi.fn(),
       product: { findUnique: vi.fn() },
@@ -356,6 +367,32 @@ describe('CreateOrderUseCase', () => {
       type: 'COURIER',
       details: { estimatedCost: 15 },
     });
+    // The use case now reads the courier config inside the tx via $queryRaw
+    // with FOR UPDATE. Mock $queryRaw to return the courier config row only
+    // when the query matches the expected store, courier name, and modality.
+    prisma.$queryRaw.mockImplementation(
+      async (strings: TemplateStringsArray, ...values: unknown[]) => {
+        const sql = strings.join('');
+        if (sql.includes('"CourierConfig"')) {
+          const hasStore = values.includes('store-1');
+          const hasName = values.includes('Olva');
+          const hasModality = values.includes('HOME');
+          if (hasStore && hasName && hasModality) {
+            return [
+              {
+                id: 'config-1',
+                courierId: 'courier-1',
+                modality: 'HOME',
+                price: new FakeDecimal(12),
+                enabled: true,
+              },
+            ];
+          }
+          return [];
+        }
+        return [];
+      },
+    );
     prisma.product.findUnique.mockResolvedValue({
       id: 'product-1',
       storeId: store.id,
@@ -385,6 +422,8 @@ describe('CreateOrderUseCase', () => {
     await useCase.execute(slug, {
       ...dto,
       deliveryMethodType: 'COURIER',
+      courierName: 'Olva',
+      courierModality: 'HOME',
       shippingAddress,
     });
 
@@ -392,7 +431,9 @@ describe('CreateOrderUseCase', () => {
       expect.objectContaining({
         data: expect.objectContaining({
           deliveryDetails: expect.objectContaining({
-            estimatedCost: 15,
+            courierName: 'Olva',
+            courierModality: 'HOME',
+            deliveryCost: 12,
             shippingAddress,
           }),
         }),
