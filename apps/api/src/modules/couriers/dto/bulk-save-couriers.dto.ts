@@ -14,7 +14,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-class BulkSaveModalityDto {
+export class BulkSaveModalityDto {
   @IsEnum(['AGENCY', 'HOME'] as const)
   modality: 'AGENCY' | 'HOME';
 
@@ -27,7 +27,7 @@ class BulkSaveModalityDto {
   enabled?: boolean;
 }
 
-class BulkSaveCourierDto {
+export class BulkSaveCourierDto {
   @IsString()
   @IsNotEmpty()
   name: string;
