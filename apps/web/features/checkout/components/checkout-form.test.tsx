@@ -9,6 +9,7 @@ const {
   findEnabledPaymentConfig,
   findAddresses,
   findStorePublic,
+  findEnabledPublicCouriers,
   fetchMock,
 } = vi.hoisted(() => ({
   findEnabledDeliveryConfig: vi.fn(),
@@ -19,6 +20,7 @@ const {
   // surfaces that as a UI error, only as an empty prefill.
   findAddresses: vi.fn().mockRejectedValue(new Error("not authenticated")),
   findStorePublic: vi.fn(),
+  findEnabledPublicCouriers: vi.fn().mockResolvedValue([]),
   fetchMock: vi.fn(),
 }));
 
@@ -29,6 +31,7 @@ vi.mock("@/lib/api-client", () => ({
     publicPaymentConfig: { findEnabled: findEnabledPaymentConfig },
     addresses: { findAll: findAddresses },
     stores: { findPublic: findStorePublic },
+    publicCouriers: { findEnabled: findEnabledPublicCouriers },
   },
 }));
 
@@ -97,23 +100,21 @@ test("submits the delivery type, pickup point, and manual payment method with an
     { method: "YAPE", enabled: true, details: {} },
     { method: "TRANSFER", enabled: true, details: {} },
   ]);
-  // fetchPublicCouriers (raw fetch) + checkout submit
-  fetchMock
-    .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) })
-    .mockResolvedValueOnce({
-      ok: true,
-      json: () =>
-        Promise.resolve({
-          order: {
-            id: "order-1",
-            paymentMethod: "TRANSFER",
-            requiredAmount: "15.00",
-            totalAmount: "15.00",
-            currency: "PEN",
-          },
-          whatsappUrl: null,
-        }),
-    });
+  // checkout submit (multipart carve-out on raw fetch)
+  fetchMock.mockResolvedValueOnce({
+    ok: true,
+    json: () =>
+      Promise.resolve({
+        order: {
+          id: "order-1",
+          paymentMethod: "TRANSFER",
+          requiredAmount: "15.00",
+          totalAmount: "15.00",
+          currency: "PEN",
+        },
+        whatsappUrl: null,
+      }),
+  });
 
   const onOrderCreated = vi.fn();
   const user = userEvent.setup();
@@ -141,8 +142,8 @@ test("submits the delivery type, pickup point, and manual payment method with an
   await user.click(screen.getByRole("button", { name: /Confirmar pedido/i }));
 
   await waitFor(() => {
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    const [url, options] = fetchMock.mock.calls[1] as [string, RequestInit];
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, options] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe("http://localhost:3000/api/stores/my-store/checkout");
     const body = options.body as FormData;
     expect(body.get("deliveryMethodType")).toBe("PICKUP");
@@ -354,10 +355,8 @@ test("submits with the chosen pickupDate when a closed-today point was selected"
     ],
   });
   findEnabledPaymentConfig.mockResolvedValue([]);
-  // fetchPublicCouriers (raw fetch) + checkout submit
-  fetchMock
-    .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) })
-    .mockResolvedValueOnce(okResponse());
+  // checkout submit (multipart carve-out on raw fetch)
+  fetchMock.mockResolvedValueOnce(okResponse());
 
   const user = userEvent.setup();
   const onOrderCreated = vi.fn();
@@ -381,7 +380,7 @@ test("submits with the chosen pickupDate when a closed-today point was selected"
   await user.click(screen.getByRole("button", { name: /Confirmar pedido/i }));
 
   await waitFor(() => {
-    const [, options] = fetchMock.mock.calls[1] as [string, RequestInit];
+    const [, options] = fetchMock.mock.calls[0] as [string, RequestInit];
     const body = options.body as FormData;
     expect(body.get("deliveryMethodType")).toBe("PICKUP");
     expect(body.get("pickupPointId")).toBe("closed-point");
@@ -407,20 +406,16 @@ test("switching to courier shows the courier selection UI instead of pickup card
     ],
   });
   findEnabledPaymentConfig.mockResolvedValue([]);
-  fetchMock.mockResolvedValueOnce({
-    ok: true,
-    json: () =>
-      Promise.resolve([
-        {
-          id: "c1",
-          name: "Olva",
-          modalities: [
-            { modality: "AGENCY", price: "5.00" },
-            { modality: "HOME", price: "8.00" },
-          ],
-        },
-      ]),
-  });
+  findEnabledPublicCouriers.mockResolvedValue([
+    {
+      id: "c1",
+      name: "Olva",
+      modalities: [
+        { modality: "AGENCY", price: "5.00" },
+        { modality: "HOME", price: "8.00" },
+      ],
+    },
+  ]);
 
   const user = userEvent.setup();
   renderWithProviders(
@@ -442,22 +437,18 @@ test("submits the inline shippingAddress fields for a COURIER HOME order without
   ]);
   findEnabledPickupPoints.mockResolvedValue({ weekday: today, points: [] });
   findEnabledPaymentConfig.mockResolvedValue([]);
-  fetchMock
-    .mockResolvedValueOnce({
-      ok: true,
-      json: () =>
-        Promise.resolve([
-          {
-            id: "c1",
-            name: "Olva",
-            modalities: [
-              { modality: "AGENCY", price: "5.00" },
-              { modality: "HOME", price: "8.00" },
-            ],
-          },
-        ]),
-    })
-    .mockResolvedValueOnce(okResponse());
+  findEnabledPublicCouriers.mockResolvedValue([
+    {
+      id: "c1",
+      name: "Olva",
+      modalities: [
+        { modality: "AGENCY", price: "5.00" },
+        { modality: "HOME", price: "8.00" },
+      ],
+    },
+  ]);
+  // checkout submit (multipart carve-out on raw fetch)
+  fetchMock.mockResolvedValueOnce(okResponse());
 
   const user = userEvent.setup();
   renderWithProviders(
@@ -494,7 +485,7 @@ test("submits the inline shippingAddress fields for a COURIER HOME order without
   await user.click(screen.getByRole("button", { name: /Confirmar pedido/i }));
 
   await waitFor(() => {
-    const [, options] = fetchMock.mock.calls[1] as [string, RequestInit];
+    const [, options] = fetchMock.mock.calls[0] as [string, RequestInit];
     const body = options.body as FormData;
     expect(body.get("deliveryMethodType")).toBe("COURIER");
     expect(body.get("courierName")).toBe("Olva");
@@ -514,20 +505,16 @@ test("prefills the shippingAddress fields from the buyer's saved default address
   ]);
   findEnabledPickupPoints.mockResolvedValue({ weekday: today, points: [] });
   findEnabledPaymentConfig.mockResolvedValue([]);
-  fetchMock.mockResolvedValueOnce({
-    ok: true,
-    json: () =>
-      Promise.resolve([
-        {
-          id: "c1",
-          name: "Olva",
-          modalities: [
-            { modality: "AGENCY", price: "5.00" },
-            { modality: "HOME", price: "8.00" },
-          ],
-        },
-      ]),
-  });
+  findEnabledPublicCouriers.mockResolvedValue([
+    {
+      id: "c1",
+      name: "Olva",
+      modalities: [
+        { modality: "AGENCY", price: "5.00" },
+        { modality: "HOME", price: "8.00" },
+      ],
+    },
+  ]);
   findAddresses.mockResolvedValue([
     {
       id: "addr-1",

@@ -15,11 +15,11 @@ import type { Prisma } from '@biasmarket/db';
 import { CouriersService } from './couriers.service.js';
 import { CreateCourierDto } from './dto/create-courier.dto.js';
 import { UpdateCourierDto } from './dto/update-courier.dto.js';
-import type {
-  CourierResponseDto,
+import {
   CourierModalityResponseDto,
+  CourierResponseDto,
 } from './dto/courier-response.dto.js';
-import type { PublicCourierDto } from './dto/public-courier-response.dto.js';
+import { PublicCourierDto } from './dto/public-courier-response.dto.js';
 import { BulkSaveCouriersBodyDto } from './dto/bulk-save-couriers.dto.js';
 
 type CourierWithConfigs = Prisma.CourierGetPayload<{

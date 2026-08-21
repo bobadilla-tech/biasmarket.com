@@ -28,6 +28,11 @@ export class BulkSaveModalityDto {
 }
 
 export class BulkSaveCourierDto {
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  id?: string;
+
   @IsString()
   @IsNotEmpty()
   name: string;

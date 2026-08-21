@@ -1,0 +1,4 @@
+# Auto-generated files — formatting them risks CI crashes and merge noise.
+# Regenerate by hand when the source changes (see CLAUDE.md).
+apps/api/openapi.json
+apps/api/src/metadata.ts

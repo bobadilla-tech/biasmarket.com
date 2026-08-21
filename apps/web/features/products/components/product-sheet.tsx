@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Upload, X, ChevronUp, ChevronDown } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, Upload, X } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { SUPPORTED_CURRENCIES } from "@biasmarket/utils/currency";

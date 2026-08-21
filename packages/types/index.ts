@@ -38,3 +38,5 @@ export * as restock from "./generated/restock/restock.js";
 export * as whatsappTemplates from "./generated/whatsapp-templates/whatsapp-templates.js";
 export * as addresses from "./generated/addresses/addresses.js";
 export * as coupons from "./generated/coupons/coupons.js";
+export * as couriers from "./generated/couriers/couriers.js";
+export * as publicCouriers from "./generated/public-couriers/public-couriers.js";

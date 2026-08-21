@@ -465,6 +465,15 @@ export interface UpdateVariantDto {
   attributes?: UpdateVariantDtoAttributes;
 }
 
+export interface ReorderImagesDto {
+  /**
+   * Exact image URLs in the desired order
+   * @minItems 1
+   * @maxItems 6
+   */
+  images: string[];
+}
+
 export interface SearchProductStoreResponseDto {
   name: string;
   slug: string;
@@ -1116,13 +1125,29 @@ export const CreateOrderDtoPaymentType = {
   PARTIAL: "PARTIAL",
 } as const;
 
+export type CreateOrderDtoCourierModality =
+  (typeof CreateOrderDtoCourierModality)[keyof typeof CreateOrderDtoCourierModality];
+
+export const CreateOrderDtoCourierModality = {
+  AGENCY: "AGENCY",
+  HOME: "HOME",
+} as const;
+
+export type ShippingAddressDtoDocumentType =
+  (typeof ShippingAddressDtoDocumentType)[keyof typeof ShippingAddressDtoDocumentType];
+
+export const ShippingAddressDtoDocumentType = {
+  DNI: "DNI",
+  PASSPORT: "PASSPORT",
+} as const;
+
 export interface ShippingAddressDto {
   /** @minLength 1 */
   recipientName: string;
   recipientSurnames?: string;
   /** @minLength 6 */
   phone: string;
-  documentType?: "DNI" | "PASSPORT";
+  documentType?: ShippingAddressDtoDocumentType;
   documentNumber?: string;
   department?: string;
   province?: string;
@@ -1153,9 +1178,9 @@ export interface CreateOrderDto {
   customerPhone: string;
   customerName?: string;
   customerEmail?: string;
-  courierName?: string;
-  courierModality?: string;
   shippingAddress?: ShippingAddressDto;
+  courierName?: string;
+  courierModality?: CreateOrderDtoCourierModality;
   /** @minItems 1 */
   items: CreateOrderItemDto[];
 }
@@ -2149,6 +2174,140 @@ export interface RedeemCouponDto {
   code: string;
 }
 
+export type CourierModalityResponseDtoModality =
+  (typeof CourierModalityResponseDtoModality)[keyof typeof CourierModalityResponseDtoModality];
+
+export const CourierModalityResponseDtoModality = {
+  AGENCY: "AGENCY",
+  HOME: "HOME",
+} as const;
+
+export interface CourierModalityResponseDto {
+  id: string;
+  modality: CourierModalityResponseDtoModality;
+  /** Decimal price as string */
+  price: string;
+  enabled: boolean;
+}
+
+export interface CourierResponseDto {
+  id: string;
+  storeId: string;
+  name: string;
+  enabled: boolean;
+  sortOrder: number;
+  createdAt: string;
+  modalities: CourierModalityResponseDto[];
+}
+
+export type CourierModalityDtoModality =
+  (typeof CourierModalityDtoModality)[keyof typeof CourierModalityDtoModality];
+
+export const CourierModalityDtoModality = {
+  AGENCY: "AGENCY",
+  HOME: "HOME",
+} as const;
+
+export interface CourierModalityDto {
+  modality: CourierModalityDtoModality;
+  /**
+   * Price in the store's currency (max 2 decimal places)
+   * @minimum 0
+   */
+  price: number;
+  enabled?: boolean;
+}
+
+export interface CreateCourierDto {
+  /** Seller-defined courier name (e.g. Olva) */
+  name: string;
+  enabled?: boolean;
+  /** @minimum 0 */
+  sortOrder?: number;
+  /**
+   * At least one modality (AGENCY or HOME)
+   * @minItems 1
+   */
+  modalities: CourierModalityDto[];
+}
+
+export type BulkSaveModalityDtoModality =
+  (typeof BulkSaveModalityDtoModality)[keyof typeof BulkSaveModalityDtoModality];
+
+export const BulkSaveModalityDtoModality = {
+  AGENCY: "AGENCY",
+  HOME: "HOME",
+} as const;
+
+export interface BulkSaveModalityDto {
+  modality: BulkSaveModalityDtoModality;
+  /** @minimum 0 */
+  price: number;
+  enabled?: boolean;
+}
+
+export interface BulkSaveCourierDto {
+  id?: string;
+  name: string;
+  enabled?: boolean;
+  /** @minimum 0 */
+  sortOrder?: number;
+  /** @minItems 1 */
+  modalities: BulkSaveModalityDto[];
+}
+
+export interface BulkSaveCouriersBodyDto {
+  couriers: BulkSaveCourierDto[];
+  deletedIds: string[];
+}
+
+export type UpdateCourierModalityDtoModality =
+  (typeof UpdateCourierModalityDtoModality)[keyof typeof UpdateCourierModalityDtoModality];
+
+export const UpdateCourierModalityDtoModality = {
+  AGENCY: "AGENCY",
+  HOME: "HOME",
+} as const;
+
+export interface UpdateCourierModalityDto {
+  modality: UpdateCourierModalityDtoModality;
+  /** @minimum 0 */
+  price: number;
+  enabled?: boolean;
+}
+
+export interface UpdateCourierDto {
+  name?: string;
+  enabled?: boolean;
+  /** @minimum 0 */
+  sortOrder?: number;
+  /**
+   * Full replacement of modalities. Provide all modalities the courier should have.
+   * @minItems 1
+   */
+  modalities?: UpdateCourierModalityDto[];
+}
+
+export type PublicCourierModalityDtoModality =
+  (typeof PublicCourierModalityDtoModality)[keyof typeof PublicCourierModalityDtoModality];
+
+export const PublicCourierModalityDtoModality = {
+  AGENCY: "AGENCY",
+  HOME: "HOME",
+} as const;
+
+export interface PublicCourierModalityDto {
+  modality: PublicCourierModalityDtoModality;
+  /** Decimal price as string */
+  price: string;
+}
+
+export interface PublicCourierDto {
+  id: string;
+  name: string;
+  modalities: PublicCourierModalityDto[];
+}
+
 export type StoresControllerfindPublicSitemapPageParams = {
   offset: string;
   limit: string;
@@ -2218,11 +2377,4 @@ export type StatsControllerpaymentMethodsParams = {
 export type MonitoringControllerfindAllParams = {
   limit?: string;
   page?: string;
-};
-
-// Manually added — OpenAPI pipeline cannot regenerate (pre-existing
-// ERR_UNKNOWN_FILE_EXTENSION in generate-swagger-metadata.ts).
-// Remove once the pipeline is fixed and a full regenerate lands.
-export type ReorderImagesDto = {
-  images: string[];
 };

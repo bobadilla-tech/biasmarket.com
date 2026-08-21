@@ -237,32 +237,23 @@ export const uploadImage = async (
   );
 };
 
-export const getUploadVariantImageUrl = (
-  storeId: string,
-  productId: string,
-  variantId: string,
-) => {
-  return `/stores/${storeId}/products/${productId}/variants/${variantId}/images`;
+export const getClearImagesUrl = (storeId: string, productId: string) => {
+  return `/stores/${storeId}/products/${productId}/images`;
 };
 
-export const uploadVariantImage = async (
+export const clearImages = async (
   storeId: string,
   productId: string,
-  variantId: string,
   options?: Parameters<typeof customFetch>[1],
-): Promise<VariantResponseDto> => {
-  return customFetch<VariantResponseDto>(
-    getUploadVariantImageUrl(storeId, productId, variantId),
+): Promise<ProductResponseDto> => {
+  return customFetch<ProductResponseDto>(
+    getClearImagesUrl(storeId, productId),
     {
       ...options,
-      method: "POST",
+      method: "DELETE",
     },
   );
 };
-
-// Manually added — OpenAPI pipeline cannot regenerate (pre-existing
-// ERR_UNKNOWN_FILE_EXTENSION in generate-swagger-metadata.ts).
-// Remove once the pipeline is fixed and a full regenerate lands.
 
 export const getRemoveImageUrl = (
   storeId: string,
@@ -308,20 +299,25 @@ export const reorderImages = async (
   );
 };
 
-export const getClearImagesUrl = (storeId: string, productId: string) => {
-  return `/stores/${storeId}/products/${productId}/images`;
-};
-
-export const clearImages = async (
+export const getUploadVariantImageUrl = (
   storeId: string,
   productId: string,
+  variantId: string,
+) => {
+  return `/stores/${storeId}/products/${productId}/variants/${variantId}/images`;
+};
+
+export const uploadVariantImage = async (
+  storeId: string,
+  productId: string,
+  variantId: string,
   options?: Parameters<typeof customFetch>[1],
-): Promise<ProductResponseDto> => {
-  return customFetch<ProductResponseDto>(
-    getClearImagesUrl(storeId, productId),
+): Promise<VariantResponseDto> => {
+  return customFetch<VariantResponseDto>(
+    getUploadVariantImageUrl(storeId, productId, variantId),
     {
       ...options,
-      method: "DELETE",
+      method: "POST",
     },
   );
 };

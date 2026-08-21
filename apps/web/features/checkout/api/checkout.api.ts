@@ -1,25 +1,14 @@
 import { apiClient } from "@/lib/api-client";
 import type { CartItem } from "@/lib/cart";
-import type { ShippingAddressDto } from "@biasmarket/types";
+import type { PublicCourierDto, ShippingAddressDto } from "@biasmarket/types";
 
 function apiUrl() {
   return process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
 }
 
-interface PublicCourierModality {
-  modality: "AGENCY" | "HOME";
-  price: string;
-}
-
-interface PublicCourier {
-  id: string;
-  name: string;
-  modalities: PublicCourierModality[];
-}
-
 export const checkoutApi = {
   async getDeliveryOptions(slug: string) {
-    const [methods, pickupPoints, paymentMethods, store, couriers] =
+    const [methods, pickupPoints, paymentMethods, store, courierRows] =
       await Promise.all([
         apiClient.publicDeliveryConfig.findEnabled(slug),
         apiClient.publicPickupPoints.findEnabled(slug),
@@ -33,7 +22,7 @@ export const checkoutApi = {
       weekday: pickupPoints.weekday,
       paymentMethods,
       storePaymentInstructions: store.paymentInstructions,
-      couriers,
+      couriers: courierRows,
     };
   },
 
@@ -140,14 +129,9 @@ export const checkoutApi = {
   },
 };
 
-async function fetchPublicCouriers(slug: string): Promise<PublicCourier[]> {
+async function fetchPublicCouriers(slug: string): Promise<PublicCourierDto[]> {
   try {
-    const res = await fetch(
-      `${apiUrl()}/api/stores/${encodeURIComponent(slug)}/public/couriers`,
-      { credentials: "include" },
-    );
-    if (!res.ok) return [];
-    return await res.json();
+    return await apiClient.publicCouriers.findEnabled(slug);
   } catch {
     return [];
   }

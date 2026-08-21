@@ -43,6 +43,16 @@ export default async () => {
       await import('./modules/monitoring/dto/kuma-webhook.dto.js'),
     ['./modules/monitoring/dto/incident-response.dto.js']:
       await import('./modules/monitoring/dto/incident-response.dto.js'),
+    ['./modules/couriers/dto/create-courier.dto.js']:
+      await import('./modules/couriers/dto/create-courier.dto.js'),
+    ['./modules/couriers/dto/update-courier.dto.js']:
+      await import('./modules/couriers/dto/update-courier.dto.js'),
+    ['./modules/couriers/dto/courier-response.dto.js']:
+      await import('./modules/couriers/dto/courier-response.dto.js'),
+    ['./modules/couriers/dto/public-courier-response.dto.js']:
+      await import('./modules/couriers/dto/public-courier-response.dto.js'),
+    ['./modules/couriers/dto/bulk-save-couriers.dto.js']:
+      await import('./modules/couriers/dto/bulk-save-couriers.dto.js'),
     ['./modules/notifications/dto/notification-response.dto.js']:
       await import('./modules/notifications/dto/notification-response.dto.js'),
     ['./modules/users/dto/user-store-count-response.dto.js']:
@@ -466,6 +476,19 @@ export default async () => {
                 required: false,
                 type: 'object',
                 additionalProperties: { type: 'string' },
+              },
+            },
+          },
+        ],
+        [
+          import('./modules/products/dto/reorder-images.dto.js'),
+          {
+            ReorderImagesDto: {
+              images: {
+                required: true,
+                type: () => [String],
+                minItems: 1,
+                maxItems: 6,
               },
             },
           },
@@ -1013,12 +1036,19 @@ export default async () => {
                 type: () => String,
                 minLength: 1,
               },
+              recipientSurnames: { required: false, type: () => String },
               phone: { required: true, type: () => String, minLength: 6 },
-              line1: { required: true, type: () => String, minLength: 1 },
+              documentType: { required: false, enum: ['DNI', 'PASSPORT'] },
+              documentNumber: { required: false, type: () => String },
+              department: { required: false, type: () => String },
+              province: { required: false, type: () => String },
+              district: { required: false, type: () => String },
+              line1: { required: false, type: () => String },
               line2: { required: false, type: () => String },
-              city: { required: true, type: () => String, minLength: 1 },
+              city: { required: false, type: () => String },
               region: { required: false, type: () => String },
               reference: { required: false, type: () => String },
+              agencyName: { required: false, type: () => String },
             },
             CreateOrderDto: {
               deliveryMethodType: {
@@ -1053,6 +1083,8 @@ export default async () => {
                   t['./modules/orders/dto/create-order.dto.js']
                     .ShippingAddressDto,
               },
+              courierName: { required: false, type: () => String },
+              courierModality: { required: false, enum: ['AGENCY', 'HOME'] },
               items: {
                 required: true,
                 type: () => [
@@ -2232,6 +2264,132 @@ export default async () => {
             },
           },
         ],
+        [
+          import('./modules/couriers/dto/create-courier.dto.js'),
+          {
+            CourierModalityDto: {
+              modality: { required: true, enum: ['AGENCY', 'HOME'] },
+              price: { required: true, type: () => Number, minimum: 0 },
+              enabled: { required: false, type: () => Boolean },
+            },
+            CreateCourierDto: {
+              name: { required: true, type: () => String },
+              enabled: { required: false, type: () => Boolean },
+              sortOrder: { required: false, type: () => Number, minimum: 0 },
+              modalities: {
+                required: true,
+                type: () => [
+                  t['./modules/couriers/dto/create-courier.dto.js']
+                    .CourierModalityDto,
+                ],
+                minItems: 1,
+              },
+            },
+          },
+        ],
+        [
+          import('./modules/couriers/dto/update-courier.dto.js'),
+          {
+            UpdateCourierModalityDto: {
+              modality: { required: true, enum: ['AGENCY', 'HOME'] },
+              price: { required: true, type: () => Number, minimum: 0 },
+              enabled: { required: false, type: () => Boolean },
+            },
+            UpdateCourierDto: {
+              name: { required: false, type: () => String },
+              enabled: { required: false, type: () => Boolean },
+              sortOrder: { required: false, type: () => Number, minimum: 0 },
+              modalities: {
+                required: false,
+                type: () => [
+                  t['./modules/couriers/dto/update-courier.dto.js']
+                    .UpdateCourierModalityDto,
+                ],
+                minItems: 1,
+              },
+            },
+          },
+        ],
+        [
+          import('./modules/couriers/dto/courier-response.dto.js'),
+          {
+            CourierModalityResponseDto: {
+              id: { required: true, type: () => String },
+              modality: { required: true, enum: ['AGENCY', 'HOME'] },
+              price: { required: true, type: () => String },
+              enabled: { required: true, type: () => Boolean },
+            },
+            CourierResponseDto: {
+              id: { required: true, type: () => String },
+              storeId: { required: true, type: () => String },
+              name: { required: true, type: () => String },
+              enabled: { required: true, type: () => Boolean },
+              sortOrder: { required: true, type: () => Number },
+              createdAt: { required: true, type: () => String },
+              modalities: {
+                required: true,
+                type: () => [
+                  t['./modules/couriers/dto/courier-response.dto.js']
+                    .CourierModalityResponseDto,
+                ],
+              },
+            },
+          },
+        ],
+        [
+          import('./modules/couriers/dto/public-courier-response.dto.js'),
+          {
+            PublicCourierModalityDto: {
+              modality: { required: true, enum: ['AGENCY', 'HOME'] },
+              price: { required: true, type: () => String },
+            },
+            PublicCourierDto: {
+              id: { required: true, type: () => String },
+              name: { required: true, type: () => String },
+              modalities: {
+                required: true,
+                type: () => [
+                  t['./modules/couriers/dto/public-courier-response.dto.js']
+                    .PublicCourierModalityDto,
+                ],
+              },
+            },
+          },
+        ],
+        [
+          import('./modules/couriers/dto/bulk-save-couriers.dto.js'),
+          {
+            BulkSaveModalityDto: {
+              modality: { required: true, enum: ['AGENCY', 'HOME'] },
+              price: { required: true, type: () => Number, minimum: 0 },
+              enabled: { required: false, type: () => Boolean },
+            },
+            BulkSaveCourierDto: {
+              id: { required: false, type: () => String },
+              name: { required: true, type: () => String },
+              enabled: { required: false, type: () => Boolean },
+              sortOrder: { required: false, type: () => Number, minimum: 0 },
+              modalities: {
+                required: true,
+                type: () => [
+                  t['./modules/couriers/dto/bulk-save-couriers.dto.js']
+                    .BulkSaveModalityDto,
+                ],
+                minItems: 1,
+              },
+            },
+            BulkSaveCouriersBodyDto: {
+              couriers: {
+                required: true,
+                type: () => [
+                  t['./modules/couriers/dto/bulk-save-couriers.dto.js']
+                    .BulkSaveCourierDto,
+                ],
+              },
+              deletedIds: { required: true, type: () => [String] },
+            },
+          },
+        ],
       ],
       controllers: [
         [import('./app.controller.js'), { AppController: { root: {} } }],
@@ -2374,6 +2532,18 @@ export default async () => {
                   .VariantResponseDto,
               },
               uploadImage: {
+                type: t['./modules/products/dto/product-response.dto.js']
+                  .ProductResponseDto,
+              },
+              removeImage: {
+                type: t['./modules/products/dto/product-response.dto.js']
+                  .ProductResponseDto,
+              },
+              reorderImages: {
+                type: t['./modules/products/dto/product-response.dto.js']
+                  .ProductResponseDto,
+              },
+              clearImages: {
                 type: t['./modules/products/dto/product-response.dto.js']
                   .ProductResponseDto,
               },
@@ -2966,6 +3136,45 @@ export default async () => {
         [
           import('./modules/coupons/internal-premium-jobs.controller.js'),
           { InternalPremiumJobsController: { expireSweep: {} } },
+        ],
+        [
+          import('./modules/couriers/couriers.controller.js'),
+          {
+            CouriersController: {
+              findAll: {
+                type: [
+                  t['./modules/couriers/dto/courier-response.dto.js']
+                    .CourierResponseDto,
+                ],
+              },
+              create: {
+                type: t['./modules/couriers/dto/courier-response.dto.js']
+                  .CourierResponseDto,
+              },
+              bulkSave: {
+                type: [
+                  t['./modules/couriers/dto/courier-response.dto.js']
+                    .CourierResponseDto,
+                ],
+              },
+              update: {
+                type: t['./modules/couriers/dto/courier-response.dto.js']
+                  .CourierResponseDto,
+              },
+              remove: {
+                type: t['./modules/couriers/dto/courier-response.dto.js']
+                  .CourierResponseDto,
+              },
+            },
+            PublicCouriersController: {
+              findEnabled: {
+                type: [
+                  t['./modules/couriers/dto/public-courier-response.dto.js']
+                    .PublicCourierDto,
+                ],
+              },
+            },
+          },
         ],
       ],
     },

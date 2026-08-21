@@ -928,6 +928,130 @@
           }
         },
         "tags": ["Products"]
+      },
+      "delete": {
+        "operationId": "ProductsController_clearImages",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Products"]
+      }
+    },
+    "/stores/{storeId}/products/{productId}/images/{index}": {
+      "delete": {
+        "operationId": "ProductsController_removeImage",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "index",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Products"]
+      }
+    },
+    "/stores/{storeId}/products/{productId}/images/reorder": {
+      "patch": {
+        "operationId": "ProductsController_reorderImages",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderImagesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Products"]
       }
     },
     "/stores/{storeId}/products/{productId}/variants/{variantId}/images": {
@@ -4064,6 +4188,225 @@
         },
         "tags": ["Coupons"]
       }
+    },
+    "/stores/{storeId}/couriers": {
+      "get": {
+        "operationId": "CouriersController_findAll",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CourierResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Couriers"]
+      },
+      "post": {
+        "operationId": "CouriersController_create",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCourierDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourierResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Couriers"]
+      }
+    },
+    "/stores/{storeId}/couriers/bulk-save": {
+      "post": {
+        "operationId": "CouriersController_bulkSave",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkSaveCouriersBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CourierResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Couriers"]
+      }
+    },
+    "/stores/{storeId}/couriers/{courierId}": {
+      "patch": {
+        "operationId": "CouriersController_update",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "courierId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCourierDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourierResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Couriers"]
+      },
+      "delete": {
+        "operationId": "CouriersController_remove",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "courierId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourierResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Couriers"]
+      }
+    },
+    "/stores/{slug}/public/couriers": {
+      "get": {
+        "operationId": "PublicCouriersController_findEnabled",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicCourierDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": ["PublicCouriers"]
+      }
     }
   },
   "info": {
@@ -5308,6 +5651,21 @@
           }
         }
       },
+      "ReorderImagesDto": {
+        "type": "object",
+        "properties": {
+          "images": {
+            "minItems": 1,
+            "maxItems": 6,
+            "description": "Exact image URLs in the desired order",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["images"]
+      },
       "SearchProductStoreResponseDto": {
         "type": "object",
         "properties": {
@@ -6236,29 +6594,49 @@
             "type": "string",
             "minLength": 1
           },
+          "recipientSurnames": {
+            "type": "string"
+          },
           "phone": {
             "type": "string",
             "minLength": 6
           },
-          "line1": {
+          "documentType": {
             "type": "string",
-            "minLength": 1
+            "enum": ["DNI", "PASSPORT"]
+          },
+          "documentNumber": {
+            "type": "string"
+          },
+          "department": {
+            "type": "string"
+          },
+          "province": {
+            "type": "string"
+          },
+          "district": {
+            "type": "string"
+          },
+          "line1": {
+            "type": "string"
           },
           "line2": {
             "type": "string"
           },
           "city": {
-            "type": "string",
-            "minLength": 1
+            "type": "string"
           },
           "region": {
             "type": "string"
           },
           "reference": {
             "type": "string"
+          },
+          "agencyName": {
+            "type": "string"
           }
         },
-        "required": ["recipientName", "phone", "line1", "city"]
+        "required": ["recipientName", "phone"]
       },
       "CreateOrderItemDto": {
         "type": "object",
@@ -6311,6 +6689,13 @@
           },
           "shippingAddress": {
             "$ref": "#/components/schemas/ShippingAddressDto"
+          },
+          "courierName": {
+            "type": "string"
+          },
+          "courierModality": {
+            "type": "string",
+            "enum": ["AGENCY", "HOME"]
           },
           "items": {
             "minItems": 1,
@@ -8525,6 +8910,241 @@
           }
         },
         "required": ["code"]
+      },
+      "CourierModalityResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "modality": {
+            "enum": ["AGENCY", "HOME"],
+            "type": "string"
+          },
+          "price": {
+            "type": "string",
+            "description": "Decimal price as string"
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": ["id", "modality", "price", "enabled"]
+      },
+      "CourierResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "sortOrder": {
+            "type": "number"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "modalities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CourierModalityResponseDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "name",
+          "enabled",
+          "sortOrder",
+          "createdAt",
+          "modalities"
+        ]
+      },
+      "CourierModalityDto": {
+        "type": "object",
+        "properties": {
+          "modality": {
+            "enum": ["AGENCY", "HOME"],
+            "type": "string"
+          },
+          "price": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Price in the store's currency (max 2 decimal places)"
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": ["modality", "price"]
+      },
+      "CreateCourierDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Seller-defined courier name (e.g. Olva)"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "sortOrder": {
+            "type": "number",
+            "minimum": 0
+          },
+          "modalities": {
+            "minItems": 1,
+            "description": "At least one modality (AGENCY or HOME)",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CourierModalityDto"
+            }
+          }
+        },
+        "required": ["name", "modalities"]
+      },
+      "BulkSaveModalityDto": {
+        "type": "object",
+        "properties": {
+          "modality": {
+            "type": "string",
+            "enum": ["AGENCY", "HOME"]
+          },
+          "price": {
+            "type": "number",
+            "minimum": 0
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": ["modality", "price"]
+      },
+      "BulkSaveCourierDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "sortOrder": {
+            "type": "number",
+            "minimum": 0
+          },
+          "modalities": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BulkSaveModalityDto"
+            }
+          }
+        },
+        "required": ["name", "modalities"]
+      },
+      "BulkSaveCouriersBodyDto": {
+        "type": "object",
+        "properties": {
+          "couriers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BulkSaveCourierDto"
+            }
+          },
+          "deletedIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["couriers", "deletedIds"]
+      },
+      "UpdateCourierModalityDto": {
+        "type": "object",
+        "properties": {
+          "modality": {
+            "enum": ["AGENCY", "HOME"],
+            "type": "string"
+          },
+          "price": {
+            "type": "number",
+            "minimum": 0
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": ["modality", "price"]
+      },
+      "UpdateCourierDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "sortOrder": {
+            "type": "number",
+            "minimum": 0
+          },
+          "modalities": {
+            "minItems": 1,
+            "description": "Full replacement of modalities. Provide all modalities the courier should have.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UpdateCourierModalityDto"
+            }
+          }
+        }
+      },
+      "PublicCourierModalityDto": {
+        "type": "object",
+        "properties": {
+          "modality": {
+            "enum": ["AGENCY", "HOME"],
+            "type": "string"
+          },
+          "price": {
+            "type": "string",
+            "description": "Decimal price as string"
+          }
+        },
+        "required": ["modality", "price"]
+      },
+      "PublicCourierDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "modalities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicCourierModalityDto"
+            }
+          }
+        },
+        "required": ["id", "name", "modalities"]
       }
     }
   }

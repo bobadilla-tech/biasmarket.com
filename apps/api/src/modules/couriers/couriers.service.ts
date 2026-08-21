@@ -158,6 +158,7 @@ export class CouriersService {
     userId: string,
     input: {
       couriers: {
+        id?: string;
         name: string;
         enabled?: boolean;
         sortOrder?: number;
@@ -195,10 +196,16 @@ export class CouriersService {
           );
         }
 
-        // Check if this is an existing courier by looking up by storeId+name
-        const existing = await tx.courier.findUnique({
-          where: { storeId_name: { storeId, name: c.name } },
-        });
+        // Resolve existing courier by id (if provided) and verify store ownership
+        let existing: { id: string; storeId: string } | null = null;
+        if (c.id) {
+          existing = await tx.courier.findUnique({
+            where: { id: c.id },
+          });
+          if (existing && existing.storeId !== storeId) {
+            existing = null;
+          }
+        }
 
         let courier;
         if (existing) {
