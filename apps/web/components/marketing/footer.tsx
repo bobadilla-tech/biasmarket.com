@@ -19,18 +19,25 @@ export function Footer() {
   const socials = t.raw("socials") as Social[];
 
   return (
-    <footer className="bg-landing-footer px-4 py-10 sm:px-10 sm:py-12">
+    <footer className="bg-[#F7F7F7] px-6 pt-8 pb-10 sm:px-10 sm:py-12">
       <div className="mx-auto max-w-7xl">
-        <div className="grid gap-8 sm:grid-cols-2 sm:gap-10 lg:grid-cols-5">
+        <h3 className="text-[20px] leading-[25px] font-extrabold tracking-wide text-[#181818] uppercase">
+          Biasmarket
+        </h3>
+        <p className="mt-0.5 text-[13px] leading-[15px] text-[#7A7A7A]">
+          {t("tagline")}
+        </p>
+
+        <div className="mt-7 grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-5 lg:gap-10">
           {columns.map((column) => (
             <div key={column.heading}>
-              <h3 className="text-lg font-medium text-black">
+              <h4 className="text-sm leading-[17px] font-semibold text-[#181818]">
                 {column.heading}
-              </h3>
-              <ul className="mt-4 space-y-3">
+              </h4>
+              <ul className="mt-2.5 space-y-2">
                 {column.links.map((label) => (
                   <li key={label}>
-                    <span className="cursor-default text-base font-light text-black/90">
+                    <span className="cursor-default text-xs leading-[14px] font-normal text-[#7A7A7A]">
                       {label}
                     </span>
                   </li>
@@ -39,21 +46,23 @@ export function Footer() {
             </div>
           ))}
 
-          <div>
-            <h3 className="text-lg font-medium text-black">{t("networks")}</h3>
-            <div className="mt-4 flex items-center gap-3 sm:gap-4">
+          <div className="col-span-2 sm:col-span-1">
+            <h4 className="text-sm leading-[17px] font-semibold text-black">
+              {t("networks")}
+            </h4>
+            <div className="mt-2.5 flex items-center gap-2">
               {socials.map((social) => (
                 <span
                   key={social.label}
                   aria-hidden="true"
-                  className="flex size-10 items-center justify-center overflow-hidden rounded-xl bg-white sm:size-12"
+                  className="flex size-10 items-center justify-center overflow-hidden rounded-xl bg-[#F2F2F2]"
                 >
                   <Image
                     src={social.image}
                     alt={social.label}
                     width={40}
                     height={40}
-                    className="h-7 w-7 object-contain sm:h-9 sm:w-9"
+                    className="size-7 object-contain"
                   />
                 </span>
               ))}

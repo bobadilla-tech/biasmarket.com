@@ -17,48 +17,81 @@ function HeroBanner() {
   const t = useTranslations("landing.hero");
 
   return (
-    <div
-      style={{
-        background:
-          "linear-gradient(114.27deg, #FFFFFF 4.68%, #EDDAFF 31.56%, #FFD7EB 89.06%)",
-      }}
-      className="relative min-h-[460px] overflow-hidden rounded-[10px] sm:min-h-[525px]"
-    >
-      <div className="relative z-10 flex h-full w-[488px] max-w-full flex-col justify-center gap-7 pr-4 pl-5 sm:gap-[42px] sm:pr-4 sm:pl-[55.5px]">
-        <h1 className="text-balance text-[30px] leading-[38px] font-extrabold sm:text-[48px] sm:leading-[58px]">
-          <span className="text-[#170A14]">{t("title1")}</span>
-          <br />
-          <span className="text-[#FF3DB1]">{t("title2")}</span>
-        </h1>
-        <p
-          style={{
-            fontWeight: 400,
-            fontSize: 16,
-            lineHeight: "19px",
-            letterSpacing: "0%",
-          }}
-          className="max-w-[381px] text-black"
-        >
-          {t("subtitle")}
-        </p>
+    <>
+      {/* Mobile — Figma Frame 56 */}
+      <div className="relative overflow-hidden rounded-[10px] bg-[#FEF3FF] sm:hidden">
+        <div className="flex flex-col items-center px-6 pt-7 text-center">
+          <h1 className="text-[34px] font-bold tracking-tight text-[#4C0566]">
+            {t("title1")}
+          </h1>
+          <p className="mt-2 text-[22px] leading-[28px] font-medium text-[#FC17A0]">
+            {t("title2")}
+          </p>
+          <Image
+            src="/landing/bm-props-sombra.png"
+            alt=""
+            width={1152}
+            height={923}
+            priority
+            className="pointer-events-none mt-1 h-auto w-[272px] select-none object-contain"
+          />
+        </div>
+        <div
+          aria-hidden="true"
+          className="h-[42px] w-full bg-gradient-to-b from-[#FEF3FF] to-[#FFC2F8]"
+        />
         <Link
           href="/search"
-          className={buttonVariants({
-            size: "lg",
-            className: "w-fit rounded-[10px] px-8 text-[20px] font-medium",
-          })}
+          className="absolute bottom-[8px] left-1/2 flex h-[31px] w-[142px] -translate-x-1/2 items-center justify-center rounded-[10px] bg-[#FC17A0] text-xs font-semibold text-white transition-colors hover:bg-[#e0128d]"
         >
           {t("cta")}
         </Link>
       </div>
-      <Image
-        src="/landing/wand.png"
-        alt=""
-        width={346}
-        height={429}
-        className="pointer-events-none absolute top-[43px] right-0 hidden w-[346px] h-[429px] select-none object-contain sm:block"
-      />
-    </div>
+
+      {/* Tablet/desktop — existing banner */}
+      <div
+        style={{
+          background:
+            "linear-gradient(114.27deg, #FFFFFF 4.68%, #EDDAFF 31.56%, #FFD7EB 89.06%)",
+        }}
+        className="relative hidden min-h-[460px] overflow-hidden rounded-[10px] sm:block sm:min-h-[525px]"
+      >
+        <div className="relative z-10 flex h-full w-[488px] max-w-full flex-col justify-center gap-7 pr-4 pl-5 sm:gap-[42px] sm:pr-4 sm:pl-[55.5px]">
+          <h1 className="text-balance text-[30px] leading-[38px] font-extrabold sm:text-[48px] sm:leading-[58px]">
+            <span className="text-[#170A14]">{t("title1")}</span>
+            <br />
+            <span className="text-[#FF3DB1]">{t("title2")}</span>
+          </h1>
+          <p
+            style={{
+              fontWeight: 400,
+              fontSize: 16,
+              lineHeight: "19px",
+              letterSpacing: "0%",
+            }}
+            className="max-w-[381px] text-black"
+          >
+            {t("subtitle")}
+          </p>
+          <Link
+            href="/search"
+            className={buttonVariants({
+              size: "lg",
+              className: "w-fit rounded-[10px] px-8 text-[20px] font-medium",
+            })}
+          >
+            {t("cta")}
+          </Link>
+        </div>
+        <Image
+          src="/landing/wand.png"
+          alt=""
+          width={346}
+          height={429}
+          className="pointer-events-none absolute top-[43px] right-0 hidden w-[346px] h-[429px] select-none object-contain sm:block"
+        />
+      </div>
+    </>
   );
 }
 
@@ -66,7 +99,7 @@ function HeroSideCards() {
   const t = useTranslations("landing.hero");
 
   return (
-    <div className="flex flex-col gap-4 sm:gap-6">
+    <div className="hidden flex-col gap-4 sm:flex sm:gap-6">
       <div
         style={{
           background:
@@ -130,7 +163,7 @@ function HeroSideCards() {
 
 export function Hero() {
   return (
-    <section className="mx-auto max-w-7xl px-4 py-6 sm:px-10 sm:py-10">
+    <section className="mx-auto max-w-7xl px-6 pt-6 pb-8 sm:px-10 sm:py-10">
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1.62fr_1fr]">
         <HeroBanner />
         <HeroSideCards />

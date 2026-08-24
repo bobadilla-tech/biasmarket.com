@@ -17,11 +17,25 @@
   "products": { "viewStore": "View in {name}" },
   "trends": {
     "title": "Trending",
-    "latestTitle": "Latest Products",
+    "latestTitle": "New Products",
     "bestSellersTitle": "Best sellers",
     "viewAll": "View all",
+    "viewMore": "See more",
     "empty": "No products yet.",
     "error": "Something went wrong. Try again."
+  },
+  "stores": {
+    "title": "Discover stores",
+    "empty": "No public stores yet."
+  },
+  "blog": {
+    "title": "Biasmarket Blog",
+    "cta": "See more",
+    "items": [
+      { "title": "Do you know Biasmarket?" },
+      { "title": "What does Bias mean?" },
+      { "title": "Events of the month" }
+    ]
   },
   "categories": {
     "title": "Categories",
@@ -45,25 +59,22 @@
     "error": "Something went wrong. Try again."
   },
   "about": {
-    "title": "What is Biasmarket?",
-    "subtitle": "Meet the story behind the market made by fans, for fans",
+    "title": "What is BIASMARKET?",
+    "subtitle": "A space created to connect K-Pop fans with independent stores and sellers.",
     "helpTitle": "Any questions? Find the answers here.",
     "helpCta": "Go to help center",
     "items": [
       {
-        "title": "A community made by fans",
-        "body": "Bias Market was born from the K-pop fandom. We connect group orders and stores that understand exactly what you're looking for: albums, photocards, official merch and limited editions.",
-        "width": 323
+        "title": "A fan community",
+        "body": "A space to find products from your favorite artists and connect with those who sell them."
       },
       {
-        "title": "Support independent sellers",
-        "body": "Every store on Bias Market is run by a fan just like you. No giant warehouses or cold middlemen — just passionate people selling what they love.",
-        "width": 323
+        "title": "Support sellers",
+        "body": "Discover stores and sellers who share your passion for K-Pop."
       },
       {
-        "title": "Buy with peace of mind",
-        "body": "Payments with Yape, Plin and more. Order tracking at every step and real support if something goes wrong. Your bias merch is in good hands.",
-        "width": 323
+        "title": "Buy directly from sellers",
+        "body": "Connect and coordinate your purchase directly with the seller."
       }
     ]
   },
@@ -85,46 +96,40 @@
     ]
   },
   "footer": {
+    "tagline": "The marketplace for K-pop fans",
     "networks": "Our socials",
     "columns": [
       {
-        "heading": "Buy with Biasmarket",
+        "heading": "Buy",
         "links": [
-          "How it works",
+          "How to buy",
           "Explore products",
           "Categories",
-          "Shipping",
+          "Stores"
+        ]
+      },
+      {
+        "heading": "Sell",
+        "links": [
+          "Create store",
+          "How to sell",
           "FAQ"
         ]
       },
       {
-        "heading": "Sell with Biasmarket",
+        "heading": "Biasmarket",
         "links": [
-          "Create my store",
-          "How to sell",
-          "Why sell on Biasmarket?",
-          "Sellers guide",
-          "Sellers FAQ"
-        ]
-      },
-      {
-        "heading": "About Biasmarket",
-        "links": [
-          "Our story",
           "About us",
-          "Verified stores",
-          "Terms of use",
-          "Privacy policy"
+          "How it works",
+          "Blog"
         ]
       },
       {
         "heading": "Help",
         "links": [
-          "Help Center",
-          "FAQ",
-          "Issues with my order",
+          "Help center",
           "Contact",
-          "Privacy Settings"
+          "Terms"
         ]
       }
     ],

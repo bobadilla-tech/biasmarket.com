@@ -1,6 +1,8 @@
 "use client";
 
+import { useRef } from "react";
 import Image from "next/image";
+import { CircleArrowLeft, CircleArrowRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { SectionHeading } from "./section-heading";
@@ -79,21 +81,98 @@ function CategoryCard({ item }: { item: { key: string; name: string } }) {
   );
 }
 
+function MobileCategoryCarousel({
+  items,
+}: {
+  items: { key: string; name: string }[];
+}) {
+  const t = useTranslations("landing.categories");
+  const scrollerRef = useRef<HTMLDivElement>(null);
+
+  const scrollByCards = (direction: -1 | 1) => {
+    scrollerRef.current?.scrollBy({
+      left: direction * 240,
+      behavior: "smooth",
+    });
+  };
+
+  return (
+    <div className="lg:hidden">
+      <h2 className="text-[21px] leading-[26px] font-bold text-black">
+        {t("title")}
+      </h2>
+      <div
+        ref={scrollerRef}
+        className="no-scrollbar mt-3 flex snap-x snap-mandatory gap-2 overflow-x-auto"
+      >
+        {items.map(({ key, name }, index) => {
+          const img = CATEGORY_IMAGES[key] ?? CATEGORY_IMAGES.otros;
+          return (
+            <Link
+              key={key}
+              href={`/search?category=${encodeURIComponent(name)}`}
+              className={`flex h-[106px] w-[106px] shrink-0 snap-start flex-col items-center justify-between rounded-[10px] pt-3 pb-1.5 ${
+                index % 2 === 0 ? "bg-[#F5EAFF]" : "bg-[#FFEAF6]"
+              }`}
+            >
+              <Image
+                src={img.src}
+                alt={name}
+                width={img.width}
+                height={img.height}
+                className="h-[52px] w-auto object-contain"
+              />
+              <span className="text-[13px] leading-4 font-medium text-black">
+                {name}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+      <div className="mt-2 flex justify-end gap-0">
+        <button
+          type="button"
+          aria-label={t("title")}
+          onClick={() => scrollByCards(-1)}
+          className="p-0.5 text-[#1C1B1F] transition-opacity hover:opacity-70"
+        >
+          <CircleArrowLeft className="size-6" strokeWidth={1.5} />
+        </button>
+        <button
+          type="button"
+          aria-label={t("title")}
+          onClick={() => scrollByCards(1)}
+          className="p-0.5 text-[#1C1B1F] transition-opacity hover:opacity-70"
+        >
+          <CircleArrowRight className="size-6" strokeWidth={1.5} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function CategoriesSection() {
   const t = useTranslations("landing.categories");
   const items = t.raw("items") as { key: string; name: string }[];
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-10 sm:py-14">
-      <SectionHeading title={t("title")} />
+    <section
+      id="categorias"
+      className="mx-auto max-w-7xl scroll-mt-28 px-6 py-8 sm:px-10 sm:py-14"
+    >
+      <MobileCategoryCarousel items={items} />
 
-      <div className="mt-6 grid gap-5 sm:mt-8 sm:gap-8 lg:grid-cols-[1fr_1.15fr]">
-        <CategoriesBanner />
+      <div className="hidden lg:block">
+        <SectionHeading title={t("title")} />
 
-        <div className="grid grid-cols-2 gap-3">
-          {items.map(({ key, name }) => (
-            <CategoryCard key={key} item={{ key, name }} />
-          ))}
+        <div className="mt-6 grid gap-5 sm:mt-8 sm:gap-8 lg:grid-cols-[1fr_1.15fr]">
+          <CategoriesBanner />
+
+          <div className="grid grid-cols-2 gap-3">
+            {items.map(({ key, name }) => (
+              <CategoryCard key={key} item={{ key, name }} />
+            ))}
+          </div>
         </div>
       </div>
     </section>

@@ -13,6 +13,11 @@ const PLACEHOLDER_KEYS = Array.from(
   (_, index) => `discover-placeholder-${index}`,
 );
 
+const ROW_PLACEHOLDER_KEYS = Array.from(
+  { length: 4 },
+  (_, index) => `discover-row-placeholder-${index}`,
+);
+
 export function DiscoverSection({
   initialData = null,
 }: {
@@ -23,33 +28,72 @@ export function DiscoverSection({
   const products = result?.products ?? [];
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-10 sm:py-14">
-      <SectionHeading title={t("title")} />
-
-      <div className="mt-6 grid grid-cols-2 gap-3 sm:mt-8 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
-        {loading || error || products.length === 0
-          ? PLACEHOLDER_KEYS.map((key) => (
-              <div
-                key={key}
-                className="aspect-[3/4] w-full rounded-[10px] border border-landing-graphite bg-white"
-              />
-            ))
-          : products.map((product) => (
-              <ProductGridCard key={product.id} product={product} />
-            ))}
+    <section className="mx-auto max-w-7xl px-6 py-8 sm:px-10 sm:py-14">
+      {/* Mobile — Figma Frame 17: left heading, 2-col card grid, pill CTA */}
+      <div className="sm:hidden">
+        <h2 className="text-[21px] leading-[26px] font-bold text-black">
+          {t("title")}
+        </h2>
+        <div className="mt-3 grid grid-cols-2 gap-2.5">
+          {loading || error || products.length === 0
+            ? ROW_PLACEHOLDER_KEYS.map((key) => (
+                <div
+                  key={key}
+                  className="animate-pulse rounded-[10px] bg-muted p-[9.5px]"
+                >
+                  <div className="aspect-square w-full rounded-[10px]" />
+                </div>
+              ))
+            : products
+                .slice(0, 4)
+                .map((product) => (
+                  <ProductGridCard
+                    key={product.id}
+                    product={product}
+                    variant="row"
+                    className="w-full"
+                  />
+                ))}
+        </div>
+        <div className="mt-5 flex justify-center">
+          <Link
+            href="/search"
+            className="flex h-[39px] w-[186px] items-center justify-center rounded-[10px] bg-[#FC17A0] text-sm font-medium text-white transition-colors hover:bg-[#e0128d]"
+          >
+            {t("cta")}
+          </Link>
+        </div>
       </div>
 
-      <div className="mt-8 flex justify-center sm:mt-10">
-        <Link
-          href="/search"
-          className={buttonVariants({
-            variant: "secondary",
-            className:
-              "h-14 w-full rounded-[10px] px-12 text-lg sm:h-[63px] sm:w-auto sm:text-xl",
-          })}
-        >
-          {t("cta")}
-        </Link>
+      {/* Tablet/desktop — existing grid */}
+      <div className="hidden sm:block">
+        <SectionHeading title={t("title")} />
+
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:mt-8 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
+          {loading || error || products.length === 0
+            ? PLACEHOLDER_KEYS.map((key) => (
+                <div
+                  key={key}
+                  className="aspect-[3/4] w-full rounded-[10px] border border-landing-graphite bg-white"
+                />
+              ))
+            : products.map((product) => (
+                <ProductGridCard key={product.id} product={product} />
+              ))}
+        </div>
+
+        <div className="mt-8 flex justify-center sm:mt-10">
+          <Link
+            href="/search"
+            className={buttonVariants({
+              variant: "secondary",
+              className:
+                "h-14 w-full rounded-[10px] px-12 text-lg sm:h-[63px] sm:w-auto sm:text-xl",
+            })}
+          >
+            {t("cta")}
+          </Link>
+        </div>
       </div>
     </section>
   );

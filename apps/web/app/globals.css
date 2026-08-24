@@ -214,6 +214,14 @@
   }
 }
 
+/* Horizontal scrollers on the mobile landing (categories, product rows) */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 .store-dashboard-theme {
   --store-primary: #6d28d9;
   --store-accent: #f472b6;
