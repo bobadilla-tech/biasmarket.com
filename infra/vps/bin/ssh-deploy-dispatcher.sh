@@ -57,6 +57,11 @@ launch() {
   # read it back from. This is deploy.sh's full stderr for the most recent
   # launch, not just early-failure output — overwritten fresh each launch.
   local errfile="$DEPLOY_ROOT/state/last_launch.log"
+  # Rotate one deep before truncating: a real failure's stderr otherwise
+  # gets silently destroyed by whatever launches next — an unrelated
+  # scheduled --cleanup fired this way mid-incident and erased the actual
+  # deploy failure before it could be read back for a postmortem.
+  [[ -s "$errfile" ]] && mv -f "$errfile" "${errfile}.previous"
   : >"$errfile"
   setsid "$DEPLOY_ROOT/deploy.sh" "$@" >/dev/null 2>"$errfile" </dev/null &
   local bg_pid=$!
