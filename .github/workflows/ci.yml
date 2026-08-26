@@ -327,6 +327,62 @@ jobs:
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=@biasmarket/db
 
+  migration-safety:
+    name: Migration Safety
+    needs: detect-changes
+    if: github.event_name == 'pull_request' && needs.detect-changes.outputs.db == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # Mirrors DESTRUCTIVE_PATTERN in infra/vps/lib/migrate.sh — deploy.sh
+      # refuses any migration matching this without the manual-only
+      # --i-understand-this-is-destructive flag (see that file and
+      # docs/core/blue-green-migrations.md). Not wired into ci-success:
+      # a destructive migration can be a legitimate, deliberate change
+      # (see the expand/contract checklist) — this job's job is to make
+      # sure the author sees that *before* merging, not to block the PR.
+      - name: Check for destructive migrations
+        run: |
+          set -euo pipefail
+          mapfile -t new_migrations < <(
+            git diff --name-only --diff-filter=A \
+              "${{ github.event.pull_request.base.sha }}" \
+              "${{ github.event.pull_request.head.sha }}" \
+              -- 'packages/db/prisma/migrations/*/migration.sql'
+          )
+          if [[ ${#new_migrations[@]} -eq 0 ]]; then
+            echo "No new migration files in this PR."
+            exit 0
+          fi
+
+          destructive_pattern='DROP[[:space:]]+TABLE|DROP[[:space:]]+COLUMN|DROP[[:space:]]+TYPE|ALTER[[:space:]]+COLUMN[^;]*TYPE'
+          found=()
+          for f in "${new_migrations[@]}"; do
+            grep -qiE "$destructive_pattern" "$f" && found+=("$f")
+          done
+
+          if [[ ${#found[@]} -eq 0 ]]; then
+            echo "No destructive migrations detected."
+            exit 0
+          fi
+
+          {
+            echo "## :warning: Destructive migration(s) in this PR"
+            echo
+            echo "These new migrations contain DROP TABLE / DROP COLUMN / DROP TYPE / ALTER COLUMN...TYPE:"
+            echo
+            for f in "${found[@]}"; do echo "- \`$f\`"; done
+            echo
+            echo "\`deploy.sh\`'s destructive-migration gate will refuse to apply these in CD — merging is fine, but deploying needs a manual run with \`--i-understand-this-is-destructive\` (see docs/core/blue-green-migrations.md's expand/contract checklist). Plan for that before this lands on main, or split into an expand/contract pair instead."
+          } >>"$GITHUB_STEP_SUMMARY"
+          echo "::error::Destructive migration(s) detected — CD will refuse to auto-deploy this PR once merged. See the job summary."
+          exit 1
+
   i18n:
     name: i18n
     needs: detect-changes
