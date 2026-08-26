@@ -17,11 +17,25 @@
   "products": { "viewStore": "Ver en {name}" },
   "trends": {
     "title": "Tendencias",
-    "latestTitle": "Últimos Productos",
+    "latestTitle": "Nuevos Productos",
     "bestSellersTitle": "Más vendidos",
     "viewAll": "Ver todo",
+    "viewMore": "Ver más",
     "empty": "Aún no hay productos.",
     "error": "Algo salió mal. Inténtalo de nuevo."
+  },
+  "stores": {
+    "title": "Descubre tiendas",
+    "empty": "Aún no hay tiendas públicas."
+  },
+  "blog": {
+    "title": "Biasmarket Blog",
+    "cta": "Ver más",
+    "items": [
+      { "title": "¿Conoces a Biasmarket?" },
+      { "title": "¿Qué significa Bias?" },
+      { "title": "Eventos del mes" }
+    ]
   },
   "categories": {
     "title": "Categorías",
@@ -45,25 +59,22 @@
     "error": "Algo salió mal. Inténtalo de nuevo."
   },
   "about": {
-    "title": "¿Qué es Biasmarket?",
-    "subtitle": "Conoce la historia detrás del mercado hecho por fans, para fans",
+    "title": "¿Qué es BIASMARKET?",
+    "subtitle": "Un espacio creado para conectar a fans del\nK-Pop con tiendas y vendedores\nindependientes.",
     "helpTitle": "¿Alguna pregunta? Encuentra aquí las respuestas.",
     "helpCta": "Ir al Centro de ayuda",
     "items": [
       {
-        "title": "Una comunidad hecha por fans",
-        "body": "Bias Market nace de la fanaticada K-pop. Conectamos GO'S y tiendas que entienden exactamente lo que buscas: álbumes, photocards, merch oficial y ediciones limitadas.",
-        "width": 323
+        "title": "Una comunidad de fans",
+        "body": "Un espacio para encontrar productos de tus artistas favoritos y conectar con quienes los venden."
       },
       {
-        "title": "Apoya a sellers independientes",
-        "body": "Cada tienda dentro de Bias Market es manejada por un fan como tú. No hay bodegas gigantes ni intermediarios fríos, solo personas apasionadas vendiendo lo que aman.",
-        "width": 323
+        "title": "Apoya a sellers",
+        "body": "Descubre tiendas y vendedores que comparten tu pasión por el K-Pop."
       },
       {
-        "title": "Compra con tranquilidad",
-        "body": "Pagos con Yape, Plin y más. Seguimiento de tu pedido en todo momento y soporte real si algo sale mal. Tu bias merch está en buenas manos.",
-        "width": 323
+        "title": "Compra directo a sellers",
+        "body": "Conecta y coordina tu compra directamente con quien vende."
       }
     ]
   },
@@ -85,46 +96,40 @@
     ]
   },
   "footer": {
+    "tagline": "El marketplace de los K-popers",
     "networks": "Nuestras redes",
     "columns": [
       {
-        "heading": "Comprar con Biasmarket",
+        "heading": "Comprar",
         "links": [
-          "Cómo funciona",
+          "Cómo comprar",
           "Explorar productos",
           "Categorías",
-          "Envíos",
+          "Tiendas"
+        ]
+      },
+      {
+        "heading": "Vender",
+        "links": [
+          "Crear tienda",
+          "Cómo vender",
           "Preguntas frecuentes"
         ]
       },
       {
-        "heading": "Vender con Biasmarket",
+        "heading": "Biasmarket",
         "links": [
-          "Crear mi tienda",
-          "Cómo vender",
-          "¿Por qué vender en Biasmarket?",
-          "Guía para sellers",
-          "FAQ para sellers"
-        ]
-      },
-      {
-        "heading": "Sobre Biasmarket",
-        "links": [
-          "Nuestra historia",
-          "Sobre nosotros",
-          "Tiendas verificadas",
-          "Términos de uso",
-          "Politica de privacidad"
+          "Quiénes somos",
+          "Cómo funciona",
+          "Blog"
         ]
       },
       {
         "heading": "Ayuda",
         "links": [
           "Centro de ayuda",
-          "Preguntas frecuentes",
-          "Problemas con mi pedido",
           "Contacto",
-          "Configuración de Privacidad"
+          "Términos"
         ]
       }
     ],

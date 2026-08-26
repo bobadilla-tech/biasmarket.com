@@ -36,7 +36,7 @@ export async function generateMetadata({
 }
 
 export default async function Home() {
-  const { latestTrend, bestSellers, discoverProducts } =
+  const { latestTrend, bestSellers, discoverProducts, featuredStores } =
     await getHomeDiscoveryData();
 
   return (
@@ -44,6 +44,7 @@ export default async function Home() {
       latestProducts={latestTrend}
       bestSellers={bestSellers}
       discoverProducts={discoverProducts}
+      featuredStores={featuredStores}
     />
   );
 }
