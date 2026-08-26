@@ -18,31 +18,31 @@ function HeroBanner() {
 
   return (
     <>
-      {/* Mobile — Figma Frame 56 */}
-      <div className="relative overflow-hidden rounded-[10px] bg-[#FEF3FF] sm:hidden">
-        <div className="flex flex-col items-center px-6 pt-7 text-center">
-          <h1 className="text-[34px] font-bold tracking-tight text-[#4C0566]">
+      <div className="relative mx-auto h-[342px] w-full max-w-[358px] overflow-hidden rounded-[10px] bg-[#FEF3FF] sm:hidden">
+        <div className="absolute inset-x-0 top-[21px] z-10 flex flex-col items-center pr-[25px] pl-[28px] text-center">
+          <h1 className="-my-1.5 text-[clamp(20px,8.6vw,34px)] leading-[36px] font-bold tracking-tight whitespace-nowrap text-[#4C0566]">
             {t("title1")}
           </h1>
-          <p className="mt-2 text-[22px] leading-[28px] font-medium text-[#FC17A0]">
+          <p className="text-[24px] leading-[32px] font-medium text-[#FC17A0]">
             {t("title2")}
           </p>
-          <Image
-            src="/landing/bm-props-sombra.png"
-            alt=""
-            width={1152}
-            height={923}
-            priority
-            className="pointer-events-none mt-1 h-auto w-[272px] select-none object-contain"
-          />
         </div>
+        <Image
+          src="/landing/bm-props-sombra.png"
+          alt=""
+          width={1152}
+          height={923}
+          priority
+          className="pointer-events-none absolute inset-x-0 bottom-[14px] z-0 mx-auto w-full max-w-none select-none"
+          style={{ transform: "rotate(-0.11deg)" }}
+        />
         <div
           aria-hidden="true"
-          className="h-[42px] w-full bg-gradient-to-b from-[#FEF3FF] to-[#FFC2F8]"
+          className="absolute inset-x-0 bottom-0 h-[39px] rounded-b-[10px] bg-gradient-to-b from-[#FEF3FF] to-[#FFC2F8]"
         />
         <Link
           href="/search"
-          className="absolute bottom-[8px] left-1/2 flex h-[31px] w-[142px] -translate-x-1/2 items-center justify-center rounded-[10px] bg-[#FC17A0] text-xs font-semibold text-white transition-colors hover:bg-[#e0128d]"
+          className="absolute bottom-[24px] left-1/2 flex h-[26px] w-[128px] -translate-x-1/2 items-center justify-center rounded-[10px] bg-[#FC17A0] text-[10px] leading-3 font-semibold text-white transition-colors hover:bg-[#e0128d]"
         >
           {t("cta")}
         </Link>

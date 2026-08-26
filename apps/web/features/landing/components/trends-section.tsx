@@ -93,9 +93,6 @@ function TrendPanel({
     </div>
   );
 }
-
-/* Mobile — Figma Frames 66/67: a full-width tinted band per trend, heading +
-   "Ver más →" on top, horizontally scrolling product cards below. */
 function TrendBand({
   title,
   sort,

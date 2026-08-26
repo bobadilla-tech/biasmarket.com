@@ -15,8 +15,6 @@ const ILLUSTRATIONS = [
   { src: "/landing/shield.png", alt: "", width: 258, height: 173 },
 ];
 
-/* Mobile — Figma Frame 32: intro row with wand art, three white feature cards,
-   ✦ divider, then the help-center CTA. */
 function MobileAbout({
   title,
   subtitle,
@@ -31,61 +29,77 @@ function MobileAbout({
   items: AboutItem[];
 }) {
   return (
-    <div className="bg-[#FFEAF6] px-6 py-8 sm:hidden">
-      <div className="flex items-start justify-between gap-3">
+    <div className="flex flex-col bg-[#FFEAF6] p-[25px] sm:hidden">
+      <div className="flex w-full items-start justify-between gap-5">
         <div className="min-w-0">
-          <h2 className="text-[22px] leading-[26px] font-bold text-black">
-            {title}
+          <h2 className="text-[21px] leading-[25px] font-bold text-black">
+            {title.includes("BIASMARKET") ? (
+              <>
+                {title.split("BIASMARKET")[0]}
+                <span
+                  className="bg-clip-text text-transparent"
+                  style={{
+                    backgroundImage:
+                      "linear-gradient(90deg, #FC17A0 0%, #8D2FEB 100%)",
+                  }}
+                >
+                  BIASMARKET
+                </span>
+                {title.split("BIASMARKET")[1]}
+              </>
+            ) : (
+              title
+            )}
           </h2>
-          <p className="mt-1.5 text-[11px] leading-[14px] text-black">
+          <p className="mt-[3px] text-[11px] leading-[13px] whitespace-pre-line text-black">
             {subtitle}
           </p>
         </div>
         <Image
           src="/landing/wand.png"
           alt=""
-          width={84}
-          height={104}
-          className="pointer-events-none h-auto w-[72px] shrink-0 select-none object-contain"
+          width={86}
+          height={137}
+          className="pointer-events-none h-auto w-[86px] shrink-0 select-none object-contain"
         />
       </div>
 
-      <div className="mt-5 flex flex-col gap-3">
+      <div className="mt-2 flex w-full flex-col gap-[5px]">
         {items.map((item, index) => (
           <div
             key={item.title}
-            className="flex flex-col gap-1 rounded-[20px] bg-white p-4"
+            className="flex flex-col items-start gap-1 rounded-[20px] bg-white px-5 py-2.5"
           >
             <Image
               src={ILLUSTRATIONS[index]?.src ?? ILLUSTRATIONS[0].src}
               alt=""
               width={ILLUSTRATIONS[index]?.width ?? 48}
               height={ILLUSTRATIONS[index]?.height ?? 48}
-              className="h-11 w-auto object-contain"
+              className="h-[47px] w-auto object-contain"
             />
-            <h3 className="mt-1 text-sm leading-[17px] font-semibold text-black">
+            <h3 className="text-[12.3px] leading-[15px] font-semibold text-black">
               {item.title}
             </h3>
-            <p className="text-justify text-[11px] leading-[14px] font-light text-black">
+            <p className="text-justify text-[8.6px] leading-[10px] font-light text-black">
               {item.body}
             </p>
           </div>
         ))}
-      </div>
 
-      <div aria-hidden="true" className="mt-6 flex items-center gap-2">
-        <span className="h-px flex-1 border-t border-white" />
-        <span className="text-lg leading-none font-bold text-white">✦</span>
-        <span className="h-px flex-1 border-t border-white" />
-      </div>
+        <div aria-hidden="true" className="mt-1 flex items-center gap-[7px]">
+          <span className="h-px min-w-[60px] flex-1 border-t border-white" />
+          <span className="text-[21px] leading-none font-bold text-white">
+            ✦
+          </span>
+          <span className="h-px min-w-[60px] flex-1 border-t border-white" />
+        </div>
 
-      <p className="mt-4 text-center text-[11px] leading-[13px] text-black">
-        {helpTitle}
-      </p>
-      <div className="mt-3 flex justify-center">
+        <p className="mt-1 text-center text-[11px] leading-[13px] text-black">
+          {helpTitle}
+        </p>
         <Link
           href="/contact"
-          className="flex h-[38px] items-center justify-center rounded-[8px] bg-[#FC17A0] px-5 text-xs font-medium text-white transition-colors hover:bg-[#e0128d]"
+          className="flex h-[31px] w-[131px] items-center justify-center rounded-[5px] bg-[#FC17A0] text-[9.8px] leading-3 font-medium text-white transition-colors hover:bg-[#e0128d]"
         >
           {helpCta}
         </Link>

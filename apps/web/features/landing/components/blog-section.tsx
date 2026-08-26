@@ -9,8 +9,6 @@ interface BlogTeaser {
   title: string;
 }
 
-/* Mobile — Figma Frame 74: horizontally scrolling teaser cards with grey
-   placeholder art, all linking into the blog. */
 export function BlogSection() {
   const t = useTranslations("landing.blog");
   const items = t.raw("items") as BlogTeaser[];

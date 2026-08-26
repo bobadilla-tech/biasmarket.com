@@ -32,8 +32,7 @@ export function StoresSection({ stores }: { stores?: LandingStore[] | null }) {
 
   return (
     <section className="px-6 py-8 sm:px-10 sm:py-14">
-      {/* Mobile — Figma Frame 68: stacked bordered rows. Always rendered; an
-          empty directory shows a message instead of dropping the section. */}
+      {}
       <div className="sm:hidden">
         <h2 className="text-center text-[21px] leading-[26px] font-bold text-black">
           {t("title")}

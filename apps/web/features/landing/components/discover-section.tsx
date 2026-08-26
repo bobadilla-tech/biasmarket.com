@@ -29,7 +29,7 @@ export function DiscoverSection({
 
   return (
     <section className="mx-auto max-w-7xl px-6 py-8 sm:px-10 sm:py-14">
-      {/* Mobile — Figma Frame 17: left heading, 2-col card grid, pill CTA */}
+      {}
       <div className="sm:hidden">
         <h2 className="text-[21px] leading-[26px] font-bold text-black">
           {t("title")}
