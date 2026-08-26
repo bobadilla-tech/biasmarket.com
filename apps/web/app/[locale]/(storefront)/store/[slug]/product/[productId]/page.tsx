@@ -66,17 +66,16 @@ export default async function ProductDetailPage({
     <div className="min-h-screen bg-gray-50">
       <header className="border-b border-gray-100 bg-white px-6 py-6">
         <div className="mx-auto flex max-w-3xl items-center gap-3">
-          <StoreLogo
-            name={store.name}
-            logoUrl={store.logoUrl}
-            size={40}
-            className="text-sm"
-          />
-          <Link
-            href={`/store/${slug}`}
-            className="text-sm font-semibold text-gray-900 hover:underline"
-          >
-            {store.name}
+          <Link href={`/store/${slug}`} className="flex items-center gap-3">
+            <StoreLogo
+              name={store.name}
+              logoUrl={store.logoUrl}
+              size={40}
+              className="text-sm"
+            />
+            <span className="text-sm font-semibold text-gray-900 hover:underline">
+              {store.name}
+            </span>
           </Link>
         </div>
       </header>
