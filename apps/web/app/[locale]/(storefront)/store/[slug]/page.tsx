@@ -7,7 +7,7 @@ import { StoreLogo } from "@/components/store-logo";
 import { Link } from "@/i18n/navigation";
 import { ProductCard } from "@/components/storefront/product-card";
 import { StoreSectionRenderer } from "@/components/storefront/section-renderer";
-import { SocialIcon } from "@/components/storefront/social-icon";
+import { SocialIcon } from "@/features/storefront/components/social-icon";
 
 async function getStore(slug: string) {
   const apiUrl =

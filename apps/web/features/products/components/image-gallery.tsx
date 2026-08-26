@@ -18,7 +18,7 @@ export function ImageGallery({
 }) {
   const [current, setCurrent] = useState(0);
 
-  const imagesKey = images.join(",");
+  const imagesKey = JSON.stringify(images);
   useEffect(() => {
     setCurrent(0);
   }, [imagesKey]);
