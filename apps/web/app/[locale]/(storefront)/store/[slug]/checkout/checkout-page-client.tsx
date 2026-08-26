@@ -245,6 +245,12 @@ export function CheckoutPageClient() {
               {t("viewOrderLink")}
             </Link>
           )}
+          <Link
+            href={`/store/${slug}`}
+            className="store-theme-link mt-2 block text-sm font-semibold"
+          >
+            {t("backToStore")}
+          </Link>
         </div>
       </div>
     );
@@ -269,7 +275,17 @@ export function CheckoutPageClient() {
   return (
     <div className="min-h-screen bg-gray-50 px-6 py-10">
       <div className="max-w-md mx-auto flex flex-col gap-6">
-        <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+        <div>
+          <Link
+            href={`/store/${slug}`}
+            className="text-sm text-gray-500 hover:underline"
+          >
+            ← {t("backToStore")}
+          </Link>
+          <h1 className="mt-2 text-2xl font-bold text-gray-900">
+            {t("title")}
+          </h1>
+        </div>
         <CheckoutSummary
           items={items}
           paymentType={paymentType}
