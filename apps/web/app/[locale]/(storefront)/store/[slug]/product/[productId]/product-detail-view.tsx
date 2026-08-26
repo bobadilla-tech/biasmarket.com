@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Bell, Clock } from "lucide-react";
+import { toast } from "sonner";
 import { Select } from "@/components/ui/select";
 import { ImageGallery } from "@/features/products/components/image-gallery";
 import { addToCart } from "@/lib/cart";
@@ -77,6 +78,10 @@ export function ProductDetailView({
     });
     setAdded(true);
     setTimeout(() => setAdded(false), 1200);
+    toast.success(t("addedToCart"), {
+      description: product.name,
+      duration: 1500,
+    });
   };
 
   return (

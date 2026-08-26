@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -17,6 +17,14 @@ export function ImageGallery({
   outOfStock?: boolean;
 }) {
   const [current, setCurrent] = useState(0);
+
+  const imagesKey = JSON.stringify(images);
+  useEffect(() => {
+    setCurrent(0);
+  }, [imagesKey]);
+
+  const safeCurrent =
+    images.length > 0 ? Math.min(current, images.length - 1) : 0;
   const hasMultiple = images.length > 1;
 
   if (images.length === 0) {
@@ -34,7 +42,7 @@ export function ImageGallery({
     <div className={cn("space-y-2", className)}>
       <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-gray-50">
         <Image
-          src={images[current]}
+          src={images[safeCurrent]}
           alt={alt}
           fill
           className={cn("object-contain", outOfStock && "opacity-70 grayscale")}
@@ -75,7 +83,7 @@ export function ImageGallery({
               onClick={() => setCurrent(index)}
               className={cn(
                 "relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border-2 transition",
-                index === current
+                index === safeCurrent
                   ? "border-[#2d1649]"
                   : "border-transparent opacity-70 hover:opacity-100",
               )}

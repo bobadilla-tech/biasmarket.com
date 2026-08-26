@@ -4,8 +4,10 @@ import { getTranslations } from "next-intl/server";
 import { isProductOutOfStock } from "@/features/discovery/lib/product-stock";
 import { canonicalUrl, SITE_URL } from "@/lib/site-config";
 import { StoreLogo } from "@/components/store-logo";
+import { Link } from "@/i18n/navigation";
 import { ProductCard } from "@/components/storefront/product-card";
 import { StoreSectionRenderer } from "@/components/storefront/section-renderer";
+import { SocialIcon } from "@/features/storefront/components/social-icon";
 
 async function getStore(slug: string) {
   const apiUrl =
@@ -66,25 +68,25 @@ function collectSoldOutProducts(store: any): any[] {
 
 function StoreSocialLinks({ store }: { store: any }) {
   const socials = [
-    { key: "instagram", label: "Instagram", url: store.instagramUrl },
-    { key: "facebook", label: "Facebook", url: store.facebookUrl },
-    { key: "tiktok", label: "TikTok", url: store.tiktokUrl },
-    { key: "twitter", label: "X", url: store.twitterUrl },
+    { key: "instagram", url: store.instagramUrl },
+    { key: "facebook", url: store.facebookUrl },
+    { key: "tiktok", url: store.tiktokUrl },
+    { key: "twitter", url: store.twitterUrl },
   ].filter((s) => Boolean(s.url));
 
   if (socials.length === 0) return null;
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5">
       {socials.map((s) => (
         <a
           key={s.key}
           href={s.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-medium text-gray-600 transition hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"
+          className="flex size-8 items-center justify-center rounded-full border border-gray-200 bg-gray-50 text-gray-600 transition hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"
         >
-          {s.label}
+          <SocialIcon platform={s.key} />
         </a>
       ))}
     </div>
@@ -193,7 +195,7 @@ export default async function StorePage({
       <div className="min-h-screen bg-gray-50">
         <header className="border-b border-gray-100 bg-white px-6 py-8">
           <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 sm:flex-row">
-            <div className="flex items-center gap-3">
+            <Link href={`/store/${slug}`} className="flex items-center gap-3">
               <StoreLogo
                 name={store.name}
                 logoUrl={store.logoUrl}
@@ -201,7 +203,7 @@ export default async function StorePage({
                 className="text-sm"
               />
               <h1 className="text-2xl font-bold text-gray-900">{store.name}</h1>
-            </div>
+            </Link>
             <StoreSocialLinks store={store} />
           </div>
         </header>
@@ -225,7 +227,7 @@ export default async function StorePage({
       />
       <header className="border-b border-gray-100 bg-white px-6 py-8">
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 sm:flex-row">
-          <div className="flex items-center gap-3">
+          <Link href={`/store/${slug}`} className="flex items-center gap-3">
             <StoreLogo
               name={store.name}
               logoUrl={store.logoUrl}
@@ -233,7 +235,7 @@ export default async function StorePage({
               className="text-sm"
             />
             <h1 className="text-2xl font-bold text-gray-900">{store.name}</h1>
-          </div>
+          </Link>
           <StoreSocialLinks store={store} />
         </div>
       </header>

@@ -91,17 +91,17 @@ function CartSummary({
         </span>
       </div>
 
-      {mixedCurrencies
-        ? <p className="text-sm text-amber-600">{t("mixedCurrencyWarning")}</p>
-        : (
-          <Link
-            href={`/store/${slug}/checkout`}
-            className="flex items-center justify-center gap-2 rounded-xl bg-stone-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-black"
-          >
-            {t("continueToCheckout")}
-            <ArrowRight className="size-4" />
-          </Link>
-        )}
+      {mixedCurrencies ? (
+        <p className="text-sm text-amber-600">{t("mixedCurrencyWarning")}</p>
+      ) : (
+        <Link
+          href={`/store/${slug}/checkout`}
+          className="flex items-center justify-center gap-2 rounded-xl bg-stone-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-black"
+        >
+          {t("continueToCheckout")}
+          <ArrowRight className="size-4" />
+        </Link>
+      )}
     </div>
   );
 }
@@ -151,7 +151,17 @@ export function CartPageClient() {
   return (
     <div className="min-h-screen bg-stone-50 px-6 py-10">
       <div className="mx-auto flex max-w-4xl flex-col gap-6">
-        <h1 className="text-2xl font-bold text-stone-900">{t("title")}</h1>
+        <div>
+          <Link
+            href={`/store/${slug}`}
+            className="text-sm text-stone-500 hover:underline"
+          >
+            ← {t("continueShopping")}
+          </Link>
+          <h1 className="mt-2 text-2xl font-bold text-stone-900">
+            {t("title")}
+          </h1>
+        </div>
 
         <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[1fr_340px] lg:items-start">
           <div className="bg-white divide-y divide-stone-100 rounded-2xl border border-stone-200 shadow-sm">
@@ -161,16 +171,14 @@ export function CartPageClient() {
                 className="flex gap-4 px-4 py-5 sm:px-6"
               >
                 <div className="relative size-20 shrink-0 overflow-hidden rounded-lg bg-stone-100">
-                  {item.image
-                    ? (
-                      <Image
-                        src={item.image}
-                        alt={item.name}
-                        fill
-                        className="object-cover"
-                      />
-                    )
-                    : null}
+                  {item.image ? (
+                    <Image
+                      src={item.image}
+                      alt={item.name}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : null}
                 </div>
 
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -201,7 +209,8 @@ export function CartPageClient() {
                       <button
                         type="button"
                         onClick={() =>
-                          handleQuantityChange(item, item.quantity - 1)}
+                          handleQuantityChange(item, item.quantity - 1)
+                        }
                         className="size-7 rounded-md text-stone-600 transition hover:bg-stone-100"
                       >
                         -
@@ -211,14 +220,16 @@ export function CartPageClient() {
                       </span>
                       {(() => {
                         const available = availableFor(item);
-                        const atCap = available !== undefined &&
+                        const atCap =
+                          available !== undefined &&
                           available !== Infinity &&
                           item.quantity >= available;
                         return (
                           <button
                             type="button"
                             onClick={() =>
-                              handleQuantityChange(item, item.quantity + 1)}
+                              handleQuantityChange(item, item.quantity + 1)
+                            }
                             disabled={atCap}
                             aria-disabled={atCap}
                             className="size-7 rounded-md text-stone-600 transition hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"

@@ -37,7 +37,10 @@ export function CartLink({ slug }: { slug: string }) {
     >
       <ShoppingCart className="size-4" />
       {count > 0 && (
-        <span className="absolute -top-1 -right-1 flex min-w-4 items-center justify-center rounded-full bg-[var(--store-primary)] px-1 text-[10px] leading-4 font-bold text-white">
+        <span
+          key={count}
+          className="cart-badge-pulse absolute -top-1 -right-1 flex min-w-4 items-center justify-center rounded-full bg-[var(--store-primary)] px-1 text-[10px] leading-4 font-bold text-white"
+        >
           {count > 99 ? "99+" : count}
         </span>
       )}

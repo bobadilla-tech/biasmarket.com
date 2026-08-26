@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Bell, Clock } from "lucide-react";
+import { toast } from "sonner";
 import { Link } from "@/i18n/navigation";
 import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
@@ -92,6 +93,10 @@ export function ProductCard({
     });
     setAdded(true);
     setTimeout(() => setAdded(false), 1200);
+    toast.success(t("addedToCart"), {
+      description: product.name,
+      duration: 1500,
+    });
   };
 
   return (
