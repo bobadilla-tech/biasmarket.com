@@ -42,6 +42,7 @@
 // for it, or extend this script with another addNotification call using the
 // same pattern as the webhook one below.
 
+import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -314,6 +315,12 @@ async function main() {
   // older than its own threshold (default 3 minutes) — so this monitor's
   // `interval` needs enough slack above that threshold to not flap on
   // ordinary timer jitter, hence 240s here, not 60s like the others.
+  // Unlike the HTTP/port monitors above, Kuma's `add` handler does not
+  // generate a pushToken server-side for type "push" — the Kuma web UI
+  // generates one client-side before ever calling `add`, so a push monitor
+  // created without one persists with pushToken=null forever (confirmed
+  // against a live 1.23.16 instance: `add` with no pushToken field, then
+  // `getMonitor`, came back null). Generate it ourselves the same way.
   let pushMonitorId = existingMonitors.get(PUSH_MONITOR_NAME);
   if (pushMonitorId) {
     console.log(
@@ -331,6 +338,7 @@ async function main() {
       active: true,
       upsideDown: false,
       accepted_statuscodes: ["200-299"],
+      pushToken: randomBytes(20).toString("hex"),
     };
     const res = await new Promise<{
       ok: boolean;
@@ -344,10 +352,28 @@ async function main() {
     );
   }
 
-  const pushDetail = await new Promise<{
+  let pushDetail = await new Promise<{
     ok: boolean;
-    monitor?: { pushToken?: string };
+    monitor?: Record<string, unknown> & { pushToken?: string };
   }>((resolve) => socket.emit("getMonitor", pushMonitorId, resolve as Cb));
+
+  // Backfills a pre-existing push monitor (created before this script knew
+  // to set pushToken on creation) that's stuck with a null token.
+  if (pushDetail.ok && pushDetail.monitor && !pushDetail.monitor.pushToken) {
+    console.log(
+      "Existing push monitor has no token — backfilling one via editMonitor ...",
+    );
+    const patched = {
+      ...pushDetail.monitor,
+      pushToken: randomBytes(20).toString("hex"),
+    };
+    const editRes = await new Promise<{ ok: boolean; msg?: string }>(
+      (resolve) => socket.emit("editMonitor", patched, resolve as Cb),
+    );
+    if (!editRes.ok) throw new Error(`editMonitor failed: ${editRes.msg}`);
+    pushDetail = { ok: true, monitor: patched };
+  }
+
   if (pushDetail.ok && pushDetail.monitor?.pushToken) {
     console.log(
       `Push monitor ready. Set KUMA_MIGRATION_PUSH_URL in infra/vps/env/watchdog.env to:\n` +
