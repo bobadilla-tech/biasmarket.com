@@ -26,6 +26,7 @@
   },
   "stores": {
     "title": "Descubre tiendas",
+    "viewMore": "Ver más",
     "empty": "Aún no hay tiendas públicas."
   },
   "blog": {
@@ -34,7 +35,8 @@
     "items": [
       { "title": "¿Conoces a Biasmarket?" },
       { "title": "¿Qué significa Bias?" },
-      { "title": "Eventos del mes" }
+      { "title": "Eventos del mes" },
+      { "title": "¿Grupos más conocidos?" }
     ]
   },
   "categories": {
@@ -101,36 +103,19 @@
     "columns": [
       {
         "heading": "Comprar",
-        "links": [
-          "Cómo comprar",
-          "Explorar productos",
-          "Categorías",
-          "Tiendas"
-        ]
+        "links": ["Cómo comprar", "Explorar productos", "Categorías", "Tiendas"]
       },
       {
         "heading": "Vender",
-        "links": [
-          "Crear tienda",
-          "Cómo vender",
-          "Preguntas frecuentes"
-        ]
+        "links": ["Crear tienda", "Cómo vender", "Preguntas frecuentes"]
       },
       {
         "heading": "Biasmarket",
-        "links": [
-          "Quiénes somos",
-          "Cómo funciona",
-          "Blog"
-        ]
+        "links": ["Quiénes somos", "Cómo funciona", "Blog"]
       },
       {
         "heading": "Ayuda",
-        "links": [
-          "Centro de ayuda",
-          "Contacto",
-          "Términos"
-        ]
+        "links": ["Centro de ayuda", "Contacto", "Términos"]
       }
     ],
     "socials": [

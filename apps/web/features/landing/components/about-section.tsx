@@ -123,57 +123,53 @@ export function AboutSection() {
       />
 
       <section className="hidden w-full bg-[#FFEAF6] sm:block">
-        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-10">
-          <h2
-            style={{ fontWeight: 600, fontSize: 36, lineHeight: "44px" }}
-            className="text-center text-black"
-          >
-            {t("title")}
-          </h2>
-          <p
-            style={{ fontWeight: 400, fontSize: 16, lineHeight: "19px" }}
-            className="mt-4 text-center text-black"
-          >
-            {t("subtitle")}
-          </p>
-
-          <div className="mx-auto mt-8 grid w-fit grid-cols-2 items-center justify-items-center gap-6 sm:mt-10 sm:flex sm:gap-12 lg:gap-24">
-            {ILLUSTRATIONS.map(({ src, alt, width, height }, index) => (
-              <Image
-                key={src}
-                src={src}
-                alt={alt}
-                width={width}
-                height={height}
-                className={
-                  index === ILLUSTRATIONS.length - 1
-                    ? "h-auto w-32 object-contain sm:w-auto col-span-2 sm:col-span-1"
-                    : "h-auto w-32 object-contain sm:w-auto"
-                }
-              />
-            ))}
+        <div className="mx-auto max-w-[1344px] px-10 py-[51px]">
+          <div className="flex items-center justify-center gap-8">
+            <div className="max-w-[1045px] text-center">
+              <h2
+                className="font-bold text-black"
+                style={{ fontWeight: 700, fontSize: 45, lineHeight: "53px" }}
+              >
+                {t("title")}
+              </h2>
+              <p
+                className="mt-1 text-black"
+                style={{ fontWeight: 400, fontSize: 24, lineHeight: "28px" }}
+              >
+                {t("subtitle").replace(/\n/g, " ")}
+              </p>
+            </div>
+            <Image
+              src="/landing/wand.png"
+              alt=""
+              width={175}
+              height={280}
+              className="hidden h-[280px] w-auto shrink-0 object-contain select-none lg:block"
+            />
           </div>
 
-          <div className="mt-0 grid gap-8 sm:mt-0 sm:gap-10 md:grid-cols-3">
-            {items.map((item) => (
+          <div className="mt-8 grid gap-[10px] md:grid-cols-3">
+            {items.map((item, index) => (
               <div
                 key={item.title}
-                className="flex flex-col items-center gap-[15px] text-center"
+                className="flex flex-col items-center rounded-[40.8px] bg-white px-10 py-6 text-center"
               >
+                <Image
+                  src={ILLUSTRATIONS[index]?.src ?? ILLUSTRATIONS[0].src}
+                  alt=""
+                  width={ILLUSTRATIONS[index]?.width ?? 104}
+                  height={ILLUSTRATIONS[index]?.height ?? 96}
+                  className="h-[96px] w-auto object-contain"
+                />
                 <h3
-                  style={{ fontWeight: 600, fontSize: 20, lineHeight: "24px" }}
-                  className="text-black"
+                  className="mt-2 font-semibold text-black"
+                  style={{ fontSize: 25, lineHeight: "30px" }}
                 >
                   {item.title}
                 </h3>
                 <p
-                  style={{
-                    fontWeight: 300,
-                    fontSize: 14,
-                    lineHeight: "17px",
-                    textAlign: "justify",
-                  }}
-                  className="text-black"
+                  className="mt-1 text-justify font-light text-black"
+                  style={{ fontSize: 18, lineHeight: "22px" }}
                 >
                   {item.body}
                 </p>
@@ -181,17 +177,28 @@ export function AboutSection() {
             ))}
           </div>
 
-          <div className="mt-10 flex flex-col items-center gap-3 text-center sm:mt-12">
+          <div className="mt-8 flex flex-col items-center gap-4 text-center">
+            <div
+              aria-hidden="true"
+              className="flex w-full items-center justify-center gap-4"
+            >
+              <span className="h-0 flex-1 border-t-2 border-white" />
+              <span className="text-[42px] font-bold leading-none text-white">
+                ✦
+              </span>
+              <span className="h-0 flex-1 border-t-2 border-white" />
+            </div>
+
             <p
-              style={{ fontWeight: 400, fontSize: 20, lineHeight: "24px" }}
+              style={{ fontWeight: 400, fontSize: 23, lineHeight: "28px" }}
               className="text-black"
             >
               {t("helpTitle")}
             </p>
             <Link
-              href="#faq"
-              style={{ fontWeight: 500, fontSize: 16, lineHeight: "19px" }}
-              className="flex h-[59px] w-[287px] items-center justify-center rounded-[8.5px] bg-[#D9D9D9] text-black transition-colors hover:bg-[#c9c9c9]"
+              href="/contact"
+              style={{ fontWeight: 600, fontSize: 20, lineHeight: "24px" }}
+              className="flex h-[63px] w-[267px] items-center justify-center rounded-[10.7px] bg-[#FC17A0] text-white transition-colors hover:bg-[#e0128d]"
             >
               {t("helpCta")}
             </Link>
