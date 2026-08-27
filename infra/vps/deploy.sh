@@ -397,8 +397,22 @@ cmd_cleanup() {
 
   atomic_write "$ROLLBACK_TARGET_FILE" ""
   atomic_write "$ROLLBACK_TARGET_SET_AT_FILE" ""
+
+  # Reclaim the now-dangling image(s) for the color just torn down, plus any
+  # stale builder cache. Runs on every --cleanup (self-scheduled 30min-post-
+  # deploy fire, or cleanup-fallback.yml's hourly tick) — the same cadence
+  # that already exists for container teardown above, so no new scheduling
+  # is introduced. `-a` only removes images unreferenced by any *running*
+  # container; since the old color's containers were just stopped+removed,
+  # this is exactly the safe moment to prune without touching the live
+  # color's image. Guarded with `|| true`: a prune failure (e.g. the disk is
+  # already full, which is the exact scenario this exists to prevent) must
+  # never turn an otherwise-successful cleanup into a reported failure.
+  docker image prune -af || log_warn "docker image prune failed — old images were not reclaimed, disk usage may grow. Investigate manually." || true
+  docker builder prune -af --filter until=72h || log_warn "docker builder prune failed — build cache was not reclaimed." || true
+
   append_history "cleanup color=$target outcome=success"
-  log_info "Cleanup complete. $target stopped and removed. No rollback target recorded until the next deploy."
+  log_info "Cleanup complete. $target stopped and removed, unused images/build cache pruned. No rollback target recorded until the next deploy."
 }
 
 cmd_bootstrap() {
