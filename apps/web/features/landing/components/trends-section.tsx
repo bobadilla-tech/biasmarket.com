@@ -6,12 +6,6 @@ import type { ProductSearchResultResponseDto } from "@biasmarket/types";
 import { useLatestProducts } from "@/features/discovery";
 import { Link } from "@/i18n/navigation";
 import { ProductGridCard } from "./product-grid-card";
-import { SectionHeading } from "./section-heading";
-
-const SKELETON_KEYS = Array.from(
-  { length: 3 },
-  (_, index) => `trend-skeleton-${index}`,
-);
 
 const ROW_SKELETON_KEYS = Array.from(
   { length: 4 },
@@ -26,7 +20,7 @@ function useTrendProducts({
   initialData?: ProductSearchResultResponseDto | null;
 }) {
   const t = useTranslations("landing.trends");
-  const { result, loading, error } = useLatestProducts(3, 1, {
+  const { result, loading, error } = useLatestProducts(6, 1, {
     sort,
     initialData,
   });
@@ -45,54 +39,6 @@ function useTrendProducts({
   };
 }
 
-function TrendPanel({
-  title,
-  sort,
-  initialData,
-}: {
-  title: string;
-  sort: "latest" | "bestseller";
-  initialData?: ProductSearchResultResponseDto | null;
-}) {
-  const { products, loading, message } = useTrendProducts({
-    sort,
-    initialData,
-  });
-
-  return (
-    <div className="flex flex-col rounded-[20px] bg-landing-rose px-4 py-5 sm:px-6">
-      <h3 className="text-center text-lg font-semibold sm:text-2xl">{title}</h3>
-      <div className="mt-4 grid grid-cols-3 gap-2.5 sm:mt-5 sm:gap-5">
-        {loading ? (
-          SKELETON_KEYS.map((key) => (
-            <div
-              key={key}
-              className="flex flex-col overflow-hidden rounded-[20px] bg-white"
-            >
-              <div className="aspect-[3/4] w-full animate-pulse bg-muted" />
-              <div className="space-y-2 p-3">
-                <div className="h-3 w-4/5 animate-pulse rounded bg-muted" />
-                <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
-              </div>
-            </div>
-          ))
-        ) : message ? (
-          <p className="col-span-3 rounded-[20px] bg-white px-6 py-10 text-center text-sm text-muted-foreground">
-            {message}
-          </p>
-        ) : (
-          products.map((product) => (
-            <ProductGridCard
-              key={product.id}
-              product={product}
-              className="rounded-[20px] border-transparent"
-            />
-          ))
-        )}
-      </div>
-    </div>
-  );
-}
 function TrendBand({
   title,
   sort,
@@ -127,11 +73,11 @@ function TrendBand({
         </Link>
       </div>
       {loading ? (
-        <div className="mt-2 flex gap-2.5 overflow-hidden">
+        <div className="no-scrollbar mt-2 flex flex-nowrap gap-2.5 overflow-x-auto">
           {ROW_SKELETON_KEYS.map((key) => (
             <div
               key={key}
-              className="w-[174px] shrink-0 animate-pulse rounded-[10px] bg-white/70 p-[9.5px]"
+              className="w-[150px] shrink-0 animate-pulse rounded-[10px] bg-white/70 p-[9.5px]"
             >
               <div className="aspect-square w-full rounded-[10px] bg-muted" />
               <div className="mt-2 h-3 w-4/5 rounded bg-muted" />
@@ -140,18 +86,87 @@ function TrendBand({
           ))}
         </div>
       ) : message ? (
-        <p className="rounded-[10px] bg-white px-4 py-6 text-center text-sm text-muted-foreground">
+        <p className="mt-2 rounded-[10px] bg-white px-4 py-6 text-center text-sm text-muted-foreground">
           {message}
         </p>
       ) : (
-        <div className="no-scrollbar -mx-5 mt-1 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-5 pb-1">
+        <div className="no-scrollbar mt-2 flex flex-nowrap gap-2.5 overflow-x-auto">
           {products.map((product) => (
-            <div key={product.id} className="snap-start">
+            <div key={product.id} className="shrink-0">
               <ProductGridCard product={product} variant="row" />
             </div>
           ))}
         </div>
       )}
+    </section>
+  );
+}
+
+function TrendBandStripe({
+  title,
+  sort,
+  bg,
+  initialData,
+}: {
+  title: string;
+  sort: "latest" | "bestseller";
+  bg: string;
+  initialData?: ProductSearchResultResponseDto | null;
+}) {
+  const t = useTranslations("landing.trends");
+  const { products, loading, message } = useTrendProducts({
+    sort,
+    initialData,
+  });
+  const viewMoreHref =
+    sort === "bestseller" ? "/search?sort=bestseller" : "/search";
+
+  return (
+    <section className={`py-14 ${bg}`}>
+      <div className="mx-auto max-w-[1344px] px-10">
+        <div className="flex items-center justify-between gap-8">
+          <h2 className="text-[32px] leading-[39px] font-bold text-black">
+            {title}
+          </h2>
+          <Link
+            href={viewMoreHref}
+            className="flex items-center gap-3 text-[20px] leading-[24px] font-medium text-[#FC17A0] transition-colors hover:text-[#e0128d]"
+          >
+            {t("viewMore")}
+            <CircleArrowRight className="size-7" strokeWidth={1.6} />
+          </Link>
+        </div>
+
+        {loading ? (
+          <div className="mt-7 grid grid-cols-6 gap-[12.3px]">
+            {Array.from({ length: 6 }, (_, index) => (
+              <div
+                key={`stripe-skeleton-${index}`}
+                className="animate-pulse rounded-[10px] bg-white/70 p-[11.6px]"
+              >
+                <div className="aspect-square w-full rounded-[12.3px] bg-muted" />
+                <div className="mt-2 h-3 w-4/5 rounded bg-muted" />
+                <div className="mt-1.5 h-3 w-1/2 rounded bg-muted" />
+              </div>
+            ))}
+          </div>
+        ) : message ? (
+          <p className="mt-7 rounded-[10px] bg-white px-4 py-8 text-center text-sm text-muted-foreground">
+            {message}
+          </p>
+        ) : (
+          <div className="mt-7 grid grid-cols-6 gap-[12.3px]">
+            {products.slice(0, 6).map((product) => (
+              <ProductGridCard
+                key={product.id}
+                product={product}
+                variant="row"
+                className="!w-full !rounded-[10px] !border-transparent"
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </section>
   );
 }
@@ -167,7 +182,7 @@ export function TrendsSection({
 
   return (
     <>
-      <div className="sm:hidden">
+      <div className="flex flex-col gap-4 sm:hidden">
         <TrendBand
           title={t("latestTitle")}
           sort="latest"
@@ -182,21 +197,20 @@ export function TrendsSection({
         />
       </div>
 
-      <section className="mx-auto hidden max-w-7xl px-4 py-10 sm:block sm:px-10 lg:py-14">
-        <SectionHeading title={t("title")} />
-        <div className="mt-6 grid gap-5 sm:mt-8 sm:gap-8 lg:grid-cols-2">
-          <TrendPanel
-            title={t("latestTitle")}
-            sort="latest"
-            initialData={latestInitialData}
-          />
-          <TrendPanel
-            title={t("bestSellersTitle")}
-            sort="bestseller"
-            initialData={bestSellersInitialData}
-          />
-        </div>
-      </section>
+      <div className="hidden flex-col gap-4 sm:flex">
+        <TrendBandStripe
+          title={t("latestTitle")}
+          sort="latest"
+          bg="bg-[#FFEAF6]"
+          initialData={latestInitialData}
+        />
+        <TrendBandStripe
+          title={t("bestSellersTitle")}
+          sort="bestseller"
+          bg="bg-[#F5EAFF]"
+          initialData={bestSellersInitialData}
+        />
+      </div>
     </>
   );
 }
