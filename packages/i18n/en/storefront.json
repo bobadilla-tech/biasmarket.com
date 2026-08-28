@@ -12,6 +12,12 @@
   "addToCart": "Add to cart",
   "addedToCart": "Added ✓",
   "cart": "Cart",
+  "header": {
+    "storeHome": "Go to {name} home page"
+  },
+  "social": {
+    "linkLabel": "{platform} (opens in a new tab)"
+  },
   "cartPage": {
     "title": "Your cart",
     "empty": "Your cart is empty.",

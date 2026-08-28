@@ -3,7 +3,6 @@ import type { Locale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { canonicalUrl } from "@/lib/site-config";
-import { StoreLogo } from "@/components/store-logo";
 import { ProductDetailView } from "./product-detail-view";
 
 async function getPublicProduct(slug: string, productId: string) {
@@ -60,26 +59,11 @@ export default async function ProductDetailPage({
     );
   }
 
-  const { store, product } = data;
+  const { product } = data;
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="border-b border-gray-100 bg-white px-6 py-6">
-        <div className="mx-auto flex max-w-3xl items-center gap-3">
-          <Link href={`/store/${slug}`} className="flex items-center gap-3">
-            <StoreLogo
-              name={store.name}
-              logoUrl={store.logoUrl}
-              size={40}
-              className="text-sm"
-            />
-            <span className="text-sm font-semibold text-gray-900 hover:underline">
-              {store.name}
-            </span>
-          </Link>
-        </div>
-      </header>
-      <main className="mx-auto max-w-3xl px-4 py-10">
+      <main className="mx-auto max-w-3xl px-4 pt-20 pb-10">
         <Link
           href={`/store/${slug}`}
           className="text-sm text-gray-500 hover:underline"

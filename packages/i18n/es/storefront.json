@@ -8,6 +8,12 @@
   "addToCart": "Agregar al carrito",
   "addedToCart": "Agregado ✓",
   "cart": "Carrito",
+  "header": {
+    "storeHome": "Ir a la página principal de {name}"
+  },
+  "social": {
+    "linkLabel": "{platform} (se abre en una pestaña nueva)"
+  },
   "cartPage": {
     "title": "Tu carrito",
     "empty": "Tu carrito está vacío.",
