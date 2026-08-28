@@ -9,6 +9,21 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 import type { CreateCourierDto } from './dto/create-courier.dto.js';
 import type { UpdateCourierDto } from './dto/update-courier.dto.js';
 
+type BulkSaveInput = {
+  couriers: {
+    id?: string;
+    name: string;
+    enabled?: boolean;
+    sortOrder?: number;
+    modalities: {
+      modality: 'AGENCY' | 'HOME';
+      price: number;
+      enabled?: boolean;
+    }[];
+  }[];
+  deletedIds: string[];
+};
+
 @Injectable()
 export class CouriersService {
   constructor(private prisma: PrismaService) {}
@@ -153,26 +168,34 @@ export class CouriersService {
     });
   }
 
-  async bulkSave(
-    storeId: string,
-    userId: string,
-    input: {
-      couriers: {
-        id?: string;
-        name: string;
-        enabled?: boolean;
-        sortOrder?: number;
-        modalities: {
-          modality: 'AGENCY' | 'HOME';
-          price: number;
-          enabled?: boolean;
-        }[];
-      }[];
-      deletedIds: string[];
-    },
-  ) {
+  async bulkSave(storeId: string, userId: string, input: BulkSaveInput) {
     await this.assertOwnership(storeId, userId);
 
+    // Guard duplicate names within the payload before touching the DB — the
+    // `@@unique([storeId, name])` constraint would otherwise surface as a raw
+    // Prisma P2002 (HTTP 500) once the second row hits `create`.
+    const names = input.couriers.map((c) => c.name);
+    if (new Set(names).size !== names.length) {
+      throw new BadRequestException('No se pueden repetir nombres de courier');
+    }
+
+    try {
+      return await this.bulkSaveTransaction(storeId, input);
+    } catch (err) {
+      // A name that collides with an existing courier not in `deletedIds`
+      // still reaches the DB — translate the unique-constraint violation into
+      // a 400 instead of leaking a 500.
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2002'
+      ) {
+        throw new BadRequestException('Ya existe un courier con ese nombre');
+      }
+      throw err;
+    }
+  }
+
+  private async bulkSaveTransaction(storeId: string, input: BulkSaveInput) {
     return this.prisma.$transaction(async (tx) => {
       // Delete removed couriers (cascade deletes configs)
       if (input.deletedIds.length > 0) {
