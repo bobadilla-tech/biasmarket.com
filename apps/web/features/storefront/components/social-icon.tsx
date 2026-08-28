@@ -27,7 +27,9 @@ const icons: Record<SocialPlatform, ReactNode> = {
   ),
 };
 
-const labels: Record<SocialPlatform, string> = {
+// Exported so the storefront header can label each social anchor with the
+// same name the icon announces (see storefront-header.tsx).
+export const socialLabels: Record<SocialPlatform, string> = {
   instagram: "Instagram",
   facebook: "Facebook",
   tiktok: "TikTok",
@@ -41,7 +43,7 @@ export function SocialIcon({ platform }: { platform: string }) {
     <>
       {icon}
       <span className="sr-only">
-        {labels[platform as SocialPlatform] ?? platform}
+        {socialLabels[platform as SocialPlatform] ?? platform}
       </span>
     </>
   );

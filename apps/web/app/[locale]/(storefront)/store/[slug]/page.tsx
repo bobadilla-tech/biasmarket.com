@@ -3,11 +3,8 @@ import type { Locale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { isProductOutOfStock } from "@/features/discovery/lib/product-stock";
 import { canonicalUrl, SITE_URL } from "@/lib/site-config";
-import { StoreLogo } from "@/components/store-logo";
-import { Link } from "@/i18n/navigation";
 import { ProductCard } from "@/components/storefront/product-card";
 import { StoreSectionRenderer } from "@/components/storefront/section-renderer";
-import { SocialIcon } from "@/features/storefront/components/social-icon";
 
 async function getStore(slug: string) {
   const apiUrl =
@@ -64,33 +61,6 @@ function collectSoldOutProducts(store: any): any[] {
     }
   }
   return Array.from(seen.values());
-}
-
-function StoreSocialLinks({ store }: { store: any }) {
-  const socials = [
-    { key: "instagram", url: store.instagramUrl },
-    { key: "facebook", url: store.facebookUrl },
-    { key: "tiktok", url: store.tiktokUrl },
-    { key: "twitter", url: store.twitterUrl },
-  ].filter((s) => Boolean(s.url));
-
-  if (socials.length === 0) return null;
-
-  return (
-    <div className="flex items-center gap-1.5">
-      {socials.map((s) => (
-        <a
-          key={s.key}
-          href={s.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex size-8 items-center justify-center rounded-full border border-gray-200 bg-gray-50 text-gray-600 transition hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"
-        >
-          <SocialIcon platform={s.key} />
-        </a>
-      ))}
-    </div>
-  );
 }
 
 export async function generateMetadata({
@@ -193,21 +163,8 @@ export default async function StorePage({
   if (visibleSections.length === 0 && soldOutProducts.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <header className="border-b border-gray-100 bg-white px-6 py-8">
-          <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 sm:flex-row">
-            <Link href={`/store/${slug}`} className="flex items-center gap-3">
-              <StoreLogo
-                name={store.name}
-                logoUrl={store.logoUrl}
-                size={48}
-                className="text-sm"
-              />
-              <h1 className="text-2xl font-bold text-gray-900">{store.name}</h1>
-            </Link>
-            <StoreSocialLinks store={store} />
-          </div>
-        </header>
-        <main className="max-w-5xl mx-auto px-4 py-8">
+        <main className="max-w-5xl mx-auto px-4 pt-20 pb-8">
+          <h1 className="sr-only">{store.name}</h1>
           <p className="text-gray-500 text-center">{t("noProducts")}</p>
         </main>
       </div>
@@ -225,21 +182,8 @@ export default async function StorePage({
           ),
         }}
       />
-      <header className="border-b border-gray-100 bg-white px-6 py-8">
-        <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 sm:flex-row">
-          <Link href={`/store/${slug}`} className="flex items-center gap-3">
-            <StoreLogo
-              name={store.name}
-              logoUrl={store.logoUrl}
-              size={48}
-              className="text-sm"
-            />
-            <h1 className="text-2xl font-bold text-gray-900">{store.name}</h1>
-          </Link>
-          <StoreSocialLinks store={store} />
-        </div>
-      </header>
-      <main className="max-w-5xl mx-auto px-4 py-8 space-y-10">
+      <main className="max-w-5xl mx-auto px-4 pt-20 pb-8 space-y-10">
+        <h1 className="sr-only">{store.name}</h1>
         {visibleSections.length === 0 ? (
           soldOutProducts.length > 0 ? null : (
             <p className="text-gray-500 text-center">{t("noProducts")}</p>

@@ -1,8 +1,14 @@
 import { getStoreThemeStyle } from "@/lib/store-theme";
-import { AccountNavLink } from "@/features/customer-auth";
-import { CartLink } from "./cart-link";
+import { StorefrontHeader } from "@/features/storefront/components/storefront-header";
 
-async function getStoreThemeConfig(slug: string) {
+// One public-store fetch for the whole storefront subtree. Same URL + options
+// as page.tsx's getStore() / the product page's store read, so Next dedupes
+// them to a single request per render pass — GET fetches with an identical
+// URL + options are memoized across layouts and pages even with
+// `cache: "no-store"` (memoization is not caching). See
+// node_modules/next/dist/docs/01-app/03-api-reference/04-functions/fetch.md
+// ("## Memoization").
+async function getStorePublic(slug: string) {
   const apiUrl =
     process.env.INTERNAL_API_URL ??
     process.env.NEXT_PUBLIC_API_URL ??
@@ -15,8 +21,7 @@ async function getStoreThemeConfig(slug: string) {
 
   if (!res.ok) return undefined;
 
-  const store = await res.json();
-  return store.themeConfig;
+  return res.json();
 }
 
 export default async function StoreLayout({
@@ -27,14 +32,21 @@ export default async function StoreLayout({
   children: React.ReactNode;
 }) {
   const { slug } = await params;
-  const themeConfig = await getStoreThemeConfig(slug);
+  const store = await getStorePublic(slug);
 
   return (
-    <div style={getStoreThemeStyle(themeConfig)}>
-      <div className="fixed top-4 right-4 z-10 flex items-center gap-2">
-        <CartLink slug={slug} />
-        <AccountNavLink slug={slug} />
-      </div>
+    <div style={getStoreThemeStyle(store?.themeConfig)}>
+      {store && (
+        <StorefrontHeader
+          slug={slug}
+          name={store.name}
+          logoUrl={store.logoUrl}
+          instagramUrl={store.instagramUrl}
+          facebookUrl={store.facebookUrl}
+          tiktokUrl={store.tiktokUrl}
+          twitterUrl={store.twitterUrl}
+        />
+      )}
       {children}
     </div>
   );
