@@ -18,6 +18,10 @@
   "social": {
     "linkLabel": "{platform} (opens in a new tab)"
   },
+  "gallery": {
+    "previousImage": "Previous image",
+    "nextImage": "Next image"
+  },
   "cartPage": {
     "title": "Your cart",
     "empty": "Your cart is empty.",
