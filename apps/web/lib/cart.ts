@@ -83,6 +83,13 @@ export function cartTotal(items: CartItem[]): number {
   return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 }
 
+// Summed line-item quantity for a store's cart. Cheap enough to call as a
+// useSyncExternalStore snapshot (see CartLink) — it returns a primitive, so
+// React's Object.is check keeps the subscription stable with no memoization.
+export function cartCount(slug: string): number {
+  return getCart(slug).reduce((sum, item) => sum + item.quantity, 0);
+}
+
 // Returns the shared currency across all cart items, or null when the cart
 // is empty or mixes currencies (checkout can't sum different currencies into
 // one total, so callers should block submission and warn in that case).

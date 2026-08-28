@@ -30,9 +30,8 @@ function computeStockMaps(
       let sum = 0;
       let unlimited = false;
       for (const variant of variants) {
-        const available = variant.stock === null
-          ? Infinity
-          : variant.stock - variant.reserved;
+        const available =
+          variant.stock === null ? Infinity : variant.stock - variant.reserved;
         variantAvail.set(variant.id, available);
         if (available === Infinity) unlimited = true;
         else sum += available;
@@ -48,6 +47,12 @@ export function useCartStock(slug: string) {
     queryKey: cartStockKeys.bySlug(slug),
     queryFn: async () =>
       computeStockMaps(await apiClient.stores.findPublic(slug)),
+    // This pulls the entire public-store payload just to derive availability.
+    // Stock changes slowly relative to a cart session, so serve it stale for
+    // 30s and keep it cached a while after unmount instead of refetching on
+    // every cart-page entry.
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
   });
 
   return {
