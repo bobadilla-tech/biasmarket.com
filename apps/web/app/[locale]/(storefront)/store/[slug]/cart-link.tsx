@@ -1,33 +1,43 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
 import { ShoppingCart } from "lucide-react";
-import { CART_UPDATED_EVENT, getCart } from "@/lib/cart";
+import { CART_UPDATED_EVENT, cartCount } from "@/lib/cart";
 import { Link } from "@/i18n/navigation";
 
 export function CartLink({ slug }: { slug: string }) {
   const t = useTranslations("storefront");
-  const [count, setCount] = useState(0);
 
-  useEffect(() => {
-    const update = () => {
-      const items = getCart(slug);
-      setCount(items.reduce((sum, item) => sum + item.quantity, 0));
-    };
-    const onCartUpdated = (event: Event) => {
-      if ((event as CustomEvent<{ slug?: string }>).detail?.slug === slug) {
-        update();
-      }
-    };
-    update();
-    globalThis.addEventListener("focus", update);
-    globalThis.addEventListener(CART_UPDATED_EVENT, onCartUpdated);
-    return () => {
-      globalThis.removeEventListener("focus", update);
-      globalThis.removeEventListener(CART_UPDATED_EVENT, onCartUpdated);
-    };
-  }, [slug]);
+  // useSyncExternalStore (not a post-mount effect): CartLink lives in the
+  // persistent (storefront) layout, so a lazy-init effect only ever showed
+  // the "0 -> N" badge pop on a hard load / new tab. The server snapshot is
+  // 0 (no window) and the client snapshot is the real count, computed
+  // synchronously on the first client render — no flash, no hydration
+  // mismatch. `subscribe` is keyed on `slug` so React does not re-subscribe
+  // on every render.
+  const subscribe = useCallback(
+    (onStoreChange: () => void) => {
+      const onCartUpdated = (event: Event) => {
+        if ((event as CustomEvent<{ slug?: string }>).detail?.slug === slug) {
+          onStoreChange();
+        }
+      };
+      globalThis.addEventListener("focus", onStoreChange);
+      globalThis.addEventListener(CART_UPDATED_EVENT, onCartUpdated);
+      return () => {
+        globalThis.removeEventListener("focus", onStoreChange);
+        globalThis.removeEventListener(CART_UPDATED_EVENT, onCartUpdated);
+      };
+    },
+    [slug],
+  );
+
+  const count = useSyncExternalStore(
+    subscribe,
+    () => cartCount(slug),
+    () => 0,
+  );
 
   return (
     <Link
