@@ -549,6 +549,18 @@ export type OrderResponseDtoDeliveryDetails = { [key: string]: unknown } | null;
 /**
  * @nullable
  */
+export type OrderResponseDtoCourierModality =
+  | (typeof OrderResponseDtoCourierModality)[keyof typeof OrderResponseDtoCourierModality]
+  | null;
+
+export const OrderResponseDtoCourierModality = {
+  AGENCY: "AGENCY",
+  HOME: "HOME",
+} as const;
+
+/**
+ * @nullable
+ */
 export type OrderResponseDtoPaymentMethod =
   | (typeof OrderResponseDtoPaymentMethod)[keyof typeof OrderResponseDtoPaymentMethod]
   | null;
@@ -748,6 +760,10 @@ export interface OrderResponseDto {
   /** @nullable */
   pickupDate: string | null;
   /** @nullable */
+  courierName: string | null;
+  /** @nullable */
+  courierModality: OrderResponseDtoCourierModality;
+  /** @nullable */
   paymentMethod: OrderResponseDtoPaymentMethod;
   paymentStatus: OrderResponseDtoPaymentStatus;
   /** @nullable */
@@ -790,6 +806,18 @@ export const OrderDetailResponseDtoDeliveryMethodType = {
 export type OrderDetailResponseDtoDeliveryDetails = {
   [key: string]: unknown;
 } | null;
+
+/**
+ * @nullable
+ */
+export type OrderDetailResponseDtoCourierModality =
+  | (typeof OrderDetailResponseDtoCourierModality)[keyof typeof OrderDetailResponseDtoCourierModality]
+  | null;
+
+export const OrderDetailResponseDtoCourierModality = {
+  AGENCY: "AGENCY",
+  HOME: "HOME",
+} as const;
 
 /**
  * @nullable
@@ -881,6 +909,10 @@ export interface OrderDetailResponseDto {
   /** @nullable */
   pickupDate: string | null;
   /** @nullable */
+  courierName: string | null;
+  /** @nullable */
+  courierModality: OrderDetailResponseDtoCourierModality;
+  /** @nullable */
   paymentMethod: OrderDetailResponseDtoPaymentMethod;
   paymentStatus: OrderDetailResponseDtoPaymentStatus;
   /** @nullable */
@@ -937,6 +969,18 @@ export const OrderStatusResponseDtoDeliveryMethodType = {
 export type OrderStatusResponseDtoDeliveryDetails = {
   [key: string]: unknown;
 } | null;
+
+/**
+ * @nullable
+ */
+export type OrderStatusResponseDtoCourierModality =
+  | (typeof OrderStatusResponseDtoCourierModality)[keyof typeof OrderStatusResponseDtoCourierModality]
+  | null;
+
+export const OrderStatusResponseDtoCourierModality = {
+  AGENCY: "AGENCY",
+  HOME: "HOME",
+} as const;
 
 /**
  * @nullable
@@ -1027,6 +1071,10 @@ export interface OrderStatusResponseDto {
   pickupPointId: string | null;
   /** @nullable */
   pickupDate: string | null;
+  /** @nullable */
+  courierName: string | null;
+  /** @nullable */
+  courierModality: OrderStatusResponseDtoCourierModality;
   /** @nullable */
   paymentMethod: OrderStatusResponseDtoPaymentMethod;
   paymentStatus: OrderStatusResponseDtoPaymentStatus;
@@ -1138,6 +1186,8 @@ export type ShippingAddressDtoDocumentType =
 
 export const ShippingAddressDtoDocumentType = {
   DNI: "DNI",
+  CE: "CE",
+  RUC: "RUC",
   PASSPORT: "PASSPORT",
 } as const;
 
@@ -1423,6 +1473,59 @@ export interface CustomerDetailResponseDto {
   orders: OrderResponseDto[];
 }
 
+export type PaymentMethodConfigResponseDtoMethod =
+  (typeof PaymentMethodConfigResponseDtoMethod)[keyof typeof PaymentMethodConfigResponseDtoMethod];
+
+export const PaymentMethodConfigResponseDtoMethod = {
+  YAPE: "YAPE",
+  PLIN: "PLIN",
+  TRANSFER: "TRANSFER",
+  CASH: "CASH",
+} as const;
+
+export type PaymentMethodConfigResponseDtoDetails = { [key: string]: unknown };
+
+export interface PaymentMethodConfigResponseDto {
+  id: string;
+  storeId: string;
+  method: PaymentMethodConfigResponseDtoMethod;
+  enabled: boolean;
+  details: PaymentMethodConfigResponseDtoDetails;
+  depositPercent: number;
+  createdAt: string;
+}
+
+export type UpsertPaymentMethodDtoMethod =
+  (typeof UpsertPaymentMethodDtoMethod)[keyof typeof UpsertPaymentMethodDtoMethod];
+
+export const UpsertPaymentMethodDtoMethod = {
+  YAPE: "YAPE",
+  PLIN: "PLIN",
+  TRANSFER: "TRANSFER",
+  CASH: "CASH",
+} as const;
+
+export interface PaymentMethodDetailsDto {
+  bankName?: string;
+  accountNumber?: string;
+  accountHolder?: string;
+  accountType?: string;
+  phoneNumber?: string;
+  qrImageUrl?: string;
+}
+
+export interface UpsertPaymentMethodDto {
+  /**
+   * Porcentaje de adelanto que el comprador paga al hacer el pedido (1-100). 20 = paga 20% ahora.
+   * @minimum 1
+   * @maximum 100
+   */
+  depositPercent?: number;
+  method: UpsertPaymentMethodDtoMethod;
+  enabled?: boolean;
+  details?: PaymentMethodDetailsDto;
+}
+
 export type DeliveryMethodConfigResponseDtoType =
   (typeof DeliveryMethodConfigResponseDtoType)[keyof typeof DeliveryMethodConfigResponseDtoType];
 
@@ -1501,59 +1604,6 @@ export interface PublicPickupPointsResponseDto {
   /** Server-computed weekday (0=Sunday..6=Saturday) used for openDays validation — storefronts must use this, not their own local date. */
   weekday: number;
   points: PickupPointResponseDto[];
-}
-
-export type PaymentMethodConfigResponseDtoMethod =
-  (typeof PaymentMethodConfigResponseDtoMethod)[keyof typeof PaymentMethodConfigResponseDtoMethod];
-
-export const PaymentMethodConfigResponseDtoMethod = {
-  YAPE: "YAPE",
-  PLIN: "PLIN",
-  TRANSFER: "TRANSFER",
-  CASH: "CASH",
-} as const;
-
-export type PaymentMethodConfigResponseDtoDetails = { [key: string]: unknown };
-
-export interface PaymentMethodConfigResponseDto {
-  id: string;
-  storeId: string;
-  method: PaymentMethodConfigResponseDtoMethod;
-  enabled: boolean;
-  details: PaymentMethodConfigResponseDtoDetails;
-  depositPercent: number;
-  createdAt: string;
-}
-
-export type UpsertPaymentMethodDtoMethod =
-  (typeof UpsertPaymentMethodDtoMethod)[keyof typeof UpsertPaymentMethodDtoMethod];
-
-export const UpsertPaymentMethodDtoMethod = {
-  YAPE: "YAPE",
-  PLIN: "PLIN",
-  TRANSFER: "TRANSFER",
-  CASH: "CASH",
-} as const;
-
-export interface PaymentMethodDetailsDto {
-  bankName?: string;
-  accountNumber?: string;
-  accountHolder?: string;
-  accountType?: string;
-  phoneNumber?: string;
-  qrImageUrl?: string;
-}
-
-export interface UpsertPaymentMethodDto {
-  /**
-   * Porcentaje de adelanto que el comprador paga al hacer el pedido (1-100). 20 = paga 20% ahora.
-   * @minimum 1
-   * @maximum 100
-   */
-  depositPercent?: number;
-  method: UpsertPaymentMethodDtoMethod;
-  enabled?: boolean;
-  details?: PaymentMethodDetailsDto;
 }
 
 export interface CreateInquiryDto {

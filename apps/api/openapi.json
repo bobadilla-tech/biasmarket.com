@@ -1958,6 +1958,165 @@
         "tags": ["CustomerOrderPayments"]
       }
     },
+    "/stores/{storeId}/payment-methods": {
+      "get": {
+        "operationId": "PaymentConfigController_findAll",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "enabled",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentMethodConfigResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": ["PaymentConfig"]
+      },
+      "post": {
+        "operationId": "PaymentConfigController_upsert",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertPaymentMethodDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethodConfigResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["PaymentConfig"]
+      }
+    },
+    "/stores/{storeId}/payment-methods/{method}/qr-image": {
+      "post": {
+        "operationId": "PaymentConfigController_uploadQrImage",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "method",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": ["file"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethodConfigResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["PaymentConfig"]
+      }
+    },
+    "/stores/{slug}/public/payment-methods": {
+      "get": {
+        "operationId": "PublicPaymentConfigController_findEnabled",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentMethodConfigResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": ["PublicPaymentConfig"]
+      }
+    },
     "/stores/{storeId}/delivery-methods": {
       "get": {
         "operationId": "DeliveryConfigController_findAll",
@@ -2265,165 +2424,6 @@
           }
         },
         "tags": ["PublicPickupPoints"]
-      }
-    },
-    "/stores/{storeId}/payment-methods": {
-      "get": {
-        "operationId": "PaymentConfigController_findAll",
-        "parameters": [
-          {
-            "name": "storeId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "enabled",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PaymentMethodConfigResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": ["PaymentConfig"]
-      },
-      "post": {
-        "operationId": "PaymentConfigController_upsert",
-        "parameters": [
-          {
-            "name": "storeId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertPaymentMethodDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaymentMethodConfigResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": ["PaymentConfig"]
-      }
-    },
-    "/stores/{storeId}/payment-methods/{method}/qr-image": {
-      "post": {
-        "operationId": "PaymentConfigController_uploadQrImage",
-        "parameters": [
-          {
-            "name": "storeId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "method",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "file": {
-                    "type": "string",
-                    "format": "binary"
-                  }
-                },
-                "required": ["file"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaymentMethodConfigResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": ["PaymentConfig"]
-      }
-    },
-    "/stores/{slug}/public/payment-methods": {
-      "get": {
-        "operationId": "PublicPaymentConfigController_findEnabled",
-        "parameters": [
-          {
-            "name": "slug",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PaymentMethodConfigResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": ["PublicPaymentConfig"]
       }
     },
     "/contact": {
@@ -6102,6 +6102,15 @@
             "nullable": true,
             "format": "date-time"
           },
+          "courierName": {
+            "type": "string",
+            "nullable": true
+          },
+          "courierModality": {
+            "nullable": true,
+            "enum": ["AGENCY", "HOME"],
+            "type": "string"
+          },
           "paymentMethod": {
             "nullable": true,
             "enum": ["YAPE", "PLIN", "TRANSFER", "CASH"],
@@ -6203,6 +6212,8 @@
           "deliveryDetails",
           "pickupPointId",
           "pickupDate",
+          "courierName",
+          "courierModality",
           "paymentMethod",
           "paymentStatus",
           "paymentRejectionReason",
@@ -6271,6 +6282,15 @@
             "nullable": true,
             "format": "date-time"
           },
+          "courierName": {
+            "type": "string",
+            "nullable": true
+          },
+          "courierModality": {
+            "nullable": true,
+            "enum": ["AGENCY", "HOME"],
+            "type": "string"
+          },
           "paymentMethod": {
             "nullable": true,
             "enum": ["YAPE", "PLIN", "TRANSFER", "CASH"],
@@ -6372,6 +6392,8 @@
           "deliveryDetails",
           "pickupPointId",
           "pickupDate",
+          "courierName",
+          "courierModality",
           "paymentMethod",
           "paymentStatus",
           "paymentRejectionReason",
@@ -6454,6 +6476,15 @@
             "nullable": true,
             "format": "date-time"
           },
+          "courierName": {
+            "type": "string",
+            "nullable": true
+          },
+          "courierModality": {
+            "nullable": true,
+            "enum": ["AGENCY", "HOME"],
+            "type": "string"
+          },
           "paymentMethod": {
             "nullable": true,
             "enum": ["YAPE", "PLIN", "TRANSFER", "CASH"],
@@ -6534,6 +6565,8 @@
           "deliveryDetails",
           "pickupPointId",
           "pickupDate",
+          "courierName",
+          "courierModality",
           "paymentMethod",
           "paymentStatus",
           "paymentRejectionReason",
@@ -6603,7 +6636,7 @@
           },
           "documentType": {
             "type": "string",
-            "enum": ["DNI", "PASSPORT"]
+            "enum": ["DNI", "CE", "RUC", "PASSPORT"]
           },
           "documentNumber": {
             "type": "string"
@@ -7104,6 +7137,89 @@
         },
         "required": ["customer", "orders"]
       },
+      "PaymentMethodConfigResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "method": {
+            "enum": ["YAPE", "PLIN", "TRANSFER", "CASH"],
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "depositPercent": {
+            "type": "number"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "method",
+          "enabled",
+          "details",
+          "depositPercent",
+          "createdAt"
+        ]
+      },
+      "PaymentMethodDetailsDto": {
+        "type": "object",
+        "properties": {
+          "bankName": {
+            "type": "string"
+          },
+          "accountNumber": {
+            "type": "string"
+          },
+          "accountHolder": {
+            "type": "string"
+          },
+          "accountType": {
+            "type": "string"
+          },
+          "phoneNumber": {
+            "type": "string"
+          },
+          "qrImageUrl": {
+            "type": "string"
+          }
+        }
+      },
+      "UpsertPaymentMethodDto": {
+        "type": "object",
+        "properties": {
+          "depositPercent": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 100,
+            "description": "Porcentaje de adelanto que el comprador paga al hacer el pedido (1-100). 20 = paga 20% ahora."
+          },
+          "method": {
+            "type": "string",
+            "enum": ["YAPE", "PLIN", "TRANSFER", "CASH"]
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "details": {
+            "$ref": "#/components/schemas/PaymentMethodDetailsDto"
+          }
+        },
+        "required": ["method"]
+      },
       "DeliveryMethodConfigResponseDto": {
         "type": "object",
         "properties": {
@@ -7262,89 +7378,6 @@
           }
         },
         "required": ["weekday", "points"]
-      },
-      "PaymentMethodConfigResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "storeId": {
-            "type": "string"
-          },
-          "method": {
-            "enum": ["YAPE", "PLIN", "TRANSFER", "CASH"],
-            "type": "string"
-          },
-          "enabled": {
-            "type": "boolean"
-          },
-          "details": {
-            "type": "object",
-            "additionalProperties": true
-          },
-          "depositPercent": {
-            "type": "number"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "id",
-          "storeId",
-          "method",
-          "enabled",
-          "details",
-          "depositPercent",
-          "createdAt"
-        ]
-      },
-      "PaymentMethodDetailsDto": {
-        "type": "object",
-        "properties": {
-          "bankName": {
-            "type": "string"
-          },
-          "accountNumber": {
-            "type": "string"
-          },
-          "accountHolder": {
-            "type": "string"
-          },
-          "accountType": {
-            "type": "string"
-          },
-          "phoneNumber": {
-            "type": "string"
-          },
-          "qrImageUrl": {
-            "type": "string"
-          }
-        }
-      },
-      "UpsertPaymentMethodDto": {
-        "type": "object",
-        "properties": {
-          "depositPercent": {
-            "type": "number",
-            "minimum": 1,
-            "maximum": 100,
-            "description": "Porcentaje de adelanto que el comprador paga al hacer el pedido (1-100). 20 = paga 20% ahora."
-          },
-          "method": {
-            "type": "string",
-            "enum": ["YAPE", "PLIN", "TRANSFER", "CASH"]
-          },
-          "enabled": {
-            "type": "boolean"
-          },
-          "details": {
-            "$ref": "#/components/schemas/PaymentMethodDetailsDto"
-          }
-        },
-        "required": ["method"]
       },
       "CreateInquiryDto": {
         "type": "object",

@@ -61,6 +61,8 @@ const baseOrder: OrderResponseDto = {
   deliveryDetails: null,
   pickupPointId: null,
   pickupDate: null,
+  courierName: null,
+  courierModality: null,
   paymentMethod: null,
   cancellationResolution: null,
   cancellationReason: null,
