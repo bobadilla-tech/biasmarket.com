@@ -603,6 +603,41 @@ test("prefills name/phone/email from a logged-in buyer's saved profile, editable
   expect(nameInput.value).toBe("John Doe");
 });
 
+test("a guest buyer (no saved profile) gets empty, editable name / phone / email fields", async () => {
+  findEnabledDeliveryConfig.mockResolvedValue([
+    { type: "PICKUP", enabled: true, details: {} },
+  ]);
+  findEnabledPickupPoints.mockResolvedValue({ weekday: today, points: [] });
+  findEnabledPaymentConfig.mockResolvedValue([]);
+  // findCustomerProfile keeps its file-level default (rejects, unauthenticated)
+  // — a logged-out buyer's failed useCustomerProfile query must never prefill.
+
+  const user = userEvent.setup();
+  renderWithProviders(
+    <CheckoutForm slug="my-store" items={cartItems} onOrderCreated={vi.fn()} />,
+  );
+
+  const nameInput = (await screen.findByPlaceholderText(
+    "Nombre",
+  )) as HTMLInputElement;
+  const emailInput = screen.getByPlaceholderText("Email") as HTMLInputElement;
+  const phoneInput = screen.getByPlaceholderText(
+    "Teléfono (WhatsApp)",
+  ) as HTMLInputElement;
+
+  // Give the (rejected) profile query a tick to settle before asserting the
+  // prefill effect left the fields untouched.
+  await waitFor(() => {
+    expect(findCustomerProfile).toHaveBeenCalled();
+  });
+  expect(nameInput.value).toBe("");
+  expect(emailInput.value).toBe("");
+  expect(phoneInput.value).toBe("");
+
+  await user.type(nameInput, "Guest Buyer");
+  expect(nameInput.value).toBe("Guest Buyer");
+});
+
 test("prefers a genuinely-configured payment method over an earlier unconfigured one when auto-selecting", async () => {
   findEnabledDeliveryConfig.mockResolvedValue([
     { type: "PICKUP", enabled: true, details: {} },
