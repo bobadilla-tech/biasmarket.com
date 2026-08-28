@@ -318,6 +318,7 @@
       "depositPercent": {
         "label": "Advance percentage",
         "help": "Percentage the buyer pays upfront at checkout. 20 = pays 20% now, the rest later. 100 = full payment only.",
+        "checkoutHint": "A value below 100 enables the partial-payment option at checkout.",
         "invalid": "Percentage must be between 1 and 100."
       }
     },

@@ -417,6 +417,165 @@ describe('orders + checkout (e2e)', () => {
     });
   });
 
+  // #120 — full / partial payment. CreateOrderUseCase only honors
+  // `paymentType: 'PARTIAL'` for an enabled, non-CASH method whose config
+  // sets `depositPercent < 100`; anything else is a 400
+  // (create-order.usecase.ts). requiredAmount is
+  // `finalAmount.times(pct).div(100)` rounded to 2 decimals, and finalAmount
+  // already includes the delivery cost.
+  describe('#120 partial payment', () => {
+    async function upsertPaymentMethod(body: Record<string, unknown>) {
+      await request(app.getHttpServer())
+        .post(`/stores/${storeId}/payment-methods`)
+        .set('Cookie', sessionCookie)
+        .send(body)
+        .expect(201);
+    }
+
+    function partialCheckout(
+      phone: string,
+      fields: Record<string, string>,
+      proof?: Buffer,
+    ) {
+      let req = request(app.getHttpServer())
+        .post(`/stores/${storeSlug}/checkout`)
+        .set('X-Forwarded-For', nextCheckoutIp())
+        .field('deliveryMethodType', 'PICKUP')
+        .field('customerPhone', phone)
+        .field(
+          'items',
+          JSON.stringify([
+            { productId, variantId: productVariantId, quantity: 1 },
+          ]),
+        )
+        .field('paymentType', 'PARTIAL');
+      for (const [k, v] of Object.entries(fields)) req = req.field(k, v);
+      if (proof) req = req.attach('file', proof, 'proof.png');
+      return req;
+    }
+
+    it('rejects PARTIAL for a CASH method', async () => {
+      await upsertPaymentMethod({ method: 'CASH', enabled: true });
+      await partialCheckout('+51970000001', { paymentMethod: 'CASH' }).expect(
+        400,
+      );
+    });
+
+    it('rejects PARTIAL when depositPercent is 100', async () => {
+      await upsertPaymentMethod({
+        method: 'TRANSFER',
+        enabled: true,
+        details: {
+          bankName: 'BCP',
+          accountNumber: '111',
+          accountHolder: 'E2E',
+        },
+        depositPercent: 100,
+      });
+      await partialCheckout(
+        '+51970000002',
+        { paymentMethod: 'TRANSFER' },
+        pngBuffer,
+      ).expect(400);
+    });
+
+    it('prices requiredAmount at round(subtotal * pct / 100, 2) over PICKUP', async () => {
+      await upsertPaymentMethod({
+        method: 'TRANSFER',
+        enabled: true,
+        details: {
+          bankName: 'BCP',
+          accountNumber: '222',
+          accountHolder: 'E2E',
+        },
+        depositPercent: 20,
+      });
+      const res = await partialCheckout(
+        '+51970000003',
+        { paymentMethod: 'TRANSFER' },
+        pngBuffer,
+      ).expect(201);
+      const orderId = res.body.order.id as string;
+      orderIds.push(orderId);
+      // product price 25, qty 1, no delivery cost on PICKUP.
+      expect(Number(res.body.order.totalAmount)).toBe(25);
+      expect(Number(res.body.order.requiredAmount)).toBe(5);
+    });
+
+    it('includes the courier delivery cost in the deposit base', async () => {
+      await upsertPaymentMethod({
+        method: 'TRANSFER',
+        enabled: true,
+        details: {
+          bankName: 'BCP',
+          accountNumber: '333',
+          accountHolder: 'E2E',
+        },
+        depositPercent: 20,
+      });
+      const res = await request(app.getHttpServer())
+        .post(`/stores/${storeSlug}/checkout`)
+        .set('X-Forwarded-For', nextCheckoutIp())
+        .field('deliveryMethodType', 'COURIER')
+        .field('customerPhone', '+51970000004')
+        .field(
+          'items',
+          JSON.stringify([
+            { productId, variantId: productVariantId, quantity: 1 },
+          ]),
+        )
+        .field('paymentType', 'PARTIAL')
+        .field('paymentMethod', 'TRANSFER')
+        .field(
+          'shippingAddress',
+          JSON.stringify({
+            recipientName: 'Jane Doe',
+            phone: '+51970000004',
+            line1: 'Av. Principal 123',
+            city: 'Lima',
+          }),
+        )
+        .attach('file', pngBuffer, 'proof.png')
+        .expect(201);
+      const orderId = res.body.order.id as string;
+      orderIds.push(orderId);
+      // 25 item + 10 legacy estimatedCost = 35; 20% deposit = 7.
+      expect(Number(res.body.order.totalAmount)).toBe(35);
+      expect(Number(res.body.order.requiredAmount)).toBe(7);
+    });
+
+    it('records an OrderPayment for exactly the requiredAmount', async () => {
+      await upsertPaymentMethod({
+        method: 'TRANSFER',
+        enabled: true,
+        details: {
+          bankName: 'BCP',
+          accountNumber: '444',
+          accountHolder: 'E2E',
+        },
+        depositPercent: 20,
+      });
+      const res = await partialCheckout(
+        '+51970000005',
+        { paymentMethod: 'TRANSFER' },
+        pngBuffer,
+      ).expect(201);
+      const orderId = res.body.order.id as string;
+      orderIds.push(orderId);
+
+      const payments = await prisma.orderPayment.findMany({
+        where: { orderId },
+      });
+      expect(payments).toHaveLength(1);
+      expect(payments[0]!.reviewStatus).toBe('PENDING_REVIEW');
+      expect(Number(payments[0]!.amount)).toBe(
+        Number(res.body.order.requiredAmount),
+      );
+      // Clean up the proof image this test uploaded to object storage.
+      await storage.deleteImage(payments[0]!.imageUrl!);
+    });
+  });
+
   // Regression coverage for the float-precision bug in
   // `OrderRepository.withPaymentSummary` (see
   // docs/plans/2026-08-06-order-payment-precision-bug-fix-plan.md). Splits

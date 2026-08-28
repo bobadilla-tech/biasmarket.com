@@ -4,10 +4,10 @@ import { renderWithProviders } from "../../../test-utils/render-with-providers";
 import type { CartItem } from "@/lib/cart";
 import { CheckoutSummary } from "./checkout-summary";
 
-// PR A pins the CURRENT float math: `payNow = total * (depositPercent / 100)`.
-// PR E edits this file to the post-fix operator order `(total * pct) / 100`
-// then `.toFixed(2)`, which mirrors the server's `Prisma.Decimal` path — the
-// `0.22` below becomes `0.23` for the same inputs.
+// Post-fix (PR E): payNow mirrors the server's operator order + rounding —
+// `((total * pct) / 100).toFixed(2)` — instead of the old
+// `total * (pct / 100)` float. Same inputs that produced "0.22" under the
+// old expression now produce "0.23".
 
 const item = (over: Partial<CartItem> = {}): CartItem => ({
   productId: "p1",
@@ -58,8 +58,8 @@ test("PARTIAL payment splits total / pay-now / pending, deposit base includes de
   );
 
   expect(rowText("Total del pedido")).toContain("1.50");
-  // Current float expression `1.5 * (15 / 100)` -> 0.2249999… -> "0.22".
-  expect(rowText("Pagar ahora")).toContain("0.22");
+  // Server-mirrored `((1.5 * 15) / 100).toFixed(2)` -> "0.23".
+  expect(rowText("Pagar ahora")).toContain("0.23");
   expect(rowText("Saldo pendiente")).toContain("1.27");
 });
 
