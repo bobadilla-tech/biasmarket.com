@@ -807,3 +807,95 @@ test("depositPercent < 100 shows the selector and it switches FULL <-> PARTIAL",
     );
   });
 });
+
+// #99 — the modality cards must reflect the *selected courier's* configured
+// modalities, and each modality gates submit on its own required fields.
+
+test("modality cards show only the selected courier's configured modalities", async () => {
+  findEnabledDeliveryConfig.mockResolvedValue([
+    { type: "COURIER", enabled: true, details: {} },
+  ]);
+  findEnabledPickupPoints.mockResolvedValue({ weekday: today, points: [] });
+  findEnabledPaymentConfig.mockResolvedValue([]);
+  findEnabledPublicCouriers.mockResolvedValue([
+    {
+      id: "c1",
+      name: "Shalom",
+      modalities: [{ modality: "AGENCY", price: "5.00" }],
+    },
+  ]);
+
+  const user = userEvent.setup();
+  renderWithProviders(
+    <CheckoutForm slug="my-store" items={cartItems} onOrderCreated={vi.fn()} />,
+  );
+
+  await user.selectOptions(
+    await screen.findByRole("combobox", { name: /Selecciona un courier/i }),
+    "Shalom",
+  );
+
+  await waitFor(() => {
+    expect(screen.getByText("Recojo en agencia")).toBeDefined();
+  });
+  expect(screen.queryByText("Envío a domicilio")).toBeNull();
+});
+
+test("an AGENCY order blocks submit until the agency name is filled", async () => {
+  findEnabledDeliveryConfig.mockResolvedValue([
+    { type: "COURIER", enabled: true, details: {} },
+  ]);
+  findEnabledPickupPoints.mockResolvedValue({ weekday: today, points: [] });
+  findEnabledPaymentConfig.mockResolvedValue([]);
+  findEnabledPublicCouriers.mockResolvedValue([
+    {
+      id: "c1",
+      name: "Shalom",
+      modalities: [{ modality: "AGENCY", price: "5.00" }],
+    },
+  ]);
+  fetchMock.mockResolvedValueOnce(okResponse());
+
+  const user = userEvent.setup();
+  renderWithProviders(
+    <CheckoutForm slug="my-store" items={cartItems} onOrderCreated={vi.fn()} />,
+  );
+
+  await user.selectOptions(
+    await screen.findByRole("combobox", { name: /Selecciona un courier/i }),
+    "Shalom",
+  );
+  await user.click(await screen.findByText("Recojo en agencia"));
+
+  const nameInputs = screen.getAllByPlaceholderText("Nombre");
+  await user.type(nameInputs[0], "Jane");
+  await user.type(
+    screen.getByPlaceholderText("Teléfono de contacto"),
+    "988888888",
+  );
+  await user.type(
+    screen.getByPlaceholderText("Teléfono (WhatsApp)"),
+    "988888888",
+  );
+  await user.type(screen.getByPlaceholderText("Email"), "jane@example.com");
+
+  const submit = screen.getByRole("button", {
+    name: /Confirmar pedido/i,
+  }) as HTMLButtonElement;
+  await user.click(submit);
+  expect(fetchMock).not.toHaveBeenCalled();
+
+  await user.type(
+    screen.getByPlaceholderText("Nombre de la agencia"),
+    "Agencia Miraflores",
+  );
+  await user.click(submit);
+
+  await waitFor(() => {
+    const [, options] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const body = options.body as FormData;
+    expect(body.get("courierModality")).toBe("AGENCY");
+    const shippingAddress = JSON.parse(body.get("shippingAddress") as string);
+    expect(shippingAddress.agencyName).toBe("Agencia Miraflores");
+  });
+});

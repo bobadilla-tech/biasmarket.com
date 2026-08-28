@@ -480,7 +480,7 @@ export function CheckoutForm({
               recipientSurnames: values.shippingRecipientSurnames || undefined,
               phone: values.shippingPhone,
               documentType: (values.shippingDocumentType || undefined) as
-                "DNI" | "PASSPORT" | undefined,
+                "DNI" | "CE" | "RUC" | "PASSPORT" | undefined,
               documentNumber: values.shippingDocumentNumber || undefined,
               department: values.shippingDepartment || undefined,
               province: values.shippingProvince || undefined,

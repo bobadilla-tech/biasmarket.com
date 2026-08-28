@@ -60,225 +60,299 @@ export function OrderDetailSheet({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="h-dvh w-[420px] gap-0 overflow-y-auto sm:max-w-[420px]">
-        {order
-          ? (
-            <>
-              <SheetHeader>
-                <SheetTitle>
-                  {t("details.title", { number: getOrderNumber(order.id) })}
-                </SheetTitle>
-                <SheetDescription>
-                  {order.customerName ?? order.customerPhone}
-                </SheetDescription>
-              </SheetHeader>
+        {order ? (
+          <>
+            <SheetHeader>
+              <SheetTitle>
+                {t("details.title", { number: getOrderNumber(order.id) })}
+              </SheetTitle>
+              <SheetDescription>
+                {order.customerName ?? order.customerPhone}
+              </SheetDescription>
+            </SheetHeader>
 
-              <div className="space-y-6 px-4 pb-24 pt-4">
-                <div className="space-y-4 rounded-[24px] border border-[#eadcf8] bg-gradient-to-b from-[#fcf9ff] to-white p-5 shadow-sm">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-[#8f7da8]">
-                      {t("details.total")}
-                    </span>
-                    <span className="font-bold text-[#2d1649]">
-                      {order.currency} {order.totalAmount}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-[#8f7da8]">
-                      {t("details.paid")}
-                    </span>
-                    <span className="font-bold text-[#159a63]">
-                      {order.currency} {order.paidAmount.toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-[#8f7da8]">
-                      {t("details.pending")}
-                    </span>
-                    <span className="font-bold text-[#d11d52]">
-                      {order.currency} {order.pendingAmount.toFixed(2)}
-                    </span>
-                  </div>
+            <div className="space-y-6 px-4 pb-24 pt-4">
+              <div className="space-y-4 rounded-[24px] border border-[#eadcf8] bg-gradient-to-b from-[#fcf9ff] to-white p-5 shadow-sm">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium text-[#8f7da8]">
+                    {t("details.total")}
+                  </span>
+                  <span className="font-bold text-[#2d1649]">
+                    {order.currency} {order.totalAmount}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium text-[#8f7da8]">
+                    {t("details.paid")}
+                  </span>
+                  <span className="font-bold text-[#159a63]">
+                    {order.currency} {order.paidAmount.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium text-[#8f7da8]">
+                    {t("details.pending")}
+                  </span>
+                  <span className="font-bold text-[#d11d52]">
+                    {order.currency} {order.pendingAmount.toFixed(2)}
+                  </span>
+                </div>
 
-                  <div className="space-y-2.5 border-t border-[#f3ebff] pt-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-semibold text-[#2d1649]">
-                        {t("details.progress")}
-                      </span>
-                      <span className="font-bold text-[var(--store-primary)]">
-                        {Math.round(
+                <div className="space-y-2.5 border-t border-[#f3ebff] pt-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-semibold text-[#2d1649]">
+                      {t("details.progress")}
+                    </span>
+                    <span className="font-bold text-[var(--store-primary)]">
+                      {Math.round(
+                        order.fulfillmentStatus === "COMPLETED"
+                          ? 100
+                          : order.paidPercentage,
+                      )}
+                      %
+                    </span>
+                  </div>
+                  <div className="h-2.5 overflow-hidden rounded-full bg-[#f0e7f8] shadow-inner">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-[var(--store-accent)] to-[var(--store-primary)] transition-all duration-500"
+                      style={{
+                        width: `${
                           order.fulfillmentStatus === "COMPLETED"
                             ? 100
-                            : order.paidPercentage,
-                        )}
-                        %
-                      </span>
-                    </div>
-                    <div className="h-2.5 overflow-hidden rounded-full bg-[#f0e7f8] shadow-inner">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-[var(--store-accent)] to-[var(--store-primary)] transition-all duration-500"
-                        style={{
-                          width: `${
-                            order.fulfillmentStatus === "COMPLETED"
-                              ? 100
-                              : order.paidPercentage
-                          }%`,
-                        }}
-                      />
-                    </div>
+                            : order.paidPercentage
+                        }%`,
+                      }}
+                    />
                   </div>
+                </div>
 
-                  <div className="space-y-2 border-t border-[#f3ebff] pt-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium text-[#8f7da8]">
-                        {t("details.delivery")}
-                      </span>
-                      <span className="font-semibold text-[#2d1649]">
-                        {getDeliveryLabel(order, t)}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium text-[#8f7da8]">
-                        {t("details.date")}
-                      </span>
-                      <span className="font-semibold text-[#2d1649]">
-                        {formatOrderDate(order.createdAt, locale, t)}
-                      </span>
-                    </div>
+                <div className="space-y-2 border-t border-[#f3ebff] pt-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium text-[#8f7da8]">
+                      {t("details.delivery")}
+                    </span>
+                    <span className="font-semibold text-[#2d1649]">
+                      {getDeliveryLabel(order, t)}
+                    </span>
                   </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium text-[#8f7da8]">
+                      {t("details.date")}
+                    </span>
+                    <span className="font-semibold text-[#2d1649]">
+                      {formatOrderDate(order.createdAt, locale, t)}
+                    </span>
+                  </div>
+                </div>
 
-                  {(() => {
-                    const shippingAddress = getShippingAddress(order);
-                    if (!shippingAddress) return null;
-                    return (
-                      <div className="space-y-1 border-t border-[#f3ebff] pt-3 text-sm">
-                        <span className="font-medium text-[#8f7da8]">
-                          {t("details.shippingAddress")}
-                        </span>
-                        <p className="font-semibold text-[#2d1649]">
-                          {shippingAddress.recipientName} ·{" "}
-                          {shippingAddress.phone}
+                {(() => {
+                  const shippingAddress = getShippingAddress(order);
+                  const modalityLabel =
+                    order.courierModality === "AGENCY"
+                      ? t("details.modalityAgency")
+                      : order.courierModality === "HOME"
+                        ? t("details.modalityHome")
+                        : null;
+                  if (
+                    !shippingAddress &&
+                    !order.courierName &&
+                    !modalityLabel
+                  ) {
+                    return null;
+                  }
+
+                  const recipient = [
+                    shippingAddress?.recipientName,
+                    shippingAddress?.recipientSurnames,
+                  ]
+                    .filter(Boolean)
+                    .join(" ");
+                  const location = [
+                    shippingAddress?.department,
+                    shippingAddress?.province,
+                    shippingAddress?.district,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ");
+
+                  return (
+                    <div className="space-y-1 border-t border-[#f3ebff] pt-3 text-sm">
+                      <span className="font-medium text-[#8f7da8]">
+                        {t("details.shippingAddress")}
+                      </span>
+
+                      {(order.courierName || modalityLabel) && (
+                        <p className="flex flex-wrap items-center gap-2 font-semibold text-[#2d1649]">
+                          {order.courierName && (
+                            <span>{order.courierName}</span>
+                          )}
+                          {modalityLabel && (
+                            <span className="rounded-full bg-[#f3ebff] px-2 py-0.5 text-xs font-semibold text-[#5b3a86]">
+                              {modalityLabel}
+                            </span>
+                          )}
                         </p>
+                      )}
+
+                      {(recipient || shippingAddress?.phone) && (
+                        <p className="font-semibold text-[#2d1649]">
+                          {recipient}
+                          {recipient && shippingAddress?.phone ? " · " : ""}
+                          {shippingAddress?.phone}
+                        </p>
+                      )}
+
+                      {(shippingAddress?.documentType ||
+                        shippingAddress?.documentNumber) && (
+                        <p className="text-[#2d1649]">
+                          {t("details.document")}:{" "}
+                          {[
+                            shippingAddress?.documentType,
+                            shippingAddress?.documentNumber,
+                          ]
+                            .filter(Boolean)
+                            .join(" ")}
+                        </p>
+                      )}
+
+                      {shippingAddress?.agencyName && (
+                        <p className="text-[#2d1649]">
+                          {t("details.agencyName")}:{" "}
+                          {shippingAddress.agencyName}
+                        </p>
+                      )}
+
+                      {shippingAddress?.line1 && (
                         <p className="text-[#2d1649]">
                           {shippingAddress.line1}
                           {shippingAddress.line2
                             ? `, ${shippingAddress.line2}`
                             : ""}
                         </p>
+                      )}
+
+                      {(shippingAddress?.city || shippingAddress?.region) && (
                         <p className="text-[#2d1649]">
-                          {shippingAddress.city}
-                          {shippingAddress.region
-                            ? `, ${shippingAddress.region}`
+                          {shippingAddress?.city}
+                          {shippingAddress?.city && shippingAddress?.region
+                            ? ", "
                             : ""}
+                          {shippingAddress?.region}
                         </p>
-                        {shippingAddress.reference && (
-                          <p className="text-[#8f7da8]">
-                            {shippingAddress.reference}
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })()}
-                </div>
+                      )}
 
-                <div className="space-y-4 rounded-[24px] border border-[#eadcf8] bg-white p-5 shadow-sm">
-                  <div className="flex items-center gap-2 text-[#2d1649]">
-                    <Wallet className="size-5 text-[var(--store-primary)]" />
-                    <h3 className="font-semibold">{t("details.addPayment")}</h3>
-                  </div>
+                      {location && (
+                        <p className="text-[#2d1649]">
+                          {t("details.location")}: {location}
+                        </p>
+                      )}
 
-                  {paymentsLocked(order)
-                    ? (
-                      <Card className="rounded-2xl border-[#eadcf8] bg-[#fcf9ff] py-0 shadow-none">
-                        <CardContent className="px-4 py-3 text-sm text-[#8f7da8]">
-                          {t("details.paymentsLocked")}
-                        </CardContent>
-                      </Card>
-                    )
-                    : (
-                      <RegisterPaymentForm
-                        pendingAmount={order.pendingAmount}
-                        enabledMethods={enabledMethods}
-                        submitting={registerPaymentSubmitting}
-                        onSubmit={onRegisterPayment}
-                      />
-                    )}
-
-                  <PaymentHistoryList
-                    currency={order.currency}
-                    payments={order.payments}
-                    onPreview={onPreviewPayment}
-                  />
-                </div>
-
-                <div className="space-y-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#927fac]">
-                    {t("details.items")}
-                  </p>
-                  <div className="space-y-2">
-                    {order.items.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-start justify-between rounded-2xl border border-[#f0e7f8] bg-white px-4 py-3"
-                      >
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-[#2d1649]">
-                            {item.product.name}
-                            {item.variant?.name
-                              ? ` (${item.variant.name})`
-                              : ""}
-                          </p>
-                          <p className="text-xs text-[#8f7da8]">
-                            {t("details.quantity", { count: item.quantity })}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                      {shippingAddress?.reference && (
+                        <p className="text-[#8f7da8]">
+                          {shippingAddress.reference}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
 
-              <SheetFooter className="sticky bottom-0 border-t border-[#f0e7f8] bg-white px-4 py-4">
-                <div className="flex w-full flex-wrap gap-2">
-                  {!isPending &&
-                    (order.paymentStatus === "PENDING_PAYMENT" ||
-                      order.paymentStatus === "PAYMENT_SUBMITTED" ||
-                      order.paymentStatus === "PARTIALLY_PAID") &&
-                    (
-                      <>
-                        <Button
-                          type="button"
-                          onClick={onApprove}
-                          disabled={order.paidAmount <= 0}
-                          title={order.paidAmount <= 0
+              <div className="space-y-4 rounded-[24px] border border-[#eadcf8] bg-white p-5 shadow-sm">
+                <div className="flex items-center gap-2 text-[#2d1649]">
+                  <Wallet className="size-5 text-[var(--store-primary)]" />
+                  <h3 className="font-semibold">{t("details.addPayment")}</h3>
+                </div>
+
+                {paymentsLocked(order) ? (
+                  <Card className="rounded-2xl border-[#eadcf8] bg-[#fcf9ff] py-0 shadow-none">
+                    <CardContent className="px-4 py-3 text-sm text-[#8f7da8]">
+                      {t("details.paymentsLocked")}
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <RegisterPaymentForm
+                    pendingAmount={order.pendingAmount}
+                    enabledMethods={enabledMethods}
+                    submitting={registerPaymentSubmitting}
+                    onSubmit={onRegisterPayment}
+                  />
+                )}
+
+                <PaymentHistoryList
+                  currency={order.currency}
+                  payments={order.payments}
+                  onPreview={onPreviewPayment}
+                />
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#927fac]">
+                  {t("details.items")}
+                </p>
+                <div className="space-y-2">
+                  {order.items.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-start justify-between rounded-2xl border border-[#f0e7f8] bg-white px-4 py-3"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-[#2d1649]">
+                          {item.product.name}
+                          {item.variant?.name ? ` (${item.variant.name})` : ""}
+                        </p>
+                        <p className="text-xs text-[#8f7da8]">
+                          {t("details.quantity", { count: item.quantity })}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <SheetFooter className="sticky bottom-0 border-t border-[#f0e7f8] bg-white px-4 py-4">
+              <div className="flex w-full flex-wrap gap-2">
+                {!isPending &&
+                  (order.paymentStatus === "PENDING_PAYMENT" ||
+                    order.paymentStatus === "PAYMENT_SUBMITTED" ||
+                    order.paymentStatus === "PARTIALLY_PAID") && (
+                    <>
+                      <Button
+                        type="button"
+                        onClick={onApprove}
+                        disabled={order.paidAmount <= 0}
+                        title={
+                          order.paidAmount <= 0
                             ? order.paymentStatus === "PAYMENT_SUBMITTED"
                               ? t("approveReviewProof")
                               : t("approveDisabledNoPayment")
-                            : undefined}
-                          className="store-theme-primary-button h-11 flex-1 rounded-2xl text-sm font-semibold hover:opacity-100 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {t("approve")}
-                        </Button>
-                        {order.paidAmount <= 0 && (
-                          <span className="sr-only">
-                            {order.paymentStatus === "PAYMENT_SUBMITTED"
-                              ? t("approveReviewProof")
-                              : t("approveDisabledNoPayment")}
-                          </span>
-                        )}
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={onReject}
-                          className="h-11 flex-1 rounded-2xl border-[#eadcf7] bg-white text-sm font-semibold text-[#2d1649] shadow-none hover:bg-[#fcf9ff]"
-                        >
-                          {t("reject")}
-                        </Button>
-                      </>
-                    )}
-                  {!isPending &&
-                    order.status !== "CANCELLED" &&
-                    order.paymentStatus !== "REJECTED" &&
-                    order.fulfillmentStatus !== "COMPLETED" && (
+                            : undefined
+                        }
+                        className="store-theme-primary-button h-11 flex-1 rounded-2xl text-sm font-semibold hover:opacity-100 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {t("approve")}
+                      </Button>
+                      {order.paidAmount <= 0 && (
+                        <span className="sr-only">
+                          {order.paymentStatus === "PAYMENT_SUBMITTED"
+                            ? t("approveReviewProof")
+                            : t("approveDisabledNoPayment")}
+                        </span>
+                      )}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={onReject}
+                        className="h-11 flex-1 rounded-2xl border-[#eadcf7] bg-white text-sm font-semibold text-[#2d1649] shadow-none hover:bg-[#fcf9ff]"
+                      >
+                        {t("reject")}
+                      </Button>
+                    </>
+                  )}
+                {!isPending &&
+                  order.status !== "CANCELLED" &&
+                  order.paymentStatus !== "REJECTED" &&
+                  order.fulfillmentStatus !== "COMPLETED" && (
                     <Button
                       type="button"
                       variant="outline"
@@ -288,11 +362,10 @@ export function OrderDetailSheet({
                       {t("cancelOrder")}
                     </Button>
                   )}
-                </div>
-              </SheetFooter>
-            </>
-          )
-          : null}
+              </div>
+            </SheetFooter>
+          </>
+        ) : null}
       </SheetContent>
     </Sheet>
   );
