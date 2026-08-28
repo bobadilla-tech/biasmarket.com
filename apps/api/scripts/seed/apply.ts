@@ -1,8 +1,8 @@
-import type { PrismaClient } from "@biasmarket/db";
-import { seedId } from "./ids.ts";
-import * as db from "./helpers.ts";
-import type { PaymentMethodSpec, StoreFixtureSpec } from "./fixtures.ts";
-import { createCustomerAccountToken } from "@biasmarket/utils/customer-account-token";
+import type { PrismaClient } from '@biasmarket/db';
+import { seedId } from './ids.ts';
+import * as db from './helpers.ts';
+import type { PaymentMethodSpec, StoreFixtureSpec } from './fixtures.ts';
+import { createCustomerAccountToken } from '@biasmarket/utils/customer-account-token';
 
 function requiredEnv(name: string): string {
   const value = process.env[name];
@@ -14,8 +14,8 @@ function buildCustomerConfirmUrl(
   storeSlug: string,
   customerId: string,
 ): string {
-  const secret = requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET");
-  const webUrl = process.env.WEB_URL ?? "http://localhost:3001";
+  const secret = requiredEnv('CUSTOMER_ACCOUNT_TOKEN_SECRET');
+  const webUrl = process.env.WEB_URL ?? 'http://localhost:3001';
   const token = createCustomerAccountToken(customerId, secret);
   return `${webUrl}/store/${storeSlug}/account/confirm?token=${token}`;
 }
@@ -31,7 +31,7 @@ export async function applyStoreFixture(
   const ownerId = await db.ensureUser(prisma, {
     email: spec.seller.email,
     name: spec.seller.name,
-    role: "seller",
+    role: 'seller',
   });
   const store = await db.ensureStore(prisma, { ownerId, ...spec.store });
 
@@ -62,8 +62,9 @@ export async function applyStoreFixture(
     });
   }
 
-  const paymentMethods: PaymentMethodSpec[] = spec.paymentMethods ??
-    (["YAPE", "PLIN", "TRANSFER", "CASH"] as const).map((method) => ({
+  const paymentMethods: PaymentMethodSpec[] =
+    spec.paymentMethods ??
+    (['YAPE', 'PLIN', 'TRANSFER', 'CASH'] as const).map((method) => ({
       method,
       enabled: true,
     }));
@@ -73,12 +74,23 @@ export async function applyStoreFixture(
       method: pm.method,
       enabled: pm.enabled ?? true,
       details: pm.details,
+      depositPercent: pm.depositPercent,
+    });
+  }
+
+  for (const [index, courier] of (spec.couriers ?? []).entries()) {
+    await db.ensureCourier(prisma, {
+      storeId: store.id,
+      name: courier.name,
+      enabled: courier.enabled ?? true,
+      sortOrder: index,
+      modalities: courier.modalities,
     });
   }
 
   const pickupPointIds = new Map<string, string>();
   for (const [index, point] of spec.pickupPoints.entries()) {
-    const id = seedId(batch, "pickup-point", store.slug, point.key);
+    const id = seedId(batch, 'pickup-point', store.slug, point.key);
     await db.ensurePickupPoint(prisma, {
       id,
       storeId: store.id,
@@ -112,7 +124,7 @@ export async function applyStoreFixture(
   const variantIds = new Map<string, string>(); // key: `${productKey}:${variantKey}`
 
   for (const product of spec.products) {
-    const productId = seedId(batch, "product", store.slug, product.key);
+    const productId = seedId(batch, 'product', store.slug, product.key);
     await db.ensureProduct(prisma, {
       id: productId,
       storeId: store.id,
@@ -137,7 +149,7 @@ export async function applyStoreFixture(
     for (const variant of product.variants ?? []) {
       const variantId = seedId(
         batch,
-        "variant",
+        'variant',
         store.slug,
         product.key,
         variant.key,
@@ -172,32 +184,33 @@ export async function applyStoreFixture(
         if (variant.stock === null) continue;
         const available = variant.stock - (variant.reserved ?? 0);
         const variantId = variantIds.get(`${product.key}:${variant.key}`)!;
-        const alert = available <= 0
-          ? {
-            type: "OUT_OF_STOCK" as const,
-            title: `Sin stock: ${variant.name}`,
-            body: `${variant.name} se quedó sin unidades disponibles.`,
-          }
-          : available <= store.lowStockThreshold
-          ? {
-            type: "LOW_STOCK" as const,
-            title: `Stock bajo: ${variant.name}`,
-            body: `${variant.name} tiene ${available} unidades disponibles.`,
-          }
-          : null;
+        const alert =
+          available <= 0
+            ? {
+                type: 'OUT_OF_STOCK' as const,
+                title: `Sin stock: ${variant.name}`,
+                body: `${variant.name} se quedó sin unidades disponibles.`,
+              }
+            : available <= store.lowStockThreshold
+              ? {
+                  type: 'LOW_STOCK' as const,
+                  title: `Stock bajo: ${variant.name}`,
+                  body: `${variant.name} tiene ${available} unidades disponibles.`,
+                }
+              : null;
         if (!alert) continue;
         await db.ensureNotification(prisma, {
           id: seedId(
             batch,
-            "notification",
+            'notification',
             store.slug,
-            "variant",
+            'variant',
             variant.key,
             product.key,
           ),
           storeId: store.id,
           type: alert.type,
-          entityType: "ProductVariant",
+          entityType: 'ProductVariant',
           entityId: variantId,
           title: alert.title,
           body: alert.body,
@@ -210,26 +223,26 @@ export async function applyStoreFixture(
         (sum, v) => sum + (v.stock ?? 0) - (v.reserved ?? 0),
         0,
       );
-      const productAlert = productAvailable <= 0
-        ? {
-          type: "OUT_OF_STOCK" as const,
-          title: `Sin stock: ${product.name}`,
-          body: `${product.name} se quedó sin unidades disponibles.`,
-        }
-        : productAvailable <= store.lowStockThreshold
-        ? {
-          type: "LOW_STOCK" as const,
-          title: `Stock bajo: ${product.name}`,
-          body:
-            `${product.name} tiene ${productAvailable} unidades disponibles.`,
-        }
-        : null;
+      const productAlert =
+        productAvailable <= 0
+          ? {
+              type: 'OUT_OF_STOCK' as const,
+              title: `Sin stock: ${product.name}`,
+              body: `${product.name} se quedó sin unidades disponibles.`,
+            }
+          : productAvailable <= store.lowStockThreshold
+            ? {
+                type: 'LOW_STOCK' as const,
+                title: `Stock bajo: ${product.name}`,
+                body: `${product.name} tiene ${productAvailable} unidades disponibles.`,
+              }
+            : null;
       if (!productAlert) continue;
       await db.ensureNotification(prisma, {
-        id: seedId(batch, "notification", store.slug, "product", product.key),
+        id: seedId(batch, 'notification', store.slug, 'product', product.key),
         storeId: store.id,
         type: productAlert.type,
-        entityType: "Product",
+        entityType: 'Product',
         entityId: productId,
         title: productAlert.title,
         body: productAlert.body,
@@ -241,7 +254,7 @@ export async function applyStoreFixture(
     const productId = productIds.get(request.productKey);
     if (!productId) continue;
     await db.ensureRestockRequest(prisma, {
-      id: seedId(batch, "restock-request", store.slug, request.key),
+      id: seedId(batch, 'restock-request', store.slug, request.key),
       storeId: store.id,
       productId,
       variantId: request.variantKey
@@ -276,7 +289,7 @@ export async function applyStoreFixture(
 
   for (const section of spec.sections) {
     await db.ensureStoreSection(prisma, {
-      id: seedId(batch, "section", store.slug, section.key),
+      id: seedId(batch, 'section', store.slug, section.key),
       storeId: store.id,
       type: section.type,
       collectionId: section.collectionKey
@@ -288,7 +301,7 @@ export async function applyStoreFixture(
   }
 
   for (const order of spec.orders) {
-    const orderId = seedId(batch, "order", store.slug, order.key);
+    const orderId = seedId(batch, 'order', store.slug, order.key);
     let subtotal = 0;
     const resolvedItems: {
       productKey: string;
@@ -308,9 +321,9 @@ export async function applyStoreFixture(
       resolvedItems.push({ ...item, unitPrice });
     }
 
-    const baseDeliveryDetails = spec.deliveryMethods.find((d) =>
-      d.type === order.deliveryMethodType
-    )?.details ?? {};
+    const baseDeliveryDetails =
+      spec.deliveryMethods.find((d) => d.type === order.deliveryMethodType)
+        ?.details ?? {};
     const deliveryCost = Number(
       (baseDeliveryDetails as Record<string, unknown>).estimatedCost ?? 0,
     );
@@ -351,7 +364,7 @@ export async function applyStoreFixture(
       paymentStatus: order.paymentStatus,
       paymentRejectionReason: order.rejectionReason,
       fulfillmentStatus: order.fulfillmentStatus,
-      status: order.cancellation ? "CANCELLED" : "ACTIVE",
+      status: order.cancellation ? 'CANCELLED' : 'ACTIVE',
       cancellationResolution: order.cancellation?.resolution,
       cancellationReason: order.cancellation?.reason,
       retainedAmount: order.cancellation?.retainedAmount,
@@ -366,7 +379,7 @@ export async function applyStoreFixture(
 
     for (const [index, item] of resolvedItems.entries()) {
       await db.ensureOrderItem(prisma, {
-        id: seedId(batch, "order-item", store.slug, order.key, String(index)),
+        id: seedId(batch, 'order-item', store.slug, order.key, String(index)),
         orderId,
         storeId: store.id,
         productId: productIds.get(item.productKey)!,
@@ -384,7 +397,7 @@ export async function applyStoreFixture(
         ? new Date(Date.now() - payment.createdDaysAgo * 24 * 60 * 60 * 1000)
         : createdAt;
       await db.ensureOrderPayment(prisma, {
-        id: seedId(batch, "order-payment", store.slug, order.key, payment.key),
+        id: seedId(batch, 'order-payment', store.slug, order.key, payment.key),
         orderId,
         storeId: store.id,
         amount: payment.amount,
@@ -403,11 +416,11 @@ export async function applyStoreFixture(
     // cancelled state.
     if (order.cancellation) {
       await db.ensureAuditLog(prisma, {
-        id: seedId(batch, "audit-log", store.slug, order.key),
+        id: seedId(batch, 'audit-log', store.slug, order.key),
         actorId: ownerId,
         storeId: store.id,
-        action: "order.cancelled",
-        entityType: "Order",
+        action: 'order.cancelled',
+        entityType: 'Order',
         entityId: orderId,
         metadata: {
           resolution: order.cancellation.resolution,
@@ -418,16 +431,18 @@ export async function applyStoreFixture(
         },
       });
     } else if (
-      order.paymentStatus === "VERIFIED" || order.paymentStatus === "REJECTED"
+      order.paymentStatus === 'VERIFIED' ||
+      order.paymentStatus === 'REJECTED'
     ) {
       await db.ensureAuditLog(prisma, {
-        id: seedId(batch, "audit-log", store.slug, order.key),
+        id: seedId(batch, 'audit-log', store.slug, order.key),
         actorId: ownerId,
         storeId: store.id,
-        action: order.paymentStatus === "VERIFIED"
-          ? "payment.approved"
-          : "payment.rejected",
-        entityType: "Order",
+        action:
+          order.paymentStatus === 'VERIFIED'
+            ? 'payment.approved'
+            : 'payment.rejected',
+        entityType: 'Order',
         entityId: orderId,
       });
     }

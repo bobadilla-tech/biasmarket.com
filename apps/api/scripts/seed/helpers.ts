@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { randomUUID } from 'node:crypto';
 import type {
   DeliveryMethodType,
   FulfillmentStatus,
@@ -8,9 +8,9 @@ import type {
   PrismaClient,
   ProductStatus,
   StoreSectionType,
-} from "@biasmarket/db";
-import type { Prisma } from "@biasmarket/db";
-import { hashPassword } from "better-auth/crypto";
+} from '@biasmarket/db';
+import type { Prisma } from '@biasmarket/db';
+import { hashPassword } from 'better-auth/crypto';
 
 function json(value: Record<string, unknown>): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
@@ -19,11 +19,11 @@ function json(value: Record<string, unknown>): Prisma.InputJsonValue {
 // Real upserts everywhere — reruns repair/update every fixture instead of
 // the old "skip if any products exist" shortcut, which meant a store that
 // already had one product never got the rest of the seed list.
-export const SEED_PASSWORD = "seedpassword123";
+export const SEED_PASSWORD = 'seedpassword123';
 
 export async function ensureUser(
   prisma: PrismaClient,
-  input: { email: string; name: string; role: "admin" | "seller" },
+  input: { email: string; name: string; role: 'admin' | 'seller' },
 ): Promise<string> {
   const now = new Date();
   const user = await prisma.user.upsert({
@@ -41,14 +41,14 @@ export async function ensureUser(
   });
 
   const hasAccount = await prisma.account.findFirst({
-    where: { userId: user.id, providerId: "credential" },
+    where: { userId: user.id, providerId: 'credential' },
   });
   if (!hasAccount) {
     await prisma.account.create({
       data: {
         id: randomUUID(),
         accountId: user.id,
-        providerId: "credential",
+        providerId: 'credential',
         userId: user.id,
         password: await hashPassword(SEED_PASSWORD),
         createdAt: now,
@@ -82,7 +82,7 @@ export async function ensureStore(
       whatsappNumber: input.whatsappNumber,
       defaultCurrency: input.defaultCurrency,
       logoUrl: input.logoUrl ?? null,
-      paymentInstructions: input.paymentInstructions ?? "",
+      paymentInstructions: input.paymentInstructions ?? '',
       isPublic: input.isPublic ?? true,
       ...(input.lowStockThreshold !== undefined && {
         lowStockThreshold: input.lowStockThreshold,
@@ -94,7 +94,7 @@ export async function ensureStore(
       ownerId: input.ownerId,
       themeConfig: {},
       logoUrl: input.logoUrl ?? null,
-      paymentInstructions: input.paymentInstructions ?? "",
+      paymentInstructions: input.paymentInstructions ?? '',
       whatsappNumber: input.whatsappNumber,
       defaultCurrency: input.defaultCurrency,
       isPublic: input.isPublic ?? true,
@@ -155,19 +155,73 @@ export async function ensurePaymentMethod(
     method: PaymentMethodType;
     enabled?: boolean;
     details?: Record<string, unknown>;
+    depositPercent?: number;
   },
 ) {
   const details = json(input.details ?? {});
+  const depositPercent = input.depositPercent ?? 100;
   return prisma.paymentMethodConfig.upsert({
     where: { storeId_method: { storeId: input.storeId, method: input.method } },
-    update: { enabled: input.enabled ?? true, details },
+    update: { enabled: input.enabled ?? true, details, depositPercent },
     create: {
       storeId: input.storeId,
       method: input.method,
       enabled: input.enabled ?? true,
       details,
+      depositPercent,
     },
   });
+}
+
+export async function ensureCourier(
+  prisma: PrismaClient,
+  input: {
+    storeId: string;
+    name: string;
+    enabled?: boolean;
+    sortOrder?: number;
+    modalities: {
+      modality: 'AGENCY' | 'HOME';
+      price: string;
+      enabled?: boolean;
+    }[];
+  },
+) {
+  const courier = await prisma.courier.upsert({
+    where: { storeId_name: { storeId: input.storeId, name: input.name } },
+    update: { enabled: input.enabled ?? true, sortOrder: input.sortOrder ?? 0 },
+    create: {
+      storeId: input.storeId,
+      name: input.name,
+      enabled: input.enabled ?? true,
+      sortOrder: input.sortOrder ?? 0,
+    },
+  });
+
+  for (const m of input.modalities) {
+    await prisma.courierConfig.upsert({
+      where: {
+        courierId_modality: { courierId: courier.id, modality: m.modality },
+      },
+      update: { price: m.price, enabled: m.enabled ?? true },
+      create: {
+        courierId: courier.id,
+        modality: m.modality,
+        price: m.price,
+        enabled: m.enabled ?? true,
+      },
+    });
+  }
+
+  // Drop modalities no longer in the spec so reruns converge.
+  await prisma.courierConfig.deleteMany({
+    where: {
+      courierId: courier.id,
+      modality: { notIn: input.modalities.map((m) => m.modality) },
+    },
+  });
+
+  return courier;
 }
 
 export async function ensureCategory(
@@ -358,12 +412,12 @@ export async function ensureOrder(
     paymentStatus: PaymentStatus;
     paymentRejectionReason?: string | null;
     fulfillmentStatus: FulfillmentStatus;
-    status?: "ACTIVE" | "CANCELLED";
-    cancellationResolution?: "REFUNDED" | "RETAINED" | "STORE_CREDIT" | null;
+    status?: 'ACTIVE' | 'CANCELLED';
+    cancellationResolution?: 'REFUNDED' | 'RETAINED' | 'STORE_CREDIT' | null;
     cancellationReason?: string | null;
     retainedAmount?: string | null;
     releasedAmount?: string | null;
-    releasedResolution?: "REFUNDED" | "STORE_CREDIT" | null;
+    releasedResolution?: 'REFUNDED' | 'STORE_CREDIT' | null;
     totalAmount: string;
     requiredAmount: string;
     currency: string;
@@ -384,7 +438,7 @@ export async function ensureOrder(
     paymentStatus: input.paymentStatus,
     paymentRejectionReason: input.paymentRejectionReason ?? null,
     fulfillmentStatus: input.fulfillmentStatus,
-    status: input.status ?? "ACTIVE",
+    status: input.status ?? 'ACTIVE',
     cancellationResolution: input.cancellationResolution ?? null,
     cancellationReason: input.cancellationReason ?? null,
     retainedAmount: input.retainedAmount ?? null,
