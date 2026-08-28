@@ -516,6 +516,9 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
                   <p className="text-xs text-[#9582ad]">
                     {t("payments.depositPercent.help")}
                   </p>
+                  <p className="text-xs text-[#9582ad]">
+                    {t("payments.depositPercent.checkoutHint")}
+                  </p>
                   <Input
                     type="number"
                     min={1}

@@ -24,7 +24,15 @@ export function CheckoutSummary({
 
   const total = cartTotal(items) + deliveryCost;
   const isPartial = paymentType === "PARTIAL" && depositPercent < 100;
-  const payNow = isPartial ? total * (depositPercent / 100) : total;
+  // Mirror the server's operator order + rounding
+  // (create-order.usecase.ts: finalAmount.times(pct).div(100), then a
+  // 2-decimal round) so this pre-submit estimate lines up with the
+  // authoritative requiredAmount. `cartTotal` is still float summation over
+  // client-cached prices, so a post-add price change can still move this by a
+  // cent — the confirmation screen shows the real requiredAmount.
+  const payNow = isPartial
+    ? Number(((total * depositPercent) / 100).toFixed(2))
+    : total;
   const pending = isPartial ? total - payNow : 0;
 
   return (

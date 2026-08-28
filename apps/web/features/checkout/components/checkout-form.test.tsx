@@ -714,3 +714,96 @@ test("checking out with a method the store enabled but never configured skips th
     expect(onOrderCreated).toHaveBeenCalled();
   });
 });
+
+// #120 — the FULL/PARTIAL selector is gated on
+// `paymentMethod !== "CASH" && config present && depositPercent < 100`
+// (checkout-form.tsx:331), the same rule CreateOrderUseCase enforces.
+// paymentMethods come straight off publicPaymentConfig.findEnabled, so the
+// mock rows just carry `depositPercent`.
+
+test("the payment-type selector is hidden for a CASH method", async () => {
+  findEnabledDeliveryConfig.mockResolvedValue([
+    { type: "PICKUP", enabled: true, details: {} },
+  ]);
+  findEnabledPickupPoints.mockResolvedValue({ weekday: today, points: [] });
+  findEnabledPaymentConfig.mockResolvedValue([
+    { method: "CASH", enabled: true, details: {}, depositPercent: 20 },
+  ]);
+
+  renderWithProviders(
+    <CheckoutForm slug="my-store" items={cartItems} onOrderCreated={vi.fn()} />,
+  );
+
+  await screen.findByText("Efectivo");
+  expect(screen.queryByText("Pago parcial")).toBeNull();
+});
+
+test("the payment-type selector is hidden when depositPercent is 100", async () => {
+  findEnabledDeliveryConfig.mockResolvedValue([
+    { type: "PICKUP", enabled: true, details: {} },
+  ]);
+  findEnabledPickupPoints.mockResolvedValue({ weekday: today, points: [] });
+  findEnabledPaymentConfig.mockResolvedValue([
+    {
+      method: "TRANSFER",
+      enabled: true,
+      details: { bankName: "BCP", accountNumber: "123", accountHolder: "Jane" },
+      depositPercent: 100,
+    },
+  ]);
+
+  renderWithProviders(
+    <CheckoutForm slug="my-store" items={cartItems} onOrderCreated={vi.fn()} />,
+  );
+
+  await screen.findByText("Transferencia bancaria");
+  expect(screen.queryByText("Pago parcial")).toBeNull();
+});
+
+test("depositPercent < 100 shows the selector and it switches FULL <-> PARTIAL", async () => {
+  findEnabledDeliveryConfig.mockResolvedValue([
+    { type: "PICKUP", enabled: true, details: {} },
+  ]);
+  findEnabledPickupPoints.mockResolvedValue({ weekday: today, points: [] });
+  findEnabledPaymentConfig.mockResolvedValue([
+    {
+      method: "TRANSFER",
+      enabled: true,
+      details: { bankName: "BCP", accountNumber: "123", accountHolder: "Jane" },
+      depositPercent: 20,
+    },
+  ]);
+
+  const user = userEvent.setup();
+  renderWithProviders(
+    <CheckoutForm slug="my-store" items={cartItems} onOrderCreated={vi.fn()} />,
+  );
+
+  const fullCard = await screen.findByText("Pago total");
+  const partialCard = screen.getByText("Pago parcial");
+  // Subtext interpolates the configured percentage.
+  expect(screen.getByText("Adelanto del 20%")).toBeDefined();
+
+  await waitFor(() => {
+    expect(fullCard.closest("button")?.getAttribute("aria-pressed")).toBe(
+      "true",
+    );
+  });
+
+  await user.click(partialCard);
+  await waitFor(() => {
+    expect(partialCard.closest("button")?.getAttribute("aria-pressed")).toBe(
+      "true",
+    );
+    expect(fullCard.closest("button")?.getAttribute("aria-pressed")).toBe(
+      "false",
+    );
+  });
+
+  await user.click(fullCard);
+  await waitFor(() => {
+    expect(fullCard.closest("button")?.getAttribute("aria-pressed")).toBe(
+      "true",
+    );
+  });
+});

@@ -318,6 +318,7 @@
       "depositPercent": {
         "label": "Porcentaje de adelanto",
         "help": "Porcentaje que el comprador adelanta al hacer el pedido. 20 = paga 20% ahora, el resto después. 100 = pago total sin opción de adelanto.",
+        "checkoutHint": "Un valor menor a 100 habilita la opción de pago parcial en el checkout.",
         "invalid": "El porcentaje debe estar entre 1 y 100."
       }
     },
