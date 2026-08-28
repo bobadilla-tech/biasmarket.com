@@ -9,10 +9,14 @@ on:
       - "**/*.md"
   pull_request:
     branches: [main]
-    paths-ignore:
-      - ".gitignore"
-      - "*.md"
-      - "**/*.md"
+  workflow_dispatch:
+    inputs:
+      run_e2e:
+        description: "Run the API E2E job on this manual run"
+        type: boolean
+        default: false
+  # merge_group is deliberately not wired. If a merge queue is enabled while
+  # CI Success is required, add merge_group here first or the queue wedges.
 
 permissions:
   contents: read
@@ -131,6 +135,22 @@ jobs:
       # Dummy connection string — `prisma generate` validates the schema's env()
       # reference but never opens a connection, so a syntactically valid URL is enough.
       DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci?schema=public"
+      REDIS_URL: "redis://localhost:6379"
+      BETTER_AUTH_SECRET: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      BETTER_AUTH_URL: "http://localhost:3000"
+      CUSTOMER_ACCOUNT_TOKEN_SECRET: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      WEB_URL: "http://localhost:3001"
+      INTERNAL_JOBS_SECRET: "e2e-internal-jobs-secret"
+      MONITORING_WEBHOOK_SECRET: "e2e-monitoring-webhook-secret"
+      SITEMAP_INTERNAL_TOKEN: "e2e-sitemap-internal-token"
+      S3_ENDPOINT: "http://127.0.0.1:9000"
+      S3_PUBLIC_URL: "http://127.0.0.1:9000"
+      S3_ACCESS_KEY: "e2e"
+      S3_SECRET_KEY: "e2e-secret-key"
+      S3_BUCKET: "products"
+      S3_LOGO_BUCKET: "logos"
+      S3_PAYMENT_BUCKET: "payments"
+      NODE_ENV: test
     steps:
       - uses: actions/checkout@v7
         with:
@@ -167,6 +187,17 @@ jobs:
 
       - name: Build
         run: pnpm turbo run build --filter=api
+
+      - name: Check OpenAPI is tracked and up to date
+        run: |
+          set -euo pipefail
+          test -s apps/api/openapi.json
+          git ls-files --error-unmatch apps/api/openapi.json
+          node apps/api/scripts/generate-openapi-spec.ts
+          # openapi.json is intentionally ignored by the repo-wide Prettier
+          # pass; normalize the generator's JSON before checking tracked drift.
+          pnpm exec prettier --ignore-path /dev/null --parser json --write apps/api/openapi.json
+          git diff --exit-code -- apps/api/openapi.json
 
       - name: Test with coverage
         run: pnpm --filter api test:cov
@@ -576,6 +607,123 @@ jobs:
           flags: utils
           fail_ci_if_error: false
 
+  e2e:
+    name: E2E (API)
+    # The full suite runs on every push regardless of which packages changed.
+    # It intentionally has no `needs` dependency or detect-changes output,
+    # avoiding a skip vector and allowing the suite to start immediately.
+    # `inputs.run_e2e` is a boolean context value; do not use
+    # `github.event.inputs.run_e2e`, whose string "false" is truthy. Keep the
+    # event-name guard in front of the input read because `inputs` is null on push.
+    if: >-
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' && inputs.run_e2e)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Never set continue-on-error here: a red E2E job must make the CI run red
+    # so both CI Success and CD's workflow_run gate fail closed.
+    env:
+      DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci?schema=public"
+      REDIS_URL: "redis://localhost:6379"
+      BETTER_AUTH_SECRET: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      BETTER_AUTH_URL: "http://localhost:3000"
+      CUSTOMER_ACCOUNT_TOKEN_SECRET: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      WEB_URL: "http://localhost:3001"
+      INTERNAL_JOBS_SECRET: "e2e-internal-jobs-secret"
+      MONITORING_WEBHOOK_SECRET: "e2e-monitoring-webhook-secret"
+      SITEMAP_INTERNAL_TOKEN: "e2e-sitemap-internal-token"
+      S3_ENDPOINT: "http://127.0.0.1:9000"
+      S3_PUBLIC_URL: "http://127.0.0.1:9000"
+      S3_ACCESS_KEY: "e2e"
+      S3_SECRET_KEY: "e2e-secret-key"
+      S3_BUCKET: "products"
+      S3_LOGO_BUCKET: "logos"
+      S3_PAYMENT_BUCKET: "payments"
+      NODE_ENV: test
+    services:
+      # Digest resolved 2026-08-28 from postgres:18; service pulls happen
+      # before steps, so these credentials are separate from docker/login-action.
+      postgres:
+        image: postgres:18@sha256:4ef4dbc939d61acea57712655ddb4b4ab27419c913f94cca0cd57cb3ea3c2280
+        credentials:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      # Digest resolved 2026-08-28 from redis:7-alpine.
+      redis:
+        image: redis:7-alpine@sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf
+        credentials:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Cache turbo
+        uses: actions/cache@v6
+        with:
+          path: .turbo/cache
+          key: turbo-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            turbo-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+
+      # Docker Hub auth for MinIO and mc, which are pulled by docker run below.
+      # Configure DOCKERHUB_USERNAME and DOCKERHUB_TOKEN repository secrets
+      # before making CI Success a required branch-protection check.
+      - name: Log in to Docker Hub for E2E sidecars
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Run API E2E suite
+        run: bash scripts/ci/e2e.sh
+
+      - name: Upload API E2E diagnostics
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: api-e2e-diagnostics-${{ github.run_id }}
+          retention-days: 1
+          if-no-files-found: ignore
+          path: |
+            .ci/e2e-workers.log
+            .ci/e2e-migrate.log
+            .ci/e2e-minio.log
+            .ci/e2e-openapi.log
+            .ci/e2e-suite.log
+
   ci-success:
     name: CI Success
     runs-on: ubuntu-latest
@@ -590,44 +738,82 @@ jobs:
       - types
       - ui
       - utils
+      - e2e
     if: always()
     steps:
       - name: Check all required jobs
+        # The required branch-protection check is this job's exact name,
+        # `CI Success`. Renaming the key or name silently detaches that check.
+        env:
+          DETECT_RESULT: ${{ needs.detect-changes.result }}
+          API_RESULT: ${{ needs.api.result }}
+          WEB_RESULT: ${{ needs.web.result }}
+          WORKERS_RESULT: ${{ needs.workers.result }}
+          DB_RESULT: ${{ needs.db.result }}
+          I18N_RESULT: ${{ needs.i18n.result }}
+          QUEUE_RESULT: ${{ needs.queue.result }}
+          TYPES_RESULT: ${{ needs.types.result }}
+          UI_RESULT: ${{ needs.ui.result }}
+          UTILS_RESULT: ${{ needs.utils.result }}
+          E2E_RESULT: ${{ needs.e2e.result }}
+          API_CHANGED: ${{ needs.detect-changes.outputs.api }}
+          WEB_CHANGED: ${{ needs.detect-changes.outputs.web }}
+          WORKERS_CHANGED: ${{ needs.detect-changes.outputs.workers }}
+          DB_CHANGED: ${{ needs.detect-changes.outputs.db }}
+          I18N_CHANGED: ${{ needs.detect-changes.outputs.i18n }}
+          QUEUE_CHANGED: ${{ needs.detect-changes.outputs.queue }}
+          TYPES_CHANGED: ${{ needs.detect-changes.outputs.types }}
+          UI_CHANGED: ${{ needs.detect-changes.outputs.ui }}
+          UTILS_CHANGED: ${{ needs.detect-changes.outputs.utils }}
+          EVENT_NAME: ${{ github.event_name }}
+          # Guard the boolean input with the event name; on push, inputs is null.
+          RUN_E2E: ${{ github.event_name == 'workflow_dispatch' && inputs.run_e2e || false }}
         run: |
-          if [[ "${{ needs.api.result }}" == "failure" ]]; then
-            echo "API checks failed"
+          set -euo pipefail
+
+          if [[ "$DETECT_RESULT" != "success" ]]; then
+            echo "Detect Changed Packages must succeed; got $DETECT_RESULT"
             exit 1
           fi
-          if [[ "${{ needs.web.result }}" == "failure" ]]; then
-            echo "Web checks failed"
+
+          check_package() {
+            local name="$1"
+            local changed="$2"
+            local result="$3"
+            if [[ "$changed" == "true" && "$result" != "success" ]]; then
+              echo "$name changed, but its job result is $result (expected success)"
+              exit 1
+            fi
+            if [[ "$changed" == "false" && "$result" != "skipped" ]]; then
+              echo "$name unchanged, but its job result is $result (expected skipped)"
+              exit 1
+            fi
+            if [[ "$changed" != "true" && "$changed" != "false" ]]; then
+              echo "$name changed output is invalid: $changed"
+              exit 1
+            fi
+          }
+
+          check_package API "$API_CHANGED" "$API_RESULT"
+          check_package Web "$WEB_CHANGED" "$WEB_RESULT"
+          check_package Workers "$WORKERS_CHANGED" "$WORKERS_RESULT"
+          check_package DB "$DB_CHANGED" "$DB_RESULT"
+          check_package i18n "$I18N_CHANGED" "$I18N_RESULT"
+          check_package Queue "$QUEUE_CHANGED" "$QUEUE_RESULT"
+          check_package Types "$TYPES_CHANGED" "$TYPES_RESULT"
+          check_package UI "$UI_CHANGED" "$UI_RESULT"
+          check_package Utils "$UTILS_CHANGED" "$UTILS_RESULT"
+
+          expected_e2e="skipped"
+          if [[ "$EVENT_NAME" == "push" ]]; then
+            expected_e2e="success"
+          elif [[ "$EVENT_NAME" == "workflow_dispatch" && "$RUN_E2E" == "true" ]]; then
+            expected_e2e="success"
+          fi
+
+          if [[ "$E2E_RESULT" != "$expected_e2e" ]]; then
+            echo "E2E result is $E2E_RESULT; expected $expected_e2e for $EVENT_NAME (run_e2e=$RUN_E2E)"
             exit 1
           fi
-          if [[ "${{ needs.workers.result }}" == "failure" ]]; then
-            echo "Workers checks failed"
-            exit 1
-          fi
-          if [[ "${{ needs.db.result }}" == "failure" ]]; then
-            echo "DB checks failed"
-            exit 1
-          fi
-          if [[ "${{ needs.i18n.result }}" == "failure" ]]; then
-            echo "i18n checks failed"
-            exit 1
-          fi
-          if [[ "${{ needs.queue.result }}" == "failure" ]]; then
-            echo "Queue checks failed"
-            exit 1
-          fi
-          if [[ "${{ needs.types.result }}" == "failure" ]]; then
-            echo "Types checks failed"
-            exit 1
-          fi
-          if [[ "${{ needs.ui.result }}" == "failure" ]]; then
-            echo "UI checks failed"
-            exit 1
-          fi
-          if [[ "${{ needs.utils.result }}" == "failure" ]]; then
-            echo "Utils checks failed"
-            exit 1
-          fi
-          echo "All required checks passed!"
+
+          echo "All required checks passed; E2E result: $E2E_RESULT"

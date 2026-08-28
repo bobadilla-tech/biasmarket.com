@@ -1,4 +1,4 @@
-import { Processor, WorkerHost } from "@nestjs/bullmq";
+import { OnWorkerEvent, Processor, WorkerHost } from "@nestjs/bullmq";
 import { Logger } from "@nestjs/common";
 import type { Job } from "bullmq";
 import {
@@ -16,6 +16,11 @@ import { MailerCore } from "./mailer.core.js";
 export class MailerProcessor extends WorkerHost {
   private readonly logger = new Logger(MailerProcessor.name);
   private readonly core = new MailerCore();
+
+  @OnWorkerEvent("ready")
+  onWorkerReady(): void {
+    this.logger.log("MAILER worker ready");
+  }
 
   async process(job: Job<SendEmailParams>): Promise<{ id: string }> {
     // Validated here too, not just at apps/api's enqueue call — see

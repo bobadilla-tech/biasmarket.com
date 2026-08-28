@@ -10,6 +10,7 @@ Merges to `main` follow this chain:
 ```text
 push/merge to main
   -> CI workflow
+  -> API E2E suite on the resulting main push
   -> CD workflow after successful push CI
   -> build api/web/workers images for the exact commit SHA
   -> push images to GHCR
@@ -19,7 +20,16 @@ push/merge to main
 ```
 
 The CD workflow only deploys successful `push` runs from this repository's
-`main` branch. Pull requests and fork workflow runs cannot deploy.
+`main` branch. Pull requests and fork workflow runs cannot deploy. Pull
+requests run the normal per-package CI checks but do not run the API E2E suite;
+the push created by a merge runs all 24 API E2E specs before `CI Success` can
+authorize CD.
+
+If the E2E job flakes and blocks a deployment, use **Re-run failed jobs** on
+the CI run. A passing rerun updates the workflow result and emits a fresh
+successful `workflow_run` event for the same push, allowing CD to continue.
+Do not push an empty or no-op commit just to retry: that would trigger an
+additional production cutover.
 
 Automated CD passes `--force` to the restricted deploy command so rapid
 successive merges do not wait for the older benched release's 30-minute cleanup
