@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function ImageGallery({
-  images,
+  images: rawImages,
   alt,
   className,
   outOfStock,
@@ -16,6 +17,12 @@ export function ImageGallery({
   className?: string;
   outOfStock?: boolean;
 }) {
+  const t = useTranslations("storefront.gallery");
+  // Collapse repeated URLs so `key={img}` is unique and a duplicate doesn't
+  // get its own thumbnail. `new Set` preserves insertion order, so the
+  // caller's ordering (variant override first — see product-detail-view) is
+  // kept.
+  const images = Array.from(new Set(rawImages));
   const [current, setCurrent] = useState(0);
 
   const imagesKey = JSON.stringify(images);
@@ -38,6 +45,9 @@ export function ImageGallery({
     );
   }
 
+  const arrowClass =
+    "absolute top-1/2 -translate-y-1/2 rounded-full bg-black/40 p-1.5 text-white transition hover:bg-black/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/40";
+
   return (
     <div className={cn("space-y-2", className)}>
       <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-gray-50">
@@ -51,23 +61,25 @@ export function ImageGallery({
           <>
             <button
               type="button"
+              aria-label={t("previousImage")}
               onClick={() =>
                 setCurrent((prev) =>
                   prev === 0 ? images.length - 1 : prev - 1,
                 )
               }
-              className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/40 p-1.5 text-white transition hover:bg-black/60"
+              className={cn(arrowClass, "left-2")}
             >
               <ChevronLeft className="size-4" />
             </button>
             <button
               type="button"
+              aria-label={t("nextImage")}
               onClick={() =>
                 setCurrent((prev) =>
                   prev === images.length - 1 ? 0 : prev + 1,
                 )
               }
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/40 p-1.5 text-white transition hover:bg-black/60"
+              className={cn(arrowClass, "right-2")}
             >
               <ChevronRight className="size-4" />
             </button>
@@ -80,11 +92,12 @@ export function ImageGallery({
             <button
               key={img}
               type="button"
+              aria-current={index === safeCurrent ? "true" : undefined}
               onClick={() => setCurrent(index)}
               className={cn(
-                "relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border-2 transition",
+                "relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2",
                 index === safeCurrent
-                  ? "border-[#2d1649]"
+                  ? "border-[var(--store-primary)]"
                   : "border-transparent opacity-70 hover:opacity-100",
               )}
             >

@@ -14,6 +14,10 @@
   "social": {
     "linkLabel": "{platform} (se abre en una pestaña nueva)"
   },
+  "gallery": {
+    "previousImage": "Imagen anterior",
+    "nextImage": "Imagen siguiente"
+  },
   "cartPage": {
     "title": "Tu carrito",
     "empty": "Tu carrito está vacío.",
