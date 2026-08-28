@@ -15,6 +15,8 @@ export default async () => {
       await import('./modules/orders/dto/order-response.dto.js'),
     ['./modules/orders/dto/create-order.dto.js']:
       await import('./modules/orders/dto/create-order.dto.js'),
+    ['./modules/payment-config/dto/payment-method-details.dto.js']:
+      await import('./modules/payment-config/dto/payment-method-details.dto.js'),
     ['./modules/orders/dto/checkout-response.dto.js']:
       await import('./modules/orders/dto/checkout-response.dto.js'),
     ['./modules/orders/infrastructure/customer-account-response.dto.js']:
@@ -25,8 +27,6 @@ export default async () => {
       await import('./modules/orders/infrastructure/customers-response.dto.js'),
     ['./modules/pickup-points/dto/pickup-point-response.dto.js']:
       await import('./modules/pickup-points/dto/pickup-point-response.dto.js'),
-    ['./modules/payment-config/dto/payment-method-details.dto.js']:
-      await import('./modules/payment-config/dto/payment-method-details.dto.js'),
     ['./modules/collections/dto/collection-response.dto.js']:
       await import('./modules/collections/dto/collection-response.dto.js'),
     ['./modules/store-sections/dto/create-store-section.dto.js']:
@@ -57,12 +57,12 @@ export default async () => {
       await import('./modules/notifications/dto/notification-response.dto.js'),
     ['./modules/users/dto/user-store-count-response.dto.js']:
       await import('./modules/users/dto/user-store-count-response.dto.js'),
+    ['./modules/payment-config/dto/payment-method-response.dto.js']:
+      await import('./modules/payment-config/dto/payment-method-response.dto.js'),
     ['./modules/delivery-config/dto/delivery-method-response.dto.js']:
       await import('./modules/delivery-config/dto/delivery-method-response.dto.js'),
     ['./modules/pickup-points/dto/public-pickup-points-response.dto.js']:
       await import('./modules/pickup-points/dto/public-pickup-points-response.dto.js'),
-    ['./modules/payment-config/dto/payment-method-response.dto.js']:
-      await import('./modules/payment-config/dto/payment-method-response.dto.js'),
     ['./modules/contact/dto/inquiry-response.dto.js']:
       await import('./modules/contact/dto/inquiry-response.dto.js'),
     ['./modules/categories/dto/category-response.dto.js']:
@@ -844,6 +844,16 @@ export default async () => {
                 type: () => String,
                 nullable: true,
               },
+              courierName: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              courierModality: {
+                required: true,
+                nullable: true,
+                enum: ['AGENCY', 'HOME'],
+              },
               paymentMethod: {
                 required: true,
                 nullable: true,
@@ -963,6 +973,16 @@ export default async () => {
                 type: () => String,
                 nullable: true,
               },
+              courierName: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              courierModality: {
+                required: true,
+                nullable: true,
+                enum: ['AGENCY', 'HOME'],
+              },
               paymentMethod: {
                 required: true,
                 nullable: true,
@@ -1038,7 +1058,10 @@ export default async () => {
               },
               recipientSurnames: { required: false, type: () => String },
               phone: { required: true, type: () => String, minLength: 6 },
-              documentType: { required: false, enum: ['DNI', 'PASSPORT'] },
+              documentType: {
+                required: false,
+                enum: ['DNI', 'CE', 'RUC', 'PASSPORT'],
+              },
               documentNumber: { required: false, type: () => String },
               department: { required: false, type: () => String },
               province: { required: false, type: () => String },
@@ -1122,6 +1145,44 @@ export default async () => {
               paidAmount: { required: true, type: () => Number },
               pendingAmount: { required: true, type: () => Number },
               paidPercentage: { required: true, type: () => Number },
+            },
+          },
+        ],
+        [
+          import('./modules/payment-config/dto/payment-method-details.dto.js'),
+          {
+            PaymentMethodDetailsDto: {
+              bankName: { required: false, type: () => String },
+              accountNumber: { required: false, type: () => String },
+              accountHolder: { required: false, type: () => String },
+              accountType: { required: false, type: () => String },
+              phoneNumber: { required: false, type: () => String },
+              qrImageUrl: { required: false, type: () => String },
+            },
+          },
+        ],
+        [
+          import('./modules/payment-config/dto/upsert-payment-method.dto.js'),
+          {
+            UpsertPaymentMethodDto: {
+              method: {
+                required: true,
+                enum: ['YAPE', 'PLIN', 'TRANSFER', 'CASH'],
+              },
+              enabled: { required: false, type: () => Boolean },
+              details: {
+                required: false,
+                type: () =>
+                  t[
+                    './modules/payment-config/dto/payment-method-details.dto.js'
+                  ].PaymentMethodDetailsDto,
+              },
+              depositPercent: {
+                required: false,
+                type: () => Number,
+                minimum: 1,
+                maximum: 100,
+              },
             },
           },
         ],
@@ -1337,6 +1398,27 @@ export default async () => {
           },
         ],
         [
+          import('./modules/payment-config/dto/payment-method-response.dto.js'),
+          {
+            PaymentMethodConfigResponseDto: {
+              id: { required: true, type: () => String },
+              storeId: { required: true, type: () => String },
+              method: {
+                required: true,
+                enum: ['YAPE', 'PLIN', 'TRANSFER', 'CASH'],
+              },
+              enabled: { required: true, type: () => Boolean },
+              details: {
+                required: true,
+                type: 'object',
+                additionalProperties: true,
+              },
+              depositPercent: { required: true, type: () => Number },
+              createdAt: { required: true, type: () => String },
+            },
+          },
+        ],
+        [
           import('./modules/delivery-config/dto/upsert-delivery-method.dto.js'),
           {
             UpsertDeliveryMethodDto: {
@@ -1430,65 +1512,6 @@ export default async () => {
                     .PickupPointResponseDto,
                 ],
               },
-            },
-          },
-        ],
-        [
-          import('./modules/payment-config/dto/payment-method-details.dto.js'),
-          {
-            PaymentMethodDetailsDto: {
-              bankName: { required: false, type: () => String },
-              accountNumber: { required: false, type: () => String },
-              accountHolder: { required: false, type: () => String },
-              accountType: { required: false, type: () => String },
-              phoneNumber: { required: false, type: () => String },
-              qrImageUrl: { required: false, type: () => String },
-            },
-          },
-        ],
-        [
-          import('./modules/payment-config/dto/upsert-payment-method.dto.js'),
-          {
-            UpsertPaymentMethodDto: {
-              method: {
-                required: true,
-                enum: ['YAPE', 'PLIN', 'TRANSFER', 'CASH'],
-              },
-              enabled: { required: false, type: () => Boolean },
-              details: {
-                required: false,
-                type: () =>
-                  t[
-                    './modules/payment-config/dto/payment-method-details.dto.js'
-                  ].PaymentMethodDetailsDto,
-              },
-              depositPercent: {
-                required: false,
-                type: () => Number,
-                minimum: 1,
-                maximum: 100,
-              },
-            },
-          },
-        ],
-        [
-          import('./modules/payment-config/dto/payment-method-response.dto.js'),
-          {
-            PaymentMethodConfigResponseDto: {
-              id: { required: true, type: () => String },
-              storeId: { required: true, type: () => String },
-              method: {
-                required: true,
-                enum: ['YAPE', 'PLIN', 'TRANSFER', 'CASH'],
-              },
-              enabled: { required: true, type: () => Boolean },
-              details: {
-                required: true,
-                type: 'object',
-                additionalProperties: true,
-              },
-              depositPercent: { required: true, type: () => Number },
-              createdAt: { required: true, type: () => String },
             },
           },
         ],
@@ -2711,6 +2734,39 @@ export default async () => {
           { InternalJobsController: { expireSweep: {} } },
         ],
         [
+          import('./modules/payment-config/payment-config.controller.js'),
+          {
+            PaymentConfigController: {
+              findAll: {
+                type: [
+                  t[
+                    './modules/payment-config/dto/payment-method-response.dto.js'
+                  ].PaymentMethodConfigResponseDto,
+                ],
+              },
+              upsert: {
+                type: t[
+                  './modules/payment-config/dto/payment-method-response.dto.js'
+                ].PaymentMethodConfigResponseDto,
+              },
+              uploadQrImage: {
+                type: t[
+                  './modules/payment-config/dto/payment-method-response.dto.js'
+                ].PaymentMethodConfigResponseDto,
+              },
+            },
+            PublicPaymentConfigController: {
+              findEnabled: {
+                type: [
+                  t[
+                    './modules/payment-config/dto/payment-method-response.dto.js'
+                  ].PaymentMethodConfigResponseDto,
+                ],
+              },
+            },
+          },
+        ],
+        [
           import('./modules/delivery-config/delivery-config.controller.js'),
           {
             DeliveryConfigController: {
@@ -2774,39 +2830,6 @@ export default async () => {
                 type: t[
                   './modules/pickup-points/dto/public-pickup-points-response.dto.js'
                 ].PublicPickupPointsResponseDto,
-              },
-            },
-          },
-        ],
-        [
-          import('./modules/payment-config/payment-config.controller.js'),
-          {
-            PaymentConfigController: {
-              findAll: {
-                type: [
-                  t[
-                    './modules/payment-config/dto/payment-method-response.dto.js'
-                  ].PaymentMethodConfigResponseDto,
-                ],
-              },
-              upsert: {
-                type: t[
-                  './modules/payment-config/dto/payment-method-response.dto.js'
-                ].PaymentMethodConfigResponseDto,
-              },
-              uploadQrImage: {
-                type: t[
-                  './modules/payment-config/dto/payment-method-response.dto.js'
-                ].PaymentMethodConfigResponseDto,
-              },
-            },
-            PublicPaymentConfigController: {
-              findEnabled: {
-                type: [
-                  t[
-                    './modules/payment-config/dto/payment-method-response.dto.js'
-                  ].PaymentMethodConfigResponseDto,
-                ],
               },
             },
           },

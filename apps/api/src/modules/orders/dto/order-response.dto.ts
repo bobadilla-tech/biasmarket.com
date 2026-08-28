@@ -210,6 +210,16 @@ export class OrderResponseDto {
   @ApiProperty({ type: String, format: 'date-time', nullable: true })
   pickupDate: string | null;
 
+  // Snapshotted onto the Order at checkout (create-order.usecase.ts) — the
+  // authoritative courier + modality for the seller order-detail sheet,
+  // present on every COURIER order including legacy-fallback ones where
+  // `deliveryDetails.courierName` was never written.
+  @ApiProperty({ type: String, nullable: true })
+  courierName: string | null;
+
+  @ApiProperty({ enum: ['AGENCY', 'HOME'], nullable: true })
+  courierModality: 'AGENCY' | 'HOME' | null;
+
   @ApiProperty({
     enum: ['YAPE', 'PLIN', 'TRANSFER', 'CASH'],
     nullable: true,
@@ -334,6 +344,16 @@ export class OrderStatusResponseDto {
 
   @ApiProperty({ type: String, format: 'date-time', nullable: true })
   pickupDate: string | null;
+
+  // Snapshotted onto the Order at checkout (create-order.usecase.ts) — the
+  // authoritative courier + modality for the seller order-detail sheet,
+  // present on every COURIER order including legacy-fallback ones where
+  // `deliveryDetails.courierName` was never written.
+  @ApiProperty({ type: String, nullable: true })
+  courierName: string | null;
+
+  @ApiProperty({ enum: ['AGENCY', 'HOME'], nullable: true })
+  courierModality: 'AGENCY' | 'HOME' | null;
 
   @ApiProperty({
     enum: ['YAPE', 'PLIN', 'TRANSFER', 'CASH'],

@@ -131,6 +131,8 @@ export interface OrderRow {
   deliveryDetails: unknown;
   pickupPointId: string | null;
   pickupDate: Date | null;
+  courierName: string | null;
+  courierModality: 'AGENCY' | 'HOME' | null;
   paymentMethod: PaymentMethodLiteral | null;
   paymentStatus: PaymentStatusLiteral;
   paymentRejectionReason: string | null;
@@ -165,6 +167,8 @@ interface OrderStatusRow {
   deliveryDetails: unknown;
   pickupPointId: string | null;
   pickupDate: Date | null;
+  courierName: string | null;
+  courierModality: 'AGENCY' | 'HOME' | null;
   paymentMethod: PaymentMethodLiteral | null;
   paymentStatus: PaymentStatusLiteral;
   paymentRejectionReason: string | null;
