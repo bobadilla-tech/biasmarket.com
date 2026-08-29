@@ -39,7 +39,8 @@ export function MobileSidebar({
 
       <SheetContent
         side="left"
-        className="h-screen w-[288px] border-none bg-transparent p-0"
+        size="sm"
+        className="h-screen border-none bg-transparent p-0"
       >
         <StoreSidebar slug={slug} store={store} forceExpanded />
       </SheetContent>

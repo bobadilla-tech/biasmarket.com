@@ -109,13 +109,13 @@ export function DeliverySection({ storeId }: { storeId: string }) {
 
   const handleTogglePoint = (id: string, enabled: boolean) => {
     setPickupPoints((prev) =>
-      prev.map((point) => (point.id === id ? { ...point, enabled } : point))
+      prev.map((point) => (point.id === id ? { ...point, enabled } : point)),
     );
   };
 
   const handleUpdatePointLabel = (id: string, label: string) => {
     setPickupPoints((prev) =>
-      prev.map((point) => (point.id === id ? { ...point, label } : point))
+      prev.map((point) => (point.id === id ? { ...point, label } : point)),
     );
   };
 
@@ -124,27 +124,26 @@ export function DeliverySection({ storeId }: { storeId: string }) {
       prev.map((point) =>
         point.id === id
           ? {
-            ...point,
-            openDays: point.openDays.includes(day)
-              ? point.openDays.filter((d) => d !== day)
-              : [...point.openDays, day].sort(),
-          }
-          : point
-      )
+              ...point,
+              openDays: point.openDays.includes(day)
+                ? point.openDays.filter((d) => d !== day)
+                : [...point.openDays, day].sort(),
+            }
+          : point,
+      ),
     );
   };
 
   const handleToggleClosedOverride = (id: string, closedOverride: boolean) => {
     setPickupPoints((prev) =>
-      prev.map((
-        point,
-      ) => (point.id === id ? { ...point, closedOverride } : point))
+      prev.map((point) =>
+        point.id === id ? { ...point, closedOverride } : point,
+      ),
     );
   };
 
   const editingPoint =
-    pickupPoints.find((point) => point.id === editingPointId) ??
-      null;
+    pickupPoints.find((point) => point.id === editingPointId) ?? null;
 
   const handleSave = () => {
     saveDelivery.mutate({
@@ -175,55 +174,55 @@ export function DeliverySection({ storeId }: { storeId: string }) {
             {t("delivery.pickupPointsLabel")}
           </span>
           <div className="space-y-2">
-            {pickupPoints.length === 0
-              ? (
-                <p className="text-xs text-[#9582ad]">
-                  {t("delivery.noPickupPoints")}
-                </p>
-              )
-              : (
-                pickupPoints.map((point) => (
-                  <div
-                    key={point.id}
-                    className="space-y-2 rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Switch
-                        checked={point.enabled}
-                        onCheckedChange={(enabled) =>
-                          handleTogglePoint(point.id, enabled)}
-                      />
-                      <Input
-                        value={point.label}
-                        onChange={(event) =>
-                          handleUpdatePointLabel(point.id, event.target.value)}
-                        className="store-theme-input h-10 rounded-xl border-[#e7dcf3] bg-white text-[#341b55] shadow-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleRemovePoint(point.id)}
-                        className="text-lg leading-none text-(--store-primary)"
-                        aria-label={t("delivery.removePickupPoint")}
-                      >
-                        ×
-                      </button>
-                    </div>
-                    <div className="flex items-center justify-between gap-2 pl-11">
-                      <span className="text-xs text-[#9582ad]">
-                        {availabilitySummary(point, t)}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setEditingPointId(point.id)}
-                        className="flex items-center gap-1 text-xs font-semibold text-(--store-primary)"
-                      >
-                        <CalendarClock className="size-3.5" />
-                        {t("delivery.editAvailability")}
-                      </button>
-                    </div>
+            {pickupPoints.length === 0 ? (
+              <p className="text-xs text-[#9582ad]">
+                {t("delivery.noPickupPoints")}
+              </p>
+            ) : (
+              pickupPoints.map((point) => (
+                <div
+                  key={point.id}
+                  className="space-y-2 rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3"
+                >
+                  <div className="flex items-center gap-3">
+                    <Switch
+                      checked={point.enabled}
+                      onCheckedChange={(enabled) =>
+                        handleTogglePoint(point.id, enabled)
+                      }
+                    />
+                    <Input
+                      value={point.label}
+                      onChange={(event) =>
+                        handleUpdatePointLabel(point.id, event.target.value)
+                      }
+                      className="store-theme-input h-10 rounded-xl border-[#e7dcf3] bg-white text-[#341b55] shadow-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePoint(point.id)}
+                      className="text-lg leading-none text-(--store-primary)"
+                      aria-label={t("delivery.removePickupPoint")}
+                    >
+                      ×
+                    </button>
                   </div>
-                ))
-              )}
+                  <div className="flex items-center justify-between gap-2 pl-11">
+                    <span className="text-xs text-[#9582ad]">
+                      {availabilitySummary(point, t)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setEditingPointId(point.id)}
+                      className="flex items-center gap-1 text-xs font-semibold text-(--store-primary)"
+                    >
+                      <CalendarClock className="size-3.5" />
+                      {t("delivery.editAvailability")}
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
             <div className="flex gap-2">
               <Input
                 value={newPointLabel}
@@ -261,15 +260,13 @@ export function DeliverySection({ storeId }: { storeId: string }) {
         </Field>
       </div>
 
-      {saveDelivery.isError
-        ? (
-          <p className="mt-4 text-sm text-[#b24368]">
-            {saveDelivery.error instanceof Error
-              ? saveDelivery.error.message
-              : String(saveDelivery.error)}
-          </p>
-        )
-        : null}
+      {saveDelivery.isError ? (
+        <p className="mt-4 text-sm text-[#b24368]">
+          {saveDelivery.error instanceof Error
+            ? saveDelivery.error.message
+            : String(saveDelivery.error)}
+        </p>
+      ) : null}
 
       <Separator className="my-5 bg-[#f0e7f8]" />
 
@@ -284,8 +281,8 @@ export function DeliverySection({ storeId }: { storeId: string }) {
           {saveDelivery.isSuccess
             ? t("saved")
             : saveDelivery.isPending
-            ? t("saving")
-            : t("save")}
+              ? t("saving")
+              : t("save")}
         </Button>
       </div>
 
@@ -295,75 +292,70 @@ export function DeliverySection({ storeId }: { storeId: string }) {
           if (!open) setEditingPointId(null);
         }}
       >
-        <SheetContent>
-          {editingPoint
-            ? (
-              <>
-                <SheetHeader>
-                  <SheetTitle>
-                    {t("delivery.availabilitySheetTitle", {
-                      label: editingPoint.label,
+        <SheetContent size="md">
+          {editingPoint ? (
+            <>
+              <SheetHeader>
+                <SheetTitle>
+                  {t("delivery.availabilitySheetTitle", {
+                    label: editingPoint.label,
+                  })}
+                </SheetTitle>
+                <SheetDescription>
+                  {t("delivery.availabilitySheetDescription")}
+                </SheetDescription>
+              </SheetHeader>
+
+              <div className="space-y-4 px-4">
+                <div className="space-y-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#927fac]">
+                    {t("delivery.weekdaysLabel")}
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {WEEKDAY_ORDER.map((day) => {
+                      const checked = editingPoint.openDays.includes(day);
+                      return (
+                        <button
+                          key={day}
+                          type="button"
+                          onClick={() => handleToggleDay(editingPoint.id, day)}
+                          className={`h-9 min-w-9 rounded-xl border px-2 text-xs font-semibold ${
+                            checked
+                              ? "store-theme-primary-button border-transparent"
+                              : "border-[#e7dcf3] bg-white text-[#8f7da8]"
+                          }`}
+                        >
+                          {weekdayLabels(t)[day]}
+                        </button>
+                      );
                     })}
-                  </SheetTitle>
-                  <SheetDescription>
-                    {t("delivery.availabilitySheetDescription")}
-                  </SheetDescription>
-                </SheetHeader>
-
-                <div className="space-y-4 px-4">
-                  <div className="space-y-2">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#927fac]">
-                      {t("delivery.weekdaysLabel")}
-                    </span>
-                    <div className="flex flex-wrap gap-2">
-                      {WEEKDAY_ORDER.map((day) => {
-                        const checked = editingPoint.openDays.includes(day);
-                        return (
-                          <button
-                            key={day}
-                            type="button"
-                            onClick={() =>
-                              handleToggleDay(editingPoint.id, day)}
-                            className={`h-9 min-w-9 rounded-xl border px-2 text-xs font-semibold ${
-                              checked
-                                ? "store-theme-primary-button border-transparent"
-                                : "border-[#e7dcf3] bg-white text-[#8f7da8]"
-                            }`}
-                          >
-                            {weekdayLabels(t)[day]}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <p className="text-xs text-[#9582ad]">
-                      {t("delivery.everyDayHint")}
-                    </p>
                   </div>
-
-                  <ToggleRow
-                    label={t("delivery.closedOverrideLabel")}
-                    description={t("delivery.closedOverrideHelp")}
-                    enabled={editingPoint.closedOverride}
-                    onChange={(closedOverride) =>
-                      handleToggleClosedOverride(
-                        editingPoint.id,
-                        closedOverride,
-                      )}
-                  />
+                  <p className="text-xs text-[#9582ad]">
+                    {t("delivery.everyDayHint")}
+                  </p>
                 </div>
 
-                <SheetFooter>
-                  <Button
-                    type="button"
-                    onClick={() => setEditingPointId(null)}
-                    className="store-theme-primary-button h-11 rounded-2xl text-sm font-semibold hover:opacity-100"
-                  >
-                    {t("delivery.doneEditingAvailability")}
-                  </Button>
-                </SheetFooter>
-              </>
-            )
-            : null}
+                <ToggleRow
+                  label={t("delivery.closedOverrideLabel")}
+                  description={t("delivery.closedOverrideHelp")}
+                  enabled={editingPoint.closedOverride}
+                  onChange={(closedOverride) =>
+                    handleToggleClosedOverride(editingPoint.id, closedOverride)
+                  }
+                />
+              </div>
+
+              <SheetFooter>
+                <Button
+                  type="button"
+                  onClick={() => setEditingPointId(null)}
+                  className="store-theme-primary-button h-11 rounded-2xl text-sm font-semibold hover:opacity-100"
+                >
+                  {t("delivery.doneEditingAvailability")}
+                </Button>
+              </SheetFooter>
+            </>
+          ) : null}
         </SheetContent>
       </Sheet>
     </SectionCard>

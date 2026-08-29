@@ -1,9 +1,23 @@
 "use client";
 
-import type * as React from "react";
+import * as React from "react";
 import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog";
 
 import { cn } from "@/lib/utils";
+
+function containsComponent(
+  children: React.ReactNode,
+  component: React.ElementType,
+): boolean {
+  return React.Children.toArray(children).some((child) => {
+    if (!React.isValidElement(child)) return false;
+    if (child.type === component) return true;
+    return containsComponent(
+      (child.props as { children?: React.ReactNode }).children,
+      component,
+    );
+  });
+}
 
 function AlertDialog({ ...props }: AlertDialogPrimitive.Root.Props) {
   return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />;
@@ -15,9 +29,10 @@ function AlertDialogPortal({ ...props }: AlertDialogPrimitive.Portal.Props) {
   );
 }
 
-function AlertDialogOverlay(
-  { className, ...props }: AlertDialogPrimitive.Backdrop.Props,
-) {
+function AlertDialogOverlay({
+  className,
+  ...props
+}: AlertDialogPrimitive.Backdrop.Props) {
   return (
     <AlertDialogPrimitive.Backdrop
       data-slot="alert-dialog-overlay"
@@ -30,16 +45,27 @@ function AlertDialogOverlay(
   );
 }
 
-function AlertDialogContent(
-  { className, children, ...props }: AlertDialogPrimitive.Popup.Props,
-) {
+function AlertDialogContent({
+  className,
+  children,
+  ...props
+}: AlertDialogPrimitive.Popup.Props) {
+  if (
+    process.env.NODE_ENV !== "production" &&
+    !containsComponent(children, AlertDialogTitle)
+  ) {
+    console.warn(
+      "AlertDialogContent requires an AlertDialogTitle for an accessible name.",
+    );
+  }
+
   return (
     <AlertDialogPortal>
       <AlertDialogOverlay />
       <AlertDialogPrimitive.Popup
         data-slot="alert-dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-[24px] border border-[#eadcf7] bg-white p-6 shadow-lg transition duration-150 ease-in-out data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0",
+          "fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-[24px] border border-border bg-background p-6 text-foreground shadow-lg outline-none transition duration-150 ease-in-out data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0",
           className,
         )}
         {...props}
@@ -50,9 +76,10 @@ function AlertDialogContent(
   );
 }
 
-function AlertDialogHeader(
-  { className, ...props }: React.ComponentProps<"div">,
-) {
+function AlertDialogHeader({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="alert-dialog-header"
@@ -62,9 +89,10 @@ function AlertDialogHeader(
   );
 }
 
-function AlertDialogFooter(
-  { className, ...props }: React.ComponentProps<"div">,
-) {
+function AlertDialogFooter({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="alert-dialog-footer"
@@ -77,25 +105,27 @@ function AlertDialogFooter(
   );
 }
 
-function AlertDialogTitle(
-  { className, ...props }: AlertDialogPrimitive.Title.Props,
-) {
+function AlertDialogTitle({
+  className,
+  ...props
+}: AlertDialogPrimitive.Title.Props) {
   return (
     <AlertDialogPrimitive.Title
       data-slot="alert-dialog-title"
-      className={cn("text-base font-semibold text-[#2d1649]", className)}
+      className={cn("text-base font-semibold text-foreground", className)}
       {...props}
     />
   );
 }
 
-function AlertDialogDescription(
-  { className, ...props }: AlertDialogPrimitive.Description.Props,
-) {
+function AlertDialogDescription({
+  className,
+  ...props
+}: AlertDialogPrimitive.Description.Props) {
   return (
     <AlertDialogPrimitive.Description
       data-slot="alert-dialog-description"
-      className={cn("text-sm text-[#8f7da8]", className)}
+      className={cn("text-sm text-muted-foreground", className)}
       {...props}
     />
   );

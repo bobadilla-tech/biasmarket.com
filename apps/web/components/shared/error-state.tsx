@@ -14,24 +14,22 @@ export function ErrorState({
   retryLabel?: string;
 }) {
   return (
-    <Alert variant="destructive">
+    <Alert variant="destructive" role="alert">
       <AlertCircle />
       {title ? <AlertTitle>{title}</AlertTitle> : null}
       <AlertDescription>
         <p>{message}</p>
-        {retry
-          ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="mt-2"
-              onClick={retry}
-            >
-              {retryLabel}
-            </Button>
-          )
-          : null}
+        {retry ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-2"
+            onClick={retry}
+          >
+            {retryLabel}
+          </Button>
+        ) : null}
       </AlertDescription>
     </Alert>
   );
