@@ -141,7 +141,7 @@ jobs:
           fetch-depth: 0
 
       - name: Load shared CI test environment
-        run: grep -E '^[A-Za-z_][A-Za-z0-9_]*=' scripts/ci/e2e.env.example >> "$GITHUB_ENV"
+        run: bash scripts/ci/load-e2e-env.sh
 
       - uses: pnpm/action-setup@v6
         with:
@@ -305,7 +305,7 @@ jobs:
           persist-credentials: false
 
       - name: Load shared CI test environment
-        run: grep -E '^[A-Za-z_][A-Za-z0-9_]*=' scripts/ci/e2e.env.example >> "$GITHUB_ENV"
+        run: bash scripts/ci/load-e2e-env.sh
 
       - uses: pnpm/action-setup@v6
         with:
@@ -353,41 +353,10 @@ jobs:
       # (see the expand/contract checklist) — this job's job is to make
       # sure the author sees that *before* merging, not to block the PR.
       - name: Check for destructive migrations
-        run: |
-          set -euo pipefail
-          mapfile -t new_migrations < <(
-            git diff --name-only --diff-filter=A \
-              "${{ github.event.pull_request.base.sha }}" \
-              "${{ github.event.pull_request.head.sha }}" \
-              -- 'packages/db/prisma/migrations/*/migration.sql'
-          )
-          if [[ ${#new_migrations[@]} -eq 0 ]]; then
-            echo "No new migration files in this PR."
-            exit 0
-          fi
-
-          destructive_pattern='DROP[[:space:]]+TABLE|DROP[[:space:]]+COLUMN|DROP[[:space:]]+TYPE|ALTER[[:space:]]+COLUMN[^;]*TYPE'
-          found=()
-          for f in "${new_migrations[@]}"; do
-            grep -qiE "$destructive_pattern" "$f" && found+=("$f")
-          done
-
-          if [[ ${#found[@]} -eq 0 ]]; then
-            echo "No destructive migrations detected."
-            exit 0
-          fi
-
-          {
-            echo "## :warning: Destructive migration(s) in this PR"
-            echo
-            echo "These new migrations contain DROP TABLE / DROP COLUMN / DROP TYPE / ALTER COLUMN...TYPE:"
-            echo
-            for f in "${found[@]}"; do echo "- \`$f\`"; done
-            echo
-            echo "\`deploy.sh\`'s destructive-migration gate will refuse to apply these in CD — merging is fine, but deploying needs a manual run with \`--i-understand-this-is-destructive\` (see docs/core/blue-green-migrations.md's expand/contract checklist). Plan for that before this lands on main, or split into an expand/contract pair instead."
-          } >>"$GITHUB_STEP_SUMMARY"
-          echo "::error::Destructive migration(s) detected — CD will refuse to auto-deploy this PR once merged. See the job summary."
-          exit 1
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: bash scripts/ci/check-destructive-migrations.sh
 
   i18n:
     name: i18n
@@ -636,7 +605,7 @@ jobs:
           persist-credentials: false
 
       - name: Load shared CI test environment
-        run: grep -E '^[A-Za-z_][A-Za-z0-9_]*=' scripts/ci/e2e.env.example >> "$GITHUB_ENV"
+        run: bash scripts/ci/load-e2e-env.sh
 
       - uses: pnpm/action-setup@v6
         with:
@@ -727,52 +696,4 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           # Guard the boolean input with the event name; on push, inputs is null.
           RUN_E2E: ${{ github.event_name == 'workflow_dispatch' && inputs.run_e2e || false }}
-        run: |
-          set -euo pipefail
-
-          if [[ "$DETECT_RESULT" != "success" ]]; then
-            echo "Detect Changed Packages must succeed; got $DETECT_RESULT"
-            exit 1
-          fi
-
-          check_package() {
-            local name="$1"
-            local changed="$2"
-            local result="$3"
-            if [[ "$changed" == "true" && "$result" != "success" ]]; then
-              echo "$name changed, but its job result is $result (expected success)"
-              exit 1
-            fi
-            if [[ "$changed" == "false" && "$result" != "skipped" ]]; then
-              echo "$name unchanged, but its job result is $result (expected skipped)"
-              exit 1
-            fi
-            if [[ "$changed" != "true" && "$changed" != "false" ]]; then
-              echo "$name changed output is invalid: $changed"
-              exit 1
-            fi
-          }
-
-          check_package API "$API_CHANGED" "$API_RESULT"
-          check_package Web "$WEB_CHANGED" "$WEB_RESULT"
-          check_package Workers "$WORKERS_CHANGED" "$WORKERS_RESULT"
-          check_package DB "$DB_CHANGED" "$DB_RESULT"
-          check_package i18n "$I18N_CHANGED" "$I18N_RESULT"
-          check_package Queue "$QUEUE_CHANGED" "$QUEUE_RESULT"
-          check_package Types "$TYPES_CHANGED" "$TYPES_RESULT"
-          check_package UI "$UI_CHANGED" "$UI_RESULT"
-          check_package Utils "$UTILS_CHANGED" "$UTILS_RESULT"
-
-          expected_e2e="skipped"
-          if [[ "$EVENT_NAME" == "push" ]]; then
-            expected_e2e="success"
-          elif [[ "$EVENT_NAME" == "workflow_dispatch" && "$RUN_E2E" == "true" ]]; then
-            expected_e2e="success"
-          fi
-
-          if [[ "$E2E_RESULT" != "$expected_e2e" ]]; then
-            echo "E2E result is $E2E_RESULT; expected $expected_e2e for $EVENT_NAME (run_e2e=$RUN_E2E)"
-            exit 1
-          fi
-
-          echo "All required checks passed; E2E result: $E2E_RESULT"
+        run: bash scripts/ci/check-ci-success.sh

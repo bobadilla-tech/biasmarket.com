@@ -382,7 +382,7 @@ There is no standalone API process, so `PORT` is irrelevant to the job-level
 env; the worker step relies on its own `?? 3002` default (don't set `PORT` there
 either unless something conflicts).
 
-CI loads the example into `GITHUB_ENV` after checkout in the `api`, `db`, and
+CI invokes `scripts/ci/load-e2e-env.sh` after checkout in the `api`, `db`, and
 `e2e` jobs, so the API OpenAPI check, Prisma checks, and E2E helper share one
 reviewed env contract. Runtime-only worker overrides are set by the helper.
 
@@ -757,7 +757,9 @@ empty/no-op commits (which trigger a real CD cutover).
   result logic; shared env-example loading; PR-time OpenAPI drift check.
 - `scripts/ci/e2e.env.example` — reviewed test-only env contract shared by CI
   jobs and the E2E helper.
-- `scripts/ci/e2e.sh` and `scripts/ci/check-openapi-drift.sh` — CI helpers.
+- `scripts/ci/e2e.sh`, `scripts/ci/check-openapi-drift.sh`,
+  `scripts/ci/load-e2e-env.sh`, `scripts/ci/check-destructive-migrations.sh`,
+  and `scripts/ci/check-ci-success.sh` — CI helpers invoked by the workflow.
 - `apps/workers/src/jobs/orders/expire-orders-scheduler.service.ts`,
   `apps/workers/src/jobs/premium/expire-premium-scheduler.service.ts` (+ their
   `.spec.ts`) — decision-6 guard, distinct log text.
