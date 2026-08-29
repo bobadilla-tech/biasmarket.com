@@ -80,7 +80,11 @@ export function CheckoutPageClient() {
       typeof details.phoneNumber === "string" && details.phoneNumber;
 
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6 py-10">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="min-h-dvh flex items-center justify-center bg-gray-50 px-6 py-10"
+      >
         <div className="w-full max-w-md text-center">
           <h1 className="text-xl font-bold text-gray-900">
             {t("orderCreatedTitle")}
@@ -252,13 +256,17 @@ export function CheckoutPageClient() {
             {t("backToStore")}
           </Link>
         </div>
-      </div>
+      </main>
     );
   }
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="min-h-dvh flex items-center justify-center bg-gray-50 px-6"
+      >
         <p className="text-gray-500">
           {t("emptyCart")}{" "}
           <Link
@@ -268,12 +276,16 @@ export function CheckoutPageClient() {
             {t("backToStore")}
           </Link>
         </p>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 px-6 py-10">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="min-h-dvh bg-gray-50 px-6 py-10"
+    >
       <div className="max-w-md mx-auto flex flex-col gap-6">
         <div>
           <Link
@@ -300,6 +312,6 @@ export function CheckoutPageClient() {
           onOrderCreated={handleOrderCreated}
         />
       </div>
-    </div>
+    </main>
   );
 }

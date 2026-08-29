@@ -7,7 +7,7 @@ export function ForgotPasswordPageClient() {
   const { slug } = useParams<{ slug: string }>();
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
+    <div className="min-h-dvh flex items-start justify-center bg-gray-50 px-6 py-10 sm:items-center">
       <ForgotPasswordForm slug={slug} />
     </div>
   );

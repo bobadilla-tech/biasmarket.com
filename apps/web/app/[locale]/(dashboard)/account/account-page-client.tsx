@@ -31,7 +31,11 @@ export function AccountPageClient() {
   };
 
   return (
-    <div className="min-h-screen bg-[#faf7fd] px-5 py-6 lg:px-8 lg:py-8">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="min-h-dvh bg-[#faf7fd] px-5 py-6 lg:px-8 lg:py-8"
+    >
       <div className="mx-auto max-w-3xl space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-[#2d1649]">
@@ -111,7 +115,7 @@ export function AccountPageClient() {
 
         <ChangePasswordForm />
       </div>
-    </div>
+    </main>
   );
 }
 

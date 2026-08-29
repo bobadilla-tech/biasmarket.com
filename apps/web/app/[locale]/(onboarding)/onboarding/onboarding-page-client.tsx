@@ -29,7 +29,7 @@ export function OnboardingPageClient() {
 
   if (checkEmail) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="min-h-dvh flex items-start justify-center bg-gray-50 px-4 py-10 sm:items-center">
         <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-100 p-8 flex flex-col gap-3 text-center">
           <h1 className="text-2xl font-bold text-gray-900">
             {t("checkEmailTitle")}
@@ -41,7 +41,7 @@ export function OnboardingPageClient() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-dvh flex items-start justify-center bg-gray-50 px-4 py-10 sm:items-center">
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-100 p-8 flex flex-col gap-5 ">
         <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
         <input

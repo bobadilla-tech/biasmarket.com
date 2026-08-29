@@ -19,7 +19,11 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="min-h-dvh flex items-center justify-center bg-gray-50 px-6"
+    >
       <div className="w-full max-w-md">
         <ErrorState
           title={t("title")}
@@ -28,6 +32,6 @@ export default function Error({
           retryLabel={t("retry")}
         />
       </div>
-    </div>
+    </main>
   );
 }

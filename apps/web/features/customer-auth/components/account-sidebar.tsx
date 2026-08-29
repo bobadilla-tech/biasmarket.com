@@ -31,8 +31,8 @@ export function AccountSidebar({
   logoutPending: boolean;
 }) {
   const t = useTranslations("storefront.accountPage");
-  const displayName = profile.customer.name ?? profile.customer.email ??
-    profile.customer.phone;
+  const displayName =
+    profile.customer.name ?? profile.customer.email ?? profile.customer.phone;
 
   return (
     <>
@@ -62,24 +62,28 @@ export function AccountSidebar({
             </button>
           </div>
         </div>
-        <div className="flex items-center gap-2 overflow-x-auto px-6 pb-4">
+        <nav
+          aria-label={t("navigationLabel")}
+          className="flex items-center gap-2 overflow-x-auto px-6 pb-4"
+        >
           {NAV_ITEMS.map(({ key, icon: Icon }) => (
             <button
               key={key}
               type="button"
               onClick={() => onSectionChange(key)}
+              aria-current={section === key ? "page" : undefined}
               className={cn(
-                "flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-semibold transition",
+                "flex shrink-0 items-center gap-2 rounded-2xl px-4 py-2 text-sm font-semibold transition",
                 section === key
                   ? "store-theme-primary-button"
                   : "text-gray-500 hover:bg-gray-50 hover:text-gray-700",
               )}
             >
-              <Icon className="size-4" />
+              <Icon aria-hidden="true" className="size-4" />
               {t(`nav.${key}`)}
             </button>
           ))}
-        </div>
+        </nav>
       </div>
 
       {/* Desktop: fixed left sidebar */}
@@ -96,12 +100,16 @@ export function AccountSidebar({
               </p>
             </div>
           </div>
-          <nav className="flex flex-col gap-1">
+          <nav
+            aria-label={t("navigationLabel")}
+            className="flex flex-col gap-1"
+          >
             {NAV_ITEMS.map(({ key, icon: Icon }) => (
               <button
                 key={key}
                 type="button"
                 onClick={() => onSectionChange(key)}
+                aria-current={section === key ? "page" : undefined}
                 className={cn(
                   "flex items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-semibold transition",
                   section === key
@@ -109,7 +117,7 @@ export function AccountSidebar({
                     : "text-gray-600 hover:bg-gray-50",
                 )}
               >
-                <Icon className="size-4 shrink-0" />
+                <Icon aria-hidden="true" className="size-4 shrink-0" />
                 {t(`nav.${key}`)}
               </button>
             ))}

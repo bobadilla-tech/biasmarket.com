@@ -135,9 +135,13 @@ export default async function StorePage({
 
   if (!store) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="min-h-dvh flex items-center justify-center"
+      >
         <p className="text-gray-500">{t("notFound")}</p>
-      </div>
+      </main>
     );
   }
 
@@ -163,7 +167,11 @@ export default async function StorePage({
   if (visibleSections.length === 0 && soldOutProducts.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <main className="max-w-5xl mx-auto px-4 pt-20 pb-8">
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="max-w-5xl mx-auto px-4 pt-20 pb-8"
+        >
           <h1 className="sr-only">{store.name}</h1>
           <p className="text-gray-500 text-center">{t("noProducts")}</p>
         </main>
@@ -182,7 +190,11 @@ export default async function StorePage({
           ),
         }}
       />
-      <main className="max-w-5xl mx-auto px-4 pt-20 pb-8 space-y-10">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="max-w-5xl mx-auto px-4 pt-20 pb-8 space-y-10"
+      >
         <h1 className="sr-only">{store.name}</h1>
         {visibleSections.length === 0 ? (
           soldOutProducts.length > 0 ? null : (

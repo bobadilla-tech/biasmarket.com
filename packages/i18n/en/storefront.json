@@ -216,6 +216,7 @@
   },
   "accountPage": {
     "title": "My account",
+    "navigationLabel": "Account navigation",
     "logout": "Log out",
     "infoTitle": "Account details",
     "noName": "No name on file",

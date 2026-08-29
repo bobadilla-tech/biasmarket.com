@@ -8,6 +8,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { LoadingState } from "@/components/shared/loading-state";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "@/i18n/navigation";
 
@@ -30,14 +31,14 @@ export default function AdminLayout({
   }, [isPending, isAdmin, impersonatedBy, router]);
 
   if (isPending || (!isAdmin && !impersonatedBy)) {
-    return null;
+    return <LoadingState />;
   }
 
   return (
     <TooltipProvider>
       <SidebarProvider>
         <AppSidebar />
-        <SidebarInset>
+        <SidebarInset id="main-content" tabIndex={-1}>
           <header className="flex h-12 items-center gap-2 border-b border-gray-100 px-4">
             <SidebarTrigger />
           </header>

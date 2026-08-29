@@ -131,7 +131,11 @@ export function CartPageClient() {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-stone-50 px-6 py-10">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="min-h-dvh bg-stone-50 px-6 py-10"
+      >
         <div className="mx-auto max-w-2xl">
           <h1 className="text-2xl font-bold text-stone-900">{t("title")}</h1>
           <p className="mt-4 text-stone-500">
@@ -144,12 +148,16 @@ export function CartPageClient() {
             </Link>
           </p>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 px-6 py-10">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="min-h-dvh bg-stone-50 px-6 py-10"
+    >
       <div className="mx-auto flex max-w-4xl flex-col gap-6">
         <div>
           <Link
@@ -251,6 +259,6 @@ export function CartPageClient() {
           <CartSummary slug={slug} items={items} />
         </div>
       </div>
-    </div>
+    </main>
   );
 }

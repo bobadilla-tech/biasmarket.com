@@ -4,6 +4,7 @@
   "countryCode": "Código de país",
   "phoneNumber": "Número de teléfono",
   "networkError": "Error de red",
+  "skipToContent": "Ir al contenido",
   "notFoundPage": {
     "title": "Página no encontrada",
     "body": "La página que buscas no existe o fue movida.",

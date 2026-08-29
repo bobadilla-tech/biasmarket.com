@@ -4,6 +4,7 @@
   "countryCode": "Country code",
   "phoneNumber": "Phone number",
   "networkError": "Network error",
+  "skipToContent": "Skip to content",
   "notFoundPage": {
     "title": "Page not found",
     "body": "The page you're looking for doesn't exist or was moved.",

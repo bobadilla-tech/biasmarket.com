@@ -21,7 +21,7 @@ import {
 interface NavItem {
   href: string;
   labelKey: "inquiries" | "stores" | "coupons" | "users";
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   disabled?: boolean;
 }
 
@@ -50,48 +50,55 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>{t("admin")}</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {NAV_ITEMS.map((item) => {
-                const Icon = item.icon;
+        <nav aria-label={t("navigationLabel")}>
+          <SidebarGroup>
+            <SidebarGroupLabel>{t("admin")}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {NAV_ITEMS.map((item) => {
+                  const Icon = item.icon;
 
-                if (item.disabled) {
+                  if (item.disabled) {
+                    return (
+                      <SidebarMenuItem key={item.href}>
+                        <SidebarMenuButton
+                          disabled
+                          className="cursor-not-allowed opacity-50"
+                        >
+                          <Icon aria-hidden="true" />
+                          <span>{t(item.labelKey)}</span>
+                          <Badge
+                            variant="secondary"
+                            className="ml-auto text-[10px]"
+                          >
+                            {t("comingSoon")}
+                          </Badge>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  }
+
+                  const isActive =
+                    pathname === item.href ||
+                    pathname.startsWith(`${item.href}/`);
+
                   return (
                     <SidebarMenuItem key={item.href}>
                       <SidebarMenuButton
-                        disabled
-                        className="cursor-not-allowed opacity-50"
+                        isActive={isActive}
+                        aria-current={isActive ? "page" : undefined}
+                        render={<Link href={item.href} />}
                       >
-                        <Icon />
+                        <Icon aria-hidden="true" />
                         <span>{t(item.labelKey)}</span>
-                        <Badge
-                          variant="secondary"
-                          className="ml-auto text-[10px]"
-                        >
-                          {t("comingSoon")}
-                        </Badge>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   );
-                }
-
-                return (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                      isActive={pathname === item.href}
-                      render={<Link href={item.href} />}
-                    >
-                      <Icon />
-                      <span>{t(item.labelKey)}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </nav>
       </SidebarContent>
 
       <SidebarFooter>

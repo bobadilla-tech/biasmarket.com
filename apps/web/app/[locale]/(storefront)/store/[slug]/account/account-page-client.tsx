@@ -17,15 +17,23 @@ export function CustomerAccountPageClient() {
 
   if (isPending) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="min-h-dvh flex items-center justify-center bg-gray-50 px-6"
+      >
         <LoadingState variant="page" className="w-full max-w-md" />
-      </div>
+      </main>
     );
   }
 
   if (isError || !data) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="min-h-dvh flex items-center justify-center bg-gray-50 px-6"
+      >
         <div className="max-w-md w-full text-center flex flex-col gap-4">
           <ErrorState
             title={t("loggedOutTitle")}
@@ -38,7 +46,7 @@ export function CustomerAccountPageClient() {
             {t("goToLogin")}
           </Link>
         </div>
-      </div>
+      </main>
     );
   }
 
