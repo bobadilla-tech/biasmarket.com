@@ -19,20 +19,23 @@ local API unit suite and worker suite are green, but a full E2E rehearsal could
 not use the fixed CI ports because developer Postgres/Redis containers already
 own 5432/6379. No existing containers were stopped.
 
-The four image references are digest-pinned as resolved on 2026-08-28:
+The E2E pulls use GHCR and are digest-pinned as resolved on 2026-08-28. `mc`
+uses the same GHCR MinIO image via an entrypoint override, so there are three
+unique image references:
 
-- `postgres:18` → `sha256:4ef4dbc939d61acea57712655ddb4b4ab27419c913f94cca0cd57cb3ea3c2280`
-- `redis:7-alpine` → `sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf`
-- `minio/minio:latest` → `sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e`
-- `minio/mc:latest` → `sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727`
+- `ghcr.io/sakiladb/postgres:18` → `sha256:7848cf782d233daf13aca55a61262e5ee775299ee48509e6b1e32eddb2c1b2e2`
+- `ghcr.io/valkey-io/valkey:7-alpine` → `sha256:8fc3da585dc963d91754d72da22d54671c6ec495d8a0257a6a9100a9a4658f38`
+- `ghcr.io/coollabsio/minio:RELEASE.2025-10-15T17-29-55Z` → `sha256:69b55a1c1c5dc285ce04db96689f5b2102317fc77a50680a1874ca6efd1c87f9`
 
-The Docker Hub mitigation uses `DOCKERHUB_USERNAME` / `DOCKERHUB_TOKEN`
-repository secrets in both service-container `credentials` and the explicit
-`docker/login-action` step. Those secrets must exist before `CI Success` is
-made required. Decision 6 is implemented and unit-covered; decision 6b was
-not applied because the required baseline has not run, so its 429 question
-must be answered during T5. The regenerated tracked OpenAPI artifact is
-stable after generation plus JSON-format normalization.
+The GHCR pulls use the workflow's `GITHUB_TOKEN` with `packages: read` in both
+service-container `credentials` and the explicit `docker/login-action` step;
+no Docker Hub account or repository secrets are required. The PostgreSQL
+image was smoke-tested locally with the CI credentials and standard entrypoint;
+Valkey was smoke-tested with `redis-cli ping`; and the MinIO image's `/usr/bin/mc`
+entrypoint was smoke-tested. Decision 6 is implemented and unit-covered;
+decision 6b was not applied because the required baseline has not run, so its
+429 question must be answered during T5. The regenerated tracked OpenAPI
+artifact is stable after generation plus JSON-format normalization.
 
 Branch protection (T11) is still pending: require the exact `CI Success` check,
 require PRs, disallow direct pushes, and leave E2E as a push-time gate rather
@@ -259,45 +262,41 @@ A docs-only push to `main` still skips the whole workflow, emits no
 
 ### 2. Provision disposable services; run a real `workers` process
 
-PostgreSQL and Redis as GitHub Actions **service containers** (digest-pinned).
+PostgreSQL and Redis-compatible Valkey as GitHub Actions **service containers**
+(digest-pinned, pulled from GHCR with `GITHUB_TOKEN`).
 MinIO + `mc` as explicit steps on a user-defined Docker network (a sidecar `mc`
 container can't reach a service container over `127.0.0.1`; use the MinIO
 container name for `mc`, the published `127.0.0.1:9000` for the host process).
 
-- **PostgreSQL** — `postgres:18` (matches `infra/docker/docker-compose.dev.yml`),
+- **PostgreSQL** — `ghcr.io/sakiladb/postgres:18` (PostgreSQL 18 with the
+  standard entrypoint; GHCR image),
   `POSTGRES_USER=ci POSTGRES_PASSWORD=ci POSTGRES_DB=ci`, `5432:5432`,
   healthcheck `pg_isready -U ci -d ci`.
   `DATABASE_URL=postgresql://ci:ci@localhost:5432/ci?schema=public`.
-- **Redis** — `redis:7-alpine` (matches dev), no password, `6379:6379`,
-  healthcheck `redis-cli ping`. `REDIS_URL=redis://localhost:6379`.
-- **MinIO** — `minio/minio`, root creds `e2e` / `e2e-secret-key` (test-only
+- **Redis-compatible service** — `ghcr.io/valkey-io/valkey:7-alpine` (matches
+  the Redis protocol used by the app), no password, `6379:6379`, healthcheck
+  `redis-cli ping`. `REDIS_URL=redis://localhost:6379`.
+- **MinIO** — `ghcr.io/coollabsio/minio`, root creds `e2e` / `e2e-secret-key` (test-only
   literals), `--name biasmarket-e2e-minio`, `-p 9000:9000`, network
   `biasmarket-e2e`; poll `http://127.0.0.1:9000/minio/health/live`.
-- **`mc`** — `minio/mc`, same network,
+- **`mc`** — the same MinIO GHCR image with `--entrypoint /usr/bin/mc`, same network,
   `MC_HOST_ci=http://e2e:e2e-secret-key@biasmarket-e2e-minio:9000`; create
   buckets `products`, `logos`, `payments`; `mc anonymous set download` on
   `products` + `logos` only (`payments` stays private — mirrors `minio-init`
   in the dev compose).
 
-**Pin all four images by digest.** Re-resolve digests at implementation time
+**Pin all three unique images by digest.** Re-resolve digests at implementation time
 (`docker buildx imagetools inspect <ref>`); record the human-readable tag next
 to each digest in a workflow comment. Do **not** copy digests from the
 superseded plan. The gate must not go required while any image is on a floating
 tag.
 
-**Docker Hub rate limits — two distinct pull paths, mitigate both:** all four
-images are anonymous pulls from Docker Hub on shared Actions egress IPs — an
-intermittent `e2e` failure vector once the gate is required.
-  - **Postgres + Redis** are `services:` containers, pulled by the runner
-    **before any step executes**, so a `docker/login-action` step can't help
-    them. They need `jobs.e2e.services.<id>.credentials.{username,password}`
-    (a new `secrets.DOCKERHUB_*` pair) **or** a GHCR mirror under
-    `bobadilla-tech` referenced with `credentials:` + `GITHUB_TOKEN`.
-  - **MinIO + `mc`** are `docker run` inside the helper step, so a
-    `docker/login-action` step earlier in the job (or the same GHCR mirror)
-    covers them.
-  Decide the approach during implementation; note the choice in Status. Both
-  paths must be covered before the gate goes required.
+**GHCR authentication — cover both pull paths:** Postgres + Valkey are
+`services:` containers, pulled by the runner **before any step executes**, so
+they use `jobs.e2e.services.<id>.credentials` with `github.actor` and the
+workflow `GITHUB_TOKEN`. MinIO + `mc` are `docker run` inside the helper step,
+so the preceding `docker/login-action` authenticates GHCR. All pulls are
+digest-pinned and no Docker Hub credentials are needed.
 
 **No standalone API process.** The suite is fully in-process; the only
 worker→API traffic is the expire-sweep `fetch()`es, which decision 6 disables.
@@ -340,7 +339,8 @@ pnpm turbo run build --filter=api --filter=workers
 ### 3. Test-only env at job level
 
 All literals (disposable runner); **never** production values or `secrets.*`
-(except the optional Docker Hub creds in decision 2). The API's required set is
+(except the workflow-provided `GITHUB_TOKEN` used for GHCR pulls in decision 2).
+The API's required set is
 the 16 keys in `apps/api/src/config/env.validation.ts` — read that file and
 cover every one:
 
@@ -616,18 +616,18 @@ pushing empty/no-op commits (which trigger a real CD cutover).
   `pull_request` trigger, keep it on `push`; add the `merge_group`-absence
   comment.
 - **T2** — `ci.yml`: add the `e2e` job (decisions 1–4): `needs: []`,
-  push-or-guarded-dispatch `if:`, no `continue-on-error`, Postgres + Redis
+  push-or-guarded-dispatch `if:`, no `continue-on-error`, Postgres + Valkey
   service containers (digest-pinned), job-level test env (decision 3, no
   `PORT`, no standalone API), the one trapped helper (inline or
   `scripts/ci/e2e.sh`) in the exact step order (build → OpenAPI check →
   migrate → workers → suite → cleanup), `if: always()`
   `actions/upload-artifact@v4` failure artifact (`retention-days: 1`; logs
   `.ci/e2e-{workers,migrate,minio,openapi,suite}.log`; **no** mailer dir).
-- **T3** — resolve + pin the 4 image digests (Postgres, Redis, MinIO, mc),
-  record tags in comments. Cover **both** Docker Hub pull paths: service-
-  container `credentials:` (or GHCR mirror) for Postgres/Redis, and a
-  `docker/login-action` step (or the same mirror) for the MinIO/`mc`
-  `docker run`.
+- **T3** — resolve + pin the 3 unique GHCR image digests (Postgres, Valkey,
+  MinIO; the MinIO image also provides `mc`), record tags in comments, grant
+  `packages: read`, and cover both pull paths with `GITHUB_TOKEN`: service-
+  container `credentials:` for Postgres/Valkey and `docker/login-action` for
+  the MinIO/`mc` `docker run`.
 - **T4** — `apps/workers`:
   - `E2E_DISABLE_EXPIRATION_SCHEDULERS` guard in both `onModuleInit()`s, with
     **distinct** per-service log text, + both `*-scheduler.service.spec.ts`
@@ -654,7 +654,7 @@ pushing empty/no-op commits (which trigger a real CD cutover).
   E2E suite before CD and PR updates don't; plus the decision-8 flaky-rerun
   recovery note (re-run the job, don't push no-op commits).
 - **T10** — update this plan's Status: measured runtime, final file/case
-  counts, digest tags, Docker Hub decision, whether decisions 6/6b were needed.
+  counts, digest tags, GHCR image choice, whether decisions 6/6b were needed.
 - **T11** (manual, not code) — apply the decision-7 branch-protection
   checklist; confirm `CI Success` is the required check.
 
@@ -699,8 +699,8 @@ pushing empty/no-op commits (which trigger a real CD cutover).
   parallelize without first making the specs data- and rate-limit-isolated.
 - **Older-completed-run edge** is bounded by CD's ancestry staleness guard,
   not by CI concurrency. No separate latest-main-SHA check added.
-- **Docker Hub anonymous pull limits** — mitigated by T3's two-path auth/mirror
-  decision; still an external dependency.
+- **Container registry availability** — mitigated by T3's two-path GHCR auth;
+  still an external dependency.
 - **Every non-`*.md` push to `main`** (including infra- or CI-meta-only
   changes) now runs the full ~30-min E2E suite and, on success, a real CD
   cutover. Deliberate (Goal 1) — the gate must test what actually ships — but
@@ -780,8 +780,9 @@ finding into this revision.
 - *`coupon-redeem-race.e2e-spec.ts` 4 auth calls vs. 3-req/10s limiter
   (runtime review M2).* **Resolved:** decision 6b adds a conditional CI-only
   rate-limit carve-out, to be confirmed/applied during the T5 baseline.
-- *Docker Hub anonymous pull limits (Actions review).* **Resolved:** T3
-  decides `docker/login-action` vs. GHCR mirror.
+- *Docker Hub anonymous pull limits (Actions review).* **Resolved:** T3 moves
+  all E2E service and sidecar pulls to digest-pinned GHCR images and uses the
+  workflow `GITHUB_TOKEN`; no Docker Hub secrets are required.
 - *Flaky-E2E recovery undocumented (Actions review).* **Resolved:** decision 8
   + T9 — "Re-run failed jobs" emits a fresh push `workflow_run`; don't push
   no-op commits.
@@ -803,7 +804,8 @@ finding into this revision.
   conditions quoted verbatim in Context.
 
 **Fact-check results (no correction needed):** 24 spec files (listed in
-Context); `postgres:18` / `redis:7-alpine` match the dev compose; Node 26 /
+Context); the E2E service contracts match the dev compose (PostgreSQL 18 and
+Redis protocol); Node 26 /
 pnpm 10.11.0 match `ci.yml` env + root `packageManager`; `actions/checkout@v7`,
 `pnpm/action-setup@v6`, `actions/setup-node@v6` match; `cd.yml` gate wording;
 `ci-success` is currently failure-only over the 10-entry `needs`;
@@ -850,9 +852,8 @@ event incl. re-runs — airtight), the `needs: []` → `skipped` assumption, the
   --filter=api` stays (OpenAPI check needs `apps/api/dist`). Step count 12 → 11.
 - *`docker/login-action` can't authenticate service-container pulls (Actions
   review).* Service containers are pulled before steps run. **Resolved:**
-  decision 2 + T3 split the mitigation — `services.<id>.credentials:` (or GHCR
-  mirror) for Postgres/Redis, the login step (or mirror) for the MinIO/`mc`
-  `docker run`.
+  decision 2 + T3 use `services.<id>.credentials:` with `GITHUB_TOKEN` for
+  Postgres/Valkey, and the login step for the MinIO/`mc` `docker run`.
 - *Mail-waiter count off by one (runtime review).* 21 specs wait on mail, not
   22; the non-waiters are `app`, `customer-auth-rate-limit`, **and
   `stores-sitemap`**. **Resolved:** Context corrected.

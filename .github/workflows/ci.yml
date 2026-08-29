@@ -20,6 +20,7 @@ on:
 
 permissions:
   contents: read
+  packages: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -641,13 +642,13 @@ jobs:
       S3_PAYMENT_BUCKET: "payments"
       NODE_ENV: test
     services:
-      # Digest resolved 2026-08-28 from postgres:18; service pulls happen
-      # before steps, so these credentials are separate from docker/login-action.
+      # Digest resolved 2026-08-28 from ghcr.io/sakiladb/postgres:18; the image
+      # keeps the standard postgres entrypoint while avoiding Docker Hub.
       postgres:
-        image: postgres:18@sha256:4ef4dbc939d61acea57712655ddb4b4ab27419c913f94cca0cd57cb3ea3c2280
+        image: ghcr.io/sakiladb/postgres:18@sha256:7848cf782d233daf13aca55a61262e5ee775299ee48509e6b1e32eddb2c1b2e2
         credentials:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
         env:
           POSTGRES_USER: ci
           POSTGRES_PASSWORD: ci
@@ -659,12 +660,13 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 20
-      # Digest resolved 2026-08-28 from redis:7-alpine.
+      # Digest resolved 2026-08-28 from ghcr.io/valkey-io/valkey:7-alpine.
+      # Valkey 7 speaks the Redis protocol used by the application.
       redis:
-        image: redis:7-alpine@sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf
+        image: ghcr.io/valkey-io/valkey:7-alpine@sha256:8fc3da585dc963d91754d72da22d54671c6ec495d8a0257a6a9100a9a4658f38
         credentials:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
         ports:
           - 6379:6379
         options: >-
@@ -697,15 +699,13 @@ jobs:
           restore-keys: |
             turbo-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
-      # Docker Hub auth for MinIO and mc, which are pulled by docker run below.
-      # Configure DOCKERHUB_USERNAME and DOCKERHUB_TOKEN repository secrets
-      # before making CI Success a required branch-protection check.
-      - name: Log in to Docker Hub for E2E sidecars
+      # GHCR auth for the MinIO image (which also supplies the mc binary).
+      - name: Log in to GHCR for E2E sidecars
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
-          registry: docker.io
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run API E2E suite
         run: bash scripts/ci/e2e.sh

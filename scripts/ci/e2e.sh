@@ -5,9 +5,9 @@ set -Eeuo pipefail
 readonly ROOT="${GITHUB_WORKSPACE:-$(pwd)}"
 readonly NETWORK="biasmarket-e2e"
 readonly MINIO_CONTAINER="biasmarket-e2e-minio"
-# Digest resolved 2026-08-28: minio/minio:latest and minio/mc:latest.
-readonly MINIO_IMAGE="docker.io/minio/minio:latest@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e"
-readonly MC_IMAGE="docker.io/minio/mc:latest@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727"
+# Digest resolved 2026-08-28: ghcr.io/coollabsio/minio:RELEASE.2025-10-15T17-29-55Z.
+# The GHCR image includes both the MinIO server and the mc client binary.
+readonly MINIO_IMAGE="ghcr.io/coollabsio/minio:RELEASE.2025-10-15T17-29-55Z@sha256:69b55a1c1c5dc285ce04db96689f5b2102317fc77a50680a1874ca6efd1c87f9"
 readonly MINIO_ACCESS_KEY="e2e"
 readonly MINIO_SECRET_KEY="e2e-secret-key"
 
@@ -73,9 +73,10 @@ done
 
 run_mc() {
   docker run --rm \
+    --entrypoint /usr/bin/mc \
     --network "$NETWORK" \
     --env "MC_HOST_ci=http://${MINIO_ACCESS_KEY}:${MINIO_SECRET_KEY}@${MINIO_CONTAINER}:9000" \
-    "$MC_IMAGE" "$@" >> .ci/e2e-minio.log 2>&1
+    "$MINIO_IMAGE" "$@" >> .ci/e2e-minio.log 2>&1
 }
 
 run_mc mb --ignore-existing ci/products
