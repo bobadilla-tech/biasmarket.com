@@ -5,6 +5,7 @@ set -Eeuo pipefail
 readonly ROOT="${GITHUB_WORKSPACE:-$(pwd)}"
 readonly NETWORK="biasmarket-e2e"
 readonly MINIO_CONTAINER="biasmarket-e2e-minio"
+readonly REDIS_IMAGE="ghcr.io/valkey-io/valkey:7-alpine@sha256:8fc3da585dc963d91754d72da22d54671c6ec495d8a0257a6a9100a9a4658f38"
 # Digest resolved 2026-08-28: ghcr.io/coollabsio/minio:RELEASE.2025-10-15T17-29-55Z.
 # The GHCR image includes both the MinIO server and the mc client binary.
 readonly MINIO_IMAGE="ghcr.io/coollabsio/minio:RELEASE.2025-10-15T17-29-55Z@sha256:69b55a1c1c5dc285ce04db96689f5b2102317fc77a50680a1874ca6efd1c87f9"
@@ -98,7 +99,8 @@ for attempt in {1..60}; do
 done
 
 for attempt in {1..60}; do
-  if redis-cli -h 127.0.0.1 -p 6379 ping 2>/dev/null | grep -qx PONG; then
+  if docker run --rm --network host --entrypoint redis-cli "$REDIS_IMAGE" \
+    -h 127.0.0.1 -p 6379 ping 2>/dev/null | grep -qx PONG; then
     break
   fi
   if [[ "$attempt" -eq 60 ]]; then
