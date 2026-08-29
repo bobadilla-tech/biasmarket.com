@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable jsx-a11y/no-noninteractive-tabindex */
+
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { OrdersTab } from "../lib/order-status";
@@ -16,17 +18,23 @@ export function OrdersTabs({
   labels: Record<OrdersTab, string>;
 }) {
   return (
-    <div className="flex items-center gap-2 overflow-x-auto rounded-2xl border border-[#eadcf7] bg-white p-1">
+    <div
+      role="region"
+      tabIndex={0}
+      aria-label={labels.all}
+      className="flex items-center gap-2 overflow-x-auto rounded-2xl border border-[#eadcf7] bg-white p-1 focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] focus-visible:ring-offset-2"
+    >
       {TABS.map((tab) => (
         <Button
           key={tab}
           type="button"
+          aria-pressed={activeTab === tab}
           variant="ghost"
           onClick={() => onChange(tab)}
           className={cn(
             "h-9 rounded-2xl px-4 text-sm font-semibold",
             activeTab === tab
-              ? "store-theme-primary-button"
+              ? "store-theme-primary-button border-2 border-[var(--store-primary)]"
               : "text-[#8f7da8] hover:bg-[#fcf9ff] hover:text-[#2d1649]",
           )}
         >

@@ -33,7 +33,11 @@ export function SingleSeriesBarChart({
           {title}
         </CardTitle>
       </CardHeader>
-      <CardContent className="overflow-x-auto px-5 pb-5">
+      <CardContent
+        role="img"
+        aria-label={title}
+        className="overflow-x-auto px-5 pb-5"
+      >
         <div style={{ minWidth }}>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart
@@ -57,7 +61,8 @@ export function SingleSeriesBarChart({
                 formatter={(value) =>
                   valueFormatter && typeof value === "number"
                     ? valueFormatter(value)
-                    : value}
+                    : value
+                }
                 contentStyle={{ borderRadius: 12, borderColor: "#eadcf8" }}
               />
               <Bar

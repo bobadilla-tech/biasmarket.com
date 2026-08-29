@@ -9,6 +9,7 @@ import {
   buildWhatsAppUrl,
 } from "@biasmarket/utils/whatsapp";
 import { Card, CardContent } from "@/components/ui/card";
+import { DataTable, DataTableCaption } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import { LoadingState } from "@/components/shared/loading-state";
 import { ErrorState } from "@/components/shared/error-state";
@@ -47,18 +48,17 @@ export function PaymentsPageClient() {
   const tCommon = useTranslations("common");
   const { locale } = useParams<{ locale: string }>();
   const { store, storeId, loading: storeLoading } = useDashboardStore();
-  const { data: orders, isPending: ordersLoading, error } = useOrders(
-    storeId,
-    tCommon("networkError"),
-  );
+  const {
+    data: orders,
+    isPending: ordersLoading,
+    error,
+  } = useOrders(storeId, tCommon("networkError"));
   const reviewPayment = useReviewPayment(storeId, tCommon("networkError"));
   const reviewProof = useReviewPaymentProof(storeId, tCommon("networkError"));
   const registerPayment = useRegisterPayment(storeId, tCommon("networkError"));
   const cancelOrder = useCancelOrder(storeId, tCommon("networkError"));
-  const enabledMethods = useEnabledPaymentMethods(
-    storeId,
-    tCommon("networkError"),
-  ).data ?? [];
+  const enabledMethods =
+    useEnabledPaymentMethods(storeId, tCommon("networkError")).data ?? [];
   const whatsappTemplates = useWhatsAppTemplates(storeId);
 
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
@@ -67,16 +67,14 @@ export function PaymentsPageClient() {
   const [paymentPreviewUrl, setPaymentPreviewUrl] = useState<string | null>(
     null,
   );
-  const [confirmTarget, setConfirmTarget] = useState<
-    {
-      orderId: string;
-      decision: "approve" | "reject";
-      // Present when the decision targets a specific buyer-submitted proof
-      // row (`paymentId` in the reviewPaymentProof mutation); absent when it
-      // reviews the order's overall paymentStatus (order-level review).
-      paymentId?: string;
-    } | null
-  >(null);
+  const [confirmTarget, setConfirmTarget] = useState<{
+    orderId: string;
+    decision: "approve" | "reject";
+    // Present when the decision targets a specific buyer-submitted proof
+    // row (`paymentId` in the reviewPaymentProof mutation); absent when it
+    // reviews the order's overall paymentStatus (order-level review).
+    paymentId?: string;
+  } | null>(null);
   const [rejectReason, setRejectReason] = useState("");
 
   const paymentActionLabels: Record<"approve" | "reject", string> = {
@@ -86,13 +84,14 @@ export function PaymentsPageClient() {
 
   const paymentOrders = useMemo(
     () =>
-      (orders ?? []).filter((order) =>
-        PAYMENT_ATTENTION_STATUSES.has(order.paymentStatus) ||
-        // VERIFIED is terminal, but a VERIFIED order approved on a deposit
-        // (or a legacy pre-guard approval) still carries an unpaid residual —
-        // it must stay in the payment queue so the seller can register it.
-        // Mirrors `paymentsLocked` (features/orders/lib/order-status.ts).
-        (order.paymentStatus === "VERIFIED" && order.pendingAmount > 0)
+      (orders ?? []).filter(
+        (order) =>
+          PAYMENT_ATTENTION_STATUSES.has(order.paymentStatus) ||
+          // VERIFIED is terminal, but a VERIFIED order approved on a deposit
+          // (or a legacy pre-guard approval) still carries an unpaid residual —
+          // it must stay in the payment queue so the seller can register it.
+          // Mirrors `paymentsLocked` (features/orders/lib/order-status.ts).
+          (order.paymentStatus === "VERIFIED" && order.pendingAmount > 0),
       ),
     [orders],
   );
@@ -108,9 +107,10 @@ export function PaymentsPageClient() {
     ) ?? null;
 
   const selectedOrder = useMemo(
-    () => (selectedOrderId
-      ? (orders ?? []).find((order) => order.id === selectedOrderId) ?? null
-      : null),
+    () =>
+      selectedOrderId
+        ? ((orders ?? []).find((order) => order.id === selectedOrderId) ?? null)
+        : null,
     [orders, selectedOrderId],
   );
 
@@ -144,13 +144,16 @@ export function PaymentsPageClient() {
   const contactBuyerUrl = (order: OrderResponseDto) =>
     buildWhatsAppUrl(
       order.customerPhone,
-      buildWhatsAppPaymentReminderMessage({
-        orderId: order.id,
-        storeName: store?.name ?? "",
-        pendingAmount: order.pendingAmount,
-        currency: order.currency,
-        customerName: order.customerName,
-      }, whatsappTemplates.data?.paymentReminder?.template),
+      buildWhatsAppPaymentReminderMessage(
+        {
+          orderId: order.id,
+          storeName: store?.name ?? "",
+          pendingAmount: order.pendingAmount,
+          currency: order.currency,
+          customerName: order.customerName,
+        },
+        whatsappTemplates.data?.paymentReminder?.template,
+      ),
     );
 
   if (storeLoading || ordersLoading) {
@@ -161,9 +164,9 @@ export function PaymentsPageClient() {
     return (
       <div className="px-5 py-6 lg:px-8 lg:py-8">
         <ErrorState
-          message={error instanceof Error
-            ? error.message
-            : tCommon("networkError")}
+          message={
+            error instanceof Error ? error.message : tCommon("networkError")
+          }
         />
       </div>
     );
@@ -179,23 +182,35 @@ export function PaymentsPageClient() {
           </h1>
         </div>
 
-        <Card className="overflow-x-auto rounded-[30px] border-[#eadcf8] bg-white py-0 shadow-sm">
+        <Card className="rounded-[30px] border-[#eadcf8] bg-white py-0 shadow-sm">
           <CardContent className="px-0">
-            {paymentOrders.length === 0
-              ? <EmptyState message={t("empty")} />
-              : (
+            {paymentOrders.length === 0 ? (
+              <EmptyState message={t("empty")} />
+            ) : (
+              <DataTable caption={t("title")}>
                 <table className="w-full text-sm">
+                  <DataTableCaption>{t("title")}</DataTableCaption>
                   <thead>
                     <tr className="border-b border-[#f3ebff] bg-[#fcf9ff] text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-[#927fac]">
-                      <th className="px-6 py-4">{tOrders("columns.number")}</th>
-                      <th className="px-6 py-4">
+                      <th scope="col" className="px-6 py-4">
+                        {tOrders("columns.number")}
+                      </th>
+                      <th scope="col" className="px-6 py-4">
                         {tOrders("columns.customer")}
                       </th>
-                      <th className="px-6 py-4">{t("columns.paid")}</th>
-                      <th className="px-6 py-4">{t("columns.pending")}</th>
-                      <th className="px-6 py-4">{t("columns.progress")}</th>
-                      <th className="px-6 py-4">{tOrders("columns.status")}</th>
-                      <th className="px-6 py-4 text-right">
+                      <th scope="col" className="px-6 py-4">
+                        {t("columns.paid")}
+                      </th>
+                      <th scope="col" className="px-6 py-4">
+                        {t("columns.pending")}
+                      </th>
+                      <th scope="col" className="px-6 py-4">
+                        {t("columns.progress")}
+                      </th>
+                      <th scope="col" className="px-6 py-4">
+                        {tOrders("columns.status")}
+                      </th>
+                      <th scope="col" className="px-6 py-4 text-right">
                         {tOrders("columns.actions")}
                       </th>
                     </tr>
@@ -207,8 +222,8 @@ export function PaymentsPageClient() {
                         order.customerName,
                         order.customerPhone,
                       );
-                      const customer = order.customerName ??
-                        order.customerPhone;
+                      const customer =
+                        order.customerName ?? order.customerPhone;
                       const date = formatOrderDate(
                         order.createdAt,
                         locale,
@@ -231,7 +246,7 @@ export function PaymentsPageClient() {
                           <td className="px-6 py-4 text-xs font-semibold text-[#8f7da8]">
                             {number}
                           </td>
-                          <td className="px-6 py-4">
+                          <td aria-label={customer} className="px-6 py-4">
                             <div className="flex items-center gap-3">
                               <div
                                 className="flex size-9 items-center justify-center rounded-full text-[11px] font-semibold text-white"
@@ -272,11 +287,14 @@ export function PaymentsPageClient() {
                                       setConfirmTarget({
                                         orderId: order.id,
                                         decision: "approve",
-                                      })}
+                                      })
+                                    }
                                     disabled={order.paidAmount <= 0}
-                                    title={order.paidAmount <= 0
-                                      ? tOrders("approveDisabledNoPayment")
-                                      : undefined}
+                                    title={
+                                      order.paidAmount <= 0
+                                        ? tOrders("approveDisabledNoPayment")
+                                        : undefined
+                                    }
                                     className="store-theme-primary-button h-8 rounded-full px-3 text-xs font-semibold hover:opacity-100 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-50"
                                   >
                                     {tOrders("approve")}
@@ -293,7 +311,8 @@ export function PaymentsPageClient() {
                                       setConfirmTarget({
                                         orderId: order.id,
                                         decision: "reject",
-                                      })}
+                                      })
+                                    }
                                     className="h-8 rounded-full border-[#eadcf7] bg-white px-3 text-xs font-semibold text-[#2d1649] shadow-none hover:bg-[#fcf9ff]"
                                   >
                                     {tOrders("reject")}
@@ -347,8 +366,7 @@ export function PaymentsPageClient() {
                                   </Button>
                                 </>
                               )}
-                              {!needsReview &&
-                                !hasPendingProof && (
+                              {!needsReview && !hasPendingProof && (
                                 <Button
                                   type="button"
                                   variant="outline"
@@ -381,7 +399,8 @@ export function PaymentsPageClient() {
                     })}
                   </tbody>
                 </table>
-              )}
+              </DataTable>
+            )}
           </CardContent>
         </Card>
 
@@ -393,12 +412,14 @@ export function PaymentsPageClient() {
 
       <ConfirmTransitionDialog
         open={!!confirmTarget}
-        label={confirmTarget
-          ? paymentActionLabels[confirmTarget.decision]
-          : null}
-        pending={confirmTarget?.paymentId
-          ? reviewProof.isPending
-          : reviewPayment.isPending}
+        label={
+          confirmTarget ? paymentActionLabels[confirmTarget.decision] : null
+        }
+        pending={
+          confirmTarget?.paymentId
+            ? reviewProof.isPending
+            : reviewPayment.isPending
+        }
         onCancel={() => {
           setConfirmTarget(null);
           setRejectReason("");
@@ -461,14 +482,16 @@ export function PaymentsPageClient() {
             orderId: selectedOrder.id,
             paymentId: pendingProofOf(selectedOrder)?.id,
             decision: "approve",
-          })}
+          })
+        }
         onReject={() =>
           selectedOrder &&
           setConfirmTarget({
             orderId: selectedOrder.id,
             paymentId: pendingProofOf(selectedOrder)?.id,
             decision: "reject",
-          })}
+          })
+        }
         onAdvance={() => {}}
         onCancel={() => setCancelDialogOpen(true)}
       />

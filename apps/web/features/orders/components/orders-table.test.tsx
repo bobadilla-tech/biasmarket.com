@@ -1,5 +1,5 @@
 import { expect, test, vi } from "vitest";
-import { screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import { renderWithProviders } from "../../../test-utils/render-with-providers";
 import type { OrderResponseDto } from "@biasmarket/types";
 
@@ -83,4 +83,28 @@ test("enables Aprobar once a payment has been registered", () => {
     name: "Aprobar",
   }) as HTMLButtonElement;
   expect(approveButton.disabled).toBe(false);
+});
+
+test("reveals all order details from a keyboard-accessible mobile disclosure", () => {
+  renderWithProviders(
+    <OrdersTable
+      orders={[{ ...baseOrder, paidAmount: 40 }]}
+      pendingOrderIds={new Set()}
+      fulfillmentLabels={{}}
+      onApprove={noop}
+      onReject={noop}
+      onAdvance={noop}
+      onView={noop}
+    />,
+  );
+
+  const disclosure = screen.getByRole("button", { name: "Pedido #ER-1" });
+  expect(disclosure.getAttribute("aria-expanded")).toBe("false");
+
+  fireEvent.click(disclosure);
+
+  expect(disclosure.getAttribute("aria-expanded")).toBe("true");
+  expect(screen.getAllByText("Cliente").length).toBeGreaterThan(1);
+  expect(screen.getAllByText("Jane").length).toBeGreaterThan(1);
+  expect(screen.getAllByText("PEN 100.00").length).toBeGreaterThan(1);
 });

@@ -31,7 +31,11 @@ export function NewVsReturningChart({
           {t("newVsReturningTitle")}
         </CardTitle>
       </CardHeader>
-      <CardContent className="overflow-x-auto px-5 pb-5">
+      <CardContent
+        role="img"
+        aria-label={t("newVsReturningTitle")}
+        className="overflow-x-auto px-5 pb-5"
+      >
         <div style={{ minWidth }}>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart
