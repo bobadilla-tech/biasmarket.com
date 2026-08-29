@@ -4,9 +4,8 @@ import AxeBuilder from "@axe-core/playwright";
 
 /**
  * Run axe against the current page, attach the full result to the test report,
- * and fail on `critical`-impact violations. Phase 0 gates only `critical`;
- * later phases tighten to `serious` and below as the baseline is burned down
- * (audit "Testing gaps").
+ * and fail on the impacts selected by the caller. Phase 7 gates both critical
+ * and serious violations for the audited route smoke coverage.
  */
 export async function runAxe(
   page: Page,

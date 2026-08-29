@@ -182,7 +182,8 @@
   --popover: #ffffff;
   --popover-foreground: #000000;
   --primary: var(--brand-pink);
-  --primary-foreground: #ffffff;
+  /* Black on the pink primary clears the WCAG AA contrast threshold. */
+  --primary-foreground: #181818;
   --secondary: var(--brand-violet);
   --secondary-foreground: #ffffff;
   --muted: #f5f5f5;

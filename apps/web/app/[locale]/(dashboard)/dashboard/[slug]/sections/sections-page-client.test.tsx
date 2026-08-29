@@ -4,6 +4,17 @@ import userEvent from "@testing-library/user-event";
 import type { StoreSectionResponseDto } from "@biasmarket/types";
 import { renderWithProviders } from "../../../../../../test-utils/render-with-providers";
 
+const { useSensorMock } = vi.hoisted(() => ({
+  useSensorMock: vi.fn(),
+}));
+
+vi.mock("@dnd-kit/core", async () => {
+  const actual =
+    await vi.importActual<typeof import("@dnd-kit/core")>("@dnd-kit/core");
+  useSensorMock.mockImplementation(actual.useSensor);
+  return { ...actual, useSensor: useSensorMock };
+});
+
 vi.mock("@/features/stores", () => ({
   useDashboardStore: () => ({
     storeId: "store-1",
@@ -12,17 +23,13 @@ vi.mock("@/features/stores", () => ({
   }),
 }));
 
-const {
-  findAllSections,
-  findAllCollections,
-  updateSection,
-  reorderSections,
-} = vi.hoisted(() => ({
-  findAllSections: vi.fn(),
-  findAllCollections: vi.fn(),
-  updateSection: vi.fn(),
-  reorderSections: vi.fn(),
-}));
+const { findAllSections, findAllCollections, updateSection, reorderSections } =
+  vi.hoisted(() => ({
+    findAllSections: vi.fn(),
+    findAllCollections: vi.fn(),
+    updateSection: vi.fn(),
+    reorderSections: vi.fn(),
+  }));
 
 vi.mock("@/lib/api-client", () => ({
   apiClient: {
@@ -97,4 +104,20 @@ test("hiding a section removes it from the preview and persists the toggle", asy
     { hidden: true },
     expect.anything(),
   );
+});
+
+test("configures the keyboard sensor for section reordering", async () => {
+  findAllSections.mockResolvedValue([bannerSection, textSection]);
+  findAllCollections.mockResolvedValue([]);
+
+  renderWithProviders(<SectionsPageClient />);
+  await screen.findByText("Welcome to the store");
+
+  const keyboardSensorCall = useSensorMock.mock.calls.find(
+    ([sensor]) => sensor.name === "KeyboardSensor",
+  );
+
+  expect(keyboardSensorCall?.[1]).toEqual({
+    coordinateGetter: expect.any(Function),
+  });
 });

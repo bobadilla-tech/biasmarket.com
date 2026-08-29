@@ -78,6 +78,7 @@ export function NotificationsSection({ store }: { store: DashboardStore }) {
           >
             <Input
               id="settings-notifications-threshold"
+              aria-label={t("notifications.thresholdLabel")}
               type="number"
               min={0}
               value={lowStockThreshold}

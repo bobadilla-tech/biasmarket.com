@@ -615,7 +615,7 @@ export function ProductSheet({
                             )
                           }
                         >
-                          ×
+                          <span aria-hidden="true">×</span>
                         </button>
                       </Badge>
                     ))}

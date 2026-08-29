@@ -99,6 +99,7 @@ function MessageTemplateEditor({
 
       <Textarea
         id={`settings-whatsapp-${type.toLowerCase()}`}
+        aria-label={title}
         value={text}
         onChange={(event) => setText(event.target.value)}
         rows={6}
@@ -114,6 +115,7 @@ function MessageTemplateEditor({
           <button
             key={token}
             type="button"
+            aria-label={t("insertVariable", { token: `{{${token}}}` })}
             onClick={() => insertToken(token)}
             className="inline-flex items-center gap-1 rounded-full border border-[#eadcf7] bg-white px-2.5 py-1 font-mono text-[11px] text-[#8f7da8] transition-colors hover:border-[#d8c6ee] hover:text-[#5a3d82]"
             title={t("insertVariable", { token: `{{${token}}}` })}

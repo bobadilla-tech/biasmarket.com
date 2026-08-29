@@ -40,6 +40,7 @@ export function ProductsHeader({
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder={searchPlaceholder}
+            aria-label={searchPlaceholder}
             className="store-theme-input h-12 rounded-2xl border-[#eadcf7] bg-white pl-11 text-[#341b55] shadow-none"
           />
         </div>

@@ -18,17 +18,25 @@ export function FounderPage() {
   return (
     <div className="landing-theme min-h-screen bg-background text-foreground">
       <div className="mx-auto max-w-3xl px-6 pt-24 pb-20 sm:px-10">
-        <span className="text-sm font-semibold tracking-widest text-muted-foreground uppercase">
-          {t("overline")}
-        </span>
-        <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">
-          {t("headline")}
-        </h1>
-        <p className="mt-6 max-w-xl text-lg text-muted-foreground">
-          {t("intro")}
-        </p>
+        <header>
+          <span className="text-sm font-semibold tracking-widest text-muted-foreground uppercase">
+            {t("overline")}
+          </span>
+          <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">
+            {t("headline")}
+          </h1>
+          <p className="mt-6 max-w-xl text-lg text-muted-foreground">
+            {t("intro")}
+          </p>
+        </header>
 
-        <section className="mt-16 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <section
+          aria-labelledby="founder-team-heading"
+          className="mt-16 grid grid-cols-1 gap-4 sm:grid-cols-3"
+        >
+          <h2 id="founder-team-heading" className="sr-only">
+            {t("teamHeading")}
+          </h2>
           {team.map((member) => (
             <div
               key={member.name}
@@ -43,8 +51,14 @@ export function FounderPage() {
           ))}
         </section>
 
-        <section className="mt-16 rounded-2xl border border-black/10 p-8 text-center">
-          <h2 className="text-2xl font-bold tracking-tight">
+        <section
+          aria-labelledby="founder-cta-heading"
+          className="mt-16 rounded-2xl border border-black/10 p-8 text-center"
+        >
+          <h2
+            id="founder-cta-heading"
+            className="text-2xl font-bold tracking-tight"
+          >
             {t("cta.heading")}
           </h2>
           <p className="mt-2 text-muted-foreground">{t("cta.body")}</p>

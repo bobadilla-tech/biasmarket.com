@@ -87,7 +87,12 @@ export function AppSidebar() {
                       <SidebarMenuButton
                         isActive={isActive}
                         aria-current={isActive ? "page" : undefined}
-                        render={<Link href={item.href} />}
+                        render={
+                          <Link
+                            href={item.href}
+                            aria-label={t(item.labelKey)}
+                          />
+                        }
                       >
                         <Icon aria-hidden="true" />
                         <span>{t(item.labelKey)}</span>

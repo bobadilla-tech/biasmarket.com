@@ -18,15 +18,23 @@ export function EnterprisePage() {
   return (
     <div className="landing-theme min-h-screen bg-background text-foreground">
       <div className="mx-auto max-w-2xl px-6 pt-24 pb-20 sm:px-10">
-        <span className="text-sm font-semibold tracking-widest text-muted-foreground uppercase">
-          {t("overline")}
-        </span>
-        <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">
-          {t("headline")}
-        </h1>
-        <p className="mt-6 text-lg text-muted-foreground">{t("intro")}</p>
+        <header>
+          <span className="text-sm font-semibold tracking-widest text-muted-foreground uppercase">
+            {t("overline")}
+          </span>
+          <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">
+            {t("headline")}
+          </h1>
+          <p className="mt-6 text-lg text-muted-foreground">{t("intro")}</p>
+        </header>
 
-        <section className="mt-16 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <section
+          aria-labelledby="enterprise-features-heading"
+          className="mt-16 grid grid-cols-1 gap-4 sm:grid-cols-2"
+        >
+          <h2 id="enterprise-features-heading" className="sr-only">
+            {t("featuresHeading")}
+          </h2>
           {features.map((item) => (
             <div
               key={item.title}
@@ -38,8 +46,14 @@ export function EnterprisePage() {
           ))}
         </section>
 
-        <section className="mt-16 rounded-2xl border border-black/10 p-8 text-center">
-          <h2 className="text-2xl font-bold tracking-tight">
+        <section
+          aria-labelledby="enterprise-cta-heading"
+          className="mt-16 rounded-2xl border border-black/10 p-8 text-center"
+        >
+          <h2
+            id="enterprise-cta-heading"
+            className="text-2xl font-bold tracking-tight"
+          >
             {t("cta.heading")}
           </h2>
           <p className="mt-2 text-muted-foreground">{t("cta.body")}</p>

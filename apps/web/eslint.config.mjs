@@ -22,15 +22,14 @@ import babelParser from "@babel/eslint-parser";
  *
  * `eslint-config-next`'s react / react-hooks / `@next/next` blocks are
  * intentionally NOT reconstructed here — Phase 0's scope is the a11y harness.
- * All rules land as `warn`; Phase 7 flips jsx-a11y to `error` once the baseline
- * is clean.
+ * Active rules are blocking errors; intentionally disabled rules remain off.
  */
 
-// jsx-a11y's flat `recommended` ships every rule at "error"; Phase 0 wants
-// "warn" everywhere so the harness lands without blocking.
+// Keep explicitly disabled compatibility rules disabled while making active
+// jsx-a11y rules blocking now that the baseline is clean.
 const a11yRecommended = jsxA11y.flatConfigs.recommended.rules;
 const a11yRules = Object.fromEntries(
-  Object.keys({
+  Object.entries({
     ...a11yRecommended,
     // Named explicitly in the audit's Phase 0 scope — pin them on even if a
     // future plugin bump drops one from `recommended`.
@@ -42,7 +41,10 @@ const a11yRules = Object.fromEntries(
     "jsx-a11y/role-has-required-aria-props": 0,
     "jsx-a11y/control-has-associated-label": 0,
     "jsx-a11y/no-autofocus": 0,
-  }).map((rule) => [rule, "warn"]),
+  }).map(([rule, config]) => [
+    rule,
+    config === 0 || config === "off" ? "off" : "error",
+  ]),
 );
 
 export default [

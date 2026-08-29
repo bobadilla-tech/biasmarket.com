@@ -157,6 +157,7 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
           </Field>
           <Field id="settings-profile-url" label={t("profile.urlLabel")}>
             <Input
+              aria-label={t("profile.urlLabel")}
               value={storefrontUrl}
               readOnly
               className="h-12 rounded-2xl border-[#ede2f6] bg-[#f5effb] text-[#8d7ba7] shadow-none"

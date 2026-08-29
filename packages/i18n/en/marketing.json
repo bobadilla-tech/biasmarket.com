@@ -16,6 +16,7 @@
     "signUp": "Sign up",
     "myAccount": "My account",
     "openMenu": "Open menu",
+    "navigationLabel": "Main navigation",
     "searchPlaceholder": "Search Items",
     "search": "Search",
     "cart": "Cart",
@@ -50,6 +51,7 @@
     "emailHeading": "Email us directly",
     "emailBody": "For anything else, reach us at",
     "form": {
+      "heading": "Send us a message",
       "name": "Name",
       "email": "Email",
       "company": "Company (optional)",
@@ -77,6 +79,7 @@
     "overline": "Founders",
     "headline": "Three founders, not one",
     "intro": "Bias Market started as a three-person team. We split the work along what each of us is actually good at, instead of one person trying to do everything.",
+    "teamHeading": "The Bias Market team",
     "team": [
       {
         "name": "Carlos Bonifacio",
@@ -108,6 +111,7 @@
     "overline": "Enterprise",
     "headline": "For K-pop agencies and high-volume sellers",
     "intro": "Running multiple artist storefronts, comeback drops, or GOs big enough that you need closer support? We work directly with larger sellers and agencies to fit Bias Market to that scale.",
+    "featuresHeading": "Enterprise features",
     "features": [
       {
         "title": "Multiple stores",

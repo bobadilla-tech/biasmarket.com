@@ -143,6 +143,7 @@ export function RestockInterestDialog({
                 </label>
                 <input
                   id="restock-name"
+                  aria-label={t("namePlaceholder")}
                   placeholder={t("namePlaceholder")}
                   className={inputClassName}
                   {...register("name")}

@@ -8,24 +8,42 @@ interface InquiriesTableProps {
   onMarkReviewed: (id: string) => void;
 }
 
-export function InquiriesTable(
-  { inquiries, onMarkReviewed }: InquiriesTableProps,
-) {
+export function InquiriesTable({
+  inquiries,
+  onMarkReviewed,
+}: InquiriesTableProps) {
   const t = useTranslations("admin.inquiries");
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+    <div className="overflow-x-auto rounded-2xl border border-gray-100 bg-white shadow-sm">
       <table className="w-full text-sm">
+        <caption className="sr-only">{t("title")}</caption>
         <thead>
           <tr className="border-b border-gray-100 bg-gray-50 text-left text-gray-500">
-            <th className="px-6 py-3 font-medium">{t("table.name")}</th>
-            <th className="px-6 py-3 font-medium">{t("table.email")}</th>
-            <th className="px-6 py-3 font-medium">{t("table.company")}</th>
-            <th className="px-6 py-3 font-medium">{t("table.type")}</th>
-            <th className="px-6 py-3 font-medium">{t("table.message")}</th>
-            <th className="px-6 py-3 font-medium">{t("table.status")}</th>
-            <th className="px-6 py-3 font-medium">{t("table.createdAt")}</th>
-            <th className="px-6 py-3 font-medium">{t("table.actions")}</th>
+            <th scope="col" className="px-6 py-3 font-medium">
+              {t("table.name")}
+            </th>
+            <th scope="col" className="px-6 py-3 font-medium">
+              {t("table.email")}
+            </th>
+            <th scope="col" className="px-6 py-3 font-medium">
+              {t("table.company")}
+            </th>
+            <th scope="col" className="px-6 py-3 font-medium">
+              {t("table.type")}
+            </th>
+            <th scope="col" className="px-6 py-3 font-medium">
+              {t("table.message")}
+            </th>
+            <th scope="col" className="px-6 py-3 font-medium">
+              {t("table.status")}
+            </th>
+            <th scope="col" className="px-6 py-3 font-medium">
+              {t("table.createdAt")}
+            </th>
+            <th scope="col" className="px-6 py-3 font-medium">
+              {t("table.actions")}
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -34,7 +52,12 @@ export function InquiriesTable(
               key={inquiry.id}
               className="border-b border-gray-100 align-top last:border-0"
             >
-              <td className="px-6 py-3 text-gray-900">{inquiry.name}</td>
+              <th
+                scope="row"
+                className="px-6 py-3 text-left font-normal text-gray-900"
+              >
+                {inquiry.name}
+              </th>
               <td className="px-6 py-3 text-gray-600">{inquiry.email}</td>
               <td className="px-6 py-3 text-gray-600">
                 {inquiry.company ?? "—"}
@@ -51,8 +74,8 @@ export function InquiriesTable(
                     inquiry.status === "REVIEWED"
                       ? "bg-emerald-100 text-emerald-700"
                       : inquiry.status === "ARCHIVED"
-                      ? "bg-gray-100 text-gray-500"
-                      : "bg-amber-100 text-amber-700"
+                        ? "bg-gray-100 text-gray-500"
+                        : "bg-amber-100 text-amber-700"
                   }`}
                 >
                   {t(`status.${inquiry.status}`)}

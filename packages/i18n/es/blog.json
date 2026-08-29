@@ -4,6 +4,7 @@
     "description": "Noticias, guías y todo sobre el mundo del K-pop."
   },
   "title": "Blog Biasmarket",
+  "postsHeading": "Artículos del blog",
   "subtitle": "Noticias, guías y todo sobre el mundo del K-pop",
   "readMore": "Leer más",
   "publishedOn": "Publicado el {date}",

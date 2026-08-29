@@ -113,6 +113,7 @@ export function CancelOrderDialog({
             >
               <input
                 id="cancel-resolution-refunded"
+                aria-label={t("refunded")}
                 type="radio"
                 name="resolution"
                 checked={resolution === "REFUNDED"}
@@ -127,6 +128,7 @@ export function CancelOrderDialog({
             >
               <input
                 id="cancel-resolution-retained"
+                aria-label={t("retained")}
                 type="radio"
                 name="resolution"
                 checked={resolution === "RETAINED"}
@@ -142,6 +144,7 @@ export function CancelOrderDialog({
                 <label htmlFor="cancel-retain-full" className="flex gap-2">
                   <input
                     id="cancel-retain-full"
+                    aria-label={t("fullRetention")}
                     name="retainMode"
                     type="radio"
                     checked={retainMode === "FULL"}
@@ -153,6 +156,7 @@ export function CancelOrderDialog({
                 <label htmlFor="cancel-retain-partial" className="flex gap-2">
                   <input
                     id="cancel-retain-partial"
+                    aria-label={t("partialRetention")}
                     name="retainMode"
                     type="radio"
                     checked={retainMode === "PARTIAL"}
@@ -168,6 +172,7 @@ export function CancelOrderDialog({
                     </label>
                     <input
                       id="cancel-retained-amount"
+                      aria-label={t("amountToRetain")}
                       type="number"
                       min={0}
                       step="0.01"
@@ -210,6 +215,7 @@ export function CancelOrderDialog({
             >
               <input
                 id="cancel-resolution-store-credit"
+                aria-label={t("storeCredit")}
                 type="radio"
                 name="resolution"
                 checked={resolution === "STORE_CREDIT"}
@@ -232,7 +238,12 @@ export function CancelOrderDialog({
         <AlertDialogFooter>
           <AlertDialogClose
             render={
-              <Button type="button" variant="outline" className="rounded-xl" />
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl"
+                aria-label={t("common.cancel")}
+              />
             }
           >
             {t("common.cancel")}
