@@ -33,7 +33,11 @@ import {
   getPickupAvailability,
   nextDateForWeekday,
 } from "../lib/pickup-availability";
-import { SelectableCard } from "./selectable-card";
+import {
+  RadioCard,
+  RadioCardGroup,
+  RadioCardIndicator,
+} from "@/components/ui/radio-card-group";
 import { PaymentMethodDetails } from "./payment-method-details";
 import { PaymentProofUpload } from "./payment-proof-upload";
 import {
@@ -565,40 +569,58 @@ export function CheckoutForm({
             >
               {t("deliveryTypeLabel")}
             </h2>
-            <div
-              role="group"
-              aria-labelledby="checkout-delivery-type-label"
-              aria-describedby={
-                form.formState.errors.deliveryMethodType
-                  ? "checkout-delivery-type-error"
-                  : undefined
-              }
-              className="grid grid-cols-2 gap-3"
-            >
-              {methods.map((m) => (
-                <SelectableCard
-                  key={m.type}
-                  selected={deliveryMethodType === m.type}
-                  onSelect={() =>
-                    form.setValue("deliveryMethodType", m.type, {
-                      shouldValidate: true,
-                    })
-                  }
-                  icon={
-                    m.type === "PICKUP" ? (
-                      <Store className="size-5" />
-                    ) : (
-                      <Truck className="size-5" />
+            <Controller
+              control={form.control}
+              name="deliveryMethodType"
+              render={({ field }) => (
+                <RadioCardGroup
+                  name={field.name}
+                  value={field.value}
+                  onValueChange={(value) =>
+                    field.onChange(
+                      value as CheckoutFormInput["deliveryMethodType"],
                     )
                   }
-                  title={
-                    m.type === "PICKUP"
-                      ? t("deliveryPickup")
-                      : t("deliveryCourier")
+                  aria-labelledby="checkout-delivery-type-label"
+                  aria-describedby={
+                    form.formState.errors.deliveryMethodType
+                      ? "checkout-delivery-type-error"
+                      : undefined
                   }
-                />
-              ))}
-            </div>
+                  className="grid grid-cols-2 gap-3"
+                >
+                  {methods.map((m) => (
+                    <RadioCard
+                      key={m.type}
+                      value={m.type}
+                      aria-label={
+                        m.type === "PICKUP"
+                          ? t("deliveryPickup")
+                          : t("deliveryCourier")
+                      }
+                    >
+                      {m.type === "PICKUP" ? (
+                        <Store aria-hidden="true" className="size-5" />
+                      ) : (
+                        <Truck aria-hidden="true" className="size-5" />
+                      )}
+                      <span className="pr-6 text-sm font-semibold">
+                        {m.type === "PICKUP"
+                          ? t("deliveryPickup")
+                          : t("deliveryCourier")}
+                      </span>
+                      <RadioCardIndicator>
+                        <Check
+                          aria-hidden="true"
+                          className="size-3"
+                          strokeWidth={3}
+                        />
+                      </RadioCardIndicator>
+                    </RadioCard>
+                  ))}
+                </RadioCardGroup>
+              )}
+            />
             {form.formState.errors.deliveryMethodType && (
               <p
                 id="checkout-delivery-type-error"
@@ -619,46 +641,60 @@ export function CheckoutForm({
             >
               {t("pickupPointsLabel")}
             </h2>
-            <div
-              role="group"
-              aria-labelledby="checkout-pickup-point-label"
-              aria-describedby={
-                form.formState.errors.pickupPointId
-                  ? "checkout-pickup-point-error"
-                  : undefined
-              }
-              className="grid grid-cols-1 gap-3 sm:grid-cols-2"
-            >
-              {points.map((point) => {
-                // `points` is only non-empty once deliveryOptions.data has
-                // loaded, so `weekday` (sourced from that same payload) is
-                // defined here. Cards are always clickable now — a
-                // closed-today point is a valid, completable selection once
-                // it has a pickupDate, so it's no longer `disabled`.
-                const availability = getPickupAvailability(point, weekday);
-                return (
-                  <SelectableCard
-                    key={point.id}
-                    selected={pickupPointId === point.id}
-                    onSelect={() =>
-                      form.setValue("pickupPointId", point.id, {
-                        shouldValidate: true,
-                      })
-                    }
-                    title={point.label}
-                    subtitle={
-                      availability.availableToday
-                        ? t("availableToday")
-                        : availability.nextAvailableDay !== null
-                          ? t("nextAvailable", {
-                              day: weekdays[availability.nextAvailableDay],
-                            })
-                          : t("pickupNoAvailability")
-                    }
-                  />
-                );
-              })}
-            </div>
+            <Controller
+              control={form.control}
+              name="pickupPointId"
+              render={({ field }) => (
+                <RadioCardGroup
+                  name={field.name}
+                  value={field.value}
+                  onValueChange={(value) => field.onChange(value)}
+                  aria-labelledby="checkout-pickup-point-label"
+                  aria-describedby={
+                    form.formState.errors.pickupPointId
+                      ? "checkout-pickup-point-error"
+                      : undefined
+                  }
+                  className="grid grid-cols-1 gap-3 sm:grid-cols-2"
+                >
+                  {points.map((point) => {
+                    // `points` is only non-empty once deliveryOptions.data has
+                    // loaded, so `weekday` (sourced from that same payload) is
+                    // defined here. Cards are always clickable now — a
+                    // closed-today point is a valid, completable selection once
+                    // it has a pickupDate, so it's no longer `disabled`.
+                    const availability = getPickupAvailability(point, weekday);
+                    return (
+                      <RadioCard
+                        key={point.id}
+                        value={point.id}
+                        aria-label={point.label}
+                      >
+                        <span className="pr-6 text-sm font-semibold">
+                          {point.label}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {availability.availableToday
+                            ? t("availableToday")
+                            : availability.nextAvailableDay !== null
+                              ? t("nextAvailable", {
+                                  day: weekdays[availability.nextAvailableDay],
+                                })
+                              : t("pickupNoAvailability")}
+                        </span>
+                        <RadioCardIndicator>
+                          <Check
+                            aria-hidden="true"
+                            className="size-3"
+                            strokeWidth={3}
+                          />
+                        </RadioCardIndicator>
+                      </RadioCard>
+                    );
+                  })}
+                </RadioCardGroup>
+              )}
+            />
             {form.formState.errors.pickupPointId && (
               <p
                 id="checkout-pickup-point-error"
@@ -779,41 +815,61 @@ export function CheckoutForm({
                     >
                       {t("courierModalityLabel")}
                     </h3>
-                    <div
-                      role="group"
-                      aria-labelledby="checkout-courier-modality-label"
-                      aria-describedby={
-                        form.formState.errors.courierModality
-                          ? "checkout-courier-modality-error"
-                          : undefined
-                      }
-                      className="grid grid-cols-2 gap-3"
-                    >
-                      {modalities.some((m) => m.modality === "AGENCY") && (
-                        <SelectableCard
-                          selected={courierModality === "AGENCY"}
-                          onSelect={() =>
-                            form.setValue("courierModality", "AGENCY", {
-                              shouldValidate: true,
-                            })
+                    <Controller
+                      control={form.control}
+                      name="courierModality"
+                      render={({ field }) => (
+                        <RadioCardGroup
+                          name={field.name}
+                          value={field.value}
+                          onValueChange={(value) => field.onChange(value)}
+                          aria-labelledby="checkout-courier-modality-label"
+                          aria-describedby={
+                            form.formState.errors.courierModality
+                              ? "checkout-courier-modality-error"
+                              : undefined
                           }
-                          icon={<Store className="size-5" />}
-                          title={t("courierModalityAgency")}
-                        />
+                          className="grid grid-cols-2 gap-3"
+                        >
+                          {modalities.some((m) => m.modality === "AGENCY") && (
+                            <RadioCard
+                              value="AGENCY"
+                              aria-label={t("courierModalityAgency")}
+                            >
+                              <Store aria-hidden="true" className="size-5" />
+                              <span className="pr-6 text-sm font-semibold">
+                                {t("courierModalityAgency")}
+                              </span>
+                              <RadioCardIndicator>
+                                <Check
+                                  aria-hidden="true"
+                                  className="size-3"
+                                  strokeWidth={3}
+                                />
+                              </RadioCardIndicator>
+                            </RadioCard>
+                          )}
+                          {modalities.some((m) => m.modality === "HOME") && (
+                            <RadioCard
+                              value="HOME"
+                              aria-label={t("courierModalityHome")}
+                            >
+                              <Home aria-hidden="true" className="size-5" />
+                              <span className="pr-6 text-sm font-semibold">
+                                {t("courierModalityHome")}
+                              </span>
+                              <RadioCardIndicator>
+                                <Check
+                                  aria-hidden="true"
+                                  className="size-3"
+                                  strokeWidth={3}
+                                />
+                              </RadioCardIndicator>
+                            </RadioCard>
+                          )}
+                        </RadioCardGroup>
                       )}
-                      {modalities.some((m) => m.modality === "HOME") && (
-                        <SelectableCard
-                          selected={courierModality === "HOME"}
-                          onSelect={() =>
-                            form.setValue("courierModality", "HOME", {
-                              shouldValidate: true,
-                            })
-                          }
-                          icon={<Home className="size-5" />}
-                          title={t("courierModalityHome")}
-                        />
-                      )}
-                    </div>
+                    />
                     {form.formState.errors.courierModality && (
                       <p
                         id="checkout-courier-modality-error"
@@ -1068,30 +1124,44 @@ export function CheckoutForm({
             >
               {t("paymentMethodLabel")}
             </h2>
-            <div
-              role="group"
-              aria-labelledby="checkout-payment-method-label"
-              aria-describedby={
-                form.formState.errors.paymentMethod
-                  ? "checkout-payment-method-error"
-                  : undefined
-              }
-              className="grid grid-cols-2 gap-3"
-            >
-              {paymentMethods.map((method) => (
-                <SelectableCard
-                  key={method.method}
-                  selected={paymentMethod === method.method}
-                  onSelect={() =>
-                    form.setValue("paymentMethod", method.method, {
-                      shouldValidate: true,
-                    })
+            <Controller
+              control={form.control}
+              name="paymentMethod"
+              render={({ field }) => (
+                <RadioCardGroup
+                  name={field.name}
+                  value={field.value}
+                  onValueChange={(value) => field.onChange(value)}
+                  aria-labelledby="checkout-payment-method-label"
+                  aria-describedby={
+                    form.formState.errors.paymentMethod
+                      ? "checkout-payment-method-error"
+                      : undefined
                   }
-                  icon={PAYMENT_METHOD_ICONS[method.method]}
-                  title={paymentLabels[method.method] ?? method.method}
-                />
-              ))}
-            </div>
+                  className="grid grid-cols-2 gap-3"
+                >
+                  {paymentMethods.map((method) => (
+                    <RadioCard
+                      key={method.method}
+                      value={method.method}
+                      aria-label={paymentLabels[method.method] ?? method.method}
+                    >
+                      {PAYMENT_METHOD_ICONS[method.method]}
+                      <span className="pr-6 text-sm font-semibold">
+                        {paymentLabels[method.method] ?? method.method}
+                      </span>
+                      <RadioCardIndicator>
+                        <Check
+                          aria-hidden="true"
+                          className="size-3"
+                          strokeWidth={3}
+                        />
+                      </RadioCardIndicator>
+                    </RadioCard>
+                  ))}
+                </RadioCardGroup>
+              )}
+            />
             {form.formState.errors.paymentMethod && (
               <p
                 id="checkout-payment-method-error"
@@ -1112,36 +1182,57 @@ export function CheckoutForm({
             >
               {t("paymentTypeLabel")}
             </h2>
-            <div
-              role="group"
-              aria-labelledby="checkout-payment-type-label"
-              className="grid grid-cols-2 gap-3"
-            >
-              <SelectableCard
-                selected={paymentType === "FULL"}
-                onSelect={() =>
-                  form.setValue("paymentType", "FULL", {
-                    shouldValidate: true,
-                  })
-                }
-                icon={<Wallet className="size-5" />}
-                title={t("paymentTypeFull")}
-                subtitle={t("paymentTypeFullSubtext")}
-              />
-              <SelectableCard
-                selected={paymentType === "PARTIAL"}
-                onSelect={() =>
-                  form.setValue("paymentType", "PARTIAL", {
-                    shouldValidate: true,
-                  })
-                }
-                icon={<Percent className="size-5" />}
-                title={t("paymentTypePartial")}
-                subtitle={t("paymentTypePartialSubtext", {
-                  percent: depositPercent,
-                })}
-              />
-            </div>
+            <Controller
+              control={form.control}
+              name="paymentType"
+              render={({ field }) => (
+                <RadioCardGroup
+                  name={field.name}
+                  value={field.value}
+                  onValueChange={(value) => field.onChange(value)}
+                  aria-labelledby="checkout-payment-type-label"
+                  className="grid grid-cols-2 gap-3"
+                >
+                  <RadioCard value="FULL" aria-label={t("paymentTypeFull")}>
+                    <Wallet aria-hidden="true" className="size-5" />
+                    <span className="pr-6 text-sm font-semibold">
+                      {t("paymentTypeFull")}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {t("paymentTypeFullSubtext")}
+                    </span>
+                    <RadioCardIndicator>
+                      <Check
+                        aria-hidden="true"
+                        className="size-3"
+                        strokeWidth={3}
+                      />
+                    </RadioCardIndicator>
+                  </RadioCard>
+                  <RadioCard
+                    value="PARTIAL"
+                    aria-label={t("paymentTypePartial")}
+                  >
+                    <Percent aria-hidden="true" className="size-5" />
+                    <span className="pr-6 text-sm font-semibold">
+                      {t("paymentTypePartial")}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {t("paymentTypePartialSubtext", {
+                        percent: depositPercent,
+                      })}
+                    </span>
+                    <RadioCardIndicator>
+                      <Check
+                        aria-hidden="true"
+                        className="size-3"
+                        strokeWidth={3}
+                      />
+                    </RadioCardIndicator>
+                  </RadioCard>
+                </RadioCardGroup>
+              )}
+            />
           </div>
         )}
 

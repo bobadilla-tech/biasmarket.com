@@ -11,7 +11,9 @@
   "variantSoldOut": "(sold out)",
   "addToCart": "Add to cart",
   "addedToCart": "Added ✓",
+  "selectVariant": "Select a variant",
   "cart": "Cart",
+  "cartCount": "{count} items in cart",
   "header": {
     "storeHome": "Go to {name} home page"
   },
@@ -20,7 +22,9 @@
   },
   "gallery": {
     "previousImage": "Previous image",
-    "nextImage": "Next image"
+    "nextImage": "Next image",
+    "imagePosition": "Image {current} of {total}",
+    "thumbnail": "Preview image {current} of {total}"
   },
   "cartPage": {
     "title": "Your cart",

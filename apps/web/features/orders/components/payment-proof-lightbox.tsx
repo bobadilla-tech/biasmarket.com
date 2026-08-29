@@ -1,20 +1,60 @@
-export function PaymentProofLightbox(
-  { url, onClose }: { url: string | null; onClose: () => void },
-) {
-  if (!url) return null;
+"use client";
+
+import { useRef } from "react";
+import { useTranslations } from "next-intl";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+export function PaymentProofLightbox({
+  url,
+  onClose,
+}: {
+  url: string | null;
+  onClose: () => void;
+}) {
+  const t = useTranslations("dashboard.orders");
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
+  const previousUrlRef = useRef<string | null>(null);
+  if (
+    typeof document !== "undefined" &&
+    url &&
+    previousUrlRef.current !== url &&
+    document.activeElement instanceof HTMLElement
+  ) {
+    // Capture the clicked proof button during render, before Base UI moves
+    // focus into the dialog. This also supports a lightbox nested in a Sheet.
+    restoreFocusRef.current = document.activeElement;
+  }
+  previousUrlRef.current = url;
+
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6"
-      role="dialog"
-      aria-modal="true"
-      onClick={onClose}
+    <Dialog
+      open={Boolean(url)}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) onClose();
+      }}
     >
-      <div
-        className="max-h-[85vh] w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-xl"
-        onClick={(event) => event.stopPropagation()}
+      <DialogContent
+        finalFocus={restoreFocusRef}
+        className="max-h-[90vh] max-w-3xl overflow-hidden bg-white p-6"
       >
-        <img src={url} alt="" className="h-full w-full object-contain" />
-      </div>
-    </div>
+        <DialogHeader className="sr-only">
+          <DialogTitle>{t("details.paymentProofDialogTitle")}</DialogTitle>
+          <DialogDescription>{t("details.imagePreview")}</DialogDescription>
+        </DialogHeader>
+        {url ? (
+          <img
+            src={url}
+            alt={t("details.paymentProofDialogTitle")}
+            className="max-h-[80vh] h-full w-full object-contain"
+          />
+        ) : null}
+      </DialogContent>
+    </Dialog>
   );
 }

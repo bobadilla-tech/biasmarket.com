@@ -28,8 +28,8 @@ export function CollectionCard({
 }: CollectionCardProps) {
   const t = useTranslations("dashboard.collections");
   const [selectedProduct, setSelectedProduct] = useState("");
-  const items = [...collection.products].sort((a, b) =>
-    a.position - b.position
+  const items = [...collection.products].sort(
+    (a, b) => a.position - b.position,
   );
 
   return (
@@ -81,6 +81,7 @@ export function CollectionCard({
         <Select
           value={selectedProduct}
           onChange={(e) => setSelectedProduct(e.target.value)}
+          aria-label={t("selectProduct")}
           className="flex-1"
           selectClassName="rounded-xl border border-gray-200 py-2 pl-3 text-sm text-gray-600"
         >

@@ -1,10 +1,18 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, type RefObject } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
-import { X } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { useRequestRestock } from "../mutations/use-request-restock";
 import {
@@ -21,6 +29,7 @@ interface RestockInterestDialogProps {
   slug: string;
   productId: string;
   variantId?: string;
+  triggerRef?: RefObject<HTMLElement | null>;
   productName: string;
   variantLabel?: string;
 }
@@ -31,22 +40,20 @@ export function RestockInterestDialog({
   slug,
   productId,
   variantId,
+  triggerRef,
   productName,
   variantLabel,
 }: RestockInterestDialogProps) {
   const t = useTranslations("storefront.restockDialog");
   const requestRestock = useRequestRestock(slug);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
+  const successHeadingRef = useRef<HTMLHeadingElement>(null);
 
-  const {
-    register,
-    handleSubmit,
-    control,
-    reset,
-    formState,
-  } = useForm<RestockRequestFormInput>({
-    resolver: zodResolver(restockRequestFormSchema),
-    defaultValues: { name: "", phone: "" },
-  });
+  const { register, handleSubmit, control, reset, formState } =
+    useForm<RestockRequestFormInput>({
+      resolver: zodResolver(restockRequestFormSchema),
+      defaultValues: { name: "", phone: "" },
+    });
 
   // Deliberately excludes the `useMutation` result object from the deps: it is
   // recreated on every render (`{ ...result, mutate }`), so including it would
@@ -54,112 +61,138 @@ export function RestockInterestDialog({
   // ("Maximum update depth exceeded"). `reset` and `requestRestock.reset` are
   // stable function references, so the effect only runs when `open` changes.
   useEffect(() => {
+    if (open && document.activeElement instanceof HTMLElement) {
+      restoreFocusRef.current = document.activeElement;
+    }
     if (open) {
       reset({ name: "", phone: "" });
       requestRestock.reset();
     }
   }, [open, reset, requestRestock.reset]);
 
-  if (!open) return null;
+  useEffect(() => {
+    if (open && requestRestock.isSuccess) {
+      successHeadingRef.current?.focus();
+    }
+  }, [open, requestRestock.isSuccess]);
 
   const submit = handleSubmit(async (values) => {
     await requestRestock.mutateAsync({ ...values, productId, variantId });
   });
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      role="dialog"
-      aria-modal="true"
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen, details) => {
+        if (!nextOpen && requestRestock.isPending) {
+          details.cancel();
+          return;
+        }
+        onOpenChange(nextOpen);
+      }}
     >
-      <div
-        className="absolute inset-0 bg-black/50"
-        onClick={() => !requestRestock.isPending && onOpenChange(false)}
-      />
-      <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-        <button
-          type="button"
-          aria-label={t("close")}
-          onClick={() => onOpenChange(false)}
-          className="absolute right-4 top-4 rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-        >
-          <X className="size-4" />
-        </button>
-
-        {requestRestock.isSuccess
-          ? (
-            <div className="py-4 text-center">
-              <h3 className="text-lg font-bold text-gray-900">
+      <DialogContent
+        initialFocus={requestRestock.isSuccess ? successHeadingRef : undefined}
+        finalFocus={triggerRef ?? restoreFocusRef}
+        className="max-h-[90vh] overflow-y-auto sm:max-w-md"
+      >
+        {requestRestock.isSuccess ? (
+          <div className="py-4 text-center">
+            <DialogHeader>
+              <DialogTitle
+                ref={successHeadingRef}
+                tabIndex={-1}
+                className="text-lg font-bold outline-none"
+              >
                 {t("successTitle")}
-              </h3>
-              <p className="mt-2 text-sm text-gray-600">{t("successBody")}</p>
-              <button
+              </DialogTitle>
+              <DialogDescription className="mt-2">
+                {t("successBody")}
+              </DialogDescription>
+            </DialogHeader>
+            <div role="status" aria-live="polite" className="sr-only">
+              {t("successTitle")}. {t("successBody")}
+            </div>
+            <DialogFooter className="mt-5 sm:justify-center">
+              <Button
                 type="button"
                 onClick={() => onOpenChange(false)}
-                className="store-theme-primary-button mt-5 rounded-xl px-5 py-2.5 text-sm font-semibold"
+                className="store-theme-primary-button rounded-xl px-5 py-2.5 text-sm font-semibold"
               >
                 {t("close")}
-              </button>
-            </div>
-          )
-          : (
-            <>
-              <h3 className="text-lg font-bold text-gray-900">{t("title")}</h3>
-              <p className="mt-1 text-sm text-gray-600">{t("subtitle")}</p>
-              <p className="mt-3 rounded-xl bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-900">
-                {productName}
-                {variantLabel ? ` — ${variantLabel}` : ""}
-              </p>
+              </Button>
+            </DialogFooter>
+          </div>
+        ) : (
+          <>
+            <DialogHeader>
+              <DialogTitle className="text-lg font-bold">
+                {t("title")}
+              </DialogTitle>
+              <DialogDescription>{t("subtitle")}</DialogDescription>
+            </DialogHeader>
+            <p className="rounded-xl bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-900">
+              {productName}
+              {variantLabel ? ` — ${variantLabel}` : ""}
+            </p>
 
-              <form onSubmit={submit} className="mt-4 flex flex-col gap-3">
-                <div>
-                  <input
-                    placeholder={t("namePlaceholder")}
-                    className={inputClassName}
-                    {...register("name")}
-                  />
-                  {formState.errors.name && (
-                    <p className="mt-1 text-sm text-red-500">
-                      {t("nameRequired")}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <Controller
-                    control={control}
-                    name="phone"
-                    render={({ field }) => (
-                      <PhoneInput
-                        value={field.value}
-                        onChange={field.onChange}
-                        placeholder={t("phonePlaceholder")}
-                        selectClassName={inputClassName}
-                        inputClassName={inputClassName}
-                      />
-                    )}
-                  />
-                  {formState.errors.phone && (
-                    <p className="mt-1 text-sm text-red-500">
-                      {t("phoneRequired")}
-                    </p>
-                  )}
-                </div>
-
-                {requestRestock.error && (
-                  <p className="text-sm text-red-500">{t("error")}</p>
+            <form onSubmit={submit} className="flex flex-col gap-3">
+              <div>
+                <label htmlFor="restock-name" className="sr-only">
+                  {t("namePlaceholder")}
+                </label>
+                <input
+                  id="restock-name"
+                  placeholder={t("namePlaceholder")}
+                  className={inputClassName}
+                  {...register("name")}
+                />
+                {formState.errors.name && (
+                  <p className="mt-1 text-sm text-red-500" role="alert">
+                    {t("nameRequired")}
+                  </p>
                 )}
+              </div>
+              <div>
+                <Controller
+                  control={control}
+                  name="phone"
+                  render={({ field }) => (
+                    <PhoneInput
+                      id="restock-phone"
+                      label={t("phonePlaceholder")}
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder={t("phonePlaceholder")}
+                      selectClassName={inputClassName}
+                      inputClassName={inputClassName}
+                    />
+                  )}
+                />
+                {formState.errors.phone && (
+                  <p className="mt-1 text-sm text-red-500" role="alert">
+                    {t("phoneRequired")}
+                  </p>
+                )}
+              </div>
 
-                <button
-                  type="submit"
-                  disabled={requestRestock.isPending}
-                  className="store-theme-primary-button mt-2 rounded-xl px-5 py-3 text-sm font-semibold transition disabled:opacity-60"
-                >
-                  {requestRestock.isPending ? t("submitting") : t("submit")}
-                </button>
-              </form>
-            </>
-          )}
-      </div>
-    </div>
+              {requestRestock.error && (
+                <p className="text-sm text-red-500" role="alert">
+                  {t("error")}
+                </p>
+              )}
+
+              <Button
+                type="submit"
+                disabled={requestRestock.isPending}
+                className="store-theme-primary-button mt-2 rounded-xl px-5 py-3 text-sm font-semibold transition disabled:opacity-60"
+              >
+                {requestRestock.isPending ? t("submitting") : t("submit")}
+              </Button>
+            </form>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

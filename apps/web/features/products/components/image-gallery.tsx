@@ -53,10 +53,24 @@ export function ImageGallery({
       <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-gray-50">
         <Image
           src={images[safeCurrent]}
-          alt={alt}
+          alt={`${alt}, ${t("imagePosition", {
+            current: safeCurrent + 1,
+            total: images.length,
+          })}`}
           fill
           className={cn("object-contain", outOfStock && "opacity-70 grayscale")}
         />
+        <div
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          className="sr-only"
+        >
+          {t("imagePosition", {
+            current: safeCurrent + 1,
+            total: images.length,
+          })}
+        </div>
         {hasMultiple && (
           <>
             <button
@@ -69,7 +83,7 @@ export function ImageGallery({
               }
               className={cn(arrowClass, "left-2")}
             >
-              <ChevronLeft className="size-4" />
+              <ChevronLeft aria-hidden="true" className="size-4" />
             </button>
             <button
               type="button"
@@ -81,7 +95,7 @@ export function ImageGallery({
               }
               className={cn(arrowClass, "right-2")}
             >
-              <ChevronRight className="size-4" />
+              <ChevronRight aria-hidden="true" className="size-4" />
             </button>
           </>
         )}
@@ -92,6 +106,10 @@ export function ImageGallery({
             <button
               key={img}
               type="button"
+              aria-label={t("thumbnail", {
+                current: index + 1,
+                total: images.length,
+              })}
               aria-current={index === safeCurrent ? "true" : undefined}
               onClick={() => setCurrent(index)}
               className={cn(

@@ -614,7 +614,8 @@
       "chooseImage": "Choose",
       "imagePreview": "Preview",
       "imageSize": "{size} KB",
-      "removeImage": "Remove image"
+      "removeImage": "Remove image",
+      "paymentProofDialogTitle": "Payment proof preview"
     },
     "approve": "Approve",
     "approveDisabledNoPayment": "Can't approve with no payment registered.",

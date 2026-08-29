@@ -37,7 +37,11 @@ export function CustomerDetailSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent size="lg" className="h-dvh gap-0 overflow-y-auto">
+      <SheetContent
+        size="lg"
+        aria-label={data?.customer.name ?? data?.customer.phone ?? t("title")}
+        className="h-dvh gap-0 overflow-y-auto"
+      >
         {isPending ? (
           <LoadingState />
         ) : data ? (

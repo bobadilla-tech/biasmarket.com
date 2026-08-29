@@ -297,7 +297,12 @@ export function DeliverySection({ storeId }: { storeId: string }) {
           if (!open) setEditingPointId(null);
         }}
       >
-        <SheetContent size="md">
+        <SheetContent
+          size="md"
+          aria-label={t("delivery.availabilitySheetTitle", {
+            label: editingPoint?.label ?? "",
+          })}
+        >
           {editingPoint ? (
             <>
               <SheetHeader>

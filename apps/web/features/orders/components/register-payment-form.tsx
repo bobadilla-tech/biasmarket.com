@@ -32,12 +32,11 @@ export function RegisterPaymentForm({
 
   const labels = paymentMethodLabels(t);
 
-  const { register, handleSubmit, watch, control, reset } = useForm<
-    RegisterPaymentInput
-  >({
-    resolver: zodResolver(buildRegisterPaymentSchema(pendingAmount)),
-    defaultValues: { amount: "", method: "", note: "", file: null },
-  });
+  const { register, handleSubmit, watch, control, reset } =
+    useForm<RegisterPaymentInput>({
+      resolver: zodResolver(buildRegisterPaymentSchema(pendingAmount)),
+      defaultValues: { amount: "", method: "", note: "", file: null },
+    });
 
   const amount = watch("amount");
   const method = watch("method");
@@ -83,6 +82,7 @@ export function RegisterPaymentForm({
       </div>
       <Select
         {...register("method")}
+        aria-label={t("details.selectPaymentMethod")}
         selectClassName="store-theme-input h-11 rounded-xl border-[#e7dcf3] bg-[#fbf8fe] text-sm text-[#341b55]"
       >
         <option value="" disabled>
@@ -110,8 +110,10 @@ export function RegisterPaymentForm({
               accept="image/png,image/jpeg"
               className="hidden"
               id="payment-image-upload"
+              aria-label={t("details.uploadPaymentImage")}
               onChange={(event) =>
-                field.onChange(event.target.files?.[0] ?? null)}
+                field.onChange(event.target.files?.[0] ?? null)
+              }
             />
           )}
         />
@@ -125,35 +127,35 @@ export function RegisterPaymentForm({
           )}
         >
           <div className="flex size-9 items-center justify-center rounded-full bg-[#f0e7f8]">
-            {file
-              ? <ImageIcon className="size-4 text-[var(--store-primary)]" />
-              : <Upload className="size-4 text-[var(--store-primary)]" />}
+            {file ? (
+              <ImageIcon className="size-4 text-[var(--store-primary)]" />
+            ) : (
+              <Upload className="size-4 text-[var(--store-primary)]" />
+            )}
           </div>
 
           <div className="flex-1">
-            {file
-              ? (
-                <>
-                  <p className="truncate text-sm font-semibold text-[#2d1649]">
-                    {file.name}
-                  </p>
-                  <p className="text-xs text-[#8f7da8]">
-                    {t("details.imageSize", {
-                      size: (file.size / 1024).toFixed(1),
-                    })}
-                  </p>
-                </>
-              )
-              : (
-                <>
-                  <p className="text-sm font-semibold text-[#2d1649]">
-                    {t("details.uploadPaymentImage")}
-                  </p>
-                  <p className="text-xs text-[#8f7da8]">
-                    {t("details.uploadPaymentImageHint")}
-                  </p>
-                </>
-              )}
+            {file ? (
+              <>
+                <p className="truncate text-sm font-semibold text-[#2d1649]">
+                  {file.name}
+                </p>
+                <p className="text-xs text-[#8f7da8]">
+                  {t("details.imageSize", {
+                    size: (file.size / 1024).toFixed(1),
+                  })}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm font-semibold text-[#2d1649]">
+                  {t("details.uploadPaymentImage")}
+                </p>
+                <p className="text-xs text-[#8f7da8]">
+                  {t("details.uploadPaymentImageHint")}
+                </p>
+              </>
+            )}
           </div>
 
           {!file && (

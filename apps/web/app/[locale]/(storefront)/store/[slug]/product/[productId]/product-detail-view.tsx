@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Bell, Clock } from "lucide-react";
 import { toast } from "sonner";
@@ -47,6 +47,7 @@ export function ProductDetailView({
   );
   const [added, setAdded] = useState(false);
   const [restockOpen, setRestockOpen] = useState(false);
+  const restockTriggerRef = useRef<HTMLButtonElement>(null);
 
   const selectedVariant = product.variants.find((v) => v.id === variantId);
   const price = Number(selectedVariant?.priceOverride ?? product.price);
@@ -117,6 +118,7 @@ export function ProductDetailView({
           <Select
             value={variantId}
             onChange={(e) => setVariantId(e.target.value)}
+            aria-label={`${product.name}: ${t("selectVariant")}`}
             className="mt-4 w-full max-w-xs"
             selectClassName="rounded-lg border border-gray-200 py-2 pl-3 text-sm text-gray-600"
           >
@@ -132,6 +134,7 @@ export function ProductDetailView({
         {outOfStock ? (
           <button
             type="button"
+            ref={restockTriggerRef}
             onClick={() => setRestockOpen(true)}
             className="mt-4 flex w-full max-w-xs items-center justify-center gap-1.5 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 sm:w-auto"
           >
@@ -154,6 +157,7 @@ export function ProductDetailView({
         slug={slug}
         productId={product.id}
         variantId={selectedVariant?.id}
+        triggerRef={restockTriggerRef}
         productName={product.name}
         variantLabel={selectedVariant?.name}
       />
