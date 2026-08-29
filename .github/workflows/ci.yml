@@ -132,26 +132,6 @@ jobs:
     if: needs.detect-changes.outputs.api == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    env:
-      # Dummy connection string — `prisma generate` validates the schema's env()
-      # reference but never opens a connection, so a syntactically valid URL is enough.
-      DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci?schema=public"
-      REDIS_URL: "redis://localhost:6379"
-      BETTER_AUTH_SECRET: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-      BETTER_AUTH_URL: "http://localhost:3000"
-      CUSTOMER_ACCOUNT_TOKEN_SECRET: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-      WEB_URL: "http://localhost:3001"
-      INTERNAL_JOBS_SECRET: "e2e-internal-jobs-secret"
-      MONITORING_WEBHOOK_SECRET: "e2e-monitoring-webhook-secret"
-      SITEMAP_INTERNAL_TOKEN: "e2e-sitemap-internal-token"
-      S3_ENDPOINT: "http://127.0.0.1:9000"
-      S3_PUBLIC_URL: "http://127.0.0.1:9000"
-      S3_ACCESS_KEY: "e2e"
-      S3_SECRET_KEY: "e2e-secret-key"
-      S3_BUCKET: "products"
-      S3_LOGO_BUCKET: "logos"
-      S3_PAYMENT_BUCKET: "payments"
-      NODE_ENV: test
     steps:
       - uses: actions/checkout@v7
         with:
@@ -159,6 +139,9 @@ jobs:
           # `lint-changed-files.mjs` diffs against origin/main; a shallow
           # checkout has no base ref, which would fail the lint step.
           fetch-depth: 0
+
+      - name: Load shared CI test environment
+        run: grep -E '^[A-Za-z_][A-Za-z0-9_]*=' scripts/ci/e2e.env.example >> "$GITHUB_ENV"
 
       - uses: pnpm/action-setup@v6
         with:
@@ -190,15 +173,7 @@ jobs:
         run: pnpm turbo run build --filter=api
 
       - name: Check OpenAPI is tracked and up to date
-        run: |
-          set -euo pipefail
-          test -s apps/api/openapi.json
-          git ls-files --error-unmatch apps/api/openapi.json
-          node apps/api/scripts/generate-openapi-spec.ts
-          # openapi.json is intentionally ignored by the repo-wide Prettier
-          # pass; normalize the generator's JSON before checking tracked drift.
-          pnpm exec prettier --ignore-path /dev/null --parser json --write apps/api/openapi.json
-          git diff --exit-code -- apps/api/openapi.json
+        run: bash scripts/ci/check-openapi-drift.sh
 
       - name: Test with coverage
         run: pnpm --filter api test:cov
@@ -324,14 +299,13 @@ jobs:
     if: needs.detect-changes.outputs.db == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    env:
-      # Dummy connection string — `prisma generate` validates the schema's env()
-      # reference but never opens a connection, so a syntactically valid URL is enough.
-      DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci?schema=public"
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+
+      - name: Load shared CI test environment
+        run: grep -E '^[A-Za-z_][A-Za-z0-9_]*=' scripts/ci/e2e.env.example >> "$GITHUB_ENV"
 
       - uses: pnpm/action-setup@v6
         with:
@@ -623,24 +597,6 @@ jobs:
     timeout-minutes: 30
     # Never set continue-on-error here: a red E2E job must make the CI run red
     # so both CI Success and CD's workflow_run gate fail closed.
-    env:
-      DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci?schema=public"
-      REDIS_URL: "redis://localhost:6379"
-      BETTER_AUTH_SECRET: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-      BETTER_AUTH_URL: "http://localhost:3000"
-      CUSTOMER_ACCOUNT_TOKEN_SECRET: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-      WEB_URL: "http://localhost:3001"
-      INTERNAL_JOBS_SECRET: "e2e-internal-jobs-secret"
-      MONITORING_WEBHOOK_SECRET: "e2e-monitoring-webhook-secret"
-      SITEMAP_INTERNAL_TOKEN: "e2e-sitemap-internal-token"
-      S3_ENDPOINT: "http://127.0.0.1:9000"
-      S3_PUBLIC_URL: "http://127.0.0.1:9000"
-      S3_ACCESS_KEY: "e2e"
-      S3_SECRET_KEY: "e2e-secret-key"
-      S3_BUCKET: "products"
-      S3_LOGO_BUCKET: "logos"
-      S3_PAYMENT_BUCKET: "payments"
-      NODE_ENV: test
     services:
       # Digest resolved 2026-08-28 from ghcr.io/immich-app/postgres:18-vectorchord0.5.3-pgvector0.8.1;
       # the image keeps the standard postgres entrypoint while avoiding Docker Hub.
@@ -678,6 +634,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+
+      - name: Load shared CI test environment
+        run: grep -E '^[A-Za-z_][A-Za-z0-9_]*=' scripts/ci/e2e.env.example >> "$GITHUB_ENV"
 
       - uses: pnpm/action-setup@v6
         with:

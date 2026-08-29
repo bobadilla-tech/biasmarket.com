@@ -256,15 +256,16 @@ reports `skipped`.
 the `inputs` context is null and the guard is what stops it being evaluated.
 
 **`paths-ignore` note (decision 1):** the superseded plan removed `paths-ignore`
-entirely; this plan keeps it only on `push` (so a docs-only merge doesn't run a
-30-min suite + a real CD cutover) and **removes it from `pull_request`**.
+entirely; this plan keeps it only on `push` (so a Markdown-only or
+`.gitignore`-only merge doesn't run a 30-min suite + a real CD cutover) and
+**removes it from `pull_request`**.
 Reason: decision 7 makes `CI Success` a required check; with `paths-ignore` on
 the `pull_request` trigger, a docs-only PR never produces a `CI Success` check
 run and is stuck "Expected — Waiting for status to be reported", unmergeable
 without admin override. Removing it from `pull_request` only costs a fast
 per-package CI run (all jobs `skipped` → `ci-success` green) on docs PRs.
-A docs-only push to `main` still skips the whole workflow, emits no
-`workflow_run`, and CD correctly doesn't run.
+A Markdown-only or `.gitignore`-only push to `main` still skips the whole
+workflow, emits no `workflow_run`, and CD correctly doesn't run.
 
 ### 2. Provision disposable services; run a real `workers` process
 
@@ -338,13 +339,14 @@ Build order (Turbo resolves `@biasmarket/db`, `@biasmarket/queue`,
 commit `dist/`, and `pnpm install` runs no build). `--filter=api` is still
 needed: the OpenAPI drift check (step 7) consumes `apps/api/dist`.
 
-```
+```bash
 pnpm turbo run build --filter=api --filter=workers
 ```
 
-### 3. Test-only env at job level
+### 3. Shared test-only env example
 
-All literals (disposable runner); **never** production values or `secrets.*`
+All literals live in `scripts/ci/e2e.env.example` (disposable runner);
+**never** production values or `secrets.*`
 (except the workflow-provided `GITHUB_TOKEN` used for GHCR pulls in decision 2).
 The API's required set is
 the 16 keys in `apps/api/src/config/env.validation.ts` — read that file and
@@ -374,6 +376,10 @@ NODE_ENV=test
 There is no standalone API process, so `PORT` is irrelevant to the job-level
 env; the worker step relies on its own `?? 3002` default (don't set `PORT`
 there either unless something conflicts).
+
+CI loads the example into `GITHUB_ENV` after checkout in the `api`, `db`, and
+`e2e` jobs, so the API OpenAPI check, Prisma checks, and E2E helper share one
+reviewed env contract. Runtime-only worker overrides are set by the helper.
 
 Workers-process env (its own step): `REDIS_URL` (same), `INTERNAL_API_URL=http://127.0.0.1:3000`
 (never dialed — see decision 2), `INTERNAL_JOBS_SECRET` (byte-identical to the
@@ -499,11 +505,15 @@ before-SHA and typically resolves every filter to `'false'` → all package jobs
 result. So `ci-success` behaves sanely on a manual run regardless; CD rejects
 it on event type anyway.
 
-**Baseline phase (Goal 6):** land decisions 1–4, 5a, and 6 first with `e2e`
-**not** in `ci-success.needs`. Run via `workflow_dispatch(run_e2e=true)` on the
-branch until 24/24 files green on a clean runner — applying decision 6b's
-stagger **only if** a 429 actually appears. Only then, in a follow-up commit,
-add `e2e` to `needs` + the result logic above (that commit is the T6 flip).
+**Baseline phase (Goal 6):** use `workflow_dispatch(run_e2e=true)` on the branch
+until 24/24 files are green on a clean runner, applying decision 6b's stagger
+**only if** a 429 actually appears. T6 is already landed in this revision, so
+the first eligible push to `main` is intentionally a production gate while T5
+is incomplete: `e2e` is in `ci-success.needs`, a failed or skipped E2E result
+makes `CI Success` fail, and CD's `workflow_run` gate proceeds only for a
+successful push CI run. Until T5 is green, merges with non-ignored changes are
+therefore expected to block CD; after the baseline is green, continue the
+push/CD verification below.
 
 ### 5a. Move the OpenAPI drift check to PR time too
 
@@ -516,16 +526,16 @@ its build step, so drift is caught before merge. (The `api` job already builds
 via `pnpm turbo run build --filter=api`, so the H1 ordering hazard doesn't
 apply — but use the built output, not `generate:openapi`.)
 
-**The `api` job must gain an env block for this step.** Today it sets only
-`DATABASE_URL` (`ci.yml:130-133`), but `generate-openapi-spec.ts` does
+**The `api` job must load the shared env example for this step.** Today it sets
+only `DATABASE_URL` (`ci.yml:130-133`), but `generate-openapi-spec.ts` does
 `app.init()` and `AppModule` init eagerly needs `REDIS_URL` (BullMQ factory
 throws if unset — connects lazily so a bare syntactically-valid URL is enough,
 no Redis service needed), all `S3_*` (`StorageService.requiredEnv` at field
 init), and `BETTER_AUTH_SECRET/URL`, `CUSTOMER_ACCOUNT_TOKEN_SECRET`,
 `INTERNAL_JOBS_SECRET`, `MONITORING_WEBHOOK_SECRET`, `SITEMAP_INTERNAL_TOKEN`,
-`WEB_URL`. Add the same non-DB test-literal keys from decision 3 to the drift
-step's env (or the job's) — no service containers, `PrismaService` is
-stub-overridden in the script. This is its own task item (T7).
+`WEB_URL`. Load `scripts/ci/e2e.env.example` into `GITHUB_ENV` after checkout —
+no service containers, `PrismaService` is stub-overridden in the script. This
+is its own task item (T7).
 
 ### 6. CI-only worker scheduler-disable guard (app-code change #1)
 
@@ -623,7 +633,7 @@ pushing empty/no-op commits (which trigger a real CD cutover).
   comment.
 - **T2** — `ci.yml`: add the `e2e` job (decisions 1–4): `needs: []`,
   push-or-guarded-dispatch `if:`, no `continue-on-error`, Postgres + Valkey
-  service containers (digest-pinned), job-level test env (decision 3, no
+  service containers (digest-pinned), shared test env example loaded after checkout (decision 3, no
   `PORT`, no standalone API), the one trapped helper (inline or
   `scripts/ci/e2e.sh`) in the exact step order (build → OpenAPI check →
   migrate → workers → suite → cleanup), `if: always()`
@@ -640,8 +650,9 @@ pushing empty/no-op commits (which trigger a real CD cutover).
     branches (decision 6).
   - `@OnWorkerEvent("ready")` handler in `mailer.processor.ts` logging
     `"MAILER worker ready"` (decision 2 probe option 1) + a unit test.
-- **T5** — baseline: `workflow_dispatch(run_e2e=true)` from the branch, `e2e`
-  not yet required. Iterate to 24/24 files green. Explicitly confirm whether
+- **T5** — baseline: `workflow_dispatch(run_e2e=true)` from the branch. The
+  manual run can isolate the suite, but push runs already have the E2E gate
+  enabled by T6. Iterate to 24/24 files green. Explicitly confirm whether
   `coupon-redeem-race` / `customer-account-auth` trip the better-auth 429; if
   so apply decision 6b's stagger/retry (helper-level preferred). Record
   file/case counts, runtime, whether decision 6 was load-bearing, and whether
@@ -649,10 +660,10 @@ pushing empty/no-op commits (which trigger a real CD cutover).
 - **T6** — `ci.yml`: add `e2e` to `ci-success.needs`; replace the gate body
   with the decision-5 per-result logic (env-mapped vars, `detect-changes`
   first, explicit `e2e` cases incl. the fail-closed default); add the
-  check-name-rename comment. This commit is the baseline→required flip.
+  check-name-rename comment. Landed before T5 was green; this intentionally
+  makes the first eligible `main` push a production gate until T5 passes.
 - **T7** — `ci.yml` `api` job: add the PR-time OpenAPI trackedness + drift
-  check (decision 5a) **and** the non-DB test-literal env block that step
-  needs (`REDIS_URL` + `S3_*` + auth/monitoring/sitemap/`WEB_URL` — no service
+  check (decision 5a) and loads the shared test env example (no service
   containers).
 - **T8** — `cd.yml`: update stale CI-scope comments; link this plan. No logic
   change.
@@ -666,10 +677,13 @@ pushing empty/no-op commits (which trigger a real CD cutover).
 
 ## Rollout / verification
 
-1. **Baseline (T5):** `workflow_dispatch(run_e2e=true)` on the branch, `e2e`
-   not required. The clean-runner run completed all 24 files but remains
-   blocked by the existing courier/order failures recorded in Status; fix and
-   rerun those before requiring `CI Success`.
+1. **Baseline (T5) and first push (T6):** `workflow_dispatch(run_e2e=true)` on
+   the branch isolates the baseline run. The clean-runner run completed all 24
+   files but remains blocked by the existing courier/order failures recorded in
+   Status. Because T6 is already landed, the first eligible push to `main` is
+   intentionally a production gate while T5 is incomplete: `e2e` is required
+   by `CI Success`, and CD's `workflow_run` gate deploys only after the whole CI
+   run succeeds. Fix and rerun the failing specs before expecting a deployment.
 2. Reproduce the bootstrap locally with the same env contract — **first move
    aside the developer's git-ignored `apps/api/.env`** (on this machine it's
    also missing `SITEMAP_INTERNAL_TOKEN`), or the local run won't actually
@@ -709,10 +723,12 @@ pushing empty/no-op commits (which trigger a real CD cutover).
   not by CI concurrency. No separate latest-main-SHA check added.
 - **Container registry availability** — mitigated by T3's two-path GHCR auth;
   still an external dependency.
-- **Every non-`*.md` push to `main`** (including infra- or CI-meta-only
-  changes) now runs the full ~30-min E2E suite and, on success, a real CD
-  cutover. Deliberate (Goal 1) — the gate must test what actually ships — but
-  it lengthens the merge→live path for changes that don't touch app code.
+- **Every `main` push with at least one non-ignored path** (anything beyond
+  Markdown or `.gitignore`, including infra- or CI-meta-only changes) now runs
+  the full ~30-min E2E suite and, on success, a real CD cutover. Deliberate
+  (Goal 1) — the gate must test what actually ships — but it lengthens the
+  merge→live path for changes that don't touch app code. Markdown-only and
+  `.gitignore`-only pushes are excluded by the push trigger.
 - **Digest drift** — pinned images re-resolved only through a reviewed
   workflow change.
 - **Suite growth** — new `*.e2e-spec.ts` files are auto-discovered by the glob;
@@ -727,8 +743,10 @@ pushing empty/no-op commits (which trigger a real CD cutover).
 
 - `.github/workflows/ci.yml` — `workflow_dispatch` + `run_e2e`; `paths-ignore`
   off `pull_request`; new `e2e` job; `e2e` in `ci-success.needs` with rewritten
-  result logic; PR-time OpenAPI drift check + its env block in the `api` job.
-- `scripts/ci/e2e.sh` — new, if the helper is extracted (new dir; document it).
+  result logic; shared env-example loading; PR-time OpenAPI drift check.
+- `scripts/ci/e2e.env.example` — reviewed test-only env contract shared by CI
+  jobs and the E2E helper.
+- `scripts/ci/e2e.sh` and `scripts/ci/check-openapi-drift.sh` — CI helpers.
 - `apps/workers/src/jobs/orders/expire-orders-scheduler.service.ts`,
   `apps/workers/src/jobs/premium/expire-premium-scheduler.service.ts` (+ their
   `.spec.ts`) — decision-6 guard, distinct log text.
@@ -846,8 +864,8 @@ event incl. re-runs — airtight), the `needs: []` → `skipped` assumption, the
 - *PR-time OpenAPI check crashes the `api` job on env (Actions review).* The
   `api` job sets only `DATABASE_URL`; `generate-openapi-spec.ts` does
   `app.init()` and `AppModule` needs `REDIS_URL` + `S3_*` + auth/monitoring/
-  sitemap env. **Resolved:** decision 5a + T7 now require adding that non-DB
-  test-literal env block to the `api` job (no service containers; Prisma is
+  sitemap env. **Resolved:** decision 5a + T7 now require loading the shared
+  test env example in the `api` job (no service containers; Prisma is
   stub-overridden in the script).
 
 **MEDIUM**
@@ -872,8 +890,9 @@ event incl. re-runs — airtight), the `needs: []` → `skipped` assumption, the
   `WorkerHost` listening hook) — it's a decorator + handler + log + unit test,
   not just a log line · the two scheduler guards must log **distinct** text or
   step 9's "both lines" assert can pass on one · `needs: []` comment wording
-  reconciled · add to Risks: every non-`*.md` push to `main` triggers the
-  full suite + a CD cutover · note `dorny/paths-filter` on `workflow_dispatch`
+  reconciled · add to Risks: every `main` push with at least one non-ignored
+  path triggers the full suite + a CD cutover · note `dorny/paths-filter` on
+  `workflow_dispatch`
   resolves all-`false` (→ `ci-success` still sane) · soften "two independent
   layers" — both manifest via `workflow_run.conclusion`; branch protection is
   the third, pre-merge layer.
