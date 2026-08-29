@@ -1,5 +1,8 @@
 {
   "loading": "Loading...",
+  "close": "Close",
+  "countryCode": "Country code",
+  "phoneNumber": "Phone number",
   "networkError": "Network error",
   "notFoundPage": {
     "title": "Page not found",

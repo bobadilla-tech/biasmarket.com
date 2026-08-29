@@ -1,5 +1,8 @@
 {
   "loading": "Cargando...",
+  "close": "Cerrar",
+  "countryCode": "Código de país",
+  "phoneNumber": "Número de teléfono",
   "networkError": "Error de red",
   "notFoundPage": {
     "title": "Página no encontrada",

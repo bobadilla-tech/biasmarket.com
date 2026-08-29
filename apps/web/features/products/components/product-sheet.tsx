@@ -359,7 +359,7 @@ export function ProductSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="h-dvh w-105 gap-0 overflow-y-auto sm:max-w-105">
+      <SheetContent size="lg" className="h-dvh gap-0 overflow-y-auto">
         <SheetHeader>
           <SheetTitle>{title}</SheetTitle>
           <SheetDescription>{description}</SheetDescription>
