@@ -23,14 +23,14 @@ The E2E pulls use GHCR and are digest-pinned as resolved on 2026-08-28. `mc`
 uses the same GHCR MinIO image via an entrypoint override, so there are three
 unique image references:
 
-- `ghcr.io/sakiladb/postgres:18` → `sha256:7848cf782d233daf13aca55a61262e5ee775299ee48509e6b1e32eddb2c1b2e2`
+- `ghcr.io/immich-app/postgres:18-vectorchord0.5.3-pgvector0.8.1` → `sha256:828081a755d3911a2d94f0a2be9f98570c07d52cf080fd310a9d6e4b83b73aa5`
 - `ghcr.io/valkey-io/valkey:7-alpine` → `sha256:8fc3da585dc963d91754d72da22d54671c6ec495d8a0257a6a9100a9a4658f38`
 - `ghcr.io/coollabsio/minio:RELEASE.2025-10-15T17-29-55Z` → `sha256:69b55a1c1c5dc285ce04db96689f5b2102317fc77a50680a1874ca6efd1c87f9`
 
 The GHCR pulls use the workflow's `GITHUB_TOKEN` with `packages: read` in both
 service-container `credentials` and the explicit `docker/login-action` step;
-no Docker Hub account or repository secrets are required. The PostgreSQL
-image was smoke-tested locally with the CI credentials and standard entrypoint;
+no Docker Hub account or repository secrets are required. The PostgreSQL image
+was smoke-tested locally with the CI credentials and standard entrypoint;
 Valkey was smoke-tested with `redis-cli ping`; and the MinIO image's `/usr/bin/mc`
 entrypoint was smoke-tested. Decision 6 is implemented and unit-covered;
 decision 6b was not applied because the required baseline has not run, so its
@@ -268,8 +268,8 @@ MinIO + `mc` as explicit steps on a user-defined Docker network (a sidecar `mc`
 container can't reach a service container over `127.0.0.1`; use the MinIO
 container name for `mc`, the published `127.0.0.1:9000` for the host process).
 
-- **PostgreSQL** — `ghcr.io/sakiladb/postgres:18` (PostgreSQL 18 with the
-  standard entrypoint; GHCR image),
+- **PostgreSQL** — `ghcr.io/immich-app/postgres:18-vectorchord0.5.3-pgvector0.8.1`
+  (PostgreSQL 18 with the standard entrypoint; GHCR image),
   `POSTGRES_USER=ci POSTGRES_PASSWORD=ci POSTGRES_DB=ci`, `5432:5432`,
   healthcheck `pg_isready -U ci -d ci`.
   `DATABASE_URL=postgresql://ci:ci@localhost:5432/ci?schema=public`.

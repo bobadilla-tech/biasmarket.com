@@ -642,10 +642,10 @@ jobs:
       S3_PAYMENT_BUCKET: "payments"
       NODE_ENV: test
     services:
-      # Digest resolved 2026-08-28 from ghcr.io/sakiladb/postgres:18; the image
-      # keeps the standard postgres entrypoint while avoiding Docker Hub.
+      # Digest resolved 2026-08-28 from ghcr.io/immich-app/postgres:18-vectorchord0.5.3-pgvector0.8.1;
+      # the image keeps the standard postgres entrypoint while avoiding Docker Hub.
       postgres:
-        image: ghcr.io/sakiladb/postgres:18@sha256:7848cf782d233daf13aca55a61262e5ee775299ee48509e6b1e32eddb2c1b2e2
+        image: ghcr.io/immich-app/postgres:18-vectorchord0.5.3-pgvector0.8.1@sha256:828081a755d3911a2d94f0a2be9f98570c07d52cf080fd310a9d6e4b83b73aa5
         credentials:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
