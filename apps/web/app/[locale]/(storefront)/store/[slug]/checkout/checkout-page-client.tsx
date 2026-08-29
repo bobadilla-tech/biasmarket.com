@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
@@ -31,6 +31,7 @@ export function CheckoutPageClient() {
   const { slug } = useParams<{ slug: string }>();
   const [items, setItems] = useState<CartItem[]>([]);
   const [order, setOrder] = useState<OrderCreatedResult | null>(null);
+  const confirmationHeadingRef = useRef<HTMLHeadingElement>(null);
   const [paymentType, setPaymentType] = useState<"FULL" | "PARTIAL">("FULL");
   const [depositPercent, setDepositPercent] = useState(100);
   // Reported up by CheckoutForm from the selected delivery method — the
@@ -49,6 +50,10 @@ export function CheckoutPageClient() {
   useEffect(() => {
     setItems(getCart(slug));
   }, [slug]);
+
+  useEffect(() => {
+    if (order) confirmationHeadingRef.current?.focus();
+  }, [order]);
 
   const handleOrderCreated = (result: OrderCreatedResult) => {
     // The order exists server-side now — drop the cart so the buyer doesn't
@@ -86,7 +91,11 @@ export function CheckoutPageClient() {
         className="min-h-dvh flex items-center justify-center bg-gray-50 px-6 py-10"
       >
         <div className="w-full max-w-md text-center">
-          <h1 className="text-xl font-bold text-gray-900">
+          <h1
+            ref={confirmationHeadingRef}
+            tabIndex={-1}
+            className="text-xl font-bold text-gray-900 outline-none"
+          >
             {t("orderCreatedTitle")}
           </h1>
           <p className="mt-2 text-gray-500">

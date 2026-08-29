@@ -1,11 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { PhoneInput } from "@/components/ui/phone-input";
+import {
+  FormErrorSummary,
+  FormField,
+  formErrorMessage,
+} from "@/components/shared/form-a11y";
 import { useCustomerForgotPassword } from "../mutations/use-customer-forgot-password";
 import {
   type ForgotPasswordInput,
@@ -13,12 +18,14 @@ import {
 } from "../schemas/forgot-password.schema";
 
 const inputClassName =
-  "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 placeholder:text-gray-600";
+  "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-base text-gray-600 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 placeholder:text-gray-600 md:text-sm";
 
 export function ForgotPasswordForm({ slug }: { slug: string }) {
   const t = useTranslations("storefront.forgotPasswordPage");
   const forgotPassword = useCustomerForgotPassword(slug);
+  const tCommon = useTranslations("common");
   const [success, setSuccess] = useState(false);
+  const successRef = useRef<HTMLParagraphElement>(null);
 
   const {
     control,
@@ -36,10 +43,21 @@ export function ForgotPasswordForm({ slug }: { slug: string }) {
     setSuccess(true);
   };
 
+  useEffect(() => {
+    if (success) successRef.current?.focus();
+  }, [success]);
+
   if (success) {
     return (
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-100 p-8 flex flex-col gap-4">
-        <p className="text-sm text-gray-700">{t("success")}</p>
+        <p
+          ref={successRef}
+          tabIndex={-1}
+          role="status"
+          className="text-sm text-gray-700 outline-none"
+        >
+          {t("success")}
+        </p>
         <Link
           href={`/store/${slug}/account/login`}
           className="store-theme-link font-semibold text-center"
@@ -58,24 +76,34 @@ export function ForgotPasswordForm({ slug }: { slug: string }) {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
-        <div className="flex flex-col gap-1.5">
-          <Controller
-            control={control}
-            name="phone"
-            render={({ field }) => (
-              <PhoneInput
-                value={field.value}
-                onChange={field.onChange}
-                placeholder={t("phonePlaceholder")}
-                selectClassName={inputClassName}
-                inputClassName={inputClassName}
-              />
-            )}
-          />
-          {errors.phone
-            ? <p className="text-sm text-red-500">{t("phoneRequired")}</p>
-            : null}
-        </div>
+        <FormErrorSummary
+          id="forgot-password-error-summary"
+          title={tCommon("formErrorsSummary")}
+          messages={errors.phone ? [tCommon("formErrorsSummary")] : []}
+        />
+        <FormField
+          id="forgot-password-phone"
+          label={t("phonePlaceholder")}
+          error={formErrorMessage(errors.phone, t("phoneRequired"))}
+        >
+          {(props) => (
+            <Controller
+              control={control}
+              name="phone"
+              render={({ field }) => (
+                <PhoneInput
+                  {...props}
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder={t("phonePlaceholder")}
+                  selectClassName={inputClassName}
+                  inputClassName={inputClassName}
+                  countryId="forgot-password-phone-country"
+                />
+              )}
+            />
+          )}
+        </FormField>
 
         <button
           type="submit"

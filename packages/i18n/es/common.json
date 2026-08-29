@@ -3,6 +3,7 @@
   "close": "Cerrar",
   "countryCode": "Código de país",
   "phoneNumber": "Número de teléfono",
+  "formErrorsSummary": "Revisa los campos marcados.",
   "networkError": "Error de red",
   "skipToContent": "Ir al contenido",
   "notFoundPage": {

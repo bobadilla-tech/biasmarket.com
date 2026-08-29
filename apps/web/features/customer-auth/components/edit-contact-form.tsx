@@ -5,6 +5,11 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { PhoneInput } from "@/components/ui/phone-input";
+import {
+  FormErrorSummary,
+  FormField,
+  formErrorMessage,
+} from "@/components/shared/form-a11y";
 import { useCustomerUpdateProfile } from "../mutations/use-customer-update-profile";
 import {
   type EditContactInput,
@@ -13,13 +18,18 @@ import {
 import type { CustomerProfileResponseDto } from "@biasmarket/types";
 
 const inputClassName =
-  "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 placeholder:text-gray-600";
+  "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-base text-gray-600 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 placeholder:text-gray-600 md:text-sm";
 
-export function EditContactForm(
-  { slug, profile }: { slug: string; profile: CustomerProfileResponseDto },
-) {
+export function EditContactForm({
+  slug,
+  profile,
+}: {
+  slug: string;
+  profile: CustomerProfileResponseDto;
+}) {
   const t = useTranslations("storefront.accountPage.editContact");
   const updateProfile = useCustomerUpdateProfile(slug);
+  const tCommon = useTranslations("common");
   const [saved, setSaved] = useState(false);
 
   const {
@@ -65,50 +75,69 @@ export function EditContactForm(
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1.5">
-          <input
-            placeholder={t("namePlaceholder")}
-            className={inputClassName}
-            {...register("name")}
-          />
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <input
-            placeholder={t("emailPlaceholder")}
-            className={inputClassName}
-            {...register("email")}
-          />
-          {errors.email
-            ? <p className="text-sm text-red-500">{t("emailInvalid")}</p>
-            : null}
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <Controller
-            control={control}
-            name="phone"
-            render={({ field }) => (
-              <PhoneInput
-                value={field.value}
-                onChange={field.onChange}
-                placeholder={t("phonePlaceholder")}
-                selectClassName={inputClassName}
-                inputClassName={inputClassName}
-              />
-            )}
-          />
-          {errors.phone
-            ? <p className="text-sm text-red-500">{t("phoneRequired")}</p>
-            : null}
-        </div>
-
-        {errors.root
-          ? <p className="text-sm text-red-500">{errors.root.message}</p>
-          : null}
-        {saved
-          ? <p className="text-sm text-emerald-600">{t("success")}</p>
-          : null}
+        <FormErrorSummary
+          id="edit-contact-error-summary"
+          title={tCommon("formErrorsSummary")}
+          messages={[
+            errors.email ? t("emailInvalid") : "",
+            errors.phone ? t("phoneRequired") : "",
+            errors.root?.message ?? "",
+          ].filter(Boolean)}
+        />
+        <FormField id="edit-contact-name" label={t("namePlaceholder")}>
+          {(props) => (
+            <input
+              {...props}
+              autoComplete="name"
+              placeholder={t("namePlaceholder")}
+              className={inputClassName}
+              {...register("name")}
+            />
+          )}
+        </FormField>
+        <FormField
+          id="edit-contact-email"
+          label={t("emailPlaceholder")}
+          error={formErrorMessage(errors.email, t("emailInvalid"))}
+        >
+          {(props) => (
+            <input
+              {...props}
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              placeholder={t("emailPlaceholder")}
+              className={inputClassName}
+              {...register("email")}
+            />
+          )}
+        </FormField>
+        <FormField
+          id="edit-contact-phone"
+          label={t("phonePlaceholder")}
+          error={formErrorMessage(errors.phone, t("phoneRequired"))}
+        >
+          {(props) => (
+            <Controller
+              control={control}
+              name="phone"
+              render={({ field }) => (
+                <PhoneInput
+                  {...props}
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder={t("phonePlaceholder")}
+                  selectClassName={inputClassName}
+                  inputClassName={inputClassName}
+                  countryId="edit-contact-phone-country"
+                />
+              )}
+            />
+          )}
+        </FormField>
+        {saved ? (
+          <p className="text-sm text-emerald-600">{t("success")}</p>
+        ) : null}
 
         <button
           type="submit"

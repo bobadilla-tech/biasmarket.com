@@ -19,6 +19,11 @@ import {
 import { isPaymentMethodConfigured } from "@biasmarket/utils/payment-methods";
 import type { CheckoutPaymentMethod } from "@biasmarket/utils/payment-methods";
 import { PhoneInput } from "@/components/ui/phone-input";
+import {
+  FormErrorSummary,
+  FormField,
+  formErrorMessage,
+} from "@/components/shared/form-a11y";
 import { type CartItem, hasMixedCurrencies } from "@/lib/cart";
 import { useDeliveryOptions } from "../queries/use-delivery-options";
 import { useDefaultShippingAddress } from "../queries/use-default-shipping-address";
@@ -37,7 +42,7 @@ import {
 } from "../schemas/checkout.schema";
 
 const inputClassName =
-  "store-theme-input rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none";
+  "store-theme-input rounded-xl border border-gray-200 px-4 py-2.5 text-base text-gray-600 outline-none md:text-sm";
 
 const PAYMENT_METHOD_ICONS: Record<string, React.ReactNode> = {
   YAPE: (
@@ -128,6 +133,7 @@ export function CheckoutForm({
   onOrderCreated,
 }: CheckoutFormProps) {
   const t = useTranslations("storefront.checkoutPage");
+  const tCommon = useTranslations("common");
   const deliveryOptions = useDeliveryOptions(slug);
   const defaultAddress = useDefaultShippingAddress(slug);
   const customerProfile = useCustomerProfile(slug);
@@ -300,6 +306,15 @@ export function CheckoutForm({
   const shippingLine1 = form.watch("shippingLine1");
   const shippingCity = form.watch("shippingCity");
   const shippingAgencyName = form.watch("shippingAgencyName");
+  const checkoutErrors = Object.values(form.formState.errors)
+    .map((error) => error?.message)
+    .filter((message): message is string => typeof message === "string");
+  const submitError =
+    submitCheckout.error instanceof Error
+      ? submitCheckout.error.message
+      : submitCheckout.error
+        ? String(submitCheckout.error)
+        : undefined;
 
   // Compute the deposit percentage for the selected payment method
   const depositPercent = useMemo(() => {
@@ -517,6 +532,14 @@ export function CheckoutForm({
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6">
+      <FormErrorSummary
+        id="checkout-error-summary"
+        title={tCommon("formErrorsSummary")}
+        messages={[
+          checkoutErrors.length > 0 ? tCommon("formErrorsSummary") : "",
+          submitError ?? "",
+        ].filter(Boolean)}
+      />
       <nav
         aria-label="breadcrumb"
         className="flex items-center gap-2 text-xs font-medium text-gray-400"
@@ -536,10 +559,22 @@ export function CheckoutForm({
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col gap-5">
         {methods.length > 0 && (
           <div className="flex flex-col gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+            <h2
+              id="checkout-delivery-type-label"
+              className="text-sm font-semibold text-foreground"
+            >
               {t("deliveryTypeLabel")}
-            </span>
-            <div className="grid grid-cols-2 gap-3">
+            </h2>
+            <div
+              role="group"
+              aria-labelledby="checkout-delivery-type-label"
+              aria-describedby={
+                form.formState.errors.deliveryMethodType
+                  ? "checkout-delivery-type-error"
+                  : undefined
+              }
+              className="grid grid-cols-2 gap-3"
+            >
               {methods.map((m) => (
                 <SelectableCard
                   key={m.type}
@@ -564,15 +599,36 @@ export function CheckoutForm({
                 />
               ))}
             </div>
+            {form.formState.errors.deliveryMethodType && (
+              <p
+                id="checkout-delivery-type-error"
+                role="alert"
+                className="text-sm text-error-foreground"
+              >
+                {t("deliveryTypeLabel")}
+              </p>
+            )}
           </div>
         )}
 
         {deliveryMethodType === "PICKUP" && points.length > 0 && (
           <div className="flex flex-col gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+            <h2
+              id="checkout-pickup-point-label"
+              className="text-sm font-semibold text-foreground"
+            >
               {t("pickupPointsLabel")}
-            </span>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            </h2>
+            <div
+              role="group"
+              aria-labelledby="checkout-pickup-point-label"
+              aria-describedby={
+                form.formState.errors.pickupPointId
+                  ? "checkout-pickup-point-error"
+                  : undefined
+              }
+              className="grid grid-cols-1 gap-3 sm:grid-cols-2"
+            >
               {points.map((point) => {
                 // `points` is only non-empty once deliveryOptions.data has
                 // loaded, so `weekday` (sourced from that same payload) is
@@ -603,6 +659,15 @@ export function CheckoutForm({
                 );
               })}
             </div>
+            {form.formState.errors.pickupPointId && (
+              <p
+                id="checkout-pickup-point-error"
+                role="alert"
+                className="text-sm text-error-foreground"
+              >
+                {t("pickupPointsLabel")}
+              </p>
+            )}
 
             {pickupPointId &&
               pointsRequiringDate.has(pickupPointId) &&
@@ -630,39 +695,36 @@ export function CheckoutForm({
                   selectedPoint.openDays.length > 0 &&
                   !selectedPoint.openDays.includes(selectedWeekday);
                 return (
-                  <div className="flex flex-col gap-1">
-                    <label
-                      htmlFor="pickup-date-input"
-                      className="text-xs font-semibold uppercase tracking-wide text-gray-400"
-                    >
-                      {t("pickupDateLabel")}
-                    </label>
-                    <Controller
-                      control={form.control}
-                      name="pickupDate"
-                      render={({ field }) => (
-                        <input
-                          id="pickup-date-input"
-                          type="date"
-                          min={toDateInputValue(new Date())}
-                          className={inputClassName}
-                          value={field.value}
-                          onChange={field.onChange}
-                        />
-                      )}
-                    />
-                    {invalidWeekday ? (
-                      <p className="text-sm text-red-500">
-                        {t("pickupDateInvalidWeekday")}
-                      </p>
-                    ) : (
-                      form.formState.errors.pickupDate && (
-                        <p className="text-sm text-red-500">
-                          {t("pickupDateRequired")}
-                        </p>
-                      )
+                  <FormField
+                    id="pickup-date-input"
+                    label={t("pickupDateLabel")}
+                    error={
+                      invalidWeekday
+                        ? t("pickupDateInvalidWeekday")
+                        : formErrorMessage(
+                            form.formState.errors.pickupDate,
+                            t("pickupDateRequired"),
+                          )
+                    }
+                  >
+                    {(props) => (
+                      <Controller
+                        control={form.control}
+                        name="pickupDate"
+                        render={({ field }) => (
+                          <input
+                            {...props}
+                            id="pickup-date-input"
+                            type="date"
+                            min={toDateInputValue(new Date())}
+                            className={inputClassName}
+                            value={field.value}
+                            onChange={field.onChange}
+                          />
+                        )}
+                      />
                     )}
-                  </div>
+                  </FormField>
                 );
               })()}
           </div>
@@ -671,36 +733,37 @@ export function CheckoutForm({
         {deliveryMethodType === "COURIER" && (
           <div className="flex flex-col gap-3">
             {couriers.length > 0 && (
-              <div className="flex flex-col gap-2">
-                <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  {t("courierSelectLabel")}
-                </span>
-                <select
-                  className={inputClassName}
-                  aria-label={t("courierSelectLabel")}
-                  value={courierName}
-                  onChange={(e) => {
-                    form.setValue("courierName", e.target.value, {
-                      shouldValidate: true,
-                    });
-                    form.setValue("courierModality", "", {
-                      shouldValidate: true,
-                    });
-                  }}
-                >
-                  <option value="">{t("courierSelectPlaceholder")}</option>
-                  {couriers.map((c) => (
-                    <option key={c.name} value={c.name}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-                {form.formState.errors.courierName && (
-                  <p className="text-sm text-red-500">
-                    {t("courierSelectRequired")}
-                  </p>
+              <FormField
+                id="checkout-courier-name"
+                label={t("courierSelectLabel")}
+                error={formErrorMessage(
+                  form.formState.errors.courierName,
+                  t("courierSelectRequired"),
                 )}
-              </div>
+              >
+                {(props) => (
+                  <select
+                    {...props}
+                    className={inputClassName}
+                    value={courierName}
+                    onChange={(e) => {
+                      form.setValue("courierName", e.target.value, {
+                        shouldValidate: true,
+                      });
+                      form.setValue("courierModality", "", {
+                        shouldValidate: true,
+                      });
+                    }}
+                  >
+                    <option value="">{t("courierSelectPlaceholder")}</option>
+                    {couriers.map((c) => (
+                      <option key={c.name} value={c.name}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </FormField>
             )}
 
             {courierName &&
@@ -710,10 +773,22 @@ export function CheckoutForm({
                 if (modalities.length === 0) return null;
                 return (
                   <div className="flex flex-col gap-2">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    <h3
+                      id="checkout-courier-modality-label"
+                      className="text-sm font-semibold text-foreground"
+                    >
                       {t("courierModalityLabel")}
-                    </span>
-                    <div className="grid grid-cols-2 gap-3">
+                    </h3>
+                    <div
+                      role="group"
+                      aria-labelledby="checkout-courier-modality-label"
+                      aria-describedby={
+                        form.formState.errors.courierModality
+                          ? "checkout-courier-modality-error"
+                          : undefined
+                      }
+                      className="grid grid-cols-2 gap-3"
+                    >
                       {modalities.some((m) => m.modality === "AGENCY") && (
                         <SelectableCard
                           selected={courierModality === "AGENCY"}
@@ -740,7 +815,11 @@ export function CheckoutForm({
                       )}
                     </div>
                     {form.formState.errors.courierModality && (
-                      <p className="text-sm text-red-500">
+                      <p
+                        id="checkout-courier-modality-error"
+                        role="alert"
+                        className="text-sm text-error-foreground"
+                      >
                         {t("courierModalityRequired")}
                       </p>
                     )}
@@ -748,125 +827,234 @@ export function CheckoutForm({
                 );
               })()}
 
-            <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+            <h3 className="text-sm font-semibold text-foreground">
               {t("shippingAddressLabel")}
-            </span>
+            </h3>
 
             {courierModality === "AGENCY" && (
-              <input
-                placeholder={t("shippingAgencyNamePlaceholder")}
-                className={inputClassName}
-                {...form.register("shippingAgencyName")}
-              />
-            )}
-            {form.formState.errors.shippingAgencyName && (
-              <p className="text-sm text-red-500">
-                {t("courierAgencyNameRequired")}
-              </p>
-            )}
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <input
-                placeholder={t("shippingRecipientNamePlaceholder")}
-                className={inputClassName}
-                {...form.register("shippingRecipientName")}
-              />
-              <input
-                placeholder={t("shippingRecipientSurnamesPlaceholder")}
-                className={inputClassName}
-                {...form.register("shippingRecipientSurnames")}
-              />
-            </div>
-            {form.formState.errors.shippingRecipientName && (
-              <p className="text-sm text-red-500">
-                {t("shippingRecipientNameRequired")}
-              </p>
-            )}
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <select
-                className={inputClassName}
-                aria-label={t("shippingDocumentTypePlaceholder")}
-                {...form.register("shippingDocumentType")}
+              <FormField
+                id="checkout-shipping-agency"
+                label={t("shippingAgencyNamePlaceholder")}
+                error={formErrorMessage(
+                  form.formState.errors.shippingAgencyName,
+                  t("courierAgencyNameRequired"),
+                )}
               >
-                <option value="">{t("shippingDocumentTypePlaceholder")}</option>
-                <option value="DNI">DNI</option>
-                <option value="CE">Carnet de Extranjería</option>
-                <option value="RUC">RUC</option>
-                <option value="PASSPORT">Pasaporte</option>
-              </select>
-              <input
-                placeholder={t("shippingDocumentNumberPlaceholder")}
-                className={inputClassName}
-                {...form.register("shippingDocumentNumber")}
-              />
+                {(props) => (
+                  <input
+                    {...props}
+                    placeholder={t("shippingAgencyNamePlaceholder")}
+                    className={inputClassName}
+                    {...form.register("shippingAgencyName")}
+                  />
+                )}
+              </FormField>
+            )}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <FormField
+                id="checkout-shipping-recipient-name"
+                label={t("shippingRecipientNamePlaceholder")}
+                error={formErrorMessage(
+                  form.formState.errors.shippingRecipientName,
+                  t("shippingRecipientNameRequired"),
+                )}
+              >
+                {(props) => (
+                  <input
+                    {...props}
+                    autoComplete="given-name"
+                    placeholder={t("shippingRecipientNamePlaceholder")}
+                    className={inputClassName}
+                    {...form.register("shippingRecipientName")}
+                  />
+                )}
+              </FormField>
+              <FormField
+                id="checkout-shipping-recipient-surnames"
+                label={t("shippingRecipientSurnamesPlaceholder")}
+              >
+                {(props) => (
+                  <input
+                    {...props}
+                    autoComplete="family-name"
+                    placeholder={t("shippingRecipientSurnamesPlaceholder")}
+                    className={inputClassName}
+                    {...form.register("shippingRecipientSurnames")}
+                  />
+                )}
+              </FormField>
             </div>
 
-            <input
-              placeholder={t("shippingPhonePlaceholder")}
-              className={inputClassName}
-              {...form.register("shippingPhone")}
-            />
-            {form.formState.errors.shippingPhone && (
-              <p className="text-sm text-red-500">
-                {t("shippingPhoneRequired")}
-              </p>
-            )}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <FormField
+                id="checkout-shipping-document-type"
+                label={t("shippingDocumentTypePlaceholder")}
+              >
+                {(props) => (
+                  <select
+                    {...props}
+                    className={inputClassName}
+                    {...form.register("shippingDocumentType")}
+                  >
+                    <option value="">
+                      {t("shippingDocumentTypePlaceholder")}
+                    </option>
+                    <option value="DNI">DNI</option>
+                    <option value="CE">Carnet de Extranjería</option>
+                    <option value="RUC">RUC</option>
+                    <option value="PASSPORT">Pasaporte</option>
+                  </select>
+                )}
+              </FormField>
+              <FormField
+                id="checkout-shipping-document-number"
+                label={t("shippingDocumentNumberPlaceholder")}
+              >
+                {(props) => (
+                  <input
+                    {...props}
+                    inputMode="numeric"
+                    placeholder={t("shippingDocumentNumberPlaceholder")}
+                    className={inputClassName}
+                    {...form.register("shippingDocumentNumber")}
+                  />
+                )}
+              </FormField>
+            </div>
+
+            <FormField
+              id="checkout-shipping-phone"
+              label={t("shippingPhonePlaceholder")}
+              error={formErrorMessage(
+                form.formState.errors.shippingPhone,
+                t("shippingPhoneRequired"),
+              )}
+            >
+              {(props) => (
+                <input
+                  {...props}
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  placeholder={t("shippingPhonePlaceholder")}
+                  className={inputClassName}
+                  {...form.register("shippingPhone")}
+                />
+              )}
+            </FormField>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <input
-                placeholder={t("shippingDepartmentPlaceholder")}
-                className={inputClassName}
-                {...form.register("shippingDepartment")}
-              />
-              <input
-                placeholder={t("shippingProvincePlaceholder")}
-                className={inputClassName}
-                {...form.register("shippingProvince")}
-              />
-              <input
-                placeholder={t("shippingDistrictPlaceholder")}
-                className={inputClassName}
-                {...form.register("shippingDistrict")}
-              />
+              <FormField
+                id="checkout-shipping-department"
+                label={t("shippingDepartmentPlaceholder")}
+              >
+                {(props) => (
+                  <input
+                    {...props}
+                    autoComplete="address-level1"
+                    placeholder={t("shippingDepartmentPlaceholder")}
+                    className={inputClassName}
+                    {...form.register("shippingDepartment")}
+                  />
+                )}
+              </FormField>
+              <FormField
+                id="checkout-shipping-province"
+                label={t("shippingProvincePlaceholder")}
+              >
+                {(props) => (
+                  <input
+                    {...props}
+                    placeholder={t("shippingProvincePlaceholder")}
+                    className={inputClassName}
+                    {...form.register("shippingProvince")}
+                  />
+                )}
+              </FormField>
+              <FormField
+                id="checkout-shipping-district"
+                label={t("shippingDistrictPlaceholder")}
+              >
+                {(props) => (
+                  <input
+                    {...props}
+                    autoComplete="address-level2"
+                    placeholder={t("shippingDistrictPlaceholder")}
+                    className={inputClassName}
+                    {...form.register("shippingDistrict")}
+                  />
+                )}
+              </FormField>
             </div>
 
             {courierModality === "HOME" && (
               <>
-                <input
-                  placeholder={t("shippingLine1Placeholder")}
-                  className={inputClassName}
-                  {...form.register("shippingLine1")}
-                />
-                {form.formState.errors.shippingLine1 && (
-                  <p className="text-sm text-red-500">
-                    {t("shippingAddressRequired")}
-                  </p>
-                )}
+                <FormField
+                  id="checkout-shipping-line1"
+                  label={t("shippingLine1Placeholder")}
+                  error={formErrorMessage(
+                    form.formState.errors.shippingLine1,
+                    t("shippingAddressRequired"),
+                  )}
+                >
+                  {(props) => (
+                    <input
+                      {...props}
+                      autoComplete="street-address"
+                      placeholder={t("shippingLine1Placeholder")}
+                      className={inputClassName}
+                      {...form.register("shippingLine1")}
+                    />
+                  )}
+                </FormField>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <input
-                    placeholder={t("shippingCityPlaceholder")}
-                    className={inputClassName}
-                    {...form.register("shippingCity")}
-                  />
-                  <input
-                    placeholder={t("shippingRegionPlaceholder")}
-                    className={inputClassName}
-                    {...form.register("shippingRegion")}
-                  />
+                  <FormField
+                    id="checkout-shipping-city"
+                    label={t("shippingCityPlaceholder")}
+                    error={formErrorMessage(
+                      form.formState.errors.shippingCity,
+                      t("shippingCityRequired"),
+                    )}
+                  >
+                    {(props) => (
+                      <input
+                        {...props}
+                        autoComplete="address-level2"
+                        placeholder={t("shippingCityPlaceholder")}
+                        className={inputClassName}
+                        {...form.register("shippingCity")}
+                      />
+                    )}
+                  </FormField>
+                  <FormField
+                    id="checkout-shipping-region"
+                    label={t("shippingRegionPlaceholder")}
+                  >
+                    {(props) => (
+                      <input
+                        {...props}
+                        autoComplete="address-level1"
+                        placeholder={t("shippingRegionPlaceholder")}
+                        className={inputClassName}
+                        {...form.register("shippingRegion")}
+                      />
+                    )}
+                  </FormField>
                 </div>
-                {form.formState.errors.shippingCity && (
-                  <p className="text-sm text-red-500">
-                    {t("shippingCityRequired")}
-                  </p>
-                )}
-
-                <input
-                  placeholder={t("shippingReferencePlaceholder")}
-                  className={inputClassName}
-                  {...form.register("shippingReference")}
-                />
+                <FormField
+                  id="checkout-shipping-reference"
+                  label={t("shippingReferencePlaceholder")}
+                >
+                  {(props) => (
+                    <input
+                      {...props}
+                      placeholder={t("shippingReferencePlaceholder")}
+                      className={inputClassName}
+                      {...form.register("shippingReference")}
+                    />
+                  )}
+                </FormField>
               </>
             )}
           </div>
@@ -874,10 +1062,22 @@ export function CheckoutForm({
 
         {paymentMethods.length > 0 && (
           <div className="flex flex-col gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+            <h2
+              id="checkout-payment-method-label"
+              className="text-sm font-semibold text-foreground"
+            >
               {t("paymentMethodLabel")}
-            </span>
-            <div className="grid grid-cols-2 gap-3">
+            </h2>
+            <div
+              role="group"
+              aria-labelledby="checkout-payment-method-label"
+              aria-describedby={
+                form.formState.errors.paymentMethod
+                  ? "checkout-payment-method-error"
+                  : undefined
+              }
+              className="grid grid-cols-2 gap-3"
+            >
               {paymentMethods.map((method) => (
                 <SelectableCard
                   key={method.method}
@@ -892,15 +1092,31 @@ export function CheckoutForm({
                 />
               ))}
             </div>
+            {form.formState.errors.paymentMethod && (
+              <p
+                id="checkout-payment-method-error"
+                role="alert"
+                className="text-sm text-error-foreground"
+              >
+                {t("paymentMethodLabel")}
+              </p>
+            )}
           </div>
         )}
 
         {partialAvailable && (
           <div className="flex flex-col gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+            <h2
+              id="checkout-payment-type-label"
+              className="text-sm font-semibold text-foreground"
+            >
               {t("paymentTypeLabel")}
-            </span>
-            <div className="grid grid-cols-2 gap-3">
+            </h2>
+            <div
+              role="group"
+              aria-labelledby="checkout-payment-type-label"
+              className="grid grid-cols-2 gap-3"
+            >
               <SelectableCard
                 selected={paymentType === "FULL"}
                 onSelect={() =>
@@ -936,66 +1152,100 @@ export function CheckoutForm({
         {paymentMethod &&
           paymentMethod !== "CASH" &&
           selectedMethodConfigured && (
-            <div className="flex flex-col gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                {t("paymentProofUploadLabel")}
-              </span>
-              <Controller
-                control={form.control}
-                name="paymentProof"
-                render={({ field }) => (
-                  <PaymentProofUpload
-                    value={field.value}
-                    onChange={field.onChange}
-                  />
-                )}
-              />
-              {form.formState.errors.paymentProof && (
-                <p className="text-sm text-red-500">
-                  {form.formState.errors.paymentProof.message ===
-                  "file too large"
-                    ? t("paymentProofTooLarge")
-                    : form.formState.errors.paymentProof.message ===
-                        "invalid file type"
-                      ? t("paymentProofInvalidFormat")
-                      : t("paymentProofRequired")}
-                </p>
+            <FormField
+              id="checkout-payment-proof"
+              label={t("paymentProofUploadLabel")}
+              error={formErrorMessage(
+                form.formState.errors.paymentProof,
+                t("paymentProofRequired"),
               )}
-            </div>
+            >
+              {(props) => (
+                <Controller
+                  control={form.control}
+                  name="paymentProof"
+                  render={({ field }) => (
+                    <PaymentProofUpload
+                      {...props}
+                      value={field.value}
+                      onChange={field.onChange}
+                    />
+                  )}
+                />
+              )}
+            </FormField>
           )}
 
-        <input
-          placeholder={t("namePlaceholder")}
-          className={inputClassName}
-          {...form.register("customerName")}
-        />
-
-        <Controller
-          control={form.control}
-          name="customerPhone"
-          render={({ field }) => (
-            <PhoneInput
-              value={field.value}
-              onChange={field.onChange}
-              placeholder={t("phonePlaceholder")}
-              selectClassName={inputClassName}
-              inputClassName={inputClassName}
+        <FormField
+          id="checkout-customer-name"
+          label={t("namePlaceholder")}
+          error={formErrorMessage(
+            form.formState.errors.customerName,
+            t("namePlaceholder"),
+          )}
+        >
+          {(props) => (
+            <input
+              {...props}
+              autoComplete="name"
+              placeholder={t("namePlaceholder")}
+              className={inputClassName}
+              {...form.register("customerName")}
             />
           )}
-        />
+        </FormField>
 
-        <input
-          placeholder={t("emailPlaceholder")}
-          className={inputClassName}
-          {...form.register("customerEmail")}
-        />
-        {form.formState.errors.customerEmail && (
-          <p className="text-sm text-red-500">{t("invalidEmail")}</p>
-        )}
+        <FormField
+          id="checkout-customer-phone"
+          label={t("phonePlaceholder")}
+          error={formErrorMessage(
+            form.formState.errors.customerPhone,
+            t("phonePlaceholder"),
+          )}
+        >
+          {(props) => (
+            <Controller
+              control={form.control}
+              name="customerPhone"
+              render={({ field }) => (
+                <PhoneInput
+                  {...props}
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder={t("phonePlaceholder")}
+                  selectClassName={inputClassName}
+                  inputClassName={inputClassName}
+                  countryId="checkout-customer-phone-country"
+                />
+              )}
+            />
+          )}
+        </FormField>
+
+        <FormField
+          id="checkout-customer-email"
+          label={t("emailPlaceholder")}
+          error={formErrorMessage(
+            form.formState.errors.customerEmail,
+            t("invalidEmail"),
+          )}
+        >
+          {(props) => (
+            <input
+              {...props}
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              placeholder={t("emailPlaceholder")}
+              className={inputClassName}
+              {...form.register("customerEmail")}
+            />
+          )}
+        </FormField>
       </div>
 
       {submitCheckout.error && (
-        <p className="text-sm text-red-500">
+        <p role="alert" className="text-sm text-red-500">
           {submitCheckout.error instanceof Error
             ? submitCheckout.error.message
             : String(submitCheckout.error)}

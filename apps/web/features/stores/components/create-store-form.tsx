@@ -31,6 +31,11 @@ import {
   STORE_PALETTES,
 } from "@/lib/store-theme";
 import { cn } from "@/lib/utils";
+import {
+  FormErrorSummary,
+  FormField,
+  formErrorMessage,
+} from "@/components/shared/form-a11y";
 import { useCreateStore } from "../mutations/use-create-store";
 import {
   type CreateStoreFormInput,
@@ -46,22 +51,22 @@ function slugifyValue(value: string) {
 }
 
 function Field({
+  id,
   label,
   help,
+  error,
   children,
 }: {
+  id: string;
   label: string;
   help?: string;
+  error?: string;
   children: React.ReactNode;
 }) {
   return (
-    <label className="block space-y-2.5">
-      <div className="space-y-1">
-        <p className="text-sm font-semibold text-[#301848]">{label}</p>
-        {help ? <p className="text-xs text-[#8d79a5]">{help}</p> : null}
-      </div>
-      {children}
-    </label>
+    <FormField id={id} label={label} description={help} error={error}>
+      {() => children}
+    </FormField>
   );
 }
 
@@ -107,7 +112,7 @@ export function CreateStoreForm() {
     }
     return (
       STORE_PALETTES.find((palette) => palette.id === selectedPaletteId) ??
-        STORE_PALETTES[0]
+      STORE_PALETTES[0]
     );
   }, [selectedPaletteId, customColor]);
 
@@ -158,6 +163,16 @@ export function CreateStoreForm() {
           className="grid gap-8 xl:grid-cols-[minmax(0,1.1fr)_360px]"
         >
           <div className="space-y-8">
+            <FormErrorSummary
+              id="create-store-error-summary"
+              title={t("genericError")}
+              messages={[
+                errors.name || errors.slug || errors.whatsappNumber
+                  ? t("genericError")
+                  : "",
+                errors.root?.message ?? "",
+              ].filter(Boolean)}
+            />
             <div>
               <Badge className="rounded-full bg-[#f3e8ff] px-4 py-1.5 text-xs uppercase tracking-[0.2em] text-[#7a38d8]">
                 <WandSparkles className="size-3.5" />
@@ -173,10 +188,18 @@ export function CreateStoreForm() {
 
             <div className="grid gap-8 2xl:grid-cols-2">
               <div className="space-y-5">
-                <Field label={t("namePlaceholder")} help={t("nameHelp")}>
+                <Field
+                  id="create-store-name"
+                  label={t("namePlaceholder")}
+                  help={t("nameHelp")}
+                  error={errors.name?.message}
+                >
                   <div className="relative">
                     <Store className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[#a38dbc]" />
                     <Input
+                      id="create-store-name"
+                      aria-invalid={Boolean(errors.name)}
+                      aria-describedby={`create-store-name-description${errors.name ? " create-store-name-error" : ""}`}
                       {...register("name")}
                       onChange={handleNameChange}
                       placeholder={t("namePlaceholder")}
@@ -185,8 +208,16 @@ export function CreateStoreForm() {
                   </div>
                 </Field>
 
-                <Field label={t("slugLabel")} help={t("slugHelp")}>
+                <Field
+                  id="create-store-slug"
+                  label={t("slugLabel")}
+                  help={t("slugHelp")}
+                  error={errors.slug?.message}
+                >
                   <Input
+                    id="create-store-slug"
+                    aria-invalid={Boolean(errors.slug)}
+                    aria-describedby={`create-store-slug-description${errors.slug ? " create-store-slug-error" : ""}`}
                     {...slugRegister}
                     onChange={(event) => {
                       event.target.value = slugifyValue(event.target.value);
@@ -198,14 +229,19 @@ export function CreateStoreForm() {
                 </Field>
 
                 <Field
+                  id="create-store-whatsapp"
                   label={t("whatsappPlaceholder")}
                   help={t("whatsappHelp")}
+                  error={errors.whatsappNumber?.message}
                 >
                   <Controller
                     control={control}
                     name="whatsappNumber"
                     render={({ field }) => (
                       <PhoneInput
+                        id="create-store-whatsapp"
+                        aria-invalid={errors.whatsappNumber ? true : undefined}
+                        aria-describedby={`create-store-whatsapp-description${errors.whatsappNumber ? " create-store-whatsapp-error" : ""}`}
                         value={field.value}
                         onChange={field.onChange}
                         placeholder={t("whatsappPlaceholder")}
@@ -216,8 +252,9 @@ export function CreateStoreForm() {
                   />
                 </Field>
 
-                <Field label={t("currencyLabel")}>
+                <Field id="create-store-currency" label={t("currencyLabel")}>
                   <Select
+                    id="create-store-currency"
                     {...register("defaultCurrency")}
                     className="h-12 w-32"
                     selectClassName="h-full rounded-[20px] border border-[#e7daf6] bg-[#fcf9ff] text-sm text-[#311948] outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
@@ -268,7 +305,8 @@ export function CreateStoreForm() {
                         ref={logoInputRef}
                         type="file"
                         accept="image/png,image/jpeg"
-                        className="hidden"
+                        aria-label={t("logoLabel")}
+                        className="sr-only"
                         onChange={handleLogoChange}
                       />
                       <Button
@@ -333,13 +371,15 @@ export function CreateStoreForm() {
                               ? "border-solid border-transparent ring-[#7a38d8]"
                               : "border-[#c9b3e8] text-[#7a38d8] ring-transparent",
                           )}
-                          style={selectedPaletteId === "custom"
-                            ? { backgroundColor: customColor }
-                            : undefined}
+                          style={
+                            selectedPaletteId === "custom"
+                              ? { backgroundColor: customColor }
+                              : undefined
+                          }
                         >
-                          {selectedPaletteId !== "custom"
-                            ? <Pipette className="size-4" />
-                            : null}
+                          {selectedPaletteId !== "custom" ? (
+                            <Pipette className="size-4" />
+                          ) : null}
                         </PopoverTrigger>
                         <PopoverContent className="w-auto">
                           <p className="mb-3 text-sm font-semibold text-[#301848]">
@@ -347,6 +387,7 @@ export function CreateStoreForm() {
                           </p>
                           <input
                             type="color"
+                            aria-label={t("customColorLabel")}
                             value={customColor}
                             onChange={(event) => {
                               setCustomColor(event.target.value);
@@ -362,15 +403,13 @@ export function CreateStoreForm() {
               </div>
             </div>
 
-            {errors.root
-              ? (
-                <Card className="rounded-[22px] border-[#f3cadc] bg-[#fff4f8] py-0 shadow-none">
-                  <CardContent className="px-4 py-3 text-sm text-[#b54472]">
-                    {errors.root.message}
-                  </CardContent>
-                </Card>
-              )
-              : null}
+            {errors.root ? (
+              <Card className="rounded-[22px] border-[#f3cadc] bg-[#fff4f8] py-0 shadow-none">
+                <CardContent className="px-4 py-3 text-sm text-[#b54472]">
+                  {errors.root.message}
+                </CardContent>
+              </Card>
+            ) : null}
 
             <Card className="rounded-[26px] border-dashed border-[#ddcaf3] bg-[#fcf8ff] py-0 shadow-none">
               <CardContent className="px-5 py-5">
@@ -385,11 +424,11 @@ export function CreateStoreForm() {
 
             <Button
               type="submit"
-              disabled={createStore.isPending || !name || !slug ||
-                !whatsappNumber}
+              disabled={
+                createStore.isPending || !name || !slug || !whatsappNumber
+              }
               style={{
-                background:
-                  `linear-gradient(135deg, ${selectedPalette.colors.accent} 0%, ${selectedPalette.colors.primary} 100%)`,
+                background: `linear-gradient(135deg, ${selectedPalette.colors.accent} 0%, ${selectedPalette.colors.primary} 100%)`,
                 boxShadow: `0 18px 36px rgba(0, 0, 0, 0.14)`,
               }}
               className="h-12 rounded-[22px] px-6 text-sm font-semibold text-white hover:opacity-95"
@@ -423,8 +462,7 @@ export function CreateStoreForm() {
                 <div
                   className="rounded-[24px] p-5"
                   style={{
-                    background:
-                      `linear-gradient(180deg, ${selectedPalette.colors.surface} 0%, #ffffff 100%)`,
+                    background: `linear-gradient(180deg, ${selectedPalette.colors.surface} 0%, #ffffff 100%)`,
                   }}
                 >
                   <div className="flex items-center gap-3">
@@ -473,15 +511,15 @@ export function CreateStoreForm() {
                           {t("previewPaletteLabel")}
                         </p>
                         <div className="mt-3 flex gap-2">
-                          {Object.values(selectedPalette.colors).map((
-                            color,
-                          ) => (
-                            <span
-                              key={color}
-                              className="h-10 flex-1 rounded-full"
-                              style={{ backgroundColor: color }}
-                            />
-                          ))}
+                          {Object.values(selectedPalette.colors).map(
+                            (color) => (
+                              <span
+                                key={color}
+                                className="h-10 flex-1 rounded-full"
+                                style={{ backgroundColor: color }}
+                              />
+                            ),
+                          )}
                         </div>
                       </CardContent>
                     </Card>

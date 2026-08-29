@@ -51,7 +51,7 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
       paymentInstructions: store.paymentInstructions ?? "",
       defaultCurrency:
         (store.defaultCurrency as ProfileFormInput["defaultCurrency"]) ??
-          SUPPORTED_CURRENCIES[0],
+        SUPPORTED_CURRENCIES[0],
       locale: (store.locale as ProfileFormInput["locale"]) ?? "es",
       instagramUrl: store.instagramUrl ?? "",
       facebookUrl: store.facebookUrl ?? "",
@@ -67,7 +67,7 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
       paymentInstructions: store.paymentInstructions ?? "",
       defaultCurrency:
         (store.defaultCurrency as ProfileFormInput["defaultCurrency"]) ??
-          SUPPORTED_CURRENCIES[0],
+        SUPPORTED_CURRENCIES[0],
       locale: (store.locale as ProfileFormInput["locale"]) ?? "es",
       instagramUrl: store.instagramUrl ?? "",
       facebookUrl: store.facebookUrl ?? "",
@@ -129,7 +129,8 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
           ref={logoInputRef}
           type="file"
           accept="image/png,image/jpeg"
-          className="hidden"
+          aria-label={t("profile.upload")}
+          className="sr-only"
           onChange={(event) => {
             const file = event.target.files?.[0];
             if (file) uploadLogo.mutate(file);
@@ -148,13 +149,13 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
 
       <form onSubmit={onSubmit}>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label={t("profile.nameLabel")}>
+          <Field id="settings-profile-name" label={t("profile.nameLabel")}>
             <Input
               {...register("name")}
               className="store-theme-input h-12 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] text-[#341b55] shadow-none"
             />
           </Field>
-          <Field label={t("profile.urlLabel")}>
+          <Field id="settings-profile-url" label={t("profile.urlLabel")}>
             <Input
               value={storefrontUrl}
               readOnly
@@ -164,12 +165,16 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
         </div>
 
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
-          <Field label={t("profile.whatsappLabel")}>
+          <Field
+            id="settings-profile-whatsapp"
+            label={t("profile.whatsappLabel")}
+          >
             <Controller
               control={control}
               name="whatsappNumber"
               render={({ field }) => (
                 <PhoneInput
+                  id="settings-profile-whatsapp"
                   value={field.value}
                   onChange={field.onChange}
                   placeholder={t("profile.whatsappPlaceholder")}
@@ -179,7 +184,10 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
               )}
             />
           </Field>
-          <Field label={t("profile.currencyLabel")}>
+          <Field
+            id="settings-profile-currency"
+            label={t("profile.currencyLabel")}
+          >
             <Select
               {...register("defaultCurrency")}
               className="h-12 w-full"
@@ -192,7 +200,7 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
               ))}
             </Select>
           </Field>
-          <Field label={t("profile.localeLabel")}>
+          <Field id="settings-profile-locale" label={t("profile.localeLabel")}>
             <Select
               {...register("locale")}
               className="h-12 w-full"
@@ -205,50 +213,95 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
         </div>
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <Field label={t("profile.instagramLabel")}>
+          <Field
+            id="settings-profile-instagram"
+            label={t("profile.instagramLabel")}
+          >
             <Input
+              aria-invalid={Boolean(errors.instagramUrl)}
+              aria-describedby={
+                errors.instagramUrl
+                  ? "settings-profile-instagram-error"
+                  : undefined
+              }
               {...register("instagramUrl")}
               placeholder={t("profile.instagramPlaceholder")}
               className="store-theme-input h-12 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] text-[#341b55] shadow-none"
             />
             {errors.instagramUrl && (
-              <p className="mt-1 text-xs text-[#b24368]">
+              <p
+                id="settings-profile-instagram-error"
+                role="alert"
+                className="mt-1 text-xs text-[#b24368]"
+              >
                 {errors.instagramUrl.message}
               </p>
             )}
           </Field>
-          <Field label={t("profile.facebookLabel")}>
+          <Field
+            id="settings-profile-facebook"
+            label={t("profile.facebookLabel")}
+          >
             <Input
+              aria-invalid={Boolean(errors.facebookUrl)}
+              aria-describedby={
+                errors.facebookUrl
+                  ? "settings-profile-facebook-error"
+                  : undefined
+              }
               {...register("facebookUrl")}
               placeholder={t("profile.facebookPlaceholder")}
               className="store-theme-input h-12 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] text-[#341b55] shadow-none"
             />
             {errors.facebookUrl && (
-              <p className="mt-1 text-xs text-[#b24368]">
+              <p
+                id="settings-profile-facebook-error"
+                role="alert"
+                className="mt-1 text-xs text-[#b24368]"
+              >
                 {errors.facebookUrl.message}
               </p>
             )}
           </Field>
-          <Field label={t("profile.tiktokLabel")}>
+          <Field id="settings-profile-tiktok" label={t("profile.tiktokLabel")}>
             <Input
+              aria-invalid={Boolean(errors.tiktokUrl)}
+              aria-describedby={
+                errors.tiktokUrl ? "settings-profile-tiktok-error" : undefined
+              }
               {...register("tiktokUrl")}
               placeholder={t("profile.tiktokPlaceholder")}
               className="store-theme-input h-12 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] text-[#341b55] shadow-none"
             />
             {errors.tiktokUrl && (
-              <p className="mt-1 text-xs text-[#b24368]">
+              <p
+                id="settings-profile-tiktok-error"
+                role="alert"
+                className="mt-1 text-xs text-[#b24368]"
+              >
                 {errors.tiktokUrl.message}
               </p>
             )}
           </Field>
-          <Field label={t("profile.twitterLabel")}>
+          <Field
+            id="settings-profile-twitter"
+            label={t("profile.twitterLabel")}
+          >
             <Input
+              aria-invalid={Boolean(errors.twitterUrl)}
+              aria-describedby={
+                errors.twitterUrl ? "settings-profile-twitter-error" : undefined
+              }
               {...register("twitterUrl")}
               placeholder={t("profile.twitterPlaceholder")}
               className="store-theme-input h-12 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] text-[#341b55] shadow-none"
             />
             {errors.twitterUrl && (
-              <p className="mt-1 text-xs text-[#b24368]">
+              <p
+                id="settings-profile-twitter-error"
+                role="alert"
+                className="mt-1 text-xs text-[#b24368]"
+              >
                 {errors.twitterUrl.message}
               </p>
             )}
@@ -256,7 +309,10 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
         </div>
 
         <div className="mt-4">
-          <Field label={t("profile.instructionsLabel")}>
+          <Field
+            id="settings-profile-instructions"
+            label={t("profile.instructionsLabel")}
+          >
             <Textarea
               {...register("paymentInstructions")}
               placeholder={t("profile.instructionsPlaceholder")}
@@ -266,15 +322,13 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
           </Field>
         </div>
 
-        {saveProfile.isError || uploadLogo.isError
-          ? (
-            <p className="mt-4 text-sm text-[#b24368]">
-              {(saveProfile.error ?? uploadLogo.error) instanceof Error
-                ? ((saveProfile.error ?? uploadLogo.error) as Error).message
-                : tCommon("networkError")}
-            </p>
-          )
-          : null}
+        {saveProfile.isError || uploadLogo.isError ? (
+          <p role="alert" className="mt-4 text-sm text-[#b24368]">
+            {(saveProfile.error ?? uploadLogo.error) instanceof Error
+              ? ((saveProfile.error ?? uploadLogo.error) as Error).message
+              : tCommon("networkError")}
+          </p>
+        ) : null}
 
         <Separator className="my-5 bg-[#f0e7f8]" />
 
@@ -282,15 +336,19 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
           <p className="text-sm text-[#8f7da8]">{t("profile.help")}</p>
           <Button
             type="submit"
-            disabled={isSubmitting || saveProfile.isPending || !storeName ||
-              !whatsappNumber}
+            disabled={
+              isSubmitting ||
+              saveProfile.isPending ||
+              !storeName ||
+              !whatsappNumber
+            }
             className="store-theme-primary-button h-11 rounded-2xl px-5 text-sm font-semibold hover:scale-[1.01] hover:opacity-100"
           >
             {saveProfile.isSuccess
               ? t("saved")
               : saveProfile.isPending
-              ? t("saving")
-              : t("save")}
+                ? t("saving")
+                : t("save")}
           </Button>
         </div>
       </form>

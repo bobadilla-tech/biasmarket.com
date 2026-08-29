@@ -3,10 +3,15 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
+import {
+  FormErrorSummary,
+  FormField,
+  formErrorMessage,
+} from "@/components/shared/form-a11y";
 import { type AddressInput, addressSchema } from "../schemas/address.schema";
 
 const inputClassName =
-  "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 placeholder:text-gray-600";
+  "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-base text-gray-600 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 placeholder:text-gray-600 md:text-sm";
 
 export function AddressForm({
   defaultValues,
@@ -20,6 +25,7 @@ export function AddressForm({
   onCancel: () => void;
 }) {
   const t = useTranslations("storefront.accountPage.addresses");
+  const tCommon = useTranslations("common");
   const {
     register,
     handleSubmit,
@@ -51,73 +57,122 @@ export function AddressForm({
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
-      <input
-        placeholder={t("labelPlaceholder")}
-        className={inputClassName}
-        {...register("label")}
+      <FormErrorSummary
+        id="address-error-summary"
+        title={tCommon("formErrorsSummary")}
+        messages={[
+          errors.recipientName || errors.phone || errors.line1 || errors.city
+            ? tCommon("formErrorsSummary")
+            : "",
+          errors.root?.message ?? "",
+        ].filter(Boolean)}
       />
-      <div className="flex flex-col gap-1.5">
-        <input
-          placeholder={t("recipientNamePlaceholder")}
-          className={inputClassName}
-          {...register("recipientName")}
-        />
-        {errors.recipientName
-          ? (
-            <p className="text-sm text-red-500">
-              {t("recipientNameRequired")}
-            </p>
-          )
-          : null}
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <input
-          placeholder={t("phonePlaceholder")}
-          className={inputClassName}
-          {...register("phone")}
-        />
-        {errors.phone
-          ? <p className="text-sm text-red-500">{t("phoneRequired")}</p>
-          : null}
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <input
-          placeholder={t("line1Placeholder")}
-          className={inputClassName}
-          {...register("line1")}
-        />
-        {errors.line1
-          ? <p className="text-sm text-red-500">{t("line1Required")}</p>
-          : null}
-      </div>
-      <input
-        placeholder={t("line2Placeholder")}
-        className={inputClassName}
-        {...register("line2")}
-      />
-      <div className="flex flex-col gap-1.5">
-        <input
-          placeholder={t("cityPlaceholder")}
-          className={inputClassName}
-          {...register("city")}
-        />
-        {errors.city
-          ? <p className="text-sm text-red-500">{t("cityRequired")}</p>
-          : null}
-      </div>
-      <input
-        placeholder={t("regionPlaceholder")}
-        className={inputClassName}
-        {...register("region")}
-      />
-      <input
-        placeholder={t("referencePlaceholder")}
-        className={inputClassName}
-        {...register("reference")}
-      />
-      {errors.root
-        ? <p className="text-sm text-red-500">{errors.root.message}</p>
-        : null}
+      <FormField id="address-label" label={t("labelPlaceholder")}>
+        {(props) => (
+          <input
+            {...props}
+            placeholder={t("labelPlaceholder")}
+            className={inputClassName}
+            {...register("label")}
+          />
+        )}
+      </FormField>
+      <FormField
+        id="address-recipient-name"
+        label={t("recipientNamePlaceholder")}
+        error={formErrorMessage(
+          errors.recipientName,
+          t("recipientNameRequired"),
+        )}
+      >
+        {(props) => (
+          <input
+            {...props}
+            placeholder={t("recipientNamePlaceholder")}
+            className={inputClassName}
+            {...register("recipientName")}
+          />
+        )}
+      </FormField>
+      <FormField
+        id="address-phone"
+        label={t("phonePlaceholder")}
+        error={formErrorMessage(errors.phone, t("phoneRequired"))}
+      >
+        {(props) => (
+          <input
+            {...props}
+            type="tel"
+            autoComplete="tel"
+            inputMode="tel"
+            placeholder={t("phonePlaceholder")}
+            className={inputClassName}
+            {...register("phone")}
+          />
+        )}
+      </FormField>
+      <FormField
+        id="address-line1"
+        label={t("line1Placeholder")}
+        error={formErrorMessage(errors.line1, t("line1Required"))}
+      >
+        {(props) => (
+          <input
+            {...props}
+            autoComplete="street-address"
+            placeholder={t("line1Placeholder")}
+            className={inputClassName}
+            {...register("line1")}
+          />
+        )}
+      </FormField>
+      <FormField id="address-line2" label={t("line2Placeholder")}>
+        {(props) => (
+          <input
+            {...props}
+            autoComplete="address-line2"
+            placeholder={t("line2Placeholder")}
+            className={inputClassName}
+            {...register("line2")}
+          />
+        )}
+      </FormField>
+      <FormField
+        id="address-city"
+        label={t("cityPlaceholder")}
+        error={formErrorMessage(errors.city, t("cityRequired"))}
+      >
+        {(props) => (
+          <input
+            {...props}
+            autoComplete="address-level2"
+            placeholder={t("cityPlaceholder")}
+            className={inputClassName}
+            {...register("city")}
+          />
+        )}
+      </FormField>
+      <FormField id="address-region" label={t("regionPlaceholder")}>
+        {(props) => (
+          <input
+            {...props}
+            autoComplete="address-level1"
+            placeholder={t("regionPlaceholder")}
+            className={inputClassName}
+            {...register("region")}
+          />
+        )}
+      </FormField>
+      <FormField id="address-reference" label={t("referencePlaceholder")}>
+        {(props) => (
+          <input
+            {...props}
+            placeholder={t("referencePlaceholder")}
+            className={inputClassName}
+            {...register("reference")}
+          />
+        )}
+      </FormField>
       <div className="flex gap-2">
         <button
           type="submit"

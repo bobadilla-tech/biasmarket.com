@@ -2,6 +2,7 @@ import { afterEach, expect, test, vi } from "vitest";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "../../../test-utils/render-with-providers";
+import { axe, expectNoA11yViolations } from "../../../test-utils/axe";
 
 const push = vi.fn();
 vi.mock("next/navigation", () => ({
@@ -27,6 +28,28 @@ const { LoginForm } = await import("./login-form");
 
 afterEach(() => {
   vi.clearAllMocks();
+});
+
+test("exposes labelled fields and accessible validation relationships", async () => {
+  const { container } = renderWithProviders(<LoginForm />);
+
+  expect(
+    screen.getByRole("textbox", { name: "Email" }).getAttribute("autocomplete"),
+  ).toBe("email");
+  expect(screen.getByLabelText("Contraseña").getAttribute("autocomplete")).toBe(
+    "current-password",
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: /ingresar/i }));
+  await waitFor(() => {
+    const email = screen.getByRole("textbox", { name: "Email" });
+    expect(email.getAttribute("aria-invalid")).toBe("true");
+    expect(email.getAttribute("aria-describedby")).toBeTruthy();
+    expect(document.activeElement?.getAttribute("id")).toBe(
+      "seller-login-error-summary",
+    );
+  });
+  expectNoA11yViolations(await axe(container));
 });
 
 async function submitValidCredentials() {
@@ -89,12 +112,14 @@ test("redirects a returning single-store seller straight to their dashboard", as
     data: { user: { role: "seller" } },
     error: null,
   });
-  listMine.mockResolvedValueOnce([{
-    id: "1",
-    name: "Demo",
-    slug: "demo-store",
-    logoUrl: null,
-  }]);
+  listMine.mockResolvedValueOnce([
+    {
+      id: "1",
+      name: "Demo",
+      slug: "demo-store",
+      logoUrl: null,
+    },
+  ]);
 
   await submitValidCredentials();
 

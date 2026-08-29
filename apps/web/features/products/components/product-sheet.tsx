@@ -10,6 +10,7 @@ import { SUPPORTED_CURRENCIES } from "@biasmarket/utils/currency";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import {
   Sheet,
@@ -21,6 +22,7 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { FormErrorSummary } from "@/components/shared/form-a11y";
 import { keyForAttributes } from "../lib/variant-key";
 import type {
   CategoryResponseDto,
@@ -67,13 +69,20 @@ export function ProductSheet({
   submitting: boolean;
 }) {
   const t = useTranslations("dashboard");
+  const tCommon = useTranslations("common");
   const { locale } = useParams<{ locale: string }>();
 
-  const { register, watch, setValue, reset, handleSubmit } =
-    useForm<ProductFormInput>({
-      resolver: zodResolver(productFormSchema),
-      defaultValues,
-    });
+  const {
+    register,
+    watch,
+    setValue,
+    reset,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ProductFormInput>({
+    resolver: zodResolver(productFormSchema),
+    defaultValues,
+  });
 
   const [draftImages, setDraftImages] = useState<(string | File)[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -366,21 +375,49 @@ export function ProductSheet({
         </SheetHeader>
 
         <div className="space-y-4 px-4 pb-24">
+          <FormErrorSummary
+            id="product-error-summary"
+            title={tCommon("formErrorsSummary")}
+            messages={
+              Object.keys(errors).length > 0
+                ? [tCommon("formErrorsSummary")]
+                : []
+            }
+          />
           <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#927fac]">
+            <Label
+              htmlFor="product-name"
+              className="text-sm font-semibold text-foreground"
+            >
               {t("products.form.nameLabel")}
-            </p>
+            </Label>
             <Input
+              id="product-name"
+              aria-invalid={Boolean(errors.name)}
+              aria-describedby={errors.name ? "product-name-error" : undefined}
               {...register("name")}
               className="store-theme-input h-11 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] shadow-none"
             />
+            {errors.name && (
+              <p
+                id="product-name-error"
+                role="alert"
+                className="text-sm text-error-foreground"
+              >
+                {errors.name.message}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#927fac]">
+            <Label
+              htmlFor="product-description"
+              className="text-sm font-semibold text-foreground"
+            >
               {t("products.form.descriptionLabel")}
-            </p>
+            </Label>
             <Textarea
+              id="product-description"
               {...register("description")}
               rows={3}
               className="store-theme-input rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] shadow-none"
@@ -389,16 +426,33 @@ export function ProductSheet({
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#927fac]">
+              <Label
+                htmlFor="product-price"
+                className="text-sm font-semibold text-foreground"
+              >
                 {hasVariants
                   ? t("products.form.priceBaseLabel")
                   : t("products.form.priceLabel")}
-              </p>
+              </Label>
               <Input
+                id="product-price"
+                aria-invalid={Boolean(errors.price)}
+                aria-describedby={
+                  errors.price ? "product-price-error" : undefined
+                }
                 {...register("price")}
                 inputMode="decimal"
                 className="store-theme-input h-11 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] shadow-none"
               />
+              {errors.price && (
+                <p
+                  id="product-price-error"
+                  role="alert"
+                  className="text-sm text-error-foreground"
+                >
+                  {errors.price.message}
+                </p>
+              )}
               {hasVariants && (
                 <p className="text-xs text-[#8f7da8]">
                   {t("products.form.priceBaseHelp")}
@@ -406,13 +460,17 @@ export function ProductSheet({
               )}
             </div>
             <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#927fac]">
+              <Label
+                htmlFor="product-currency"
+                className="text-sm font-semibold text-foreground"
+              >
                 {t("products.form.currencyLabel")}
-              </p>
+              </Label>
               <Select
+                id="product-currency"
                 {...register("currency")}
                 className="h-11"
-                selectClassName="store-theme-input h-full rounded-2xl border border-[#e7dcf3] bg-[#fbf8fe] text-sm text-[#341b55] outline-none"
+                selectClassName="store-theme-input h-full rounded-2xl border border-[#e7dcf3] bg-[#fbf8fe] text-base text-[#341b55] outline-none md:text-sm"
               >
                 {SUPPORTED_CURRENCIES.map((currency) => (
                   <option key={currency} value={currency}>
@@ -424,13 +482,17 @@ export function ProductSheet({
           </div>
 
           <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#927fac]">
+            <Label
+              htmlFor="product-availability"
+              className="text-sm font-semibold text-foreground"
+            >
               {t("products.form.availabilityLabel")}
-            </p>
+            </Label>
             <Select
+              id="product-availability"
               {...register("availability")}
               className="h-11"
-              selectClassName="store-theme-input h-full rounded-2xl border border-[#e7dcf3] bg-[#fbf8fe] text-sm text-[#341b55] outline-none"
+              selectClassName="store-theme-input h-full rounded-2xl border border-[#e7dcf3] bg-[#fbf8fe] text-base text-[#341b55] outline-none md:text-sm"
             >
               <option value="AVAILABLE">
                 {t("products.details.available")}
@@ -450,9 +512,12 @@ export function ProductSheet({
           </div>
 
           <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#927fac]">
+            <Label
+              htmlFor="product-stock"
+              className="text-sm font-semibold text-foreground"
+            >
               {t("products.form.stockLabel")}
-            </p>
+            </Label>
             {hasVariants ? (
               <div className="rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3 text-xs text-[#8f7da8]">
                 {t("products.form.stockPerVariant")}
@@ -460,11 +525,25 @@ export function ProductSheet({
             ) : (
               <>
                 <Input
+                  id="product-stock"
+                  aria-invalid={Boolean(errors.stock)}
+                  aria-describedby={
+                    errors.stock ? "product-stock-error" : undefined
+                  }
                   {...register("stock")}
                   inputMode="numeric"
                   placeholder={t("products.form.stockPlaceholder")}
                   className="store-theme-input h-11 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] shadow-none"
                 />
+                {errors.stock && (
+                  <p
+                    id="product-stock-error"
+                    role="alert"
+                    className="text-sm text-error-foreground"
+                  >
+                    {errors.stock.message}
+                  </p>
+                )}
                 <p className="text-xs text-[#8f7da8]">
                   {t("products.form.stockHelp")}
                 </p>
@@ -494,12 +573,14 @@ export function ProductSheet({
                 <div className="grid gap-3 sm:grid-cols-2">
                   <Input
                     value={newOptionName}
+                    aria-label={t("products.form.variantTypePlaceholder")}
                     onChange={(event) => setNewOptionName(event.target.value)}
                     placeholder={t("products.form.variantTypePlaceholder")}
                     className="store-theme-input h-11 rounded-2xl border-[#e7dcf3] bg-white shadow-none"
                   />
                   <Input
                     value={newOptionValues}
+                    aria-label={t("products.form.variantValuesPlaceholder")}
                     onChange={(event) => setNewOptionValues(event.target.value)}
                     placeholder={t("products.form.variantValuesPlaceholder")}
                     className="store-theme-input h-11 rounded-2xl border-[#e7dcf3] bg-white shadow-none"
@@ -526,6 +607,7 @@ export function ProductSheet({
                         {option.name}: {option.values.join(", ")}
                         <button
                           type="button"
+                          aria-label={`${t("products.form.removeImage")} ${option.name}`}
                           className="ml-2 text-[#d11d52]"
                           onClick={() =>
                             setOptions((prev) =>
@@ -549,7 +631,8 @@ export function ProductSheet({
                       ref={variantFileRef}
                       type="file"
                       accept="image/png,image/jpeg"
-                      className="hidden"
+                      aria-label={t("products.form.variantImageUpload")}
+                      className="sr-only"
                       onChange={(event) => {
                         const file = event.target.files?.[0] ?? null;
                         if (activeVariantImageKey) {
@@ -585,6 +668,7 @@ export function ProductSheet({
                               </div>
                               <Input
                                 value={variantOverrides[key]?.stock ?? ""}
+                                aria-label={`${draft.name} ${t("products.form.variantStock")}`}
                                 onChange={(event) =>
                                   setVariantOverrides((prev) => ({
                                     ...prev,
@@ -600,6 +684,7 @@ export function ProductSheet({
                               />
                               <Input
                                 value={variantOverrides[key]?.price ?? ""}
+                                aria-label={`${draft.name} ${t("products.form.variantPrice")}`}
                                 onChange={(event) =>
                                   setVariantOverrides((prev) => ({
                                     ...prev,
@@ -748,6 +833,7 @@ export function ProductSheet({
                 <div className="space-y-3">
                   <Input
                     value={categorySearch}
+                    aria-label={t("products.form.categorySearchPlaceholder")}
                     onChange={(event) => setCategorySearch(event.target.value)}
                     placeholder={t("products.form.categorySearchPlaceholder")}
                     className="store-theme-input h-11 rounded-2xl border-[#e7dcf3] bg-white shadow-none"
@@ -787,6 +873,7 @@ export function ProductSheet({
                   <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_120px]">
                     <Input
                       value={newCategoryName}
+                      aria-label={t("products.form.newCategoryPlaceholder")}
                       onChange={(event) =>
                         setNewCategoryName(event.target.value)
                       }
@@ -816,7 +903,8 @@ export function ProductSheet({
               type="file"
               accept="image/png,image/jpeg"
               multiple
-              className="hidden"
+              aria-label={t("products.form.imageUpload")}
+              className="sr-only"
               onChange={(event) => {
                 const files = Array.from(event.target.files ?? []);
                 setDraftImages((prev) => {
@@ -842,6 +930,7 @@ export function ProductSheet({
                   </span>
                   <button
                     type="button"
+                    aria-label={`${t("products.form.removeImage")} ${index + 1}`}
                     onClick={() =>
                       setDraftImages((prev) =>
                         prev.filter((_, i) => i !== index),

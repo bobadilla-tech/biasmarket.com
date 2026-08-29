@@ -9,13 +9,19 @@ import {
   type CustomerChangePasswordInput,
   customerChangePasswordSchema,
 } from "../schemas/change-password.schema";
+import {
+  FormErrorSummary,
+  FormField,
+  formErrorMessage,
+} from "@/components/shared/form-a11y";
 
 const inputClassName =
-  "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 placeholder:text-gray-600";
+  "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-base text-gray-600 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 placeholder:text-gray-600 md:text-sm";
 
 export function CustomerChangePasswordForm({ slug }: { slug: string }) {
   const t = useTranslations("storefront.accountPage.changePassword");
   const changePassword = useCustomerChangePassword(slug);
+  const tCommon = useTranslations("common");
   const [saved, setSaved] = useState(false);
 
   const {
@@ -46,52 +52,75 @@ export function CustomerChangePasswordForm({ slug }: { slug: string }) {
       <h2 className="text-sm font-semibold text-gray-900">{t("title")}</h2>
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1.5">
-          <input
-            placeholder={t("currentPasswordPlaceholder")}
-            type="password"
-            className={inputClassName}
-            {...register("currentPassword")}
-          />
-          {errors.currentPassword
-            ? (
-              <p className="text-sm text-red-500">
-                {t("currentPasswordRequired")}
-              </p>
-            )
-            : null}
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <input
-            placeholder={t("newPasswordPlaceholder")}
-            type="password"
-            className={inputClassName}
-            {...register("newPassword")}
-          />
-          {errors.newPassword
-            ? <p className="text-sm text-red-500">{t("passwordTooShort")}</p>
-            : null}
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <input
-            placeholder={t("confirmNewPasswordPlaceholder")}
-            type="password"
-            className={inputClassName}
-            {...register("confirmNewPassword")}
-          />
-          {errors.confirmNewPassword
-            ? <p className="text-sm text-red-500">{t("passwordsDontMatch")}</p>
-            : null}
-        </div>
-
-        {errors.root
-          ? <p className="text-sm text-red-500">{errors.root.message}</p>
-          : null}
-        {saved
-          ? <p className="text-sm text-emerald-600">{t("success")}</p>
-          : null}
+        <FormErrorSummary
+          id="customer-change-password-error-summary"
+          title={tCommon("formErrorsSummary")}
+          messages={[
+            errors.currentPassword ||
+            errors.newPassword ||
+            errors.confirmNewPassword
+              ? tCommon("formErrorsSummary")
+              : "",
+            errors.root?.message ?? "",
+          ].filter(Boolean)}
+        />
+        <FormField
+          id="customer-change-current-password"
+          label={t("currentPasswordPlaceholder")}
+          error={formErrorMessage(
+            errors.currentPassword,
+            t("currentPasswordRequired"),
+          )}
+        >
+          {(props) => (
+            <input
+              {...props}
+              placeholder={t("currentPasswordPlaceholder")}
+              type="password"
+              autoComplete="current-password"
+              className={inputClassName}
+              {...register("currentPassword")}
+            />
+          )}
+        </FormField>
+        <FormField
+          id="customer-change-new-password"
+          label={t("newPasswordPlaceholder")}
+          error={formErrorMessage(errors.newPassword, t("passwordTooShort"))}
+        >
+          {(props) => (
+            <input
+              {...props}
+              placeholder={t("newPasswordPlaceholder")}
+              type="password"
+              autoComplete="new-password"
+              className={inputClassName}
+              {...register("newPassword")}
+            />
+          )}
+        </FormField>
+        <FormField
+          id="customer-change-confirm-password"
+          label={t("confirmNewPasswordPlaceholder")}
+          error={formErrorMessage(
+            errors.confirmNewPassword,
+            t("passwordsDontMatch"),
+          )}
+        >
+          {(props) => (
+            <input
+              {...props}
+              placeholder={t("confirmNewPasswordPlaceholder")}
+              type="password"
+              autoComplete="new-password"
+              className={inputClassName}
+              {...register("confirmNewPassword")}
+            />
+          )}
+        </FormField>
+        {saved ? (
+          <p className="text-sm text-emerald-600">{t("success")}</p>
+        ) : null}
 
         <button
           type="submit"

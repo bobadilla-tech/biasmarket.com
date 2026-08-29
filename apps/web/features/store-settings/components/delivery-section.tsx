@@ -192,6 +192,7 @@ export function DeliverySection({ storeId }: { storeId: string }) {
                       }
                     />
                     <Input
+                      aria-label={t("delivery.pickupPointPlaceholder")}
                       value={point.label}
                       onChange={(event) =>
                         handleUpdatePointLabel(point.id, event.target.value)
@@ -225,6 +226,7 @@ export function DeliverySection({ storeId }: { storeId: string }) {
             )}
             <div className="flex gap-2">
               <Input
+                aria-label={t("delivery.pickupPointPlaceholder")}
                 value={newPointLabel}
                 onChange={(event) => setNewPointLabel(event.target.value)}
                 placeholder={t("delivery.pickupPointPlaceholder")}
@@ -250,7 +252,10 @@ export function DeliverySection({ storeId }: { storeId: string }) {
           onChange={setCourierEnabled}
         />
 
-        <Field label={t("delivery.courierCostLabel")}>
+        <Field
+          id="settings-delivery-courier-cost"
+          label={t("delivery.courierCostLabel")}
+        >
           <Input
             value={courierCost}
             onChange={(event) => setCourierCost(event.target.value)}
@@ -261,7 +266,7 @@ export function DeliverySection({ storeId }: { storeId: string }) {
       </div>
 
       {saveDelivery.isError ? (
-        <p className="mt-4 text-sm text-[#b24368]">
+        <p role="alert" className="mt-4 text-sm text-[#b24368]">
           {saveDelivery.error instanceof Error
             ? saveDelivery.error.message
             : String(saveDelivery.error)}

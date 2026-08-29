@@ -2,6 +2,7 @@ import { afterEach, expect, test, vi } from "vitest";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "../../../test-utils/render-with-providers";
+import { axe, expectNoA11yViolations } from "../../../test-utils/axe";
 
 const push = vi.fn();
 vi.mock("next/navigation", () => ({
@@ -20,6 +21,25 @@ const { CustomerLoginForm } = await import("./customer-login-form");
 
 afterEach(() => {
   vi.clearAllMocks();
+});
+
+test("labels the split phone control and announces submit errors", async () => {
+  const { container } = renderWithProviders(
+    <CustomerLoginForm slug="my-store" />,
+  );
+
+  expect(
+    screen.getByLabelText("Teléfono (WhatsApp)").getAttribute("autocomplete"),
+  ).toBe("tel");
+  expect(screen.getByLabelText("Código de país")).toBeDefined();
+
+  fireEvent.click(screen.getByRole("button", { name: /ingresar/i }));
+  await waitFor(() => {
+    expect(document.activeElement?.getAttribute("id")).toBe(
+      "customer-login-error-summary",
+    );
+  });
+  expectNoA11yViolations(await axe(container));
 });
 
 test("shows validation errors when submitted empty", async () => {
