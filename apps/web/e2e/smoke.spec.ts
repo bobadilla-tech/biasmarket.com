@@ -22,7 +22,9 @@ test("seller login (/es/login) renders and passes an axe critical-impact scan", 
   const response = await page.goto("/es/login");
   expect(response?.ok()).toBeTruthy();
   await expect(
-    page.getByRole("button", { name: /iniciar sesión|log in|entrar|ingresar/i }),
+    page.getByRole("button", {
+      name: /iniciar sesión|log in|entrar|ingresar/i,
+    }),
   ).toBeVisible();
   await runAxe(page, testInfo);
 });
