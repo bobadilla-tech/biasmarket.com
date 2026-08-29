@@ -70,6 +70,12 @@ export class CheckoutOrderResponseDto {
   @ApiProperty({ type: String, format: 'date-time', nullable: true })
   pickupDate: string | null;
 
+  @ApiProperty({ type: String, nullable: true })
+  courierName: string | null;
+
+  @ApiProperty({ enum: ['AGENCY', 'HOME'], nullable: true })
+  courierModality: 'AGENCY' | 'HOME' | null;
+
   @ApiProperty({
     enum: ['YAPE', 'PLIN', 'TRANSFER', 'CASH'],
     nullable: true,

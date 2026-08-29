@@ -6831,6 +6831,15 @@
             "nullable": true,
             "format": "date-time"
           },
+          "courierName": {
+            "type": "string",
+            "nullable": true
+          },
+          "courierModality": {
+            "nullable": true,
+            "enum": ["AGENCY", "HOME"],
+            "type": "string"
+          },
           "paymentMethod": {
             "nullable": true,
             "enum": ["YAPE", "PLIN", "TRANSFER", "CASH"],
@@ -6917,6 +6926,8 @@
           "deliveryDetails",
           "pickupPointId",
           "pickupDate",
+          "courierName",
+          "courierModality",
           "paymentMethod",
           "paymentStatus",
           "paymentRejectionReason",
