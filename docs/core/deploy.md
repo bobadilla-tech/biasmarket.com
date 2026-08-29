@@ -20,21 +20,21 @@ push/merge to main
   -> wait for the secret-free deploy result
 ```
 
-Pushes whose changes are only ignored paths (`*.md`, `**/*.md`, or
-`.gitignore`) do not start this automatic CI/CD chain.
+Pushes whose changes are only ignored paths (`*.md`, `**/*.md`, or `.gitignore`)
+do not start this automatic CI/CD chain.
 
 The CD workflow only deploys successful `push` runs from this repository's
-`main` branch. Pull requests and fork workflow runs cannot deploy. Pull
-requests run the normal per-package CI checks but do not run the API E2E suite.
+`main` branch. Pull requests and fork workflow runs cannot deploy. Pull requests
+run the normal per-package CI checks but do not run the API E2E suite.
 Markdown-only and `.gitignore`-only pushes are ignored by the push trigger and
 therefore do not start CI or CD. A merge push with at least one non-ignored
 change runs all 24 API E2E specs before `CI Success` can authorize CD.
 
-If the E2E job flakes and blocks a deployment, use **Re-run failed jobs** on
-the CI run. A passing rerun updates the workflow result and emits a fresh
-successful `workflow_run` event for the same push, allowing CD to continue.
-Do not push an empty or no-op commit just to retry: that would trigger an
-additional production cutover.
+If the E2E job flakes and blocks a deployment, use **Re-run failed jobs** on the
+CI run. A passing rerun updates the workflow result and emits a fresh successful
+`workflow_run` event for the same push, allowing CD to continue. Do not push an
+empty or no-op commit just to retry: that would trigger an additional production
+cutover.
 
 Automated CD passes `--force` to the restricted deploy command so rapid
 successive merges do not wait for the older benched release's 30-minute cleanup
