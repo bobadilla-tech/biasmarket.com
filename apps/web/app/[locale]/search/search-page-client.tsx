@@ -69,8 +69,7 @@ export function ProductSearchPageClient({
     ? Math.max(1, Math.ceil(result.total / PAGE_SIZE))
     : 1;
   const categories = tCategories.raw("items") as
-    | { key: string; name: string }[]
-    | undefined;
+    { key: string; name: string }[] | undefined;
 
   const navigate = (next: {
     q?: string;
@@ -89,7 +88,11 @@ export function ProductSearchPageClient({
   };
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-16 sm:px-10">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="mx-auto max-w-5xl px-6 py-16 sm:px-10"
+    >
       <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
         {t("title")}
       </h1>
@@ -159,75 +162,71 @@ export function ProductSearchPageClient({
       </div>
 
       <div className="mt-8">
-        {loading
-          ? <LoadingState />
-          : error || !result
-          ? <ErrorState message={tCommon("networkError")} />
-          : result.products.length === 0
-          ? <EmptyState message={t("empty")} />
-          : (
-            <>
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-                {result.products.map((product) => (
-                  <Link
-                    key={product.id}
-                    href={`/store/${product.store.slug}/product/${product.id}`}
-                    className="rounded-2xl border border-border bg-card p-3 transition hover:shadow-md"
-                  >
-                    {product.images[0]
-                      ? (
-                        <div className="relative aspect-square w-full overflow-hidden rounded-xl">
-                          <Image
-                            src={product.images[0]}
-                            alt={product.name}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                      )
-                      : (
-                        <div className="aspect-square w-full rounded-xl bg-muted" />
-                      )}
-                    <p className="mt-2 truncate text-sm font-semibold">
-                      {product.name}
-                    </p>
-                    <p className="text-sm font-bold text-primary">
-                      {product.currency} {product.price}
-                    </p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {t("viewStore", { name: product.store.name })}
-                    </p>
-                  </Link>
-                ))}
+        {loading ? (
+          <LoadingState />
+        ) : error || !result ? (
+          <ErrorState message={tCommon("networkError")} />
+        ) : result.products.length === 0 ? (
+          <EmptyState message={t("empty")} />
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+              {result.products.map((product) => (
+                <Link
+                  key={product.id}
+                  href={`/store/${product.store.slug}/product/${product.id}`}
+                  className="rounded-2xl border border-border bg-card p-3 transition hover:shadow-md"
+                >
+                  {product.images[0] ? (
+                    <div className="relative aspect-square w-full overflow-hidden rounded-xl">
+                      <Image
+                        src={product.images[0]}
+                        alt={product.name}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="aspect-square w-full rounded-xl bg-muted" />
+                  )}
+                  <p className="mt-2 truncate text-sm font-semibold">
+                    {product.name}
+                  </p>
+                  <p className="text-sm font-bold text-primary">
+                    {product.currency} {product.price}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {t("viewStore", { name: product.store.name })}
+                  </p>
+                </Link>
+              ))}
+            </div>
+            {totalPages > 1 ? (
+              <div className="mt-8 flex items-center justify-center gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={page <= 1}
+                  onClick={() => navigate({ page: page - 1 })}
+                >
+                  {t("previous")}
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  {t("pageOf", { page, total: totalPages })}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={page >= totalPages}
+                  onClick={() => navigate({ page: page + 1 })}
+                >
+                  {t("next")}
+                </Button>
               </div>
-              {totalPages > 1
-                ? (
-                  <div className="mt-8 flex items-center justify-center gap-3">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled={page <= 1}
-                      onClick={() => navigate({ page: page - 1 })}
-                    >
-                      {t("previous")}
-                    </Button>
-                    <span className="text-sm text-muted-foreground">
-                      {t("pageOf", { page, total: totalPages })}
-                    </span>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled={page >= totalPages}
-                      onClick={() => navigate({ page: page + 1 })}
-                    >
-                      {t("next")}
-                    </Button>
-                  </div>
-                )
-                : null}
-            </>
-          )}
+            ) : null}
+          </>
+        )}
       </div>
-    </div>
+    </main>
   );
 }

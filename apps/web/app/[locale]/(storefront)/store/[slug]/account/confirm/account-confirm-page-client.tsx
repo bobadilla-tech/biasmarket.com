@@ -19,9 +19,13 @@ export function AccountConfirmPageClient() {
       return <ErrorFallback slug={slug} t={t} />;
     }
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="min-h-dvh flex items-start justify-center bg-gray-50 px-6 py-10 sm:items-center"
+      >
         <LoadingState variant="page" className="w-full max-w-md" />
-      </div>
+      </main>
     );
   }
 
@@ -40,7 +44,11 @@ function ErrorFallback({
   t: ReturnType<typeof useTranslations>;
 }) {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="min-h-dvh flex items-start justify-center bg-gray-50 px-6 py-10 sm:items-center"
+    >
       <div className="max-w-md w-full text-center flex flex-col gap-4">
         <ErrorState title={t("errorTitle")} message={t("errorBody")} />
         <Link
@@ -50,6 +58,6 @@ function ErrorFallback({
           {t("backToStore")}
         </Link>
       </div>
-    </div>
+    </main>
   );
 }

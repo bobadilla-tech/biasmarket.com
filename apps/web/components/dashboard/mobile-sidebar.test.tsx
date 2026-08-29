@@ -19,10 +19,9 @@ vi.mock("@/lib/auth-client", () => ({
 }));
 
 const notificationsMock = vi.hoisted(() => ({ unreadCount: vi.fn() }));
-vi.mock(
-  "@/lib/api-client",
-  () => ({ apiClient: { notifications: notificationsMock } }),
-);
+vi.mock("@/lib/api-client", () => ({
+  apiClient: { notifications: notificationsMock },
+}));
 
 const { MobileSidebar } = await import("./mobile-sidebar");
 
@@ -63,6 +62,10 @@ test("mobile sheet renders StoreSidebar fully expanded even when the desktop col
   );
 
   fireEvent.click(screen.getByRole("button", { name: "Abrir menú" }));
+
+  expect(
+    screen.getByRole("dialog", { name: "Navegación de tienda" }),
+  ).toBeDefined();
 
   // Nav labels only render in expanded mode — a collapsed rail hides them
   // and shows icons only. Finding them proves collapse state didn't leak

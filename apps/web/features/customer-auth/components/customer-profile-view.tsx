@@ -9,9 +9,13 @@ import { AccountOrdersSection } from "./account-orders-section";
 import { AccountAddressesSection } from "./account-addresses-section";
 import { AccountProfileSection } from "./account-profile-section";
 
-export function CustomerProfileView(
-  { slug, profile }: { slug: string; profile: CustomerProfileResponseDto },
-) {
+export function CustomerProfileView({
+  slug,
+  profile,
+}: {
+  slug: string;
+  profile: CustomerProfileResponseDto;
+}) {
   const router = useRouter();
   const logout = useCustomerLogout(slug);
   const [section, setSection] = useState<AccountSection>("orders");
@@ -22,7 +26,7 @@ export function CustomerProfileView(
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-dvh bg-gray-50">
       <div className="mx-auto flex max-w-5xl flex-col md:flex-row md:gap-8 md:px-6 md:py-10">
         <AccountSidebar
           slug={slug}
@@ -32,7 +36,11 @@ export function CustomerProfileView(
           onLogout={handleLogout}
           logoutPending={logout.isPending}
         />
-        <main className="flex-1 px-6 py-6 md:px-0 md:py-0">
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="flex-1 px-6 py-6 md:px-0 md:py-0"
+        >
           {section === "orders" && (
             <AccountOrdersSection slug={slug} profile={profile} />
           )}

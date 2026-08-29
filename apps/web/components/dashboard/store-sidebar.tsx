@@ -35,7 +35,7 @@ const COLLAPSE_STORAGE_KEY = "store-sidebar-collapsed";
 type NavItem = {
   key: string;
   href?: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   disabled?: boolean;
 };
 
@@ -88,14 +88,19 @@ function SidebarSection({
       <div className="space-y-1.5">
         {items.map((item) => {
           const Icon = item.icon;
-          const href = item.href === undefined
-            ? undefined
-            : item.href === ""
-            ? `/dashboard/${slug}`
-            : `/dashboard/${slug}/${item.href}`;
+          const href =
+            item.href === undefined
+              ? undefined
+              : item.href === ""
+                ? `/dashboard/${slug}`
+                : `/dashboard/${slug}/${item.href}`;
           const isActive = href ? pathname === href : false;
           const label = t(`nav.${item.key}`);
           const badgeCount = badges[item.key] ?? 0;
+          const badgeLabel =
+            item.key === "notifications"
+              ? t("unreadNotifications", { count: badgeCount })
+              : t("restockRequests", { count: badgeCount });
 
           if (!href) {
             return (
@@ -107,10 +112,12 @@ function SidebarSection({
                   collapsed && "justify-center px-0",
                 )}
               >
-                <Icon className="size-4 shrink-0" />
+                <Icon aria-hidden="true" className="size-4 shrink-0" />
+                <span className={cn("flex-1", collapsed && "sr-only")}>
+                  {label}
+                </span>
                 {!collapsed && (
                   <>
-                    <span className="flex-1">{label}</span>
                     <span className="rounded-full border border-white/10 bg-white/8 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/40">
                       {t("soon")}
                     </span>
@@ -124,6 +131,8 @@ function SidebarSection({
             <Link
               key={item.key}
               href={href}
+              aria-label={label}
+              aria-current={isActive ? "page" : undefined}
               title={collapsed ? label : undefined}
               className={cn(
                 "flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition",
@@ -134,14 +143,19 @@ function SidebarSection({
               )}
             >
               <span className="relative inline-flex shrink-0">
-                <Icon className="size-4 shrink-0" />
+                <Icon aria-hidden="true" className="size-4 shrink-0" />
                 {badgeCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 flex size-3.5 items-center justify-center rounded-full bg-[#d11d52] text-[8px] font-semibold leading-none text-white">
+                  <span
+                    aria-label={badgeLabel}
+                    className="absolute -top-1.5 -right-1.5 flex size-3.5 items-center justify-center rounded-full bg-[#d11d52] text-[8px] font-semibold leading-none text-white"
+                  >
                     {badgeCount > 9 ? "9+" : badgeCount}
                   </span>
                 )}
               </span>
-              {!collapsed && <span className="flex-1">{label}</span>}
+              <span className={cn("flex-1", collapsed && "sr-only")}>
+                {label}
+              </span>
             </Link>
           );
         })}
@@ -219,19 +233,17 @@ export function StoreSidebar({
             <p className="truncate text-sm font-semibold text-white">
               {store?.name ?? t("brand")}
             </p>
-            {slug
-              ? (
-                <a
-                  href={`/${locale}/store/${slug}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-xs text-white/50 transition hover:text-white/80"
-                >
-                  {t("viewStore")}
-                  <ExternalLink className="size-3" />
-                </a>
-              )
-              : null}
+            {slug ? (
+              <a
+                href={`/${locale}/store/${slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-xs text-white/50 transition hover:text-white/80"
+              >
+                {t("viewStore")}
+                <ExternalLink className="size-3" />
+              </a>
+            ) : null}
           </div>
         )}
         {!forceExpanded && (
@@ -241,14 +253,16 @@ export function StoreSidebar({
             title={t(effectiveCollapsed ? "expand" : "collapse")}
             className="flex size-7 shrink-0 items-center justify-center rounded-full text-white/60 transition hover:bg-white/8 hover:text-white"
           >
-            {effectiveCollapsed
-              ? <ChevronRight className="size-4" />
-              : <ChevronLeft className="size-4" />}
+            {effectiveCollapsed ? (
+              <ChevronRight className="size-4" />
+            ) : (
+              <ChevronLeft className="size-4" />
+            )}
           </button>
         )}
       </div>
 
-      <div className="flex-1 space-y-7">
+      <nav aria-label={t("navigationLabel")} className="flex-1 space-y-7">
         <SidebarSection
           title={t("sections.store")}
           items={primaryItems}
@@ -277,7 +291,7 @@ export function StoreSidebar({
           t={t}
           collapsed={effectiveCollapsed}
         />
-      </div>
+      </nav>
 
       <div className="space-y-3 border-t border-white/10 pt-5">
         {!effectiveCollapsed && (
@@ -292,14 +306,18 @@ export function StoreSidebar({
         )}
         <Link
           href="/account"
+          aria-label={t("myAccount")}
+          aria-current={pathname === "/account" ? "page" : undefined}
           title={effectiveCollapsed ? t("myAccount") : undefined}
           className={cn(
             "flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm text-white/72 transition hover:bg-white/8 hover:text-white",
             effectiveCollapsed && "justify-center px-0",
           )}
         >
-          <UserCircle className="size-4 shrink-0" />
-          {!effectiveCollapsed && <span>{t("myAccount")}</span>}
+          <UserCircle aria-hidden="true" className="size-4 shrink-0" />
+          <span className={cn(effectiveCollapsed && "sr-only")}>
+            {t("myAccount")}
+          </span>
         </Link>
         <button
           onClick={handleSignOut}
@@ -309,8 +327,10 @@ export function StoreSidebar({
             effectiveCollapsed && "justify-center px-0",
           )}
         >
-          <LogOut className="size-4 shrink-0" />
-          {!effectiveCollapsed && <span>{t("signOut")}</span>}
+          <LogOut aria-hidden="true" className="size-4 shrink-0" />
+          <span className={cn(effectiveCollapsed && "sr-only")}>
+            {t("signOut")}
+          </span>
         </button>
       </div>
     </aside>

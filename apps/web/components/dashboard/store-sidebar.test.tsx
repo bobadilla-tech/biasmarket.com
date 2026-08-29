@@ -3,6 +3,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "@biasmarket/i18n";
+import { axe, expectNoA11yViolations } from "@/test-utils/axe";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
@@ -20,12 +21,9 @@ vi.mock("@/lib/auth-client", () => ({
 
 const notificationsMock = vi.hoisted(() => ({ unreadCount: vi.fn() }));
 const restockMock = vi.hoisted(() => ({ count: vi.fn() }));
-vi.mock(
-  "@/lib/api-client",
-  () => ({
-    apiClient: { notifications: notificationsMock, restock: restockMock },
-  }),
-);
+vi.mock("@/lib/api-client", () => ({
+  apiClient: { notifications: notificationsMock, restock: restockMock },
+}));
 
 const { StoreSidebar } = await import("./store-sidebar");
 
@@ -104,4 +102,25 @@ test("hides the restock badge when the count is 0", async () => {
 
   await screen.findByText("Reposición");
   expect(screen.queryByText("0")).toBeNull();
+});
+
+test("exposes a labelled navigation with a current page and collapsed names", async () => {
+  notificationsMock.unreadCount.mockResolvedValue({ count: 0 });
+  renderSidebar();
+
+  const navigation = await screen.findByRole("navigation", {
+    name: "Navegación principal",
+  });
+  expect(
+    screen
+      .getByRole("link", { name: "Productos" })
+      .getAttribute("aria-current"),
+  ).toBe("page");
+
+  const collapseButton = screen.getByRole("button", {
+    name: "Contraer barra lateral",
+  });
+  collapseButton.click();
+  expect(screen.getByRole("link", { name: "Productos" })).toBeDefined();
+  expectNoA11yViolations(await axe(navigation));
 });

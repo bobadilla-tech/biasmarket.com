@@ -5,7 +5,11 @@ export default async function NotFound() {
   const t = await getTranslations("common.notFoundPage");
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="min-h-dvh flex items-center justify-center bg-gray-50 px-6"
+    >
       <div className="max-w-md text-center">
         <h1 className="text-xl font-bold text-gray-900">{t("title")}</h1>
         <p className="mt-2 text-gray-500">{t("body")}</p>
@@ -16,6 +20,6 @@ export default async function NotFound() {
           {t("backHome")}
         </Link>
       </div>
-    </div>
+    </main>
   );
 }

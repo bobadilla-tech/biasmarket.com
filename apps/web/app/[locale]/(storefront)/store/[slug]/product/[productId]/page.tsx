@@ -53,9 +53,13 @@ export default async function ProductDetailPage({
 
   if (!data || data.product?.discontinued) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="flex min-h-dvh items-center justify-center"
+      >
         <p className="text-gray-500">{t("productDetail.notFound")}</p>
-      </div>
+      </main>
     );
   }
 
@@ -63,7 +67,11 @@ export default async function ProductDetailPage({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <main className="mx-auto max-w-3xl px-4 pt-20 pb-10">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="mx-auto max-w-3xl px-4 pt-20 pb-10"
+      >
         <Link
           href={`/store/${slug}`}
           className="text-sm text-gray-500 hover:underline"

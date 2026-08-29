@@ -19,8 +19,12 @@ export default function GlobalError({
 
   return (
     <html lang="en">
-      <body className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
-        <div className="w-full max-w-md text-center">
+      <body className="min-h-dvh flex items-center justify-center bg-gray-50 px-6">
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="w-full max-w-md text-center"
+        >
           <h1 className="text-2xl font-semibold text-gray-900">
             Something went wrong
           </h1>
@@ -31,7 +35,7 @@ export default function GlobalError({
           >
             Try again
           </button>
-        </div>
+        </main>
       </body>
     </html>
   );

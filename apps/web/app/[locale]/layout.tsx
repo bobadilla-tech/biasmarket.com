@@ -7,6 +7,7 @@ import { routing } from "@/i18n/routing";
 import { SITE_URL } from "@/lib/site-config";
 import { Toaster } from "sonner";
 import { QueryProvider } from "./query-provider";
+import { SkipLink } from "@/components/shared/skip-link";
 import "../globals.css";
 
 const geistSans = Geist({
@@ -108,7 +109,10 @@ export default async function RootLayout({
           }}
         />
         <NextIntlClientProvider locale={locale}>
-          <QueryProvider>{children}</QueryProvider>
+          <QueryProvider>
+            <SkipLink />
+            {children}
+          </QueryProvider>
         </NextIntlClientProvider>
 
         <Toaster position="top-center" richColors closeButton />

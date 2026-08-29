@@ -212,6 +212,7 @@
   },
   "accountPage": {
     "title": "Mi cuenta",
+    "navigationLabel": "Navegación de cuenta",
     "logout": "Cerrar sesión",
     "infoTitle": "Datos de la cuenta",
     "noName": "Sin nombre registrado",

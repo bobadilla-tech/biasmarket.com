@@ -1,6 +1,7 @@
 "use client";
 
 import { ImpersonationBanner } from "@/components/dashboard/impersonation-banner";
+import { LoadingState } from "@/components/shared/loading-state";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 
 export default function DashboardLayout({
@@ -10,7 +11,7 @@ export default function DashboardLayout({
 }) {
   const { isReady } = useRequireAuth();
 
-  if (!isReady) return null;
+  if (!isReady) return <LoadingState />;
 
   return (
     <>

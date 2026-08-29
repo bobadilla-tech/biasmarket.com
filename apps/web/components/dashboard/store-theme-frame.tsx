@@ -15,9 +15,10 @@ export function StoreThemeFrame({
   children: React.ReactNode;
 }) {
   const { store } = useDashboardStore();
-  const themeStyle = useMemo(() => getStoreThemeStyle(store?.themeConfig), [
-    store?.themeConfig,
-  ]);
+  const themeStyle = useMemo(
+    () => getStoreThemeStyle(store?.themeConfig),
+    [store?.themeConfig],
+  );
 
   useEffect(() => {
     const root = document.documentElement;
@@ -43,7 +44,7 @@ export function StoreThemeFrame({
 
   return (
     <div
-      className="store-dashboard-theme flex min-h-screen flex-col lg:flex-row"
+      className="store-dashboard-theme flex min-h-dvh flex-col lg:flex-row"
       style={themeStyle}
     >
       <div className="hidden lg:flex">
@@ -51,14 +52,16 @@ export function StoreThemeFrame({
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex items-center justify-between p-4 lg:justify-end lg:px-8 lg:py-4">
+        <div className="sticky top-0 z-40 flex items-center justify-between bg-background/95 p-4 backdrop-blur lg:static lg:justify-end lg:bg-transparent lg:px-8 lg:py-4 lg:backdrop-blur-none">
           <div className="lg:hidden">
             <MobileSidebar slug={slug} store={store} />
           </div>
           <NotificationsBell slug={slug} storeId={store?.id} />
         </div>
 
-        <main className="min-w-0 flex-1">{children}</main>
+        <main id="main-content" tabIndex={-1} className="min-w-0 flex-1">
+          {children}
+        </main>
       </div>
     </div>
   );

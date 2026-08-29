@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 import { Menu } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { usePathname } from "@/i18n/navigation";
 
 import { StoreSidebar } from "./store-sidebar";
@@ -40,8 +46,11 @@ export function MobileSidebar({
       <SheetContent
         side="left"
         size="sm"
-        className="h-screen border-none bg-transparent p-0"
+        className="h-dvh border-none bg-transparent p-0"
       >
+        <SheetHeader className="sr-only">
+          <SheetTitle>{t("navigationTitle")}</SheetTitle>
+        </SheetHeader>
         <StoreSidebar slug={slug} store={store} forceExpanded />
       </SheetContent>
     </Sheet>
