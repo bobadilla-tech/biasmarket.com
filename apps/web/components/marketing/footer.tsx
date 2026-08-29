@@ -24,7 +24,7 @@ export function Footer() {
         <h3 className="text-[32px] leading-[39px] font-extrabold tracking-wide text-[#181818] sm:text-[48px] sm:leading-[56px]">
           Biasmarket
         </h3>
-        <p className="mt-0.5 text-lg leading-[22px] text-[#7A7A7A] sm:text-[28px] sm:leading-[33px]">
+        <p className="mt-0.5 text-lg leading-[22px] text-[#5F5F5F] sm:text-[28px] sm:leading-[33px]">
           {t("tagline")}
         </p>
 
@@ -37,7 +37,7 @@ export function Footer() {
               <ul className="mt-2.5 space-y-1 sm:mt-4 sm:space-y-2">
                 {column.links.map((label) => (
                   <li key={label}>
-                    <span className="cursor-default text-sm leading-[18px] font-normal text-[#7A7A7A] sm:text-[24px] sm:leading-[29px]">
+                    <span className="cursor-default text-sm leading-[18px] font-normal text-[#5F5F5F] sm:text-[24px] sm:leading-[29px]">
                       {label}
                     </span>
                   </li>
