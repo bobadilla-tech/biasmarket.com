@@ -44,6 +44,7 @@ jobs:
       types: ${{ steps.filter.outputs.types }}
       ui: ${{ steps.filter.outputs.ui }}
       utils: ${{ steps.filter.outputs.utils }}
+      web_e2e: ${{ steps.filter.outputs.web_e2e }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -120,6 +121,22 @@ jobs:
               - '.github/workflows/ci.yml'
             utils:
               - 'packages/utils/**'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'turbo.json'
+              - 'package.json'
+              - '.github/workflows/ci.yml'
+            # The a11y browser E2E job builds and runs BOTH apps plus the seed,
+            # so it is sensitive to api/db/seed changes on top of everything the
+            # `web` filter covers.
+            web_e2e:
+              - 'apps/web/**'
+              - 'apps/api/scripts/seed/**'
+              - 'packages/db/**'
+              - 'scripts/ci/minio-e2e.sh'
+              - 'scripts/ci/web-e2e.sh'
+              - 'scripts/ci/load-e2e-env.sh'
+              - 'scripts/ci/e2e.env.example'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
               - 'turbo.json'
@@ -652,6 +669,103 @@ jobs:
             .ci/e2e-openapi.log
             .ci/e2e-suite.log
 
+  web-e2e:
+    name: Web E2E (a11y)
+    needs: detect-changes
+    if: needs.detect-changes.outputs.web_e2e == 'true'
+    runs-on: ubuntu-latest
+    # Builds api + web, migrates + seeds, boots both servers, downloads a
+    # browser, then runs the axe/keyboard smoke. Realistically +6–12 min over a
+    # package job; keep headroom.
+    timeout-minutes: 25
+    # This job is a PR gate (it is in `ci-success.needs`). Phase 0 ships only
+    # the harness smoke spec here. As Phases 3/5 land the two targeted specs
+    # (keyboard checkout, seller approve-payment) they gate too; the broader
+    # axe/reflow/contrast matrix stays push-only / opt-in until Phase 7 and
+    # must NOT be added to this gating job before then.
+    services:
+      postgres:
+        image: ghcr.io/immich-app/postgres:18-vectorchord0.5.3-pgvector0.8.1@sha256:828081a755d3911a2d94f0a2be9f98570c07d52cf080fd310a9d6e4b83b73aa5
+        credentials:
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      redis:
+        image: ghcr.io/valkey-io/valkey:7-alpine@sha256:8fc3da585dc963d91754d72da22d54671c6ec495d8a0257a6a9100a9a4658f38
+        credentials:
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Load shared CI test environment
+        run: bash scripts/ci/load-e2e-env.sh
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Cache turbo
+        uses: actions/cache@v6
+        with:
+          path: .turbo/cache
+          key: turbo-web-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            turbo-web-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+
+      - name: Cache Playwright browsers
+        id: pw-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install Playwright browser
+        run: pnpm --filter web exec playwright install --with-deps chromium
+
+      - name: Run web a11y E2E
+        run: bash scripts/ci/web-e2e.sh
+
+      - name: Upload Playwright + server diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: web-e2e-diagnostics-${{ github.run_id }}
+          retention-days: 3
+          if-no-files-found: ignore
+          path: |
+            apps/web/playwright-report
+            apps/web/test-results
+            .ci/web-e2e-api.log
+            .ci/web-e2e-web.log
+
   ci-success:
     name: CI Success
     runs-on: ubuntu-latest
@@ -667,6 +781,7 @@ jobs:
       - ui
       - utils
       - e2e
+      - web-e2e
     if: always()
     steps:
       - uses: actions/checkout@v7
@@ -688,6 +803,7 @@ jobs:
           UI_RESULT: ${{ needs.ui.result }}
           UTILS_RESULT: ${{ needs.utils.result }}
           E2E_RESULT: ${{ needs.e2e.result }}
+          WEB_E2E_RESULT: ${{ needs.web-e2e.result }}
           API_CHANGED: ${{ needs.detect-changes.outputs.api }}
           WEB_CHANGED: ${{ needs.detect-changes.outputs.web }}
           WORKERS_CHANGED: ${{ needs.detect-changes.outputs.workers }}
@@ -697,6 +813,7 @@ jobs:
           TYPES_CHANGED: ${{ needs.detect-changes.outputs.types }}
           UI_CHANGED: ${{ needs.detect-changes.outputs.ui }}
           UTILS_CHANGED: ${{ needs.detect-changes.outputs.utils }}
+          WEB_E2E_CHANGED: ${{ needs.detect-changes.outputs.web_e2e }}
           EVENT_NAME: ${{ github.event_name }}
           # Guard the boolean input with the event name; on push, inputs is null.
           RUN_E2E: ${{ github.event_name == 'workflow_dispatch' && inputs.run_e2e || false }}

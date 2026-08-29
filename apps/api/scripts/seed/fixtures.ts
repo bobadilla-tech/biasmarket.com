@@ -91,6 +91,15 @@ export interface OrderPaymentSpec {
   method?: 'YAPE' | 'PLIN' | 'TRANSFER' | 'CASH';
   note?: string;
   imageUrl?: string;
+  // Who created the row and its proof-review state. Defaults mirror
+  // `ensureOrderPayment` / the Prisma schema: SELLER_RECORDED + N_A. A
+  // BUYER_SUBMITTED + PENDING_REVIEW row with `imageUrl` set is what the
+  // seller proof-lightbox e2e spec (audit C4/H7) needs; note that only
+  // SELLER_RECORDED or reviewStatus APPROVED rows count toward `paidAmount`
+  // (common/payment-summary.ts `countsTowardPaid`), so a submitted order that
+  // must show Approve as *enabled* also needs one of those.
+  source?: 'SELLER_RECORDED' | 'BUYER_SUBMITTED';
+  reviewStatus?: 'N_A' | 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED';
   createdDaysAgo?: number;
 }
 
@@ -182,6 +191,10 @@ const pastDate = () => new Date(Date.now() - 10 * DAY_MS);
 const futureDate = () => new Date(Date.now() + 90 * DAY_MS);
 
 function camilaStore(): StoreFixtureSpec {
+  const paymentProofImageUrl = `${
+    process.env.S3_PUBLIC_URL ?? 'http://127.0.0.1:9000'
+  }/payments/payment-proof-fixture.png`;
+
   return {
     seller: { email: 'seed-seller1@biasmarket.dev', name: 'Camila Seller' },
     store: {
@@ -404,6 +417,33 @@ function camilaStore(): StoreFixtureSpec {
         paymentStatus: 'PAYMENT_SUBMITTED',
         fulfillmentStatus: 'ORDERING',
         items: [{ productKey: 'photobook', variantKey: 'a', quantity: 1 }],
+        // Two payments so this order drives the seller review e2e specs:
+        //  - `buyer-proof`: BUYER_SUBMITTED + PENDING_REVIEW + imageUrl →
+        //    PaymentHistoryList shows the preview → PaymentProofLightbox opens
+        //    (audit C4 nested-focus spec).
+        //  - `seller-partial`: SELLER_RECORDED → paidAmount > 0 → the Approve
+        //    control is not `disabled` (audit H7 approve-payment spec).
+        payments: [
+          {
+            key: 'seller-partial',
+            amount: '15.00',
+            method: 'TRANSFER',
+            note: 'Adelanto registrado por la tienda',
+            source: 'SELLER_RECORDED',
+            reviewStatus: 'N_A',
+            createdDaysAgo: 1,
+          },
+          {
+            key: 'buyer-proof',
+            amount: '30.00',
+            method: 'TRANSFER',
+            note: 'Comprobante enviado por el comprador',
+            imageUrl: paymentProofImageUrl,
+            source: 'BUYER_SUBMITTED',
+            reviewStatus: 'PENDING_REVIEW',
+            createdDaysAgo: 1,
+          },
+        ],
         createdDaysAgo: 1,
       },
       {

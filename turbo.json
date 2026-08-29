@@ -9,8 +9,20 @@
     "build": { "dependsOn": ["^build"], "outputs": ["dist/**", ".next/**"] },
     "dev": { "cache": false, "persistent": true },
     "lint": {},
+    "web#lint": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "eslint.config.mjs",
+        "../../scripts/lint-changed-files.mjs"
+      ]
+    },
     "typecheck": { "dependsOn": ["^build"] },
     "test": { "dependsOn": ["^build"] },
+    "web#test:e2e": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "outputs": ["playwright-report/**", "test-results/**"]
+    },
     "@biasmarket/db#typecheck": { "dependsOn": ["^build", "build"] },
     "@biasmarket/db#build": { "cache": false, "outputs": ["generated/**"] },
     "db:generate": { "cache": false }

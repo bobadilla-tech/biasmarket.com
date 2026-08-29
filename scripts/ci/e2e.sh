@@ -3,11 +3,7 @@
 set -Eeuo pipefail
 
 readonly ROOT="${GITHUB_WORKSPACE:-$(pwd)}"
-readonly NETWORK="biasmarket-e2e"
-readonly MINIO_CONTAINER="biasmarket-e2e-minio"
-# Digest resolved 2026-08-28: ghcr.io/coollabsio/minio:RELEASE.2025-10-15T17-29-55Z.
-# The GHCR image includes both the MinIO server and the mc client binary.
-readonly MINIO_IMAGE="ghcr.io/coollabsio/minio:RELEASE.2025-10-15T17-29-55Z@sha256:69b55a1c1c5dc285ce04db96689f5b2102317fc77a50680a1874ca6efd1c87f9"
+source "$ROOT/scripts/ci/minio-e2e.sh"
 
 WORKER_PID=""
 
@@ -29,11 +25,7 @@ cleanup() {
     fi
   fi
 
-  if docker inspect "$MINIO_CONTAINER" >/dev/null 2>&1; then
-    docker logs "$MINIO_CONTAINER" > .ci/e2e-minio.log 2>&1
-    docker rm -f "$MINIO_CONTAINER" >/dev/null 2>&1
-  fi
-  docker network rm "$NETWORK" >/dev/null 2>&1
+  stop_minio
   rm -rf apps/workers/.mailer-dev
 
   exit "$status"
@@ -45,43 +37,7 @@ rm -f .ci/e2e-{api,workers,migrate,minio,openapi,suite}.log
 rm -rf apps/workers/.mailer-dev
 
 echo "Starting MinIO on the E2E-only Docker network"
-docker network create "$NETWORK" > .ci/e2e-minio.log 2>&1
-docker run --detach \
-  --name "$MINIO_CONTAINER" \
-  --network "$NETWORK" \
-  --publish 9000:9000 \
-  --env MINIO_ROOT_USER="$S3_ACCESS_KEY" \
-  --env MINIO_ROOT_PASSWORD="$S3_SECRET_KEY" \
-  "$MINIO_IMAGE" server /data --console-address ":9001" >> .ci/e2e-minio.log 2>&1
-
-for attempt in {1..60}; do
-  if curl --fail --silent http://127.0.0.1:9000/minio/health/live >/dev/null; then
-    break
-  fi
-  if [[ "$(docker inspect --format '{{.State.Running}}' "$MINIO_CONTAINER" 2>/dev/null)" != "true" ]]; then
-    echo "::error::MinIO exited before its liveness endpoint became ready"
-    exit 1
-  fi
-  sleep 1
-  if [[ "$attempt" -eq 60 ]]; then
-    echo "::error::MinIO did not become ready within 60 seconds"
-    exit 1
-  fi
-done
-
-run_mc() {
-  docker run --rm \
-    --entrypoint /usr/bin/mc \
-    --network "$NETWORK" \
-    --env "MC_HOST_ci=http://${S3_ACCESS_KEY}:${S3_SECRET_KEY}@${MINIO_CONTAINER}:9000" \
-    "$MINIO_IMAGE" "$@" >> .ci/e2e-minio.log 2>&1
-}
-
-run_mc mb --ignore-existing ci/products
-run_mc mb --ignore-existing ci/logos
-run_mc mb --ignore-existing ci/payments
-run_mc anonymous set download ci/products
-run_mc anonymous set download ci/logos
+start_minio
 
 echo "Waiting for PostgreSQL and Redis service containers"
 for attempt in {1..60}; do
