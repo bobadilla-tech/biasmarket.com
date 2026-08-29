@@ -184,8 +184,8 @@ is expected, not a failure.)
 - No browser / Playwright / Cypress suite for `apps/web`. No E2E suite for
   `apps/workers` or `apps/sanity` (none exist; leave it).
 - No new product-flow coverage — the 24 existing specs are the scope. The only
-  sanctioned app-code changes are the two CI-only env guards in decisions 6
-  and 6b.
+  sanctioned app-code change is the CI-only env guard in decision 6. Decision
+  6b, if needed, is a test-helper change rather than an app-code change.
 - No `merge_group` / merge-queue support, no `merge-policy.yml`
   skip-CI-token workflow, no `release-config` path-filter job (all were in the
   superseded plan; none exist in the repo today; orthogonal to this gate).
@@ -388,8 +388,9 @@ suite's), `MAIL_DRIVER=file`, `E2E_DISABLE_EXPIRATION_SCHEDULERS=true`
 MinIO root creds and the `mc` alias exactly. Never `MAIL_DRIVER=resend` /
 `RESEND_*`.
 
-Decision 6b (the auth rate-limit issue) is now handled by a spec-level
-stagger/retry, **not** an env flag — see decision 6b. No
+Decision 6b (the auth rate-limit issue) remains pending: the baseline did not
+show a 429, so no spec-level stagger/retry or env flag is present. Its
+conditional remedy is documented in decision 6b. No
 `E2E_DISABLE_AUTH_RATELIMIT` is set.
 
 ### 4. One trapped helper; strict step order
