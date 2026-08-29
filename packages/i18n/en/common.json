@@ -3,6 +3,7 @@
   "close": "Close",
   "countryCode": "Country code",
   "phoneNumber": "Phone number",
+  "formErrorsSummary": "Please review the highlighted fields.",
   "networkError": "Network error",
   "skipToContent": "Skip to content",
   "notFoundPage": {

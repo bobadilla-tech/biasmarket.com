@@ -1,11 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { buttonVariants } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
+import {
+  FormErrorSummary,
+  FormField,
+  formErrorMessage,
+} from "@/components/shared/form-a11y";
 import {
   type InquirySubmissionInput,
   inquirySubmissionSchema,
@@ -13,14 +18,20 @@ import {
 } from "@/features/contact";
 
 const inputClass =
-  "w-full rounded-lg border border-black/40 bg-background px-4 py-2.5 text-sm text-foreground transition placeholder:text-muted-foreground focus:border-brand-pink focus:ring-2 focus:ring-brand-pink/60";
+  "w-full rounded-lg border border-black/40 bg-background px-4 py-2.5 text-base text-foreground transition placeholder:text-muted-foreground focus:border-brand-pink focus:ring-2 focus:ring-brand-pink/60 md:text-sm";
 
 export function ContactForm() {
   const t = useTranslations("marketing.contactPage.form");
+  const tCommon = useTranslations("common");
   const [success, setSuccess] = useState(false);
+  const successRef = useRef<HTMLParagraphElement>(null);
   const submitInquiry = useSubmitInquiry(t("error"));
 
-  const { register, handleSubmit } = useForm<InquirySubmissionInput>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<InquirySubmissionInput>({
     resolver: zodResolver(inquirySubmissionSchema),
     defaultValues: {
       name: "",
@@ -40,10 +51,21 @@ export function ContactForm() {
     }
   });
 
+  useEffect(() => {
+    if (success) successRef.current?.focus();
+  }, [success]);
+
   if (success) {
     return (
       <div className="rounded-2xl border border-black/10 p-8 text-center">
-        <p className="font-semibold">{t("success")}</p>
+        <p
+          ref={successRef}
+          tabIndex={-1}
+          role="status"
+          className="font-semibold outline-none"
+        >
+          {t("success")}
+        </p>
       </div>
     );
   }
@@ -53,76 +75,92 @@ export function ContactForm() {
       onSubmit={onSubmit}
       className="flex flex-col gap-4 rounded-2xl border border-black/10 p-8"
     >
-      <div>
-        <label htmlFor="name" className="mb-2 block text-sm font-medium">
-          {t("name")}
-        </label>
-        <input
-          id="name"
-          required
-          className={inputClass}
-          {...register("name")}
-        />
-      </div>
-
-      <div>
-        <label htmlFor="email" className="mb-2 block text-sm font-medium">
-          {t("email")}
-        </label>
-        <input
-          id="email"
-          type="email"
-          required
-          className={inputClass}
-          {...register("email")}
-        />
-      </div>
-
-      <div>
-        <label htmlFor="company" className="mb-2 block text-sm font-medium">
-          {t("company")}
-        </label>
-        <input id="company" className={inputClass} {...register("company")} />
-      </div>
-
-      <div>
-        <label htmlFor="inquiryType" className="mb-2 block text-sm font-medium">
-          {t("inquiryType")}
-        </label>
-        <Select
-          id="inquiryType"
-          className="w-full"
-          selectClassName={inputClass.replace("px-4", "pl-4")}
-          {...register("inquiryType")}
-        >
-          <option value="general">{t("inquiryGeneral")}</option>
-          <option value="technical">{t("inquiryTechnical")}</option>
-          <option value="pricing">{t("inquiryPricing")}</option>
-          <option value="partnership">{t("inquiryPartnership")}</option>
-          <option value="other">{t("inquiryOther")}</option>
-        </Select>
-      </div>
-
-      <div>
-        <label htmlFor="message" className="mb-2 block text-sm font-medium">
-          {t("message")}
-        </label>
-        <textarea
-          id="message"
-          rows={5}
-          required
-          className={inputClass}
-          {...register("message")}
-        />
-      </div>
-
-      {submitInquiry.isError && (
-        <p className="text-sm text-red-400">
-          {submitInquiry.error instanceof Error
-            ? submitInquiry.error.message
-            : t("error")}
-        </p>
-      )}
+      <FormErrorSummary
+        id="contact-error-summary"
+        title={tCommon("formErrorsSummary")}
+        messages={[
+          errors.name || errors.email || errors.message
+            ? tCommon("formErrorsSummary")
+            : "",
+          submitInquiry.isError
+            ? submitInquiry.error instanceof Error
+              ? submitInquiry.error.message
+              : t("error")
+            : "",
+        ].filter(Boolean)}
+      />
+      <FormField
+        id="contact-name"
+        label={t("name")}
+        error={formErrorMessage(errors.name, t("nameRequired"))}
+      >
+        {(props) => (
+          <input
+            {...props}
+            required
+            className={inputClass}
+            {...register("name")}
+          />
+        )}
+      </FormField>
+      <FormField
+        id="contact-email"
+        label={t("email")}
+        error={formErrorMessage(errors.email, t("emailInvalid"))}
+      >
+        {(props) => (
+          <input
+            {...props}
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            required
+            className={inputClass}
+            {...register("email")}
+          />
+        )}
+      </FormField>
+      <FormField id="contact-company" label={t("company")}>
+        {(props) => (
+          <input
+            {...props}
+            autoComplete="organization"
+            className={inputClass}
+            {...register("company")}
+          />
+        )}
+      </FormField>
+      <FormField id="contact-inquiry-type" label={t("inquiryType")}>
+        {(props) => (
+          <Select
+            {...props}
+            className="w-full"
+            selectClassName={inputClass.replace("px-4", "pl-4")}
+            {...register("inquiryType")}
+          >
+            <option value="general">{t("inquiryGeneral")}</option>
+            <option value="technical">{t("inquiryTechnical")}</option>
+            <option value="pricing">{t("inquiryPricing")}</option>
+            <option value="partnership">{t("inquiryPartnership")}</option>
+            <option value="other">{t("inquiryOther")}</option>
+          </Select>
+        )}
+      </FormField>
+      <FormField
+        id="contact-message"
+        label={t("message")}
+        error={formErrorMessage(errors.message, t("messageRequired"))}
+      >
+        {(props) => (
+          <textarea
+            {...props}
+            rows={5}
+            required
+            className={inputClass}
+            {...register("message")}
+          />
+        )}
+      </FormField>
 
       <button
         type="submit"

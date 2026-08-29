@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import { useEffect, isValidElement, cloneElement } from "react";
+import type { ReactElement } from "react";
 import {
   Card,
   CardContent,
@@ -7,6 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { Field as A11yField } from "@/components/ui/field";
 
 /**
  * Mirrors the old shared `savedSection` 1.8s flash timer, but scoped to one
@@ -53,19 +55,30 @@ export function SectionCard({
 }
 
 export function Field({
+  id,
   label,
   children,
 }: {
+  id?: string;
   label: string;
   children: React.ReactNode;
 }) {
+  const controlId =
+    id ?? `settings-field-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+  const control = isValidElement(children)
+    ? cloneElement(children as ReactElement<{ id?: string }>, { id: controlId })
+    : children;
+
   return (
-    <label className="block space-y-2">
-      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#927fac]">
+    <A11yField.Root>
+      <A11yField.Label
+        htmlFor={controlId}
+        className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#927fac]"
+      >
         {label}
-      </span>
-      {children}
-    </label>
+      </A11yField.Label>
+      {control}
+    </A11yField.Root>
   );
 }
 
@@ -86,21 +99,24 @@ export function ToggleRow({
     <div className="flex items-center justify-between gap-4 rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3">
       <div>
         <p className="text-sm font-medium text-[#341b55]">{label}</p>
-        {description
-          ? <p className="text-xs text-[#9582ad]">{description}</p>
-          : null}
+        {description ? (
+          <p className="text-xs text-[#9582ad]">{description}</p>
+        ) : null}
       </div>
       <Switch
+        aria-label={label}
         checked={enabled}
         onCheckedChange={onChange}
         disabled={disabled}
         className="data-[checked]:bg-transparent"
-        style={enabled
-          ? {
-            background:
-              "linear-gradient(135deg, var(--store-accent) 0%, var(--store-primary) 100%)",
-          }
-          : undefined}
+        style={
+          enabled
+            ? {
+                background:
+                  "linear-gradient(135deg, var(--store-accent) 0%, var(--store-primary) 100%)",
+              }
+            : undefined
+        }
       />
     </div>
   );

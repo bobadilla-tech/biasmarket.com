@@ -16,10 +16,14 @@ export function PaymentProofUpload({
   value,
   onChange,
   id = "payment-proof-upload",
+  "aria-describedby": ariaDescribedBy,
+  "aria-invalid": ariaInvalid,
 }: {
   value: File | null;
   onChange: (file: File | null) => void;
   id?: string;
+  "aria-describedby"?: string;
+  "aria-invalid"?: true;
 }) {
   const t = useTranslations("storefront.checkoutPage");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -37,51 +41,56 @@ export function PaymentProofUpload({
 
   return (
     <div className="flex flex-col gap-2">
-      <input
-        ref={fileInputRef}
-        type="file"
-        id={id}
-        accept="image/jpeg,image/png,application/pdf,.jpg,.jpeg,.png,.pdf"
-        className="hidden"
-        onChange={(event) => onChange(event.target.files?.[0] ?? null)}
-      />
-
       <label
         htmlFor={id}
         className={cn(
           "flex cursor-pointer items-center gap-3 rounded-xl border border-dashed px-4 py-3 transition",
-          "border-gray-200 bg-gray-50 hover:bg-gray-100",
+          "border-gray-200 bg-gray-50 hover:bg-gray-100 focus-within:ring-3 focus-within:ring-ring/50",
           value && "border-[var(--store-primary)] bg-[#faf5ff]",
         )}
       >
+        <input
+          ref={fileInputRef}
+          type="file"
+          id={id}
+          accept="image/jpeg,image/png,application/pdf,.jpg,.jpeg,.png,.pdf"
+          className="sr-only"
+          aria-label={t("paymentProofLabel")}
+          aria-describedby={ariaDescribedBy}
+          aria-invalid={ariaInvalid}
+          onChange={(event) => onChange(event.target.files?.[0] ?? null)}
+        />
         <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white">
-          {value
-            ? <FileText className="size-4 text-[var(--store-primary)]" />
-            : <Upload className="size-4 text-[var(--store-primary)]" />}
+          {value ? (
+            <FileText className="size-4 text-[var(--store-primary)]" />
+          ) : (
+            <Upload className="size-4 text-[var(--store-primary)]" />
+          )}
         </div>
 
         <div className="min-w-0 flex-1">
-          {value
-            ? (
-              <>
-                <p className="truncate text-sm font-semibold text-gray-800">
-                  {value.name}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {t("paymentProofSize", {
-                    size: (value.size / 1024).toFixed(1),
-                  })}
-                </p>
-              </>
-            )
-            : (
-              <>
-                <p className="text-sm font-semibold text-gray-800">
-                  {t("paymentProofLabel")}
-                </p>
-                <p className="text-xs text-gray-500">{t("paymentProofHint")}</p>
-              </>
-            )}
+          {value ? (
+            <>
+              <p
+                aria-live="polite"
+                className="truncate text-sm font-semibold text-gray-800"
+              >
+                {value.name}
+              </p>
+              <p className="text-xs text-gray-500">
+                {t("paymentProofSize", {
+                  size: (value.size / 1024).toFixed(1),
+                })}
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-semibold text-gray-800">
+                {t("paymentProofLabel")}
+              </p>
+              <p className="text-xs text-gray-500">{t("paymentProofHint")}</p>
+            </>
+          )}
         </div>
 
         {!value && (

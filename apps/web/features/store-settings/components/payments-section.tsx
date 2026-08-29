@@ -21,7 +21,7 @@ import {
   transferDetailsSchema,
   walletDetailsSchema,
 } from "../schemas/payment-details.schema";
-import { SectionCard, useSavedFlash } from "./section-primitives";
+import { Field, SectionCard, useSavedFlash } from "./section-primitives";
 
 const PAYMENT_METHODS = [
   {
@@ -384,75 +384,115 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
                 <div className="space-y-3 border-t border-[#f0e7f8] px-4 py-4">
                   {method.method === "TRANSFER" ? (
                     <>
-                      <Input
-                        placeholder={t("payments.fields.bankName")}
-                        value={detailsForm.TRANSFER.bankName}
-                        onChange={(e) =>
-                          updateDetailField(
-                            "TRANSFER",
-                            "bankName",
-                            e.target.value,
-                          )
-                        }
-                      />
-                      <Input
-                        placeholder={t("payments.fields.accountNumber")}
-                        value={detailsForm.TRANSFER.accountNumber}
-                        onChange={(e) =>
-                          updateDetailField(
-                            "TRANSFER",
-                            "accountNumber",
-                            e.target.value,
-                          )
-                        }
-                      />
-                      <Input
-                        placeholder={t("payments.fields.accountHolder")}
-                        value={detailsForm.TRANSFER.accountHolder}
-                        onChange={(e) =>
-                          updateDetailField(
-                            "TRANSFER",
-                            "accountHolder",
-                            e.target.value,
-                          )
-                        }
-                      />
-                      <Input
-                        placeholder={t("payments.fields.accountType")}
-                        value={detailsForm.TRANSFER.accountType}
-                        onChange={(e) =>
-                          updateDetailField(
-                            "TRANSFER",
-                            "accountType",
-                            e.target.value,
-                          )
-                        }
-                      />
+                      <Field
+                        id="settings-payment-transfer-bank"
+                        label={t("payments.fields.bankName")}
+                      >
+                        <Input
+                          id="settings-payment-transfer-bank"
+                          placeholder={t("payments.fields.bankName")}
+                          value={detailsForm.TRANSFER.bankName}
+                          onChange={(e) =>
+                            updateDetailField(
+                              "TRANSFER",
+                              "bankName",
+                              e.target.value,
+                            )
+                          }
+                        />
+                      </Field>
+                      <Field
+                        id="settings-payment-transfer-account"
+                        label={t("payments.fields.accountNumber")}
+                      >
+                        <Input
+                          id="settings-payment-transfer-account"
+                          placeholder={t("payments.fields.accountNumber")}
+                          value={detailsForm.TRANSFER.accountNumber}
+                          onChange={(e) =>
+                            updateDetailField(
+                              "TRANSFER",
+                              "accountNumber",
+                              e.target.value,
+                            )
+                          }
+                          inputMode="numeric"
+                        />
+                      </Field>
+                      <Field
+                        id="settings-payment-transfer-holder"
+                        label={t("payments.fields.accountHolder")}
+                      >
+                        <Input
+                          id="settings-payment-transfer-holder"
+                          placeholder={t("payments.fields.accountHolder")}
+                          value={detailsForm.TRANSFER.accountHolder}
+                          onChange={(e) =>
+                            updateDetailField(
+                              "TRANSFER",
+                              "accountHolder",
+                              e.target.value,
+                            )
+                          }
+                        />
+                      </Field>
+                      <Field
+                        id="settings-payment-transfer-type"
+                        label={t("payments.fields.accountType")}
+                      >
+                        <Input
+                          id="settings-payment-transfer-type"
+                          placeholder={t("payments.fields.accountType")}
+                          value={detailsForm.TRANSFER.accountType}
+                          onChange={(e) =>
+                            updateDetailField(
+                              "TRANSFER",
+                              "accountType",
+                              e.target.value,
+                            )
+                          }
+                        />
+                      </Field>
                     </>
                   ) : (
                     <>
-                      <Input
-                        placeholder={t("payments.fields.phoneNumber")}
-                        value={detailsForm[method.method].phoneNumber}
-                        onChange={(e) =>
-                          updateDetailField(
-                            method.method as "YAPE" | "PLIN",
-                            "phoneNumber",
-                            e.target.value,
-                          )
-                        }
-                      />
-                      <Input
-                        placeholder={t("payments.fields.accountHolder")}
-                        value={detailsForm[method.method].accountHolder}
-                        onChange={(e) =>
-                          updateDetailField(
-                            method.method as "YAPE" | "PLIN",
-                            "accountHolder",
-                            e.target.value,
-                          )
-                        }
-                      />
+                      <Field
+                        id={`settings-payment-${method.method.toLowerCase()}-phone`}
+                        label={t("payments.fields.phoneNumber")}
+                      >
+                        <Input
+                          id={`settings-payment-${method.method.toLowerCase()}-phone`}
+                          type="tel"
+                          autoComplete="tel"
+                          inputMode="tel"
+                          placeholder={t("payments.fields.phoneNumber")}
+                          value={detailsForm[method.method].phoneNumber}
+                          onChange={(e) =>
+                            updateDetailField(
+                              method.method as "YAPE" | "PLIN",
+                              "phoneNumber",
+                              e.target.value,
+                            )
+                          }
+                        />
+                      </Field>
+                      <Field
+                        id={`settings-payment-${method.method.toLowerCase()}-holder`}
+                        label={t("payments.fields.accountHolder")}
+                      >
+                        <Input
+                          id={`settings-payment-${method.method.toLowerCase()}-holder`}
+                          placeholder={t("payments.fields.accountHolder")}
+                          value={detailsForm[method.method].accountHolder}
+                          onChange={(e) =>
+                            updateDetailField(
+                              method.method as "YAPE" | "PLIN",
+                              "accountHolder",
+                              e.target.value,
+                            )
+                          }
+                        />
+                      </Field>
                       <div className="flex items-center gap-3">
                         {detailsForm[method.method].qrImageUrl && (
                           <Image
@@ -468,7 +508,8 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
                           <input
                             type="file"
                             accept="image/png,image/jpeg"
-                            className="hidden"
+                            aria-label={t("payments.uploadQr")}
+                            className="sr-only"
                             onChange={(e) =>
                               handleQrFileChange(
                                 method.method as "YAPE" | "PLIN",
@@ -487,7 +528,7 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
                   )}
 
                   {detailsError[method.method as MethodWithDetails] && (
-                    <p className="text-xs text-[#b24368]">
+                    <p role="alert" className="text-xs text-[#b24368]">
                       {detailsError[method.method as MethodWithDetails]}
                     </p>
                   )}
@@ -519,19 +560,25 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
                   <p className="text-xs text-[#9582ad]">
                     {t("payments.depositPercent.checkoutHint")}
                   </p>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={100}
-                    placeholder="100"
-                    value={depositPercents[method.method] ?? 100}
-                    onChange={(e) =>
-                      updateDepositPercent(method.method, e.target.value)
-                    }
-                  />
+                  <Field
+                    id={`settings-payment-${method.method.toLowerCase()}-deposit`}
+                    label={t("payments.depositPercent.label")}
+                  >
+                    <Input
+                      id={`settings-payment-${method.method.toLowerCase()}-deposit`}
+                      type="number"
+                      min={1}
+                      max={100}
+                      placeholder="100"
+                      value={depositPercents[method.method] ?? 100}
+                      onChange={(e) =>
+                        updateDepositPercent(method.method, e.target.value)
+                      }
+                    />
+                  </Field>
 
                   {depositError[method.method] && (
-                    <p className="text-xs text-[#b24368]">
+                    <p role="alert" className="text-xs text-[#b24368]">
                       {depositError[method.method]}
                     </p>
                   )}

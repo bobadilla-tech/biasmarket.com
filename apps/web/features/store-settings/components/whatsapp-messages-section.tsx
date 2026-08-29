@@ -68,7 +68,7 @@ function MessageTemplateEditor({
 
   const hasCustomTemplate = text.trim().length > 0;
   const missing = useMemo(
-    () => hasCustomTemplate ? getMissingRequiredTokens(type, text) : [],
+    () => (hasCustomTemplate ? getMissingRequiredTokens(type, text) : []),
     [type, text, hasCustomTemplate],
   );
 
@@ -77,21 +77,28 @@ function MessageTemplateEditor({
       ? buildWhatsAppOrderMessage(SAMPLE_NEW_ORDER_INPUT, text)
       : buildWhatsAppPaymentReminderMessage(SAMPLE_REMINDER_INPUT, text)
     : type === "NEW_ORDER"
-    ? buildWhatsAppOrderMessage(SAMPLE_NEW_ORDER_INPUT)
-    : buildWhatsAppPaymentReminderMessage(SAMPLE_REMINDER_INPUT);
+      ? buildWhatsAppOrderMessage(SAMPLE_NEW_ORDER_INPUT)
+      : buildWhatsAppPaymentReminderMessage(SAMPLE_REMINDER_INPUT);
 
   const insertToken = (token: string) => {
-    setText((current) =>
-      `${current}${current && !current.endsWith(" ") ? " " : ""}{{${token}}}`
+    setText(
+      (current) =>
+        `${current}${current && !current.endsWith(" ") ? " " : ""}{{${token}}}`,
     );
   };
 
   return (
     <div className="rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] p-4">
-      <p className="text-sm font-medium text-[#341b55]">{title}</p>
+      <label
+        htmlFor={`settings-whatsapp-${type.toLowerCase()}`}
+        className="text-sm font-medium text-[#341b55]"
+      >
+        {title}
+      </label>
       <p className="mt-1 text-xs text-[#9582ad]">{description}</p>
 
       <Textarea
+        id={`settings-whatsapp-${type.toLowerCase()}`}
         value={text}
         onChange={(event) => setText(event.target.value)}
         rows={6}
@@ -117,25 +124,21 @@ function MessageTemplateEditor({
         ))}
       </div>
 
-      {missing.length > 0
-        ? (
-          <p className="mt-3 text-sm text-[#b24368]">
-            {t("missingTokens", {
-              tokens: missing.map((token) => `{{${token}}}`).join(", "),
-            })}
-          </p>
-        )
-        : null}
+      {missing.length > 0 ? (
+        <p className="mt-3 text-sm text-[#b24368]">
+          {t("missingTokens", {
+            tokens: missing.map((token) => `{{${token}}}`).join(", "),
+          })}
+        </p>
+      ) : null}
 
-      {saveTemplate.isError
-        ? (
-          <p className="mt-3 text-sm text-[#b24368]">
-            {saveTemplate.error instanceof Error
-              ? saveTemplate.error.message
-              : String(saveTemplate.error)}
-          </p>
-        )
-        : null}
+      {saveTemplate.isError ? (
+        <p className="mt-3 text-sm text-[#b24368]">
+          {saveTemplate.error instanceof Error
+            ? saveTemplate.error.message
+            : String(saveTemplate.error)}
+        </p>
+      ) : null}
 
       <div className="mt-3">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#927fac]">
@@ -155,8 +158,8 @@ function MessageTemplateEditor({
           {saveTemplate.isSuccess
             ? t("saved")
             : saveTemplate.isPending
-            ? t("saving")
-            : t("save")}
+              ? t("saving")
+              : t("save")}
         </Button>
       </div>
     </div>
@@ -170,8 +173,7 @@ export function WhatsAppMessagesSection({
 }: {
   storeId: string;
   templates:
-    | { newOrder: string | null; paymentReminder: string | null }
-    | undefined;
+    { newOrder: string | null; paymentReminder: string | null } | undefined;
   loading: boolean;
 }) {
   const t = useTranslations("dashboard.settings.whatsappMessages");
@@ -182,27 +184,27 @@ export function WhatsAppMessagesSection({
       title={t("title")}
       description={t("description")}
     >
-      {loading || !templates
-        ? <p className="text-sm text-[#8f7da8]">{t("loading")}</p>
-        : (
-          <div className="space-y-4">
-            <MessageTemplateEditor
-              type="NEW_ORDER"
-              storeId={storeId}
-              initialTemplate={templates.newOrder}
-              title={t("newOrder.title")}
-              description={t("newOrder.description")}
-            />
-            <Separator className="bg-[#f0e7f8]" />
-            <MessageTemplateEditor
-              type="PAYMENT_REMINDER"
-              storeId={storeId}
-              initialTemplate={templates.paymentReminder}
-              title={t("paymentReminder.title")}
-              description={t("paymentReminder.description")}
-            />
-          </div>
-        )}
+      {loading || !templates ? (
+        <p className="text-sm text-[#8f7da8]">{t("loading")}</p>
+      ) : (
+        <div className="space-y-4">
+          <MessageTemplateEditor
+            type="NEW_ORDER"
+            storeId={storeId}
+            initialTemplate={templates.newOrder}
+            title={t("newOrder.title")}
+            description={t("newOrder.description")}
+          />
+          <Separator className="bg-[#f0e7f8]" />
+          <MessageTemplateEditor
+            type="PAYMENT_REMINDER"
+            storeId={storeId}
+            initialTemplate={templates.paymentReminder}
+            title={t("paymentReminder.title")}
+            description={t("paymentReminder.description")}
+          />
+        </div>
+      )}
     </SectionCard>
   );
 }
