@@ -106,6 +106,8 @@ export function ProductSearchPageClient({
         className="mt-8 max-w-sm"
       >
         <Input
+          id="product-search"
+          aria-label={t("searchLabel")}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           placeholder={t("searchPlaceholder")}
@@ -113,12 +115,13 @@ export function ProductSearchPageClient({
         />
       </form>
 
-      <div className="mt-6 flex flex-wrap items-center gap-2">
+      <fieldset className="mt-6 flex flex-wrap items-center gap-2">
+        <legend className="sr-only">{t("categoryFilters")}</legend>
         <button
           type="button"
           onClick={() => navigate({ category: null, page: 1 })}
           className={cn(
-            "rounded-full border px-4 py-1.5 text-sm font-medium transition",
+            "min-h-11 rounded-full border px-4 py-1.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
             category === null
               ? "border-primary bg-primary text-primary-foreground"
               : "border-border bg-card text-foreground hover:bg-muted",
@@ -132,7 +135,7 @@ export function ProductSearchPageClient({
             type="button"
             onClick={() => navigate({ category: name, page: 1 })}
             className={cn(
-              "rounded-full border px-4 py-1.5 text-sm font-medium transition",
+              "min-h-11 rounded-full border px-4 py-1.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
               category === name
                 ? "border-primary bg-primary text-primary-foreground"
                 : "border-border bg-card text-foreground hover:bg-muted",
@@ -141,16 +144,17 @@ export function ProductSearchPageClient({
             {name}
           </button>
         ))}
-      </div>
+      </fieldset>
 
-      <div className="mt-4 flex items-center gap-2">
+      <fieldset className="mt-4 flex flex-wrap items-center gap-2">
+        <legend className="sr-only">{t("sortFilters")}</legend>
         {(["latest", "bestseller"] as const).map((value) => (
           <button
             key={value}
             type="button"
             onClick={() => navigate({ sort: value, page: 1 })}
             className={cn(
-              "rounded-full border px-4 py-1.5 text-sm font-medium transition",
+              "min-h-11 rounded-full border px-4 py-1.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
               sort === value
                 ? "border-primary bg-primary text-primary-foreground"
                 : "border-border bg-card text-foreground hover:bg-muted",
@@ -159,7 +163,7 @@ export function ProductSearchPageClient({
             {value === "latest" ? t("sortLatest") : t("sortBestsellers")}
           </button>
         ))}
-      </div>
+      </fieldset>
 
       <div className="mt-8">
         {loading ? (
@@ -167,9 +171,15 @@ export function ProductSearchPageClient({
         ) : error || !result ? (
           <ErrorState message={tCommon("networkError")} />
         ) : result.products.length === 0 ? (
-          <EmptyState message={t("empty")} />
+          <div role="status" aria-live="polite">
+            <p className="sr-only">{t("resultsCount", { count: 0 })}</p>
+            <EmptyState message={t("empty")} />
+          </div>
         ) : (
           <>
+            <p className="sr-only" role="status" aria-live="polite">
+              {t("resultsCount", { count: result.total })}
+            </p>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
               {result.products.map((product) => (
                 <Link
@@ -183,6 +193,7 @@ export function ProductSearchPageClient({
                         src={product.images[0]}
                         alt={product.name}
                         fill
+                        sizes="(min-width: 768px) 220px, 50vw"
                         className="object-cover"
                       />
                     </div>

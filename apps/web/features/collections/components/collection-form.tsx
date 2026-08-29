@@ -15,12 +15,11 @@ interface CollectionFormProps {
 
 export function CollectionForm({ submitting, onSubmit }: CollectionFormProps) {
   const t = useTranslations("dashboard.collections");
-  const { register, handleSubmit, reset, watch } = useForm<
-    CreateCollectionInput
-  >({
-    resolver: zodResolver(createCollectionSchema),
-    defaultValues: { name: "", description: "" },
-  });
+  const { register, handleSubmit, reset, watch } =
+    useForm<CreateCollectionInput>({
+      resolver: zodResolver(createCollectionSchema),
+      defaultValues: { name: "", description: "" },
+    });
   const name = watch("name");
 
   const submit = handleSubmit(async (values) => {
@@ -31,22 +30,22 @@ export function CollectionForm({ submitting, onSubmit }: CollectionFormProps) {
   return (
     <form
       onSubmit={submit}
-      className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-wrap gap-3 items-center"
+      className="flex flex-col items-stretch gap-3 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm sm:flex-row sm:items-center"
     >
       <input
         placeholder={t("namePlaceholder")}
-        className="flex-1 min-w-[160px] rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600"
+        className="min-h-11 min-w-0 w-full flex-1 rounded-xl border border-gray-200 px-4 py-2.5 text-base text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2 sm:text-sm"
         {...register("name")}
       />
       <input
         placeholder={t("descriptionPlaceholder")}
-        className="flex-1 min-w-[160px] rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600"
+        className="min-h-11 min-w-0 w-full flex-1 rounded-xl border border-gray-200 px-4 py-2.5 text-base text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2 sm:text-sm"
         {...register("description")}
       />
       <button
         type="submit"
         disabled={submitting || !name}
-        className="store-theme-primary-button rounded-xl px-5 py-2.5 text-sm font-semibold transition disabled:opacity-60"
+        className="store-theme-primary-button min-h-11 w-full rounded-xl px-5 py-2.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2 disabled:opacity-60 sm:w-auto"
       >
         {t("add")}
       </button>

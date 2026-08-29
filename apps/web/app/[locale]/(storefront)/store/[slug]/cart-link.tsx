@@ -43,7 +43,7 @@ export function CartLink({ slug }: { slug: string }) {
     <Link
       href={`/store/${slug}/cart`}
       aria-label={t("cart")}
-      className="relative flex size-9 items-center justify-center rounded-full border border-gray-100 bg-white text-gray-700 shadow-sm transition hover:bg-gray-50"
+      className="relative flex size-11 shrink-0 items-center justify-center rounded-full border border-gray-100 bg-white text-gray-700 shadow-sm transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2"
     >
       <ShoppingCart className="size-4" />
       {count > 0 && (

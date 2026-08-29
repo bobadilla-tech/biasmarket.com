@@ -12,10 +12,12 @@
   "addToCart": "Add to cart",
   "addedToCart": "Added ✓",
   "selectVariant": "Select a variant",
+  "chooseVariant": "Choose a variant for {product}",
   "cart": "Cart",
   "cartCount": "{count} items in cart",
   "header": {
-    "storeHome": "Go to {name} home page"
+    "storeHome": "Go to {name} home page",
+    "navigation": "Store navigation"
   },
   "social": {
     "linkLabel": "{platform} (opens in a new tab)"
@@ -37,7 +39,11 @@
     "total": "Total",
     "continueToCheckout": "Continue to checkout",
     "remove": "Remove",
-    "mixedCurrencyWarning": "Your cart has products in different currencies — remove one to check out."
+    "mixedCurrencyWarning": "Your cart has products in different currencies — remove one to check out.",
+    "decreaseQuantity": "Decrease quantity of {product}",
+    "increaseQuantity": "Increase quantity of {product}",
+    "quantityUpdated": "{product} quantity: {quantity}.",
+    "itemRemoved": "{product} removed from cart."
   },
   "checkoutPage": {
     "title": "Confirm order",
@@ -331,6 +337,10 @@
     "title": "Search products",
     "subtitle": "Find a product across every store on Bias Market.",
     "searchPlaceholder": "Search products by name...",
+    "searchLabel": "Search products",
+    "categoryFilters": "Filter by category",
+    "sortFilters": "Sort results",
+    "resultsCount": "{count} products found.",
     "empty": "No products found.",
     "allCategories": "All categories",
     "sortLatest": "Latest",

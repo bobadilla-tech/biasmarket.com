@@ -58,6 +58,7 @@ export function ImageGallery({
             total: images.length,
           })}`}
           fill
+          sizes="(min-width: 640px) 50vw, 100vw"
           className={cn("object-contain", outOfStock && "opacity-70 grayscale")}
         />
         <div
@@ -123,6 +124,7 @@ export function ImageGallery({
                 src={img}
                 alt={`${alt} ${index + 1}`}
                 fill
+                sizes="64px"
                 className="object-cover"
               />
             </button>

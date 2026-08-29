@@ -112,6 +112,7 @@ export function ProductCard({
                 src={imageUrl}
                 alt={product.name}
                 fill
+                sizes="(min-width: 768px) 220px, 50vw"
                 className={cn(
                   "object-cover",
                   outOfStock && "opacity-70 grayscale",
@@ -148,9 +149,9 @@ export function ProductCard({
         <Select
           value={variantId}
           onChange={(e) => setVariantId(e.target.value)}
-          aria-label={`${product.name}: ${t("selectVariant")}`}
-          className="mt-2 w-full"
-          selectClassName="rounded-lg border border-gray-200 py-1.5 pl-2 text-xs text-gray-600"
+          aria-label={t("chooseVariant", { product: product.name })}
+          className="mt-2 min-h-11 w-full"
+          selectClassName="rounded-lg border border-gray-200 py-1.5 pl-2 text-base text-gray-600"
         >
           {product.variants.map((v) => (
             <option key={v.id} value={v.id} disabled={availableStock(v) <= 0}>
@@ -166,15 +167,16 @@ export function ProductCard({
           type="button"
           ref={restockTriggerRef}
           onClick={() => setRestockOpen(true)}
-          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-50"
+          className="mt-2 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2"
         >
           <Bell className="size-3.5" />
           {t("registerInterest")}
         </button>
       ) : (
         <button
+          type="button"
           onClick={handleAddToCart}
-          className="store-theme-primary-button mt-2 w-full rounded-lg px-3 py-1.5 text-xs font-semibold transition"
+          className="store-theme-primary-button mt-2 min-h-11 w-full rounded-lg px-3 py-1.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2"
         >
           {added ? t("addedToCart") : t("addToCart")}
         </button>
