@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Bell, Clock } from "lucide-react";
@@ -50,6 +50,7 @@ export function ProductCard({
   );
   const [added, setAdded] = useState(false);
   const [restockOpen, setRestockOpen] = useState(false);
+  const restockTriggerRef = useRef<HTMLButtonElement>(null);
 
   const selectedVariant = product.variants.find((v) => v.id === variantId);
   const effectivePrices = product.variants.map((v) =>
@@ -147,6 +148,7 @@ export function ProductCard({
         <Select
           value={variantId}
           onChange={(e) => setVariantId(e.target.value)}
+          aria-label={`${product.name}: ${t("selectVariant")}`}
           className="mt-2 w-full"
           selectClassName="rounded-lg border border-gray-200 py-1.5 pl-2 text-xs text-gray-600"
         >
@@ -162,6 +164,7 @@ export function ProductCard({
       {outOfStock ? (
         <button
           type="button"
+          ref={restockTriggerRef}
           onClick={() => setRestockOpen(true)}
           className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-50"
         >
@@ -183,6 +186,7 @@ export function ProductCard({
         slug={slug}
         productId={product.id}
         variantId={selectedVariant?.id}
+        triggerRef={restockTriggerRef}
         productName={product.name}
         variantLabel={selectedVariant?.name}
       />

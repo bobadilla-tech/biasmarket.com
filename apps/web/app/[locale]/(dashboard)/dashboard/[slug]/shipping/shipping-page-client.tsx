@@ -156,7 +156,13 @@ export function ShippingPageClient() {
           if (!open) setSelectedOrderId(null);
         }}
       >
-        <SheetContent size="lg" className="h-dvh gap-0 overflow-y-auto">
+        <SheetContent
+          size="lg"
+          aria-label={tOrders("details.title", {
+            number: selectedOrder ? getOrderNumber(selectedOrder.id) : "",
+          })}
+          className="h-dvh gap-0 overflow-y-auto"
+        >
           {selectedOrder ? (
             <>
               <SheetHeader>

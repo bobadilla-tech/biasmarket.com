@@ -5,6 +5,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   couponFormSchema,
   type CouponFormValues,
 } from "../schemas/coupon.schema";
@@ -53,38 +60,34 @@ export function CouponFormDialog({
     }
   }, [open, initialValues, form]);
 
-  if (!open) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      onClick={onClose}
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) onClose();
+      }}
     >
-      <div
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-gray-100 bg-white p-6 shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-gray-900">
+      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto bg-white">
+        <DialogHeader>
+          <DialogTitle className="text-lg font-semibold text-gray-900">
             {initialValues ? t("editTitle") : t("createTitle")}
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg px-2 py-1 text-gray-500 transition hover:bg-gray-100"
-            aria-label={t("close")}
-          >
-            ✕
-          </button>
-        </div>
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            {initialValues ? t("editTitle") : t("createTitle")}
+          </DialogDescription>
+        </DialogHeader>
 
         <form
           onSubmit={form.handleSubmit(onSubmit)}
           className="grid gap-4 md:grid-cols-2"
         >
-          <label className="flex flex-col gap-1 text-sm text-gray-700">
+          <label
+            htmlFor="coupon-code"
+            className="flex flex-col gap-1 text-sm text-gray-700"
+          >
             <span>{t("form.code")}</span>
             <input
+              id="coupon-code"
               {...form.register("code")}
               maxLength={8}
               className="rounded-xl border border-gray-200 px-3 py-2 text-sm uppercase"
@@ -97,9 +100,13 @@ export function CouponFormDialog({
             )}
           </label>
 
-          <label className="flex flex-col gap-1 text-sm text-gray-700">
+          <label
+            htmlFor="coupon-name"
+            className="flex flex-col gap-1 text-sm text-gray-700"
+          >
             <span>{t("form.name")}</span>
             <input
+              id="coupon-name"
               {...form.register("name")}
               className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
             />
@@ -110,17 +117,25 @@ export function CouponFormDialog({
             )}
           </label>
 
-          <label className="flex flex-col gap-1 text-sm text-gray-700 md:col-span-2">
+          <label
+            htmlFor="coupon-description"
+            className="flex flex-col gap-1 text-sm text-gray-700 md:col-span-2"
+          >
             <span>{t("form.description")}</span>
             <input
+              id="coupon-description"
               {...form.register("description")}
               className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
             />
           </label>
 
-          <label className="flex flex-col gap-1 text-sm text-gray-700">
+          <label
+            htmlFor="coupon-max-uses"
+            className="flex flex-col gap-1 text-sm text-gray-700"
+          >
             <span>{t("form.maxUses")}</span>
             <input
+              id="coupon-max-uses"
               type="number"
               min={1}
               {...form.register("maxUses", { valueAsNumber: true })}
@@ -134,18 +149,26 @@ export function CouponFormDialog({
           </label>
 
           <div className="md:col-span-2 grid gap-4 md:grid-cols-2">
-            <label className="flex flex-col gap-1 text-sm text-gray-700">
+            <label
+              htmlFor="coupon-starts-at"
+              className="flex flex-col gap-1 text-sm text-gray-700"
+            >
               <span>{t("form.startsAt")}</span>
               <input
+                id="coupon-starts-at"
                 type="date"
                 {...form.register("startsAt")}
                 className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
               />
             </label>
 
-            <label className="flex flex-col gap-1 text-sm text-gray-700">
+            <label
+              htmlFor="coupon-expires-at"
+              className="flex flex-col gap-1 text-sm text-gray-700"
+            >
               <span>{t("form.expiresAt")}</span>
               <input
+                id="coupon-expires-at"
                 type="date"
                 {...form.register("expiresAt")}
                 className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
@@ -166,7 +189,7 @@ export function CouponFormDialog({
             </button>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

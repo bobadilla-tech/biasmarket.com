@@ -22,7 +22,6 @@ function RadioCardGroup({
 function RadioCard({
   className,
   children,
-  "aria-labelledby": ariaLabelledBy,
   id: idProp,
   ...props
 }: RadioPrimitive.Root.Props<string>) {
@@ -36,7 +35,6 @@ function RadioCard({
         className,
       )}
       id={idProp ?? generatedId}
-      aria-labelledby={ariaLabelledBy ?? ""}
       {...props}
     >
       {children}

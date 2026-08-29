@@ -54,7 +54,7 @@ test("clicking a thumbnail makes it the active image", async () => {
   expect(activeThumbIndex()).toBe(2);
 
   expect(
-    (screen.getByAltText("Tee") as HTMLImageElement).getAttribute("src"),
+    (screen.getByAltText(/Tee,/) as HTMLImageElement).getAttribute("src"),
   ).toContain(encodeURIComponent(IMAGES[2]));
 });
 
@@ -115,7 +115,7 @@ test("shrinking the image list clamps the main image instead of blanking it", as
 
   rerender(<ImageGallery images={IMAGES.slice(0, 2)} alt="Tee" />);
 
-  expect(screen.getByAltText("Tee")).toBeDefined();
+  expect(screen.getByAltText(/Tee,/)).toBeDefined();
   expect(activeThumbIndex()).toBe(0);
 });
 

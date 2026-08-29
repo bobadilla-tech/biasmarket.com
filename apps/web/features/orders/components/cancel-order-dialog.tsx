@@ -41,9 +41,8 @@ export function CancelOrderDialog({
 }: CancelOrderDialogProps) {
   const t = useTranslations("dashboard.orders");
 
-  const [resolution, setResolution] = useState<CancellationResolution>(
-    "REFUNDED",
-  );
+  const [resolution, setResolution] =
+    useState<CancellationResolution>("REFUNDED");
 
   const [retainMode, setRetainMode] = useState<"FULL" | "PARTIAL">("FULL");
 
@@ -108,8 +107,12 @@ export function CancelOrderDialog({
               {t("cancelPaymentHandling")}
             </p>
 
-            <label className="flex cursor-pointer items-center gap-3 text-sm">
+            <label
+              htmlFor="cancel-resolution-refunded"
+              className="flex cursor-pointer items-center gap-3 text-sm"
+            >
               <input
+                id="cancel-resolution-refunded"
                 type="radio"
                 name="resolution"
                 checked={resolution === "REFUNDED"}
@@ -118,8 +121,12 @@ export function CancelOrderDialog({
               {t("refunded")}
             </label>
 
-            <label className="flex cursor-pointer items-center gap-3 text-sm">
+            <label
+              htmlFor="cancel-resolution-retained"
+              className="flex cursor-pointer items-center gap-3 text-sm"
+            >
               <input
+                id="cancel-resolution-retained"
                 type="radio"
                 name="resolution"
                 checked={resolution === "RETAINED"}
@@ -132,8 +139,10 @@ export function CancelOrderDialog({
               <div className="ml-6 space-y-4 rounded-xl border p-4">
                 <p className="font-medium">{t("retentionType")}</p>
 
-                <label className="flex gap-2">
+                <label htmlFor="cancel-retain-full" className="flex gap-2">
                   <input
+                    id="cancel-retain-full"
+                    name="retainMode"
                     type="radio"
                     checked={retainMode === "FULL"}
                     onChange={() => setRetainMode("FULL")}
@@ -141,8 +150,10 @@ export function CancelOrderDialog({
                   {t("fullRetention")}
                 </label>
 
-                <label className="flex gap-2">
+                <label htmlFor="cancel-retain-partial" className="flex gap-2">
                   <input
+                    id="cancel-retain-partial"
+                    name="retainMode"
                     type="radio"
                     checked={retainMode === "PARTIAL"}
                     onChange={() => setRetainMode("PARTIAL")}
@@ -152,7 +163,11 @@ export function CancelOrderDialog({
 
                 {retainMode === "PARTIAL" && (
                   <div className="space-y-3">
+                    <label htmlFor="cancel-retained-amount" className="sr-only">
+                      {t("amountToRetain")}
+                    </label>
                     <input
+                      id="cancel-retained-amount"
                       type="number"
                       min={0}
                       step="0.01"
@@ -171,11 +186,14 @@ export function CancelOrderDialog({
                     </p>
 
                     <select
+                      id="cancel-released-resolution"
+                      aria-label={t("remaining")}
                       value={releasedResolution}
                       onChange={(e) =>
                         setReleasedResolution(
                           e.target.value as "REFUNDED" | "STORE_CREDIT",
-                        )}
+                        )
+                      }
                       className="border rounded p-2"
                     >
                       <option value="REFUNDED">{t("refund")}</option>
@@ -186,8 +204,12 @@ export function CancelOrderDialog({
               </div>
             )}
 
-            <label className="flex cursor-pointer items-center gap-3 text-sm">
+            <label
+              htmlFor="cancel-resolution-store-credit"
+              className="flex cursor-pointer items-center gap-3 text-sm"
+            >
               <input
+                id="cancel-resolution-store-credit"
                 type="radio"
                 name="resolution"
                 checked={resolution === "STORE_CREDIT"}
@@ -199,6 +221,7 @@ export function CancelOrderDialog({
 
           {/* Note */}
           <Textarea
+            aria-label={t("cancelReasonPlaceholder")}
             value={reason}
             onChange={(event) => setReason(event.target.value)}
             placeholder={t("cancelReasonPlaceholder")}

@@ -7,7 +7,9 @@
   "variantSoldOut": "(agotado)",
   "addToCart": "Agregar al carrito",
   "addedToCart": "Agregado ✓",
+  "selectVariant": "Selecciona una variante",
   "cart": "Carrito",
+  "cartCount": "{count} productos en el carrito",
   "header": {
     "storeHome": "Ir a la página principal de {name}"
   },
@@ -16,7 +18,9 @@
   },
   "gallery": {
     "previousImage": "Imagen anterior",
-    "nextImage": "Imagen siguiente"
+    "nextImage": "Imagen siguiente",
+    "imagePosition": "Imagen {current} de {total}",
+    "thumbnail": "Vista previa de la imagen {current} de {total}"
   },
   "cartPage": {
     "title": "Tu carrito",

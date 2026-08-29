@@ -59,7 +59,15 @@ export function OrderDetailSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent size="lg" className="h-dvh gap-0 overflow-y-auto">
+      <SheetContent
+        size="lg"
+        aria-label={
+          order
+            ? t("details.title", { number: getOrderNumber(order.id) })
+            : t("details.title", { number: "" })
+        }
+        className="h-dvh gap-0 overflow-y-auto"
+      >
         {order ? (
           <>
             <SheetHeader>

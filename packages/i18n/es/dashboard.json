@@ -614,7 +614,8 @@
       "chooseImage": "Elegir",
       "imagePreview": "Vista previa",
       "imageSize": "{size} KB",
-      "removeImage": "Eliminar imagen"
+      "removeImage": "Eliminar imagen",
+      "paymentProofDialogTitle": "Vista previa del comprobante de pago"
     },
     "approve": "Aprobar",
     "approveDisabledNoPayment": "No se puede aprobar sin ningún pago registrado.",

@@ -264,7 +264,8 @@
   display: none;
 }
 
-.store-dashboard-theme {
+.store-dashboard-theme,
+.storefront-theme {
   --store-primary: #6d28d9;
   --store-accent: #f472b6;
   --store-surface: #faf5ff;

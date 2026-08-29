@@ -1,5 +1,6 @@
 import { getStoreThemeStyle } from "@/lib/store-theme";
 import { StorefrontHeader } from "@/features/storefront/components/storefront-header";
+import { StorefrontThemeVars } from "@/components/storefront/storefront-theme-vars";
 
 // One public-store fetch for the whole storefront subtree. Same URL + options
 // as page.tsx's getStore() / the product page's store read, so Next dedupes
@@ -33,9 +34,11 @@ export default async function StoreLayout({
 }) {
   const { slug } = await params;
   const store = await getStorePublic(slug);
+  const themeStyle = getStoreThemeStyle(store?.themeConfig);
 
   return (
-    <div style={getStoreThemeStyle(store?.themeConfig)}>
+    <div className="storefront-theme" style={themeStyle}>
+      <StorefrontThemeVars style={themeStyle} />
       {store && (
         <StorefrontHeader
           slug={slug}

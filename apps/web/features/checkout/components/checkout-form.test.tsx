@@ -139,7 +139,9 @@ test("submits the delivery type, pickup point, and manual payment method with an
 
   await screen.findByText("Alameda 28 de Julio");
 
-  await user.click(screen.getByText("Transferencia bancaria"));
+  await user.click(
+    screen.getByRole("radio", { name: "Transferencia bancaria" }),
+  );
   const fileInput = screen.getByLabelText(proofUploadLabel) as HTMLInputElement;
   await user.upload(
     fileInput,
@@ -288,12 +290,11 @@ test("renders a closed-today pickup point as selectable (not disabled) and does 
     <CheckoutForm slug="my-store" items={cartItems} onOrderCreated={vi.fn()} />,
   );
 
-  const card = await screen.findByText("Estación Central");
-  const cardButton = card.closest("button") as HTMLButtonElement;
+  const card = await screen.findByRole("radio", { name: "Estación Central" });
   // The report's whole ask: a closed-today card must be clickable, not
   // greyed out — this is the behavior the old disabled prop broke.
-  expect(cardButton.disabled).toBe(false);
-  expect(card.parentElement?.textContent).toContain("Próximo día disponible");
+  expect(card.getAttribute("aria-disabled")).not.toBe("true");
+  expect(card.textContent).toContain("Próximo día disponible");
 
   // With no available-today point to auto-default to, the field stays
   // unset until the buyer explicitly picks a point + date.
@@ -326,8 +327,8 @@ test("selecting a closed-today point reveals a date picker defaulted to the next
     <CheckoutForm slug="my-store" items={cartItems} onOrderCreated={vi.fn()} />,
   );
 
-  const card = await screen.findByText("Estación Central");
-  await user.click(card.closest("button") as HTMLButtonElement);
+  const card = await screen.findByRole("radio", { name: "Estación Central" });
+  await user.click(card);
 
   // closedTodayDays excludes only today, so the next open day is tomorrow.
   const tomorrow = new Date();
@@ -379,8 +380,8 @@ test("submits with the chosen pickupDate when a closed-today point was selected"
     />,
   );
 
-  const card = await screen.findByText("Estación Central");
-  await user.click(card.closest("button") as HTMLButtonElement);
+  const card = await screen.findByRole("radio", { name: "Estación Central" });
+  await user.click(card);
   await screen.findByLabelText("Fecha de recojo");
 
   await user.type(
@@ -656,15 +657,13 @@ test("prefers a genuinely-configured payment method over an earlier unconfigured
     <CheckoutForm slug="my-store" items={cartItems} onOrderCreated={vi.fn()} />,
   );
 
-  const transferCard = await screen.findByText("Transferencia bancaria");
-  const yapeCard = screen.getByText("Yape");
+  const transferCard = await screen.findByRole("radio", {
+    name: "Transferencia bancaria",
+  });
+  const yapeCard = screen.getByRole("radio", { name: "Yape" });
   await waitFor(() => {
-    expect(transferCard.closest("button")?.getAttribute("aria-pressed")).toBe(
-      "true",
-    );
-    expect(yapeCard.closest("button")?.getAttribute("aria-pressed")).toBe(
-      "false",
-    );
+    expect(transferCard.getAttribute("aria-checked")).toBe("true");
+    expect(yapeCard.getAttribute("aria-checked")).toBe("false");
   });
 });
 
@@ -779,31 +778,23 @@ test("depositPercent < 100 shows the selector and it switches FULL <-> PARTIAL",
     <CheckoutForm slug="my-store" items={cartItems} onOrderCreated={vi.fn()} />,
   );
 
-  const fullCard = await screen.findByText("Pago total");
-  const partialCard = screen.getByText("Pago parcial");
+  const fullCard = await screen.findByRole("radio", { name: "Pago total" });
+  const partialCard = screen.getByRole("radio", { name: "Pago parcial" });
   // Subtext interpolates the configured percentage.
   expect(screen.getByText("Adelanto del 20%")).toBeDefined();
 
   await waitFor(() => {
-    expect(fullCard.closest("button")?.getAttribute("aria-pressed")).toBe(
-      "true",
-    );
+    expect(fullCard.getAttribute("aria-checked")).toBe("true");
   });
 
   await user.click(partialCard);
   await waitFor(() => {
-    expect(partialCard.closest("button")?.getAttribute("aria-pressed")).toBe(
-      "true",
-    );
-    expect(fullCard.closest("button")?.getAttribute("aria-pressed")).toBe(
-      "false",
-    );
+    expect(partialCard.getAttribute("aria-checked")).toBe("true");
+    expect(fullCard.getAttribute("aria-checked")).toBe("false");
   });
 
   await user.click(fullCard);
   await waitFor(() => {
-    expect(fullCard.closest("button")?.getAttribute("aria-pressed")).toBe(
-      "true",
-    );
+    expect(fullCard.getAttribute("aria-checked")).toBe("true");
   });
 });

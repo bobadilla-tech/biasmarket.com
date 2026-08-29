@@ -54,6 +54,9 @@ export function CartLink({ slug }: { slug: string }) {
           {count > 99 ? "99+" : count}
         </span>
       )}
+      <span className="sr-only" role="status" aria-live="polite">
+        {t("cartCount", { count })}
+      </span>
     </Link>
   );
 }

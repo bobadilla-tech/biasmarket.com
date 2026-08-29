@@ -15,9 +15,11 @@ interface SectionFormProps {
   onSubmit: (values: SectionFormInput) => Promise<unknown>;
 }
 
-export function SectionForm(
-  { collections, submitting, onSubmit }: SectionFormProps,
-) {
+export function SectionForm({
+  collections,
+  submitting,
+  onSubmit,
+}: SectionFormProps) {
   const t = useTranslations("dashboard.sections");
   const { register, handleSubmit, watch, reset } = useForm<SectionFormInput>({
     resolver: zodResolver(sectionFormSchema),
@@ -46,7 +48,8 @@ export function SectionForm(
     });
   });
 
-  const disabled = submitting ||
+  const disabled =
+    submitting ||
     (type === "COLLECTION" && !collectionId) ||
     (type === "BANNER" && !imageUrl) ||
     (type === "TEXT_BLOCK" && !body);
@@ -58,6 +61,7 @@ export function SectionForm(
     >
       <Select
         {...register("type")}
+        aria-label={t("typeLabel")}
         selectClassName="rounded-xl border border-gray-200 py-2.5 text-sm text-gray-600"
       >
         <option value="COLLECTION">{t("collection")}</option>
@@ -68,6 +72,7 @@ export function SectionForm(
       {type === "COLLECTION" && (
         <Select
           {...register("collectionId")}
+          aria-label={t("selectCollection")}
           selectClassName="rounded-xl border border-gray-200 py-2.5 text-sm text-gray-600"
         >
           <option value="">{t("selectCollection")}</option>
