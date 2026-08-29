@@ -669,6 +669,10 @@ jobs:
       - e2e
     if: always()
     steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
       - name: Check all required jobs
         # The required branch-protection check is this job's exact name,
         # `CI Success`. Renaming the key or name silently detaches that check.
