@@ -59,22 +59,32 @@ export class CouriersService {
       );
     }
 
-    return this.prisma.courier.create({
-      data: {
-        storeId,
-        name: dto.name,
-        enabled: dto.enabled ?? true,
-        sortOrder: dto.sortOrder ?? 0,
-        configs: {
-          create: dto.modalities.map((m) => ({
-            modality: m.modality,
-            price: new Prisma.Decimal(m.price),
-            enabled: m.enabled ?? true,
-          })),
+    try {
+      return await this.prisma.courier.create({
+        data: {
+          storeId,
+          name: dto.name,
+          enabled: dto.enabled ?? true,
+          sortOrder: dto.sortOrder ?? 0,
+          configs: {
+            create: dto.modalities.map((m) => ({
+              modality: m.modality,
+              price: new Prisma.Decimal(m.price),
+              enabled: m.enabled ?? true,
+            })),
+          },
         },
-      },
-      include: { configs: { orderBy: { modality: 'asc' } } },
-    });
+        include: { configs: { orderBy: { modality: 'asc' } } },
+      });
+    } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2002'
+      ) {
+        throw new BadRequestException('Ya existe un courier con ese nombre');
+      }
+      throw err;
+    }
   }
 
   async update(

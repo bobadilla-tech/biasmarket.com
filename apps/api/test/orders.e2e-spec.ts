@@ -54,6 +54,8 @@ describe('orders + checkout (e2e)', () => {
 
   const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const email = `orders-e2e-${runId}@example.com`;
+  const courierName = 'Olva';
+  const courierModality = 'HOME';
   let checkoutIpCounter = 0;
 
   function nextCheckoutIp(): string {
@@ -139,6 +141,14 @@ describe('orders + checkout (e2e)', () => {
       .set('Cookie', sessionCookie)
       .send({ type: 'COURIER', enabled: true, details: { estimatedCost: 10 } })
       .expect(201);
+    await request(app.getHttpServer())
+      .post(`/stores/${storeId}/couriers`)
+      .set('Cookie', sessionCookie)
+      .send({
+        name: courierName,
+        modalities: [{ modality: courierModality, price: 10 }],
+      })
+      .expect(201);
   });
 
   afterAll(async () => {
@@ -171,6 +181,10 @@ describe('orders + checkout (e2e)', () => {
       await prisma.productVariant.deleteMany({ where: { storeId } });
       await prisma.product.deleteMany({ where: { storeId } });
       await prisma.notification.deleteMany({ where: { storeId } });
+      await prisma.courierConfig.deleteMany({
+        where: { courier: { storeId } },
+      });
+      await prisma.courier.deleteMany({ where: { storeId } });
       await prisma.paymentMethodConfig.deleteMany({ where: { storeId } });
       await prisma.deliveryMethodConfig.deleteMany({ where: { storeId } });
       await prisma.store.deleteMany({ where: { id: storeId } });
@@ -373,6 +387,8 @@ describe('orders + checkout (e2e)', () => {
       .post(`/stores/${storeSlug}/checkout`)
       .set('X-Forwarded-For', nextCheckoutIp())
       .field('deliveryMethodType', 'COURIER')
+      .field('courierName', courierName)
+      .field('courierModality', courierModality)
       .field('customerPhone', '+51955555511')
       .field(
         'items',
@@ -396,6 +412,8 @@ describe('orders + checkout (e2e)', () => {
       .post(`/stores/${storeSlug}/checkout`)
       .set('X-Forwarded-For', nextCheckoutIp())
       .field('deliveryMethodType', 'COURIER')
+      .field('courierName', courierName)
+      .field('courierModality', courierModality)
       .field('customerPhone', '+51955555522')
       .field(
         'items',
@@ -517,6 +535,8 @@ describe('orders + checkout (e2e)', () => {
         .post(`/stores/${storeSlug}/checkout`)
         .set('X-Forwarded-For', nextCheckoutIp())
         .field('deliveryMethodType', 'COURIER')
+        .field('courierName', courierName)
+        .field('courierModality', courierModality)
         .field('customerPhone', '+51970000004')
         .field(
           'items',

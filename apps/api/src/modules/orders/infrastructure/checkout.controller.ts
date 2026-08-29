@@ -49,6 +49,8 @@ interface CheckoutOrderRow {
   deliveryDetails: unknown;
   pickupPointId: string | null;
   pickupDate: Date | null;
+  courierName: string | null;
+  courierModality: 'AGENCY' | 'HOME' | null;
   paymentMethod: 'YAPE' | 'PLIN' | 'TRANSFER' | 'CASH' | null;
   paymentStatus:
     | 'PENDING_PAYMENT'
