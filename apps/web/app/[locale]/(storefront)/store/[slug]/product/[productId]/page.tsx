@@ -66,17 +66,17 @@ export default async function ProductDetailPage({
   const { product } = data;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-dvh bg-gray-50">
       <main
         id="main-content"
         tabIndex={-1}
-        className="mx-auto max-w-3xl px-4 pt-20 pb-10"
+        className="mx-auto max-w-3xl px-4 pt-24 pb-10 sm:pt-20"
       >
         <Link
           href={`/store/${slug}`}
           className="text-sm text-gray-500 hover:underline"
         >
-          ← {t("productDetail.back")}
+          <span aria-hidden="true">←</span> {t("productDetail.back")}
         </Link>
         <div className="mt-6">
           <ProductDetailView slug={slug} product={product} />

@@ -8,10 +8,12 @@
   "addToCart": "Agregar al carrito",
   "addedToCart": "Agregado ✓",
   "selectVariant": "Selecciona una variante",
+  "chooseVariant": "Elige una variante para {product}",
   "cart": "Carrito",
   "cartCount": "{count} productos en el carrito",
   "header": {
-    "storeHome": "Ir a la página principal de {name}"
+    "storeHome": "Ir a la página principal de {name}",
+    "navigation": "Navegación de la tienda"
   },
   "social": {
     "linkLabel": "{platform} (se abre en una pestaña nueva)"
@@ -33,7 +35,11 @@
     "total": "Total",
     "continueToCheckout": "Continuar al pago",
     "remove": "Quitar",
-    "mixedCurrencyWarning": "Tienes productos en distintas monedas — quita alguno del carrito para poder pagar."
+    "mixedCurrencyWarning": "Tienes productos en distintas monedas — quita alguno del carrito para poder pagar.",
+    "decreaseQuantity": "Disminuir cantidad de {product}",
+    "increaseQuantity": "Aumentar cantidad de {product}",
+    "quantityUpdated": "Cantidad de {product}: {quantity}.",
+    "itemRemoved": "{product} se quitó del carrito."
   },
   "checkoutPage": {
     "title": "Confirmar pedido",
@@ -327,6 +333,10 @@
     "title": "Buscar productos",
     "subtitle": "Encuentra un producto en todas las tiendas de Bias Market.",
     "searchPlaceholder": "Buscar productos por nombre...",
+    "searchLabel": "Buscar productos",
+    "categoryFilters": "Filtrar por categoría",
+    "sortFilters": "Ordenar resultados",
+    "resultsCount": "{count} productos encontrados.",
     "empty": "No se encontraron productos.",
     "allCategories": "Todas las categorías",
     "sortLatest": "Más recientes",

@@ -92,7 +92,9 @@ function CartSummary({
       </div>
 
       {mixedCurrencies ? (
-        <p className="text-sm text-amber-600">{t("mixedCurrencyWarning")}</p>
+        <p className="text-sm text-amber-600" role="status" aria-live="polite">
+          {t("mixedCurrencyWarning")}
+        </p>
       ) : (
         <Link
           href={`/store/${slug}/checkout`}
@@ -110,6 +112,7 @@ export function CartPageClient() {
   const t = useTranslations("storefront.cartPage");
   const { slug } = useParams<{ slug: string }>();
   const [items, setItems] = useState<CartItem[]>([]);
+  const [quantityAnnouncement, setQuantityAnnouncement] = useState("");
   const { variantAvail, productAvail } = useCartStock(slug);
 
   useEffect(() => {
@@ -123,6 +126,14 @@ export function CartPageClient() {
 
   const handleQuantityChange = (item: CartItem, quantity: number) => {
     setItems(updateQuantity(slug, item, quantity));
+    setQuantityAnnouncement(
+      quantity > 0
+        ? t("quantityUpdated", {
+            product: displayName(item),
+            quantity,
+          })
+        : t("itemRemoved", { product: displayName(item) }),
+    );
   };
 
   const handleRemove = (item: CartItem) => {
@@ -159,6 +170,14 @@ export function CartPageClient() {
       className="min-h-dvh bg-stone-50 px-6 py-10"
     >
       <div className="mx-auto flex max-w-4xl flex-col gap-6">
+        <div
+          className="sr-only"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {quantityAnnouncement}
+        </div>
         <div>
           <Link
             href={`/store/${slug}`}
@@ -184,6 +203,7 @@ export function CartPageClient() {
                       src={item.image}
                       alt={item.name}
                       fill
+                      sizes="80px"
                       className="object-cover"
                     />
                   ) : null}
@@ -216,10 +236,13 @@ export function CartPageClient() {
                     <div className="flex items-center gap-1 rounded-lg border border-stone-200 p-1">
                       <button
                         type="button"
+                        aria-label={t("decreaseQuantity", {
+                          product: displayName(item),
+                        })}
                         onClick={() =>
                           handleQuantityChange(item, item.quantity - 1)
                         }
-                        className="size-7 rounded-md text-stone-600 transition hover:bg-stone-100"
+                        className="flex size-11 items-center justify-center rounded-md text-stone-600 transition hover:bg-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-500 focus-visible:ring-offset-1"
                       >
                         -
                       </button>
@@ -235,12 +258,15 @@ export function CartPageClient() {
                         return (
                           <button
                             type="button"
+                            aria-label={t("increaseQuantity", {
+                              product: displayName(item),
+                            })}
                             onClick={() =>
                               handleQuantityChange(item, item.quantity + 1)
                             }
                             disabled={atCap}
                             aria-disabled={atCap}
-                            className="size-7 rounded-md text-stone-600 transition hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+                            className="flex size-11 items-center justify-center rounded-md text-stone-600 transition hover:bg-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-500 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
                           >
                             +
                           </button>

@@ -170,7 +170,7 @@ export default async function StorePage({
         <main
           id="main-content"
           tabIndex={-1}
-          className="max-w-5xl mx-auto px-4 pt-20 pb-8"
+          className="mx-auto max-w-5xl px-4 pt-24 pb-8 sm:pt-20"
         >
           <h1 className="sr-only">{store.name}</h1>
           <p className="text-gray-500 text-center">{t("noProducts")}</p>
@@ -180,7 +180,7 @@ export default async function StorePage({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-dvh bg-gray-50">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -193,7 +193,7 @@ export default async function StorePage({
       <main
         id="main-content"
         tabIndex={-1}
-        className="max-w-5xl mx-auto px-4 pt-20 pb-8 space-y-10"
+        className="mx-auto max-w-5xl space-y-10 px-4 pt-24 pb-8 sm:pt-20"
       >
         <h1 className="sr-only">{store.name}</h1>
         {visibleSections.length === 0 ? (

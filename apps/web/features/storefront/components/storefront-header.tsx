@@ -50,44 +50,49 @@ export function StorefrontHeader({
   );
 
   return (
-    <header className="fixed top-4 right-4 z-10 flex max-w-[calc(100vw-2rem)] flex-wrap items-center justify-end gap-2">
-      <Link
-        href={`/store/${slug}`}
-        aria-label={t("header.storeHome", { name })}
-        className="flex items-center gap-2 rounded-full border border-gray-100 bg-white/90 px-2.5 py-1.5 shadow-sm backdrop-blur transition hover:bg-gray-50"
+    <header className="fixed top-4 right-4 z-10 max-w-[calc(100vw-2rem)]">
+      <nav
+        aria-label={t("header.navigation")}
+        className="no-scrollbar flex h-11 items-center justify-start gap-2 overflow-x-auto sm:justify-end"
       >
-        <StoreLogo
-          name={name}
-          logoUrl={logoUrl}
-          size={28}
-          className="text-[10px]"
-        />
-        <span className="hidden text-sm font-semibold text-gray-900 sm:inline">
-          {name}
-        </span>
-      </Link>
+        <Link
+          href={`/store/${slug}`}
+          aria-label={t("header.storeHome", { name })}
+          className="flex min-h-11 shrink-0 items-center gap-2 rounded-full border border-gray-100 bg-white/90 px-2.5 py-1.5 shadow-sm backdrop-blur transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2"
+        >
+          <StoreLogo
+            name={name}
+            logoUrl={logoUrl}
+            size={28}
+            className="text-[10px]"
+          />
+          <span className="hidden text-sm font-semibold text-gray-900 sm:inline">
+            {name}
+          </span>
+        </Link>
 
-      {socials.length > 0 && (
-        <div className="flex items-center gap-1.5">
-          {socials.map((key) => (
-            <a
-              key={key}
-              href={urlByPlatform[key] as string}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={t("social.linkLabel", {
-                platform: socialLabels[key],
-              })}
-              className="flex size-8 items-center justify-center rounded-full border border-gray-200 bg-white/90 text-gray-600 shadow-sm backdrop-blur transition hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"
-            >
-              <SocialIcon platform={key} />
-            </a>
-          ))}
-        </div>
-      )}
+        {socials.length > 0 && (
+          <div className="flex shrink-0 items-center gap-1.5">
+            {socials.map((key) => (
+              <a
+                key={key}
+                href={urlByPlatform[key] as string}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={t("social.linkLabel", {
+                  platform: socialLabels[key],
+                })}
+                className="flex size-11 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white/90 text-gray-600 shadow-sm backdrop-blur transition hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2"
+              >
+                <SocialIcon platform={key} />
+              </a>
+            ))}
+          </div>
+        )}
 
-      <CartLink slug={slug} />
-      <AccountNavLink slug={slug} />
+        <CartLink slug={slug} />
+        <AccountNavLink slug={slug} />
+      </nav>
     </header>
   );
 }

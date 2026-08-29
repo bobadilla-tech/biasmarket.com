@@ -118,9 +118,9 @@ export function ProductDetailView({
           <Select
             value={variantId}
             onChange={(e) => setVariantId(e.target.value)}
-            aria-label={`${product.name}: ${t("selectVariant")}`}
-            className="mt-4 w-full max-w-xs"
-            selectClassName="rounded-lg border border-gray-200 py-2 pl-3 text-sm text-gray-600"
+            aria-label={t("chooseVariant", { product: product.name })}
+            className="mt-4 min-h-11 w-full max-w-xs"
+            selectClassName="rounded-lg border border-gray-200 py-2 pl-3 text-base text-gray-600"
           >
             {product.variants.map((v) => (
               <option key={v.id} value={v.id} disabled={availableStock(v) <= 0}>
@@ -136,15 +136,16 @@ export function ProductDetailView({
             type="button"
             ref={restockTriggerRef}
             onClick={() => setRestockOpen(true)}
-            className="mt-4 flex w-full max-w-xs items-center justify-center gap-1.5 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 sm:w-auto"
+            className="mt-4 flex min-h-11 w-full max-w-xs items-center justify-center gap-1.5 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2 sm:w-auto"
           >
             <Bell className="size-4" />
             {t("registerInterest")}
           </button>
         ) : (
           <button
+            type="button"
             onClick={handleAddToCart}
-            className="store-theme-primary-button mt-4 w-full max-w-xs rounded-xl px-4 py-2.5 text-sm font-semibold transition sm:w-auto"
+            className="store-theme-primary-button mt-4 min-h-11 w-full max-w-xs rounded-xl px-4 py-2.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2 sm:w-auto"
           >
             {added ? t("addedToCart") : t("addToCart")}
           </button>

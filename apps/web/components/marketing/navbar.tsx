@@ -89,8 +89,8 @@ function SearchForm({
         aria-label={t("search")}
         className={
           compact
-            ? "h-9 w-full rounded-[10px] border border-black/60 bg-white pr-3 pl-9 text-xs text-foreground outline-none transition placeholder:text-[#1C1B1F]/70 focus:border-primary"
-            : "h-11 w-full rounded-full border border-black/20 bg-white pr-4 pl-10 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary"
+            ? "h-11 w-full rounded-[10px] border border-black/60 bg-white pr-3 pl-9 text-base text-foreground outline-none transition placeholder:text-[#1C1B1F]/70 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/50"
+            : "h-11 w-full rounded-full border border-black/20 bg-white pr-4 pl-10 text-base text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 md:text-sm"
         }
       />
       <Search
@@ -113,23 +113,23 @@ function MobileNavStrip() {
   ] as const;
 
   return (
-    <nav className="no-scrollbar flex items-center justify-between gap-4 overflow-x-auto px-6 pt-0.5 pb-2 lg:hidden">
+    <nav className="no-scrollbar flex items-center justify-between gap-2 overflow-x-auto px-4 pt-0.5 pb-2 lg:hidden">
       {items.map(({ key, href }) => (
         <Link
           key={key}
           href={href}
-          className="shrink-0 text-[10px] leading-3 font-medium text-black transition-colors hover:text-primary"
+          className="inline-flex min-h-11 shrink-0 items-center px-2 text-sm font-medium text-black transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
           {t(`links.${key}`)}
         </Link>
       ))}
       <Link
         href="/#categorias"
-        className="shrink-0 text-[10px] leading-3 font-medium text-black transition-colors hover:text-primary"
+        className="inline-flex min-h-11 shrink-0 items-center px-2 text-sm font-medium text-black transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
       >
         {t("links.categories")}
       </Link>
-      <span className="shrink-0 scale-90">
+      <span className="shrink-0">
         <LanguageToggle />
       </span>
     </nav>
@@ -310,8 +310,8 @@ export function Navbar() {
 
         <Link
           href="/search"
-          aria-label={t("cart")}
-          className="flex shrink-0 items-center justify-center rounded-full p-1.5 text-foreground transition-colors hover:bg-muted lg:hidden"
+          aria-label={t("search")}
+          className="flex size-11 shrink-0 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 lg:hidden"
         >
           <ShoppingBag className="size-[22px]" strokeWidth={1.8} />
         </Link>
