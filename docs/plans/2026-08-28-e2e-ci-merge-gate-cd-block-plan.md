@@ -12,12 +12,18 @@ lands.
 
 ## Status
 
-Implementation landed for T1–T4 and T6–T9. T5's clean GitHub-runner baseline,
-T10's measured runtime, and T11's repository-settings checklist remain
-rollout/admin steps; they cannot be completed from this local checkout. The
-local API unit suite and worker suite are green, but a full E2E rehearsal could
-not use the fixed CI ports because developer Postgres/Redis containers already
-own 5432/6379. No existing containers were stopped.
+Implementation landed for T1–T4 and T6–T9. T5's GitHub-runner baseline ran on
+workflow dispatch run `33230628422` but is not green: all 24 files ran, 22
+files/65 tests passed, and 12 tests in `couriers.e2e-spec.ts` and
+`orders.e2e-spec.ts` failed. The failures are application behavior/schema
+issues (`courierName` is returned but absent from the response schema;
+courier duplicate/bulk-save expectations fail), not GHCR or service bootstrap
+failures. No better-auth 429 was observed. The E2E job runtime was 2m13s.
+T11's repository-settings checklist remains a rollout/admin step; it cannot be
+completed from this local checkout. The local API unit suite and worker suite
+are green, but a full E2E rehearsal could not use the fixed CI ports because
+developer Postgres/Redis containers already own 5432/6379. No existing
+containers were stopped.
 
 The E2E pulls use GHCR and are digest-pinned as resolved on 2026-08-28. `mc`
 uses the same GHCR MinIO image via an entrypoint override, so there are three
@@ -33,9 +39,9 @@ no Docker Hub account or repository secrets are required. The PostgreSQL image
 was smoke-tested locally with the CI credentials and standard entrypoint;
 Valkey was smoke-tested with `redis-cli ping`; and the MinIO image's `/usr/bin/mc`
 entrypoint was smoke-tested. Decision 6 is implemented and unit-covered;
-decision 6b was not applied because the required baseline has not run, so its
-429 question must be answered during T5. The regenerated tracked OpenAPI
-artifact is stable after generation plus JSON-format normalization.
+decision 6b was not applied because the baseline did not show a 429. The
+regenerated tracked OpenAPI artifact is stable after generation plus JSON-format
+normalization.
 
 Branch protection (T11) is still pending: require the exact `CI Success` check,
 require PRs, disallow direct pushes, and leave E2E as a push-time gate rather
@@ -661,7 +667,9 @@ pushing empty/no-op commits (which trigger a real CD cutover).
 ## Rollout / verification
 
 1. **Baseline (T5):** `workflow_dispatch(run_e2e=true)` on the branch, `e2e`
-   not required. Confirm all 24 files run and pass on a clean runner.
+   not required. The clean-runner run completed all 24 files but remains
+   blocked by the existing courier/order failures recorded in Status; fix and
+   rerun those before requiring `CI Success`.
 2. Reproduce the bootstrap locally with the same env contract — **first move
    aside the developer's git-ignored `apps/api/.env`** (on this machine it's
    also missing `SITEMAP_INTERNAL_TOKEN`), or the local run won't actually
