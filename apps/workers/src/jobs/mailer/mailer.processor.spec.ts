@@ -4,6 +4,18 @@ import type { SendEmailParams } from "@biasmarket/queue";
 import { MailerProcessor } from "./mailer.processor.js";
 
 describe("MailerProcessor", () => {
+  it("logs when the BullMQ MAILER worker is ready", () => {
+    const processor = new MailerProcessor();
+    const logger = (
+      processor as unknown as { logger: { log: (message: string) => void } }
+    ).logger;
+    const log = vi.spyOn(logger, "log");
+
+    processor.onWorkerReady();
+
+    expect(log).toHaveBeenCalledWith("MAILER worker ready");
+  });
+
   it("sends a valid payload via MailerCore", async () => {
     const processor = new MailerProcessor();
     const core = { send: vi.fn().mockResolvedValue({ id: "resend-1" }) };

@@ -18,6 +18,13 @@ export class ExpirePremiumSchedulerService implements OnModuleInit {
   constructor(@InjectQueue(QUEUE_NAMES.PREMIUM) private queue: Queue) {}
 
   async onModuleInit(): Promise<void> {
+    if (process.env.E2E_DISABLE_EXPIRATION_SCHEDULERS === "true") {
+      this.logger.log(
+        "premium expiration scheduler disabled (E2E_DISABLE_EXPIRATION_SCHEDULERS)",
+      );
+      return;
+    }
+
     await this.queue.upsertJobScheduler(
       EXPIRE_PREMIUM_SCHEDULER_ID,
       { pattern: EXPIRE_PREMIUM_CRON_PATTERN },

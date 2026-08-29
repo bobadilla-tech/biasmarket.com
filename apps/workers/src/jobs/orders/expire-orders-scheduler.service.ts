@@ -21,6 +21,13 @@ export class ExpireOrdersSchedulerService implements OnModuleInit {
   constructor(@InjectQueue(QUEUE_NAMES.ORDERS) private queue: Queue) {}
 
   async onModuleInit(): Promise<void> {
+    if (process.env.E2E_DISABLE_EXPIRATION_SCHEDULERS === "true") {
+      this.logger.log(
+        "orders expiration scheduler disabled (E2E_DISABLE_EXPIRATION_SCHEDULERS)",
+      );
+      return;
+    }
+
     await this.queue.upsertJobScheduler(
       EXPIRE_ORDERS_SCHEDULER_ID,
       { pattern: EXPIRE_ORDERS_CRON_PATTERN },

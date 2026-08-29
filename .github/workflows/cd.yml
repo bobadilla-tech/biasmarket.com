@@ -1,9 +1,9 @@
 name: CD
 
-# Triggered by CI's success, not by push directly — ci.yml itself needs
-# ZERO changes for this to work. See docs/plans/2026-08-10-bluegreen-zero-
-# downtime-deploy-plan.md decision 1 for the full security rationale behind
-# every condition in the `gate` job below.
+# Triggered by CI's success, not by push directly. CI's push-only API E2E job
+# now contributes to that success via `CI Success`; see the implementation
+# plan at docs/plans/2026-08-28-e2e-ci-merge-gate-cd-block-plan.md and the
+# blue/green plan below for the full security rationale behind this gate.
 on:
   workflow_run:
     workflows: ["CI"]

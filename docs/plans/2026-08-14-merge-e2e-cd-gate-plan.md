@@ -2,6 +2,14 @@
 
 ## Status
 
+**Superseded (never implemented)** by
+[`2026-08-28-e2e-ci-merge-gate-cd-block-plan.md`](2026-08-28-e2e-ci-merge-gate-cd-block-plan.md).
+This doc is kept for its review history and dependency analysis. It went stale
+(22 vs. 24 E2E specs, pre-`postgres:18` image digests) and its scope was trimmed
+— the successor drops the `merge-policy.yml` skip-CI-token workflow, the
+`CODEOWNERS` rewrite, the `release-config` path-filter job, and `merge_group`
+support as orthogonal hardening.
+
 Planning only. This document describes the implementation to make; it does not
 add the workflow or change deployment behavior by itself.
 
