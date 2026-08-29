@@ -548,16 +548,18 @@ export function CheckoutForm({
         aria-label="breadcrumb"
         className="flex items-center gap-2 text-xs font-medium text-gray-400"
       >
-        <span>{t("breadcrumb.store")}</span>
-        <span aria-hidden="true">›</span>
-        <span className="store-theme-active-text flex items-center gap-1">
-          {t("breadcrumb.cart")}
-          <Check className="size-3" strokeWidth={3} />
-        </span>
-        <span aria-hidden="true">›</span>
-        <span className="font-semibold text-gray-900">
-          {t("breadcrumb.confirm")}
-        </span>
+        <ol className="flex items-center gap-2">
+          <li>{t("breadcrumb.store")}</li>
+          <li aria-hidden="true">›</li>
+          <li className="store-theme-active-text flex items-center gap-1">
+            {t("breadcrumb.cart")}
+            <Check aria-hidden="true" className="size-3" strokeWidth={3} />
+          </li>
+          <li aria-hidden="true">›</li>
+          <li aria-current="step" className="font-semibold text-gray-900">
+            {t("breadcrumb.confirm")}
+          </li>
+        </ol>
       </nav>
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col gap-5">

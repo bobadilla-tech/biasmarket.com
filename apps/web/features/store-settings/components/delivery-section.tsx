@@ -186,6 +186,7 @@ export function DeliverySection({ storeId }: { storeId: string }) {
                 >
                   <div className="flex items-center gap-3">
                     <Switch
+                      aria-label={`${point.label} ${t("delivery.pickupToggle")}`}
                       checked={point.enabled}
                       onCheckedChange={(enabled) =>
                         handleTogglePoint(point.id, enabled)
@@ -257,6 +258,7 @@ export function DeliverySection({ storeId }: { storeId: string }) {
           label={t("delivery.courierCostLabel")}
         >
           <Input
+            aria-label={t("delivery.courierCostLabel")}
             value={courierCost}
             onChange={(event) => setCourierCost(event.target.value)}
             placeholder={t("delivery.courierCostPlaceholder")}

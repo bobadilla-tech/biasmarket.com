@@ -6,7 +6,7 @@ import type { StoreResponseDto } from "@biasmarket/types";
 
 export function StoreLinkCard({ store }: { store: StoreResponseDto }) {
   return (
-    <Link href={`/dashboard/${store.slug}`}>
+    <Link href={`/dashboard/${store.slug}`} aria-label={store.name}>
       <Card className="rounded-[26px] border-[#eadcf8] bg-white py-0 shadow-sm transition hover:shadow-md">
         <CardContent className="flex items-center gap-4 px-5 py-5">
           <StoreLogo

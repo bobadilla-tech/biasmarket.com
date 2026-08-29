@@ -11,9 +11,12 @@ interface SectionEditFormProps {
   onCancel: () => void;
 }
 
-export function SectionEditForm(
-  { section, submitting, onSave, onCancel }: SectionEditFormProps,
-) {
+export function SectionEditForm({
+  section,
+  submitting,
+  onSave,
+  onCancel,
+}: SectionEditFormProps) {
   const t = useTranslations("dashboard.sections");
   const content = section.content as Record<string, unknown>;
   const [imageUrl, setImageUrl] = useState(String(content.imageUrl ?? ""));
@@ -34,31 +37,32 @@ export function SectionEditForm(
       onSubmit={submit}
       className="mt-3 flex flex-col gap-2 border-t border-gray-100 pt-3"
     >
-      {section.type === "BANNER"
-        ? (
-          <>
-            <input
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              placeholder={t("imageUrlPlaceholder")}
-              className="rounded-xl border border-gray-200 px-3 py-2 text-xs text-gray-600"
-            />
-            <input
-              value={linkUrl}
-              onChange={(e) => setLinkUrl(e.target.value)}
-              placeholder={t("linkUrlPlaceholder")}
-              className="rounded-xl border border-gray-200 px-3 py-2 text-xs text-gray-600"
-            />
-          </>
-        )
-        : (
-          <textarea
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder={t("bodyPlaceholder")}
+      {section.type === "BANNER" ? (
+        <>
+          <input
+            aria-label={t("imageUrlPlaceholder")}
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+            placeholder={t("imageUrlPlaceholder")}
             className="rounded-xl border border-gray-200 px-3 py-2 text-xs text-gray-600"
           />
-        )}
+          <input
+            aria-label={t("linkUrlPlaceholder")}
+            value={linkUrl}
+            onChange={(e) => setLinkUrl(e.target.value)}
+            placeholder={t("linkUrlPlaceholder")}
+            className="rounded-xl border border-gray-200 px-3 py-2 text-xs text-gray-600"
+          />
+        </>
+      ) : (
+        <textarea
+          aria-label={t("bodyPlaceholder")}
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          placeholder={t("bodyPlaceholder")}
+          className="rounded-xl border border-gray-200 px-3 py-2 text-xs text-gray-600"
+        />
+      )}
       <div className="flex gap-2">
         <button
           type="submit"

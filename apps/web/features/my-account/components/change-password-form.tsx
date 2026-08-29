@@ -52,48 +52,67 @@ export function ChangePasswordForm() {
       <CardContent className="px-5 pb-5">
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wide text-[#927fac]">
+            <label
+              htmlFor="account-current-password"
+              className="text-xs font-semibold uppercase tracking-wide text-[#927fac]"
+            >
               {t("currentLabel")}
             </label>
             <Input
+              id="account-current-password"
               type="password"
+              autoComplete="current-password"
               {...register("currentPassword")}
               className="h-11 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] text-[#341b55] shadow-none"
             />
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wide text-[#927fac]">
+            <label
+              htmlFor="account-new-password"
+              className="text-xs font-semibold uppercase tracking-wide text-[#927fac]"
+            >
               {t("newLabel")}
             </label>
             <Input
+              id="account-new-password"
               type="password"
+              autoComplete="new-password"
               {...register("newPassword")}
               className="h-11 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] text-[#341b55] shadow-none"
             />
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wide text-[#927fac]">
+            <label
+              htmlFor="account-confirm-password"
+              className="text-xs font-semibold uppercase tracking-wide text-[#927fac]"
+            >
               {t("confirmLabel")}
             </label>
             <Input
+              id="account-confirm-password"
               type="password"
+              autoComplete="new-password"
               {...register("confirmPassword")}
               className="h-11 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] text-[#341b55] shadow-none"
             />
-            {errors.confirmPassword
-              ? <p className="text-sm text-[#b24368]">{t("mismatch")}</p>
-              : null}
+            {errors.confirmPassword ? (
+              <p
+                id="account-confirm-password-error"
+                role="alert"
+                className="text-sm text-[#b24368]"
+              >
+                {t("mismatch")}
+              </p>
+            ) : null}
           </div>
 
-          {changePassword.isError
-            ? (
-              <p className="text-sm text-[#b24368]">
-                {changePassword.error instanceof Error
-                  ? changePassword.error.message
-                  : tCommon("networkError")}
-              </p>
-            )
-            : null}
+          {changePassword.isError ? (
+            <p role="alert" className="text-sm text-[#b24368]">
+              {changePassword.error instanceof Error
+                ? changePassword.error.message
+                : tCommon("networkError")}
+            </p>
+          ) : null}
 
           <Button
             type="submit"
@@ -103,8 +122,8 @@ export function ChangePasswordForm() {
             {changePassword.isSuccess
               ? t("saved")
               : changePassword.isPending
-              ? t("submitting")
-              : t("submit")}
+                ? t("submitting")
+                : t("submit")}
           </Button>
         </form>
       </CardContent>

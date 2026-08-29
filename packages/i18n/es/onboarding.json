@@ -12,6 +12,7 @@
     "signUpLink": "Regístrate"
   },
   "signup": {
+    "progressLabel": "Progreso del registro",
     "title": "Crear cuenta",
     "namePlaceholder": "Nombre",
     "emailPlaceholder": "Email",

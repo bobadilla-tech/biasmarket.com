@@ -73,8 +73,12 @@ export function ContactForm() {
   return (
     <form
       onSubmit={onSubmit}
+      aria-labelledby="contact-form-heading"
       className="flex flex-col gap-4 rounded-2xl border border-black/10 p-8"
     >
+      <h2 id="contact-form-heading" className="sr-only">
+        {t("heading")}
+      </h2>
       <FormErrorSummary
         id="contact-error-summary"
         title={tCommon("formErrorsSummary")}

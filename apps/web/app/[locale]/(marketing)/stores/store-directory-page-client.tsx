@@ -36,51 +36,49 @@ export function StoreDirectoryPageClient() {
           setPage(1);
         }}
         placeholder={t("searchPlaceholder")}
+        aria-label={t("searchPlaceholder")}
         className="mt-8 h-12 max-w-sm rounded-2xl"
       />
 
       <div className="mt-8">
-        {loading
-          ? <LoadingState />
-          : error || !result
-          ? <ErrorState message={error ?? tCommon("networkError")} />
-          : result.stores.length === 0
-          ? <EmptyState message={t("empty")} />
-          : (
-            <>
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-                {result.stores.map((store) => (
-                  <StoreCard key={store.id} store={store} />
-                ))}
+        {loading ? (
+          <LoadingState />
+        ) : error || !result ? (
+          <ErrorState message={error ?? tCommon("networkError")} />
+        ) : result.stores.length === 0 ? (
+          <EmptyState message={t("empty")} />
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+              {result.stores.map((store) => (
+                <StoreCard key={store.id} store={store} />
+              ))}
+            </div>
+            {totalPages > 1 ? (
+              <div className="mt-8 flex items-center justify-center gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
+                  {t("previous")}
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  {t("pageOf", { page, total: totalPages })}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                >
+                  {t("next")}
+                </Button>
               </div>
-              {totalPages > 1
-                ? (
-                  <div className="mt-8 flex items-center justify-center gap-3">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled={page <= 1}
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    >
-                      {t("previous")}
-                    </Button>
-                    <span className="text-sm text-muted-foreground">
-                      {t("pageOf", { page, total: totalPages })}
-                    </span>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled={page >= totalPages}
-                      onClick={() =>
-                        setPage((p) => Math.min(totalPages, p + 1))}
-                    >
-                      {t("next")}
-                    </Button>
-                  </div>
-                )
-                : null}
-            </>
-          )}
+            ) : null}
+          </>
+        )}
       </div>
     </div>
   );

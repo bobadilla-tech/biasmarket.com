@@ -50,6 +50,7 @@ export function SettingsPageClient() {
               <Input
                 value={t("searchPlaceholder")}
                 readOnly
+                aria-label={t("searchPlaceholder")}
                 className="hidden min-w-[250px] rounded-2xl border-[#eadcf7] bg-white text-[#a18eb8] shadow-none sm:flex"
               />
               <StoreLogo

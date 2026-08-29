@@ -96,6 +96,7 @@ export function RegisterPaymentForm({
       </Select>
       <Input
         {...register("note")}
+        aria-label={t("details.paymentNotePlaceholder")}
         placeholder={t("details.paymentNotePlaceholder")}
         className="store-theme-input h-11 rounded-xl border-[#e7dcf3] bg-[#fbf8fe] shadow-none"
       />

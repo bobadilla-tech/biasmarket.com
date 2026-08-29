@@ -85,10 +85,11 @@ function SheetContent({
                 variant="ghost"
                 className="absolute top-3 right-3"
                 size="icon-sm"
+                aria-label={t("close")}
               />
             }
           >
-            <XIcon />
+            <XIcon aria-hidden="true" />
             <span className="sr-only">{t("close")}</span>
           </SheetPrimitive.Close>
         )}

@@ -172,12 +172,14 @@ export function CouriersSection({ storeId }: { storeId: string }) {
           >
             <div className="flex items-center gap-3">
               <Switch
+                aria-label={`${courier.name || t("delivery.courierNamePlaceholder")} ${t("delivery.courierToggle")}`}
                 checked={courier.enabled}
                 onCheckedChange={(enabled) =>
                   handleToggleCourier(courier.id, enabled)
                 }
               />
               <Input
+                aria-label={`${courier.name || t("delivery.courierNamePlaceholder")} ${t("delivery.courierNamePlaceholder")}`}
                 value={courier.name}
                 onChange={(e) => handleUpdateName(courier.id, e.target.value)}
                 placeholder={t("delivery.courierNamePlaceholder")}
@@ -206,6 +208,7 @@ export function CouriersSection({ storeId }: { storeId: string }) {
               <div className="pl-11">
                 <Field label={t("delivery.agencyPriceLabel")}>
                   <Input
+                    aria-label={t("delivery.agencyPriceLabel")}
                     type="number"
                     min={0}
                     value={getModalityPrice(courier, "AGENCY")}
@@ -232,6 +235,7 @@ export function CouriersSection({ storeId }: { storeId: string }) {
               <div className="pl-11">
                 <Field label={t("delivery.homePriceLabel")}>
                   <Input
+                    aria-label={t("delivery.homePriceLabel")}
                     type="number"
                     min={0}
                     value={getModalityPrice(courier, "HOME")}

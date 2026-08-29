@@ -300,6 +300,7 @@ export function AccountOrderDetail({
               <button
                 key={payment.id}
                 type="button"
+                aria-label={tAccount("orderDetail.screenshots")}
                 onClick={() =>
                   setPreviewUrl(
                     orderPaymentsApi.paymentImageUrl(

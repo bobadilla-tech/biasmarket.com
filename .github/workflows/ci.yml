@@ -678,11 +678,10 @@ jobs:
     # browser, then runs the axe/keyboard smoke. Realistically +6–12 min over a
     # package job; keep headroom.
     timeout-minutes: 25
-    # This job is a PR gate (it is in `ci-success.needs`). Phase 0 ships only
-    # the harness smoke spec here. As Phases 3/5 land the two targeted specs
-    # (keyboard checkout, seller approve-payment) they gate too; the broader
-    # axe/reflow/contrast matrix stays push-only / opt-in until Phase 7 and
-    # must NOT be added to this gating job before then.
+    # This job is a blocking PR gate (it is in `ci-success.needs`). Phase 7
+    # adds route-specific marketing/onboarding axe coverage to the existing
+    # keyboard smoke suite; authenticated dashboard coverage remains a
+    # follow-up until CI has stable seeded sessions.
     services:
       postgres:
         image: ghcr.io/immich-app/postgres:18-vectorchord0.5.3-pgvector0.8.1@sha256:828081a755d3911a2d94f0a2be9f98570c07d52cf080fd310a9d6e4b83b73aa5

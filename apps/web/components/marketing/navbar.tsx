@@ -33,7 +33,7 @@ function NavLinks({
   ] as const;
 
   return (
-    <nav className={className}>
+    <nav aria-label={t("navigationLabel")} className={className}>
       {items.map(({ key, href }) =>
         key === "help" ? (
           <span
@@ -113,7 +113,10 @@ function MobileNavStrip() {
   ] as const;
 
   return (
-    <nav className="no-scrollbar flex items-center justify-between gap-2 overflow-x-auto px-4 pt-0.5 pb-2 lg:hidden">
+    <nav
+      aria-label={t("navigationLabel")}
+      className="no-scrollbar flex items-center justify-between gap-2 overflow-x-auto px-4 pt-0.5 pb-2 lg:hidden"
+    >
       {items.map(({ key, href }) => (
         <Link
           key={key}

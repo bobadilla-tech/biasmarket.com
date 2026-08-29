@@ -88,6 +88,12 @@ const EMPTY_DETAILS_ROW: DetailsFormRow = {
 export function PaymentsSection({ storeId }: { storeId: string }) {
   const t = useTranslations("dashboard.settings");
   const tCommon = useTranslations("common");
+  const paymentMethodLabels = {
+    YAPE: t("payments.items.yape.label"),
+    PLIN: t("payments.items.plin.label"),
+    TRANSFER: t("payments.items.transfer.label"),
+    CASH: t("payments.items.cash.label"),
+  };
   const { data: methods } = usePaymentMethods(storeId);
   const saveMethods = useSavePaymentMethods(storeId);
   const saveDetails = useSavePaymentMethodDetails(storeId);
@@ -369,6 +375,9 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
                     </Button>
                   )}
                   <Switch
+                    aria-label={
+                      paymentMethodLabels[method.method] ?? method.method
+                    }
                     checked={enabledByMethod[method.method] ?? true}
                     onCheckedChange={(checked) =>
                       setEnabledByMethod((prev) => ({
@@ -390,6 +399,7 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
                       >
                         <Input
                           id="settings-payment-transfer-bank"
+                          aria-label={t("payments.fields.bankName")}
                           placeholder={t("payments.fields.bankName")}
                           value={detailsForm.TRANSFER.bankName}
                           onChange={(e) =>
@@ -407,6 +417,7 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
                       >
                         <Input
                           id="settings-payment-transfer-account"
+                          aria-label={t("payments.fields.accountNumber")}
                           placeholder={t("payments.fields.accountNumber")}
                           value={detailsForm.TRANSFER.accountNumber}
                           onChange={(e) =>
@@ -425,6 +436,7 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
                       >
                         <Input
                           id="settings-payment-transfer-holder"
+                          aria-label={t("payments.fields.accountHolder")}
                           placeholder={t("payments.fields.accountHolder")}
                           value={detailsForm.TRANSFER.accountHolder}
                           onChange={(e) =>
@@ -442,6 +454,7 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
                       >
                         <Input
                           id="settings-payment-transfer-type"
+                          aria-label={t("payments.fields.accountType")}
                           placeholder={t("payments.fields.accountType")}
                           value={detailsForm.TRANSFER.accountType}
                           onChange={(e) =>
@@ -462,6 +475,7 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
                       >
                         <Input
                           id={`settings-payment-${method.method.toLowerCase()}-phone`}
+                          aria-label={t("payments.fields.phoneNumber")}
                           type="tel"
                           autoComplete="tel"
                           inputMode="tel"
@@ -482,6 +496,7 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
                       >
                         <Input
                           id={`settings-payment-${method.method.toLowerCase()}-holder`}
+                          aria-label={t("payments.fields.accountHolder")}
                           placeholder={t("payments.fields.accountHolder")}
                           value={detailsForm[method.method].accountHolder}
                           onChange={(e) =>
@@ -566,6 +581,7 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
                   >
                     <Input
                       id={`settings-payment-${method.method.toLowerCase()}-deposit`}
+                      aria-label={t("payments.depositPercent.label")}
                       type="number"
                       min={1}
                       max={100}

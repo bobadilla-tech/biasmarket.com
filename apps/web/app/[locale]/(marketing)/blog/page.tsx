@@ -46,7 +46,13 @@ export default async function BlogIndexPage({
           {posts.length === 0 ? (
             <p className="mt-8 text-base text-muted-foreground">{t("empty")}</p>
           ) : (
-            <div className="mt-8 sm:mt-10">
+            <section
+              aria-labelledby="blog-posts-heading"
+              className="mt-8 sm:mt-10"
+            >
+              <h2 id="blog-posts-heading" className="sr-only">
+                {t("postsHeading")}
+              </h2>
               {posts.map((post) => (
                 <BlogListItem
                   key={post._id}
@@ -57,7 +63,7 @@ export default async function BlogIndexPage({
                   readMoreLabel={t("readMore")}
                 />
               ))}
-            </div>
+            </section>
           )}
         </div>
       </div>
