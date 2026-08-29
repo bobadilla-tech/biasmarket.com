@@ -408,9 +408,9 @@ Helper order (exact — **build before the OpenAPI check**, see review H1):
 2. `docker network create biasmarket-e2e`; start named MinIO container; wait
    for `/minio/health/live` → `.ci/e2e-minio.log`.
 3. Run `mc`: create 3 buckets; `anonymous set download` on `products` + `logos`.
-4. Poll Postgres (`pg_isready`) and Redis (`redis-cli ping`) with
-   service-specific failure messages (service containers are usually up at job
-   start; poll anyway).
+4. Poll Postgres (`pg_isready`) and Redis with a runner-independent TCP
+   connectivity check against `127.0.0.1:6379`, with service-specific failure
+   messages (service containers are usually up at job start; poll anyway).
 5. `pnpm --filter @biasmarket/db db:generate` (Prisma client only — does not
    build the tsc packages).
 6. **`pnpm turbo run build --filter=api --filter=workers`** — builds
