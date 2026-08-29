@@ -81,7 +81,7 @@ function SidebarSection({
   return (
     <div className="space-y-2">
       {!collapsed && (
-        <p className="px-3 text-[10px] font-semibold uppercase tracking-[0.24em] text-white/35">
+        <p className="px-3 text-[10px] font-semibold uppercase tracking-[0.24em] text-sidebar-muted-foreground">
           {title}
         </p>
       )}
@@ -108,7 +108,7 @@ function SidebarSection({
                 key={item.key}
                 title={collapsed ? label : undefined}
                 className={cn(
-                  "flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm text-white/52",
+                  "flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm text-sidebar-subtle-foreground",
                   collapsed && "justify-center px-0",
                 )}
               >
@@ -118,7 +118,7 @@ function SidebarSection({
                 </span>
                 {!collapsed && (
                   <>
-                    <span className="rounded-full border border-white/10 bg-white/8 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/40">
+                    <span className="rounded-full border border-white/15 bg-white/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sidebar-badge-foreground">
                       {t("soon")}
                     </span>
                   </>
@@ -139,7 +139,7 @@ function SidebarSection({
                 collapsed && "justify-center px-0",
                 isActive
                   ? "bg-white/13 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.16)]"
-                  : "text-white/72 hover:bg-white/8 hover:text-white",
+                  : "text-sidebar-muted-foreground hover:bg-white/10 hover:text-white",
               )}
             >
               <span className="relative inline-flex shrink-0">
@@ -238,7 +238,7 @@ export function StoreSidebar({
                 href={`/${locale}/store/${slug}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1 text-xs text-white/50 transition hover:text-white/80"
+                className="flex items-center gap-1 text-xs text-sidebar-subtle-foreground transition hover:text-white"
               >
                 {t("viewStore")}
                 <ExternalLink className="size-3" />
@@ -251,7 +251,7 @@ export function StoreSidebar({
             onClick={toggleCollapsed}
             aria-label={t(effectiveCollapsed ? "expand" : "collapse")}
             title={t(effectiveCollapsed ? "expand" : "collapse")}
-            className="flex size-7 shrink-0 items-center justify-center rounded-full text-white/60 transition hover:bg-white/8 hover:text-white"
+            className="flex size-7 shrink-0 items-center justify-center rounded-full text-sidebar-muted-foreground transition hover:bg-white/10 hover:text-white"
           >
             {effectiveCollapsed ? (
               <ChevronRight className="size-4" />
@@ -299,7 +299,7 @@ export function StoreSidebar({
             <p className="truncate text-sm font-semibold text-white">
               {session?.user.name ?? t("fallbackName")}
             </p>
-            <p className="truncate text-xs text-white/50">
+            <p className="truncate text-xs text-sidebar-subtle-foreground">
               {session?.user.email ?? t("fallbackRole")}
             </p>
           </div>
@@ -310,7 +310,7 @@ export function StoreSidebar({
           aria-current={pathname === "/account" ? "page" : undefined}
           title={effectiveCollapsed ? t("myAccount") : undefined}
           className={cn(
-            "flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm text-white/72 transition hover:bg-white/8 hover:text-white",
+            "flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm text-sidebar-muted-foreground transition hover:bg-white/10 hover:text-white",
             effectiveCollapsed && "justify-center px-0",
           )}
         >
@@ -323,7 +323,7 @@ export function StoreSidebar({
           onClick={handleSignOut}
           title={effectiveCollapsed ? t("signOut") : undefined}
           className={cn(
-            "flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm text-white/72 transition hover:bg-white/8 hover:text-white",
+            "flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm text-sidebar-muted-foreground transition hover:bg-white/10 hover:text-white",
             effectiveCollapsed && "justify-center px-0",
           )}
         >

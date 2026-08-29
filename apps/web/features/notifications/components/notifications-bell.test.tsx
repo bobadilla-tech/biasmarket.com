@@ -9,10 +9,9 @@ const notificationsMock = vi.hoisted(() => ({
   unreadCount: vi.fn(),
   markRead: vi.fn(),
 }));
-vi.mock(
-  "@/lib/api-client",
-  () => ({ apiClient: { notifications: notificationsMock } }),
-);
+vi.mock("@/lib/api-client", () => ({
+  apiClient: { notifications: notificationsMock },
+}));
 
 const { NotificationsBell } = await import("./notifications-bell");
 
@@ -49,6 +48,9 @@ test("renders the unread count on the badge", async () => {
   renderBell("store-1");
 
   expect(await screen.findByText("3")).toBeDefined();
+  expect(
+    await screen.findByLabelText("3 notificaciones sin leer"),
+  ).toBeDefined();
 });
 
 test("truncates counts above 9 to '9+'", async () => {

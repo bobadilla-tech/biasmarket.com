@@ -40,11 +40,7 @@ function dateInputValue(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-function formatPeriod(
-  fromIso: string,
-  toIso: string,
-  locale: string,
-): string {
+function formatPeriod(fromIso: string, toIso: string, locale: string): string {
   const from = new Date(fromIso);
   const to = new Date(toIso);
   const formatter = new Intl.DateTimeFormat(locale, {
@@ -67,8 +63,8 @@ export function PaymentMethodsBreakdown({
 
   const today = new Date();
   const [preset, setPreset] = useState<PaymentRangePreset>("month");
-  const [customFrom, setCustomFrom] = useState(
-    () => dateInputValue(new Date(today.getFullYear(), today.getMonth(), 1)),
+  const [customFrom, setCustomFrom] = useState(() =>
+    dateInputValue(new Date(today.getFullYear(), today.getMonth(), 1)),
   );
   const [customTo, setCustomTo] = useState(() => dateInputValue(today));
 
@@ -83,9 +79,7 @@ export function PaymentMethodsBreakdown({
 
   const rows = useMemo(
     () =>
-      (breakdown?.byMethod ?? [])
-        .slice()
-        .sort((a, b) => b.amount - a.amount),
+      (breakdown?.byMethod ?? []).slice().sort((a, b) => b.amount - a.amount),
     [breakdown],
   );
   const chartData = rows.filter((row) => row.amount > 0);
@@ -151,102 +145,106 @@ export function PaymentMethodsBreakdown({
       </div>
 
       <CardContent className="flex flex-col gap-6 px-6 pb-6 pt-5">
-        {loading
-          ? <LoadingState variant="inline" rows={4} />
-          : error || !breakdown
-          ? <ErrorState message={error ?? t("loadError")} />
-          : breakdown.totalCount === 0
-          ? <EmptyState icon={Wallet} message={t("noData")} />
-          : (
-            <>
-              <div className="grid gap-4 sm:grid-cols-3">
-                <StatTile
-                  icon={Wallet}
-                  label={t("summary.totalReceived")}
-                  value={`${currency} ${breakdown.totalAmount.toFixed(2)}`}
-                />
-                <StatTile
-                  icon={CreditCard}
-                  label={t("summary.totalPayments")}
-                  value={String(breakdown.totalCount)}
-                />
-                <StatTile
-                  icon={Calendar}
-                  label={t("summary.period")}
-                  value={formatPeriod(breakdown.from, breakdown.to, locale)}
-                />
-              </div>
+        {loading ? (
+          <LoadingState variant="inline" rows={4} />
+        ) : error || !breakdown ? (
+          <ErrorState message={error ?? t("loadError")} />
+        ) : breakdown.totalCount === 0 ? (
+          <EmptyState icon={Wallet} message={t("noData")} />
+        ) : (
+          <>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <StatTile
+                icon={Wallet}
+                label={t("summary.totalReceived")}
+                value={`${currency} ${breakdown.totalAmount.toFixed(2)}`}
+              />
+              <StatTile
+                icon={CreditCard}
+                label={t("summary.totalPayments")}
+                value={String(breakdown.totalCount)}
+              />
+              <StatTile
+                icon={Calendar}
+                label={t("summary.period")}
+                value={formatPeriod(breakdown.from, breakdown.to, locale)}
+              />
+            </div>
 
-              <div className="grid gap-6 lg:grid-cols-2">
-                <div className="flex min-h-[260px] items-center justify-center rounded-2xl border border-[#f0e7f8] bg-white p-4">
-                  {chartData.length === 0
-                    ? <p className="text-sm text-[#8f7da8]">{t("noData")}</p>
-                    : (
-                      <ResponsiveContainer width="100%" height={240}>
-                        <PieChart>
-                          <Pie
-                            data={chartData}
-                            dataKey="amount"
-                            nameKey="method"
-                            innerRadius={68}
-                            outerRadius={92}
-                            paddingAngle={2}
-                            strokeWidth={0}
-                          >
-                            {chartData.map((row) => (
-                              <Cell
-                                key={row.method ?? "unknown"}
-                                fill={methodColor(row.method)}
-                              />
-                            ))}
-                          </Pie>
-                          <Tooltip
-                            formatter={(value, name) => [
-                              `${currency} ${Number(value).toFixed(2)}`,
-                              labelFor(name as PaymentMethodValue | null),
-                            ]}
-                            contentStyle={{
-                              borderRadius: 12,
-                              borderColor: "#eadcf8",
-                            }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    )}
-                </div>
-
-                <div className="rounded-2xl border border-[#f0e7f8] bg-white p-4">
-                  <ul className="divide-y divide-[#f3ebff]">
-                    {rows.map((row) => (
-                      <li
-                        key={row.method ?? "unknown"}
-                        className="flex items-center justify-between gap-4 py-3"
+            <div className="grid gap-6 lg:grid-cols-2">
+              <div
+                role="img"
+                aria-label={t("breakdownTitle")}
+                className="flex min-h-[260px] items-center justify-center rounded-2xl border border-[#f0e7f8] bg-white p-4"
+              >
+                {chartData.length === 0 ? (
+                  <p className="text-sm text-[#8f7da8]">{t("noData")}</p>
+                ) : (
+                  <ResponsiveContainer width="100%" height={240}>
+                    <PieChart>
+                      <Pie
+                        data={chartData}
+                        dataKey="amount"
+                        nameKey="method"
+                        innerRadius={68}
+                        outerRadius={92}
+                        paddingAngle={2}
+                        strokeWidth={0}
                       >
-                        <div className="flex min-w-0 items-center gap-3">
-                          <span
-                            className="size-2.5 shrink-0 rounded-full"
-                            style={{ backgroundColor: methodColor(row.method) }}
+                        {chartData.map((row) => (
+                          <Cell
+                            key={row.method ?? "unknown"}
+                            fill={methodColor(row.method)}
                           />
-                          <span className="truncate text-sm font-medium text-[#2d1649]">
-                            {labelFor(row.method)}
-                          </span>
-                        </div>
-                        <div className="shrink-0 text-right">
-                          <p className="text-sm font-semibold text-[#2d1649]">
-                            {currency} {row.amount.toFixed(2)}
-                          </p>
-                          <p className="text-xs text-[#8f7da8]">
-                            {row.percentage.toFixed(1)}% ·{" "}
-                            {t("transactions", { count: row.count })}
-                          </p>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value, name) => [
+                          `${currency} ${Number(value).toFixed(2)}`,
+                          labelFor(name as PaymentMethodValue | null),
+                        ]}
+                        contentStyle={{
+                          borderRadius: 12,
+                          borderColor: "#eadcf8",
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
               </div>
-            </>
-          )}
+
+              <div className="rounded-2xl border border-[#f0e7f8] bg-white p-4">
+                <ul className="divide-y divide-[#f3ebff]">
+                  {rows.map((row) => (
+                    <li
+                      key={row.method ?? "unknown"}
+                      className="flex items-center justify-between gap-4 py-3"
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span
+                          className="size-2.5 shrink-0 rounded-full"
+                          style={{ backgroundColor: methodColor(row.method) }}
+                        />
+                        <span className="truncate text-sm font-medium text-[#2d1649]">
+                          {labelFor(row.method)}
+                        </span>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-sm font-semibold text-[#2d1649]">
+                          {currency} {row.amount.toFixed(2)}
+                        </p>
+                        <p className="text-xs text-[#8f7da8]">
+                          {row.percentage.toFixed(1)}% ·{" "}
+                          {t("transactions", { count: row.count })}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </>
+        )}
       </CardContent>
     </Card>
   );

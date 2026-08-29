@@ -125,7 +125,7 @@ export function ShippingPageClient() {
           </h1>
         </div>
 
-        <Card className="overflow-x-auto rounded-[30px] border-[#eadcf8] bg-white py-0 shadow-sm">
+        <Card className="rounded-[30px] border-[#eadcf8] bg-white py-0 shadow-sm">
           <CardContent className="px-0">
             {shippingOrders.length === 0 ? (
               <div className="px-6 py-10 text-sm text-[#8f7da8]">
@@ -235,11 +235,11 @@ export function ShippingPageClient() {
                 </div>
               </div>
 
-              <SheetFooter className="sticky bottom-0 border-t border-[#f0e7f8] bg-white px-4 py-4">
+              <SheetFooter className="sticky bottom-0 border-t border-[#f0e7f8] bg-white px-4 py-4 pb-[env(safe-area-inset-bottom)]">
                 {NEXT_FULFILLMENT[selectedOrder.fulfillmentStatus] ? (
                   <Button
                     type="button"
-                    className="store-theme-primary-button h-11 w-full rounded-2xl text-sm font-semibold hover:opacity-100"
+                    className="store-theme-primary-button min-h-11 h-auto w-full rounded-2xl py-2.5 text-sm font-semibold whitespace-normal hover:opacity-100"
                     onClick={() => {
                       handleAdvance(selectedOrder);
                       setDetailsOpen(false);

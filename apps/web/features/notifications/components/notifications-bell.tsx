@@ -13,10 +13,15 @@ import { useNotifications, useUnreadCount } from "../queries/use-notifications";
 import { useMarkRead } from "../mutations/use-mark-read";
 import { NotificationRow } from "./notification-row";
 
-export function NotificationsBell(
-  { slug, storeId }: { slug: string; storeId?: string },
-) {
+export function NotificationsBell({
+  slug,
+  storeId,
+}: {
+  slug: string;
+  storeId?: string;
+}) {
   const t = useTranslations("dashboard.notifications");
+  const tShell = useTranslations("dashboard.shell");
   const [open, setOpen] = useState(false);
 
   const { data: unreadCount } = useUnreadCount(storeId);
@@ -35,40 +40,38 @@ export function NotificationsBell(
           <button
             type="button"
             className="relative rounded-xl p-2 hover:bg-black/5"
-            aria-label={t("title")}
+            aria-label={
+              count > 0 ? tShell("unreadNotifications", { count }) : t("title")
+            }
           >
             <Bell className="size-5" />
-            {count > 0
-              ? (
-                <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-[#d11d52] text-[10px] font-semibold text-white">
-                  {count > 9 ? "9+" : count}
-                </span>
-              )
-              : null}
+            {count > 0 ? (
+              <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-[#d11d52] text-[10px] font-semibold text-white">
+                {count > 9 ? "9+" : count}
+              </span>
+            ) : null}
           </button>
         }
       />
-      <PopoverContent className="w-80 p-0">
+      <PopoverContent className="w-80 max-w-[calc(100vw-2rem)] p-0">
         <div className="flex items-center justify-between border-b border-[#f0e7f8] px-4 py-3">
-          <p className="text-sm font-semibold text-[#2d1649]">{t("title")}</p>
+          <h2 className="text-sm font-semibold text-[#2d1649]">{t("title")}</h2>
         </div>
         <div className="max-h-80 overflow-y-auto">
-          {visibleItems.length === 0
-            ? (
-              <p className="px-4 py-6 text-center text-sm text-[#9582ad]">
-                {t("empty")}
-              </p>
-            )
-            : (
-              visibleItems.map((item) => (
-                <NotificationRow
-                  key={item.id}
-                  item={item}
-                  compact
-                  onMarkRead={(id) => markRead.mutate(id)}
-                />
-              ))
-            )}
+          {visibleItems.length === 0 ? (
+            <p className="px-4 py-6 text-center text-sm text-[#9582ad]">
+              {t("empty")}
+            </p>
+          ) : (
+            visibleItems.map((item) => (
+              <NotificationRow
+                key={item.id}
+                item={item}
+                compact
+                onMarkRead={(id) => markRead.mutate(id)}
+              />
+            ))
+          )}
         </div>
         <Link
           href={`/dashboard/${slug}/notifications`}

@@ -303,7 +303,7 @@
 
 .store-theme-secondary-button {
   background: var(--store-surface);
-  color: var(--store-primary);
+  color: var(--store-primary-text, var(--store-primary));
   border-color: var(--store-soft-border);
 }
 
@@ -312,21 +312,21 @@
 }
 
 .store-theme-link {
-  color: var(--store-primary);
+  color: var(--store-primary-text, var(--store-primary));
 }
 
 .store-theme-active-text {
-  color: var(--store-primary);
+  color: var(--store-primary-text, var(--store-primary));
 }
 
 .store-theme-soft-badge {
   background: var(--store-surface);
-  color: var(--store-primary);
+  color: var(--store-primary-text, var(--store-primary));
 }
 
 .store-theme-icon-surface {
   background: var(--store-surface);
-  color: var(--store-primary);
+  color: var(--store-primary-text, var(--store-primary));
 }
 
 @keyframes cart-badge-pop {

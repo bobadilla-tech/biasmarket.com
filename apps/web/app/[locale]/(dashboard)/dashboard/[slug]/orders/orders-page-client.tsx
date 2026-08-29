@@ -50,15 +50,13 @@ export function OrdersPageClient() {
   const [paymentPreviewUrl, setPaymentPreviewUrl] = useState<string | null>(
     null,
   );
-  const [confirmTarget, setConfirmTarget] = useState<
-    {
-      orderId: string;
-      kind: "review" | "advance";
-      decision?: "approve" | "reject";
-      nextStatus?: string;
-      label: string;
-    } | null
-  >(null);
+  const [confirmTarget, setConfirmTarget] = useState<{
+    orderId: string;
+    kind: "review" | "advance";
+    decision?: "approve" | "reject";
+    nextStatus?: string;
+    label: string;
+  } | null>(null);
   const [rejectReason, setRejectReason] = useState("");
 
   const {
@@ -71,7 +69,8 @@ export function OrdersPageClient() {
   const registerPayment = useRegisterPayment(storeId, tCommon("networkError"));
   const cancelOrder = useCancelOrder(storeId, tCommon("networkError"));
 
-  const error = errorMessage(ordersQuery.error) ??
+  const error =
+    errorMessage(ordersQuery.error) ??
     errorMessage(reviewPayment.error) ??
     errorMessage(advanceFulfillment.error) ??
     errorMessage(registerPayment.error) ??
@@ -128,8 +127,9 @@ export function OrdersPageClient() {
       await reviewPayment.mutateAsync({
         orderId: confirmTarget.orderId,
         decision: confirmTarget.decision,
-        ...(confirmTarget.decision === "reject" &&
-          { reason: rejectReason.trim() }),
+        ...(confirmTarget.decision === "reject" && {
+          reason: rejectReason.trim(),
+        }),
       });
     } else if (confirmTarget.kind === "advance" && confirmTarget.nextStatus) {
       await advanceFulfillment.mutateAsync({
@@ -151,16 +151,17 @@ export function OrdersPageClient() {
       all: orders.length,
       pending: orders.filter((order) => matchesTab(order, "pending")).length,
       transit: orders.filter((order) => matchesTab(order, "transit")).length,
-      delivered:
-        orders.filter((order) => matchesTab(order, "delivered")).length,
+      delivered: orders.filter((order) => matchesTab(order, "delivered"))
+        .length,
     }),
     [orders],
   );
 
   const selectedOrder = useMemo(
-    () => (selectedOrderId
-      ? orders.find((order) => order.id === selectedOrderId) ?? null
-      : null),
+    () =>
+      selectedOrderId
+        ? (orders.find((order) => order.id === selectedOrderId) ?? null)
+        : null,
     [orders, selectedOrderId],
   );
 
@@ -208,17 +209,15 @@ export function OrdersPageClient() {
           </p>
         </div>
 
-        {error
-          ? (
-            <Card className="rounded-2xl border-[#f3cbd8] bg-[#fff3f7] py-0 shadow-none">
-              <CardContent className="px-4 py-3 text-sm text-[#b24368]">
-                {error}
-              </CardContent>
-            </Card>
-          )
-          : null}
+        {error ? (
+          <Card className="rounded-2xl border-[#f3cbd8] bg-[#fff3f7] py-0 shadow-none">
+            <CardContent className="px-4 py-3 text-sm text-[#b24368]">
+              {error}
+            </CardContent>
+          </Card>
+        ) : null}
 
-        <Card className="overflow-x-auto rounded-[30px] border-[#eadcf8] bg-white py-0 shadow-sm">
+        <Card className="rounded-[30px] border-[#eadcf8] bg-white py-0 shadow-sm">
           <CardContent className="px-0">
             <OrdersTable
               orders={filteredOrders}
@@ -280,9 +279,11 @@ export function OrdersPageClient() {
           }}
           onPreviewPayment={setPaymentPreviewUrl}
           onApprove={() =>
-            selectedOrder && handleReviewClick(selectedOrder, "approve")}
+            selectedOrder && handleReviewClick(selectedOrder, "approve")
+          }
           onReject={() =>
-            selectedOrder && handleReviewClick(selectedOrder, "reject")}
+            selectedOrder && handleReviewClick(selectedOrder, "reject")
+          }
           onAdvance={async () => {
             if (!selectedOrder) return;
             const next = NEXT_FULFILLMENT[selectedOrder.fulfillmentStatus];
@@ -309,10 +310,10 @@ export function OrdersPageClient() {
           onConfirm={handleConfirmTransition}
           {...(confirmTarget?.kind === "review" &&
             confirmTarget.decision === "reject" && {
-            reason: rejectReason,
-            onReasonChange: setRejectReason,
-            reasonRequired: true,
-          })}
+              reason: rejectReason,
+              onReasonChange: setRejectReason,
+              reasonRequired: true,
+            })}
         />
       </div>
     </div>

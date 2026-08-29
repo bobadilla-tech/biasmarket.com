@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { SUPPORTED_CURRENCIES } from "@biasmarket/utils/currency";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DataTable, DataTableCaption } from "@/components/ui/data-table";
 import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { useDashboardStore } from "@/features/stores";
@@ -290,8 +291,9 @@ export function ProductsPageClient() {
               </CardTitle>
             </CardHeader>
             <CardContent className="px-0 pb-0">
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-205 text-left text-sm">
+              <DataTable caption={t("products.listTitle")}>
+                <table className="w-full text-left text-sm">
+                  <DataTableCaption>{t("products.listTitle")}</DataTableCaption>
                   <thead>
                     <tr className="border-b border-[#f3ebff] text-xs font-semibold uppercase tracking-[0.18em] text-[#8f7da8]">
                       <th className="px-6 py-3">
@@ -353,7 +355,7 @@ export function ProductsPageClient() {
                     })}
                   </tbody>
                 </table>
-              </div>
+              </DataTable>
             </CardContent>
           </Card>
         )}

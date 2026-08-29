@@ -36,6 +36,7 @@ export function MobileSidebar({
         render={
           <button
             aria-label={t("openMenu")}
+            type="button"
             className="rounded-xl p-2 hover:bg-muted"
           >
             <Menu className="size-6" />
@@ -46,7 +47,7 @@ export function MobileSidebar({
       <SheetContent
         side="left"
         size="sm"
-        className="h-dvh border-none bg-transparent p-0"
+        className="h-dvh border-none bg-transparent p-0 pb-[env(safe-area-inset-bottom)]"
       >
         <SheetHeader className="sr-only">
           <SheetTitle>{t("navigationTitle")}</SheetTitle>

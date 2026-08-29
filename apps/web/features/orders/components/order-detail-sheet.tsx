@@ -240,7 +240,7 @@ export function OrderDetailSheet({
               </div>
             </div>
 
-            <SheetFooter className="sticky bottom-0 border-t border-[#f0e7f8] bg-white px-4 py-4">
+            <SheetFooter className="sticky bottom-0 border-t border-[#f0e7f8] bg-white px-4 py-4 pb-[env(safe-area-inset-bottom)]">
               <div className="flex w-full flex-wrap gap-2">
                 {!isPending &&
                   (order.paymentStatus === "PENDING_PAYMENT" ||
@@ -258,7 +258,7 @@ export function OrderDetailSheet({
                               : t("approveDisabledNoPayment")
                             : undefined
                         }
-                        className="store-theme-primary-button h-11 flex-1 rounded-2xl text-sm font-semibold hover:opacity-100 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-50"
+                        className="store-theme-primary-button min-h-11 h-auto flex-1 rounded-2xl py-2.5 text-sm font-semibold whitespace-normal hover:opacity-100 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {t("approve")}
                       </Button>
@@ -273,7 +273,7 @@ export function OrderDetailSheet({
                         type="button"
                         variant="outline"
                         onClick={onReject}
-                        className="h-11 flex-1 rounded-2xl border-[#eadcf7] bg-white text-sm font-semibold text-[#2d1649] shadow-none hover:bg-[#fcf9ff]"
+                        className="min-h-11 h-auto flex-1 rounded-2xl border-[#eadcf7] bg-white py-2.5 text-sm font-semibold whitespace-normal text-[#2d1649] shadow-none hover:bg-[#fcf9ff]"
                       >
                         {t("reject")}
                       </Button>
@@ -287,7 +287,7 @@ export function OrderDetailSheet({
                       type="button"
                       variant="outline"
                       onClick={onCancel}
-                      className="h-11 flex-1 rounded-2xl border-red-200 text-red-600 hover:bg-red-50"
+                      className="min-h-11 h-auto flex-1 rounded-2xl border-red-200 py-2.5 whitespace-normal text-red-600 hover:bg-red-50"
                     >
                       {t("cancelOrder")}
                     </Button>
