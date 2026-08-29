@@ -6,6 +6,9 @@ export default defineConfig({
   plugins: [tsconfigPaths(), react()],
   test: {
     environment: "jsdom",
+    // Playwright specs under e2e/ are `*.spec.ts` too — keep vitest out of
+    // them (they need a browser + a running server, not jsdom).
+    exclude: ["**/node_modules/**", "**/dist/**", "**/.next/**", "e2e/**"],
     // lib/api-client.ts calls configureApiClient() eagerly at module load,
     // throwing if NEXT_PUBLIC_API_URL/INTERNAL_API_URL is unset — fine for
     // real dev/build (.env.local always sets it) but a real test file can

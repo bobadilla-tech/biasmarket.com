@@ -405,6 +405,8 @@ export async function applyStoreFixture(
         method: payment.method,
         note: payment.note,
         imageUrl: payment.imageUrl,
+        source: payment.source,
+        reviewStatus: payment.reviewStatus,
         createdAt: paymentCreatedAt,
       });
     }

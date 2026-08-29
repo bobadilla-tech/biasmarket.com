@@ -4,6 +4,8 @@ import type {
   FulfillmentStatus,
   NotificationType,
   PaymentMethodType,
+  PaymentReviewStatus,
+  PaymentSource,
   PaymentStatus,
   PrismaClient,
   ProductStatus,
@@ -489,6 +491,10 @@ export async function ensureOrderPayment(
     method?: PaymentMethodType | null;
     note?: string | null;
     imageUrl?: string | null;
+    // Default to the schema/`ensureOrderPayment` historical behaviour
+    // (SELLER_RECORDED / N_A) when a fixture doesn't say otherwise.
+    source?: PaymentSource | null;
+    reviewStatus?: PaymentReviewStatus | null;
     createdAt?: Date;
   },
 ) {
@@ -500,6 +506,8 @@ export async function ensureOrderPayment(
     method: input.method ?? null,
     note: input.note ?? null,
     imageUrl: input.imageUrl ?? null,
+    source: input.source ?? ('SELLER_RECORDED' as PaymentSource),
+    reviewStatus: input.reviewStatus ?? ('N_A' as PaymentReviewStatus),
   };
   return prisma.orderPayment.upsert({
     where: { id: input.id },

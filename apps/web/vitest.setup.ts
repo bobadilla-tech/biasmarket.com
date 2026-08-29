@@ -1,5 +1,12 @@
 import { afterEach, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
+import { installBrowserEnvStubs, resetViewport } from "./test-utils/viewport";
+
+// jsdom ships no matchMedia / ResizeObserver / IntersectionObserver — Base UI
+// positioners, recharts, useIsMobile(), and prefers-reduced-motion checks all
+// need them. `setViewport()` / `setReducedMotion()` from ./test-utils/viewport
+// drive the matchMedia stub in responsive tests.
+installBrowserEnvStubs();
 
 // jsdom has no PointerEvent constructor — Base UI's Switch (and other
 // primitives using pointer capture) read `ownerWindow(...).PointerEvent`
@@ -31,4 +38,5 @@ if (typeof URL.revokeObjectURL !== "function") {
 
 afterEach(() => {
   cleanup();
+  resetViewport();
 });
