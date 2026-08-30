@@ -208,7 +208,7 @@ export function CouriersSection({ storeId }: { storeId: string }) {
               <div className="pl-11">
                 <Field label={t("delivery.agencyPriceLabel")}>
                   <Input
-                    aria-label={t("delivery.agencyPriceLabel")}
+                    aria-label={`${courier.name || t("delivery.courierNamePlaceholder")} ${t("delivery.agencyPriceLabel")}`}
                     type="number"
                     min={0}
                     value={getModalityPrice(courier, "AGENCY")}
@@ -235,7 +235,7 @@ export function CouriersSection({ storeId }: { storeId: string }) {
               <div className="pl-11">
                 <Field label={t("delivery.homePriceLabel")}>
                   <Input
-                    aria-label={t("delivery.homePriceLabel")}
+                    aria-label={`${courier.name || t("delivery.courierNamePlaceholder")} ${t("delivery.homePriceLabel")}`}
                     type="number"
                     min={0}
                     value={getModalityPrice(courier, "HOME")}

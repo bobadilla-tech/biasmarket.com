@@ -10,7 +10,7 @@ function MobileStoreRow({ store }: { store: LandingStore }) {
   return (
     <Link
       href={`/store/${store.slug}`}
-      className="mx-auto flex h-[92px] w-full max-w-[300px] items-center gap-4 rounded-[10px] border border-[#AAA8A8] bg-white pr-4 pl-3 transition hover:shadow-md"
+      className="mx-auto flex min-h-[92px] h-auto w-full max-w-[300px] items-center gap-4 rounded-[10px] border border-[#AAA8A8] bg-white px-3 py-4 pr-4 transition hover:shadow-md"
     >
       <StoreLogo
         name={store.name}
@@ -19,7 +19,7 @@ function MobileStoreRow({ store }: { store: LandingStore }) {
         className="shrink-0 text-lg font-bold"
         gradient={{ from: "#FC17A0", to: "#8D2FEB" }}
       />
-      <span className="min-w-0 flex-1 truncate text-center text-base text-black">
+      <span className="min-w-0 flex-1 text-center text-base break-words text-black">
         {store.name}
       </span>
     </Link>
@@ -37,7 +37,7 @@ export function StoresSection({ stores }: { stores?: LandingStore[] | null }) {
           {t("title")}
         </h2>
         {list.length === 0 ? (
-          <p className="mt-4 rounded-[10px] border border-dashed border-[#AAA8A8] px-4 py-6 text-center text-xs text-[#7A7A7A]">
+          <p className="mt-4 rounded-[10px] border border-dashed border-[#AAA8A8] px-4 py-6 text-center text-xs text-[#696969]">
             {t("empty")}
           </p>
         ) : (
@@ -57,7 +57,7 @@ export function StoresSection({ stores }: { stores?: LandingStore[] | null }) {
           </h2>
           <Link
             href="/stores"
-            className="flex items-center gap-3 text-[24px] leading-[29px] font-medium text-[#FC17A0] transition-colors hover:text-[#e0128d]"
+            className="flex items-center gap-3 text-[24px] leading-[29px] font-medium text-[#b0006d] transition-colors hover:text-[#8f0059]"
           >
             {t("viewMore")}
             <CircleArrowRight className="size-7" strokeWidth={1.8} />
@@ -65,7 +65,7 @@ export function StoresSection({ stores }: { stores?: LandingStore[] | null }) {
         </div>
 
         {list.length === 0 ? (
-          <p className="mt-6 rounded-[10px] border border-dashed border-[#AAA8A8] px-4 py-10 text-center text-sm text-[#7A7A7A]">
+          <p className="mt-6 rounded-[10px] border border-dashed border-[#AAA8A8] px-4 py-10 text-center text-sm text-[#696969]">
             {t("empty")}
           </p>
         ) : (
@@ -74,7 +74,7 @@ export function StoresSection({ stores }: { stores?: LandingStore[] | null }) {
               <Link
                 key={store.id}
                 href={`/store/${store.slug}`}
-                className="flex h-[129px] items-center gap-6 rounded-[18.8px] border-[1.88px] border-[#AAA8A8] bg-white px-8 transition hover:shadow-md"
+                className="flex min-h-[129px] h-auto items-center gap-6 rounded-[18.8px] border-[1.88px] border-[#AAA8A8] bg-white px-8 py-4 transition hover:shadow-md"
               >
                 <StoreLogo
                   name={store.name}
@@ -83,7 +83,7 @@ export function StoresSection({ stores }: { stores?: LandingStore[] | null }) {
                   className="shrink-0 text-xl font-bold"
                   gradient={{ from: "#FC17A0", to: "#8D2FEB" }}
                 />
-                <span className="truncate text-[30.08px] leading-[36px] text-black">
+                <span className="min-w-0 flex-1 break-words text-[30.08px] leading-[36px] text-black">
                   {store.name}
                 </span>
               </Link>

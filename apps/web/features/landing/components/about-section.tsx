@@ -99,7 +99,7 @@ function MobileAbout({
         </p>
         <Link
           href="/contact"
-          className="flex h-[31px] w-[131px] items-center justify-center rounded-[5px] bg-[#FC17A0] text-[9.8px] leading-3 font-medium text-white transition-colors hover:bg-[#e0128d]"
+          className="flex min-h-[31px] h-auto min-w-[131px] max-w-full items-center justify-center rounded-[5px] bg-[#b0006d] px-3 py-2 text-center text-[9.8px] leading-3 font-medium text-white transition-colors hover:bg-[#8f0059]"
         >
           {helpCta}
         </Link>
@@ -198,7 +198,7 @@ export function AboutSection() {
             <Link
               href="/contact"
               style={{ fontWeight: 600, fontSize: 20, lineHeight: "24px" }}
-              className="flex h-[63px] w-[267px] items-center justify-center rounded-[10.7px] bg-[#FC17A0] text-white transition-colors hover:bg-[#e0128d]"
+              className="flex min-h-[63px] h-auto min-w-[267px] max-w-full items-center justify-center rounded-[10.7px] bg-[#b0006d] px-6 py-4 text-center text-white transition-colors hover:bg-[#8f0059]"
             >
               {t("helpCta")}
             </Link>

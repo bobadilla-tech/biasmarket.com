@@ -33,11 +33,13 @@ export function CollectionForm({ submitting, onSubmit }: CollectionFormProps) {
       className="flex flex-col items-stretch gap-3 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm sm:flex-row sm:items-center"
     >
       <input
+        aria-label={t("namePlaceholder")}
         placeholder={t("namePlaceholder")}
         className="min-h-11 min-w-0 w-full flex-1 rounded-xl border border-gray-200 px-4 py-2.5 text-base text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2 sm:text-sm"
         {...register("name")}
       />
       <input
+        aria-label={t("descriptionPlaceholder")}
         placeholder={t("descriptionPlaceholder")}
         className="min-h-11 min-w-0 w-full flex-1 rounded-xl border border-gray-200 px-4 py-2.5 text-base text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2 sm:text-sm"
         {...register("description")}

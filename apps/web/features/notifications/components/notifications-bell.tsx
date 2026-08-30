@@ -46,7 +46,7 @@ export function NotificationsBell({
           >
             <Bell className="size-5" />
             {count > 0 ? (
-              <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-[#d11d52] text-[10px] font-semibold text-white">
+              <span className="absolute -top-0.5 -right-0.5 flex min-h-4 min-w-4 h-auto items-center justify-center rounded-full bg-[#d11d52] px-1 py-0.5 text-[10px] leading-none font-semibold text-white">
                 {count > 9 ? "9+" : count}
               </span>
             ) : null}

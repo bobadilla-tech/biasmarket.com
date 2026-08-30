@@ -15,7 +15,7 @@ export function Hero() {
           <h1 className="-my-1.5 text-[clamp(20px,8.6vw,34px)] leading-[36px] font-bold tracking-tight whitespace-nowrap text-[#4C0566]">
             {t("title1")}
           </h1>
-          <p className="text-[24px] leading-[32px] font-medium text-[#FC17A0]">
+          <p className="text-[24px] leading-[32px] font-medium text-[#b0006d]">
             {t("title2")}
           </p>
         </div>
@@ -34,7 +34,7 @@ export function Hero() {
         />
         <Link
           href="/search"
-          className="absolute bottom-[24px] left-1/2 flex h-[26px] w-[128px] -translate-x-1/2 items-center justify-center rounded-[10px] bg-[#FC17A0] text-[10px] leading-3 font-semibold text-white transition-colors hover:bg-[#e0128d]"
+          className="absolute bottom-[24px] left-1/2 flex min-h-[26px] h-auto min-w-[128px] max-w-full -translate-x-1/2 items-center justify-center rounded-[10px] bg-[#b0006d] px-3 py-2 text-center text-[10px] leading-3 font-semibold text-white transition-colors hover:bg-[#8f0059]"
         >
           {t("cta")}
         </Link>
@@ -64,7 +64,7 @@ export function Hero() {
               {t("title1")}
             </h1>
             <p
-              className="font-medium text-[#FC17A0]"
+              className="font-medium text-[#b0006d]"
               style={{
                 fontSize: "clamp(24px, 3.6vw, 52px)",
                 lineHeight: "1.05",
@@ -80,7 +80,7 @@ export function Hero() {
             </p>
             <Link
               href="/search"
-              className="flex h-[48px] w-[238px] items-center justify-center rounded-[18.9px] bg-[#FC17A0] font-semibold text-white transition-colors hover:bg-[#e0128d]"
+              className="flex min-h-[48px] h-auto min-w-[238px] max-w-full items-center justify-center rounded-[18.9px] bg-[#b0006d] px-6 py-3 text-center font-semibold text-white transition-colors hover:bg-[#8f0059]"
               style={{ fontSize: 18.6, lineHeight: "22px" }}
             >
               {t("cta")}

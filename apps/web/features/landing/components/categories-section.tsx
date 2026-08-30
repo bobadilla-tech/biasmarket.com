@@ -48,7 +48,7 @@ function MobileCategoryCarousel({
             <Link
               key={key}
               href={`/search?category=${encodeURIComponent(name)}`}
-              className={`flex h-[106px] w-[106px] shrink-0 snap-start flex-col items-center justify-between rounded-[10px] pt-3 pb-1.5 ${
+              className={`flex min-h-[106px] h-auto w-[106px] shrink-0 snap-start flex-col items-center justify-between rounded-[10px] pt-3 pb-1.5 ${
                 index % 2 === 0 ? "bg-[#F5EAFF]" : "bg-[#FFEAF6]"
               }`}
             >
@@ -59,7 +59,7 @@ function MobileCategoryCarousel({
                 height={img.height}
                 className="h-[52px] w-auto object-contain"
               />
-              <span className="text-[13px] leading-4 font-medium text-black">
+              <span className="max-w-full px-2 text-center text-[13px] leading-4 font-medium break-words text-black">
                 {name}
               </span>
             </Link>
@@ -112,7 +112,7 @@ export function CategoriesSection() {
               <Link
                 key={key}
                 href={`/search?category=${encodeURIComponent(name)}`}
-                className="flex h-[185px] flex-1 flex-col items-center justify-between rounded-[10px] px-2 pt-[30px] pb-[16px] transition hover:shadow-md"
+                className="flex min-h-[185px] h-auto flex-1 flex-col items-center justify-between rounded-[10px] px-2 pt-[30px] pb-[16px] transition hover:shadow-md"
                 style={{
                   background: index % 2 === 0 ? "#F5EAFF" : "#FFEAF6",
                 }}
@@ -124,7 +124,7 @@ export function CategoriesSection() {
                   height={height}
                   className="mx-auto h-[96px] w-auto max-w-full object-contain"
                 />
-                <span className="text-center text-[20px] leading-[24px] font-medium text-black">
+                <span className="max-w-full px-2 text-center text-[20px] leading-[24px] font-medium break-words text-black">
                   {name}
                 </span>
               </Link>

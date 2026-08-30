@@ -22,6 +22,17 @@ export async function runAxe(
   });
 
   const gated = results.violations.filter((v) => gate.includes(v.impact ?? ""));
+  console.log(
+    `[axe] ${page.url()} total=${results.violations.length} gated=${gated.length}` +
+      (results.violations.length
+        ? ` details=${results.violations
+            .map(
+              (v) =>
+                `${v.id}:${v.impact}:${v.nodes.map((node) => node.target.join(" ")).join(";")}`,
+            )
+            .join(" | ")}`
+        : ""),
+  );
   expect(
     gated,
     gated.length

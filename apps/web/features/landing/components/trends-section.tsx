@@ -66,7 +66,7 @@ function TrendBand({
         </h2>
         <Link
           href={viewMoreHref}
-          className="flex shrink-0 items-center gap-1.5 text-[13px] leading-4 font-medium text-[#FC17A0]"
+          className="flex shrink-0 items-center gap-1.5 text-[13px] leading-4 font-medium text-[#b0006d]"
         >
           {t("viewMore")}
           <CircleArrowRight className="size-4" strokeWidth={1.8} />
@@ -130,7 +130,7 @@ function TrendBandStripe({
           </h2>
           <Link
             href={viewMoreHref}
-            className="flex items-center gap-3 text-[20px] leading-[24px] font-medium text-[#FC17A0] transition-colors hover:text-[#e0128d]"
+            className="flex items-center gap-3 text-[20px] leading-[24px] font-medium text-[#b0006d] transition-colors hover:text-[#8f0059]"
           >
             {t("viewMore")}
             <CircleArrowRight className="size-7" strokeWidth={1.6} />

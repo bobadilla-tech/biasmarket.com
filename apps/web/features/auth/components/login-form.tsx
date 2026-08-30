@@ -104,7 +104,7 @@ export function LoginForm() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full rounded-xl bg-emerald-500 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-60"
+          className="w-full rounded-xl bg-emerald-700 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:opacity-60"
         >
           {isSubmitting ? t("submitting") : t("submit")}
         </button>
@@ -114,7 +114,7 @@ export function LoginForm() {
         {t("noAccount")}{" "}
         <Link
           href="/onboarding"
-          className="text-emerald-600 font-medium hover:underline"
+          className="font-medium text-emerald-700 hover:underline"
         >
           {t("signUpLink")}
         </Link>
