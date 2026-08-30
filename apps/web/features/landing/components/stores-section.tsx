@@ -37,7 +37,7 @@ export function StoresSection({ stores }: { stores?: LandingStore[] | null }) {
           {t("title")}
         </h2>
         {list.length === 0 ? (
-          <p className="mt-4 rounded-[10px] border border-dashed border-[#AAA8A8] px-4 py-6 text-center text-xs text-[#7A7A7A]">
+          <p className="mt-4 rounded-[10px] border border-dashed border-[#AAA8A8] px-4 py-6 text-center text-xs text-[#696969]">
             {t("empty")}
           </p>
         ) : (
@@ -65,7 +65,7 @@ export function StoresSection({ stores }: { stores?: LandingStore[] | null }) {
         </div>
 
         {list.length === 0 ? (
-          <p className="mt-6 rounded-[10px] border border-dashed border-[#AAA8A8] px-4 py-10 text-center text-sm text-[#7A7A7A]">
+          <p className="mt-6 rounded-[10px] border border-dashed border-[#AAA8A8] px-4 py-10 text-center text-sm text-[#696969]">
             {t("empty")}
           </p>
         ) : (
