@@ -72,7 +72,7 @@ export function ProductGridCard({
           className={cn(
             "font-bold",
             isRow
-              ? "text-[19px] leading-[23px] text-[#FC17A0]"
+              ? "text-[19px] leading-[23px] text-[#b0006d]"
               : "text-landing-title text-xs sm:text-sm",
           )}
         >

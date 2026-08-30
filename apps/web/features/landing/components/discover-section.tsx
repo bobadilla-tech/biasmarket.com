@@ -55,7 +55,7 @@ export function DiscoverSection({
         <div className="mt-5 flex justify-center">
           <Link
             href="/search"
-            className="flex h-[39px] w-[186px] items-center justify-center rounded-[10px] bg-[#FC17A0] text-sm font-medium text-white transition-colors hover:bg-[#e0128d]"
+            className="flex min-h-[39px] h-auto min-w-[186px] max-w-full items-center justify-center rounded-[10px] bg-[#b0006d] px-6 py-3 text-center text-sm font-medium text-white transition-colors hover:bg-[#8f0059]"
           >
             {t("cta")}
           </Link>
@@ -91,7 +91,7 @@ export function DiscoverSection({
         <div className="mt-8 flex justify-center sm:mt-10">
           <Link
             href="/search"
-            className="flex h-[74px] w-[416px] items-center justify-center rounded-[16.6px] bg-[#FC17A0] text-[24px] leading-[29px] font-medium text-white transition-colors hover:bg-[#e0128d]"
+            className="flex min-h-[74px] h-auto min-w-[416px] max-w-full items-center justify-center rounded-[16.6px] bg-[#b0006d] px-8 py-5 text-center text-[24px] leading-[29px] font-medium text-white transition-colors hover:bg-[#8f0059]"
           >
             {t("cta")}
           </Link>

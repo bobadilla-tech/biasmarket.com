@@ -235,7 +235,7 @@ export function ShippingPageClient() {
                 </div>
               </div>
 
-              <SheetFooter className="sticky bottom-0 border-t border-[#f0e7f8] bg-white px-4 py-4 pb-[env(safe-area-inset-bottom)]">
+              <SheetFooter className="sticky bottom-0 border-t border-[#f0e7f8] bg-white px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
                 {NEXT_FULFILLMENT[selectedOrder.fulfillmentStatus] ? (
                   <Button
                     type="button"

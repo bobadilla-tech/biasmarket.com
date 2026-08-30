@@ -47,7 +47,7 @@ export function MobileSidebar({
       <SheetContent
         side="left"
         size="sm"
-        className="h-dvh border-none bg-transparent p-0 pb-[env(safe-area-inset-bottom)]"
+        className="h-dvh border-none bg-transparent p-0 pb-[max(1rem,env(safe-area-inset-bottom))]"
       >
         <SheetHeader className="sr-only">
           <SheetTitle>{t("navigationTitle")}</SheetTitle>

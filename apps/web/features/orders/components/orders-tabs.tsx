@@ -32,7 +32,7 @@ export function OrdersTabs({
           variant="ghost"
           onClick={() => onChange(tab)}
           className={cn(
-            "h-9 rounded-2xl px-4 text-sm font-semibold",
+            "min-h-9 h-auto rounded-2xl px-4 py-2 text-sm font-semibold whitespace-normal",
             activeTab === tab
               ? "store-theme-primary-button border-2 border-[var(--store-primary)]"
               : "text-[#8f7da8] hover:bg-[#fcf9ff] hover:text-[#2d1649]",

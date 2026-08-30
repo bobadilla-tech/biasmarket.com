@@ -961,7 +961,7 @@ export function ProductSheet({
           </div>
         </div>
 
-        <SheetFooter className="sticky bottom-0 z-10 border-t border-[#f0e7f8] bg-white/95 backdrop-blur">
+        <SheetFooter className="sticky bottom-0 z-10 border-t border-[#f0e7f8] bg-white/95 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur">
           <Button
             onClick={submit}
             disabled={submitting || !name || !price}
