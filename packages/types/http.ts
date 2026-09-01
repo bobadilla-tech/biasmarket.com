@@ -1,5 +1,8 @@
 export interface ApiClientConfig {
   baseUrl: string;
+  /** Per-request auth header — called each time so refreshes are picked up. */
+  getAuthHeader?: () => Record<string, string> | undefined;
+  credentials?: RequestCredentials;
 }
 
 let config: ApiClientConfig | undefined;
@@ -60,10 +63,23 @@ export async function customFetch<T>(
       "configureApiClient() must be called before making API requests",
     );
   }
-  const { fallbackErrorMessage, ...init } = options;
+  const { fallbackErrorMessage, headers: callerHeaders, ...init } = options;
+
+  // Caller-supplied headers win over the injected auth header (per-call wins).
+  const authHeader = config.getAuthHeader?.();
+  const mergedHeaders = new Headers(callerHeaders as HeadersInit);
+  if (authHeader) {
+    for (const [key, value] of Object.entries(authHeader)) {
+      if (!mergedHeaders.has(key)) {
+        mergedHeaders.set(key, value);
+      }
+    }
+  }
+
   const res = await fetch(`${config.baseUrl}${url}`, {
     ...init,
-    credentials: "include",
+    headers: mergedHeaders,
+    credentials: config.credentials ?? "include",
   });
 
   const body = [204, 205, 304].includes(res.status) ? null : await res.text();

@@ -8,10 +8,12 @@
   "scripts": {
     "generate": "orval --config orval.config.ts && node scripts/fix-esm-extensions.mjs",
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "devDependencies": {
     "orval": "^8.23.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
   }
 }
