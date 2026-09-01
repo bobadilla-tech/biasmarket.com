@@ -85,10 +85,17 @@ NEXT_PUBLIC_API_URL="http://localhost:3000" \
 echo "--- Seed base fixtures"
 pnpm --filter api run seed:base
 
+# `e2e.env.example` sets WEB_URL to `http://localhost:3001`, but this script
+# serves web on `127.0.0.1` (WEB_URL_LOCAL) and Playwright drives it there — so
+# the browser's `Origin` on a cross-origin auth call is `http://127.0.0.1:3001`.
+# better-auth >=1.7 force-validates that Origin against `trustedOrigins` even on
+# a cookieless first sign-in (its new Fetch-Metadata form-CSRF check), so
+# `trustedOrigins` (derived from WEB_URL) must name the host the browser
+# actually uses, not `localhost`.
 echo "--- Start API on :3000"
 (
   cd "$ROOT"
-  exec env PORT=3000 node apps/api/dist/main.js
+  exec env PORT=3000 WEB_URL="$WEB_URL_LOCAL" node apps/api/dist/main.js
 ) > .ci/web-e2e-api.log 2>&1 &
 API_PID=$!
 wait_for_http "$API_URL/api/health" "API" "$API_PID" .ci/web-e2e-api.log
