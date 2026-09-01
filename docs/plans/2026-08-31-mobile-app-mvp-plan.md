@@ -25,10 +25,9 @@ confirmed, not just documented). That narrows the real work to three things: (1)
 a native UI layer, since zero shared UI exists today (the former `packages/ui`
 stub is now a token-only package, and `apps/web`'s real components are
 DOM/Base-UI bound and cannot run on React Native), (2) an auth transport mobile
-can actually use, since both existing auth
-systems are cookie-only, and (3) replicating the proof-of-payment
-upload/authenticated-image-view pattern, which is the one genuinely
-mobile-specific piece of business logic in this product.
+can actually use, since both existing auth systems are cookie-only, and (3)
+replicating the proof-of-payment upload/authenticated-image-view pattern, which
+is the one genuinely mobile-specific piece of business logic in this product.
 
 ### Framework decision
 
@@ -49,12 +48,12 @@ Expo+RN+gluestack-ui, Next.js PWA, bare React Native (no Expo), Flutter/native.
   throws away all TypeScript/React code-reuse, which is the entire premise of
   adding mobile cheaply to an existing TS team.
 - **Tamagui / gluestack-ui rejected.** These earn their complexity when there's
-  a large, actively-shared component surface between web and native. Here,
-  there is no shared component package and `apps/web`'s actual components are
-  built on Base UI (`apps/web/components.json`: `"style": "base-nova"`), which
-  has no React Native renderer and no path to one. Adopting Tamagui would mean
-  building a second design system from scratch anyway — while also taking on a
-  new compiler and styling API as team surface area — paying maximum-sharing
+  a large, actively-shared component surface between web and native. Here, there
+  is no shared component package and `apps/web`'s actual components are built on
+  Base UI (`apps/web/components.json`: `"style": "base-nova"`), which has no
+  React Native renderer and no path to one. Adopting Tamagui would mean building
+  a second design system from scratch anyway — while also taking on a new
+  compiler and styling API as team surface area — paying maximum-sharing
   complexity for a sharing benefit that doesn't exist in this repo. NativeWind
   gets the one real win (Tailwind class familiarity carrying over from
   `apps/web`) without the framework lock-in.

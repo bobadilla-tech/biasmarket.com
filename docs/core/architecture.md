@@ -308,13 +308,12 @@ structure:
 - **Theme resolver layer**: `packages/design-tokens` validates the portable
   palette portion of the raw JSON and fills defaults;
   `apps/web/lib/store-theme.ts` adapts the result to CSS custom properties
-  (`--store-primary`, ...).
-  Never let raw untrusted JSON hit
+  (`--store-primary`, ...). Never let raw untrusted JSON hit
   `style={{ background: theme.colors.primary }}` without validation — it's a
   JSON blob coming from a DB row a seller can edit via the dashboard.
 - Component overrides (v1+): let a store optionally override specific web
-  components (`ProductCard`, `Header`) by referencing a named variant shipped
-  in `apps/web`, not by injecting arbitrary code. Native variants should be
+  components (`ProductCard`, `Header`) by referencing a named variant shipped in
+  `apps/web`, not by injecting arbitrary code. Native variants should be
   implemented separately against the same tokens.
 - Theme marketplace (v1+): themes become named token presets stored server-side;
   "installing" a theme = copying a preset's JSON into `Store.themeConfig`, no

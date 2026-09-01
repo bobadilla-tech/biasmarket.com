@@ -189,13 +189,13 @@ as a confirmed sale at each step.
      - Soft hold released, stock returns to the available pool, `AuditLog`
        written; rejection is terminal (no re-open/resubmit path in the MVP)
 5. **Expiration sweep** —
-   `apps/workers/src/jobs/orders/expire-orders-scheduler.service.ts` registers
-   a repeatable BullMQ job. Its processor calls the API's
+   `apps/workers/src/jobs/orders/expire-orders-scheduler.service.ts` registers a
+   repeatable BullMQ job. Its processor calls the API's
    `POST /internal/orders/expire-sweep` endpoint, protected by the shared
    internal-jobs secret and network isolation. The API expires any reserved-hold
    status (`PENDING_PAYMENT`, `PARTIALLY_PAID`, or `PAYMENT_SUBMITTED`) past
-   `expiresAt`, sets it to `CANCELLED`, and releases the soft hold with no seller
-   action required.
+   `expiresAt`, sets it to `CANCELLED`, and releases the soft hold with no
+   seller action required.
 
 ### 9.3 State summary
 
@@ -216,8 +216,8 @@ The buyer follows the order from `PENDING_PAYMENT` to `COMPLETED` on
 ### 9.4 Future Upgrade Path
 
 - **Automated proof hardening** — virus scanning, image re-encoding/EXIF
-  stripping, and automated payment-provider verification remain future work.
-  The live buyer-proof flow deliberately reuses `OrderPayment` rather than a
+  stripping, and automated payment-provider verification remain future work. The
+  live buyer-proof flow deliberately reuses `OrderPayment` rather than a
   separate `PaymentProof` model.
 - Stripe / MercadoPago integration for automatic verification (removes the
   manual review step for stores that opt in)

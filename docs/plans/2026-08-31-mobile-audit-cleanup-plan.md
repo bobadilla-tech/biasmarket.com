@@ -219,12 +219,11 @@ implementation.
 
 All seven cleanup items landed in this pass:
 
-1. Replaced the unused `@biasmarket/ui` stub with
-   `@biasmarket/design-tokens`. The package owns framework-neutral palette
-   values, validation, color derivation, and theme resolution; the web app
-   retains the DOM/CSS-variable adapter. CI, Docker build manifests, the dev
-   compose volume, dependency metadata, and architecture docs now use the new
-   package name.
+1. Replaced the unused `@biasmarket/ui` stub with `@biasmarket/design-tokens`.
+   The package owns framework-neutral palette values, validation, color
+   derivation, and theme resolution; the web app retains the DOM/CSS-variable
+   adapter. CI, Docker build manifests, the dev compose volume, dependency
+   metadata, and architecture docs now use the new package name.
 2. Updated CLAUDE.md to list every current API module and document the
    buyer-facing global-account controller. The audit's original counts were
    themselves stale: the repository has 21 module directories, not 23, and the
@@ -246,10 +245,10 @@ All seven cleanup items landed in this pass:
 6. Removed the unused API dependency on `@biasmarket/i18n` and documented the
    package as web-only today.
 7. Extracted the listing page's product structured-data builder, used it on the
-   detail page, escaped embedded JSON-LD using Next.js's documented pattern,
-   and corrected listing offers to link to their product detail URL. Product
-   detail fetching now also fails closed when the API URL is unavailable or the
-   request errors.
+   detail page, escaped embedded JSON-LD using Next.js's documented pattern, and
+   corrected listing offers to link to their product detail URL. Product detail
+   fetching now also fails closed when the API URL is unavailable or the request
+   errors.
 
 Two adjacent correctness improvements came out of verification:
 
@@ -258,8 +257,8 @@ Two adjacent correctness improvements came out of verification:
   accent/surface/text colors instead of accidentally overwriting them with the
   default preset.
 - Swagger metadata and OpenAPI generation now write their canonical formatted
-  artifacts directly, avoiding noisy generated-file rewrites during typecheck
-  or direct generation. Regeneration captured the previously missing courier
+  artifacts directly, avoiding noisy generated-file rewrites during typecheck or
+  direct generation. Regeneration captured the previously missing courier
   response fields in `metadata.ts`.
 
 ### Should Next.js components move to `packages/ui`?
