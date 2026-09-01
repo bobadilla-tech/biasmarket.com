@@ -15,6 +15,10 @@ Turborepo monorepo: `apps/api` (NestJS), `apps/web` (Next.js), `packages/*`
   package). No CommonJS, no `require`. Relative imports in `apps/api` use
   explicit `.js` extensions (NodeNext resolution) even though the source is
   `.ts` — follow this pattern for new files there.
+- **Never run `pnpm fix`, `pnpm lint`, `prettier`, or any formatter on the whole
+  repo/app.** That rewrites every changed file vs `origin/main` and pollutes PRs
+  with collateral diffs. Only touch/reformat files you actually edit, by hand,
+  and verify with scoped typecheck/test only.
 - **web never imports `packages/db` or talks to Postgres directly.** All data
   access from the frontend goes through `api` over HTTP. This is the #1 rule
   keeping multi-tenant isolation enforceable in one place. Don't import

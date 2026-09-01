@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { buildRegisterPaymentSchema } from "./register-payment.schema";
+import { buildRegisterPaymentSchema } from "./register-payment.schema.js";
 
 test("accepts a valid payment within the pending amount", () => {
   const schema = buildRegisterPaymentSchema(60);
@@ -69,4 +69,15 @@ test("rejects a non-image file type", () => {
     file: pdfFile,
   });
   expect(result.success).toBe(false);
+});
+
+test("accepts a structural asset shape (React Native image-picker file)", () => {
+  const schema = buildRegisterPaymentSchema(60);
+  const result = schema.safeParse({
+    amount: "10",
+    method: "YAPE",
+    note: "",
+    file: { name: "proof.png", type: "image/png", size: 2048 },
+  });
+  expect(result.success).toBe(true);
 });

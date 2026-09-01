@@ -17,6 +17,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@biasmarket/utils": "workspace:*",
     "zod": "^4.4.3"
   },
   "devDependencies": {

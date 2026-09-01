@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { buildCheckoutFormSchema } from "./checkout.schema";
+import { buildCheckoutFormSchema } from "./checkout.schema.js";
 
 const validValues = {
   customerName: "",
@@ -226,6 +226,15 @@ test("accepts a file with an allowed extension even when its MIME type is blank"
   const result = schema.safeParse({
     ...manualMethodValues,
     paymentProof: new File(["x"], "proof.pdf"),
+  });
+  expect(result.success).toBe(true);
+});
+
+test("accepts structural proof shapes (React Native image-picker asset)", () => {
+  const schema = buildCheckoutFormSchema(true, true);
+  const result = schema.safeParse({
+    ...manualMethodValues,
+    paymentProof: { name: "proof.png", type: "image/png", size: 2048 },
   });
   expect(result.success).toBe(true);
 });

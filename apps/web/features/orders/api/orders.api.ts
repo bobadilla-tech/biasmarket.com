@@ -1,5 +1,5 @@
 import { apiClient } from "@/lib/api-client";
-import type { RegisterPaymentInput } from "../schemas/register-payment.schema";
+import type { RegisterPaymentInput } from "@biasmarket/validation";
 
 function apiUrl() {
   return process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
@@ -51,7 +51,7 @@ export const ordersApi = {
     formData.append("amount", values.amount);
     formData.append("method", values.method);
     if (values.note) formData.append("note", values.note);
-    if (values.file) formData.append("file", values.file);
+    if (values.file) formData.append("file", values.file as File);
 
     const res = await fetch(
       `${apiUrl()}/api/stores/${storeId}/orders/${orderId}/payments`,

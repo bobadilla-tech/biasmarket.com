@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import {
   buildRegisterPaymentSchema,
   type RegisterPaymentInput,
-} from "../schemas/register-payment.schema";
+} from "@biasmarket/validation";
 import { paymentMethodLabels } from "../lib/payment-method-labels";
 
 export function RegisterPaymentForm({
@@ -47,7 +47,7 @@ export function RegisterPaymentForm({
       setPreviewUrl(null);
       return;
     }
-    const url = URL.createObjectURL(file);
+    const url = URL.createObjectURL(file as File);
     setPreviewUrl(url);
     return () => URL.revokeObjectURL(url);
   }, [file]);
@@ -143,7 +143,7 @@ export function RegisterPaymentForm({
                 </p>
                 <p className="text-xs text-[#8f7da8]">
                   {t("details.imageSize", {
-                    size: (file.size / 1024).toFixed(1),
+                    size: ((file.size ?? 0) / 1024).toFixed(1),
                   })}
                 </p>
               </>

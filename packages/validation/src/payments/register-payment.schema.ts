@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MAX_FILE_SIZE, type ProofFileShape } from "../checkout/file-proof.js";
 
 export const PAYMENT_METHOD_TYPES = [
   "YAPE",
@@ -7,7 +8,6 @@ export const PAYMENT_METHOD_TYPES = [
   "CASH",
 ] as const;
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png"];
 
 /**
@@ -15,7 +15,10 @@ const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png"];
  * client-side errors surface before the network round-trip: amount finite,
  * >0, <= pendingAmount; method one of YAPE|PLIN|TRANSFER|CASH; file <=5MB,
  * JPEG/PNG. `maxAmount` is the order's current pendingAmount, so the schema
- * is built per-order rather than a static export.
+ * is built per-order rather than a static export. The file is validated
+ * structurally (not `instanceof File`) so the same schema runs under React
+ * Native, where the browser `File` type does not exist — web still passes a
+ * real `File` and mobile an image-picker asset; both overlap `ProofFileShape`.
  */
 export function buildRegisterPaymentSchema(maxAmount: number) {
   return z.object({
@@ -35,11 +38,15 @@ export function buildRegisterPaymentSchema(maxAmount: number) {
       ),
     note: z.string(),
     file: z
-      .instanceof(File)
+      .custom<ProofFileShape>(() => true)
       .nullable()
-      .refine((file) => !file || file.size <= MAX_FILE_SIZE, "file too large")
       .refine(
-        (file) => !file || ACCEPTED_IMAGE_TYPES.includes(file.type),
+        (file) => !file || (file.size ?? 0) <= MAX_FILE_SIZE,
+        "file too large",
+      )
+      .refine(
+        (file) =>
+          !file || (!!file.type && ACCEPTED_IMAGE_TYPES.includes(file.type)),
         "invalid file type",
       ),
   });

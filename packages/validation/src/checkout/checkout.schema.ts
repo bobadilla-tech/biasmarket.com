@@ -1,19 +1,24 @@
 import { z } from "zod";
 import type { CheckoutPaymentMethod } from "@biasmarket/utils/payment-methods";
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
-const ACCEPTED_MIME_TYPES = ["image/jpeg", "image/png", "application/pdf"];
-const ACCEPTED_EXTENSION = /\.(jpe?g|png|pdf)$/i;
-
-function isValidProofFile(file: File): boolean {
-  return (
-    ACCEPTED_MIME_TYPES.includes(file.type) ||
-    ACCEPTED_EXTENSION.test(file.name)
-  );
-}
+import {
+  ACCEPTED_EXTENSION,
+  ACCEPTED_MIME_TYPES,
+  isValidProofFile,
+  MAX_FILE_SIZE,
+  type ProofFileShape,
+} from "./file-proof.js";
 
 const MANUAL_METHODS = ["YAPE", "PLIN", "TRANSFER"];
 
+/**
+ * Mirrors the backend's validation for POST .../stores/:slug/checkout so
+ * client-side errors surface before the network round-trip: per-field
+ * requirements plus the pickup-point/payment-proof/courier refinements.
+ * Payment proof is validated structurally (not `instanceof File`) so the same
+ * schema runs under React Native, where the browser `File` type does not
+ * exist — web still passes a real `File` and mobile an image-picker asset;
+ * both overlap `ProofFileShape`.
+ */
 export function buildCheckoutFormSchema(
   pickupPointsAvailable: boolean,
   paymentMethodsAvailable: boolean,
@@ -51,10 +56,10 @@ export function buildCheckoutFormSchema(
         // AGENCY modality
         shippingAgencyName: z.string(),
         paymentProof: z
-          .custom<File | null>(() => true)
+          .custom<ProofFileShape>(() => true)
           .nullable()
           .refine(
-            (file) => !file || file.size <= MAX_FILE_SIZE,
+            (file) => !file || (file.size ?? 0) <= MAX_FILE_SIZE,
             "file too large",
           )
           .refine(

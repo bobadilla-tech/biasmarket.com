@@ -44,4 +44,4 @@ export {
   buildRegisterPaymentSchema,
   PAYMENT_METHOD_TYPES,
   type RegisterPaymentInput,
-} from "./schemas/register-payment.schema";
+} from "@biasmarket/validation";
