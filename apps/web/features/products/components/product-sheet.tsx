@@ -9,6 +9,7 @@ import { useTranslations } from "next-intl";
 import { SUPPORTED_CURRENCIES } from "@biasmarket/utils/currency";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
@@ -384,7 +385,7 @@ export function ProductSheet({
                 : []
             }
           />
-          <div className="space-y-2">
+          <Field.Root className="space-y-2">
             <Label
               htmlFor="product-name"
               className="text-sm font-semibold text-foreground"
@@ -407,9 +408,9 @@ export function ProductSheet({
                 {errors.name.message}
               </p>
             )}
-          </div>
+          </Field.Root>
 
-          <div className="space-y-2">
+          <Field.Root className="space-y-2">
             <Label
               htmlFor="product-description"
               className="text-sm font-semibold text-foreground"
@@ -422,10 +423,10 @@ export function ProductSheet({
               rows={3}
               className="store-theme-input rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] shadow-none"
             />
-          </div>
+          </Field.Root>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-2">
+            <Field.Root className="space-y-2">
               <Label
                 htmlFor="product-price"
                 className="text-sm font-semibold text-foreground"
@@ -458,8 +459,8 @@ export function ProductSheet({
                   {t("products.form.priceBaseHelp")}
                 </p>
               )}
-            </div>
-            <div className="space-y-2">
+            </Field.Root>
+            <Field.Root className="space-y-2">
               <Label
                 htmlFor="product-currency"
                 className="text-sm font-semibold text-foreground"
@@ -478,10 +479,10 @@ export function ProductSheet({
                   </option>
                 ))}
               </Select>
-            </div>
+            </Field.Root>
           </div>
 
-          <div className="space-y-2">
+          <Field.Root className="space-y-2">
             <Label
               htmlFor="product-availability"
               className="text-sm font-semibold text-foreground"
@@ -509,9 +510,9 @@ export function ProductSheet({
                 ? t("products.form.availabilityHelpDiscontinued")
                 : t("products.form.availabilityHelp")}
             </p>
-          </div>
+          </Field.Root>
 
-          <div className="space-y-2">
+          <Field.Root className="space-y-2">
             <Label
               htmlFor="product-stock"
               className="text-sm font-semibold text-foreground"
@@ -549,7 +550,7 @@ export function ProductSheet({
                 </p>
               </>
             )}
-          </div>
+          </Field.Root>
 
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-3">
