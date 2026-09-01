@@ -4507,6 +4507,9 @@
           "isPublic": {
             "type": "boolean"
           },
+          "isDemo": {
+            "type": "boolean"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -4531,6 +4534,7 @@
           "lowStockThreshold",
           "lowStockAlertsEnabled",
           "isPublic",
+          "isDemo",
           "createdAt"
         ]
       },
@@ -4614,6 +4618,9 @@
           "isPublic": {
             "type": "boolean"
           },
+          "isDemo": {
+            "type": "boolean"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -4641,6 +4648,7 @@
           "lowStockThreshold",
           "lowStockAlertsEnabled",
           "isPublic",
+          "isDemo",
           "createdAt",
           "owner"
         ]
@@ -5122,6 +5130,9 @@
           "isPublic": {
             "type": "boolean"
           },
+          "isDemo": {
+            "type": "boolean"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -5152,6 +5163,7 @@
           "lowStockThreshold",
           "lowStockAlertsEnabled",
           "isPublic",
+          "isDemo",
           "createdAt",
           "sections"
         ]

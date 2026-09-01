@@ -60,6 +60,12 @@ export class StoreResponseDto {
   @ApiProperty()
   isPublic: boolean;
 
+  // Platform-owned marker (distinct from the seller-owned `isPublic` toggle) —
+  // demo/test stores are hidden from every public listing but stay reachable
+  // by slug. Read-only here; sellers can't set it (see #167).
+  @ApiProperty()
+  isDemo: boolean;
+
   @ApiProperty({ type: String, format: 'date-time' })
   createdAt: string;
 }

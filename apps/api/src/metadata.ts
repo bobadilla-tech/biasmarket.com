@@ -191,6 +191,7 @@ export default async () => {
               lowStockThreshold: { required: true, type: () => Number },
               lowStockAlertsEnabled: { required: true, type: () => Boolean },
               isPublic: { required: true, type: () => Boolean },
+              isDemo: { required: true, type: () => Boolean },
               createdAt: { required: true, type: () => String },
             },
             StoreOwnerResponseDto: {

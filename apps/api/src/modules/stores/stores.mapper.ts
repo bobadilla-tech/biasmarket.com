@@ -22,6 +22,7 @@ export interface StoreRow {
   lowStockThreshold: number;
   lowStockAlertsEnabled: boolean;
   isPublic: boolean;
+  isDemo: boolean;
   createdAt: Date;
 }
 

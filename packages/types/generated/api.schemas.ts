@@ -44,6 +44,7 @@ export interface StoreResponseDto {
   lowStockThreshold: number;
   lowStockAlertsEnabled: boolean;
   isPublic: boolean;
+  isDemo: boolean;
   createdAt: string;
 }
 
@@ -81,6 +82,7 @@ export interface StoreWithOwnerResponseDto {
   lowStockThreshold: number;
   lowStockAlertsEnabled: boolean;
   isPublic: boolean;
+  isDemo: boolean;
   createdAt: string;
   owner: StoreOwnerResponseDto;
 }
@@ -276,6 +278,7 @@ export interface StorePublicDetailResponseDto {
   lowStockThreshold: number;
   lowStockAlertsEnabled: boolean;
   isPublic: boolean;
+  isDemo: boolean;
   createdAt: string;
   sections: StoreSectionWithCollectionResponseDto[];
 }
@@ -1246,6 +1249,18 @@ export const CheckoutOrderResponseDtoDeliveryMethodType = {
 /**
  * @nullable
  */
+export type CheckoutOrderResponseDtoCourierModality =
+  | (typeof CheckoutOrderResponseDtoCourierModality)[keyof typeof CheckoutOrderResponseDtoCourierModality]
+  | null;
+
+export const CheckoutOrderResponseDtoCourierModality = {
+  AGENCY: "AGENCY",
+  HOME: "HOME",
+} as const;
+
+/**
+ * @nullable
+ */
 export type CheckoutOrderResponseDtoPaymentMethod =
   | (typeof CheckoutOrderResponseDtoPaymentMethod)[keyof typeof CheckoutOrderResponseDtoPaymentMethod]
   | null;
@@ -1352,6 +1367,10 @@ export interface CheckoutOrderResponseDto {
   pickupPointId: string | null;
   /** @nullable */
   pickupDate: string | null;
+  /** @nullable */
+  courierName: string | null;
+  /** @nullable */
+  courierModality: CheckoutOrderResponseDtoCourierModality;
   /** @nullable */
   paymentMethod: CheckoutOrderResponseDtoPaymentMethod;
   paymentStatus: CheckoutOrderResponseDtoPaymentStatus;
