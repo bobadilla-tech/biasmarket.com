@@ -44,11 +44,11 @@ COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY apps/api/package.json ./apps/api/package.json
 COPY apps/web/package.json ./apps/web/package.json
 COPY apps/workers/package.json ./apps/workers/package.json
+COPY packages/design-tokens/package.json ./packages/design-tokens/package.json
 COPY packages/db/package.json ./packages/db/package.json
 COPY packages/i18n/package.json ./packages/i18n/package.json
 COPY packages/queue/package.json ./packages/queue/package.json
 COPY packages/types/package.json ./packages/types/package.json
-COPY packages/ui/package.json ./packages/ui/package.json
 COPY packages/utils/package.json ./packages/utils/package.json
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm-store \
     pnpm install --frozen-lockfile --store-dir=/pnpm-store

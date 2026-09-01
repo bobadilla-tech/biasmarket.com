@@ -43,9 +43,6 @@ importers:
       '@biasmarket/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@biasmarket/i18n':
-        specifier: workspace:*
-        version: link:../../packages/i18n
       '@biasmarket/queue':
         specifier: workspace:*
         version: link:../../packages/queue
@@ -207,15 +204,15 @@ importers:
       '@base-ui/react':
         specifier: ^1.6.0
         version: 1.6.0(@date-fns/tz@1.5.0)(@types/react@19.2.17)(date-fns@4.4.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@biasmarket/design-tokens':
+        specifier: workspace:*
+        version: link:../../packages/design-tokens
       '@biasmarket/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
       '@biasmarket/types':
         specifier: workspace:*
         version: link:../../packages/types
-      '@biasmarket/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
       '@biasmarket/utils':
         specifier: workspace:*
         version: link:../../packages/utils
@@ -475,6 +472,12 @@ importers:
         specifier: ^7.0.2
         version: 7.0.2
 
+  packages/design-tokens:
+    devDependencies:
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+
   packages/i18n:
     devDependencies:
       typescript:
@@ -508,19 +511,6 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
-
-  packages/ui:
-    dependencies:
-      react:
-        specifier: ^19
-        version: 19.2.4
-    devDependencies:
-      '@types/react':
-        specifier: ^19
-        version: 19.2.17
-      typescript:
-        specifier: ^7.0.2
-        version: 7.0.2
 
   packages/utils:
     devDependencies:

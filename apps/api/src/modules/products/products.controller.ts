@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -30,6 +29,20 @@ import type {
   ProductWithVariantsResponseDto,
   VariantResponseDto,
 } from './dto/product-response.dto.js';
+import {
+  IMAGE_UPLOAD_MIME_TYPES,
+  UploadedFileValidationPipe,
+  type ValidatedUploadedFile,
+} from '../../common/uploaded-file-validation.pipe.js';
+
+const PRODUCT_IMAGE_PIPE = new UploadedFileValidationPipe({
+  allowedMimeTypes: IMAGE_UPLOAD_MIME_TYPES,
+  messages: {
+    missingFile: 'Missing File',
+    fileTooLarge: 'Max 5MB',
+    unsupportedType: 'Just JPEG or PNG',
+  },
+});
 
 // Structural, not `Prisma.Product`/`Prisma.ProductVariant` — importing the
 // Prisma-generated types here would reproduce the metadata-generator bug the
@@ -288,21 +301,12 @@ export class ProductsController {
     @Param('storeId') storeId: string,
     @Param('productId') productId: string,
     @Session() session: UserSession,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile(PRODUCT_IMAGE_PIPE) file: ValidatedUploadedFile,
     @Query('replace') replace?: string,
   ): Promise<ProductResponseDto> {
-    if (!file) throw new BadRequestException('Missing File');
-    if (file.size > 5 * 1024 * 1024) throw new BadRequestException('Max 5MB');
-
-    const isJpeg = file.buffer[0] === 0xff && file.buffer[1] === 0xd8;
-    const isPng = file.buffer
-      .subarray(0, 8)
-      .equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
-    if (!isJpeg && !isPng) throw new BadRequestException('Just JPEG or PNG');
-
     const url = await this.storage.uploadImage(
       file.buffer,
-      isPng ? 'image/png' : 'image/jpeg',
+      file.detectedMimeType,
     );
     try {
       const product = await this.products.addImage(
@@ -387,20 +391,11 @@ export class ProductsController {
     @Param('productId') productId: string,
     @Param('variantId') variantId: string,
     @Session() session: UserSession,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile(PRODUCT_IMAGE_PIPE) file: ValidatedUploadedFile,
   ): Promise<VariantResponseDto> {
-    if (!file) throw new BadRequestException('Missing File');
-    if (file.size > 5 * 1024 * 1024) throw new BadRequestException('Max 5MB');
-
-    const isJpeg = file.buffer[0] === 0xff && file.buffer[1] === 0xd8;
-    const isPng = file.buffer
-      .subarray(0, 8)
-      .equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
-    if (!isJpeg && !isPng) throw new BadRequestException('Just JPEG or PNG');
-
     const url = await this.storage.uploadImage(
       file.buffer,
-      isPng ? 'image/png' : 'image/jpeg',
+      file.detectedMimeType,
     );
     const variant = await this.products.addVariantImage(
       variantId,

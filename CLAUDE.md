@@ -5,7 +5,7 @@ first). Manual payment-first (bank transfer, Wise, PayPal) with built-in
 proof-of-payment review, no Stripe required.
 
 Turborepo monorepo: `apps/api` (NestJS), `apps/web` (Next.js), `packages/*`
-(shared db/types/ui/i18n/utils). pnpm workspaces.
+(shared db/types/design-tokens/i18n/queue/utils). pnpm workspaces.
 
 ## Hard rules
 
@@ -92,10 +92,10 @@ Production is deployed only by the blue/green CI/CD flow described in
 `docs/core/deploy.md`; use `infra/vps/deploy.sh` for a supervised manual
 deployment or recovery.
 
-CI (`.github/workflows/ci.yml`) path-filters per package and runs
-lint/typecheck/build/test independently for `api`, `web`, `db`, `i18n`, `types`,
-`ui`, `utils` — only changed packages (and their dependents per the filter
-rules) run.
+CI (`.github/workflows/ci.yml`) path-filters per package and runs the applicable
+lint/typecheck/build/test tasks independently for `api`, `web`, `workers`, `db`,
+`design-tokens`, `i18n`, `queue`, `types`, and `utils` — only changed packages
+(and their dependents per the filter rules) run.
 
 ## Architecture
 
@@ -108,8 +108,10 @@ apps/
 packages/
   db/     Prisma schema + generated client (packages/db/generated/prisma)
   types/  Shared DTOs/interfaces between api and web
-  ui/     Shared React components (theme-aware, no business logic, no fetching)
-  i18n/   ES/EN translation dictionaries, shared by api + web
+  design-tokens/ Portable store palette values/resolution used by web and ready
+                 for mobile
+  i18n/   ES/EN translation dictionaries used by web
+  queue/  Shared BullMQ queue names and payload contracts used by api + workers
   utils/  Shared pure functions
 ```
 
@@ -120,9 +122,13 @@ packages/
 ### API structure (apps/api/src)
 
 Flat NestJS `controller/service/dto` per module for most of
-`apps/api/src/modules/*` (`stores`, `products`, `categories`, `collections`,
-`store-sections`, `payment-config`, `delivery-config`, `pickup-points`,
-`notifications`, `contact`, `customer-auth`, `stats`, `users`, `health`).
+`apps/api/src/modules/*` (`addresses`, `categories`, `collections`, `contact`,
+`coupons`, `couriers`, `customer-auth`, `delivery-config`, `health`,
+`monitoring`, `notifications`, `orders`, `payment-config`, `pickup-points`,
+`products`, `restock`, `stats`, `store-sections`, `stores`, `users`, and
+`whatsapp-templates`). The buyer-facing `global-account.controller.ts` lives
+inside `customer-auth`: it handles global buyer identity, while the neighboring
+customer-auth controller handles per-store buyer sessions.
 `orders` is the one module using the DDD-lite layering
 (`domain/application/infrastructure`) described in `docs/core/architecture.md` —
 it owns the payment/fulfillment state machine, which warranted the extra
@@ -163,7 +169,7 @@ features.
 
 Core models: `User`, `Store`, `Product`, `ProductVariant`, `Category`,
 `Collection`, `StoreSection`, `Order`, `OrderItem`, `OrderPayment`,
-`PaymentProof`, `PaymentMethodConfig`, `DeliveryMethodConfig`, `PickupPoint`,
+`PaymentMethodConfig`, `DeliveryMethodConfig`, `PickupPoint`,
 `Customer`, `ContactInquiry`, `Notification`, `AuditLog`, plus better-auth's
 `Session`/`Account`/`Verification`. Money fields are `Decimal`, never `Float`.
 
@@ -175,10 +181,11 @@ VERIFIED/REJECTED`, plus
 (`ORDERING → IN_TRANSIT → READY → COMPLETED`) are tracked separately, an order
 carries a soft-hold `expiresAt` that `expire-orders.usecase.ts` sweeps,
 `OrderPayment` rows record each partial payment toward `requiredAmount`, and
-`PaymentProof` holds the buyer-submitted proof image plus its own `ProofStatus`
-review state. See `apps/api/src/modules/orders/domain/order-status.vo.ts` and
-`order.entity.ts` for the transition rules, and `orders-cron.service.ts` for the
-expiration sweep's scheduling.
+buyer-submitted proof images are also `OrderPayment` rows with
+`source: BUYER_SUBMITTED` and `reviewStatus: PENDING_REVIEW`. See
+`apps/api/src/modules/orders/domain/order-status.vo.ts` and `order.entity.ts`
+for the transition rules. The workers app schedules the BullMQ expiry job and
+calls the API's authenticated internal expiry-sweep endpoint.
 
 ### Multi-tenancy
 

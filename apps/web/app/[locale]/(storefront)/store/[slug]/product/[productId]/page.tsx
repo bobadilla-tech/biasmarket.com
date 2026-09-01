@@ -3,6 +3,7 @@ import type { Locale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { canonicalUrl } from "@/lib/site-config";
+import { buildProductJsonLd, serializeJsonLd } from "@/lib/product-json-ld";
 import { ProductDetailView } from "./product-detail-view";
 
 async function getPublicProduct(slug: string, productId: string) {
@@ -12,16 +13,22 @@ async function getPublicProduct(slug: string, productId: string) {
     (process.env.NODE_ENV === "development"
       ? "http://localhost:3000"
       : undefined);
-  const res = await fetch(
-    `${apiUrl}/api/stores/${slug}/products/${productId}/public`,
-    {
-      cache: "no-store",
-    },
-  );
+  if (!apiUrl) return null;
 
-  if (!res.ok) return null;
+  try {
+    const res = await fetch(
+      `${apiUrl}/api/stores/${slug}/products/${productId}/public`,
+      {
+        cache: "no-store",
+      },
+    );
 
-  return res.json();
+    if (!res.ok) return null;
+
+    return res.json();
+  } catch {
+    return null;
+  }
 }
 
 export async function generateMetadata({
@@ -64,9 +71,22 @@ export default async function ProductDetailPage({
   }
 
   const { product } = data;
+  const productUrl = canonicalUrl(
+    locale,
+    `/store/${slug}/product/${productId}`,
+  );
 
   return (
     <div className="min-h-dvh bg-gray-50">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: serializeJsonLd({
+            "@context": "https://schema.org",
+            ...buildProductJsonLd(product, productUrl),
+          }),
+        }}
+      />
       <main
         id="main-content"
         tabIndex={-1}

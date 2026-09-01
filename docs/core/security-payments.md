@@ -50,14 +50,15 @@ check.
 
 ### 7.3 File Upload Validation
 
-For payment images (seller-recorded via `OrderPayment`, see §9.2 — there is no
-buyer upload in the MVP):
+For payment images (seller-recorded or buyer-submitted via `OrderPayment`, see
+§9.2):
 
 - Max size (5MB)
 - Allowed types:
 
   - image/jpeg
   - image/png
+  - application/pdf (checkout-time buyer proofs only)
 
 - Virus scan (optional future)
 - The image is attached to an `OrderPayment` row that carries `orderId` +
@@ -152,13 +153,14 @@ as a confirmed sale at each step.
      [§5.5](product.md#55-delivery-methods-seller-panel))
    - `expiresAt` is set from `Store.holdWindowHours` (default 48h,
      store-configurable)
-2. **Checkout hands the buyer off to WhatsApp** — `create-order.usecase.ts`
-   builds a pre-filled `wa.me` link from `Store.whatsappNumber` (order id,
-   items, total, delivery + payment method) and the storefront redirects there
-   (`checkout-form.tsx`); if the store has no WhatsApp number configured the
-   link is null and the buyer just gets the payment instructions. Payment
-   happens wherever buyer and seller coordinate — outside the app, with no
-   buyer-side evidence collected here
+2. **Checkout collects proof when the payment method is configured, then offers
+   a WhatsApp handoff** — Yape/Plin/transfer checkouts with complete account
+   details require an in-app JPEG/PNG/PDF proof, stored as a
+   `BUYER_SUBMITTED`/`PENDING_REVIEW` `OrderPayment`. CASH, no selected method,
+   or an incompletely configured method skips the upload. In either case,
+   `create-order.usecase.ts` may build a pre-filled `wa.me` link from
+   `Store.whatsappNumber`; if no number is configured the link is null and the
+   buyer sees the payment instructions/result in-app.
 3. **Seller records what came in** —
    `POST /stores/:storeId/orders/:orderId/payments` (`order.controller.ts`
    `addPayment`, AuthGuard + `assertOwnership`): the seller enters amount,
@@ -186,10 +188,14 @@ as a confirmed sale at each step.
    - **Reject** → `REJECTED`
      - Soft hold released, stock returns to the available pool, `AuditLog`
        written; rejection is terminal (no re-open/resubmit path in the MVP)
-5. **Expiration sweep** — `orders-cron.service.ts` (`@Cron("*/5 * * * *")`)
-   checks for orders still in `PENDING_PAYMENT` past their `expiresAt`
-   - Status set to `CANCELLED`, soft hold released automatically, no seller
-     action required
+5. **Expiration sweep** —
+   `apps/workers/src/jobs/orders/expire-orders-scheduler.service.ts` registers
+   a repeatable BullMQ job. Its processor calls the API's
+   `POST /internal/orders/expire-sweep` endpoint, protected by the shared
+   internal-jobs secret and network isolation. The API expires any reserved-hold
+   status (`PENDING_PAYMENT`, `PARTIALLY_PAID`, or `PAYMENT_SUBMITTED`) past
+   `expiresAt`, sets it to `CANCELLED`, and releases the soft hold with no seller
+   action required.
 
 ### 9.3 State summary
 
@@ -209,14 +215,10 @@ The buyer follows the order from `PENDING_PAYMENT` to `COMPLETED` on
 
 ### 9.4 Future Upgrade Path
 
-- **In-app buyer proof upload (not built, deliberately)** — wiring this for real
-  (a buyer-facing upload endpoint + `PENDING_REVIEW`/`APPROVED`/`REJECTED`
-  review) is a possible future addition, only worth building if real sellers
-  report the WhatsApp handoff as actual friction (audit §3, §16 #7). The
-  `PaymentProof` model was deleted rather than left half-wired, so building it
-  would mean a new schema model + migration, a buyer upload API, and a review
-  surface. (The `docs/business/buyer-flow.md`/`seller-flow.md` diagrams document
-  the current WhatsApp handoff + seller-recorded flow.)
+- **Automated proof hardening** — virus scanning, image re-encoding/EXIF
+  stripping, and automated payment-provider verification remain future work.
+  The live buyer-proof flow deliberately reuses `OrderPayment` rather than a
+  separate `PaymentProof` model.
 - Stripe / MercadoPago integration for automatic verification (removes the
   manual review step for stores that opt in)
 - Hybrid manual + automated, selectable per store, consistent with the

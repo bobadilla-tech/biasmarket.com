@@ -6,7 +6,7 @@
   "packageManager": "pnpm@10.11.0",
   "type": "module",
   "scripts": {
-    "test": "turbo run test",
+    "test": "DATABASE_URL=\"${DATABASE_URL:-postgresql://build:build@localhost:5432/build?schema=public}\" turbo run test",
     "dev": "turbo run dev --parallel",
     "build": "DATABASE_URL=\"${DATABASE_URL:-postgresql://build:build@localhost:5432/build?schema=public}\" turbo run build",
     "lint": "turbo run lint",

@@ -4,6 +4,7 @@ import { Prisma } from '@biasmarket/db';
 import { computePaymentSummary } from '../../../common/payment-summary.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
+import { Order } from '../domain/order.entity.js';
 
 // Mirrors CancelOrderUseCase's RESERVED_HOLD_STATUSES: all statuses that keep
 // stock soft-held (reserved). Orders holding stock past expiresAt must release
@@ -34,6 +35,14 @@ export class ExpireOrdersUseCase {
     let cancelled = 0;
 
     for (const order of expired) {
+      const entity = new Order(
+        order.id,
+        order.storeId,
+        order.paymentStatus,
+        order.fulfillmentStatus,
+      );
+      entity.expire();
+
       // Default policy on auto-expiry: retain whatever the buyer already paid
       // (partial deposit). The seller can refund it out-of-band; the recorded
       // resolution keeps the money traceable, consistent with the manual
@@ -56,7 +65,7 @@ export class ExpireOrdersUseCase {
             },
             data: {
               status: 'CANCELLED',
-              paymentStatus: 'CANCELLED',
+              paymentStatus: entity.currentPaymentStatus,
               cancellationResolution: 'RETAINED',
               retainedAmount: new Prisma.Decimal(paidAmount),
               releasedAmount: new Prisma.Decimal(0),

@@ -36,24 +36,25 @@
 // `import ... from "../dist/app.module.js"` would fail tsc's module
 // resolution in both cases. A computed specifier types as `any` and skips
 // static resolution, so typecheck only ever validates this file's own code.
-import "dotenv/config";
+import 'dotenv/config';
 
-import { Test } from "@nestjs/testing";
-import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
-import { writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { Test } from '@nestjs/testing';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { format } from 'prettier';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const distDir = join(__dirname, "..", "dist");
-const outputPath = join(__dirname, "..", "openapi.json");
+const distDir = join(__dirname, '..', 'dist');
+const outputPath = join(__dirname, '..', 'openapi.json');
 
 async function main() {
-  const { AppModule } = await import(join(distDir, "app.module.js"));
+  const { AppModule } = await import(join(distDir, 'app.module.js'));
   const { PrismaService } = await import(
-    join(distDir, "prisma", "prisma.service.js")
+    join(distDir, 'prisma', 'prisma.service.js')
   );
-  const { default: metadata } = await import(join(distDir, "metadata.js"));
+  const { default: metadata } = await import(join(distDir, 'metadata.js'));
 
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(PrismaService)
@@ -67,13 +68,22 @@ async function main() {
   const document = SwaggerModule.createDocument(
     app,
     new DocumentBuilder()
-      .setTitle("Bias Market API")
-      .setDescription("Bias Market — niche-first store builder API")
-      .setVersion("1.0")
+      .setTitle('Bias Market API')
+      .setDescription('Bias Market — niche-first store builder API')
+      .setVersion('1.0')
       .build(),
   );
 
-  writeFileSync(outputPath, `${JSON.stringify(document, null, 2)}\n`);
+  // Keep direct `pnpm generate:openapi` runs byte-for-byte consistent with
+  // the tracked artifact and the CI drift check. Prettier intentionally skips
+  // this generated file during the repo-wide formatting pass.
+  writeFileSync(
+    outputPath,
+    // Prettier's default objectWrap="preserve" retains whether an object
+    // started on one line. Feed it indented JSON so repeated runs do not
+    // collapse the committed spec into a different-but-valid layout.
+    await format(JSON.stringify(document, null, 2), { parser: 'json' }),
+  );
   await app.close();
   console.log(`Wrote ${outputPath}`);
 }

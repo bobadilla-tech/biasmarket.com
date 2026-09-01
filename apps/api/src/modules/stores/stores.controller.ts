@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -55,6 +54,15 @@ import type {
   StoreSectionWithCollectionResponseDto,
   StoreWithOwnerResponseDto,
 } from './dto/store-response.dto.js';
+import {
+  IMAGE_UPLOAD_MIME_TYPES,
+  UploadedFileValidationPipe,
+  type ValidatedUploadedFile,
+} from '../../common/uploaded-file-validation.pipe.js';
+
+const STORE_LOGO_PIPE = new UploadedFileValidationPipe({
+  allowedMimeTypes: IMAGE_UPLOAD_MIME_TYPES,
+});
 
 interface VariantRow {
   id: string;
@@ -322,22 +330,11 @@ export class StoresController {
   async uploadLogo(
     @Param('storeId') storeId: string,
     @Session() session: UserSession,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile(STORE_LOGO_PIPE) file: ValidatedUploadedFile,
   ): Promise<StoreResponseDto> {
-    if (!file) throw new BadRequestException('Falta el archivo');
-    if (file.size > 5 * 1024 * 1024) {
-      throw new BadRequestException('Máximo 5MB');
-    }
-
-    const isJpeg = file.buffer[0] === 0xff && file.buffer[1] === 0xd8;
-    const isPng = file.buffer
-      .subarray(0, 8)
-      .equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
-    if (!isJpeg && !isPng) throw new BadRequestException('Solo JPEG o PNG');
-
     const url = await this.storage.uploadLogo(
       file.buffer,
-      isPng ? 'image/png' : 'image/jpeg',
+      file.detectedMimeType,
     );
     const store = await this.stores.updateLogo(storeId, session.user.id, url);
     return toStoreDto(store);

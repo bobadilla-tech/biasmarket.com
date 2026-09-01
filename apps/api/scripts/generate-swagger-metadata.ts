@@ -10,16 +10,17 @@
 // ReadonlyVisitor (the swagger-specific AST visitor) comes from
 // "@nestjs/swagger/plugin". Verified against installed node_modules; Nest's own
 // docs example imports both from these exact paths.
-import { PluginMetadataGenerator } from "@nestjs/cli/lib/compiler/plugins/plugin-metadata-generator.js";
-import { ReadonlyVisitor } from "@nestjs/swagger/plugin";
-import { existsSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { PluginMetadataGenerator } from '@nestjs/cli/lib/compiler/plugins/plugin-metadata-generator.js';
+import { ReadonlyVisitor } from '@nestjs/swagger/plugin';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { format } from 'prettier';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const apiRoot = join(__dirname, "..");
-const srcDir = join(apiRoot, "src");
-const outputPath = join(srcDir, "metadata.ts");
+const apiRoot = join(__dirname, '..');
+const srcDir = join(apiRoot, 'src');
+const outputPath = join(srcDir, 'metadata.ts');
 
 // PluginMetadataGenerator's non-watch path type-checks the *whole* program,
 // including this script's own previous output, before writing a new
@@ -41,7 +42,7 @@ const outputPath = join(srcDir, "metadata.ts");
 //    run's whole-program check the same way. If regeneration silently stops
 //    updating, delete src/metadata.ts and rerun this script to recover.
 if (!existsSync(outputPath)) {
-  writeFileSync(outputPath, "export default async () => ({});\n");
+  writeFileSync(outputPath, 'export default async () => ({});\n');
 }
 
 const generator = new PluginMetadataGenerator();
@@ -57,7 +58,18 @@ generator.generate({
     }),
   ],
   outputDir: srcDir,
-  filename: "metadata.ts",
-  tsconfigPath: "tsconfig.json",
+  filename: 'metadata.ts',
+  tsconfigPath: 'tsconfig.json',
   printDiagnostics: true,
 });
+
+// Nest's metadata printer emits the complete object graph on a handful of
+// enormous lines. Keep the tracked artifact deterministic and reviewable on
+// every prebuild/pretypecheck run instead of relying on a separate formatter.
+writeFileSync(
+  outputPath,
+  await format(readFileSync(outputPath, 'utf8'), {
+    parser: 'typescript',
+    singleQuote: true,
+  }),
+);

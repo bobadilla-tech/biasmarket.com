@@ -39,7 +39,6 @@
     "@aws-sdk/client-s3": "^3.1091.0",
     "@aws-sdk/s3-request-presigner": "^3.1091.0",
     "@biasmarket/db": "workspace:*",
-    "@biasmarket/i18n": "workspace:*",
     "@biasmarket/queue": "workspace:*",
     "@biasmarket/types": "workspace:*",
     "@biasmarket/utils": "workspace:*",

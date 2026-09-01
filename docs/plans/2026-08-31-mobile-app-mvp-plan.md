@@ -10,11 +10,10 @@ work lands" convention — see `docs/plans/README.md`).
 architecture audit — read that first for the evidence behind every decision
 below).
 
-**Related:** `docs/plans/2026-08-31-mobile-audit-cleanup-plan.md`. Not a hard
-dependency, but Problem 1 there (deciding what happens to the dead `packages/ui`
-stub) should land before Phase 0 here, since Phase 0 introduces a
-`packages/design-tokens` package that would otherwise sit awkwardly alongside a
-similarly-named dead package.
+**Related:** `docs/plans/2026-08-31-mobile-audit-cleanup-plan.md`. Its cleanup
+pass repurposed the dead `packages/ui` stub as `packages/design-tokens` and
+moved the existing store-palette resolver into it. Phase 0 below now extends
+that package instead of introducing it.
 
 ## Context
 
@@ -23,9 +22,10 @@ project: there's no cart API, no payment gateway, no wishlist/reviews, and the
 backend is already a clean HTTP-only API with no page-render logic baked in
 (`apps/web` never touches `packages/db` directly, per CLAUDE.md's hard rule —
 confirmed, not just documented). That narrows the real work to three things: (1)
-a native UI layer, since zero shared UI exists today (`packages/ui` is a dead
-stub, `apps/web`'s real components are DOM/Base-UI bound and cannot run on React
-Native), (2) an auth transport mobile can actually use, since both existing auth
+a native UI layer, since zero shared UI exists today (the former `packages/ui`
+stub is now a token-only package, and `apps/web`'s real components are
+DOM/Base-UI bound and cannot run on React Native), (2) an auth transport mobile
+can actually use, since both existing auth
 systems are cookie-only, and (3) replicating the proof-of-payment
 upload/authenticated-image-view pattern, which is the one genuinely
 mobile-specific piece of business logic in this product.
@@ -37,10 +37,12 @@ Expo+RN+gluestack-ui, Next.js PWA, bare React Native (no Expo), Flutter/native.
 
 **Chosen: Expo + React Native + Expo Router + NativeWind.**
 
-- **PWA rejected** — no reliable push notifications on iOS Safari-based PWAs
-  historically, no App Store presence, weaker camera/file APIs. Doesn't meet
-  "production-quality native app" or App Store bar the task explicitly asked
-  for.
+- **PWA rejected** — iOS does support Web Push for Home Screen web apps, so
+  notifications are not the deciding limitation. A PWA still lacks the native
+  App Store product/distribution target this project calls for and offers a
+  weaker fit for camera/file, secure-storage, and native navigation work.
+  ([WebKit's iOS/iPadOS Web Push
+  announcement](https://webkit.org/blog/13966/webkit-features-in-safari-16-4/))
 - **Bare RN (no Expo) and Flutter/native rejected** — bare RN adds native
   build-toolchain maintenance (linking, Xcode/Gradle config, upgrades) for a
   small team with no offsetting benefit over Expo's maturity + EAS. Flutter
@@ -48,14 +50,14 @@ Expo+RN+gluestack-ui, Next.js PWA, bare React Native (no Expo), Flutter/native.
   adding mobile cheaply to an existing TS team.
 - **Tamagui / gluestack-ui rejected.** These earn their complexity when there's
   a large, actively-shared component surface between web and native. Here,
-  `packages/ui` is empty and `apps/web`'s actual components are built on Base UI
-  (`apps/web/components.json`: `"style": "base-nova"`), which has no React
-  Native renderer and no path to one. Adopting Tamagui would mean building a
-  second design system from scratch anyway — while also taking on a new compiler
-  and styling API as team surface area — paying maximum-sharing complexity for a
-  sharing benefit that doesn't exist in this repo. NativeWind gets the one real
-  win (Tailwind class familiarity carrying over from `apps/web`) without the
-  framework lock-in.
+  there is no shared component package and `apps/web`'s actual components are
+  built on Base UI (`apps/web/components.json`: `"style": "base-nova"`), which
+  has no React Native renderer and no path to one. Adopting Tamagui would mean
+  building a second design system from scratch anyway — while also taking on a
+  new compiler and styling API as team surface area — paying maximum-sharing
+  complexity for a sharing benefit that doesn't exist in this repo. NativeWind
+  gets the one real win (Tailwind class familiarity carrying over from
+  `apps/web`) without the framework lock-in.
 
 ## MVP scope
 
@@ -94,9 +96,10 @@ zero behavior change to the web app, before any mobile code exists.
   `apps/web/features/*/schemas/` directories to start (e.g. `collections`,
   `checkout`, `register-payment`), re-exported so `apps/web`'s imports change to
   point at the package but resolve to identical schema objects.
-- New `packages/design-tokens` (or the repurposed `packages/ui`, per the cleanup
-  plan's Problem 1 decision) — color/spacing/type-scale values extracted from
-  `apps/web`'s Tailwind config as plain JS/JSON data, no components.
+- Existing `packages/design-tokens` — extend the store palette/resolver already
+  extracted by the cleanup pass with any additional color/spacing/type-scale
+  values the first native screens actually need. Keep it plain TypeScript data
+  and pure functions, with no components.
 - `packages/types/http.ts` — add an injectable auth-header strategy to
   `customFetch`, defaulting to today's `credentials: "include"` behavior so
   `apps/web` is unaffected. Signature becomes something like
@@ -516,8 +519,8 @@ audit's own instruction to avoid false precision.
 
 ## Files likely touched (cumulative, across all phases)
 
-- New: `apps/mobile/**`, `packages/validation/**`, `packages/design-tokens/**`
-  (or repurposed `packages/ui`)
+- New: `apps/mobile/**`, `packages/validation/**`
+- Extended: `packages/design-tokens/**`
 - `packages/types/http.ts` (injectable auth-header strategy)
 - `apps/api/src/auth/auth.config.ts`,
   `apps/api/src/modules/customer-auth/customer-session.guard.ts`,

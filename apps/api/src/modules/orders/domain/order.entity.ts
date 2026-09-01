@@ -32,6 +32,10 @@ export class Order {
   }
 
   expire(): void {
+    this.cancel();
+  }
+
+  cancel(): void {
     assertPaymentTransition(this.paymentStatus, 'CANCELLED');
     this.paymentStatus = 'CANCELLED';
   }

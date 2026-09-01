@@ -1,6 +1,6 @@
 # Mobile audit cleanup — stale docs, dead package, duplicated validation
 
-**Status:** Not started. Written ahead of the work.
+**Status:** Implemented on 2026-08-31.
 
 **Original status (pre-implementation):** written ahead of the work, per
 mobile-audit follow-up request — deviates from this directory's usual "record
@@ -215,18 +215,99 @@ implementation.
 - `apps/web/app/[locale]/(storefront)/store/[slug]/product/[productId]/page.tsx`
   (Problem 7)
 
+## Implementation result
+
+All seven cleanup items landed in this pass:
+
+1. Replaced the unused `@biasmarket/ui` stub with
+   `@biasmarket/design-tokens`. The package owns framework-neutral palette
+   values, validation, color derivation, and theme resolution; the web app
+   retains the DOM/CSS-variable adapter. CI, Docker build manifests, the dev
+   compose volume, dependency metadata, and architecture docs now use the new
+   package name.
+2. Updated CLAUDE.md to list every current API module and document the
+   buyer-facing global-account controller. The audit's original counts were
+   themselves stale: the repository has 21 module directories, not 23, and the
+   old CLAUDE.md list named 15 of them when counting `orders`.
+3. Rewrote the payment/security documentation around the BullMQ scheduler and
+   authenticated internal expiry-sweep endpoint. Also corrected the upload and
+   buyer-proof descriptions that had drifted since checkout proof upload was
+   implemented.
+4. Added `Order.cancel()` and routed both explicit cancellation and expiry
+   through the entity/VO. The transition table now expresses cancellation from
+   `PAYMENT_SUBMITTED` and `VERIFIED`; the application guard still prevents a
+   completed order from being cancelled. Explicit cancellation also compares
+   both state axes in its atomic update, preventing a stale request from
+   overwriting a concurrent payment review or fulfillment advance.
+5. Added `UploadedFileValidationPipe` in `apps/api/src/common/` and moved all
+   six upload call sites to it. It centralizes the 5 MB limit, magic-byte
+   detection, per-route MIME allowlists, optional-file behavior, existing
+   response messages, and the trusted MIME type passed to storage.
+6. Removed the unused API dependency on `@biasmarket/i18n` and documented the
+   package as web-only today.
+7. Extracted the listing page's product structured-data builder, used it on the
+   detail page, escaped embedded JSON-LD using Next.js's documented pattern,
+   and corrected listing offers to link to their product detail URL. Product
+   detail fetching now also fails closed when the API URL is unavailable or the
+   request errors.
+
+Two adjacent correctness improvements came out of verification:
+
+- Persisted custom theme data is validated before color math runs, so malformed
+  values fall back safely. Partial custom palettes now preserve derived
+  accent/surface/text colors instead of accidentally overwriting them with the
+  default preset.
+- Swagger metadata and OpenAPI generation now write their canonical formatted
+  artifacts directly, avoiding noisy generated-file rewrites during typecheck
+  or direct generation. Regeneration captured the previously missing courier
+  response fields in `metadata.ts`.
+
+### Should Next.js components move to `packages/ui`?
+
+Not now. The inventory found 24 production files in `apps/web/components/ui`;
+they are implemented with HTML elements, DOM event/ref types, Tailwind classes,
+Base UI primitives, and in some cases `next-intl`. React Native renders native
+`View`, `Text`, and other platform components rather than those DOM primitives,
+so moving these files would create a web package, not reusable mobile UI. It
+would add package/CI/versioning overhead for a single consumer without reducing
+the native implementation work.
+
+The useful sharing boundary is the one implemented here: plain tokens and pure
+functions now; validation schemas, API contracts/client logic, and other
+platform-neutral business rules as concrete mobile needs arise. If web and
+mobile later converge on a genuinely shared component API, introduce it only
+with explicit web/native implementations (for example, normal and `.native.tsx`
+files) after the second implementation proves the abstraction. Do not move the
+current Next.js components pre-emptively.
+
+This matches the platform guidance: Expo describes monorepos as useful for
+shared code while explicitly calling out their added tooling complexity
+([Expo monorepos](https://docs.expo.dev/guides/monorepos/)); React Native maps
+its core components to native views, not DOM nodes
+([RN core components](https://reactnative.dev/docs/intro-react-native-components));
+and React Native recommends `.native` files when a shared module needs distinct
+web and native implementations
+([RN platform-specific code](https://reactnative.dev/docs/platform-specific-code.html)).
+
 ## Verification
 
-- `pnpm typecheck` and `pnpm lint` — clean across all touched packages after the
-  `packages/ui` change (Problem 1), since it changes a workspace dependency
-  graph.
-- `pnpm --filter api test` — existing `orders` unit specs pass unchanged; add
-  new unit coverage for the shared upload-validation pipe (Problem 5).
-- `pnpm --filter api test:e2e` — `orders.e2e-spec.ts` and any
-  file-upload-touching e2e specs (products, checkout, payment-config) stay green
-  after Problems 4 and 5, confirming no behavior change slipped in during the
-  consolidation/alignment work.
-- Manual: load the product detail page, verify `Product` JSON-LD renders via
-  browser devtools or Google's Rich Results Test (Problem 7).
-- Docs-only fixes (Problems 2, 3, 6a) need no automated verification — just a
-  read-through against the current code to confirm accuracy before merging.
+- `pnpm lint`: clean (including the changed-file formatting gate and full web
+  ESLint pass).
+- `pnpm typecheck`: 15/15 Turbo tasks passed across the workspace.
+- `pnpm build`: 10/10 Turbo tasks passed, including the Next.js production
+  build, API/workers SWC builds, and the new design-token package.
+- `pnpm test`: 10/10 Turbo tasks passed. The material totals were API 519/519,
+  web 364/364, workers 14/14, and shared utils 66/66 tests.
+- `pnpm --filter api test:e2e`: 24/24 files and 77/77 tests passed against
+  disposable PostgreSQL and MinIO plus the real Redis/worker mail path. This
+  includes every upload-touching controller and the order cancellation/expiry
+  paths.
+- `scripts/ci/check-openapi-drift.sh`, the renamed CI-success package gate, and
+  `docker compose ... config --quiet`: clean. Direct OpenAPI generation is now
+  idempotent with that CI check.
+- Product JSON-LD has focused builder/availability/escaping tests and the
+  dynamic product route passed a full Next.js production build. Google's Rich
+  Results Test was not run because this local pass did not deploy a public
+  product URL; run it as a post-deploy smoke check.
+- Documentation was read back against the current module tree, workers expiry
+  implementation, upload routes, and package dependency graph.

@@ -24,6 +24,17 @@ import type {
   CheckoutOrderResponseDto,
   CheckoutResultResponseDto,
 } from '../dto/checkout-response.dto.js';
+import {
+  PROOF_UPLOAD_MIME_TYPES,
+  UploadedFileValidationPipe,
+  type ValidatedUploadedFile,
+} from '../../../common/uploaded-file-validation.pipe.js';
+
+const CHECKOUT_PROOF_PIPE = new UploadedFileValidationPipe({
+  allowedMimeTypes: PROOF_UPLOAD_MIME_TYPES,
+  fileIsRequired: false,
+  messages: { unsupportedType: 'Solo JPEG, PNG o PDF' },
+});
 
 interface CheckoutOrderItemRow {
   id: string;
@@ -154,21 +165,6 @@ async function buildValidatedDto(body: Record<string, unknown>) {
 const REQUIRES_PROOF = (method: CreateOrderDto['paymentMethod']): boolean =>
   method !== undefined && method !== 'CASH';
 
-function detectProofMimeType(buffer: Buffer): string | null {
-  if (buffer[0] === 0xff && buffer[1] === 0xd8) return 'image/jpeg';
-  if (
-    buffer
-      .subarray(0, 8)
-      .equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))
-  ) {
-    return 'image/png';
-  }
-  if (buffer.subarray(0, 4).toString('latin1') === '%PDF') {
-    return 'application/pdf';
-  }
-  return null;
-}
-
 @Controller('stores/:slug/checkout')
 export class CheckoutController {
   constructor(
@@ -192,7 +188,8 @@ export class CheckoutController {
   async create(
     @Param('slug') slug: string,
     @Body() body: Record<string, unknown>,
-    @UploadedFile() file: Express.Multer.File | undefined,
+    @UploadedFile(CHECKOUT_PROOF_PIPE)
+    file: ValidatedUploadedFile | undefined,
   ): Promise<CheckoutResultResponseDto> {
     const dto = await buildValidatedDto(body ?? {});
 
@@ -214,16 +211,9 @@ export class CheckoutController {
 
     let proofImageUrl: string | undefined;
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        throw new BadRequestException('Máximo 5MB');
-      }
-      const mimeType = detectProofMimeType(file.buffer);
-      if (!mimeType) {
-        throw new BadRequestException('Solo JPEG, PNG o PDF');
-      }
       proofImageUrl = await this.storage.uploadPaymentImage(
         file.buffer,
-        mimeType,
+        file.detectedMimeType,
       );
     }
 
