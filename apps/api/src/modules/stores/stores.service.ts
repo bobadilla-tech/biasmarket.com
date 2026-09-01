@@ -7,6 +7,10 @@ import {
 import type { Prisma } from '@biasmarket/db';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { countsTowardPaid } from '../../common/payment-summary.js';
+import {
+  PUBLIC_STORE_HAS_LISTABLE_PRODUCT,
+  PUBLIC_STORE_VISIBILITY,
+} from '../../common/public-store-visibility.js';
 import { slugify } from '@biasmarket/utils/strings';
 import type { UpdateStoreDto } from './dto/update-store.dto.js';
 import type { CreateStoreDto } from './dto/create-store.dto.js';
@@ -137,17 +141,17 @@ export class StoresService {
 
   async findAllPublic() {
     return this.prisma.store.findMany({
-      where: { isPublic: true },
+      where: { ...PUBLIC_STORE_VISIBILITY },
       select: { slug: true, createdAt: true },
     });
   }
 
   async findPublicSitemapCount() {
-    return this.prisma.store.count({ where: { isPublic: true } });
+    return this.prisma.store.count({ where: { ...PUBLIC_STORE_VISIBILITY } });
   }
 
   async findPublicSitemapPage(limit: number, offset: number) {
-    const where = { isPublic: true };
+    const where = { ...PUBLIC_STORE_VISIBILITY };
     const [items, total] = await Promise.all([
       this.prisma.store.findMany({
         where,
@@ -175,11 +179,8 @@ export class StoresService {
 
     const candidates = await this.prisma.store.findMany({
       where: {
-        isPublic: true,
-        products: {
-          some: { status: 'PUBLISHED', deletedAt: null, discontinued: false },
-        },
-        owner: { banned: { not: true } },
+        ...PUBLIC_STORE_VISIBILITY,
+        ...PUBLIC_STORE_HAS_LISTABLE_PRODUCT,
       },
       select: { id: true, name: true, slug: true, logoUrl: true },
     });
@@ -232,11 +233,8 @@ export class StoresService {
 
   async findDirectory(page: number, limit: number, q: string | undefined) {
     const where: Prisma.StoreWhereInput = {
-      isPublic: true,
-      products: {
-        some: { status: 'PUBLISHED', deletedAt: null, discontinued: false },
-      },
-      owner: { banned: { not: true } },
+      ...PUBLIC_STORE_VISIBILITY,
+      ...PUBLIC_STORE_HAS_LISTABLE_PRODUCT,
       ...(q && { name: { contains: q, mode: 'insensitive' as const } }),
     };
 
@@ -342,7 +340,7 @@ export class StoresService {
 
   async findCollectionsPublic() {
     const collections = await this.prisma.collection.findMany({
-      where: { store: { isPublic: true } },
+      where: { store: { ...PUBLIC_STORE_VISIBILITY } },
       include: {
         store: { select: { slug: true } },
         products: {

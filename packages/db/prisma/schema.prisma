@@ -93,6 +93,10 @@ model Store {
   // Showcased on the public homepage/directory search vs. reachable only by
   // direct link (/store/:slug). Doesn't gate the storefront itself.
   isPublic              Boolean  @default(true)
+  // Platform-owned "this is test/demo data" marker, distinct from the
+  // seller-owned isPublic toggle. Kept out of every public listing/search,
+  // but still reachable by direct link (/store/:slug) for QA.
+  isDemo                Boolean  @default(false)
   createdAt             DateTime @default(now())
 
   owner             User                      @relation(fields: [ownerId], references: [id])

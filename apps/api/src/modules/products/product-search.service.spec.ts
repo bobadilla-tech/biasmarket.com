@@ -29,7 +29,7 @@ describe('ProductSearchService', () => {
     service = module.get(ProductSearchService);
   });
 
-  it('filters to PUBLISHED, non-deleted products with a non-banned owner', async () => {
+  it('filters to PUBLISHED, non-deleted products in a public, non-demo store with a non-banned owner', async () => {
     prisma.product.findMany.mockResolvedValue([]);
     prisma.product.count.mockResolvedValue(0);
 
@@ -41,7 +41,11 @@ describe('ProductSearchService', () => {
           status: 'PUBLISHED',
           deletedAt: null,
           discontinued: false,
-          store: { owner: { banned: { not: true } } },
+          store: {
+            isPublic: true,
+            isDemo: false,
+            owner: { banned: { not: true } },
+          },
         },
       }),
     );
@@ -124,7 +128,11 @@ describe('ProductSearchService', () => {
             status: 'PUBLISHED',
             deletedAt: null,
             discontinued: false,
-            store: { owner: { banned: { not: true } } },
+            store: {
+              isPublic: true,
+              isDemo: false,
+              owner: { banned: { not: true } },
+            },
           },
           order: { paymentStatus: 'VERIFIED' },
         },
@@ -138,7 +146,11 @@ describe('ProductSearchService', () => {
         status: 'PUBLISHED',
         deletedAt: null,
         discontinued: false,
-        store: { owner: { banned: { not: true } } },
+        store: {
+          isPublic: true,
+          isDemo: false,
+          owner: { banned: { not: true } },
+        },
         orderItems: { some: { order: { paymentStatus: 'VERIFIED' } } },
       },
     });
@@ -196,6 +208,28 @@ describe('ProductSearchService', () => {
       }),
     );
     expect(result.products).toEqual([{ id: 'p3' }]);
+  });
+
+  it('gates search on public, non-demo stores', async () => {
+    prisma.product.findMany.mockResolvedValue([]);
+    prisma.product.count.mockResolvedValue(0);
+
+    await service.search(1, 24, undefined, undefined, 'latest');
+
+    const store = prisma.product.findMany.mock.calls[0][0].where.store;
+    expect(store.isPublic).toBe(true);
+    expect(store.isDemo).toBe(false);
+  });
+
+  it('gates bestsellers on public, non-demo stores', async () => {
+    prisma.orderItem.groupBy.mockResolvedValue([]);
+    prisma.product.count.mockResolvedValue(0);
+
+    await service.search(1, 24, undefined, undefined, 'bestseller');
+
+    const store = prisma.orderItem.groupBy.mock.calls[0][0].where.product.store;
+    expect(store.isPublic).toBe(true);
+    expect(store.isDemo).toBe(false);
   });
 
   it('returns no bestsellers when no verified sales exist', async () => {

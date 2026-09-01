@@ -168,6 +168,7 @@ export interface StoreFixtureSpec {
     logoUrl?: string;
     paymentInstructions?: string;
     isPublic?: boolean;
+    isDemo?: boolean;
     lowStockThreshold?: number;
   };
   deliveryMethods: {
@@ -208,8 +209,10 @@ function camilaStore(): StoreFixtureSpec {
         'cuenta 193-1234567-0-89, CCI 00219300123456789012. Envía tu ' +
         'comprobante por WhatsApp para confirmar tu pedido.',
       // Demo store — reachable via direct link for QA/testing, but kept out
-      // of the homepage/directory search (see Store.isPublic).
+      // of the homepage/directory search/sitemap (isDemo) and unlisted by the
+      // seller-owned toggle too (isPublic).
       isPublic: false,
+      isDemo: true,
     },
     deliveryMethods: [
       { type: 'PICKUP', details: {} },
@@ -635,6 +638,7 @@ function kpopCornerStore(): StoreFixtureSpec {
         'Interbank cuenta 898-3001234567, CCI 00389800300123456712. ' +
         'Envía tu comprobante por WhatsApp para confirmar tu pedido.',
       isPublic: false,
+      isDemo: true,
     },
     deliveryMethods: [
       { type: 'PICKUP', details: {} },
@@ -985,6 +989,8 @@ export function buildAppendFixture(label: string): StoreFixtureSpec {
       slug: `demo-${safeLabel}`,
       whatsappNumber: '+51900000000',
       defaultCurrency: 'PEN',
+      isPublic: false,
+      isDemo: true,
     },
     deliveryMethods: [
       { type: 'PICKUP', details: {} },

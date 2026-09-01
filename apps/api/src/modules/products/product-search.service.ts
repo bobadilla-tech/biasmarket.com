@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { Prisma } from '@biasmarket/db';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import type { ProductSort } from '../../common/public-list-query.js';
+import { PUBLIC_STORE_VISIBILITY } from '../../common/public-store-visibility.js';
 
 const PRODUCT_SELECT = {
   id: true,
@@ -27,7 +28,7 @@ export class ProductSearchService {
       status: 'PUBLISHED',
       deletedAt: null,
       discontinued: false,
-      store: { owner: { banned: { not: true } } },
+      store: { ...PUBLIC_STORE_VISIBILITY, owner: { banned: { not: true } } },
       ...(q && { name: { contains: q, mode: 'insensitive' as const } }),
       ...(category && {
         categories: {

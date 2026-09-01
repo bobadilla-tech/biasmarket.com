@@ -364,6 +364,60 @@ describe('stores + my-stores (e2e)', () => {
     });
   });
 
+  it('isDemo stores drop out of every public listing but stay reachable by slug (#167)', async () => {
+    const isListed = async () => {
+      const [directory, allPublic, search, sitemapCount] = await Promise.all([
+        request(app.getHttpServer()).get('/stores/directory').expect(200),
+        request(app.getHttpServer()).get('/stores/public').expect(200),
+        request(app.getHttpServer())
+          .get('/products/search?limit=50')
+          .expect(200),
+        request(app.getHttpServer())
+          .get('/stores/internal/sitemap/count')
+          .set('X-Internal-Sitemap-Token', process.env.SITEMAP_INTERNAL_TOKEN!)
+          .expect(200),
+      ]);
+      return {
+        directory: directory.body.stores.some(
+          (s: { id: string }) => s.id === storeId,
+        ),
+        allPublic: allPublic.body.some(
+          (s: { slug: string }) => s.slug === storeSlug,
+        ),
+        search: search.body.products.some(
+          (p: { id: string }) => p.id === productId,
+        ),
+        sitemapTotal: sitemapCount.body.total as number,
+      };
+    };
+
+    const before = await isListed();
+    expect(before.directory).toBe(true);
+    expect(before.allPublic).toBe(true);
+    expect(before.search).toBe(true);
+
+    await prisma.store.update({
+      where: { id: storeId },
+      data: { isDemo: true },
+    });
+
+    const after = await isListed();
+    expect(after.directory).toBe(false);
+    expect(after.allPublic).toBe(false);
+    expect(after.search).toBe(false);
+    expect(after.sitemapTotal).toBe(before.sitemapTotal - 1);
+
+    // Direct link still resolves — demo stores stay usable for QA.
+    await request(app.getHttpServer())
+      .get(`/stores/${storeSlug}/public`)
+      .expect(200);
+
+    await prisma.store.update({
+      where: { id: storeId },
+      data: { isDemo: false },
+    });
+  });
+
   it('delete: documents a real, pre-existing bug found while writing this spec, not fixed here', async () => {
     // Every store — even a brand-new one with zero products — gets a
     // DeliveryMethodConfig row + 4 PaymentMethodConfig rows auto-created by
