@@ -6,6 +6,10 @@
   "formErrorsSummary": "Revisa los campos marcados.",
   "networkError": "Error de red",
   "skipToContent": "Ir al contenido",
+  "carousel": {
+    "prev": "Anterior",
+    "next": "Siguiente"
+  },
   "notFoundPage": {
     "title": "Página no encontrada",
     "body": "La página que buscas no existe o fue movida.",

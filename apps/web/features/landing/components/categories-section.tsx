@@ -24,6 +24,7 @@ function MobileCategoryCarousel({
   items: { key: string; name: string }[];
 }) {
   const t = useTranslations("landing.categories");
+  const tCarousel = useTranslations("common.carousel");
   const scrollerRef = useRef<HTMLDivElement>(null);
 
   const scrollByCards = (direction: -1 | 1) => {
@@ -69,7 +70,7 @@ function MobileCategoryCarousel({
       <div className="mt-2 flex justify-end gap-0">
         <button
           type="button"
-          aria-label={t("title")}
+          aria-label={tCarousel("prev")}
           onClick={() => scrollByCards(-1)}
           className="p-0.5 text-[#1C1B1F] transition-opacity hover:opacity-70"
         >
@@ -77,7 +78,7 @@ function MobileCategoryCarousel({
         </button>
         <button
           type="button"
-          aria-label={t("title")}
+          aria-label={tCarousel("next")}
           onClick={() => scrollByCards(1)}
           className="p-0.5 text-[#1C1B1F] transition-opacity hover:opacity-70"
         >

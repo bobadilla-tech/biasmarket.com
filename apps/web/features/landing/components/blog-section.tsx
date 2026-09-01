@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { useRef } from "react";
 import { CircleArrowLeft, CircleArrowRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
@@ -11,7 +11,18 @@ interface BlogTeaser {
 
 export function BlogSection() {
   const t = useTranslations("landing.blog");
+  const tCarousel = useTranslations("common.carousel");
   const items = t.raw("items") as BlogTeaser[];
+  const scrollerRef = useRef<HTMLDivElement>(null);
+
+  const scrollByCards = (direction: -1 | 1) => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    const firstCard = scroller.firstElementChild as HTMLElement | null;
+    const gap = Number.parseFloat(getComputedStyle(scroller).columnGap) || 0;
+    const step = (firstCard?.clientWidth ?? scroller.clientWidth) + gap;
+    scroller.scrollBy({ left: direction * step, behavior: "smooth" });
+  };
 
   return (
     <section className="py-8 sm:py-14">
@@ -19,7 +30,10 @@ export function BlogSection() {
         <h2 className="text-[21px] leading-[26px] font-bold text-black">
           {t("title")}
         </h2>
-        <div className="no-scrollbar mt-3 flex flex-nowrap snap-x snap-mandatory gap-8 overflow-x-auto">
+        <div
+          ref={scrollerRef}
+          className="no-scrollbar mt-3 flex flex-nowrap snap-x snap-mandatory gap-8 overflow-x-auto"
+        >
           {items.map(({ title }) => (
             <Link
               key={title}
@@ -32,6 +46,24 @@ export function BlogSection() {
               </p>
             </Link>
           ))}
+        </div>
+        <div className="mt-2 flex justify-end gap-0">
+          <button
+            type="button"
+            aria-label={tCarousel("prev")}
+            onClick={() => scrollByCards(-1)}
+            className="p-0.5 text-[#1C1B1F] transition-opacity hover:opacity-70"
+          >
+            <CircleArrowLeft className="size-6" strokeWidth={1.5} />
+          </button>
+          <button
+            type="button"
+            aria-label={tCarousel("next")}
+            onClick={() => scrollByCards(1)}
+            className="p-0.5 text-[#1C1B1F] transition-opacity hover:opacity-70"
+          >
+            <CircleArrowRight className="size-6" strokeWidth={1.5} />
+          </button>
         </div>
       </div>
 
@@ -49,20 +81,6 @@ export function BlogSection() {
               </p>
             </Link>
           ))}
-        </div>
-
-        <div
-          aria-hidden="true"
-          className="mt-6 flex items-center justify-end gap-1 sm:mt-8"
-        >
-          <CircleArrowLeft
-            className="size-[46px] text-[#1C1B1F]"
-            strokeWidth={1}
-          />
-          <CircleArrowRight
-            className="size-[46px] text-[#1C1B1F]"
-            strokeWidth={1}
-          />
         </div>
       </div>
     </section>

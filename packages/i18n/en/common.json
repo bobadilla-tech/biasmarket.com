@@ -6,6 +6,10 @@
   "formErrorsSummary": "Please review the highlighted fields.",
   "networkError": "Network error",
   "skipToContent": "Skip to content",
+  "carousel": {
+    "prev": "Previous",
+    "next": "Next"
+  },
   "notFoundPage": {
     "title": "Page not found",
     "body": "The page you're looking for doesn't exist or was moved.",
