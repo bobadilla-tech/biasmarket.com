@@ -11,7 +11,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import {
   Sheet,
@@ -386,12 +385,12 @@ export function ProductSheet({
             }
           />
           <Field.Root className="space-y-2">
-            <Label
+            <label
               htmlFor="product-name"
               className="text-sm font-semibold text-foreground"
             >
               {t("products.form.nameLabel")}
-            </Label>
+            </label>
             <Input
               id="product-name"
               aria-invalid={Boolean(errors.name)}
@@ -411,12 +410,12 @@ export function ProductSheet({
           </Field.Root>
 
           <Field.Root className="space-y-2">
-            <Label
+            <label
               htmlFor="product-description"
               className="text-sm font-semibold text-foreground"
             >
               {t("products.form.descriptionLabel")}
-            </Label>
+            </label>
             <Textarea
               id="product-description"
               {...register("description")}
@@ -427,14 +426,14 @@ export function ProductSheet({
 
           <div className="grid gap-3 sm:grid-cols-2">
             <Field.Root className="space-y-2">
-              <Label
+              <label
                 htmlFor="product-price"
                 className="text-sm font-semibold text-foreground"
               >
                 {hasVariants
                   ? t("products.form.priceBaseLabel")
                   : t("products.form.priceLabel")}
-              </Label>
+              </label>
               <Input
                 id="product-price"
                 aria-invalid={Boolean(errors.price)}
@@ -461,12 +460,12 @@ export function ProductSheet({
               )}
             </Field.Root>
             <Field.Root className="space-y-2">
-              <Label
+              <label
                 htmlFor="product-currency"
                 className="text-sm font-semibold text-foreground"
               >
                 {t("products.form.currencyLabel")}
-              </Label>
+              </label>
               <Select
                 id="product-currency"
                 {...register("currency")}
@@ -483,12 +482,12 @@ export function ProductSheet({
           </div>
 
           <Field.Root className="space-y-2">
-            <Label
+            <label
               htmlFor="product-availability"
               className="text-sm font-semibold text-foreground"
             >
               {t("products.form.availabilityLabel")}
-            </Label>
+            </label>
             <Select
               id="product-availability"
               {...register("availability")}
@@ -513,12 +512,12 @@ export function ProductSheet({
           </Field.Root>
 
           <Field.Root className="space-y-2">
-            <Label
+            <label
               htmlFor="product-stock"
               className="text-sm font-semibold text-foreground"
             >
               {t("products.form.stockLabel")}
-            </Label>
+            </label>
             {hasVariants ? (
               <div className="rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] px-4 py-3 text-xs text-[#8f7da8]">
                 {t("products.form.stockPerVariant")}

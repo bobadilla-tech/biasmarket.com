@@ -1,206 +1,41 @@
-export type StorePalette = {
-  id: string;
-  name: string;
-  description: string;
-  colors: {
-    primary: string;
-    accent: string;
-    surface: string;
-    text: string;
-  };
-};
+/**
+ * @biasmarket/design-tokens
+ *
+ * Portable design-token data + pure functions shared by web and mobile.
+ * Store-palette color data/resolvers live in `palette.ts`; non-color
+ * primitives (spacing, radii, typography) in their own modules. No
+ * components and no framework imports here — this stays plain TS data so the
+ * NativeWind/Tailwind config in apps/mobile (Phase 2) can consume it too.
+ */
 
-export type StoreThemeConfig = {
-  paletteId?: string;
-  colors?: Partial<StorePalette["colors"]>;
-};
+export {
+  buildCustomStorePalette,
+  buildStoreThemeConfig,
+  darken,
+  DEFAULT_STORE_PALETTE,
+  lighten,
+  resolveStorePalette,
+  rgba,
+  STORE_PALETTES,
+  type StorePalette,
+  type StoreThemeConfig,
+} from "./palette.js";
 
-export const STORE_PALETTES: readonly StorePalette[] = [
-  {
-    id: "royal-bloom",
-    name: "Royal Bloom",
-    description: "Plum, orchid, and soft rose",
-    colors: {
-      primary: "#6d28d9",
-      accent: "#f472b6",
-      surface: "#faf5ff",
-      text: "#2d1649",
-    },
-  },
-  {
-    id: "midnight-luxe",
-    name: "Midnight Luxe",
-    description: "Deep navy with electric violet",
-    colors: {
-      primary: "#312e81",
-      accent: "#8b5cf6",
-      surface: "#eef2ff",
-      text: "#1f1b4b",
-    },
-  },
-  {
-    id: "sunset-pop",
-    name: "Sunset Pop",
-    description: "Coral, peach, and warm ivory",
-    colors: {
-      primary: "#ea580c",
-      accent: "#fb7185",
-      surface: "#fff7ed",
-      text: "#4a1d18",
-    },
-  },
-  {
-    id: "mint-stage",
-    name: "Mint Stage",
-    description: "Fresh mint with bright teal",
-    colors: {
-      primary: "#0f766e",
-      accent: "#22c55e",
-      surface: "#ecfeff",
-      text: "#13343a",
-    },
-  },
-] as const;
+export {
+  spacing,
+  type SpacingToken,
+} from "./spacing.js";
 
-export const DEFAULT_STORE_PALETTE = STORE_PALETTES[0];
+export {
+  radii,
+  type RadiusToken,
+} from "./radii.js";
 
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
-}
-
-function hexToRgb(hex: string) {
-  const normalized = hex.replace("#", "");
-  const expanded =
-    normalized.length === 3
-      ? normalized
-          .split("")
-          .map((char) => char + char)
-          .join("")
-      : normalized;
-
-  const value = Number.parseInt(expanded, 16);
-  return {
-    r: (value >> 16) & 255,
-    g: (value >> 8) & 255,
-    b: value & 255,
-  };
-}
-
-export function rgba(hex: string, alpha: number) {
-  const { r, g, b } = hexToRgb(hex);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-export function darken(hex: string, amount: number) {
-  const { r, g, b } = hexToRgb(hex);
-  const ratio = clamp(1 - amount, 0, 1);
-  const toChannel = (channel: number) => Math.round(channel * ratio);
-  return `rgb(${toChannel(r)}, ${toChannel(g)}, ${toChannel(b)})`;
-}
-
-export function lighten(hex: string, amount: number) {
-  const { r, g, b } = hexToRgb(hex);
-  const ratio = clamp(amount, 0, 1);
-  const toChannel = (channel: number) =>
-    Math.round(channel + (255 - channel) * ratio);
-  return `rgb(${toChannel(r)}, ${toChannel(g)}, ${toChannel(b)})`;
-}
-
-const STORE_COLOR_KEYS = ["primary", "accent", "surface", "text"] as const;
-
-function isHexColor(value: unknown): value is string {
-  return (
-    typeof value === "string" && /^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(value)
-  );
-}
-
-function parseThemeConfig(value: unknown): StoreThemeConfig | null {
-  if (typeof value !== "object" || value === null) return null;
-  const record = value as Record<string, unknown>;
-  const paletteId = record.paletteId;
-  if (paletteId !== undefined && typeof paletteId !== "string") return null;
-
-  const rawColors = record.colors;
-  const colors: StoreThemeConfig["colors"] = {};
-  if (rawColors !== undefined) {
-    if (
-      typeof rawColors !== "object" ||
-      rawColors === null ||
-      Array.isArray(rawColors)
-    ) {
-      return null;
-    }
-    const colorRecord = rawColors as Record<string, unknown>;
-    for (const key of STORE_COLOR_KEYS) {
-      const color = colorRecord[key];
-      if (color === undefined) continue;
-      if (!isHexColor(color)) return null;
-      colors[key] = color;
-    }
-  }
-
-  return {
-    ...(paletteId !== undefined && { paletteId }),
-    ...(rawColors !== undefined && { colors }),
-  };
-}
-
-export function buildCustomStorePalette(primaryHex: string): StorePalette {
-  return {
-    id: "custom",
-    name: "Custom",
-    description: "Your own color",
-    colors: {
-      primary: primaryHex,
-      accent: lighten(primaryHex, 0.25),
-      surface: lighten(primaryHex, 0.92),
-      text: darken(primaryHex, 0.75),
-    },
-  };
-}
-
-export function resolveStorePalette(themeConfig?: unknown): StorePalette {
-  const parsedThemeConfig = parseThemeConfig(themeConfig);
-  if (!parsedThemeConfig) {
-    return DEFAULT_STORE_PALETTE;
-  }
-
-  const paletteId = parsedThemeConfig.paletteId;
-  const preset = paletteId
-    ? STORE_PALETTES.find((palette) => palette.id === paletteId)
-    : undefined;
-  const base = preset ?? DEFAULT_STORE_PALETTE;
-  const isCustomPalette = Boolean(paletteId && !preset);
-
-  const merged = {
-    ...base,
-    id: isCustomPalette ? paletteId! : base.id,
-    name: isCustomPalette ? "Custom" : base.name,
-    description: isCustomPalette ? "Your own color" : base.description,
-    colors: {
-      ...base.colors,
-      ...(parsedThemeConfig.colors ?? {}),
-    },
-  } satisfies StorePalette;
-
-  if (isCustomPalette && merged.colors.primary) {
-    const custom = buildCustomStorePalette(merged.colors.primary);
-    return {
-      ...custom,
-      id: paletteId!,
-      colors: {
-        ...custom.colors,
-        ...(parsedThemeConfig.colors ?? {}),
-      },
-    };
-  }
-
-  return merged;
-}
-
-export function buildStoreThemeConfig(palette: StorePalette): StoreThemeConfig {
-  return {
-    paletteId: palette.id,
-    colors: palette.colors,
-  };
-}
+export {
+  fontSizes,
+  fontWeights,
+  lineHeights,
+  type FontSizeToken,
+  type FontWeightToken,
+  type LineHeightToken,
+} from "./typography.js";

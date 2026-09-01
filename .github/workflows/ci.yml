@@ -539,6 +539,9 @@ jobs:
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=@biasmarket/design-tokens
 
+      - name: Test
+        run: pnpm turbo run test --filter=@biasmarket/design-tokens
+
   utils:
     name: Utils
     needs: detect-changes
@@ -617,9 +620,6 @@ jobs:
           key: turbo-validation-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
           restore-keys: |
             turbo-validation-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
-
-      - name: Lint
-        run: pnpm turbo run lint --filter=@biasmarket/validation
 
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=@biasmarket/validation

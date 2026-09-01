@@ -13,9 +13,13 @@ export function useRegisterPayment(
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (
-      { orderId, values }: { orderId: string; values: RegisterPaymentInput },
-    ) =>
+    mutationFn: ({
+      orderId,
+      values,
+    }: {
+      orderId: string;
+      values: RegisterPaymentInput;
+    }) =>
       ordersApi.registerPayment(
         storeId as string,
         orderId,
