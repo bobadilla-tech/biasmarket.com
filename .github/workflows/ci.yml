@@ -44,6 +44,7 @@ jobs:
       types: ${{ steps.filter.outputs.types }}
       design_tokens: ${{ steps.filter.outputs.design_tokens }}
       utils: ${{ steps.filter.outputs.utils }}
+      validation: ${{ steps.filter.outputs.validation }}
       web_e2e: ${{ steps.filter.outputs.web_e2e }}
     steps:
       - uses: actions/checkout@v7
@@ -121,6 +122,13 @@ jobs:
               - '.github/workflows/ci.yml'
             utils:
               - 'packages/utils/**'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'turbo.json'
+              - 'package.json'
+              - '.github/workflows/ci.yml'
+            validation:
+              - 'packages/validation/**'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
               - 'turbo.json'
@@ -571,6 +579,49 @@ jobs:
           flags: utils
           fail_ci_if_error: false
 
+  validation:
+    name: Validation
+    needs: detect-changes
+    if: needs.detect-changes.outputs.validation == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Cache turbo
+        uses: actions/cache@v6
+        with:
+          path: .turbo/cache
+          key: turbo-validation-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            turbo-validation-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+
+      - name: Lint
+        run: pnpm turbo run lint --filter=@biasmarket/validation
+
+      - name: Typecheck
+        run: pnpm turbo run typecheck --filter=@biasmarket/validation
+
+      - name: Build
+        run: pnpm turbo run build --filter=@biasmarket/validation
+
+      - name: Test
+        run: pnpm turbo run test --filter=@biasmarket/validation
+
   e2e:
     name: E2E (API)
     # The full suite runs on every push regardless of which packages changed.
@@ -782,6 +833,7 @@ jobs:
       - types
       - design-tokens
       - utils
+      - validation
       - e2e
       - web-e2e
     if: always()
@@ -804,6 +856,7 @@ jobs:
           TYPES_RESULT: ${{ needs.types.result }}
           DESIGN_TOKENS_RESULT: ${{ needs.design-tokens.result }}
           UTILS_RESULT: ${{ needs.utils.result }}
+          VALIDATION_RESULT: ${{ needs.validation.result }}
           E2E_RESULT: ${{ needs.e2e.result }}
           WEB_E2E_RESULT: ${{ needs.web-e2e.result }}
           API_CHANGED: ${{ needs.detect-changes.outputs.api }}
@@ -815,6 +868,7 @@ jobs:
           TYPES_CHANGED: ${{ needs.detect-changes.outputs.types }}
           DESIGN_TOKENS_CHANGED: ${{ needs.detect-changes.outputs.design_tokens }}
           UTILS_CHANGED: ${{ needs.detect-changes.outputs.utils }}
+          VALIDATION_CHANGED: ${{ needs.detect-changes.outputs.validation }}
           WEB_E2E_CHANGED: ${{ needs.detect-changes.outputs.web_e2e }}
           EVENT_NAME: ${{ github.event_name }}
           # Guard the boolean input with the event name; on push, inputs is null.
