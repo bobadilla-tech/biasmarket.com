@@ -19,7 +19,7 @@ found while testing the fix. For day-to-day development Compose commands, see
 - **`COMPOSE_BAKE=true`** (`infra/docker/.env.example`) — Compose uses buildx
   Bake, which builds `api`/`web` in parallel rather than sequentially.
 - **Shared `base` stage** — `api.Dockerfile` and `web.Dockerfile` both start
-  with an identical `FROM node:26-slim` + corepack-install block, so BuildKit
+  with an identical `FROM node:24-slim` + corepack-install block, so BuildKit
   reuses that layer across both images on the same builder.
 - CI runs the application checks. CD builds the three production images on an
   arm64 GitHub runner, pushes immutable SHA-tagged images to GHCR, and the VPS

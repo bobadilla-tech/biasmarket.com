@@ -4,9 +4,9 @@
 # `base`/`deps` stages. docker-compose.dev.yml builds target `dev`; the VPS
 # blue/green stack builds the default final target `runtime`.
 
-# node:26-slim no longer bundles corepack, install it pinned (not @latest)
+# Install corepack pinned (not @latest)
 # so pnpm resolution is reproducible across builds.
-FROM node:26-slim AS base
+FROM node:24-slim AS base
 ENV COREPACK_HOME=/usr/local/share/corepack \
     COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN npm install -g corepack@0.35.0 && corepack enable && corepack prepare pnpm@10.11.0 --activate
@@ -20,7 +20,7 @@ FROM base AS dev
 ENV NODE_ENV=development
 # procps provides `ps`, which tree-kill (used by `concurrently -k` in this
 # service's dev command) shells out to when killing sibling processes.
-# node:26-slim omits it, so tree-kill's `spawn('ps', ...)` throws an
+# The slim image omits it, so tree-kill's `spawn('ps', ...)` throws an
 # unhandled ENOENT and crashes the whole container the moment any watched
 # process exits — not just the one it's trying to clean up after.
 RUN apt-get update && apt-get install -y --no-install-recommends procps \
@@ -71,9 +71,9 @@ RUN --mount=type=cache,id=turbo-cache,target=/app/.turbo \
 # ---------------------------------------------------------------------------
 # runtime: prod image, non-root. Next standalone output bundles its own
 # minimal node_modules, so this stage doesn't need pnpm/corepack at all —
-# start clean from node:26-slim instead of `base` to keep it lean.
+# start clean from node:24-slim instead of `base` to keep it lean.
 # ---------------------------------------------------------------------------
-FROM node:26-slim AS runtime
+FROM node:24-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production \
     PORT=3001 \
