@@ -51,6 +51,9 @@ export async function ensureUser(
         id: randomUUID(),
         accountId: user.id,
         providerId: 'credential',
+        // better-auth 1.7 keys the credential account by `issuer`, not
+        // `providerId` — sign-in looks up `issuer === 'local:credential'`.
+        issuer: 'local:credential',
         userId: user.id,
         password: await hashPassword(SEED_PASSWORD),
         createdAt: now,
