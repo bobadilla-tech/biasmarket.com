@@ -8,7 +8,7 @@ import { useCustomerChangePassword } from "../mutations/use-customer-change-pass
 import {
   type CustomerChangePasswordInput,
   customerChangePasswordSchema,
-} from "../schemas/change-password.schema";
+} from "@biasmarket/validation";
 import {
   FormErrorSummary,
   FormField,

@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
-import type { AddressInput } from "../schemas/address.schema";
+import type { AddressInput } from "@biasmarket/validation";
 
 export function useCreateAddress(slug: string) {
   const queryClient = useQueryClient();
