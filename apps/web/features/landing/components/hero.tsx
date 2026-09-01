@@ -41,23 +41,28 @@ export function Hero() {
       </div>
 
       {/* Desktop — Figma Frame 93 hero */}
-      <div className="mx-auto hidden max-w-[1346px] px-6 pt-[25px] pb-6 sm:block sm:px-10 sm:pt-[35px]">
-        <div className="relative h-[460px] overflow-hidden rounded-[10px] bg-[#FEF3FF] sm:h-[525px]">
-          <Image
-            src="/landing/bm-props-sombra.png"
-            alt=""
-            width={563}
-            height={522}
-            priority
-            className="pointer-events-none absolute top-0 right-[-60px] h-full w-auto max-w-none select-none object-contain"
-            style={{ transform: "rotate(-0.11deg)" }}
-          />
+      <div className="mx-auto hidden max-w-[1346px] px-6 pt-[25px] pb-10 sm:block sm:px-10 sm:pt-[35px]">
+        <div className="relative min-h-[460px] rounded-[10px] bg-[#FEF3FF] sm:min-h-[525px]">
+          {/* Decorative art is clipped by its own wrapper, so the box can
+              grow (min-h) without the outer overflow-hidden that used to
+              crop the CTA/subtitle when the text ran tall (#165). */}
+          <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[10px]">
+            <Image
+              src="/landing/bm-props-sombra.png"
+              alt=""
+              width={563}
+              height={522}
+              priority
+              className="absolute top-0 right-[-60px] h-full w-auto max-w-none select-none object-contain"
+              style={{ transform: "rotate(-0.11deg)" }}
+            />
+          </div>
 
-          <div className="absolute inset-y-0 left-0 flex w-[849px] max-w-full flex-col items-center justify-center gap-4 px-6 text-center sm:px-[70px]">
+          <div className="relative z-10 flex min-h-[460px] w-[849px] max-w-full flex-col items-center justify-center gap-4 px-6 pb-[115px] text-center sm:min-h-[525px] sm:px-[70px]">
             <h1
-              className="font-bold whitespace-nowrap text-[#4C0566]"
+              className="font-bold text-[#4C0566] xl:whitespace-nowrap"
               style={{
-                fontSize: "clamp(38px, 5.4vw, 78px)",
+                fontSize: "clamp(38px, 4.8vw, 78px)",
                 lineHeight: "1.05",
               }}
             >
@@ -89,7 +94,7 @@ export function Hero() {
 
           <div
             aria-hidden="true"
-            className="absolute inset-x-0 bottom-0 h-[99px] rounded-b-[10px] bg-gradient-to-b from-[#FEF3FF] to-[#FFC2F8]"
+            className="absolute inset-x-0 bottom-0 z-0 h-[99px] rounded-b-[10px] bg-gradient-to-b from-[#FEF3FF] to-[#FFC2F8]"
           />
         </div>
       </div>
