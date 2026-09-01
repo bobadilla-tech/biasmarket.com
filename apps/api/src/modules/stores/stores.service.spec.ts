@@ -147,7 +147,7 @@ describe('StoresService', () => {
 
       await expect(service.findPublicSitemapCount()).resolves.toBe(4);
       expect(prisma.store.count).toHaveBeenCalledWith({
-        where: { isPublic: true },
+        where: { isPublic: true, isDemo: false },
       });
     });
 
@@ -162,14 +162,14 @@ describe('StoresService', () => {
         },
       );
       expect(prisma.store.findMany).toHaveBeenCalledWith({
-        where: { isPublic: true },
+        where: { isPublic: true, isDemo: false },
         select: { slug: true },
         orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
         skip: 100,
         take: 50_000,
       });
       expect(prisma.store.count).toHaveBeenCalledWith({
-        where: { isPublic: true },
+        where: { isPublic: true, isDemo: false },
       });
     });
   });
@@ -550,7 +550,7 @@ describe('StoresService', () => {
       expect(result[1].revenue).toBe(150);
     });
 
-    it('scopes eligibility to stores with a published product and a non-banned owner', async () => {
+    it('scopes eligibility to public, non-demo stores with a published product and a non-banned owner', async () => {
       prisma.store.findMany.mockResolvedValue([]);
       prisma.order.findMany.mockResolvedValue([]);
 
@@ -559,6 +559,7 @@ describe('StoresService', () => {
       expect(prisma.store.findMany).toHaveBeenCalledWith({
         where: {
           isPublic: true,
+          isDemo: false,
           products: {
             some: { status: 'PUBLISHED', deletedAt: null, discontinued: false },
           },
@@ -617,6 +618,7 @@ describe('StoresService', () => {
         expect.objectContaining({
           where: {
             isPublic: true,
+            isDemo: false,
             products: {
               some: {
                 status: 'PUBLISHED',
@@ -628,6 +630,17 @@ describe('StoresService', () => {
           },
         }),
       );
+    });
+
+    it('excludes demo and unlisted stores from the directory', async () => {
+      prisma.store.findMany.mockResolvedValue([]);
+      prisma.store.count.mockResolvedValue(0);
+
+      await service.findDirectory(1, 24, undefined);
+
+      const where = prisma.store.findMany.mock.calls[0][0].where;
+      expect(where.isPublic).toBe(true);
+      expect(where.isDemo).toBe(false);
     });
   });
 

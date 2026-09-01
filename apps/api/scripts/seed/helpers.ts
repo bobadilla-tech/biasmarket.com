@@ -73,6 +73,7 @@ export async function ensureStore(
     logoUrl?: string;
     paymentInstructions?: string;
     isPublic?: boolean;
+    isDemo?: boolean;
     lowStockThreshold?: number;
   },
 ) {
@@ -86,6 +87,7 @@ export async function ensureStore(
       logoUrl: input.logoUrl ?? null,
       paymentInstructions: input.paymentInstructions ?? '',
       isPublic: input.isPublic ?? true,
+      isDemo: input.isDemo ?? false,
       ...(input.lowStockThreshold !== undefined && {
         lowStockThreshold: input.lowStockThreshold,
       }),
@@ -100,6 +102,7 @@ export async function ensureStore(
       whatsappNumber: input.whatsappNumber,
       defaultCurrency: input.defaultCurrency,
       isPublic: input.isPublic ?? true,
+      isDemo: input.isDemo ?? false,
       ...(input.lowStockThreshold !== undefined && {
         lowStockThreshold: input.lowStockThreshold,
       }),
