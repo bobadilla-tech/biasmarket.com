@@ -8,8 +8,7 @@ export const EXPIRE_ORDERS_JOB_NAME = "expire-sweep";
 // repeatable job instead of creating a duplicate.
 export const EXPIRE_ORDERS_SCHEDULER_ID = "expire-orders";
 
-// Every 5 minutes, matching the @Cron pattern this replaces
-// (orders-cron.service.ts, removed by the migration plan).
+// Every 5 minutes, preserving the cadence of the removed in-process scheduler.
 export const EXPIRE_ORDERS_CRON_PATTERN = "*/5 * * * *";
 
 // Shared by apps/workers' outbound call and apps/api's InternalJobsSecretGuard

@@ -6,7 +6,7 @@
   "packageManager": "pnpm@10.11.0",
   "type": "module",
   "scripts": {
-    "test": "turbo run test",
+    "test": "DATABASE_URL=\"${DATABASE_URL:-postgresql://build:build@localhost:5432/build?schema=public}\" turbo run test",
     "dev": "turbo run dev --parallel",
     "build": "DATABASE_URL=\"${DATABASE_URL:-postgresql://build:build@localhost:5432/build?schema=public}\" turbo run build",
     "lint": "turbo run lint",
@@ -22,7 +22,7 @@
     "seed:append:dev": "docker compose -f infra/docker/docker-compose.dev.yml exec api pnpm --filter api run seed:append"
   },
   "devDependencies": {
-    "@types/node": "^26.0.0",
+    "@types/node": "^24.0.0",
     "concurrently": "^10.0.3",
     "nodemon": "^3.1.10",
     "prettier": "^3.4.2",

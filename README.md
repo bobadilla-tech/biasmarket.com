@@ -13,7 +13,7 @@ Next.js · NestJS · Prisma · PostgreSQL · Docker · Cloudflare R2 · JWT · R
 
 ## Getting started
 
-Prereqs: Docker, Node 26, [pnpm](https://pnpm.io).
+Prereqs: Docker, Node 24 LTS, [pnpm](https://pnpm.io).
 
 ```bash
 pnpm docker:dev

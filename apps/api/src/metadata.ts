@@ -1244,6 +1244,16 @@ export default async () => {
                 type: () => String,
                 nullable: true,
               },
+              courierName: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              courierModality: {
+                required: true,
+                nullable: true,
+                enum: ['AGENCY', 'HOME'],
+              },
               paymentMethod: {
                 required: true,
                 nullable: true,

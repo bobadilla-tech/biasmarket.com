@@ -6,7 +6,10 @@ import { PrismaService } from '../../../prisma/prisma.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
 
 const order = (overrides: Record<string, unknown> = {}) => ({
+  id: 'order-1',
   storeId: 'store-1',
+  paymentStatus: 'PENDING_PAYMENT',
+  fulfillmentStatus: 'ORDERING',
   requiredAmount: new Prisma.Decimal(100),
   payments: [],
   ...overrides,

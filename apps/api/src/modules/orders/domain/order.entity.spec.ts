@@ -44,6 +44,23 @@ describe('Order entity', () => {
     expect(order.currentPaymentStatus).toBe('CANCELLED');
   });
 
+  it('expire() moves PAYMENT_SUBMITTED to CANCELLED', () => {
+    const order = new Order(
+      'order-1',
+      'store-1',
+      'PAYMENT_SUBMITTED',
+      'ORDERING',
+    );
+    order.expire();
+    expect(order.currentPaymentStatus).toBe('CANCELLED');
+  });
+
+  it('cancel() moves a verified, unfulfilled order to CANCELLED', () => {
+    const order = new Order('order-1', 'store-1', 'VERIFIED', 'READY');
+    order.cancel();
+    expect(order.currentPaymentStatus).toBe('CANCELLED');
+  });
+
   it('advanceFulfillment() throws when payment is not yet VERIFIED', () => {
     const order = new Order(
       'order-1',

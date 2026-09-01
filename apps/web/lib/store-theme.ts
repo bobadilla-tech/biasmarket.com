@@ -1,74 +1,23 @@
 import type { CSSProperties } from "react";
+import {
+  buildCustomStorePalette,
+  buildStoreThemeConfig,
+  darken,
+  DEFAULT_STORE_PALETTE,
+  resolveStorePalette,
+  rgba,
+  STORE_PALETTES,
+} from "@biasmarket/design-tokens";
+import type { StorePalette, StoreThemeConfig } from "@biasmarket/design-tokens";
 
-export type StorePalette = {
-  id: string;
-  name: string;
-  description: string;
-  colors: {
-    primary: string;
-    accent: string;
-    surface: string;
-    text: string;
-  };
+export {
+  buildCustomStorePalette,
+  buildStoreThemeConfig,
+  DEFAULT_STORE_PALETTE,
+  resolveStorePalette,
+  STORE_PALETTES,
 };
-
-export type StoreThemeConfig = {
-  paletteId?: string;
-  colors?: Partial<StorePalette["colors"]>;
-};
-
-export const STORE_PALETTES: StorePalette[] = [
-  {
-    id: "royal-bloom",
-    name: "Royal Bloom",
-    description: "Plum, orchid, and soft rose",
-    colors: {
-      primary: "#6d28d9",
-      accent: "#f472b6",
-      surface: "#faf5ff",
-      text: "#2d1649",
-    },
-  },
-  {
-    id: "midnight-luxe",
-    name: "Midnight Luxe",
-    description: "Deep navy with electric violet",
-    colors: {
-      primary: "#312e81",
-      accent: "#8b5cf6",
-      surface: "#eef2ff",
-      text: "#1f1b4b",
-    },
-  },
-  {
-    id: "sunset-pop",
-    name: "Sunset Pop",
-    description: "Coral, peach, and warm ivory",
-    colors: {
-      primary: "#ea580c",
-      accent: "#fb7185",
-      surface: "#fff7ed",
-      text: "#4a1d18",
-    },
-  },
-  {
-    id: "mint-stage",
-    name: "Mint Stage",
-    description: "Fresh mint with bright teal",
-    colors: {
-      primary: "#0f766e",
-      accent: "#22c55e",
-      surface: "#ecfeff",
-      text: "#13343a",
-    },
-  },
-] as const;
-
-export const DEFAULT_STORE_PALETTE = STORE_PALETTES[0];
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
-}
+export type { StorePalette, StoreThemeConfig };
 
 function hexToRgb(hex: string) {
   const normalized = hex.replace("#", "");
@@ -86,26 +35,6 @@ function hexToRgb(hex: string) {
     g: (value >> 8) & 255,
     b: value & 255,
   };
-}
-
-function rgba(hex: string, alpha: number) {
-  const { r, g, b } = hexToRgb(hex);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-function darken(hex: string, amount: number) {
-  const { r, g, b } = hexToRgb(hex);
-  const ratio = clamp(1 - amount, 0, 1);
-  const toChannel = (channel: number) => Math.round(channel * ratio);
-  return `rgb(${toChannel(r)}, ${toChannel(g)}, ${toChannel(b)})`;
-}
-
-function lighten(hex: string, amount: number) {
-  const { r, g, b } = hexToRgb(hex);
-  const ratio = clamp(amount, 0, 1);
-  const toChannel = (channel: number) =>
-    Math.round(channel + (255 - channel) * ratio);
-  return `rgb(${toChannel(r)}, ${toChannel(g)}, ${toChannel(b)})`;
 }
 
 function channelLuminance(channel: number) {
@@ -149,78 +78,6 @@ function readableTextColor(hex: string) {
   }
 
   return darken(hex, 0.8);
-}
-
-export function buildCustomStorePalette(primaryHex: string): StorePalette {
-  return {
-    id: "custom",
-    name: "Custom",
-    description: "Your own color",
-    colors: {
-      primary: primaryHex,
-      accent: lighten(primaryHex, 0.25),
-      surface: lighten(primaryHex, 0.92),
-      text: darken(primaryHex, 0.75),
-    },
-  };
-}
-
-function isThemeConfig(value: unknown): value is StoreThemeConfig {
-  if (typeof value !== "object" || value === null) return false;
-  const record = value as Record<string, unknown>;
-  const paletteId = record.paletteId;
-  if (paletteId !== undefined && typeof paletteId !== "string") return false;
-  const colors = record.colors;
-  if (colors !== undefined) {
-    if (typeof colors !== "object" || colors === null || Array.isArray(colors))
-      return false;
-  }
-  return true;
-}
-
-export function resolveStorePalette(themeConfig?: unknown): StorePalette {
-  if (!isThemeConfig(themeConfig)) {
-    return DEFAULT_STORE_PALETTE;
-  }
-
-  const paletteId = themeConfig.paletteId;
-  const preset = paletteId
-    ? STORE_PALETTES.find((palette) => palette.id === paletteId)
-    : undefined;
-  const base = preset ?? DEFAULT_STORE_PALETTE;
-  const isCustomPalette = Boolean(paletteId && !preset);
-
-  const merged = {
-    ...base,
-    id: isCustomPalette ? paletteId! : base.id,
-    name: isCustomPalette ? "Custom" : base.name,
-    description: isCustomPalette ? "Your own color" : base.description,
-    colors: {
-      ...base.colors,
-      ...(themeConfig.colors ?? {}),
-    },
-  } satisfies StorePalette;
-
-  if (isCustomPalette && merged.colors.primary) {
-    const custom = buildCustomStorePalette(merged.colors.primary);
-    return {
-      ...custom,
-      id: paletteId!,
-      colors: {
-        ...custom.colors,
-        ...merged.colors,
-      },
-    };
-  }
-
-  return merged;
-}
-
-export function buildStoreThemeConfig(palette: StorePalette): StoreThemeConfig {
-  return {
-    paletteId: palette.id,
-    colors: palette.colors,
-  };
 }
 
 export function getStoreThemeStyle(themeConfig?: unknown): CSSProperties {

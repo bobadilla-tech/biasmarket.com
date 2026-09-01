@@ -5,6 +5,7 @@ import { isProductOutOfStock } from "@/features/discovery/lib/product-stock";
 import { canonicalUrl, SITE_URL } from "@/lib/site-config";
 import { ProductCard } from "@/components/storefront/product-card";
 import { StoreSectionRenderer } from "@/components/storefront/section-renderer";
+import { buildProductJsonLd, serializeJsonLd } from "@/lib/product-json-ld";
 
 async function getStore(slug: string) {
   const apiUrl =
@@ -104,20 +105,12 @@ function buildJsonLd(locale: string, slug: string, store: any) {
         url: pageUrl,
         ...(store.logoUrl && { logo: store.logoUrl, image: store.logoUrl }),
       },
-      ...products.map((product: any) => ({
-        "@type": "Product",
-        name: product.name,
-        ...(product.images?.[0] && { image: product.images[0] }),
-        offers: {
-          "@type": "Offer",
-          price: String(product.price),
-          priceCurrency: product.currency,
-          availability: isProductOutOfStock(product)
-            ? "https://schema.org/OutOfStock"
-            : "https://schema.org/InStock",
-          url: pageUrl,
-        },
-      })),
+      ...products.map((product: any) =>
+        buildProductJsonLd(
+          product,
+          `${pageUrl}/product/${encodeURIComponent(product.id)}`,
+        ),
+      ),
     ],
   };
 }
@@ -184,10 +177,7 @@ export default async function StorePage({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(buildJsonLd(locale, slug, store)).replace(
-            /</g,
-            "\\u003c",
-          ),
+          __html: serializeJsonLd(buildJsonLd(locale, slug, store)),
         }}
       />
       <main

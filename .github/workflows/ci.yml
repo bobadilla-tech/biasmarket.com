@@ -27,7 +27,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: "26"
+  NODE_VERSION: "24"
   PNPM_VERSION: "10.11.0"
 
 jobs:
@@ -42,7 +42,7 @@ jobs:
       i18n: ${{ steps.filter.outputs.i18n }}
       queue: ${{ steps.filter.outputs.queue }}
       types: ${{ steps.filter.outputs.types }}
-      ui: ${{ steps.filter.outputs.ui }}
+      design_tokens: ${{ steps.filter.outputs.design_tokens }}
       utils: ${{ steps.filter.outputs.utils }}
       web_e2e: ${{ steps.filter.outputs.web_e2e }}
     steps:
@@ -68,9 +68,9 @@ jobs:
               - '.github/workflows/ci.yml'
             web:
               - 'apps/web/**'
+              - 'packages/design-tokens/**'
               - 'packages/i18n/**'
               - 'packages/types/**'
-              - 'packages/ui/**'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
               - 'turbo.json'
@@ -112,8 +112,8 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
-            ui:
-              - 'packages/ui/**'
+            design_tokens:
+              - 'packages/design-tokens/**'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
               - 'turbo.json'
@@ -486,10 +486,10 @@ jobs:
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=@biasmarket/types
 
-  ui:
-    name: UI
+  design-tokens:
+    name: Design Tokens
     needs: detect-changes
-    if: needs.detect-changes.outputs.ui == 'true'
+    if: needs.detect-changes.outputs.design_tokens == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -513,12 +513,15 @@ jobs:
         uses: actions/cache@v6
         with:
           path: .turbo/cache
-          key: turbo-ui-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          key: turbo-design-tokens-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
           restore-keys: |
-            turbo-ui-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+            turbo-design-tokens-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+
+      - name: Build
+        run: pnpm turbo run build --filter=@biasmarket/design-tokens
 
       - name: Typecheck
-        run: pnpm turbo run typecheck --filter=@biasmarket/ui
+        run: pnpm turbo run typecheck --filter=@biasmarket/design-tokens
 
   utils:
     name: Utils
@@ -777,7 +780,7 @@ jobs:
       - i18n
       - queue
       - types
-      - ui
+      - design-tokens
       - utils
       - e2e
       - web-e2e
@@ -799,7 +802,7 @@ jobs:
           I18N_RESULT: ${{ needs.i18n.result }}
           QUEUE_RESULT: ${{ needs.queue.result }}
           TYPES_RESULT: ${{ needs.types.result }}
-          UI_RESULT: ${{ needs.ui.result }}
+          DESIGN_TOKENS_RESULT: ${{ needs.design-tokens.result }}
           UTILS_RESULT: ${{ needs.utils.result }}
           E2E_RESULT: ${{ needs.e2e.result }}
           WEB_E2E_RESULT: ${{ needs.web-e2e.result }}
@@ -810,7 +813,7 @@ jobs:
           I18N_CHANGED: ${{ needs.detect-changes.outputs.i18n }}
           QUEUE_CHANGED: ${{ needs.detect-changes.outputs.queue }}
           TYPES_CHANGED: ${{ needs.detect-changes.outputs.types }}
-          UI_CHANGED: ${{ needs.detect-changes.outputs.ui }}
+          DESIGN_TOKENS_CHANGED: ${{ needs.detect-changes.outputs.design_tokens }}
           UTILS_CHANGED: ${{ needs.detect-changes.outputs.utils }}
           WEB_E2E_CHANGED: ${{ needs.detect-changes.outputs.web_e2e }}
           EVENT_NAME: ${{ github.event_name }}

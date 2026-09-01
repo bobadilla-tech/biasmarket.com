@@ -12,7 +12,7 @@ describe('assertPaymentTransition', () => {
     ).not.toThrow();
   });
 
-  it('allows PENDING_PAYMENT -> VERIFIED directly (no in-app proof step in MVP)', () => {
+  it('allows PENDING_PAYMENT -> VERIFIED directly when no proof was required', () => {
     expect(() =>
       assertPaymentTransition('PENDING_PAYMENT', 'VERIFIED'),
     ).not.toThrow();
@@ -42,10 +42,16 @@ describe('assertPaymentTransition', () => {
     ).not.toThrow();
   });
 
-  it('rejects PAYMENT_SUBMITTED -> CANCELLED', () => {
+  it('allows PAYMENT_SUBMITTED -> CANCELLED for expiry or seller cancellation', () => {
     expect(() =>
       assertPaymentTransition('PAYMENT_SUBMITTED', 'CANCELLED'),
-    ).toThrow(InvalidOrderTransitionError);
+    ).not.toThrow();
+  });
+
+  it('allows VERIFIED -> CANCELLED on the independent cancellation axis', () => {
+    expect(() =>
+      assertPaymentTransition('VERIFIED', 'CANCELLED'),
+    ).not.toThrow();
   });
 
   it('rejects re-approving an already VERIFIED order', () => {

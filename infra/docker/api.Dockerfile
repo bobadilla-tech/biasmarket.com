@@ -4,9 +4,9 @@
 # `base`/`deps` stages. docker-compose.dev.yml builds target `dev`; the VPS
 # blue/green stack builds the default final target `runtime`.
 
-# node:26-slim no longer bundles corepack, install it pinned (not @latest)
+# Install corepack pinned (not @latest)
 # so pnpm resolution is reproducible across builds.
-FROM node:26-slim AS base
+FROM node:24-slim AS base
 ENV COREPACK_HOME=/usr/local/share/corepack \
     COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN npm install -g corepack@0.35.0 && corepack enable && corepack prepare pnpm@10.11.0 --activate
@@ -24,7 +24,7 @@ FROM base AS dev
 ENV NODE_ENV=development
 # procps provides `ps`, which tree-kill (used by `concurrently -k` in this
 # service's dev command) shells out to when killing sibling processes.
-# node:26-slim omits it, so tree-kill's `spawn('ps', ...)` throws an
+# The slim image omits it, so tree-kill's `spawn('ps', ...)` throws an
 # unhandled ENOENT and crashes the whole container the moment any watched
 # process exits — not just the one it's trying to clean up after.
 RUN apt-get update && apt-get install -y --no-install-recommends procps \
@@ -40,11 +40,11 @@ COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY apps/api/package.json ./apps/api/package.json
 COPY apps/web/package.json ./apps/web/package.json
 COPY apps/workers/package.json ./apps/workers/package.json
+COPY packages/design-tokens/package.json ./packages/design-tokens/package.json
 COPY packages/db/package.json ./packages/db/package.json
 COPY packages/i18n/package.json ./packages/i18n/package.json
 COPY packages/queue/package.json ./packages/queue/package.json
 COPY packages/types/package.json ./packages/types/package.json
-COPY packages/ui/package.json ./packages/ui/package.json
 COPY packages/utils/package.json ./packages/utils/package.json
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm-store \
     pnpm install --frozen-lockfile --store-dir=/pnpm-store

@@ -7,6 +7,7 @@ import { CancelOrderDto } from '../dto/cancel-order.dto.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { OrderRepository } from '../infrastructure/order.repository.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
+import { Order } from '../domain/order.entity.js';
 
 const RESERVED_HOLD_STATUSES = new Set([
   'PENDING_PAYMENT',
@@ -79,17 +80,30 @@ export class CancelOrderUseCase {
       );
     }
 
+    const entity = new Order(
+      row.id,
+      row.storeId,
+      row.paymentStatus,
+      row.fulfillmentStatus,
+    );
+    entity.cancel();
+
     const releaseStock = RESERVED_HOLD_STATUSES.has(row.paymentStatus);
 
     return this.prisma.$transaction(async (tx) => {
-      // Guard against a concurrent cancel/review of the same order: only
-      // proceed if the row is still ACTIVE, same pattern as
-      // ReviewPaymentUseCase's updateMany guard.
+      // Guard against a concurrent cancel/review/advance of the same order:
+      // only proceed if neither state axis changed since the entity validated
+      // the transition, same pattern as ReviewPaymentUseCase's updateMany guard.
       const guard = await tx.order.updateMany({
-        where: { id: orderId, status: 'ACTIVE' },
+        where: {
+          id: orderId,
+          status: 'ACTIVE',
+          paymentStatus: row.paymentStatus,
+          fulfillmentStatus: row.fulfillmentStatus,
+        },
         data: {
           status: 'CANCELLED',
-          paymentStatus: 'CANCELLED',
+          paymentStatus: entity.currentPaymentStatus,
           cancellationResolution: dto.resolution,
           cancellationReason: dto.reason ?? null,
           retainedAmount,

@@ -14,9 +14,10 @@ biasmarket/
     web/                  # Next.js frontend (storefront + dashboard + onboarding)
   packages/
     db/                   # Prisma schema + client, migrations
-    types/                # Shared DTOs/interfaces (Order, Product, Store, Theme...)
-    ui/                   # Shared React components (design system, theme-aware)
-    i18n/                 # ES/EN translation dictionaries, shared by api + web
+    design-tokens/        # Portable store palettes + validated theme resolution
+    types/                # OpenAPI-generated SDK and request/response contracts
+    i18n/                 # ES/EN translation dictionaries used by web
+    queue/                # BullMQ queue names and payload contracts
     utils/                # Shared pure functions (slugify, currency format, date utils)
   docker-compose.yml
   turbo.json / pnpm-workspace.yaml
@@ -26,10 +27,11 @@ biasmarket/
 directly. All data access goes through `api` over HTTP. This is the #1 rule that
 keeps multi-tenant isolation enforceable in one place instead of two.
 
-- `packages/types` is the contract between `api` and `web` — hand-written or
-  generated from Prisma/OpenAPI, never duplicated.
-- `packages/ui` holds theme-aware components only; no business logic, no
-  fetching.
+- `packages/types` is the OpenAPI-generated contract between API consumers and
+  `api`; response/request shapes are not duplicated by hand.
+- `packages/design-tokens` holds portable palette data and pure resolution
+  logic. Web-only Base UI/Tailwind components stay in `apps/web/components/ui`;
+  React Native will consume the tokens, not those DOM components.
 - Bad pattern to avoid: importing `@prisma/client` into `web` "just for types" —
   it drags the DB boundary into the frontend bundle and tempts direct queries
   later.
@@ -58,7 +60,7 @@ modules/
       review-payment.usecase.ts   # seller approve/reject: stock, AuditLog, buyer email
       advance-fulfillment.usecase.ts
       cancel-order.usecase.ts
-      expire-orders.usecase.ts    # swept by orders-cron.service.ts (@Cron "*/5 * * * *")
+      expire-orders.usecase.ts    # workers' BullMQ scheduler calls the internal sweep endpoint
       customer-account.service.ts # buyer phone/email account
     infrastructure/
       order.repository.ts     # Prisma-backed + assertOwnership/findRowByIdForStore
@@ -303,16 +305,17 @@ structure:
 }
 ```
 
-- **Theme resolver layer** (in `packages/ui` or a `theme/` module in `web`):
-  takes the raw JSON, validates against a Zod schema, fills defaults for missing
-  tokens, outputs CSS custom properties (`--color-primary`, `--radius-md`, ...).
+- **Theme resolver layer**: `packages/design-tokens` validates the portable
+  palette portion of the raw JSON and fills defaults;
+  `apps/web/lib/store-theme.ts` adapts the result to CSS custom properties
+  (`--store-primary`, ...).
   Never let raw untrusted JSON hit
   `style={{ background: theme.colors.primary }}` without validation — it's a
   JSON blob coming from a DB row a seller can edit via the dashboard.
-- Component overrides (v1+): let a store optionally override specific components
-  (`ProductCard`, `Header`) by referencing a named variant already shipped in
-  `packages/ui`, not by injecting arbitrary code — keeps the marketplace safe
-  without a plugin sandbox.
+- Component overrides (v1+): let a store optionally override specific web
+  components (`ProductCard`, `Header`) by referencing a named variant shipped
+  in `apps/web`, not by injecting arbitrary code. Native variants should be
+  implemented separately against the same tokens.
 - Theme marketplace (v1+): themes become named token presets stored server-side;
   "installing" a theme = copying a preset's JSON into `Store.themeConfig`, no
   new architecture needed.
@@ -445,9 +448,9 @@ discipline, and recovery.
   and a "reviewed_by" requirement so accountability is traceable per admin — not
   a technical fix, an accountability one.
 - **Charge disputes**: no payment processor means no chargeback protection or
-  transaction record beyond what you store — the `PaymentProof` + `AuditLog`
-  pair _is_ your evidence trail, treat it as such (don't allow deletion, only
-  status changes).
+  transaction record beyond what you store — buyer/seller proof images on
+  `OrderPayment` plus `AuditLog` are your evidence trail, so treat them as
+  append-only records (don't allow deletion, only review/status changes).
 - **Scaling multi-tenant themes**: JSON-blob theming is cheap now; a
   plugin/component-override marketplace (§5) is where complexity will actually
   show up — defer it, ship token-based theming first.

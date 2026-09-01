@@ -247,7 +247,7 @@ services:
     depends_on:
       api-blue:
         condition: service_healthy
-    # web's runtime image is a lean node:26-slim stage with no
+    # web's runtime image is a lean node:24-slim stage with no
     # infra/docker/api-healthcheck.ts copied into it (unlike api/workers) —
     # web.Dockerfile is explicitly out of scope for this migration, so this
     # inlines the same "GET a path, exit 0 if status < 500" check via
