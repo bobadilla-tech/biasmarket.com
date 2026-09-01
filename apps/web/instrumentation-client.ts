@@ -9,5 +9,11 @@ if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
   Sentry.init({
     dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
     tracesSampleRate: 0.01,
+    // The bundled web-vitals collector inside browserTracingIntegration can
+    // throw "Cannot read properties of undefined (reading 'startTime')" from
+    // its reportAllChanges path on App Router client navigations (empty/stale
+    // LCP PerformanceObserver records). It's upstream noise, not an app fault —
+    // drop it so it doesn't flood error tracking.
+    ignoreErrors: [/reading 'startTime'/, /reportAllChanges/],
   });
 }
