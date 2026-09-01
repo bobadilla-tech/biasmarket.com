@@ -213,6 +213,9 @@ importers:
       '@biasmarket/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
+      '@biasmarket/query':
+        specifier: workspace:*
+        version: link:../../packages/query
       '@biasmarket/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -489,6 +492,18 @@ importers:
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
+
+  packages/query:
+    devDependencies:
+      '@tanstack/react-query':
+        specifier: ^5.101.4
+        version: 5.101.4(react@19.2.8)
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(lightningcss@1.33.0)(terser@5.49.0)(tsx@4.23.12)(yaml@2.9.0)
 
   packages/queue:
     dependencies:
@@ -15201,6 +15216,11 @@ snapshots:
     dependencies:
       '@tanstack/query-core': 5.101.4
       react: 19.2.4
+
+  '@tanstack/react-query@5.101.4(react@19.2.8)':
+    dependencies:
+      '@tanstack/query-core': 5.101.4
+      react: 19.2.8
 
   '@tanstack/react-table@8.21.3(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
     dependencies:

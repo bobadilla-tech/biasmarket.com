@@ -45,6 +45,7 @@ jobs:
       design_tokens: ${{ steps.filter.outputs.design_tokens }}
       utils: ${{ steps.filter.outputs.utils }}
       validation: ${{ steps.filter.outputs.validation }}
+      query: ${{ steps.filter.outputs.query }}
       web_e2e: ${{ steps.filter.outputs.web_e2e }}
     steps:
       - uses: actions/checkout@v7
@@ -129,6 +130,13 @@ jobs:
               - '.github/workflows/ci.yml'
             validation:
               - 'packages/validation/**'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'turbo.json'
+              - 'package.json'
+              - '.github/workflows/ci.yml'
+            query:
+              - 'packages/query/**'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
               - 'turbo.json'
@@ -622,6 +630,46 @@ jobs:
       - name: Test
         run: pnpm turbo run test --filter=@biasmarket/validation
 
+  query:
+    name: Query
+    needs: detect-changes
+    if: needs.detect-changes.outputs.query == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Cache turbo
+        uses: actions/cache@v6
+        with:
+          path: .turbo/cache
+          key: turbo-query-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            turbo-query-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+
+      - name: Build
+        run: pnpm turbo run build --filter=@biasmarket/query
+
+      - name: Typecheck
+        run: pnpm turbo run typecheck --filter=@biasmarket/query
+
+      - name: Test
+        run: pnpm turbo run test --filter=@biasmarket/query
+
   e2e:
     name: E2E (API)
     # The full suite runs on every push regardless of which packages changed.
@@ -834,6 +882,7 @@ jobs:
       - design-tokens
       - utils
       - validation
+      - query
       - e2e
       - web-e2e
     if: always()
@@ -857,6 +906,7 @@ jobs:
           DESIGN_TOKENS_RESULT: ${{ needs.design-tokens.result }}
           UTILS_RESULT: ${{ needs.utils.result }}
           VALIDATION_RESULT: ${{ needs.validation.result }}
+          QUERY_RESULT: ${{ needs.query.result }}
           E2E_RESULT: ${{ needs.e2e.result }}
           WEB_E2E_RESULT: ${{ needs.web-e2e.result }}
           API_CHANGED: ${{ needs.detect-changes.outputs.api }}
@@ -869,6 +919,7 @@ jobs:
           DESIGN_TOKENS_CHANGED: ${{ needs.detect-changes.outputs.design_tokens }}
           UTILS_CHANGED: ${{ needs.detect-changes.outputs.utils }}
           VALIDATION_CHANGED: ${{ needs.detect-changes.outputs.validation }}
+          QUERY_CHANGED: ${{ needs.detect-changes.outputs.query }}
           WEB_E2E_CHANGED: ${{ needs.detect-changes.outputs.web_e2e }}
           EVENT_NAME: ${{ github.event_name }}
           # Guard the boolean input with the event name; on push, inputs is null.

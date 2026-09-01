@@ -31,8 +31,8 @@ check_package() {
   fi
 }
 
-package_names=(API Web Workers DB i18n Queue Types "Design Tokens" Utils Validation "Web E2E (a11y)")
-package_keys=(API WEB WORKERS DB I18N QUEUE TYPES DESIGN_TOKENS UTILS VALIDATION WEB_E2E)
+package_names=(API Web Workers DB i18n Queue Types "Design Tokens" Utils Validation Query "Web E2E (a11y)")
+package_keys=(API WEB WORKERS DB I18N QUEUE TYPES DESIGN_TOKENS UTILS VALIDATION QUERY WEB_E2E)
 for index in "${!package_names[@]}"; do
   changed_var="${package_keys[$index]}_CHANGED"
   result_var="${package_keys[$index]}_RESULT"
