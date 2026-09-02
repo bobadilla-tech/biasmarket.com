@@ -5,16 +5,16 @@
 // yet; if they already signed up normally, use promote-admin.ts instead.
 // Usage: pnpm --filter api run admin:create <email> [name]
 
-import { randomBytes, randomUUID } from "node:crypto";
-import { PrismaClient } from "@biasmarket/db";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { hashPassword } from "better-auth/crypto";
+import { randomBytes, randomUUID } from 'node:crypto';
+import { PrismaClient } from '@biasmarket/db';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { hashPassword } from 'better-auth/crypto';
 
 const email = process.argv[2];
-const name = process.argv[3] ?? email?.split("@")[0];
+const name = process.argv[3] ?? email?.split('@')[0];
 
 if (!email) {
-  console.error("Usage: node scripts/create-admin.ts <email> [name]");
+  console.error('Usage: node scripts/create-admin.ts <email> [name]');
   process.exit(1);
 }
 
@@ -31,7 +31,7 @@ if (existing) {
   process.exit(1);
 }
 
-const password = randomBytes(18).toString("base64url");
+const password = randomBytes(18).toString('base64url');
 const userId = randomUUID();
 const now = new Date();
 
@@ -41,7 +41,7 @@ await prisma.user.create({
     name,
     email,
     emailVerified: true,
-    role: "admin",
+    role: 'admin',
     createdAt: now,
     updatedAt: now,
   },
@@ -51,7 +51,9 @@ await prisma.account.create({
   data: {
     id: randomUUID(),
     accountId: userId,
-    providerId: "credential",
+    providerId: 'credential',
+    // better-auth 1.7 looks up the credential account by `issuer`.
+    issuer: 'local:credential',
     userId,
     password: await hashPassword(password),
     createdAt: now,
@@ -61,6 +63,6 @@ await prisma.account.create({
 
 console.log(`Created admin ${email}`);
 console.log(`Password: ${password}`);
-console.log("Save this now — it is not stored or shown again.");
+console.log('Save this now — it is not stored or shown again.');
 
 await prisma.$disconnect();

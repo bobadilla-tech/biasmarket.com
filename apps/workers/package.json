@@ -25,11 +25,11 @@
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
-    "bullmq": "^6.0.9",
+    "bullmq": "^6.3.4",
     "dotenv": "^17.4.2",
     "ioredis": "^5.11.1",
     "reflect-metadata": "^0.2.2",
-    "resend": "^6.18.1",
+    "resend": "^6.25.0",
     "rxjs": "^7.8.1"
   },
   "devDependencies": {
@@ -37,7 +37,7 @@
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.1",
     "@swc/cli": "^0.8.1",
-    "@swc/core": "1.15.43",
+    "@swc/core": "1.16.1",
     "@types/express": "^5.0.0",
     "@types/node": "^24.0.0",
     "@types/supertest": "^7.0.0",

@@ -1,6 +1,16 @@
 packages:
   - apps/*
   - packages/*
+overrides:
+  # Keep a single copy of the React type packages across the workspace. Without
+  # this, a devDependency bump can pull one workspace package up to a newer
+  # @types/react while transitive peers elsewhere still resolve the previous
+  # patch — two copies of the module-augmented
+  # DO_NOT_USE_OR_YOU_WILL_BE_FIRED_EXPERIMENTAL_KEY_TYPES interface then make
+  # `React.Key` structurally incompatible with itself (a `unique symbol` from
+  # each copy), breaking spreads like `<div {...props} />` in shadcn primitives.
+  "@types/react": "19.2.18"
+  "@types/react-dom": "19.2.5"
 packageExtensions:
   # @nestjs/swagger's CLI plugin (used by apps/api's generate:swagger-metadata
   # script) does `require("typescript")` at runtime without declaring it as a
