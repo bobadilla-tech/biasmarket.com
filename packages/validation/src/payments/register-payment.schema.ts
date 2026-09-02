@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { MAX_FILE_SIZE, type ProofFileShape } from "../checkout/file-proof.js";
+import { MAX_FILE_SIZE, isProofFileShape, type ProofFileShape } from "../checkout/file-proof.js";
 
 export const PAYMENT_METHOD_TYPES = [
   "YAPE",
@@ -38,10 +38,11 @@ export function buildRegisterPaymentSchema(maxAmount: number) {
       ),
     note: z.string(),
     file: z
-      .custom<ProofFileShape>(() => true)
+      .custom<ProofFileShape>(isProofFileShape)
       .nullable()
       .refine(
-        (file) => !file || (file.size ?? 0) <= MAX_FILE_SIZE,
+        (file) =>
+          !file || (typeof file.size === "number" && file.size <= MAX_FILE_SIZE),
         "file too large",
       )
       .refine(

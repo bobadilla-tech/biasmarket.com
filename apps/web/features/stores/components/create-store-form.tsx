@@ -32,9 +32,9 @@ import {
 } from "@/lib/store-theme";
 import { cn } from "@/lib/utils";
 import {
+  formErrorMessage,
   FormErrorSummary,
   FormField,
-  formErrorMessage,
 } from "@/components/shared/form-a11y";
 import { useCreateStore } from "../mutations/use-create-store";
 import {
@@ -199,7 +199,9 @@ export function CreateStoreForm() {
                     <Input
                       id="create-store-name"
                       aria-invalid={Boolean(errors.name)}
-                      aria-describedby={`create-store-name-description${errors.name ? " create-store-name-error" : ""}`}
+                      aria-describedby={`create-store-name-description${
+                        errors.name ? " create-store-name-error" : ""
+                      }`}
                       {...register("name")}
                       onChange={handleNameChange}
                       placeholder={t("namePlaceholder")}
@@ -217,7 +219,9 @@ export function CreateStoreForm() {
                   <Input
                     id="create-store-slug"
                     aria-invalid={Boolean(errors.slug)}
-                    aria-describedby={`create-store-slug-description${errors.slug ? " create-store-slug-error" : ""}`}
+                    aria-describedby={`create-store-slug-description${
+                      errors.slug ? " create-store-slug-error" : ""
+                    }`}
                     {...slugRegister}
                     onChange={(event) => {
                       event.target.value = slugifyValue(event.target.value);
@@ -241,7 +245,11 @@ export function CreateStoreForm() {
                       <PhoneInput
                         id="create-store-whatsapp"
                         aria-invalid={errors.whatsappNumber ? true : undefined}
-                        aria-describedby={`create-store-whatsapp-description${errors.whatsappNumber ? " create-store-whatsapp-error" : ""}`}
+                        aria-describedby={`create-store-whatsapp-description${
+                          errors.whatsappNumber
+                            ? " create-store-whatsapp-error"
+                            : ""
+                        }`}
                         value={field.value}
                         onChange={field.onChange}
                         placeholder={t("whatsappPlaceholder")}

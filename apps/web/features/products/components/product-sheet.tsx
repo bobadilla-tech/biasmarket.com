@@ -607,7 +607,9 @@ export function ProductSheet({
                         {option.name}: {option.values.join(", ")}
                         <button
                           type="button"
-                          aria-label={`${t("products.form.removeImage")} ${option.name}`}
+                          aria-label={`${t(
+                            "products.form.removeImage",
+                          )} ${option.name}`}
                           className="ml-2 text-[#d11d52]"
                           onClick={() =>
                             setOptions((prev) =>
@@ -668,7 +670,9 @@ export function ProductSheet({
                               </div>
                               <Input
                                 value={variantOverrides[key]?.stock ?? ""}
-                                aria-label={`${draft.name} ${t("products.form.variantStock")}`}
+                                aria-label={`${draft.name} ${t(
+                                  "products.form.variantStock",
+                                )}`}
                                 onChange={(event) =>
                                   setVariantOverrides((prev) => ({
                                     ...prev,
@@ -684,7 +688,9 @@ export function ProductSheet({
                               />
                               <Input
                                 value={variantOverrides[key]?.price ?? ""}
-                                aria-label={`${draft.name} ${t("products.form.variantPrice")}`}
+                                aria-label={`${draft.name} ${t(
+                                  "products.form.variantPrice",
+                                )}`}
                                 onChange={(event) =>
                                   setVariantOverrides((prev) => ({
                                     ...prev,
@@ -930,7 +936,9 @@ export function ProductSheet({
                   </span>
                   <button
                     type="button"
-                    aria-label={`${t("products.form.removeImage")} ${index + 1}`}
+                    aria-label={`${t("products.form.removeImage")} ${
+                      index + 1
+                    }`}
                     onClick={() =>
                       setDraftImages((prev) =>
                         prev.filter((_, i) => i !== index),

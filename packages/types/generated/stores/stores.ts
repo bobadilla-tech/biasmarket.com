@@ -17,10 +17,10 @@ import type {
   StoreDirectoryResponseDto,
   StorePublicDetailResponseDto,
   StoreResponseDto,
-  StoreWithOwnerResponseDto,
   StoresControllerfindDirectoryParams,
   StoresControllerfindFeaturedParams,
   StoresControllerfindPublicSitemapPageParams,
+  StoreWithOwnerResponseDto,
   UpdateStoreDto,
 } from "../api.schemas.js";
 

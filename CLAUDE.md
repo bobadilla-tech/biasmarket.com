@@ -132,12 +132,12 @@ Flat NestJS `controller/service/dto` per module for most of
 `products`, `restock`, `stats`, `store-sections`, `stores`, `users`, and
 `whatsapp-templates`). The buyer-facing `global-account.controller.ts` lives
 inside `customer-auth`: it handles global buyer identity, while the neighboring
-customer-auth controller handles per-store buyer sessions.
-`orders` is the one module using the DDD-lite layering
-(`domain/application/infrastructure`) described in `docs/core/architecture.md` —
-it owns the payment/fulfillment state machine, which warranted the extra
-structure. Don't apply that layering to CRUD-style modules, and don't retrofit
-it onto existing flat modules unless asked.
+customer-auth controller handles per-store buyer sessions. `orders` is the one
+module using the DDD-lite layering (`domain/application/infrastructure`)
+described in `docs/core/architecture.md` — it owns the payment/fulfillment state
+machine, which warranted the extra structure. Don't apply that layering to
+CRUD-style modules, and don't retrofit it onto existing flat modules unless
+asked.
 
 - `main.ts`: global
   `ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })`, global
@@ -173,8 +173,8 @@ features.
 
 Core models: `User`, `Store`, `Product`, `ProductVariant`, `Category`,
 `Collection`, `StoreSection`, `Order`, `OrderItem`, `OrderPayment`,
-`PaymentMethodConfig`, `DeliveryMethodConfig`, `PickupPoint`,
-`Customer`, `ContactInquiry`, `Notification`, `AuditLog`, plus better-auth's
+`PaymentMethodConfig`, `DeliveryMethodConfig`, `PickupPoint`, `Customer`,
+`ContactInquiry`, `Notification`, `AuditLog`, plus better-auth's
 `Session`/`Account`/`Verification`. Money fields are `Decimal`, never `Float`.
 
 `Order` implements the state machine from `docs/core/security-payments.md` §9:

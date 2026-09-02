@@ -28,3 +28,20 @@ export function isValidProofFile(file: ProofFileShape): boolean {
     (!!file.name && ACCEPTED_EXTENSION.test(file.name))
   );
 }
+
+/**
+ * Zod `.custom()` predicate for `ProofFileShape`: accepts only non-null
+ * objects whose present optional fields are well-typed. Rejects primitives
+ * like `false`, `0`, `""` that would otherwise slip past a `!file ||`
+ * refinement guard. Real `File`s and expo-image-picker assets both satisfy
+ * the shape.
+ */
+export function isProofFileShape(value: unknown): value is ProofFileShape {
+  if (value === null || typeof value !== "object") return false;
+  const file = value as Record<string, unknown>;
+  if ("name" in file && typeof file.name !== "string") return false;
+  if ("type" in file && typeof file.type !== "string") return false;
+  if ("size" in file && (typeof file.size !== "number" || !Number.isFinite(file.size))) return false;
+  if ("uri" in file && typeof file.uri !== "string") return false;
+  return true;
+}

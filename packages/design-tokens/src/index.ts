@@ -21,21 +21,15 @@ export {
   type StoreThemeConfig,
 } from "./palette.js";
 
-export {
-  spacing,
-  type SpacingToken,
-} from "./spacing.js";
+export { spacing, type SpacingToken } from "./spacing.js";
 
-export {
-  radii,
-  type RadiusToken,
-} from "./radii.js";
+export { radii, type RadiusToken } from "./radii.js";
 
 export {
   fontSizes,
-  fontWeights,
-  lineHeights,
   type FontSizeToken,
+  fontWeights,
   type FontWeightToken,
+  lineHeights,
   type LineHeightToken,
 } from "./typography.js";

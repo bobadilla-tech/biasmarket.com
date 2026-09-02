@@ -81,3 +81,46 @@ test("accepts a structural asset shape (React Native image-picker file)", () => 
   });
   expect(result.success).toBe(true);
 });
+
+test("rejects primitive file values (false, 0, empty string)", () => {
+  const schema = buildRegisterPaymentSchema(60);
+  for (const file of [false, 0, ""]) {
+    const result = schema.safeParse({
+      amount: "10",
+      method: "YAPE",
+      note: "",
+      file,
+    });
+    expect(result.success, `file=${String(file)}`).toBe(false);
+  }
+});
+
+test("rejects file values with malformed optional fields", () => {
+  const schema = buildRegisterPaymentSchema(60);
+  const malformed = [
+    { name: 5, type: "image/png", size: 2048 },
+    { name: "proof.png", type: 123, size: 2048 },
+    { name: "proof.png", type: "image/png", size: "big" },
+    { uri: 7, type: "image/png", size: 2048 },
+  ];
+  for (const file of malformed) {
+    const result = schema.safeParse({
+      amount: "10",
+      method: "YAPE",
+      note: "",
+      file,
+    });
+    expect(result.success, `malformed file`).toBe(false);
+  }
+});
+
+test("rejects a file without a known size", () => {
+  const schema = buildRegisterPaymentSchema(60);
+  const result = schema.safeParse({
+    amount: "10",
+    method: "YAPE",
+    note: "",
+    file: { name: "proof.png", type: "image/png" },
+  });
+  expect(result.success).toBe(false);
+});

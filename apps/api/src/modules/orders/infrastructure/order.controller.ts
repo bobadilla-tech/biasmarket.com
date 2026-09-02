@@ -360,8 +360,7 @@ export class OrderController {
     @Body('amount') amount: string,
     @Body('method') method: string,
     @Body('note') note?: string,
-    @UploadedFile(OPTIONAL_PAYMENT_IMAGE_PIPE)
-    file?: ValidatedUploadedFile,
+    @UploadedFile(OPTIONAL_PAYMENT_IMAGE_PIPE) file?: ValidatedUploadedFile,
   ): Promise<OrderDetailResponseDto> {
     await this.orders.assertOwnership(storeId, session.user.id);
     const order = await this.orders.findRowByIdForStore(orderId, storeId);

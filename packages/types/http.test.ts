@@ -199,4 +199,42 @@ describe("customFetch", () => {
       expect((e as ApiError).message).toBe("Store not found");
     }
   });
+
+  it("omits the auth header when baseUrl is cleartext HTTP", async () => {
+    configure({
+      baseUrl: "http://localhost:3000/api",
+      getAuthHeader: () => ({ Authorization: "Bearer secret" }),
+    });
+    fetchSpy.mockResolvedValue(fakeJson({ ok: true }));
+
+    await customFetch<{ ok: boolean }>("/test");
+
+    const headers = new Headers(fetchSpy.mock.calls[0][1]?.headers as HeadersInit);
+    expect(headers.has("Authorization")).toBe(false);
+  });
+
+  it("strips a caller-supplied Authorization header over cleartext HTTP", async () => {
+    configure({ baseUrl: "http://localhost:3000/api" });
+    fetchSpy.mockResolvedValue(fakeJson({ ok: true }));
+
+    await customFetch<{ ok: boolean }>("/test", {
+      headers: { Authorization: "Bearer caller-leaked" },
+    });
+
+    const headers = new Headers(fetchSpy.mock.calls[0][1]?.headers as HeadersInit);
+    expect(headers.has("Authorization")).toBe(false);
+  });
+
+  it("still sends the auth header over HTTPS", async () => {
+    configure({
+      baseUrl: "https://api.example.com",
+      getAuthHeader: () => ({ Authorization: "Bearer safe" }),
+    });
+    fetchSpy.mockResolvedValue(fakeJson({ ok: true }));
+
+    await customFetch<{ ok: boolean }>("/test");
+
+    const headers = new Headers(fetchSpy.mock.calls[0][1]?.headers as HeadersInit);
+    expect(headers.get("Authorization")).toBe("Bearer safe");
+  });
 });

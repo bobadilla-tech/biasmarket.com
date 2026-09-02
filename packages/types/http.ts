@@ -65,15 +65,23 @@ export async function customFetch<T>(
   }
   const { fallbackErrorMessage, headers: callerHeaders, ...init } = options;
 
-  // Caller-supplied headers win over the injected auth header (per-call wins).
+  // Never send an Authorization header over cleartext HTTP — a baseUrl of
+  // http:// means any Authorization (injected or caller-supplied) would be
+  // readable on the wire. Non-authenticated requests over HTTP keep working;
+  // authenticated requests are only allowed over HTTPS.
+  const isCleartextHttp = /^http:\/\//i.test(config.baseUrl);
+
   const authHeader = config.getAuthHeader?.();
   const mergedHeaders = new Headers(callerHeaders as HeadersInit);
-  if (authHeader) {
+  if (authHeader && !isCleartextHttp) {
     for (const [key, value] of Object.entries(authHeader)) {
       if (!mergedHeaders.has(key)) {
         mergedHeaders.set(key, value);
       }
     }
+  }
+  if (isCleartextHttp) {
+    mergedHeaders.delete("Authorization");
   }
 
   const res = await fetch(`${config.baseUrl}${url}`, {

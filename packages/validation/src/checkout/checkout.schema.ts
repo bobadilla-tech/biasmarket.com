@@ -3,6 +3,7 @@ import type { CheckoutPaymentMethod } from "@biasmarket/utils/payment-methods";
 import {
   ACCEPTED_EXTENSION,
   ACCEPTED_MIME_TYPES,
+  isProofFileShape,
   isValidProofFile,
   MAX_FILE_SIZE,
   type ProofFileShape,
@@ -56,10 +57,12 @@ export function buildCheckoutFormSchema(
         // AGENCY modality
         shippingAgencyName: z.string(),
         paymentProof: z
-          .custom<ProofFileShape>(() => true)
+          .custom<ProofFileShape>(isProofFileShape)
           .nullable()
           .refine(
-            (file) => !file || (file.size ?? 0) <= MAX_FILE_SIZE,
+            (file) =>
+              !file ||
+              (typeof file.size === "number" && file.size <= MAX_FILE_SIZE),
             "file too large",
           )
           .refine(
