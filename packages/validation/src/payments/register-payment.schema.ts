@@ -1,4 +1,9 @@
 import { z } from "zod";
+import {
+  MAX_FILE_SIZE,
+  type ProofFileLike,
+  isAllowedProof,
+} from "../checkout/file-proof.js";
 
 export const PAYMENT_METHOD_TYPES = [
   "YAPE",
@@ -7,7 +12,6 @@ export const PAYMENT_METHOD_TYPES = [
   "CASH",
 ] as const;
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png"];
 
 /**
@@ -34,12 +38,15 @@ export function buildRegisterPaymentSchema(maxAmount: number) {
         "invalid method",
       ),
     note: z.string(),
+    // RN-safe structural file check (no `File` global): proof is null/undefined
+    // or a ProofFileLike ({ name, type?, size }), keeping the same 5MB +
+    // JPEG/PNG rules. Web passes a real File, which satisfies this shape.
     file: z
-      .instanceof(File)
+      .custom<ProofFileLike | null>(isAllowedProof, "invalid file")
       .nullable()
       .refine((file) => !file || file.size <= MAX_FILE_SIZE, "file too large")
       .refine(
-        (file) => !file || ACCEPTED_IMAGE_TYPES.includes(file.type),
+        (file) => !file || ACCEPTED_IMAGE_TYPES.includes(file.type ?? ""),
         "invalid file type",
       ),
   });

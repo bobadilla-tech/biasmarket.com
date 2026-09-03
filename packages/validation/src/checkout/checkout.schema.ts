@@ -1,16 +1,18 @@
 import { z } from "zod";
 import type { CheckoutPaymentMethod } from "@biasmarket/utils/payment-methods";
+import {
+  MAX_FILE_SIZE,
+  type ProofFileLike,
+  isValidProofFile,
+} from "./file-proof.js";
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
-const ACCEPTED_MIME_TYPES = ["image/jpeg", "image/png", "application/pdf"];
-const ACCEPTED_EXTENSION = /\.(jpe?g|png|pdf)$/i;
-
-function isValidProofFile(file: File): boolean {
-  return (
-    ACCEPTED_MIME_TYPES.includes(file.type) ||
-    ACCEPTED_EXTENSION.test(file.name)
-  );
-}
+export {
+  MAX_FILE_SIZE,
+  ACCEPTED_MIME_TYPES,
+  ACCEPTED_EXTENSION,
+  type ProofFileLike,
+  isProofFileLike,
+} from "./file-proof.js";
 
 const MANUAL_METHODS = ["YAPE", "PLIN", "TRANSFER"];
 
@@ -51,7 +53,7 @@ export function buildCheckoutFormSchema(
         // AGENCY modality
         shippingAgencyName: z.string(),
         paymentProof: z
-          .custom<File | null>(() => true)
+          .custom<ProofFileLike | null>(() => true)
           .nullable()
           .refine(
             (file) => !file || file.size <= MAX_FILE_SIZE,
