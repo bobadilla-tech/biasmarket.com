@@ -18,3 +18,19 @@ export type { RedeemCouponValues } from "./coupons/redeem-coupon.schema.js";
 
 export { inquirySubmissionSchema } from "./contact/inquiry-submission.schema.js";
 export type { InquirySubmissionInput } from "./contact/inquiry-submission.schema.js";
+
+export { buildCheckoutFormSchema } from "./checkout/checkout.schema.js";
+export type { CheckoutFormInput } from "./checkout/checkout.schema.js";
+export {
+  MAX_FILE_SIZE,
+  ACCEPTED_MIME_TYPES,
+  ACCEPTED_EXTENSION,
+  type ProofFileLike,
+  isProofFileLike,
+} from "./checkout/checkout.schema.js";
+
+export {
+  buildRegisterPaymentSchema,
+  PAYMENT_METHOD_TYPES,
+  type RegisterPaymentInput,
+} from "./payments/register-payment.schema.js";

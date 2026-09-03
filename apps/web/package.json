@@ -19,6 +19,7 @@
     "@base-ui/react": "^1.7.0",
     "@biasmarket/design-tokens": "workspace:*",
     "@biasmarket/i18n": "workspace:*",
+    "@biasmarket/query": "workspace:*",
     "@biasmarket/types": "workspace:*",
     "@biasmarket/utils": "workspace:*",
     "@biasmarket/validation": "workspace:*",

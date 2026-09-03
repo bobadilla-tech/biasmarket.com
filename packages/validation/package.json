@@ -18,6 +18,7 @@
     "test:cov": "vitest run --coverage --passWithNoTests"
   },
   "dependencies": {
+    "@biasmarket/utils": "workspace:*",
     "zod": "^4.5.4"
   },
   "devDependencies": {

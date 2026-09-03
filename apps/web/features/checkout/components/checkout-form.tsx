@@ -43,7 +43,7 @@ import { PaymentProofUpload } from "./payment-proof-upload";
 import {
   buildCheckoutFormSchema,
   type CheckoutFormInput,
-} from "../schemas/checkout.schema";
+} from "@biasmarket/validation";
 
 const inputClassName =
   "store-theme-input rounded-xl border border-gray-200 px-4 py-2.5 text-base text-gray-600 outline-none md:text-sm";
@@ -483,7 +483,7 @@ export function CheckoutForm({
       customerName: values.customerName,
       customerPhone: values.customerPhone,
       customerEmail: values.customerEmail,
-      paymentProof: values.paymentProof,
+      paymentProof: values.paymentProof as File | null,
       courierName:
         values.deliveryMethodType === "COURIER"
           ? values.courierName
@@ -1260,7 +1260,7 @@ export function CheckoutForm({
                   render={({ field }) => (
                     <PaymentProofUpload
                       {...props}
-                      value={field.value}
+                      value={field.value as File | null}
                       onChange={field.onChange}
                     />
                   )}

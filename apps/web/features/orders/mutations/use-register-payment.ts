@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { statsKeys } from "@/features/stats";
 import { ordersApi } from "../api/orders.api";
 import { ordersKeys } from "../queries/use-orders";
-import type { RegisterPaymentInput } from "../schemas/register-payment.schema";
+import type { RegisterPaymentInput } from "@biasmarket/validation";
 
 export function useRegisterPayment(
   storeId: string | undefined,
@@ -13,9 +13,13 @@ export function useRegisterPayment(
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (
-      { orderId, values }: { orderId: string; values: RegisterPaymentInput },
-    ) =>
+    mutationFn: ({
+      orderId,
+      values,
+    }: {
+      orderId: string;
+      values: RegisterPaymentInput;
+    }) =>
       ordersApi.registerPayment(
         storeId as string,
         orderId,
