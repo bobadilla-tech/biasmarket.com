@@ -251,6 +251,31 @@ test("rejects an unsupported proof type", () => {
   expect(result.success).toBe(false);
 });
 
+test("rejects a proof with a wrong-but-present MIME type even though the extension matches", () => {
+  const schema = buildCheckoutFormSchema(true, true);
+  const result = schema.safeParse({
+    ...manualMethodValues,
+    paymentProof: new File(["x"], "proof.pdf", { type: "text/html" }),
+  });
+  expect(result.success).toBe(false);
+});
+
+test("rejects a paymentProof that is not a valid ProofFileLike shape", () => {
+  const schema = buildCheckoutFormSchema(true, true);
+  // Not an object at all.
+  expect(
+    schema.safeParse({ ...manualMethodValues, paymentProof: "proof.png" })
+      .success,
+  ).toBe(false);
+  // A structurally-invalid object: `type` is the wrong type (not a string).
+  expect(
+    schema.safeParse({
+      ...manualMethodValues,
+      paymentProof: { name: "proof.pdf", size: 1, type: 42 },
+    }).success,
+  ).toBe(false);
+});
+
 test("does not require a payment proof for a method the store enabled but never configured", () => {
   const schema = buildCheckoutFormSchema(
     true,

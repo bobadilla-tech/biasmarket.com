@@ -530,12 +530,21 @@ importers:
 
   packages/types:
     devDependencies:
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.13.3
+      '@vitest/coverage-v8':
+        specifier: ^3.2.4
+        version: 3.2.7(vitest@3.2.7(@types/node@24.13.3)(jiti@2.7.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(lightningcss@1.33.0)(terser@5.49.0)(tsx@4.23.12)(yaml@2.9.0))
       orval:
         specifier: ^8.23.0
         version: 8.23.0(prettier@3.9.6)(typescript@5.9.3)
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(lightningcss@1.33.0)(terser@5.49.0)(tsx@4.23.12)(yaml@2.9.0)
 
   packages/utils:
     devDependencies:

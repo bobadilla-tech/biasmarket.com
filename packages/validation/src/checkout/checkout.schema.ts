@@ -3,6 +3,7 @@ import type { CheckoutPaymentMethod } from "@biasmarket/utils/payment-methods";
 import {
   MAX_FILE_SIZE,
   type ProofFileLike,
+  isAllowedProof,
   isValidProofFile,
 } from "./file-proof.js";
 
@@ -53,7 +54,7 @@ export function buildCheckoutFormSchema(
         // AGENCY modality
         shippingAgencyName: z.string(),
         paymentProof: z
-          .custom<ProofFileLike | null>(() => true)
+          .custom<ProofFileLike | null>(isAllowedProof, "invalid file")
           .nullable()
           .refine(
             (file) => !file || file.size <= MAX_FILE_SIZE,

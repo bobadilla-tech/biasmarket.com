@@ -43,11 +43,11 @@ export function RegisterPaymentForm({
   const file = watch("file");
 
   useEffect(() => {
-    if (!file) {
+    if (!(file instanceof File)) {
       setPreviewUrl(null);
       return;
     }
-    const url = URL.createObjectURL(file as File);
+    const url = URL.createObjectURL(file);
     setPreviewUrl(url);
     return () => URL.revokeObjectURL(url);
   }, [file]);

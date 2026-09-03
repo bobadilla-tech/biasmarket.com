@@ -13,6 +13,7 @@ export const PAYMENT_METHOD_TYPES = [
 ] as const;
 
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png"];
+const ACCEPTED_IMAGE_EXTENSION = /\.(jpe?g|png)$/i;
 
 /**
  * Mirrors the backend's validation for POST .../orders/:orderId/payments so
@@ -45,10 +46,16 @@ export function buildRegisterPaymentSchema(maxAmount: number) {
       .custom<ProofFileLike | null>(isAllowedProof, "invalid file")
       .nullable()
       .refine((file) => !file || file.size <= MAX_FILE_SIZE, "file too large")
-      .refine(
-        (file) => !file || ACCEPTED_IMAGE_TYPES.includes(file.type ?? ""),
-        "invalid file type",
-      ),
+      .refine((file) => {
+        if (!file) return true;
+        // When a MIME type is present (and non-blank) it must be an accepted
+        // image; pickers that leave `type` empty fall back to a JPEG/PNG
+        // filename extension (PDF is not accepted for per-payment images).
+        if (file.type !== undefined && file.type !== "") {
+          return ACCEPTED_IMAGE_TYPES.includes(file.type);
+        }
+        return ACCEPTED_IMAGE_EXTENSION.test(file.name);
+      }, "invalid file type"),
   });
 }
 

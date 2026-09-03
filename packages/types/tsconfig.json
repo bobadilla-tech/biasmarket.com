@@ -9,5 +9,5 @@
     "esModuleInterop": true,
     "skipLibCheck": true
   },
-  "include": ["index.ts", "http.ts", "generated"]
+  "include": ["index.ts", "http.ts", "http.test.ts", "generated"]
 }
