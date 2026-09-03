@@ -1,5 +1,12 @@
 export interface ApiClientConfig {
   baseUrl: string;
+  // Called per-request (never cached) so a token refresh or logout is picked
+  // up on the next call. Returns headers to merge into the outgoing request,
+  // e.g. `{ Authorization: `Bearer ${token}` }`. Omit on web (cookie auth).
+  getAuthHeader?: () => Record<string, string> | undefined;
+  // Defaults to "include" (cookie auth). Mobile passes "omit" and relies on
+  // `getAuthHeader` for a bearer token instead.
+  credentials?: RequestCredentials;
 }
 
 let config: ApiClientConfig | undefined;
@@ -61,9 +68,18 @@ export async function customFetch<T>(
     );
   }
   const { fallbackErrorMessage, ...init } = options;
+  // Injected auth header goes first; per-call RequestOptions.headers override it
+  // (caller wins) so an explicit per-call Authorization always takes precedence.
+  const requestHeaders = new Headers(config.getAuthHeader?.());
+  if (init.headers) {
+    new Headers(init.headers).forEach((value, key) =>
+      requestHeaders.set(key, value),
+    );
+  }
   const res = await fetch(`${config.baseUrl}${url}`, {
     ...init,
-    credentials: "include",
+    headers: requestHeaders,
+    credentials: config.credentials ?? "include",
   });
 
   const body = [204, 205, 304].includes(res.status) ? null : await res.text();
