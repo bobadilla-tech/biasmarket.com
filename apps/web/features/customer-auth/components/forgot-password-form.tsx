@@ -15,7 +15,7 @@ import { useCustomerForgotPassword } from "../mutations/use-customer-forgot-pass
 import {
   type ForgotPasswordInput,
   forgotPasswordSchema,
-} from "../schemas/forgot-password.schema";
+} from "@biasmarket/validation";
 
 const inputClassName =
   "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-base text-gray-600 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 placeholder:text-gray-600 md:text-sm";

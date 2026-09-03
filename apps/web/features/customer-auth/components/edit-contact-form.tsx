@@ -14,7 +14,7 @@ import { useCustomerUpdateProfile } from "../mutations/use-customer-update-profi
 import {
   type EditContactInput,
   editContactSchema,
-} from "../schemas/edit-contact.schema";
+} from "@biasmarket/validation";
 import type { CustomerProfileResponseDto } from "@biasmarket/types";
 
 const inputClassName =

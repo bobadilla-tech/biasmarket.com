@@ -2,7 +2,7 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
-import type { InquirySubmissionInput } from "../schemas/inquiry-submission.schema";
+import type { InquirySubmissionInput } from "@biasmarket/validation";
 
 export function useSubmitInquiry(fallbackErrorMessage?: string) {
   return useMutation({

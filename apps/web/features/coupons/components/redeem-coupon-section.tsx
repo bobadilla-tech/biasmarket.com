@@ -9,7 +9,7 @@ import { useUserPlan } from "../queries/use-my-plan";
 import {
   redeemCouponSchema,
   type RedeemCouponValues,
-} from "../schemas/redeem-coupon.schema";
+} from "@biasmarket/validation";
 
 interface RedeemCouponSectionProps {
   onRedeemed?: (expiresAt: string) => void;
