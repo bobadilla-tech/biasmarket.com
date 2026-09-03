@@ -223,6 +223,9 @@ importers:
       '@biasmarket/utils':
         specifier: workspace:*
         version: link:../../packages/utils
+      '@biasmarket/validation':
+        specifier: workspace:*
+        version: link:../../packages/validation
       '@dnd-kit/core':
         specifier: ^6.3.1
         version: 6.3.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -520,6 +523,25 @@ importers:
         version: 5.9.3
 
   packages/utils:
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.13.3
+      '@vitest/coverage-v8':
+        specifier: ^3.2.4
+        version: 3.2.7(vitest@3.2.7(@types/node@24.13.3)(jiti@2.7.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(lightningcss@1.33.0)(terser@5.49.0)(tsx@4.23.12)(yaml@2.9.0))
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7(@types/node@24.13.3)(jiti@2.7.0)(jsdom@29.1.1(@noble/hashes@2.3.0))(lightningcss@1.33.0)(terser@5.49.0)(tsx@4.23.12)(yaml@2.9.0)
+
+  packages/validation:
+    dependencies:
+      zod:
+        specifier: ^4.5.4
+        version: 4.5.4
     devDependencies:
       '@types/node':
         specifier: ^24.0.0
