@@ -23,7 +23,7 @@ import { paymentsLocked } from "../lib/order-status";
 import { RegisterPaymentForm } from "./register-payment-form";
 import { PaymentHistoryList } from "./payment-history-list";
 import type { OrderResponseDto } from "@biasmarket/types";
-import type { RegisterPaymentInput } from "../schemas/register-payment.schema";
+import type { RegisterPaymentInput } from "@biasmarket/validation";
 
 export function OrderDetailSheet({
   open,

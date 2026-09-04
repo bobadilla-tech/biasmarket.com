@@ -20,7 +20,7 @@ export const orderPaymentsApi = {
     formData.append("amount", values.amount);
     formData.append("method", values.method);
     if (values.note) formData.append("note", values.note);
-    if (values.file) formData.append("file", values.file);
+    if (values.file instanceof File) formData.append("file", values.file);
 
     const res = await fetch(
       `${apiUrl()}/api/stores/${slug}/account/orders/${orderId}/payments`,

@@ -9,4 +9,4 @@ export { CheckoutForm } from "./components/checkout-form";
 export {
   buildCheckoutFormSchema,
   type CheckoutFormInput,
-} from "./schemas/checkout.schema";
+} from "@biasmarket/validation";

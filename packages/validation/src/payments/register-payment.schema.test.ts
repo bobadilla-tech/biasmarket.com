@@ -70,3 +70,26 @@ test("rejects a non-image file type", () => {
   });
   expect(result.success).toBe(false);
 });
+
+test("accepts an image with a blank MIME type via its JPEG/PNG extension", () => {
+  const schema = buildRegisterPaymentSchema(60);
+  const result = schema.safeParse({
+    amount: "10",
+    method: "YAPE",
+    note: "",
+    file: new File(["x"], "proof.png"),
+  });
+  expect(result.success).toBe(true);
+});
+
+test("rejects a PDF extension when the MIME type is blank", () => {
+  const schema = buildRegisterPaymentSchema(60);
+  // PDF is allowed for checkout proofs but not per-payment images.
+  const result = schema.safeParse({
+    amount: "10",
+    method: "YAPE",
+    note: "",
+    file: new File(["%PDF"], "proof.pdf"),
+  });
+  expect(result.success).toBe(false);
+});

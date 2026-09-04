@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import {
   buildRegisterPaymentSchema,
   type RegisterPaymentInput,
-} from "../schemas/register-payment.schema";
+} from "@biasmarket/validation";
 import { paymentMethodLabels } from "../lib/payment-method-labels";
 
 export function RegisterPaymentForm({
@@ -43,7 +43,7 @@ export function RegisterPaymentForm({
   const file = watch("file");
 
   useEffect(() => {
-    if (!file) {
+    if (!(file instanceof File)) {
       setPreviewUrl(null);
       return;
     }

@@ -5,9 +5,12 @@
     "moduleResolution": "NodeNext",
     "declaration": true,
     "outDir": "dist",
+    "types": ["node"],
     "strict": true,
     "esModuleInterop": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "rootDir": "./src"
   },
-  "include": ["index.ts", "http.ts", "http.test.ts", "generated"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.test.ts"]
 }

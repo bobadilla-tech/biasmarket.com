@@ -1,22 +1,30 @@
 {
-  "name": "@biasmarket/types",
+  "name": "@biasmarket/validation",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
-    "generate": "orval --config orval.config.ts && node scripts/fix-esm-extensions.mjs",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "test:cov": "vitest run --coverage --passWithNoTests"
   },
+  "dependencies": {
+    "@biasmarket/utils": "workspace:*",
+    "zod": "^4.5.4"
+  },
   "devDependencies": {
     "@types/node": "^24.0.0",
     "@vitest/coverage-v8": "^3.2.4",
-    "orval": "^8.23.0",
-    "typescript": "^5.9.3",
+    "typescript": "^7.0.2",
     "vitest": "^3.2.4"
   }
 }

@@ -36,16 +36,16 @@ export { ContactSellerButton } from "./components/contact-seller-button";
 export {
   type CustomerLoginInput,
   customerLoginSchema,
-} from "./schemas/login.schema";
+} from "@biasmarket/validation";
 export {
   type CustomerRegisterInput,
   customerRegisterSchema,
-} from "./schemas/register.schema";
+} from "@biasmarket/validation";
 export {
   type CustomerChangePasswordInput,
   customerChangePasswordSchema,
-} from "./schemas/change-password.schema";
+} from "@biasmarket/validation";
 export {
   type ForgotPasswordInput,
   forgotPasswordSchema,
-} from "./schemas/forgot-password.schema";
+} from "@biasmarket/validation";
