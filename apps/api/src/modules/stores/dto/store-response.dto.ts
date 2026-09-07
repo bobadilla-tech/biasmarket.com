@@ -27,6 +27,14 @@ export class StoreResponseDto {
   @ApiProperty({ type: String, nullable: true })
   logoUrl: string | null;
 
+  // Seller-authored store copy — see
+  // docs/plans/2026-09-07-store-rich-content-and-thin-content-indexing-plan.md.
+  @ApiProperty({ type: String, nullable: true })
+  bio: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  aboutMarkdown: string | null;
+
   @ApiProperty()
   paymentInstructions: string;
 

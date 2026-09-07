@@ -263,6 +263,24 @@ describe('StoresService', () => {
       });
     });
 
+    it('persists bio and aboutMarkdown when provided', async () => {
+      prisma.store.findUnique.mockResolvedValue({ id: 'store-1', ownerId });
+      prisma.store.update.mockResolvedValue({ id: 'store-1' });
+
+      await service.update('store-1', ownerId, {
+        bio: 'Official merch, ships nationwide.',
+        aboutMarkdown: '## About\n\nWe are the real deal.',
+      });
+
+      expect(prisma.store.update).toHaveBeenCalledWith({
+        where: { id: 'store-1' },
+        data: {
+          bio: 'Official merch, ships nationwide.',
+          aboutMarkdown: '## About\n\nWe are the real deal.',
+        },
+      });
+    });
+
     it('updates locale and social links when provided', async () => {
       prisma.store.findUnique.mockResolvedValue({ id: 'store-1', ownerId });
       prisma.store.update.mockResolvedValue({ id: 'store-1' });

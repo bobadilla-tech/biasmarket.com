@@ -80,6 +80,14 @@ model Store {
   ownerId               String
   themeConfig           Json
   logoUrl               String?
+  // Seller-authored store copy for SEO/discovery (see
+  // docs/plans/2026-09-07-store-rich-content-and-thin-content-indexing-plan.md).
+  // `bio`: short plain-text tagline, app-capped at 280.
+  // `aboutMarkdown`: longer "about the store" content, MARKDOWN SUBSET,
+  // app-capped at 4000. The render-time allowlist (web) is the security
+  // boundary; the DTO also fail-fast-lints it on write.
+  bio                   String?
+  aboutMarkdown         String?
   paymentInstructions   String
   whatsappNumber        String?
   instagramUrl          String?

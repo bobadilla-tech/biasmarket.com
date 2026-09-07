@@ -4469,6 +4469,14 @@
             "type": "string",
             "nullable": true
           },
+          "bio": {
+            "type": "string",
+            "nullable": true
+          },
+          "aboutMarkdown": {
+            "type": "string",
+            "nullable": true
+          },
           "paymentInstructions": {
             "type": "string"
           },
@@ -4523,6 +4531,8 @@
           "ownerId",
           "themeConfig",
           "logoUrl",
+          "bio",
+          "aboutMarkdown",
           "paymentInstructions",
           "whatsappNumber",
           "instagramUrl",
@@ -4577,6 +4587,14 @@
             "additionalProperties": true
           },
           "logoUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "bio": {
+            "type": "string",
+            "nullable": true
+          },
+          "aboutMarkdown": {
             "type": "string",
             "nullable": true
           },
@@ -4637,6 +4655,8 @@
           "ownerId",
           "themeConfig",
           "logoUrl",
+          "bio",
+          "aboutMarkdown",
           "paymentInstructions",
           "whatsappNumber",
           "instagramUrl",
@@ -4684,6 +4704,14 @@
             "type": "string",
             "nullable": true,
             "format": "uri"
+          },
+          "bio": {
+            "type": "string",
+            "maxLength": 280
+          },
+          "aboutMarkdown": {
+            "type": "string",
+            "maxLength": 4000
           },
           "paymentInstructions": {
             "type": "string"
@@ -5092,6 +5120,14 @@
             "type": "string",
             "nullable": true
           },
+          "bio": {
+            "type": "string",
+            "nullable": true
+          },
+          "aboutMarkdown": {
+            "type": "string",
+            "nullable": true
+          },
           "paymentInstructions": {
             "type": "string"
           },
@@ -5152,6 +5188,8 @@
           "ownerId",
           "themeConfig",
           "logoUrl",
+          "bio",
+          "aboutMarkdown",
           "paymentInstructions",
           "whatsappNumber",
           "instagramUrl",

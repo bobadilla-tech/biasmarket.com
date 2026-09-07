@@ -6,10 +6,12 @@ import {
   IsOptional,
   IsString,
   IsUrl,
+  MaxLength,
   Min,
   ValidateIf,
 } from 'class-validator';
 import { SUPPORTED_CURRENCIES } from '@biasmarket/utils/currency';
+import { IsSafeMarkdown } from '../../../common/is-safe-markdown.validator.js';
 
 export class UpdateStoreDto {
   @IsOptional()
@@ -43,6 +45,17 @@ export class UpdateStoreDto {
   @ValidateIf((_, v) => v !== null && v !== '')
   @IsUrl()
   twitterUrl?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(280)
+  bio?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(4000)
+  @IsSafeMarkdown()
+  aboutMarkdown?: string;
 
   @IsOptional()
   @IsString()

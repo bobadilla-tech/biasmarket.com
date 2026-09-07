@@ -28,6 +28,10 @@ export interface StoreResponseDto {
   themeConfig: StoreResponseDtoThemeConfig;
   /** @nullable */
   logoUrl: string | null;
+  /** @nullable */
+  bio: string | null;
+  /** @nullable */
+  aboutMarkdown: string | null;
   paymentInstructions: string;
   /** @nullable */
   whatsappNumber: string | null;
@@ -66,6 +70,10 @@ export interface StoreWithOwnerResponseDto {
   themeConfig: StoreWithOwnerResponseDtoThemeConfig;
   /** @nullable */
   logoUrl: string | null;
+  /** @nullable */
+  bio: string | null;
+  /** @nullable */
+  aboutMarkdown: string | null;
   paymentInstructions: string;
   /** @nullable */
   whatsappNumber: string | null;
@@ -101,6 +109,10 @@ export interface UpdateStoreDto {
   tiktokUrl?: string | null;
   /** @nullable */
   twitterUrl?: string | null;
+  /** @maxLength 280 */
+  bio?: string;
+  /** @maxLength 4000 */
+  aboutMarkdown?: string;
   paymentInstructions?: string;
   defaultCurrency?: string;
   themeConfig?: UpdateStoreDtoThemeConfig;
@@ -262,6 +274,10 @@ export interface StorePublicDetailResponseDto {
   themeConfig: StorePublicDetailResponseDtoThemeConfig;
   /** @nullable */
   logoUrl: string | null;
+  /** @nullable */
+  bio: string | null;
+  /** @nullable */
+  aboutMarkdown: string | null;
   paymentInstructions: string;
   /** @nullable */
   whatsappNumber: string | null;

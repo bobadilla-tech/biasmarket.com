@@ -9,6 +9,11 @@ export const settingsApi = {
   updateProfile: (storeId: string, payload: ProfileFormInput) =>
     apiClient.stores.update(storeId, payload),
 
+  updateStoreContent: (
+    storeId: string,
+    payload: { bio: string; aboutMarkdown: string },
+  ) => apiClient.stores.update(storeId, payload),
+
   updateAppearance: (storeId: string, themeConfig: StoreThemeConfig) =>
     apiClient.stores.update(storeId, { themeConfig }),
 
