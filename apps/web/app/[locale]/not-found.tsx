@@ -1,5 +1,12 @@
+import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+
+// The 404 status code is the authoritative signal (Google won't index a
+// 404-status page regardless of meta), so this is belt-and-suspenders, not a
+// bug fix — see docs/plans/2026-09-07-gsc-indexing-audit-organic-growth-plan.md
+// Phase C.
+export const metadata: Metadata = { robots: { index: false } };
 
 export default async function NotFound() {
   const t = await getTranslations("common.notFoundPage");

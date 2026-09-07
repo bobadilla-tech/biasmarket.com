@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { Locale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { isProductOutOfStock } from "@/features/discovery/lib/product-stock";
-import { canonicalUrl, SITE_URL } from "@/lib/site-config";
+import { canonicalUrl, localeAlternates, SITE_URL } from "@/lib/site-config";
 import { ProductCard } from "@/components/storefront/product-card";
 import { StoreSectionRenderer } from "@/components/storefront/section-renderer";
 import { buildProductJsonLd, serializeJsonLd } from "@/lib/product-json-ld";
@@ -82,7 +82,10 @@ export async function generateMetadata({
   return {
     title: store.name,
     description,
-    alternates: { canonical: canonicalUrl(locale, `/store/${slug}`) },
+    alternates: {
+      canonical: canonicalUrl(locale, `/store/${slug}`),
+      languages: localeAlternates(`/store/${slug}`),
+    },
     openGraph: {
       title: store.name,
       description,

@@ -7,7 +7,7 @@ import { BlogPostView } from "@/features/blog";
 import { formatPublishedDate } from "@/features/blog/format-date";
 import { urlForImage } from "@/features/blog/lib/sanity";
 import { getBlogPost, getBlogPosts } from "@/features/blog/server";
-import { canonicalUrl } from "@/lib/site-config";
+import { canonicalUrl, localeAlternates } from "@/lib/site-config";
 
 export async function generateStaticParams() {
   const posts = await getBlogPosts();
@@ -29,7 +29,10 @@ export async function generateMetadata({
   return {
     title: post ? `${post.title} — Bias Market` : t("title"),
     description: post?.excerpt || t("description"),
-    alternates: { canonical: canonicalUrl(locale, `/blog/${slug}`) },
+    alternates: {
+      canonical: canonicalUrl(locale, `/blog/${slug}`),
+      languages: localeAlternates(`/blog/${slug}`),
+    },
     ...(ogImage
       ? {
           openGraph: {
