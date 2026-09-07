@@ -5209,6 +5209,9 @@
             "items": {
               "$ref": "#/components/schemas/StoreSectionWithCollectionResponseDto"
             }
+          },
+          "indexable": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -5234,7 +5237,8 @@
           "isPublic",
           "isDemo",
           "createdAt",
-          "sections"
+          "sections",
+          "indexable"
         ]
       },
       "PublicCategoryResponseDto": {

@@ -305,8 +305,13 @@ export class StoresController {
   async findPublic(
     @Param('slug') slug: string,
   ): Promise<StorePublicDetailResponseDto> {
-    const { sections, ...store } = await this.stores.findPublicBySlug(slug);
-    return { ...toStoreDto(store), sections: sections.map(toSectionDto) };
+    const { sections, indexable, ...store } =
+      await this.stores.findPublicBySlug(slug);
+    return {
+      ...toStoreDto(store),
+      sections: sections.map(toSectionDto),
+      indexable,
+    };
   }
 
   @Public()

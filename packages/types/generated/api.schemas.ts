@@ -298,6 +298,7 @@ export interface StorePublicDetailResponseDto {
   isDemo: boolean;
   createdAt: string;
   sections: StoreSectionWithCollectionResponseDto[];
+  indexable: boolean;
 }
 
 export interface PublicCategoryResponseDto {

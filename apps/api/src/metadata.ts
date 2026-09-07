@@ -389,6 +389,7 @@ export default async () => {
                     .StoreSectionWithCollectionResponseDto,
                 ],
               },
+              indexable: { required: true, type: () => Boolean },
             },
             StoreContentImageResponseDto: {
               url: { required: true, type: () => String },
