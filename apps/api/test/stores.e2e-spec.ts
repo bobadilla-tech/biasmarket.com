@@ -61,6 +61,7 @@ describe('stores + my-stores (e2e)', () => {
   let storeSlug: string;
   let categoryId: string;
   let productId: string;
+  let secondProductId: string | undefined;
   let collectionId: string;
   let sectionId: string;
   let uploadedLogoUrl: string | undefined;
@@ -130,10 +131,17 @@ describe('stores + my-stores (e2e)', () => {
       await prisma.collectionProduct.deleteMany({ where: { collectionId } });
       await prisma.collection.deleteMany({ where: { id: collectionId } });
     }
-    if (productId) {
-      await prisma.productVariant.deleteMany({ where: { productId } });
-      await prisma.productCategory.deleteMany({ where: { productId } });
-      await prisma.product.deleteMany({ where: { id: productId } });
+    const productIds = [productId, secondProductId].filter(
+      (id): id is string => !!id,
+    );
+    if (productIds.length > 0) {
+      await prisma.productVariant.deleteMany({
+        where: { productId: { in: productIds } },
+      });
+      await prisma.productCategory.deleteMany({
+        where: { productId: { in: productIds } },
+      });
+      await prisma.product.deleteMany({ where: { id: { in: productIds } } });
     }
     if (categoryId) {
       await prisma.category.deleteMany({ where: { id: categoryId } });
@@ -196,6 +204,30 @@ describe('stores + my-stores (e2e)', () => {
       .set('Cookie', sessionCookie)
       .expect(200);
 
+    // D6/D7 (docs/plans/2026-09-07-store-rich-content-and-thin-content-indexing-plan.md):
+    // the sitemap now lists only stores that clear the thin-content bar —
+    // >= MIN_INDEXABLE_PRODUCTS (2) published products AND some prose. Give
+    // this store a second published product and a bio so the sitemap
+    // assertions below (and the isDemo test's before/after delta) exercise a
+    // genuinely indexable store.
+    const secondProductRes = await request(app.getHttpServer())
+      .post(`/stores/${storeId}/products`)
+      .set('Cookie', sessionCookie)
+      .send({ name: 'E2E Product 2', price: 30, currency: 'USD', stock: 5 })
+      .expect(201);
+    secondProductId = secondProductRes.body.id;
+
+    await request(app.getHttpServer())
+      .patch(`/stores/${storeId}/products/${secondProductId}/publish`)
+      .set('Cookie', sessionCookie)
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .patch(`/stores/${storeId}`)
+      .set('Cookie', sessionCookie)
+      .send({ bio: 'Handmade K-pop photocard sets, shipped from Lima.' })
+      .expect(200);
+
     const collectionRes = await request(app.getHttpServer())
       .post(`/stores/${storeId}/collections`)
       .set('Cookie', sessionCookie)
@@ -207,6 +239,15 @@ describe('stores + my-stores (e2e)', () => {
       .post(`/stores/${storeId}/collections/${collectionId}/products`)
       .set('Cookie', sessionCookie)
       .send({ productId })
+      .expect(201);
+
+    // Keep the second (indexability-quota) product inside the collection too,
+    // so findPublicBySlug still returns only the real nested join below and
+    // not the orphan-product fallback section.
+    await request(app.getHttpServer())
+      .post(`/stores/${storeId}/collections/${collectionId}/products`)
+      .set('Cookie', sessionCookie)
+      .send({ productId: secondProductId })
       .expect(201);
 
     const sectionRes = await request(app.getHttpServer())
@@ -266,7 +307,9 @@ describe('stores + my-stores (e2e)', () => {
       sitemapStorePageSchema,
       openapi.components,
     );
-    expect(pageRes.body.items).toEqual([{ slug: expect.any(String) }]);
+    expect(pageRes.body.items).toEqual([
+      { slug: expect.any(String), lastModified: expect.any(String) },
+    ]);
     expect(pageRes.body.total).toBe(countRes.body.total);
 
     await request(app.getHttpServer())
