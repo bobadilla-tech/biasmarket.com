@@ -6,6 +6,11 @@ import { canonicalUrl, localeAlternates, SITE_URL } from "@/lib/site-config";
 import { ProductCard } from "@/components/storefront/product-card";
 import { StoreSectionRenderer } from "@/components/storefront/section-renderer";
 import { buildProductJsonLd, serializeJsonLd } from "@/lib/product-json-ld";
+import {
+  firstStoreMarkdownImage,
+  renderStoreMarkdown,
+  storeMarkdownToPlainText,
+} from "@/lib/store-markdown";
 
 async function getStore(slug: string) {
   const apiUrl =
@@ -48,6 +53,15 @@ function collectProducts(store: any): any[] {
   return Array.from(seen.values());
 }
 
+function firstBannerImageUrl(store: any): string | null {
+  for (const section of store.sections ?? []) {
+    if (section?.type !== "BANNER") continue;
+    const url = section.content?.imageUrl;
+    if (typeof url === "string" && url.trim() !== "") return url;
+  }
+  return null;
+}
+
 function collectSoldOutProducts(store: any): any[] {
   const seen = new Map<string, any>();
   for (const section of store.sections ?? []) {
@@ -64,6 +78,21 @@ function collectSoldOutProducts(store: any): any[] {
   return Array.from(seen.values());
 }
 
+// The store page owns the single visible <h1>. When the seller has written a
+// bio, promote the name to a visible heading with the bio as a sub-line;
+// otherwise keep it screen-reader-only (a bare store has nothing to show).
+function StoreHeading({ name, bio }: { name: string; bio: string }) {
+  if (!bio) return <h1 className="sr-only">{name}</h1>;
+  return (
+    <header className="space-y-2">
+      <h1 className="text-2xl font-semibold text-gray-900 sm:text-3xl">
+        {name}
+      </h1>
+      <p className="max-w-2xl text-gray-600">{bio}</p>
+    </header>
+  );
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -75,9 +104,21 @@ export async function generateMetadata({
   if (!store) return { robots: { index: false, follow: false } };
 
   const products = collectProducts(store);
-  const description = `Shop ${store.name} — ${products.length} product${
+  const boilerplateDescription = `Shop ${store.name} — ${products.length} product${
     products.length === 1 ? "" : "s"
   } available.`;
+  // Seller-authored copy wins: short bio first, then a flattened lede from the
+  // "about" markdown, then the generic boilerplate.
+  const description =
+    (typeof store.bio === "string" && store.bio.trim()) ||
+    storeMarkdownToPlainText(store.aboutMarkdown, 155) ||
+    boilerplateDescription;
+
+  const ogImage =
+    firstStoreMarkdownImage(store.aboutMarkdown) ??
+    firstBannerImageUrl(store) ??
+    store.logoUrl ??
+    `${SITE_URL}/og-image.png`;
 
   return {
     title: store.name,
@@ -89,7 +130,7 @@ export async function generateMetadata({
     openGraph: {
       title: store.name,
       description,
-      images: [store.logoUrl ?? `${SITE_URL}/og-image.png`],
+      images: [ogImage],
     },
   };
 }
@@ -97,6 +138,21 @@ export async function generateMetadata({
 function buildJsonLd(locale: string, slug: string, store: any) {
   const pageUrl = `${SITE_URL}/${locale}/store/${slug}`;
   const products = collectProducts(store);
+
+  const storeDescription =
+    (typeof store.bio === "string" && store.bio.trim()) ||
+    storeMarkdownToPlainText(store.aboutMarkdown, 300) ||
+    undefined;
+
+  const sameAs = [
+    store.instagramUrl,
+    store.facebookUrl,
+    store.tiktokUrl,
+    store.twitterUrl,
+  ].filter(
+    (url: unknown): url is string =>
+      typeof url === "string" && url.trim() !== "",
+  );
 
   return {
     "@context": "https://schema.org",
@@ -106,7 +162,33 @@ function buildJsonLd(locale: string, slug: string, store: any) {
         "@id": `${pageUrl}#store`,
         name: store.name,
         url: pageUrl,
+        ...(storeDescription && { description: storeDescription }),
         ...(store.logoUrl && { logo: store.logoUrl, image: store.logoUrl }),
+        ...(sameAs.length > 0 && { sameAs }),
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": `${pageUrl}#breadcrumb`,
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: `${SITE_URL}/${locale}`,
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Stores",
+            item: `${SITE_URL}/${locale}/stores`,
+          },
+          {
+            "@type": "ListItem",
+            position: 3,
+            name: store.name,
+            item: pageUrl,
+          },
+        ],
       },
       ...products.map((product: any) =>
         buildProductJsonLd(
@@ -141,6 +223,9 @@ export default async function StorePage({
     );
   }
 
+  const bio = typeof store.bio === "string" ? store.bio.trim() : "";
+  const aboutNode = renderStoreMarkdown(store.aboutMarkdown);
+
   // Build visible sections by excluding discontinued and sold-out products so
   // the UI can show a friendly empty state when nothing is visible.
   const visibleSections = (store.sections ?? [])
@@ -166,9 +251,12 @@ export default async function StorePage({
         <main
           id="main-content"
           tabIndex={-1}
-          className="mx-auto max-w-5xl px-4 pt-24 pb-8 sm:pt-20"
+          className="mx-auto max-w-5xl space-y-10 px-4 pt-24 pb-8 sm:pt-20"
         >
-          <h1 className="sr-only">{store.name}</h1>
+          <StoreHeading name={store.name} bio={bio} />
+          {aboutNode && (
+            <section className="prose max-w-none">{aboutNode}</section>
+          )}
           <p className="text-gray-500 text-center">{t("noProducts")}</p>
         </main>
       </div>
@@ -188,7 +276,10 @@ export default async function StorePage({
         tabIndex={-1}
         className="mx-auto max-w-5xl space-y-10 px-4 pt-24 pb-8 sm:pt-20"
       >
-        <h1 className="sr-only">{store.name}</h1>
+        <StoreHeading name={store.name} bio={bio} />
+        {aboutNode && (
+          <section className="prose max-w-none">{aboutNode}</section>
+        )}
         {visibleSections.length === 0 ? (
           soldOutProducts.length > 0 ? null : (
             <p className="text-gray-500 text-center">{t("noProducts")}</p>

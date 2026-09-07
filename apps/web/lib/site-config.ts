@@ -4,6 +4,13 @@ export const BOBADILLA_TECH_URL = "https://bobadilla.tech";
 export const CONTACT_EMAIL = "hello@biasmarket.com";
 export const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://biasmarket.com";
+/**
+ * Public base URL of the platform image CDN (S3/MinIO public host). Seller
+ * content images (`Store.aboutMarkdown`) must resolve to this host — see
+ * `lib/store-markdown.tsx`. Matches `next.config.ts`'s image `remotePatterns`.
+ */
+export const CDN_URL =
+  process.env.NEXT_PUBLIC_CDN_URL ?? "https://cdn.biasmarket.com";
 export const CAL_COM_URL = "https://cal.com/alexandra-flores/bias-market";
 
 /**
