@@ -169,6 +169,7 @@
     "selectCollection": "Elige una colección",
     "imageUrlPlaceholder": "URL de imagen",
     "linkUrlPlaceholder": "URL de enlace (opcional)",
+    "altPlaceholder": "Texto alternativo (describe la imagen)",
     "bodyPlaceholder": "Contenido de texto",
     "add": "Agregar sección",
     "delete": "Eliminar",
@@ -273,7 +274,12 @@
       "bioHelp": "Se muestra bajo el nombre de tu tienda y en los resultados de Google.",
       "aboutLabel": "Sobre la tienda",
       "aboutPlaceholder": "Contá quién sos, qué vendés y por qué comprar acá. Podés usar párrafos y listas.",
-      "aboutHelp": "Markdown pronto: por ahora se guarda como texto plano.",
+      "aboutHelp": "Markdown: títulos, listas, enlaces e imágenes.",
+      "imageButton": "Agregar imagen",
+      "imageUploading": "Subiendo…",
+      "imageTooLong": "Esa imagen dejaría el texto por encima del límite.",
+      "previewLabel": "Vista previa",
+      "previewEmpty": "Acá aparece tu texto con formato.",
       "help": "Este contenido se usa en la página pública de tu tienda y en su ficha para buscadores."
     },
     "appearance": {

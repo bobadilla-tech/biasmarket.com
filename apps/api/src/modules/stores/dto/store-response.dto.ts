@@ -362,3 +362,10 @@ export class StorePublicDetailResponseDto extends StoreResponseDto {
   @ApiProperty({ type: [StoreSectionWithCollectionResponseDto] })
   sections: StoreSectionWithCollectionResponseDto[];
 }
+
+// POST :storeId/content-images — the public CDN URL of the stored image, to be
+// spliced into `aboutMarkdown` as `![alt](url)` by the dashboard editor.
+export class StoreContentImageResponseDto {
+  @ApiProperty()
+  url: string;
+}

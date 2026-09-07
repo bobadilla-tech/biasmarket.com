@@ -207,6 +207,35 @@ describe('StoresService', () => {
     });
   });
 
+  describe('assertOwnership()', () => {
+    it('throws NotFoundException when the store does not exist', async () => {
+      prisma.store.findUnique.mockResolvedValue(null);
+
+      await expect(service.assertOwnership('store-1', ownerId)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('throws ForbiddenException when the user does not own the store', async () => {
+      prisma.store.findUnique.mockResolvedValue({
+        id: 'store-1',
+        ownerId: 'someone-else',
+      });
+
+      await expect(service.assertOwnership('store-1', ownerId)).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+
+    it('resolves when the user owns the store', async () => {
+      prisma.store.findUnique.mockResolvedValue({ id: 'store-1', ownerId });
+
+      await expect(
+        service.assertOwnership('store-1', ownerId),
+      ).resolves.toBeUndefined();
+    });
+  });
+
   describe('update()', () => {
     it('throws NotFoundException when the store does not exist', async () => {
       prisma.store.findUnique.mockResolvedValue(null);

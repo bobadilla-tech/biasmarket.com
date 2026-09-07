@@ -318,6 +318,10 @@ export interface PublicProductPageResponseDto {
   product: PublicProductWithVariantsResponseDto;
 }
 
+export interface StoreContentImageResponseDto {
+  url: string;
+}
+
 export type CreateVariantDtoAttributes = { [key: string]: string };
 
 export interface CreateVariantDto {

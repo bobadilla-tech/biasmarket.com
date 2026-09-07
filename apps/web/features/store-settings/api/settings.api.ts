@@ -5,6 +5,14 @@ import type { StoreThemeConfig } from "@/lib/store-theme";
 
 const PAYMENT_METHOD_TYPES = ["YAPE", "PLIN", "TRANSFER", "CASH"] as const;
 
+// Multipart carve-out (see apps/web/AGENTS.md): the aboutMarkdown editor's
+// image button uploads through here, then splices the returned CDN URL into
+// the markdown. A file body doesn't fit the generated JSON client, so this
+// stays on raw fetch + FormData like `products`' image uploads.
+function apiUrl() {
+  return process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
+}
+
 export const settingsApi = {
   updateProfile: (storeId: string, payload: ProfileFormInput) =>
     apiClient.stores.update(storeId, payload),
@@ -13,6 +21,27 @@ export const settingsApi = {
     storeId: string,
     payload: { bio: string; aboutMarkdown: string },
   ) => apiClient.stores.update(storeId, payload),
+
+  async uploadContentImage(
+    storeId: string,
+    file: File,
+    fallbackErrorMessage?: string,
+  ): Promise<{ url: string }> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch(
+      `${apiUrl()}/api/stores/${storeId}/content-images`,
+      { method: "POST", credentials: "include", body: formData },
+    );
+    const data = (await res.json().catch(() => null)) as {
+      url?: string;
+      message?: string;
+    } | null;
+    if (!res.ok || !data?.url) {
+      throw new Error(data?.message ?? fallbackErrorMessage ?? "Network error");
+    }
+    return { url: data.url };
+  },
 
   updateAppearance: (storeId: string, themeConfig: StoreThemeConfig) =>
     apiClient.stores.update(storeId, { themeConfig }),

@@ -74,6 +74,20 @@ export class StoresService {
     });
   }
 
+  // Throws if the store does not exist or `userId` is not its owner. For
+  // endpoints that act on a store without going through `update()` (e.g. the
+  // multipart content-image upload) — the ownership gate must run before any
+  // side effect.
+  async assertOwnership(storeId: string, userId: string): Promise<void> {
+    const store = await this.prisma.store.findUnique({
+      where: { id: storeId },
+    });
+    if (!store) throw new NotFoundException('Store no encontrada');
+    if (store.ownerId !== userId) {
+      throw new ForbiddenException('No sos dueño de esta store');
+    }
+  }
+
   async update(storeId: string, userId: string, dto: UpdateStoreDto) {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },

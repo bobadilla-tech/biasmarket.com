@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 // Mirrors the API `UpdateStoreDto` caps (`@MaxLength(280)` / `@MaxLength(4000)`).
-// Plain text for now — markdown rendering/preview lands in a later PR (D2/D3).
+// `aboutMarkdown` is rendered as markdown on the storefront (D2) and previewed
+// live in the editor (D3) via the shared `lib/store-markdown` allowlist.
 export const BIO_MAX_LENGTH = 280;
 export const ABOUT_MARKDOWN_MAX_LENGTH = 4000;
 
