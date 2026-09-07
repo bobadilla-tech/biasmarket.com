@@ -11,6 +11,8 @@ export interface StoreRow {
   ownerId: string;
   themeConfig: unknown;
   logoUrl: string | null;
+  bio: string | null;
+  aboutMarkdown: string | null;
   paymentInstructions: string;
   whatsappNumber: string | null;
   instagramUrl: string | null;

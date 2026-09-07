@@ -112,6 +112,12 @@ export default async () => {
                 nullable: true,
                 format: 'uri',
               },
+              bio: { required: false, type: () => String, maxLength: 280 },
+              aboutMarkdown: {
+                required: false,
+                type: () => String,
+                maxLength: 4000,
+              },
               paymentInstructions: { required: false, type: () => String },
               defaultCurrency: { required: false, type: () => String },
               themeConfig: {
@@ -164,6 +170,12 @@ export default async () => {
                 additionalProperties: true,
               },
               logoUrl: { required: true, type: () => String, nullable: true },
+              bio: { required: true, type: () => String, nullable: true },
+              aboutMarkdown: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
               paymentInstructions: { required: true, type: () => String },
               whatsappNumber: {
                 required: true,

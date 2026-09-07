@@ -265,6 +265,17 @@
       "instructionsPlaceholder": "Share the payment details or guidance you want buyers to see after checkout.",
       "help": "These values are used across the storefront and the order flow."
     },
+    "storeContent": {
+      "title": "Store content",
+      "description": "Your own copy so the store can rank in Google, not just the catalog.",
+      "bioLabel": "Bio",
+      "bioPlaceholder": "Official [artist] merch, shipping nationwide.",
+      "bioHelp": "Shown under your store name and in Google results.",
+      "aboutLabel": "About the store",
+      "aboutPlaceholder": "Tell buyers who you are, what you sell, and why to buy here. Paragraphs and lists are fine.",
+      "aboutHelp": "Markdown coming soon — stored as plain text for now.",
+      "help": "This content is used on your public store page and its search listing."
+    },
     "appearance": {
       "title": "Appearance",
       "description": "Choose the palette used by the sidebar, primary buttons, and key store UI accents.",

@@ -24,6 +24,8 @@ export const dashboardStoreSchema = z.object({
   twitterUrl: z.string().nullable().optional(),
   defaultCurrency: z.string(),
   logoUrl: z.string().nullable().optional(),
+  bio: z.string().nullable().optional(),
+  aboutMarkdown: z.string().nullable().optional(),
   paymentInstructions: z.string().optional(),
   themeConfig: storeThemeConfigSchema.nullable().optional(),
   lowStockThreshold: z.number().optional(),
