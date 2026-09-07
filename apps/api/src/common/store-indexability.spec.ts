@@ -1,5 +1,6 @@
 import {
   MIN_INDEXABLE_PRODUCTS,
+  SITEMAP_INDEXABLE_STORE_WHERE,
   isStoreIndexable,
   type StoreIndexabilityInput,
 } from './store-indexability.js';
@@ -81,5 +82,24 @@ describe('isStoreIndexable', () => {
         publishedProductCount: MIN_INDEXABLE_PRODUCTS + 10,
       }),
     ).toBe(true);
+  });
+});
+
+describe('SITEMAP_INDEXABLE_STORE_WHERE (D7)', () => {
+  it('gates on a non-banned owner and the published-product bar', () => {
+    expect(SITEMAP_INDEXABLE_STORE_WHERE.owner).toEqual({
+      banned: { not: true },
+    });
+    expect(SITEMAP_INDEXABLE_STORE_WHERE.publishedProductCount).toEqual({
+      gte: MIN_INDEXABLE_PRODUCTS,
+    });
+  });
+
+  it('accepts prose from bio, aboutMarkdown, or a TEXT_BLOCK section (loose OR)', () => {
+    expect(SITEMAP_INDEXABLE_STORE_WHERE.OR).toEqual([
+      { bio: { not: null } },
+      { aboutMarkdown: { not: null } },
+      { sections: { some: { type: 'TEXT_BLOCK' } } },
+    ]);
   });
 });

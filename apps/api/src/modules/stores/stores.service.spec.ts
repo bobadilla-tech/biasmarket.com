@@ -142,12 +142,27 @@ describe('StoresService', () => {
   });
 
   describe('sitemap queries', () => {
-    it('counts only public stores', async () => {
+    // D7 — sitemap reads now gate on the thin-content bar on top of
+    // PUBLIC_STORE_VISIBILITY: non-banned owner, >= 2 published products, and
+    // some prose (loose OR — see SITEMAP_INDEXABLE_STORE_WHERE).
+    const SITEMAP_WHERE = {
+      isPublic: true,
+      isDemo: false,
+      owner: { banned: { not: true } },
+      publishedProductCount: { gte: 2 },
+      OR: [
+        { bio: { not: null } },
+        { aboutMarkdown: { not: null } },
+        { sections: { some: { type: 'TEXT_BLOCK' } } },
+      ],
+    };
+
+    it('counts only public stores above the thin-content bar', async () => {
       prisma.store.count.mockResolvedValue(4);
 
       await expect(service.findPublicSitemapCount()).resolves.toBe(4);
       expect(prisma.store.count).toHaveBeenCalledWith({
-        where: { isPublic: true, isDemo: false },
+        where: SITEMAP_WHERE,
       });
     });
 
@@ -172,14 +187,14 @@ describe('StoresService', () => {
         },
       );
       expect(prisma.store.findMany).toHaveBeenCalledWith({
-        where: { isPublic: true, isDemo: false },
+        where: SITEMAP_WHERE,
         select: { slug: true, contentStaleAt: true, createdAt: true },
         orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
         skip: 100,
         take: 50_000,
       });
       expect(prisma.store.count).toHaveBeenCalledWith({
-        where: { isPublic: true, isDemo: false },
+        where: SITEMAP_WHERE,
       });
     });
   });
