@@ -215,6 +215,54 @@ without it, and it's listed as an MVP deliverable in [roadmap.md](roadmap.md).
 - MVP limit: up to 5 images per product, JPEG/PNG only, same size/type rules as
   payment images (§7.3 of that file)
 
+### 5.2.1 Seller-content conventions (SEO + accessibility)
+
+Applies to every field a seller writes that ends up on a public storefront page:
+`Store.bio`, `Store.aboutMarkdown`, `StoreSection` `TEXT_BLOCK` / `BANNER`
+content, and product name/description/images. Scoped by
+[the store rich-content + thin-content indexing plan](../plans/2026-09-07-store-rich-content-and-thin-content-indexing-plan.md);
+this also closes the GSC-audit doc's Phase D Tier 3 item 4 (alt-text
+convention). The forms and the markdown renderer **enforce** the
+machine-checkable parts (non-empty `alt`, on-CDN image `src`, the tag
+allowlist); the rest of this subsection is the copy guidance behind that
+enforcement.
+
+**`Store.aboutMarkdown` — markdown subset only.** Rendered server-side
+through a strict allowlist (`apps/web/lib/store-markdown.tsx`), never as raw
+HTML:
+
+- Allowed: paragraphs, `**bold**` / `_italic_`, sub-headings (`##`–`####`),
+  bulleted and numbered lists, blockquotes, links, images, inline `code` and
+  fenced code blocks, horizontal rules.
+- **No raw HTML** of any kind — `<script>`, `<iframe>`, `<style>`, `on*=`
+  handlers, and `javascript:` URLs are stripped/rejected on write and on render.
+- **No `<h1>`.** The page owns its single `<h1>` (the store name). A leading `#`
+  is demoted to `##`.
+- No tables in v1 (revisit only for a concrete size/return-table use-case).
+- App caps: `bio` ≤ 280 chars (plain text, no markdown), `aboutMarkdown`
+  ≤ 4000.
+
+**Outbound links in seller content carry `rel="nofollow ugc noopener"`** (and
+`target="_blank"`), forced by the renderer. Sellers don't get to pass the
+platform's ranking authority to arbitrary external sites, and `ugc` marks the
+content as user-generated. Only `http:` / `https:` / `mailto:` schemes are
+allowed.
+
+**Every seller-provided image must be CDN-hosted and carry non-empty,
+human-written `alt` text** — this covers product images, `BANNER` section
+images, and inline `![alt](url)` images in `aboutMarkdown`:
+
+- `src` must resolve to the platform CDN host (`cdn.biasmarket.com`). Arbitrary
+  remote images (hotlinks, tracking pixels, mixed content) are rejected; inline
+  markdown images with an off-CDN `src` are dropped at render.
+- `alt` must be a real description of what's in the image, written by a
+  person — not the filename, not "image", not empty. The forms reject an empty
+  `alt`; an inline markdown image with an empty `alt` is dropped.
+- Why: image-search discoverability and screen-reader accessibility, in equal
+  measure. A store that fills these in ranks for image queries its competitors
+  don't; one that doesn't is invisible to that surface and unusable to
+  assistive tech.
+
 ### 5.3 Storefront Features (Public Storefront)
 
 - Product listing:

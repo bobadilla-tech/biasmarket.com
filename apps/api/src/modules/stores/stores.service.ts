@@ -11,7 +11,10 @@ import {
   PUBLIC_STORE_HAS_LISTABLE_PRODUCT,
   PUBLIC_STORE_VISIBILITY,
 } from '../../common/public-store-visibility.js';
-import { isStoreIndexable } from '../../common/store-indexability.js';
+import {
+  isStoreIndexable,
+  SITEMAP_INDEXABLE_STORE_WHERE,
+} from '../../common/store-indexability.js';
 import { slugify } from '@biasmarket/utils/strings';
 import type { UpdateStoreDto } from './dto/update-store.dto.js';
 import type { CreateStoreDto } from './dto/create-store.dto.js';
@@ -181,11 +184,20 @@ export class StoresService {
   }
 
   async findPublicSitemapCount() {
-    return this.prisma.store.count({ where: { ...PUBLIC_STORE_VISIBILITY } });
+    return this.prisma.store.count({
+      where: { ...PUBLIC_STORE_VISIBILITY, ...SITEMAP_INDEXABLE_STORE_WHERE },
+    });
   }
 
   async findPublicSitemapPage(limit: number, offset: number) {
-    const where = { ...PUBLIC_STORE_VISIBILITY };
+    // D7 — thin-content gate: only stores that clear the indexability bar
+    // (non-banned owner, >= MIN_INDEXABLE_PRODUCTS published products, some
+    // prose) are sitemap-listed. See SITEMAP_INDEXABLE_STORE_WHERE for why this
+    // filter is loose and the per-page `indexable` check is authoritative.
+    const where = {
+      ...PUBLIC_STORE_VISIBILITY,
+      ...SITEMAP_INDEXABLE_STORE_WHERE,
+    };
     const [rows, total] = await Promise.all([
       this.prisma.store.findMany({
         where,

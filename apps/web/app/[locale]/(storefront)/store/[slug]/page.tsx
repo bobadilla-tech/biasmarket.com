@@ -123,6 +123,13 @@ export async function generateMetadata({
   return {
     title: store.name,
     description,
+    // D6 — thin-content gate: a store below the indexability bar (see the API's
+    // isStoreIndexable predicate, surfaced as `indexable` on the public DTO) is
+    // noindex'd but stays fully crawlable. No robots.txt disallow — Googlebot
+    // must be able to fetch the page to see this tag and drop it from the index
+    // (the ordering trap from 2026-08-14-seo-account-page-deindex-authguard-plan).
+    // `=== false` so a store whose DTO predates the field stays indexable.
+    robots: store.indexable === false ? { index: false } : undefined,
     alternates: {
       canonical: canonicalUrl(locale, `/store/${slug}`),
       languages: localeAlternates(`/store/${slug}`),
