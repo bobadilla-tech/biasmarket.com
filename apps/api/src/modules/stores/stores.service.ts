@@ -90,10 +90,18 @@ export class StoresService {
       twitterUrl,
       ...rest
     } = dto;
+    // Seller-authored storefront copy changed → move the sitemap's per-store
+    // `lastModified` (D4). Compare against the loaded row so a no-op save
+    // (settings form re-submitted unchanged) doesn't bump it.
+    const contentChanged =
+      (dto.bio !== undefined && dto.bio !== store.bio) ||
+      (dto.aboutMarkdown !== undefined &&
+        dto.aboutMarkdown !== store.aboutMarkdown);
     return this.prisma.store.update({
       where: { id: storeId },
       data: {
         ...rest,
+        ...(contentChanged && { contentStaleAt: new Date() }),
         ...(instagramUrl !== undefined && {
           instagramUrl: instagramUrl || null,
         }),
@@ -152,16 +160,23 @@ export class StoresService {
 
   async findPublicSitemapPage(limit: number, offset: number) {
     const where = { ...PUBLIC_STORE_VISIBILITY };
-    const [items, total] = await Promise.all([
+    const [rows, total] = await Promise.all([
       this.prisma.store.findMany({
         where,
-        select: { slug: true },
+        select: { slug: true, contentStaleAt: true, createdAt: true },
         orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
         skip: offset,
         take: limit,
       }),
       this.prisma.store.count({ where }),
     ]);
+
+    // `contentStaleAt` is null until the store's first storefront-visible edit
+    // (D4 added no data backfill) — fall back to `createdAt`.
+    const items = rows.map((row) => ({
+      slug: row.slug,
+      lastModified: (row.contentStaleAt ?? row.createdAt).toISOString(),
+    }));
 
     return { items, total };
   }

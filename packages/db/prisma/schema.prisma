@@ -88,6 +88,17 @@ model Store {
   // boundary; the DTO also fail-fast-lints it on write.
   bio                   String?
   aboutMarkdown         String?
+  // Denormalised count of PUBLISHED, non-discontinued, non-soft-deleted
+  // products. Kept in sync by ProductsService on every status transition
+  // (docs/plans/2026-09-07-store-rich-content-and-thin-content-indexing-plan.md
+  // D4) so the sitemap indexability gate can filter without an N+1 count.
+  publishedProductCount Int      @default(0)
+  // Timestamp of the last storefront-VISIBLE content change (bio,
+  // aboutMarkdown, store sections, published-product count). Feeds the
+  // sitemap's per-store lastModified. Deliberately NOT a Prisma @updatedAt —
+  // a payment-config or low-stock-settings edit must not nudge Google to
+  // recrawl. Nullable; readers fall back to createdAt.
+  contentStaleAt        DateTime?
   paymentInstructions   String
   whatsappNumber        String?
   instagramUrl          String?

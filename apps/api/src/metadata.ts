@@ -397,6 +397,7 @@ export default async () => {
           {
             SitemapStoreItemDto: {
               slug: { required: true, type: () => String },
+              lastModified: { required: true, type: () => String },
             },
             SitemapStorePageDto: {
               items: {

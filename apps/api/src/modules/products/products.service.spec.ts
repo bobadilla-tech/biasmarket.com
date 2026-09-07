@@ -12,13 +12,14 @@ import { NotificationsService } from '../notifications/notifications.service.js'
 describe('ProductsService', () => {
   let service: ProductsService;
   let prisma: {
-    store: { findUnique: Mock };
+    store: { findUnique: Mock; update: Mock };
     product: {
       findUnique: Mock;
       findUniqueOrThrow: Mock;
       findMany: Mock;
       create: Mock;
       update: Mock;
+      count: Mock;
     };
     productVariant: {
       create: Mock;
@@ -39,13 +40,14 @@ describe('ProductsService', () => {
 
   beforeEach(async () => {
     prisma = {
-      store: { findUnique: vi.fn() },
+      store: { findUnique: vi.fn(), update: vi.fn() },
       product: {
         findUnique: vi.fn(),
         findUniqueOrThrow: vi.fn(),
         findMany: vi.fn(),
         create: vi.fn(),
         update: vi.fn(),
+        count: vi.fn().mockResolvedValue(0),
       },
       productVariant: {
         create: vi.fn(),
@@ -352,6 +354,68 @@ describe('ProductsService', () => {
     expect(prisma.product.update).toHaveBeenCalledWith({
       where: { id: productId },
       data: expectedData,
+    });
+  });
+
+  describe('publishedProductCount maintenance', () => {
+    beforeEach(() => {
+      prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
+      prisma.product.findUnique.mockResolvedValue({ id: productId, storeId });
+      prisma.product.update.mockResolvedValue({});
+    });
+
+    const RECOUNT_WHERE = {
+      storeId,
+      status: 'PUBLISHED',
+      discontinued: false,
+      deletedAt: null,
+    };
+
+    it('recounts published products across publish -> discontinue -> delete', async () => {
+      // publish(): one product now counts
+      prisma.product.count.mockResolvedValueOnce(1);
+      await service.publish(productId, storeId, ownerId);
+      expect(prisma.product.count).toHaveBeenLastCalledWith({
+        where: RECOUNT_WHERE,
+      });
+      expect(prisma.store.update).toHaveBeenLastCalledWith({
+        where: { id: storeId },
+        data: {
+          publishedProductCount: 1,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.any() is untyped
+          contentStaleAt: expect.any(Date),
+        },
+      });
+
+      // update({ discontinued: true }): back to zero
+      prisma.product.count.mockResolvedValueOnce(0);
+      await service.update(productId, storeId, ownerId, { discontinued: true });
+      expect(prisma.store.update).toHaveBeenLastCalledWith({
+        where: { id: storeId },
+        data: {
+          publishedProductCount: 0,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.any() is untyped
+          contentStaleAt: expect.any(Date),
+        },
+      });
+
+      // softDelete(): still zero, count stays correct
+      prisma.product.count.mockResolvedValueOnce(0);
+      await service.softDelete(productId, storeId, ownerId);
+      expect(prisma.store.update).toHaveBeenLastCalledWith({
+        where: { id: storeId },
+        data: {
+          publishedProductCount: 0,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.any() is untyped
+          contentStaleAt: expect.any(Date),
+        },
+      });
+    });
+
+    it('does not recount on an update that leaves product status untouched', async () => {
+      await service.update(productId, storeId, ownerId, { price: 42 });
+      expect(prisma.product.count).not.toHaveBeenCalled();
+      expect(prisma.store.update).not.toHaveBeenCalled();
     });
   });
 

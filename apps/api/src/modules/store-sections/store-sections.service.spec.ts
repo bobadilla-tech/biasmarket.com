@@ -11,7 +11,7 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 describe('StoreSectionsService', () => {
   let service: StoreSectionsService;
   let prisma: {
-    store: { findUnique: Mock };
+    store: { findUnique: Mock; update: Mock };
     collection: { findUnique: Mock };
     storeSection: {
       findUnique: Mock;
@@ -32,7 +32,7 @@ describe('StoreSectionsService', () => {
 
   beforeEach(async () => {
     prisma = {
-      store: { findUnique: vi.fn() },
+      store: { findUnique: vi.fn(), update: vi.fn() },
       collection: { findUnique: vi.fn() },
       storeSection: {
         findUnique: vi.fn(),
@@ -142,6 +142,22 @@ describe('StoreSectionsService', () => {
           position: 0,
           hidden: true,
         },
+      });
+    });
+
+    it('marks the parent store content stale (sitemap lastModified, D4)', async () => {
+      prisma.storeSection.count.mockResolvedValue(0);
+      prisma.storeSection.create.mockResolvedValue({ id: sectionId });
+
+      await service.create(storeId, ownerId, {
+        type: 'BANNER' as any,
+        content: { imageUrl: 'https://example.com/banner.png' },
+      });
+
+      expect(prisma.store.update).toHaveBeenCalledWith({
+        where: { id: storeId },
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.any() is untyped
+        data: { contentStaleAt: expect.any(Date) },
       });
     });
   });

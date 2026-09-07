@@ -28,10 +28,12 @@ export function staticEntry(
 export function storeEntry(
   locale: string,
   slug: string,
+  lastModified?: string,
 ): MetadataRoute.Sitemap[number] {
   const path = `/store/${slug}`;
   return {
     url: localizedUrl(locale, path),
+    ...(lastModified ? { lastModified } : {}),
     changeFrequency: "daily",
     priority: 0.8,
     alternates: alternates(path),
