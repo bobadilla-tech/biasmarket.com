@@ -1,6 +1,5 @@
 import type { MetadataRoute } from "next";
-import { routing } from "@/i18n/routing";
-import { canonicalUrl } from "@/lib/site-config";
+import { canonicalUrl, localeAlternates } from "@/lib/site-config";
 
 export function localizedUrl(locale: string, path: string): string {
   return canonicalUrl(locale, path);
@@ -9,14 +8,9 @@ export function localizedUrl(locale: string, path: string): string {
 export function alternates(
   path: string,
 ): NonNullable<MetadataRoute.Sitemap[number]["alternates"]> {
-  return {
-    languages: {
-      ...Object.fromEntries(
-        routing.locales.map((locale) => [locale, localizedUrl(locale, path)]),
-      ),
-      "x-default": localizedUrl(routing.defaultLocale, path),
-    },
-  };
+  // Same hreflang set the pages' `alternates.languages` use — one computation,
+  // in `lib/site-config.ts`, so sitemap XML and page `<head>` can't diverge.
+  return { languages: localeAlternates(path) };
 }
 
 export function staticEntry(

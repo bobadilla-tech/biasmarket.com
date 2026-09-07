@@ -86,6 +86,23 @@ describe("canonical regression", () => {
         `${file} exports neither alternates.canonical nor robots noindex — ` +
           "add canonicalUrl(locale, path) or robots: { index: false }",
       ).toBe(true);
+
+      // Second bug class this repo shipped once (see
+      // docs/plans/2026-09-07-gsc-indexing-audit-organic-growth-plan.md Phase
+      // B, GSC row 6): a page declares a self-referential canonical but no
+      // per-page hreflang, so Google folds the translated pages into a
+      // canonical we didn't choose. An indexable canonical page must also
+      // export alternates.languages. Noindexed pages are exempt (hreflang on a
+      // page Google won't index is meaningless).
+      if (hasCanonical && !hasNoindex) {
+        const hasLanguages = /alternates:\s*\{[\s\S]*?languages/.test(source);
+        expect(
+          hasLanguages,
+          `${file} exports alternates.canonical without alternates.languages ` +
+            "— add languages: localeAlternates(path) so translated pages " +
+            "declare reciprocal hreflang",
+        ).toBe(true);
+      }
     });
   }
 });
