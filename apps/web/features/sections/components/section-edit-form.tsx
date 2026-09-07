@@ -21,12 +21,17 @@ export function SectionEditForm({
   const content = section.content as Record<string, unknown>;
   const [imageUrl, setImageUrl] = useState(String(content.imageUrl ?? ""));
   const [linkUrl, setLinkUrl] = useState(String(content.linkUrl ?? ""));
+  const [alt, setAlt] = useState(String(content.alt ?? ""));
   const [body, setBody] = useState(String(content.body ?? ""));
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (section.type === "BANNER") {
-      await onSave({ imageUrl, linkUrl: linkUrl || undefined });
+      await onSave({
+        imageUrl,
+        linkUrl: linkUrl || undefined,
+        alt: alt || undefined,
+      });
     } else {
       await onSave({ body });
     }
@@ -51,6 +56,13 @@ export function SectionEditForm({
             value={linkUrl}
             onChange={(e) => setLinkUrl(e.target.value)}
             placeholder={t("linkUrlPlaceholder")}
+            className="rounded-xl border border-gray-200 px-3 py-2 text-xs text-gray-600"
+          />
+          <input
+            aria-label={t("altPlaceholder")}
+            value={alt}
+            onChange={(e) => setAlt(e.target.value)}
+            placeholder={t("altPlaceholder")}
             className="rounded-xl border border-gray-200 px-3 py-2 text-xs text-gray-600"
           />
         </>

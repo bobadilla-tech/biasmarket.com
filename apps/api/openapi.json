@@ -468,6 +468,34 @@
         "tags": ["Stores"]
       }
     },
+    "/stores/{storeId}/content-images": {
+      "post": {
+        "operationId": "StoresController_uploadContentImage",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreContentImageResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Stores"]
+      }
+    },
     "/me/stores": {
       "get": {
         "operationId": "MyStoresController_findMine",
@@ -5249,6 +5277,15 @@
           }
         },
         "required": ["store", "product"]
+      },
+      "StoreContentImageResponseDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": ["url"]
       },
       "CreateVariantDto": {
         "type": "object",

@@ -7,7 +7,11 @@ import type { SectionFormInput } from "../schemas/section.schema";
 
 function buildContent(values: SectionFormInput): Record<string, unknown> {
   if (values.type === "BANNER") {
-    return { imageUrl: values.imageUrl, linkUrl: values.linkUrl || undefined };
+    return {
+      imageUrl: values.imageUrl,
+      linkUrl: values.linkUrl || undefined,
+      alt: values.alt || undefined,
+    };
   }
   if (values.type === "TEXT_BLOCK") {
     return { body: values.body };
@@ -27,9 +31,8 @@ export function useCreateSection(
         storeId as string,
         {
           type: values.type,
-          collectionId: values.type === "COLLECTION"
-            ? values.collectionId
-            : undefined,
+          collectionId:
+            values.type === "COLLECTION" ? values.collectionId : undefined,
           content: buildContent(values),
         },
         { fallbackErrorMessage },

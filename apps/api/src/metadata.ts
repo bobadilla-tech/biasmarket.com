@@ -390,6 +390,9 @@ export default async () => {
                 ],
               },
             },
+            StoreContentImageResponseDto: {
+              url: { required: true, type: () => String },
+            },
           },
         ],
         [
@@ -2512,6 +2515,10 @@ export default async () => {
               uploadLogo: {
                 type: t['./modules/stores/dto/store-response.dto.js']
                   .StoreResponseDto,
+              },
+              uploadContentImage: {
+                type: t['./modules/stores/dto/store-response.dto.js']
+                  .StoreContentImageResponseDto,
               },
             },
           },

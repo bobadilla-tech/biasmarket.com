@@ -9,6 +9,7 @@ export const sectionFormSchema = z
     collectionId: z.string(),
     imageUrl: z.string(),
     linkUrl: z.string(),
+    alt: z.string(),
     body: z.string(),
   })
   .refine(
