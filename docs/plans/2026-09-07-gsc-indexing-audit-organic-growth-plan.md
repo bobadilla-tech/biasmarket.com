@@ -321,7 +321,10 @@ Items are tiered by what they actually need next, not treated uniformly:
    2026-08-20 plan's Phase 5 (previously dropped from an earlier draft of this
    doc, restored here). No current repo-wide convention enforcing descriptive
    `alt` text on product/store images — affects image search discoverability and
-   accessibility both.
+   accessibility both. **Closed** by D8 of
+   `docs/plans/2026-09-07-store-rich-content-and-thin-content-indexing-plan.md`:
+   the convention is written up in `docs/core/product.md` §5.2.1 and enforced by
+   the store-content forms + markdown renderer shipped in D2/D3.
 5. **Mobile-first UX audit.** Carried forward from the 2026-08-20 plan's Phase 5
    (same restoration note as above). Google indexes mobile-first; this repo has
    no dedicated mobile UX audit on record.
