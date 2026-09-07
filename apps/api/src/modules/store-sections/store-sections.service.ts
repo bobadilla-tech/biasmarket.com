@@ -45,6 +45,20 @@ export class StoreSectionsService {
     return section;
   }
 
+  /**
+   * Store sections are storefront-visible, so any create/update/delete/reorder
+   * moves the sitemap's per-store `lastModified` (D4 of
+   * docs/plans/2026-09-07-store-rich-content-and-thin-content-indexing-plan.md).
+   * Kept off Prisma `@updatedAt` on purpose — unrelated store edits must not
+   * nudge Google to recrawl.
+   */
+  private async markStoreContentStale(storeId: string) {
+    await this.prisma.store.update({
+      where: { id: storeId },
+      data: { contentStaleAt: new Date() },
+    });
+  }
+
   private async assertCollectionInStore(collectionId: string, storeId: string) {
     const collection = await this.prisma.collection.findUnique({
       where: { id: collectionId },
@@ -67,7 +81,7 @@ export class StoreSectionsService {
     const position =
       dto.position ??
       (await this.prisma.storeSection.count({ where: { storeId } }));
-    return this.prisma.storeSection.create({
+    const section = await this.prisma.storeSection.create({
       data: {
         storeId,
         type: dto.type,
@@ -78,6 +92,8 @@ export class StoreSectionsService {
         hidden: dto.hidden ?? false,
       },
     });
+    await this.markStoreContentStale(storeId);
+    return section;
   }
 
   async findAllForStore(storeId: string, userId: string) {
@@ -105,7 +121,7 @@ export class StoreSectionsService {
       }
       await this.assertCollectionInStore(nextCollectionId, storeId);
     }
-    return this.prisma.storeSection.update({
+    const section = await this.prisma.storeSection.update({
       where: { id: sectionId },
       data: {
         ...(dto.type !== undefined && { type: dto.type }),
@@ -119,11 +135,17 @@ export class StoreSectionsService {
         ...(dto.hidden !== undefined && { hidden: dto.hidden }),
       },
     });
+    await this.markStoreContentStale(storeId);
+    return section;
   }
 
   async delete(sectionId: string, storeId: string, userId: string) {
     await this.findOwnedSection(sectionId, storeId, userId);
-    return this.prisma.storeSection.delete({ where: { id: sectionId } });
+    const section = await this.prisma.storeSection.delete({
+      where: { id: sectionId },
+    });
+    await this.markStoreContentStale(storeId);
+    return section;
   }
 
   async reorder(storeId: string, userId: string, dto: ReorderStoreSectionsDto) {
@@ -140,7 +162,7 @@ export class StoreSectionsService {
       );
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    const sections = await this.prisma.$transaction(async (tx) => {
       for (const [position, sectionId] of dto.sectionIds.entries()) {
         const result = await tx.storeSection.updateMany({
           where: { id: sectionId, storeId },
@@ -158,5 +180,7 @@ export class StoreSectionsService {
         orderBy: { position: 'asc' },
       });
     });
+    await this.markStoreContentStale(storeId);
+    return sections;
   }
 }

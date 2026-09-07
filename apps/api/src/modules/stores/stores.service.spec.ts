@@ -152,18 +152,28 @@ describe('StoresService', () => {
     });
 
     it('pages public stores with deterministic createdAt/id ordering', async () => {
-      prisma.store.findMany.mockResolvedValue([{ slug: 'first' }]);
+      const staleAt = new Date('2026-03-04T05:06:07.000Z');
+      const createdAt = new Date('2026-01-02T03:04:05.000Z');
+      prisma.store.findMany.mockResolvedValue([
+        { slug: 'first', contentStaleAt: staleAt, createdAt },
+        { slug: 'second', contentStaleAt: null, createdAt },
+      ]);
       prisma.store.count.mockResolvedValue(8);
 
+      // contentStaleAt wins when set; createdAt is the fallback (D4 ran no
+      // data backfill for contentStaleAt).
       await expect(service.findPublicSitemapPage(50_000, 100)).resolves.toEqual(
         {
-          items: [{ slug: 'first' }],
+          items: [
+            { slug: 'first', lastModified: staleAt.toISOString() },
+            { slug: 'second', lastModified: createdAt.toISOString() },
+          ],
           total: 8,
         },
       );
       expect(prisma.store.findMany).toHaveBeenCalledWith({
         where: { isPublic: true, isDemo: false },
-        select: { slug: true },
+        select: { slug: true, contentStaleAt: true, createdAt: true },
         orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
         skip: 100,
         take: 50_000,
@@ -292,7 +302,7 @@ describe('StoresService', () => {
       });
     });
 
-    it('persists bio and aboutMarkdown when provided', async () => {
+    it('persists bio and aboutMarkdown and bumps contentStaleAt when they change', async () => {
       prisma.store.findUnique.mockResolvedValue({ id: 'store-1', ownerId });
       prisma.store.update.mockResolvedValue({ id: 'store-1' });
 
@@ -306,7 +316,26 @@ describe('StoresService', () => {
         data: {
           bio: 'Official merch, ships nationwide.',
           aboutMarkdown: '## About\n\nWe are the real deal.',
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.any() is untyped
+          contentStaleAt: expect.any(Date),
         },
+      });
+    });
+
+    it('does not bump contentStaleAt on a no-op bio save', async () => {
+      prisma.store.findUnique.mockResolvedValue({
+        id: 'store-1',
+        ownerId,
+        bio: 'Unchanged.',
+        aboutMarkdown: null,
+      });
+      prisma.store.update.mockResolvedValue({ id: 'store-1' });
+
+      await service.update('store-1', ownerId, { bio: 'Unchanged.' });
+
+      expect(prisma.store.update).toHaveBeenCalledWith({
+        where: { id: 'store-1' },
+        data: { bio: 'Unchanged.' },
       });
     });
 

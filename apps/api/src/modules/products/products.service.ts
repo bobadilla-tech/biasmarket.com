@@ -53,6 +53,29 @@ export class ProductsService {
     return product;
   }
 
+  /**
+   * Recompute `Store.publishedProductCount` from scratch and stamp
+   * `contentStaleAt`. Called from every mutation that can change whether a
+   * product counts as PUBLISHED / non-discontinued / non-soft-deleted (D4 of
+   * docs/plans/2026-09-07-store-rich-content-and-thin-content-indexing-plan.md).
+   * A full recount (rather than scattered increment/decrement math) keeps the
+   * "what counts" rule in one place; the D4 backfill migration mirrors it.
+   */
+  private async recountPublishedProducts(storeId: string) {
+    const publishedProductCount = await this.prisma.product.count({
+      where: {
+        storeId,
+        status: 'PUBLISHED',
+        discontinued: false,
+        deletedAt: null,
+      },
+    });
+    await this.prisma.store.update({
+      where: { id: storeId },
+      data: { publishedProductCount, contentStaleAt: new Date() },
+    });
+  }
+
   private async assertCategoriesInStore(
     categoryIds: string[],
     storeId: string,
@@ -66,6 +89,9 @@ export class ProductsService {
     }
   }
 
+  // A newly created product is always DRAFT (CreateProductDto has no `status`
+  // and the global ValidationPipe rejects unknown fields), so it never affects
+  // `publishedProductCount` — recount happens on publish(), not here.
   async create(storeId: string, userId: string, dto: CreateProductDto) {
     const store = await this.assertOwnership(storeId, userId);
     const { categoryIds, stock, variants, ...data } = dto;
@@ -175,10 +201,12 @@ export class ProductsService {
 
   async publish(productId: string, storeId: string, userId: string) {
     await this.findOwnedProduct(productId, storeId, userId);
-    return this.prisma.product.update({
+    const product = await this.prisma.product.update({
       where: { id: productId },
       data: { status: 'PUBLISHED' },
     });
+    await this.recountPublishedProducts(storeId);
+    return product;
   }
 
   async update(
@@ -190,8 +218,8 @@ export class ProductsService {
     await this.findOwnedProduct(productId, storeId, userId);
     const { categoryIds, ...data } = dto;
     if (categoryIds) await this.assertCategoriesInStore(categoryIds, storeId);
-    return this.prisma.$transaction(async (tx) => {
-      const product = await tx.product.update({
+    const product = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.product.update({
         where: { id: productId },
         data,
       });
@@ -203,16 +231,24 @@ export class ProductsService {
           });
         }
       }
-      return product;
+      return updated;
     });
+    // `discontinued` is the only count-affecting field UpdateProductDto exposes
+    // (publish/soft-delete are their own endpoints); recount only when it moved.
+    if ('discontinued' in data) {
+      await this.recountPublishedProducts(storeId);
+    }
+    return product;
   }
 
   async softDelete(productId: string, storeId: string, userId: string) {
     await this.findOwnedProduct(productId, storeId, userId);
-    return this.prisma.product.update({
+    const product = await this.prisma.product.update({
       where: { id: productId },
       data: { deletedAt: new Date(), status: 'DRAFT', discontinued: false },
     });
+    await this.recountPublishedProducts(storeId);
+    return product;
   }
 
   async addVariant(

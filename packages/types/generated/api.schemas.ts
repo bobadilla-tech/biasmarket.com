@@ -133,6 +133,7 @@ export interface SitemapStoreCountDto {
 
 export interface SitemapStoreItemDto {
   slug: string;
+  lastModified: string;
 }
 
 export interface SitemapStorePageDto {

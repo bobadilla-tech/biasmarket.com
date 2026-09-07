@@ -4790,9 +4790,12 @@
         "properties": {
           "slug": {
             "type": "string"
+          },
+          "lastModified": {
+            "type": "string"
           }
         },
-        "required": ["slug"]
+        "required": ["slug", "lastModified"]
       },
       "SitemapStorePageDto": {
         "type": "object",
