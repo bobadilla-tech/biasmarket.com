@@ -11,11 +11,23 @@ import {
   PUBLIC_STORE_HAS_LISTABLE_PRODUCT,
   PUBLIC_STORE_VISIBILITY,
 } from '../../common/public-store-visibility.js';
+import { isStoreIndexable } from '../../common/store-indexability.js';
 import { slugify } from '@biasmarket/utils/strings';
 import type { UpdateStoreDto } from './dto/update-store.dto.js';
 import type { CreateStoreDto } from './dto/create-store.dto.js';
 
 const RESERVED_SLUGS = ['www', 'api', 'admin', 'app'];
+
+// A TEXT_BLOCK section stores `{ body: string }` in its Json `content`. Narrow
+// at the read site (same convention as the storefront renderer and
+// StoreSectionWithCollectionResponseDto).
+function textBlockBody(content: unknown): string {
+  if (content !== null && typeof content === 'object' && 'body' in content) {
+    const { body } = content as { body: unknown };
+    if (typeof body === 'string') return body.trim();
+  }
+  return '';
+}
 
 @Injectable()
 export class StoresService {
@@ -282,8 +294,14 @@ export class StoresService {
   }
 
   async findPublicBySlug(slug: string) {
-    const store = await this.prisma.store.findUnique({ where: { slug } });
-    if (!store) throw new NotFoundException('Tienda no encontrada');
+    const row = await this.prisma.store.findUnique({
+      where: { slug },
+      // `owner.banned` feeds the D5 indexability predicate below; strip it from
+      // the returned shape so it never reaches the public DTO.
+      include: { owner: { select: { banned: true } } },
+    });
+    if (!row) throw new NotFoundException('Tienda no encontrada');
+    const { owner, ...store } = row;
 
     const rawSections = await this.prisma.storeSection.findMany({
       where: { storeId: store.id, hidden: false },
@@ -364,7 +382,25 @@ export class StoresService {
       });
     }
 
-    return { ...store, sections };
+    // D5 (report-only): compute `isStoreIndexable` and expose it on the public
+    // DTO. Nothing acts on it yet — D6 turns it into page `noindex`, D7 into a
+    // sitemap filter. `hasRealTextBlockSection` is checked here (not in the
+    // sitemap `where`) because this read already loads section bodies.
+    const hasRealTextBlockSection = rawSections.some(
+      (section) =>
+        section.type === 'TEXT_BLOCK' && textBlockBody(section.content) !== '',
+    );
+    const indexable = isStoreIndexable({
+      isPublic: store.isPublic,
+      isDemo: store.isDemo,
+      ownerBanned: owner?.banned === true,
+      publishedProductCount: store.publishedProductCount,
+      bio: store.bio,
+      aboutMarkdown: store.aboutMarkdown,
+      hasRealTextBlockSection,
+    });
+
+    return { ...store, sections, indexable };
   }
 
   async findCollectionsPublic() {

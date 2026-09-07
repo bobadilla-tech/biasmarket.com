@@ -394,6 +394,56 @@ describe('StoresService', () => {
       );
     });
 
+    describe('indexable verdict (D5, report-only)', () => {
+      it('returns indexable=true for a public store at the bar with a real TEXT_BLOCK, and never leaks owner', async () => {
+        prisma.store.findUnique.mockResolvedValue({
+          id: storeId,
+          slug: 'my-store',
+          isPublic: true,
+          isDemo: false,
+          publishedProductCount: 2,
+          bio: null,
+          aboutMarkdown: null,
+          owner: { banned: false },
+        });
+        prisma.storeSection.findMany.mockResolvedValue([
+          {
+            id: 'section-1',
+            storeId,
+            type: 'TEXT_BLOCK',
+            position: 0,
+            content: { body: 'Welcome to our official fan-run store.' },
+            collection: null,
+          },
+        ]);
+        prisma.product.findMany.mockResolvedValue([]);
+
+        const result = await service.findPublicBySlug('my-store');
+
+        expect(result.indexable).toBe(true);
+        expect(result).not.toHaveProperty('owner');
+      });
+
+      it('returns indexable=false below the product bar even with prose', async () => {
+        prisma.store.findUnique.mockResolvedValue({
+          id: storeId,
+          slug: 'my-store',
+          isPublic: true,
+          isDemo: false,
+          publishedProductCount: 1,
+          bio: 'A real tagline.',
+          aboutMarkdown: null,
+          owner: { banned: false },
+        });
+        prisma.storeSection.findMany.mockResolvedValue([]);
+        prisma.product.findMany.mockResolvedValue([]);
+
+        const result = await service.findPublicBySlug('my-store');
+
+        expect(result.indexable).toBe(false);
+      });
+    });
+
     it('lists every published product directly when the store has no sections configured', async () => {
       prisma.storeSection.findMany.mockResolvedValue([]);
       prisma.product.findMany.mockResolvedValue([productA, productB]);
