@@ -1,5 +1,6 @@
 import { betterAuth } from 'better-auth';
 import { admin } from 'better-auth/plugins/admin';
+import { bearer } from 'better-auth/plugins/bearer';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { Logger } from '@nestjs/common';
 import type { Auth } from '@thallesp/nestjs-better-auth';
@@ -83,7 +84,20 @@ export const createAuth = (
     // additionalField — role stays server-controlled only, see
     // scripts/promote-admin.ts. defaultRole preserves the pre-plugin
     // default (the plugin's own default is "user").
+    // The `bearer` plugin (mobile MVP Phase 1, issue #178) adds a
+    // native-client-compatible transport alongside the existing cookie
+    // sessions: it accepts `Authorization: Bearer <session token>` on the way
+    // in (injecting it as the session cookie before the admin/email-password
+    // handlers run) and echoes the raw session token via a `set-auth-token`
+    // response header on any response that sets a session cookie. Both
+    // transports coexist per-request; the cookie path is untouched. Plugin is
+    // pure request/response remapping — it has no coupling to the admin plugin
+    // or to the `plan`/`premiumUntil` additionalFields below (verified against
+    // the pinned 1.7.2 source: `dist/plugins/bearer/index.mjs` only reads the
+    // auth secret and session-cookie name, and the e2e suite exercises the
+    // full config incl. admin + additionalFields).
     plugins: [
+      bearer(),
       admin({
         defaultRole: DEFAULT_SELLER_ROLE,
         adminRoles: ['admin'],

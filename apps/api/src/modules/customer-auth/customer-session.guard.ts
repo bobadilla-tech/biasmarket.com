@@ -15,21 +15,7 @@ import {
   CUSTOMER_SESSION_TTL_MS,
 } from './customer-session.constants.js';
 import { requiredEnv } from '../../config/env.validation.js';
-
-// No cookie-parser middleware is installed in this app (see main.ts) — the
-// session token's own characters (base64url + ".") never need escaping, so
-// this only has to handle the standard `key=value; key2=value2` shape.
-function parseCookies(header: string | undefined): Record<string, string> {
-  const cookies: Record<string, string> = {};
-  if (!header) return cookies;
-  for (const part of header.split(';')) {
-    const separator = part.indexOf('=');
-    if (separator === -1) continue;
-    const key = part.slice(0, separator).trim();
-    if (key) cookies[key] = part.slice(separator + 1).trim();
-  }
-  return cookies;
-}
+import { extractCustomerSessionToken } from './customer-session-token.js';
 
 // No `storeId` here — the session identifies a global `BuyerAccount`, not a
 // per-store `Customer`. Any endpoint that needs store scoping does its own
@@ -56,7 +42,11 @@ export class CustomerSessionGuard implements CanActivate {
     const req = context.switchToHttp().getRequest<Request>();
     const res = context.switchToHttp().getResponse<Response>();
 
-    const token = parseCookies(req.headers.cookie)[CUSTOMER_SESSION_COOKIE];
+    // Phase 1 (issue #178): accept the session token from either the
+    // `bm_customer_session` cookie (today's web path) or an
+    // `Authorization: Bearer <token>` header (mobile path). One token is
+    // accepted per request; a cookie takes precedence when both are present.
+    const token = extractCustomerSessionToken(req);
     if (!token) throw new UnauthorizedException('No autenticado');
 
     const secret = requiredEnv('CUSTOMER_ACCOUNT_TOKEN_SECRET');
@@ -79,6 +69,9 @@ export class CustomerSessionGuard implements CanActivate {
     // cookie, so an active session never expires mid-use; a fully idle one
     // still expires CUSTOMER_SESSION_TTL_MS after its last authenticated
     // request. Deliberate choice, not the only valid one — see the plan doc.
+    // For bearer-mode (mobile) requests the cookie is harmless (ignored by
+    // native clients) but keeps the reissue codepath identical for both
+    // transports.
     const fresh = createCustomerSessionToken(
       buyerAccount.id,
       buyerAccount.passwordVersion,
