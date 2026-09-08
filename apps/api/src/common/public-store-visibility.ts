@@ -12,9 +12,16 @@ export const PUBLIC_STORE_VISIBILITY = {
 } as const satisfies Prisma.StoreWhereInput;
 
 // The extra "worth showing in a *listing*" predicate — a non-banned owner and
-// at least one listable product. Used only by findFeatured / findDirectory;
-// deliberately NOT applied to the sitemap reads, which list every public
-// store regardless of catalog state.
+// at least one listable product. Used only by findFeatured / findDirectory.
+//
+// The sitemap reads used to be deliberately exempt from any catalog/content
+// gate ("list every public store regardless of state"). D7 of
+// docs/plans/2026-09-07-store-rich-content-and-thin-content-indexing-plan.md
+// (parent: 2026-09-07-gsc-indexing-audit-organic-growth-plan.md Tier 3 item 1)
+// reversed that: the sitemap now spreads SITEMAP_INDEXABLE_STORE_WHERE (see
+// store-indexability.ts) so thin / near-empty stores are neither indexed nor
+// sitemap-listed. findFeatured / findDirectory keep their own separate
+// predicate below — "what we surface" and "what Google indexes" stay distinct.
 export const PUBLIC_STORE_HAS_LISTABLE_PRODUCT = {
   owner: { banned: { not: true } },
   products: {

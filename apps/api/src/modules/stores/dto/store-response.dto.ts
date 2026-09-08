@@ -27,6 +27,14 @@ export class StoreResponseDto {
   @ApiProperty({ type: String, nullable: true })
   logoUrl: string | null;
 
+  // Seller-authored store copy — see
+  // docs/plans/2026-09-07-store-rich-content-and-thin-content-indexing-plan.md.
+  @ApiProperty({ type: String, nullable: true })
+  bio: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  aboutMarkdown: string | null;
+
   @ApiProperty()
   paymentInstructions: string;
 
@@ -353,4 +361,20 @@ export class StoreSectionWithCollectionResponseDto {
 export class StorePublicDetailResponseDto extends StoreResponseDto {
   @ApiProperty({ type: [StoreSectionWithCollectionResponseDto] })
   sections: StoreSectionWithCollectionResponseDto[];
+
+  // D5 (report-only, see
+  // docs/plans/2026-09-07-store-rich-content-and-thin-content-indexing-plan.md
+  // Part 5.3 / Part 7 step 2): the full `isStoreIndexable` verdict. Computed
+  // here because this read already loads section bodies. Nothing consumes it
+  // yet — D6 makes the storefront page emit `robots: { index: false }` when
+  // this is false.
+  @ApiProperty()
+  indexable: boolean;
+}
+
+// POST :storeId/content-images — the public CDN URL of the stored image, to be
+// spliced into `aboutMarkdown` as `![alt](url)` by the dashboard editor.
+export class StoreContentImageResponseDto {
+  @ApiProperty()
+  url: string;
 }

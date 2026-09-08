@@ -5,7 +5,7 @@ import { Footer } from "@/components/marketing/footer";
 import { BlogListItem } from "@/features/blog";
 import { formatPublishedDate } from "@/features/blog/format-date";
 import { getBlogPosts } from "@/features/blog/server";
-import { canonicalUrl } from "@/lib/site-config";
+import { canonicalUrl, localeAlternates } from "@/lib/site-config";
 
 export async function generateMetadata({
   params,
@@ -18,7 +18,10 @@ export async function generateMetadata({
   return {
     title: t("title"),
     description: t("description"),
-    alternates: { canonical: canonicalUrl(locale, "/blog") },
+    alternates: {
+      canonical: canonicalUrl(locale, "/blog"),
+      languages: localeAlternates("/blog"),
+    },
   };
 }
 

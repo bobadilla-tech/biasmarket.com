@@ -18,16 +18,21 @@ vi.mock('@thallesp/nestjs-better-auth', () => ({
 
 describe('StoresController', () => {
   let controller: StoresController;
-  let service: { create: Mock };
+  let service: { create: Mock; assertOwnership: Mock };
+  let storage: { uploadImage: Mock; uploadStoreContentImage: Mock };
 
   beforeEach(async () => {
-    service = { create: vi.fn() };
+    service = { create: vi.fn(), assertOwnership: vi.fn() };
+    storage = {
+      uploadImage: vi.fn(),
+      uploadStoreContentImage: vi.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [StoresController],
       providers: [
         { provide: StoresService, useValue: service },
-        { provide: StorageService, useValue: { uploadImage: vi.fn() } },
+        { provide: StorageService, useValue: storage },
       ],
     }).compile();
 
@@ -65,5 +70,42 @@ describe('StoresController', () => {
     await controller.create(session, dto);
 
     expect(service.create).toHaveBeenCalledWith('user-1', dto);
+  });
+
+  describe('uploadContentImage()', () => {
+    const session = { user: { id: 'user-1' } } as never;
+    const file = {
+      buffer: Buffer.from('img'),
+      detectedMimeType: 'image/png',
+    } as never;
+
+    it('asserts ownership before uploading and returns the stored url', async () => {
+      storage.uploadStoreContentImage.mockResolvedValue(
+        'https://cdn.biasmarket.com/products/store-content/a.png',
+      );
+
+      const result = await controller.uploadContentImage(
+        'store-1',
+        session,
+        file,
+      );
+
+      expect(service.assertOwnership).toHaveBeenCalledWith('store-1', 'user-1');
+      expect(service.assertOwnership.mock.invocationCallOrder[0]).toBeLessThan(
+        storage.uploadStoreContentImage.mock.invocationCallOrder[0],
+      );
+      expect(result).toEqual({
+        url: 'https://cdn.biasmarket.com/products/store-content/a.png',
+      });
+    });
+
+    it('does not upload when ownership assertion rejects', async () => {
+      service.assertOwnership.mockRejectedValue(new Error('forbidden'));
+
+      await expect(
+        controller.uploadContentImage('store-1', session, file),
+      ).rejects.toThrow('forbidden');
+      expect(storage.uploadStoreContentImage).not.toHaveBeenCalled();
+    });
   });
 });

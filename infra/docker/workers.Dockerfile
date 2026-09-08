@@ -47,9 +47,11 @@ COPY apps/workers/package.json ./apps/workers/package.json
 COPY packages/design-tokens/package.json ./packages/design-tokens/package.json
 COPY packages/db/package.json ./packages/db/package.json
 COPY packages/i18n/package.json ./packages/i18n/package.json
+COPY packages/query/package.json ./packages/query/package.json
 COPY packages/queue/package.json ./packages/queue/package.json
 COPY packages/types/package.json ./packages/types/package.json
 COPY packages/utils/package.json ./packages/utils/package.json
+COPY packages/validation/package.json ./packages/validation/package.json
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm-store \
     pnpm install --frozen-lockfile --store-dir=/pnpm-store
 

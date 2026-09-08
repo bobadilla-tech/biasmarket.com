@@ -50,6 +50,7 @@ import type {
   SectionCollectionResponseDto,
   StoreDirectoryResponseDto,
   StorePublicDetailResponseDto,
+  StoreContentImageResponseDto,
   StoreResponseDto,
   StoreSectionWithCollectionResponseDto,
   StoreWithOwnerResponseDto,
@@ -61,6 +62,12 @@ import {
 } from '../../common/uploaded-file-validation.pipe.js';
 
 const STORE_LOGO_PIPE = new UploadedFileValidationPipe({
+  allowedMimeTypes: IMAGE_UPLOAD_MIME_TYPES,
+});
+
+// Same allowlist + 5MB cap as product images — deliberately reused, not a
+// second limit.
+const STORE_CONTENT_IMAGE_PIPE = new UploadedFileValidationPipe({
   allowedMimeTypes: IMAGE_UPLOAD_MIME_TYPES,
 });
 
@@ -298,8 +305,13 @@ export class StoresController {
   async findPublic(
     @Param('slug') slug: string,
   ): Promise<StorePublicDetailResponseDto> {
-    const { sections, ...store } = await this.stores.findPublicBySlug(slug);
-    return { ...toStoreDto(store), sections: sections.map(toSectionDto) };
+    const { sections, indexable, ...store } =
+      await this.stores.findPublicBySlug(slug);
+    return {
+      ...toStoreDto(store),
+      sections: sections.map(toSectionDto),
+      indexable,
+    };
   }
 
   @Public()
@@ -338,5 +350,27 @@ export class StoresController {
     );
     const store = await this.stores.updateLogo(storeId, session.user.id, url);
     return toStoreDto(store);
+  }
+
+  // Raw-FormData carve-out (see apps/web/AGENTS.md): the dashboard's
+  // aboutMarkdown editor uploads an inline image here and splices the returned
+  // URL into the markdown as `![alt](url)`. Ownership is checked before the
+  // upload runs — the file never reaches storage for a store the caller does
+  // not own.
+  @UseGuards(AuthGuard)
+  @Post(':storeId/content-images')
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadContentImage(
+    @Param('storeId') storeId: string,
+    @Session() session: UserSession,
+    @UploadedFile(STORE_CONTENT_IMAGE_PIPE) file: ValidatedUploadedFile,
+  ): Promise<StoreContentImageResponseDto> {
+    await this.stores.assertOwnership(storeId, session.user.id);
+    const url = await this.storage.uploadStoreContentImage(
+      file.buffer,
+      file.detectedMimeType,
+    );
+    return { url };
   }
 }

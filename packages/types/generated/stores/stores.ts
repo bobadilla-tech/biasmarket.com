@@ -14,6 +14,7 @@ import type {
   PublicStoreListingResponseDto,
   SitemapStoreCountDto,
   SitemapStorePageDto,
+  StoreContentImageResponseDto,
   StoreDirectoryResponseDto,
   StorePublicDetailResponseDto,
   StoreResponseDto,
@@ -287,4 +288,21 @@ export const uploadLogo = async (
     ...options,
     method: "POST",
   });
+};
+
+export const getUploadContentImageUrl = (storeId: string) => {
+  return `/stores/${storeId}/content-images`;
+};
+
+export const uploadContentImage = async (
+  storeId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<StoreContentImageResponseDto> => {
+  return customFetch<StoreContentImageResponseDto>(
+    getUploadContentImageUrl(storeId),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
 };
