@@ -8255,6 +8255,10 @@
         "properties": {
           "ok": {
             "type": "boolean"
+          },
+          "sessionToken": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": ["ok"]
