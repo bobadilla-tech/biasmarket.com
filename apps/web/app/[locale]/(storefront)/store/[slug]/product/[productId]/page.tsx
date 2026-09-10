@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { Locale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { canonicalUrl } from "@/lib/site-config";
+import { canonicalUrl, localeAlternates } from "@/lib/site-config";
 import { buildProductJsonLd, serializeJsonLd } from "@/lib/product-json-ld";
 import { ProductDetailView } from "./product-detail-view";
 
@@ -43,6 +43,7 @@ export async function generateMetadata({
     title: data.product.name,
     alternates: {
       canonical: canonicalUrl(locale, `/store/${slug}/product/${productId}`),
+      languages: localeAlternates(`/store/${slug}/product/${productId}`),
     },
   };
 }

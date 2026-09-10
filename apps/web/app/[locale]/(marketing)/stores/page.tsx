@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { Locale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { StoreDirectoryPageClient } from "./store-directory-page-client";
-import { canonicalUrl } from "@/lib/site-config";
+import { canonicalUrl, localeAlternates } from "@/lib/site-config";
 
 export async function generateMetadata({
   params,
@@ -16,7 +16,10 @@ export async function generateMetadata({
   });
   return {
     title: t("title"),
-    alternates: { canonical: canonicalUrl(locale, "/stores") },
+    alternates: {
+      canonical: canonicalUrl(locale, "/stores"),
+      languages: localeAlternates("/stores"),
+    },
   };
 }
 

@@ -42,7 +42,7 @@ export class CustomerSessionGuard implements CanActivate {
     const req = context.switchToHttp().getRequest<Request>();
     const res = context.switchToHttp().getResponse<Response>();
 
-    // Phase 1 (issue #178): accept the session token from either the
+    //  accept the session token from either the
     // `bm_customer_session` cookie (today's web path) or an
     // `Authorization: Bearer <token>` header (mobile path). One token is
     // accepted per request; a cookie takes precedence when both are present.

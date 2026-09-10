@@ -40,9 +40,13 @@ export interface RenderableSection {
 // *not* cover the synthesized trailing catch-all section for uncollected
 // products (documented out of scope there): callers only ever pass real,
 // ordered StoreSection rows.
-export function StoreSectionRenderer(
-  { slug, sections }: { slug: string; sections: RenderableSection[] },
-) {
+export function StoreSectionRenderer({
+  slug,
+  sections,
+}: {
+  slug: string;
+  sections: RenderableSection[];
+}) {
   return (
     <>
       {sections.map((section) => {
@@ -97,9 +101,19 @@ export function StoreSectionRenderer(
           );
         }
 
+        // Back-compat: existing rows are `{ body: "line\n\nline" }` — a single
+        // string. Split on blank lines so each paragraph gets its own <p>
+        // instead of one flat block with collapsed line breaks.
+        const paragraphs = String(section.content?.body ?? "")
+          .split(/\n{2,}/)
+          .map((para) => para.trim())
+          .filter(Boolean);
+
         return (
           <section key={section.id} className="prose max-w-none">
-            <p>{section.content?.body as string}</p>
+            {paragraphs.map((para, index) => (
+              <p key={index}>{para}</p>
+            ))}
           </section>
         );
       })}

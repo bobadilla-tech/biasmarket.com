@@ -12,7 +12,8 @@ const CACHE_OPTIONS = {
 };
 
 type SitemapCount = { total: number };
-type SitemapPage = { items: { slug: string }[]; total: number };
+type SitemapPageItem = { slug: string; lastModified: string };
+type SitemapPage = { items: SitemapPageItem[]; total: number };
 
 function apiBaseUrl(): string {
   const base = process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
@@ -63,7 +64,12 @@ function parsePage(value: unknown): SitemapPage {
     !Number.isSafeInteger(page.total) ||
     page.total < 0 ||
     page.items.some(
-      (item) => !item || typeof item.slug !== "string" || !item.slug,
+      (item) =>
+        !item ||
+        typeof item.slug !== "string" ||
+        !item.slug ||
+        typeof item.lastModified !== "string" ||
+        Number.isNaN(Date.parse(item.lastModified)),
     )
   ) {
     throw new Error("Invalid stores sitemap page envelope");
@@ -100,8 +106,9 @@ export const storesSource: SitemapSource = {
       throw new SitemapStaleChunkError("stores", chunkId);
     }
 
-    const entries: MetadataRoute.Sitemap = page.items.flatMap(({ slug }) =>
-      routing.locales.map((locale) => storeEntry(locale, slug)),
+    const entries: MetadataRoute.Sitemap = page.items.flatMap(
+      ({ slug, lastModified }) =>
+        routing.locales.map((locale) => storeEntry(locale, slug, lastModified)),
     );
     return entries.slice(pageSize.sliceStart, pageSize.sliceEnd);
   },

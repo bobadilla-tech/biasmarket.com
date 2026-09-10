@@ -33,7 +33,7 @@ export const AllowNoOrigin = () =>
 // enforcement. A full CSRF-token scheme is out of scope for this pass;
 // this is the documented minimum bar instead.
 //
-// Phase 1 (issue #178) adds two narrow, security-reviewed exemptions so
+// adds two narrow, security-reviewed exemptions so
 // native (mobile) clients can use these endpoints without a browser Origin:
 //
 // 1. VERIFIED BEARER ONLY — a request carrying an already-validated

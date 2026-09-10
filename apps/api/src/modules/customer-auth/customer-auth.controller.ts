@@ -44,7 +44,7 @@ function setSessionCookie(res: Response, token: string): void {
   });
 }
 
-// Phase 1 (issue #178): native mobile clients have no cookie jar, so they
+// native mobile clients have no cookie jar, so they
 // can't read the HttpOnly `bm_customer_session` cookie. When the request
 // self-identifies as a mobile client with `X-Client: mobile`, the controller
 // also returns the freshly-issued session token in the JSON body. The cookie

@@ -12,6 +12,7 @@ import {
   NotificationsSection,
   PaymentsSection,
   ProfileSection,
+  StoreContentSection,
   useWhatsAppTemplates,
   WhatsAppMessagesSection,
 } from "@/features/store-settings";
@@ -67,6 +68,7 @@ export function SettingsPageClient() {
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)]">
           <div className="space-y-6">
             <ProfileSection store={store} />
+            <StoreContentSection store={store} />
             <AppearanceSection store={store} />
             <PaymentsSection storeId={store.id} />
             <WhatsAppMessagesSection

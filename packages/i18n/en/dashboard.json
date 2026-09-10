@@ -169,6 +169,7 @@
     "selectCollection": "Select a collection",
     "imageUrlPlaceholder": "Image URL",
     "linkUrlPlaceholder": "Link URL (optional)",
+    "altPlaceholder": "Alt text (describe the image)",
     "bodyPlaceholder": "Text content",
     "add": "Add section",
     "delete": "Delete",
@@ -264,6 +265,22 @@
       "instructionsLabel": "Payment instructions",
       "instructionsPlaceholder": "Share the payment details or guidance you want buyers to see after checkout.",
       "help": "These values are used across the storefront and the order flow."
+    },
+    "storeContent": {
+      "title": "Store content",
+      "description": "Your own copy so the store can rank in Google, not just the catalog.",
+      "bioLabel": "Bio",
+      "bioPlaceholder": "Official [artist] merch, shipping nationwide.",
+      "bioHelp": "Shown under your store name and in Google results.",
+      "aboutLabel": "About the store",
+      "aboutPlaceholder": "Tell buyers who you are, what you sell, and why to buy here. Paragraphs and lists are fine.",
+      "aboutHelp": "Markdown: headings, lists, links, and images.",
+      "imageButton": "Add image",
+      "imageUploading": "Uploading…",
+      "imageTooLong": "That image would push the text over the limit.",
+      "previewLabel": "Preview",
+      "previewEmpty": "Your formatted text shows up here.",
+      "help": "This content is used on your public store page and its search listing."
     },
     "appearance": {
       "title": "Appearance",

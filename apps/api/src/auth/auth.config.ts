@@ -84,8 +84,7 @@ export const createAuth = (
     // additionalField — role stays server-controlled only, see
     // scripts/promote-admin.ts. defaultRole preserves the pre-plugin
     // default (the plugin's own default is "user").
-    // The `bearer` plugin (mobile MVP Phase 1, issue #178) adds a
-    // native-client-compatible transport alongside the existing cookie
+    // The `bearer` adds a native-client transport alongside the existing cookie
     // sessions: it accepts `Authorization: Bearer <session token>` on the way
     // in (injecting it as the session cookie before the admin/email-password
     // handlers run) and echoes the raw session token via a `set-auth-token`

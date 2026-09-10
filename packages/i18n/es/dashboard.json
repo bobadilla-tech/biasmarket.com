@@ -169,6 +169,7 @@
     "selectCollection": "Elige una colección",
     "imageUrlPlaceholder": "URL de imagen",
     "linkUrlPlaceholder": "URL de enlace (opcional)",
+    "altPlaceholder": "Texto alternativo (describe la imagen)",
     "bodyPlaceholder": "Contenido de texto",
     "add": "Agregar sección",
     "delete": "Eliminar",
@@ -264,6 +265,22 @@
       "instructionsLabel": "Instrucciones de pago",
       "instructionsPlaceholder": "Comparte los datos de pago o la guía que quieres mostrar después del checkout.",
       "help": "Estos valores se usan en la tienda pública y en el flujo de pedidos."
+    },
+    "storeContent": {
+      "title": "Contenido de la tienda",
+      "description": "Texto propio para que tu tienda posicione en Google, no solo el catálogo.",
+      "bioLabel": "Bio",
+      "bioPlaceholder": "Merch oficial de [artista], envíos a todo el país.",
+      "bioHelp": "Se muestra bajo el nombre de tu tienda y en los resultados de Google.",
+      "aboutLabel": "Sobre la tienda",
+      "aboutPlaceholder": "Contá quién sos, qué vendés y por qué comprar acá. Podés usar párrafos y listas.",
+      "aboutHelp": "Markdown: títulos, listas, enlaces e imágenes.",
+      "imageButton": "Agregar imagen",
+      "imageUploading": "Subiendo…",
+      "imageTooLong": "Esa imagen dejaría el texto por encima del límite.",
+      "previewLabel": "Vista previa",
+      "previewEmpty": "Acá aparece tu texto con formato.",
+      "help": "Este contenido se usa en la página pública de tu tienda y en su ficha para buscadores."
     },
     "appearance": {
       "title": "Apariencia",

@@ -8,7 +8,7 @@ import { AccountOrderResponseDto } from './account-order-response.dto.js';
 // this same `{ ok: true }` shape — the session cookie itself is set via
 // `@Res({ passthrough: true })`, never part of the JSON body.
 //
-// Phase 1 (issue #178) adds an optional `sessionToken` field, present only
+// adds an optional `sessionToken` field, present only
 // on `login`/`changePassword` when the request carries `X-Client: mobile`.
 // Native mobile clients can't read the HttpOnly session cookie, so the
 // controller echoes the same token in the JSON body for them. Web/browser

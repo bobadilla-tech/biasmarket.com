@@ -28,6 +28,7 @@ export function SectionForm({
       collectionId: "",
       imageUrl: "",
       linkUrl: "",
+      alt: "",
       body: "",
     },
   });
@@ -44,6 +45,7 @@ export function SectionForm({
       collectionId: "",
       imageUrl: "",
       linkUrl: "",
+      alt: "",
       body: "",
     });
   });
@@ -95,6 +97,11 @@ export function SectionForm({
             placeholder={t("linkUrlPlaceholder")}
             className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600"
             {...register("linkUrl")}
+          />
+          <input
+            placeholder={t("altPlaceholder")}
+            className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600"
+            {...register("alt")}
           />
         </>
       )}

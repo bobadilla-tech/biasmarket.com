@@ -17,7 +17,7 @@ function parseCookies(header: string | undefined): Record<string, string> {
   return cookies;
 }
 
-// Phase 1 (issue #178): extract the raw session token from an
+//  extract the raw session token from an
 // `Authorization: Bearer <token>` header. Returns `undefined` when the
 // header is absent or the token is empty.
 export function extractBearerTokenFromAuthorization(

@@ -377,7 +377,7 @@ describe('customer account + customer auth (e2e)', () => {
   );
 
   // ---------------------------------------------------------------------------
-  // Mobile bearer-path coverage (issue #178)
+  // Mobile bearer-path coverage 
   // ---------------------------------------------------------------------------
   // Validates X-Client: mobile login → body sessionToken, bearer-token access
   // on protected routes, and the non-browser no-Origin exemption on unauthed

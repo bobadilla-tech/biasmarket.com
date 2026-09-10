@@ -468,6 +468,34 @@
         "tags": ["Stores"]
       }
     },
+    "/stores/{storeId}/content-images": {
+      "post": {
+        "operationId": "StoresController_uploadContentImage",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreContentImageResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Stores"]
+      }
+    },
     "/me/stores": {
       "get": {
         "operationId": "MyStoresController_findMine",
@@ -4469,6 +4497,14 @@
             "type": "string",
             "nullable": true
           },
+          "bio": {
+            "type": "string",
+            "nullable": true
+          },
+          "aboutMarkdown": {
+            "type": "string",
+            "nullable": true
+          },
           "paymentInstructions": {
             "type": "string"
           },
@@ -4523,6 +4559,8 @@
           "ownerId",
           "themeConfig",
           "logoUrl",
+          "bio",
+          "aboutMarkdown",
           "paymentInstructions",
           "whatsappNumber",
           "instagramUrl",
@@ -4577,6 +4615,14 @@
             "additionalProperties": true
           },
           "logoUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "bio": {
+            "type": "string",
+            "nullable": true
+          },
+          "aboutMarkdown": {
             "type": "string",
             "nullable": true
           },
@@ -4637,6 +4683,8 @@
           "ownerId",
           "themeConfig",
           "logoUrl",
+          "bio",
+          "aboutMarkdown",
           "paymentInstructions",
           "whatsappNumber",
           "instagramUrl",
@@ -4684,6 +4732,14 @@
             "type": "string",
             "nullable": true,
             "format": "uri"
+          },
+          "bio": {
+            "type": "string",
+            "maxLength": 280
+          },
+          "aboutMarkdown": {
+            "type": "string",
+            "maxLength": 4000
           },
           "paymentInstructions": {
             "type": "string"
@@ -4734,9 +4790,12 @@
         "properties": {
           "slug": {
             "type": "string"
+          },
+          "lastModified": {
+            "type": "string"
           }
         },
-        "required": ["slug"]
+        "required": ["slug", "lastModified"]
       },
       "SitemapStorePageDto": {
         "type": "object",
@@ -5092,6 +5151,14 @@
             "type": "string",
             "nullable": true
           },
+          "bio": {
+            "type": "string",
+            "nullable": true
+          },
+          "aboutMarkdown": {
+            "type": "string",
+            "nullable": true
+          },
           "paymentInstructions": {
             "type": "string"
           },
@@ -5142,6 +5209,9 @@
             "items": {
               "$ref": "#/components/schemas/StoreSectionWithCollectionResponseDto"
             }
+          },
+          "indexable": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -5152,6 +5222,8 @@
           "ownerId",
           "themeConfig",
           "logoUrl",
+          "bio",
+          "aboutMarkdown",
           "paymentInstructions",
           "whatsappNumber",
           "instagramUrl",
@@ -5165,7 +5237,8 @@
           "isPublic",
           "isDemo",
           "createdAt",
-          "sections"
+          "sections",
+          "indexable"
         ]
       },
       "PublicCategoryResponseDto": {
@@ -5211,6 +5284,15 @@
           }
         },
         "required": ["store", "product"]
+      },
+      "StoreContentImageResponseDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": ["url"]
       },
       "CreateVariantDto": {
         "type": "object",
