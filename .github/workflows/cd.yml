@@ -35,8 +35,11 @@ jobs:
         id: sha
         run: echo "head_sha=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
 
-  # Native arm64 runners, not x86_64 + QEMU — the VPS is Oracle Ampere A1
-  # (arm64). Every downstream checkout pins `ref: needs.gate.outputs.head_sha`
+  # Native x86_64 (amd64) runners — the VPS is a Contabo Cloud VPS (x86_64).
+  # The runner architecture decides the image architecture (no `platforms:`
+  # is set on build-push-action), so this must match the VPS. It was arm64
+  # while production ran on Oracle Ampere A1. Every downstream checkout pins
+  # `ref: needs.gate.outputs.head_sha`
   # explicitly and individually (never assumed to propagate) — this is what
   # makes the gate job's fork-PR check actually load-bearing: without a
   # pinned ref, a job could still end up building whatever the default
@@ -44,7 +47,7 @@ jobs:
   build-push:
     name: Build & push (${{ matrix.app }})
     needs: gate
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     # Builds for an older commit are disposable: if a newer main commit
     # arrives while one is still building, let the newer build replace it.

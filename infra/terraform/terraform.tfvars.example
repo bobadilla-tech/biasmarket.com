@@ -1,0 +1,12 @@
+# Copy to terraform.tfvars (gitignored) and fill in.
+cloudflare_zone_id = "<zone id>"
+contabo_instance_id = "<numeric instance id>"
+contabo_image_id    = "<image uuid>"
+admin_ssh_public_key = "<contents of your .pub file>"
+web_public_env = {
+  NEXT_PUBLIC_API_URL           = "https://api.example.com"
+  NEXT_PUBLIC_SITE_URL          = "https://example.com"
+  NEXT_PUBLIC_SANITY_PROJECT_ID = "<id>"
+  NEXT_PUBLIC_SANITY_DATASET    = "production"
+  NEXT_PUBLIC_SENTRY_DSN        = "<dsn>"
+}
