@@ -17,3 +17,8 @@ variable "contabo_image_id" {
   description = "Contabo image UUID for the OS (GET /v1/compute/images?search=ubuntu). Changing it on an existing instance REINSTALLS it."
   type        = string
 }
+
+variable "admin_ssh_public_key" {
+  description = "Public key (single line) allowed to log in as root on the VPS. Public, not secret."
+  type        = string
+}

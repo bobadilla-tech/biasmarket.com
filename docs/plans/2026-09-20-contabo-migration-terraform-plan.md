@@ -82,7 +82,12 @@ example. The layout is kept reusable so the next project can copy the skeleton.
       into local state, plan is empty. The `content` still points at the Oracle
       IP through `var.origin_ip`; the actual cutover to the Contabo IP is held
       back until the box is bootstrapped (Phase 9).
-- [ ] Phases 2-5, 7, 8 (docs), 9, 10. Blocked on the Contabo API password.
+- [x] Phase 2. Read-only data sources (`contabo_image`, `contabo_instance`).
+      Contabo credentials verified (token endpoint, then Terraform).
+- [x] Phase 3. VPS `203595710` (product `V153`) imported. Plan needed
+      `lifecycle { ignore_changes = [period, region] }` because the API does not
+      return those two fields on read. Final state: `No changes`.
+- [ ] Phases 4, 5, 7, 8 (docs), 9, 10.
 
 ### Facts gathered along the way
 
@@ -93,6 +98,18 @@ example. The layout is kept reusable so the next project can copy the skeleton.
   the Google site verification TXT.
 - Oracle production is already unreachable, so there is effectively **no live
   data to migrate**. Treated as a fresh start unless backups turn up.
+- Instance facts from the API: id `203595710`, product **`V153`**, add-on `1501`
+  (must be declared or the plan removes it), no SSH keys (password login only),
+  image `ubuntu-26.04` = `f5193fe6-d547-4726-9271-cdb2819833fd`, IPv4
+  `161.97.113.35`.
+- **Ubuntu 26.04 differs from the provisioning docs.** `rrsync` is installed by
+  the `rsync` package at `/usr/bin/rrsync` (rsync 3.4.1); the docs' Step 2
+  (`gunzip /usr/share/doc/rsync/scripts/rrsync.gz`) would fail. Cloud-init
+  symlinks `/usr/local/bin/rrsync` to it so `authorized_keys` lines and `cd.yml`
+  stay unchanged. Docker publishes a `resolute` (26.04) apt suite, so the
+  standard Docker install works. OpenSSH is 10.2.
+- The provider **does** have a `contabo_firewall` resource (the panel also
+  announced a free firewall). Phase 4 decides between it and `ufw`.
 - The Cloudflare API token expires 2026-09-28. Recreate it before then or Phase
   6/10 will start failing with auth errors.
 - R2 (S3-compatible) credentials exist, reserved for the remote state backend in

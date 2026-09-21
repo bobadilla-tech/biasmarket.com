@@ -172,14 +172,105 @@ health check.
 
 ## Part 3. Reading before owning (data sources)
 
-_To be written when we reach it._ Look up the Ubuntu 26.04 image id, read the
-existing VPS as a `data` source, and see the difference between `data` (read
-something you do not own) and `resource` (own it).
+Before declaring anything that can cost money, ask the API what is actually
+there. First with a raw token (`curl` to
+`api.contabo.com/v1/compute/instances`), then through Terraform. Two things came
+out of it that no tutorial would have told us:
+
+- The VPS is instance **`203595710`**, product **`V153`** ("Cloud VPS 4
+  (2026)"). The blog post we started from used `V91`. Product codes change with
+  each generation of plans, so copying one from an article would have described
+  a different (or nonexistent) machine.
+- It carries an **add-on** (`id 1501`) and has **no SSH keys**, only a password.
+  Any resource block that leaves the add-on out would be read by Terraform as
+  "remove it".
+
+The Ubuntu 26.04 image UUID (`f5193fe6-...`) came from the same API
+(`GET /v1/compute/images?search=ubuntu`), which lists every image with its ID.
+
+Then the read-only Terraform:
+
+```hcl
+data "contabo_image" "os" {
+  id = var.contabo_image_id
+}
+
+data "contabo_instance" "existing" {
+  id = var.contabo_instance_id
+}
+```
+
+`terraform plan` runs these lookups and prints them as new outputs. It ends with
+"You can apply this plan to save these new output values to the Terraform state,
+without changing any real infrastructure", which is the sentence to remember: a
+plan with only data sources and outputs cannot modify anything.
+
+**Concepts.** `data` vs `resource` (look up vs own), variables for IDs that are
+not secret but are environment-specific, and outputs as a debugging window into
+what a provider actually returns.
+
+**Surprise.** In that output `period` and `region` were `null`. The API simply
+does not report them when you read an instance. Hold that thought.
+
+**Bonus finding: a firewall resource exists.** The blog post said the community
+provider is limited. The registry schema (via
+`terraform providers schema -json`) shows a `contabo_firewall` resource, and the
+panel announced a free firewall the same week. Guides age faster than providers.
 
 ## Part 4. Adopting the existing VPS (`terraform import`)
 
-_To be written._ `import {}` block, iterating on the resource until `plan` is
-empty, what state is and how to read a plan (`~`, `-/+`).
+```hcl
+resource "contabo_instance" "main" {
+  product_id = "V153"
+  region     = "EU"
+  image_id   = data.contabo_image.os.id
+  period     = 1
+
+  add_ons {
+    id       = 1501
+    quantity = 1
+  }
+}
+
+import {
+  to = contabo_instance.main
+  id = var.contabo_instance_id
+}
+```
+
+**First plan:** `1 to import, 1 to change`. Not empty. The change was
+`+ period = 1` and `+ region = "EU"`, the same two fields that read back as
+`null` in Part 3. Terraform saw "state says null, code says a value" and
+proposed an in-place update. Applying an update to a paid, running server
+because of two fields the API cannot even report is exactly the kind of plan you
+stop and think about.
+
+**The fix is to say so out loud**, with `lifecycle`:
+
+```hcl
+lifecycle {
+  ignore_changes = [period, region]
+}
+```
+
+The values stay in the code as documentation (and are used if the resource is
+ever created fresh), but Terraform stops comparing them after import.
+
+**Second plan:** `1 to import, 0 to add, 0 to change, 0 to destroy`. Only then
+did we `apply`, which wrote the server into state and did nothing to the server
+(SSH kept answering throughout). A third plan says `No changes`.
+
+**Concepts.** `import` again (this time a resource that costs money),
+`lifecycle.ignore_changes`, and the rule for imports: keep adjusting the code
+until the plan is empty, and never `apply` a non-empty plan you have not read.
+
+**Safety notes learned here.**
+
+- In this provider, changing `image_id`, `user_data` or `root_password` on an
+  existing instance **reinstalls** it. None of them are in the imported plan.
+  They arrive in Part 5, on purpose.
+- `ssh_keys` and `root_password` take **numeric secret IDs**, not the key or the
+  password itself. The key lives in a separate `contabo_secret` resource.
 
 ## Part 5. SSH key and cloud-init (and a deliberate reinstall)
 

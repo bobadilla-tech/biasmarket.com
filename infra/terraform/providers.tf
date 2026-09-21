@@ -8,3 +8,9 @@ provider "contabo" {}
 
 # Reads CLOUDFLARE_API_TOKEN from the environment.
 provider "cloudflare" {}
+
+# Reads GITHUB_TOKEN from the environment. The token must belong to a user with
+# admin on the repo (managing environments needs it).
+provider "github" {
+  owner = "bobadilla-tech"
+}

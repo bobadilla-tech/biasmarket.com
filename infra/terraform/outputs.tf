@@ -16,3 +16,13 @@ output "existing_instance" {
     add_ons    = data.contabo_instance.existing.add_ons
   }
 }
+
+output "ssh_command" {
+  description = "Log in as the admin."
+  value       = "ssh root@${data.contabo_instance.existing.ip_config[0].v4[0].ip}"
+}
+
+output "known_hosts" {
+  description = "Pinned host key line, becomes the DEPLOY_SSH_KNOWN_HOSTS GitHub secret."
+  value       = "${data.contabo_instance.existing.ip_config[0].v4[0].ip} ${trimspace(tls_private_key.host.public_key_openssh)}"
+}
