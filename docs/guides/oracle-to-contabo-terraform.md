@@ -477,6 +477,17 @@ address-vs-ID (the address is your name for it in code, the ID is the cloud's),
 `terraform.tfvars` for real values with a committed `.tfvars.example`, and
 "import only proves the code matches once the plan is empty".
 
+**Gotcha: a token that can read but not write.** Import and `plan` worked, then
+the cutover `apply` failed on all four records with the unhelpful
+`Error: failed to make http request`. Nothing had changed in Cloudflare. The
+cause was in the token itself: asking the API for its own policies
+(`GET /accounts/<id>/tokens/<token id>`) showed every permission group was
+`... Read`, with no `DNS Edit`. Reads succeed with a read-only token, so the
+whole import phase looked healthy. Lessons: (1) `plan` only proves read access,
+so test write access with the smallest possible change before the big one; (2)
+when a provider wraps an error in a generic message, go around it and ask the
+API directly (read-only) what your credentials are allowed to do.
+
 **Gotcha.** The Cloudflare token we were given expires in about eight days.
 Terraform has no idea; it just starts failing. Tokens with expiry deserve a
 calendar reminder.
