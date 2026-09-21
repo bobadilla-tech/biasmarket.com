@@ -743,7 +743,10 @@ model Account {
   id                    String    @id
   accountId             String
   providerId            String
-  issuer                String
+  // Deprecated: better-auth 1.7.0-1.7.2 wrote this; 1.7.3+ matches accounts on
+  // (providerId, accountId) again and never writes it. Kept nullable until a
+  // follow-up migration drops the column once no 1.7.2 container is running.
+  issuer                String?
   userId                String
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?
@@ -756,7 +759,6 @@ model Account {
   createdAt             DateTime
   updatedAt             DateTime
 
-  @@unique([issuer, accountId])
   @@map("account")
 }
 

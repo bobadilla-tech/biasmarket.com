@@ -52,8 +52,6 @@ await prisma.account.create({
     id: randomUUID(),
     accountId: userId,
     providerId: 'credential',
-    // better-auth 1.7 looks up the credential account by `issuer`.
-    issuer: 'local:credential',
     userId,
     password: await hashPassword(password),
     createdAt: now,
