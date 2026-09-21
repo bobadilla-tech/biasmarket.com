@@ -18,3 +18,8 @@ import {
   to = cloudflare_dns_record.app[each.key]
   id = "${var.cloudflare_zone_id}/${each.value}"
 }
+
+import {
+  to = contabo_instance.main
+  id = var.contabo_instance_id
+}

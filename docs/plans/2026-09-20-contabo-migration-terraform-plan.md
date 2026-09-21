@@ -78,23 +78,23 @@ example. The layout is kept reusable so the next project can copy the skeleton.
 - [x] Phase 8 (part). `cd.yml` `build-push` moved to `ubuntu-latest` (amd64).
       Grep confirmed no other arm64 assumption in `.github`, `infra`, or the
       Prisma schema.
-- [x] Phase 6 (import half). Cloudflare provider added, four A records
-      imported into local state, plan is empty. The `content` still points at
-      the Oracle IP through `var.origin_ip`; the actual cutover to the Contabo
-      IP is held back until the box is bootstrapped (Phase 9).
+- [x] Phase 6 (import half). Cloudflare provider added, four A records imported
+      into local state, plan is empty. The `content` still points at the Oracle
+      IP through `var.origin_ip`; the actual cutover to the Contabo IP is held
+      back until the box is bootstrapped (Phase 9).
 - [ ] Phases 2-5, 7, 8 (docs), 9, 10. Blocked on the Contabo API password.
 
 ### Facts gathered along the way
 
-- Cloudflare zone `biasmarket.com` has 9 DNS records. Terraform will manage
-  only the four **A** records (`@`, `api`, `cdn`, `status`, all still pointing
-  at the old Oracle IP). The rest are not ours to touch: `blog` (Vercel CNAME),
-  the Resend/SES email records (`send` MX + SPF TXT, `resend._domainkey` TXT),
-  and the Google site verification TXT.
+- Cloudflare zone `biasmarket.com` has 9 DNS records. Terraform will manage only
+  the four **A** records (`@`, `api`, `cdn`, `status`, all still pointing at the
+  old Oracle IP). The rest are not ours to touch: `blog` (Vercel CNAME), the
+  Resend/SES email records (`send` MX + SPF TXT, `resend._domainkey` TXT), and
+  the Google site verification TXT.
 - Oracle production is already unreachable, so there is effectively **no live
   data to migrate**. Treated as a fresh start unless backups turn up.
-- The Cloudflare API token expires 2026-09-28. Recreate it before then or
-  Phase 6/10 will start failing with auth errors.
+- The Cloudflare API token expires 2026-09-28. Recreate it before then or Phase
+  6/10 will start failing with auth errors.
 - R2 (S3-compatible) credentials exist, reserved for the remote state backend in
   Phase 10.
 
@@ -128,16 +128,17 @@ Each phase ends with a checkpoint the maintainer runs themselves
 - Install Terraform
   (`brew tap hashicorp/tap && brew install hashicorp/tap/terraform`).
 - Contabo: Customer Control Panel, Account, Security, API. Collect client ID,
-  client secret and API user (email). The **API password** is not on
-  that card: set it via _Password, Reset via email, Send link_ on the same page.
+  client secret and API user (email). The **API password** is not on that card:
+  set it via _Password, Reset via email, Send link_ on the same page.
 - Cloudflare: API token scoped to **Zone, DNS, Edit** on `biasmarket.com` only.
   Also note the zone ID.
-- GitHub: no new token. The `github` provider reads `GITHUB_TOKEN`, and the
-  `gh` CLI already holds one. It must come from an account with **admin** on the
-  repo (creating/importing environments needs it), which is the `UltiRequiem`
-  account here: `GITHUB_TOKEN=$(gh auth token --user UltiRequiem)`.
-- Put the exports in a file **outside the repo** (`~/.config/biasmarket/terraform.env`,
-  mode 600) and `source` it, so no credential can ever be committed.
+- GitHub: no new token. The `github` provider reads `GITHUB_TOKEN`, and the `gh`
+  CLI already holds one. It must come from an account with **admin** on the repo
+  (creating/importing environments needs it), which is the `UltiRequiem` account
+  here: `GITHUB_TOKEN=$(gh auth token --user UltiRequiem)`.
+- Put the exports in a file **outside the repo**
+  (`~/.config/biasmarket/terraform.env`, mode 600) and `source` it, so no
+  credential can ever be committed.
 
 _Concept: least-privilege API credentials, env vars vs tfvars._
 
@@ -227,9 +228,8 @@ v5 vs v4 resource names (verify at write time)._
 
 The `production` environment and the five `NEXT_PUBLIC_*` repo variables
 (including `NEXT_PUBLIC_SITE_URL`, which the provisioning doc forgot) **already
-exist**, so they are imported, not created. Environment _secrets_ are
-write-only in the GitHub API and cannot be imported: Terraform simply
-overwrites them.
+exist**, so they are imported, not created. Environment _secrets_ are write-only
+in the GitHub API and cannot be imported: Terraform simply overwrites them.
 
 `github_repository_environment` `production`,
 `github_actions_environment_secret` for `DEPLOY_SSH_HOST`, `DEPLOY_SSH_USER`,

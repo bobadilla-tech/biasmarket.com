@@ -79,10 +79,11 @@ Cloudflare needs one API token, scoped to `Zone, DNS, Edit` on a single zone
 (least privilege: a leaked token can edit DNS for one domain, not the account).
 
 GitHub needs no new secret. The `github` provider reads `GITHUB_TOKEN`, and the
-`gh` CLI already holds a token, so `GITHUB_TOKEN="$(gh auth token --user <acct>)"`
-borrows it. It must belong to an account with **admin** on the repo, because
-creating or importing environments requires it. (We had three `gh` accounts
-logged in and only one of them had admin, which `gh api repos/<repo> --jq
+`gh` CLI already holds a token, so
+`GITHUB_TOKEN="$(gh auth token --user <acct>)"` borrows it. It must belong to an
+account with **admin** on the repo, because creating or importing environments
+requires it. (We had three `gh` accounts logged in and only one of them had
+admin, which `gh api repos/<repo> --jq
 .permissions` shows in a second.)
 
 All of it goes in one file **outside the repository**, sourced by hand:
@@ -108,9 +109,9 @@ input variables. Provider credentials belong in the first group.
 **Surprise: the tutorial that started this was slightly wrong.** The blog post
 we followed used `oauth2_password`; the real argument is `oauth2_pass`. It also
 pinned `~> 0.1` while the provider's own example pins `>= 0.1.44`. When a
-tutorial and the provider's repo disagree, the repo wins. Read
-`docs/index.md` of the provider on GitHub, since the registry site is a
-JavaScript app that is awkward to read from scripts.
+tutorial and the provider's repo disagree, the repo wins. Read `docs/index.md`
+of the provider on GitHub, since the registry site is a JavaScript app that is
+awkward to read from scripts.
 
 ## Part 2. The smallest possible Terraform project
 
@@ -165,9 +166,9 @@ terraform plan
 
 **Surprise: `plan` said "No changes" and proved nothing.** With no resources
 declared, Terraform never contacts Contabo, so a wrong password would still
-"pass". Credentials are only exercised once a resource or data source reads
-from the API, which is the next part. Green output from an empty project is not
-a health check.
+"pass". Credentials are only exercised once a resource or data source reads from
+the API, which is the next part. Green output from an empty project is not a
+health check.
 
 ## Part 3. Reading before owning (data sources)
 
@@ -318,10 +319,10 @@ is:
 ```
 
 Before trusting that, grep for every other arm assumption (`arm64`, `aarch64`,
-`--platform`, Prisma `binaryTargets`, digest-pinned base images). Here there were
-none: every `FROM` is a multi-arch tag. This is the part of a cloud migration
-that Terraform cannot help with, and the reason to grep the whole repo for the
-old provider's assumptions, not only the infra folder.
+`--platform`, Prisma `binaryTargets`, digest-pinned base images). Here there
+were none: every `FROM` is a multi-arch tag. This is the part of a cloud
+migration that Terraform cannot help with, and the reason to grep the whole repo
+for the old provider's assumptions, not only the infra folder.
 
 Side benefit: the x86_64 runner is the default, well-cached and cheaper than the
 arm one.
