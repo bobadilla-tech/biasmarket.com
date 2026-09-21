@@ -5,8 +5,6 @@
 locals {
   github_repo = "biasmarket.com"
 
-  vps_ipv4 = contabo_instance.main.ip_config[0].v4[0].ip
-
   # Values for the environment secrets. Derived from sensitive values (private
   # keys), so this map cannot be iterated directly, see the for_each below.
   deploy_secret_values = {

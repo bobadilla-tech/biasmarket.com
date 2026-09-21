@@ -9,9 +9,9 @@ Docker-based development plus the immutable blue/green VPS production stack.
 
 Deploying to production? The VPS is provisioned with Terraform from
 `infra/terraform/` (walkthrough:
-[oracle-to-contabo-terraform.md](../guides/oracle-to-contabo-terraform.md)). See [deploy.md](deploy.md) and
-[blue-green-migrations.md](blue-green-migrations.md) for provisioning, secrets,
-DNS, deployment, and verification.
+[oracle-to-contabo-terraform.md](../guides/oracle-to-contabo-terraform.md)). See
+[deploy.md](deploy.md) and [blue-green-migrations.md](blue-green-migrations.md)
+for provisioning, secrets, DNS, deployment, and verification.
 
 ## Quick start (dev)
 

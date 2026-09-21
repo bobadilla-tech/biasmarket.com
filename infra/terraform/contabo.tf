@@ -67,3 +67,9 @@ resource "contabo_instance" "main" {
     ignore_changes = [period, region]
   }
 }
+
+locals {
+  # Referenced by DNS (cloudflare.tf) and the GitHub secrets (github.tf), so
+  # rebuilding or replacing the VPS re-points both automatically.
+  vps_ipv4 = contabo_instance.main.ip_config[0].v4[0].ip
+}

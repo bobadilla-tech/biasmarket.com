@@ -17,7 +17,7 @@ resource "cloudflare_dns_record" "app" {
   zone_id = var.cloudflare_zone_id
   name    = each.value
   type    = "A"
-  content = var.origin_ip
+  content = local.vps_ipv4
   ttl     = 1 # 1 = "automatic" (required when proxied)
   proxied = true
 }

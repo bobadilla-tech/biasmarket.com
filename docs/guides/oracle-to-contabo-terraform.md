@@ -312,23 +312,23 @@ Plan: 4 to add, 1 to change, 0 to destroy.
 ```
 
 `update in-place` describes the API call (a PATCH, not a delete-and-recreate).
-It does not say that this provider **reinstalls the operating system and wipes the
-disk** when `user_data`, `image_id` or `root_password` change. Terraform cannot
-know that; only the provider's documentation does. So the discipline is: for
-every argument that changes in a plan, know what the provider does with it. Here
-the disk was empty, so we applied. On a server with data this same plan would
-have been a disaster with a green tick.
+It does not say that this provider **reinstalls the operating system and wipes
+the disk** when `user_data`, `image_id` or `root_password` change. Terraform
+cannot know that; only the provider's documentation does. So the discipline is:
+for every argument that changes in a plan, know what the provider does with it.
+Here the disk was empty, so we applied. On a server with data this same plan
+would have been a disaster with a green tick.
 
-We also saved the plan first (`terraform plan -out=file`, `terraform apply file`)
-so that what we applied was exactly what we had read, and then deleted the file,
-because a saved plan contains the secrets too.
+We also saved the plan first (`terraform plan -out=file`,
+`terraform apply file`) so that what we applied was exactly what we had read,
+and then deleted the file, because a saved plan contains the secrets too.
 
 **Verify, don't assume.** Terraform finished in 44 seconds, which only means
 Contabo accepted the request. The actual first boot took a few more minutes.
 Login proved the important part: SSH with `StrictHostKeyChecking=yes` against a
 `known_hosts` line built from **Terraform's own host key**. We had generated the
-server's SSH host key in Terraform and injected it through cloud-init, so we knew
-its fingerprint before the machine existed. That removes the awkward
+server's SSH host key in Terraform and injected it through cloud-init, so we
+knew its fingerprint before the machine existed. That removes the awkward
 "verify the fingerprint through a web console" step from the runbook.
 
 Then the checks on the server: Docker 29, `deploy` user in the `docker` group,
@@ -337,12 +337,12 @@ Then the checks on the server: Docker 29, `deploy` user in the `docker` group,
 
 **Surprises.**
 
-- `cloud-init status` said `error`. The cause was not our config: Contabo injects
-  its own cloud-config (a `bootcmd` that sets `PermitRootLogin yes` and a root
-  password), and its `pkill -HUP sshd` step fails on Ubuntu 26.04 because the
-  service is named `ssh`. Harmless, but a lesson: when a platform layers its own
-  first-boot config over yours, "error" needs reading, not panicking. Check the
-  real end state instead of the summary flag.
+- `cloud-init status` said `error`. The cause was not our config: Contabo
+  injects its own cloud-config (a `bootcmd` that sets `PermitRootLogin yes` and
+  a root password), and its `pkill -HUP sshd` step fails on Ubuntu 26.04 because
+  the service is named `ssh`. Harmless, but a lesson: when a platform layers its
+  own first-boot config over yours, "error" needs reading, not panicking. Check
+  the real end state instead of the summary flag.
 - Ubuntu ships `50-cloud-init.conf` with `PasswordAuthentication yes`. Ours
   (`10-...`) wins because sshd reads drop-ins in lexical order and the first
   value it sees is the one it keeps. `sshd -T` prints the effective config and
@@ -499,17 +499,18 @@ resource "github_actions_environment_secret" "deploy" {
 
 The values are references: the server IP comes from the instance, the private
 keys from the `tls_private_key` resources, the pinned host key from the host key
-resource. If the VPS is ever rebuilt, `terraform apply` rewrites the secrets that
-depend on it. One source of truth, no copy-paste.
+resource. If the VPS is ever rebuilt, `terraform apply` rewrites the secrets
+that depend on it. One source of truth, no copy-paste.
 
-**Auth without a new token.** The provider reads `GITHUB_TOKEN`, and the `gh` CLI
-already had one. Creating environments needs repo **admin**, and of three logged
-in accounts only one had it: `gh api repos/OWNER/REPO --jq .permissions`.
+**Auth without a new token.** The provider reads `GITHUB_TOKEN`, and the `gh`
+CLI already had one. Creating environments needs repo **admin**, and of three
+logged in accounts only one had it: `gh api repos/OWNER/REPO --jq .permissions`.
 
 **Gotcha: `for_each` and sensitive values.** The natural version iterates over a
 map whose values are secrets. Terraform refuses: sensitive values cannot be used
-in `for_each`, because the keys would leak into the plan. The fix is to loop over
-a plain list of secret _names_ and look the value up inside the block, as above.
+in `for_each`, because the keys would leak into the plan. The fix is to loop
+over a plain list of secret _names_ and look the value up inside the block, as
+above.
 
 **Import vs write-only.** The environment and the variables existed already, so
 they were imported (`id = "biasmarket.com:production"`, `"repo:VARIABLE"`), with
