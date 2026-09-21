@@ -1,0 +1,3 @@
+# Copy to terraform.tfvars (gitignored) and fill in.
+cloudflare_zone_id = "<zone id>"
+origin_ip          = "<current A record IPv4>"

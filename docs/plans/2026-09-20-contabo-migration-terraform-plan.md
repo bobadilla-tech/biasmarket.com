@@ -58,20 +58,45 @@ example. The layout is kept reusable so the next project can copy the skeleton.
    - credentials can come from `CNTB_OAUTH2_CLIENT_ID`,
      `CNTB_OAUTH2_CLIENT_SECRET`, `CNTB_OAUTH2_USER`, `CNTB_OAUTH2_PASS`, which
      keeps them out of `.tf` files entirely. Preferred here;
-   - `oauth2_user` is the account **email**, and the API password is set
-     separately in the Customer Control Panel (not the login password);
+   - `oauth2_user` is the account **email**. The API password is not shown on
+     the API credentials card; it is set through the panel's _Password, Send
+     link_ email flow (Contabo's docs do not say if it equals the login
+     password);
    - the pinned example version is `>= 0.1.44`, not `~> 0.1`;
    - `image_id`, `user_data` and `root_password` **each reinstall the server
      when changed** (data on the disk is lost). A `plan` that touches any of
      them must be read carefully.
-3. **Root password leaked into the kickoff chat** (Contabo's order page shows it
-   in plaintext). It is treated as compromised. Mitigation is part of Phase 4:
-   the reinstall applies an SSH key + cloud-init that disables password login,
-   and the old password stops being valid. Until then, change it in the panel.
-4. **Cloudflare proxy + Caddy.** With proxied records, Caddy's ACME HTTP-01
+3. **Cloudflare proxy + Caddy.** With proxied records, Caddy's ACME HTTP-01
    still works, but the zone's SSL mode must be **Full (strict)**, otherwise
    Cloudflare talks plain HTTP to the origin and can redirect-loop against
    Caddy's automatic HTTPS. Decide the proxied flag per record in Phase 6.
+
+## Progress
+
+- [x] Phase 0. Credentials collected (Contabo API password still pending).
+- [x] Phase 1. Scaffold, `terraform init` (contabo provider v0.1.44).
+- [x] Phase 8 (part). `cd.yml` `build-push` moved to `ubuntu-latest` (amd64).
+      Grep confirmed no other arm64 assumption in `.github`, `infra`, or the
+      Prisma schema.
+- [x] Phase 6 (import half). Cloudflare provider added, four A records
+      imported into local state, plan is empty. The `content` still points at
+      the Oracle IP through `var.origin_ip`; the actual cutover to the Contabo
+      IP is held back until the box is bootstrapped (Phase 9).
+- [ ] Phases 2-5, 7, 8 (docs), 9, 10. Blocked on the Contabo API password.
+
+### Facts gathered along the way
+
+- Cloudflare zone `biasmarket.com` has 9 DNS records. Terraform will manage
+  only the four **A** records (`@`, `api`, `cdn`, `status`, all still pointing
+  at the old Oracle IP). The rest are not ours to touch: `blog` (Vercel CNAME),
+  the Resend/SES email records (`send` MX + SPF TXT, `resend._domainkey` TXT),
+  and the Google site verification TXT.
+- Oracle production is already unreachable, so there is effectively **no live
+  data to migrate**. Treated as a fresh start unless backups turn up.
+- The Cloudflare API token expires 2026-09-28. Recreate it before then or
+  Phase 6/10 will start failing with auth errors.
+- R2 (S3-compatible) credentials exist, reserved for the remote state backend in
+  Phase 10.
 
 ## Target layout
 
@@ -103,13 +128,16 @@ Each phase ends with a checkpoint the maintainer runs themselves
 - Install Terraform
   (`brew tap hashicorp/tap && brew install hashicorp/tap/terraform`).
 - Contabo: Customer Control Panel, Account, Security, API. Collect client ID,
-  client secret, API user (email) and set an **API password**.
+  client secret and API user (email). The **API password** is not on
+  that card: set it via _Password, Reset via email, Send link_ on the same page.
 - Cloudflare: API token scoped to **Zone, DNS, Edit** on `biasmarket.com` only.
   Also note the zone ID.
-- GitHub: fine-grained token limited to this repo with Environments, Secrets and
-  Variables (read/write) plus Administration for environments.
-- Export everything as env vars in the shell, never in a file in the repo.
-- Change the leaked root password (Finding 3).
+- GitHub: no new token. The `github` provider reads `GITHUB_TOKEN`, and the
+  `gh` CLI already holds one. It must come from an account with **admin** on the
+  repo (creating/importing environments needs it), which is the `UltiRequiem`
+  account here: `GITHUB_TOKEN=$(gh auth token --user UltiRequiem)`.
+- Put the exports in a file **outside the repo** (`~/.config/biasmarket/terraform.env`,
+  mode 600) and `source` it, so no credential can ever be committed.
 
 _Concept: least-privilege API credentials, env vars vs tfvars._
 
@@ -196,6 +224,12 @@ follows), `for_each`, import IDs (`<zone_id>/<record_id>`), Cloudflare provider
 v5 vs v4 resource names (verify at write time)._
 
 ### Phase 7. GitHub production environment
+
+The `production` environment and the five `NEXT_PUBLIC_*` repo variables
+(including `NEXT_PUBLIC_SITE_URL`, which the provisioning doc forgot) **already
+exist**, so they are imported, not created. Environment _secrets_ are
+write-only in the GitHub API and cannot be imported: Terraform simply
+overwrites them.
 
 `github_repository_environment` `production`,
 `github_actions_environment_secret` for `DEPLOY_SSH_HOST`, `DEPLOY_SSH_USER`,
