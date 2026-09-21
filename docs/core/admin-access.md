@@ -30,6 +30,16 @@ password once. `admin:promote` changes an existing account's role. Both commands
 must run inside the API container because the production database is private to
 the Docker network.
 
+### First admin on a fresh production database
+
+A newly bootstrapped database has **no admin**: sellers can sign up on their
+own, but admins only come from these commands. Run `admin:create` once for
+yourself, copy the password it prints (it is not stored or shown again), then
+sign in at `https://biasmarket.com/es/login` (or `/en/login`) and open
+`https://biasmarket.com/es/admin`, which has users, stores, coupons and
+inquiries. Change the password after the first login. To make someone who
+already registered an admin, use `admin:promote` with their email instead.
+
 ## Development
 
 ```bash
@@ -38,6 +48,13 @@ pnpm admin:promote:dev you@example.com
 ```
 
 ## Seeding production data
+
+> **Do not run `seed:base` on a real production database.** It has no production
+> guard and creates `admin@biasmarket.dev` and `owner@biasmarket.dev` as
+> **admins** with the published dev password, plus demo sellers with
+> `seedpassword123`, which is a public backdoor. It is meant for development and
+> throwaway environments. If it was ever run against production, revoke those
+> accounts (see "Revoking admin access" below) and delete them.
 
 Use the same live-color selection, but run the seed command in `api-$color`:
 
