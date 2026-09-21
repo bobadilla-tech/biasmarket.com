@@ -10,6 +10,11 @@ import { QueryProvider } from "./query-provider";
 import { SkipLink } from "@/components/shared/skip-link";
 import "../globals.css";
 
+// Only the locales returned by generateStaticParams are valid. This prevents
+// arbitrary one-segment paths (including automated PHP-file probes) from
+// rendering the marketing subtree before the locale guard can return 404.
+export const dynamicParams = false;
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
