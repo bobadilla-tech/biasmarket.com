@@ -65,6 +65,11 @@ resource "contabo_instance" "main" {
   # future create), and ignored afterwards.
   lifecycle {
     ignore_changes = [period, region]
+
+    # A plan that would destroy or replace the production VPS fails instead.
+    # To really tear it down, remove this line first (and remember a Contabo
+    # destroy schedules cancellation, it does not refund the current term).
+    prevent_destroy = true
   }
 }
 

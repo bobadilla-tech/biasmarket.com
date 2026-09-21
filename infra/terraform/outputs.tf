@@ -8,11 +8,9 @@ output "existing_instance" {
   value = {
     id         = data.contabo_instance.existing.id
     product_id = data.contabo_instance.existing.product_id
-    region     = data.contabo_instance.existing.region
     image_id   = data.contabo_instance.existing.image_id
     status     = data.contabo_instance.existing.status
     ipv4       = data.contabo_instance.existing.ip_config[0].v4[0].ip
-    period     = data.contabo_instance.existing.period
     add_ons    = data.contabo_instance.existing.add_ons
   }
 }

@@ -209,8 +209,10 @@ plan with only data sources and outputs cannot modify anything.
 not secret but are environment-specific, and outputs as a debugging window into
 what a provider actually returns.
 
-**Surprise.** In that output `period` and `region` were `null`. The API simply
-does not report them when you read an instance. Hold that thought.
+**Surprise.** In the first version of that output, `period` and `region` were
+`null` (we dropped them from the output afterwards, an output that prints `null`
+is noise). The API simply does not report them when you read an instance. Hold
+that thought.
 
 **Bonus finding: a firewall resource exists.** The blog post said the community
 provider is limited. The registry schema (via
@@ -255,6 +257,11 @@ lifecycle {
 
 The values stay in the code as documentation (and are used if the resource is
 ever created fresh), but Terraform stops comparing them after import.
+
+**Safety net:** `prevent_destroy = true` in the same `lifecycle` block makes any
+plan that would destroy or replace the VPS fail outright. And the `import` block
+stays in the repo while state is local: a fresh clone has no state, and without
+it `terraform plan` would propose creating a _second_ VPS.
 
 **Second plan:** `1 to import, 0 to add, 0 to change, 0 to destroy`. Only then
 did we `apply`, which wrote the server into state and did nothing to the server

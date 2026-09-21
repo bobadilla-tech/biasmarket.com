@@ -1,6 +1,11 @@
-# One-time adoption of records that already existed in Cloudflare before
-# Terraform did. After a successful `apply` the resources live in state and this
-# file can be deleted (an import block is only an instruction for the next apply).
+# Adoption of resources that existed before Terraform did (the VPS, the
+# Cloudflare records, the GitHub environment and variables).
+#
+# KEEP THIS FILE while state is local and gitignored: a fresh clone has no
+# state, and without these blocks `terraform plan` would propose CREATING a
+# second VPS (and a second bill) and duplicate DNS records. Import blocks are
+# harmless once a resource is in state. Delete this file only after state has
+# moved to a shared remote backend that already contains these resources.
 #
 # Record IDs come from: GET /zones/<zone_id>/dns_records?type=A
 locals {
