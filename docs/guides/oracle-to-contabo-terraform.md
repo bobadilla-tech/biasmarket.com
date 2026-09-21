@@ -707,7 +707,7 @@ EOF
 
 - It prints a generated password **once**. Copy it, then sign in at
   `https://biasmarket.com/es/login` and open `/es/admin` (users, stores,
-  coupons, inquiries). Change the password after the first login.
+  coupons, inquiries). Change the password after the first login at `/es/account`.
 - Already registered and just need the role? Use
   `admin:promote -- you@example.com` instead of `admin:create`.
 - To remove admin rights, the SQL in `admin-access.md` sets the role back to

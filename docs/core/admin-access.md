@@ -37,7 +37,8 @@ own, but admins only come from these commands. Run `admin:create` once for
 yourself, copy the password it prints (it is not stored or shown again), then
 sign in at `https://biasmarket.com/es/login` (or `/en/login`) and open
 `https://biasmarket.com/es/admin`, which has users, stores, coupons and
-inquiries. Change the password after the first login. To make someone who
+inquiries. Change the password after the first login, on the account page
+(`/es/account`, it has a change-password form). To make someone who
 already registered an admin, use `admin:promote` with their email instead.
 
 ## Development
