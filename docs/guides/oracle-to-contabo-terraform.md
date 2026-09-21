@@ -688,35 +688,41 @@ logged into interactively from outside: its two keys are locked to "rsync into
 ### Creating and managing admin users
 
 A fresh production database has no admin. Sellers register themselves, admins
-are made from the server. From your machine, pipe a small script into the
-`deploy` user's login shell. A heredoc avoids the quoting trap of one long
-`ssh "sudo ... bash -lc '...'"` line (the command otherwise passes through your
-shell, ssh, sudo and `bash -lc`, and a one-liner we tried first failed with
-`cd: too many arguments`). The commands are the ones documented in
-[admin-access.md](../core/admin-access.md):
+are made from the server. You do not need a copy of the repo on the server, and you should not clone one:
+the API's admin scripts ship inside the API's Docker image, so the command just
+has to run _inside the live container_. Working out which color is live and which
+image tag it runs is fiddly, so a wrapper does it. It lives in `infra/vps/bin/`,
+which CD already syncs to `/opt/biasmarket/bin/` on every deploy, so it is
+automatically there and never a manual step. Run it as root (or `deploy`) from any
+directory:
 
 ```bash
-ssh root@161.97.113.35 "sudo -iu deploy bash -l" <<'EOF'
-cd /opt/biasmarket
-color=$(cat state/current_color)
-tag=$(cat state/current_sha)
-IMAGE_TAG="$tag" docker compose --env-file env/shared.env exec -T "api-$color" \
-  pnpm --filter api run admin:create -- you@example.com "Your Name"
-EOF
+ssh root@161.97.113.35
+/opt/biasmarket/bin/admin.sh create  you@example.com "Your Name"
+/opt/biasmarket/bin/admin.sh promote you@example.com
+/opt/biasmarket/bin/admin.sh revoke  you@example.com
 ```
+
+Or in one line from your laptop: `ssh root@161.97.113.35 /opt/biasmarket/bin/admin.sh create you@example.com "Your Name"`.
 
 - It prints a generated password **once**. Copy it, then sign in at
   `https://biasmarket.com/es/login` and open `/es/admin` (users, stores,
   coupons, inquiries). Change the password after the first login at `/es/account`.
 - Already registered and just need the role? Use
-  `admin:promote -- you@example.com` instead of `admin:create`.
-- To remove admin rights, the SQL in `admin-access.md` sets the role back to
-  `seller`.
+  `admin.sh promote you@example.com` instead of `create`.
+- To remove admin rights: `admin.sh revoke you@example.com` (sets the role back
+  to `seller`).
 - **Never run `seed:base` on production.** It creates admin accounts with a
   published password. It is for development databases only.
 
-You can also just `ssh` in, run `sudo -iu deploy bash -l`, and paste the plain
-form from `admin-access.md`.
+**A trap we fell into while writing this:** the first version of these commands had
+`--` before the arguments (`... admin:create -- you@example.com`), which is the
+usual way to pass arguments through `pnpm run`. Here it made the script read `--`
+as the email, so it would have created an admin account with the email `--`.
+Testing the exact command against the real server (with a harmless `promote` on a
+nonexistent address) is what caught it: the error read `No user found with email --`.
+The lesson is the same as everywhere in this guide: run the documented command
+before you trust it.
 
 ### Deploying and rolling back
 
