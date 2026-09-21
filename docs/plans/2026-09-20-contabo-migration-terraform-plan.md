@@ -102,11 +102,26 @@ example. The layout is kept reusable so the next project can copy the skeleton.
 - [x] Phase 8 (docs). Oracle/arm64 wording updated in `CLAUDE.md`,
       `docs/core/{architecture,blue-green-migrations,docker,infra}.md`; the
       provisioning section now maps steps 1-6 to Terraform/cloud-init.
-- [ ] Phase 6 (cutover half: repoint DNS). Staged in code, not applied: the plan
-      is `4 to change`, held until images exist so Caddy can get its
+- [x] Phase 6 (cutover half: repoint DNS) applied 2026-09-21 after replacing the
+      read-only Cloudflare token with one that has DNS Write.
+- [ ] (superseded) Phase 6 cutover, original entry: Staged in code, not applied:
+      the plan is `4 to change`, held until images exist so Caddy can get its
       certificates the moment DNS points at the VPS.
-- [ ] Phase 9 (first deploy). Depends on merging the PR (CD builds the amd64
-      images), then the DNS apply, then `deploy.sh --bootstrap <sha>`.
+- [x] Phase 9 (first deploy): `deploy.sh --bootstrap f8c379b` succeeded, color
+      `blue` live, api health `{status:ok,db:ok}`, all four Let's Encrypt certs
+      issued. Needed a manual first sync (staleness-guard chicken-and-egg), a
+      Linux rsync client (macOS openrsync rejected by `rrsync`), and pinned
+      `quay.io/minio/*` images (Docker Hub copies are gone).
+- [x] Post-deploy fixes (branch `fix/minio-images-quay`, unmerged): CD staleness
+      guard tolerates a missing dispatcher (ssh exit 127 = first deploy; 255 and
+      other errors still fail), tested against simulated ssh outcomes; admin
+      docs gain a first-admin flow and a warning that `seed:base` must never run
+      on production (no guard, creates admins with a published password); guide
+      Part 11 (operator manual).
+- [ ] Still open: Kuma monitors (admin account exists), minio-quay PR merged
+      (server has a hand-copied compose until it is), Phase 10.
+- [ ] (superseded) Phase 9, original entry: Depends on merging the PR (CD builds
+      the amd64 images), then the DNS apply, then `deploy.sh --bootstrap <sha>`.
 
 Not blocked, not required for the migration: **Phase 10** (follow-ups).
 

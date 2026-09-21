@@ -606,6 +606,26 @@ few details worth making explicit:
   `sudo -iu deploy bash -lc 'cd /opt/biasmarket && ./deploy.sh --bootstrap <sha>'`.
   Commands typed after an interactive `sudo -iu deploy` are easy to run in the
   wrong shell or directory.
+- First deploy on a never-deployed server: `cd.yml`'s staleness guard SSHes with
+  the dispatch key before the rsync step has delivered
+  `bin/ssh-deploy-dispatcher.sh`. The guard treats ssh exit `127` (script not
+  installed yet) as "first deploy, skip the ancestry check", so the rsync step
+  installs everything on that first run; a connection failure (exit `255`) or
+  any other error still fails the job. That first CD run still ends red at the
+  last step (`deploy.sh` refuses with "never been bootstrapped"), by design:
+  `--bootstrap` is manual-only. Then run `--bootstrap <sha>` yourself. (Before
+  this guard existed, the first run failed earlier and needed a manual first
+  sync.)
+- If you ever sync by hand, do it from Linux (or a container), not macOS:
+  `/usr/bin/rsync` on macOS is Apple's openrsync, which the Python `rrsync` on
+  Ubuntu 26.04 rejects (`invalid rsync-command syntax or options`). Example:
+  `docker run --rm -v "$PWD/infra/vps":/src:ro ... ubuntu:24.04` with `rsync`
+  and `openssh-client` installed.
+- MinIO no longer publishes images on Docker Hub; the compose files use pinned
+  `quay.io/minio/minio` and `quay.io/minio/mc` tags. Bootstrapping a fresh
+  server pulls them, so a stale `minio/minio` reference fails the bootstrap.
+- Point DNS at the new VPS before `--bootstrap`, so Caddy can complete ACME
+  issuance as soon as it starts.
 - The private key and public key must be one matching pair. If a key is
   regenerated, replace both its public line in `authorized_keys` and its
   corresponding GitHub secret. Never paste private key contents into chat, logs,

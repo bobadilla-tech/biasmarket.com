@@ -477,6 +477,17 @@ address-vs-ID (the address is your name for it in code, the ID is the cloud's),
 `terraform.tfvars` for real values with a committed `.tfvars.example`, and
 "import only proves the code matches once the plan is empty".
 
+**Gotcha: a token that can read but not write.** Import and `plan` worked, then
+the cutover `apply` failed on all four records with the unhelpful
+`Error: failed to make http request`. Nothing had changed in Cloudflare. The
+cause was in the token itself: asking the API for its own policies
+(`GET /accounts/<id>/tokens/<token id>`) showed every permission group was
+`... Read`, with no `DNS Edit`. Reads succeed with a read-only token, so the
+whole import phase looked healthy. Lessons: (1) `plan` only proves read access,
+so test write access with the smallest possible change before the big one; (2)
+when a provider wraps an error in a generic message, go around it and ask the
+API directly (read-only) what your credentials are allowed to do.
+
 **Gotcha.** The Cloudflare token we were given expires in about eight days.
 Terraform has no idea; it just starts failing. Tokens with expiry deserve a
 calendar reminder.
@@ -557,11 +568,228 @@ for the old provider's assumptions, not only the infra folder.
 Side benefit: the x86_64 runner is the default, well-cached and cheaper than the
 arm one.
 
-## Part 9. First deploy
+## Part 9. First deploy (four things that went wrong, in order)
 
-_To be written._
+By now Terraform had done its job: a provisioned server, DNS ready to move, the
+CI secrets in place. Getting the _application_ onto it is a different tool's job
+(`deploy.sh`), and this is where reality pushed back.
+
+**Setup.** Secrets for the app (`env/shared.env` and friends) are deliberately
+not in Terraform: they would land in state and have a checksum baseline that
+`deploy.sh` enforces. Instead they were generated _on the server_ with
+`openssl rand`, so they exist nowhere else. Only the external ones (Resend,
+Sentry DSNs) came from outside.
+
+**1. The chicken-and-egg in CD.** After merging, CI went green and CD built the
+three amd64 images, then failed at its _first_ SSH step. That step (a staleness
+guard) runs a script that only arrives on the server during the rsync step
+_after_ it. On a server that has never been deployed to, the pipeline cannot
+bootstrap itself. The workaround that night was one manual first sync, as the
+runbook says. Afterwards the guard itself was fixed: `ssh` returns the remote
+command's exit status, so "the script isn't installed yet" is exit `127` while
+"the connection failed" is `255`. The guard now skips its ancestry check only on
+`127` and still fails hard on anything else, so a fresh server no longer needs a
+hand-made sync. The first CD run still ends red at its last step, by design,
+because bootstrap is manual-only.
+
+**2. The rsync that worked on CI and not on my laptop.** The manual sync failed
+with `rrsync error: invalid rsync-command syntax or options`. The server was
+fine. macOS's `/usr/bin/rsync` is not rsync any more: it is Apple's
+**openrsync** (protocol 29, "2.6.9 compatible"), which the Python `rrsync`
+shipped with Ubuntu 26.04 rejects. Running the same command from an Ubuntu 24.04
+container (rsync 3.2.7, what GitHub's runners have) worked. Useful reflex: when
+"it works in CI but not locally", compare the _client tool_, not just the flags.
+
+**3. MinIO disappeared from Docker Hub.** Bootstrap stopped before starting a
+single container: `pull access denied for minio/mc, repository does not exist`.
+MinIO had stopped publishing images on Docker Hub. The stack only ever worked on
+the old server because the layers were already cached there, and the compose
+file used the floating `latest` tag. A fresh machine is the first honest test of
+"can I rebuild this from nothing?" and this is what it found. The images still
+exist on `quay.io/minio/*`, so the fix was to repoint both services and to _pin_
+the tags instead of trusting `latest`. It is also a small piece of
+infrastructure hygiene worth remembering: pin what you depend on, because the
+registry can take it away.
+
+**4. Hot-patching, and the debt it creates.** To keep moving, the fixed compose
+file was copied onto the server by hand, then the same change went into the repo
+as a PR. That order matters: CD's rsync runs with `--delete`, so a hand edit on
+the server is silently reverted by the next deploy unless the repo already says
+the same thing. Manual fixes on a server are a loan, and the PR is the
+repayment.
+
+**Bootstrap.** Then `deploy.sh --bootstrap <sha>` ran as the `deploy` user. It
+pulled the images, applied every migration to the empty database (the old
+`DROP TABLE` migrations are fine on an empty DB, and bootstrap passes the
+destructive flag), started the `blue` color, waited for health, and started
+Caddy. About ten minutes end to end.
+
+**The check that counts.**
+
+```text
+api.biasmarket.com/api/health  -> {"status":"ok","db":"ok"}
+biasmarket.com                 -> 307 /es -> 200, Spanish storefront title
+cdn.biasmarket.com             -> 200
+Caddy: certificate obtained successfully (all four hostnames, Let's Encrypt)
+```
+
+Because Terraform had already moved DNS, Caddy got its certificates seconds
+after starting. Order mattered: DNS first, then the service that needs to prove
+domain ownership.
+
+**One sharp edge to close immediately.** A fresh Uptime Kuma has no users, so
+the first person to open its setup page becomes admin. On a public hostname that
+is a race, so create the admin account right after bootstrap.
 
 ## Part 10. What is reusable next time
 
-_To be written._ Which files copy across projects unchanged and which are
-project-specific.
+Copy as-is: `versions.tf`, `providers.tf`, `.gitignore`, the `contabo.tf`
+skeleton (secret, keys, instance, `templatefile`), the `cloudflare.tf`
+`for_each` records pattern, `github.tf`, and the
+credentials-file-outside-the-repo habit. Change: domain and subdomain map, the
+packages and users in `cloud-init.yaml.tftpl`, the GitHub secret names.
+
+The habits that generalize beyond this stack:
+
+- Import first, then adjust the code until `plan` is empty, before any `apply`.
+- Read the provider's docs for every argument that changes: a green "update
+  in-place" can be a reinstall.
+- `plan` proves you can read, not write. Test writes with a tiny change.
+- State is a secret. Local and gitignored is fine to start; keep the import
+  blocks until state is shared.
+- Terraform makes the infrastructure; a deploy tool ships the app; keep them
+  separate, and keep app secrets out of state.
+- Rebuilding from scratch is the only real test of a runbook. Every surprise in
+  Part 9 was invisible until a fresh server existed.
+
+Still open at the time of writing: backups (Part 11), safer Terraform state
+(Part 11), Uptime Kuma monitors, and moving `contabo_firewall` and the
+Cloudflare SSL mode under Terraform.
+
+## Part 11. Running it day to day
+
+Everything above builds the thing. This part is the manual for living with it.
+
+### Getting in
+
+```bash
+# once: trust the server's host key that Terraform generated
+cd infra/terraform && source ~/.config/biasmarket/terraform.env
+terraform output -raw known_hosts >> ~/.ssh/known_hosts
+
+ssh root@161.97.113.35                     # admin: your key, no password
+sudo -iu deploy bash -l                     # the user the app runs as
+```
+
+Password login is off. Root logs in with your key only. `deploy` cannot be
+logged into interactively from outside: its two keys are locked to "rsync into
+`/opt/biasmarket`" and "run the deploy script", and belong to GitHub Actions.
+
+### Creating and managing admin users
+
+A fresh production database has no admin. Sellers register themselves, admins
+are made from the server. You do not need a copy of the repo on the server, and you should not clone one:
+the API's admin scripts ship inside the API's Docker image, so the command just
+has to run _inside the live container_. Working out which color is live and which
+image tag it runs is fiddly, so a wrapper does it. It lives in `infra/vps/bin/`,
+which CD already syncs to `/opt/biasmarket/bin/` on every deploy, so it is
+automatically there and never a manual step. Run it as root (or `deploy`) from any
+directory:
+
+```bash
+ssh root@161.97.113.35
+/opt/biasmarket/bin/admin.sh create  you@example.com "Your Name"
+/opt/biasmarket/bin/admin.sh promote you@example.com
+/opt/biasmarket/bin/admin.sh revoke  you@example.com
+```
+
+Or in one line from your laptop: `ssh root@161.97.113.35 /opt/biasmarket/bin/admin.sh create you@example.com "Your Name"`.
+
+- It prints a generated password **once**. Copy it, then sign in at
+  `https://biasmarket.com/es/login` and open `/es/admin` (users, stores,
+  coupons, inquiries). Change the password after the first login at `/es/account`.
+- Already registered and just need the role? Use
+  `admin.sh promote you@example.com` instead of `create`.
+- To remove admin rights: `admin.sh revoke you@example.com` (sets the role back
+  to `seller`).
+- **Never run `seed:base` on production.** It creates admin accounts with a
+  published password. It is for development databases only.
+
+**A trap we fell into while writing this:** the first version of these commands had
+`--` before the arguments (`... admin:create -- you@example.com`), which is the
+usual way to pass arguments through `pnpm run`. Here it made the script read `--`
+as the email, so it would have created an admin account with the email `--`.
+Testing the exact command against the real server (with a harmless `promote` on a
+nonexistent address) is what caught it: the error read `No user found with email --`.
+The lesson is the same as everywhere in this guide: run the documented command
+before you trust it.
+
+### Deploying and rolling back
+
+Merge to `main`; CI (with E2E) then CD does the rest. Watch it with
+`gh run list --branch main`. On the server:
+
+```bash
+sudo -iu deploy bash -lc 'cd /opt/biasmarket && cat state/current_color state/current_sha && tail -5 releases/history.log'
+sudo -iu deploy bash -lc 'cd /opt/biasmarket && ./deploy.sh --rollback'   # back to the previous color
+docker logs -f biasmarket-api-blue-1                                       # or -green-, whichever is live
+```
+
+### Terraform, day to day
+
+```bash
+cd infra/terraform && source ~/.config/biasmarket/terraform.env
+terraform plan        # read it. Always.
+terraform apply
+```
+
+Things to remember:
+
+- **The site does not need Terraform or its tokens to keep running.** The
+  Cloudflare and Contabo credentials are only used when _you_ run Terraform. If
+  the Cloudflare token expires, the website is unaffected; only `terraform plan`
+  and `apply` start failing until you make a new token (a one-minute job) and
+  put it in `~/.config/biasmarket/terraform.env`. Minimal permission needed:
+  Zone, DNS, Edit on `biasmarket.com`.
+- Before any `apply`, look for changes to `image_id`, `user_data` or `ssh_keys`
+  on the instance. They **reinstall the server and wipe its disk**, and the plan
+  calls it "update in-place". `prevent_destroy` does not stop this one.
+- Adding a DNS record, a GitHub secret, or a firewall rule is safe and routine.
+
+### The Terraform state file is now worth protecting
+
+`infra/terraform/terraform.tfstate` lives only on your laptop (gitignored). It
+records which real resources Terraform owns, and it also holds the generated
+private keys (the two deploy keys and the server's host key). Lose it and
+Terraform forgets everything, and worse: a fresh state would generate _new_
+keys, which changes `user_data`, which the provider treats as a reason to
+reinstall the server. That would wipe production, and `prevent_destroy` would
+not catch it, because it is an in-place update. So:
+
+- Until remote state exists, keep a private, encrypted copy of
+  `terraform.tfstate` somewhere other than this laptop, and refresh it after
+  every `apply`.
+- The better fix is a remote backend. The Cloudflare R2 credentials mentioned
+  earlier are for this and **only** this: R2 would store the Terraform state
+  file. It has nothing to do with the app's file storage, which is MinIO on the
+  VPS. R2 was suggested simply because it is S3-compatible and free at this
+  size. Any private S3-style bucket works. It needs a token with R2 _write_
+  access (the earlier one was read-only).
+
+### Backups: there are none yet
+
+Be clear-eyed about this one. Postgres data, MinIO uploads (product images,
+payment proofs) and Uptime Kuma all live in Docker volumes on one VPS disk. The
+only copies that exist are the pre-migration SQL snapshots `deploy.sh` writes
+into `releases/`, and those sit on the same disk. If the VPS is lost, so is the
+data.
+
+Cheap steps, roughly in order of effort:
+
+1. Take a Contabo snapshot from the customer panel (your plan includes one).
+   Terraform also has a `contabo_instance_snapshot` resource.
+2. A nightly `pg_dump` from the `db` container, copied off the server.
+3. A nightly mirror of the MinIO buckets (`mc mirror`) to a bucket somewhere
+   else. An R2 bucket would be a natural home for 2 and 3.
+
+None of this is implemented yet. It is the most valuable next piece of work.

@@ -144,7 +144,22 @@ jobs:
       - name: Staleness guard
         run: |
           set -euo pipefail
-          CURRENT_SHA="$(ssh -i ~/.ssh/deploy_dispatch_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'deploy.sh --print-current-sha')"
+          # ssh exits with the remote command's own status. 127 means the
+          # forced dispatcher script does not exist yet: this is the very
+          # first deploy to a fresh VPS, and the sync step below is what
+          # installs it (a guard that can only run after the sync it guards
+          # would otherwise make the first deploy impossible). Anything
+          # else that is non-zero (255 = connection/auth failure, etc.)
+          # must still fail the job.
+          rc=0
+          CURRENT_SHA="$(ssh -i ~/.ssh/deploy_dispatch_key -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" 'deploy.sh --print-current-sha')" || rc=$?
+          if [[ "$rc" -eq 127 ]]; then
+            echo "::notice::Dispatcher not installed on the VPS yet (first deploy to this server) — skipping ancestry check; the sync step installs it."
+            exit 0
+          elif [[ "$rc" -ne 0 ]]; then
+            echo "::error::Could not query the VPS for its current SHA (ssh exit $rc) — refusing to deploy blind."
+            exit "$rc"
+          fi
           if [[ -z "$CURRENT_SHA" ]]; then
             echo "No current_sha recorded on the VPS yet (never bootstrapped) — skipping ancestry check."
             exit 0
