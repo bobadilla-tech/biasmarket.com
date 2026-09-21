@@ -7,7 +7,9 @@ Docker-based development plus the immutable blue/green VPS production stack.
 - `infra/vps/` — the only production Compose file, deploy state machine, Caddy,
   runtime env templates, and operational scripts. See [deploy.md](deploy.md).
 
-Deploying to production on Oracle Cloud? See [deploy.md](deploy.md) and
+Deploying to production? The VPS is provisioned with Terraform from
+`infra/terraform/` (walkthrough:
+[oracle-to-contabo-terraform.md](../guides/oracle-to-contabo-terraform.md)). See [deploy.md](deploy.md) and
 [blue-green-migrations.md](blue-green-migrations.md) for provisioning, secrets,
 DNS, deployment, and verification.
 

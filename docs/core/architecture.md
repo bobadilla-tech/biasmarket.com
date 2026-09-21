@@ -384,7 +384,7 @@ apps/web/app/
 
 ## 8. Docker / Deployment
 
-Production runs on one Oracle Cloud VM using the immutable blue/green stack in
+Production runs on one Contabo Cloud VPS (x86_64) using the immutable blue/green stack in
 `infra/vps/docker-compose.yml`. CI builds `api`, `web`, and `workers` images for
 the exact commit SHA and pushes them to GHCR. The VPS pulls those images;
 production never builds from a source checkout.

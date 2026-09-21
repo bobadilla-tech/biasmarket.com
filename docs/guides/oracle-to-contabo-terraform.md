@@ -272,10 +272,96 @@ until the plan is empty, and never `apply` a non-empty plan you have not read.
 - `ssh_keys` and `root_password` take **numeric secret IDs**, not the key or the
   password itself. The key lives in a separate `contabo_secret` resource.
 
-## Part 5. SSH key and cloud-init (and a deliberate reinstall)
+## Part 5. SSH key, cloud-init, and a deliberate reinstall
 
-_To be written._ Why changing `user_data` reinstalls the server, and how to
-notice that in the plan _before_ applying.
+Three ideas meet here: a secret that holds your public key, keys that Terraform
+generates itself, and `user_data` (cloud-init), the script that configures a
+server the first time it boots.
+
+```hcl
+resource "contabo_secret" "admin_ssh" {
+  name  = "biasmarket-admin"
+  type  = "ssh"
+  value = trimspace(var.admin_ssh_public_key)
+}
+
+resource "tls_private_key" "host"            { algorithm = "ED25519" }
+resource "tls_private_key" "deploy_rsync"    { algorithm = "ED25519" }
+resource "tls_private_key" "deploy_dispatch" { algorithm = "ED25519" }
+
+resource "contabo_instance" "main" {
+  # ...
+  ssh_keys  = [tonumber(contabo_secret.admin_ssh.id)]
+  user_data = local.user_data # templatefile("cloud-init.yaml.tftpl", {...})
+}
+```
+
+The cloud-init file does what used to be four manual runbook steps: installs
+Docker, creates the `deploy` user, writes two _restricted_ `authorized_keys`
+lines (rsync-only and one-command-only, see the deploy docs), opens the firewall
+for 22/80/443, disables SSH password login, and adds swap. `templatefile()`
+fills in the public keys, so the file is a template with `${...}` holes.
+
+**Read the plan: it lies, politely.**
+
+```text
+# contabo_instance.main will be updated in-place
+~ ssh_keys  = [] -> (known after apply)
++ user_data = (sensitive value)
+Plan: 4 to add, 1 to change, 0 to destroy.
+```
+
+`update in-place` describes the API call (a PATCH, not a delete-and-recreate).
+It does not say that this provider **reinstalls the operating system and wipes the
+disk** when `user_data`, `image_id` or `root_password` change. Terraform cannot
+know that; only the provider's documentation does. So the discipline is: for
+every argument that changes in a plan, know what the provider does with it. Here
+the disk was empty, so we applied. On a server with data this same plan would
+have been a disaster with a green tick.
+
+We also saved the plan first (`terraform plan -out=file`, `terraform apply file`)
+so that what we applied was exactly what we had read, and then deleted the file,
+because a saved plan contains the secrets too.
+
+**Verify, don't assume.** Terraform finished in 44 seconds, which only means
+Contabo accepted the request. The actual first boot took a few more minutes.
+Login proved the important part: SSH with `StrictHostKeyChecking=yes` against a
+`known_hosts` line built from **Terraform's own host key**. We had generated the
+server's SSH host key in Terraform and injected it through cloud-init, so we knew
+its fingerprint before the machine existed. That removes the awkward
+"verify the fingerprint through a web console" step from the runbook.
+
+Then the checks on the server: Docker 29, `deploy` user in the `docker` group,
+`ufw` active on 22/80/443, 4 GB swap, `/opt/biasmarket` owned by `deploy`, and
+`sshd -T` reporting password login off.
+
+**Surprises.**
+
+- `cloud-init status` said `error`. The cause was not our config: Contabo injects
+  its own cloud-config (a `bootcmd` that sets `PermitRootLogin yes` and a root
+  password), and its `pkill -HUP sshd` step fails on Ubuntu 26.04 because the
+  service is named `ssh`. Harmless, but a lesson: when a platform layers its own
+  first-boot config over yours, "error" needs reading, not panicking. Check the
+  real end state instead of the summary flag.
+- Ubuntu ships `50-cloud-init.conf` with `PasswordAuthentication yes`. Ours
+  (`10-...`) wins because sshd reads drop-ins in lexical order and the first
+  value it sees is the one it keeps. `sshd -T` prints the effective config and
+  is the only honest way to check.
+- `user_data` contains the host's **private** key and the plan hides it as
+  `(sensitive value)`. That protects the terminal, not the state file.
+
+**The state-file lesson.** `terraform.tfstate` now holds three private keys in
+plain text (the two deploy keys and the host key). Terraform's `sensitive` flag
+only hides values in command output. Consequence: the state file must be treated
+as a secret. It is gitignored, and a later part moves it to encrypted remote
+storage. The alternative, generating keys outside Terraform, keeps them out of
+state at the cost of manual steps; both are legitimate, and the trade-off is the
+lesson.
+
+**Concepts.** `contabo_secret` and referencing one resource from another (an
+implicit dependency: Terraform creates the secret first because the instance
+mentions it), `tls_private_key`, `templatefile()`, saved plans, `sensitive`,
+destructive in-place updates, cloud-init vs Terraform.
 
 ## Part 6. DNS with Cloudflare (first import, first `for_each`)
 
@@ -390,7 +476,52 @@ calendar reminder.
 
 ## Part 7. GitHub secrets from Terraform
 
-_To be written._ Outputs feeding other resources, secrets in state.
+The repo already had a `production` environment and five `NEXT_PUBLIC_*`
+variables, created by hand for the old server. The `github` provider can manage
+them, so the CD pipeline's credentials come from the same place as the server.
+
+```hcl
+resource "github_repository_environment" "production" {
+  repository  = "biasmarket.com"
+  environment = "production"
+}
+
+resource "github_actions_environment_secret" "deploy" {
+  for_each = toset(["DEPLOY_SSH_HOST", "DEPLOY_SSH_USER", "DEPLOY_SSH_KNOWN_HOSTS",
+                    "DEPLOY_SSH_KEY_RSYNC", "DEPLOY_SSH_KEY_DISPATCH"])
+
+  repository      = "biasmarket.com"
+  environment     = github_repository_environment.production.environment
+  secret_name     = each.value
+  plaintext_value = local.deploy_secret_values[each.value]
+}
+```
+
+The values are references: the server IP comes from the instance, the private
+keys from the `tls_private_key` resources, the pinned host key from the host key
+resource. If the VPS is ever rebuilt, `terraform apply` rewrites the secrets that
+depend on it. One source of truth, no copy-paste.
+
+**Auth without a new token.** The provider reads `GITHUB_TOKEN`, and the `gh` CLI
+already had one. Creating environments needs repo **admin**, and of three logged
+in accounts only one had it: `gh api repos/OWNER/REPO --jq .permissions`.
+
+**Gotcha: `for_each` and sensitive values.** The natural version iterates over a
+map whose values are secrets. Terraform refuses: sensitive values cannot be used
+in `for_each`, because the keys would leak into the plan. The fix is to loop over
+a plain list of secret _names_ and look the value up inside the block, as above.
+
+**Import vs write-only.** The environment and the variables existed already, so
+they were imported (`id = "biasmarket.com:production"`, `"repo:VARIABLE"`), with
+`0 to change` proving our code matched. The secrets cannot be imported: GitHub
+never returns a secret's value, so Terraform cannot compare. It shows them as
+"to be created" and simply overwrites the old (Oracle-era) values. After apply
+the plan was empty, and `gh api .../environments/production/secrets` showed all
+five with fresh timestamps.
+
+**Concepts.** Outputs of one provider feeding another, write-only resources,
+import ID formats that differ per provider, and the mismatch between what a
+resource can _read back_ and what it can _write_.
 
 ## Part 8. Changing the pipeline: arm64 to amd64
 

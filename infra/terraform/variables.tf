@@ -22,3 +22,8 @@ variable "admin_ssh_public_key" {
   description = "Public key (single line) allowed to log in as root on the VPS. Public, not secret."
   type        = string
 }
+
+variable "web_public_env" {
+  description = "NEXT_PUBLIC_* values, stored as repo-level GitHub Actions variables and baked into the web image at build time. Public by design."
+  type        = map(string)
+}

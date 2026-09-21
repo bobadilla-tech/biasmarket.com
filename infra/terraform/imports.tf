@@ -23,3 +23,19 @@ import {
   to = contabo_instance.main
   id = var.contabo_instance_id
 }
+
+# The GitHub `production` environment and the NEXT_PUBLIC_* variables were
+# created by hand before Terraform. Import format: <repository>:<name>.
+# (Environment secrets cannot be imported: GitHub never returns their values,
+# so Terraform just writes them.)
+import {
+  to = github_repository_environment.production
+  id = "biasmarket.com:production"
+}
+
+import {
+  for_each = var.web_public_env
+
+  to = github_actions_variable.web_public[each.key]
+  id = "biasmarket.com:${each.key}"
+}
