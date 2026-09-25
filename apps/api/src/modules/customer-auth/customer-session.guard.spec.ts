@@ -10,9 +10,11 @@ import {
 import type { PrismaService } from '../../prisma/prisma.service.js';
 import { CUSTOMER_SESSION_COOKIE } from './customer-session.constants.js';
 
-function buildContext(cookieHeader: string | undefined) {
+function buildContext(
+  headers: { cookie?: string } | { authorization?: string },
+) {
   const req = {
-    headers: { cookie: cookieHeader },
+    headers,
   } as unknown as CustomerSessionRequest;
   const cookieMock = vi.fn();
   const res = { cookie: cookieMock };
@@ -36,7 +38,7 @@ describe('CustomerSessionGuard', () => {
   });
 
   it('rejects when there is no session cookie', async () => {
-    const { context } = buildContext(undefined);
+    const { context } = buildContext({});
 
     await expect(guard.canActivate(context)).rejects.toBeInstanceOf(
       UnauthorizedException,
@@ -44,9 +46,9 @@ describe('CustomerSessionGuard', () => {
   });
 
   it('rejects a tampered or expired token', async () => {
-    const { context } = buildContext(
-      `${CUSTOMER_SESSION_COOKIE}=not-a-real-token`,
-    );
+    const { context } = buildContext({
+      cookie: `${CUSTOMER_SESSION_COOKIE}=not-a-real-token`,
+    });
 
     await expect(guard.canActivate(context)).rejects.toBeInstanceOf(
       UnauthorizedException,
@@ -63,7 +65,9 @@ describe('CustomerSessionGuard', () => {
       passwordVersion: 2,
     });
 
-    const { context } = buildContext(`${CUSTOMER_SESSION_COOKIE}=${token}`);
+    const { context } = buildContext({
+      cookie: `${CUSTOMER_SESSION_COOKIE}=${token}`,
+    });
 
     await expect(guard.canActivate(context)).rejects.toBeInstanceOf(
       UnauthorizedException,
@@ -79,9 +83,9 @@ describe('CustomerSessionGuard', () => {
       passwordVersion: 1,
     });
 
-    const { req, res, cookieMock, context } = buildContext(
-      `${CUSTOMER_SESSION_COOKIE}=${token}`,
-    );
+    const { req, res, cookieMock, context } = buildContext({
+      cookie: `${CUSTOMER_SESSION_COOKIE}=${token}`,
+    });
 
     const result = await guard.canActivate(context);
 
@@ -103,7 +107,44 @@ describe('CustomerSessionGuard', () => {
       passwordVersion: 0,
     });
 
-    const { context } = buildContext(`${CUSTOMER_SESSION_COOKIE}=${token}`);
+    const { context } = buildContext({
+      cookie: `${CUSTOMER_SESSION_COOKIE}=${token}`,
+    });
+
+    await expect(guard.canActivate(context)).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
+  });
+
+  it('accepts a valid token presented via Authorization: Bearer header (mobile path)', async () => {
+    const passwordHash = await hashPassword('current-password-1');
+    const token = createCustomerSessionToken('buyer-1', 1, 'test-secret');
+    prisma.buyerAccount.findUnique.mockResolvedValue({
+      id: 'buyer-1',
+      passwordHash,
+      passwordVersion: 1,
+    });
+
+    const { req, cookieMock, context } = buildContext({
+      authorization: `Bearer ${token}`,
+    });
+
+    const result = await guard.canActivate(context);
+
+    expect(result).toBe(true);
+    expect(req.customerSession).toEqual({ buyerAccountId: 'buyer-1' });
+    // Sliding renewal still reissues the cookie even for bearer-mode requests.
+    expect(cookieMock).toHaveBeenCalledWith(
+      CUSTOMER_SESSION_COOKIE,
+      expect.any(String),
+      expect.any(Object),
+    );
+  });
+
+  it('rejects an invalid bearer token', async () => {
+    const { context } = buildContext({
+      authorization: 'Bearer forged-token',
+    });
 
     await expect(guard.canActivate(context)).rejects.toBeInstanceOf(
       UnauthorizedException,

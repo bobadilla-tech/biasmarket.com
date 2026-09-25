@@ -68,7 +68,7 @@ describe('CustomerAuthController', () => {
       'tok',
       'super-secret-1',
     );
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, sessionToken: null });
   });
 
   it('login() sets the session cookie on success', async () => {
@@ -77,6 +77,7 @@ describe('CustomerAuthController', () => {
     const result = await controller.login(
       'my-store',
       { phone: '+51988888888', password: 'super-secret-1' },
+      undefined,
       res as never,
     );
 
@@ -90,7 +91,25 @@ describe('CustomerAuthController', () => {
       'signed-token',
       expect.objectContaining({ httpOnly: true }),
     );
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, sessionToken: null });
+  });
+
+  it('login() with X-Client: mobile returns the session token in the body', async () => {
+    service.login.mockResolvedValue('signed-token');
+
+    const result = await controller.login(
+      'my-store',
+      { phone: '+51988888888', password: 'super-secret-1' },
+      'mobile',
+      res as never,
+    );
+
+    expect(res.cookie).toHaveBeenCalledWith(
+      'bm_customer_session',
+      'signed-token',
+      expect.any(Object),
+    );
+    expect(result).toEqual({ ok: true, sessionToken: 'signed-token' });
   });
 
   it('changePassword() reissues the session cookie with a fresh token', async () => {
@@ -100,6 +119,7 @@ describe('CustomerAuthController', () => {
     const result = await controller.changePassword(
       session,
       { currentPassword: 'old-1', newPassword: 'new-1' },
+      undefined,
       res as never,
     );
 
@@ -113,7 +133,26 @@ describe('CustomerAuthController', () => {
       'new-signed-token',
       expect.any(Object),
     );
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, sessionToken: null });
+  });
+
+  it('changePassword() with X-Client: mobile returns the fresh token in the body', async () => {
+    service.changePassword.mockResolvedValue('new-signed-token');
+    const session = { buyerAccountId: 'buyer-1' };
+
+    const result = await controller.changePassword(
+      session,
+      { currentPassword: 'old-1', newPassword: 'new-1' },
+      'mobile',
+      res as never,
+    );
+
+    expect(res.cookie).toHaveBeenCalledWith(
+      'bm_customer_session',
+      'new-signed-token',
+      expect.any(Object),
+    );
+    expect(result).toEqual({ ok: true, sessionToken: 'new-signed-token' });
   });
 
   it('me() delegates to the service with the slug and session', async () => {
@@ -150,7 +189,7 @@ describe('CustomerAuthController', () => {
       'my-store',
       '+51988888888',
     );
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, sessionToken: null });
   });
 
   it('orderDetail() delegates to the service and maps the row through toOrderDto', async () => {
@@ -206,6 +245,6 @@ describe('CustomerAuthController', () => {
       'bm_customer_session',
       expect.objectContaining({ path: '/' }),
     );
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, sessionToken: null });
   });
 });

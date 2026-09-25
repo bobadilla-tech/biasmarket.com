@@ -1981,7 +1981,14 @@ export default async () => {
         [
           import('./modules/customer-auth/dto/customer-auth-response.dto.js'),
           {
-            OkResponseDto: { ok: { required: true, type: () => Boolean } },
+            OkResponseDto: {
+              ok: { required: true, type: () => Boolean },
+              sessionToken: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+            },
             CustomerProfileCustomerResponseDto: {
               name: { required: true, type: () => String, nullable: true },
               email: { required: true, type: () => String, nullable: true },
