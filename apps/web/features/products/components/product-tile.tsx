@@ -73,9 +73,9 @@ export function ProductTile({
       </Badge>
     );
   return (
-    <Card className="rounded-[26px] border-[#eadcf8] bg-white py-0 shadow-sm transition hover:shadow-md">
+    <Card className="rounded-4xl border-[#eadcf8] bg-white py-0 shadow-sm transition hover:shadow-md">
       <CardContent className="px-0 pb-0">
-        <div className="rounded-t-[26px] bg-[#fff2f7] p-6">
+        <div className="rounded-t-4xl bg-[#fff2f7] p-6">
           <div className="flex items-start justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <Badge className="store-theme-soft-badge rounded-full px-3 py-1 text-[11px] font-semibold">

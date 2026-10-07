@@ -36,9 +36,9 @@ export function DiscoverSection({
             ? ROW_PLACEHOLDER_KEYS.map((key) => (
                 <div
                   key={key}
-                  className="animate-pulse rounded-[10px] bg-muted p-[9.5px]"
+                  className="animate-pulse rounded-lg bg-muted p-[9.5px]"
                 >
-                  <div className="aspect-square w-full rounded-[10px]" />
+                  <div className="aspect-square w-full rounded-lg" />
                 </div>
               ))
             : products
@@ -55,7 +55,7 @@ export function DiscoverSection({
         <div className="mt-5 flex justify-center">
           <Link
             href="/search"
-            className="flex min-h-[39px] h-auto min-w-[186px] max-w-full items-center justify-center rounded-[10px] bg-[#b0006d] px-6 py-3 text-center text-sm font-medium text-white transition-colors hover:bg-[#8f0059]"
+            className="flex min-h-[39px] h-auto min-w-[186px] max-w-full items-center justify-center rounded-lg bg-[#b0006d] px-6 py-3 text-center text-sm font-medium text-white transition-colors hover:bg-[#8f0059]"
           >
             {t("cta")}
           </Link>
@@ -73,7 +73,7 @@ export function DiscoverSection({
             ? PLACEHOLDER_KEYS.slice(0, 6).map((key) => (
                 <div
                   key={key}
-                  className="aspect-square w-full rounded-[10px] border border-landing-graphite bg-white"
+                  className="aspect-square w-full rounded-lg border border-landing-graphite bg-white"
                 />
               ))
             : products
@@ -83,7 +83,7 @@ export function DiscoverSection({
                     key={product.id}
                     product={product}
                     variant="row"
-                    className="!w-full !rounded-[10px] !border-transparent"
+                    className="!w-full !rounded-lg !border-transparent"
                   />
                 ))}
         </div>

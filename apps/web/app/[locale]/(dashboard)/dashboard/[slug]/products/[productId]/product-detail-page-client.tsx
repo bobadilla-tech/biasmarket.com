@@ -188,7 +188,7 @@ export function ProductDetailsPageClient() {
   const imageContent =
     product.images?.length > 0 ? (
       <div className="space-y-3">
-        <div className="relative mx-auto aspect-square w-full overflow-hidden rounded-[22px] bg-gray-50 shadow-sm">
+        <div className="relative mx-auto aspect-square w-full overflow-hidden rounded-3xl bg-gray-50 shadow-sm">
           <Image
             src={product.images[0]}
             alt={product.name}
@@ -220,7 +220,7 @@ export function ProductDetailsPageClient() {
         )}
       </div>
     ) : (
-      <div className="mx-auto flex aspect-square w-full items-center justify-center rounded-[22px] bg-white/70 text-2xl font-semibold text-[#2d1649]">
+      <div className="mx-auto flex aspect-square w-full items-center justify-center rounded-3xl bg-white/70 text-2xl font-semibold text-[#2d1649]">
         {product.name.slice(0, 1).toUpperCase()}
       </div>
     );

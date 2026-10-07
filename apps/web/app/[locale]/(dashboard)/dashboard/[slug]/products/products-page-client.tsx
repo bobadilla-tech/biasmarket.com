@@ -284,7 +284,7 @@ export function ProductsPageClient() {
             })}
           </div>
         ) : (
-          <Card className="rounded-[26px] border-[#eadcf8] bg-white py-0 shadow-sm">
+          <Card className="rounded-4xl border-[#eadcf8] bg-white py-0 shadow-sm">
             <CardHeader className="px-6 pt-6">
               <CardTitle className="text-base text-[#2d1649]">
                 {t("products.listTitle")}

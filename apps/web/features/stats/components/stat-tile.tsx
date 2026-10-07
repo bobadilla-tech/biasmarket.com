@@ -11,7 +11,7 @@ export function StatTile({
   value: string;
 }) {
   return (
-    <Card className="rounded-[26px] border-[#eadcf8] bg-white py-0 shadow-sm">
+    <Card className="rounded-4xl border-[#eadcf8] bg-white py-0 shadow-sm">
       <CardContent className="flex items-center gap-4 px-5 py-5">
         <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-[#f4ecfb] text-[var(--store-primary)]">
           <Icon className="size-5" />
