@@ -17,7 +17,7 @@ function MobileStoreRow({ store }: { store: LandingStore }) {
         logoUrl={store.logoUrl}
         size={64}
         className="shrink-0 text-lg font-bold"
-        gradient={{ from: "#FC17A0", to: "#8D2FEB" }}
+        gradient={{ from: "#FC17A0", to: "var(--brand-violet)" }}
       />
       <span className="min-w-0 flex-1 text-center text-base break-words text-black">
         {store.name}
@@ -81,7 +81,7 @@ export function StoresSection({ stores }: { stores?: LandingStore[] | null }) {
                   logoUrl={store.logoUrl}
                   size={96}
                   className="shrink-0 text-xl font-bold"
-                  gradient={{ from: "#FC17A0", to: "#8D2FEB" }}
+                  gradient={{ from: "#FC17A0", to: "var(--brand-violet)" }}
                 />
                 <span className="min-w-0 flex-1 break-words text-[30.08px] leading-[36px] text-black">
                   {store.name}

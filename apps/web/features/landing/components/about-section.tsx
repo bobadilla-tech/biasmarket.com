@@ -40,7 +40,7 @@ function MobileAbout({
                   className="bg-clip-text text-transparent"
                   style={{
                     backgroundImage:
-                      "linear-gradient(90deg, #FC17A0 0%, #8D2FEB 100%)",
+                      "linear-gradient(90deg, #FC17A0 0%, var(--brand-violet) 100%)",
                   }}
                 >
                   BIASMARKET
