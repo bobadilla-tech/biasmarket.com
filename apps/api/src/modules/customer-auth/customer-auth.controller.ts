@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
   Param,
   Patch,
   Post,
@@ -14,7 +15,7 @@ import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { CustomerAuthService } from './customer-auth.service.js';
 import { CustomerSessionGuard } from './customer-session.guard.js';
-import { OriginGuard } from './origin.guard.js';
+import { AllowNoOrigin, OriginGuard } from './origin.guard.js';
 import { CustomerSession } from './customer-session.decorator.js';
 import { RegisterCustomerDto } from './dto/register-customer.dto.js';
 import { LoginCustomerDto } from './dto/login-customer.dto.js';
@@ -43,11 +44,28 @@ function setSessionCookie(res: Response, token: string): void {
   });
 }
 
+// native mobile clients have no cookie jar, so they
+// can't read the HttpOnly `bm_customer_session` cookie. When the request
+// self-identifies as a mobile client with `X-Client: mobile`, the controller
+// also returns the freshly-issued session token in the JSON body. The cookie
+// is ALWAYS still set as before; `apps/web` and every other caller simply
+// never send the header, so their responses (`{ ok: true, sessionToken:
+// null }`) are unchanged in shape.
+function sessionTokenForClient(
+  client: string | undefined,
+  token: string,
+): string | null {
+  return client === 'mobile' ? token : null;
+}
+
+const okNoToken: OkResponseDto = { ok: true, sessionToken: null };
+
 @Controller('stores/:slug/account')
 export class CustomerAuthController {
   constructor(private customerAuth: CustomerAuthService) {}
 
   @Public()
+  @AllowNoOrigin()
   @UseGuards(OriginGuard, ThrottlerGuard)
   @Throttle({ default: { ttl: 60_000, limit: 5 } })
   @Post('register')
@@ -55,24 +73,29 @@ export class CustomerAuthController {
     @Param('slug') slug: string,
     @Body() dto: RegisterCustomerDto,
   ): Promise<OkResponseDto> {
-    return this.customerAuth.register(slug, dto.token, dto.password);
+    return this.customerAuth
+      .register(slug, dto.token, dto.password)
+      .then(() => okNoToken);
   }
 
   @Public()
+  @AllowNoOrigin()
   @UseGuards(OriginGuard, ThrottlerGuard)
   @Throttle({ default: { ttl: 60_000, limit: 5 } })
   @Post('login')
   async login(
     @Param('slug') slug: string,
     @Body() dto: LoginCustomerDto,
+    @Headers('x-client') client: string | undefined,
     @Res({ passthrough: true }) res: Response,
   ): Promise<OkResponseDto> {
     const token = await this.customerAuth.login(slug, dto.phone, dto.password);
     setSessionCookie(res, token);
-    return { ok: true };
+    return { ok: true, sessionToken: sessionTokenForClient(client, token) };
   }
 
   @Public()
+  @AllowNoOrigin()
   @UseGuards(OriginGuard, ThrottlerGuard)
   @Throttle({ default: { ttl: 60_000, limit: 5 } })
   @Post('forgot-password')
@@ -81,7 +104,7 @@ export class CustomerAuthController {
     @Body() dto: ForgotPasswordDto,
   ): Promise<OkResponseDto> {
     await this.customerAuth.forgotPassword(slug, dto.phone);
-    return { ok: true };
+    return okNoToken;
   }
 
   // `slug` isn't read by `changePassword` (the customer session already
@@ -100,6 +123,7 @@ export class CustomerAuthController {
   async changePassword(
     @CustomerSession() session: { buyerAccountId: string },
     @Body() dto: ChangeCustomerPasswordDto,
+    @Headers('x-client') client: string | undefined,
     @Res({ passthrough: true }) res: Response,
   ): Promise<OkResponseDto> {
     const token = await this.customerAuth.changePassword(
@@ -108,7 +132,7 @@ export class CustomerAuthController {
       dto.newPassword,
     );
     setSessionCookie(res, token);
-    return { ok: true };
+    return { ok: true, sessionToken: sessionTokenForClient(client, token) };
   }
 
   @Public()
@@ -166,6 +190,6 @@ export class CustomerAuthController {
   @Post('logout')
   logout(@Res({ passthrough: true }) res: Response): OkResponseDto {
     res.clearCookie(CUSTOMER_SESSION_COOKIE, { path: '/' });
-    return { ok: true };
+    return okNoToken;
   }
 }

@@ -376,6 +376,283 @@ describe('customer account + customer auth (e2e)', () => {
     },
   );
 
+  // ---------------------------------------------------------------------------
+  // Mobile bearer-path coverage
+  // ---------------------------------------------------------------------------
+  // Validates X-Client: mobile login → body sessionToken, bearer-token access
+  // on protected routes, and the non-browser no-Origin exemption on unauthed
+  // routes.
+  it(
+    'mobile login returns sessionToken in body; bearer token grants access ' +
+      'on protected routes; no-Origin non-browser exemption works',
+    async () => {
+      const runId = `caa-bearer-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      const bearerSellerEmail = `caa-bearer-seller-${runId}@example.com`;
+      const bearerCustomerEmail = `caa-bearer-customer-${runId}@example.com`;
+      const bearerCustomerPhone = `+519${String(Date.now()).slice(-7)}`;
+      const bearerPassword = 'correcthorsebatterystaple';
+
+      let bearerSellerUserId: string | undefined;
+      let bearerStoreId: string | undefined;
+      let bearerProductId: string | undefined;
+      let bearerOrder: string | undefined;
+      let bearerToken: string | undefined;
+      let bearerApp: INestApplication | undefined;
+      let bearerPrisma: PrismaService | undefined;
+
+      try {
+        // ---- Boot a fresh Nest app for this isolated test run so the
+        // beforeAll seller+store setup (above) doesn't pollute the bearer
+        // assertions — the test's beforeAll uses a single seller e-mail and
+        // session cookie.
+        const moduleFixture: TestingModule = await Test.createTestingModule({
+          imports: [AppModule],
+        }).compile();
+        bearerApp = moduleFixture.createNestApplication();
+        await bearerApp.init();
+        bearerPrisma = moduleFixture.get(PrismaService);
+        await cleanupBuyerTestData(bearerPrisma!, [bearerCustomerPhone]);
+
+        // --- Seller sign-up → verify → sign-in → capture set-auth-token ---
+        const existingMailerFiles = new Set(readdirSync(mailerDevDir));
+
+        const signUpRes = await request(bearerApp.getHttpServer())
+          .post('/api/auth/sign-up/email')
+          .send({
+            email: bearerSellerEmail,
+            password: bearerPassword,
+            name: 'Bearer E2E Seller',
+          })
+          .expect(200);
+        bearerSellerUserId = signUpRes.body.user.id;
+
+        const mailerFile = await waitForNewMailerFile(
+          existingMailerFiles,
+          bearerSellerEmail,
+        );
+        const html = readFileSync(mailerFile, 'utf-8');
+        const tokenMatch = html.match(/verify-email\?token=([^&"]+)/);
+        if (!tokenMatch)
+          throw new Error('verification link not found in email');
+        await request(bearerApp.getHttpServer())
+          .get(`/api/auth/verify-email?token=${tokenMatch[1]}`)
+          .expect((res) => {
+            if (res.status >= 400)
+              throw new Error(`verify-email failed with status ${res.status}`);
+          });
+
+        const signInRes = await request(bearerApp.getHttpServer())
+          .post('/api/auth/sign-in/email')
+          .send({ email: bearerSellerEmail, password: bearerPassword })
+          .expect(200);
+
+        // better-auth's Bearer plugin exposes the session token in
+        // set-auth-token on successful sign-in.
+        const bearerHeader = signInRes.headers['set-auth-token'] as
+          string | undefined;
+        expect(bearerHeader).toBeDefined();
+
+        const setCookie = signInRes.headers[
+          'set-cookie'
+        ] as unknown as string[];
+        const rawCookie = setCookie?.find((c) => c.includes('session_token'));
+        const sellerSessionCookie = rawCookie ? rawCookie.split(';')[0]! : '';
+
+        // --- Create a store + product ---
+        const slug = `caa-bearer-${runId}`;
+        const storeRes = await request(bearerApp.getHttpServer())
+          .post('/stores')
+          .set('Cookie', sellerSessionCookie)
+          .send({
+            name: 'Bearer E2E Store',
+            slug,
+            whatsappNumber: '+51900000002',
+          })
+          .expect(201);
+        bearerStoreId = storeRes.body.id;
+
+        const productRes = await request(bearerApp.getHttpServer())
+          .post(`/stores/${bearerStoreId}/products`)
+          .set('Cookie', sellerSessionCookie)
+          .send({
+            name: 'Bearer E2E Product',
+            price: 10,
+            currency: 'PEN',
+            stock: 100,
+          })
+          .expect(201);
+        bearerProductId = productRes.body.id;
+        const variantId = productRes.body.variants[0].id;
+        await request(bearerApp.getHttpServer())
+          .patch(`/stores/${bearerStoreId}/products/${bearerProductId}/publish`)
+          .set('Cookie', sellerSessionCookie)
+          .expect(200);
+
+        // --- Checkout → confirm → register (non-browser: no Origin) ---
+        const checkoutRes = await request(bearerApp.getHttpServer())
+          .post(`/stores/${slug}/checkout`)
+          .send({
+            deliveryMethodType: 'PICKUP',
+            customerPhone: bearerCustomerPhone,
+            customerEmail: bearerCustomerEmail,
+            customerName: 'Bearer E2E Customer',
+            items: [
+              {
+                productId: bearerProductId,
+                variantId,
+                quantity: 1,
+              },
+            ],
+          })
+          .expect(201);
+        bearerOrder = checkoutRes.body.order.id as string;
+
+        const mailerFiles2 = new Set(readdirSync(mailerDevDir));
+        const mailerFile2 = await waitForNewMailerFile(
+          mailerFiles2,
+          bearerCustomerEmail,
+        );
+        const html2 = readFileSync(mailerFile2, 'utf-8');
+        const tokenMatch2 = html2.match(/token=([^&"]+)/);
+        if (!tokenMatch2)
+          throw new Error('confirm-account link not found in email');
+        const confirmToken = tokenMatch2[1]!;
+
+        await request(bearerApp.getHttpServer())
+          .get(`/stores/${slug}/account/confirm?token=${confirmToken}`)
+          .expect(200);
+
+        // Register WITHOUT Origin header — @AllowNoOrigin non-browser path.
+        // Must succeed; sessionToken null (no X-Client).
+        const registerRes = await request(bearerApp.getHttpServer())
+          .post(`/stores/${slug}/account/register`)
+          .send({ token: confirmToken, password: bearerPassword })
+          .expect(201);
+        expect(registerRes.body.ok).toBe(true);
+        expect(registerRes.body.sessionToken).toBeNull();
+
+        // --- Login with X-Client: mobile → body contains sessionToken ---
+        const loginRes = await request(bearerApp.getHttpServer())
+          .post(`/stores/${slug}/account/login`)
+          .set('Origin', 'http://localhost:3001')
+          .set('X-Client', 'mobile')
+          .send({ phone: bearerCustomerPhone, password: bearerPassword })
+          .expect(201);
+        assertMatchesSchema(loginRes.body, okSchema, openapi.components);
+        expect(loginRes.body.ok).toBe(true);
+        expect(typeof loginRes.body.sessionToken).toBe('string');
+        bearerToken = loginRes.body.sessionToken as string;
+
+        // The cookie must still be set even for mobile clients.
+        const loginCookies = loginRes.headers[
+          'set-cookie'
+        ] as unknown as string[];
+        expect(
+          loginCookies?.some((c) => c.includes('bm_customer_session')),
+        ).toBe(true);
+
+        // --- Bearer token grants access on protected routes (no cookie) ---
+        const meRes = await request(bearerApp.getHttpServer())
+          .get(`/stores/${slug}/account/me`)
+          .set('Authorization', `Bearer ${bearerToken}`)
+          .expect(200);
+        assertMatchesSchema(meRes.body, profileSchema, openapi.components);
+
+        // --- changePassword with X-Client: mobile returns fresh token ---
+        const newPassword = 'correcthorsebatterystaple2';
+        const changePwRes = await request(bearerApp.getHttpServer())
+          .post(`/stores/${slug}/account/change-password`)
+          .set('Authorization', `Bearer ${bearerToken}`)
+          .set('Origin', 'http://localhost:3001')
+          .set('X-Client', 'mobile')
+          .send({
+            currentPassword: bearerPassword,
+            newPassword,
+          })
+          .expect(201);
+        assertMatchesSchema(changePwRes.body, okSchema, openapi.components);
+        expect(typeof changePwRes.body.sessionToken).toBe('string');
+        bearerToken = changePwRes.body.sessionToken as string;
+
+        // New token must work; old token must no longer work (same DB).
+        const me2Res = await request(bearerApp.getHttpServer())
+          .get(`/stores/${slug}/account/me`)
+          .set('Authorization', `Bearer ${bearerToken}`)
+          .expect(200);
+        expect(me2Res.body.customer).toBeDefined();
+
+        // --- Forgot-password with no Origin: @AllowNoOrigin non-browser ---
+        const forgotRes = await request(bearerApp.getHttpServer())
+          .post(`/stores/${slug}/account/forgot-password`)
+          .send({ phone: bearerCustomerPhone })
+          .expect(201);
+        expect(forgotRes.body.ok).toBe(true);
+
+        // --- Invalid bearer token is rejected ---
+        await request(bearerApp.getHttpServer())
+          .get(`/stores/${slug}/account/me`)
+          .set('Authorization', 'Bearer forged-token')
+          .expect(401);
+      } finally {
+        // Cleanup DB rows
+        if (bearerOrder) {
+          // Checkout creates an OrderPayment row (see create-order.usecase.ts)
+          // and OrderPayment.order has no cascade delete — payments must go
+          // first, matching schema-assert.ts's cleanupBuyerTestData order.
+          await bearerPrisma!.orderPayment.deleteMany({
+            where: { orderId: bearerOrder },
+          });
+          await bearerPrisma!.orderItem.deleteMany({
+            where: { orderId: bearerOrder },
+          });
+          await bearerPrisma!.order.deleteMany({
+            where: { id: bearerOrder },
+          });
+        }
+        if (bearerProductId) {
+          await bearerPrisma!.orderPayment.deleteMany({
+            where: { storeId: bearerStoreId! },
+          });
+          await bearerPrisma!.orderItem.deleteMany({
+            where: { storeId: bearerStoreId! },
+          });
+          await bearerPrisma!.order.deleteMany({
+            where: { storeId: bearerStoreId! },
+          });
+          await bearerPrisma!.productVariant.deleteMany({
+            where: { productId: bearerProductId },
+          });
+          await bearerPrisma!.product.deleteMany({
+            where: { id: bearerProductId },
+          });
+        }
+        if (bearerStoreId) {
+          await bearerPrisma!.customerStoreLink.deleteMany({
+            where: { storeId: bearerStoreId },
+          });
+          await bearerPrisma!.notification.deleteMany({
+            where: { storeId: bearerStoreId },
+          });
+          await bearerPrisma!.paymentMethodConfig.deleteMany({
+            where: { storeId: bearerStoreId },
+          });
+          await bearerPrisma!.deliveryMethodConfig.deleteMany({
+            where: { storeId: bearerStoreId },
+          });
+          await bearerPrisma!.store.deleteMany({
+            where: { id: bearerStoreId },
+          });
+        }
+        if (bearerSellerUserId) {
+          await bearerPrisma!.user.deleteMany({
+            where: { id: bearerSellerUserId },
+          });
+        }
+        await bearerApp?.close();
+      }
+    },
+  );
+
   it(
     'one BuyerAccount persists across stores: register/login at store A, ' +
       'then check out at store B with the same phone -> one BuyerAccount, ' +
