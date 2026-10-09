@@ -1,6 +1,6 @@
 import type { Config } from "tailwindcss";
 import {
-  APP_PALETTE,
+  BRAND_PALETTE,
   radii,
   spacing,
   typography,
@@ -26,7 +26,7 @@ const config: Config = {
       borderRadius: Object.fromEntries(
         Object.entries(radii).map(([token, value]) => [token, px(value)]),
       ),
-      colors: { app: APP_PALETTE },
+      colors: { brand: BRAND_PALETTE },
       fontSize: Object.fromEntries(
         Object.entries(typography.sizes).map(([token, metrics]) => [
           token,

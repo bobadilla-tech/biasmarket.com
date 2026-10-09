@@ -269,7 +269,7 @@ export function CreateStoreForm() {
               </div>
 
               <div className="space-y-5">
-                <Card className="rounded-[26px] border-[#eadcf9] bg-[#fbf7ff] py-0 shadow-none">
+                <Card className="rounded-4xl border-[#eadcf9] bg-[#fbf7ff] py-0 shadow-none">
                   <CardHeader className="px-5 pt-5">
                     <div className="flex items-center gap-3">
                       <div className="flex size-11 items-center justify-center rounded-2xl bg-[#f1e6ff] text-[#7a38d8]">
@@ -321,7 +321,7 @@ export function CreateStoreForm() {
                   </CardContent>
                 </Card>
 
-                <Card className="rounded-[26px] border-[#eadcf9] bg-[#fbf7ff] py-0 shadow-none">
+                <Card className="rounded-4xl border-[#eadcf9] bg-[#fbf7ff] py-0 shadow-none">
                   <CardHeader className="px-5 pt-5">
                     <div className="flex items-center gap-3">
                       <div className="flex size-11 items-center justify-center rounded-2xl bg-[#f1e6ff] text-[#7a38d8]">
@@ -404,14 +404,14 @@ export function CreateStoreForm() {
             </div>
 
             {errors.root ? (
-              <Card className="rounded-[22px] border-[#f3cadc] bg-[#fff4f8] py-0 shadow-none">
+              <Card className="rounded-3xl border-[#f3cadc] bg-[#fff4f8] py-0 shadow-none">
                 <CardContent className="px-4 py-3 text-sm text-[#b54472]">
                   {errors.root.message}
                 </CardContent>
               </Card>
             ) : null}
 
-            <Card className="rounded-[26px] border-dashed border-[#ddcaf3] bg-[#fcf8ff] py-0 shadow-none">
+            <Card className="rounded-4xl border-dashed border-[#ddcaf3] bg-[#fcf8ff] py-0 shadow-none">
               <CardContent className="px-5 py-5">
                 <p className="font-semibold text-[#301848]">
                   {t("futureTitle")}
@@ -431,7 +431,7 @@ export function CreateStoreForm() {
                 background: `linear-gradient(135deg, ${selectedPalette.colors.accent} 0%, ${selectedPalette.colors.primary} 100%)`,
                 boxShadow: `0 18px 36px rgba(0, 0, 0, 0.14)`,
               }}
-              className="h-12 rounded-[22px] px-6 text-sm font-semibold text-white hover:opacity-95"
+              className="h-12 rounded-3xl px-6 text-sm font-semibold text-white hover:opacity-95"
             >
               {createStore.isPending ? t("submitting") : t("submit")}
             </Button>
@@ -467,7 +467,7 @@ export function CreateStoreForm() {
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className="flex size-[64px] items-center justify-center rounded-[22px] text-lg font-black text-white"
+                      className="flex size-[64px] items-center justify-center rounded-3xl text-lg font-black text-white"
                       style={{
                         background: logoPreviewUrl
                           ? `center/cover no-repeat url(${logoPreviewUrl})`

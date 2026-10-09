@@ -10,14 +10,12 @@ export function Hero() {
   return (
     <>
       {/* Mobile — compact hero */}
-      <div className="relative mx-auto h-[342px] w-full max-w-[358px] overflow-hidden rounded-[10px] bg-[#FEF3FF] sm:hidden">
+      <div className="relative mx-auto h-[342px] w-full max-w-[358px] overflow-hidden rounded-lg bg-[#FEF3FF] sm:hidden">
         <div className="absolute inset-x-0 top-[21px] z-10 flex flex-col items-center pr-[25px] pl-[28px] text-center">
           <h1 className="-my-1.5 text-[clamp(20px,8.6vw,34px)] leading-[36px] font-bold tracking-tight whitespace-nowrap text-[#4C0566]">
             {t("title1")}
           </h1>
-          <p className="text-[24px] leading-[32px] font-medium text-[#b0006d]">
-            {t("title2")}
-          </p>
+          <p className="text-2xl font-medium text-[#b0006d]">{t("title2")}</p>
         </div>
         <Image
           src="/landing/bm-props-sombra.png"
@@ -30,11 +28,11 @@ export function Hero() {
         />
         <div
           aria-hidden="true"
-          className="absolute inset-x-0 bottom-0 h-[39px] rounded-b-[10px] bg-gradient-to-b from-[#FEF3FF] to-[#FFC2F8]"
+          className="absolute inset-x-0 bottom-0 h-[39px] rounded-b-lg bg-gradient-to-b from-[#FEF3FF] to-[#FFC2F8]"
         />
         <Link
           href="/search"
-          className="absolute bottom-[24px] left-1/2 flex min-h-[26px] h-auto min-w-[128px] max-w-full -translate-x-1/2 items-center justify-center rounded-[10px] bg-[#b0006d] px-3 py-2 text-center text-[10px] leading-3 font-semibold text-white transition-colors hover:bg-[#8f0059]"
+          className="absolute bottom-[24px] left-1/2 flex min-h-[26px] h-auto min-w-[128px] max-w-full -translate-x-1/2 items-center justify-center rounded-lg bg-[#b0006d] px-3 py-2 text-center text-3xs font-semibold text-white transition-colors hover:bg-[#8f0059]"
         >
           {t("cta")}
         </Link>
@@ -42,11 +40,11 @@ export function Hero() {
 
       {/* Desktop — Figma Frame 93 hero */}
       <div className="mx-auto hidden max-w-[1346px] px-6 pt-[25px] pb-10 sm:block sm:px-10 sm:pt-[35px]">
-        <div className="relative min-h-[460px] rounded-[10px] bg-[#FEF3FF] sm:min-h-[525px]">
+        <div className="relative min-h-[460px] rounded-lg bg-[#FEF3FF] sm:min-h-[525px]">
           {/* Decorative art is clipped by its own wrapper, so the box can
               grow (min-h) without the outer overflow-hidden that used to
               crop the CTA/subtitle when the text ran tall (#165). */}
-          <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[10px]">
+          <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-lg">
             <Image
               src="/landing/bm-props-sombra.png"
               alt=""
@@ -94,7 +92,7 @@ export function Hero() {
 
           <div
             aria-hidden="true"
-            className="absolute inset-x-0 bottom-0 z-0 h-[99px] rounded-b-[10px] bg-gradient-to-b from-[#FEF3FF] to-[#FFC2F8]"
+            className="absolute inset-x-0 bottom-0 z-0 h-[99px] rounded-b-lg bg-gradient-to-b from-[#FEF3FF] to-[#FFC2F8]"
           />
         </div>
       </div>

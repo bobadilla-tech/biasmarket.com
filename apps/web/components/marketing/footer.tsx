@@ -31,7 +31,7 @@ export function Footer() {
         <div className="mt-7 grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-5 lg:gap-10">
           {columns.map((column) => (
             <div key={column.heading}>
-              <h4 className="text-xl leading-[24px] font-semibold text-[#181818] sm:text-[32px] sm:leading-[39px]">
+              <h4 className="text-xl leading-6 font-semibold text-[#181818] sm:text-[32px] sm:leading-[39px]">
                 {column.heading}
               </h4>
               <ul className="mt-2.5 space-y-1 sm:mt-4 sm:space-y-2">
@@ -47,7 +47,7 @@ export function Footer() {
           ))}
 
           <div className="col-span-2 sm:col-span-1">
-            <h4 className="text-xl leading-[24px] font-semibold text-black sm:text-[32px] sm:leading-[39px]">
+            <h4 className="text-xl leading-6 font-semibold text-black sm:text-[32px] sm:leading-[39px]">
               {t("networks")}
             </h4>
             <div className="mt-2.5 flex items-center gap-2 sm:mt-4">

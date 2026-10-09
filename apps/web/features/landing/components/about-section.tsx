@@ -40,7 +40,7 @@ function MobileAbout({
                   className="bg-clip-text text-transparent"
                   style={{
                     backgroundImage:
-                      "linear-gradient(90deg, #FC17A0 0%, #8D2FEB 100%)",
+                      "linear-gradient(90deg, #FC17A0 0%, var(--brand-violet) 100%)",
                   }}
                 >
                   BIASMARKET
@@ -51,7 +51,7 @@ function MobileAbout({
               title
             )}
           </h2>
-          <p className="mt-[3px] text-[11px] leading-[13px] whitespace-pre-line text-black">
+          <p className="mt-[3px] text-2xs whitespace-pre-line text-black">
             {subtitle}
           </p>
         </div>
@@ -80,7 +80,7 @@ function MobileAbout({
             <h3 className="text-[12.3px] leading-[15px] font-semibold text-black">
               {item.title}
             </h3>
-            <p className="text-justify text-[8.6px] leading-[10px] font-light text-black">
+            <p className="text-justify text-[8.6px] leading-2.5 font-light text-black">
               {item.body}
             </p>
           </div>
@@ -94,9 +94,7 @@ function MobileAbout({
           <span className="h-px min-w-[60px] flex-1 border-t border-white" />
         </div>
 
-        <p className="mt-1 text-center text-[11px] leading-[13px] text-black">
-          {helpTitle}
-        </p>
+        <p className="mt-1 text-center text-2xs text-black">{helpTitle}</p>
         <Link
           href="/contact"
           className="flex min-h-[31px] h-auto min-w-[131px] max-w-full items-center justify-center rounded-[5px] bg-[#b0006d] px-3 py-2 text-center text-[9.8px] leading-3 font-medium text-white transition-colors hover:bg-[#8f0059]"
@@ -148,7 +146,7 @@ export function AboutSection() {
             />
           </div>
 
-          <div className="mt-8 grid gap-[10px] md:grid-cols-3">
+          <div className="mt-8 grid gap-2.5 md:grid-cols-3">
             {items.map((item, index) => (
               <div
                 key={item.title}

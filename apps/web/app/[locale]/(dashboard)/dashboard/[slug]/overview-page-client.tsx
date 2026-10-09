@@ -37,7 +37,8 @@ export function DashboardOverviewPageClient() {
     );
   }
 
-  const pendingReview = stats.paymentStatusCounts.PENDING_PAYMENT +
+  const pendingReview =
+    stats.paymentStatusCounts.PENDING_PAYMENT +
     stats.paymentStatusCounts.PARTIALLY_PAID +
     stats.paymentStatusCounts.PAYMENT_SUBMITTED;
 
@@ -113,7 +114,7 @@ function StatusBreakdownCard({
   labels: Record<PaymentStatusValue, string>;
 }) {
   return (
-    <Card className="rounded-[26px] border-[#eadcf8] bg-white py-0 shadow-sm">
+    <Card className="rounded-4xl border-[#eadcf8] bg-white py-0 shadow-sm">
       <CardHeader className="px-5 pt-5">
         <CardTitle className="text-base font-semibold text-[#2d1649]">
           {title}
@@ -154,7 +155,7 @@ function FulfillmentBreakdownCard({
   };
 
   return (
-    <Card className="rounded-[26px] border-[#eadcf8] bg-white py-0 shadow-sm">
+    <Card className="rounded-4xl border-[#eadcf8] bg-white py-0 shadow-sm">
       <CardHeader className="px-5 pt-5">
         <CardTitle className="text-base font-semibold text-[#2d1649]">
           {title}

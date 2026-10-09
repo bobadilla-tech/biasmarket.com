@@ -22,7 +22,7 @@ export function ProductGridCard({
     <Link
       href={`/store/${product.store.slug}/product/${product.id}`}
       className={cn(
-        "group flex flex-col overflow-hidden rounded-[10px] bg-white transition hover:shadow-md",
+        "group flex flex-col overflow-hidden rounded-lg bg-white transition hover:shadow-md",
         isRow
           ? "w-[174px] shrink-0 border border-transparent p-[9.5px]"
           : "border border-landing-graphite",
@@ -31,7 +31,7 @@ export function ProductGridCard({
     >
       <div
         className={cn(
-          "relative aspect-square w-full overflow-hidden rounded-[10px] bg-white",
+          "relative aspect-square w-full overflow-hidden rounded-lg bg-white",
           !isRow && "aspect-[3/4] rounded-none",
         )}
       >
@@ -64,7 +64,7 @@ export function ProductGridCard({
           {product.name}
         </p>
         {isRow ? (
-          <p className="truncate text-[10px] leading-3 font-medium text-[#696969]">
+          <p className="truncate text-3xs font-medium text-[#696969]">
             @{product.store.slug}
           </p>
         ) : null}

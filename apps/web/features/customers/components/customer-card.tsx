@@ -13,8 +13,9 @@ function getInitials(name: string | null, phone: string) {
     const parts = source.split(/\s+/).filter(Boolean);
     const initialA = parts[0]?.slice(0, 1) ?? "";
     const initialB = parts[1]?.slice(0, 1) ?? "";
-    return `${initialA}${initialB}`.toUpperCase() ||
-      source.slice(0, 2).toUpperCase();
+    return (
+      `${initialA}${initialB}`.toUpperCase() || source.slice(0, 2).toUpperCase()
+    );
   }
   return phone.slice(-2).toUpperCase();
 }
@@ -33,7 +34,7 @@ export function CustomerCard({
   const displayName = customer.name ?? customer.phone;
 
   return (
-    <Card className="rounded-[26px] border-[#eadcf8] bg-white py-0 shadow-sm">
+    <Card className="rounded-4xl border-[#eadcf8] bg-white py-0 shadow-sm">
       <CardContent className="flex flex-col gap-4 px-5 py-5">
         <div className="flex items-center gap-3">
           <div
@@ -51,14 +52,12 @@ export function CustomerCard({
             </p>
             <p className="truncate text-xs text-[#8f7da8]">{customer.phone}</p>
           </div>
-          {customer.emailVerified
-            ? (
-              <ShieldCheck
-                className="size-4 shrink-0 text-emerald-600"
-                aria-label={t("verified")}
-              />
-            )
-            : null}
+          {customer.emailVerified ? (
+            <ShieldCheck
+              className="size-4 shrink-0 text-emerald-600"
+              aria-label={t("verified")}
+            />
+          ) : null}
         </div>
 
         <div className="grid grid-cols-2 gap-3 border-t border-[#f3ebff] pt-4">

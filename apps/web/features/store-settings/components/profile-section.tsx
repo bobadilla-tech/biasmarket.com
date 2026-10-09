@@ -115,7 +115,7 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
             name={storeName}
             logoUrl={store.logoUrl ?? null}
             size={72}
-            className="rounded-[22px] text-xl font-black"
+            className="rounded-3xl text-xl font-black"
             style={{ boxShadow: "0 18px 36px var(--store-shadow)" }}
           />
           <div>

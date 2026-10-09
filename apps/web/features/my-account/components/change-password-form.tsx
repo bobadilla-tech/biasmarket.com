@@ -40,7 +40,7 @@ export function ChangePasswordForm() {
   });
 
   return (
-    <Card className="rounded-[26px] border-[#eadcf8] bg-white py-0 shadow-sm">
+    <Card className="rounded-4xl border-[#eadcf8] bg-white py-0 shadow-sm">
       <CardHeader className="px-5 pt-5">
         <CardTitle className="text-base font-semibold text-[#2d1649]">
           {t("title")}
