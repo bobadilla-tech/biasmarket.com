@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
+  ApiBearerAuth,
   ApiConsumes,
   ApiOkResponse,
   ApiParam,
@@ -73,6 +74,7 @@ export class CustomerOrderPaymentsController {
   }
 
   @ApiParam({ name: 'slug', type: String })
+  @ApiBearerAuth('bearer')
   @ApiConsumes('multipart/form-data')
   @Public()
   @UseGuards(CustomerSessionGuard, ThrottlerGuard)
@@ -235,6 +237,7 @@ export class CustomerOrderPaymentsController {
   // origins. The stream is still auth-gated, so `cross-origin` only widens
   // embedding to the session holder, which is exactly the intended consumer.
   @Header('Cross-Origin-Resource-Policy', 'cross-origin')
+  @ApiBearerAuth('bearer')
   @Public()
   @UseGuards(CustomerSessionGuard)
   @Get(':paymentId/image')

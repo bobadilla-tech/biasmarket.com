@@ -12,7 +12,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { ApiConsumes, ApiQuery } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiConsumes, ApiQuery } from '@nestjs/swagger';
 import { AuthGuard, Session } from '@thallesp/nestjs-better-auth';
 import type { UserSession } from '@thallesp/nestjs-better-auth';
 import { ProductsService } from './products.service.js';
@@ -140,6 +140,7 @@ function toProductDetailDto(
 
 @Controller('stores/:storeId/products')
 @UseGuards(AuthGuard)
+@ApiBearerAuth('bearer')
 export class ProductsController {
   constructor(
     private products: ProductsService,

@@ -8,7 +8,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { ApiParam } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { Public } from '@thallesp/nestjs-better-auth';
 import { CustomerSessionGuard } from '../customer-auth/customer-session.guard.js';
 import { CustomerSession } from '../customer-auth/customer-session.decorator.js';
@@ -28,6 +28,7 @@ export class AddressesController {
 
   @ApiParam({ name: 'slug', type: String })
   @Public()
+  @ApiBearerAuth('bearer')
   @UseGuards(CustomerSessionGuard)
   @Get()
   async findAll(
@@ -38,6 +39,7 @@ export class AddressesController {
 
   @ApiParam({ name: 'slug', type: String })
   @Public()
+  @ApiBearerAuth('bearer')
   @UseGuards(CustomerSessionGuard)
   @Post()
   async create(
@@ -49,6 +51,7 @@ export class AddressesController {
 
   @ApiParam({ name: 'slug', type: String })
   @Public()
+  @ApiBearerAuth('bearer')
   @UseGuards(CustomerSessionGuard)
   @Patch(':id')
   async update(
@@ -61,6 +64,7 @@ export class AddressesController {
 
   @ApiParam({ name: 'slug', type: String })
   @Public()
+  @ApiBearerAuth('bearer')
   @UseGuards(CustomerSessionGuard)
   @Delete(':id')
   async remove(

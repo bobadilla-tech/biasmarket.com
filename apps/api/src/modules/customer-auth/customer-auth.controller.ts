@@ -9,7 +9,7 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { ApiParam } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { Public } from '@thallesp/nestjs-better-auth';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import type { Response } from 'express';
@@ -118,6 +118,7 @@ export class CustomerAuthController {
   // openapi.json's `parameters` for this path).
   @ApiParam({ name: 'slug', type: String })
   @Public()
+  @ApiBearerAuth('bearer')
   @UseGuards(CustomerSessionGuard, OriginGuard)
   @Post('change-password')
   async changePassword(
@@ -136,6 +137,7 @@ export class CustomerAuthController {
   }
 
   @Public()
+  @ApiBearerAuth('bearer')
   @UseGuards(CustomerSessionGuard)
   @Get('me')
   async me(
@@ -156,6 +158,7 @@ export class CustomerAuthController {
   // `order.buyerAccountId === session.buyerAccountId`, enforced in
   // `CustomerAuthService.getOrderDetail`.
   @Public()
+  @ApiBearerAuth('bearer')
   @UseGuards(CustomerSessionGuard)
   @Get('orders/:orderId')
   async orderDetail(
@@ -168,6 +171,7 @@ export class CustomerAuthController {
   }
 
   @Public()
+  @ApiBearerAuth('bearer')
   @UseGuards(CustomerSessionGuard, OriginGuard)
   @Patch('me')
   updateMe(
