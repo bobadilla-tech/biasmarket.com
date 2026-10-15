@@ -8402,7 +8402,7 @@
             "nullable": true
           }
         },
-        "required": ["ok"]
+        "required": ["ok", "sessionToken"]
       },
       "LoginCustomerDto": {
         "type": "object",

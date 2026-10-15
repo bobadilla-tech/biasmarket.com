@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { AccountOrderResponseDto } from './account-order-response.dto.js';
 
 // Money/Decimal, Date-as-ISO-string, and literal-union conventions — see
@@ -8,18 +8,16 @@ import { AccountOrderResponseDto } from './account-order-response.dto.js';
 // this same `{ ok: true }` shape — the session cookie itself is set via
 // `@Res({ passthrough: true })`, never part of the JSON body.
 //
-// adds an optional `sessionToken` field, present only
-// on `login`/`changePassword` when the request carries `X-Client: mobile`.
-// Native mobile clients can't read the HttpOnly session cookie, so the
-// controller echoes the same token in the JSON body for them. Web/browser
-// (and all cookie-mode) callers never see it — the field is null, so the
-// response contract (which we regenerate into openapi.json) is unchanged
-// for them.
+// adds a nullable `sessionToken` field. It contains a token on `login` and
+// `changePassword` when the request carries `X-Client: mobile`; other flows
+// and web/browser callers receive `null`. Native mobile clients can't read
+// the HttpOnly session cookie, so the controller echoes the same token in
+// the JSON body for them.
 export class OkResponseDto {
   @ApiProperty({ type: Boolean })
   ok: true;
 
-  @ApiPropertyOptional({ type: String, nullable: true })
+  @ApiProperty({ type: String, nullable: true })
   sessionToken: string | null;
 }
 

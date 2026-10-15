@@ -572,6 +572,7 @@ describe('customer account + customer auth (e2e)', () => {
           .expect(201);
         assertMatchesSchema(changePwRes.body, okSchema, openapi.components);
         expect(typeof changePwRes.body.sessionToken).toBe('string');
+        const staleToken = bearerToken;
         bearerToken = changePwRes.body.sessionToken as string;
 
         // New token must work; old token must no longer work (same DB).
@@ -580,6 +581,11 @@ describe('customer account + customer auth (e2e)', () => {
           .set('Authorization', `Bearer ${bearerToken}`)
           .expect(200);
         expect(me2Res.body.customer).toBeDefined();
+
+        await request(bearerApp.getHttpServer())
+          .get(`/stores/${slug}/account/me`)
+          .set('Authorization', `Bearer ${staleToken}`)
+          .expect(401);
 
         // --- Forgot-password with no Origin: @AllowNoOrigin non-browser ---
         const forgotRes = await request(bearerApp.getHttpServer())

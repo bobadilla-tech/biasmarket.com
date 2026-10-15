@@ -3,7 +3,6 @@ import type { INestApplication } from '@nestjs/common';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import request from 'supertest';
 import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { AppModule } from './../src/app.module.js';
 import {
   cleanupBuyerTestData,
@@ -15,18 +14,6 @@ import {
 // session token via set-auth-token on sign-in, and that the token can be used
 // on the Authorization header to access seller-protected endpoints — no
 // cookie, no Origin header — proving the mobile seller path works end-to-end.
-const openapiPath = join(__dirname, '..', 'openapi.json');
-let openapiRaw: string;
-try {
-  openapiRaw = readFileSync(openapiPath, 'utf-8');
-} catch {
-  throw new Error(
-    `${openapiPath} not found — run "pnpm --filter api generate:openapi" first.`,
-  );
-}
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const openapi = JSON.parse(openapiRaw);
-
 describe('seller bearer auth (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
