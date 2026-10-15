@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { Test, type TestingModule } from '@nestjs/testing';
 import type { INestApplication } from '@nestjs/common';
 import { PrismaService } from '../src/prisma/prisma.service.js';
@@ -21,7 +22,7 @@ describe('seller bearer auth (e2e)', () => {
   let storeId: string | undefined;
   let productId: string | undefined;
 
-  const runId = `sba-e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const runId = `sba-e2e-${randomUUID()}`;
   const sellerEmail = `sba-e2e-${runId}@example.com`;
   const password = 'correcthorsebatterystaple';
   const storeSlug = `sba-store-${runId}`;

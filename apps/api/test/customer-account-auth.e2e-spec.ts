@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { Test, type TestingModule } from '@nestjs/testing';
 import type { INestApplication } from '@nestjs/common';
 import { PrismaService } from '../src/prisma/prisma.service.js';
@@ -386,7 +387,7 @@ describe('customer account + customer auth (e2e)', () => {
     'mobile login returns sessionToken in body; bearer token grants access ' +
       'on protected routes; no-Origin non-browser exemption works',
     async () => {
-      const runId = `caa-bearer-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      const runId = `caa-bearer-${randomUUID()}`;
       const bearerSellerEmail = `caa-bearer-seller-${runId}@example.com`;
       const bearerCustomerEmail = `caa-bearer-customer-${runId}@example.com`;
       const bearerCustomerPhone = `+519${String(Date.now()).slice(-7)}`;
