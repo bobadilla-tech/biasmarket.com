@@ -4584,7 +4584,6 @@
     "securitySchemes": {
       "bearer": {
         "scheme": "bearer",
-        "bearerFormat": "opaque",
         "type": "http"
       }
     },
