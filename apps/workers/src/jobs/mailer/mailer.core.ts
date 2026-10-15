@@ -42,7 +42,7 @@ export class MailerCore {
     : "";
   private readonly fromEmail = this.driver === "resend"
     ? requiredEnv("RESEND_FROM_EMAIL")
-    : (process.env.RESEND_FROM_EMAIL ?? "no-reply@biasmarket.com");
+    : (process.env.RESEND_FROM_EMAIL ?? "no-reply@send.biasmarket.com");
   private client = this.driver === "resend"
     ? new Resend(this.apiKey)
     : undefined;

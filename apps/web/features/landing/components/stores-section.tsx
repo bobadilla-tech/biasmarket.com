@@ -10,14 +10,14 @@ function MobileStoreRow({ store }: { store: LandingStore }) {
   return (
     <Link
       href={`/store/${store.slug}`}
-      className="mx-auto flex min-h-[92px] h-auto w-full max-w-[300px] items-center gap-4 rounded-[10px] border border-[#AAA8A8] bg-white px-3 py-4 pr-4 transition hover:shadow-md"
+      className="mx-auto flex min-h-[92px] h-auto w-full max-w-[300px] items-center gap-4 rounded-lg border border-[#AAA8A8] bg-white px-3 py-4 pr-4 transition hover:shadow-md"
     >
       <StoreLogo
         name={store.name}
         logoUrl={store.logoUrl}
         size={64}
         className="shrink-0 text-lg font-bold"
-        gradient={{ from: "#FC17A0", to: "#8D2FEB" }}
+        gradient={{ from: "#FC17A0", to: "var(--brand-violet)" }}
       />
       <span className="min-w-0 flex-1 text-center text-base break-words text-black">
         {store.name}
@@ -37,7 +37,7 @@ export function StoresSection({ stores }: { stores?: LandingStore[] | null }) {
           {t("title")}
         </h2>
         {list.length === 0 ? (
-          <p className="mt-4 rounded-[10px] border border-dashed border-[#AAA8A8] px-4 py-6 text-center text-xs text-[#696969]">
+          <p className="mt-4 rounded-lg border border-dashed border-[#AAA8A8] px-4 py-6 text-center text-xs text-[#696969]">
             {t("empty")}
           </p>
         ) : (
@@ -65,7 +65,7 @@ export function StoresSection({ stores }: { stores?: LandingStore[] | null }) {
         </div>
 
         {list.length === 0 ? (
-          <p className="mt-6 rounded-[10px] border border-dashed border-[#AAA8A8] px-4 py-10 text-center text-sm text-[#696969]">
+          <p className="mt-6 rounded-lg border border-dashed border-[#AAA8A8] px-4 py-10 text-center text-sm text-[#696969]">
             {t("empty")}
           </p>
         ) : (
@@ -81,7 +81,7 @@ export function StoresSection({ stores }: { stores?: LandingStore[] | null }) {
                   logoUrl={store.logoUrl}
                   size={96}
                   className="shrink-0 text-xl font-bold"
-                  gradient={{ from: "#FC17A0", to: "#8D2FEB" }}
+                  gradient={{ from: "#FC17A0", to: "var(--brand-violet)" }}
                 />
                 <span className="min-w-0 flex-1 break-words text-[30.08px] leading-[36px] text-black">
                   {store.name}

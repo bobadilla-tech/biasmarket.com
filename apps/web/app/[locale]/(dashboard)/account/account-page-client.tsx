@@ -44,7 +44,7 @@ export function AccountPageClient() {
           <p className="mt-1 text-sm text-[#8f7da8]">{t("subtitle")}</p>
         </div>
 
-        <Card className="rounded-[26px] border-[#eadcf8] bg-white py-0 shadow-sm">
+        <Card className="rounded-4xl border-[#eadcf8] bg-white py-0 shadow-sm">
           <CardContent className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-xs font-medium text-[#8f7da8]">
@@ -67,7 +67,7 @@ export function AccountPageClient() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-[26px] border-[#eadcf8] bg-white py-0 shadow-sm">
+        <Card className="rounded-4xl border-[#eadcf8] bg-white py-0 shadow-sm">
           <CardContent className="flex flex-col gap-3 px-5 py-5">
             <div>
               <h2 className="text-base font-semibold text-[#2d1649]">

@@ -44,7 +44,7 @@ export function SuggestionCard({
   const { icon: Icon, className } = SEVERITY_STYLES[suggestion.severity];
 
   return (
-    <Card className="rounded-[26px] border-[#eadcf8] bg-white py-0 shadow-sm">
+    <Card className="rounded-4xl border-[#eadcf8] bg-white py-0 shadow-sm">
       <CardContent className="flex items-start gap-4 px-5 py-5">
         <div
           className={cn(

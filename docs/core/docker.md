@@ -22,7 +22,7 @@ found while testing the fix. For day-to-day development Compose commands, see
   with an identical `FROM node:24-slim` + corepack-install block, so BuildKit
   reuses that layer across both images on the same builder.
 - CI runs the application checks. CD builds the three production images on an
-  arm64 GitHub runner, pushes immutable SHA-tagged images to GHCR, and the VPS
+  amd64 GitHub runner, pushes immutable SHA-tagged images to GHCR, and the VPS
   pulls them during `deploy.sh`; the VPS does not build application images.
 
 ## Gap found: Turbo's own cache wasn't persisted

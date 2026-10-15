@@ -35,6 +35,13 @@ api.biasmarket.com {
 }
 
 biasmarket.com {
+	# Bias Market has no PHP runtime. Reject common PHP-file probes before
+	# they reach Next.js and trigger unnecessary server-side page work.
+	@phpProbe path_regexp phpProbe `(?i)\.php(?:[./]|$)`
+	handle @phpProbe {
+		respond 404
+	}
+
 	import /etc/caddy/active/web.caddy
 }
 

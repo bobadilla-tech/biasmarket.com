@@ -1,0 +1,14 @@
+# Provider plugins, downloaded by `terraform init`.
+.terraform/
+
+# State can contain secrets (keys, user_data, secret values). Never commit.
+*.tfstate
+*.tfstate.*
+crash.log
+
+# Real variable values. `*.tfvars.example` stays committed.
+*.tfvars
+*.tfvars.json
+
+# NOT ignored on purpose: .terraform.lock.hcl pins exact provider versions and
+# checksums so everyone (and CI) installs the same plugin.

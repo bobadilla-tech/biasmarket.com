@@ -27,7 +27,7 @@ export function SingleSeriesBarChart({
   const minWidth = Math.max(data.length * 32, 320);
 
   return (
-    <Card className="rounded-[26px] border-[#eadcf8] bg-white py-0 shadow-sm">
+    <Card className="rounded-4xl border-[#eadcf8] bg-white py-0 shadow-sm">
       <CardHeader className="px-5 pt-5">
         <CardTitle className="text-base font-semibold text-[#2d1649]">
           {title}

@@ -79,7 +79,10 @@ services:
       - "6379"
 
   minio:
-    image: minio/minio
+    # Docker Hub no longer serves minio/minio (MinIO stopped publishing there);
+    # quay.io/minio/* still does. Pinned instead of `latest`: MinIO's community
+    # images are no longer being updated, so a floating tag buys nothing.
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
     restart: unless-stopped
     networks: [stack]
     environment:
@@ -96,7 +99,7 @@ services:
       start_period: 10s
 
   minio-init:
-    image: minio/mc
+    image: quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z
     restart: "no"
     networks: [stack]
     environment:

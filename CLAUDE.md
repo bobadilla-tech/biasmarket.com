@@ -195,7 +195,8 @@ checks against `Store.ownerId`), not global middleware. Slug strategy is
 
 ### Deployment
 
-Single Oracle Cloud VM, blue/green containers for `api`, `web`, and `workers`,
+Single Contabo Cloud VPS (x86_64, provisioned with Terraform from
+`infra/terraform/`), blue/green containers for `api`, `web`, and `workers`,
 plus shared `db`, `redis`, `minio`, `uptime-kuma`, and `caddy` (S3-compatible
 object storage — product/logo/payment-proof images, see
 `apps/api/src/storage/storage.service.ts`). Production definitions live in

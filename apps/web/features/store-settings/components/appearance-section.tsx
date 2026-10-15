@@ -77,7 +77,7 @@ export function AppearanceSection({ store }: { store: DashboardStore }) {
             variant="outline"
             onClick={() => setSelectedPaletteId(palette.id)}
             className={cn(
-              "h-auto flex-col items-stretch rounded-[22px] p-4 text-left shadow-none",
+              "h-auto flex-col items-stretch rounded-3xl p-4 text-left shadow-none",
               selectedPaletteId === palette.id
                 ? "bg-white shadow-sm"
                 : "bg-[#fcf9ff] hover:bg-white",
@@ -119,7 +119,7 @@ export function AppearanceSection({ store }: { store: DashboardStore }) {
             type="button"
             onClick={() => setSelectedPaletteId("custom")}
             className={cn(
-              "h-auto flex-col items-stretch rounded-[22px] border p-4 text-left shadow-none",
+              "h-auto flex-col items-stretch rounded-3xl border p-4 text-left shadow-none",
               selectedPaletteId === "custom"
                 ? "bg-white shadow-sm"
                 : "bg-[#fcf9ff] hover:bg-white",

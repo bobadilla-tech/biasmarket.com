@@ -227,9 +227,8 @@ machine-checkable parts (non-empty `alt`, on-CDN image `src`, the tag
 allowlist); the rest of this subsection is the copy guidance behind that
 enforcement.
 
-**`Store.aboutMarkdown` — markdown subset only.** Rendered server-side
-through a strict allowlist (`apps/web/lib/store-markdown.tsx`), never as raw
-HTML:
+**`Store.aboutMarkdown` — markdown subset only.** Rendered server-side through a
+strict allowlist (`apps/web/lib/store-markdown.tsx`), never as raw HTML:
 
 - Allowed: paragraphs, `**bold**` / `_italic_`, sub-headings (`##`–`####`),
   bulleted and numbered lists, blockquotes, links, images, inline `code` and
@@ -239,8 +238,7 @@ HTML:
 - **No `<h1>`.** The page owns its single `<h1>` (the store name). A leading `#`
   is demoted to `##`.
 - No tables in v1 (revisit only for a concrete size/return-table use-case).
-- App caps: `bio` ≤ 280 chars (plain text, no markdown), `aboutMarkdown`
-  ≤ 4000.
+- App caps: `bio` ≤ 280 chars (plain text, no markdown), `aboutMarkdown` ≤ 4000.
 
 **Outbound links in seller content carry `rel="nofollow ugc noopener"`** (and
 `target="_blank"`), forced by the renderer. Sellers don't get to pass the
@@ -255,13 +253,13 @@ images, and inline `![alt](url)` images in `aboutMarkdown`:
 - `src` must resolve to the platform CDN host (`cdn.biasmarket.com`). Arbitrary
   remote images (hotlinks, tracking pixels, mixed content) are rejected; inline
   markdown images with an off-CDN `src` are dropped at render.
-- `alt` must be a real description of what's in the image, written by a
-  person — not the filename, not "image", not empty. The forms reject an empty
-  `alt`; an inline markdown image with an empty `alt` is dropped.
+- `alt` must be a real description of what's in the image, written by a person —
+  not the filename, not "image", not empty. The forms reject an empty `alt`; an
+  inline markdown image with an empty `alt` is dropped.
 - Why: image-search discoverability and screen-reader accessibility, in equal
   measure. A store that fills these in ranks for image queries its competitors
-  don't; one that doesn't is invisible to that surface and unusable to
-  assistive tech.
+  don't; one that doesn't is invisible to that surface and unusable to assistive
+  tech.
 
 ### 5.3 Storefront Features (Public Storefront)
 

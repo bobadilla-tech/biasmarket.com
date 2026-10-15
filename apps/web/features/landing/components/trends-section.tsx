@@ -77,16 +77,16 @@ function TrendBand({
           {ROW_SKELETON_KEYS.map((key) => (
             <div
               key={key}
-              className="w-[150px] shrink-0 animate-pulse rounded-[10px] bg-white/70 p-[9.5px]"
+              className="w-[150px] shrink-0 animate-pulse rounded-lg bg-white/70 p-[9.5px]"
             >
-              <div className="aspect-square w-full rounded-[10px] bg-muted" />
+              <div className="aspect-square w-full rounded-lg bg-muted" />
               <div className="mt-2 h-3 w-4/5 rounded bg-muted" />
               <div className="mt-1.5 h-3 w-1/2 rounded bg-muted" />
             </div>
           ))}
         </div>
       ) : message ? (
-        <p className="mt-2 rounded-[10px] bg-white px-4 py-6 text-center text-sm text-muted-foreground">
+        <p className="mt-2 rounded-lg bg-white px-4 py-6 text-center text-sm text-muted-foreground">
           {message}
         </p>
       ) : (
@@ -130,7 +130,7 @@ function TrendBandStripe({
           </h2>
           <Link
             href={viewMoreHref}
-            className="flex items-center gap-3 text-[20px] leading-[24px] font-medium text-[#b0006d] transition-colors hover:text-[#8f0059]"
+            className="flex items-center gap-3 text-[20px] leading-6 font-medium text-[#b0006d] transition-colors hover:text-[#8f0059]"
           >
             {t("viewMore")}
             <CircleArrowRight className="size-7" strokeWidth={1.6} />
@@ -142,7 +142,7 @@ function TrendBandStripe({
             {Array.from({ length: 6 }, (_, index) => (
               <div
                 key={`stripe-skeleton-${index}`}
-                className="animate-pulse rounded-[10px] bg-white/70 p-[11.6px]"
+                className="animate-pulse rounded-lg bg-white/70 p-[11.6px]"
               >
                 <div className="aspect-square w-full rounded-[12.3px] bg-muted" />
                 <div className="mt-2 h-3 w-4/5 rounded bg-muted" />
@@ -151,7 +151,7 @@ function TrendBandStripe({
             ))}
           </div>
         ) : message ? (
-          <p className="mt-7 rounded-[10px] bg-white px-4 py-8 text-center text-sm text-muted-foreground">
+          <p className="mt-7 rounded-lg bg-white px-4 py-8 text-center text-sm text-muted-foreground">
             {message}
           </p>
         ) : (
@@ -161,7 +161,7 @@ function TrendBandStripe({
                 key={product.id}
                 product={product}
                 variant="row"
-                className="!w-full !rounded-[10px] !border-transparent"
+                className="!w-full !rounded-lg !border-transparent"
               />
             ))}
           </div>

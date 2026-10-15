@@ -12,7 +12,7 @@ export function PhotocardStack() {
       {cards.map(({ rotate, translate, icon: Icon }, i) => (
         <div
           key={i}
-          className={`absolute inset-x-0 top-0 mx-auto aspect-[3/4] w-40 rounded-2xl bg-gradient-to-br from-brand-pink via-brand-violet to-brand-gold p-[3px] shadow-[0_20px_60px_-15px_oklch(0.66_0.25_350_/_0.5)] ${rotate} ${translate}`}
+          className={`absolute inset-x-0 top-0 mx-auto aspect-[3/4] w-40 rounded-2xl bg-gradient-to-br from-brand-pink via-brand-violet to-brand-gold p-[3px] shadow-[0_20px_60px_-15px_color-mix(in_srgb,var(--brand-pink)_50%,transparent)] ${rotate} ${translate}`}
           style={{ zIndex: i }}
         >
           <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-[1rem] bg-brand-ink/90">

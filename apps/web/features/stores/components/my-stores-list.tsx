@@ -55,7 +55,7 @@ export function MyStoresList() {
         ) : null}
 
         {!isPending && stores.length === 0 ? (
-          <div className="rounded-[22px] border border-dashed border-white/14 bg-white/5 p-4 text-sm text-white/68">
+          <div className="rounded-3xl border border-dashed border-white/14 bg-white/5 p-4 text-sm text-white/68">
             {t("empty")}
           </div>
         ) : null}
@@ -63,7 +63,7 @@ export function MyStoresList() {
         {stores.map((store) => (
           <Card
             key={store.id}
-            className="rounded-[22px] border-white/10 bg-white/6 py-0 text-white ring-white/10"
+            className="rounded-3xl border-white/10 bg-white/6 py-0 text-white ring-white/10"
           >
             <CardContent className="px-4 py-4">
               <Button
