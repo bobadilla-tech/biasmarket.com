@@ -520,7 +520,6 @@
     },
     "/stores/{storeId}/products": {
       "post": {
-        "security": [{ "bearer": [] }],
         "operationId": "ProductsController_create",
         "parameters": [
           {
@@ -554,10 +553,14 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Products"]
       },
       "get": {
-        "security": [{ "bearer": [] }],
         "operationId": "ProductsController_findAll",
         "parameters": [
           {
@@ -584,12 +587,16 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Products"]
       }
     },
     "/stores/{storeId}/products/{productId}": {
       "get": {
-        "security": [{ "bearer": [] }],
         "operationId": "ProductsController_findOne",
         "parameters": [
           {
@@ -621,10 +628,14 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Products"]
       },
       "patch": {
-        "security": [{ "bearer": [] }],
         "operationId": "ProductsController_update",
         "parameters": [
           {
@@ -666,10 +677,14 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Products"]
       },
       "delete": {
-        "security": [{ "bearer": [] }],
         "operationId": "ProductsController_softDelete",
         "parameters": [
           {
@@ -701,12 +716,16 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Products"]
       }
     },
     "/stores/{storeId}/products/{productId}/publish": {
       "patch": {
-        "security": [{ "bearer": [] }],
         "operationId": "ProductsController_publish",
         "parameters": [
           {
@@ -738,12 +757,16 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Products"]
       }
     },
     "/stores/{storeId}/products/{productId}/variants": {
       "post": {
-        "security": [{ "bearer": [] }],
         "operationId": "ProductsController_addVariant",
         "parameters": [
           {
@@ -785,10 +808,14 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Products"]
       },
       "get": {
-        "security": [{ "bearer": [] }],
         "operationId": "ProductsController_listVariants",
         "parameters": [
           {
@@ -823,12 +850,16 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Products"]
       }
     },
     "/stores/{storeId}/products/{productId}/variants/{variantId}": {
       "patch": {
-        "security": [{ "bearer": [] }],
         "operationId": "ProductsController_updateVariant",
         "parameters": [
           {
@@ -878,10 +909,14 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Products"]
       },
       "delete": {
-        "security": [{ "bearer": [] }],
         "operationId": "ProductsController_deleteVariant",
         "parameters": [
           {
@@ -921,12 +956,16 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Products"]
       }
     },
     "/stores/{storeId}/products/{productId}/images": {
       "post": {
-        "security": [{ "bearer": [] }],
         "operationId": "ProductsController_uploadImage",
         "parameters": [
           {
@@ -966,10 +1005,14 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Products"]
       },
       "delete": {
-        "security": [{ "bearer": [] }],
         "operationId": "ProductsController_clearImages",
         "parameters": [
           {
@@ -1001,12 +1044,16 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Products"]
       }
     },
     "/stores/{storeId}/products/{productId}/images/{index}": {
       "delete": {
-        "security": [{ "bearer": [] }],
         "operationId": "ProductsController_removeImage",
         "parameters": [
           {
@@ -1046,12 +1093,16 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Products"]
       }
     },
     "/stores/{storeId}/products/{productId}/images/reorder": {
       "patch": {
-        "security": [{ "bearer": [] }],
         "operationId": "ProductsController_reorderImages",
         "parameters": [
           {
@@ -1093,12 +1144,16 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Products"]
       }
     },
     "/stores/{storeId}/products/{productId}/variants/{variantId}/images": {
       "post": {
-        "security": [{ "bearer": [] }],
         "operationId": "ProductsController_uploadVariantImage",
         "parameters": [
           {
@@ -1138,6 +1193,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Products"]
       }
     },
@@ -1916,7 +1976,6 @@
     },
     "/stores/{slug}/account/orders/{orderId}/payments": {
       "post": {
-        "security": [{ "bearer": [] }],
         "operationId": "CustomerOrderPaymentsController_submit",
         "parameters": [
           {
@@ -1948,12 +2007,16 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["CustomerOrderPayments"]
       }
     },
     "/stores/{slug}/account/orders/{orderId}/payments/{paymentId}/image": {
       "get": {
-        "security": [{ "bearer": [] }],
         "operationId": "CustomerOrderPaymentsController_getImage",
         "parameters": [
           {
@@ -2000,6 +2063,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["CustomerOrderPayments"]
       }
     },
@@ -3424,7 +3492,6 @@
     },
     "/stores/{slug}/account/change-password": {
       "post": {
-        "security": [{ "bearer": [] }],
         "operationId": "CustomerAuthController_changePassword",
         "parameters": [
           {
@@ -3458,12 +3525,16 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["CustomerAuth"]
       }
     },
     "/stores/{slug}/account/me": {
       "get": {
-        "security": [{ "bearer": [] }],
         "operationId": "CustomerAuthController_me",
         "parameters": [
           {
@@ -3487,10 +3558,14 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["CustomerAuth"]
       },
       "patch": {
-        "security": [{ "bearer": [] }],
         "operationId": "CustomerAuthController_updateMe",
         "parameters": [
           {
@@ -3524,12 +3599,16 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["CustomerAuth"]
       }
     },
     "/stores/{slug}/account/orders/{orderId}": {
       "get": {
-        "security": [{ "bearer": [] }],
         "operationId": "CustomerAuthController_orderDetail",
         "parameters": [
           {
@@ -3561,6 +3640,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["CustomerAuth"]
       }
     },
@@ -3594,7 +3678,6 @@
     },
     "/account/me": {
       "get": {
-        "security": [{ "bearer": [] }],
         "operationId": "GlobalAccountController_me",
         "parameters": [],
         "responses": {
@@ -3609,12 +3692,16 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["GlobalAccount"]
       }
     },
     "/account/orders": {
       "get": {
-        "security": [{ "bearer": [] }],
         "operationId": "GlobalAccountController_orders",
         "parameters": [],
         "responses": {
@@ -3632,6 +3719,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["GlobalAccount"]
       }
     },
@@ -3821,7 +3913,6 @@
     },
     "/stores/{slug}/account/addresses": {
       "get": {
-        "security": [{ "bearer": [] }],
         "operationId": "AddressesController_findAll",
         "parameters": [
           {
@@ -3848,10 +3939,14 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Addresses"]
       },
       "post": {
-        "security": [{ "bearer": [] }],
         "operationId": "AddressesController_create",
         "parameters": [
           {
@@ -3885,12 +3980,16 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Addresses"]
       }
     },
     "/stores/{slug}/account/addresses/{id}": {
       "patch": {
-        "security": [{ "bearer": [] }],
         "operationId": "AddressesController_update",
         "parameters": [
           {
@@ -3932,10 +4031,14 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Addresses"]
       },
       "delete": {
-        "security": [{ "bearer": [] }],
         "operationId": "AddressesController_remove",
         "parameters": [
           {
@@ -3960,6 +4063,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Addresses"]
       }
     },
@@ -4475,8 +4583,9 @@
   "components": {
     "securitySchemes": {
       "bearer": {
-        "type": "http",
-        "scheme": "bearer"
+        "scheme": "bearer",
+        "bearerFormat": "opaque",
+        "type": "http"
       }
     },
     "schemas": {
