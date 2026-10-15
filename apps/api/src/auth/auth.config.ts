@@ -79,6 +79,13 @@ export const createAuth = (
       // way, just gives someone whose original link expired/got lost a way
       // to get a new one without a dedicated "resend" endpoint.
       sendOnSignIn: true,
+      // Clicking the link both verifies the email and signs the seller in
+      // (session cookie set on the verify-email redirect), so onboarding goes
+      // sign up → verify → straight into the app with no second login. Only
+      // the first click signs in: once `emailVerified` is true, better-auth
+      // redirects a reused link without creating a session, so the link
+      // can't be replayed as a standing login credential.
+      autoSignInAfterVerification: true,
     },
     // Role is owned by the admin plugin (below), not a hand-rolled
     // additionalField — role stays server-controlled only, see

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { Locale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { EmailVerifiedRedirect } from "@/features/auth";
 
 export async function generateMetadata({
   params,
@@ -41,27 +42,26 @@ export default async function VerifyEmailPage({
             <h1 className="text-2xl font-bold text-gray-900">
               {t("errorTitle")}
             </h1>
-            <p className="text-sm text-gray-600">{t("errorBody")}</p>
+            <p className="text-sm text-gray-600">
+              {t(error === "TOKEN_EXPIRED" ? "expiredBody" : "errorBody")}
+            </p>
+            {/* Signing in with an unverified account re-sends the link
+                (`sendOnSignIn` in apps/api auth.config.ts). */}
+            <Link
+              href="/login"
+              className="text-emerald-600 font-medium hover:underline"
+            >
+              {t("requestNewLink")}
+            </Link>
             <Link
               href="/onboarding"
-              className="text-emerald-600 font-medium hover:underline"
+              className="text-sm text-gray-500 hover:underline"
             >
               {t("signUpAgain")}
             </Link>
           </>
         ) : (
-          <>
-            <h1 className="text-2xl font-bold text-gray-900">
-              {t("successTitle")}
-            </h1>
-            <p className="text-sm text-gray-600">{t("successBody")}</p>
-            <Link
-              href="/login"
-              className="text-emerald-600 font-medium hover:underline"
-            >
-              {t("backToLogin")}
-            </Link>
-          </>
+          <EmailVerifiedRedirect />
         )}
       </div>
     </div>
