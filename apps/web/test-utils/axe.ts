@@ -12,6 +12,10 @@ import type { AxeResults, Result as AxeRuleResult } from "axe-core";
  *   `expectNoA11yViolations` therefore fails on non-allowlisted `incomplete`
  *   results too — the honest jsdom signal is "cannot tell", and that must be
  *   surfaced, not swallowed.
+ * - `label-content-name-mismatch` also depends on knowing which text is
+ *   visually rendered. jsdom cannot resolve that for CSS-hidden labels and
+ *   icon-only controls, so axe reports those cases as `incomplete`; DOM-level
+ *   accessible-name assertions remain in the component tests.
  * - Real contrast / focus-visibility / reflow / announcement checks belong in
  *   Playwright against `next start`, not here.
  *
@@ -26,6 +30,7 @@ const JSDOM_UNRESOLVABLE = [
   "color-contrast",
   "target-size",
   "scrollable-region-focusable",
+  "label-content-name-mismatch",
 ] as const;
 
 export const axe = configureAxe({

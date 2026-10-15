@@ -553,6 +553,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Products"]
       },
       "get": {
@@ -582,6 +587,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Products"]
       }
     },
@@ -618,6 +628,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Products"]
       },
       "patch": {
@@ -662,6 +677,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Products"]
       },
       "delete": {
@@ -696,6 +716,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Products"]
       }
     },
@@ -732,6 +757,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Products"]
       }
     },
@@ -778,6 +808,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Products"]
       },
       "get": {
@@ -815,6 +850,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Products"]
       }
     },
@@ -869,6 +909,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Products"]
       },
       "delete": {
@@ -911,6 +956,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Products"]
       }
     },
@@ -955,6 +1005,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Products"]
       },
       "delete": {
@@ -989,6 +1044,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Products"]
       }
     },
@@ -1033,6 +1093,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Products"]
       }
     },
@@ -1079,6 +1144,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Products"]
       }
     },
@@ -1123,6 +1193,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Products"]
       }
     },
@@ -1932,6 +2007,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["CustomerOrderPayments"]
       }
     },
@@ -1983,6 +2063,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["CustomerOrderPayments"]
       }
     },
@@ -3440,6 +3525,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["CustomerAuth"]
       }
     },
@@ -3468,6 +3558,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["CustomerAuth"]
       },
       "patch": {
@@ -3504,6 +3599,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["CustomerAuth"]
       }
     },
@@ -3540,6 +3640,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["CustomerAuth"]
       }
     },
@@ -3587,6 +3692,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["GlobalAccount"]
       }
     },
@@ -3609,6 +3719,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["GlobalAccount"]
       }
     },
@@ -3824,6 +3939,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Addresses"]
       },
       "post": {
@@ -3860,6 +3980,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Addresses"]
       }
     },
@@ -3906,6 +4031,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Addresses"]
       },
       "delete": {
@@ -3933,6 +4063,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": ["Addresses"]
       }
     },
@@ -4446,6 +4581,12 @@
   "tags": [],
   "servers": [],
   "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "type": "http"
+      }
+    },
     "schemas": {
       "CreateStoreDto": {
         "type": "object",
@@ -8255,9 +8396,13 @@
         "properties": {
           "ok": {
             "type": "boolean"
+          },
+          "sessionToken": {
+            "type": "string",
+            "nullable": true
           }
         },
-        "required": ["ok"]
+        "required": ["ok", "sessionToken"]
       },
       "LoginCustomerDto": {
         "type": "object",

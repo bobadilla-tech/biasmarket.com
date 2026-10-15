@@ -1,4 +1,5 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { Public } from '@thallesp/nestjs-better-auth';
 import { CustomerAuthService } from './customer-auth.service.js';
 import { CustomerSessionGuard } from './customer-session.guard.js';
@@ -19,6 +20,7 @@ export class GlobalAccountController {
   constructor(private customerAuth: CustomerAuthService) {}
 
   @Public()
+  @ApiBearerAuth('bearer')
   @UseGuards(CustomerSessionGuard)
   @Get('me')
   me(
@@ -28,6 +30,7 @@ export class GlobalAccountController {
   }
 
   @Public()
+  @ApiBearerAuth('bearer')
   @UseGuards(CustomerSessionGuard)
   @Get('orders')
   async orders(
