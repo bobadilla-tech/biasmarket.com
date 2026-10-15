@@ -64,10 +64,7 @@ async function bootstrap() {
       .setTitle('Bias Market API')
       .setDescription('Bias Market — niche-first store builder API')
       .setVersion('1.0')
-      .addBearerAuth(
-        { type: 'http', scheme: 'bearer' },
-        'bearer',
-      )
+      .addBearerAuth({ type: 'http', scheme: 'bearer' }, 'bearer')
       .build(),
   );
 
