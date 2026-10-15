@@ -5,13 +5,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { authClient } from "@/lib/auth-client";
 import { Link, useRouter } from "@/i18n/navigation";
-import { storesApi } from "@/features/stores";
 import { Field } from "@/components/ui/field";
 import {
   FormErrorSummary,
   FormField,
   formErrorMessage,
 } from "@/components/shared/form-a11y";
+import { resolveSellerHomePath } from "../lib/seller-home-path";
 import { type LoginInput, loginSchema } from "../schemas/login.schema";
 
 const inputClassName =
@@ -35,22 +35,7 @@ export function LoginForm() {
       setError("root", { message: error.message ?? t("invalidCredentials") });
       return;
     }
-    if (data.user.role === "admin") {
-      router.push("/admin");
-      return;
-    }
-
-    // First-time sellers (no store yet) still go through first-store
-    // onboarding; returning sellers skip it — onboarding is a one-time
-    // setup flow, not the permanent post-login landing page.
-    const stores = await storesApi.listMine();
-    if (stores.length === 0) {
-      router.push("/onboarding/create-store");
-    } else if (stores.length === 1) {
-      router.push(`/dashboard/${stores[0].slug}`);
-    } else {
-      router.push("/account");
-    }
+    router.push(await resolveSellerHomePath(data.user.role));
   };
 
   return (

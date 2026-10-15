@@ -29,11 +29,14 @@
   },
   "verifyEmail": {
     "successTitle": "Account verified",
-    "successBody": "Your email was successfully verified. You can now log in.",
+    "successBody": "Your email was verified. Log in to continue.",
     "errorTitle": "We couldn't verify your account",
-    "errorBody": "The link expired or is invalid. Try signing up again to get a new one.",
+    "errorBody": "This verification link is invalid or was already used. Log in and we'll email you a new one.",
     "backToLogin": "Log in",
-    "signUpAgain": "Sign up again"
+    "signUpAgain": "Sign up again",
+    "signingIn": "Signing you in…",
+    "expiredBody": "This verification link has expired. Log in and we'll email you a new one.",
+    "requestNewLink": "Log in to get a new link"
   },
   "createStore": {
     "title": "Create your store",

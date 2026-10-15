@@ -29,11 +29,14 @@
   },
   "verifyEmail": {
     "successTitle": "Cuenta verificada",
-    "successBody": "Tu correo fue verificado correctamente. Ya puedes iniciar sesión.",
+    "successBody": "Tu correo fue verificado. Inicia sesión para continuar.",
     "errorTitle": "No pudimos verificar tu cuenta",
-    "errorBody": "El enlace expiró o no es válido. Intenta registrarte de nuevo para recibir uno nuevo.",
+    "errorBody": "Este enlace de verificación no es válido o ya fue usado. Inicia sesión y te enviaremos uno nuevo.",
     "backToLogin": "Iniciar sesión",
-    "signUpAgain": "Registrarme de nuevo"
+    "signUpAgain": "Registrarme de nuevo",
+    "signingIn": "Iniciando sesión…",
+    "expiredBody": "Este enlace de verificación expiró. Inicia sesión y te enviaremos uno nuevo.",
+    "requestNewLink": "Iniciar sesión para recibir un enlace nuevo"
   },
   "createStore": {
     "title": "Crea tu tienda",
