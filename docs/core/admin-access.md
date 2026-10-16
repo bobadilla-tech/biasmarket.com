@@ -6,19 +6,19 @@ Development commands use the local dev Compose stack.
 ## Production
 
 Use the wrapper that ships in `infra/vps/bin/` (CD syncs it to
-`/opt/biasmarket/bin/` on every deploy). There is no source checkout on the VPS;
+`/home/deploy/biasmarket/bin/` on every deploy). There is no source checkout on the VPS;
 the wrapper finds the live color and image tag for you and runs the API's own
 scripts inside the live API container. Run it as `root` (`ssh root@<vps>`) or the
 `deploy` user, from any directory:
 
 ```bash
-/opt/biasmarket/bin/admin.sh create  you@example.com "Your Name"
-/opt/biasmarket/bin/admin.sh promote you@example.com
-/opt/biasmarket/bin/admin.sh revoke  you@example.com
+/home/deploy/biasmarket/bin/admin.sh create  you@example.com "Your Name"
+/home/deploy/biasmarket/bin/admin.sh promote you@example.com
+/home/deploy/biasmarket/bin/admin.sh revoke  you@example.com
 ```
 
 Under the hood `create` and `promote` are the following, which you can also run
-by hand as the `deploy` user from `/opt/biasmarket`:
+by hand as the `deploy` user from `/home/deploy/biasmarket`:
 
 ```bash
 color=$(cat state/current_color)
@@ -69,7 +69,7 @@ Use the same live-color selection, but run the seed command in `api-$color`:
 
 ```bash
 sudo -iu deploy bash -lc '
-  cd /opt/biasmarket
+  cd /home/deploy/biasmarket
   color=$(cat state/current_color)
   tag=$(cat state/current_sha)
   IMAGE_TAG="$tag" docker compose --env-file env/shared.env exec -T "api-$color" \
@@ -86,7 +86,7 @@ pnpm --filter api run seed:append -- --batch=<label>
 ## Revoking admin access
 
 ```bash
-/opt/biasmarket/bin/admin.sh revoke user@example.com
+/home/deploy/biasmarket/bin/admin.sh revoke user@example.com
 ```
 
 That sets the account's role back to `seller` (it prints the affected row, or

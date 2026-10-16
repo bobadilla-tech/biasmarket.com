@@ -339,7 +339,7 @@ knew its fingerprint before the machine existed. That removes the awkward
 "verify the fingerprint through a web console" step from the runbook.
 
 Then the checks on the server: Docker 29, `deploy` user in the `docker` group,
-`ufw` active on 22/80/443, 4 GB swap, `/opt/biasmarket` owned by `deploy`, and
+`ufw` active on 22/80/443, 4 GB swap, `/home/deploy/biasmarket` owned by `deploy`, and
 `sshd -T` reporting password login off.
 
 **Surprises.**
@@ -683,7 +683,7 @@ sudo -iu deploy bash -l                     # the user the app runs as
 
 Password login is off. Root logs in with your key only. `deploy` cannot be
 logged into interactively from outside: its two keys are locked to "rsync into
-`/opt/biasmarket`" and "run the deploy script", and belong to GitHub Actions.
+`/home/deploy/biasmarket`" and "run the deploy script", and belong to GitHub Actions.
 
 ### Creating and managing admin users
 
@@ -692,18 +692,18 @@ are made from the server. You do not need a copy of the repo on the server, and 
 the API's admin scripts ship inside the API's Docker image, so the command just
 has to run _inside the live container_. Working out which color is live and which
 image tag it runs is fiddly, so a wrapper does it. It lives in `infra/vps/bin/`,
-which CD already syncs to `/opt/biasmarket/bin/` on every deploy, so it is
+which CD already syncs to `/home/deploy/biasmarket/bin/` on every deploy, so it is
 automatically there and never a manual step. Run it as root (or `deploy`) from any
 directory:
 
 ```bash
 ssh root@161.97.113.35
-/opt/biasmarket/bin/admin.sh create  you@example.com "Your Name"
-/opt/biasmarket/bin/admin.sh promote you@example.com
-/opt/biasmarket/bin/admin.sh revoke  you@example.com
+/home/deploy/biasmarket/bin/admin.sh create  you@example.com "Your Name"
+/home/deploy/biasmarket/bin/admin.sh promote you@example.com
+/home/deploy/biasmarket/bin/admin.sh revoke  you@example.com
 ```
 
-Or in one line from your laptop: `ssh root@161.97.113.35 /opt/biasmarket/bin/admin.sh create you@example.com "Your Name"`.
+Or in one line from your laptop: `ssh root@161.97.113.35 /home/deploy/biasmarket/bin/admin.sh create you@example.com "Your Name"`.
 
 - It prints a generated password **once**. Copy it, then sign in at
   `https://biasmarket.com/es/login` and open `/es/admin` (users, stores,
@@ -730,8 +730,8 @@ Merge to `main`; CI (with E2E) then CD does the rest. Watch it with
 `gh run list --branch main`. On the server:
 
 ```bash
-sudo -iu deploy bash -lc 'cd /opt/biasmarket && cat state/current_color state/current_sha && tail -5 releases/history.log'
-sudo -iu deploy bash -lc 'cd /opt/biasmarket && ./deploy.sh --rollback'   # back to the previous color
+sudo -iu deploy bash -lc 'cd /home/deploy/biasmarket && cat state/current_color state/current_sha && tail -5 releases/history.log'
+sudo -iu deploy bash -lc 'cd /home/deploy/biasmarket && ./deploy.sh --rollback'   # back to the previous color
 docker logs -f biasmarket-api-blue-1                                       # or -green-, whichever is live
 ```
 

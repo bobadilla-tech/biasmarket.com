@@ -3,7 +3,7 @@
 # key, separate from key A which is rrsync-restricted to syncing
 # infra/vps/**). Installed on the VPS deploy user's authorized_keys as:
 #
-#   command="/opt/biasmarket/bin/ssh-deploy-dispatcher.sh",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-ed25519 AAAA... key-b-deploy
+#   command="/home/deploy/biasmarket/bin/ssh-deploy-dispatcher.sh",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-ed25519 AAAA... key-b-deploy
 #
 # $SSH_ORIGINAL_COMMAND is matched against a strict, anchored allowlist
 # below and NEVER eval'd:
@@ -43,7 +43,7 @@
 # heartbeat) instead of `systemctl status`/journald per-run grouping.
 set -euo pipefail
 
-DEPLOY_ROOT="/opt/biasmarket"
+DEPLOY_ROOT="/home/deploy/biasmarket"
 cmd="${SSH_ORIGINAL_COMMAND:-}"
 
 launch() {

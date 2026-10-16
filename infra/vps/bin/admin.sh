@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Operator CLI for the running production stack.
 #
-#   /opt/biasmarket/bin/admin.sh create  <email> [name]   new admin account (prints the password once)
-#   /opt/biasmarket/bin/admin.sh promote <email>          give an existing account the admin role
-#   /opt/biasmarket/bin/admin.sh revoke  <email>          set an account's role back to seller
+#   /home/deploy/biasmarket/bin/admin.sh create  <email> [name]   new admin account (prints the password once)
+#   /home/deploy/biasmarket/bin/admin.sh promote <email>          give an existing account the admin role
+#   /home/deploy/biasmarket/bin/admin.sh revoke  <email>          set an account's role back to seller
 #
 # There is no source checkout on the VPS: the API's own scripts (apps/api/scripts)
 # ship inside the API image, so this runs them inside the LIVE color's api

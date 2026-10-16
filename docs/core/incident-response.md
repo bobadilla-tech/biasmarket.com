@@ -12,7 +12,7 @@ If a deploy has landed (Caddy fully switched to the new color) but something
 looks wrong that the deploy's own automated smoke tests didn't catch:
 
 ```bash
-# on the VPS, as the deploy user, from /opt/biasmarket — or via CI's
+# on the VPS, as the deploy user, from /home/deploy/biasmarket — or via CI's
 # restricted dispatch key, see infra/vps/bin/ssh-deploy-dispatcher.sh
 ./deploy.sh --rollback
 ```
@@ -23,14 +23,14 @@ degraded while benched. If it refuses, the sidelined color itself needs manual
 attention (check its logs:
 `IMAGE_TAG="$(cat state/current_sha)" docker compose
 --env-file env/shared.env logs api-<color>`
-from `/opt/biasmarket`) before a rollback is possible; at that point you're
+from `/home/deploy/biasmarket`) before a rollback is possible; at that point you're
 choosing between fixing the sidelined color or rolling forward with another
 `deploy.sh <sha>` deploy.
 
 Rollback does **not** undo an already-applied database migration — Prisma
 generates no down-migrations for `migrate deploy`. If the incident is
 migration-related (the new schema broke something), the pre-migration snapshot
-in `/opt/biasmarket/releases/pre-migrate-*.sql.gz` is the real recovery path,
+in `/home/deploy/biasmarket/releases/pre-migrate-*.sql.gz` is the real recovery path,
 and it's a manual, deliberate restore — not something `deploy.sh --rollback`
 attempts automatically. See
 [`blue-green-migrations.md`](blue-green-migrations.md#migration-discipline-expandcontract)
@@ -41,7 +41,7 @@ recovery mechanism.
 
 A deploy that applied its migration but never finished cutting over (crashed,
 hung, or lost its SSH/systemd session mid-phase) leaves
-`/opt/biasmarket/state/migration_pending` in place. This is alertable: an
+`/home/deploy/biasmarket/state/migration_pending` in place. This is alertable: an
 independent systemd timer (`biasmarket-migration-watchdog.timer`, deliberately
 **not** part of `deploy.sh` itself) pings a dedicated Kuma push monitor once a
 minute, but only while `migration_pending` is absent or younger than ~3 minutes
@@ -54,7 +54,7 @@ running and at what phase) and `state/migration_pending`'s contents (which
 SHA/color), then
 `IMAGE_TAG="$(cat state/current_sha)" docker compose --env-file env/shared.env
 logs api-<candidate-color>`
-from `/opt/biasmarket` to see what actually happened. Do not blindly re-run
+from `/home/deploy/biasmarket` to see what actually happened. Do not blindly re-run
 `deploy.sh <sha>` against a stuck lock — check `state/deploy.lock.meta` first;
 if the previous process is genuinely dead (not just slow), the flock releases on
 its own once that process's file descriptor closes.
@@ -81,7 +81,7 @@ only the colored services exist, replaced by 4 static per-color monitors.
 One of the two internal monitors for a given app is expected to show down
 whenever only one color is running (the normal steady state between deploys) —
 that's not an incident on its own; check which color is currently live
-(`cat /opt/biasmarket/state/current_color` on the VPS) before treating an
+(`cat /home/deploy/biasmarket/state/current_color` on the VPS) before treating an
 internal monitor's down state as a problem.
 
 ## First triage step: isolate edge vs. app
@@ -90,7 +90,7 @@ Every critical surface has an external and an internal monitor. Check both
 before doing anything else:
 
 - **External down, internal up** → Caddy/DNS/TLS problem. From
-  `/opt/biasmarket`, check
+  `/home/deploy/biasmarket`, check
   `IMAGE_TAG="$(cat state/current_sha)" docker compose
 --env-file env/shared.env logs caddy`,
   confirm DNS still resolves (`dig +short api.biasmarket.com`), and check for an
@@ -104,7 +104,7 @@ before doing anything else:
 
 ## Common fixes
 
-On the blue/green stack (from `/opt/biasmarket` — **never** run a bare
+On the blue/green stack (from `/home/deploy/biasmarket` — **never** run a bare
 `docker compose down`):
 
 ```bash
@@ -143,7 +143,7 @@ further (see the plan doc's "Decision" sections for why).
 
 The secret lives in two places that don't sync automatically:
 
-1. `/opt/biasmarket/env/shared.env`, read by the live `api-<color>` services.
+1. `/home/deploy/biasmarket/env/shared.env`, read by the live `api-<color>` services.
 2. Kuma's own Webhook notification-provider config (Settings → Notifications →
    the webhook provider → edit the `X-Webhook-Secret` header value), stored in
    Kuma's SQLite.
@@ -151,8 +151,8 @@ The secret lives in two places that don't sync automatically:
 To rotate on the blue/green stack: `env/shared.env` is checksum-gated
 (`deploy.sh` refuses to deploy if it changes unexpectedly — see
 `blue-green-migrations.md`). Edit `MONITORING_WEBHOOK_SECRET`'s value in
-`/opt/biasmarket/env/shared.env` by hand, update the recorded baseline
-(`sha256sum /opt/biasmarket/env/shared.env | cut -d' ' -f1 > /opt/biasmarket/state/shared_env.sha256`
+`/home/deploy/biasmarket/env/shared.env` by hand, update the recorded baseline
+(`sha256sum /home/deploy/biasmarket/env/shared.env | cut -d' ' -f1 > /home/deploy/biasmarket/state/shared_env.sha256`
 — write just the hash, matching the format `deploy.sh` itself writes), then
 restart both running app services that read it, explicitly naming the live
 color:

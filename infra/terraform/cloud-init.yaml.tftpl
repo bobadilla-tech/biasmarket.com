@@ -27,10 +27,10 @@ users:
     shell: /bin/bash
     lock_passwd: true
     ssh_authorized_keys:
-      # Key A: rsync only, confined to /opt/biasmarket/ by rrsync.
-      - 'command="/usr/local/bin/rrsync /opt/biasmarket/",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ${deploy_rsync_public_key}'
+      # Key A: rsync only, confined to /home/deploy/biasmarket/ by rrsync.
+      - 'command="/usr/local/bin/rrsync /home/deploy/biasmarket/",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ${deploy_rsync_public_key}'
       # Key B: forced command, only the deploy dispatcher script.
-      - 'command="/opt/biasmarket/bin/ssh-deploy-dispatcher.sh",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ${deploy_dispatch_public_key}'
+      - 'command="/home/deploy/biasmarket/bin/ssh-deploy-dispatcher.sh",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ${deploy_dispatch_public_key}'
 
 write_files:
   # sshd uses the FIRST value it reads and includes sshd_config.d/*.conf in
@@ -48,8 +48,8 @@ runcmd:
   - ln -sf /usr/bin/rrsync /usr/local/bin/rrsync
   - curl -fsSL https://get.docker.com | sh
   - usermod -aG docker deploy
-  - mkdir -p /opt/biasmarket/env /opt/biasmarket/caddy/active /opt/biasmarket/state /opt/biasmarket/releases
-  - chown -R deploy:deploy /opt/biasmarket
+  - mkdir -p /home/deploy/biasmarket/env /home/deploy/biasmarket/caddy/active /home/deploy/biasmarket/state /home/deploy/biasmarket/releases
+  - chown -R deploy:deploy /home/deploy/biasmarket
   # Firewall: SSH and web only. (Docker publishes only Caddy's 80/443.)
   - ufw default deny incoming
   - ufw default allow outgoing
