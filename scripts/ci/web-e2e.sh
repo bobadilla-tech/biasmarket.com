@@ -9,8 +9,8 @@
 # The API E2E suite still runs workers and an in-process Nest app via supertest;
 # it never boots a standalone HTTP API, never serves web, and never seeds. This
 # script reuses only the shared MinIO bootstrap and stands up its own stack:
-#   - prisma migrate deploy + `seed:base`  (needs Postgres, provided as a CI
-#     service container; DATABASE_URL etc. come from scripts/ci/load-e2e-env.sh)
+#   - prisma migrate deploy + `seed:base`  (Postgres/Redis started by
+#     e2e-datastores.sh; DATABASE_URL etc. come from scripts/ci/load-e2e-env.sh)
 #   - `node apps/api/dist/main.js` on :3000   (health-gated, torn down on exit)
 #   - `next start` for apps/web on :3001      (health-gated, torn down on exit)
 #   - `playwright test`  (WEB_E2E_BASE_URL is exported so the Playwright config
@@ -26,6 +26,7 @@ readonly ROOT="${GITHUB_WORKSPACE:-$(pwd)}"
 readonly API_URL="http://127.0.0.1:3000"
 readonly WEB_URL_LOCAL="http://127.0.0.1:3001"
 source "$ROOT/scripts/ci/minio-e2e.sh"
+source "$ROOT/scripts/ci/e2e-datastores.sh"
 
 API_PID=""
 WEB_PID=""
@@ -48,10 +49,14 @@ cleanup() {
   done
 
   stop_minio
+  stop_datastores
 
   exit "$status"
 }
 trap cleanup EXIT INT TERM
+
+echo "--- Start PostgreSQL and Redis"
+start_datastores
 
 echo "--- Start MinIO and seed private proof fixture"
 start_minio

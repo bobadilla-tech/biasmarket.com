@@ -4,7 +4,7 @@ After=network-online.target
 
 [Service]
 Type=oneshot
-EnvironmentFile=/opt/biasmarket/env/watchdog.env
-ExecStart=/opt/biasmarket/bin/migration-watchdog.sh
+EnvironmentFile=/home/deploy/biasmarket/env/watchdog.env
+ExecStart=/home/deploy/biasmarket/bin/migration-watchdog.sh
 # Deliberately not part of deploy.sh's own process tree/cgroup — a wedged
 # deploy must not be able to silence its own alarm.
