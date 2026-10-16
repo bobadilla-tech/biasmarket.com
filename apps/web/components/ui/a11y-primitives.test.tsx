@@ -1,11 +1,15 @@
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "@biasmarket/i18n";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 import type { ReactNode } from "react";
 
-import { axe, expectNoA11yViolations } from "@/test-utils/axe";
+import {
+  axe,
+  expectNoA11yViolations,
+  JSDOM_UNRESOLVABLE_WITH_NAME_CHECKS,
+} from "@/test-utils/axe";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "./dialog";
 import { Field } from "./field";
 import { RadioCard, RadioCardGroup } from "./radio-card-group";
@@ -74,7 +78,12 @@ describe("Dialog", () => {
       );
     });
     expect(dialog.getAttribute("aria-labelledby")).toBeTruthy();
-    expectNoA11yViolations(await axe(dialog));
+    expect(
+      within(dialog).getByRole("button", { name: "Cerrar" }),
+    ).toBeDefined();
+    expectNoA11yViolations(await axe(dialog), {
+      allowIncomplete: JSDOM_UNRESOLVABLE_WITH_NAME_CHECKS,
+    });
 
     await user.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
@@ -116,6 +125,9 @@ describe("RadioCardGroup", () => {
         .getAllByRole("radio")
         .filter((radio) => radio.getAttribute("tabindex") === "0"),
     ).toHaveLength(1);
-    expectNoA11yViolations(await axe(container));
+    // Radio names (asserted above via getByRole) come from aria-label.
+    expectNoA11yViolations(await axe(container), {
+      allowIncomplete: JSDOM_UNRESOLVABLE_WITH_NAME_CHECKS,
+    });
   });
 });

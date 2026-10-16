@@ -14,8 +14,10 @@ import type { AxeResults, Result as AxeRuleResult } from "axe-core";
  *   surfaced, not swallowed.
  * - `label-content-name-mismatch` also depends on knowing which text is
  *   visually rendered. jsdom cannot resolve that for CSS-hidden labels and
- *   icon-only controls, so axe reports those cases as `incomplete`; DOM-level
- *   accessible-name assertions remain in the component tests.
+ *   icon-only controls, so axe reports those cases as `incomplete`. It is NOT
+ *   allowlisted by default: a test may opt in via
+ *   {@link JSDOM_UNRESOLVABLE_WITH_NAME_CHECKS} only when it independently
+ *   asserts the affected accessible names (e.g. `getByRole(..., { name })`).
  * - Real contrast / focus-visibility / reflow / announcement checks belong in
  *   Playwright against `next start`, not here.
  *
@@ -30,6 +32,13 @@ const JSDOM_UNRESOLVABLE = [
   "color-contrast",
   "target-size",
   "scrollable-region-focusable",
+] as const;
+
+// Opt-in for tests that assert the accessible names of CSS-hidden-label or
+// icon-only controls themselves, since jsdom leaves
+// `label-content-name-mismatch` `incomplete` for those.
+export const JSDOM_UNRESOLVABLE_WITH_NAME_CHECKS = [
+  ...JSDOM_UNRESOLVABLE,
   "label-content-name-mismatch",
 ] as const;
 

@@ -8399,10 +8399,10 @@
           },
           "sessionToken": {
             "type": "string",
-            "nullable": true
+            "description": "Session token, returned only to mobile clients (`X-Client: mobile`) on login and change-password."
           }
         },
-        "required": ["ok", "sessionToken"]
+        "required": ["ok"]
       },
       "LoginCustomerDto": {
         "type": "object",

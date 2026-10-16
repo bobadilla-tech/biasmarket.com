@@ -1983,11 +1983,7 @@ export default async () => {
           {
             OkResponseDto: {
               ok: { required: true, type: () => Boolean },
-              sessionToken: {
-                required: true,
-                type: () => String,
-                nullable: true,
-              },
+              sessionToken: { required: false, type: () => String },
             },
             CustomerProfileCustomerResponseDto: {
               name: { required: true, type: () => String, nullable: true },

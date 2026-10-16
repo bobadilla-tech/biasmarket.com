@@ -8,17 +8,22 @@ import { AccountOrderResponseDto } from './account-order-response.dto.js';
 // this same `{ ok: true }` shape — the session cookie itself is set via
 // `@Res({ passthrough: true })`, never part of the JSON body.
 //
-// adds a nullable `sessionToken` field. It contains a token on `login` and
+// adds an optional `sessionToken` field. It is present only on `login` and
 // `changePassword` when the request carries `X-Client: mobile`; other flows
-// and web/browser callers receive `null`. Native mobile clients can't read
+// and web/browser callers never receive it. Native mobile clients can't read
 // the HttpOnly session cookie, so the controller echoes the same token in
 // the JSON body for them.
 export class OkResponseDto {
   @ApiProperty({ type: Boolean })
   ok: true;
 
-  @ApiProperty({ type: String, nullable: true })
-  sessionToken: string | null;
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      'Session token, returned only to mobile clients (`X-Client: mobile`) on login and change-password.',
+  })
+  sessionToken?: string;
 }
 
 export class CustomerProfileCustomerResponseDto {

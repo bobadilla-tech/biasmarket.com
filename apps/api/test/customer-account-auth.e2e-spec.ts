@@ -530,13 +530,13 @@ describe('customer account + customer auth (e2e)', () => {
           .expect(200);
 
         // Register WITHOUT Origin header — @AllowNoOrigin non-browser path.
-        // Must succeed; sessionToken null (no X-Client).
+        // Must succeed; no sessionToken in the body (no X-Client).
         const registerRes = await request(bearerApp.getHttpServer())
           .post(`/stores/${slug}/account/register`)
           .send({ token: confirmToken, password: bearerPassword })
           .expect(201);
         expect(registerRes.body.ok).toBe(true);
-        expect(registerRes.body.sessionToken).toBeNull();
+        expect(registerRes.body).not.toHaveProperty('sessionToken');
 
         // --- Login with X-Client: mobile → body contains sessionToken ---
         const loginRes = await request(bearerApp.getHttpServer())
