@@ -4,6 +4,7 @@ set -Eeuo pipefail
 
 readonly ROOT="${GITHUB_WORKSPACE:-$(pwd)}"
 source "$ROOT/scripts/ci/minio-e2e.sh"
+source "$ROOT/scripts/ci/e2e-datastores.sh"
 
 WORKER_PID=""
 
@@ -26,6 +27,7 @@ cleanup() {
   fi
 
   stop_minio
+  stop_datastores
   rm -rf apps/workers/.mailer-dev
 
   exit "$status"
@@ -39,28 +41,8 @@ rm -rf apps/workers/.mailer-dev
 echo "Starting MinIO on the E2E-only Docker network"
 start_minio
 
-echo "Waiting for PostgreSQL and Redis service containers"
-for attempt in {1..60}; do
-  if pg_isready -h 127.0.0.1 -p 5432 -U ci -d ci >/dev/null 2>&1; then
-    break
-  fi
-  if [[ "$attempt" -eq 60 ]]; then
-    echo "::error::PostgreSQL did not become ready within 60 seconds"
-    exit 1
-  fi
-  sleep 1
-done
-
-for attempt in {1..60}; do
-  if (exec 3<>/dev/tcp/127.0.0.1/6379) 2>/dev/null; then
-    break
-  fi
-  if [[ "$attempt" -eq 60 ]]; then
-    echo "::error::Redis did not become ready within 60 seconds"
-    exit 1
-  fi
-  sleep 1
-done
+echo "Starting PostgreSQL and Redis"
+start_datastores
 
 pnpm --filter @biasmarket/db db:generate
 pnpm turbo run build --filter=api --filter=workers

@@ -163,6 +163,8 @@ jobs:
               - 'apps/api/scripts/seed/**'
               - 'packages/db/**'
               - 'scripts/ci/minio-e2e.sh'
+              - 'scripts/ci/e2e-images.sh'
+              - 'scripts/ci/e2e-datastores.sh'
               - 'scripts/ci/web-e2e.sh'
               - 'scripts/ci/load-e2e-env.sh'
               - 'scripts/ci/e2e.env.example'
@@ -745,39 +747,10 @@ jobs:
     timeout-minutes: 30
     # Never set continue-on-error here: a red E2E job must make the CI run red
     # so both CI Success and CD's workflow_run gate fail closed.
-    services:
-      # Digest resolved 2026-08-28 from ghcr.io/immich-app/postgres:18-vectorchord0.5.3-pgvector0.8.1;
-      # the image keeps the standard postgres entrypoint while avoiding Docker Hub.
-      postgres:
-        image: ghcr.io/immich-app/postgres:18-vectorchord0.5.3-pgvector0.8.1@sha256:828081a755d3911a2d94f0a2be9f98570c07d52cf080fd310a9d6e4b83b73aa5
-        credentials:
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-        env:
-          POSTGRES_USER: ci
-          POSTGRES_PASSWORD: ci
-          POSTGRES_DB: ci
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U ci -d ci"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 20
-      # Digest resolved 2026-08-28 from ghcr.io/valkey-io/valkey:7-alpine.
-      # Valkey 7 speaks the Redis protocol used by the application.
-      redis:
-        image: ghcr.io/valkey-io/valkey:7-alpine@sha256:8fc3da585dc963d91754d72da22d54671c6ec495d8a0257a6a9100a9a4658f38
-        credentials:
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 20
+    # Postgres/Redis/MinIO are started by scripts/ci/e2e-datastores.sh and
+    # minio-e2e.sh rather than `services:`: service-container pulls happen
+    # before any step, retry for only a few seconds, and cannot be cached, so
+    # a transient GHCR `toomanyrequests` used to fail the job outright.
     steps:
       - uses: actions/checkout@v7
         with:
@@ -806,13 +779,34 @@ jobs:
           restore-keys: |
             turbo-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
-      # GHCR auth for the MinIO image (which also supplies the mc binary).
+      - name: Restore E2E sidecar images
+        id: e2e-images
+        uses: actions/cache/restore@v6
+        with:
+          path: ~/.cache/biasmarket-e2e-images
+          key: e2e-images-${{ runner.os }}-${{ hashFiles('scripts/ci/e2e-images.sh') }}
+
+      # Only reached on a cache miss (first run after a digest bump, or after
+      # cache eviction); pulls retry with minute-scale backoff.
       - name: Log in to GHCR for E2E sidecars
+        if: steps.e2e-images.outputs.cache-hit != 'true'
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull or load E2E sidecar images
+        run: bash scripts/ci/e2e-images.sh prefetch
+
+      # Saved immediately (not in the post-job hook) so a red test run still
+      # warms the cache for the next one.
+      - name: Save E2E sidecar images
+        if: steps.e2e-images.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ~/.cache/biasmarket-e2e-images
+          key: ${{ steps.e2e-images.outputs.cache-primary-key }}
 
       - name: Run API E2E suite
         run: bash scripts/ci/e2e.sh
@@ -844,35 +838,7 @@ jobs:
     # adds route-specific marketing/onboarding axe coverage to the existing
     # keyboard smoke suite; authenticated dashboard coverage remains a
     # follow-up until CI has stable seeded sessions.
-    services:
-      postgres:
-        image: ghcr.io/immich-app/postgres:18-vectorchord0.5.3-pgvector0.8.1@sha256:828081a755d3911a2d94f0a2be9f98570c07d52cf080fd310a9d6e4b83b73aa5
-        credentials:
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-        env:
-          POSTGRES_USER: ci
-          POSTGRES_PASSWORD: ci
-          POSTGRES_DB: ci
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U ci -d ci"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 20
-      redis:
-        image: ghcr.io/valkey-io/valkey:7-alpine@sha256:8fc3da585dc963d91754d72da22d54671c6ec495d8a0257a6a9100a9a4658f38
-        credentials:
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 20
+    # Sidecars are script-managed (see the E2E (API) job).
     steps:
       - uses: actions/checkout@v7
         with:
@@ -900,6 +866,35 @@ jobs:
           key: turbo-web-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
           restore-keys: |
             turbo-web-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+
+      - name: Restore E2E sidecar images
+        id: e2e-images
+        uses: actions/cache/restore@v6
+        with:
+          path: ~/.cache/biasmarket-e2e-images
+          key: e2e-images-${{ runner.os }}-${{ hashFiles('scripts/ci/e2e-images.sh') }}
+
+      # Only reached on a cache miss (first run after a digest bump, or after
+      # cache eviction); pulls retry with minute-scale backoff.
+      - name: Log in to GHCR for E2E sidecars
+        if: steps.e2e-images.outputs.cache-hit != 'true'
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull or load E2E sidecar images
+        run: bash scripts/ci/e2e-images.sh prefetch
+
+      # Saved immediately (not in the post-job hook) so a red test run still
+      # warms the cache for the next one.
+      - name: Save E2E sidecar images
+        if: steps.e2e-images.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ~/.cache/biasmarket-e2e-images
+          key: ${{ steps.e2e-images.outputs.cache-primary-key }}
 
       - name: Cache Playwright browsers
         id: pw-cache
