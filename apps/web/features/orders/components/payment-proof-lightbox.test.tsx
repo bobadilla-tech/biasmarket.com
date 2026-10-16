@@ -1,9 +1,13 @@
 import { expect, test, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "@biasmarket/i18n";
-import { axe, expectNoA11yViolations } from "../../../test-utils/axe";
+import {
+  axe,
+  expectNoA11yViolations,
+  JSDOM_UNRESOLVABLE_WITH_NAME_CHECKS,
+} from "../../../test-utils/axe";
 import type { ReactNode } from "react";
 import { PaymentProofLightbox } from "./payment-proof-lightbox";
 
@@ -54,7 +58,10 @@ test("traps focus, announces the proof, and restores the trigger on Escape", asy
       "dialog-close",
     );
   });
-  expectNoA11yViolations(await axe(dialog));
+  expect(within(dialog).getByRole("button", { name: "Cerrar" })).toBeDefined();
+  expectNoA11yViolations(await axe(dialog), {
+    allowIncomplete: JSDOM_UNRESOLVABLE_WITH_NAME_CHECKS,
+  });
 
   await user.keyboard("{Escape}");
   expect(onClose).toHaveBeenCalledTimes(1);

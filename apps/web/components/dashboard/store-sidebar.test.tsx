@@ -3,7 +3,11 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "@biasmarket/i18n";
-import { axe, expectNoA11yViolations } from "@/test-utils/axe";
+import {
+  axe,
+  expectNoA11yViolations,
+  JSDOM_UNRESOLVABLE_WITH_NAME_CHECKS,
+} from "@/test-utils/axe";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
@@ -121,6 +125,11 @@ test("exposes a labelled navigation with a current page and collapsed names", as
     name: "Contraer barra lateral",
   });
   collapseButton.click();
+  // Collapsed links hide their text label via CSS; their names come from
+  // aria-label, asserted here because axe can't verify them under jsdom.
   expect(screen.getByRole("link", { name: "Productos" })).toBeDefined();
-  expectNoA11yViolations(await axe(navigation));
+  expect(screen.getByRole("link", { name: "Resumen" })).toBeDefined();
+  expectNoA11yViolations(await axe(navigation), {
+    allowIncomplete: JSDOM_UNRESOLVABLE_WITH_NAME_CHECKS,
+  });
 });

@@ -68,7 +68,7 @@ describe('CustomerAuthController', () => {
       'tok',
       'super-secret-1',
     );
-    expect(result).toEqual({ ok: true, sessionToken: null });
+    expect(result).toEqual({ ok: true });
   });
 
   it('login() sets the session cookie on success', async () => {
@@ -91,7 +91,7 @@ describe('CustomerAuthController', () => {
       'signed-token',
       expect.objectContaining({ httpOnly: true }),
     );
-    expect(result).toEqual({ ok: true, sessionToken: null });
+    expect(result).toEqual({ ok: true });
   });
 
   it('login() with X-Client: mobile returns the session token in the body', async () => {
@@ -133,7 +133,7 @@ describe('CustomerAuthController', () => {
       'new-signed-token',
       expect.any(Object),
     );
-    expect(result).toEqual({ ok: true, sessionToken: null });
+    expect(result).toEqual({ ok: true });
   });
 
   it('changePassword() with X-Client: mobile returns the fresh token in the body', async () => {
@@ -189,7 +189,7 @@ describe('CustomerAuthController', () => {
       'my-store',
       '+51988888888',
     );
-    expect(result).toEqual({ ok: true, sessionToken: null });
+    expect(result).toEqual({ ok: true });
   });
 
   it('orderDetail() delegates to the service and maps the row through toOrderDto', async () => {
@@ -245,6 +245,6 @@ describe('CustomerAuthController', () => {
       'bm_customer_session',
       expect.objectContaining({ path: '/' }),
     );
-    expect(result).toEqual({ ok: true, sessionToken: null });
+    expect(result).toEqual({ ok: true });
   });
 });

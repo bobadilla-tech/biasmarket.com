@@ -1984,7 +1984,8 @@ export interface RegisterCustomerDto {
 
 export interface OkResponseDto {
   ok: boolean;
-  sessionToken?: string | null;
+  /** Session token, returned only to mobile clients (`X-Client: mobile`) on login and change-password. */
+  sessionToken?: string;
 }
 
 export interface LoginCustomerDto {
