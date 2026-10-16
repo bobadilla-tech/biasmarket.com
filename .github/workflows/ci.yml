@@ -26,6 +26,13 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Turbo cache policy: every job restores `.turbo/cache`, but only push runs on
+# main save it (PR runs can read main's caches, not each other's). Keys carry
+# the commit SHA, so saving from every PR run used to add one entry per job
+# per push and fill the 10 GB repo cache, evicting the pnpm, Playwright and
+# E2E image caches. Entries older than 7 days are pruned before saving so the
+# archive restored from the newest key does not grow forever.
+
 env:
   NODE_VERSION: "24"
   PNPM_VERSION: "10.11.0"
@@ -203,8 +210,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Cache turbo
-        uses: actions/cache@v6
+      - name: Restore turbo cache
+        id: turbo-cache
+        uses: actions/cache/restore@v6
         with:
           path: .turbo/cache
           key: turbo-api-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
@@ -234,6 +242,18 @@ jobs:
           flags: api
           fail_ci_if_error: false
 
+      # See "Turbo cache policy" at the top of this file.
+      - name: Prune turbo cache
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: bash scripts/ci/prune-turbo-cache.sh
+
+      - name: Save turbo cache
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: actions/cache/save@v6
+        with:
+          path: .turbo/cache
+          key: ${{ steps.turbo-cache.outputs.cache-primary-key }}
+
   web:
     name: Web
     needs: detect-changes
@@ -260,8 +280,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Cache turbo
-        uses: actions/cache@v6
+      - name: Restore turbo cache
+        id: turbo-cache
+        uses: actions/cache/restore@v6
         with:
           path: .turbo/cache
           key: turbo-web-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
@@ -290,6 +311,18 @@ jobs:
           flags: web
           fail_ci_if_error: false
 
+      # See "Turbo cache policy" at the top of this file.
+      - name: Prune turbo cache
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: bash scripts/ci/prune-turbo-cache.sh
+
+      - name: Save turbo cache
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: actions/cache/save@v6
+        with:
+          path: .turbo/cache
+          key: ${{ steps.turbo-cache.outputs.cache-primary-key }}
+
   mobile:
     name: Mobile
     needs: detect-changes
@@ -313,8 +346,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Cache turbo
-        uses: actions/cache@v6
+      - name: Restore turbo cache
+        id: turbo-cache
+        uses: actions/cache/restore@v6
         with:
           path: .turbo/cache
           key: turbo-mobile-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
@@ -326,6 +360,18 @@ jobs:
 
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=mobile
+
+      # See "Turbo cache policy" at the top of this file.
+      - name: Prune turbo cache
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: bash scripts/ci/prune-turbo-cache.sh
+
+      - name: Save turbo cache
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: actions/cache/save@v6
+        with:
+          path: .turbo/cache
+          key: ${{ steps.turbo-cache.outputs.cache-primary-key }}
 
   workers:
     name: Workers
@@ -350,8 +396,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Cache turbo
-        uses: actions/cache@v6
+      - name: Restore turbo cache
+        id: turbo-cache
+        uses: actions/cache/restore@v6
         with:
           path: .turbo/cache
           key: turbo-workers-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
@@ -377,6 +424,18 @@ jobs:
           files: apps/workers/coverage/lcov.info
           flags: workers
           fail_ci_if_error: false
+
+      # See "Turbo cache policy" at the top of this file.
+      - name: Prune turbo cache
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: bash scripts/ci/prune-turbo-cache.sh
+
+      - name: Save turbo cache
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: actions/cache/save@v6
+        with:
+          path: .turbo/cache
+          key: ${{ steps.turbo-cache.outputs.cache-primary-key }}
 
   db:
     name: DB (Prisma)
@@ -404,8 +463,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Cache turbo
-        uses: actions/cache@v6
+      - name: Restore turbo cache
+        id: turbo-cache
+        uses: actions/cache/restore@v6
         with:
           path: .turbo/cache
           key: turbo-db-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
@@ -417,6 +477,18 @@ jobs:
 
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=@biasmarket/db
+
+      # See "Turbo cache policy" at the top of this file.
+      - name: Prune turbo cache
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: bash scripts/ci/prune-turbo-cache.sh
+
+      - name: Save turbo cache
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: actions/cache/save@v6
+        with:
+          path: .turbo/cache
+          key: ${{ steps.turbo-cache.outputs.cache-primary-key }}
 
   migration-safety:
     name: Migration Safety
@@ -466,8 +538,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Cache turbo
-        uses: actions/cache@v6
+      - name: Restore turbo cache
+        id: turbo-cache
+        uses: actions/cache/restore@v6
         with:
           path: .turbo/cache
           key: turbo-i18n-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
@@ -479,6 +552,18 @@ jobs:
 
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=@biasmarket/i18n
+
+      # See "Turbo cache policy" at the top of this file.
+      - name: Prune turbo cache
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: bash scripts/ci/prune-turbo-cache.sh
+
+      - name: Save turbo cache
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: actions/cache/save@v6
+        with:
+          path: .turbo/cache
+          key: ${{ steps.turbo-cache.outputs.cache-primary-key }}
 
   queue:
     name: Queue
@@ -503,8 +588,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Cache turbo
-        uses: actions/cache@v6
+      - name: Restore turbo cache
+        id: turbo-cache
+        uses: actions/cache/restore@v6
         with:
           path: .turbo/cache
           key: turbo-queue-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
@@ -516,6 +602,18 @@ jobs:
 
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=@biasmarket/queue
+
+      # See "Turbo cache policy" at the top of this file.
+      - name: Prune turbo cache
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: bash scripts/ci/prune-turbo-cache.sh
+
+      - name: Save turbo cache
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: actions/cache/save@v6
+        with:
+          path: .turbo/cache
+          key: ${{ steps.turbo-cache.outputs.cache-primary-key }}
 
   types:
     name: Types
@@ -540,8 +638,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Cache turbo
-        uses: actions/cache@v6
+      - name: Restore turbo cache
+        id: turbo-cache
+        uses: actions/cache/restore@v6
         with:
           path: .turbo/cache
           key: turbo-types-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
@@ -553,6 +652,18 @@ jobs:
 
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=@biasmarket/types
+
+      # See "Turbo cache policy" at the top of this file.
+      - name: Prune turbo cache
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: bash scripts/ci/prune-turbo-cache.sh
+
+      - name: Save turbo cache
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: actions/cache/save@v6
+        with:
+          path: .turbo/cache
+          key: ${{ steps.turbo-cache.outputs.cache-primary-key }}
 
   design-tokens:
     name: Design Tokens
@@ -577,8 +688,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Cache turbo
-        uses: actions/cache@v6
+      - name: Restore turbo cache
+        id: turbo-cache
+        uses: actions/cache/restore@v6
         with:
           path: .turbo/cache
           key: turbo-design-tokens-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
@@ -590,6 +702,18 @@ jobs:
 
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=@biasmarket/design-tokens
+
+      # See "Turbo cache policy" at the top of this file.
+      - name: Prune turbo cache
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: bash scripts/ci/prune-turbo-cache.sh
+
+      - name: Save turbo cache
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: actions/cache/save@v6
+        with:
+          path: .turbo/cache
+          key: ${{ steps.turbo-cache.outputs.cache-primary-key }}
 
   utils:
     name: Utils
@@ -614,8 +738,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Cache turbo
-        uses: actions/cache@v6
+      - name: Restore turbo cache
+        id: turbo-cache
+        uses: actions/cache/restore@v6
         with:
           path: .turbo/cache
           key: turbo-utils-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
@@ -638,6 +763,18 @@ jobs:
           files: packages/utils/coverage/lcov.info
           flags: utils
           fail_ci_if_error: false
+
+      # See "Turbo cache policy" at the top of this file.
+      - name: Prune turbo cache
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: bash scripts/ci/prune-turbo-cache.sh
+
+      - name: Save turbo cache
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: actions/cache/save@v6
+        with:
+          path: .turbo/cache
+          key: ${{ steps.turbo-cache.outputs.cache-primary-key }}
 
   validation:
     name: Validation
@@ -662,8 +799,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Cache turbo
-        uses: actions/cache@v6
+      - name: Restore turbo cache
+        id: turbo-cache
+        uses: actions/cache/restore@v6
         with:
           path: .turbo/cache
           key: turbo-validation-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
@@ -690,6 +828,18 @@ jobs:
           flags: validation
           fail_ci_if_error: false
 
+      # See "Turbo cache policy" at the top of this file.
+      - name: Prune turbo cache
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: bash scripts/ci/prune-turbo-cache.sh
+
+      - name: Save turbo cache
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: actions/cache/save@v6
+        with:
+          path: .turbo/cache
+          key: ${{ steps.turbo-cache.outputs.cache-primary-key }}
+
   query:
     name: Query
     needs: detect-changes
@@ -713,8 +863,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Cache turbo
-        uses: actions/cache@v6
+      - name: Restore turbo cache
+        id: turbo-cache
+        uses: actions/cache/restore@v6
         with:
           path: .turbo/cache
           key: turbo-query-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
@@ -726,6 +877,18 @@ jobs:
 
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=@biasmarket/query
+
+      # See "Turbo cache policy" at the top of this file.
+      - name: Prune turbo cache
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: bash scripts/ci/prune-turbo-cache.sh
+
+      - name: Save turbo cache
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: actions/cache/save@v6
+        with:
+          path: .turbo/cache
+          key: ${{ steps.turbo-cache.outputs.cache-primary-key }}
 
   e2e:
     name: E2E (API)
@@ -771,8 +934,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Cache turbo
-        uses: actions/cache@v6
+      - name: Restore turbo cache
+        id: turbo-cache
+        uses: actions/cache/restore@v6
         with:
           path: .turbo/cache
           key: turbo-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
@@ -825,6 +989,18 @@ jobs:
             .ci/e2e-openapi.log
             .ci/e2e-suite.log
 
+      # See "Turbo cache policy" at the top of this file.
+      - name: Prune turbo cache
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: bash scripts/ci/prune-turbo-cache.sh
+
+      - name: Save turbo cache
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: actions/cache/save@v6
+        with:
+          path: .turbo/cache
+          key: ${{ steps.turbo-cache.outputs.cache-primary-key }}
+
   web-e2e:
     name: Web E2E (a11y)
     needs: detect-changes
@@ -859,8 +1035,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Cache turbo
-        uses: actions/cache@v6
+      - name: Restore turbo cache
+        id: turbo-cache
+        uses: actions/cache/restore@v6
         with:
           path: .turbo/cache
           key: turbo-web-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
@@ -921,6 +1098,18 @@ jobs:
             apps/web/test-results
             .ci/web-e2e-api.log
             .ci/web-e2e-web.log
+
+      # See "Turbo cache policy" at the top of this file.
+      - name: Prune turbo cache
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: bash scripts/ci/prune-turbo-cache.sh
+
+      - name: Save turbo cache
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: actions/cache/save@v6
+        with:
+          path: .turbo/cache
+          key: ${{ steps.turbo-cache.outputs.cache-primary-key }}
 
   ci-success:
     name: CI Success
