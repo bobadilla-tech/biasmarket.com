@@ -145,7 +145,9 @@ describe('seller bearer auth (e2e)', () => {
         .set('Cookie', rawCookie!.split(';')[0]!)
         .expect(200);
       expect(
-        listRes.body.data.some((p: { id: string }) => p.id === productId),
+        (listRes.body as { id: string }[]).some(
+          (p: { id: string }) => p.id === productId,
+        ),
       ).toBe(true);
     },
   );

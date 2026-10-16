@@ -176,6 +176,8 @@ a manual CI dispatch is expected, not a failure.)
 1. Run all 24 existing `apps/api` E2E specs on every push to `main` (i.e. after
    a PR merges), against disposable, test-only services.
 2. Do **not** run E2E on pull requests or PR updates — PR CI cost unchanged.
+   _Superseded 2026-10-16: E2E now also runs on every PR update — see
+   `2026-10-16-api-e2e-on-pull-requests.md`._
 3. Make a failed / cancelled / timed-out / wrongly-skipped E2E run block CD, via
    CI's `ci-success` gate and CD's existing `workflow_run` trigger.
 4. CD deploys exactly the SHA E2E tested (already true).

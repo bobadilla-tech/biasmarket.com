@@ -727,14 +727,19 @@ jobs:
 
   e2e:
     name: E2E (API)
-    # The full suite runs on every push regardless of which packages changed.
+    # The full suite runs on every PR update and every push to main,
+    # regardless of which packages changed, so regressions are caught before
+    # merge rather than after (the repo is public: hosted-runner minutes are
+    # free, and the job runs in parallel with the per-package jobs).
     # It intentionally has no `needs` dependency or detect-changes output,
     # avoiding a skip vector and allowing the suite to start immediately.
     # `inputs.run_e2e` is a boolean context value; do not use
     # `github.event.inputs.run_e2e`, whose string "false" is truthy. Keep the
-    # event-name guard in front of the input read because `inputs` is null on push.
+    # event-name guard in front of the input read because `inputs` is null on
+    # push and pull_request.
     if: >-
       github.event_name == 'push' ||
+      github.event_name == 'pull_request' ||
       (github.event_name == 'workflow_dispatch' && inputs.run_e2e)
     runs-on: ubuntu-latest
     timeout-minutes: 30
