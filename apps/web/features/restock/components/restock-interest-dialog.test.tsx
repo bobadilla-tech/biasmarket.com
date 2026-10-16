@@ -1,10 +1,14 @@
 import type { ReactNode } from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "@biasmarket/i18n";
 import { afterEach, expect, test, vi } from "vitest";
-import { axe, expectNoA11yViolations } from "../../../test-utils/axe";
+import {
+  axe,
+  expectNoA11yViolations,
+  JSDOM_UNRESOLVABLE_WITH_NAME_CHECKS,
+} from "../../../test-utils/axe";
 
 const mutationState = vi.hoisted(() => ({
   isSuccess: false,
@@ -91,7 +95,10 @@ test("has a named modal, traps focus, and restores the interest trigger on Escap
     name: "Avisarme cuando haya stock",
   });
   expect(screen.getByRole("textbox", { name: "Nombre" })).toBeDefined();
-  expectNoA11yViolations(await axe(dialog));
+  expect(within(dialog).getByRole("button", { name: "Cerrar" })).toBeDefined();
+  expectNoA11yViolations(await axe(dialog), {
+    allowIncomplete: JSDOM_UNRESOLVABLE_WITH_NAME_CHECKS,
+  });
 
   await user.keyboard("{Escape}");
   expect(onOpenChange).toHaveBeenCalledWith(false);

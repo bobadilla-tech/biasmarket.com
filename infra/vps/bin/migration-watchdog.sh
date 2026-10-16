@@ -15,7 +15,7 @@
 # docs/core/incident-response.md).
 set -euo pipefail
 
-STATE_FILE="/opt/biasmarket/state/migration_pending"
+STATE_FILE="/home/deploy/biasmarket/state/migration_pending"
 THRESHOLD_SECONDS="${MIGRATION_WATCHDOG_THRESHOLD_SECONDS:-180}"
 PUSH_URL="${KUMA_MIGRATION_PUSH_URL:?Set KUMA_MIGRATION_PUSH_URL (see infra/vps/env/watchdog.env.example) — the push monitor URL created by scripts/setup-kuma.ts}"
 

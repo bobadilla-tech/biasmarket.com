@@ -40,7 +40,7 @@ for index in "${!package_names[@]}"; do
 done
 
 expected_e2e="skipped"
-if [[ "$EVENT_NAME" == "push" ]]; then
+if [[ "$EVENT_NAME" == "push" || "$EVENT_NAME" == "pull_request" ]]; then
   expected_e2e="success"
 elif [[ "$EVENT_NAME" == "workflow_dispatch" && "$RUN_E2E" == "true" ]]; then
   expected_e2e="success"

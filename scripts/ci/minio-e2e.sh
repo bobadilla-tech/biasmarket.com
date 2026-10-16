@@ -3,9 +3,12 @@
 # Shared disposable MinIO setup for the API and web E2E jobs.
 # This file is sourced by the owning job script; it does not own a trap.
 
+source "${GITHUB_WORKSPACE:-$(pwd)}/scripts/ci/e2e-images.sh"
+
 readonly MINIO_NETWORK="biasmarket-e2e"
 readonly MINIO_CONTAINER="biasmarket-e2e-minio"
-readonly MINIO_IMAGE="ghcr.io/coollabsio/minio:RELEASE.2025-10-15T17-29-55Z@sha256:69b55a1c1c5dc285ce04db96689f5b2102317fc77a50680a1874ca6efd1c87f9"
+MINIO_IMAGE="$(e2e_image_tag "$E2E_MINIO_REF")"
+readonly MINIO_IMAGE
 readonly MINIO_ROOT="${GITHUB_WORKSPACE:-$(pwd)}"
 readonly MINIO_LOG="${MINIO_LOG:-.ci/e2e-minio.log}"
 
@@ -20,6 +23,7 @@ minio_run_mc() {
 
 start_minio() {
   mkdir -p "$(dirname "$MINIO_LOG")"
+  e2e_ensure_image "$E2E_MINIO_REF"
   docker network create "$MINIO_NETWORK" > "$MINIO_LOG" 2>&1
   docker run --detach \
     --name "$MINIO_CONTAINER" \

@@ -189,9 +189,9 @@ jobs:
       # change infra/vps/lib/*.sh content.
       - name: Sync infra/vps/ to the VPS
         run: |
-          # The deploy key is forced through `rrsync /opt/biasmarket/`.
+          # The deploy key is forced through `rrsync /home/deploy/biasmarket/`.
           # Use a relative remote path so rrsync maps it to that directory;
-          # an absolute /opt/biasmarket/ would be prefixed again.
+          # an absolute /home/deploy/biasmarket/ would be prefixed again.
           rsync -az --delete --delay-updates --delete-delay \
             --exclude 'env/*.env' \
             --exclude 'state/' \

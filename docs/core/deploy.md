@@ -15,7 +15,7 @@ push/merge to main
   -> CD workflow after successful push CI
   -> build api/web/workers images for the exact commit SHA
   -> push images to GHCR
-  -> sync infra/vps/ to /opt/biasmarket
+  -> sync infra/vps/ to /home/deploy/biasmarket
   -> launch deploy.sh <sha> over the restricted SSH dispatcher
   -> wait for the secret-free deploy result
 ```
@@ -61,7 +61,7 @@ Use the VPS `deploy` user, never `ubuntu` or root for the deploy process:
 
 ```bash
 sudo -iu deploy bash -lc '
-  cd /opt/biasmarket &&
+  cd /home/deploy/biasmarket &&
   ./deploy.sh <40-hex-commit-sha>
 '
 ```
@@ -79,9 +79,9 @@ the current live color untouched.
 Useful supervised operations:
 
 ```bash
-sudo -iu deploy bash -lc 'cd /opt/biasmarket && ./deploy.sh --rollback'
-sudo -iu deploy bash -lc 'cd /opt/biasmarket && ./deploy.sh --cleanup'
-sudo -iu deploy bash -lc 'cd /opt/biasmarket && ./deploy.sh --print-current-sha'
+sudo -iu deploy bash -lc 'cd /home/deploy/biasmarket && ./deploy.sh --rollback'
+sudo -iu deploy bash -lc 'cd /home/deploy/biasmarket && ./deploy.sh --cleanup'
+sudo -iu deploy bash -lc 'cd /home/deploy/biasmarket && ./deploy.sh --print-current-sha'
 ```
 
 Manual production recovery uses the same `infra/vps/docker-compose.yml` and
@@ -91,7 +91,7 @@ from a source checkout on the VPS, or use a bare `docker compose down`.
 ## Runtime layout
 
 ```text
-/opt/biasmarket/
+/home/deploy/biasmarket/
   docker-compose.yml       blue/green Compose definition
   deploy.sh                deployment state machine
   env/*.env                runtime secrets, never synced by CD
@@ -108,8 +108,8 @@ does not build application images from a source checkout.
 ```bash
 curl https://api.biasmarket.com/api/health
 curl -I https://biasmarket.com
-sudo -iu deploy bash -lc 'cd /opt/biasmarket && cat state/current_color'
-sudo -iu deploy bash -lc 'cd /opt/biasmarket && cat state/current_sha'
+sudo -iu deploy bash -lc 'cd /home/deploy/biasmarket && cat state/current_color'
+sudo -iu deploy bash -lc 'cd /home/deploy/biasmarket && cat state/current_sha'
 ```
 
 For health, migration, rollback, and incident procedures, see

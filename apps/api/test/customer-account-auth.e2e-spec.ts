@@ -387,7 +387,10 @@ describe('customer account + customer auth (e2e)', () => {
     'mobile login returns sessionToken in body; bearer token grants access ' +
       'on protected routes; no-Origin non-browser exemption works',
     async () => {
-      const runId = `caa-bearer-${randomUUID()}`;
+      // Bare UUID: the email prefixes below already say `caa-bearer-`, and a
+      // doubled prefix pushes the customer email's local part past the RFC
+      // 5321 64-char limit, which checkout's `@IsEmail` rejects with a 400.
+      const runId = randomUUID();
       const bearerSellerEmail = `caa-bearer-seller-${runId}@example.com`;
       const bearerCustomerEmail = `caa-bearer-customer-${runId}@example.com`;
       const bearerCustomerPhone = `+519${String(Date.now()).slice(-7)}`;
@@ -490,6 +493,10 @@ describe('customer account + customer auth (e2e)', () => {
           .expect(200);
 
         // --- Checkout → confirm → register (non-browser: no Origin) ---
+        // Snapshot before checkout: the worker can write the verification
+        // email before the checkout response is even read, and a snapshot
+        // taken after would count it as pre-existing and wait forever.
+        const mailerFiles2 = new Set(readdirSync(mailerDevDir));
         const checkoutRes = await request(bearerApp.getHttpServer())
           .post(`/stores/${slug}/checkout`)
           .send({
@@ -508,7 +515,6 @@ describe('customer account + customer auth (e2e)', () => {
           .expect(201);
         bearerOrder = checkoutRes.body.order.id as string;
 
-        const mailerFiles2 = new Set(readdirSync(mailerDevDir));
         const mailerFile2 = await waitForNewMailerFile(
           mailerFiles2,
           bearerCustomerEmail,
@@ -524,13 +530,13 @@ describe('customer account + customer auth (e2e)', () => {
           .expect(200);
 
         // Register WITHOUT Origin header — @AllowNoOrigin non-browser path.
-        // Must succeed; sessionToken null (no X-Client).
+        // Must succeed; no sessionToken in the body (no X-Client).
         const registerRes = await request(bearerApp.getHttpServer())
           .post(`/stores/${slug}/account/register`)
           .send({ token: confirmToken, password: bearerPassword })
           .expect(201);
         expect(registerRes.body.ok).toBe(true);
-        expect(registerRes.body.sessionToken).toBeNull();
+        expect(registerRes.body).not.toHaveProperty('sessionToken');
 
         // --- Login with X-Client: mobile → body contains sessionToken ---
         const loginRes = await request(bearerApp.getHttpServer())
@@ -634,6 +640,10 @@ describe('customer account + customer auth (e2e)', () => {
           });
         }
         if (bearerStoreId) {
+          // Checkout + register create Customer/BuyerAccount/Address rows for
+          // this phone; Customer.storeId has no cascade, so they must go
+          // before the store.
+          await cleanupBuyerTestData(bearerPrisma!, [bearerCustomerPhone]);
           await bearerPrisma!.customerStoreLink.deleteMany({
             where: { storeId: bearerStoreId },
           });
@@ -658,6 +668,9 @@ describe('customer account + customer auth (e2e)', () => {
         await bearerApp?.close();
       }
     },
+    // Boots a second full AppModule and runs the whole seller + buyer flow
+    // (two mailer round-trips) — routinely ~5.5s, over vitest's 5s default.
+    30_000,
   );
 
   it(

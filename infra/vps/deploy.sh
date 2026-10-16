@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Blue/green deploy state machine for the Bias Market VPS stack. Lives at
-# infra/vps/deploy.sh in the repo, synced to /opt/biasmarket/deploy.sh (see
+# infra/vps/deploy.sh in the repo, synced to /home/deploy/biasmarket/deploy.sh (see
 # T9 provisioning + cd.yml's rsync step) — ROOT_DIR is resolved from this
 # script's own location so it works from either path.
 #
