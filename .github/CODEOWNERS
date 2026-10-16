@@ -1,1 +1,4 @@
-- @bobadilla-tech/biasmarket-core
+# Every PR requests a review from the Bias Market team. The team's
+# auto-assignment settings (GitHub → Teams → Bias Market → Settings →
+# Code review) then pick individual reviewers by load balance.
+* @bobadilla-tech/bias-market
