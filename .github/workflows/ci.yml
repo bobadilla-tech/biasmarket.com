@@ -26,14 +26,18 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# Turbo cache policy: every job restores `.turbo/cache`, but only push runs on
-# main save it (PR runs can read main's caches, not each other's). Keys carry
-# the commit SHA, so saving from every PR run used to add one entry per job
-# per push and fill the 10 GB repo cache, evicting the pnpm, Playwright and
-# E2E image caches. Entries older than 7 days are pruned before saving so the
-# archive restored from the newest key does not grow forever.
+# Turbo cache policy: main saves under `turbo-<job>-…-<sha>`, PR runs under
+# `turbo-<job>-…-pr<N>-<sha>`. PR runs restore their own PR's newest cache
+# first (fast re-pushes), then main's; main can never read PR caches (GitHub
+# scopes caches by ref), and turbo only reuses outputs whose input hash
+# matches, so a restored cache cannot make a build wrong. Entries older than
+# 7 days are pruned before saving so the archive restored from the newest key
+# stops growing forever. GitHub evicts least-recently-used caches first, so
+# stale PR caches go before the pnpm/Playwright/E2E image caches that every
+# run reads.
 
 env:
+  TURBO_CACHE_SCOPE: ${{ github.event_name == 'pull_request' && format('pr{0}-', github.event.pull_request.number) || '' }}
   NODE_VERSION: "24"
   PNPM_VERSION: "10.11.0"
 
@@ -215,8 +219,9 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: .turbo/cache
-          key: turbo-api-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          key: turbo-api-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}${{ github.sha }}
           restore-keys: |
+            turbo-api-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}
             turbo-api-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
       - name: Lint
@@ -244,11 +249,11 @@ jobs:
 
       # See "Turbo cache policy" at the top of this file.
       - name: Prune turbo cache
-        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
         run: bash scripts/ci/prune-turbo-cache.sh
 
       - name: Save turbo cache
-        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
         uses: actions/cache/save@v6
         with:
           path: .turbo/cache
@@ -285,8 +290,9 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: .turbo/cache
-          key: turbo-web-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          key: turbo-web-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}${{ github.sha }}
           restore-keys: |
+            turbo-web-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}
             turbo-web-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
       - name: Lint
@@ -313,11 +319,11 @@ jobs:
 
       # See "Turbo cache policy" at the top of this file.
       - name: Prune turbo cache
-        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
         run: bash scripts/ci/prune-turbo-cache.sh
 
       - name: Save turbo cache
-        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
         uses: actions/cache/save@v6
         with:
           path: .turbo/cache
@@ -351,8 +357,9 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: .turbo/cache
-          key: turbo-mobile-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          key: turbo-mobile-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}${{ github.sha }}
           restore-keys: |
+            turbo-mobile-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}
             turbo-mobile-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
       - name: Lint
@@ -363,11 +370,11 @@ jobs:
 
       # See "Turbo cache policy" at the top of this file.
       - name: Prune turbo cache
-        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
         run: bash scripts/ci/prune-turbo-cache.sh
 
       - name: Save turbo cache
-        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
         uses: actions/cache/save@v6
         with:
           path: .turbo/cache
@@ -401,8 +408,9 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: .turbo/cache
-          key: turbo-workers-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          key: turbo-workers-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}${{ github.sha }}
           restore-keys: |
+            turbo-workers-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}
             turbo-workers-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
       - name: Lint
@@ -427,11 +435,11 @@ jobs:
 
       # See "Turbo cache policy" at the top of this file.
       - name: Prune turbo cache
-        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
         run: bash scripts/ci/prune-turbo-cache.sh
 
       - name: Save turbo cache
-        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
         uses: actions/cache/save@v6
         with:
           path: .turbo/cache
@@ -468,8 +476,9 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: .turbo/cache
-          key: turbo-db-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          key: turbo-db-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}${{ github.sha }}
           restore-keys: |
+            turbo-db-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}
             turbo-db-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
       - name: Build (prisma generate)
@@ -480,11 +489,11 @@ jobs:
 
       # See "Turbo cache policy" at the top of this file.
       - name: Prune turbo cache
-        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
         run: bash scripts/ci/prune-turbo-cache.sh
 
       - name: Save turbo cache
-        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
         uses: actions/cache/save@v6
         with:
           path: .turbo/cache
@@ -543,8 +552,9 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: .turbo/cache
-          key: turbo-i18n-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          key: turbo-i18n-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}${{ github.sha }}
           restore-keys: |
+            turbo-i18n-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}
             turbo-i18n-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
       - name: Build
@@ -555,11 +565,11 @@ jobs:
 
       # See "Turbo cache policy" at the top of this file.
       - name: Prune turbo cache
-        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
         run: bash scripts/ci/prune-turbo-cache.sh
 
       - name: Save turbo cache
-        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
         uses: actions/cache/save@v6
         with:
           path: .turbo/cache
@@ -593,8 +603,9 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: .turbo/cache
-          key: turbo-queue-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          key: turbo-queue-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}${{ github.sha }}
           restore-keys: |
+            turbo-queue-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}
             turbo-queue-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
       - name: Build
@@ -605,11 +616,11 @@ jobs:
 
       # See "Turbo cache policy" at the top of this file.
       - name: Prune turbo cache
-        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
         run: bash scripts/ci/prune-turbo-cache.sh
 
       - name: Save turbo cache
-        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
         uses: actions/cache/save@v6
         with:
           path: .turbo/cache
@@ -643,8 +654,9 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: .turbo/cache
-          key: turbo-types-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          key: turbo-types-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}${{ github.sha }}
           restore-keys: |
+            turbo-types-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}
             turbo-types-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
       - name: Build
@@ -655,11 +667,11 @@ jobs:
 
       # See "Turbo cache policy" at the top of this file.
       - name: Prune turbo cache
-        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
         run: bash scripts/ci/prune-turbo-cache.sh
 
       - name: Save turbo cache
-        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
         uses: actions/cache/save@v6
         with:
           path: .turbo/cache
@@ -693,8 +705,9 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: .turbo/cache
-          key: turbo-design-tokens-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          key: turbo-design-tokens-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}${{ github.sha }}
           restore-keys: |
+            turbo-design-tokens-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}
             turbo-design-tokens-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
       - name: Build
@@ -705,11 +718,11 @@ jobs:
 
       # See "Turbo cache policy" at the top of this file.
       - name: Prune turbo cache
-        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
         run: bash scripts/ci/prune-turbo-cache.sh
 
       - name: Save turbo cache
-        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
         uses: actions/cache/save@v6
         with:
           path: .turbo/cache
@@ -743,8 +756,9 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: .turbo/cache
-          key: turbo-utils-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          key: turbo-utils-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}${{ github.sha }}
           restore-keys: |
+            turbo-utils-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}
             turbo-utils-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
       - name: Build
@@ -766,11 +780,11 @@ jobs:
 
       # See "Turbo cache policy" at the top of this file.
       - name: Prune turbo cache
-        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
         run: bash scripts/ci/prune-turbo-cache.sh
 
       - name: Save turbo cache
-        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
         uses: actions/cache/save@v6
         with:
           path: .turbo/cache
@@ -804,8 +818,9 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: .turbo/cache
-          key: turbo-validation-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          key: turbo-validation-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}${{ github.sha }}
           restore-keys: |
+            turbo-validation-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}
             turbo-validation-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
       - name: Lint
@@ -830,11 +845,11 @@ jobs:
 
       # See "Turbo cache policy" at the top of this file.
       - name: Prune turbo cache
-        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
         run: bash scripts/ci/prune-turbo-cache.sh
 
       - name: Save turbo cache
-        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
         uses: actions/cache/save@v6
         with:
           path: .turbo/cache
@@ -868,8 +883,9 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: .turbo/cache
-          key: turbo-query-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          key: turbo-query-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}${{ github.sha }}
           restore-keys: |
+            turbo-query-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}
             turbo-query-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
       - name: Build
@@ -880,11 +896,11 @@ jobs:
 
       # See "Turbo cache policy" at the top of this file.
       - name: Prune turbo cache
-        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
         run: bash scripts/ci/prune-turbo-cache.sh
 
       - name: Save turbo cache
-        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
         uses: actions/cache/save@v6
         with:
           path: .turbo/cache
@@ -939,8 +955,9 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: .turbo/cache
-          key: turbo-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          key: turbo-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}${{ github.sha }}
           restore-keys: |
+            turbo-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}
             turbo-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
       - name: Restore E2E sidecar images
@@ -991,11 +1008,11 @@ jobs:
 
       # See "Turbo cache policy" at the top of this file.
       - name: Prune turbo cache
-        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
         run: bash scripts/ci/prune-turbo-cache.sh
 
       - name: Save turbo cache
-        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
         uses: actions/cache/save@v6
         with:
           path: .turbo/cache
@@ -1040,8 +1057,9 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: .turbo/cache
-          key: turbo-web-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          key: turbo-web-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}${{ github.sha }}
           restore-keys: |
+            turbo-web-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}
             turbo-web-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
       - name: Restore E2E sidecar images
@@ -1101,11 +1119,11 @@ jobs:
 
       # See "Turbo cache policy" at the top of this file.
       - name: Prune turbo cache
-        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
         run: bash scripts/ci/prune-turbo-cache.sh
 
       - name: Save turbo cache
-        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
         uses: actions/cache/save@v6
         with:
           path: .turbo/cache
