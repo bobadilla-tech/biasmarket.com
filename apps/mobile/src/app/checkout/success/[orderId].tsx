@@ -33,7 +33,9 @@ export default function CheckoutSuccessScreen() {
           router.push({ pathname: "/orders/[orderId]", params: { orderId } })
         }
       >
-        <Text className="font-semibold text-white">Ver mi pedido</Text>
+        <Text className="font-semibold text-white">
+          {t("orders.viewOrder")}
+        </Text>
       </Pressable>
       <Pressable
         accessibilityRole="button"
