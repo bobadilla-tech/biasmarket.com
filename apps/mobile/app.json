@@ -68,7 +68,8 @@
         "expo-image-picker",
         {
           "photosPermission": false,
-          "cameraPermission": false
+          "cameraPermission": false,
+          "microphonePermission": false
         }
       ]
     ],
