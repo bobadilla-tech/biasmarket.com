@@ -37,15 +37,14 @@ export class MailerCore {
   // RESEND_* are only required when the "resend" driver is active — the
   // file driver is the documented local dev mode and must boot without
   // third-party credentials (see validateEnv, same rule).
-  private readonly apiKey = this.driver === "resend"
-    ? requiredEnv("RESEND_API_KEY")
-    : "";
-  private readonly fromEmail = this.driver === "resend"
-    ? requiredEnv("RESEND_FROM_EMAIL")
-    : (process.env.RESEND_FROM_EMAIL ?? "no-reply@send.biasmarket.com");
-  private client = this.driver === "resend"
-    ? new Resend(this.apiKey)
-    : undefined;
+  private readonly apiKey =
+    this.driver === "resend" ? requiredEnv("RESEND_API_KEY") : "";
+  private readonly fromEmail =
+    this.driver === "resend"
+      ? requiredEnv("RESEND_FROM_EMAIL")
+      : (process.env.RESEND_FROM_EMAIL ?? "no-reply@send.biasmarket.com");
+  private client =
+    this.driver === "resend" ? new Resend(this.apiKey) : undefined;
 
   async send(params: SendEmailParams): Promise<{ id: string }> {
     const from = params.from ?? this.fromEmail;

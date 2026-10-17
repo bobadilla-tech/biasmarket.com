@@ -1,15 +1,16 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
-import { useForm, Controller } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { z } from "zod";
+import { ApiError } from "@biasmarket/types";
 import {
   customerLoginSchema,
   customerRegisterSchema,
 } from "@biasmarket/validation";
-import { useBuyerSession } from "../features/auth/session-context.js";
-import { useMobileI18n } from "../i18n/mobile-i18n.js";
+import { useBuyerSession } from "../features/auth/session-context";
+import { useMobileI18n } from "../i18n/mobile-i18n";
 
 const registerFormSchema = customerRegisterSchema.extend({
   storeSlug: z.string().min(1),
@@ -51,7 +52,30 @@ export default function RegisterScreen() {
         values.password,
       );
       router.replace("/");
-    } catch {
+    } catch (cause) {
+      if (
+        cause instanceof Error &&
+        cause.message === "auth.registrationCompleteSignInFailed"
+      ) {
+        router.replace({
+          pathname: "/login",
+          params: {
+            slug: values.storeSlug.trim(),
+            notice: "registration-complete",
+          },
+        });
+        return;
+      }
+      if (cause instanceof ApiError && cause.status === 409) {
+        router.replace({
+          pathname: "/login",
+          params: {
+            slug: values.storeSlug.trim(),
+            notice: "account-already-registered",
+          },
+        });
+        return;
+      }
       setError(t("auth.registerFailed"));
     }
   });
@@ -159,7 +183,13 @@ function RegisterField({
       />
       {error ? (
         <Text accessibilityRole="alert" className="text-sm text-red-300">
-          {error ? t("auth.requiredField") : null}
+          {error
+            ? t(
+                error === "passwordsDontMatch"
+                  ? "auth.passwordMismatch"
+                  : "auth.requiredField",
+              )
+            : null}
         </Text>
       ) : null}
     </View>

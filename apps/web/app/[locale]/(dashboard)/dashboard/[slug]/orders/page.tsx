@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import type { Locale } from "next-intl";
 import { getTranslations } from "next-intl/server";
@@ -14,5 +15,10 @@ export async function generateMetadata({
 }
 
 export default function OrdersPage() {
-  return <OrdersPageClient />;
+  // useSearchParams (the ?order= deep link) needs a Suspense boundary.
+  return (
+    <Suspense>
+      <OrdersPageClient />
+    </Suspense>
+  );
 }

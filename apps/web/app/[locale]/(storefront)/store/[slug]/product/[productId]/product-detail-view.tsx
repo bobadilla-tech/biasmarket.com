@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Bell, Clock } from "lucide-react";
+import { Bell, Clock, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Select } from "@/components/ui/select";
 import { ImageGallery } from "@/features/products/components/image-gallery";
@@ -86,8 +86,11 @@ export function ProductDetailView({
   };
 
   return (
-    <div className="grid gap-8 sm:grid-cols-2">
-      <div className="relative">
+    <div className="product-detail-layout grid gap-8 sm:grid-cols-2 lg:gap-12">
+      <div
+        data-store-card
+        className="photocard-detail relative rounded-[2rem] border border-(--store-border) bg-(--store-card) p-2.5 shadow-[0_18px_45px_color-mix(in_srgb,var(--store-primary)_12%,transparent)]"
+      >
         <ImageGallery
           images={galleryImages}
           alt={product.name}
@@ -103,13 +106,19 @@ export function ProductDetailView({
         )}
       </div>
 
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">{product.name}</h1>
-        <p className="mt-2 text-xl font-bold store-theme-active-text">
+      <div className="relative self-center rounded-[2rem] border border-(--store-border) bg-(--store-card) p-5 shadow-[var(--shadow-soft)] sm:p-7">
+        <Sparkles
+          aria-hidden="true"
+          className="fan-sparkle absolute top-5 right-5 size-5 text-(--store-primary) opacity-70"
+        />
+        <h1 className="max-w-[calc(100%-2rem)] text-2xl font-extrabold tracking-tight text-(--store-text) sm:text-3xl">
+          {product.name}
+        </h1>
+        <p className="mt-3 text-2xl font-extrabold tracking-tight store-theme-active-text">
           {price} {product.currency}
         </p>
         {product.description ? (
-          <p className="mt-4 whitespace-pre-line text-sm text-gray-600">
+          <p className="mt-5 whitespace-pre-line text-sm leading-7 text-(--store-muted)">
             {product.description}
           </p>
         ) : null}
@@ -145,8 +154,16 @@ export function ProductDetailView({
           <button
             type="button"
             onClick={handleAddToCart}
-            className="store-theme-primary-button mt-4 min-h-11 w-full max-w-xs rounded-xl px-4 py-2.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2 sm:w-auto"
+            className={`store-theme-primary-button mt-5 flex min-h-12 w-full max-w-xs items-center justify-center gap-2 rounded-full px-6 py-2.5 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2 sm:w-auto ${
+              added ? "fan-added" : ""
+            }`}
           >
+            {added && (
+              <Sparkles
+                aria-hidden="true"
+                className="fan-pop size-4 text-amber-100"
+              />
+            )}
             {added ? t("addedToCart") : t("addToCart")}
           </button>
         )}

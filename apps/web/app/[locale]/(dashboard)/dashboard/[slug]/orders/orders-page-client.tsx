@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Plus } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { DuplicateOperationCodeError } from "@/features/orders/api/orders.api";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { BuyerNoticePrompt, NewOrderButton } from "@/features/assisted-orders";
 import { useDashboardStore } from "@/features/stores";
 import type { OrderResponseDto } from "@biasmarket/types";
 import { useCancelOrder } from "@/features/orders";
@@ -33,7 +35,8 @@ function errorMessage(error: unknown) {
 export function OrdersPageClient() {
   const t = useTranslations("dashboard.orders");
   const tCommon = useTranslations("common");
-  const { storeId, loading: storeLoading } = useDashboardStore();
+  const { store, storeId, slug, loading: storeLoading } = useDashboardStore();
+  const searchParams = useSearchParams();
 
   const ordersQuery = useOrders(storeId, tCommon("networkError"));
   const orders = ordersQuery.data ?? [];
@@ -73,7 +76,11 @@ export function OrdersPageClient() {
     errorMessage(ordersQuery.error) ??
     errorMessage(reviewPayment.error) ??
     errorMessage(advanceFulfillment.error) ??
-    errorMessage(registerPayment.error) ??
+    errorMessage(
+      registerPayment.error instanceof DuplicateOperationCodeError
+        ? null
+        : registerPayment.error,
+    ) ??
     errorMessage(cancelOrder.error);
 
   const fulfillmentLabels: Record<string, string> = {
@@ -165,6 +172,32 @@ export function OrdersPageClient() {
     [orders, selectedOrderId],
   );
 
+  // "Corregir número" on the created screen lands here with ?order=<id> to
+  // open that order's detail.
+  const requestedOrderId = searchParams.get("order");
+  const consumedOrderId = useRef<string | null>(null);
+  useEffect(() => {
+    if (!requestedOrderId) {
+      consumedOrderId.current = null;
+      return;
+    }
+    if (consumedOrderId.current === requestedOrderId) return;
+    if (!orders.some((order) => order.id === requestedOrderId)) return;
+    consumedOrderId.current = requestedOrderId;
+    setSelectedOrderId(requestedOrderId);
+    setDetailsOpen(true);
+    const nextUrl = new URL(window.location.href);
+    if (nextUrl.searchParams.get("order") === requestedOrderId) {
+      nextUrl.searchParams.delete("order");
+      const query = nextUrl.searchParams.toString();
+      window.history.replaceState(
+        window.history.state,
+        "",
+        `${nextUrl.pathname}${query ? `?${query}` : ""}${nextUrl.hash}`,
+      );
+    }
+  }, [requestedOrderId, orders]);
+
   if (storeLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center px-6 text-sm text-[#8f7da8]">
@@ -185,14 +218,7 @@ export function OrdersPageClient() {
               {t("titleWithCount", { count: orders.length })}
             </h1>
           </div>
-          <Button
-            type="button"
-            onClick={() => alert(t("newOrderSoon"))}
-            className="store-theme-primary-button h-11 rounded-2xl px-5 text-sm font-semibold hover:opacity-100"
-          >
-            <Plus className="size-4" />
-            {t("newOrder")}
-          </Button>
+          <NewOrderButton slug={slug} />
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -257,6 +283,8 @@ export function OrdersPageClient() {
           }}
         />
 
+        <BuyerNoticePrompt storeId={storeId} storeName={store?.name ?? ""} />
+
         <OrderDetailSheet
           open={detailsOpen}
           onOpenChange={(open) => {
@@ -264,17 +292,20 @@ export function OrdersPageClient() {
             if (!open) setSelectedOrderId(null);
           }}
           order={selectedOrder}
+          storeId={storeId}
+          storeName={store?.name ?? ""}
           isPending={selectedOrder ? !!pending[selectedOrder.id] : false}
           fulfillmentLabels={fulfillmentLabels}
           enabledMethods={enabledMethods}
           registerPaymentSubmitting={registerPayment.isPending}
-          onRegisterPayment={(values) => {
+          onRegisterPayment={(values, options) => {
             if (!selectedOrder || paymentsLocked(selectedOrder)) {
               return Promise.resolve();
             }
             return registerPayment.mutateAsync({
               orderId: selectedOrder.id,
               values,
+              confirmDuplicate: options?.confirmDuplicate,
             });
           }}
           onPreviewPayment={setPaymentPreviewUrl}

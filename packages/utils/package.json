@@ -11,7 +11,8 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:cov": "vitest run --coverage"
+    "test:cov": "vitest run --coverage",
+    "lint": "node ../../scripts/lint-changed-files.mjs packages/utils && eslint . --max-warnings 0"
   },
   "dependencies": {},
   "devDependencies": {

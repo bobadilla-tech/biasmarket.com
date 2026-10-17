@@ -44,12 +44,28 @@ pago, seguimiento — todo scoped a esa tienda)
 
 Notas:
 
-- "Tiendas destacadas" no es curación manual: son tiendas con al menos 3 órdenes
-  `VERIFIED` en los últimos 30 días, con al menos un producto publicado, no
-  baneadas.
+- "Tiendas destacadas" no es curación manual: son tiendas públicas (no demo) con
+  al menos 3 órdenes `VERIFIED` en los últimos 30 días, con al menos un producto
+  publicado y disponible, y cuyo dueño no está baneado. Se ordenan por ingresos
+  verificados y, en empate, por cantidad de órdenes
+  (`StoresService.findFeatured`).
 - Una tienda puede optar por no aparecer en directorio/búsqueda/destacadas
   (`Store.isPublic = false`, configurable en Configuración de la tienda) — no
   afecta su funcionamiento normal en `/store/:slug`, solo su visibilidad en este
   layer.
 - La búsqueda de productos solo muestra productos `PUBLISHED`, igual que
   cualquier storefront individual.
+
+## Other acquisition surfaces
+
+Besides the directory and search, the public site has `/blog`, `/for-sellers`,
+`/how-it-works`, `/how-to-buy`, `/faq` and a generated sitemap. They bring
+visitors in; they are not part of the buying flow above. Stores that are thin or
+near-empty are left out of the sitemap even when public.
+
+## Related
+
+- [buyer-flow.md](buyer-flow.md): what happens after a buyer lands on a store.
+- [`../core/product.md`](../core/product.md) and
+  [`../core/roadmap.md`](../core/roadmap.md): product spec and what is planned.
+- [`../readme.md`](../readme.md): docs index.

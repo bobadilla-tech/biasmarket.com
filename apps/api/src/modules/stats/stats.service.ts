@@ -2,50 +2,50 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-} from '@nestjs/common';
-import { Prisma } from '@biasmarket/db';
+} from "@nestjs/common";
+import { Prisma } from "@biasmarket/db";
 import type {
   FulfillmentStatus,
   PaymentMethodType,
   PaymentStatus,
-} from '@biasmarket/db';
+} from "@biasmarket/db";
 import {
   countsTowardPaid,
   REVENUE_ORDER_PAYMENT_STATUSES,
   withPaymentSummary,
-} from '../../common/payment-summary.js';
-import { PrismaService } from '../../prisma/prisma.service.js';
-import { buildBuckets } from './analytics-buckets.js';
+} from "../../common/payment-summary.js";
+import { PrismaService } from "../../prisma/prisma.service.js";
+import { buildBuckets } from "./analytics-buckets.js";
 import type {
   AnalyticsRange,
   AnalyticsResult,
   PaymentMethodBreakdownRow,
   PaymentMethodsBreakdown,
-} from './analytics.types.js';
+} from "./analytics.types.js";
 
 const TOP_PRODUCTS_LIMIT = 5;
 
 const KNOWN_PAYMENT_METHODS: PaymentMethodType[] = [
-  'YAPE',
-  'PLIN',
-  'TRANSFER',
-  'CASH',
+  "YAPE",
+  "PLIN",
+  "TRANSFER",
+  "CASH",
 ];
 
 const PAYMENT_STATUSES: PaymentStatus[] = [
-  'PENDING_PAYMENT',
-  'PARTIALLY_PAID',
-  'PAYMENT_SUBMITTED',
-  'VERIFIED',
-  'REJECTED',
-  'CANCELLED',
+  "PENDING_PAYMENT",
+  "PARTIALLY_PAID",
+  "PAYMENT_SUBMITTED",
+  "VERIFIED",
+  "REJECTED",
+  "CANCELLED",
 ];
 
 const FULFILLMENT_STATUSES: FulfillmentStatus[] = [
-  'ORDERING',
-  'IN_TRANSIT',
-  'READY',
-  'COMPLETED',
+  "ORDERING",
+  "IN_TRANSIT",
+  "READY",
+  "COMPLETED",
 ];
 
 const RECENT_ORDERS_LIMIT = 10;
@@ -65,9 +65,9 @@ export class StatsService {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
-    if (!store) throw new NotFoundException('Store no encontrada');
+    if (!store) throw new NotFoundException("Store no encontrada");
     if (store.ownerId !== userId) {
-      throw new ForbiddenException('No sos dueño de esta store');
+      throw new ForbiddenException("No sos dueño de esta store");
     }
     return store;
   }
@@ -76,7 +76,7 @@ export class StatsService {
     await this.assertOwnership(storeId, userId);
 
     const [
-      revenueAgg,
+      revenueAggregate,
       paymentGroups,
       fulfillmentGroups,
       lowStockCount,
@@ -86,28 +86,22 @@ export class StatsService {
       this.prisma.orderPayment.aggregate({
         where: {
           storeId,
-          // Revenue is money actually collected and verified — VERIFIED and
-          // PARTIALLY_PAID orders both qualify, but a partial payment only
-          // ever contributes its own paid amount, not the full order total.
-          // The `OR` below is `countsTowardPaid`: it excludes a
-          // buyer-submitted proof still awaiting seller review — see
-          // common/payment-summary.ts's `countsTowardRevenue` +
-          // `countsTowardPaid`, the same predicates every other revenue/spend
-          // aggregate in this codebase filters by.
+          // Must mirror `countsTowardPaid` in common/payment-summary.ts.
+          voidedAt: null,
+          OR: [{ source: "SELLER_RECORDED" }, { reviewStatus: "APPROVED" }],
           order: {
             paymentStatus: { in: [...REVENUE_ORDER_PAYMENT_STATUSES] },
           },
-          OR: [{ source: 'SELLER_RECORDED' }, { reviewStatus: 'APPROVED' }],
         },
         _sum: { amount: true },
       }),
       this.prisma.order.groupBy({
-        by: ['paymentStatus'],
+        by: ["paymentStatus"],
         where: { storeId },
         _count: true,
       }),
       this.prisma.order.groupBy({
-        by: ['fulfillmentStatus'],
+        by: ["fulfillmentStatus"],
         where: { storeId },
         _count: true,
       }),
@@ -115,16 +109,17 @@ export class StatsService {
         where: {
           storeId,
           archived: false,
-          type: { in: ['LOW_STOCK', 'OUT_OF_STOCK'] },
+          type: { in: ["LOW_STOCK", "OUT_OF_STOCK"] },
         },
       }),
       this.prisma.order.findMany({
         where: { storeId },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         take: RECENT_ORDERS_LIMIT,
         include: {
           items: { include: { product: true, variant: true } },
-          payments: { orderBy: { createdAt: 'desc' } },
+          payments: { orderBy: { createdAt: "desc" } },
+          createdBy: { select: { name: true } },
         },
       }),
       // Every order still collecting money, with the same per-order
@@ -139,8 +134,8 @@ export class StatsService {
           storeId,
           paymentStatus: { in: [...REVENUE_ORDER_PAYMENT_STATUSES] },
         },
-        orderBy: { createdAt: 'desc' },
-        include: { payments: { orderBy: { createdAt: 'desc' } } },
+        orderBy: { createdAt: "desc" },
+        include: { payments: { orderBy: { createdAt: "desc" } } },
         take: PARTIAL_PAYMENTS_LIMIT,
       }),
     ]);
@@ -166,7 +161,7 @@ export class StatsService {
     );
 
     return {
-      revenue: Number(revenueAgg._sum.amount ?? 0),
+      revenue: revenueAggregate._sum.amount?.toNumber() ?? 0,
       totalOrders,
       paymentStatusCounts,
       fulfillmentStatusCounts,
@@ -206,13 +201,13 @@ export class StatsService {
           select: { customerId: true, createdAt: true },
         }),
         this.prisma.orderItem.groupBy({
-          by: ['productId'],
+          by: ["productId"],
           where: {
             storeId,
             order: { createdAt: { gte: rangeStart, lt: rangeEnd } },
           },
           _sum: { quantity: true },
-          orderBy: { _sum: { quantity: 'desc' } },
+          orderBy: { _sum: { quantity: "desc" } },
           take: TOP_PRODUCTS_LIMIT,
         }),
         // Revenue follows the payment timestamp, not the order timestamp: a
@@ -225,13 +220,25 @@ export class StatsService {
         this.prisma.orderPayment.findMany({
           where: {
             storeId,
-            createdAt: { gte: rangeStart, lt: rangeEnd },
-            OR: [{ source: 'SELLER_RECORDED' }, { reviewStatus: 'APPROVED' }],
+            OR: [
+              { paidAt: { gte: rangeStart, lt: rangeEnd } },
+              {
+                paidAt: null,
+                createdAt: { gte: rangeStart, lt: rangeEnd },
+              },
+            ],
             order: {
               paymentStatus: { in: [...REVENUE_ORDER_PAYMENT_STATUSES] },
             },
           },
-          select: { amount: true, createdAt: true },
+          select: {
+            amount: true,
+            createdAt: true,
+            paidAt: true,
+            source: true,
+            reviewStatus: true,
+            voidedAt: true,
+          },
         }),
       ]);
 
@@ -254,9 +261,10 @@ export class StatsService {
       );
 
       const revenue = rangePayments
-        .filter(
-          (payment) => payment.createdAt >= start && payment.createdAt < end,
-        )
+        .filter((payment) => {
+          const paidAt = payment.paidAt ?? payment.createdAt;
+          return countsTowardPaid(payment) && paidAt >= start && paidAt < end;
+        })
         .reduce(
           (sum, payment) => sum.plus(payment.amount),
           new Prisma.Decimal(0),
@@ -299,7 +307,7 @@ export class StatsService {
 
     const topProducts = topProductRows.map((row) => ({
       productId: row.productId,
-      name: productNameById.get(row.productId) ?? '',
+      name: productNameById.get(row.productId) ?? "",
       unitsSold: row._sum.quantity ?? 0,
     }));
 
@@ -314,23 +322,49 @@ export class StatsService {
   ): Promise<PaymentMethodsBreakdown> {
     await this.assertOwnership(storeId, userId);
 
-    const rows = await this.prisma.orderPayment.groupBy({
-      by: ['method'],
+    const payments = await this.prisma.orderPayment.findMany({
       where: {
         storeId,
-        createdAt: { gte: from, lt: to },
-        order: { status: 'ACTIVE' },
+        OR: [
+          { paidAt: { gte: from, lt: to } },
+          { paidAt: null, createdAt: { gte: from, lt: to } },
+        ],
+        order: { status: "ACTIVE" },
       },
-      _sum: { amount: true },
-      _count: true,
+      select: {
+        method: true,
+        amount: true,
+        paidAt: true,
+        source: true,
+        reviewStatus: true,
+        voidedAt: true,
+      },
     });
 
-    const totalAmountDecimal = rows.reduce(
-      (sum, row) => sum.plus(row._sum.amount ?? 0),
+    const totalsByMethod = new Map<
+      PaymentMethodType | null,
+      { amount: Prisma.Decimal; count: number }
+    >();
+    for (const payment of payments.filter(countsTowardPaid)) {
+      const current = totalsByMethod.get(payment.method) ?? {
+        amount: new Prisma.Decimal(0),
+        count: 0,
+      };
+      totalsByMethod.set(payment.method, {
+        amount: current.amount.plus(payment.amount),
+        count: current.count + 1,
+      });
+    }
+
+    const totalAmountDecimal = [...totalsByMethod.values()].reduce(
+      (sum, row) => sum.plus(row.amount),
       new Prisma.Decimal(0),
     );
     const totalAmount = totalAmountDecimal.toNumber();
-    const totalCount = rows.reduce((sum, row) => sum + row._count, 0);
+    const totalCount = [...totalsByMethod.values()].reduce(
+      (sum, row) => sum + row.count,
+      0,
+    );
 
     const percentageOf = (amount: Prisma.Decimal) =>
       totalAmountDecimal.greaterThan(0)
@@ -339,26 +373,26 @@ export class StatsService {
 
     const byMethod: PaymentMethodBreakdownRow[] = KNOWN_PAYMENT_METHODS.map(
       (method) => {
-        const row = rows.find((r) => r.method === method);
-        const amount = new Prisma.Decimal(row?._sum.amount ?? 0);
+        const row = totalsByMethod.get(method);
+        const amount = row?.amount ?? new Prisma.Decimal(0);
         return {
           method,
           amount: amount.toNumber(),
-          count: row?._count ?? 0,
+          count: row?.count ?? 0,
           percentage: percentageOf(amount),
         };
       },
     );
 
-    for (const row of rows) {
-      if (row.method !== null && KNOWN_PAYMENT_METHODS.includes(row.method)) {
+    for (const [method, row] of totalsByMethod) {
+      if (method !== null && KNOWN_PAYMENT_METHODS.includes(method)) {
         continue;
       }
-      const amount = new Prisma.Decimal(row._sum.amount ?? 0);
+      const amount = row.amount;
       byMethod.push({
-        method: row.method,
+        method,
         amount: amount.toNumber(),
-        count: row._count,
+        count: row.count,
         percentage: percentageOf(amount),
       });
     }

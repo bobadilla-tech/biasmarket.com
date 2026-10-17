@@ -1,9 +1,9 @@
-import type { FulfillmentStatus, PaymentStatus } from '@biasmarket/db';
+import type { FulfillmentStatus, PaymentStatus } from "@biasmarket/db";
 
 export class InvalidOrderTransitionError extends Error {
   constructor(from: string, to: string) {
     super(`Cannot transition order from ${from} to ${to}`);
-    this.name = 'InvalidOrderTransitionError';
+    this.name = "InvalidOrderTransitionError";
   }
 }
 
@@ -16,24 +16,24 @@ export class InvalidOrderTransitionError extends Error {
 // collected.
 const PAYMENT_TRANSITIONS: Record<PaymentStatus, PaymentStatus[]> = {
   PENDING_PAYMENT: [
-    'PARTIALLY_PAID',
-    'PAYMENT_SUBMITTED',
-    'VERIFIED',
-    'REJECTED',
-    'CANCELLED',
+    "PARTIALLY_PAID",
+    "PAYMENT_SUBMITTED",
+    "VERIFIED",
+    "REJECTED",
+    "CANCELLED",
   ],
   PARTIALLY_PAID: [
-    'PARTIALLY_PAID',
-    'PAYMENT_SUBMITTED',
-    'VERIFIED',
-    'REJECTED',
-    'CANCELLED',
+    "PARTIALLY_PAID",
+    "PAYMENT_SUBMITTED",
+    "VERIFIED",
+    "REJECTED",
+    "CANCELLED",
   ],
-  PAYMENT_SUBMITTED: ['PARTIALLY_PAID', 'VERIFIED', 'REJECTED', 'CANCELLED'],
+  PAYMENT_SUBMITTED: ["PARTIALLY_PAID", "VERIFIED", "REJECTED", "CANCELLED"],
   // Payment verification is terminal for payment review, but not for the
   // independent order-cancellation axis: sellers may still cancel a verified
   // order until fulfillment is completed and record how funds were resolved.
-  VERIFIED: ['CANCELLED'],
+  VERIFIED: ["CANCELLED"],
   REJECTED: [],
   CANCELLED: [],
 };
@@ -49,9 +49,9 @@ export function assertPaymentTransition(
 
 const FULFILLMENT_TRANSITIONS: Record<FulfillmentStatus, FulfillmentStatus[]> =
   {
-    ORDERING: ['IN_TRANSIT'],
-    IN_TRANSIT: ['READY'],
-    READY: ['COMPLETED'],
+    ORDERING: ["IN_TRANSIT"],
+    IN_TRANSIT: ["READY"],
+    READY: ["COMPLETED"],
     COMPLETED: [],
   };
 

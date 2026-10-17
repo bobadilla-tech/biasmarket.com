@@ -31,7 +31,21 @@ describe("device cart storage", () => {
     await addToStoreCart("store-b", { ...item, productId: "p2" });
 
     expect(await readStoreCart("store-a")).toEqual([item]);
-    expect(await readStoreCart("store-b")).toEqual([{ ...item, productId: "p2" }]);
+    expect(await readStoreCart("store-b")).toEqual([
+      {
+        ...item,
+        productId: "p2",
+      },
+    ]);
+  });
+
+  it("rehydrates persisted cart contents after the app module restarts", async () => {
+    await addToStoreCart("store-a", item);
+
+    vi.resetModules();
+    const restartedStorage = await import("./cart-storage");
+
+    expect(await restartedStorage.readStoreCart("store-a")).toEqual([item]);
   });
 
   it("serializes rapid quantity updates without losing cart items", async () => {

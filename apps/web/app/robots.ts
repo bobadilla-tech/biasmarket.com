@@ -28,6 +28,9 @@ export default function robots(): MetadataRoute.Robots {
         "/*/store/*/account/confirm",
         "/*/store/*/account/orders",
         "/*/store/*/account/orders/*",
+        // Buyer's private order link (the token is the credential).
+        "/*/store/*/pedido",
+        "/*/store/*/pedido/*",
         "/*/verify-email",
       ],
     },

@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty } from "@nestjs/swagger";
 
 // Money/Decimal and Date-as-ISO-string conventions — see
 // collections/dto/collection-response.dto.ts for the full rationale.
@@ -21,14 +21,26 @@ export class StoreResponseDto {
   @ApiProperty()
   ownerId: string;
 
-  @ApiProperty({ type: 'object', additionalProperties: true })
+  @ApiProperty({ type: "object", additionalProperties: true })
   themeConfig: Record<string, unknown>;
 
   @ApiProperty({ type: String, nullable: true })
   logoUrl: string | null;
 
+  @ApiProperty({ type: String, nullable: true })
+  bannerUrl: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  locationLabel: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  publicOwnerName: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  publicOwnerAvatarUrl: string | null;
+
   // Seller-authored store copy — see
-  // docs/plans/2026-09-07-store-rich-content-and-thin-content-indexing-plan.md.
+  // .artifacts/2026/09/20260907--store-rich-content-and-thin/plan.md.
   @ApiProperty({ type: String, nullable: true })
   bio: string | null;
 
@@ -74,7 +86,7 @@ export class StoreResponseDto {
   @ApiProperty()
   isDemo: boolean;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: String, format: "date-time" })
   createdAt: string;
 }
 
@@ -101,7 +113,7 @@ export class PublicStoreListingResponseDto {
   @ApiProperty()
   slug: string;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: String, format: "date-time" })
   createdAt: string;
 }
 
@@ -113,7 +125,7 @@ export class PublicCollectionListingResponseDto {
   @ApiProperty()
   collectionSlug: string;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: String, format: "date-time" })
   createdAt: string;
 }
 
@@ -181,13 +193,22 @@ export class PublicCategoryResponseDto {
   @ApiProperty()
   name: string;
 
+  @ApiProperty()
+  slug: string;
+
   @ApiProperty({ type: String, nullable: true })
   parentId: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  imageUrl: string | null;
+
+  @ApiProperty()
+  productCount: number;
 }
 
 // Shared by findPublicProduct and the section->collection->products join in
-// findPublicBySlug — both read `{ include: { variants: true } }`, no
-// category join. Local to this module (not the products module's own
+// findPublicBySlug — both include variants and category names for storefront
+// filtering. Local to this module (not the products module's own
 // response DTOs) — same "each module owns its nested join shapes"
 // convention collections' ProductInCollectionResponseDto already
 // established, avoiding a cross-module coupling that isn't needed here.
@@ -216,8 +237,38 @@ export class PublicProductVariantResponseDto {
   @ApiProperty({ type: String, nullable: true })
   imageOverride: string | null;
 
-  @ApiProperty({ type: 'object', additionalProperties: true })
+  @ApiProperty({ type: "object", additionalProperties: true })
   attributes: Record<string, unknown>;
+}
+
+export class PublicProductCategoryNameResponseDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  name: string;
+
+  @ApiProperty()
+  slug: string;
+}
+
+export class StoreCatalogResponseDto {
+  @ApiProperty({ type: () => [PublicProductWithVariantsResponseDto] })
+  items: PublicProductWithVariantsResponseDto[];
+
+  @ApiProperty()
+  total: number;
+
+  @ApiProperty()
+  page: number;
+
+  @ApiProperty()
+  limit: number;
+}
+
+export class PublicProductCategoryResponseDto {
+  @ApiProperty({ type: PublicProductCategoryNameResponseDto })
+  category: PublicProductCategoryNameResponseDto;
 }
 
 export class PublicProductWithVariantsResponseDto {
@@ -242,11 +293,11 @@ export class PublicProductWithVariantsResponseDto {
   @ApiProperty({ type: [String] })
   images: string[];
 
-  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  @ApiProperty({ type: String, format: "date-time", nullable: true })
   availableUntil: string | null;
 
-  @ApiProperty({ enum: ['DRAFT', 'PUBLISHED'] })
-  status: 'DRAFT' | 'PUBLISHED';
+  @ApiProperty({ enum: ["DRAFT", "PUBLISHED"] })
+  status: "DRAFT" | "PUBLISHED";
 
   @ApiProperty()
   soldOut: boolean;
@@ -254,14 +305,17 @@ export class PublicProductWithVariantsResponseDto {
   @ApiProperty()
   discontinued: boolean;
 
-  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  @ApiProperty({ type: String, format: "date-time", nullable: true })
   deletedAt: string | null;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: String, format: "date-time" })
   createdAt: string;
 
   @ApiProperty({ type: [PublicProductVariantResponseDto] })
   variants: PublicProductVariantResponseDto[];
+
+  @ApiProperty({ type: [PublicProductCategoryResponseDto] })
+  categories: PublicProductCategoryResponseDto[];
 }
 
 // findPublicProduct's shape.
@@ -321,7 +375,7 @@ export class SectionCollectionResponseDto {
   @ApiProperty()
   description: string;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: String, format: "date-time" })
   createdAt: string;
 
   @ApiProperty({ type: [SectionCollectionProductResponseDto] })
@@ -335,13 +389,13 @@ export class StoreSectionWithCollectionResponseDto {
   @ApiProperty()
   storeId: string;
 
-  @ApiProperty({ enum: ['COLLECTION', 'BANNER', 'TEXT_BLOCK'] })
-  type: 'COLLECTION' | 'BANNER' | 'TEXT_BLOCK';
+  @ApiProperty({ enum: ["COLLECTION", "BANNER", "TEXT_BLOCK"] })
+  type: "COLLECTION" | "BANNER" | "TEXT_BLOCK";
 
   @ApiProperty({ type: String, nullable: true })
   collectionId: string | null;
 
-  @ApiProperty({ type: 'object', additionalProperties: true })
+  @ApiProperty({ type: "object", additionalProperties: true })
   content: Record<string, unknown>;
 
   @ApiProperty()
@@ -350,7 +404,7 @@ export class StoreSectionWithCollectionResponseDto {
   @ApiProperty()
   hidden: boolean;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: String, format: "date-time" })
   createdAt: string;
 
   @ApiProperty({ type: SectionCollectionResponseDto, nullable: true })
@@ -363,7 +417,7 @@ export class StorePublicDetailResponseDto extends StoreResponseDto {
   sections: StoreSectionWithCollectionResponseDto[];
 
   // D5 (report-only, see
-  // docs/plans/2026-09-07-store-rich-content-and-thin-content-indexing-plan.md
+  // .artifacts/2026/09/20260907--store-rich-content-and-thin/plan.md
   // Part 5.3 / Part 7 step 2): the full `isStoreIndexable` verdict. Computed
   // here because this read already loads section bodies. Nothing consumes it
   // yet — D6 makes the storefront page emit `robots: { index: false }` when

@@ -1,14 +1,15 @@
-import { Processor, WorkerHost } from "@nestjs/bullmq";
+import { Processor } from "@nestjs/bullmq";
 import { Logger } from "@nestjs/common";
 import type { Job } from "bullmq";
 import { INTERNAL_JOBS_SECRET_HEADER, QUEUE_NAMES } from "@biasmarket/queue";
 import { requiredEnv } from "../../config/env.validation.js";
+import { ObservedProcessor } from "../../common/observed-processor.js";
 
 // Mirrors jobs/orders/expire-orders.processor.ts: apps/workers owns
 // *scheduling* only — this processor does nothing more than call apps/api's
 // internal endpoint, which still runs ExpirePremiumUseCase in-process.
 @Processor(QUEUE_NAMES.PREMIUM)
-export class ExpirePremiumProcessor extends WorkerHost {
+export class ExpirePremiumProcessor extends ObservedProcessor {
   private readonly logger = new Logger(ExpirePremiumProcessor.name);
 
   async process(job: Job): Promise<{ expired: number }> {

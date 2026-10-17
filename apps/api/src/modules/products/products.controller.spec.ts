@@ -1,15 +1,15 @@
-import { Test, type TestingModule } from '@nestjs/testing';
-import { type Mock, vi } from 'vitest';
-import { ProductsController } from './products.controller.js';
-import { ProductsService } from './products.service.js';
-import { StorageService } from '../../storage/storage.service.js';
+import { Test, type TestingModule } from "@nestjs/testing";
+import { type Mock, vi } from "vitest";
+import { ProductsController } from "./products.controller.js";
+import { ProductsService } from "./products.service.js";
+import { StorageService } from "../../storage/storage.service.js";
 
-vi.mock('@thallesp/nestjs-better-auth', () => ({
+vi.mock("@thallesp/nestjs-better-auth", () => ({
   AuthGuard: class AuthGuard {},
   Session: () => () => undefined,
 }));
 
-describe('ProductsController', () => {
+describe("ProductsController", () => {
   let controller: ProductsController;
   let service: {
     create: Mock;
@@ -25,9 +25,9 @@ describe('ProductsController', () => {
     clearImages: Mock;
   };
 
-  const storeId = 'store-1';
-  const productId = 'product-1';
-  const session = { user: { id: 'user-1' } } as never;
+  const storeId = "store-1";
+  const productId = "product-1";
+  const session = { user: { id: "user-1" } } as never;
 
   // Real service methods return actual Prisma `Decimal`/`Date` instances —
   // these fixtures only need to structurally match what the controller's
@@ -35,23 +35,23 @@ describe('ProductsController', () => {
   const productRow = {
     id: productId,
     storeId,
-    name: 'Widget',
-    description: '',
-    price: { toString: () => '10.00' },
-    currency: 'USD',
+    name: "Widget",
+    description: "",
+    price: { toString: () => "10.00" },
+    currency: "USD",
     images: [],
     availableUntil: null,
-    status: 'DRAFT' as const,
+    status: "DRAFT" as const,
     soldOut: false,
     deletedAt: null,
-    createdAt: new Date('2026-01-01T00:00:00.000Z'),
+    createdAt: new Date("2026-01-01T00:00:00.000Z"),
   };
 
   const variantRow = {
-    id: 'variant-1',
+    id: "variant-1",
     productId,
     storeId,
-    name: 'Default',
+    name: "Default",
     stock: null,
     reserved: 0,
     priceOverride: null,
@@ -91,23 +91,23 @@ describe('ProductsController', () => {
     controller = module.get<ProductsController>(ProductsController);
   });
 
-  it('should be defined', () => {
+  it("should be defined", () => {
     expect(controller).toBeDefined();
   });
 
-  it('create() delegates to service.create and maps the response', async () => {
-    const dto = { name: 'Widget', price: 10 } as never;
+  it("create() delegates to service.create and maps the response", async () => {
+    const dto = { name: "Widget", price: 10 } as never;
     service.create.mockResolvedValue({ ...productRow, variants: [variantRow] });
 
     const result = await controller.create(storeId, session, dto);
 
-    expect(service.create).toHaveBeenCalledWith(storeId, 'user-1', dto);
+    expect(service.create).toHaveBeenCalledWith(storeId, "user-1", dto);
     expect(result).toEqual({
       id: productRow.id,
       storeId: productRow.storeId,
       name: productRow.name,
       description: productRow.description,
-      price: '10.00',
+      price: "10.00",
       currency: productRow.currency,
       images: productRow.images,
       availableUntil: null,
@@ -131,7 +131,7 @@ describe('ProductsController', () => {
     });
   });
 
-  it('findAll() delegates to service.findAllForStore with storeId, userId', async () => {
+  it("findAll() delegates to service.findAllForStore with storeId, userId", async () => {
     service.findAllForStore.mockResolvedValue([
       {
         ...productRow,
@@ -144,11 +144,11 @@ describe('ProductsController', () => {
 
     await controller.findAll(storeId, session);
 
-    expect(service.findAllForStore).toHaveBeenCalledWith(storeId, 'user-1');
+    expect(service.findAllForStore).toHaveBeenCalledWith(storeId, "user-1");
   });
 
-  it('update() delegates to service.update with productId, storeId, userId, dto', async () => {
-    const dto = { name: 'Renamed' } as never;
+  it("update() delegates to service.update with productId, storeId, userId, dto", async () => {
+    const dto = { name: "Renamed" } as never;
     service.update.mockResolvedValue(productRow);
 
     await controller.update(storeId, productId, session, dto);
@@ -156,20 +156,20 @@ describe('ProductsController', () => {
     expect(service.update).toHaveBeenCalledWith(
       productId,
       storeId,
-      'user-1',
+      "user-1",
       dto,
     );
   });
 
-  it('publish() delegates to service.publish with productId, storeId, userId', async () => {
+  it("publish() delegates to service.publish with productId, storeId, userId", async () => {
     service.publish.mockResolvedValue(productRow);
 
     await controller.publish(storeId, productId, session);
 
-    expect(service.publish).toHaveBeenCalledWith(productId, storeId, 'user-1');
+    expect(service.publish).toHaveBeenCalledWith(productId, storeId, "user-1");
   });
 
-  it('softDelete() delegates to service.softDelete with productId, storeId, userId', async () => {
+  it("softDelete() delegates to service.softDelete with productId, storeId, userId", async () => {
     service.softDelete.mockResolvedValue(productRow);
 
     await controller.softDelete(storeId, productId, session);
@@ -177,12 +177,12 @@ describe('ProductsController', () => {
     expect(service.softDelete).toHaveBeenCalledWith(
       productId,
       storeId,
-      'user-1',
+      "user-1",
     );
   });
 
-  it('addVariant() delegates to service.addVariant with productId, storeId, userId, dto', async () => {
-    const dto = { name: 'Large' } as never;
+  it("addVariant() delegates to service.addVariant with productId, storeId, userId, dto", async () => {
+    const dto = { name: "Large" } as never;
     service.addVariant.mockResolvedValue(variantRow);
 
     await controller.addVariant(storeId, productId, session, dto);
@@ -190,12 +190,12 @@ describe('ProductsController', () => {
     expect(service.addVariant).toHaveBeenCalledWith(
       productId,
       storeId,
-      'user-1',
+      "user-1",
       dto,
     );
   });
 
-  it('listVariants() delegates to service.listVariants with productId, storeId, userId', async () => {
+  it("listVariants() delegates to service.listVariants with productId, storeId, userId", async () => {
     service.listVariants.mockResolvedValue([variantRow]);
 
     await controller.listVariants(storeId, productId, session);
@@ -203,12 +203,12 @@ describe('ProductsController', () => {
     expect(service.listVariants).toHaveBeenCalledWith(
       productId,
       storeId,
-      'user-1',
+      "user-1",
     );
   });
 
-  it('removeImage() removes the image and deletes from storage', async () => {
-    service.removeImage.mockResolvedValue({ removed: 'old.png' });
+  it("removeImage() removes the image and deletes from storage", async () => {
+    service.removeImage.mockResolvedValue({ removed: "old.png" });
     service.findOne.mockResolvedValue({
       ...productRow,
       images: [],
@@ -223,34 +223,34 @@ describe('ProductsController', () => {
     expect(service.removeImage).toHaveBeenCalledWith(
       productId,
       storeId,
-      'user-1',
+      "user-1",
       0,
     );
     expect(result.images).toEqual([]);
   });
 
-  it('reorderImages() delegates to service.reorderImages', async () => {
+  it("reorderImages() delegates to service.reorderImages", async () => {
     service.reorderImages.mockResolvedValue({
       ...productRow,
-      images: ['b.png', 'a.png'],
+      images: ["b.png", "a.png"],
     });
 
     const result = await controller.reorderImages(storeId, productId, session, {
-      images: ['b.png', 'a.png'],
+      images: ["b.png", "a.png"],
     });
 
     expect(service.reorderImages).toHaveBeenCalledWith(
       productId,
       storeId,
-      'user-1',
-      ['b.png', 'a.png'],
+      "user-1",
+      ["b.png", "a.png"],
     );
-    expect(result.images).toEqual(['b.png', 'a.png']);
+    expect(result.images).toEqual(["b.png", "a.png"]);
   });
 
-  it('clearImages() clears all images and deletes from storage', async () => {
+  it("clearImages() clears all images and deletes from storage", async () => {
     service.clearImages.mockResolvedValue({
-      removed: ['a.png', 'b.png'],
+      removed: ["a.png", "b.png"],
     });
     service.findOne.mockResolvedValue({
       ...productRow,
@@ -266,7 +266,7 @@ describe('ProductsController', () => {
     expect(service.clearImages).toHaveBeenCalledWith(
       productId,
       storeId,
-      'user-1',
+      "user-1",
     );
     expect(result.images).toEqual([]);
   });

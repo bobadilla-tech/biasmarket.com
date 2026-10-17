@@ -17,7 +17,10 @@ using:
 ### Profile
 
 - Age: 16–30
-- Location: LATAM, Southeast Asia, US (but LATAM is your easiest entry)
+- Location: LATAM, Southeast Asia, US (but LATAM is your easiest entry). The
+  product today is available in Spanish and English and its payment methods are
+  Peru-first (Yape, Plin, bank transfer, cash), so Peru and Spanish-speaking
+  LATAM fit it best.
 - Runs **fan-led group orders** for:
   - Albums
   - Photocards

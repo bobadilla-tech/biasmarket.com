@@ -1,4 +1,4 @@
-export type SuggestionSeverity = 'info' | 'warning' | 'critical';
+export type SuggestionSeverity = "info" | "warning" | "critical";
 
 export interface Suggestion {
   id: string;

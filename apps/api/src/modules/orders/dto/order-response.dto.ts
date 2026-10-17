@@ -1,10 +1,10 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty } from "@nestjs/swagger";
 
 // Money/Decimal, Date-as-ISO-string, and literal-union conventions — see
 // collections/dto/collection-response.dto.ts for the full rationale.
 //
 // `Order` has more than one real response shape (see
-// docs/plans/2026-08-05-orval-rollout-batch-4-order-checkout-plan.md):
+// .artifacts/2026/08/20260805--orval-rollout-batch-4-order/plan.md):
 // - `findAll`/`findOne`/`addPayment` run every row through
 //   `OrderRepository.withPaymentSummary`, adding `paidAmount`/
 //   `pendingAmount`/`paidPercentage` — plain `number`s, not the Decimal-
@@ -17,7 +17,7 @@ import { ApiProperty } from '@nestjs/swagger';
 //   `PaymentProof` model), which was deleted as dead schema (never written
 //   anywhere in apps/api — the real flow is seller-recorded `OrderPayment`
 //   instead) per
-//   docs/plans/2026-08-08-payment-proof-image-access-control-plan.md. Kept
+//   .artifacts/2026/08/20260808--payment-proof-image-access-control/plan.md. Kept
 //   as its own type in case `findOne` grows real detail-only fields later.
 // - `review`/`advance`/`cancel` return the *raw* Prisma `Order` row
 //   (`tx.order.update`/`findUniqueOrThrow`, never passed through
@@ -49,11 +49,11 @@ export class OrderProductResponseDto {
   @ApiProperty({ type: [String] })
   images: string[];
 
-  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  @ApiProperty({ type: String, format: "date-time", nullable: true })
   availableUntil: string | null;
 
-  @ApiProperty({ enum: ['DRAFT', 'PUBLISHED'] })
-  status: 'DRAFT' | 'PUBLISHED';
+  @ApiProperty({ enum: ["DRAFT", "PUBLISHED"] })
+  status: "DRAFT" | "PUBLISHED";
 
   @ApiProperty()
   soldOut: boolean;
@@ -61,10 +61,10 @@ export class OrderProductResponseDto {
   @ApiProperty()
   discontinued: boolean;
 
-  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  @ApiProperty({ type: String, format: "date-time", nullable: true })
   deletedAt: string | null;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: String, format: "date-time" })
   createdAt: string;
 }
 
@@ -93,7 +93,7 @@ export class OrderVariantResponseDto {
   @ApiProperty({ type: String, nullable: true })
   imageOverride: string | null;
 
-  @ApiProperty({ type: 'object', additionalProperties: true })
+  @ApiProperty({ type: "object", additionalProperties: true })
   attributes: Record<string, unknown>;
 }
 
@@ -122,7 +122,7 @@ export class OrderItemResponseDto {
   @ApiProperty()
   currency: string;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: String, format: "date-time" })
   createdAt: string;
 
   @ApiProperty({ type: OrderProductResponseDto })
@@ -148,8 +148,8 @@ export class OrderPaymentResponseDto {
   @ApiProperty()
   currency: string;
 
-  @ApiProperty({ enum: ['YAPE', 'PLIN', 'TRANSFER', 'CASH'], nullable: true })
-  method: 'YAPE' | 'PLIN' | 'TRANSFER' | 'CASH' | null;
+  @ApiProperty({ enum: ["YAPE", "PLIN", "TRANSFER", "CASH"], nullable: true })
+  method: "YAPE" | "PLIN" | "TRANSFER" | "CASH" | null;
 
   @ApiProperty({ type: String, nullable: true })
   note: string | null;
@@ -157,18 +157,30 @@ export class OrderPaymentResponseDto {
   @ApiProperty({ type: String, nullable: true })
   imageUrl: string | null;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: String, format: "date-time" })
   createdAt: string;
 
-  @ApiProperty({ enum: ['SELLER_RECORDED', 'BUYER_SUBMITTED'] })
-  source: 'SELLER_RECORDED' | 'BUYER_SUBMITTED';
+  @ApiProperty({ type: String, nullable: true })
+  operationCode: string | null;
+
+  @ApiProperty({ type: String, format: "date-time", nullable: true })
+  paidAt: string | null;
+
+  @ApiProperty({ type: String, format: "date-time", nullable: true })
+  voidedAt: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  voidReason: string | null;
+
+  @ApiProperty({ enum: ["SELLER_RECORDED", "BUYER_SUBMITTED"] })
+  source: "SELLER_RECORDED" | "BUYER_SUBMITTED";
 
   @ApiProperty({
-    enum: ['N_A', 'PENDING_REVIEW', 'APPROVED', 'REJECTED'],
+    enum: ["N_A", "PENDING_REVIEW", "APPROVED", "REJECTED"],
   })
-  reviewStatus: 'N_A' | 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED';
+  reviewStatus: "N_A" | "PENDING_REVIEW" | "APPROVED" | "REJECTED";
 
-  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  @ApiProperty({ type: String, format: "date-time", nullable: true })
   reviewedAt: string | null;
 
   @ApiProperty({ type: String, nullable: true })
@@ -187,9 +199,6 @@ export class OrderResponseDto {
   customerId: string | null;
 
   @ApiProperty({ type: String, nullable: true })
-  buyerAccountId: string | null;
-
-  @ApiProperty({ type: String, nullable: true })
   customerEmail: string | null;
 
   @ApiProperty()
@@ -198,16 +207,19 @@ export class OrderResponseDto {
   @ApiProperty({ type: String, nullable: true })
   customerName: string | null;
 
-  @ApiProperty({ enum: ['PICKUP', 'COURIER'] })
-  deliveryMethodType: 'PICKUP' | 'COURIER';
+  @ApiProperty({ enum: ["MARKETPLACE", "VENDOR_ASSISTED"] })
+  source: "MARKETPLACE" | "VENDOR_ASSISTED";
 
-  @ApiProperty({ type: 'object', additionalProperties: true, nullable: true })
+  @ApiProperty({ enum: ["PICKUP", "COURIER"] })
+  deliveryMethodType: "PICKUP" | "COURIER";
+
+  @ApiProperty({ type: "object", additionalProperties: true, nullable: true })
   deliveryDetails: Record<string, unknown> | null;
 
   @ApiProperty({ type: String, nullable: true })
   pickupPointId: string | null;
 
-  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  @ApiProperty({ type: String, format: "date-time", nullable: true })
   pickupDate: string | null;
 
   // Snapshotted onto the Order at checkout (create-order.usecase.ts) — the
@@ -217,47 +229,56 @@ export class OrderResponseDto {
   @ApiProperty({ type: String, nullable: true })
   courierName: string | null;
 
-  @ApiProperty({ enum: ['AGENCY', 'HOME'], nullable: true })
-  courierModality: 'AGENCY' | 'HOME' | null;
+  @ApiProperty({ type: String, nullable: true })
+  trackingNumber: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  trackingUrl: string | null;
+
+  @ApiProperty()
+  packedPhotoAvailable: boolean;
+
+  @ApiProperty({ enum: ["AGENCY", "HOME"], nullable: true })
+  courierModality: "AGENCY" | "HOME" | null;
 
   @ApiProperty({
-    enum: ['YAPE', 'PLIN', 'TRANSFER', 'CASH'],
+    enum: ["YAPE", "PLIN", "TRANSFER", "CASH"],
     nullable: true,
   })
-  paymentMethod: 'YAPE' | 'PLIN' | 'TRANSFER' | 'CASH' | null;
+  paymentMethod: "YAPE" | "PLIN" | "TRANSFER" | "CASH" | null;
 
   @ApiProperty({
     enum: [
-      'PENDING_PAYMENT',
-      'PARTIALLY_PAID',
-      'PAYMENT_SUBMITTED',
-      'VERIFIED',
-      'REJECTED',
-      'CANCELLED',
+      "PENDING_PAYMENT",
+      "PARTIALLY_PAID",
+      "PAYMENT_SUBMITTED",
+      "VERIFIED",
+      "REJECTED",
+      "CANCELLED",
     ],
   })
   paymentStatus:
-    | 'PENDING_PAYMENT'
-    | 'PARTIALLY_PAID'
-    | 'PAYMENT_SUBMITTED'
-    | 'VERIFIED'
-    | 'REJECTED'
-    | 'CANCELLED';
+    | "PENDING_PAYMENT"
+    | "PARTIALLY_PAID"
+    | "PAYMENT_SUBMITTED"
+    | "VERIFIED"
+    | "REJECTED"
+    | "CANCELLED";
 
   @ApiProperty({ type: String, nullable: true })
   paymentRejectionReason: string | null;
 
-  @ApiProperty({ enum: ['ORDERING', 'IN_TRANSIT', 'READY', 'COMPLETED'] })
-  fulfillmentStatus: 'ORDERING' | 'IN_TRANSIT' | 'READY' | 'COMPLETED';
+  @ApiProperty({ enum: ["ORDERING", "IN_TRANSIT", "READY", "COMPLETED"] })
+  fulfillmentStatus: "ORDERING" | "IN_TRANSIT" | "READY" | "COMPLETED";
 
-  @ApiProperty({ enum: ['ACTIVE', 'CANCELLED'] })
-  status: 'ACTIVE' | 'CANCELLED';
+  @ApiProperty({ enum: ["ACTIVE", "CANCELLED"] })
+  status: "ACTIVE" | "CANCELLED";
 
   @ApiProperty({
-    enum: ['REFUNDED', 'RETAINED', 'STORE_CREDIT'],
+    enum: ["REFUNDED", "RETAINED", "STORE_CREDIT"],
     nullable: true,
   })
-  cancellationResolution: 'REFUNDED' | 'RETAINED' | 'STORE_CREDIT' | null;
+  cancellationResolution: "REFUNDED" | "RETAINED" | "STORE_CREDIT" | null;
 
   @ApiProperty({ type: String, nullable: true })
   cancellationReason: string | null;
@@ -269,10 +290,10 @@ export class OrderResponseDto {
   releasedAmount: string | null;
 
   @ApiProperty({
-    enum: ['REFUNDED', 'RETAINED', 'STORE_CREDIT'],
+    enum: ["REFUNDED", "RETAINED", "STORE_CREDIT"],
     nullable: true,
   })
-  releasedResolution: 'REFUNDED' | 'RETAINED' | 'STORE_CREDIT' | null;
+  releasedResolution: "REFUNDED" | "RETAINED" | "STORE_CREDIT" | null;
 
   @ApiProperty({ type: String })
   totalAmount: string;
@@ -283,10 +304,10 @@ export class OrderResponseDto {
   @ApiProperty()
   currency: string;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: String, format: "date-time" })
   expiresAt: string;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: String, format: "date-time" })
   createdAt: string;
 
   @ApiProperty()
@@ -297,6 +318,36 @@ export class OrderResponseDto {
 
   @ApiProperty()
   paidPercentage: number;
+
+  @ApiProperty({
+    type: String,
+    format: "date-time",
+    nullable: true,
+    description: "First time the buyer opened the private link.",
+  })
+  linkFirstOpenedAt: string | null;
+
+  @ApiProperty({
+    type: String,
+    format: "date-time",
+    nullable: true,
+    description: "When the buyer claimed the order into an account.",
+  })
+  claimedAt: string | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: "When the buyer confirmed receiving the order.",
+  })
+  buyerConfirmedReceivedAt: string | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: "Display name of the seller who created an assisted order.",
+  })
+  createdByName: string | null;
 
   @ApiProperty({ type: [OrderItemResponseDto] })
   items: OrderItemResponseDto[];
@@ -322,9 +373,6 @@ export class OrderStatusResponseDto {
   customerId: string | null;
 
   @ApiProperty({ type: String, nullable: true })
-  buyerAccountId: string | null;
-
-  @ApiProperty({ type: String, nullable: true })
   customerEmail: string | null;
 
   @ApiProperty()
@@ -333,16 +381,19 @@ export class OrderStatusResponseDto {
   @ApiProperty({ type: String, nullable: true })
   customerName: string | null;
 
-  @ApiProperty({ enum: ['PICKUP', 'COURIER'] })
-  deliveryMethodType: 'PICKUP' | 'COURIER';
+  @ApiProperty({ enum: ["MARKETPLACE", "VENDOR_ASSISTED"] })
+  source: "MARKETPLACE" | "VENDOR_ASSISTED";
 
-  @ApiProperty({ type: 'object', additionalProperties: true, nullable: true })
+  @ApiProperty({ enum: ["PICKUP", "COURIER"] })
+  deliveryMethodType: "PICKUP" | "COURIER";
+
+  @ApiProperty({ type: "object", additionalProperties: true, nullable: true })
   deliveryDetails: Record<string, unknown> | null;
 
   @ApiProperty({ type: String, nullable: true })
   pickupPointId: string | null;
 
-  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  @ApiProperty({ type: String, format: "date-time", nullable: true })
   pickupDate: string | null;
 
   // Snapshotted onto the Order at checkout (create-order.usecase.ts) — the
@@ -352,47 +403,56 @@ export class OrderStatusResponseDto {
   @ApiProperty({ type: String, nullable: true })
   courierName: string | null;
 
-  @ApiProperty({ enum: ['AGENCY', 'HOME'], nullable: true })
-  courierModality: 'AGENCY' | 'HOME' | null;
+  @ApiProperty({ type: String, nullable: true })
+  trackingNumber: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  trackingUrl: string | null;
+
+  @ApiProperty()
+  packedPhotoAvailable: boolean;
+
+  @ApiProperty({ enum: ["AGENCY", "HOME"], nullable: true })
+  courierModality: "AGENCY" | "HOME" | null;
 
   @ApiProperty({
-    enum: ['YAPE', 'PLIN', 'TRANSFER', 'CASH'],
+    enum: ["YAPE", "PLIN", "TRANSFER", "CASH"],
     nullable: true,
   })
-  paymentMethod: 'YAPE' | 'PLIN' | 'TRANSFER' | 'CASH' | null;
+  paymentMethod: "YAPE" | "PLIN" | "TRANSFER" | "CASH" | null;
 
   @ApiProperty({
     enum: [
-      'PENDING_PAYMENT',
-      'PARTIALLY_PAID',
-      'PAYMENT_SUBMITTED',
-      'VERIFIED',
-      'REJECTED',
-      'CANCELLED',
+      "PENDING_PAYMENT",
+      "PARTIALLY_PAID",
+      "PAYMENT_SUBMITTED",
+      "VERIFIED",
+      "REJECTED",
+      "CANCELLED",
     ],
   })
   paymentStatus:
-    | 'PENDING_PAYMENT'
-    | 'PARTIALLY_PAID'
-    | 'PAYMENT_SUBMITTED'
-    | 'VERIFIED'
-    | 'REJECTED'
-    | 'CANCELLED';
+    | "PENDING_PAYMENT"
+    | "PARTIALLY_PAID"
+    | "PAYMENT_SUBMITTED"
+    | "VERIFIED"
+    | "REJECTED"
+    | "CANCELLED";
 
   @ApiProperty({ type: String, nullable: true })
   paymentRejectionReason: string | null;
 
-  @ApiProperty({ enum: ['ORDERING', 'IN_TRANSIT', 'READY', 'COMPLETED'] })
-  fulfillmentStatus: 'ORDERING' | 'IN_TRANSIT' | 'READY' | 'COMPLETED';
+  @ApiProperty({ enum: ["ORDERING", "IN_TRANSIT", "READY", "COMPLETED"] })
+  fulfillmentStatus: "ORDERING" | "IN_TRANSIT" | "READY" | "COMPLETED";
 
-  @ApiProperty({ enum: ['ACTIVE', 'CANCELLED'] })
-  status: 'ACTIVE' | 'CANCELLED';
+  @ApiProperty({ enum: ["ACTIVE", "CANCELLED"] })
+  status: "ACTIVE" | "CANCELLED";
 
   @ApiProperty({
-    enum: ['REFUNDED', 'RETAINED', 'STORE_CREDIT'],
+    enum: ["REFUNDED", "RETAINED", "STORE_CREDIT"],
     nullable: true,
   })
-  cancellationResolution: 'REFUNDED' | 'RETAINED' | 'STORE_CREDIT' | null;
+  cancellationResolution: "REFUNDED" | "RETAINED" | "STORE_CREDIT" | null;
 
   @ApiProperty({ type: String, nullable: true })
   cancellationReason: string | null;
@@ -404,10 +464,10 @@ export class OrderStatusResponseDto {
   releasedAmount: string | null;
 
   @ApiProperty({
-    enum: ['REFUNDED', 'RETAINED', 'STORE_CREDIT'],
+    enum: ["REFUNDED", "RETAINED", "STORE_CREDIT"],
     nullable: true,
   })
-  releasedResolution: 'REFUNDED' | 'RETAINED' | 'STORE_CREDIT' | null;
+  releasedResolution: "REFUNDED" | "RETAINED" | "STORE_CREDIT" | null;
 
   @ApiProperty({ type: String })
   totalAmount: string;
@@ -418,9 +478,9 @@ export class OrderStatusResponseDto {
   @ApiProperty()
   currency: string;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: String, format: "date-time" })
   expiresAt: string;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: String, format: "date-time" })
   createdAt: string;
 }

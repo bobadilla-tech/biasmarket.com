@@ -1,7 +1,6 @@
 #cloud-config
 # Runs ONCE, on the first boot after Terraform (re)installs the VPS.
-# Replaces steps 1-4 of the VPS provisioning section in
-# docs/core/blue-green-migrations.md. Changing this file changes `user_data`,
+# Replaces steps 1-4 of the manual fallback in docs/core/provisioning.md. Changing this file changes `user_data`,
 # which makes the provider REINSTALL the server.
 
 package_update: true

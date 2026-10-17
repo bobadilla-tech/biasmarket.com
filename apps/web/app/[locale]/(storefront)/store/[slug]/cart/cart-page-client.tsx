@@ -38,7 +38,10 @@ function CartSummary({
   const total = subtotal + (shipping ?? 0) - (discount ?? 0);
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+    <div
+      data-store-card
+      className="flex flex-col gap-3 rounded-[1.5rem] border border-(--store-border) bg-(--store-card) p-6 shadow-[var(--shadow-pop)]"
+    >
       <h2 className="text-base font-bold text-stone-900">{t("summary")}</h2>
 
       <div className="flex flex-col gap-1.5">
