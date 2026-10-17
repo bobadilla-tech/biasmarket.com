@@ -27,7 +27,9 @@ describe("static mobile app association files", () => {
       }),
     ).toBe(false);
     expect(() =>
-      readFileSync(path.join(publicDirectory, ".well-known/apple-app-site-association")),
+      readFileSync(
+        path.join(publicDirectory, ".well-known/apple-app-site-association"),
+      ),
     ).toThrow();
   });
 
@@ -60,7 +62,10 @@ describe("static mobile app association files", () => {
       ),
     );
     const android = JSON.parse(
-      readFileSync(path.join(publicDirectory, ".well-known/assetlinks.json"), "utf8"),
+      readFileSync(
+        path.join(publicDirectory, ".well-known/assetlinks.json"),
+        "utf8",
+      ),
     );
 
     expect(generated).toBe(true);
