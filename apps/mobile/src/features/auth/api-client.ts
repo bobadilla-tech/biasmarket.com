@@ -2,7 +2,7 @@ import { configureApiClient } from "@biasmarket/types";
 
 const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_URL?.trim().replace(/\/+$/, "") ||
-  "https://api.biasmarket.com";
+  "https://api.biasmarket.com/api";
 
 let configured = false;
 let bearerToken: string | null = null;

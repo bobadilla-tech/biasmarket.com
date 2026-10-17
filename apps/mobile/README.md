@@ -12,7 +12,7 @@ Scan the QR code with Expo Go on an Android device. Routes live in `src/app/`.
 
 ## Buyer authentication
 
-The app defaults to `https://api.biasmarket.com`. Set `EXPO_PUBLIC_API_URL` in
+The app defaults to `https://api.biasmarket.com/api`. Set `EXPO_PUBLIC_API_URL` (including `/api`) in
 the environment before starting Expo to use another API, such as a development
 server reachable from the test device.
 
