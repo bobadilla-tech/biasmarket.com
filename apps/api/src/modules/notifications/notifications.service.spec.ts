@@ -18,6 +18,7 @@ describe('NotificationsService', () => {
       count: Mock;
     };
     productVariant: { findMany: Mock };
+    deviceToken: { findMany: Mock };
   };
 
   const ownerId = 'user-1';
@@ -37,6 +38,7 @@ describe('NotificationsService', () => {
         count: vi.fn(),
       },
       productVariant: { findMany: vi.fn() },
+      deviceToken: { findMany: vi.fn().mockResolvedValue([]) },
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -46,6 +48,7 @@ describe('NotificationsService', () => {
           provide: PrismaService,
           useValue: prisma,
         },
+        { provide: 'BullQueue_push', useValue: { add: vi.fn() } },
       ],
     }).compile();
 
