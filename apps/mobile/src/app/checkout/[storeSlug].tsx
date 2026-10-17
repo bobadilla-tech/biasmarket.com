@@ -48,7 +48,10 @@ import {
   readStoreCart,
 } from "../../features/cart/cart-storage";
 import { useBuyerSession } from "../../features/auth/session-context";
-import { compressPaymentProof } from "../../features/checkout/proof-image";
+import {
+  compressPaymentProof,
+  proofSelectionErrorKey,
+} from "../../features/checkout/proof-image";
 import { useMobileI18n } from "../../i18n/mobile-i18n.js";
 
 const emptyForm: CheckoutFormInput = {
@@ -206,13 +209,7 @@ export default function CheckoutScreen() {
       const proof = await compressPaymentProof(result.assets[0].uri);
       setField("paymentProof", proof);
     } catch (error) {
-      setSubmitError(
-        error instanceof Error
-          ? error.message === "checkout.proofCompressFailed"
-            ? t("checkout.proofCompressFailed")
-            : error.message
-          : t("checkout.proofLoadFailed"),
-      );
+      setSubmitError(t(proofSelectionErrorKey(error)));
     } finally {
       setLoadingProof(false);
     }
