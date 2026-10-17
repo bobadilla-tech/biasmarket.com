@@ -123,7 +123,7 @@ export default function OrderDetailScreen() {
               method:
                 order.deliveryMethodType === "PICKUP"
                   ? t("orders.pickup")
-                  : `Courier${order.courierName ? ` · ${order.courierName}` : ""}`,
+                  : `${t("checkout.courier")}${order.courierName ? ` · ${order.courierName}` : ""}`,
             })}
           </Text>
         </View>
