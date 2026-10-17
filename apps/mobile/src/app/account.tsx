@@ -73,7 +73,7 @@ export default function AccountScreen() {
       </Pressable>
       {error || sessionError ? (
         <Text accessibilityRole="alert" className="text-sm text-red-300">
-          {error || sessionError}
+          {error || (sessionError ? t(sessionError) : null)}
         </Text>
       ) : null}
       <Text className="text-sm font-medium text-white">
