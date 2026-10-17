@@ -18,3 +18,7 @@ Catalog requests are public and work without a buyer session.
 The API base defaults to `https://api.biasmarket.com/api`. Set
 `EXPO_PUBLIC_API_URL` to a complete API base URL (including `/api`) when using a
 development server.
+
+Buyer authentication uses Expo SecureStore. Login and invitation-based account
+setup support English and Spanish using the shared `packages/i18n` catalogs;
+the account screen includes the language selector.

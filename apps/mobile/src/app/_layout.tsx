@@ -3,20 +3,22 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createQueryClient } from "@biasmarket/query";
-import { configureApiClient } from "@biasmarket/types";
+import { BuyerSessionProvider } from "../features/auth/session-context.js";
+import { configureMobileApiClient } from "../features/auth/api-client.js";
+import { MobileI18nProvider } from "../i18n/mobile-i18n.js";
 
 const queryClient = createQueryClient();
-const apiBaseUrl =
-  process.env.EXPO_PUBLIC_API_URL?.trim().replace(/\/+$/, "") ||
-  "https://api.biasmarket.com/api";
-
-configureApiClient({ baseUrl: apiBaseUrl, credentials: "omit" });
+configureMobileApiClient();
 
 export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Stack screenOptions={{ headerShown: false }} />
-      <StatusBar style="auto" />
+      <MobileI18nProvider>
+        <BuyerSessionProvider>
+          <Stack screenOptions={{ headerShown: false }} />
+          <StatusBar style="auto" />
+        </BuyerSessionProvider>
+      </MobileI18nProvider>
     </QueryClientProvider>
   );
 }

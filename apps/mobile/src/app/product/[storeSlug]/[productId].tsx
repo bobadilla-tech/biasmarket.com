@@ -12,6 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import { stores } from "@biasmarket/types";
 import type { PublicProductVariantResponseDto } from "@biasmarket/types";
 import { formatPrice } from "../../../features/catalog/catalog-ui";
+import { useMobileI18n } from "../../../i18n/mobile-i18n.js";
 
 export default function ProductDetailScreen() {
   const { storeSlug, productId } = useLocalSearchParams<{
@@ -19,6 +20,7 @@ export default function ProductDetailScreen() {
     productId: string;
   }>();
   const router = useRouter();
+  const { locale, t } = useMobileI18n();
   const productQuery = useQuery({
     queryKey: ["catalog", "product", storeSlug, productId],
     queryFn: () => stores.findPublicProduct(storeSlug, productId),
@@ -29,7 +31,7 @@ export default function ProductDetailScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-brand-ink">
         <ActivityIndicator color="#f2b4c7" />
-        <Text className="mt-3 text-white/70">Cargando producto...</Text>
+        <Text className="mt-3 text-white/70">{t("common.loadingProduct")}</Text>
       </View>
     );
   }
@@ -37,12 +39,10 @@ export default function ProductDetailScreen() {
   if (productQuery.error || !productQuery.data) {
     return (
       <View className="flex-1 items-center justify-center gap-4 bg-brand-ink px-6">
-        <Text className="text-center text-white">
-          No pudimos encontrar este producto.
-        </Text>
+        <Text className="text-center text-white">{t("catalog.notFound")}</Text>
         <Pressable accessibilityRole="button" onPress={() => router.back()}>
           <Text className="font-semibold text-brand-pink">
-            Volver al catálogo
+            {t("catalog.backToCatalog")}
           </Text>
         </Pressable>
       </View>
@@ -59,7 +59,9 @@ export default function ProductDetailScreen() {
     >
       <View className="flex-row items-center justify-between px-5 pb-3 pt-12">
         <Pressable accessibilityRole="button" onPress={() => router.back()}>
-          <Text className="font-semibold text-brand-pink">‹ Volver</Text>
+          <Text className="font-semibold text-brand-pink">
+            ‹ {t("common.back")}
+          </Text>
         </Pressable>
         <Text numberOfLines={1} className="max-w-[65%] text-sm text-white/70">
           {store.name}
@@ -83,29 +85,29 @@ export default function ProductDetailScreen() {
         />
       ) : (
         <View className="mx-5 h-72 items-center justify-center rounded-2xl bg-white/5">
-          <Text className="text-white/50">Sin imágenes</Text>
+          <Text className="text-white/50">{t("common.noImages")}</Text>
         </View>
       )}
       <View className="gap-5 px-5 pt-6">
         <View className="gap-2">
           <Text className="text-2xl font-bold text-white">{product.name}</Text>
           <Text className="text-2xl font-bold text-brand-pink">
-            {formatPrice(product.price, product.currency)}
+            {formatPrice(product.price, product.currency, locale)}
           </Text>
           <Text
             className={`text-sm font-semibold ${unavailable ? "text-red-300" : "text-emerald-300"}`}
           >
             {product.discontinued
-              ? "Producto descontinuado"
+              ? t("common.discontinued")
               : product.soldOut
-                ? "Agotado"
-                : "Disponible"}
+                ? t("common.outOfStock")
+                : t("common.available")}
           </Text>
         </View>
         {product.description ? (
           <View className="gap-2">
             <Text className="text-lg font-semibold text-white">
-              Descripción
+              {t("catalog.description")}
             </Text>
             <Text className="leading-6 text-white/75">
               {product.description}
@@ -114,13 +116,17 @@ export default function ProductDetailScreen() {
         ) : null}
         {product.variants.length ? (
           <View className="gap-3">
-            <Text className="text-lg font-semibold text-white">Variantes</Text>
+            <Text className="text-lg font-semibold text-white">
+              {t("catalog.variants")}
+            </Text>
             {product.variants.map((variant) => (
               <VariantRow
                 key={variant.id}
                 basePrice={product.price}
                 currency={product.currency}
                 variant={variant}
+                locale={locale}
+                t={t}
               />
             ))}
           </View>
@@ -131,7 +137,7 @@ export default function ProductDetailScreen() {
           onPress={() => router.push("/search")}
         >
           <Text className="text-center font-semibold text-brand-ink">
-            Seguir explorando
+            {t("catalog.keepBrowsing")}
           </Text>
         </Pressable>
       </View>
@@ -143,10 +149,14 @@ function VariantRow({
   currency,
   basePrice,
   variant,
+  locale,
+  t,
 }: {
   currency: string;
   basePrice: string;
   variant: PublicProductVariantResponseDto;
+  locale: "en" | "es";
+  t: (key: string, values?: Record<string, string | number>) => string;
 }) {
   const attributes = Object.entries(variant.attributes)
     .map(([key, value]) => `${key}: ${String(value)}`)
@@ -170,13 +180,15 @@ function VariantRow({
         ) : null}
         <Text className="text-xs text-white/60">
           {variant.stock === null
-            ? "Disponibilidad variable"
-            : `${Math.max(variant.stock - variant.reserved, 0)} disponibles`}
+            ? t("common.variableAvailability")
+            : t("catalog.availableCount", {
+                count: Math.max(variant.stock - variant.reserved, 0),
+              })}
         </Text>
       </View>
       {price ? (
         <Text className="font-semibold text-brand-pink">
-          {formatPrice(price, currency)}
+          {formatPrice(price, currency, locale)}
         </Text>
       ) : null}
     </View>

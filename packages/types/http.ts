@@ -7,6 +7,9 @@ export interface ApiClientConfig {
   // Defaults to "include" (cookie auth). Mobile passes "omit" and relies on
   // `getAuthHeader` for a bearer token instead.
   credentials?: RequestCredentials;
+  // Called for a 401 response to a request that carried a bearer token.
+  // Native apps use this to clear stale SecureStore credentials.
+  onUnauthorized?: (authorization: string) => void | Promise<void>;
 }
 
 let config: ApiClientConfig | undefined;
@@ -50,7 +53,9 @@ function errorMessage(
   status: number,
 ): string {
   if (
-    data && typeof data === "object" && "message" in data &&
+    data &&
+    typeof data === "object" &&
+    "message" in data &&
     typeof (data as { message: unknown }).message === "string"
   ) {
     return (data as { message: string }).message;
@@ -81,6 +86,14 @@ export async function customFetch<T>(
     headers: requestHeaders,
     credentials: config.credentials ?? "include",
   });
+
+  if (res.status === 401 && requestHeaders.has("Authorization")) {
+    try {
+      await config.onUnauthorized?.(requestHeaders.get("Authorization")!);
+    } catch {
+      // Preserve the API error even if local session cleanup fails.
+    }
+  }
 
   const body = [204, 205, 304].includes(res.status) ? null : await res.text();
   let data: unknown;
