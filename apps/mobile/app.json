@@ -9,9 +9,26 @@
     "scheme": "biasmarket",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.biasmarket.mobile",
+      "associatedDomains": ["applinks:biasmarket.com"]
     },
     "android": {
+      "package": "com.biasmarket.mobile",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "category": ["BROWSABLE", "DEFAULT"],
+          "data": [
+            {
+              "scheme": "https",
+              "host": "biasmarket.com",
+              "pathPrefix": "/store"
+            }
+          ]
+        }
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -32,6 +49,10 @@
         }
       ],
       "expo-image",
+      [
+        "expo-notifications",
+        { "icon": "./assets/images/icon.png", "color": "#208AEF" }
+      ],
       [
         "expo-image-picker",
         {

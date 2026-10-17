@@ -26,6 +26,7 @@ model User {
   sessions          Session[]
   accounts          Account[]
   stores            Store[]
+  deviceTokens      DeviceToken[]
   createdCoupons    Coupon[]           @relation("CouponCreatedBy")
   couponRedemptions CouponRedemption[]
 
@@ -598,6 +599,23 @@ model BuyerAccount {
   stores    CustomerStoreLink[]
   orders    Order[]
   addresses Address[]
+  deviceTokens DeviceToken[]
+}
+
+model DeviceToken {
+  id             String   @id @default(cuid())
+  userId         String?
+  buyerAccountId String?
+  expoPushToken  String   @unique
+  platform       String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  buyerAccount BuyerAccount? @relation(fields: [buyerAccountId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([buyerAccountId])
 }
 
 // Buyer-owned, reusable across every store the BuyerAccount is linked to

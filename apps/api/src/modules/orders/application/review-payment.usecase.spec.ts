@@ -24,7 +24,7 @@ describe('ReviewPaymentUseCase', () => {
     auditLog: { create: Mock };
     $transaction: Mock;
   };
-  let notifications: { syncStockAlerts: Mock };
+  let notifications: { syncStockAlerts: Mock; pushToBuyer: Mock };
   let mailer: {
     send: Mock<
       (params: {
@@ -53,7 +53,7 @@ describe('ReviewPaymentUseCase', () => {
       auditLog: { create: vi.fn() },
       $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(prisma)),
     };
-    notifications = { syncStockAlerts: vi.fn() };
+    notifications = { syncStockAlerts: vi.fn(), pushToBuyer: vi.fn() };
     mailer = { send: vi.fn().mockResolvedValue({ id: 'email-1' }) };
 
     const module: TestingModule = await Test.createTestingModule({

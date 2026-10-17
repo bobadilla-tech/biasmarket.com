@@ -20,6 +20,7 @@ import {
       }),
     }),
     BullModule.registerQueue({ name: QUEUE_NAMES.PING }),
+    BullModule.registerQueue({ name: QUEUE_NAMES.PUSH }),
     BullModule.registerQueue({
       name: QUEUE_NAMES.MAILER,
       defaultJobOptions: mailerJobOptions,
