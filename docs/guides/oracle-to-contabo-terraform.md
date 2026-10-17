@@ -605,10 +605,11 @@ single container: `pull access denied for minio/mc, repository does not exist`.
 MinIO had stopped publishing images on Docker Hub. The stack only ever worked on
 the old server because the layers were already cached there, and the compose
 file used the floating `latest` tag. A fresh machine is the first honest test of
-"can I rebuild this from nothing?" and this is what it found. The images still
-exist on `quay.io/minio/*`, so the fix was to repoint both services and to _pin_
-the tags instead of trusting `latest`. It is also a small piece of
-infrastructure hygiene worth remembering: pin what you depend on, because the
+"can I rebuild this from nothing?" and this is what it found. The first fix was
+to pin `quay.io/minio/*`. Quay later started returning 401 for anonymous pulls
+(September 2026), so compose now pins Coolify's GHCR rebuild
+`ghcr.io/coollabsio/minio:RELEASE.2025-10-15T17-29-55Z` (digest-pinned; that
+image also provides `mc` for `minio-init`). Pin what you depend on, because the
 registry can take it away.
 
 **4. Hot-patching, and the debt it creates.** To keep moving, the fixed compose

@@ -621,9 +621,12 @@ few details worth making explicit:
   Ubuntu 26.04 rejects (`invalid rsync-command syntax or options`). Example:
   `docker run --rm -v "$PWD/infra/vps":/src:ro ... ubuntu:24.04` with `rsync`
   and `openssh-client` installed.
-- MinIO no longer publishes images on Docker Hub; the compose files use pinned
-  `quay.io/minio/minio` and `quay.io/minio/mc` tags. Bootstrapping a fresh
-  server pulls them, so a stale `minio/minio` reference fails the bootstrap.
+- MinIO no longer publishes images on Docker Hub, and `quay.io/minio/*` now
+  returns 401 for anonymous pulls. Compose pins Coolify's rebuild
+  `ghcr.io/coollabsio/minio:RELEASE.2025-10-15T17-29-55Z` (digest-pinned, same
+  ref as `scripts/ci/e2e-images.sh`) for both the `minio` server and
+  `minio-init` (`mc` is in that image). A stale `minio/minio` or Quay tag
+  fails bootstrap on a fresh machine.
 - Point DNS at the new VPS before `--bootstrap`, so Caddy can complete ACME
   issuance as soon as it starts.
 - The private key and public key must be one matching pair. If a key is
