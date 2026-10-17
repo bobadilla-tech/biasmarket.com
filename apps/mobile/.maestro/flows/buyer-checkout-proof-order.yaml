@@ -14,7 +14,8 @@ appId: com.biasmarket.mobile
 - assertVisible: "^(?:Search|Buscar)$"
 - stopApp
 - launchApp
-- assertVisible: "^(?:Search|Buscar)$"
+- openLink: biasmarket:///account
+- assertVisible: "^(?:Buyer session active|Sesión de comprador activa)$"
 - openLink: biasmarket:///store/${STORE_SLUG}/product/${PRODUCT_ID}
 - assertVisible: ${PRODUCT_NAME}
 - tapOn: "^(?:Add to cart|Añadir al carrito)$"
