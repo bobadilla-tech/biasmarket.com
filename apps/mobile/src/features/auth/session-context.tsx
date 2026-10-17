@@ -64,7 +64,7 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
       await runStorageOperation(deleteBuyerSession);
     } catch (cause) {
       if (generation === sessionGeneration.current) {
-        setError(t("auth.sessionDeleteFailed"));
+        setError("auth.sessionDeleteFailed");
       }
       throw cause;
     }
@@ -95,7 +95,7 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
       .catch(() => {
         if (!active || generation !== sessionGeneration.current) return;
         setStatus("unauthenticated");
-        setError(t("auth.sessionReadFailed"));
+        setError("auth.sessionReadFailed");
       });
 
     return () => {
