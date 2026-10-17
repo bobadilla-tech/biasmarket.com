@@ -110,6 +110,7 @@ test("401 with a bearer token clears the native session", async () => {
     status: 401,
   });
   expect(cleanup).toHaveBeenCalledOnce();
+  expect(cleanup).toHaveBeenCalledWith("Bearer expired-token");
 });
 
 test("401 without a bearer token does not clear a session", async () => {
