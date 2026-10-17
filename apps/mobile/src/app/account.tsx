@@ -54,7 +54,9 @@ export default function HomeScreen() {
           ‹ {t("common.backToDiscover")}
         </Text>
       </Pressable>
-      <Text className="text-3xl font-bold text-brand-pink">\n        {t("common.brandName")}\n      </Text>
+      <Text className="text-3xl font-bold text-brand-pink">
+        {t("common.brandName")}
+      </Text>
       <Text className="text-lg text-white">
         {profile?.customer.name
           ? t("account.greeting", { name: profile.customer.name })
