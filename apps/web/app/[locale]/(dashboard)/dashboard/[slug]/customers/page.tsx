@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import type { Locale } from "next-intl";
 import { getTranslations } from "next-intl/server";
+import { LoadingState } from "@/components/shared/loading-state";
 import { CustomersPageClient } from "./customers-page-client";
 
 export async function generateMetadata({
@@ -14,5 +16,9 @@ export async function generateMetadata({
 }
 
 export default function CustomersPage() {
-  return <CustomersPageClient />;
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <CustomersPageClient />
+    </Suspense>
+  );
 }

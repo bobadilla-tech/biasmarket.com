@@ -6,11 +6,11 @@ import { cn } from "@/lib/utils";
 import type { OrderResponseDto } from "@biasmarket/types";
 import { getOrderStatus } from "../lib/order-status";
 
-export function OrderStatusBadge(
-  { order }: {
-    order: Pick<OrderResponseDto, "paymentStatus" | "fulfillmentStatus">;
-  },
-) {
+export function OrderStatusBadge({
+  order,
+}: {
+  order: Pick<OrderResponseDto, "paymentStatus" | "fulfillmentStatus">;
+}) {
   const t = useTranslations("dashboard.orders");
   const status = getOrderStatus(order, t);
   return (

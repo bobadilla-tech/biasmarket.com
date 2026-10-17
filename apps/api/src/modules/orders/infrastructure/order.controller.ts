@@ -4,6 +4,7 @@ import {
   Controller,
   Get,
   Header,
+  HttpException,
   NotFoundException,
   Param,
   Patch,
@@ -13,63 +14,144 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
-} from '@nestjs/common';
-import { AuthGuard, Session } from '@thallesp/nestjs-better-auth';
-import type { UserSession } from '@thallesp/nestjs-better-auth';
-import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+} from "@nestjs/common";
+import { AuthGuard, Session } from "@thallesp/nestjs-better-auth";
+import type { UserSession } from "@thallesp/nestjs-better-auth";
+import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
 import type {
   FulfillmentStatus,
   PaymentMethodType,
   PaymentStatus,
-} from '@biasmarket/db';
+} from "@biasmarket/db";
 import {
   ApiConsumes,
   ApiOkResponse,
   ApiProduces,
   ApiQuery,
-} from '@nestjs/swagger';
-import { OrderRepository } from './order.repository.js';
-import { ReviewPaymentUseCase } from '../application/review-payment.usecase.js';
-import { AdvanceFulfillmentUseCase } from '../application/advance-fulfillment.usecase.js';
-import { CancelOrderUseCase } from '../application/cancel-order.usecase.js';
-import { ReviewPaymentDto } from '../dto/review-payment.dto.js';
-import { AdvanceFulfillmentDto } from '../dto/advance-fulfillment.dto.js';
-import { CancelOrderDto } from '../dto/cancel-order.dto.js';
-import { PrismaService } from '../../../prisma/prisma.service.js';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { StorageService } from '../../../storage/storage.service.js';
+} from "@nestjs/swagger";
+import { OrderRepository } from "./order.repository.js";
+import { ReviewPaymentUseCase } from "../application/review-payment.usecase.js";
+import { AdvanceFulfillmentUseCase } from "../application/advance-fulfillment.usecase.js";
+import { CancelOrderUseCase } from "../application/cancel-order.usecase.js";
+import { OrderEventsService } from "../application/order-events.service.js";
+import { ReviewPaymentDto } from "../dto/review-payment.dto.js";
+import { AdvanceFulfillmentDto } from "../dto/advance-fulfillment.dto.js";
+import { CancelOrderDto } from "../dto/cancel-order.dto.js";
+import { VoidOrderPaymentDto } from "../dto/void-order-payment.dto.js";
+import { VoidOrderPaymentUseCase } from "../application/void-order-payment.usecase.js";
+import {
+  assertAcceptsSellerPayments,
+  assertSellerPaymentInput,
+  assertWithinSellerLimit,
+  OrderPaymentsService,
+  reservedPendingCents,
+} from "../application/order-payments.service.js";
+import { DuplicateOperationCodeException } from "../domain/duplicate-operation-code.exception.js";
+import { PrismaService } from "../../../prisma/prisma.service.js";
+import { FileInterceptor } from "@nestjs/platform-express";
+import {
+  isNoteTooLong,
+  NOTE_TOO_LONG_MESSAGE,
+  sanitizeDisplayText,
+} from "../../../common/text-sanitize.js";
+import { PAYMENT_PROOF_UPLOAD_LIMITS } from "../../../common/upload-limits.js";
+import { StorageService } from "../../../storage/storage.service.js";
+import { OrderDetailResponseDto } from "../dto/order-response.dto.js";
+import { RelatedOrdersResponseDto } from "../dto/related-orders-response.dto.js";
 import type {
-  OrderDetailResponseDto,
   OrderItemResponseDto,
   OrderPaymentResponseDto,
   OrderProductResponseDto,
   OrderResponseDto,
   OrderStatusResponseDto,
   OrderVariantResponseDto,
-} from '../dto/order-response.dto.js';
+} from "../dto/order-response.dto.js";
 import {
   IMAGE_UPLOAD_MIME_TYPES,
+  MAX_UPLOAD_SIZE_BYTES,
   UploadedFileValidationPipe,
   type ValidatedUploadedFile,
-} from '../../../common/uploaded-file-validation.pipe.js';
+} from "../../../common/uploaded-file-validation.pipe.js";
+import { computePaymentSummary } from "../../../common/payment-summary.js";
+import { UpdateOrderShippingDto } from "../dto/update-order-shipping.dto.js";
 
 const OPTIONAL_PAYMENT_IMAGE_PIPE = new UploadedFileValidationPipe({
   allowedMimeTypes: IMAGE_UPLOAD_MIME_TYPES,
   fileIsRequired: false,
 });
+const PACKED_PHOTO_PIPE = new UploadedFileValidationPipe({
+  allowedMimeTypes: IMAGE_UPLOAD_MIME_TYPES,
+});
+
+// Money boundary comparisons compare in cents, not raw floats, so a residual
+// float-conversion artifact can never reject (or accept) a payment that's
+// actually exact to the cent.
+const toCents = (n: number) => Math.round(n * 100);
 
 type PaymentStatusLiteral =
-  | 'PENDING_PAYMENT'
-  | 'PARTIALLY_PAID'
-  | 'PAYMENT_SUBMITTED'
-  | 'VERIFIED'
-  | 'REJECTED'
-  | 'CANCELLED';
+  | "PENDING_PAYMENT"
+  | "PARTIALLY_PAID"
+  | "PAYMENT_SUBMITTED"
+  | "VERIFIED"
+  | "REJECTED"
+  | "CANCELLED";
 type FulfillmentStatusLiteral =
-  'ORDERING' | 'IN_TRANSIT' | 'READY' | 'COMPLETED';
-type DeliveryMethodTypeLiteral = 'PICKUP' | 'COURIER';
-type CancellationResolutionLiteral = 'REFUNDED' | 'RETAINED' | 'STORE_CREDIT';
-type PaymentMethodLiteral = 'YAPE' | 'PLIN' | 'TRANSFER' | 'CASH';
+  "ORDERING" | "IN_TRANSIT" | "READY" | "COMPLETED";
+type DeliveryMethodTypeLiteral = "PICKUP" | "COURIER";
+type CancellationResolutionLiteral = "REFUNDED" | "RETAINED" | "STORE_CREDIT";
+type PaymentMethodLiteral = "YAPE" | "PLIN" | "TRANSFER" | "CASH";
+type OrderSourceLiteral = "MARKETPLACE" | "VENDOR_ASSISTED";
+
+// Seller and checkout responses copy these fields and nothing else. A new
+// column on `Order` stays off the wire until it is added here, including the
+// private-link columns (`accessTokenHash`, `createdByUserId`,
+// `customerPhoneNormalized`, …).
+const PUBLIC_ORDER_FIELDS = [
+  "id",
+  "storeId",
+  "customerId",
+  "customerEmail",
+  "customerPhone",
+  "customerName",
+  "source",
+  "deliveryMethodType",
+  "deliveryDetails",
+  "pickupPointId",
+  "pickupDate",
+  "courierName",
+  "courierModality",
+  "paymentMethod",
+  "paymentStatus",
+  "paymentRejectionReason",
+  "fulfillmentStatus",
+  "status",
+  "cancellationResolution",
+  "cancellationReason",
+  "retainedAmount",
+  "releasedAmount",
+  "releasedResolution",
+  "totalAmount",
+  "requiredAmount",
+  "currency",
+  "expiresAt",
+  "createdAt",
+  "paidAmount",
+  "pendingAmount",
+  "paidPercentage",
+  "items",
+  "payments",
+] as const;
+
+export function pickPublicOrderFields<T extends object>(row: T): T {
+  const source = row as Record<string, unknown>;
+  const copy: Record<string, unknown> = {};
+  for (const key of PUBLIC_ORDER_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(source, key)) {
+      copy[key] = source[key];
+    }
+  }
+  return copy as T;
+}
 
 export interface OrderProductRow {
   id: string;
@@ -80,7 +162,7 @@ export interface OrderProductRow {
   currency: string;
   images: string[];
   availableUntil: Date | null;
-  status: 'DRAFT' | 'PUBLISHED';
+  status: "DRAFT" | "PUBLISHED";
   soldOut: boolean;
   discontinued: boolean;
   deletedAt: Date | null;
@@ -123,8 +205,12 @@ export interface OrderPaymentRow {
   note: string | null;
   imageUrl: string | null;
   createdAt: Date;
-  source: 'SELLER_RECORDED' | 'BUYER_SUBMITTED';
-  reviewStatus: 'N_A' | 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED';
+  operationCode?: string | null;
+  paidAt?: Date | null;
+  voidedAt?: Date | null;
+  voidReason?: string | null;
+  source: "SELLER_RECORDED" | "BUYER_SUBMITTED";
+  reviewStatus: "N_A" | "PENDING_REVIEW" | "APPROVED" | "REJECTED";
   reviewedAt: Date | null;
   reviewedBy: string | null;
 }
@@ -137,17 +223,21 @@ export interface OrderRow {
   customerEmail: string | null;
   customerPhone: string;
   customerName: string | null;
+  source: OrderSourceLiteral;
   deliveryMethodType: DeliveryMethodTypeLiteral;
   deliveryDetails: unknown;
   pickupPointId: string | null;
   pickupDate: Date | null;
   courierName: string | null;
-  courierModality: 'AGENCY' | 'HOME' | null;
+  courierModality: "AGENCY" | "HOME" | null;
+  trackingNumber: string | null;
+  trackingUrl: string | null;
+  packedPhotoUrl: string | null;
   paymentMethod: PaymentMethodLiteral | null;
   paymentStatus: PaymentStatusLiteral;
   paymentRejectionReason: string | null;
   fulfillmentStatus: FulfillmentStatusLiteral;
-  status: 'ACTIVE' | 'CANCELLED';
+  status: "ACTIVE" | "CANCELLED";
   cancellationResolution: CancellationResolutionLiteral | null;
   cancellationReason: string | null;
   retainedAmount: { toString(): string } | null;
@@ -158,6 +248,10 @@ export interface OrderRow {
   currency: string;
   expiresAt: Date;
   createdAt: Date;
+  linkFirstOpenedAt: Date | null;
+  claimedAt: Date | null;
+  buyerConfirmedReceivedAt: Date | null;
+  createdBy?: { name: string | null } | null;
   paidAmount: number;
   pendingAmount: number;
   paidPercentage: number;
@@ -173,17 +267,21 @@ interface OrderStatusRow {
   customerEmail: string | null;
   customerPhone: string;
   customerName: string | null;
+  source: OrderSourceLiteral;
   deliveryMethodType: DeliveryMethodTypeLiteral;
   deliveryDetails: unknown;
   pickupPointId: string | null;
   pickupDate: Date | null;
   courierName: string | null;
-  courierModality: 'AGENCY' | 'HOME' | null;
+  courierModality: "AGENCY" | "HOME" | null;
+  trackingNumber: string | null;
+  trackingUrl: string | null;
+  packedPhotoUrl: string | null;
   paymentMethod: PaymentMethodLiteral | null;
   paymentStatus: PaymentStatusLiteral;
   paymentRejectionReason: string | null;
   fulfillmentStatus: FulfillmentStatusLiteral;
-  status: 'ACTIVE' | 'CANCELLED';
+  status: "ACTIVE" | "CANCELLED";
   cancellationResolution: CancellationResolutionLiteral | null;
   cancellationReason: string | null;
   retainedAmount: { toString(): string } | null;
@@ -229,25 +327,49 @@ export function toOrderPaymentDto(
   payment: OrderPaymentRow,
 ): OrderPaymentResponseDto {
   return {
-    ...payment,
+    id: payment.id,
+    orderId: payment.orderId,
+    storeId: payment.storeId,
     amount: payment.amount.toString(),
+    currency: payment.currency,
+    method: payment.method,
+    note: payment.note,
+    imageUrl: payment.imageUrl,
     createdAt: payment.createdAt.toISOString(),
+    operationCode: payment.operationCode ?? null,
+    paidAt: payment.paidAt?.toISOString() ?? null,
+    voidedAt: payment.voidedAt?.toISOString() ?? null,
+    voidReason: payment.voidReason ?? null,
+    source: payment.source,
+    reviewStatus: payment.reviewStatus,
     reviewedAt: payment.reviewedAt?.toISOString() ?? null,
+    reviewedBy: payment.reviewedBy,
   };
 }
 
 export function toOrderDto(row: OrderRow): OrderResponseDto {
   return {
-    ...row,
+    ...pickPublicOrderFields(row),
     deliveryDetails: row.deliveryDetails as Record<string, unknown> | null,
     pickupDate: row.pickupDate?.toISOString() ?? null,
     retainedAmount: row.retainedAmount?.toString() ?? null,
     releasedAmount: row.releasedAmount?.toString() ?? null,
     releasedResolution: row.releasedResolution ?? null,
+    trackingNumber: row.trackingNumber,
+    trackingUrl: row.trackingUrl,
     totalAmount: row.totalAmount.toString(),
     requiredAmount: row.requiredAmount.toString(),
     expiresAt: row.expiresAt.toISOString(),
     createdAt: row.createdAt.toISOString(),
+    // Not in PUBLIC_ORDER_FIELDS: that list also shapes the checkout and
+    // status responses, which must not grow these. The creator is shown by
+    // display name only, never by user id.
+    linkFirstOpenedAt: row.linkFirstOpenedAt?.toISOString() ?? null,
+    claimedAt: row.claimedAt?.toISOString() ?? null,
+    buyerConfirmedReceivedAt:
+      row.buyerConfirmedReceivedAt?.toISOString() ?? null,
+    createdByName: row.createdBy?.name ?? null,
+    packedPhotoAvailable: Boolean(row.packedPhotoUrl),
     items: row.items.map(toOrderItemDto),
     payments: row.payments.map(toOrderPaymentDto),
   };
@@ -259,20 +381,23 @@ function toOrderDetailDto(row: OrderRow): OrderDetailResponseDto {
 
 function toOrderStatusDto(row: OrderStatusRow): OrderStatusResponseDto {
   return {
-    ...row,
+    ...pickPublicOrderFields(row),
     deliveryDetails: row.deliveryDetails as Record<string, unknown> | null,
     pickupDate: row.pickupDate?.toISOString() ?? null,
     retainedAmount: row.retainedAmount?.toString() ?? null,
     releasedAmount: row.releasedAmount?.toString() ?? null,
     releasedResolution: row.releasedResolution ?? null,
+    trackingNumber: row.trackingNumber,
+    trackingUrl: row.trackingUrl,
     totalAmount: row.totalAmount.toString(),
     requiredAmount: row.requiredAmount.toString(),
     expiresAt: row.expiresAt.toISOString(),
     createdAt: row.createdAt.toISOString(),
+    packedPhotoAvailable: Boolean(row.packedPhotoUrl),
   };
 }
 
-@Controller('stores/:storeId/orders')
+@Controller("stores/:storeId/orders")
 @UseGuards(AuthGuard)
 export class OrderController {
   constructor(
@@ -282,16 +407,19 @@ export class OrderController {
     private cancelOrder: CancelOrderUseCase,
     private prisma: PrismaService,
     private storage: StorageService,
+    private events: OrderEventsService,
+    private voidOrderPayment: VoidOrderPaymentUseCase,
+    private payments: OrderPaymentsService,
   ) {}
 
-  @ApiQuery({ name: 'paymentStatus', required: false, type: String })
-  @ApiQuery({ name: 'fulfillmentStatus', required: false, type: String })
+  @ApiQuery({ name: "paymentStatus", required: false, type: String })
+  @ApiQuery({ name: "fulfillmentStatus", required: false, type: String })
   @Get()
   async findAll(
-    @Param('storeId') storeId: string,
+    @Param("storeId") storeId: string,
     @Session() session: UserSession,
-    @Query('paymentStatus') paymentStatus: PaymentStatus | undefined,
-    @Query('fulfillmentStatus')
+    @Query("paymentStatus") paymentStatus: PaymentStatus | undefined,
+    @Query("fulfillmentStatus")
     fulfillmentStatus: FulfillmentStatus | undefined,
   ): Promise<OrderResponseDto[]> {
     await this.orders.assertOwnership(storeId, session.user.id);
@@ -302,10 +430,10 @@ export class OrderController {
     return rows.map(toOrderDto);
   }
 
-  @Get(':orderId')
+  @Get(":orderId")
   async findOne(
-    @Param('storeId') storeId: string,
-    @Param('orderId') orderId: string,
+    @Param("storeId") storeId: string,
+    @Param("orderId") orderId: string,
     @Session() session: UserSession,
   ): Promise<OrderDetailResponseDto> {
     await this.orders.assertOwnership(storeId, session.user.id);
@@ -313,24 +441,38 @@ export class OrderController {
     return toOrderDetailDto(row);
   }
 
+  // Other orders of the same buyer phone in this store. Ownership first, then
+  // the order is resolved inside the store, so a foreign or missing order is
+  // the same 404 as `findOne`.
+  @Get(":orderId/related")
+  async findRelated(
+    @Param("storeId") storeId: string,
+    @Param("orderId") orderId: string,
+    @Session() session: UserSession,
+  ): Promise<RelatedOrdersResponseDto> {
+    await this.orders.assertOwnership(storeId, session.user.id);
+    const row = await this.orders.findRowByIdForStore(orderId, storeId);
+    return this.orders.findRelatedForStore(storeId, row);
+  }
+
   // Authenticated streaming read for a payment's proof image — the only
   // way to fetch one. Never redirects to a presigned URL (see
-  // docs/plans/2026-08-08-payment-proof-image-access-control-plan.md): the
+  // .artifacts/2026/08/20260808--payment-proof-image-access-control/plan.md): the
   // payment bucket is private, so `OrderPayment.imageUrl` alone is no longer
   // fetchable by anyone who obtains it, only via this ownership-gated route.
-  @Get(':orderId/payments/:paymentId/image')
-  @ApiOkResponse({ schema: { type: 'string', format: 'binary' } })
-  @ApiProduces('image/jpeg', 'image/png')
+  @Get(":orderId/payments/:paymentId/image")
+  @ApiOkResponse({ schema: { type: "string", format: "binary" } })
+  @ApiProduces("image/jpeg", "image/png")
   // Helmet's default CORP (`same-origin`) makes the browser block this image
   // from being embedded by the web app's cross-origin `<img>` tags
   // (`ERR_BLOCKED_BY_RESPONSE.NotSameOrigin`) — the web frontend
   // (`biasmarket.com`) and the API (`api.biasmarket.com`) are different
   // origins. Same reasoning as `CustomerOrderPaymentsController.getImage`.
-  @Header('Cross-Origin-Resource-Policy', 'cross-origin')
+  @Header("Cross-Origin-Resource-Policy", "cross-origin")
   async getPaymentImage(
-    @Param('storeId') storeId: string,
-    @Param('orderId') orderId: string,
-    @Param('paymentId') paymentId: string,
+    @Param("storeId") storeId: string,
+    @Param("orderId") orderId: string,
+    @Param("paymentId") paymentId: string,
     @Session() session: UserSession,
   ): Promise<StreamableFile> {
     await this.orders.assertOwnership(storeId, session.user.id);
@@ -340,7 +482,7 @@ export class OrderController {
       storeId,
     );
     if (!payment.imageUrl) {
-      throw new NotFoundException('Este pago no tiene comprobante');
+      throw new NotFoundException("Este pago no tiene comprobante");
     }
     const { body, contentType } = await this.storage.getPaymentImageStream(
       payment.imageUrl,
@@ -348,74 +490,221 @@ export class OrderController {
     return new StreamableFile(body, { type: contentType });
   }
 
-  @Post(':orderId/payments')
-  @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FileInterceptor('file'))
+  @Patch(":orderId/shipping")
+  @ApiOkResponse({ type: OrderDetailResponseDto })
+  async updateShipping(
+    @Param("storeId") storeId: string,
+    @Param("orderId") orderId: string,
+    @Session() session: UserSession,
+    @Body() dto: UpdateOrderShippingDto,
+  ): Promise<OrderDetailResponseDto> {
+    await this.orders.assertOwnership(storeId, session.user.id);
+    if (dto.trackingNumber === undefined && dto.trackingUrl === undefined) {
+      throw new BadRequestException("Ingresa los datos de seguimiento");
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      const locked = await tx.$queryRaw<Array<{ id: string }>>`
+        SELECT id FROM "Order" WHERE id = ${orderId} AND "storeId" = ${storeId} FOR UPDATE
+      `;
+      if (!locked.length) throw new NotFoundException("Orden no encontrada");
+
+      const order = await tx.order.findFirst({
+        where: { id: orderId, storeId },
+        select: { trackingNumber: true, trackingUrl: true, source: true },
+      });
+      if (!order) throw new NotFoundException("Orden no encontrada");
+
+      const trackingNumberChanged =
+        dto.trackingNumber !== undefined &&
+        dto.trackingNumber !== order.trackingNumber;
+      const trackingUrlChanged =
+        dto.trackingUrl !== undefined && dto.trackingUrl !== order.trackingUrl;
+      if (!trackingNumberChanged && !trackingUrlChanged) return;
+
+      const data = {
+        ...(dto.trackingNumber !== undefined && {
+          trackingNumber: dto.trackingNumber,
+        }),
+        ...(dto.trackingUrl !== undefined && { trackingUrl: dto.trackingUrl }),
+      };
+      const updated = await tx.order.updateMany({
+        where: { id: orderId, storeId },
+        data,
+      });
+      if (updated.count !== 1) {
+        throw new NotFoundException("Orden no encontrada");
+      }
+
+      if (trackingNumberChanged && dto.trackingNumber) {
+        await this.events.record(tx, {
+          orderId,
+          storeId,
+          type: "TRACKING_ADDED",
+          actor: "SELLER",
+        });
+      }
+      if (
+        order.source === "VENDOR_ASSISTED" &&
+        (trackingNumberChanged || trackingUrlChanged)
+      ) {
+        await tx.auditLog.create({
+          data: {
+            actorId: session.user.id,
+            storeId,
+            action: "order.tracking_updated",
+            entityType: "Order",
+            entityId: orderId,
+            metadata: {},
+          },
+        });
+      }
+    });
+
+    return toOrderDetailDto(
+      await this.orders.findRowByIdForStore(orderId, storeId),
+    );
+  }
+
+  @Post(":orderId/shipping/photo")
+  @ApiConsumes("multipart/form-data")
+  @ApiOkResponse({ type: OrderDetailResponseDto })
+  @UseInterceptors(
+    FileInterceptor("file", { limits: { fileSize: MAX_UPLOAD_SIZE_BYTES } }),
+  )
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 20 } })
+  async uploadPackedPhoto(
+    @Param("storeId") storeId: string,
+    @Param("orderId") orderId: string,
+    @Session() session: UserSession,
+    @UploadedFile(PACKED_PHOTO_PIPE) file: ValidatedUploadedFile,
+  ): Promise<OrderDetailResponseDto> {
+    await this.orders.assertOwnership(storeId, session.user.id);
+    const imageUrl = await this.storage.uploadPaymentImage(
+      file.buffer,
+      file.detectedMimeType,
+    );
+
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        const order = await tx.order.findFirst({
+          where: { id: orderId, storeId },
+          select: { source: true },
+        });
+        if (!order) throw new NotFoundException("Orden no encontrada");
+
+        const updated = await tx.order.updateMany({
+          where: { id: orderId, storeId },
+          data: { packedPhotoUrl: imageUrl },
+        });
+        if (updated.count !== 1) {
+          throw new NotFoundException("Orden no encontrada");
+        }
+        await this.events.record(tx, {
+          orderId,
+          storeId,
+          type: "PACKED_PHOTO_ADDED",
+          actor: "SELLER",
+        });
+        if (order.source === "VENDOR_ASSISTED") {
+          await tx.auditLog.create({
+            data: {
+              actorId: session.user.id,
+              storeId,
+              action: "order.packed_photo_added",
+              entityType: "Order",
+              entityId: orderId,
+              metadata: {},
+            },
+          });
+        }
+      });
+    } catch (error) {
+      await this.storage.deleteImage(imageUrl).catch(() => undefined);
+      throw error;
+    }
+
+    return toOrderDetailDto(
+      await this.orders.findRowByIdForStore(orderId, storeId),
+    );
+  }
+
+  @Get(":orderId/shipping/photo")
+  @ApiOkResponse({ schema: { type: "string", format: "binary" } })
+  @ApiProduces("image/jpeg", "image/png")
+  @Header("Cache-Control", "no-store")
+  @Header("Cross-Origin-Resource-Policy", "cross-origin")
+  async getPackedPhoto(
+    @Param("storeId") storeId: string,
+    @Param("orderId") orderId: string,
+    @Session() session: UserSession,
+  ): Promise<StreamableFile> {
+    await this.orders.assertOwnership(storeId, session.user.id);
+    const order = await this.orders.findRowByIdForStore(orderId, storeId);
+    if (!order.packedPhotoUrl) {
+      throw new NotFoundException("Este pedido no tiene foto del paquete");
+    }
+    const { body, contentType } = await this.storage.getPaymentImageStream(
+      order.packedPhotoUrl,
+    );
+    return new StreamableFile(body, { type: contentType });
+  }
+
+  @Post(":orderId/payments")
+  @ApiConsumes("multipart/form-data")
+  @UseInterceptors(
+    FileInterceptor("file", { limits: PAYMENT_PROOF_UPLOAD_LIMITS }),
+  )
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { ttl: 60_000, limit: 20 } })
   async addPayment(
-    @Param('storeId') storeId: string,
-    @Param('orderId') orderId: string,
+    @Param("storeId") storeId: string,
+    @Param("orderId") orderId: string,
     @Session() session: UserSession,
-    @Body('amount') amount: string,
-    @Body('method') method: string,
-    @Body('note') note?: string,
-    @UploadedFile(OPTIONAL_PAYMENT_IMAGE_PIPE)
-    file?: ValidatedUploadedFile,
+    @Body("amount") amount: string,
+    @Body("method") method: string,
+    @Body("note") note?: string,
+    @UploadedFile(OPTIONAL_PAYMENT_IMAGE_PIPE) file?: ValidatedUploadedFile,
+    @Body("operationCode") operationCode?: unknown,
+    @Body("paidAt") paidAt?: unknown,
+    @Body("confirmDuplicate") confirmDuplicate?: unknown,
   ): Promise<OrderDetailResponseDto> {
     await this.orders.assertOwnership(storeId, session.user.id);
+    if (isNoteTooLong(note)) {
+      throw new BadRequestException(NOTE_TOO_LONG_MESSAGE);
+    }
     const order = await this.orders.findRowByIdForStore(orderId, storeId);
-    if (order.paymentStatus === 'CANCELLED') {
-      throw new BadRequestException(
-        'No se pueden registrar abonos en una orden cancelada',
+    assertAcceptsSellerPayments(order);
+    const input = assertSellerPaymentInput({
+      amount,
+      method,
+      operationCode,
+      paidAt,
+      confirmDuplicate,
+      hasCapture: Boolean(file),
+    });
+    const numericAmount = Number(input.amount);
+    // Compare in cents against what is really left: the balance minus buyer
+    // proofs still waiting for review (an approved proof must never push the
+    // order past its required amount).
+    assertWithinSellerLimit(
+      input.amountCents,
+      order.pendingAmount,
+      reservedPendingCents(order.payments ?? []),
+    );
+
+    // Advisory duplicate check, before anything is uploaded or written. The
+    // 409 carries only `{ code, orderId }` (see AllExceptionsFilter).
+    if (input.operationCode && !input.confirmDuplicate) {
+      const duplicate = await this.payments.findDuplicateOperationCode(
+        storeId,
+        input.operationCode,
+        { currentOrderId: orderId },
       );
-    }
-    if (order.paymentStatus === 'REJECTED') {
-      throw new BadRequestException(
-        'No se pueden registrar abonos en una orden rechazada',
-      );
-    }
-    // A VERIFIED order only closes to further payments once its balance is
-    // actually settled. Approving on a deposit (or a legacy pre-guard order
-    // approved with zero money) leaves `pendingAmount > 0`, and the seller
-    // must be able to keep registering the remainder — mirrors the frontend
-    // `paymentsLocked` rule (features/orders/lib/order-status.ts).
-    if (
-      order.paymentStatus === 'VERIFIED' &&
-      Number(order.pendingAmount) <= 0
-    ) {
-      throw new BadRequestException('La orden ya está pagada');
-    }
-    if (
-      order.fulfillmentStatus === 'IN_TRANSIT' ||
-      order.fulfillmentStatus === 'READY' ||
-      order.fulfillmentStatus === 'COMPLETED'
-    ) {
-      throw new BadRequestException(
-        'No se pueden registrar abonos en una orden enviada',
-      );
-    }
-    const numericAmount = Number(amount);
-    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
-      throw new BadRequestException('Monto inválido');
-    }
-    // Belt-and-suspenders on top of the Decimal-space fix in
-    // `computePaymentSummary`: money boundary comparisons compare in cents,
-    // not raw floats, so a residual float-conversion artifact in
-    // `numericAmount`/`pendingAmount` can never reject (or accept) a payment
-    // that's actually exact to the cent.
-    const toCents = (n: number) => Math.round(n * 100);
-    if (toCents(numericAmount) > toCents(order.pendingAmount)) {
-      throw new BadRequestException('El abono excede el saldo pendiente');
-    }
-    const PAYMENT_METHODS: PaymentMethodType[] = [
-      'YAPE',
-      'PLIN',
-      'TRANSFER',
-      'CASH',
-    ];
-    if (!method || !PAYMENT_METHODS.includes(method as PaymentMethodType)) {
-      throw new BadRequestException('Selecciona un método de pago');
+      if (duplicate) {
+        throw new DuplicateOperationCodeException(duplicate.orderId);
+      }
     }
 
     let imageUrl: string | null = null;
@@ -434,12 +723,21 @@ export class OrderController {
 
     try {
       await this.prisma.$transaction(async (tx) => {
-        // Re-read the order under the transaction's snapshot so concurrent
-        // requests serialize on this row.
+        // Lock the order so concurrent add/void/review operations serialize
+        // before reading the credited payment total.
+        const [locked] = await tx.$queryRaw<Array<{ id: string }>>`
+          SELECT "id" FROM "Order"
+          WHERE "id" = ${orderId} AND "storeId" = ${storeId}
+          FOR UPDATE
+        `;
+        if (!locked) throw new NotFoundException("Orden no encontrada");
+
         const current = await tx.order.findUniqueOrThrow({
           where: { id: orderId },
           select: {
             paymentStatus: true,
+            fulfillmentStatus: true,
+            status: true,
             requiredAmount: true,
             currency: true,
           },
@@ -450,31 +748,45 @@ export class OrderController {
         // not raw floats, so a residual float-conversion artifact in
         // `numericAmount`/`pendingAmount` can never reject (or accept) a payment
         // that's actually exact to the cent.
-        const paidSummary = await tx.orderPayment.aggregate({
-          _sum: { amount: true },
-          where: {
-            orderId,
-            reviewStatus: { notIn: ['REJECTED'] },
+        const payments = await tx.orderPayment.findMany({
+          where: { orderId, storeId },
+          select: {
+            amount: true,
+            source: true,
+            reviewStatus: true,
+            voidedAt: true,
           },
         });
-        const currentPaid = Number(paidSummary._sum.amount ?? 0);
-        const currentPending = Number(current.requiredAmount) - currentPaid;
-        if (toCents(numericAmount) > toCents(currentPending)) {
-          throw new Error('El abono excede el saldo pendiente');
-        }
+        const paymentSummary = computePaymentSummary(
+          current.requiredAmount,
+          payments,
+        );
+        const currentPaid = paymentSummary.paidAmount;
+        const currentPending = paymentSummary.pendingAmount;
+        // The snapshot read before the lock is stale by now: a cancel, a
+        // rejection, a shipment or a concurrent payment may have committed.
+        assertAcceptsSellerPayments({
+          ...current,
+          pendingAmount: currentPending,
+        });
+        assertWithinSellerLimit(
+          input.amountCents,
+          currentPending,
+          reservedPendingCents(payments),
+        );
 
         // Already-VERIFIED orders with a residual balance stay VERIFIED no
         // matter what this payment brings them to: VERIFIED is terminal
         // (order-status.vo has no outgoing transitions), stock was already
         // decremented at approval, and routing through ReviewPaymentUseCase
         // would throw VERIFIED -> VERIFIED.
-        alreadyVerified = current.paymentStatus === 'VERIFIED';
+        alreadyVerified = current.paymentStatus === "VERIFIED";
 
         const nextPaid = currentPaid + numericAmount;
         nextStatus =
           toCents(nextPaid) >= toCents(Number(current.requiredAmount))
-            ? 'VERIFIED'
-            : 'PARTIALLY_PAID';
+            ? "VERIFIED"
+            : "PARTIALLY_PAID";
 
         await tx.orderPayment.create({
           data: {
@@ -482,8 +794,11 @@ export class OrderController {
             storeId,
             amount: numericAmount,
             currency: current.currency,
-            method: method as PaymentMethodType,
-            note,
+            method: input.method,
+            note: sanitizeDisplayText(note),
+            operationCode: input.operationCode,
+            paidAt: input.paidAt,
+            recordedBy: session.user.id,
             ...(imageUrl && { imageUrl }),
           },
         });
@@ -503,17 +818,17 @@ export class OrderController {
             data: {
               actorId: session.user.id,
               storeId,
-              action: 'payment.recorded',
-              entityType: 'Order',
+              action: "payment.recorded",
+              entityType: "Order",
               entityId: orderId,
               metadata: {
                 amount: numericAmount,
-                method,
-                resultingPaymentStatus: 'VERIFIED',
+                method: input.method,
+                resultingPaymentStatus: "VERIFIED",
               },
             },
           });
-        } else if (nextStatus === 'PARTIALLY_PAID') {
+        } else if (nextStatus === "PARTIALLY_PAID") {
           await this.orders.saveStatus(
             orderId,
             { paymentStatus: nextStatus },
@@ -523,28 +838,48 @@ export class OrderController {
             data: {
               actorId: session.user.id,
               storeId,
-              action: 'payment.partial',
-              entityType: 'Order',
+              action: "payment.partial",
+              entityType: "Order",
               entityId: orderId,
               metadata: {
                 amount: numericAmount,
-                method,
+                method: input.method,
                 resultingPaymentStatus: nextStatus,
               },
             },
           });
         }
+
+        // Recorded once, after the branches: every payment row gets exactly
+        // one PAYMENT_SUBMITTED, including the one that settles the balance
+        // (`!alreadyVerified && nextStatus === 'VERIFIED'`), which matches no
+        // branch above. Inside this transaction so it commits with the
+        // payment row, per security-payments.md §9.
+        await this.events.record(tx, {
+          orderId,
+          storeId,
+          type: "PAYMENT_SUBMITTED",
+          actor: "SELLER",
+          payload: { amount: numericAmount, method: input.method },
+        });
       });
     } catch (e) {
+      // Do not leave the capture orphaned when nothing was recorded.
+      if (imageUrl) {
+        await this.storage.deleteImage(imageUrl).catch(() => undefined);
+      }
+      // Business errors (400/404/409...) pass through unchanged; only an
+      // unexpected failure is wrapped, without leaking database details.
+      if (e instanceof HttpException) throw e;
       throw new BadRequestException(e instanceof Error ? e.message : String(e));
     }
 
-    if (!alreadyVerified && nextStatus === 'VERIFIED') {
+    if (!alreadyVerified && nextStatus === "VERIFIED") {
       await this.reviewPayment.execute(
         orderId,
         storeId,
         session.user.id,
-        'approve',
+        "approve",
       );
     }
 
@@ -561,11 +896,11 @@ export class OrderController {
   // `addPayment` above already runs for a seller-recorded payment, so a
   // buyer's approved submission reaches the same end state a seller manually
   // recording that amount would.
-  @Patch(':orderId/payments/:paymentId/review')
+  @Patch(":orderId/payments/:paymentId/review")
   async reviewPaymentProof(
-    @Param('storeId') storeId: string,
-    @Param('orderId') orderId: string,
-    @Param('paymentId') paymentId: string,
+    @Param("storeId") storeId: string,
+    @Param("orderId") orderId: string,
+    @Param("paymentId") paymentId: string,
     @Session() session: UserSession,
     @Body() dto: ReviewPaymentDto,
   ): Promise<OrderDetailResponseDto> {
@@ -575,79 +910,198 @@ export class OrderController {
       orderId,
       storeId,
     );
-    if (payment.source !== 'BUYER_SUBMITTED') {
+    if (payment.source !== "BUYER_SUBMITTED") {
       throw new BadRequestException(
-        'Solo se pueden revisar comprobantes enviados por el comprador',
+        "Solo se pueden revisar comprobantes enviados por el comprador",
       );
     }
-    if (payment.reviewStatus !== 'PENDING_REVIEW') {
-      throw new BadRequestException('Este comprobante ya fue revisado');
+    if (payment.reviewStatus !== "PENDING_REVIEW") {
+      throw new BadRequestException("Este comprobante ya fue revisado");
     }
 
-    const reviewStatus = dto.decision === 'approve' ? 'APPROVED' : 'REJECTED';
+    const reviewStatus = dto.decision === "approve" ? "APPROVED" : "REJECTED";
+    let settlesOrder = false;
     await this.prisma.$transaction(async (tx) => {
-      await tx.orderPayment.update({
-        where: { id: paymentId },
+      // Serialise concurrent reviews of the same order. Without the row lock
+      // two overlapping approvals of two half proofs each sum only their own
+      // approval and both write PARTIALLY_PAID, leaving a fully-paid order
+      // stuck. Same lock customer-order-payments.controller.ts takes.
+      const [locked] = await tx.$queryRaw<
+        Array<{ id: string }>
+      >`SELECT id FROM "Order" WHERE id = ${orderId} AND "storeId" = ${storeId} FOR UPDATE`;
+      if (!locked) throw new NotFoundException("Orden no encontrada");
+
+      const order = await tx.order.findUniqueOrThrow({
+        where: { id: orderId },
+        select: { paymentStatus: true, requiredAmount: true },
+      });
+      if (dto.decision === "approve") {
+        // Thrown before the claim below, so nothing has been written yet and
+        // the proof stays PENDING_REVIEW. Approving on a dead order would mark
+        // the proof APPROVED and make it count toward paid.
+        if (
+          order.paymentStatus === "CANCELLED" ||
+          order.paymentStatus === "REJECTED"
+        ) {
+          throw new BadRequestException(
+            order.paymentStatus === "CANCELLED"
+              ? "No se puede aprobar un comprobante de una orden cancelada"
+              : "No se puede aprobar un comprobante de una orden rechazada",
+          );
+        }
+        const credited = computePaymentSummary(
+          order.requiredAmount,
+          await tx.orderPayment.findMany({
+            where: { orderId, storeId },
+            select: {
+              amount: true,
+              source: true,
+              reviewStatus: true,
+              voidedAt: true,
+            },
+          }),
+        ).paidAmount;
+        if (
+          toCents(Number(payment.amount)) >
+          toCents(Number(order.requiredAmount)) - toCents(credited)
+        ) {
+          throw new BadRequestException(
+            "El comprobante excede el saldo pendiente de la orden",
+          );
+        }
+      }
+
+      // Guarded on PENDING_REVIEW so a double approve (or approve racing a
+      // reject) of the same proof changes one row and records one event.
+      const claimed = await tx.orderPayment.updateMany({
+        where: { id: paymentId, orderId, reviewStatus: "PENDING_REVIEW" },
         data: {
           reviewStatus,
           reviewedAt: new Date(),
           reviewedBy: session.user.id,
+          ...(dto.decision === "approve" && {
+            paidAt: new Date(),
+            recordedBy: session.user.id,
+          }),
         },
       });
+      if (claimed.count === 0) {
+        throw new BadRequestException("Este comprobante ya fue revisado");
+      }
       await tx.auditLog.create({
         data: {
           actorId: session.user.id,
           storeId,
           action:
-            dto.decision === 'approve'
-              ? 'payment_proof.approved'
-              : 'payment_proof.rejected',
-          entityType: 'OrderPayment',
+            dto.decision === "approve"
+              ? "payment_proof.approved"
+              : "payment_proof.rejected",
+          entityType: "OrderPayment",
           entityId: paymentId,
-          metadata: { reason: dto.reason ?? null },
+          // One string feeds both the audit log and the buyer response, so it
+          // is sanitized and capped here (never the code, note or image).
+          metadata: { reason: sanitizeDisplayText(dto.reason) },
         },
       });
+
+      // Only auto-advance from the two "still collecting money" states —
+      // mirrors the domain guard in order-status.vo.ts (VERIFIED/REJECTED/
+      // CANCELLED have no outgoing transitions). A proof left PENDING_REVIEW
+      // while the order moved on for an unrelated reason (e.g. cancelled) still
+      // gets marked reviewed above for the record, but emits no buyer-visible
+      // event and does not try to re-drive an order that can no longer legally
+      // change state.
+      if (
+        order.paymentStatus !== "PENDING_PAYMENT" &&
+        order.paymentStatus !== "PARTIALLY_PAID"
+      ) {
+        return;
+      }
+
+      await this.events.record(tx, {
+        orderId,
+        storeId,
+        type:
+          dto.decision === "approve" ? "PAYMENT_VALIDATED" : "PAYMENT_REJECTED",
+        actor: "SELLER",
+        payload: { paymentId },
+      });
+
+      if (dto.decision !== "approve") return;
+
+      // Re-derive the order's status from the new total in this same
+      // transaction (under the lock above), so a partial approval records its
+      // PARTIALLY_PAID write and its event atomically.
+      const payments = await tx.orderPayment.findMany({
+        where: { orderId },
+        select: {
+          amount: true,
+          source: true,
+          reviewStatus: true,
+          voidedAt: true,
+        },
+      });
+
+      const { paidAmount } = computePaymentSummary(
+        order.requiredAmount,
+        payments,
+      );
+      if (toCents(paidAmount) >= toCents(Number(order.requiredAmount))) {
+        // Settling also has to convert the soft-hold `reserved` into real
+        // `stock`, run the domain transition guard and email the buyer —
+        // ReviewPaymentUseCase owns that, and it is called after this commit.
+        // The PAYMENT_VALIDATED above already represents this seller action
+        // (with the proof's paymentId), so that call is told not to record a
+        // second one.
+        settlesOrder = true;
+      } else if (paidAmount > 0) {
+        await this.orders.saveStatus(
+          orderId,
+          { paymentStatus: "PARTIALLY_PAID" },
+          tx,
+        );
+      }
     });
 
-    if (dto.decision === 'approve') {
-      const order = await this.orders.findRowByIdForStore(orderId, storeId);
-      const toCents = (n: number) => Math.round(n * 100);
-      // Only auto-advance status from the two "still collecting money" states
-      // — mirrors the domain guard in order-status.vo.ts (VERIFIED/REJECTED/
-      // CANCELLED have no outgoing transitions). A proof left PENDING_REVIEW
-      // while the order moved on for an unrelated reason (e.g. the seller
-      // rejected it separately) still gets marked APPROVED above for the
-      // record, it just doesn't try to re-drive an order that can no longer
-      // legally change state.
-      if (
-        order.paymentStatus === 'PENDING_PAYMENT' ||
-        order.paymentStatus === 'PARTIALLY_PAID'
-      ) {
-        if (
-          toCents(order.paidAmount) >= toCents(Number(order.requiredAmount))
-        ) {
-          await this.reviewPayment.execute(
-            orderId,
-            storeId,
-            session.user.id,
-            'approve',
-          );
-        } else if (order.paidAmount > 0) {
-          await this.orders.saveStatus(orderId, {
-            paymentStatus: 'PARTIALLY_PAID',
-          });
-        }
-      }
+    if (settlesOrder) {
+      await this.reviewPayment.execute(
+        orderId,
+        storeId,
+        session.user.id,
+        "approve",
+        undefined,
+        { recordEvent: false },
+      );
     }
 
     const updated = await this.orders.findRowByIdForStore(orderId, storeId);
     return toOrderDetailDto(updated);
   }
 
-  @Patch(':orderId/review')
+  @Patch(":orderId/payments/:paymentId/void")
+  async voidPayment(
+    @Param("storeId") storeId: string,
+    @Param("orderId") orderId: string,
+    @Param("paymentId") paymentId: string,
+    @Session() session: UserSession,
+    @Body() dto: VoidOrderPaymentDto,
+  ): Promise<OrderDetailResponseDto> {
+    await this.voidOrderPayment.execute(
+      orderId,
+      paymentId,
+      storeId,
+      session.user.id,
+      dto.reason,
+    );
+    return toOrderDetailDto(
+      await this.orders.findRowByIdForStore(orderId, storeId),
+    );
+  }
+
+  @Patch(":orderId/review")
   async review(
-    @Param('storeId') storeId: string,
-    @Param('orderId') orderId: string,
+    @Param("storeId") storeId: string,
+    @Param("orderId") orderId: string,
     @Session() session: UserSession,
     @Body() dto: ReviewPaymentDto,
   ): Promise<OrderStatusResponseDto> {
@@ -661,10 +1115,10 @@ export class OrderController {
     return toOrderStatusDto(row);
   }
 
-  @Patch(':orderId/fulfillment')
+  @Patch(":orderId/fulfillment")
   async advance(
-    @Param('storeId') storeId: string,
-    @Param('orderId') orderId: string,
+    @Param("storeId") storeId: string,
+    @Param("orderId") orderId: string,
     @Session() session: UserSession,
     @Body() dto: AdvanceFulfillmentDto,
   ): Promise<OrderStatusResponseDto> {
@@ -677,10 +1131,10 @@ export class OrderController {
     return toOrderStatusDto(row);
   }
 
-  @Patch(':orderId/cancel')
+  @Patch(":orderId/cancel")
   async cancel(
-    @Param('storeId') storeId: string,
-    @Param('orderId') orderId: string,
+    @Param("storeId") storeId: string,
+    @Param("orderId") orderId: string,
     @Session() session: UserSession,
     @Body() dto: CancelOrderDto,
   ): Promise<OrderStatusResponseDto> {

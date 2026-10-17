@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { randomUUID } from "node:crypto";
 import type {
   DeliveryMethodType,
   FulfillmentStatus,
@@ -10,9 +10,10 @@ import type {
   PrismaClient,
   ProductStatus,
   StoreSectionType,
-} from '@biasmarket/db';
-import type { Prisma } from '@biasmarket/db';
-import { hashPassword } from 'better-auth/crypto';
+} from "@biasmarket/db";
+import type { Prisma } from "@biasmarket/db";
+import { hashPassword } from "better-auth/crypto";
+import { slugify } from "@biasmarket/utils/strings";
 
 function json(value: Record<string, unknown>): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
@@ -21,11 +22,11 @@ function json(value: Record<string, unknown>): Prisma.InputJsonValue {
 // Real upserts everywhere — reruns repair/update every fixture instead of
 // the old "skip if any products exist" shortcut, which meant a store that
 // already had one product never got the rest of the seed list.
-export const SEED_PASSWORD = 'seedpassword123';
+export const SEED_PASSWORD = "seedpassword123";
 
 export async function ensureUser(
   prisma: PrismaClient,
-  input: { email: string; name: string; role: 'admin' | 'seller' },
+  input: { email: string; name: string; role: "admin" | "seller" },
 ): Promise<string> {
   const now = new Date();
   const user = await prisma.user.upsert({
@@ -43,14 +44,14 @@ export async function ensureUser(
   });
 
   const hasAccount = await prisma.account.findFirst({
-    where: { userId: user.id, providerId: 'credential' },
+    where: { userId: user.id, providerId: "credential" },
   });
   if (!hasAccount) {
     await prisma.account.create({
       data: {
         id: randomUUID(),
         accountId: user.id,
-        providerId: 'credential',
+        providerId: "credential",
         userId: user.id,
         password: await hashPassword(SEED_PASSWORD),
         createdAt: now,
@@ -85,7 +86,7 @@ export async function ensureStore(
       whatsappNumber: input.whatsappNumber,
       defaultCurrency: input.defaultCurrency,
       logoUrl: input.logoUrl ?? null,
-      paymentInstructions: input.paymentInstructions ?? '',
+      paymentInstructions: input.paymentInstructions ?? "",
       isPublic: input.isPublic ?? true,
       isDemo: input.isDemo ?? false,
       ...(input.lowStockThreshold !== undefined && {
@@ -98,7 +99,7 @@ export async function ensureStore(
       ownerId: input.ownerId,
       themeConfig: {},
       logoUrl: input.logoUrl ?? null,
-      paymentInstructions: input.paymentInstructions ?? '',
+      paymentInstructions: input.paymentInstructions ?? "",
       whatsappNumber: input.whatsappNumber,
       defaultCurrency: input.defaultCurrency,
       isPublic: input.isPublic ?? true,
@@ -186,7 +187,7 @@ export async function ensureCourier(
     enabled?: boolean;
     sortOrder?: number;
     modalities: {
-      modality: 'AGENCY' | 'HOME';
+      modality: "AGENCY" | "HOME";
       price: string;
       enabled?: boolean;
     }[];
@@ -233,34 +234,26 @@ export async function ensureCategory(
   prisma: PrismaClient,
   input: { storeId: string; parentId: string | null; name: string },
 ) {
-  // Prisma's compound-unique `where` on `[storeId, parentId, name]` requires
-  // a non-null parentId (Postgres treats every NULL as distinct, so the
-  // constraint can't be used to look up a single top-level row) — fall back
-  // to find-then-create/update for top-level categories (parentId: null).
-  if (input.parentId === null) {
-    const existing = await prisma.category.findFirst({
-      where: { storeId: input.storeId, parentId: null, name: input.name },
-    });
-    if (existing) return existing;
-    return prisma.category.create({
-      data: { storeId: input.storeId, parentId: null, name: input.name },
-    });
-  }
-
-  return prisma.category.upsert({
+  const existing = await prisma.category.findFirst({
     where: {
-      storeId_parentId_name: {
-        storeId: input.storeId,
-        parentId: input.parentId,
-        name: input.name,
-      },
-    },
-    update: {},
-    create: {
       storeId: input.storeId,
       parentId: input.parentId,
       name: input.name,
     },
+  });
+  if (existing) return existing;
+
+  const base = slugify(input.name) || "categoria";
+  const existingSlugs = await prisma.category.findMany({
+    where: { storeId: input.storeId, slug: { startsWith: base } },
+    select: { slug: true },
+  });
+  const used = new Set(existingSlugs.map(({ slug }) => slug));
+  let slug = base;
+  let suffix = 2;
+  while (used.has(slug)) slug = `${base}-${suffix++}`;
+  return prisma.category.create({
+    data: { ...input, slug },
   });
 }
 
@@ -417,12 +410,12 @@ export async function ensureOrder(
     paymentStatus: PaymentStatus;
     paymentRejectionReason?: string | null;
     fulfillmentStatus: FulfillmentStatus;
-    status?: 'ACTIVE' | 'CANCELLED';
-    cancellationResolution?: 'REFUNDED' | 'RETAINED' | 'STORE_CREDIT' | null;
+    status?: "ACTIVE" | "CANCELLED";
+    cancellationResolution?: "REFUNDED" | "RETAINED" | "STORE_CREDIT" | null;
     cancellationReason?: string | null;
     retainedAmount?: string | null;
     releasedAmount?: string | null;
-    releasedResolution?: 'REFUNDED' | 'STORE_CREDIT' | null;
+    releasedResolution?: "REFUNDED" | "STORE_CREDIT" | null;
     totalAmount: string;
     requiredAmount: string;
     currency: string;
@@ -443,7 +436,7 @@ export async function ensureOrder(
     paymentStatus: input.paymentStatus,
     paymentRejectionReason: input.paymentRejectionReason ?? null,
     fulfillmentStatus: input.fulfillmentStatus,
-    status: input.status ?? 'ACTIVE',
+    status: input.status ?? "ACTIVE",
     cancellationResolution: input.cancellationResolution ?? null,
     cancellationReason: input.cancellationReason ?? null,
     retainedAmount: input.retainedAmount ?? null,
@@ -509,8 +502,8 @@ export async function ensureOrderPayment(
     method: input.method ?? null,
     note: input.note ?? null,
     imageUrl: input.imageUrl ?? null,
-    source: input.source ?? ('SELLER_RECORDED' as PaymentSource),
-    reviewStatus: input.reviewStatus ?? ('N_A' as PaymentReviewStatus),
+    source: input.source ?? ("SELLER_RECORDED" as PaymentSource),
+    reviewStatus: input.reviewStatus ?? ("N_A" as PaymentReviewStatus),
   };
   return prisma.orderPayment.upsert({
     where: { id: input.id },

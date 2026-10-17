@@ -48,11 +48,18 @@ export default function SearchScreen() {
     enabled: Boolean(storeSlug),
   });
   const resultQuery = useInfiniteQuery({
-    queryKey: ["catalog", "product-search", debouncedQuery, category],
+    queryKey: [
+      "catalog",
+      "product-search",
+      storeSlug,
+      debouncedQuery,
+      category,
+    ],
     initialPageParam: 1,
     queryFn: ({ pageParam }) =>
       productSearch.search({
         q: debouncedQuery || undefined,
+        store: storeSlug || undefined,
         category: category || undefined,
         page: String(pageParam),
         limit: String(PAGE_SIZE),
@@ -204,11 +211,15 @@ function FilterChip({
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ selected }}
-      className={`rounded-full px-3 py-2 ${selected ? "bg-brand-pink" : "bg-white/10"}`}
+      className={`rounded-full px-3 py-2 ${
+        selected ? "bg-brand-pink" : "bg-white/10"
+      }`}
       onPress={onPress}
     >
       <Text
-        className={`text-xs font-semibold ${selected ? "text-brand-ink" : "text-white"}`}
+        className={`text-xs font-semibold ${
+          selected ? "text-brand-ink" : "text-white"
+        }`}
       >
         {label}
       </Text>

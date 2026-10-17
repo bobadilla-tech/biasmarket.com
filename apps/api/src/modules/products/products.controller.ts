@@ -11,36 +11,36 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
-} from '@nestjs/common';
-import { ApiBearerAuth, ApiConsumes, ApiQuery } from '@nestjs/swagger';
-import { AuthGuard, Session } from '@thallesp/nestjs-better-auth';
-import type { UserSession } from '@thallesp/nestjs-better-auth';
-import { ProductsService } from './products.service.js';
-import { CreateProductDto } from './dto/create-product.dto.js';
-import { UpdateProductDto } from './dto/update-product.dto.js';
-import { CreateVariantDto } from './dto/create-variant.dto.js';
-import { UpdateVariantDto } from './dto/update-variant.dto.js';
-import { ReorderImagesDto } from './dto/reorder-images.dto.js';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { StorageService } from '../../storage/storage.service.js';
+} from "@nestjs/common";
+import { ApiBearerAuth, ApiConsumes, ApiQuery } from "@nestjs/swagger";
+import { AuthGuard, Session } from "@thallesp/nestjs-better-auth";
+import type { UserSession } from "@thallesp/nestjs-better-auth";
+import { ProductsService } from "./products.service.js";
+import { CreateProductDto } from "./dto/create-product.dto.js";
+import { UpdateProductDto } from "./dto/update-product.dto.js";
+import { CreateVariantDto } from "./dto/create-variant.dto.js";
+import { UpdateVariantDto } from "./dto/update-variant.dto.js";
+import { ReorderImagesDto } from "./dto/reorder-images.dto.js";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { StorageService } from "../../storage/storage.service.js";
 import type {
   ProductDetailResponseDto,
   ProductResponseDto,
   ProductWithVariantsResponseDto,
   VariantResponseDto,
-} from './dto/product-response.dto.js';
+} from "./dto/product-response.dto.js";
 import {
   IMAGE_UPLOAD_MIME_TYPES,
   UploadedFileValidationPipe,
   type ValidatedUploadedFile,
-} from '../../common/uploaded-file-validation.pipe.js';
+} from "../../common/uploaded-file-validation.pipe.js";
 
 const PRODUCT_IMAGE_PIPE = new UploadedFileValidationPipe({
   allowedMimeTypes: IMAGE_UPLOAD_MIME_TYPES,
   messages: {
-    missingFile: 'Missing File',
-    fileTooLarge: 'Max 5MB',
-    unsupportedType: 'Just JPEG or PNG',
+    missingFile: "Missing File",
+    fileTooLarge: "Max 5MB",
+    unsupportedType: "Just JPEG or PNG",
   },
 });
 
@@ -57,7 +57,7 @@ type ProductRow = {
   currency: string;
   images: string[];
   availableUntil: Date | null;
-  status: 'DRAFT' | 'PUBLISHED';
+  status: "DRAFT" | "PUBLISHED";
   soldOut: boolean;
   discontinued: boolean;
   deletedAt: Date | null;
@@ -138,9 +138,9 @@ function toProductDetailDto(
   };
 }
 
-@Controller('stores/:storeId/products')
+@Controller("stores/:storeId/products")
 @UseGuards(AuthGuard)
-@ApiBearerAuth('bearer')
+@ApiBearerAuth("bearer")
 export class ProductsController {
   constructor(
     private products: ProductsService,
@@ -149,7 +149,7 @@ export class ProductsController {
 
   @Post()
   async create(
-    @Param('storeId') storeId: string,
+    @Param("storeId") storeId: string,
     @Session() session: UserSession,
     @Body() dto: CreateProductDto,
   ): Promise<ProductWithVariantsResponseDto> {
@@ -162,7 +162,7 @@ export class ProductsController {
 
   @Get()
   async findAll(
-    @Param('storeId') storeId: string,
+    @Param("storeId") storeId: string,
     @Session() session: UserSession,
   ): Promise<ProductDetailResponseDto[]> {
     const products = await this.products.findAllForStore(
@@ -172,10 +172,10 @@ export class ProductsController {
     return products.map(toProductDetailDto);
   }
 
-  @Get(':productId')
+  @Get(":productId")
   async findOne(
-    @Param('storeId') storeId: string,
-    @Param('productId') productId: string,
+    @Param("storeId") storeId: string,
+    @Param("productId") productId: string,
     @Session() session: UserSession,
   ): Promise<ProductDetailResponseDto> {
     const product = await this.products.findOne(
@@ -186,10 +186,10 @@ export class ProductsController {
     return toProductDetailDto(product);
   }
 
-  @Patch(':productId')
+  @Patch(":productId")
   async update(
-    @Param('storeId') storeId: string,
-    @Param('productId') productId: string,
+    @Param("storeId") storeId: string,
+    @Param("productId") productId: string,
     @Session() session: UserSession,
     @Body() dto: UpdateProductDto,
   ): Promise<ProductResponseDto> {
@@ -202,10 +202,10 @@ export class ProductsController {
     return toProductDto(product);
   }
 
-  @Patch(':productId/publish')
+  @Patch(":productId/publish")
   async publish(
-    @Param('storeId') storeId: string,
-    @Param('productId') productId: string,
+    @Param("storeId") storeId: string,
+    @Param("productId") productId: string,
     @Session() session: UserSession,
   ): Promise<ProductResponseDto> {
     const product = await this.products.publish(
@@ -216,10 +216,10 @@ export class ProductsController {
     return toProductDto(product);
   }
 
-  @Delete(':productId')
+  @Delete(":productId")
   async softDelete(
-    @Param('storeId') storeId: string,
-    @Param('productId') productId: string,
+    @Param("storeId") storeId: string,
+    @Param("productId") productId: string,
     @Session() session: UserSession,
   ): Promise<ProductResponseDto> {
     const product = await this.products.softDelete(
@@ -230,10 +230,10 @@ export class ProductsController {
     return toProductDto(product);
   }
 
-  @Post(':productId/variants')
+  @Post(":productId/variants")
   async addVariant(
-    @Param('storeId') storeId: string,
-    @Param('productId') productId: string,
+    @Param("storeId") storeId: string,
+    @Param("productId") productId: string,
     @Session() session: UserSession,
     @Body() dto: CreateVariantDto,
   ): Promise<VariantResponseDto> {
@@ -246,10 +246,10 @@ export class ProductsController {
     return toVariantDto(variant);
   }
 
-  @Get(':productId/variants')
+  @Get(":productId/variants")
   async listVariants(
-    @Param('storeId') storeId: string,
-    @Param('productId') productId: string,
+    @Param("storeId") storeId: string,
+    @Param("productId") productId: string,
     @Session() session: UserSession,
   ): Promise<VariantResponseDto[]> {
     const variants = await this.products.listVariants(
@@ -260,11 +260,11 @@ export class ProductsController {
     return variants.map(toVariantDto);
   }
 
-  @Patch(':productId/variants/:variantId')
+  @Patch(":productId/variants/:variantId")
   async updateVariant(
-    @Param('storeId') storeId: string,
-    @Param('productId') productId: string,
-    @Param('variantId') variantId: string,
+    @Param("storeId") storeId: string,
+    @Param("productId") productId: string,
+    @Param("variantId") variantId: string,
     @Session() session: UserSession,
     @Body() dto: UpdateVariantDto,
   ): Promise<VariantResponseDto> {
@@ -278,11 +278,11 @@ export class ProductsController {
     return toVariantDto(variant);
   }
 
-  @Delete(':productId/variants/:variantId')
+  @Delete(":productId/variants/:variantId")
   async deleteVariant(
-    @Param('storeId') storeId: string,
-    @Param('productId') productId: string,
-    @Param('variantId') variantId: string,
+    @Param("storeId") storeId: string,
+    @Param("productId") productId: string,
+    @Param("variantId") variantId: string,
     @Session() session: UserSession,
   ): Promise<VariantResponseDto> {
     const variant = await this.products.deleteVariant(
@@ -294,16 +294,16 @@ export class ProductsController {
     return toVariantDto(variant);
   }
 
-  @Post(':productId/images')
-  @ApiConsumes('multipart/form-data')
-  @ApiQuery({ name: 'replace', required: false, type: String })
-  @UseInterceptors(FileInterceptor('file'))
+  @Post(":productId/images")
+  @ApiConsumes("multipart/form-data")
+  @ApiQuery({ name: "replace", required: false, type: String })
+  @UseInterceptors(FileInterceptor("file"))
   async uploadImage(
-    @Param('storeId') storeId: string,
-    @Param('productId') productId: string,
+    @Param("storeId") storeId: string,
+    @Param("productId") productId: string,
     @Session() session: UserSession,
     @UploadedFile(PRODUCT_IMAGE_PIPE) file: ValidatedUploadedFile,
-    @Query('replace') replace?: string,
+    @Query("replace") replace?: string,
   ): Promise<ProductResponseDto> {
     const url = await this.storage.uploadImage(
       file.buffer,
@@ -315,7 +315,7 @@ export class ProductsController {
         storeId,
         session.user.id,
         url,
-        replace === '1' || replace === 'true',
+        replace === "1" || replace === "true",
       );
       return toProductDto(product);
     } catch (error) {
@@ -324,11 +324,11 @@ export class ProductsController {
     }
   }
 
-  @Delete(':productId/images/:index')
+  @Delete(":productId/images/:index")
   async removeImage(
-    @Param('storeId') storeId: string,
-    @Param('productId') productId: string,
-    @Param('index', ParseIntPipe) index: number,
+    @Param("storeId") storeId: string,
+    @Param("productId") productId: string,
+    @Param("index", ParseIntPipe) index: number,
     @Session() session: UserSession,
   ): Promise<ProductResponseDto> {
     const { removed } = await this.products.removeImage(
@@ -346,10 +346,10 @@ export class ProductsController {
     return toProductDto(product);
   }
 
-  @Patch(':productId/images/reorder')
+  @Patch(":productId/images/reorder")
   async reorderImages(
-    @Param('storeId') storeId: string,
-    @Param('productId') productId: string,
+    @Param("storeId") storeId: string,
+    @Param("productId") productId: string,
     @Session() session: UserSession,
     @Body() dto: ReorderImagesDto,
   ): Promise<ProductResponseDto> {
@@ -362,10 +362,10 @@ export class ProductsController {
     return toProductDto(product);
   }
 
-  @Delete(':productId/images')
+  @Delete(":productId/images")
   async clearImages(
-    @Param('storeId') storeId: string,
-    @Param('productId') productId: string,
+    @Param("storeId") storeId: string,
+    @Param("productId") productId: string,
     @Session() session: UserSession,
   ): Promise<ProductResponseDto> {
     const { removed } = await this.products.clearImages(
@@ -384,13 +384,13 @@ export class ProductsController {
     return toProductDto(product);
   }
 
-  @Post(':productId/variants/:variantId/images')
-  @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FileInterceptor('file'))
+  @Post(":productId/variants/:variantId/images")
+  @ApiConsumes("multipart/form-data")
+  @UseInterceptors(FileInterceptor("file"))
   async uploadVariantImage(
-    @Param('storeId') storeId: string,
-    @Param('productId') productId: string,
-    @Param('variantId') variantId: string,
+    @Param("storeId") storeId: string,
+    @Param("productId") productId: string,
+    @Param("variantId") variantId: string,
     @Session() session: UserSession,
     @UploadedFile(PRODUCT_IMAGE_PIPE) file: ValidatedUploadedFile,
   ): Promise<VariantResponseDto> {

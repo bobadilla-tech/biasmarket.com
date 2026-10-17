@@ -7,8 +7,10 @@ import { AlertTriangle, Banknote, Check, Copy } from "lucide-react";
 import type { PaymentMethodConfigResponseDto } from "@biasmarket/types";
 import { isPaymentMethodConfigured } from "@biasmarket/utils/payment-methods";
 
+// Only `method` and `details` are read, so the buyer's private order page can
+// pass the narrower public payment-method DTO.
 interface PaymentMethodDetailsProps {
-  method: PaymentMethodConfigResponseDto;
+  method: Pick<PaymentMethodConfigResponseDto, "method" | "details">;
 }
 
 function getDetail(details: Record<string, unknown>, key: string): string {

@@ -84,23 +84,40 @@ pnpm --filter @biasmarket/db db:generate
 pnpm --filter @biasmarket/db exec prisma migrate deploy
 
 echo "--- Build api + web"
-NEXT_PUBLIC_API_URL="http://localhost:3000" \
+NEXT_PUBLIC_API_URL="$API_URL" \
+NEXT_PUBLIC_STOREFRONT_REDESIGN_STORE_SLUGS="demo-kpop-corner" \
   pnpm turbo run build --filter=api --filter=web
 
 echo "--- Seed base fixtures"
 pnpm --filter api run seed:base
 
-# `e2e.env.example` sets WEB_URL to `http://localhost:3001`, but this script
-# serves web on `127.0.0.1` (WEB_URL_LOCAL) and Playwright drives it there — so
-# the browser's `Origin` on a cross-origin auth call is `http://127.0.0.1:3001`.
-# better-auth >=1.7 force-validates that Origin against `trustedOrigins` even on
-# a cookieless first sign-in (its new Fetch-Metadata form-CSRF check), so
-# `trustedOrigins` (derived from WEB_URL) must name the host the browser
-# actually uses, not `localhost`.
+# One host for the whole stack. `e2e.env.example` points WEB_URL and
+# BETTER_AUTH_URL at `localhost`, but Playwright drives web on `127.0.0.1`
+# (WEB_URL_LOCAL), and the browser calls the API at NEXT_PUBLIC_API_URL (baked
+# at build time above). A page on one host calling an API on another is
+# cross-site, so the `SameSite=Lax` better-auth and `bm_claim` cookies would
+# never be sent. So WEB_URL, BETTER_AUTH_URL and NEXT_PUBLIC_API_URL all use
+# 127.0.0.1 here. better-auth >=1.7 also force-validates the request `Origin`
+# against `trustedOrigins` (derived from WEB_URL), so WEB_URL must name the
+# host the browser actually uses. The overrides live on the exec lines below,
+# never in `e2e.env.example`, which also feeds the API E2E job.
+#
+# The Google stub (scripts/ci/google-stub.mjs) is preloaded on this API process
+# only, with fake credentials: it answers the OAuth token call so the buyer
+# claim can run without Google. Nothing here reaches build, deploy or the
+# example env files.
 echo "--- Start API on :3000"
 (
   cd "$ROOT"
-  exec env PORT=3000 WEB_URL="$WEB_URL_LOCAL" node apps/api/dist/main.js
+  exec env \
+    PORT=3000 \
+    WEB_URL="$WEB_URL_LOCAL" \
+    BETTER_AUTH_URL="$API_URL" \
+    E2E_GOOGLE_STUB=1 \
+    GOOGLE_CLIENT_ID="e2e-fake-client-id.invalid" \
+    GOOGLE_CLIENT_SECRET="e2e-fake-secret.invalid" \
+    NODE_OPTIONS="--import $ROOT/scripts/ci/google-stub.mjs" \
+    node apps/api/dist/main.js
 ) > .ci/web-e2e-api.log 2>&1 &
 API_PID=$!
 wait_for_http "$API_URL/api/health" "API" "$API_PID" .ci/web-e2e-api.log
@@ -111,12 +128,22 @@ echo "--- Start web on :3001"
   exec env \
     PORT=3001 \
     NODE_ENV=production \
-    NEXT_PUBLIC_API_URL="http://localhost:3000" \
-    INTERNAL_API_URL="http://localhost:3000" \
+    NEXT_PUBLIC_API_URL="$API_URL" \
+    NEXT_PUBLIC_STOREFRONT_REDESIGN_STORE_SLUGS="demo-kpop-corner" \
+    INTERNAL_API_URL="$API_URL" \
     pnpm --filter web exec next start -p 3001
 ) > .ci/web-e2e-web.log 2>&1 &
 WEB_PID=$!
 wait_for_http "$WEB_URL_LOCAL/es" "Web" "$WEB_PID" .ci/web-e2e-web.log
 
+# Unique per run: flows derive store slugs, phones and Google codes from it.
+E2E_RUN_ID="${E2E_RUN_ID:-$(date +%s)-$$}"
+export E2E_RUN_ID
+
 echo "--- Playwright"
-WEB_E2E_BASE_URL="$WEB_URL_LOCAL" pnpm --filter web exec playwright test
+# WEB_E2E_PLAYWRIGHT_ARGS (optional, word-split on purpose) lets a person pass
+# e.g. `--project=flows --repeat-each=3 --workers=1` to a local run.
+# shellcheck disable=SC2086
+WEB_E2E_BASE_URL="$WEB_URL_LOCAL" \
+  WEB_E2E_API_URL="$API_URL" \
+  pnpm --filter web exec playwright test ${WEB_E2E_PLAYWRIGHT_ARGS:-}

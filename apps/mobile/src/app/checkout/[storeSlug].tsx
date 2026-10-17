@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -11,8 +11,6 @@ import {
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getInfoAsync } from "expo-file-system/legacy";
-import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 import {
   ApiError,
@@ -33,7 +31,6 @@ import type {
 } from "@biasmarket/types";
 import {
   buildCheckoutFormSchema,
-  MAX_FILE_SIZE,
   type CheckoutFormInput,
   type ProofFileLike,
 } from "@biasmarket/validation";
@@ -48,10 +45,15 @@ import type { CartItem } from "@biasmarket/utils/cart";
 import { formatPrice } from "../../features/catalog/catalog-ui";
 import {
   clearStoreCart,
+  getCheckoutIdempotencyKey,
   readStoreCart,
 } from "../../features/cart/cart-storage";
 import { useBuyerSession } from "../../features/auth/session-context";
-import { useMobileI18n } from "../../i18n/mobile-i18n";
+import {
+  compressPaymentProof,
+  proofSelectionErrorKey,
+} from "../../features/checkout/proof-image";
+import { useMobileI18n } from "../../i18n/mobile-i18n.js";
 
 const emptyForm: CheckoutFormInput = {
   customerName: "",
@@ -84,16 +86,37 @@ const EMPTY_POINTS: PickupPointResponseDto[] = [];
 const EMPTY_PAYMENT_METHODS: PaymentMethodConfigResponseDto[] = [];
 
 export default function CheckoutScreen() {
-  const { locale, t } = useMobileI18n();
   const { storeSlug } = useLocalSearchParams<{ storeSlug: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
   const session = useBuyerSession();
+  const { locale, t } = useMobileI18n();
   const [form, setForm] = useState(emptyForm);
+  const [profileFieldsTouched, setProfileFieldsTouched] = useState({
+    customerName: false,
+    customerPhone: false,
+    customerEmail: false,
+  });
   const [fieldErrors, setFieldErrors] = useState<string[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [loadingProof, setLoadingProof] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    void ImagePicker.getPendingResultAsync()
+      .then(async (result) => {
+        if (!result || !("assets" in result) || !result.assets[0]) return;
+        const proof = await compressPaymentProof(result.assets[0].uri);
+        if (active) setField("paymentProof", proof);
+      })
+      .catch(() => {
+        if (active) setSubmitError(t("checkout.proofRecoveryFailed"));
+      });
+    return () => {
+      active = false;
+    };
+  }, [t]);
 
   const cartQuery = useQuery({
     queryKey: ["cart", storeSlug],
@@ -133,6 +156,26 @@ export default function CheckoutScreen() {
     retry: (failureCount, error) =>
       !(error instanceof ApiError && error.status === 401) && failureCount < 2,
   });
+
+  useEffect(() => {
+    const customer = profileQuery.data?.customer;
+    if (!customer) return;
+    setForm((current) => ({
+      ...current,
+      customerName:
+        !profileFieldsTouched.customerName && !current.customerName
+          ? (customer.name ?? "")
+          : current.customerName,
+      customerPhone:
+        !profileFieldsTouched.customerPhone && !current.customerPhone
+          ? (customer.phone ?? "")
+          : current.customerPhone,
+      customerEmail:
+        !profileFieldsTouched.customerEmail && !current.customerEmail
+          ? (customer.email ?? "")
+          : current.customerEmail,
+    }));
+  }, [profileFieldsTouched, profileQuery.data]);
 
   const items = cartQuery.data ?? [];
   const deliveryMethods = deliveryQuery.data ?? [];
@@ -194,24 +237,21 @@ export default function CheckoutScreen() {
     setSubmitError(null);
     setLoadingProof(true);
     try {
-      const permission = useCamera
-        ? await ImagePicker.requestCameraPermissionsAsync()
-        : await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        setSubmitError(t("checkout.permissionRequired"));
-        return;
+      if (useCamera) {
+        const permission = await ImagePicker.requestCameraPermissionsAsync();
+        if (!permission.granted) {
+          setSubmitError(t("checkout.permissionRequired"));
+          return;
+        }
       }
       const result = useCamera
         ? await ImagePicker.launchCameraAsync({ mediaTypes: ["images"] })
         : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"] });
       if (result.canceled || !result.assets[0]) return;
-      const proof = await compressProof(
-        result.assets[0].uri,
-        t("checkout.proofCompressFailed"),
-      );
+      const proof = await compressPaymentProof(result.assets[0].uri);
       setField("paymentProof", proof);
-    } catch {
-      setSubmitError(t("checkout.proofLoadFailed"));
+    } catch (error) {
+      setSubmitError(t(proofSelectionErrorKey(error)));
     } finally {
       setLoadingProof(false);
     }
@@ -219,29 +259,22 @@ export default function CheckoutScreen() {
 
   async function submitCheckout() {
     setSubmitError(null);
-    const profile = profileQuery.data?.customer;
-    const values = {
-      ...form,
-      customerName: form.customerName || profile?.name || "",
-      customerPhone: form.customerPhone || profile?.phone || "",
-      customerEmail: form.customerEmail || profile?.email || "",
-    };
-    const parsed = schema.safeParse(values);
+    const parsed = schema.safeParse(form);
     if (!parsed.success) {
       setFieldErrors(
         parsed.error.issues.map((issue) =>
-          t(`checkout.validation.${String(issue.path[0] ?? "")}`),
+          t(`checkout.validation.${String(issue.path[0])}`),
         ),
       );
       return;
     }
     setFieldErrors([]);
     if (items.length === 0) {
-      setSubmitError(t("cart.emptyError"));
+      setSubmitError(t("checkout.noItems"));
       return;
     }
     if (hasMixedCurrencies(items)) {
-      setSubmitError(t("cart.mixedCurrencyError"));
+      setSubmitError(t("checkout.mixedCurrencies"));
       return;
     }
     if (!/^[a-z0-9-]+$/i.test(storeSlug)) {
@@ -301,11 +334,21 @@ export default function CheckoutScreen() {
         } as unknown as Blob);
       }
 
+      const idempotencyKey = await getCheckoutIdempotencyKey(storeSlug, items);
       const result = await customFetch<CheckoutResultResponseDto>(
         `/stores/${encodeURIComponent(storeSlug)}/checkout`,
-        { method: "POST", body },
+        {
+          method: "POST",
+          body,
+          headers: { "Idempotency-Key": idempotencyKey },
+        },
       );
-      await clearStoreCart(storeSlug);
+      try {
+        await clearStoreCart(storeSlug);
+      } catch {
+        // The order already exists. Keep the buyer on its confirmation screen
+        // instead of encouraging a second submission because local cleanup failed.
+      }
       queryClient.setQueryData(["cart", storeSlug], [] satisfies CartItem[]);
       router.replace({
         pathname: "/checkout/success/[orderId]",
@@ -317,8 +360,14 @@ export default function CheckoutScreen() {
           ),
         },
       });
-    } catch {
-      setSubmitError(t("checkout.submitFailed"));
+    } catch (error) {
+      setSubmitError(
+        error instanceof ApiError && error.status === 400
+          ? error.message
+          : error instanceof TypeError
+            ? t("common.connectionError")
+            : t("checkout.submitFailed"),
+      );
     } finally {
       setSubmitting(false);
     }
@@ -333,9 +382,25 @@ export default function CheckoutScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-brand-ink">
         <ActivityIndicator color="#f2b4c7" />
-        <Text className="mt-3 text-white/70">
-          {t("common.loadingCheckout")}
+        <Text className="mt-3 text-white/70">{t("checkout.preparing")}</Text>
+      </View>
+    );
+  }
+
+  if (paymentQuery.isError) {
+    return (
+      <View className="flex-1 items-center justify-center gap-4 bg-brand-ink px-6">
+        <Text accessibilityRole="alert" className="text-center text-red-200">
+          {t("checkout.paymentConfigFailed")}
         </Text>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => void paymentQuery.refetch()}
+        >
+          <Text className="font-semibold text-brand-pink">
+            {t("common.retry")}
+          </Text>
+        </Pressable>
       </View>
     );
   }
@@ -390,25 +455,39 @@ export default function CheckoutScreen() {
         <Section title={t("checkout.yourDetails")}>
           <Field
             label={t("checkout.name")}
-            value={form.customerName || profileQuery.data?.customer.name || ""}
-            onChangeText={(value) => setField("customerName", value)}
+            value={form.customerName}
+            onChangeText={(value) => {
+              setProfileFieldsTouched((current) => ({
+                ...current,
+                customerName: true,
+              }));
+              setField("customerName", value);
+            }}
           />
           <Field
-            label={t("auth.phone")}
+            label={t("checkout.phone")}
             keyboardType="phone-pad"
-            value={
-              form.customerPhone || profileQuery.data?.customer.phone || ""
-            }
-            onChangeText={(value) => setField("customerPhone", value)}
+            value={form.customerPhone}
+            onChangeText={(value) => {
+              setProfileFieldsTouched((current) => ({
+                ...current,
+                customerPhone: true,
+              }));
+              setField("customerPhone", value);
+            }}
           />
           <Field
             label={t("checkout.email")}
             keyboardType="email-address"
             autoCapitalize="none"
-            value={
-              form.customerEmail || profileQuery.data?.customer.email || ""
-            }
-            onChangeText={(value) => setField("customerEmail", value)}
+            value={form.customerEmail}
+            onChangeText={(value) => {
+              setProfileFieldsTouched((current) => ({
+                ...current,
+                customerEmail: true,
+              }));
+              setField("customerEmail", value);
+            }}
           />
         </Section>
 
@@ -557,7 +636,12 @@ export default function CheckoutScreen() {
               key={method.method}
               label={t(`checkout.paymentMethods.${method.method}`)}
               selected={form.paymentMethod === method.method}
-              onPress={() => setField("paymentMethod", method.method)}
+              onPress={() => {
+                if (form.paymentMethod !== method.method) {
+                  setField("paymentProof", null);
+                }
+                setField("paymentMethod", method.method);
+              }}
             />
           ))}
           {selectedPayment ? (
@@ -654,7 +738,12 @@ export default function CheckoutScreen() {
         ) : null}
         <Pressable
           accessibilityRole="button"
-          disabled={submitting || loadingProof || items.length === 0}
+          disabled={
+            submitting ||
+            loadingProof ||
+            items.length === 0 ||
+            paymentQuery.isError
+          }
           className="rounded-xl bg-brand-pink px-5 py-4 disabled:opacity-50"
           onPress={() => void submitCheckout()}
         >
@@ -665,37 +754,6 @@ export default function CheckoutScreen() {
       </View>
     </ScrollView>
   );
-}
-
-async function compressProof(
-  uri: string,
-  failureMessage: string,
-): Promise<ProofFileLike & { uri: string }> {
-  for (const preset of [
-    { width: 1600, compress: 0.75 },
-    { width: 1200, compress: 0.65 },
-    { width: 900, compress: 0.5 },
-  ]) {
-    const output = await ImageManipulator.manipulateAsync(
-      uri,
-      [{ resize: { width: preset.width } }],
-      { compress: preset.compress, format: ImageManipulator.SaveFormat.JPEG },
-    );
-    const info = await getInfoAsync(output.uri);
-    if (
-      info.exists &&
-      typeof info.size === "number" &&
-      info.size <= MAX_FILE_SIZE
-    ) {
-      return {
-        uri: output.uri,
-        name: `payment-proof-${Date.now()}.jpg`,
-        type: "image/jpeg",
-        size: info.size,
-      };
-    }
-  }
-  throw new Error(failureMessage);
 }
 
 function toShippingAddress(

@@ -19,10 +19,13 @@
   "scripts": {
     "build": "tsc && node scripts/write-tailwind-theme.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint": "node ../../scripts/lint-changed-files.mjs packages/design-tokens && eslint . --max-warnings 0",
+    "test:cov": "vitest run --coverage"
   },
   "devDependencies": {
     "typescript": "^7.0.2",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.11",
+    "@vitest/coverage-v8": "^4.1.11"
   }
 }

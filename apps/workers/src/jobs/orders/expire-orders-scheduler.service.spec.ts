@@ -1,6 +1,9 @@
 import { type Mock, vi } from "vitest";
 import type { Queue } from "bullmq";
 import {
+  ASSISTED_IDENTITY_RETENTION_CRON_PATTERN,
+  ASSISTED_IDENTITY_RETENTION_JOB_NAME,
+  ASSISTED_IDENTITY_RETENTION_SCHEDULER_ID,
   EXPIRE_ORDERS_CRON_PATTERN,
   EXPIRE_ORDERS_JOB_NAME,
   EXPIRE_ORDERS_SCHEDULER_ID,
@@ -12,7 +15,7 @@ describe("ExpireOrdersSchedulerService", () => {
     vi.unstubAllEnvs();
   });
 
-  it("registers a single repeatable job scheduler on module init", async () => {
+  it("registers repeatable expiry and retention schedulers on module init", async () => {
     const queue = {
       upsertJobScheduler: vi.fn().mockResolvedValue(undefined),
     } as unknown as Queue & { upsertJobScheduler: Mock };
@@ -20,11 +23,16 @@ describe("ExpireOrdersSchedulerService", () => {
 
     await service.onModuleInit();
 
-    expect(queue.upsertJobScheduler).toHaveBeenCalledTimes(1);
+    expect(queue.upsertJobScheduler).toHaveBeenCalledTimes(2);
     expect(queue.upsertJobScheduler).toHaveBeenCalledWith(
       EXPIRE_ORDERS_SCHEDULER_ID,
       { pattern: EXPIRE_ORDERS_CRON_PATTERN },
       { name: EXPIRE_ORDERS_JOB_NAME },
+    );
+    expect(queue.upsertJobScheduler).toHaveBeenCalledWith(
+      ASSISTED_IDENTITY_RETENTION_SCHEDULER_ID,
+      { pattern: ASSISTED_IDENTITY_RETENTION_CRON_PATTERN },
+      { name: ASSISTED_IDENTITY_RETENTION_JOB_NAME },
     );
   });
 
