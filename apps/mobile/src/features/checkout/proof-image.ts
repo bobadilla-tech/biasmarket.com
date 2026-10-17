@@ -35,3 +35,11 @@ export async function compressPaymentProof(
 
   throw new Error("checkout.proofCompressFailed");
 }
+
+export function proofSelectionErrorKey(
+  error: unknown,
+): "checkout.proofCompressFailed" | "checkout.proofLoadFailed" {
+  return error instanceof Error && error.message === "checkout.proofCompressFailed"
+    ? "checkout.proofCompressFailed"
+    : "checkout.proofLoadFailed";
+}
