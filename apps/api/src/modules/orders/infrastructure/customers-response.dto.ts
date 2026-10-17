@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { OrderResponseDto } from '../dto/order-response.dto.js';
+import { ApiProperty } from "@nestjs/swagger";
+import { OrderResponseDto } from "../dto/order-response.dto.js";
 
 // Money/Decimal, Date-as-ISO-string, and literal-union conventions — see
 // collections/dto/collection-response.dto.ts for the full rationale.
@@ -21,7 +21,7 @@ export class CustomerListItemResponseDto {
   @ApiProperty()
   emailVerified: boolean;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: String, format: "date-time" })
   createdAt: string;
 
   @ApiProperty()
@@ -30,7 +30,7 @@ export class CustomerListItemResponseDto {
   @ApiProperty()
   lifetimeSpend: number;
 
-  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  @ApiProperty({ type: String, format: "date-time", nullable: true })
   lastOrderAt: string | null;
 }
 
@@ -50,8 +50,19 @@ export class CustomerDetailCustomerResponseDto {
   @ApiProperty()
   emailVerified: boolean;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: String, format: "date-time" })
   createdAt: string;
+}
+
+export class CustomerLookupResponseDto {
+  @ApiProperty()
+  normalizedPhone: string;
+
+  @ApiProperty()
+  previousOrders: number;
+
+  @ApiProperty({ type: String, nullable: true })
+  lastAlias: string | null;
 }
 
 // `findOne`'s shape (`CustomersService.findOneForStore`). `orders` reuses
@@ -63,7 +74,7 @@ export class CustomerDetailCustomerResponseDto {
 // chosen over re-declaring nine-plus fields a second time. This is the first
 // case in this rollout where two tags share an entire response shape, not
 // just a nested piece of one (see
-// docs/plans/2026-08-06-orval-rollout-batches-5-6-plan.md's Batch 5 section).
+// .artifacts/2026/08/20260806--orval-rollout-batches-5-6/plan.md's Batch 5 section).
 export class CustomerDetailResponseDto {
   @ApiProperty({ type: CustomerDetailCustomerResponseDto })
   customer: CustomerDetailCustomerResponseDto;

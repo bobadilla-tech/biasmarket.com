@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { AccountOrderResponseDto } from './account-order-response.dto.js';
+import { ApiProperty } from "@nestjs/swagger";
+import { AccountOrderResponseDto } from "./account-order-response.dto.js";
 
 // Money/Decimal, Date-as-ISO-string, and literal-union conventions — see
 // collections/dto/collection-response.dto.ts for the full rationale.
@@ -21,7 +21,7 @@ export class OkResponseDto {
     type: String,
     required: false,
     description:
-      'Session token, returned only to mobile clients (`X-Client: mobile`) on login and change-password.',
+      "Session token, returned only to mobile clients (`X-Client: mobile`) on login and change-password.",
   })
   sessionToken?: string;
 }
@@ -33,8 +33,8 @@ export class CustomerProfileCustomerResponseDto {
   @ApiProperty({ type: String, nullable: true })
   email: string | null;
 
-  @ApiProperty()
-  phone: string;
+  @ApiProperty({ type: String, nullable: true })
+  phone: string | null;
 
   @ApiProperty()
   emailVerified: boolean;

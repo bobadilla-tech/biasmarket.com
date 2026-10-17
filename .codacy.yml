@@ -1,0 +1,5 @@
+---
+exclude_paths:
+  # Prisma migrations are Postgres SQL. Codacy's TSQLLint runs T-SQL rules on
+  # them (e.g. set-quoted-identifier) that cannot apply (#342).
+  - "packages/db/prisma/migrations/**"

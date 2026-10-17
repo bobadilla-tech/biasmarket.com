@@ -7,9 +7,14 @@
 
 _caddy_block() {
   local service_prefix="$1" port="$2" primary="$3" secondary="${4:-}" secondary_weight="${5:-}"
+  local api_client_ip_header=""
+  if [[ "$service_prefix" == api ]]; then
+    api_client_ip_header=$'\theader_up X-Forwarded-For {client_ip}\n'
+  fi
   if [[ -n "$secondary" ]]; then
     cat <<EOF
 reverse_proxy ${service_prefix}-${primary}:${port} ${service_prefix}-${secondary}:${port} {
+${api_client_ip_header}
 	lb_policy weighted_round_robin $((10 - secondary_weight)) ${secondary_weight}
 	health_uri /api/health
 	health_interval 10s
@@ -19,6 +24,7 @@ EOF
   else
     cat <<EOF
 reverse_proxy ${service_prefix}-${primary}:${port} {
+${api_client_ip_header}
 	health_uri /api/health
 	health_interval 10s
 	health_timeout 5s

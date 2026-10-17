@@ -1,4 +1,4 @@
-import type { StoreResponseDto } from './dto/store-response.dto.js';
+import type { StoreResponseDto } from "./dto/store-response.dto.js";
 
 // Shared by StoresController and MyStoresController — both map a raw
 // Store row to StoreResponseDto (Decimal/Date convention, see
@@ -11,6 +11,10 @@ export interface StoreRow {
   ownerId: string;
   themeConfig: unknown;
   logoUrl: string | null;
+  bannerUrl: string | null;
+  locationLabel: string | null;
+  publicOwnerName: string | null;
+  publicOwnerAvatarUrl: string | null;
   bio: string | null;
   aboutMarkdown: string | null;
   paymentInstructions: string;
@@ -43,6 +47,10 @@ export function toStoreDto(row: StoreRow): StoreResponseDto {
     ownerId: row.ownerId,
     themeConfig: row.themeConfig as Record<string, unknown>,
     logoUrl: row.logoUrl,
+    bannerUrl: row.bannerUrl,
+    locationLabel: row.locationLabel,
+    publicOwnerName: row.publicOwnerName,
+    publicOwnerAvatarUrl: row.publicOwnerAvatarUrl,
     bio: row.bio,
     aboutMarkdown: row.aboutMarkdown,
     paymentInstructions: row.paymentInstructions,

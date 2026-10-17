@@ -23,10 +23,10 @@ services:
       retries: 10
 
   minio:
-    # Docker Hub no longer serves minio/minio (MinIO stopped publishing there);
-    # quay.io/minio/* still does. Pinned instead of `latest`: MinIO's community
-    # images are no longer being updated, so a floating tag buys nothing.
-    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
+    # MinIO removed Hub images and later closed anonymous Quay pulls. Coolify's
+    # GHCR rebuild of the last OSS release also ships `mc` (same pin as CI in
+    # scripts/ci/e2e-images.sh). Keep the compose service name `minio`.
+    image: ghcr.io/coollabsio/minio:RELEASE.2025-10-15T17-29-55Z@sha256:69b55a1c1c5dc285ce04db96689f5b2102317fc77a50680a1874ca6efd1c87f9
     container_name: barriostore-minio
     networks: [stack]
     ports:
@@ -51,7 +51,7 @@ services:
   # policy). `payments` deliberately gets no anonymous policy — private,
   # readable only through the API's authenticated endpoint.
   minio-init:
-    image: quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z
+    image: ghcr.io/coollabsio/minio:RELEASE.2025-10-15T17-29-55Z@sha256:69b55a1c1c5dc285ce04db96689f5b2102317fc77a50680a1874ca6efd1c87f9
     networks: [stack]
     restart: "no"
     environment:

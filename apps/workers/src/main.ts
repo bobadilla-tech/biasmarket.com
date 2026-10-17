@@ -1,15 +1,23 @@
 import "dotenv/config";
 
 import { NestFactory } from "@nestjs/core";
+import { Logger } from "nestjs-pino";
 import { AppModule } from "./app.module.js";
+import { initErrorTracking } from "./common/error-tracking.js";
 import { validateEnv } from "./config/env.validation.js";
 
 async function bootstrap() {
   // Refuse to boot before the process starts listening if a required env
   // var is missing, rather than stalling silently on the first job.
   validateEnv();
+  // Env-gated: no-op unless SENTRY_DSN is set. Reports failed jobs and forwards
+  // info-and-above logs to GlitchTip.
+  initErrorTracking();
 
-  const app = await NestFactory.create(AppModule);
+  // bufferLogs holds Nest's boot logs until pino exists, so they come out as
+  // structured JSON too.
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  app.useLogger(app.get(Logger));
 
   // Without this, a `docker compose down`/redeploy SIGTERMs the container
   // mid-job. Enabling shutdown hooks makes Nest call onApplicationShutdown

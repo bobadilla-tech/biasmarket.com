@@ -1,8 +1,8 @@
 import { z } from "zod";
 import {
+  isAllowedProof,
   MAX_FILE_SIZE,
   type ProofFileLike,
-  isAllowedProof,
 } from "../checkout/file-proof.js";
 
 export const PAYMENT_METHOD_TYPES = [

@@ -8,12 +8,13 @@ export type { RequestOptions } from "./http.js";
 export * from "./generated/api.schemas.js";
 
 // One namespace export per migrated tag/controller (see
-// docs/plans/2026-08-04-typed-sdk-client-followups.md). Add a line here as
+// .artifacts/2026/08/20260804--typed-sdk-client-followups/plan.md). Add a line here as
 // each further module migrates; apps/web/lib/api-client.ts assembles these
 // into a single `apiClient` object.
 export * as collections from "./generated/collections/collections.js";
 export * as products from "./generated/products/products.js";
 export * as categories from "./generated/categories/categories.js";
+export * as storeReferences from "./generated/store-references/store-references.js";
 export * as notifications from "./generated/notifications/notifications.js";
 export * as contact from "./generated/contact/contact.js";
 export * as suggestions from "./generated/suggestions/suggestions.js";
@@ -28,6 +29,7 @@ export * as stores from "./generated/stores/stores.js";
 export * as myStores from "./generated/my-stores/my-stores.js";
 export * as orders from "./generated/order/order.js";
 export * as checkout from "./generated/checkout/checkout.js";
+export * as publicOrders from "./generated/public-order-events/public-order-events.js";
 export * as customerAuth from "./generated/customer-auth/customer-auth.js";
 export * as customerAccount from "./generated/customer-account/customer-account.js";
 export * as customers from "./generated/customers/customers.js";
@@ -37,6 +39,7 @@ export * as users from "./generated/users/users.js";
 export * as restock from "./generated/restock/restock.js";
 export * as whatsappTemplates from "./generated/whatsapp-templates/whatsapp-templates.js";
 export * as addresses from "./generated/addresses/addresses.js";
+export * as globalAccount from "./generated/global-account/global-account.js";
 export * as coupons from "./generated/coupons/coupons.js";
 export * as couriers from "./generated/couriers/couriers.js";
 export * as publicCouriers from "./generated/public-couriers/public-couriers.js";

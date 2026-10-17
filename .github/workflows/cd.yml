@@ -2,7 +2,7 @@ name: CD
 
 # Triggered by CI's success, not by push directly. CI's push-only API E2E job
 # now contributes to that success via `CI Success`; see the implementation
-# plan at docs/plans/2026-08-28-e2e-ci-merge-gate-cd-block-plan.md and the
+# plan at .artifacts/2026/08/20260828--e2e-ci-merge-gate-cd/plan.md and the
 # blue/green plan below for the full security rationale behind this gate.
 on:
   workflow_run:
@@ -89,12 +89,14 @@ jobs:
           tags: ghcr.io/bobadilla-tech/biasmarket-${{ matrix.app }}:${{ needs.gate.outputs.head_sha }}
           cache-from: type=gha,scope=${{ matrix.app }}
           cache-to: type=gha,mode=max,scope=${{ matrix.app }}
+          # Match the Dockerfile and production template pilot when the rollout variable is unset.
           build-args: |
             NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
             NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL }}
             NEXT_PUBLIC_SENTRY_DSN=${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
             NEXT_PUBLIC_SANITY_PROJECT_ID=${{ vars.NEXT_PUBLIC_SANITY_PROJECT_ID }}
             NEXT_PUBLIC_SANITY_DATASET=${{ vars.NEXT_PUBLIC_SANITY_DATASET }}
+            NEXT_PUBLIC_STOREFRONT_REDESIGN_STORE_SLUGS=${{ vars.NEXT_PUBLIC_STOREFRONT_REDESIGN_STORE_SLUGS || 'korealexa' }}
         env:
           BUILDKIT_PROGRESS: plain
 
@@ -184,7 +186,7 @@ jobs:
       # rsync has replaced deploy.sh but not yet one of its sourced
       # lib/*.sh files (or vice versa), sourcing a version-mismatched mix
       # that can crash with an unbound-variable error. See
-      # docs/plans/2026-08-10-server-side-cleanup-scheduling-plan.md
+      # .artifacts/2026/08/20260810--server-side-cleanup-scheduling/plan.md
       # decision 9 for the full analysis — it only applies to commits that
       # change infra/vps/lib/*.sh content.
       - name: Sync infra/vps/ to the VPS

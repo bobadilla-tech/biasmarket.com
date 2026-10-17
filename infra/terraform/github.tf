@@ -1,6 +1,6 @@
 # Phase 7: the GitHub `production` environment that cd.yml and
 # cleanup-fallback.yml read their deploy credentials from. Replaces step 6 of
-# the VPS provisioning section in docs/core/blue-green-migrations.md.
+# the GitHub environment steps in docs/core/provisioning.md.
 
 locals {
   github_repo = "biasmarket.com"

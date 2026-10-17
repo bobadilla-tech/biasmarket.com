@@ -1,99 +1,99 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from "vitest";
 import {
   assertFulfillmentTransition,
   assertPaymentTransition,
   InvalidOrderTransitionError,
-} from './order-status.vo.js';
+} from "./order-status.vo.js";
 
-describe('assertPaymentTransition', () => {
-  it('allows PENDING_PAYMENT -> PAYMENT_SUBMITTED', () => {
+describe("assertPaymentTransition", () => {
+  it("allows PENDING_PAYMENT -> PAYMENT_SUBMITTED", () => {
     expect(() =>
-      assertPaymentTransition('PENDING_PAYMENT', 'PAYMENT_SUBMITTED'),
+      assertPaymentTransition("PENDING_PAYMENT", "PAYMENT_SUBMITTED"),
     ).not.toThrow();
   });
 
-  it('allows PENDING_PAYMENT -> VERIFIED directly when no proof was required', () => {
+  it("allows PENDING_PAYMENT -> VERIFIED directly when no proof was required", () => {
     expect(() =>
-      assertPaymentTransition('PENDING_PAYMENT', 'VERIFIED'),
+      assertPaymentTransition("PENDING_PAYMENT", "VERIFIED"),
     ).not.toThrow();
   });
 
-  it('allows PENDING_PAYMENT -> REJECTED directly', () => {
+  it("allows PENDING_PAYMENT -> REJECTED directly", () => {
     expect(() =>
-      assertPaymentTransition('PENDING_PAYMENT', 'REJECTED'),
+      assertPaymentTransition("PENDING_PAYMENT", "REJECTED"),
     ).not.toThrow();
   });
 
-  it('allows PENDING_PAYMENT -> CANCELLED (expiration)', () => {
+  it("allows PENDING_PAYMENT -> CANCELLED (expiration)", () => {
     expect(() =>
-      assertPaymentTransition('PENDING_PAYMENT', 'CANCELLED'),
+      assertPaymentTransition("PENDING_PAYMENT", "CANCELLED"),
     ).not.toThrow();
   });
 
-  it('allows PAYMENT_SUBMITTED -> VERIFIED', () => {
+  it("allows PAYMENT_SUBMITTED -> VERIFIED", () => {
     expect(() =>
-      assertPaymentTransition('PAYMENT_SUBMITTED', 'VERIFIED'),
+      assertPaymentTransition("PAYMENT_SUBMITTED", "VERIFIED"),
     ).not.toThrow();
   });
 
-  it('allows PAYMENT_SUBMITTED -> REJECTED', () => {
+  it("allows PAYMENT_SUBMITTED -> REJECTED", () => {
     expect(() =>
-      assertPaymentTransition('PAYMENT_SUBMITTED', 'REJECTED'),
+      assertPaymentTransition("PAYMENT_SUBMITTED", "REJECTED"),
     ).not.toThrow();
   });
 
-  it('allows PAYMENT_SUBMITTED -> CANCELLED for expiry or seller cancellation', () => {
+  it("allows PAYMENT_SUBMITTED -> CANCELLED for expiry or seller cancellation", () => {
     expect(() =>
-      assertPaymentTransition('PAYMENT_SUBMITTED', 'CANCELLED'),
+      assertPaymentTransition("PAYMENT_SUBMITTED", "CANCELLED"),
     ).not.toThrow();
   });
 
-  it('allows VERIFIED -> CANCELLED on the independent cancellation axis', () => {
+  it("allows VERIFIED -> CANCELLED on the independent cancellation axis", () => {
     expect(() =>
-      assertPaymentTransition('VERIFIED', 'CANCELLED'),
+      assertPaymentTransition("VERIFIED", "CANCELLED"),
     ).not.toThrow();
   });
 
-  it('rejects re-approving an already VERIFIED order', () => {
-    expect(() => assertPaymentTransition('VERIFIED', 'VERIFIED')).toThrow(
+  it("rejects re-approving an already VERIFIED order", () => {
+    expect(() => assertPaymentTransition("VERIFIED", "VERIFIED")).toThrow(
       InvalidOrderTransitionError,
     );
   });
 
-  it('rejects approving an already REJECTED order', () => {
-    expect(() => assertPaymentTransition('REJECTED', 'VERIFIED')).toThrow(
+  it("rejects approving an already REJECTED order", () => {
+    expect(() => assertPaymentTransition("REJECTED", "VERIFIED")).toThrow(
       InvalidOrderTransitionError,
     );
   });
 
-  it('rejects any transition out of CANCELLED', () => {
-    expect(() => assertPaymentTransition('CANCELLED', 'VERIFIED')).toThrow(
+  it("rejects any transition out of CANCELLED", () => {
+    expect(() => assertPaymentTransition("CANCELLED", "VERIFIED")).toThrow(
       InvalidOrderTransitionError,
     );
   });
 });
 
-describe('assertFulfillmentTransition', () => {
-  it('allows ORDERING -> IN_TRANSIT -> READY -> COMPLETED in sequence', () => {
+describe("assertFulfillmentTransition", () => {
+  it("allows ORDERING -> IN_TRANSIT -> READY -> COMPLETED in sequence", () => {
     expect(() =>
-      assertFulfillmentTransition('ORDERING', 'IN_TRANSIT'),
+      assertFulfillmentTransition("ORDERING", "IN_TRANSIT"),
     ).not.toThrow();
     expect(() =>
-      assertFulfillmentTransition('IN_TRANSIT', 'READY'),
+      assertFulfillmentTransition("IN_TRANSIT", "READY"),
     ).not.toThrow();
     expect(() =>
-      assertFulfillmentTransition('READY', 'COMPLETED'),
+      assertFulfillmentTransition("READY", "COMPLETED"),
     ).not.toThrow();
   });
 
-  it('rejects skipping a state (ORDERING -> READY)', () => {
-    expect(() => assertFulfillmentTransition('ORDERING', 'READY')).toThrow(
+  it("rejects skipping a state (ORDERING -> READY)", () => {
+    expect(() => assertFulfillmentTransition("ORDERING", "READY")).toThrow(
       InvalidOrderTransitionError,
     );
   });
 
-  it('rejects any transition out of COMPLETED', () => {
-    expect(() => assertFulfillmentTransition('COMPLETED', 'ORDERING')).toThrow(
+  it("rejects any transition out of COMPLETED", () => {
+    expect(() => assertFulfillmentTransition("COMPLETED", "ORDERING")).toThrow(
       InvalidOrderTransitionError,
     );
   });

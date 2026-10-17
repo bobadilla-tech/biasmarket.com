@@ -1,0 +1,4 @@
+jobs:
+  lax:
+    steps:
+      - run: pnpm --filter @fixture/lax test:cov

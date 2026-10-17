@@ -7,7 +7,11 @@ dist
 *.log
 postgres_data/
 .pnpm-store/
-.claude/
+# Claude Code: share skills, keep settings and local state private
+.claude/*
+!.claude/skills/
+.claude/skills/**/*.local.*
+.claude/skills/**/.env*
 coverage/
 cookies.txt
 .mailer-dev/

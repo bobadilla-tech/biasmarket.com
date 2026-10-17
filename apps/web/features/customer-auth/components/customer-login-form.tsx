@@ -2,13 +2,14 @@
 
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { useSearchParams } from "next/navigation";
 import { Link, useRouter } from "@/i18n/navigation";
 import { PhoneInput } from "@/components/ui/phone-input";
 import {
+  formErrorMessage,
   FormErrorSummary,
   FormField,
-  formErrorMessage,
 } from "@/components/shared/form-a11y";
 import { useCustomerLogin } from "../mutations/use-customer-login";
 import {
@@ -19,11 +20,27 @@ import {
 const inputClassName =
   "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-base text-gray-600 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 placeholder:text-gray-600 md:text-sm";
 
-export function CustomerLoginForm({ slug }: { slug: string }) {
+const googleErrorKeys = {
+  unavailable: true,
+  failed: true,
+} as const;
+type GoogleErrorKey = keyof typeof googleErrorKeys;
+
+// `slug` set: the store's own login page. Omitted: the global login on My
+// purchases, which signs in without choosing a store.
+export function CustomerLoginForm({
+  slug,
+  onSuccess,
+}: {
+  slug?: string;
+  onSuccess?: () => void;
+}) {
   const t = useTranslations("storefront.loginPage");
   const router = useRouter();
   const login = useCustomerLogin(slug);
   const tCommon = useTranslations("common");
+  const locale = useLocale();
+  const googleError = useSearchParams().get("google");
 
   const {
     register,
@@ -39,7 +56,8 @@ export function CustomerLoginForm({ slug }: { slug: string }) {
   const onSubmit = async (values: CustomerLoginInput) => {
     try {
       await login.mutateAsync(values);
-      router.push(`/store/${slug}/account`);
+      if (slug) router.push(`/store/${slug}/account`);
+      onSuccess?.();
     } catch (err) {
       setError("root", {
         message: err instanceof Error ? err.message : t("invalidCredentials"),
@@ -58,6 +76,9 @@ export function CustomerLoginForm({ slug }: { slug: string }) {
           messages={[
             errors.phone || errors.password ? tCommon("formErrorsSummary") : "",
             errors.root?.message ?? "",
+            googleError && googleError in googleErrorKeys
+              ? t(`googleErrors.${googleError as GoogleErrorKey}`)
+              : "",
           ].filter(Boolean)}
         />
         <FormField
@@ -102,7 +123,11 @@ export function CustomerLoginForm({ slug }: { slug: string }) {
         </FormField>
 
         <Link
-          href={`/store/${slug}/account/forgot-password`}
+          href={
+            slug
+              ? `/store/${slug}/account/forgot-password`
+              : "/my-purchases/forgot-password"
+          }
           className="store-theme-link text-sm font-medium -mt-3"
         >
           {t("forgotPasswordLink")}
@@ -116,6 +141,16 @@ export function CustomerLoginForm({ slug }: { slug: string }) {
           {isSubmitting ? t("submitting") : t("submit")}
         </button>
       </form>
+
+      <a
+        href={`${process.env.NEXT_PUBLIC_API_URL}/api/${
+          slug ? `stores/${encodeURIComponent(slug)}/` : ""
+        }account/google?locale=${locale}`}
+        className="w-full rounded-xl border border-gray-200 py-2.5 text-center text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+      >
+        {t("google")}
+      </a>
+      <p className="text-center text-xs text-gray-600">{t("googleHint")}</p>
     </div>
   );
 }

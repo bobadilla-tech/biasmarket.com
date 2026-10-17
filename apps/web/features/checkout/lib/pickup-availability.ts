@@ -51,7 +51,7 @@ export function getPickupAvailability(
 // `getPickupAvailability`'s own "next" semantics — it never returns today's
 // own weekday as "next" since a today-open point never reaches this helper.
 export function nextDateForWeekday(weekday: number, today: Date): Date {
-  const offset = ((weekday - today.getDay() + 7) % 7) || 7;
+  const offset = (weekday - today.getDay() + 7) % 7 || 7;
   const result = new Date(today);
   result.setDate(result.getDate() + offset);
   return result;

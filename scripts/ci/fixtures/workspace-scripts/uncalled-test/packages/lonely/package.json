@@ -1,0 +1,8 @@
+{
+  "name": "@fixture/lonely",
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  }
+}

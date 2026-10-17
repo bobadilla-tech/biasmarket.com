@@ -1,7 +1,7 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString } from "class-validator";
 
 // Structural union of the three method-shapes this plan defines (see
-// docs/plans/2026-08-08-buyer-post-checkout-payment-instructions-plan.md's
+// .artifacts/2026/08/20260808--buyer-post-checkout-payment-instructions/plan.md's
 // "Decision: PaymentMethodConfig.details shape") — all fields optional here,
 // the method-conditional "which fields are actually required" check lives in
 // PaymentConfigService.normalizeDetails, since class-validator's

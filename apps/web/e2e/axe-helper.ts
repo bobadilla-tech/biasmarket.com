@@ -28,7 +28,9 @@ export async function runAxe(
         ? ` details=${results.violations
             .map(
               (v) =>
-                `${v.id}:${v.impact}:${v.nodes.map((node) => node.target.join(" ")).join(";")}`,
+                `${v.id}:${v.impact}:${v.nodes
+                  .map((node) => node.target.join(" "))
+                  .join(";")}`,
             )
             .join(" | ")}`
         : ""),

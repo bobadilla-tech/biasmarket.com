@@ -211,8 +211,9 @@ export function StoreSidebar({
         effectiveCollapsed ? "w-19 px-3" : "w-full",
       )}
       style={{
-        background:
-          "linear-gradient(180deg, var(--store-sidebar-start) 0%, var(--store-sidebar-mid) 50%, var(--store-sidebar-end) 100%)",
+        backgroundImage:
+          "radial-gradient(circle at 18% 16%, rgb(255 255 255 / 15%) 0 1px, transparent 1.7px), radial-gradient(circle at 82% 8%, rgb(255 255 255 / 11%) 0 1.5px, transparent 2px), linear-gradient(180deg, var(--store-sidebar-start) 0%, var(--store-sidebar-mid) 50%, var(--store-sidebar-end) 100%)",
+        backgroundSize: "46px 46px, 72px 72px, auto",
       }}
     >
       <div

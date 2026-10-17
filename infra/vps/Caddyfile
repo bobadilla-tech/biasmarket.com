@@ -1,4 +1,54 @@
+# Client IP for anything behind Cloudflare. The API trusts exactly one hop
+# (Caddy), so the address Caddy decides here is the address rate limits use.
+# Ranges copied from https://www.cloudflare.com/ips-v4 and /ips-v6 on
+# 2026-10-27. A direct connection to the origin is not in this list, so a
+# forged CF-Connecting-IP or X-Forwarded-For is ignored. Strict mode reads a
+# trusted chain from the right, which is the side proxies append to.
+{
+	# Default logger (reverse_proxy runtime errors, e.g. "dial tcp ...
+	# connection refused" during a blue/green switch, go here and carry the
+	# request URI and headers). Same redaction as the (redact_log) snippet
+	# below: order access tokens never reach a log line.
+	log {
+		format filter {
+			wrap json
+			fields {
+				request>uri regexp (/public/orders/)[^/?#]+ ${1}REDACTED
+				request>uri regexp (/pedido/)[^/?#]+ ${1}REDACTED
+				request>headers>Referer delete
+			}
+		}
+	}
+	servers {
+		trusted_proxies static 173.245.48.0/20 103.21.244.0/22 103.22.200.0/22 103.31.4.0/22 141.101.64.0/18 108.162.192.0/18 190.93.240.0/20 188.114.96.0/20 197.234.240.0/22 198.41.128.0/17 162.158.0.0/15 104.16.0.0/13 104.24.0.0/14 172.64.0.0/13 131.0.72.0/22 2400:cb00::/32 2606:4700::/32 2803:f800::/32 2405:b500::/32 2405:8100::/32 2a06:98c0::/29 2c0f:f248::/32
+		trusted_proxies_strict
+		client_ip_headers CF-Connecting-IP
+	}
+}
+
+# Access log for the two public app sites. Before this there was no access
+# log at all (so adding it turns logging ON, including client IPs). Assisted
+# order links carry a private token in the path (`/api/public/orders/<token>`
+# on the API, `/store/<slug>/pedido/<token>` and the `/es|en/...` variants on
+# the web), so the token segment is replaced before the line is written, and
+# the Referer header (which can hold the web URL) is dropped. Keep the two
+# regexps in sync with the default log in the global block above.
+(redact_log) {
+	log {
+		format filter {
+			wrap json
+			fields {
+				request>uri regexp (/public/orders/)[^/?#]+ ${1}REDACTED
+				request>uri regexp (/pedido/)[^/?#]+ ${1}REDACTED
+				request>headers>Referer delete
+			}
+		}
+	}
+}
+
 api.biasmarket.com {
+	import redact_log
+
 	# /internal/* (apps/api's internal-jobs endpoints, e.g. the order-expiration
 	# sweep dispatched by apps/workers) is never reachable from the public
 	# internet — blocked here before the catch-all below, first-match-wins.
@@ -10,7 +60,7 @@ api.biasmarket.com {
 	}
 
 	# The API has no content Google should ever index (see
-	# docs/plans/2026-08-20-seo-strategy-review-plan.md Phase 3) — a bare
+	# .artifacts/2026/08/20260820--seo-strategy-review/plan.md Phase 3) — a bare
 	# GET / 404s under Nest's global 'api' route prefix, but nothing stopped
 	# it from being crawled in the first place. Served at the Caddy layer,
 	# not from Nest, since the global prefix would otherwise put this at
@@ -35,6 +85,8 @@ api.biasmarket.com {
 }
 
 biasmarket.com {
+	import redact_log
+
 	# Bias Market has no PHP runtime. Reject common PHP-file probes before
 	# they reach Next.js and trigger unnecessary server-side page work.
 	@phpProbe path_regexp phpProbe `(?i)\.php(?:[./]|$)`

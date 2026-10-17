@@ -10,6 +10,16 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov"],
+      // Count source files no test loads (without `include` v8 only reports
+      // loaded files, which inflates the numbers).
+      include: ["src/**/*.ts"],
+      exclude: [
+        "**/*.spec.ts",
+        "**/*.e2e-spec.ts",
+        "**/*.d.ts",
+        "src/metadata.ts",
+      ],
+      thresholds: { statements: 75, branches: 73, functions: 67, lines: 75 },
     },
   },
   resolve: {
