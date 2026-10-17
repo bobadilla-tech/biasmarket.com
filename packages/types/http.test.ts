@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from "vitest";
-import { configureApiClient, customFetch } from "./http.js";
+import { configureApiClient, customFetch, customFetchBlob } from "./http.js";
 
 const baseUrl = "https://api.example.com";
 
@@ -131,4 +131,26 @@ test("401 without a bearer token does not clear a session", async () => {
     },
   );
   expect(cleanup).not.toHaveBeenCalled();
+});
+
+test("binary fetch sends the bearer token and returns the private image bytes", async () => {
+  const fetchFn = vi.fn(
+    async (): Promise<Response> =>
+      new Response(new Blob(["private proof"]), {
+        headers: { "Content-Type": "image/jpeg" },
+      }),
+  );
+  vi.stubGlobal("fetch", fetchFn);
+  configureApiClient({
+    baseUrl,
+    credentials: "omit",
+    getAuthHeader: () => ({ Authorization: "Bearer buyer-token" }),
+  });
+
+  const blob = await customFetchBlob("/stores/demo/account/orders/o1/payments/p1/image");
+
+  expect(await blob.text()).toBe("private proof");
+  const init = requestOf(fetchFn);
+  expect(init?.credentials).toBe("omit");
+  expect(new Headers(init?.headers).get("Authorization")).toBe("Bearer buyer-token");
 });

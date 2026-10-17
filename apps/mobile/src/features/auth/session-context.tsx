@@ -7,6 +7,7 @@ import {
   useState,
   type PropsWithChildren,
 } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { customerAuth } from "@biasmarket/types";
 import {
   deleteBuyerSession,
@@ -37,11 +38,15 @@ const BuyerSessionContext = createContext<BuyerSessionContextValue | null>(
 );
 
 export function BuyerSessionProvider({ children }: PropsWithChildren) {
+  const queryClient = useQueryClient();
   const [status, setStatus] = useState<SessionStatus>("loading");
   const [storeSlug, setStoreSlug] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const clearLocalSession = useCallback(async () => {
+    queryClient.removeQueries({ queryKey: ["private-payment-proof"] });
+    queryClient.removeQueries({ queryKey: ["buyer"] });
+    queryClient.removeQueries({ queryKey: ["buyer-order"] });
     setMobileBearerToken(null);
     setStoreSlug(null);
     setStatus("unauthenticated");
@@ -50,7 +55,7 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
     } catch {
       setError("No se pudo borrar la sesión segura del dispositivo.");
     }
-  }, []);
+  }, [queryClient]);
 
   useEffect(() => {
     setUnauthorizedHandler(clearLocalSession);

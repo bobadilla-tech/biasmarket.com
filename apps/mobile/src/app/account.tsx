@@ -55,6 +55,13 @@ export default function AccountScreen() {
       <Text className="text-sm text-white/70">
         Tienda: {storeSlug}{profile ? ` · ${profile.customer.phone}` : ""}
       </Text>
+      <Pressable
+        accessibilityRole="button"
+        className="rounded-xl border border-white/15 px-5 py-3"
+        onPress={() => router.push("/orders")}
+      >
+        <Text className="text-center font-semibold text-white">Ver mis pedidos</Text>
+      </Pressable>
       {error ? (
         <Text accessibilityRole="alert" className="text-sm text-red-300">
           {error}
