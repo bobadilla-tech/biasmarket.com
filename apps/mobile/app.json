@@ -56,8 +56,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Permite elegir una imagen de tu comprobante de pago.",
-          "cameraPermission": "Permite fotografiar tu comprobante de pago."
+          "photosPermission": false,
+          "cameraPermission": false
         }
       ]
     ],

@@ -17,13 +17,13 @@ import {
   flattenProductPages,
   nextProductSearchPage,
 } from "../features/catalog/pagination";
-import { useMobileI18n } from "../i18n/mobile-i18n.js";
+import { useMobileI18n } from "../i18n/mobile-i18n";
 
 const PAGE_SIZE = 24;
 
 export default function SearchScreen() {
-  const router = useRouter();
   const { t } = useMobileI18n();
+  const router = useRouter();
   const params = useLocalSearchParams<{ storeSlug?: string }>();
   const routeStoreSlug = Array.isArray(params.storeSlug)
     ? params.storeSlug[0]

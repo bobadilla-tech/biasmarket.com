@@ -1,0 +1,38 @@
+name: Mobile store submission
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: "Store to submit to"
+        required: true
+        type: choice
+        options: [ios, android, all]
+
+permissions:
+  contents: read
+
+jobs:
+  submit:
+    name: Submit production build to stores
+    runs-on: ubuntu-latest
+    environment: mobile-production
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
+      PLATFORM: ${{ inputs.platform }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: mobile-release
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Submit selected production binaries
+        run: |
+          test -n "$EXPO_TOKEN" || (echo "EXPO_TOKEN is required in mobile-production" && exit 1)
+          test -n "$EAS_PROJECT_ID" || (echo "EAS_PROJECT_ID is required in mobile-production" && exit 1)
+          npm install --global eas-cli
+          cd apps/mobile
+          eas submit --platform "$PLATFORM" --profile production --latest --non-interactive

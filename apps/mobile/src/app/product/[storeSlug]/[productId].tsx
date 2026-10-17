@@ -14,16 +14,16 @@ import type { PublicProductVariantResponseDto } from "@biasmarket/types";
 import { formatPrice } from "../../../features/catalog/catalog-ui";
 import { cartCount } from "@biasmarket/utils/cart";
 import { useStoreCart } from "../../../features/cart/use-store-cart";
-import { useMobileI18n } from "../../../i18n/mobile-i18n.js";
+import { useMobileI18n } from "../../../i18n/mobile-i18n";
 
 export default function ProductDetailScreen() {
+  const { locale, t } = useMobileI18n();
   const { storeSlug, productId } = useLocalSearchParams<{
     storeSlug: string;
     productId: string;
   }>();
   const router = useRouter();
   const cart = useStoreCart(storeSlug);
-  const { locale, t } = useMobileI18n();
   const productQuery = useQuery({
     queryKey: ["catalog", "product", storeSlug, productId],
     queryFn: () => stores.findPublicProduct(storeSlug, productId),
@@ -42,12 +42,10 @@ export default function ProductDetailScreen() {
   if (productQuery.error || !productQuery.data) {
     return (
       <View className="flex-1 items-center justify-center gap-4 bg-brand-ink px-6">
-        <Text className="text-center text-white">
-          No pudimos encontrar este producto.
-        </Text>
+        <Text className="text-center text-white">{t("catalog.notFound")}</Text>
         <Pressable accessibilityRole="button" onPress={() => router.back()}>
           <Text className="font-semibold text-brand-pink">
-            Volver al catálogo
+            {t("catalog.backToCatalog")}
           </Text>
         </Pressable>
       </View>
@@ -73,7 +71,9 @@ export default function ProductDetailScreen() {
         </Text>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`${t("catalog.openCart", { count: cartCount(cart.items) })}`}
+          accessibilityLabel={t("catalog.openCart", {
+            count: cartCount(cart.items),
+          })}
           onPress={() =>
             router.push({
               pathname: "/cart/[storeSlug]",
@@ -143,6 +143,8 @@ export default function ProductDetailScreen() {
                 key={variant.id}
                 basePrice={product.price}
                 currency={product.currency}
+                locale={locale}
+                t={t}
                 variant={variant}
                 disabled={unavailable}
                 onAdd={() =>
@@ -192,7 +194,7 @@ export default function ProductDetailScreen() {
           onPress={() => router.push("/search")}
         >
           <Text className="text-center font-semibold text-brand-ink">
-            Seguir explorando
+            {t("catalog.keepBrowsing")}
           </Text>
         </Pressable>
       </View>
@@ -202,18 +204,21 @@ export default function ProductDetailScreen() {
 
 function VariantRow({
   currency,
+  locale,
+  t,
   basePrice,
   variant,
   onAdd,
   disabled,
 }: {
   currency: string;
+  locale: "en" | "es";
+  t: (key: string, values?: Record<string, string | number>) => string;
   basePrice: string;
   variant: PublicProductVariantResponseDto;
   onAdd: () => void;
   disabled: boolean;
 }) {
-  const { locale, t } = useMobileI18n();
   const attributes = Object.entries(variant.attributes)
     .map(([key, value]) => `${key}: ${String(value)}`)
     .join(" · ");
