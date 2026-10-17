@@ -90,3 +90,45 @@ test("per-call RequestOptions.headers override the injected auth header", async 
   const headers = new Headers(init?.headers);
   expect(headers.get("Authorization")).toBe("Bearer caller");
 });
+
+test("401 with a bearer token clears the native session", async () => {
+  const cleanup = vi.fn(async () => undefined);
+  const fetchFn = vi.fn(
+    async (): Promise<Response> =>
+      new Response(JSON.stringify({ message: "Unauthorized" }), {
+        status: 401,
+      }),
+  );
+  vi.stubGlobal("fetch", fetchFn);
+  configureApiClient({
+    baseUrl,
+    getAuthHeader: () => ({ Authorization: "Bearer expired-token" }),
+    onUnauthorized: cleanup,
+  });
+
+  await expect(customFetch("/stores/demo/account/me")).rejects.toMatchObject({
+    status: 401,
+  });
+  expect(cleanup).toHaveBeenCalledOnce();
+});
+
+test("401 without a bearer token does not clear a session", async () => {
+  const cleanup = vi.fn(async () => undefined);
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(
+      async (): Promise<Response> =>
+        new Response(JSON.stringify({ message: "Unauthorized" }), {
+          status: 401,
+        }),
+    ),
+  );
+  configureApiClient({ baseUrl, onUnauthorized: cleanup });
+
+  await expect(customFetch("/stores/demo/account/login")).rejects.toMatchObject(
+    {
+      status: 401,
+    },
+  );
+  expect(cleanup).not.toHaveBeenCalled();
+});

@@ -22,6 +22,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-secure-store",
       [
         "expo-splash-screen",
         {
@@ -30,7 +31,14 @@
           "imageWidth": 76
         }
       ],
-      "expo-image"
+      "expo-image",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permite elegir una imagen de tu comprobante de pago.",
+          "cameraPermission": "Permite fotografiar tu comprobante de pago."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

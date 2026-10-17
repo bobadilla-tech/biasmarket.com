@@ -1,0 +1,504 @@
+import { useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+  type TextInputProps,
+} from "react-native";
+import { Image } from "expo-image";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getInfoAsync } from "expo-file-system/legacy";
+import * as ImageManipulator from "expo-image-manipulator";
+import * as ImagePicker from "expo-image-picker";
+import {
+  ApiError,
+  customFetch,
+  customerAuth,
+  publicDeliveryConfig,
+  publicPaymentConfig,
+  publicPickupPoints,
+  publicCouriers,
+  stores,
+} from "@biasmarket/types";
+import type {
+  CheckoutResultResponseDto,
+  CreateOrderDto,
+  PaymentMethodConfigResponseDto,
+  PickupPointResponseDto,
+  ShippingAddressDto,
+} from "@biasmarket/types";
+import {
+  buildCheckoutFormSchema,
+  MAX_FILE_SIZE,
+  type CheckoutFormInput,
+  type ProofFileLike,
+} from "@biasmarket/validation";
+import { isPaymentMethodConfigured } from "@biasmarket/utils/payment-methods";
+import type { CheckoutPaymentMethod } from "@biasmarket/utils/payment-methods";
+import { cartCurrency, cartTotal, hasMixedCurrencies } from "@biasmarket/utils/cart";
+import type { CartItem } from "@biasmarket/utils/cart";
+import { formatPrice } from "../../features/catalog/catalog-ui";
+import { clearStoreCart, readStoreCart } from "../../features/cart/cart-storage";
+import { useBuyerSession } from "../../features/auth/session-context";
+
+const emptyForm: CheckoutFormInput = {
+  customerName: "",
+  customerPhone: "",
+  customerEmail: "",
+  deliveryMethodType: "",
+  pickupPointId: "",
+  pickupDate: "",
+  paymentMethod: "",
+  paymentType: "FULL",
+  courierName: "",
+  courierModality: "",
+  shippingRecipientName: "",
+  shippingRecipientSurnames: "",
+  shippingPhone: "",
+  shippingDocumentType: "",
+  shippingDocumentNumber: "",
+  shippingDepartment: "",
+  shippingProvince: "",
+  shippingDistrict: "",
+  shippingLine1: "",
+  shippingLine2: "",
+  shippingCity: "",
+  shippingRegion: "",
+  shippingReference: "",
+  shippingAgencyName: "",
+  paymentProof: null,
+};
+const EMPTY_POINTS: PickupPointResponseDto[] = [];
+const EMPTY_PAYMENT_METHODS: PaymentMethodConfigResponseDto[] = [];
+
+export default function CheckoutScreen() {
+  const { storeSlug } = useLocalSearchParams<{ storeSlug: string }>();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const session = useBuyerSession();
+  const [form, setForm] = useState(emptyForm);
+  const [fieldErrors, setFieldErrors] = useState<string[]>([]);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [loadingProof, setLoadingProof] = useState(false);
+
+  const cartQuery = useQuery({
+    queryKey: ["cart", storeSlug],
+    queryFn: () => readStoreCart(storeSlug),
+    enabled: Boolean(storeSlug),
+  });
+  const deliveryQuery = useQuery({
+    queryKey: ["checkout", storeSlug, "delivery"],
+    queryFn: () => publicDeliveryConfig.findEnabled(storeSlug),
+    enabled: Boolean(storeSlug),
+  });
+  const pickupQuery = useQuery({
+    queryKey: ["checkout", storeSlug, "pickup"],
+    queryFn: () => publicPickupPoints.findEnabled(storeSlug),
+    enabled: Boolean(storeSlug),
+  });
+  const paymentQuery = useQuery({
+    queryKey: ["checkout", storeSlug, "payment"],
+    queryFn: () => publicPaymentConfig.findEnabled(storeSlug),
+    enabled: Boolean(storeSlug),
+  });
+  const courierQuery = useQuery({
+    queryKey: ["checkout", storeSlug, "couriers"],
+    queryFn: () => publicCouriers.findEnabled(storeSlug),
+    enabled: Boolean(storeSlug),
+  });
+  const storeQuery = useQuery({
+    queryKey: ["checkout", storeSlug, "store"],
+    queryFn: () => stores.findPublic(storeSlug),
+    enabled: Boolean(storeSlug),
+  });
+  const profileQuery = useQuery({
+    queryKey: ["buyer", storeSlug, "profile"],
+    queryFn: () => customerAuth.me(storeSlug),
+    enabled: session.status === "authenticated" && session.storeSlug === storeSlug,
+    retry: (failureCount, error) =>
+      !(error instanceof ApiError && error.status === 401) && failureCount < 2,
+  });
+
+  const items = cartQuery.data ?? [];
+  const deliveryMethods = deliveryQuery.data ?? [];
+  const points = pickupQuery.data?.points ?? EMPTY_POINTS;
+  const weekday = pickupQuery.data?.weekday ?? new Date().getDay();
+  const paymentMethods = paymentQuery.data ?? EMPTY_PAYMENT_METHODS;
+  const couriers = courierQuery.data ?? [];
+  const unavailableManualMethods = useMemo(
+    () =>
+      new Set(
+        paymentMethods
+          .filter(
+            (method) =>
+              method.method !== "CASH" &&
+              !isPaymentMethodConfigured(method.method, method.details),
+          )
+          .map((method) => method.method),
+      ),
+    [paymentMethods],
+  );
+  const pointsRequiringDate = useMemo(
+    () =>
+      new Set(
+        points
+          .filter(
+            (point) =>
+              !point.closedOverride &&
+              point.openDays.length > 0 &&
+              !point.openDays.includes(weekday),
+          )
+          .map((point) => point.id),
+      ),
+    [points, weekday],
+  );
+  const schema = useMemo(
+    () =>
+      buildCheckoutFormSchema(
+        points.length > 0,
+        paymentMethods.length > 0,
+        pointsRequiringDate,
+        unavailableManualMethods,
+      ),
+    [points.length, paymentMethods.length, pointsRequiringDate, unavailableManualMethods],
+  );
+
+  function setField<K extends keyof CheckoutFormInput>(
+    key: K,
+    value: CheckoutFormInput[K],
+  ) {
+    setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  async function chooseProof(useCamera: boolean) {
+    setSubmitError(null);
+    setLoadingProof(true);
+    try {
+      const permission = useCamera
+        ? await ImagePicker.requestCameraPermissionsAsync()
+        : await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        setSubmitError("Necesitamos permiso para acceder a tus imágenes.");
+        return;
+      }
+      const result = useCamera
+        ? await ImagePicker.launchCameraAsync({ mediaTypes: ["images"] })
+        : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"] });
+      if (result.canceled || !result.assets[0]) return;
+      const proof = await compressProof(result.assets[0].uri);
+      setField("paymentProof", proof);
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "No se pudo cargar el comprobante.");
+    } finally {
+      setLoadingProof(false);
+    }
+  }
+
+  async function submitCheckout() {
+    setSubmitError(null);
+    const profile = profileQuery.data?.customer;
+    const values = {
+      ...form,
+      customerName: form.customerName || profile?.name || "",
+      customerPhone: form.customerPhone || profile?.phone || "",
+      customerEmail: form.customerEmail || profile?.email || "",
+    };
+    const parsed = schema.safeParse(values);
+    if (!parsed.success) {
+      setFieldErrors(parsed.error.issues.map((issue) => issue.message));
+      return;
+    }
+    setFieldErrors([]);
+    if (items.length === 0) {
+      setSubmitError("El carrito está vacío.");
+      return;
+    }
+    if (hasMixedCurrencies(items)) {
+      setSubmitError("El carrito contiene monedas distintas y no se puede cobrar junto.");
+      return;
+    }
+    if (!/^[a-z0-9-]+$/i.test(storeSlug)) {
+      setSubmitError("La tienda no es válida.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const address = toShippingAddress(parsed.data);
+      const order: CreateOrderDto = {
+        deliveryMethodType: parsed.data.deliveryMethodType as CreateOrderDto["deliveryMethodType"],
+        customerName: parsed.data.customerName || undefined,
+        customerPhone: parsed.data.customerPhone,
+        customerEmail: parsed.data.customerEmail || undefined,
+        pickupPointId: parsed.data.pickupPointId || undefined,
+        pickupDate: parsed.data.pickupDate || undefined,
+        paymentMethod: parsed.data.paymentMethod
+          ? (parsed.data.paymentMethod as CreateOrderDto["paymentMethod"])
+          : undefined,
+        paymentType: parsed.data.paymentType,
+        courierName: parsed.data.courierName || undefined,
+        courierModality: parsed.data.courierModality
+          ? (parsed.data.courierModality as CreateOrderDto["courierModality"])
+          : undefined,
+        shippingAddress: address,
+        items: items.map(({ productId, variantId, quantity }) => ({
+          productId,
+          variantId,
+          quantity,
+        })),
+      };
+      const body = new FormData();
+      body.append("deliveryMethodType", order.deliveryMethodType);
+      body.append("customerPhone", order.customerPhone);
+      body.append("paymentType", order.paymentType ?? "FULL");
+      if (order.customerName) body.append("customerName", order.customerName);
+      if (order.customerEmail) body.append("customerEmail", order.customerEmail);
+      if (order.pickupPointId) body.append("pickupPointId", order.pickupPointId);
+      if (order.pickupDate) body.append("pickupDate", order.pickupDate);
+      if (order.paymentMethod) body.append("paymentMethod", order.paymentMethod);
+      if (order.courierName) body.append("courierName", order.courierName);
+      if (order.courierModality) body.append("courierModality", order.courierModality);
+      if (address) body.append("shippingAddress", JSON.stringify(address));
+      body.append("items", JSON.stringify(order.items));
+      if (form.paymentProof && order.paymentMethod !== "CASH") {
+        const proof = form.paymentProof as ProofFileLike & { uri: string };
+        body.append("file", {
+          uri: proof.uri,
+          name: proof.name,
+          type: proof.type ?? "image/jpeg",
+        } as unknown as Blob);
+      }
+
+      const result = await customFetch<CheckoutResultResponseDto>(
+        `/stores/${encodeURIComponent(storeSlug)}/checkout`,
+        { method: "POST", body },
+      );
+      await clearStoreCart(storeSlug);
+      queryClient.setQueryData(["cart", storeSlug], [] satisfies CartItem[]);
+      router.replace({
+        pathname: "/checkout/success/[orderId]",
+        params: {
+          orderId: result.order.id,
+          paymentStatus: result.order.paymentStatus,
+          proofSubmitted: String(Boolean(form.paymentProof && order.paymentMethod !== "CASH")),
+        },
+      });
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "No se pudo completar la compra.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (cartQuery.isPending || deliveryQuery.isPending || pickupQuery.isPending || paymentQuery.isPending) {
+    return (
+      <View className="flex-1 items-center justify-center bg-brand-ink">
+        <ActivityIndicator color="#f2b4c7" />
+        <Text className="mt-3 text-white/70">Preparando checkout...</Text>
+      </View>
+    );
+  }
+
+  const selectedPayment = paymentMethods.find((method) => method.method === form.paymentMethod);
+  const qrImageUrl = selectedPayment?.details.qrImageUrl;
+
+  return (
+    <ScrollView className="flex-1 bg-brand-ink" contentContainerStyle={{ paddingBottom: 44 }} keyboardShouldPersistTaps="handled">
+      <View className="gap-5 px-5 pt-12">
+        <Pressable accessibilityRole="button" onPress={() => router.back()}>
+          <Text className="font-semibold text-brand-pink">‹ Volver al carrito</Text>
+        </Pressable>
+        <Text className="text-3xl font-bold text-white">Finalizar compra</Text>
+        <Text className="text-sm text-white/60">{items.length} productos · {cartCurrency(items) ? formatPrice(String(cartTotal(items)), cartCurrency(items)!) : "—"}</Text>
+        {session.status !== "authenticated" || session.storeSlug !== storeSlug ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push({ pathname: "/login", params: { storeSlug, returnTo: "checkout" } })}
+          >
+            <Text className="text-sm font-semibold text-brand-pink">
+              Inicia sesión para autocompletar tus datos
+            </Text>
+          </Pressable>
+        ) : null}
+
+        <Section title="Tus datos">
+          <Field label="Nombre" value={form.customerName || profileQuery.data?.customer.name || ""} onChangeText={(value) => setField("customerName", value)} />
+          <Field label="Teléfono" keyboardType="phone-pad" value={form.customerPhone || profileQuery.data?.customer.phone || ""} onChangeText={(value) => setField("customerPhone", value)} />
+          <Field label="Correo electrónico" keyboardType="email-address" autoCapitalize="none" value={form.customerEmail || profileQuery.data?.customer.email || ""} onChangeText={(value) => setField("customerEmail", value)} />
+        </Section>
+
+        <Section title="Entrega">
+          {deliveryMethods.map((method) => (
+            <Choice key={method.type} label={method.type === "PICKUP" ? "Recojo" : "Courier"} selected={form.deliveryMethodType === method.type} onPress={() => setField("deliveryMethodType", method.type)} />
+          ))}
+          {form.deliveryMethodType === "PICKUP" && points.length ? (
+            <>
+              <Text className="font-medium text-white">Punto de recojo</Text>
+              {points.map((point) => (
+                <Choice key={point.id} label={point.label} selected={form.pickupPointId === point.id} onPress={() => setField("pickupPointId", point.id)} />
+              ))}
+              {form.pickupPointId && pointsRequiringDate.has(form.pickupPointId) ? (
+                <Field label="Fecha de recojo (AAAA-MM-DD)" value={form.pickupDate} onChangeText={(value) => setField("pickupDate", value)} placeholder="2026-10-20" />
+              ) : null}
+            </>
+          ) : null}
+          {form.deliveryMethodType === "COURIER" ? (
+            <>
+              <Text className="font-medium text-white">Courier</Text>
+              {courierQuery.data?.map((courier) => (
+                <Choice key={courier.id} label={courier.name} selected={form.courierName === courier.name} onPress={() => setField("courierName", courier.name)} />
+              ))}
+              {courierQuery.data?.find((courier) => courier.name === form.courierName)?.modalities.map(({ modality }) => (
+                <Choice key={modality} label={modality === "HOME" ? "Entrega a domicilio" : "Agencia"} selected={form.courierModality === modality} onPress={() => setField("courierModality", modality)} />
+              ))}
+              <Field label="Nombre de quien recibe" value={form.shippingRecipientName} onChangeText={(value) => setField("shippingRecipientName", value)} />
+              <Field label="Apellidos" value={form.shippingRecipientSurnames} onChangeText={(value) => setField("shippingRecipientSurnames", value)} />
+              <Field label="Teléfono de contacto" keyboardType="phone-pad" value={form.shippingPhone} onChangeText={(value) => setField("shippingPhone", value)} />
+              {form.courierModality === "HOME" ? (
+                <>
+                  <Field label="Dirección" value={form.shippingLine1} onChangeText={(value) => setField("shippingLine1", value)} />
+                  <Field label="Ciudad" value={form.shippingCity} onChangeText={(value) => setField("shippingCity", value)} />
+                  <Field label="Distrito" value={form.shippingDistrict} onChangeText={(value) => setField("shippingDistrict", value)} />
+                  <Field label="Provincia" value={form.shippingProvince} onChangeText={(value) => setField("shippingProvince", value)} />
+                  <Field label="Departamento" value={form.shippingDepartment} onChangeText={(value) => setField("shippingDepartment", value)} />
+                  <Field label="Referencia" value={form.shippingReference} onChangeText={(value) => setField("shippingReference", value)} />
+                </>
+              ) : null}
+              {form.courierModality === "AGENCY" ? (
+                <Field label="Nombre de agencia" value={form.shippingAgencyName} onChangeText={(value) => setField("shippingAgencyName", value)} />
+              ) : null}
+            </>
+          ) : null}
+        </Section>
+
+        <Section title="Pago">
+          {paymentMethods.map((method) => (
+            <Choice key={method.method} label={method.method} selected={form.paymentMethod === method.method} onPress={() => setField("paymentMethod", method.method)} />
+          ))}
+          {selectedPayment ? <Text className="text-sm text-white/70">{paymentDescription(selectedPayment)}</Text> : null}
+          {form.paymentMethod && storeQuery.data?.paymentInstructions ? (
+            <Text className="text-sm leading-5 text-white/70">
+              {storeQuery.data.paymentInstructions}
+            </Text>
+          ) : null}
+          {typeof qrImageUrl === "string" ? (
+            <Image
+              source={{ uri: qrImageUrl }}
+              contentFit="contain"
+              cachePolicy="memory-disk"
+              style={{ width: 180, height: 180, alignSelf: "center" }}
+            />
+          ) : null}
+          {form.paymentMethod && form.paymentMethod !== "CASH" && !unavailableManualMethods.has(form.paymentMethod as CheckoutPaymentMethod) ? (
+            <>
+              <Text className="font-medium text-white">Tipo de pago</Text>
+              <Choice label="Pago completo" selected={form.paymentType === "FULL"} onPress={() => setField("paymentType", "FULL")} />
+              <Choice label="Adelanto parcial" selected={form.paymentType === "PARTIAL"} onPress={() => setField("paymentType", "PARTIAL")} />
+              <View className="flex-row gap-2">
+                <Pressable accessibilityRole="button" className="flex-1 rounded-xl bg-white/10 p-3" disabled={loadingProof} onPress={() => void chooseProof(true)}>
+                  <Text className="text-center text-white">Tomar foto</Text>
+                </Pressable>
+                <Pressable accessibilityRole="button" className="flex-1 rounded-xl bg-white/10 p-3" disabled={loadingProof} onPress={() => void chooseProof(false)}>
+                  <Text className="text-center text-white">Elegir imagen</Text>
+                </Pressable>
+              </View>
+              <Text className="text-sm text-white/60">
+                {loadingProof ? "Comprimiendo imagen..." : form.paymentProof ? `Comprobante listo: ${form.paymentProof.name}` : "Adjunta una imagen del comprobante. Se comprimirá antes de subirla."}
+              </Text>
+            </>
+          ) : null}
+        </Section>
+
+        {fieldErrors.length ? (
+          <View accessibilityRole="alert" className="gap-1 rounded-xl bg-red-400/10 p-4">
+            {fieldErrors.map((message, index) => <Text key={`${message}-${index}`} className="text-sm text-red-200">{message}</Text>)}
+          </View>
+        ) : null}
+        {submitError ? <Text accessibilityRole="alert" className="text-sm text-red-200">{submitError}</Text> : null}
+        <Pressable accessibilityRole="button" disabled={submitting || loadingProof || items.length === 0} className="rounded-xl bg-brand-pink px-5 py-4 disabled:opacity-50" onPress={() => void submitCheckout()}>
+          <Text className="text-center font-bold text-brand-ink">{submitting ? "Enviando pedido..." : "Confirmar pedido"}</Text>
+        </Pressable>
+      </View>
+    </ScrollView>
+  );
+}
+
+async function compressProof(uri: string): Promise<ProofFileLike & { uri: string }> {
+  for (const preset of [
+    { width: 1600, compress: 0.75 },
+    { width: 1200, compress: 0.65 },
+    { width: 900, compress: 0.5 },
+  ]) {
+    const output = await ImageManipulator.manipulateAsync(
+      uri,
+      [{ resize: { width: preset.width } }],
+      { compress: preset.compress, format: ImageManipulator.SaveFormat.JPEG },
+    );
+    const info = await getInfoAsync(output.uri);
+    if (info.exists && typeof info.size === "number" && info.size <= MAX_FILE_SIZE) {
+      return {
+        uri: output.uri,
+        name: `payment-proof-${Date.now()}.jpg`,
+        type: "image/jpeg",
+        size: info.size,
+      };
+    }
+  }
+  throw new Error("No se pudo comprimir el comprobante por debajo de 5 MB.");
+}
+
+function toShippingAddress(form: CheckoutFormInput): ShippingAddressDto | undefined {
+  if (form.deliveryMethodType !== "COURIER") return undefined;
+  return {
+    recipientName: form.shippingRecipientName,
+    recipientSurnames: form.shippingRecipientSurnames || undefined,
+    phone: form.shippingPhone,
+    documentType: form.shippingDocumentType || undefined,
+    documentNumber: form.shippingDocumentNumber || undefined,
+    department: form.shippingDepartment || undefined,
+    province: form.shippingProvince || undefined,
+    district: form.shippingDistrict || undefined,
+    line1: form.shippingLine1 || undefined,
+    line2: form.shippingLine2 || undefined,
+    city: form.shippingCity || undefined,
+    region: form.shippingRegion || undefined,
+    reference: form.shippingReference || undefined,
+    agencyName: form.shippingAgencyName || undefined,
+  };
+}
+
+function paymentDescription(method: PaymentMethodConfigResponseDto): string {
+  const details = method.details;
+  return [details.bankName, details.accountType, details.accountNumber, details.accountHolder, details.phoneNumber]
+    .filter((value): value is string => typeof value === "string" && value.length > 0)
+    .join(" · ");
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return <View className="gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+    <Text className="text-lg font-bold text-white">{title}</Text>
+    {children}
+  </View>;
+}
+
+function Field({ label, ...props }: TextInputProps & { label: string }) {
+  return <View className="gap-1">
+    <Text className="text-sm font-medium text-white/80">{label}</Text>
+    <TextInput
+      {...props}
+      className="rounded-xl border border-white/15 bg-black/10 px-4 py-3 text-white"
+      placeholderTextColor="#aaa"
+    />
+  </View>;
+}
+
+function Choice({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
+  return <Pressable accessibilityRole="radio" accessibilityState={{ selected }} className={`rounded-xl border px-4 py-3 ${selected ? "border-brand-pink bg-brand-pink/10" : "border-white/10 bg-white/5"}`} onPress={onPress}>
+    <Text className={selected ? "font-semibold text-brand-pink" : "text-white"}>{label}</Text>
+  </Pressable>;
+}

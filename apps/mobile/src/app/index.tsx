@@ -14,6 +14,7 @@ import {
   ProductCard,
   StoreRow,
 } from "../features/catalog/catalog-ui";
+import { useBuyerSession } from "../features/auth/session-context";
 
 const directoryKey = ["catalog", "store-directory"] as const;
 const EMPTY_FEATURED_STORES: FeaturedStoreResponseDto[] = [];
@@ -21,6 +22,7 @@ const EMPTY_DIRECTORY_STORES: DirectoryStoreItemResponseDto[] = [];
 
 export default function DiscoverScreen() {
   const router = useRouter();
+  const { status } = useBuyerSession();
   const [refreshing, setRefreshing] = useState(false);
   const featuredQuery = useQuery({
     queryKey: ["catalog", "featured-stores"],
@@ -100,6 +102,7 @@ export default function DiscoverScreen() {
             featured={featured}
             products={productsQuery.data ?? []}
             onSearch={() => router.push("/search")}
+            onAccount={() => router.push(status === "authenticated" ? "/account" : "/login")}
             onStore={(slug) =>
               router.push({ pathname: "/search", params: { storeSlug: slug } })
             }
@@ -145,6 +148,7 @@ function DiscoverHeader({
   featured,
   products: featuredProducts,
   onSearch,
+  onAccount,
   onStore,
   onProduct,
 }: {
@@ -152,6 +156,7 @@ function DiscoverHeader({
   featured: FeaturedStoreResponseDto[];
   products: SearchProductResponseDto[];
   onSearch: () => void;
+  onAccount: () => void;
   onStore: (storeSlug: string) => void;
   onProduct: (product: SearchProductResponseDto) => void;
 }) {
@@ -164,13 +169,22 @@ function DiscoverHeader({
           </Text>
           <Text className="mt-1 text-3xl font-bold text-white">Descubre</Text>
         </View>
-        <Pressable
-          accessibilityRole="button"
-          className="rounded-xl bg-brand-pink px-4 py-3"
-          onPress={onSearch}
-        >
-          <Text className="font-semibold text-brand-ink">Buscar</Text>
-        </Pressable>
+        <View className="flex-row gap-2">
+          <Pressable
+            accessibilityRole="button"
+            className="rounded-xl bg-white/10 px-3 py-3"
+            onPress={onAccount}
+          >
+            <Text className="font-semibold text-white">Cuenta</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            className="rounded-xl bg-brand-pink px-4 py-3"
+            onPress={onSearch}
+          >
+            <Text className="font-semibold text-brand-ink">Buscar</Text>
+          </Pressable>
+        </View>
       </View>
       {error ? (
         <Text accessibilityRole="alert" className="text-sm text-red-300">
