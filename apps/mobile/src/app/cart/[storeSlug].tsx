@@ -13,13 +13,13 @@ import {
 } from "@biasmarket/utils/cart";
 import { formatPrice } from "../../features/catalog/catalog-ui";
 import { useStoreCart } from "../../features/cart/use-store-cart";
-import { useMobileI18n } from "../../i18n/mobile-i18n.js";
+import { useMobileI18n } from "../../i18n/mobile-i18n";
 
 export default function CartScreen() {
   const { storeSlug } = useLocalSearchParams<{ storeSlug: string }>();
   const router = useRouter();
-  const cart = useStoreCart(storeSlug);
   const { locale, t } = useMobileI18n();
+  const cart = useStoreCart(storeSlug);
   const mixedCurrencies = hasMixedCurrencies(cart.items);
   const currency = cartCurrency(cart.items);
 
@@ -152,7 +152,12 @@ export default function CartScreen() {
           <Pressable
             accessibilityRole="button"
             className="rounded-xl bg-brand-pink px-5 py-4"
-            onPress={() => router.push({ pathname: "/checkout/[storeSlug]", params: { storeSlug } })}
+            onPress={() =>
+              router.push({
+                pathname: "/checkout/[storeSlug]",
+                params: { storeSlug },
+              })
+            }
           >
             <Text className="text-center font-bold text-brand-ink">
               {t("cart.continueCheckout")}

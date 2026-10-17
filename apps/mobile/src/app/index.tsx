@@ -14,15 +14,17 @@ import {
   ProductCard,
   StoreRow,
 } from "../features/catalog/catalog-ui";
-import { useMobileI18n } from "../i18n/mobile-i18n.js";
+import { useBuyerSession } from "../features/auth/session-context";
+import { useMobileI18n } from "../i18n/mobile-i18n";
 
 const directoryKey = ["catalog", "store-directory"] as const;
 const EMPTY_FEATURED_STORES: FeaturedStoreResponseDto[] = [];
 const EMPTY_DIRECTORY_STORES: DirectoryStoreItemResponseDto[] = [];
 
 export default function DiscoverScreen() {
-  const router = useRouter();
   const { t } = useMobileI18n();
+  const router = useRouter();
+  const { status } = useBuyerSession();
   const [refreshing, setRefreshing] = useState(false);
   const featuredQuery = useQuery({
     queryKey: ["catalog", "featured-stores"],
@@ -98,11 +100,13 @@ export default function DiscoverScreen() {
         }
         ListHeaderComponent={
           <DiscoverHeader
-            error={error ? t("catalog.loadFailed") : null}
+            error={error instanceof Error ? error.message : null}
             featured={featured}
             products={productsQuery.data ?? []}
             onSearch={() => router.push("/search")}
-            onAccount={() => router.push("/account")}
+            onAccount={() =>
+              router.push(status === "authenticated" ? "/account" : "/login")
+            }
             onStore={(slug) =>
               router.push({ pathname: "/search", params: { storeSlug: slug } })
             }
@@ -175,7 +179,7 @@ function DiscoverHeader({
         <View className="flex-row gap-2">
           <Pressable
             accessibilityRole="button"
-            className="rounded-xl border border-white/15 px-3 py-3"
+            className="rounded-xl bg-white/10 px-3 py-3"
             onPress={onAccount}
           >
             <Text className="font-semibold text-white">

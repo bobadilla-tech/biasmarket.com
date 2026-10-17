@@ -6,7 +6,10 @@ import { customFetch } from "@biasmarket/types";
 
 const STORAGE_KEY = "buyer-expo-push-token";
 
-export async function registerBuyerPushToken(storeSlug: string): Promise<void> {
+export async function registerBuyerPushToken(
+  storeSlug: string,
+  channelName: string,
+): Promise<void> {
   if (Platform.OS === "web") return;
   const permission = await Notifications.getPermissionsAsync();
   const granted =
@@ -15,7 +18,7 @@ export async function registerBuyerPushToken(storeSlug: string): Promise<void> {
   if (!granted) return;
   if (Platform.OS === "android") {
     await Notifications.setNotificationChannelAsync("default", {
-      name: "default",
+      name: channelName,
       importance: Notifications.AndroidImportance.DEFAULT,
     });
   }
