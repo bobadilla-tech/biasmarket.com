@@ -32,7 +32,7 @@ export function StoreImage({
       className="items-center justify-center rounded-2xl bg-white/10"
       style={{ width: size, height: size }}
     >
-      <Text className="text-lg font-bold text-brand-pink">B</Text>
+      <Text className="text-lg font-bold text-brand-pink">{t("common.brandMonogram")}</Text>
     </View>
   );
 }
