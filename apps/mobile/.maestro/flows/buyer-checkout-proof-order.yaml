@@ -14,11 +14,11 @@ appId: com.biasmarket.mobile
 - assertVisible: "^(?:Search|Buscar)$"
 - stopApp
 - launchApp
-- assertVisible: "Search"
+- assertVisible: "^(?:Search|Buscar)$"
 - openLink: biasmarket:///store/${STORE_SLUG}/product/${PRODUCT_ID}
 - assertVisible: ${PRODUCT_NAME}
 - tapOn: "^(?:Add to cart|Añadir al carrito)$"
-- tapOn: '^(?:Cart|Carrito) \(1\)
+- tapOn: "^(?:Cart|Carrito).*1.*$"
 - tapOn: "^(?:Continue to checkout|Continuar al pago)$"
 - assertVisible: "^(?:Checkout|Finalizar compra)$"
 - tapOn: "^(?:Pickup|Recojo)$"
@@ -32,17 +32,3 @@ appId: com.biasmarket.mobile
 - tapOn: "^(?:View my order|Ver mi pedido)$"
 - assertVisible: "^(?:Products|Productos)$"
 - assertVisible: "^(?:Private payment receipt|Comprobante de pago privado)$"
-
-- tapOn: "Continue to checkout"
-- assertVisible: "Checkout"
-- tapOn: "Pickup"
-- tapOn: ${PICKUP_LABEL}
-- tapOn: ${PAYMENT_METHOD}
-- tapOn: "Choose image"
-- tapOn:
-    point: "25%, 35%"
-- tapOn: "Place order"
-- assertVisible: "Order placed"
-- tapOn: "View my order"
-- assertVisible: "Products"
-- assertVisible: "Private payment receipt"
