@@ -14,6 +14,7 @@ import {
   ProductCard,
   StoreRow,
 } from "../features/catalog/catalog-ui";
+import { useMobileI18n } from "../i18n/mobile-i18n.js";
 
 const directoryKey = ["catalog", "store-directory"] as const;
 const EMPTY_FEATURED_STORES: FeaturedStoreResponseDto[] = [];
@@ -21,6 +22,7 @@ const EMPTY_DIRECTORY_STORES: DirectoryStoreItemResponseDto[] = [];
 
 export default function DiscoverScreen() {
   const router = useRouter();
+  const { t } = useMobileI18n();
   const [refreshing, setRefreshing] = useState(false);
   const featuredQuery = useQuery({
     queryKey: ["catalog", "featured-stores"],
@@ -96,10 +98,11 @@ export default function DiscoverScreen() {
         }
         ListHeaderComponent={
           <DiscoverHeader
-            error={error instanceof Error ? error.message : null}
+            error={error ? t("catalog.loadFailed") : null}
             featured={featured}
             products={productsQuery.data ?? []}
             onSearch={() => router.push("/search")}
+            onAccount={() => router.push("/account")}
             onStore={(slug) =>
               router.push({ pathname: "/search", params: { storeSlug: slug } })
             }
@@ -116,7 +119,7 @@ export default function DiscoverScreen() {
         }
         ListEmptyComponent={
           <Text className="px-6 pb-8 text-sm text-white/70">
-            Aún no hay más tiendas en el directorio.
+            {t("catalog.directoryEmpty")}
           </Text>
         }
         renderItem={({ item }) => (
@@ -145,6 +148,7 @@ function DiscoverHeader({
   featured,
   products: featuredProducts,
   onSearch,
+  onAccount,
   onStore,
   onProduct,
 }: {
@@ -152,9 +156,11 @@ function DiscoverHeader({
   featured: FeaturedStoreResponseDto[];
   products: SearchProductResponseDto[];
   onSearch: () => void;
+  onAccount: () => void;
   onStore: (storeSlug: string) => void;
   onProduct: (product: SearchProductResponseDto) => void;
 }) {
+  const { t } = useMobileI18n();
   return (
     <View className="gap-7 px-5 pt-12">
       <View className="flex-row items-center justify-between">
@@ -162,23 +168,38 @@ function DiscoverHeader({
           <Text className="text-sm font-semibold uppercase tracking-widest text-brand-pink">
             Bias Market
           </Text>
-          <Text className="mt-1 text-3xl font-bold text-white">Descubre</Text>
+          <Text className="mt-1 text-3xl font-bold text-white">
+            {t("common.discover")}
+          </Text>
         </View>
-        <Pressable
-          accessibilityRole="button"
-          className="rounded-xl bg-brand-pink px-4 py-3"
-          onPress={onSearch}
-        >
-          <Text className="font-semibold text-brand-ink">Buscar</Text>
-        </Pressable>
+        <View className="flex-row gap-2">
+          <Pressable
+            accessibilityRole="button"
+            className="rounded-xl border border-white/15 px-3 py-3"
+            onPress={onAccount}
+          >
+            <Text className="font-semibold text-white">
+              {t("common.account")}
+            </Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            className="rounded-xl bg-brand-pink px-4 py-3"
+            onPress={onSearch}
+          >
+            <Text className="font-semibold text-brand-ink">
+              {t("common.search")}
+            </Text>
+          </Pressable>
+        </View>
       </View>
       {error ? (
         <Text accessibilityRole="alert" className="text-sm text-red-300">
-          No pudimos cargar el catálogo. Desliza hacia abajo para reintentar.
+          {t("catalog.loadFailed")}
         </Text>
       ) : null}
       <View className="gap-3">
-        <SectionTitle title="Tiendas destacadas" />
+        <SectionTitle title={t("catalog.featuredStores")} />
         {featured.length ? (
           <FlashList
             horizontal
@@ -194,12 +215,12 @@ function DiscoverHeader({
           />
         ) : (
           <Text className="text-sm text-white/60">
-            Pronto habrá tiendas destacadas.
+            {t("catalog.featuredEmpty")}
           </Text>
         )}
       </View>
       <View className="gap-3">
-        <SectionTitle title="Recién publicados" />
+        <SectionTitle title={t("catalog.recentProducts")} />
         {featuredProducts.length ? (
           <FlashList
             horizontal
@@ -214,14 +235,14 @@ function DiscoverHeader({
           />
         ) : (
           <Text className="text-sm text-white/60">
-            No hay productos disponibles todavía.
+            {t("catalog.productsEmpty")}
           </Text>
         )}
       </View>
       <View className="gap-1 pt-1">
-        <SectionTitle title="Directorio de tiendas" />
+        <SectionTitle title={t("catalog.storeDirectory")} />
         <Text className="text-sm text-white/60">
-          Explora las tiendas públicas de Bias Market.
+          {t("catalog.directoryDescription")}
         </Text>
       </View>
     </View>
@@ -233,10 +254,13 @@ function SectionTitle({ title }: { title: string }) {
 }
 
 function LoadingScreen() {
+  const { t } = useMobileI18n();
   return (
     <View className="flex-1 items-center justify-center bg-brand-ink">
       <ActivityIndicator color="#f2b4c7" />
-      <Text className="mt-3 text-sm text-white/70">Cargando tiendas...</Text>
+      <Text className="mt-3 text-sm text-white/70">
+        {t("common.loadingStores")}
+      </Text>
     </View>
   );
 }
