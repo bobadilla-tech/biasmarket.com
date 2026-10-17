@@ -11,6 +11,8 @@ import type {
   FeaturedStoreResponseDto,
   SearchProductResponseDto,
 } from "@biasmarket/types";
+import type { Locale } from "@biasmarket/i18n";
+import { useMobileI18n } from "../../i18n/mobile-i18n.js";
 
 export function StoreImage({
   uri,
@@ -92,6 +94,7 @@ export function ProductCard({
   onPress: () => void;
   style?: StyleProp<ViewStyle>;
 }) {
+  const { locale } = useMobileI18n();
   return (
     <Pressable
       accessibilityRole="button"
@@ -113,18 +116,22 @@ export function ProductCard({
           {product.store.name}
         </Text>
         <Text className="font-bold text-brand-pink">
-          {formatPrice(product.price, product.currency)}
+          {formatPrice(product.price, product.currency, locale)}
         </Text>
       </View>
     </Pressable>
   );
 }
 
-export function formatPrice(value: string, currency: string): string {
+export function formatPrice(
+  value: string,
+  currency: string,
+  locale: Locale = "es",
+): string {
   const amount = Number(value);
   if (!Number.isFinite(amount)) return `${currency} ${value}`;
   try {
-    return new Intl.NumberFormat("es-PE", {
+    return new Intl.NumberFormat(locale === "es" ? "es-PE" : "en-US", {
       style: "currency",
       currency,
       maximumFractionDigits: 2,

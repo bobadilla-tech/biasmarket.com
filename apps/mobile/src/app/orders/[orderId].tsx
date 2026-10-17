@@ -13,6 +13,7 @@ import type { OrderPaymentResponseDto } from "@biasmarket/types";
 import { useBuyerSession } from "../../features/auth/session-context";
 import { formatPrice } from "../../features/catalog/catalog-ui";
 import { fetchPrivatePaymentProof } from "../../features/orders/private-payment-proof";
+import { useMobileI18n } from "../../i18n/mobile-i18n.js";
 
 export default function OrderDetailScreen() {
   const { orderId, storeSlug: routeStoreSlug } = useLocalSearchParams<{
@@ -22,6 +23,7 @@ export default function OrderDetailScreen() {
   const router = useRouter();
   const { status, storeSlug: sessionStoreSlug } = useBuyerSession();
   const storeSlug = routeStoreSlug ?? sessionStoreSlug;
+  const { locale, t } = useMobileI18n();
   const orderQuery = useQuery({
     queryKey: ["buyer-order", storeSlug, orderId],
     queryFn: () => customerAuth.orderDetail(storeSlug!, orderId),
@@ -43,14 +45,16 @@ export default function OrderDetailScreen() {
     return (
       <View className="flex-1 items-center justify-center gap-4 bg-brand-ink px-6">
         <Text className="text-center text-white">
-          Inicia sesión para abrir este pedido.
+          {t("orders.loginToOpen")}
         </Text>
         <Pressable
           accessibilityRole="button"
           className="rounded-xl bg-brand-pink px-5 py-3"
           onPress={() => router.push("/login")}
         >
-          <Text className="font-semibold text-brand-ink">Iniciar sesión</Text>
+          <Text className="font-semibold text-brand-ink">
+            {t("auth.signIn")}
+          </Text>
         </Pressable>
       </View>
     );
@@ -60,11 +64,11 @@ export default function OrderDetailScreen() {
     return (
       <View className="flex-1 items-center justify-center gap-4 bg-brand-ink px-6">
         <Text accessibilityRole="alert" className="text-center text-red-200">
-          No pudimos abrir este pedido.
+          {t("orders.openFailed")}
         </Text>
         <Pressable accessibilityRole="button" onPress={() => router.back()}>
           <Text className="font-semibold text-brand-pink">
-            Volver a mis pedidos
+            {t("orders.backToOrders")}
           </Text>
         </Pressable>
       </View>
@@ -79,37 +83,52 @@ export default function OrderDetailScreen() {
     >
       <View className="gap-5 px-5 pt-12">
         <Pressable accessibilityRole="button" onPress={() => router.back()}>
-          <Text className="font-semibold text-brand-pink">‹ Mis pedidos</Text>
+          <Text className="font-semibold text-brand-pink">
+            ‹ {t("orders.title")}
+          </Text>
         </Pressable>
         <View className="gap-2">
           <Text className="text-2xl font-bold text-white">
-            Pedido {order.id.slice(0, 8)}
+            {t("orders.order", { id: order.id.slice(0, 8) })}
           </Text>
           <Text className="text-sm text-white/60">
-            {new Date(order.createdAt).toLocaleString("es-PE")}
+            {new Date(order.createdAt).toLocaleString(
+              locale === "es" ? "es-PE" : "en-US",
+            )}
           </Text>
         </View>
 
         <View className="gap-2 rounded-2xl border border-white/10 bg-white/5 p-4">
           <Text className="font-semibold text-white">
-            Estado del pago: {paymentStatusLabel(order.paymentStatus)}
+            {t("orders.paymentStatusLabel", {
+              status: paymentStatusLabel(t, order.paymentStatus),
+            })}
           </Text>
           <Text className="text-sm text-white/70">
-            Total: {formatPrice(order.totalAmount, order.currency)}
+            {t("orders.totalLabel", {
+              amount: formatPrice(order.totalAmount, order.currency, locale),
+            })}
           </Text>
           <Text className="text-sm text-white/70">
-            Pendiente:{" "}
-            {formatPrice(String(order.pendingAmount), order.currency)}
+            {t("orders.pendingLabel", {
+              amount: formatPrice(
+                String(order.pendingAmount),
+                order.currency,
+                locale,
+              ),
+            })}
           </Text>
           <Text className="text-sm text-white/70">
-            Entrega:{" "}
-            {order.deliveryMethodType === "PICKUP"
-              ? "Recojo"
-              : `Courier${order.courierName ? ` · ${order.courierName}` : ""}`}
+            {t("orders.deliveryLabel", {
+              method:
+                order.deliveryMethodType === "PICKUP"
+                  ? t("orders.pickup")
+                  : `Courier${order.courierName ? ` · ${order.courierName}` : ""}`,
+            })}
           </Text>
         </View>
 
-        <Section title="Productos">
+        <Section title={t("orders.products")}>
           {order.items.map((item) => (
             <View
               key={item.id}
@@ -121,20 +140,20 @@ export default function OrderDetailScreen() {
                   {item.variant?.name ? ` · ${item.variant.name}` : ""}
                 </Text>
                 <Text className="text-xs text-white/60">
-                  Cantidad: {item.quantity}
+                  {t("orders.quantity", { count: item.quantity })}
                 </Text>
               </View>
               <Text className="font-semibold text-brand-pink">
-                {formatPrice(item.unitPriceAtPurchase, item.currency)}
+                {formatPrice(item.unitPriceAtPurchase, item.currency, locale)}
               </Text>
             </View>
           ))}
         </Section>
 
-        <Section title="Historial de pagos">
+        <Section title={t("orders.paymentHistory")}>
           {order.payments.length === 0 ? (
             <Text className="text-sm text-white/60">
-              Este pedido todavía no tiene pagos registrados.
+              {t("orders.noPayments")}
             </Text>
           ) : (
             order.payments.map((payment) => (
@@ -144,11 +163,11 @@ export default function OrderDetailScreen() {
               >
                 <View className="flex-row items-center justify-between gap-3">
                   <Text className="font-medium text-white">
-                    {payment.method ?? "Pago"} ·{" "}
-                    {paymentReviewLabel(payment.reviewStatus)}
+                    {payment.method ?? t("orders.payment")} ·{" "}
+                    {paymentReviewLabel(t, payment.reviewStatus)}
                   </Text>
                   <Text className="font-semibold text-brand-pink">
-                    {formatPrice(payment.amount, payment.currency)}
+                    {formatPrice(payment.amount, payment.currency, locale)}
                   </Text>
                 </View>
                 {payment.source === "BUYER_SUBMITTED" && payment.imageUrl ? (
@@ -176,6 +195,7 @@ function PrivatePaymentProof({
   orderId: string;
   payment: OrderPaymentResponseDto;
 }) {
+  const { t } = useMobileI18n();
   const proofQuery = useQuery({
     queryKey: ["private-payment-proof", storeSlug, orderId, payment.id],
     queryFn: () => fetchPrivatePaymentProof(storeSlug, orderId, payment.id),
@@ -185,15 +205,13 @@ function PrivatePaymentProof({
 
   if (proofQuery.isPending) {
     return (
-      <Text className="text-xs text-white/60">
-        Cargando comprobante privado…
-      </Text>
+      <Text className="text-xs text-white/60">{t("orders.loadingProof")}</Text>
     );
   }
   if (proofQuery.error || !proofQuery.data) {
     return (
       <Text accessibilityRole="alert" className="text-xs text-red-200">
-        No se pudo cargar el comprobante.
+        {t("orders.proofFailed")}
       </Text>
     );
   }
@@ -203,7 +221,7 @@ function PrivatePaymentProof({
   return (
     <Image
       source={{ uri: proofQuery.data }}
-      accessibilityLabel="Comprobante de pago privado"
+      accessibilityLabel={t("orders.privatePaymentProof")}
       resizeMode="contain"
       style={{
         width: "100%",
@@ -230,24 +248,16 @@ function Section({
   );
 }
 
-function paymentStatusLabel(status: string): string {
-  const labels: Record<string, string> = {
-    PENDING_PAYMENT: "Pendiente de pago",
-    PARTIALLY_PAID: "Pago parcial",
-    PAYMENT_SUBMITTED: "En revisión",
-    VERIFIED: "Pagado",
-    REJECTED: "Pago rechazado",
-    CANCELLED: "Cancelado",
-  };
-  return labels[status] ?? status;
+function paymentStatusLabel(
+  t: (key: string) => string,
+  status: string,
+): string {
+  return t(`orders.paymentStatus.${status}`);
 }
 
-function paymentReviewLabel(status: string): string {
-  const labels: Record<string, string> = {
-    PENDING_REVIEW: "En revisión",
-    APPROVED: "Aprobado",
-    REJECTED: "Rechazado",
-    N_A: "Confirmado",
-  };
-  return labels[status] ?? status;
+function paymentReviewLabel(
+  t: (key: string) => string,
+  status: string,
+): string {
+  return t(`orders.reviewStatus.${status}`);
 }
