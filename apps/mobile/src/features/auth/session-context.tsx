@@ -67,9 +67,7 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
         await runStorageOperation(deleteBuyerSession);
       } catch (cause) {
         if (generation === sessionGeneration.current) {
-          setError(
-            "No se pudo borrar la sesión segura del dispositivo. Inténtalo de nuevo.",
-          );
+          setError("auth.sessionDeleteFailed");
         }
         throw cause;
       }
@@ -103,7 +101,7 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
       })
       .catch(() => {
         if (!active || generation !== sessionGeneration.current) return;
-        setError("No se pudo leer la sesión segura del dispositivo.");
+        setError("auth.sessionReadFailed");
       });
 
     return () => {
@@ -123,21 +121,17 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
       );
       const token = response.sessionToken;
       if (!token) {
-        throw new Error("El servidor no devolvió el token de sesión móvil.");
+        throw new Error("auth.missingSessionToken");
       }
 
       if (generation !== sessionGeneration.current) {
-        throw new Error(
-          "La sesión cambió antes de completar el inicio de sesión.",
-        );
+        throw new Error("auth.sessionChanged");
       }
       await runStorageOperation(() =>
         writeBuyerSession({ token, storeSlug: slug }),
       );
       if (generation !== sessionGeneration.current) {
-        throw new Error(
-          "La sesión cambió antes de completar el inicio de sesión.",
-        );
+        throw new Error("auth.sessionChanged");
       }
       setMobileBearerToken(token);
       setStoreSlug(slug);
@@ -156,7 +150,7 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
         { headers: { "X-Client": "mobile" } },
       );
       if (generation !== sessionGeneration.current) {
-        throw new Error("La sesión cambió antes de completar el registro.");
+        throw new Error("auth.registrationSessionChanged");
       }
       // The current registration endpoint sets the password but doesn't issue
       // a session token, so log in immediately to establish the mobile session.
