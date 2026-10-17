@@ -17,10 +17,12 @@ import {
   flattenProductPages,
   nextProductSearchPage,
 } from "../features/catalog/pagination";
+import { useMobileI18n } from "../i18n/mobile-i18n";
 
 const PAGE_SIZE = 24;
 
 export default function SearchScreen() {
+  const { t } = useMobileI18n();
   const router = useRouter();
   const params = useLocalSearchParams<{ storeSlug?: string }>();
   const routeStoreSlug = Array.isArray(params.storeSlug)
@@ -74,27 +76,31 @@ export default function SearchScreen() {
         <View className="flex-row items-center justify-between">
           <View>
             <Text className="text-sm font-semibold uppercase tracking-widest text-brand-pink">
-              Catálogo
+              {t("common.catalogEyebrow")}
             </Text>
-            <Text className="mt-1 text-3xl font-bold text-white">Buscar</Text>
+            <Text className="mt-1 text-3xl font-bold text-white">
+              {t("common.search")}
+            </Text>
           </View>
           <Pressable accessibilityRole="button" onPress={() => router.back()}>
-            <Text className="font-semibold text-brand-pink">Volver</Text>
+            <Text className="font-semibold text-brand-pink">
+              {t("common.back")}
+            </Text>
           </Pressable>
         </View>
         <TextInput
-          accessibilityLabel="Buscar productos"
+          accessibilityLabel={t("common.search")}
           autoCapitalize="none"
           className="rounded-xl border border-white/15 bg-white px-4 py-3 text-brand-ink"
           onChangeText={setQuery}
-          placeholder="¿Qué estás buscando?"
+          placeholder={t("common.searchPlaceholder")}
           placeholderTextColor="#7b747c"
           returnKeyType="search"
           value={query}
         />
         <View className="gap-2">
           <Text className="text-sm font-semibold text-white">
-            Categorías de una tienda
+            {t("search.categories")}
           </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View className="flex-row gap-2">
@@ -112,7 +118,7 @@ export default function SearchScreen() {
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View className="flex-row gap-2">
                 <FilterChip
-                  label="Todas"
+                  label={t("common.all")}
                   selected={!category}
                   onPress={() => setCategory("")}
                 />
@@ -128,7 +134,7 @@ export default function SearchScreen() {
             </ScrollView>
           ) : (
             <Text className="text-xs text-white/50">
-              Elige una tienda para ver sus categorías.
+              {t("search.chooseStore")}
             </Text>
           )}
         </View>
@@ -137,7 +143,7 @@ export default function SearchScreen() {
         ) : null}
         {resultQuery.error ? (
           <Text accessibilityRole="alert" className="text-sm text-red-300">
-            No se pudieron cargar los productos. Intenta de nuevo.
+            {t("search.loadFailed")}
           </Text>
         ) : null}
       </View>
@@ -157,7 +163,7 @@ export default function SearchScreen() {
             <ActivityIndicator className="mt-10" color="#f2b4c7" />
           ) : (
             <Text className="mt-8 text-center text-sm text-white/60">
-              No encontramos productos con esos filtros.
+              {t("search.noResults")}
             </Text>
           )
         }

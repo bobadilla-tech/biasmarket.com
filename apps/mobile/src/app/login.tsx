@@ -9,10 +9,15 @@ import {
   type CustomerLoginInput,
 } from "@biasmarket/validation";
 import { useBuyerSession } from "../features/auth/session-context";
+import { useMobileI18n } from "../i18n/mobile-i18n";
 
 export default function LoginScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ storeSlug?: string; returnTo?: string }>();
+  const { t } = useMobileI18n();
+  const params = useLocalSearchParams<{
+    storeSlug?: string;
+    returnTo?: string;
+  }>();
   const { signIn, error: sessionError } = useBuyerSession();
   const [error, setError] = useState<string | null>(null);
   const {
@@ -23,7 +28,11 @@ export default function LoginScreen() {
     resolver: zodResolver(
       customerLoginSchema.extend({ storeSlug: z.string().min(1) }),
     ),
-    defaultValues: { storeSlug: params.storeSlug ?? "", phone: "", password: "" },
+    defaultValues: {
+      storeSlug: params.storeSlug ?? "",
+      phone: "",
+      password: "",
+    },
   });
 
   const submit = handleSubmit(async ({ storeSlug, phone, password }) => {
@@ -32,14 +41,15 @@ export default function LoginScreen() {
       const normalizedSlug = storeSlug.trim();
       await signIn(normalizedSlug, phone.trim(), password);
       if (params.returnTo === "checkout") {
-        router.replace({ pathname: "/checkout/[storeSlug]", params: { storeSlug: normalizedSlug } });
+        router.replace({
+          pathname: "/checkout/[storeSlug]",
+          params: { storeSlug: normalizedSlug },
+        });
       } else {
         router.replace("/");
       }
     } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "No se pudo iniciar sesión.",
-      );
+      setError(cause instanceof Error ? cause.message : t("auth.loginFailed"));
     }
   });
 
@@ -48,27 +58,29 @@ export default function LoginScreen() {
       contentContainerClassName="flex-grow justify-center gap-4 bg-brand-ink px-6 py-8"
       keyboardShouldPersistTaps="handled"
     >
-      <Text className="text-3xl font-bold text-brand-pink">Iniciar sesión</Text>
+      <Text className="text-3xl font-bold text-brand-pink">
+        {t("auth.loginTitle")}
+      </Text>
       <Text className="text-sm text-white/80">
-        Accede con la tienda y el teléfono asociados a tu cuenta.
+        {t("auth.loginAccountDescription")}
       </Text>
       <LoginField
         control={control}
         name="storeSlug"
-        label="Slug de la tienda"
+        label={t("auth.storeSlug")}
         error={errors.storeSlug?.message}
       />
       <LoginField
         control={control}
         name="phone"
-        label="Teléfono"
+        label={t("auth.phone")}
         keyboardType="phone-pad"
         error={errors.phone?.message}
       />
       <LoginField
         control={control}
         name="password"
-        label="Contraseña"
+        label={t("auth.password")}
         secureTextEntry
         error={errors.password?.message}
       />
@@ -84,7 +96,7 @@ export default function LoginScreen() {
         onPress={() => void submit()}
       >
         <Text className="text-center font-semibold text-brand-ink">
-          {isSubmitting ? "Ingresando…" : "Ingresar"}
+          {isSubmitting ? t("auth.loggingIn") : t("auth.loginButton")}
         </Text>
       </Pressable>
       <Link
@@ -94,7 +106,7 @@ export default function LoginScreen() {
         }}
         className="text-center font-medium text-white"
       >
-        Configurar contraseña con enlace de invitación
+        {t("auth.signUpLink")}
       </Link>
     </ScrollView>
   );
@@ -117,6 +129,7 @@ function LoginField({
   secureTextEntry?: boolean;
   keyboardType?: "default" | "phone-pad";
 }) {
+  const { t } = useMobileI18n();
   return (
     <View className="gap-1">
       <Text className="text-sm font-medium text-white">{label}</Text>
@@ -138,7 +151,7 @@ function LoginField({
       />
       {error ? (
         <Text accessibilityRole="alert" className="text-sm text-red-300">
-          {error}
+          {t("auth.requiredField")}
         </Text>
       ) : null}
     </View>

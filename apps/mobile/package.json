@@ -6,6 +6,7 @@
   "main": "expo-router/entry",
   "dependencies": {
     "@biasmarket/design-tokens": "workspace:*",
+    "@biasmarket/i18n": "workspace:*",
     "@biasmarket/query": "workspace:*",
     "@biasmarket/types": "workspace:*",
     "@biasmarket/utils": "workspace:*",

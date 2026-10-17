@@ -9,6 +9,7 @@ import {
   customerRegisterSchema,
 } from "@biasmarket/validation";
 import { useBuyerSession } from "../features/auth/session-context";
+import { useMobileI18n } from "../i18n/mobile-i18n";
 
 const registerFormSchema = customerRegisterSchema.extend({
   storeSlug: z.string().min(1),
@@ -18,7 +19,12 @@ const registerFormSchema = customerRegisterSchema.extend({
 type RegisterForm = z.infer<typeof registerFormSchema>;
 
 export default function RegisterScreen() {
-  const params = useLocalSearchParams<{ slug?: string; token?: string; returnTo?: string }>();
+  const params = useLocalSearchParams<{
+    slug?: string;
+    token?: string;
+    returnTo?: string;
+  }>();
+  const { t } = useMobileI18n();
   const router = useRouter();
   const { register, error: sessionError } = useBuyerSession();
   const [error, setError] = useState<string | null>(null);
@@ -49,15 +55,16 @@ export default function RegisterScreen() {
         values.password,
       );
       if (params.returnTo === "checkout") {
-        router.replace({ pathname: "/checkout/[storeSlug]", params: { storeSlug: values.storeSlug.trim() } });
+        router.replace({
+          pathname: "/checkout/[storeSlug]",
+          params: { storeSlug: values.storeSlug.trim() },
+        });
       } else {
         router.replace("/");
       }
     } catch (cause) {
       setError(
-        cause instanceof Error
-          ? cause.message
-          : "No se pudo completar el registro.",
+        cause instanceof Error ? cause.message : t("auth.registerFailed"),
       );
     }
   });
@@ -68,42 +75,41 @@ export default function RegisterScreen() {
       keyboardShouldPersistTaps="handled"
     >
       <Text className="text-3xl font-bold text-brand-pink">
-        Configurar cuenta
+        {t("auth.registerSetupTitle")}
       </Text>
       <Text className="text-sm text-white/80">
-        Usa el enlace de confirmación recibido y el teléfono de la cuenta. Al
-        guardar la contraseña iniciaremos tu sesión.
+        {t("auth.registerSetupDescription")}
       </Text>
       <RegisterField
         control={control}
         name="storeSlug"
-        label="Slug de la tienda"
+        label={t("auth.storeSlug")}
         error={errors.storeSlug?.message}
       />
       <RegisterField
         control={control}
         name="token"
-        label="Token del enlace"
+        label={t("auth.inviteToken")}
         error={errors.token?.message}
       />
       <RegisterField
         control={control}
         name="phone"
-        label="Teléfono de la cuenta"
+        label={t("auth.accountPhone")}
         keyboardType="phone-pad"
         error={errors.phone?.message}
       />
       <RegisterField
         control={control}
         name="password"
-        label="Contraseña (mínimo 8 caracteres)"
+        label={t("auth.passwordMin")}
         secureTextEntry
         error={errors.password?.message}
       />
       <RegisterField
         control={control}
         name="confirmPassword"
-        label="Repetir contraseña"
+        label={t("auth.repeatPassword")}
         secureTextEntry
         error={errors.confirmPassword?.message}
       />
@@ -119,7 +125,7 @@ export default function RegisterScreen() {
         onPress={() => void submit()}
       >
         <Text className="text-center font-semibold text-brand-ink">
-          {isSubmitting ? "Guardando…" : "Crear cuenta"}
+          {isSubmitting ? t("auth.saving") : t("auth.registerButton")}
         </Text>
       </Pressable>
       <Link
@@ -129,7 +135,7 @@ export default function RegisterScreen() {
         }}
         className="text-center font-medium text-white"
       >
-        Ya tengo contraseña
+        {t("auth.alreadyHavePassword")}
       </Link>
     </ScrollView>
   );
@@ -150,6 +156,7 @@ function RegisterField({
   secureTextEntry?: boolean;
   keyboardType?: "default" | "phone-pad";
 }) {
+  const { t } = useMobileI18n();
   return (
     <View className="gap-1">
       <Text className="text-sm font-medium text-white">{label}</Text>
@@ -171,7 +178,11 @@ function RegisterField({
       />
       {error ? (
         <Text accessibilityRole="alert" className="text-sm text-red-300">
-          {error}
+          {name === "password" && error.includes("8")
+            ? t("auth.passwordLength")
+            : name === "confirmPassword" && error === "passwordsDontMatch"
+              ? t("auth.passwordMismatch")
+              : t("auth.requiredField")}
         </Text>
       ) : null}
     </View>

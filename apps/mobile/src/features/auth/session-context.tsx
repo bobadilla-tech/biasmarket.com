@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type PropsWithChildren,
 } from "react";
@@ -16,6 +17,7 @@ import {
 } from "./session-storage";
 import { setMobileBearerToken, setUnauthorizedHandler } from "./api-client";
 import { registerBuyerPushToken, unregisterBuyerPushToken } from "./push-token";
+import { useMobileI18n } from "../../i18n/mobile-i18n";
 
 type SessionStatus = "loading" | "authenticated" | "unauthenticated";
 
@@ -39,29 +41,49 @@ const BuyerSessionContext = createContext<BuyerSessionContextValue | null>(
 );
 
 export function BuyerSessionProvider({ children }: PropsWithChildren) {
+  const { t } = useMobileI18n();
   const queryClient = useQueryClient();
+  const sessionGeneration = useRef(0);
+  const storageQueue = useRef<Promise<void>>(Promise.resolve());
   const [status, setStatus] = useState<SessionStatus>("loading");
   const [storeSlug, setStoreSlug] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const runStorageOperation = useCallback(<T,>(operation: () => Promise<T>) => {
+    const result = storageQueue.current.then(operation, operation);
+    storageQueue.current = result.then(
+      () => undefined,
+      () => undefined,
+    );
+    return result;
+  }, []);
+
   const clearLocalSession = useCallback(async () => {
+    const generation = ++sessionGeneration.current;
+    try {
+      await runStorageOperation(deleteBuyerSession);
+    } catch (cause) {
+      if (generation === sessionGeneration.current) {
+        setError(t("auth.sessionDeleteFailed"));
+      }
+      throw cause;
+    }
+    if (generation !== sessionGeneration.current) return;
     queryClient.removeQueries({ queryKey: ["private-payment-proof"] });
     queryClient.removeQueries({ queryKey: ["buyer"] });
     queryClient.removeQueries({ queryKey: ["buyer-order"] });
     setMobileBearerToken(null);
     setStoreSlug(null);
     setStatus("unauthenticated");
-    try {
-      await deleteBuyerSession();
-    } catch {
-      setError("No se pudo borrar la sesión segura del dispositivo.");
-    }
-  }, [queryClient]);
+  }, [queryClient, runStorageOperation, t]);
 
   useEffect(() => {
+    const generation = ++sessionGeneration.current;
+    let active = true;
     setUnauthorizedHandler(clearLocalSession);
-    void readBuyerSession()
+    void runStorageOperation(readBuyerSession)
       .then((session) => {
+        if (!active || generation !== sessionGeneration.current) return;
         if (session) {
           setMobileBearerToken(session.token);
           setStoreSlug(session.storeSlug);
@@ -71,15 +93,20 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
         }
       })
       .catch(() => {
+        if (!active || generation !== sessionGeneration.current) return;
         setStatus("unauthenticated");
-        setError("No se pudo leer la sesión segura del dispositivo.");
+        setError(t("auth.sessionReadFailed"));
       });
 
-    return () => setUnauthorizedHandler(undefined);
-  }, [clearLocalSession]);
+    return () => {
+      active = false;
+      setUnauthorizedHandler(undefined);
+    };
+  }, [clearLocalSession, runStorageOperation, t]);
 
   const signIn = useCallback(
     async (slug: string, phone: string, password: string) => {
+      const generation = ++sessionGeneration.current;
       setError(null);
       const response = await customerAuth.login(
         slug,
@@ -88,31 +115,43 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
       );
       const token = response.sessionToken;
       if (!token) {
-        throw new Error("El servidor no devolvió el token de sesión móvil.");
+        throw new Error(t("auth.missingSessionToken"));
       }
 
-      await writeBuyerSession({ token, storeSlug: slug });
+      if (generation !== sessionGeneration.current) {
+        throw new Error(t("auth.sessionChanged"));
+      }
+      await runStorageOperation(() =>
+        writeBuyerSession({ token, storeSlug: slug }),
+      );
+      if (generation !== sessionGeneration.current) {
+        throw new Error(t("auth.sessionChanged"));
+      }
       setMobileBearerToken(token);
       void registerBuyerPushToken(slug).catch(() => undefined);
       setStoreSlug(slug);
       setStatus("authenticated");
     },
-    [],
+    [runStorageOperation, t],
   );
 
   const register = useCallback(
     async (slug: string, token: string, phone: string, password: string) => {
+      const generation = ++sessionGeneration.current;
       setError(null);
       await customerAuth.register(
         slug,
         { token, password },
         { headers: { "X-Client": "mobile" } },
       );
+      if (generation !== sessionGeneration.current) {
+        throw new Error(t("auth.registrationSessionChanged"));
+      }
       // The current registration endpoint sets the password but doesn't issue
       // a session token, so log in immediately to establish the mobile session.
       await signIn(slug, phone, password);
     },
-    [signIn],
+    [signIn, t],
   );
 
   const signOut = useCallback(async () => {

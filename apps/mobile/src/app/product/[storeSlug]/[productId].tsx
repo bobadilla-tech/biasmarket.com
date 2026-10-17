@@ -14,8 +14,10 @@ import type { PublicProductVariantResponseDto } from "@biasmarket/types";
 import { formatPrice } from "../../../features/catalog/catalog-ui";
 import { cartCount } from "@biasmarket/utils/cart";
 import { useStoreCart } from "../../../features/cart/use-store-cart";
+import { useMobileI18n } from "../../../i18n/mobile-i18n";
 
 export default function ProductDetailScreen() {
+  const { locale, t } = useMobileI18n();
   const { storeSlug, productId } = useLocalSearchParams<{
     storeSlug: string;
     productId: string;
@@ -32,7 +34,7 @@ export default function ProductDetailScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-brand-ink">
         <ActivityIndicator color="#f2b4c7" />
-        <Text className="mt-3 text-white/70">Cargando producto...</Text>
+        <Text className="mt-3 text-white/70">{t("common.loadingProduct")}</Text>
       </View>
     );
   }
@@ -40,12 +42,10 @@ export default function ProductDetailScreen() {
   if (productQuery.error || !productQuery.data) {
     return (
       <View className="flex-1 items-center justify-center gap-4 bg-brand-ink px-6">
-        <Text className="text-center text-white">
-          No pudimos encontrar este producto.
-        </Text>
+        <Text className="text-center text-white">{t("catalog.notFound")}</Text>
         <Pressable accessibilityRole="button" onPress={() => router.back()}>
           <Text className="font-semibold text-brand-pink">
-            Volver al catálogo
+            {t("catalog.backToCatalog")}
           </Text>
         </Pressable>
       </View>
@@ -62,17 +62,28 @@ export default function ProductDetailScreen() {
     >
       <View className="flex-row items-center justify-between px-5 pb-3 pt-12">
         <Pressable accessibilityRole="button" onPress={() => router.back()}>
-          <Text className="font-semibold text-brand-pink">‹ Volver</Text>
+          <Text className="font-semibold text-brand-pink">
+            ‹ {t("common.back")}
+          </Text>
         </Pressable>
         <Text numberOfLines={1} className="max-w-[55%] text-sm text-white/70">
           {store.name}
         </Text>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Abrir carrito, ${cartCount(cart.items)} productos`}
-          onPress={() => router.push({ pathname: "/cart/[storeSlug]", params: { storeSlug } })}
+          accessibilityLabel={t("catalog.openCart", {
+            count: cartCount(cart.items),
+          })}
+          onPress={() =>
+            router.push({
+              pathname: "/cart/[storeSlug]",
+              params: { storeSlug },
+            })
+          }
         >
-          <Text className="font-semibold text-brand-pink">Carrito ({cartCount(cart.items)})</Text>
+          <Text className="font-semibold text-brand-pink">
+            {t("catalog.cartCount", { count: cartCount(cart.items) })}
+          </Text>
         </Pressable>
       </View>
       {product.images.length ? (
@@ -93,29 +104,29 @@ export default function ProductDetailScreen() {
         />
       ) : (
         <View className="mx-5 h-72 items-center justify-center rounded-2xl bg-white/5">
-          <Text className="text-white/50">Sin imágenes</Text>
+          <Text className="text-white/50">{t("common.noImages")}</Text>
         </View>
       )}
       <View className="gap-5 px-5 pt-6">
         <View className="gap-2">
           <Text className="text-2xl font-bold text-white">{product.name}</Text>
           <Text className="text-2xl font-bold text-brand-pink">
-            {formatPrice(product.price, product.currency)}
+            {formatPrice(product.price, product.currency, locale)}
           </Text>
           <Text
             className={`text-sm font-semibold ${unavailable ? "text-red-300" : "text-emerald-300"}`}
           >
             {product.discontinued
-              ? "Producto descontinuado"
+              ? t("common.discontinued")
               : product.soldOut
-                ? "Agotado"
-                : "Disponible"}
+                ? t("common.outOfStock")
+                : t("common.available")}
           </Text>
         </View>
         {product.description ? (
           <View className="gap-2">
             <Text className="text-lg font-semibold text-white">
-              Descripción
+              {t("catalog.description")}
             </Text>
             <Text className="leading-6 text-white/75">
               {product.description}
@@ -124,24 +135,30 @@ export default function ProductDetailScreen() {
         ) : null}
         {product.variants.length ? (
           <View className="gap-3">
-            <Text className="text-lg font-semibold text-white">Variantes</Text>
+            <Text className="text-lg font-semibold text-white">
+              {t("catalog.variants")}
+            </Text>
             {product.variants.map((variant) => (
               <VariantRow
                 key={variant.id}
                 basePrice={product.price}
                 currency={product.currency}
+                locale={locale}
+                t={t}
                 variant={variant}
                 disabled={unavailable}
-                onAdd={() => cart.add({
-                  productId: product.id,
-                  variantId: variant.id,
-                  name: product.name,
-                  variantLabel: variant.name,
-                  image: variant.imageOverride ?? product.images[0],
-                  price: Number(variant.priceOverride ?? product.price),
-                  currency: product.currency,
-                  quantity: 1,
-                })}
+                onAdd={() =>
+                  cart.add({
+                    productId: product.id,
+                    variantId: variant.id,
+                    name: product.name,
+                    variantLabel: variant.name,
+                    image: variant.imageOverride ?? product.images[0],
+                    price: Number(variant.priceOverride ?? product.price),
+                    currency: product.currency,
+                    quantity: 1,
+                  })
+                }
               />
             ))}
           </View>
@@ -151,17 +168,23 @@ export default function ProductDetailScreen() {
             accessibilityRole="button"
             disabled={unavailable || cart.isSaving}
             className={`rounded-xl px-5 py-4 ${unavailable ? "bg-white/15" : "bg-brand-pink"}`}
-            onPress={() => cart.add({
-              productId: product.id,
-              name: product.name,
-              image: product.images[0],
-              price: Number(product.price),
-              currency: product.currency,
-              quantity: 1,
-            })}
+            onPress={() =>
+              cart.add({
+                productId: product.id,
+                name: product.name,
+                image: product.images[0],
+                price: Number(product.price),
+                currency: product.currency,
+                quantity: 1,
+              })
+            }
           >
             <Text className="text-center font-bold text-brand-ink">
-              {unavailable ? "No disponible" : cart.isSaving ? "Guardando..." : "Añadir al carrito"}
+              {unavailable
+                ? t("common.unavailable")
+                : cart.isSaving
+                  ? t("catalog.saving")
+                  : t("catalog.addToCart")}
             </Text>
           </Pressable>
         ) : null}
@@ -171,7 +194,7 @@ export default function ProductDetailScreen() {
           onPress={() => router.push("/search")}
         >
           <Text className="text-center font-semibold text-brand-ink">
-            Seguir explorando
+            {t("catalog.keepBrowsing")}
           </Text>
         </Pressable>
       </View>
@@ -181,12 +204,16 @@ export default function ProductDetailScreen() {
 
 function VariantRow({
   currency,
+  locale,
+  t,
   basePrice,
   variant,
   onAdd,
   disabled,
 }: {
   currency: string;
+  locale: "en" | "es";
+  t: (key: string, values?: Record<string, string | number>) => string;
   basePrice: string;
   variant: PublicProductVariantResponseDto;
   onAdd: () => void;
@@ -214,23 +241,30 @@ function VariantRow({
         ) : null}
         <Text className="text-xs text-white/60">
           {variant.stock === null
-            ? "Disponibilidad variable"
-            : `${Math.max(variant.stock - variant.reserved, 0)} disponibles`}
+            ? t("common.variableAvailability")
+            : t("catalog.availableCount", {
+                count: Math.max(variant.stock - variant.reserved, 0),
+              })}
         </Text>
       </View>
       <View className="items-end gap-2">
         {price ? (
           <Text className="font-semibold text-brand-pink">
-            {formatPrice(price, currency)}
+            {formatPrice(price, currency, locale)}
           </Text>
         ) : null}
         <Pressable
           accessibilityRole="button"
-          disabled={disabled || (variant.stock !== null && variant.stock - variant.reserved <= 0)}
+          disabled={
+            disabled ||
+            (variant.stock !== null && variant.stock - variant.reserved <= 0)
+          }
           className={`rounded-lg px-3 py-2 ${disabled ? "bg-white/15" : "bg-brand-pink"}`}
           onPress={onAdd}
         >
-          <Text className="text-xs font-bold text-brand-ink">Añadir</Text>
+          <Text className="text-xs font-bold text-brand-ink">
+            {t("catalog.add")}
+          </Text>
         </Pressable>
       </View>
     </View>
