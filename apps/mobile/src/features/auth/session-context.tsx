@@ -68,7 +68,10 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
     try {
       await runStorageOperation(deleteBuyerSession);
     } catch (cause) {
-      if (generation === sessionGeneration.current) {
+      if (
+        generation === sessionGeneration.current &&
+        (!authorization || isCurrentMobileAuthorization(authorization))
+      ) {
         setError("auth.sessionDeleteFailed");
       }
       throw cause;
