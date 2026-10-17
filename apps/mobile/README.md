@@ -19,6 +19,10 @@ The API base defaults to `https://api.biasmarket.com/api`. Set
 `EXPO_PUBLIC_API_URL` to a complete API base URL (including `/api`) when using a
 development server.
 
+The buyer cart is stored locally with AsyncStorage. Each store has a separate
+cart key, matching the web storefront's per-store cart behavior. Quantity and
+currency calculations live in `@biasmarket/utils/cart`, shared with the web
+cart so the two clients use the same rules.
 
 Buyer authentication uses Expo SecureStore. Login and invitation-based account
 setup support English and Spanish using the shared `packages/i18n` catalogs;

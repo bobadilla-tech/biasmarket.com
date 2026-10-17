@@ -84,7 +84,8 @@
     "description": "Descripción",
     "availableCount": "{count} disponibles",
     "keepBrowsing": "Seguir explorando",
-    "saving": "Guardando…"
+    "saving": "Guardando…",
+    "notAvailable": "No disponible"
   },
   "cart": {
     "title": "Tu carrito",
