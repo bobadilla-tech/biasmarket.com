@@ -21,6 +21,7 @@ describe('seller bearer auth (e2e)', () => {
   let sellerUserId: string | undefined;
   let storeId: string | undefined;
   let productId: string | undefined;
+  let sellerDeviceToken: string | undefined;
 
   const runId = `sba-e2e-${randomUUID()}`;
   const sellerEmail = `sba-e2e-${runId}@example.com`;
@@ -62,6 +63,11 @@ describe('seller bearer auth (e2e)', () => {
   });
 
   afterAll(async () => {
+    if (sellerDeviceToken) {
+      await prisma.deviceToken.deleteMany({
+        where: { expoPushToken: sellerDeviceToken },
+      });
+    }
     if (productId) {
       await prisma.orderPayment.deleteMany({ where: { storeId: storeId! } });
       await prisma.orderItem.deleteMany({ where: { storeId: storeId! } });
@@ -98,6 +104,39 @@ describe('seller bearer auth (e2e)', () => {
       expect(bearerToken).toBeDefined();
       expect(typeof bearerToken).toBe('string');
       expect(bearerToken!.length).toBeGreaterThan(10);
+
+      // Register and remove a device using bearer auth alone. This exercises
+      // the seller endpoint through the real AuthGuard and database.
+      sellerDeviceToken = `ExpoPushToken[phase8-seller-${runId.replaceAll('-', '')}]`;
+      const deviceResponse = await request(app.getHttpServer())
+        .post('/mobile/devices')
+        .set('Authorization', `Bearer ${bearerToken}`)
+        .send({ expoPushToken: sellerDeviceToken, platform: 'android' })
+        .expect(201);
+      expect(deviceResponse.body).toEqual({
+        id: expect.any(String),
+        platform: 'android',
+      });
+      expect(
+        await prisma.deviceToken.findUnique({
+          where: { expoPushToken: sellerDeviceToken },
+        }),
+      ).toMatchObject({
+        userId: sellerUserId,
+        buyerAccountId: null,
+        platform: 'android',
+      });
+
+      await request(app.getHttpServer())
+        .delete('/mobile/devices')
+        .set('Authorization', `Bearer ${bearerToken}`)
+        .send({ expoPushToken: sellerDeviceToken, platform: 'android' })
+        .expect(200);
+      expect(
+        await prisma.deviceToken.findUnique({
+          where: { expoPushToken: sellerDeviceToken },
+        }),
+      ).toBeNull();
 
       // Cookie must also be set (cookie-mode is still the default).
       const setCookie = signInRes.headers['set-cookie'] as unknown as string[];
