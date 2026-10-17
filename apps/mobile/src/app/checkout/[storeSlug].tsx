@@ -39,11 +39,19 @@ import {
 } from "@biasmarket/validation";
 import { isPaymentMethodConfigured } from "@biasmarket/utils/payment-methods";
 import type { CheckoutPaymentMethod } from "@biasmarket/utils/payment-methods";
-import { cartCurrency, cartTotal, hasMixedCurrencies } from "@biasmarket/utils/cart";
+import {
+  cartCurrency,
+  cartTotal,
+  hasMixedCurrencies,
+} from "@biasmarket/utils/cart";
 import type { CartItem } from "@biasmarket/utils/cart";
 import { formatPrice } from "../../features/catalog/catalog-ui";
-import { clearStoreCart, readStoreCart } from "../../features/cart/cart-storage";
+import {
+  clearStoreCart,
+  readStoreCart,
+} from "../../features/cart/cart-storage";
 import { useBuyerSession } from "../../features/auth/session-context";
+import { useMobileI18n } from "../../i18n/mobile-i18n.js";
 
 const emptyForm: CheckoutFormInput = {
   customerName: "",
@@ -80,6 +88,7 @@ export default function CheckoutScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const session = useBuyerSession();
+  const { locale, t } = useMobileI18n();
   const [form, setForm] = useState(emptyForm);
   const [fieldErrors, setFieldErrors] = useState<string[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -119,7 +128,8 @@ export default function CheckoutScreen() {
   const profileQuery = useQuery({
     queryKey: ["buyer", storeSlug, "profile"],
     queryFn: () => customerAuth.me(storeSlug),
-    enabled: session.status === "authenticated" && session.storeSlug === storeSlug,
+    enabled:
+      session.status === "authenticated" && session.storeSlug === storeSlug,
     retry: (failureCount, error) =>
       !(error instanceof ApiError && error.status === 401) && failureCount < 2,
   });
@@ -165,7 +175,12 @@ export default function CheckoutScreen() {
         pointsRequiringDate,
         unavailableManualMethods,
       ),
-    [points.length, paymentMethods.length, pointsRequiringDate, unavailableManualMethods],
+    [
+      points.length,
+      paymentMethods.length,
+      pointsRequiringDate,
+      unavailableManualMethods,
+    ],
   );
 
   function setField<K extends keyof CheckoutFormInput>(
@@ -183,7 +198,7 @@ export default function CheckoutScreen() {
         ? await ImagePicker.requestCameraPermissionsAsync()
         : await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
-        setSubmitError("Necesitamos permiso para acceder a tus imágenes.");
+        setSubmitError(t("checkout.permissionRequired"));
         return;
       }
       const result = useCamera
@@ -193,7 +208,13 @@ export default function CheckoutScreen() {
       const proof = await compressProof(result.assets[0].uri);
       setField("paymentProof", proof);
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : "No se pudo cargar el comprobante.");
+      setSubmitError(
+        error instanceof Error
+          ? error.message === "checkout.proofCompressFailed"
+            ? t("checkout.proofCompressFailed")
+            : error.message
+          : t("checkout.proofLoadFailed"),
+      );
     } finally {
       setLoadingProof(false);
     }
@@ -210,20 +231,24 @@ export default function CheckoutScreen() {
     };
     const parsed = schema.safeParse(values);
     if (!parsed.success) {
-      setFieldErrors(parsed.error.issues.map((issue) => issue.message));
+      setFieldErrors(
+        parsed.error.issues.map((issue) =>
+          t(`checkout.validation.${String(issue.path[0])}`),
+        ),
+      );
       return;
     }
     setFieldErrors([]);
     if (items.length === 0) {
-      setSubmitError("El carrito está vacío.");
+      setSubmitError(t("checkout.noItems"));
       return;
     }
     if (hasMixedCurrencies(items)) {
-      setSubmitError("El carrito contiene monedas distintas y no se puede cobrar junto.");
+      setSubmitError(t("checkout.mixedCurrencies"));
       return;
     }
     if (!/^[a-z0-9-]+$/i.test(storeSlug)) {
-      setSubmitError("La tienda no es válida.");
+      setSubmitError(t("checkout.storeInvalid"));
       return;
     }
 
@@ -231,7 +256,8 @@ export default function CheckoutScreen() {
     try {
       const address = toShippingAddress(parsed.data);
       const order: CreateOrderDto = {
-        deliveryMethodType: parsed.data.deliveryMethodType as CreateOrderDto["deliveryMethodType"],
+        deliveryMethodType: parsed.data
+          .deliveryMethodType as CreateOrderDto["deliveryMethodType"],
         customerName: parsed.data.customerName || undefined,
         customerPhone: parsed.data.customerPhone,
         customerEmail: parsed.data.customerEmail || undefined,
@@ -257,12 +283,16 @@ export default function CheckoutScreen() {
       body.append("customerPhone", order.customerPhone);
       body.append("paymentType", order.paymentType ?? "FULL");
       if (order.customerName) body.append("customerName", order.customerName);
-      if (order.customerEmail) body.append("customerEmail", order.customerEmail);
-      if (order.pickupPointId) body.append("pickupPointId", order.pickupPointId);
+      if (order.customerEmail)
+        body.append("customerEmail", order.customerEmail);
+      if (order.pickupPointId)
+        body.append("pickupPointId", order.pickupPointId);
       if (order.pickupDate) body.append("pickupDate", order.pickupDate);
-      if (order.paymentMethod) body.append("paymentMethod", order.paymentMethod);
+      if (order.paymentMethod)
+        body.append("paymentMethod", order.paymentMethod);
       if (order.courierName) body.append("courierName", order.courierName);
-      if (order.courierModality) body.append("courierModality", order.courierModality);
+      if (order.courierModality)
+        body.append("courierModality", order.courierModality);
       if (address) body.append("shippingAddress", JSON.stringify(address));
       body.append("items", JSON.stringify(order.items));
       if (form.paymentProof && order.paymentMethod !== "CASH") {
@@ -285,102 +315,259 @@ export default function CheckoutScreen() {
         params: {
           orderId: result.order.id,
           paymentStatus: result.order.paymentStatus,
-          proofSubmitted: String(Boolean(form.paymentProof && order.paymentMethod !== "CASH")),
+          proofSubmitted: String(
+            Boolean(form.paymentProof && order.paymentMethod !== "CASH"),
+          ),
         },
       });
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : "No se pudo completar la compra.");
+      setSubmitError(
+        error instanceof Error ? error.message : t("checkout.submitFailed"),
+      );
     } finally {
       setSubmitting(false);
     }
   }
 
-  if (cartQuery.isPending || deliveryQuery.isPending || pickupQuery.isPending || paymentQuery.isPending) {
+  if (
+    cartQuery.isPending ||
+    deliveryQuery.isPending ||
+    pickupQuery.isPending ||
+    paymentQuery.isPending
+  ) {
     return (
       <View className="flex-1 items-center justify-center bg-brand-ink">
         <ActivityIndicator color="#f2b4c7" />
-        <Text className="mt-3 text-white/70">Preparando checkout...</Text>
+        <Text className="mt-3 text-white/70">{t("checkout.preparing")}</Text>
       </View>
     );
   }
 
-  const selectedPayment = paymentMethods.find((method) => method.method === form.paymentMethod);
+  const selectedPayment = paymentMethods.find(
+    (method) => method.method === form.paymentMethod,
+  );
   const qrImageUrl = selectedPayment?.details.qrImageUrl;
 
   return (
-    <ScrollView className="flex-1 bg-brand-ink" contentContainerStyle={{ paddingBottom: 44 }} keyboardShouldPersistTaps="handled">
+    <ScrollView
+      className="flex-1 bg-brand-ink"
+      contentContainerStyle={{ paddingBottom: 44 }}
+      keyboardShouldPersistTaps="handled"
+    >
       <View className="gap-5 px-5 pt-12">
         <Pressable accessibilityRole="button" onPress={() => router.back()}>
-          <Text className="font-semibold text-brand-pink">‹ Volver al carrito</Text>
+          <Text className="font-semibold text-brand-pink">
+            ‹ {t("checkout.backToCart")}
+          </Text>
         </Pressable>
-        <Text className="text-3xl font-bold text-white">Finalizar compra</Text>
-        <Text className="text-sm text-white/60">{items.length} productos · {cartCurrency(items) ? formatPrice(String(cartTotal(items)), cartCurrency(items)!) : "—"}</Text>
-        {session.status !== "authenticated" || session.storeSlug !== storeSlug ? (
+        <Text className="text-3xl font-bold text-white">
+          {t("checkout.title")}
+        </Text>
+        <Text className="text-sm text-white/60">
+          {t("checkout.items", { count: items.length })} ·{" "}
+          {cartCurrency(items)
+            ? formatPrice(
+                String(cartTotal(items)),
+                cartCurrency(items)!,
+                locale,
+              )
+            : "—"}
+        </Text>
+        {session.status !== "authenticated" ||
+        session.storeSlug !== storeSlug ? (
           <Pressable
             accessibilityRole="button"
-            onPress={() => router.push({ pathname: "/login", params: { storeSlug, returnTo: "checkout" } })}
+            onPress={() =>
+              router.push({
+                pathname: "/login",
+                params: { storeSlug, returnTo: "checkout" },
+              })
+            }
           >
             <Text className="text-sm font-semibold text-brand-pink">
-              Inicia sesión para autocompletar tus datos
+              {t("checkout.loginToFill")}
             </Text>
           </Pressable>
         ) : null}
 
-        <Section title="Tus datos">
-          <Field label="Nombre" value={form.customerName || profileQuery.data?.customer.name || ""} onChangeText={(value) => setField("customerName", value)} />
-          <Field label="Teléfono" keyboardType="phone-pad" value={form.customerPhone || profileQuery.data?.customer.phone || ""} onChangeText={(value) => setField("customerPhone", value)} />
-          <Field label="Correo electrónico" keyboardType="email-address" autoCapitalize="none" value={form.customerEmail || profileQuery.data?.customer.email || ""} onChangeText={(value) => setField("customerEmail", value)} />
+        <Section title={t("checkout.yourDetails")}>
+          <Field
+            label={t("checkout.name")}
+            value={form.customerName || profileQuery.data?.customer.name || ""}
+            onChangeText={(value) => setField("customerName", value)}
+          />
+          <Field
+            label={t("checkout.phone")}
+            keyboardType="phone-pad"
+            value={
+              form.customerPhone || profileQuery.data?.customer.phone || ""
+            }
+            onChangeText={(value) => setField("customerPhone", value)}
+          />
+          <Field
+            label={t("checkout.email")}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            value={
+              form.customerEmail || profileQuery.data?.customer.email || ""
+            }
+            onChangeText={(value) => setField("customerEmail", value)}
+          />
         </Section>
 
-        <Section title="Entrega">
+        <Section title={t("checkout.delivery")}>
           {deliveryMethods.map((method) => (
-            <Choice key={method.type} label={method.type === "PICKUP" ? "Recojo" : "Courier"} selected={form.deliveryMethodType === method.type} onPress={() => setField("deliveryMethodType", method.type)} />
+            <Choice
+              key={method.type}
+              label={
+                method.type === "PICKUP"
+                  ? t("checkout.pickup")
+                  : t("checkout.courier")
+              }
+              selected={form.deliveryMethodType === method.type}
+              onPress={() => setField("deliveryMethodType", method.type)}
+            />
           ))}
           {form.deliveryMethodType === "PICKUP" && points.length ? (
             <>
-              <Text className="font-medium text-white">Punto de recojo</Text>
+              <Text className="font-medium text-white">
+                {t("checkout.pickupPoint")}
+              </Text>
               {points.map((point) => (
-                <Choice key={point.id} label={point.label} selected={form.pickupPointId === point.id} onPress={() => setField("pickupPointId", point.id)} />
+                <Choice
+                  key={point.id}
+                  label={point.label}
+                  selected={form.pickupPointId === point.id}
+                  onPress={() => setField("pickupPointId", point.id)}
+                />
               ))}
-              {form.pickupPointId && pointsRequiringDate.has(form.pickupPointId) ? (
-                <Field label="Fecha de recojo (AAAA-MM-DD)" value={form.pickupDate} onChangeText={(value) => setField("pickupDate", value)} placeholder="2026-10-20" />
+              {form.pickupPointId &&
+              pointsRequiringDate.has(form.pickupPointId) ? (
+                <Field
+                  label={t("checkout.pickupDate")}
+                  value={form.pickupDate}
+                  onChangeText={(value) => setField("pickupDate", value)}
+                  placeholder={t("checkout.datePlaceholder")}
+                />
               ) : null}
             </>
           ) : null}
           {form.deliveryMethodType === "COURIER" ? (
             <>
-              <Text className="font-medium text-white">Courier</Text>
+              <Text className="font-medium text-white">
+                {t("checkout.courier")}
+              </Text>
               {courierQuery.data?.map((courier) => (
-                <Choice key={courier.id} label={courier.name} selected={form.courierName === courier.name} onPress={() => setField("courierName", courier.name)} />
+                <Choice
+                  key={courier.id}
+                  label={courier.name}
+                  selected={form.courierName === courier.name}
+                  onPress={() => setField("courierName", courier.name)}
+                />
               ))}
-              {courierQuery.data?.find((courier) => courier.name === form.courierName)?.modalities.map(({ modality }) => (
-                <Choice key={modality} label={modality === "HOME" ? "Entrega a domicilio" : "Agencia"} selected={form.courierModality === modality} onPress={() => setField("courierModality", modality)} />
-              ))}
-              <Field label="Nombre de quien recibe" value={form.shippingRecipientName} onChangeText={(value) => setField("shippingRecipientName", value)} />
-              <Field label="Apellidos" value={form.shippingRecipientSurnames} onChangeText={(value) => setField("shippingRecipientSurnames", value)} />
-              <Field label="Teléfono de contacto" keyboardType="phone-pad" value={form.shippingPhone} onChangeText={(value) => setField("shippingPhone", value)} />
+              {courierQuery.data
+                ?.find((courier) => courier.name === form.courierName)
+                ?.modalities.map(({ modality }) => (
+                  <Choice
+                    key={modality}
+                    label={
+                      modality === "HOME"
+                        ? t("checkout.homeDelivery")
+                        : t("checkout.agency")
+                    }
+                    selected={form.courierModality === modality}
+                    onPress={() => setField("courierModality", modality)}
+                  />
+                ))}
+              <Field
+                label={t("checkout.recipientName")}
+                value={form.shippingRecipientName}
+                onChangeText={(value) =>
+                  setField("shippingRecipientName", value)
+                }
+              />
+              <Field
+                label={t("checkout.surnames")}
+                value={form.shippingRecipientSurnames}
+                onChangeText={(value) =>
+                  setField("shippingRecipientSurnames", value)
+                }
+              />
+              <Field
+                label={t("checkout.contactPhone")}
+                keyboardType="phone-pad"
+                value={form.shippingPhone}
+                onChangeText={(value) => setField("shippingPhone", value)}
+              />
               {form.courierModality === "HOME" ? (
                 <>
-                  <Field label="Dirección" value={form.shippingLine1} onChangeText={(value) => setField("shippingLine1", value)} />
-                  <Field label="Ciudad" value={form.shippingCity} onChangeText={(value) => setField("shippingCity", value)} />
-                  <Field label="Distrito" value={form.shippingDistrict} onChangeText={(value) => setField("shippingDistrict", value)} />
-                  <Field label="Provincia" value={form.shippingProvince} onChangeText={(value) => setField("shippingProvince", value)} />
-                  <Field label="Departamento" value={form.shippingDepartment} onChangeText={(value) => setField("shippingDepartment", value)} />
-                  <Field label="Referencia" value={form.shippingReference} onChangeText={(value) => setField("shippingReference", value)} />
+                  <Field
+                    label={t("checkout.address")}
+                    value={form.shippingLine1}
+                    onChangeText={(value) => setField("shippingLine1", value)}
+                  />
+                  <Field
+                    label={t("checkout.city")}
+                    value={form.shippingCity}
+                    onChangeText={(value) => setField("shippingCity", value)}
+                  />
+                  <Field
+                    label={t("checkout.district")}
+                    value={form.shippingDistrict}
+                    onChangeText={(value) =>
+                      setField("shippingDistrict", value)
+                    }
+                  />
+                  <Field
+                    label={t("checkout.province")}
+                    value={form.shippingProvince}
+                    onChangeText={(value) =>
+                      setField("shippingProvince", value)
+                    }
+                  />
+                  <Field
+                    label={t("checkout.department")}
+                    value={form.shippingDepartment}
+                    onChangeText={(value) =>
+                      setField("shippingDepartment", value)
+                    }
+                  />
+                  <Field
+                    label={t("checkout.reference")}
+                    value={form.shippingReference}
+                    onChangeText={(value) =>
+                      setField("shippingReference", value)
+                    }
+                  />
                 </>
               ) : null}
               {form.courierModality === "AGENCY" ? (
-                <Field label="Nombre de agencia" value={form.shippingAgencyName} onChangeText={(value) => setField("shippingAgencyName", value)} />
+                <Field
+                  label={t("checkout.agencyName")}
+                  value={form.shippingAgencyName}
+                  onChangeText={(value) =>
+                    setField("shippingAgencyName", value)
+                  }
+                />
               ) : null}
             </>
           ) : null}
         </Section>
 
-        <Section title="Pago">
+        <Section title={t("checkout.payment")}>
           {paymentMethods.map((method) => (
-            <Choice key={method.method} label={method.method} selected={form.paymentMethod === method.method} onPress={() => setField("paymentMethod", method.method)} />
+            <Choice
+              key={method.method}
+              label={t(`checkout.paymentMethods.${method.method}`)}
+              selected={form.paymentMethod === method.method}
+              onPress={() => setField("paymentMethod", method.method)}
+            />
           ))}
-          {selectedPayment ? <Text className="text-sm text-white/70">{paymentDescription(selectedPayment)}</Text> : null}
+          {selectedPayment ? (
+            <Text className="text-sm text-white/70">
+              {paymentDescription(selectedPayment)}
+            </Text>
+          ) : null}
           {form.paymentMethod && storeQuery.data?.paymentInstructions ? (
             <Text className="text-sm leading-5 text-white/70">
               {storeQuery.data.paymentInstructions}
@@ -394,41 +581,98 @@ export default function CheckoutScreen() {
               style={{ width: 180, height: 180, alignSelf: "center" }}
             />
           ) : null}
-          {form.paymentMethod && form.paymentMethod !== "CASH" && !unavailableManualMethods.has(form.paymentMethod as CheckoutPaymentMethod) ? (
+          {form.paymentMethod &&
+          form.paymentMethod !== "CASH" &&
+          !unavailableManualMethods.has(
+            form.paymentMethod as CheckoutPaymentMethod,
+          ) ? (
             <>
-              <Text className="font-medium text-white">Tipo de pago</Text>
-              <Choice label="Pago completo" selected={form.paymentType === "FULL"} onPress={() => setField("paymentType", "FULL")} />
-              <Choice label="Adelanto parcial" selected={form.paymentType === "PARTIAL"} onPress={() => setField("paymentType", "PARTIAL")} />
+              <Text className="font-medium text-white">
+                {t("checkout.paymentType")}
+              </Text>
+              <Choice
+                label={t("checkout.fullPayment")}
+                selected={form.paymentType === "FULL"}
+                onPress={() => setField("paymentType", "FULL")}
+              />
+              <Choice
+                label={t("checkout.partialPayment")}
+                selected={form.paymentType === "PARTIAL"}
+                onPress={() => setField("paymentType", "PARTIAL")}
+              />
               <View className="flex-row gap-2">
-                <Pressable accessibilityRole="button" className="flex-1 rounded-xl bg-white/10 p-3" disabled={loadingProof} onPress={() => void chooseProof(true)}>
-                  <Text className="text-center text-white">Tomar foto</Text>
+                <Pressable
+                  accessibilityRole="button"
+                  className="flex-1 rounded-xl bg-white/10 p-3"
+                  disabled={loadingProof}
+                  onPress={() => void chooseProof(true)}
+                >
+                  <Text className="text-center text-white">
+                    {t("checkout.takePhoto")}
+                  </Text>
                 </Pressable>
-                <Pressable accessibilityRole="button" className="flex-1 rounded-xl bg-white/10 p-3" disabled={loadingProof} onPress={() => void chooseProof(false)}>
-                  <Text className="text-center text-white">Elegir imagen</Text>
+                <Pressable
+                  accessibilityRole="button"
+                  className="flex-1 rounded-xl bg-white/10 p-3"
+                  disabled={loadingProof}
+                  onPress={() => void chooseProof(false)}
+                >
+                  <Text className="text-center text-white">
+                    {t("checkout.chooseImage")}
+                  </Text>
                 </Pressable>
               </View>
               <Text className="text-sm text-white/60">
-                {loadingProof ? "Comprimiendo imagen..." : form.paymentProof ? `Comprobante listo: ${form.paymentProof.name}` : "Adjunta una imagen del comprobante. Se comprimirá antes de subirla."}
+                {loadingProof
+                  ? t("checkout.compressingImage")
+                  : form.paymentProof
+                    ? t("checkout.proofReady", {
+                        filename: form.paymentProof.name,
+                      })
+                    : t("checkout.proofInstructions")}
               </Text>
             </>
           ) : null}
         </Section>
 
         {fieldErrors.length ? (
-          <View accessibilityRole="alert" className="gap-1 rounded-xl bg-red-400/10 p-4">
-            {fieldErrors.map((message, index) => <Text key={`${message}-${index}`} className="text-sm text-red-200">{message}</Text>)}
+          <View
+            accessibilityRole="alert"
+            className="gap-1 rounded-xl bg-red-400/10 p-4"
+          >
+            {fieldErrors.map((message, index) => (
+              <Text
+                key={`${message}-${index}`}
+                className="text-sm text-red-200"
+              >
+                {message}
+              </Text>
+            ))}
           </View>
         ) : null}
-        {submitError ? <Text accessibilityRole="alert" className="text-sm text-red-200">{submitError}</Text> : null}
-        <Pressable accessibilityRole="button" disabled={submitting || loadingProof || items.length === 0} className="rounded-xl bg-brand-pink px-5 py-4 disabled:opacity-50" onPress={() => void submitCheckout()}>
-          <Text className="text-center font-bold text-brand-ink">{submitting ? "Enviando pedido..." : "Confirmar pedido"}</Text>
+        {submitError ? (
+          <Text accessibilityRole="alert" className="text-sm text-red-200">
+            {submitError}
+          </Text>
+        ) : null}
+        <Pressable
+          accessibilityRole="button"
+          disabled={submitting || loadingProof || items.length === 0}
+          className="rounded-xl bg-brand-pink px-5 py-4 disabled:opacity-50"
+          onPress={() => void submitCheckout()}
+        >
+          <Text className="text-center font-bold text-brand-ink">
+            {submitting ? t("checkout.submitting") : t("checkout.confirmOrder")}
+          </Text>
         </Pressable>
       </View>
     </ScrollView>
   );
 }
 
-async function compressProof(uri: string): Promise<ProofFileLike & { uri: string }> {
+async function compressProof(
+  uri: string,
+): Promise<ProofFileLike & { uri: string }> {
   for (const preset of [
     { width: 1600, compress: 0.75 },
     { width: 1200, compress: 0.65 },
@@ -440,7 +684,11 @@ async function compressProof(uri: string): Promise<ProofFileLike & { uri: string
       { compress: preset.compress, format: ImageManipulator.SaveFormat.JPEG },
     );
     const info = await getInfoAsync(output.uri);
-    if (info.exists && typeof info.size === "number" && info.size <= MAX_FILE_SIZE) {
+    if (
+      info.exists &&
+      typeof info.size === "number" &&
+      info.size <= MAX_FILE_SIZE
+    ) {
       return {
         uri: output.uri,
         name: `payment-proof-${Date.now()}.jpg`,
@@ -449,10 +697,12 @@ async function compressProof(uri: string): Promise<ProofFileLike & { uri: string
       };
     }
   }
-  throw new Error("No se pudo comprimir el comprobante por debajo de 5 MB.");
+  throw new Error("checkout.proofCompressFailed");
 }
 
-function toShippingAddress(form: CheckoutFormInput): ShippingAddressDto | undefined {
+function toShippingAddress(
+  form: CheckoutFormInput,
+): ShippingAddressDto | undefined {
   if (form.deliveryMethodType !== "COURIER") return undefined;
   return {
     recipientName: form.shippingRecipientName,
@@ -474,31 +724,68 @@ function toShippingAddress(form: CheckoutFormInput): ShippingAddressDto | undefi
 
 function paymentDescription(method: PaymentMethodConfigResponseDto): string {
   const details = method.details;
-  return [details.bankName, details.accountType, details.accountNumber, details.accountHolder, details.phoneNumber]
-    .filter((value): value is string => typeof value === "string" && value.length > 0)
+  return [
+    details.bankName,
+    details.accountType,
+    details.accountNumber,
+    details.accountHolder,
+    details.phoneNumber,
+  ]
+    .filter(
+      (value): value is string => typeof value === "string" && value.length > 0,
+    )
     .join(" · ");
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return <View className="gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
-    <Text className="text-lg font-bold text-white">{title}</Text>
-    {children}
-  </View>;
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <View className="gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+      <Text className="text-lg font-bold text-white">{title}</Text>
+      {children}
+    </View>
+  );
 }
 
 function Field({ label, ...props }: TextInputProps & { label: string }) {
-  return <View className="gap-1">
-    <Text className="text-sm font-medium text-white/80">{label}</Text>
-    <TextInput
-      {...props}
-      className="rounded-xl border border-white/15 bg-black/10 px-4 py-3 text-white"
-      placeholderTextColor="#aaa"
-    />
-  </View>;
+  return (
+    <View className="gap-1">
+      <Text className="text-sm font-medium text-white/80">{label}</Text>
+      <TextInput
+        {...props}
+        className="rounded-xl border border-white/15 bg-black/10 px-4 py-3 text-white"
+        placeholderTextColor="#aaa"
+      />
+    </View>
+  );
 }
 
-function Choice({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
-  return <Pressable accessibilityRole="radio" accessibilityState={{ selected }} className={`rounded-xl border px-4 py-3 ${selected ? "border-brand-pink bg-brand-pink/10" : "border-white/10 bg-white/5"}`} onPress={onPress}>
-    <Text className={selected ? "font-semibold text-brand-pink" : "text-white"}>{label}</Text>
-  </Pressable>;
+function Choice({
+  label,
+  selected,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="radio"
+      accessibilityState={{ selected }}
+      className={`rounded-xl border px-4 py-3 ${selected ? "border-brand-pink bg-brand-pink/10" : "border-white/10 bg-white/5"}`}
+      onPress={onPress}
+    >
+      <Text
+        className={selected ? "font-semibold text-brand-pink" : "text-white"}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
 }

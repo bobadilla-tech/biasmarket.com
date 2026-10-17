@@ -1,16 +1,16 @@
 import "../global.css";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { createQueryClient } from "@biasmarket/query";
 import { Stack } from "expo-router";
 import { useRouter, type Href } from "expo-router";
 import * as Notifications from "expo-notifications";
 import { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
-import { BuyerSessionProvider } from "../features/auth/session-context";
-import { configureMobileApiClient } from "../features/auth/api-client";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { createQueryClient } from "@biasmarket/query";
+import { BuyerSessionProvider } from "../features/auth/session-context.js";
+import { configureMobileApiClient } from "../features/auth/api-client.js";
+import { MobileI18nProvider } from "../i18n/mobile-i18n.js";
 
 const queryClient = createQueryClient();
-
 configureMobileApiClient();
 
 export default function RootLayout() {
@@ -36,10 +36,12 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <BuyerSessionProvider>
-        <Stack screenOptions={{ headerShown: false }} />
-        <StatusBar style="auto" />
-      </BuyerSessionProvider>
+      <MobileI18nProvider>
+        <BuyerSessionProvider>
+          <Stack screenOptions={{ headerShown: false }} />
+          <StatusBar style="auto" />
+        </BuyerSessionProvider>
+      </MobileI18nProvider>
     </QueryClientProvider>
   );
 }

@@ -9,7 +9,7 @@ export interface ApiClientConfig {
   credentials?: RequestCredentials;
   // Called for a 401 response to a request that carried a bearer token.
   // Native apps use this to clear stale SecureStore credentials.
-  onUnauthorized?: () => void | Promise<void>;
+  onUnauthorized?: (authorization: string) => void | Promise<void>;
 }
 
 let config: ApiClientConfig | undefined;
@@ -89,7 +89,7 @@ export async function customFetch<T>(
 
   if (res.status === 401 && requestHeaders.has("Authorization")) {
     try {
-      await config.onUnauthorized?.();
+      await config.onUnauthorized?.(requestHeaders.get("Authorization")!);
     } catch {
       // Preserve the API error even if local session cleanup fails.
     }
@@ -147,7 +147,7 @@ export async function customFetchBlob(
 
   if (res.status === 401 && requestHeaders.has("Authorization")) {
     try {
-      await config.onUnauthorized?.();
+      await config.onUnauthorized?.(requestHeaders.get("Authorization")!);
     } catch {
       // Preserve the API error even if local session cleanup fails.
     }

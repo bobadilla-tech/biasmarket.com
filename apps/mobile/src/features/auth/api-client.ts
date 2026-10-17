@@ -6,7 +6,8 @@ const API_BASE_URL =
 
 let configured = false;
 let bearerToken: string | null = null;
-let unauthorizedHandler: (() => void | Promise<void>) | undefined;
+let unauthorizedHandler:
+  ((authorization: string) => void | Promise<void>) | undefined;
 
 export function configureMobileApiClient(): void {
   if (configured) return;
@@ -16,7 +17,7 @@ export function configureMobileApiClient(): void {
     credentials: "omit",
     getAuthHeader: () =>
       bearerToken ? { Authorization: `Bearer ${bearerToken}` } : undefined,
-    onUnauthorized: () => unauthorizedHandler?.(),
+    onUnauthorized: (authorization) => unauthorizedHandler?.(authorization),
   });
   configured = true;
 }
@@ -25,8 +26,12 @@ export function setMobileBearerToken(token: string | null): void {
   bearerToken = token;
 }
 
+export function isCurrentMobileAuthorization(authorization: string): boolean {
+  return bearerToken !== null && authorization === `Bearer ${bearerToken}`;
+}
+
 export function setUnauthorizedHandler(
-  handler: (() => void | Promise<void>) | undefined,
+  handler: ((authorization: string) => void | Promise<void>) | undefined,
 ): void {
   unauthorizedHandler = handler;
 }
