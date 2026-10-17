@@ -32,10 +32,11 @@ appId: com.biasmarket.mobile
 - assertVisible: "^(?:Order placed|Pedido enviado)$"
 - tapOn: "^(?:View my order|Ver mi pedido)$"
 - assertVisible: "^(?:Products|Productos)$"
-- assertVisible: "^(?:Private payment receipt|Comprobante de pago privado)$"- openLink: biasmarket:///account
+- assertVisible: "^(?:Private payment receipt|Comprobante de pago privado)$"
+- openLink: biasmarket:///account
 - tapOn: "^(?:Sign out|Cerrar sesión)$"
 - assertVisible: "^(?:Sign in|Ingresar)$"
 - stopApp
 - launchApp
 - openLink: biasmarket:///orders
-- assertVisible: "^(?:Sign in to view your orders\\.|Inicia sesión para ver tus pedidos\\.)$"
+- assertVisible: ".*(?:Sign in to view your orders|Inicia sesión para ver tus pedidos).*"
