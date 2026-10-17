@@ -490,6 +490,7 @@ describe('customer account + customer auth (e2e)', () => {
           .expect(200);
 
         // --- Checkout → confirm → register (non-browser: no Origin) ---
+        const mailerFiles2 = new Set(readdirSync(mailerDevDir));
         const checkoutRes = await request(bearerApp.getHttpServer())
           .post(`/stores/${slug}/checkout`)
           .send({
@@ -508,7 +509,6 @@ describe('customer account + customer auth (e2e)', () => {
           .expect(201);
         bearerOrder = checkoutRes.body.order.id as string;
 
-        const mailerFiles2 = new Set(readdirSync(mailerDevDir));
         const mailerFile2 = await waitForNewMailerFile(
           mailerFiles2,
           bearerCustomerEmail,
@@ -524,13 +524,13 @@ describe('customer account + customer auth (e2e)', () => {
           .expect(200);
 
         // Register WITHOUT Origin header — @AllowNoOrigin non-browser path.
-        // Must succeed; sessionToken null (no X-Client).
+        // Must succeed and retain the web response shape without X-Client.
         const registerRes = await request(bearerApp.getHttpServer())
           .post(`/stores/${slug}/account/register`)
           .send({ token: confirmToken, password: bearerPassword })
           .expect(201);
         expect(registerRes.body.ok).toBe(true);
-        expect(registerRes.body.sessionToken).toBeNull();
+        expect(registerRes.body).toEqual({ ok: true });
 
         // --- Login with X-Client: mobile → body contains sessionToken ---
         const loginRes = await request(bearerApp.getHttpServer())
@@ -654,6 +654,9 @@ describe('customer account + customer auth (e2e)', () => {
           await bearerPrisma!.user.deleteMany({
             where: { id: bearerSellerUserId },
           });
+        }
+        if (bearerPrisma) {
+          await cleanupBuyerTestData(bearerPrisma, [bearerCustomerPhone]);
         }
         await bearerApp?.close();
       }

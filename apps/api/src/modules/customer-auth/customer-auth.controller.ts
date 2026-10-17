@@ -49,16 +49,16 @@ function setSessionCookie(res: Response, token: string): void {
 // self-identifies as a mobile client with `X-Client: mobile`, the controller
 // also returns the freshly-issued session token in the JSON body. The cookie
 // is ALWAYS still set as before; `apps/web` and every other caller simply
-// never send the header, so their responses (`{ ok: true, sessionToken:
-// null }`) are unchanged in shape.
+// never send the header, so their responses retain the original `{ ok: true }`
+// shape.
 function sessionTokenForClient(
   client: string | undefined,
   token: string,
-): string | null {
-  return client === 'mobile' ? token : null;
+): Partial<Pick<OkResponseDto, 'sessionToken'>> {
+  return client === 'mobile' ? { sessionToken: token } : {};
 }
 
-const okNoToken: OkResponseDto = { ok: true, sessionToken: null };
+const okNoToken: OkResponseDto = { ok: true };
 
 @Controller('stores/:slug/account')
 export class CustomerAuthController {
@@ -91,7 +91,7 @@ export class CustomerAuthController {
   ): Promise<OkResponseDto> {
     const token = await this.customerAuth.login(slug, dto.phone, dto.password);
     setSessionCookie(res, token);
-    return { ok: true, sessionToken: sessionTokenForClient(client, token) };
+    return { ok: true, ...sessionTokenForClient(client, token) };
   }
 
   @Public()
@@ -133,7 +133,7 @@ export class CustomerAuthController {
       dto.newPassword,
     );
     setSessionCookie(res, token);
-    return { ok: true, sessionToken: sessionTokenForClient(client, token) };
+    return { ok: true, ...sessionTokenForClient(client, token) };
   }
 
   @Public()

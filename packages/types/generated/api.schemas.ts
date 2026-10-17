@@ -1984,7 +1984,7 @@ export interface RegisterCustomerDto {
 
 export interface OkResponseDto {
   ok: boolean;
-  sessionToken?: string | null;
+  sessionToken?: string;
 }
 
 export interface LoginCustomerDto {

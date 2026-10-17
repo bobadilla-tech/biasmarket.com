@@ -8398,11 +8398,10 @@
             "type": "boolean"
           },
           "sessionToken": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           }
         },
-        "required": ["ok", "sessionToken"]
+        "required": ["ok"]
       },
       "LoginCustomerDto": {
         "type": "object",
