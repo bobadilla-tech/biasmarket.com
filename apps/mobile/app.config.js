@@ -1,8 +1,7 @@
-import { readFileSync } from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+const { readFileSync } = require("node:fs");
+const path = require("node:path");
 
-const appDirectory = path.dirname(fileURLToPath(import.meta.url));
+const appDirectory = __dirname;
 const readLocale = (locale) =>
   JSON.parse(
     readFileSync(
@@ -13,7 +12,7 @@ const readLocale = (locale) =>
 
 const locales = { en: readLocale("en"), es: readLocale("es") };
 
-export default ({ config }) => {
+module.exports = ({ config }) => {
   const englishMessages = locales.en;
   const plugins = (config.plugins ?? []).map((plugin) => {
     if (!Array.isArray(plugin) || plugin[0] !== "expo-image-picker") {
