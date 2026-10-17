@@ -5,6 +5,7 @@ import { PingModule } from "./jobs/ping/ping.module.js";
 import { MailerModule } from "./jobs/mailer/mailer.module.js";
 import { OrdersModule } from "./jobs/orders/orders.module.js";
 import { PremiumModule } from "./jobs/premium/premium.module.js";
+import { PushModule } from "./jobs/push/push.module.js";
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { PremiumModule } from "./jobs/premium/premium.module.js";
     MailerModule,
     OrdersModule,
     PremiumModule,
+    PushModule,
   ],
 })
 export class AppModule {}

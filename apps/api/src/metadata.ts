@@ -2069,6 +2069,21 @@ export default async () => {
           },
         ],
         [
+          import('./modules/device-tokens/device-token.dto.js'),
+          {
+            DeviceTokenDto: {
+              expoPushToken: {
+                required: true,
+                type: () => String,
+                minLength: 20,
+                maxLength: 256,
+                pattern: '^(Exponent|Expo)PushToken\\[[A-Za-z0-9_-]+\\]$',
+              },
+              platform: { required: true, enum: ['ios', 'android'] },
+            },
+          },
+        ],
+        [
           import('./modules/restock/dto/create-restock-request.dto.js'),
           {
             CreateRestockRequestDto: {
@@ -3084,6 +3099,24 @@ export default async () => {
                   ].GlobalAccountOrderResponseDto,
                 ],
               },
+            },
+          },
+        ],
+        [
+          import('./modules/customer-auth/customer-device-tokens.controller.js'),
+          {
+            CustomerDeviceTokensController: {
+              register: {},
+              unregister: { type: Object },
+            },
+          },
+        ],
+        [
+          import('./modules/device-tokens/device-tokens.controller.js'),
+          {
+            SellerDeviceTokensController: {
+              register: {},
+              unregister: { type: Object },
             },
           },
         ],
