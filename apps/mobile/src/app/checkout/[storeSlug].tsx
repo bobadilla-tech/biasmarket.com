@@ -11,8 +11,6 @@ import {
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getInfoAsync } from "expo-file-system/legacy";
-import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 import {
   ApiError,
@@ -33,7 +31,6 @@ import type {
 } from "@biasmarket/types";
 import {
   buildCheckoutFormSchema,
-  MAX_FILE_SIZE,
   type CheckoutFormInput,
   type ProofFileLike,
 } from "@biasmarket/validation";
@@ -51,6 +48,7 @@ import {
   readStoreCart,
 } from "../../features/cart/cart-storage";
 import { useBuyerSession } from "../../features/auth/session-context";
+import { compressPaymentProof } from "../../features/checkout/proof-image";
 import { useMobileI18n } from "../../i18n/mobile-i18n.js";
 
 const emptyForm: CheckoutFormInput = {
@@ -205,7 +203,7 @@ export default function CheckoutScreen() {
         ? await ImagePicker.launchCameraAsync({ mediaTypes: ["images"] })
         : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"] });
       if (result.canceled || !result.assets[0]) return;
-      const proof = await compressProof(result.assets[0].uri);
+      const proof = await compressPaymentProof(result.assets[0].uri);
       setField("paymentProof", proof);
     } catch (error) {
       setSubmitError(
@@ -668,36 +666,6 @@ export default function CheckoutScreen() {
       </View>
     </ScrollView>
   );
-}
-
-async function compressProof(
-  uri: string,
-): Promise<ProofFileLike & { uri: string }> {
-  for (const preset of [
-    { width: 1600, compress: 0.75 },
-    { width: 1200, compress: 0.65 },
-    { width: 900, compress: 0.5 },
-  ]) {
-    const output = await ImageManipulator.manipulateAsync(
-      uri,
-      [{ resize: { width: preset.width } }],
-      { compress: preset.compress, format: ImageManipulator.SaveFormat.JPEG },
-    );
-    const info = await getInfoAsync(output.uri);
-    if (
-      info.exists &&
-      typeof info.size === "number" &&
-      info.size <= MAX_FILE_SIZE
-    ) {
-      return {
-        uri: output.uri,
-        name: `payment-proof-${Date.now()}.jpg`,
-        type: "image/jpeg",
-        size: info.size,
-      };
-    }
-  }
-  throw new Error("checkout.proofCompressFailed");
 }
 
 function toShippingAddress(
