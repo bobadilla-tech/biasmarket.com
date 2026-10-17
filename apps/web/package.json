@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3001",
-    "build": "next build",
+    "build": "node scripts/generate-mobile-associations.mjs && next build",
     "lint": "node ../../scripts/lint-changed-files.mjs apps/web && eslint .",
     "start": "next start",
     "typecheck": "tsc --noEmit",
