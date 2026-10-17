@@ -13,10 +13,9 @@ import type { OrderPaymentResponseDto } from "@biasmarket/types";
 import { useBuyerSession } from "../../features/auth/session-context";
 import { formatPrice } from "../../features/catalog/catalog-ui";
 import { fetchPrivatePaymentProof } from "../../features/orders/private-payment-proof";
-import { useMobileI18n } from "../../i18n/mobile-i18n";
+import { useMobileI18n } from "../../i18n/mobile-i18n.js";
 
 export default function OrderDetailScreen() {
-  const { locale, t } = useMobileI18n();
   const { orderId, storeSlug: routeStoreSlug } = useLocalSearchParams<{
     orderId: string;
     storeSlug?: string;
@@ -24,6 +23,7 @@ export default function OrderDetailScreen() {
   const router = useRouter();
   const { status, storeSlug: sessionStoreSlug } = useBuyerSession();
   const storeSlug = routeStoreSlug ?? sessionStoreSlug;
+  const { locale, t } = useMobileI18n();
   const orderQuery = useQuery({
     queryKey: ["buyer-order", storeSlug, orderId],
     queryFn: () => customerAuth.orderDetail(storeSlug!, orderId),
@@ -53,7 +53,7 @@ export default function OrderDetailScreen() {
           onPress={() => router.push("/login")}
         >
           <Text className="font-semibold text-brand-ink">
-            {t("auth.loginTitle")}
+            {t("auth.signIn")}
           </Text>
         </Pressable>
       </View>
@@ -101,7 +101,7 @@ export default function OrderDetailScreen() {
         <View className="gap-2 rounded-2xl border border-white/10 bg-white/5 p-4">
           <Text className="font-semibold text-white">
             {t("orders.paymentStatusLabel", {
-              status: paymentStatusLabel(order.paymentStatus, t),
+              status: paymentStatusLabel(t, order.paymentStatus),
             })}
           </Text>
           <Text className="text-sm text-white/70">
@@ -164,7 +164,7 @@ export default function OrderDetailScreen() {
                 <View className="flex-row items-center justify-between gap-3">
                   <Text className="font-medium text-white">
                     {payment.method ?? t("orders.payment")} ·{" "}
-                    {paymentReviewLabel(payment.reviewStatus, t)}
+                    {paymentReviewLabel(t, payment.reviewStatus)}
                   </Text>
                   <Text className="font-semibold text-brand-pink">
                     {formatPrice(payment.amount, payment.currency, locale)}
@@ -249,15 +249,15 @@ function Section({
 }
 
 function paymentStatusLabel(
-  status: string,
   t: (key: string) => string,
+  status: string,
 ): string {
-  return t(`orders.paymentStatus.${status}`) || status;
+  return t(`orders.paymentStatus.${status}`);
 }
 
 function paymentReviewLabel(
-  status: string,
   t: (key: string) => string,
+  status: string,
 ): string {
-  return t(`orders.reviewStatus.${status}`) || status;
+  return t(`orders.reviewStatus.${status}`);
 }

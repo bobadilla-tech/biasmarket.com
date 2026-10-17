@@ -1,7 +1,5 @@
 {
   "common": {
-    "brandName": "Bias Market",
-    "brandMonogram": "B",
     "back": "Volver",
     "loadingCart": "Cargando carrito…",
     "loadingProduct": "Cargando producto…",
@@ -26,7 +24,8 @@
     "variableAvailability": "Disponibilidad variable",
     "backToDiscover": "Volver a descubrir",
     "catalogEyebrow": "Catálogo",
-    "brandName": "Bias Market"
+    "brandName": "Bias Market",
+    "brandMonogram": "B"
   },
   "auth": {
     "loginTitle": "Iniciar sesión",
@@ -85,7 +84,8 @@
     "description": "Descripción",
     "availableCount": "{count} disponibles",
     "keepBrowsing": "Seguir explorando",
-    "saving": "Guardando…"
+    "saving": "Guardando…",
+    "notAvailable": "No disponible"
   },
   "cart": {
     "title": "Tu carrito",
@@ -178,9 +178,16 @@
     "orderReceivedPaymentPending": "Recibimos tu pedido. Sigue las instrucciones de pago de la tienda.",
     "orderReceived": "Recibimos tu pedido y la tienda podrá revisarlo desde su panel.",
     "orderSent": "Pedido enviado",
-    "loginToFill": "Inicia sesión para autocompletar tus datos.",
+    "loginToFill": "Inicia sesión para autocompletar tus datos",
     "orderNumber": "Pedido: {id}",
-    "viewOrder": "Ver mi pedido"
+    "viewOrder": "Ver mi pedido",
+    "phone": "Teléfono",
+    "paymentMethod": "Método de pago",
+    "noItems": "El carrito está vacío.",
+    "mixedCurrencies": "El carrito contiene monedas distintas y no se puede cobrar junto.",
+    "preparing": "Preparando checkout…",
+    "orderSuccessTitle": "Pedido enviado",
+    "backToDiscover": "Volver a descubrir"
   },
   "orders": {
     "loginPrompt": "Inicia sesión para ver tus pedidos.",
@@ -217,7 +224,8 @@
       "APPROVED": "Aprobado",
       "REJECTED": "Rechazado",
       "N_A": "Confirmado"
-    }
+    },
+    "viewOrders": "Ver mis pedidos"
   },
   "account": {
     "buyerAccount": "Cuenta de comprador",

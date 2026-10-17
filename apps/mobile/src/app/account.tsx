@@ -3,10 +3,10 @@ import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { ApiError, customerAuth } from "@biasmarket/types";
 import type { CustomerProfileResponseDto } from "@biasmarket/types";
-import { useBuyerSession } from "../features/auth/session-context";
-import { useMobileI18n } from "../i18n/mobile-i18n";
+import { useBuyerSession } from "../features/auth/session-context.js";
+import { useMobileI18n } from "../i18n/mobile-i18n.js";
 
-export default function AccountScreen() {
+export default function HomeScreen() {
   const router = useRouter();
   const { locale, setLocale, t } = useMobileI18n();
   const { status, storeSlug, signOut, error: sessionError } = useBuyerSession();
@@ -22,6 +22,7 @@ export default function AccountScreen() {
   useEffect(() => {
     if (status !== "authenticated" || !storeSlug) return;
     let active = true;
+
     void customerAuth
       .me(storeSlug)
       .then((data) => {
@@ -32,6 +33,7 @@ export default function AccountScreen() {
         if (cause instanceof ApiError && cause.status === 401) return;
         setError(t("common.connectionError"));
       });
+
     return () => {
       active = false;
     };
@@ -47,9 +49,9 @@ export default function AccountScreen() {
 
   return (
     <View className="flex-1 justify-center gap-4 bg-brand-ink px-6">
-      <Pressable accessibilityRole="button" onPress={() => router.back()}>
+      <Pressable accessibilityRole="button" onPress={() => router.replace("/")}>
         <Text className="font-semibold text-brand-pink">
-          ‹ {t("common.back")}
+          ‹ {t("common.backToDiscover")}
         </Text>
       </Pressable>
       <Text className="text-3xl font-bold text-brand-pink">{t("common.brandName")}</Text>
@@ -68,7 +70,7 @@ export default function AccountScreen() {
         onPress={() => router.push("/orders")}
       >
         <Text className="text-center font-semibold text-white">
-          {t("auth.myOrders")}
+          {t("orders.viewOrders")}
         </Text>
       </Pressable>
       {error || sessionError ? (
@@ -97,11 +99,11 @@ export default function AccountScreen() {
       <Pressable
         accessibilityRole="button"
         className="rounded-xl bg-brand-pink px-5 py-3"
-        onPress={() =>
+        onPress={() => {
           void signOut()
             .then(() => router.replace("/login"))
-            .catch(() => undefined)
-        }
+            .catch(() => undefined);
+        }}
       >
         <Text className="text-center font-semibold text-brand-ink">
           {t("auth.signOut")}

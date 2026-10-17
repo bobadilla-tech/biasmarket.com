@@ -11,8 +11,6 @@ import {
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getInfoAsync } from "expo-file-system/legacy";
-import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 import {
   ApiError,
@@ -33,7 +31,6 @@ import type {
 } from "@biasmarket/types";
 import {
   buildCheckoutFormSchema,
-  MAX_FILE_SIZE,
   type CheckoutFormInput,
   type ProofFileLike,
 } from "@biasmarket/validation";
@@ -51,7 +48,11 @@ import {
   readStoreCart,
 } from "../../features/cart/cart-storage";
 import { useBuyerSession } from "../../features/auth/session-context";
-import { useMobileI18n } from "../../i18n/mobile-i18n";
+import {
+  compressPaymentProof,
+  proofSelectionErrorKey,
+} from "../../features/checkout/proof-image";
+import { useMobileI18n } from "../../i18n/mobile-i18n.js";
 
 const emptyForm: CheckoutFormInput = {
   customerName: "",
@@ -84,11 +85,11 @@ const EMPTY_POINTS: PickupPointResponseDto[] = [];
 const EMPTY_PAYMENT_METHODS: PaymentMethodConfigResponseDto[] = [];
 
 export default function CheckoutScreen() {
-  const { locale, t } = useMobileI18n();
   const { storeSlug } = useLocalSearchParams<{ storeSlug: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
   const session = useBuyerSession();
+  const { locale, t } = useMobileI18n();
   const [form, setForm] = useState(emptyForm);
   const [fieldErrors, setFieldErrors] = useState<string[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -205,13 +206,10 @@ export default function CheckoutScreen() {
         ? await ImagePicker.launchCameraAsync({ mediaTypes: ["images"] })
         : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"] });
       if (result.canceled || !result.assets[0]) return;
-      const proof = await compressProof(
-        result.assets[0].uri,
-        t("checkout.proofCompressFailed"),
-      );
+      const proof = await compressPaymentProof(result.assets[0].uri);
       setField("paymentProof", proof);
-    } catch {
-      setSubmitError(t("checkout.proofLoadFailed"));
+    } catch (error) {
+      setSubmitError(t(proofSelectionErrorKey(error)));
     } finally {
       setLoadingProof(false);
     }
@@ -230,18 +228,18 @@ export default function CheckoutScreen() {
     if (!parsed.success) {
       setFieldErrors(
         parsed.error.issues.map((issue) =>
-          t(`checkout.validation.${String(issue.path[0] ?? "")}`),
+          t(`checkout.validation.${String(issue.path[0])}`),
         ),
       );
       return;
     }
     setFieldErrors([]);
     if (items.length === 0) {
-      setSubmitError(t("cart.emptyError"));
+      setSubmitError(t("checkout.noItems"));
       return;
     }
     if (hasMixedCurrencies(items)) {
-      setSubmitError(t("cart.mixedCurrencyError"));
+      setSubmitError(t("checkout.mixedCurrencies"));
       return;
     }
     if (!/^[a-z0-9-]+$/i.test(storeSlug)) {
@@ -317,8 +315,10 @@ export default function CheckoutScreen() {
           ),
         },
       });
-    } catch {
-      setSubmitError(t("checkout.submitFailed"));
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error ? error.message : t("checkout.submitFailed"),
+      );
     } finally {
       setSubmitting(false);
     }
@@ -333,9 +333,7 @@ export default function CheckoutScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-brand-ink">
         <ActivityIndicator color="#f2b4c7" />
-        <Text className="mt-3 text-white/70">
-          {t("common.loadingCheckout")}
-        </Text>
+        <Text className="mt-3 text-white/70">{t("checkout.preparing")}</Text>
       </View>
     );
   }
@@ -394,7 +392,7 @@ export default function CheckoutScreen() {
             onChangeText={(value) => setField("customerName", value)}
           />
           <Field
-            label={t("auth.phone")}
+            label={t("checkout.phone")}
             keyboardType="phone-pad"
             value={
               form.customerPhone || profileQuery.data?.customer.phone || ""
@@ -665,37 +663,6 @@ export default function CheckoutScreen() {
       </View>
     </ScrollView>
   );
-}
-
-async function compressProof(
-  uri: string,
-  failureMessage: string,
-): Promise<ProofFileLike & { uri: string }> {
-  for (const preset of [
-    { width: 1600, compress: 0.75 },
-    { width: 1200, compress: 0.65 },
-    { width: 900, compress: 0.5 },
-  ]) {
-    const output = await ImageManipulator.manipulateAsync(
-      uri,
-      [{ resize: { width: preset.width } }],
-      { compress: preset.compress, format: ImageManipulator.SaveFormat.JPEG },
-    );
-    const info = await getInfoAsync(output.uri);
-    if (
-      info.exists &&
-      typeof info.size === "number" &&
-      info.size <= MAX_FILE_SIZE
-    ) {
-      return {
-        uri: output.uri,
-        name: `payment-proof-${Date.now()}.jpg`,
-        type: "image/jpeg",
-        size: info.size,
-      };
-    }
-  }
-  throw new Error(failureMessage);
 }
 
 function toShippingAddress(
