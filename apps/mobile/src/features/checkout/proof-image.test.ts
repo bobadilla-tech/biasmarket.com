@@ -15,7 +15,10 @@ vi.mock("expo-image-manipulator", () => ({
   SaveFormat: mocks.saveFormat,
 }));
 
-import { compressPaymentProof } from "./proof-image";
+import {
+  compressPaymentProof,
+  proofSelectionErrorKey,
+} from "./proof-image";
 
 afterEach(() => vi.clearAllMocks());
 
@@ -63,5 +66,17 @@ describe("compressPaymentProof", () => {
       compressPaymentProof("file://camera-source.jpg"),
     ).rejects.toThrow("checkout.proofCompressFailed");
     expect(mocks.manipulateAsync).toHaveBeenCalledTimes(3);
+  });
+
+  it("maps native errors to catalog keys instead of displaying platform text", () => {
+    expect(proofSelectionErrorKey(new Error("checkout.proofCompressFailed"))).toBe(
+      "checkout.proofCompressFailed",
+    );
+    expect(proofSelectionErrorKey(new Error("native platform error"))).toBe(
+      "checkout.proofLoadFailed",
+    );
+    expect(proofSelectionErrorKey("native platform error")).toBe(
+      "checkout.proofLoadFailed",
+    );
   });
 });
