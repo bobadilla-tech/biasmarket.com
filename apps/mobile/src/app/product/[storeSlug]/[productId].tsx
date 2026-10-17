@@ -12,6 +12,8 @@ import { useQuery } from "@tanstack/react-query";
 import { stores } from "@biasmarket/types";
 import type { PublicProductVariantResponseDto } from "@biasmarket/types";
 import { formatPrice } from "../../../features/catalog/catalog-ui";
+import { cartCount } from "@biasmarket/utils/cart";
+import { useStoreCart } from "../../../features/cart/use-store-cart";
 
 export default function ProductDetailScreen() {
   const { storeSlug, productId } = useLocalSearchParams<{
@@ -19,6 +21,7 @@ export default function ProductDetailScreen() {
     productId: string;
   }>();
   const router = useRouter();
+  const cart = useStoreCart(storeSlug);
   const productQuery = useQuery({
     queryKey: ["catalog", "product", storeSlug, productId],
     queryFn: () => stores.findPublicProduct(storeSlug, productId),
@@ -61,9 +64,16 @@ export default function ProductDetailScreen() {
         <Pressable accessibilityRole="button" onPress={() => router.back()}>
           <Text className="font-semibold text-brand-pink">‹ Volver</Text>
         </Pressable>
-        <Text numberOfLines={1} className="max-w-[65%] text-sm text-white/70">
+        <Text numberOfLines={1} className="max-w-[55%] text-sm text-white/70">
           {store.name}
         </Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Abrir carrito, ${cartCount(cart.items)} productos`}
+          onPress={() => router.push({ pathname: "/cart/[storeSlug]", params: { storeSlug } })}
+        >
+          <Text className="font-semibold text-brand-pink">Carrito ({cartCount(cart.items)})</Text>
+        </Pressable>
       </View>
       {product.images.length ? (
         <FlashList
@@ -121,9 +131,39 @@ export default function ProductDetailScreen() {
                 basePrice={product.price}
                 currency={product.currency}
                 variant={variant}
+                disabled={unavailable}
+                onAdd={() => cart.add({
+                  productId: product.id,
+                  variantId: variant.id,
+                  name: product.name,
+                  variantLabel: variant.name,
+                  image: variant.imageOverride ?? product.images[0],
+                  price: Number(variant.priceOverride ?? product.price),
+                  currency: product.currency,
+                  quantity: 1,
+                })}
               />
             ))}
           </View>
+        ) : null}
+        {!product.variants.length ? (
+          <Pressable
+            accessibilityRole="button"
+            disabled={unavailable || cart.isSaving}
+            className={`rounded-xl px-5 py-4 ${unavailable ? "bg-white/15" : "bg-brand-pink"}`}
+            onPress={() => cart.add({
+              productId: product.id,
+              name: product.name,
+              image: product.images[0],
+              price: Number(product.price),
+              currency: product.currency,
+              quantity: 1,
+            })}
+          >
+            <Text className="text-center font-bold text-brand-ink">
+              {unavailable ? "No disponible" : cart.isSaving ? "Guardando..." : "Añadir al carrito"}
+            </Text>
+          </Pressable>
         ) : null}
         <Pressable
           accessibilityRole="button"
@@ -143,10 +183,14 @@ function VariantRow({
   currency,
   basePrice,
   variant,
+  onAdd,
+  disabled,
 }: {
   currency: string;
   basePrice: string;
   variant: PublicProductVariantResponseDto;
+  onAdd: () => void;
+  disabled: boolean;
 }) {
   const attributes = Object.entries(variant.attributes)
     .map(([key, value]) => `${key}: ${String(value)}`)
@@ -174,11 +218,21 @@ function VariantRow({
             : `${Math.max(variant.stock - variant.reserved, 0)} disponibles`}
         </Text>
       </View>
-      {price ? (
-        <Text className="font-semibold text-brand-pink">
-          {formatPrice(price, currency)}
-        </Text>
-      ) : null}
+      <View className="items-end gap-2">
+        {price ? (
+          <Text className="font-semibold text-brand-pink">
+            {formatPrice(price, currency)}
+          </Text>
+        ) : null}
+        <Pressable
+          accessibilityRole="button"
+          disabled={disabled || (variant.stock !== null && variant.stock - variant.reserved <= 0)}
+          className={`rounded-lg px-3 py-2 ${disabled ? "bg-white/15" : "bg-brand-pink"}`}
+          onPress={onAdd}
+        >
+          <Text className="text-xs font-bold text-brand-ink">Añadir</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
