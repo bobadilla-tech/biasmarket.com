@@ -18,7 +18,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     const openNotification = (response: Notifications.NotificationResponse) => {
-      const data = response.notification.request.content.data;
+      const data = response.notification.request.content.data ?? {};
       if (
         data.type === "PAYMENT_REVIEWED" &&
         typeof data.orderId === "string"
