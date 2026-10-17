@@ -27,10 +27,10 @@ function blobToDataUri(blob: Blob): Promise<string> {
       if (typeof reader.result === "string") {
         resolve(reader.result);
       } else {
-        reject(new Error());
+        reject(new Error("orders.proofFailed"));
       }
     };
-    reader.onerror = () => reject(new Error());
+    reader.onerror = () => reject(new Error("orders.proofFailed"));
     reader.readAsDataURL(blob);
   });
 }
