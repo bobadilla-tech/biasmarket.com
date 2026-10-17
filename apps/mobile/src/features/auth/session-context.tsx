@@ -15,7 +15,11 @@ import {
   readBuyerSession,
   writeBuyerSession,
 } from "./session-storage";
-import { setMobileBearerToken, setUnauthorizedHandler } from "./api-client";
+import {
+  isCurrentMobileAuthorization,
+  setMobileBearerToken,
+  setUnauthorizedHandler,
+} from "./api-client";
 import { registerBuyerPushToken, unregisterBuyerPushToken } from "./push-token";
 import { useMobileI18n } from "../../i18n/mobile-i18n";
 
@@ -58,7 +62,8 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
     return result;
   }, []);
 
-  const clearLocalSession = useCallback(async () => {
+  const clearLocalSession = useCallback(async (authorization?: string) => {
+    if (authorization && !isCurrentMobileAuthorization(authorization)) return;
     const generation = ++sessionGeneration.current;
     try {
       await runStorageOperation(deleteBuyerSession);
@@ -68,7 +73,10 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
       }
       throw cause;
     }
-    if (generation !== sessionGeneration.current) return;
+    if (
+      generation !== sessionGeneration.current ||
+      (authorization && !isCurrentMobileAuthorization(authorization))
+    ) return;
     queryClient.removeQueries({ queryKey: ["private-payment-proof"] });
     queryClient.removeQueries({ queryKey: ["buyer"] });
     queryClient.removeQueries({ queryKey: ["buyer-order"] });
@@ -80,7 +88,7 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     const generation = ++sessionGeneration.current;
     let active = true;
-    setUnauthorizedHandler(clearLocalSession);
+    setUnauthorizedHandler((authorization) => clearLocalSession(authorization));
     void runStorageOperation(readBuyerSession)
       .then((session) => {
         if (!active || generation !== sessionGeneration.current) return;
