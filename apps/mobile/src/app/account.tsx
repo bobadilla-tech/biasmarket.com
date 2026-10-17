@@ -64,6 +64,15 @@ export default function HomeScreen() {
         {t("checkout.storeLabel", { slug: storeSlug ?? "" })}
         {profile ? ` · ${profile.customer.phone}` : ""}
       </Text>
+      <Pressable
+        accessibilityRole="button"
+        className="rounded-xl border border-white/15 px-5 py-3"
+        onPress={() => router.push("/orders")}
+      >
+        <Text className="text-center font-semibold text-white">
+          {t("orders.viewOrders")}
+        </Text>
+      </Pressable>
       {error || sessionError ? (
         <Text accessibilityRole="alert" className="text-sm text-red-300">
           {error || (sessionError ? t(sessionError) : null)}
