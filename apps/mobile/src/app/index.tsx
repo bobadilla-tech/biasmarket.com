@@ -14,7 +14,7 @@ import {
   ProductCard,
   StoreRow,
 } from "../features/catalog/catalog-ui";
-import { useMobileI18n } from "../i18n/mobile-i18n.js";
+import { useMobileI18n } from "../i18n/mobile-i18n";
 
 const directoryKey = ["catalog", "store-directory"] as const;
 const EMPTY_FEATURED_STORES: FeaturedStoreResponseDto[] = [];

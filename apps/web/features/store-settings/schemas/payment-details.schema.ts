@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 // Mirrors the backend's PaymentMethodDetailsDto/normalizeDetails shapes —
-// see docs/plans/2026-08-08-buyer-post-checkout-payment-instructions-plan.md's
+// see .artifacts/2026/08/20260808--buyer-post-checkout-payment-instructions/plan.md's
 // "Decision: PaymentMethodConfig.details shape". CASH has no structured
 // details schema — the settings UI never shows detail fields for it.
 export const transferDetailsSchema = z.object({

@@ -36,7 +36,7 @@ function MobileCategoryCarousel({
 
   return (
     <div className="lg:hidden">
-      <h2 className="text-[21px] leading-[26px] font-bold text-black">
+      <h2 className="landing-section-title text-[21px] leading-[26px] font-bold text-black">
         {t("title")}
       </h2>
       <div
@@ -49,8 +49,8 @@ function MobileCategoryCarousel({
             <Link
               key={key}
               href={`/search?category=${encodeURIComponent(name)}`}
-              className={`flex min-h-[106px] h-auto w-[106px] shrink-0 snap-start flex-col items-center justify-between rounded-lg pt-3 pb-1.5 ${
-                index % 2 === 0 ? "bg-[#F5EAFF]" : "bg-[#FFEAF6]"
+              className={`landing-category-card flex min-h-[106px] h-auto w-[106px] shrink-0 snap-start flex-col items-center justify-between rounded-xl border border-white/70 pt-3 pb-1.5 shadow-[var(--shadow-soft)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-raised)] ${
+                index % 2 === 0 ? "bg-landing-violet" : "bg-landing-rose"
               }`}
             >
               <Image
@@ -60,7 +60,7 @@ function MobileCategoryCarousel({
                 height={img.height}
                 className="h-[52px] w-auto object-contain"
               />
-              <span className="max-w-full px-2 text-center text-[13px] leading-4 font-medium break-words text-black">
+              <span className="max-w-full px-2 text-center text-[13px] leading-4 font-medium break-words text-landing-ink">
                 {name}
               </span>
             </Link>
@@ -72,7 +72,7 @@ function MobileCategoryCarousel({
           type="button"
           aria-label={tCarousel("prev")}
           onClick={() => scrollByCards(-1)}
-          className="p-0.5 text-[#1C1B1F] transition-opacity hover:opacity-70"
+          className="p-0.5 text-foreground transition-opacity hover:opacity-70"
         >
           <CircleArrowLeft className="size-6" strokeWidth={1.5} />
         </button>
@@ -80,7 +80,7 @@ function MobileCategoryCarousel({
           type="button"
           aria-label={tCarousel("next")}
           onClick={() => scrollByCards(1)}
-          className="p-0.5 text-[#1C1B1F] transition-opacity hover:opacity-70"
+          className="p-0.5 text-foreground transition-opacity hover:opacity-70"
         >
           <CircleArrowRight className="size-6" strokeWidth={1.5} />
         </button>
@@ -101,7 +101,7 @@ export function CategoriesSection() {
       <MobileCategoryCarousel items={items} />
 
       <div className="hidden lg:block">
-        <h2 className="text-[32px] leading-[39px] font-bold text-black">
+        <h2 className="landing-section-title text-[32px] leading-[39px] font-bold text-black">
           {t("title")}
         </h2>
 
@@ -113,9 +113,12 @@ export function CategoriesSection() {
               <Link
                 key={key}
                 href={`/search?category=${encodeURIComponent(name)}`}
-                className="flex min-h-[185px] h-auto flex-1 flex-col items-center justify-between rounded-lg px-2 pt-[30px] pb-4 transition hover:shadow-md"
+                className="landing-category-card flex min-h-[185px] h-auto flex-1 flex-col items-center justify-between rounded-xl border border-white/70 px-2 pt-[30px] pb-4 shadow-[var(--shadow-soft)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-raised)]"
                 style={{
-                  background: index % 2 === 0 ? "#F5EAFF" : "#FFEAF6",
+                  background:
+                    index % 2 === 0
+                      ? "var(--landing-violet)"
+                      : "var(--landing-rose)",
                 }}
               >
                 <Image
@@ -125,7 +128,7 @@ export function CategoriesSection() {
                   height={height}
                   className="mx-auto h-[96px] w-auto max-w-full object-contain"
                 />
-                <span className="max-w-full px-2 text-center text-[20px] leading-6 font-medium break-words text-black">
+                <span className="max-w-full px-2 text-center text-[20px] leading-6 font-medium break-words text-landing-ink">
                   {name}
                 </span>
               </Link>

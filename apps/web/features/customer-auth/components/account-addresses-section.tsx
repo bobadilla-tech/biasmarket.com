@@ -126,8 +126,8 @@ export function AccountAddressesSection({ slug }: { slug: string }) {
                       {address.label || address.recipientName}
                     </p>
                     {address.isDefault && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-600">
-                        <Star className="size-3" />
+                      <span className="inline-flex items-center gap-1 rounded-full bg-[#fff4d6] px-2.5 py-1 text-xs font-semibold text-[#775015] shadow-[0_3px_10px_rgb(220_164_51/14%)]">
+                        <Star className="fan-sparkle size-3 fill-current" />
                         {t("default")}
                       </span>
                     )}

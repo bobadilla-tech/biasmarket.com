@@ -3,22 +3,40 @@
   "globalEnv": [
     "DATABASE_URL",
     "NEXT_PUBLIC_SANITY_PROJECT_ID",
-    "NEXT_PUBLIC_SANITY_DATASET"
+    "NEXT_PUBLIC_SANITY_DATASET",
+    "NEXT_PUBLIC_STOREFRONT_REDESIGN_STORE_SLUGS"
   ],
+  "globalPassThroughEnv": ["BASE_REF"],
   "tasks": {
     "build": { "dependsOn": ["^build"], "outputs": ["dist/**", ".next/**"] },
     "dev": { "cache": false, "persistent": true },
-    "mobile#dev": { "cache": false, "persistent": true },
-    "lint": {},
+    "mobile#dev": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "env": ["BASE_REF"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/.prettierrc",
+        "$TURBO_ROOT$/eslint.config.mjs",
+        "$TURBO_ROOT$/scripts/lint-changed-files.mjs"
+      ]
+    },
     "web#lint": {
+      "env": ["BASE_REF"],
       "inputs": [
         "$TURBO_DEFAULT$",
         "eslint.config.mjs",
+        "$TURBO_ROOT$/.prettierrc",
+        "$TURBO_ROOT$/eslint.config.mjs",
         "../../scripts/lint-changed-files.mjs"
       ]
     },
     "typecheck": { "dependsOn": ["^build"] },
     "test": { "dependsOn": ["^build"] },
+    "test:cov": { "dependsOn": ["^build"], "outputs": ["coverage/**"] },
     "web#test:e2e": {
       "dependsOn": ["^build"],
       "cache": false,

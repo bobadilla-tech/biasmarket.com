@@ -1,0 +1,6 @@
+{
+  "name": "@fixture/broken",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

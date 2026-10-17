@@ -1,0 +1,11 @@
+{
+  // Used by `pnpm typecheck` and scripts/generate-swagger-metadata.ts. TypeScript 6 defaults
+  // rootDir to the tsconfig's directory, so type-checking reports
+  // TS6059 for workspace packages (packages/db) outside apps/api. rootDir is
+  // kept out of tsconfig.json because the SWC build derives its dist/ layout
+  // from it (start:prod expects dist/main.js).
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "../.."
+  }
+}

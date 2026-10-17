@@ -1,36 +1,38 @@
 # Seller Flow
 
-Reflects the actual payment flow — the seller records what the buyer sent over
-WhatsApp and approves/rejects from the panel — see
-[`docs/core/security-payments.md` §9](../core/security-payments.md#9-payment-flow-design-manual)
-and
+Reflects the payment flow implemented in the app. Buyers can attach a proof
+image (at checkout, on their private order page, or from their account), and the
+seller reviews it in the panel (approve, reject or void). The seller can also
+record a payment received over WhatsApp or another channel (amount, method,
+optional note, optional image). See
+[`docs/core/security-payments.md` §9](../core/security-payments.md#9-payment-flow-design-manual),
+[§9.3.1](../core/security-payments.md#931-buyer-proof-upload-by-private-link)
+for the buyer upload rules, and
 [`docs/core/product.md` §5.9](../core/product.md#59-seller-panel-management).
 
-(There is **no buyer-uploaded proof image** to review in the MVP — the old
-schema-only `PaymentProof` model was removed. Payment happens over WhatsApp and
-the seller records the `OrderPayment` themselves — amount, method, optional
-note, optional image.)
-
 ```
-Login (dashboard, per store)
+Login (/login) → onboarding / crear tienda (primera vez)
         │
         ▼
    Dashboard (/dashboard/:slug)
         │
-   ┌────┼──────────────┬───────────────┬──────────────┐
-   ▼    ▼               ▼               ▼              ▼
-Productos  Pedidos   Categorías/   Pago y entrega   Configuración
-                      Colecciones   (métodos, depósito %,
-                                     puntos de recojo)
+   Menú lateral: Resumen, Pedidos, Productos, Colecciones, Secciones,
+   Envíos, Pagos | Clientes, Reposición, Analíticas, Notificaciones |
+   Configuración, Preferencias
+   (cada entrada es /dashboard/:slug/<entrada>; ver
+   store-management-flow.md para el detalle de cada una)
    │
    ▼
-Pedidos → filtra por estado (PENDING_PAYMENT, PARTIALLY_PAID, …)
+Pedidos (o Pagos) → filtra por estado (PENDING_PAYMENT, PARTIALLY_PAID, …)
    │
    ▼
 Selecciona un pedido pendiente
    │
+   ├── Si el comprador subió un comprobante (PENDING_REVIEW):
+   │      revisa la imagen → aprobar / rechazar, o anular el pago
+   │
    ▼
-Registra el pago recibido (OrderPayment): monto, método,
+O registra el pago recibido (OrderPayment): monto, método,
 nota opcional, imagen opcional
    │
    ├── Monto parcial → PARTIALLY_PAID (sigue con soft-hold)
@@ -80,3 +82,15 @@ cada 5 min — o el vendedor la cancela):
 CANCELLED — stock (soft-hold) liberado automáticamente,
 sin acción del vendedor
 ```
+
+Pedidos asistidos: desde Pedidos → nuevo (`/dashboard/:slug/orders/new`) el
+vendedor crea una orden en nombre de un comprador y comparte el enlace privado;
+ver [`../core/assisted-orders.md`](../core/assisted-orders.md).
+
+## Related
+
+- [buyer-flow.md](buyer-flow.md): the buyer side of the same order.
+- [store-management-flow.md](store-management-flow.md): every dashboard page.
+- [`../core/product.md`](../core/product.md) and
+  [`../core/roadmap.md`](../core/roadmap.md): product spec and what is planned.
+- [`../readme.md`](../readme.md): docs index.

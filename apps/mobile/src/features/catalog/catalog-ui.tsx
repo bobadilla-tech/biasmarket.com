@@ -1,9 +1,9 @@
 import { Image } from "expo-image";
 import {
   Pressable,
+  type StyleProp,
   Text,
   View,
-  type StyleProp,
   type ViewStyle,
 } from "react-native";
 import type {
@@ -12,7 +12,7 @@ import type {
   SearchProductResponseDto,
 } from "@biasmarket/types";
 import type { Locale } from "@biasmarket/i18n";
-import { useMobileI18n } from "../../i18n/mobile-i18n.js";
+import { useMobileI18n } from "../../i18n/mobile-i18n";
 
 export function StoreImage({
   uri,
@@ -35,7 +35,9 @@ export function StoreImage({
       className="items-center justify-center rounded-2xl bg-white/10"
       style={{ width: size, height: size }}
     >
-      <Text className="text-lg font-bold text-brand-pink">{t("common.brandMonogram")}</Text>
+      <Text className="text-lg font-bold text-brand-pink">
+        {t("common.brandMonogram")}
+      </Text>
     </View>
   );
 }

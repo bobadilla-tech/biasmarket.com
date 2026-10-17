@@ -1,9 +1,9 @@
-import { Module } from '@nestjs/common';
+import { Module } from "@nestjs/common";
 import {
   PickupPointsController,
   PublicPickupPointsController,
-} from './pickup-points.controller.js';
-import { PickupPointsService } from './pickup-points.service.js';
+} from "./pickup-points.controller.js";
+import { PickupPointsService } from "./pickup-points.service.js";
 
 @Module({
   controllers: [PickupPointsController, PublicPickupPointsController],

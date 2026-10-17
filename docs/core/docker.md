@@ -1,106 +1,69 @@
-# Docker build setup: caching, and how it's verified
+# Docker images
 
-Research + fixes from an audit of `infra/docker/api.Dockerfile` and
-`web.Dockerfile` — what was already cached well, what wasn't, and a real bug
-found while testing the fix. For day-to-day development Compose commands, see
-[infra.md](infra.md); for production deploy steps, see [deploy.md](deploy.md).
+How the application images are built, what is cached, and the pitfalls found
+along the way. For the dev Compose workflow see [docker-dev.md](docker-dev.md);
+for production deploys see [deploy.md](deploy.md). The earlier audit narrative
+that led to this setup is kept as history in
+[`docker-audit-history.md`](../../.artifacts/2026/10/20261030--docs-full-audit/docker-audit-history.md).
 
-## What was already caching well
+## Images
 
-- **Multi-stage builds** (`base` → `deps` → `build` → `runtime`). The `deps`
-  stage only `COPY`s `package.json` files before `pnpm install` — so editing
-  application source never invalidates that layer, only a `package.json`/
-  `pnpm-lock.yaml` change does.
-- **BuildKit cache mount for the pnpm store**
-  (`--mount=type=cache,id=pnpm-store,target=/pnpm-store`). This persists across
-  builds independently of Docker's layer cache — even when the `deps` layer
-  _does_ rebuild (lockfile changed), already-downloaded packages don't get
-  re-fetched.
-- **`COMPOSE_BAKE=true`** (`infra/docker/.env.example`) — Compose uses buildx
-  Bake, which builds `api`/`web` in parallel rather than sequentially.
-- **Shared `base` stage** — `api.Dockerfile` and `web.Dockerfile` both start
-  with an identical `FROM node:24-slim` + corepack-install block, so BuildKit
-  reuses that layer across both images on the same builder.
-- CI runs the application checks. CD builds the three production images on an
-  amd64 GitHub runner, pushes immutable SHA-tagged images to GHCR, and the VPS
-  pulls them during `deploy.sh`; the VPS does not build application images.
+Three Dockerfiles live in `infra/docker/`:
 
-## Gap found: Turbo's own cache wasn't persisted
+| File                 | Image   | Notes                                                |
+| -------------------- | ------- | ---------------------------------------------------- |
+| `api.Dockerfile`     | api     | Has a `dev` target and the default `runtime` target. |
+| `workers.Dockerfile` | workers | Same shape as `api`; no Prisma step, no database.    |
+| `web.Dockerfile`     | web     | Runtime copies Next's standalone output.             |
 
-`RUN pnpm exec turbo run build --filter=api` (and `--filter=web`) ran cold on
-every single build. Even when `packages/utils`/`i18n`/`types` hadn't changed
-since the last deploy, Turbo had no memory of that inside the ephemeral `build`
-stage — `.turbo` is (correctly) excluded via `.dockerignore`, and nothing
-carried a cache forward another way. Every deploy recompiled every workspace
-package from scratch, regardless of how small the actual change was.
+`docker-compose.dev.yml` builds target `dev` (source is bind-mounted, nothing to
+compile). The VPS blue/green stack uses the default `runtime` target. CI and CD
+run the application checks and build the production images on an amd64 GitHub
+runner, push SHA-tagged images to GHCR, and the VPS pulls them during
+`deploy.sh`; the VPS does not build application images.
 
-**Fix:** the same BuildKit cache-mount pattern already used for the pnpm store,
-applied to Turbo's cache directory too:
+## Stages and caching
 
-```dockerfile
-RUN --mount=type=cache,id=turbo-cache,target=/app/.turbo \
-    pnpm exec turbo run build --filter=api
-```
+- **Multi-stage** (`base` -> `deps` -> `build` -> `runtime`). `deps` copies only
+  the `package.json` files before `pnpm install`, so editing source never
+  invalidates that layer; only a `package.json` or `pnpm-lock.yaml` change does.
+  Every workspace member's `package.json` must be copied there because
+  `pnpm install --frozen-lockfile` reconciles against the whole workspace
+  lockfile.
+- **Shared `base` stage.** Each Dockerfile starts from the same Node image plus
+  a pinned corepack and pnpm install block, so BuildKit reuses that layer across
+  images on the same builder.
+- **pnpm store cache mount** (`--mount=type=cache,id=pnpm-store`). Persists
+  across builds independently of the layer cache, so a lockfile change does not
+  re-download every package.
+- **Turbo cache mount** (`--mount=type=cache,id=turbo-cache,target=/app/.turbo`)
+  on the `turbo run build` step in each Dockerfile. `.turbo` is excluded by
+  `.dockerignore`, so without the mount every build recompiles every workspace
+  package from scratch.
+- **`COMPOSE_BAKE=true`** in `infra/docker/.env.example` makes Compose build
+  through buildx Bake, so the images build in parallel.
 
-Applied to both Dockerfiles. Low-risk — one line each, no behavior change, just
-lets Turbo skip unchanged package builds across deploys on the same VM/builder.
+Turbo Remote Cache is not used. It would only help if builds ran on more than
+one machine.
 
-## Bug found while verifying the fix: `apps/api/scripts` was never in the runtime image
+## Runtime image requirements
 
-While testing the Turbo cache change against a real build, ran `admin:create`
-against the built runtime image and hit
-`Cannot find module '/app/apps/api/scripts/create-admin.ts'` — the exact failure
-the user had already hit in prod. Root cause: the `runtime` stage's
-`COPY --from=build` list never included `apps/api/scripts` at all:
+- **`apps/api/scripts` must be copied into the `api` runtime stage.** The
+  one-off ops scripts (`admin:create`, `admin:promote`, the seed) run through
+  `docker compose exec api pnpm --filter api run <script>` and need their
+  sources in the image. This was missing once: `admin:create` in production
+  failed with `Cannot find module '/app/apps/api/scripts/create-admin.ts'`. It
+  stayed invisible in dev because the dev Compose file bind-mounts the whole
+  repo, so `scripts/` is always on disk there. The `runtime` stage is copy-only,
+  so anything it needs must be in an explicit `COPY --from=build`. To check,
+  build the `runtime` target and list `apps/api/scripts` in it.
+- **Migrations do not run at container start.** The deploy runs them as a
+  separate phase; see [blue-green-migrations.md](blue-green-migrations.md).
+- The `workers` runtime copies only the workers build and `packages/`; it never
+  depends on `@biasmarket/db`.
 
-```dockerfile
-COPY --from=build --chown=nestjs:nestjs /app/apps/api/dist ./apps/api/dist
-COPY --from=build --chown=nestjs:nestjs /app/apps/api/package.json ./apps/api/package.json
-# packages/, package.json, pnpm-workspace.yaml... but never apps/api/scripts
-```
+## Related
 
-This was invisible in dev because `docker-compose.dev.yml` bind-mounts the whole
-repo (`../..:/app`) — `scripts/` is always present on disk there regardless of
-what any Dockerfile `COPY`s. Prod's `runtime` stage is copy-only (no bind
-mount), so `promote-admin.ts`/`create-admin.ts` (see
-[admin-access.md](admin-access.md)) could not have worked in production — the
-scripts existed in the `build` stage but were never copied into the final image.
-
-**Fix:** added the missing `COPY`:
-
-```dockerfile
-COPY --from=build --chown=nestjs:nestjs /app/apps/api/scripts ./apps/api/scripts
-```
-
-## Verification
-
-Built the `api` image's `build` and `runtime` targets standalone
-(`docker build -f infra/docker/api.Dockerfile --target <stage> ...`, not through
-compose, to isolate each stage):
-
-- `docker run --rm <runtime-image> ls apps/api/scripts` — confirmed
-  `create-admin.ts`/`promote-admin.ts`/`seed-dev.ts` are now present.
-- Ran the actual runtime image against the real dev Postgres (attached to the
-  dev compose network, real `DATABASE_URL`):
-  `pnpm --filter api run
-admin:create <email>` succeeded end-to-end — account
-  created, password printed, exactly reproducing (and confirming the fix for)
-  the failure from the live prod attempt. Cleaned up the test account afterward.
-- Test images (`biasmarket-api-buildtest`, `biasmarket-api-runtime-test`)
-  removed after verification — not meant to stick around as real tags.
-
-## Status
-
-Both fixes are in `infra/docker/api.Dockerfile` (Turbo cache mount + scripts
-copy) and `infra/docker/web.Dockerfile` (Turbo cache mount only — `web`'s
-runtime stage doesn't need any api-scripts-style fix, it copies Next's
-standalone output wholesale). The next CD run picks up both.
-
-## Not done (bigger lift, optional)
-
-- **Turbo Remote Cache** (Vercel-hosted or self-hosted) — would let cache hits
-  carry across machines (e.g. CI populates it, the VM reuses it), not just
-  across repeated builds on the same VM. Every `turbo` run today shows "Remote
-  caching disabled." Not pursued here since the actual use case (single VM,
-  redeploy after a small change) is already solved by the local BuildKit mount —
-  only worth it if builds start happening on more than one machine.
+- [docker-dev.md](docker-dev.md): dev Compose workflow.
+- [deploy.md](deploy.md): how the images reach production.
+- [ci.md](ci.md): CI and the image build jobs.
