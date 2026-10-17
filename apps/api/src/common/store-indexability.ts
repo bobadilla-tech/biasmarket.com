@@ -1,5 +1,5 @@
 // Track C core of
-// docs/plans/2026-09-07-store-rich-content-and-thin-content-indexing-plan.md
+// .artifacts/2026/09/20260907--store-rich-content-and-thin/plan.md
 // (Part 5.3). Single source of truth for "should Google index this store page".
 //
 // Deliberate REVERSAL of public-store-visibility.ts's note that the sitemap
@@ -13,7 +13,7 @@
 // `robots: { index: false }`. D7 applies it to the sitemap query via
 // SITEMAP_INDEXABLE_STORE_WHERE below.
 
-import type { Prisma } from '@biasmarket/db';
+import type { Prisma } from "@biasmarket/db";
 
 export const MIN_INDEXABLE_PRODUCTS = 2;
 
@@ -24,10 +24,11 @@ export interface StoreIndexabilityInput {
   publishedProductCount: number;
   bio: string | null;
   aboutMarkdown: string | null;
-  // >=1 TEXT_BLOCK section whose content.body is a non-empty string. The Prisma
-  // `where` used by the sitemap query can't express this refinement, so the
-  // authoritative check lives on the read path that already loads sections
-  // (findPublicBySlug).
+  // >=1 TEXT_BLOCK section whose content.body is a non-empty string. CT13 keeps
+  // these blocks visible in the redesigned storefront's About tab, so they
+  // remain valid prose for the indexability bar. The Prisma `where` used by the
+  // sitemap query can't express this refinement, so the authoritative check
+  // lives on the read path that already loads sections (findPublicBySlug).
   hasRealTextBlockSection: boolean;
 }
 
@@ -59,6 +60,6 @@ export const SITEMAP_INDEXABLE_STORE_WHERE = {
   OR: [
     { bio: { not: null } },
     { aboutMarkdown: { not: null } },
-    { sections: { some: { type: 'TEXT_BLOCK' } } },
+    { sections: { some: { type: "TEXT_BLOCK" } } },
   ],
 } as const satisfies Prisma.StoreWhereInput;

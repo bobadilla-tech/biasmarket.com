@@ -1,0 +1,6 @@
+jobs:
+  lonely:
+    steps:
+      # run: pnpm --filter @fixture/lonely test
+      - run: pnpm --filter @fixture/lonely exec playwright test
+      - run: pnpm --filter @fixture/lonely test:e2e

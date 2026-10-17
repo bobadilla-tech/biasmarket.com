@@ -8,6 +8,11 @@ pnpm install --frozen-lockfile --filter="workers..."
 pnpm exec turbo run build --filter=@biasmarket/queue
 pnpm --filter workers exec nest build
 
+# `turbo watch` is deliberately not used for the pkg watcher: its daemon dies
+# on Docker Desktop bind mounts ("filewatching failed to start: waiting for
+# cookie timed out"), and `concurrently -k` then takes the whole container
+# down. nodemon --legacy-watch polls, which works on every host FS.
+#
 # `exec` hands PID 1 to concurrently directly, so `docker stop`/compose down's
 # SIGTERM reaches it (and its children) immediately instead of going through
 # an intermediate shell that may not forward it.
@@ -17,6 +22,6 @@ pnpm --filter workers exec nest build
 #   build - Nest's own compile-only watch (no run)
 #   run   - restarts `node dist/main.js` on any dependency dist change
 exec pnpm exec concurrently -k -n pkg,build,run \
-  "pnpm exec turbo watch build --filter=@biasmarket/queue" \
+  "pnpm exec nodemon --legacy-watch --ignore '**/dist/**' --ignore '**/node_modules/**' -e ts,json --delay 300ms --watch packages/queue --exec \"pnpm exec turbo run build --filter=@biasmarket/queue\"" \
   "pnpm --filter workers exec nest build --watch" \
   "pnpm exec nodemon --watch apps/workers/dist --watch packages/queue/dist -e js,json,ts --delay 300ms --exec 'node apps/workers/dist/main.js'"

@@ -1,22 +1,37 @@
 "use client";
 
+import { useState } from "react";
 import { Receipt } from "lucide-react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
+import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogClose,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { formatOrderDate } from "../lib/order-format";
 import { paymentMethodLabels } from "../lib/payment-method-labels";
 import { ordersApi } from "../api/orders.api";
 import { useReviewPaymentProof } from "../mutations/use-review-payment-proof";
+import { useVoidPayment } from "../mutations/use-void-payment";
+import { canVoidPayment } from "../lib/payment-limits";
 import type { OrderPaymentResponseDto } from "@biasmarket/types";
 
-function ProofReviewBadge(
-  { reviewStatus, t }: {
-    reviewStatus: OrderPaymentResponseDto["reviewStatus"];
-    t: ReturnType<typeof useTranslations<"dashboard.orders">>;
-  },
-) {
+function ProofReviewBadge({
+  reviewStatus,
+  t,
+}: {
+  reviewStatus: OrderPaymentResponseDto["reviewStatus"];
+  t: ReturnType<typeof useTranslations<"dashboard.orders">>;
+}) {
   const styles: Record<string, string> = {
     PENDING_REVIEW: "bg-amber-50 text-amber-600",
     APPROVED: "bg-emerald-50 text-emerald-600",
@@ -28,13 +43,15 @@ function ProofReviewBadge(
     <span
       className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${style}`}
     >
-      {t(`proofReview.${
-        reviewStatus === "PENDING_REVIEW"
-          ? "pending"
-          : reviewStatus === "APPROVED"
-          ? "approved"
-          : "rejected"
-      }`)}
+      {t(
+        `proofReview.${
+          reviewStatus === "PENDING_REVIEW"
+            ? "pending"
+            : reviewStatus === "APPROVED"
+              ? "approved"
+              : "rejected"
+        }`,
+      )}
     </span>
   );
 }
@@ -53,10 +70,12 @@ const PAYMENT_METHOD_LOGOS: Record<
 export function PaymentHistoryList({
   currency,
   payments,
+  order,
   onPreview,
 }: {
   currency: string;
   payments: OrderPaymentResponseDto[];
+  order: { paymentStatus: string; fulfillmentStatus: string };
   onPreview: (url: string) => void;
 }) {
   const t = useTranslations("dashboard.orders");
@@ -65,6 +84,10 @@ export function PaymentHistoryList({
   const labels = paymentMethodLabels(t);
   const storeId = payments[0]?.storeId ?? "";
   const reviewProof = useReviewPaymentProof(storeId);
+  const voidPayment = useVoidPayment(storeId, t("void.error"));
+  const [voiding, setVoiding] = useState<OrderPaymentResponseDto | null>(null);
+  const [reason, setReason] = useState("");
+  const trimmedReason = reason.trim();
 
   if (payments.length === 0) return null;
 
@@ -77,10 +100,10 @@ export function PaymentHistoryList({
         {payments.map((payment) => {
           const imageUrl = payment.imageUrl
             ? ordersApi.paymentImageUrl(
-              payment.storeId,
-              payment.orderId,
-              payment.id,
-            )
+                payment.storeId,
+                payment.orderId,
+                payment.id,
+              )
             : null;
           const methodLogo = payment.method
             ? PAYMENT_METHOD_LOGOS[payment.method]
@@ -90,50 +113,51 @@ export function PaymentHistoryList({
               key={payment.id}
               className="flex items-start gap-3 rounded-xl border border-[#f0e7f8] bg-[#fcf9ff] p-3 transition hover:bg-white"
             >
-              {imageUrl
-                ? (
-                  <button
-                    type="button"
-                    onClick={() => onPreview(imageUrl)}
-                    aria-label={t("details.viewPaymentProof")}
-                    className="mt-0.5 flex size-7 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-[#f0e7f8] text-[var(--store-primary)]"
-                  >
-                    <Image
-                      src={imageUrl}
-                      alt=""
-                      width={28}
-                      height={28}
-                      className="h-full w-full object-cover"
-                      unoptimized
-                    />
-                  </button>
-                )
-                : (
-                  <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#f0e7f8] text-[var(--store-primary)]">
-                    <Receipt className="size-3.5" />
-                  </div>
-                )}
+              {imageUrl ? (
+                <button
+                  type="button"
+                  onClick={() => onPreview(imageUrl)}
+                  aria-label={t("details.viewPaymentProof")}
+                  className="mt-0.5 flex size-7 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-[#f0e7f8] text-[var(--store-primary)]"
+                >
+                  <Image
+                    src={imageUrl}
+                    alt=""
+                    width={28}
+                    height={28}
+                    className="h-full w-full object-cover"
+                    unoptimized
+                  />
+                </button>
+              ) : (
+                <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#f0e7f8] text-[var(--store-primary)]">
+                  <Receipt className="size-3.5" />
+                </div>
+              )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="flex flex-wrap items-center gap-1.5 font-bold text-[#2d1649]">
+                  <span
+                    className={cn(
+                      "flex flex-wrap items-center gap-1.5 font-bold text-[#2d1649]",
+                      payment.voidedAt && "text-[#8f7da8] line-through",
+                    )}
+                  >
                     {currency} {payment.amount}
-                    {payment.method
-                      ? (
-                        <span className="inline-flex items-center gap-1 font-medium text-[#8f7da8]">
-                          <span aria-hidden="true">·</span>
-                          {methodLogo && (
-                            <Image
-                              src={methodLogo.src}
-                              alt=""
-                              width={methodLogo.width}
-                              height={methodLogo.height}
-                              className="size-3.5 shrink-0 object-contain"
-                            />
-                          )}
-                          {labels[payment.method] ?? payment.method}
-                        </span>
-                      )
-                      : null}
+                    {payment.method ? (
+                      <span className="inline-flex items-center gap-1 font-medium text-[#8f7da8]">
+                        <span aria-hidden="true">·</span>
+                        {methodLogo && (
+                          <Image
+                            src={methodLogo.src}
+                            alt=""
+                            width={methodLogo.width}
+                            height={methodLogo.height}
+                            className="size-3.5 shrink-0 object-contain"
+                          />
+                        )}
+                        {labels[payment.method] ?? payment.method}
+                      </span>
+                    ) : null}
                     {payment.source === "BUYER_SUBMITTED" && (
                       <ProofReviewBadge
                         reviewStatus={payment.reviewStatus}
@@ -142,55 +166,145 @@ export function PaymentHistoryList({
                     )}
                   </span>
                   <span className="text-[11px] font-medium text-[#8f7da8]">
-                    {formatOrderDate(payment.createdAt, locale, t)}
+                    {formatOrderDate(
+                      payment.paidAt ?? payment.createdAt,
+                      locale,
+                      t,
+                    )}
                   </span>
                 </div>
-                {payment.note
-                  ? (
-                    <p className="mt-1 truncate text-xs text-[#6e5a87]">
-                      {payment.note}
-                    </p>
-                  )
-                  : null}
+                {payment.operationCode && (
+                  <p className="mt-1 text-xs text-[#6e5a87]">
+                    {t("details.operationCodeLine", {
+                      code: payment.operationCode,
+                    })}
+                  </p>
+                )}
+                {payment.voidedAt && (
+                  <p className="mt-1 text-xs text-[#b24368]">
+                    {t("void.voidedLine", {
+                      date: formatOrderDate(payment.voidedAt, locale, t),
+                      reason: payment.voidReason ?? "",
+                    })}
+                  </p>
+                )}
+                {payment.note ? (
+                  <p className="mt-1 truncate text-xs text-[#6e5a87]">
+                    {payment.note}
+                  </p>
+                ) : null}
                 {payment.source === "BUYER_SUBMITTED" &&
                   payment.reviewStatus === "PENDING_REVIEW" && (
-                  <div className="mt-2 flex gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      disabled={reviewProof.isPending}
-                      onClick={() =>
-                        reviewProof.mutate({
-                          orderId: payment.orderId,
-                          paymentId: payment.id,
-                          decision: "approve",
-                        })}
-                      className="store-theme-primary-button h-7 rounded-full px-3 text-xs font-semibold hover:opacity-100"
-                    >
-                      {t("approve")}
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      disabled={reviewProof.isPending}
-                      onClick={() =>
-                        reviewProof.mutate({
-                          orderId: payment.orderId,
-                          paymentId: payment.id,
-                          decision: "reject",
-                        })}
-                      className="h-7 rounded-full px-3 text-xs font-semibold text-[#b24368] hover:bg-[#fff0f5]"
-                    >
-                      {t("reject")}
-                    </Button>
-                  </div>
+                    <div className="mt-2 flex gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={reviewProof.isPending}
+                        onClick={() =>
+                          reviewProof.mutate({
+                            orderId: payment.orderId,
+                            paymentId: payment.id,
+                            decision: "approve",
+                          })
+                        }
+                        className="store-theme-primary-button h-7 rounded-full px-3 text-xs font-semibold hover:opacity-100"
+                      >
+                        {t("approve")}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        disabled={reviewProof.isPending}
+                        onClick={() =>
+                          reviewProof.mutate({
+                            orderId: payment.orderId,
+                            paymentId: payment.id,
+                            decision: "reject",
+                          })
+                        }
+                        className="h-7 rounded-full px-3 text-xs font-semibold text-[#b24368] hover:bg-[#fff0f5]"
+                      >
+                        {t("reject")}
+                      </Button>
+                    </div>
+                  )}
+                {canVoidPayment(order, payment) && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setReason("");
+                      setVoiding(payment);
+                    }}
+                    className="mt-2 h-7 rounded-full px-3 text-xs font-semibold text-[#b24368] hover:bg-[#fff0f5]"
+                  >
+                    {t("void.button")}
+                  </Button>
                 )}
               </div>
             </div>
           );
         })}
       </div>
+
+      <AlertDialog
+        open={voiding !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setVoiding(null);
+            voidPayment.reset();
+          }
+        }}
+      >
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("void.title")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("void.description", {
+                amount: voiding ? `${currency} ${voiding.amount}` : "",
+              })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Textarea
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
+            maxLength={500}
+            aria-label={t("void.reasonLabel")}
+            placeholder={t("void.reasonLabel")}
+          />
+          {voidPayment.isError && (
+            <p role="alert" className="text-sm text-rose-600">
+              {voidPayment.error instanceof Error
+                ? voidPayment.error.message
+                : t("void.error")}
+            </p>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogClose render={<Button variant="ghost" />}>
+              {t("void.cancel")}
+            </AlertDialogClose>
+            <Button
+              type="button"
+              disabled={trimmedReason.length === 0 || voidPayment.isPending}
+              onClick={() => {
+                if (!voiding) return;
+                voidPayment.mutate(
+                  {
+                    orderId: voiding.orderId,
+                    paymentId: voiding.id,
+                    reason: trimmedReason,
+                  },
+                  { onSuccess: () => setVoiding(null) },
+                );
+              }}
+            >
+              {t("void.confirm")}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

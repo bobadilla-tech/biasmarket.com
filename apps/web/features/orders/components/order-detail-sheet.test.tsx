@@ -13,15 +13,19 @@ const baseOrder: OrderResponseDto = {
   id: "order-1",
   storeId: "store-1",
   customerId: null,
-  buyerAccountId: null,
   customerEmail: null,
   customerName: "Jane",
   customerPhone: "+51987654321",
+  source: "MARKETPLACE",
   totalAmount: "100.00",
   requiredAmount: "100.00",
   paidAmount: 0,
   pendingAmount: 100,
   paidPercentage: 0,
+  linkFirstOpenedAt: null,
+  claimedAt: null,
+  buyerConfirmedReceivedAt: null,
+  createdByName: null,
   currency: "PEN",
   status: "ACTIVE",
   paymentStatus: "PENDING_PAYMENT",
@@ -32,6 +36,9 @@ const baseOrder: OrderResponseDto = {
   pickupPointId: null,
   pickupDate: null,
   courierName: null,
+  trackingNumber: null,
+  trackingUrl: null,
+  packedPhotoAvailable: false,
   courierModality: null,
   paymentMethod: null,
   cancellationResolution: null,
@@ -124,4 +131,12 @@ test("does not render a shipping address section for a PICKUP order", () => {
   renderSheet(baseOrder);
 
   expect(screen.queryByText("Dirección de envío")).toBeNull();
+});
+
+test("shows shipping details for any order", () => {
+  renderSheet(baseOrder);
+
+  expect(screen.getByText("Seguimiento y paquete")).toBeDefined();
+  expect(screen.getByText("Número de seguimiento")).toBeDefined();
+  expect(screen.getByText("Foto del paquete")).toBeDefined();
 });

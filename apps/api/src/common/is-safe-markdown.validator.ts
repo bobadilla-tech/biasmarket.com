@@ -1,9 +1,9 @@
 import {
   registerDecorator,
-  ValidatorConstraint,
   type ValidationOptions,
+  ValidatorConstraint,
   type ValidatorConstraintInterface,
-} from 'class-validator';
+} from "class-validator";
 
 // Fail-fast guard for seller-authored markdown (Store.aboutMarkdown). The real
 // security boundary is the render-time allowlist in the web app
@@ -22,16 +22,16 @@ export function containsUnsafeMarkdown(value: string): boolean {
   return FORBIDDEN_PATTERNS.some((pattern) => pattern.test(value));
 }
 
-@ValidatorConstraint({ name: 'isSafeMarkdown', async: false })
+@ValidatorConstraint({ name: "isSafeMarkdown", async: false })
 export class IsSafeMarkdownConstraint implements ValidatorConstraintInterface {
   validate(value: unknown): boolean {
     // Type mismatches are @IsString's job — only reject strings we can prove bad.
-    if (typeof value !== 'string') return true;
+    if (typeof value !== "string") return true;
     return !containsUnsafeMarkdown(value);
   }
 
   defaultMessage(): string {
-    return 'aboutMarkdown contains disallowed HTML or script content';
+    return "aboutMarkdown contains disallowed HTML or script content";
   }
 }
 

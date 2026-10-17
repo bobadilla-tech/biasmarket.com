@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { Locale } from "next-intl";
 import { getTranslations } from "next-intl/server";
+import { AuthEditorialLayout } from "@/features/auth/components/auth-editorial-layout";
 import { LoginForm } from "@/features/auth";
 
 export async function generateMetadata({
@@ -13,10 +14,17 @@ export async function generateMetadata({
   return { title: t("title") };
 }
 
-export default function LoginPage() {
+export default async function LoginPage({
+  params,
+}: {
+  params: Promise<{ locale: Locale }>;
+}) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "onboarding.login" });
+
   return (
-    <div className="min-h-dvh flex items-start justify-center bg-gray-50 px-4 py-10 sm:items-center">
+    <AuthEditorialLayout formSide="right" formLabel={t("title")}>
       <LoginForm />
-    </div>
+    </AuthEditorialLayout>
   );
 }

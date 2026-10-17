@@ -1,0 +1,9 @@
+{
+  "name": "@fixture/lax",
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "test:cov": "vitest run --coverage --passWithNoTests"
+  }
+}

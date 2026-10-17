@@ -23,7 +23,8 @@
     "account": "Mi cuenta",
     "signOut": "Cerrar sesión",
     "myStores": "Mis tiendas",
-    "createStore": "Crear una tienda"
+    "createStore": "Crear una tienda",
+    "myPurchases": "Mis compras"
   },
   "footer": {
     "navHeading": "Sitio",
@@ -32,7 +33,9 @@
     "navEnterprise": "Empresas",
     "navContact": "Contacto",
     "credit": "Desarrollado por <name>Bobadilla Tech</name>",
-    "copyright": "© {year} Bias Market. Todos los derechos reservados."
+    "copyright": "© {year} Bias Market. Todos los derechos reservados.",
+    "navPrivacy": "Privacidad",
+    "navTerms": "Términos"
   },
   "scheduleCallCard": {
     "text": "¿Quieres hablar? Agenda una llamada de 15 min con Alexandra, nuestra líder de ventas.",
@@ -134,6 +137,350 @@
       "heading": "Hablemos de tu caso",
       "body": "Cuéntanos sobre tus artistas, tiendas y volumen de pedidos, y juntos vemos qué encaja mejor.",
       "button": "Contáctanos"
+    }
+  },
+  "legal": {
+    "updated": "Última actualización: 20 de octubre de 2026",
+    "privacy": {
+      "meta": {
+        "title": "Política de Privacidad — Bias Market",
+        "description": "Cómo Bias Market recopila, usa y protege tus datos personales."
+      },
+      "title": "Política de Privacidad",
+      "sections": [
+        {
+          "heading": "Quiénes somos y qué hace el servicio",
+          "paragraphs": [
+            "Bias Market (biasmarket.com) es una plataforma en línea que permite a creadores y vendedores independientes, principalmente de merchandising K-pop, abrir y operar sus tiendas, y a los fans explorar esas tiendas y hacer pedidos. Los vendedores gestionan productos, pedidos y la revisión manual de pagos (transferencia bancaria, Wise, PayPal) desde un panel. Esta Política de Privacidad explica qué datos personales recopilamos, cómo los usamos y protegemos, y qué opciones tienes. Contacto: hello@biasmarket.com."
+          ]
+        },
+        {
+          "heading": "Información que recopilamos",
+          "paragraphs": [
+            "Información de cuenta: tu nombre, correo electrónico y contraseña (guardada solo como hash con sal) al registrarte como vendedor o crear una cuenta de comprador.",
+            "Información del inicio de sesión con Google: si eliges \"Continuar con Google\", Google nos comparte tu nombre, correo, estado de verificación del correo, foto de perfil e identificador de cuenta de Google. Ver \"Datos de usuario de Google\" más abajo.",
+            "Información de tiendas y pedidos: para vendedores, datos de la tienda, productos, precios e imágenes; para compradores, nombre, correo, teléfono, datos de entrega o retiro e historial de pedidos.",
+            "Comprobantes de pago: imágenes o recibos que los compradores suben para acreditar un pago manual, visibles para el vendedor de ese pedido y para nosotros por soporte y prevención de fraude.",
+            "Mensajes: información que envías por formularios de contacto o correo de soporte.",
+            "Información técnica: dirección IP, tipo de navegador y dispositivo, páginas solicitadas y fechas en los registros del servidor, y cookies esenciales para mantener tu sesión."
+          ]
+        },
+        {
+          "heading": "Datos de usuario de Google",
+          "paragraphs": [
+            "Bias Market ofrece inicio de sesión con Google para vendedores. Solicitamos solo los permisos básicos openid, email y profile. No pedimos acceso a Gmail, Drive, Calendar, Contactos ni a ningún otro servicio de Google.",
+            "Qué datos obtenemos: tu nombre, correo, estado de verificación del correo, URL de la foto de perfil e ID de cuenta de Google.",
+            "Cómo los usamos: solo para crear tu cuenta de Bias Market, iniciar tu sesión y vincular un inicio de sesión posterior con Google a la misma cuenta, mostrar tu nombre y foto en tu panel y contactarte sobre tu cuenta.",
+            "Compartir: no vendemos los datos de usuario de Google, no los compartimos con anunciantes ni corredores de datos, y no los transferimos a terceros salvo a proveedores que alojan nuestra infraestructura y envían correos transaccionales, solo en lo necesario para operar el servicio, o cuando la ley lo exija.",
+            "Sin publicidad ni entrenamiento de IA: no usamos los datos de Google para publicidad, ni para decisiones de crédito o préstamos, ni para desarrollar, mejorar o entrenar modelos de inteligencia artificial o aprendizaje automático generalizados. Ninguna persona lee tus datos de Google salvo por investigaciones de seguridad, por obligación legal o con tu consentimiento.",
+            "Uso limitado: el uso y la transferencia por parte de Bias Market de la información recibida de las API de Google cumple con la Política de Datos de Usuario de los Servicios de API de Google, incluidos los requisitos de Uso Limitado.",
+            "Almacenamiento y eliminación: los datos del perfil de Google se guardan en nuestra base de datos PostgreSQL junto con el resto de tu cuenta. Puedes revocar el acceso de Bias Market en cualquier momento en https://myaccount.google.com/permissions y pedir la eliminación de tu cuenta y de los datos de Google escribiendo a hello@biasmarket.com; los eliminamos en un plazo de 30 días, salvo registros que debamos conservar por ley."
+          ]
+        },
+        {
+          "heading": "Cómo usamos tu información",
+          "paragraphs": [
+            "Para prestar y proteger el servicio: crear cuentas, autenticarte, operar tiendas, procesar pedidos y permitir que los vendedores revisen comprobantes de pago.",
+            "Para comunicarnos contigo: correos de verificación, novedades de pedidos, avisos de seguridad y respuestas a tus mensajes.",
+            "Para prevenir fraude, abuso e incidentes de seguridad, y hacer cumplir nuestros Términos del Servicio.",
+            "Para mantener y mejorar la plataforma con estadísticas agregadas que no te identifican.",
+            "Para cumplir obligaciones legales.",
+            "No vendemos datos personales ni mostramos publicidad de terceros."
+          ]
+        },
+        {
+          "heading": "Cómo compartimos la información",
+          "paragraphs": [
+            "Vendedores: cada vendedor ve solo los datos del comprador, los pedidos y los comprobantes de pago de los pedidos hechos en su propia tienda. Los datos de cada tienda están separados de los de las demás.",
+            "Proveedores de servicios: usamos proveedores de alojamiento de servidores, almacenamiento de archivos y envío de correos transaccionales. Tratan los datos solo según nuestras instrucciones y bajo deber de confidencialidad.",
+            "Legal y seguridad: podemos divulgar información cuando la ley lo exija o para proteger los derechos, la seguridad de los usuarios y de la plataforma.",
+            "Transferencias del negocio: si Bias Market participa en una fusión o venta, los datos podrían transferirse y te avisaremos de cualquier cambio en su tratamiento."
+          ]
+        },
+        {
+          "heading": "Cookies",
+          "paragraphs": [
+            "Usamos solo cookies esenciales y almacenamiento similar para mantener tu sesión, protegerla y recordar tu idioma. No usamos cookies publicitarias ni de seguimiento entre sitios."
+          ]
+        },
+        {
+          "heading": "Conservación de datos",
+          "paragraphs": [
+            "Conservamos los datos de cuenta mientras tu cuenta esté activa. Tras la eliminación, borramos o anonimizamos los datos personales en un plazo de 30 días, salvo registros que debamos conservar, por ejemplo pedidos y pagos requeridos por contabilidad, impuestos o prevención de fraude."
+          ]
+        },
+        {
+          "heading": "Seguridad",
+          "paragraphs": [
+            "Protegemos los datos con conexiones cifradas (HTTPS), contraseñas con hash, controles de acceso por tienda y acceso restringido a los sistemas de producción. Ningún sistema es completamente seguro, pero trabajamos para proteger tu información y notificaremos a los afectados de una brecha según lo exija la ley."
+          ]
+        },
+        {
+          "heading": "Transferencias internacionales",
+          "paragraphs": [
+            "Nuestra infraestructura puede procesar datos en países distintos al tuyo. Cuando corresponda, aplicamos salvaguardas adecuadas."
+          ]
+        },
+        {
+          "heading": "Tus derechos y opciones",
+          "paragraphs": [
+            "Según tu país, puedes tener derecho a acceder, corregir, eliminar o exportar tus datos personales y a oponerte o limitar ciertos tratamientos. Puedes actualizar tu perfil en tu cuenta, revocar el acceso de Google en tu cuenta de Google, o escribir a hello@biasmarket.com para ejercer estos derechos. Respondemos en un plazo razonable."
+          ]
+        },
+        {
+          "heading": "Menores",
+          "paragraphs": [
+            "Bias Market no está dirigido a menores de 13 años y no recopilamos sus datos a sabiendas. Si crees que un menor nos dio datos, contáctanos y los eliminaremos."
+          ]
+        },
+        {
+          "heading": "Cambios a esta política",
+          "paragraphs": [
+            "Podemos actualizar esta política. La fecha al inicio indica la última revisión y los cambios importantes se anunciarán en el sitio o por correo."
+          ]
+        },
+        {
+          "heading": "Contacto",
+          "paragraphs": [
+            "Consultas o solicitudes de privacidad: hello@biasmarket.com. Bias Market, https://biasmarket.com."
+          ]
+        }
+      ]
+    },
+    "terms": {
+      "meta": {
+        "title": "Términos del Servicio — Bias Market",
+        "description": "Los términos que rigen el uso de Bias Market."
+      },
+      "title": "Términos del Servicio",
+      "sections": [
+        {
+          "heading": "Aceptación",
+          "paragraphs": [
+            "Al crear una cuenta o usar Bias Market aceptas estos términos. Si no estás de acuerdo, no uses el servicio."
+          ]
+        },
+        {
+          "heading": "El servicio",
+          "paragraphs": [
+            "Bias Market ofrece herramientas para que los vendedores creen y operen tiendas en línea, incluyendo catálogo de productos, pedidos y revisión manual de pagos (transferencia bancaria, Wise, PayPal y similares). Bias Market es una plataforma de software: no somos parte de las ventas entre vendedores y compradores, ni procesamos o retenemos pagos."
+          ]
+        },
+        {
+          "heading": "Cuentas",
+          "paragraphs": [
+            "Debes dar información veraz y proteger tus credenciales. Eres responsable de la actividad de tu cuenta. Puedes iniciar sesión con correo y contraseña o con Google."
+          ]
+        },
+        {
+          "heading": "Responsabilidades del vendedor",
+          "paragraphs": [
+            "Los vendedores son responsables de sus productos, precios, entregas, reembolsos, impuestos y del cumplimiento de la ley aplicable, incluida la protección al consumidor y la propiedad intelectual. No vendas productos falsificados, ilegales o que infrinjan derechos."
+          ]
+        },
+        {
+          "heading": "Responsabilidades del comprador",
+          "paragraphs": [
+            "Los compradores deben dar datos de pedido veraces y comprobantes de pago genuinos. Está prohibido enviar comprobantes falsificados o engañosos."
+          ]
+        },
+        {
+          "heading": "Uso aceptable",
+          "paragraphs": [
+            "No hagas mal uso del servicio: nada de accesos no autorizados, scraping que dañe la plataforma, malware, acoso, fraude ni intentos de leer datos de otra tienda."
+          ]
+        },
+        {
+          "heading": "Contenido",
+          "paragraphs": [
+            "Conservas la propiedad del contenido que subes. Nos otorgas una licencia limitada para alojarlo y mostrarlo según sea necesario para operar el servicio. Eres responsable de tener los derechos sobre lo que subes."
+          ]
+        },
+        {
+          "heading": "Suspensión y terminación",
+          "paragraphs": [
+            "Podemos suspender o cerrar cuentas que incumplan estos términos o pongan en riesgo la plataforma u otros usuarios. Puedes dejar de usar el servicio y pedir la eliminación de tu cuenta cuando quieras."
+          ]
+        },
+        {
+          "heading": "Descargos y responsabilidad",
+          "paragraphs": [
+            "El servicio se ofrece \"tal cual\", sin garantías. En la medida permitida por la ley, Bias Market no responde por daños indirectos o consecuentes ni por disputas entre vendedores y compradores."
+          ]
+        },
+        {
+          "heading": "Cambios",
+          "paragraphs": [
+            "Podemos actualizar estos términos. Seguir usando el servicio tras los cambios implica que los aceptas."
+          ]
+        },
+        {
+          "heading": "Contacto",
+          "paragraphs": ["Bias Market — hello@biasmarket.com"]
+        }
+      ]
+    }
+  },
+  "info": {
+    "howToBuy": {
+      "meta": {
+        "title": "Cómo comprar — Bias Market",
+        "description": "Cómo pedir merch K-pop a vendedores independientes en Bias Market."
+      },
+      "title": "Cómo comprar",
+      "intro": "Bias Market te conecta con vendedores independientes de K-pop. Pides en la tienda de un vendedor, le pagas directamente y subes tu comprobante de pago.",
+      "sections": [
+        {
+          "heading": "1. Encuentra una tienda y productos",
+          "paragraphs": [
+            "Explora tiendas desde la página Tiendas o busca un álbum, photocard o lightstick en Explorar productos. Cada tienda la gestiona un vendedor independiente."
+          ]
+        },
+        {
+          "heading": "2. Agrega al carrito y paga",
+          "paragraphs": [
+            "Elige tus productos e ingresa tus datos de contacto y de entrega o retiro. El vendedor define qué métodos de entrega y de pago ofrece."
+          ]
+        },
+        {
+          "heading": "3. Paga al vendedor",
+          "paragraphs": [
+            "Bias Market no recibe tu pago. El checkout muestra las opciones del vendedor, como transferencia bancaria, Wise o PayPal. Paga con el método elegido y guarda tu recibo."
+          ]
+        },
+        {
+          "heading": "4. Sube tu comprobante de pago",
+          "paragraphs": [
+            "Sube una captura o foto de tu recibo desde la página de tu pedido. El pedido se reserva por tiempo limitado, así que envía el comprobante pronto o podría expirar."
+          ]
+        },
+        {
+          "heading": "5. Espera la confirmación",
+          "paragraphs": [
+            "El vendedor revisa tu comprobante y lo confirma o rechaza. Puedes seguir el estado de pago y entrega desde tu cuenta."
+          ]
+        },
+        {
+          "heading": "¿Necesitas ayuda?",
+          "paragraphs": [
+            "Revisa las preguntas frecuentes o escríbenos a hello@biasmarket.com."
+          ]
+        }
+      ]
+    },
+    "howItWorks": {
+      "meta": {
+        "title": "Cómo funciona — Bias Market",
+        "description": "Cómo funciona Bias Market para vendedores y compradores."
+      },
+      "title": "Cómo funciona Bias Market",
+      "intro": "Bias Market es un creador de tiendas para el comercio liderado por creadores, empezando por el merch K-pop. Los pagos son manuales y ocurren directamente entre comprador y vendedor.",
+      "sections": [
+        {
+          "heading": "Para vendedores",
+          "paragraphs": [
+            "Crea una cuenta, configura tu tienda, agrega productos con fotos y precios, y elige cómo cobras y entregas. Comparte el enlace de tu tienda con tu comunidad. Cuando llegue un pedido, revisa el comprobante de pago y avanza el pedido desde tu panel."
+          ]
+        },
+        {
+          "heading": "Para compradores",
+          "paragraphs": [
+            "Explora tiendas y productos, pide al vendedor que elijas, págale directamente y sube tu comprobante. Puedes seguir el estado de tu pedido tras el checkout."
+          ]
+        },
+        {
+          "heading": "Por qué pagos manuales",
+          "paragraphs": [
+            "Muchos vendedores fans ya usan transferencias, Wise o PayPal. Bias Market mantiene ese flujo y agrega estructura: pedidos, revisión de comprobantes, seguimiento de estados y notificaciones, sin necesidad de pasarela de pago."
+          ]
+        },
+        {
+          "heading": "Seguro por diseño",
+          "paragraphs": [
+            "Los datos de cada tienda están separados de los de las demás, y los vendedores solo ven los pedidos de su propia tienda. Lee nuestra Política de Privacidad y Términos del Servicio."
+          ]
+        }
+      ]
+    },
+    "faq": {
+      "meta": {
+        "title": "Preguntas frecuentes — Bias Market",
+        "description": "Preguntas frecuentes sobre Bias Market."
+      },
+      "title": "Preguntas frecuentes",
+      "intro": "Respuestas rápidas sobre comprar y vender en Bias Market.",
+      "sections": [
+        {
+          "heading": "¿Necesito una pasarela de pago?",
+          "paragraphs": [
+            "No. Los compradores suben su comprobante de pago manualmente. Transferencia, Wise, PayPal, lo que ya uses."
+          ]
+        },
+        {
+          "heading": "¿Puedo vender solo photocards, no pedidos grupales completos?",
+          "paragraphs": [
+            "Sí. Bias Market sirve para pedidos grupales de álbumes, photocards individuales, división de sets y lanzamientos de merch hecho por fans."
+          ]
+        },
+        {
+          "heading": "¿Es gratis?",
+          "paragraphs": [
+            "Es gratis para vendedores tempranos mientras seguimos construyendo el producto."
+          ]
+        },
+        {
+          "heading": "¿Bias Market procesa mi pago como comprador?",
+          "paragraphs": [
+            "No. Le pagas directamente al vendedor con los métodos que ofrece y luego subes tu comprobante."
+          ]
+        },
+        {
+          "heading": "¿Qué pasa si no subo el comprobante a tiempo?",
+          "paragraphs": [
+            "Los pedidos se reservan por tiempo limitado. Si no se envía comprobante antes de que venza la reserva, el pedido puede liberarse."
+          ]
+        },
+        {
+          "heading": "¿Puedo iniciar sesión con Google?",
+          "paragraphs": [
+            "Sí. Los vendedores pueden entrar con correo y contraseña o con Google."
+          ]
+        },
+        {
+          "heading": "¿Cómo elimino mi cuenta o mis datos?",
+          "paragraphs": [
+            "Escribe a hello@biasmarket.com y eliminaremos tu cuenta y datos personales como indica nuestra Política de Privacidad."
+          ]
+        }
+      ]
+    },
+    "help": {
+      "meta": {
+        "title": "Centro de ayuda — Bias Market",
+        "description": "Obtén ayuda con Bias Market."
+      },
+      "title": "Centro de ayuda",
+      "intro": "Encuentra respuestas o escríbenos directamente.",
+      "sections": [
+        {
+          "heading": "Guías",
+          "paragraphs": [
+            "Cómo comprar explica cómo pedir y pagar. Cómo funciona da la visión general para compradores y vendedores. Las preguntas frecuentes resuelven dudas comunes."
+          ]
+        },
+        {
+          "heading": "Contáctanos",
+          "paragraphs": [
+            "Usa la página de Contacto o escribe a hello@biasmarket.com. Para dudas de un pedido, contacta primero al vendedor de la tienda; para problemas de cuenta o plataforma, contáctanos a nosotros."
+          ]
+        },
+        {
+          "heading": "Legal",
+          "paragraphs": [
+            "Lee nuestra Política de Privacidad y Términos del Servicio."
+          ]
+        }
+      ]
     }
   }
 }

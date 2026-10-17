@@ -25,9 +25,9 @@ export function BlogSection() {
   };
 
   return (
-    <section className="py-8 sm:py-14">
-      <div className="sm:hidden px-5">
-        <h2 className="text-[21px] leading-[26px] font-bold text-black">
+    <section className="landing-blog-section py-8 sm:py-14">
+      <div className="px-5 sm:hidden">
+        <h2 className="landing-section-title text-[21px] leading-[26px] font-bold text-black">
           {t("title")}
         </h2>
         <div
@@ -38,9 +38,9 @@ export function BlogSection() {
             <Link
               key={title}
               href="/blog"
-              className="w-[144px] shrink-0 snap-start"
+              className="landing-blog-card w-[144px] shrink-0 snap-start"
             >
-              <div className="h-[122px] w-[144px] rounded-[4px] bg-[#D9D9D9]" />
+              <div className="landing-blog-art h-[122px] w-[144px] rounded-2xl" />
               <p className="mt-1 line-clamp-2 min-h-[38px] text-[15px] leading-[19px] font-semibold text-black">
                 {title}
               </p>
@@ -68,14 +68,14 @@ export function BlogSection() {
       </div>
 
       <div className="mx-auto hidden max-w-[1344px] px-10 sm:block">
-        <h2 className="text-[32px] leading-[39px] font-bold text-black">
+        <h2 className="landing-section-title text-[32px] leading-[39px] font-bold text-black">
           {t("title")}
         </h2>
 
         <div className="mt-6 grid grid-cols-4 gap-[37.2px] sm:mt-8">
           {items.map(({ title }) => (
-            <Link key={title} href="/blog" className="group">
-              <div className="aspect-[260/220] w-full overflow-hidden rounded-[4px] bg-[#D9D9D9] transition group-hover:opacity-90" />
+            <Link key={title} href="/blog" className="landing-blog-card group">
+              <div className="landing-blog-art aspect-[260/220] w-full overflow-hidden rounded-2xl" />
               <p className="mt-3 line-clamp-2 text-[28.9px] leading-[35px] font-bold text-black">
                 {title}
               </p>

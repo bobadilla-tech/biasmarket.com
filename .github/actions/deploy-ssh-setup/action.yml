@@ -2,7 +2,7 @@ name: Deploy SSH setup
 description: >
   Writes ~/.ssh/known_hosts and the two restricted deploy SSH keys (key A,
   rrsync-restricted; key B, dispatcher-restricted — see
-  infra/vps/bin/ssh-deploy-dispatcher.sh and docs/core/blue-green-migrations.md),
+  infra/vps/bin/ssh-deploy-dispatcher.sh and docs/core/provisioning.md),
   and exposes SSH_HOST/SSH_USER via GITHUB_ENV for subsequent steps.
 inputs:
   host:

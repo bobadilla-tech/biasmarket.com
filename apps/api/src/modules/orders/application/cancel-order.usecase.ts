@@ -2,18 +2,14 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
-} from '@nestjs/common';
-import { CancelOrderDto } from '../dto/cancel-order.dto.js';
-import { PrismaService } from '../../../prisma/prisma.service.js';
-import { OrderRepository } from '../infrastructure/order.repository.js';
-import { NotificationsService } from '../../notifications/notifications.service.js';
-import { Order } from '../domain/order.entity.js';
-
-const RESERVED_HOLD_STATUSES = new Set([
-  'PENDING_PAYMENT',
-  'PARTIALLY_PAID',
-  'PAYMENT_SUBMITTED',
-]);
+} from "@nestjs/common";
+import { CancelOrderDto } from "../dto/cancel-order.dto.js";
+import { PrismaService } from "../../../prisma/prisma.service.js";
+import { OrderRepository } from "../infrastructure/order.repository.js";
+import { NotificationsService } from "../../notifications/notifications.service.js";
+import { Order } from "../domain/order.entity.js";
+import { OrderEventsService } from "./order-events.service.js";
+import { RESERVED_HOLD_STATUSES } from "../domain/hold-statuses.js";
 
 @Injectable()
 export class CancelOrderUseCase {
@@ -21,6 +17,7 @@ export class CancelOrderUseCase {
     private prisma: PrismaService,
     private orders: OrderRepository,
     private notifications: NotificationsService,
+    private events: OrderEventsService,
   ) {}
 
   async execute(
@@ -36,20 +33,20 @@ export class CancelOrderUseCase {
 
     let retainedAmount = 0;
     let releasedAmount = 0;
-    let releasedResolution: 'REFUNDED' | 'STORE_CREDIT' | null = null;
+    let releasedResolution: "REFUNDED" | "STORE_CREDIT" | null = null;
 
-    if (dto.resolution === 'RETAINED') {
-      if (dto.retainMode === 'FULL') {
+    if (dto.resolution === "RETAINED") {
+      if (dto.retainMode === "FULL") {
         retainedAmount = paidAmount;
         releasedAmount = 0;
       }
 
-      if (dto.retainMode === 'PARTIAL') {
+      if (dto.retainMode === "PARTIAL") {
         if (
           dto.retainedAmount === undefined ||
           dto.retainedAmount > paidAmount
         ) {
-          throw new BadRequestException('Monto retenido inválido');
+          throw new BadRequestException("Monto retenido inválido");
         }
 
         retainedAmount = dto.retainedAmount;
@@ -57,26 +54,26 @@ export class CancelOrderUseCase {
         releasedResolution = dto.releasedResolution ?? null;
       }
     } else if (
-      dto.resolution === 'REFUNDED' ||
-      dto.resolution === 'STORE_CREDIT'
+      dto.resolution === "REFUNDED" ||
+      dto.resolution === "STORE_CREDIT"
     ) {
       releasedAmount = paidAmount;
       releasedResolution = dto.resolution;
     }
 
-    if (row.paymentStatus === 'CANCELLED') {
-      throw new BadRequestException('La orden ya está cancelada');
+    if (row.paymentStatus === "CANCELLED") {
+      throw new BadRequestException("La orden ya está cancelada");
     }
 
-    if (row.paymentStatus === 'REJECTED') {
+    if (row.paymentStatus === "REJECTED") {
       throw new BadRequestException(
-        'No se puede cancelar una orden con pago rechazado',
+        "No se puede cancelar una orden con pago rechazado",
       );
     }
 
-    if (row.fulfillmentStatus === 'COMPLETED') {
+    if (row.fulfillmentStatus === "COMPLETED") {
       throw new BadRequestException(
-        'No se puede cancelar una orden ya entregada',
+        "No se puede cancelar una orden ya entregada",
       );
     }
 
@@ -88,7 +85,7 @@ export class CancelOrderUseCase {
     );
     entity.cancel();
 
-    const releaseStock = RESERVED_HOLD_STATUSES.has(row.paymentStatus);
+    const releaseStock = RESERVED_HOLD_STATUSES.includes(row.paymentStatus);
 
     return this.prisma.$transaction(async (tx) => {
       // Guard against a concurrent cancel/review/advance of the same order:
@@ -97,12 +94,13 @@ export class CancelOrderUseCase {
       const guard = await tx.order.updateMany({
         where: {
           id: orderId,
-          status: 'ACTIVE',
+          status: "ACTIVE",
           paymentStatus: row.paymentStatus,
           fulfillmentStatus: row.fulfillmentStatus,
         },
         data: {
-          status: 'CANCELLED',
+          status: "CANCELLED",
+          closedAt: new Date(),
           paymentStatus: entity.currentPaymentStatus,
           cancellationResolution: dto.resolution,
           cancellationReason: dto.reason ?? null,
@@ -113,7 +111,7 @@ export class CancelOrderUseCase {
       });
       if (guard.count === 0) {
         throw new ConflictException(
-          'Este pedido ya fue actualizado por otra solicitud.',
+          "Este pedido ya fue actualizado por otra solicitud.",
         );
       }
 
@@ -149,8 +147,8 @@ export class CancelOrderUseCase {
         data: {
           actorId: userId,
           storeId,
-          action: 'order.cancelled',
-          entityType: 'Order',
+          action: "order.cancelled",
+          entityType: "Order",
           entityId: orderId,
           metadata: {
             resolution: dto.resolution,
@@ -161,6 +159,13 @@ export class CancelOrderUseCase {
             reason: dto.reason ?? null,
           },
         },
+      });
+      await this.events.record(tx, {
+        orderId,
+        storeId,
+        type: "ORDER_CANCELLED",
+        actor: "SELLER",
+        payload: { resolution: dto.resolution },
       });
 
       return tx.order.findUniqueOrThrow({ where: { id: orderId } });

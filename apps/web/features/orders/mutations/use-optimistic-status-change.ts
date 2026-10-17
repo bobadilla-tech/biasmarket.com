@@ -41,9 +41,9 @@ export function useOptimisticStatusChange(
     queryClient.setQueryData<OrderResponseDto[]>(
       ordersKeys.byStore(storeId),
       (orders) =>
-        orders?.map((
-          order,
-        ) => (order.id === orderId ? { ...order, [field]: value } : order)),
+        orders?.map((order) =>
+          order.id === orderId ? { ...order, [field]: value } : order,
+        ),
     );
   };
 

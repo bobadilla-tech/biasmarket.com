@@ -11,20 +11,24 @@ export default async () => {
       await import('./modules/products/dto/product-response.dto.js'),
     ['./modules/products/dto/product-search-response.dto.js']:
       await import('./modules/products/dto/product-search-response.dto.js'),
+    ['./modules/orders/dto/related-orders-response.dto.js']:
+      await import('./modules/orders/dto/related-orders-response.dto.js'),
     ['./modules/orders/dto/order-response.dto.js']:
       await import('./modules/orders/dto/order-response.dto.js'),
     ['./modules/orders/dto/create-order.dto.js']:
       await import('./modules/orders/dto/create-order.dto.js'),
-    ['./modules/payment-config/dto/payment-method-details.dto.js']:
-      await import('./modules/payment-config/dto/payment-method-details.dto.js'),
     ['./modules/orders/dto/checkout-response.dto.js']:
       await import('./modules/orders/dto/checkout-response.dto.js'),
+    ['./modules/payment-config/dto/payment-method-details.dto.js']:
+      await import('./modules/payment-config/dto/payment-method-details.dto.js'),
     ['./modules/orders/infrastructure/customer-account-response.dto.js']:
       await import('./modules/orders/infrastructure/customer-account-response.dto.js'),
     ['./modules/customer-auth/dto/account-order-response.dto.js']:
       await import('./modules/customer-auth/dto/account-order-response.dto.js'),
     ['./modules/orders/infrastructure/customers-response.dto.js']:
       await import('./modules/orders/infrastructure/customers-response.dto.js'),
+    ['./modules/orders/dto/public-order-response.dto.js']:
+      await import('./modules/orders/dto/public-order-response.dto.js'),
     ['./modules/pickup-points/dto/pickup-point-response.dto.js']:
       await import('./modules/pickup-points/dto/pickup-point-response.dto.js'),
     ['./modules/collections/dto/collection-response.dto.js']:
@@ -33,10 +37,10 @@ export default async () => {
       await import('./modules/store-sections/dto/create-store-section.dto.js'),
     ['./modules/stats/dto/stats-response.dto.js']:
       await import('./modules/stats/dto/stats-response.dto.js'),
-    ['./modules/customer-auth/dto/customer-auth-response.dto.js']:
-      await import('./modules/customer-auth/dto/customer-auth-response.dto.js'),
     ['./modules/customer-auth/dto/global-account-response.dto.js']:
       await import('./modules/customer-auth/dto/global-account-response.dto.js'),
+    ['./modules/customer-auth/dto/customer-auth-response.dto.js']:
+      await import('./modules/customer-auth/dto/customer-auth-response.dto.js'),
     ['./modules/restock/dto/restock-response.dto.js']:
       await import('./modules/restock/dto/restock-response.dto.js'),
     ['./modules/monitoring/dto/kuma-webhook.dto.js']:
@@ -53,10 +57,18 @@ export default async () => {
       await import('./modules/couriers/dto/public-courier-response.dto.js'),
     ['./modules/couriers/dto/bulk-save-couriers.dto.js']:
       await import('./modules/couriers/dto/bulk-save-couriers.dto.js'),
+    ['./modules/store-references/dto/store-reference-response.dto.js']:
+      await import('./modules/store-references/dto/store-reference-response.dto.js'),
     ['./modules/notifications/dto/notification-response.dto.js']:
       await import('./modules/notifications/dto/notification-response.dto.js'),
     ['./modules/users/dto/user-store-count-response.dto.js']:
       await import('./modules/users/dto/user-store-count-response.dto.js'),
+    ['./modules/orders/dto/assisted-order-response.dto.js']:
+      await import('./modules/orders/dto/assisted-order-response.dto.js'),
+    ['./modules/orders/dto/submit-public-payment.dto.js']:
+      await import('./modules/orders/dto/submit-public-payment.dto.js'),
+    ['./modules/orders/dto/receipt-confirmed-response.dto.js']:
+      await import('./modules/orders/dto/receipt-confirmed-response.dto.js'),
     ['./modules/payment-config/dto/payment-method-response.dto.js']:
       await import('./modules/payment-config/dto/payment-method-response.dto.js'),
     ['./modules/delivery-config/dto/delivery-method-response.dto.js']:
@@ -118,6 +130,18 @@ export default async () => {
                 type: () => String,
                 maxLength: 4000,
               },
+              locationLabel: {
+                required: false,
+                type: () => String,
+                nullable: true,
+                maxLength: 60,
+              },
+              publicOwnerName: {
+                required: false,
+                type: () => String,
+                nullable: true,
+                maxLength: 60,
+              },
               paymentInstructions: { required: false, type: () => String },
               defaultCurrency: { required: false, type: () => String },
               themeConfig: {
@@ -170,6 +194,22 @@ export default async () => {
                 additionalProperties: true,
               },
               logoUrl: { required: true, type: () => String, nullable: true },
+              bannerUrl: { required: true, type: () => String, nullable: true },
+              locationLabel: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              publicOwnerName: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              publicOwnerAvatarUrl: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
               bio: { required: true, type: () => String, nullable: true },
               aboutMarkdown: {
                 required: true,
@@ -257,7 +297,10 @@ export default async () => {
             PublicCategoryResponseDto: {
               id: { required: true, type: () => String },
               name: { required: true, type: () => String },
+              slug: { required: true, type: () => String },
               parentId: { required: true, type: () => String, nullable: true },
+              imageUrl: { required: true, type: () => String, nullable: true },
+              productCount: { required: true, type: () => Number },
             },
             PublicProductVariantResponseDto: {
               id: { required: true, type: () => String },
@@ -280,6 +323,31 @@ export default async () => {
                 required: true,
                 type: 'object',
                 additionalProperties: true,
+              },
+            },
+            PublicProductCategoryNameResponseDto: {
+              id: { required: true, type: () => String },
+              name: { required: true, type: () => String },
+              slug: { required: true, type: () => String },
+            },
+            StoreCatalogResponseDto: {
+              items: {
+                required: true,
+                type: () => [
+                  t['./modules/stores/dto/store-response.dto.js']
+                    .PublicProductWithVariantsResponseDto,
+                ],
+              },
+              total: { required: true, type: () => Number },
+              page: { required: true, type: () => Number },
+              limit: { required: true, type: () => Number },
+            },
+            PublicProductCategoryResponseDto: {
+              category: {
+                required: true,
+                type: () =>
+                  t['./modules/stores/dto/store-response.dto.js']
+                    .PublicProductCategoryNameResponseDto,
               },
             },
             PublicProductWithVariantsResponseDto: {
@@ -305,6 +373,13 @@ export default async () => {
                 type: () => [
                   t['./modules/stores/dto/store-response.dto.js']
                     .PublicProductVariantResponseDto,
+                ],
+              },
+              categories: {
+                required: true,
+                type: () => [
+                  t['./modules/stores/dto/store-response.dto.js']
+                    .PublicProductCategoryResponseDto,
                 ],
               },
             },
@@ -419,6 +494,25 @@ export default async () => {
           },
         ],
         [
+          import('./modules/stores/dto/storefront-request.dto.js'),
+          {
+            StorefrontRequestDto: {
+              slug: {
+                required: true,
+                type: () => String,
+                pattern: '^[a-z0-9][a-z0-9_-]*$',
+              },
+            },
+            StorefrontCatalogRequestDto: {
+              query: {
+                required: false,
+                type: 'object',
+                additionalProperties: true,
+              },
+            },
+          },
+        ],
+        [
           import('./modules/products/dto/create-variant.dto.js'),
           {
             CreateVariantDto: {
@@ -502,12 +596,7 @@ export default async () => {
           import('./modules/products/dto/reorder-images.dto.js'),
           {
             ReorderImagesDto: {
-              images: {
-                required: true,
-                type: () => [String],
-                minItems: 1,
-                maxItems: 6,
-              },
+              images: { required: true, type: () => [String], minItems: 1 },
             },
           },
         ],
@@ -638,7 +727,12 @@ export default async () => {
               storeId: { required: true, type: () => String },
               type: {
                 required: true,
-                enum: ['LOW_STOCK', 'OUT_OF_STOCK', 'PAYMENT_PROOF_SUBMITTED'],
+                enum: [
+                  'LOW_STOCK',
+                  'OUT_OF_STOCK',
+                  'PAYMENT_PROOF_SUBMITTED',
+                  'RECEIPT_CONFIRMED',
+                ],
               },
               entityType: { required: true, type: () => String },
               entityId: { required: true, type: () => String },
@@ -674,6 +768,76 @@ export default async () => {
           },
         ],
         [import('./modules/orders/domain/order.entity.js'), { Order: {} }],
+        [
+          import('./modules/orders/dto/related-orders-response.dto.js'),
+          {
+            RelatedOrderResponseDto: {
+              id: { required: true, type: () => String },
+              orderNumber: { required: true, type: () => String },
+              createdAt: { required: true, type: () => String },
+              status: { required: true, enum: ['CANCELLED', 'ACTIVE'] },
+              paymentStatus: {
+                required: true,
+                enum: [
+                  'PENDING_PAYMENT',
+                  'PARTIALLY_PAID',
+                  'PAYMENT_SUBMITTED',
+                  'VERIFIED',
+                  'REJECTED',
+                  'CANCELLED',
+                ],
+              },
+              fulfillmentStatus: {
+                required: true,
+                enum: ['ORDERING', 'IN_TRANSIT', 'READY', 'COMPLETED'],
+              },
+              totalAmount: { required: true, type: () => String },
+              currency: { required: true, type: () => String },
+              source: {
+                required: true,
+                enum: ['MARKETPLACE', 'VENDOR_ASSISTED'],
+              },
+            },
+            RelatedOrdersResponseDto: {
+              items: {
+                required: true,
+                type: () => [
+                  t['./modules/orders/dto/related-orders-response.dto.js']
+                    .RelatedOrderResponseDto,
+                ],
+              },
+              total: { required: true, type: () => Number },
+            },
+          },
+        ],
+        [
+          import('./modules/orders/dto/record-invite-event.dto.js'),
+          {
+            RecordInviteEventDto: {
+              type: {
+                required: true,
+                enum: ['INVITE_SHOWN', 'INVITE_CLICKED', 'INVITE_DISMISSED'],
+              },
+              moment: {
+                required: false,
+                enum: [
+                  'banner',
+                  'entrega',
+                  'pago_validado',
+                  'adelanto_linea_de_tiempo',
+                ],
+              },
+            },
+          },
+        ],
+        [
+          import('./modules/orders/dto/receipt-confirmed-response.dto.js'),
+          {
+            ReceiptConfirmedResponseDto: {
+              receiptConfirmedAt: { required: true, type: () => String },
+            },
+          },
+        ],
         [
           import('./modules/orders/dto/cancel-order.dto.js'),
           {
@@ -712,6 +876,19 @@ export default async () => {
               status: {
                 required: true,
                 enum: ['IN_TRANSIT', 'READY', 'COMPLETED'],
+              },
+            },
+          },
+        ],
+        [
+          import('./modules/orders/dto/void-order-payment.dto.js'),
+          {
+            VoidOrderPaymentDto: {
+              reason: {
+                required: true,
+                type: () => String,
+                minLength: 1,
+                maxLength: 500,
               },
             },
           },
@@ -799,6 +976,18 @@ export default async () => {
               note: { required: true, type: () => String, nullable: true },
               imageUrl: { required: true, type: () => String, nullable: true },
               createdAt: { required: true, type: () => String },
+              operationCode: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              paidAt: { required: true, type: () => String, nullable: true },
+              voidedAt: { required: true, type: () => String, nullable: true },
+              voidReason: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
               source: {
                 required: true,
                 enum: ['SELLER_RECORDED', 'BUYER_SUBMITTED'],
@@ -826,11 +1015,6 @@ export default async () => {
                 type: () => String,
                 nullable: true,
               },
-              buyerAccountId: {
-                required: true,
-                type: () => String,
-                nullable: true,
-              },
               customerEmail: {
                 required: true,
                 type: () => String,
@@ -841,6 +1025,10 @@ export default async () => {
                 required: true,
                 type: () => String,
                 nullable: true,
+              },
+              source: {
+                required: true,
+                enum: ['MARKETPLACE', 'VENDOR_ASSISTED'],
               },
               deliveryMethodType: {
                 required: true,
@@ -867,6 +1055,17 @@ export default async () => {
                 type: () => String,
                 nullable: true,
               },
+              trackingNumber: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              trackingUrl: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              packedPhotoAvailable: { required: true, type: () => Boolean },
               courierModality: {
                 required: true,
                 nullable: true,
@@ -931,6 +1130,22 @@ export default async () => {
               paidAmount: { required: true, type: () => Number },
               pendingAmount: { required: true, type: () => Number },
               paidPercentage: { required: true, type: () => Number },
+              linkFirstOpenedAt: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              claimedAt: { required: true, type: () => String, nullable: true },
+              buyerConfirmedReceivedAt: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              createdByName: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
               items: {
                 required: true,
                 type: () => [
@@ -955,11 +1170,6 @@ export default async () => {
                 type: () => String,
                 nullable: true,
               },
-              buyerAccountId: {
-                required: true,
-                type: () => String,
-                nullable: true,
-              },
               customerEmail: {
                 required: true,
                 type: () => String,
@@ -970,6 +1180,10 @@ export default async () => {
                 required: true,
                 type: () => String,
                 nullable: true,
+              },
+              source: {
+                required: true,
+                enum: ['MARKETPLACE', 'VENDOR_ASSISTED'],
               },
               deliveryMethodType: {
                 required: true,
@@ -996,6 +1210,17 @@ export default async () => {
                 type: () => String,
                 nullable: true,
               },
+              trackingNumber: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              trackingUrl: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              packedPhotoAvailable: { required: true, type: () => Boolean },
               courierModality: {
                 required: true,
                 nullable: true,
@@ -1057,6 +1282,26 @@ export default async () => {
               currency: { required: true, type: () => String },
               expiresAt: { required: true, type: () => String },
               createdAt: { required: true, type: () => String },
+            },
+          },
+        ],
+        [
+          import('./modules/orders/dto/update-order-shipping.dto.js'),
+          {
+            UpdateOrderShippingDto: {
+              trackingNumber: {
+                required: false,
+                type: () => String,
+                nullable: true,
+                maxLength: 120,
+              },
+              trackingUrl: {
+                required: false,
+                type: () => String,
+                nullable: true,
+                maxLength: 2048,
+                format: 'uri',
+              },
             },
           },
         ],
@@ -1138,69 +1383,72 @@ export default async () => {
           },
         ],
         [
-          import('./modules/customer-auth/dto/account-order-response.dto.js'),
+          import('./modules/orders/dto/create-assisted-order.dto.js'),
           {
-            AccountOrderResponseDto: {
-              id: { required: true, type: () => String },
-              paymentStatus: {
+            CreateAssistedOrderDto: {
+              deliveryMethodType: {
                 required: true,
-                enum: [
-                  'PENDING_PAYMENT',
-                  'PARTIALLY_PAID',
-                  'PAYMENT_SUBMITTED',
-                  'VERIFIED',
-                  'REJECTED',
-                  'CANCELLED',
-                ],
+                enum: ['PICKUP', 'COURIER'],
               },
-              fulfillmentStatus: {
-                required: true,
-                enum: ['ORDERING', 'IN_TRANSIT', 'READY', 'COMPLETED'],
+              pickupPointId: { required: false, type: () => String },
+              pickupDate: {
+                required: false,
+                type: () => String,
+                pattern: '^\\d{4}-\\d{2}-\\d{2}$',
               },
-              totalAmount: { required: true, type: () => String },
-              currency: { required: true, type: () => String },
-              createdAt: { required: true, type: () => String },
-              paidAmount: { required: true, type: () => Number },
-              pendingAmount: { required: true, type: () => Number },
-              paidPercentage: { required: true, type: () => Number },
-            },
-          },
-        ],
-        [
-          import('./modules/payment-config/dto/payment-method-details.dto.js'),
-          {
-            PaymentMethodDetailsDto: {
-              bankName: { required: false, type: () => String },
-              accountNumber: { required: false, type: () => String },
-              accountHolder: { required: false, type: () => String },
-              accountType: { required: false, type: () => String },
-              phoneNumber: { required: false, type: () => String },
-              qrImageUrl: { required: false, type: () => String },
-            },
-          },
-        ],
-        [
-          import('./modules/payment-config/dto/upsert-payment-method.dto.js'),
-          {
-            UpsertPaymentMethodDto: {
-              method: {
-                required: true,
+              paymentMethod: {
+                required: false,
                 enum: ['YAPE', 'PLIN', 'TRANSFER', 'CASH'],
               },
-              enabled: { required: false, type: () => Boolean },
-              details: {
+              paymentType: { required: false, enum: ['FULL', 'PARTIAL'] },
+              customerPhone: { required: true, type: () => String },
+              customerName: {
+                required: false,
+                type: () => String,
+                maxLength: 60,
+                pattern:
+                  '^[^\\p{Cc}\\u200B\\u2028\\u2029\\u202A-\\u202E\\u2066-\\u2069\\uFEFF\\u2060-\\u2064\\u00AD\\u180E\\u034F\\uFFFC\\uFFF9-\\uFFFB\\u3164\\u115F\\u1160\\u2800]*$',
+              },
+              shippingAddress: {
                 required: false,
                 type: () =>
-                  t[
-                    './modules/payment-config/dto/payment-method-details.dto.js'
-                  ].PaymentMethodDetailsDto,
+                  t['./modules/orders/dto/create-order.dto.js']
+                    .ShippingAddressDto,
               },
-              depositPercent: {
-                required: false,
-                type: () => Number,
-                minimum: 1,
-                maximum: 100,
+              courierName: { required: false, type: () => String },
+              courierModality: { required: false, enum: ['AGENCY', 'HOME'] },
+              items: {
+                required: true,
+                type: () => [
+                  t['./modules/orders/dto/create-order.dto.js']
+                    .CreateOrderItemDto,
+                ],
+                minItems: 1,
               },
+            },
+          },
+        ],
+        [
+          import('./modules/orders/dto/buyer-notice.dto.js'),
+          {
+            BuyerNoticeDto: {
+              notice: {
+                required: true,
+                enum: [
+                  'ASSISTED_PAYMENT_VALIDATED',
+                  'ASSISTED_IN_TRANSIT',
+                  'ASSISTED_READY',
+                  'ASSISTED_DELIVERED',
+                ],
+              },
+            },
+          },
+        ],
+        [
+          import('./modules/orders/dto/correct-buyer-phone.dto.js'),
+          {
+            CorrectBuyerPhoneDto: {
+              customerPhone: { required: true, type: () => String },
             },
           },
         ],
@@ -1226,11 +1474,6 @@ export default async () => {
                 type: () => String,
                 nullable: true,
               },
-              buyerAccountId: {
-                required: true,
-                type: () => String,
-                nullable: true,
-              },
               customerEmail: {
                 required: true,
                 type: () => String,
@@ -1241,6 +1484,10 @@ export default async () => {
                 required: true,
                 type: () => String,
                 nullable: true,
+              },
+              source: {
+                required: true,
+                enum: ['MARKETPLACE', 'VENDOR_ASSISTED'],
               },
               deliveryMethodType: {
                 required: true,
@@ -1352,12 +1599,108 @@ export default async () => {
           },
         ],
         [
+          import('./modules/orders/dto/assisted-order-response.dto.js'),
+          {
+            CreateAssistedOrderResponseDto: {
+              order: {
+                required: true,
+                type: () =>
+                  t['./modules/orders/dto/checkout-response.dto.js']
+                    .CheckoutOrderResponseDto,
+              },
+              accessUrl: { required: true, type: () => String },
+              previousOrders: { required: true, type: () => Number },
+            },
+            AssistedOrderLinkResponseDto: {
+              order: {
+                required: true,
+                type: () =>
+                  t['./modules/orders/dto/order-response.dto.js']
+                    .OrderDetailResponseDto,
+              },
+              accessUrl: { required: true, type: () => String },
+            },
+          },
+        ],
+        [
+          import('./modules/customer-auth/dto/account-order-response.dto.js'),
+          {
+            AccountOrderResponseDto: {
+              id: { required: true, type: () => String },
+              paymentStatus: {
+                required: true,
+                enum: [
+                  'PENDING_PAYMENT',
+                  'PARTIALLY_PAID',
+                  'PAYMENT_SUBMITTED',
+                  'VERIFIED',
+                  'REJECTED',
+                  'CANCELLED',
+                ],
+              },
+              fulfillmentStatus: {
+                required: true,
+                enum: ['ORDERING', 'IN_TRANSIT', 'READY', 'COMPLETED'],
+              },
+              totalAmount: { required: true, type: () => String },
+              currency: { required: true, type: () => String },
+              createdAt: { required: true, type: () => String },
+              paidAmount: { required: true, type: () => Number },
+              pendingAmount: { required: true, type: () => Number },
+              paidPercentage: { required: true, type: () => Number },
+              source: {
+                required: true,
+                enum: ['MARKETPLACE', 'VENDOR_ASSISTED'],
+              },
+              claimedAt: { required: true, type: () => String, nullable: true },
+            },
+          },
+        ],
+        [
+          import('./modules/payment-config/dto/payment-method-details.dto.js'),
+          {
+            PaymentMethodDetailsDto: {
+              bankName: { required: false, type: () => String },
+              accountNumber: { required: false, type: () => String },
+              accountHolder: { required: false, type: () => String },
+              accountType: { required: false, type: () => String },
+              phoneNumber: { required: false, type: () => String },
+              qrImageUrl: { required: false, type: () => String },
+            },
+          },
+        ],
+        [
+          import('./modules/payment-config/dto/upsert-payment-method.dto.js'),
+          {
+            UpsertPaymentMethodDto: {
+              method: {
+                required: true,
+                enum: ['YAPE', 'PLIN', 'TRANSFER', 'CASH'],
+              },
+              enabled: { required: false, type: () => Boolean },
+              details: {
+                required: false,
+                type: () =>
+                  t[
+                    './modules/payment-config/dto/payment-method-details.dto.js'
+                  ].PaymentMethodDetailsDto,
+              },
+              depositPercent: {
+                required: false,
+                type: () => Number,
+                minimum: 1,
+                maximum: 100,
+              },
+            },
+          },
+        ],
+        [
           import('./modules/orders/infrastructure/customer-account-response.dto.js'),
           {
             ConfirmAccountCustomerResponseDto: {
               name: { required: true, type: () => String, nullable: true },
               email: { required: true, type: () => String, nullable: true },
-              phone: { required: true, type: () => String },
+              phone: { required: true, type: () => String, nullable: true },
               hasPassword: { required: true, type: () => Boolean },
             },
             ConfirmAccountResponseDto: {
@@ -1408,6 +1751,11 @@ export default async () => {
               emailVerified: { required: true, type: () => Boolean },
               createdAt: { required: true, type: () => String },
             },
+            CustomerLookupResponseDto: {
+              normalizedPhone: { required: true, type: () => String },
+              previousOrders: { required: true, type: () => Number },
+              lastAlias: { required: true, type: () => String, nullable: true },
+            },
             CustomerDetailResponseDto: {
               customer: {
                 required: true,
@@ -1422,6 +1770,294 @@ export default async () => {
                     .OrderResponseDto,
                 ],
               },
+            },
+          },
+        ],
+        [
+          import('./modules/orders/dto/assisted-order-identity-erasure.dto.js'),
+          {
+            AssistedOrderIdentityErasureDto: {
+              storeId: { required: true, type: () => String, maxLength: 64 },
+              customerPhone: {
+                required: true,
+                type: () => String,
+                maxLength: 32,
+              },
+              operatorId: {
+                required: true,
+                type: () => String,
+                maxLength: 80,
+                pattern: '^[A-Za-z0-9._-]+$',
+              },
+              requestReference: {
+                required: true,
+                type: () => String,
+                maxLength: 120,
+                pattern: '^[A-Za-z0-9._/#-]+$',
+              },
+            },
+          },
+        ],
+        [
+          import('./modules/orders/dto/public-order-response.dto.js'),
+          {
+            PublicOrderStoreResponseDto: {
+              name: { required: true, type: () => String },
+              slug: { required: true, type: () => String },
+              logoUrl: { required: true, type: () => String, nullable: true },
+              whatsappNumber: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+            },
+            PublicOrderItemResponseDto: {
+              name: { required: true, type: () => String },
+              quantity: { required: true, type: () => Number },
+              unitPrice: { required: true, type: () => String },
+              currency: { required: true, type: () => String },
+            },
+            PublicOrderPaymentResponseDto: {
+              id: { required: true, type: () => String },
+              method: {
+                required: true,
+                nullable: true,
+                enum: ['YAPE', 'PLIN', 'TRANSFER', 'CASH'],
+              },
+              paidAt: { required: true, type: () => String, nullable: true },
+              hasProof: { required: true, type: () => Boolean },
+              source: {
+                required: true,
+                enum: ['SELLER_RECORDED', 'BUYER_SUBMITTED'],
+              },
+              amount: { required: true, type: () => String },
+              createdAt: { required: true, type: () => String },
+              voidedAt: { required: true, type: () => String, nullable: true },
+              reviewStatus: {
+                required: true,
+                enum: ['REJECTED', 'N_A', 'PENDING_REVIEW', 'APPROVED'],
+              },
+            },
+            PublicOrderTimelineItemDto: {
+              type: {
+                required: true,
+                enum: [
+                  'PAYMENT_SUBMITTED',
+                  'RECEIPT_CONFIRMED',
+                  'CREATED',
+                  'PAYMENT_VALIDATED',
+                  'PAYMENT_REJECTED',
+                  'PAYMENT_VOIDED',
+                  'FULFILLMENT_ADVANCED',
+                  'PACKED_PHOTO_ADDED',
+                  'TRACKING_ADDED',
+                  'CLAIMED',
+                  'ORDER_CANCELLED',
+                ],
+              },
+              at: { required: true, type: () => String },
+              toStatus: {
+                required: true,
+                nullable: true,
+                enum: ['ORDERING', 'IN_TRANSIT', 'READY', 'COMPLETED'],
+              },
+              amount: { required: true, type: () => String, nullable: true },
+              resolution: {
+                required: true,
+                nullable: true,
+                enum: ['REFUNDED', 'RETAINED', 'STORE_CREDIT'],
+              },
+            },
+            PublicOrderPaymentMethodResponseDto: {
+              method: {
+                required: true,
+                enum: ['YAPE', 'PLIN', 'TRANSFER', 'CASH'],
+              },
+              depositPercent: { required: true, type: () => Number },
+              details: {
+                required: true,
+                type: 'object',
+                additionalProperties: true,
+              },
+            },
+            PublicOrderDeliveryDetailsResponseDto: {
+              line1: { required: true, type: () => String, nullable: true },
+              district: { required: true, type: () => String, nullable: true },
+              city: { required: true, type: () => String, nullable: true },
+              reference: { required: true, type: () => String, nullable: true },
+              pickupPointLabel: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+            },
+            PublicOrderClosureResponseDto: {
+              kind: { required: true, enum: ['CANCELLED', 'EXPIRED'] },
+              reason: { required: true, type: () => String, nullable: true },
+            },
+            PublicOrderResponseDto: {
+              store: {
+                required: true,
+                type: () =>
+                  t['./modules/orders/dto/public-order-response.dto.js']
+                    .PublicOrderStoreResponseDto,
+              },
+              customerPhone: { required: true, type: () => String },
+              customerAlias: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              orderNumber: { required: true, type: () => String },
+              createdAt: { required: true, type: () => String },
+              items: {
+                required: true,
+                type: () => [
+                  t['./modules/orders/dto/public-order-response.dto.js']
+                    .PublicOrderItemResponseDto,
+                ],
+              },
+              totalAmount: { required: true, type: () => String },
+              requiredAmount: { required: true, type: () => String },
+              paidAmount: { required: true, type: () => Number },
+              pendingAmount: { required: true, type: () => Number },
+              currency: { required: true, type: () => String },
+              paymentStatus: {
+                required: true,
+                enum: [
+                  'PENDING_PAYMENT',
+                  'PARTIALLY_PAID',
+                  'PAYMENT_SUBMITTED',
+                  'VERIFIED',
+                  'REJECTED',
+                  'CANCELLED',
+                ],
+              },
+              fulfillmentStatus: {
+                required: true,
+                enum: ['ORDERING', 'IN_TRANSIT', 'READY', 'COMPLETED'],
+              },
+              status: { required: true, enum: ['CANCELLED', 'ACTIVE'] },
+              paymentInstructions: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              paymentMethods: {
+                required: true,
+                type: () => [
+                  t['./modules/orders/dto/public-order-response.dto.js']
+                    .PublicOrderPaymentMethodResponseDto,
+                ],
+              },
+              deliveryMethodType: {
+                required: true,
+                enum: ['PICKUP', 'COURIER'],
+              },
+              deliveryDetails: {
+                required: true,
+                type: () =>
+                  t['./modules/orders/dto/public-order-response.dto.js']
+                    .PublicOrderDeliveryDetailsResponseDto,
+              },
+              pickupDate: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              courierName: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              trackingNumber: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              trackingUrl: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              packedPhotoAvailable: { required: true, type: () => Boolean },
+              receiptConfirmedAt: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              claimed: { required: true, type: () => Boolean },
+              lastUpdateAt: { required: true, type: () => String },
+              timeline: {
+                required: true,
+                type: () => [
+                  t['./modules/orders/dto/public-order-response.dto.js']
+                    .PublicOrderTimelineItemDto,
+                ],
+              },
+              hasValidatedPayment: { required: true, type: () => Boolean },
+              courierModality: {
+                required: true,
+                nullable: true,
+                enum: ['AGENCY', 'HOME'],
+              },
+              payments: {
+                required: true,
+                type: () => [
+                  t['./modules/orders/dto/public-order-response.dto.js']
+                    .PublicOrderPaymentResponseDto,
+                ],
+              },
+              expiresAt: { required: true, type: () => String, nullable: true },
+              paymentRejectionReason: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              closure: {
+                required: true,
+                type: () =>
+                  t['./modules/orders/dto/public-order-response.dto.js']
+                    .PublicOrderClosureResponseDto,
+                nullable: true,
+              },
+            },
+          },
+        ],
+        [
+          import('./modules/orders/dto/claim-ticket.dto.js'),
+          {
+            ClaimTicketDto: {
+              moment: {
+                required: false,
+                enum: [
+                  'banner',
+                  'entrega',
+                  'pago_validado',
+                  'adelanto_linea_de_tiempo',
+                ],
+              },
+            },
+          },
+        ],
+        [
+          import('./modules/orders/dto/submit-public-payment.dto.js'),
+          {
+            SubmitPublicPaymentDto: {
+              amount: { required: true, type: () => String },
+              method: {
+                required: true,
+                enum: ['YAPE', 'PLIN', 'TRANSFER', 'CASH'],
+              },
+              operationCode: { required: false, type: () => String },
+              note: { required: false, type: () => String },
+              file: { required: true, type: () => Object },
+            },
+            SubmitPublicPaymentResponseDto: {
+              id: { required: true, type: () => String },
+              amount: { required: true, type: () => String },
+              reviewStatus: { required: true, enum: ['PENDING_REVIEW'] },
+              createdAt: { required: true, type: () => String },
             },
           },
         ],
@@ -1589,6 +2225,12 @@ export default async () => {
             UpdateCategoryDto: {
               name: { required: false, type: () => String, minLength: 1 },
               parentId: { required: false, type: () => String },
+              slug: {
+                required: false,
+                type: () => String,
+                pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$',
+              },
+              imageUrl: { required: false, type: () => String, nullable: true },
             },
           },
         ],
@@ -1600,6 +2242,9 @@ export default async () => {
               storeId: { required: true, type: () => String },
               parentId: { required: true, type: () => String, nullable: true },
               name: { required: true, type: () => String },
+              imageUrl: { required: true, type: () => String, nullable: true },
+              slug: { required: true, type: () => String },
+              productCount: { required: true, type: () => Number },
               createdAt: { required: true, type: () => String },
             },
           },
@@ -1930,6 +2575,104 @@ export default async () => {
           },
         ],
         [
+          import('./modules/customer-auth/dto/global-account-response.dto.js'),
+          {
+            LinkedStoreResponseDto: {
+              slug: { required: true, type: () => String },
+              name: { required: true, type: () => String },
+            },
+            GlobalAccountProfileResponseDto: {
+              name: { required: true, type: () => String, nullable: true },
+              email: { required: true, type: () => String, nullable: true },
+              phone: { required: true, type: () => String, nullable: true },
+              emailVerified: { required: true, type: () => Boolean },
+              pendingEmail: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              pendingPhone: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              stores: {
+                required: true,
+                type: () => [
+                  t[
+                    './modules/customer-auth/dto/global-account-response.dto.js'
+                  ].LinkedStoreResponseDto,
+                ],
+              },
+            },
+            GlobalAccountOrderResponseDto: {
+              storeSlug: { required: true, type: () => String },
+              storeName: { required: true, type: () => String },
+            },
+            GlobalAccountOrderItemResponseDto: {
+              name: { required: true, type: () => String },
+              quantity: { required: true, type: () => Number },
+              unitPrice: { required: true, type: () => String },
+              currency: { required: true, type: () => String },
+            },
+            GlobalAccountOrderPaymentResponseDto: {
+              source: {
+                required: true,
+                enum: ['SELLER_RECORDED', 'BUYER_SUBMITTED'],
+              },
+              amount: { required: true, type: () => String },
+              createdAt: { required: true, type: () => String },
+              voidedAt: { required: true, type: () => String, nullable: true },
+              reviewStatus: {
+                required: true,
+                enum: ['REJECTED', 'N_A', 'PENDING_REVIEW', 'APPROVED'],
+              },
+            },
+            GlobalAccountOrderDetailResponseDto: {
+              status: { required: true, enum: ['CANCELLED', 'ACTIVE'] },
+              requiredAmount: { required: true, type: () => String },
+              trackingNumber: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              trackingUrl: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              receiptConfirmedAt: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              items: {
+                required: true,
+                type: () => [
+                  t[
+                    './modules/customer-auth/dto/global-account-response.dto.js'
+                  ].GlobalAccountOrderItemResponseDto,
+                ],
+              },
+              payments: {
+                required: true,
+                type: () => [
+                  t[
+                    './modules/customer-auth/dto/global-account-response.dto.js'
+                  ].GlobalAccountOrderPaymentResponseDto,
+                ],
+              },
+              timeline: {
+                required: true,
+                type: () => [
+                  t['./modules/orders/dto/public-order-response.dto.js']
+                    .PublicOrderTimelineItemDto,
+                ],
+              },
+            },
+          },
+        ],
+        [
           import('./modules/customer-auth/dto/register-customer.dto.js'),
           {
             RegisterCustomerDto: {
@@ -1988,7 +2731,7 @@ export default async () => {
             CustomerProfileCustomerResponseDto: {
               name: { required: true, type: () => String, nullable: true },
               email: { required: true, type: () => String, nullable: true },
-              phone: { required: true, type: () => String },
+              phone: { required: true, type: () => String, nullable: true },
               emailVerified: { required: true, type: () => Boolean },
               pendingEmail: {
                 required: true,
@@ -2028,43 +2771,6 @@ export default async () => {
                 type: () => String,
                 nullable: true,
               },
-            },
-          },
-        ],
-        [
-          import('./modules/customer-auth/dto/global-account-response.dto.js'),
-          {
-            LinkedStoreResponseDto: {
-              slug: { required: true, type: () => String },
-              name: { required: true, type: () => String },
-            },
-            GlobalAccountProfileResponseDto: {
-              name: { required: true, type: () => String, nullable: true },
-              email: { required: true, type: () => String, nullable: true },
-              phone: { required: true, type: () => String },
-              emailVerified: { required: true, type: () => Boolean },
-              pendingEmail: {
-                required: true,
-                type: () => String,
-                nullable: true,
-              },
-              pendingPhone: {
-                required: true,
-                type: () => String,
-                nullable: true,
-              },
-              stores: {
-                required: true,
-                type: () => [
-                  t[
-                    './modules/customer-auth/dto/global-account-response.dto.js'
-                  ].LinkedStoreResponseDto,
-                ],
-              },
-            },
-            GlobalAccountOrderResponseDto: {
-              storeSlug: { required: true, type: () => String },
-              storeName: { required: true, type: () => String },
             },
           },
         ],
@@ -2133,7 +2839,18 @@ export default async () => {
             WhatsAppTemplateResponseDto: {
               id: { required: true, type: () => String },
               storeId: { required: true, type: () => String },
-              type: { required: true, enum: ['NEW_ORDER', 'PAYMENT_REMINDER'] },
+              type: {
+                required: true,
+                enum: [
+                  'ASSISTED_PAYMENT_VALIDATED',
+                  'ASSISTED_IN_TRANSIT',
+                  'ASSISTED_READY',
+                  'ASSISTED_DELIVERED',
+                  'NEW_ORDER',
+                  'PAYMENT_REMINDER',
+                  'ASSISTED_ORDER_LINK',
+                ],
+              },
               template: { required: true, type: () => String },
               updatedAt: { required: true, type: () => String },
             },
@@ -2444,6 +3161,72 @@ export default async () => {
             },
           },
         ],
+        [
+          import('./modules/store-references/dto/create-store-reference.dto.js'),
+          {
+            CreateStoreReferenceDto: {
+              privacyConfirmed: { required: true, type: () => Boolean },
+              takenAt: { required: true, type: () => String },
+              caption: { required: false, type: () => String, maxLength: 240 },
+              width: {
+                required: true,
+                type: () => Number,
+                minimum: 1,
+                maximum: 12000,
+              },
+              height: {
+                required: true,
+                type: () => Number,
+                minimum: 1,
+                maximum: 12000,
+              },
+            },
+          },
+        ],
+        [
+          import('./modules/store-references/dto/update-store-reference.dto.js'),
+          {
+            UpdateStoreReferenceDto: {
+              takenAt: { required: false, type: () => String },
+              caption: {
+                required: false,
+                type: () => String,
+                nullable: true,
+                maxLength: 240,
+              },
+            },
+          },
+        ],
+        [
+          import('./modules/store-references/dto/store-reference-response.dto.js'),
+          {
+            StoreReferenceResponseDto: {
+              id: { required: true, type: () => String },
+              storeId: { required: true, type: () => String },
+              imageUrl: { required: true, type: () => String },
+              width: { required: true, type: () => Number },
+              height: { required: true, type: () => Number },
+              takenAt: { required: true, type: () => String },
+              source: { required: true, enum: ['STORE', 'BUYER'] },
+              caption: { required: true, type: () => String, nullable: true },
+              hidden: { required: true, type: () => Boolean },
+              createdAt: { required: true, type: () => String },
+            },
+            PublicStoreReferencesResponseDto: {
+              items: {
+                required: true,
+                type: () => [
+                  t[
+                    './modules/store-references/dto/store-reference-response.dto.js'
+                  ].StoreReferenceResponseDto,
+                ],
+              },
+              total: { required: true, type: () => Number },
+              page: { required: true, type: () => Number },
+              limit: { required: true, type: () => Number },
+            },
+          },
+        ],
       ],
       controllers: [
         [import('./app.controller.js'), { AppController: { root: {} } }],
@@ -2503,11 +3286,29 @@ export default async () => {
                 type: t['./modules/stores/dto/store-response.dto.js']
                   .StoreDirectoryResponseDto,
               },
+              findPublicCatalog: {
+                type: t['./modules/stores/dto/store-response.dto.js']
+                  .StoreCatalogResponseDto,
+              },
+              findStorefrontCatalog: {
+                type: t['./modules/stores/dto/store-response.dto.js']
+                  .StoreCatalogResponseDto,
+              },
               findPublic: {
                 type: t['./modules/stores/dto/store-response.dto.js']
                   .StorePublicDetailResponseDto,
               },
+              findStorefrontPublic: {
+                type: t['./modules/stores/dto/store-response.dto.js']
+                  .StorePublicDetailResponseDto,
+              },
               findCategoriesPublic: {
+                type: [
+                  t['./modules/stores/dto/store-response.dto.js']
+                    .PublicCategoryResponseDto,
+                ],
+              },
+              findStorefrontCategories: {
                 type: [
                   t['./modules/stores/dto/store-response.dto.js']
                     .PublicCategoryResponseDto,
@@ -2518,6 +3319,14 @@ export default async () => {
                   .PublicProductPageResponseDto,
               },
               uploadLogo: {
+                type: t['./modules/stores/dto/store-response.dto.js']
+                  .StoreResponseDto,
+              },
+              uploadBanner: {
+                type: t['./modules/stores/dto/store-response.dto.js']
+                  .StoreResponseDto,
+              },
+              uploadPublicOwnerAvatar: {
                 type: t['./modules/stores/dto/store-response.dto.js']
                   .StoreResponseDto,
               },
@@ -2687,12 +3496,29 @@ export default async () => {
                 type: t['./modules/orders/dto/order-response.dto.js']
                   .OrderDetailResponseDto,
               },
+              findRelated: {
+                type: t['./modules/orders/dto/related-orders-response.dto.js']
+                  .RelatedOrdersResponseDto,
+              },
               getPaymentImage: {},
+              updateShipping: {
+                type: t['./modules/orders/dto/order-response.dto.js']
+                  .OrderDetailResponseDto,
+              },
+              uploadPackedPhoto: {
+                type: t['./modules/orders/dto/order-response.dto.js']
+                  .OrderDetailResponseDto,
+              },
+              getPackedPhoto: {},
               addPayment: {
                 type: t['./modules/orders/dto/order-response.dto.js']
                   .OrderDetailResponseDto,
               },
               reviewPaymentProof: {
+                type: t['./modules/orders/dto/order-response.dto.js']
+                  .OrderDetailResponseDto,
+              },
+              voidPayment: {
                 type: t['./modules/orders/dto/order-response.dto.js']
                   .OrderDetailResponseDto,
               },
@@ -2723,6 +3549,26 @@ export default async () => {
           },
         ],
         [
+          import('./modules/orders/infrastructure/assisted-orders.controller.js'),
+          {
+            AssistedOrdersController: {
+              createAssisted: {
+                type: t['./modules/orders/dto/assisted-order-response.dto.js']
+                  .CreateAssistedOrderResponseDto,
+              },
+              regenerateAccessLink: {
+                type: t['./modules/orders/dto/assisted-order-response.dto.js']
+                  .AssistedOrderLinkResponseDto,
+              },
+              correctBuyerPhone: {
+                type: t['./modules/orders/dto/assisted-order-response.dto.js']
+                  .AssistedOrderLinkResponseDto,
+              },
+              recordBuyerNotice: {},
+            },
+          },
+        ],
+        [
           import('./modules/orders/infrastructure/customer-account.controller.js'),
           {
             CustomerAccountController: {
@@ -2743,6 +3589,11 @@ export default async () => {
                   t['./modules/orders/infrastructure/customers-response.dto.js']
                     .CustomerListItemResponseDto,
                 ],
+              },
+              lookup: {
+                type: t[
+                  './modules/orders/infrastructure/customers-response.dto.js'
+                ].CustomerLookupResponseDto,
               },
               findOne: {
                 type: t[
@@ -2766,7 +3617,37 @@ export default async () => {
         ],
         [
           import('./modules/orders/infrastructure/internal-jobs.controller.js'),
-          { InternalJobsController: { expireSweep: {} } },
+          {
+            InternalJobsController: {
+              expireSweep: {},
+              assistedIdentityRetentionSweep: {},
+              eraseAssistedIdentityRequest: {},
+            },
+          },
+        ],
+        [
+          import('./modules/orders/infrastructure/public-order-events.controller.js'),
+          {
+            PublicOrderEventsController: {
+              getByToken: {
+                type: t['./modules/orders/dto/public-order-response.dto.js']
+                  .PublicOrderResponseDto,
+              },
+              getPackedPhoto: {},
+              submitPayment: {
+                type: t['./modules/orders/dto/submit-public-payment.dto.js']
+                  .SubmitPublicPaymentResponseDto,
+              },
+              getPaymentProofImage: {},
+              recordInvite: {},
+              confirmReceipt: {
+                type: t[
+                  './modules/orders/dto/receipt-confirmed-response.dto.js'
+                ].ReceiptConfirmedResponseDto,
+              },
+              claimTicket: {},
+            },
+          },
         ],
         [
           import('./modules/payment-config/payment-config.controller.js'),
@@ -2912,6 +3793,10 @@ export default async () => {
                 type: t['./modules/categories/dto/category-response.dto.js']
                   .CategoryResponseDto,
               },
+              uploadImage: {
+                type: t['./modules/categories/dto/category-response.dto.js']
+                  .CategoryResponseDto,
+              },
             },
           },
         ],
@@ -3023,6 +3908,16 @@ export default async () => {
           },
         ],
         [
+          import('./modules/customer-auth/buyer-google.controller.js'),
+          {
+            BuyerGoogleController: {
+              startForStore: {},
+              startGlobal: {},
+              callback: {},
+            },
+          },
+        ],
+        [
           import('./modules/customer-auth/customer-auth.controller.js'),
           {
             CustomerAuthController: {
@@ -3083,6 +3978,31 @@ export default async () => {
                     './modules/customer-auth/dto/global-account-response.dto.js'
                   ].GlobalAccountOrderResponseDto,
                 ],
+              },
+              orderDetail: {
+                type: t[
+                  './modules/customer-auth/dto/global-account-response.dto.js'
+                ].GlobalAccountOrderDetailResponseDto,
+              },
+              login: {
+                type: t[
+                  './modules/customer-auth/dto/customer-auth-response.dto.js'
+                ].OkResponseDto,
+              },
+              logout: {
+                type: t[
+                  './modules/customer-auth/dto/customer-auth-response.dto.js'
+                ].OkResponseDto,
+              },
+              forgotPassword: {
+                type: t[
+                  './modules/customer-auth/dto/customer-auth-response.dto.js'
+                ].OkResponseDto,
+              },
+              resetPassword: {
+                type: t[
+                  './modules/customer-auth/dto/customer-auth-response.dto.js'
+                ].OkResponseDto,
               },
             },
           },
@@ -3230,6 +4150,50 @@ export default async () => {
                   t['./modules/couriers/dto/public-courier-response.dto.js']
                     .PublicCourierDto,
                 ],
+              },
+            },
+          },
+        ],
+        [
+          import('./modules/store-references/store-references.controller.js'),
+          {
+            StoreReferencesController: {
+              findAll: {
+                type: [
+                  t[
+                    './modules/store-references/dto/store-reference-response.dto.js'
+                  ].StoreReferenceResponseDto,
+                ],
+              },
+              create: {
+                type: t[
+                  './modules/store-references/dto/store-reference-response.dto.js'
+                ].StoreReferenceResponseDto,
+              },
+              update: {
+                type: t[
+                  './modules/store-references/dto/store-reference-response.dto.js'
+                ].StoreReferenceResponseDto,
+              },
+              delete: {
+                type: t[
+                  './modules/store-references/dto/store-reference-response.dto.js'
+                ].StoreReferenceResponseDto,
+              },
+              hide: {
+                type: t[
+                  './modules/store-references/dto/store-reference-response.dto.js'
+                ].StoreReferenceResponseDto,
+              },
+              unhide: {
+                type: t[
+                  './modules/store-references/dto/store-reference-response.dto.js'
+                ].StoreReferenceResponseDto,
+              },
+              findPublic: {
+                type: t[
+                  './modules/store-references/dto/store-reference-response.dto.js'
+                ].PublicStoreReferencesResponseDto,
               },
             },
           },

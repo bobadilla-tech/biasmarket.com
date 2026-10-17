@@ -1,9 +1,9 @@
-import { Test, type TestingModule } from '@nestjs/testing';
-import { type Mock, vi } from 'vitest';
-import { ExpirePremiumUseCase } from './expire-premium.usecase.js';
-import { PrismaService } from '../../prisma/prisma.service.js';
+import { Test, type TestingModule } from "@nestjs/testing";
+import { type Mock, vi } from "vitest";
+import { ExpirePremiumUseCase } from "./expire-premium.usecase.js";
+import { PrismaService } from "../../prisma/prisma.service.js";
 
-describe('ExpirePremiumUseCase', () => {
+describe("ExpirePremiumUseCase", () => {
   let useCase: ExpirePremiumUseCase;
   let prisma: { user: { updateMany: Mock } };
 
@@ -20,9 +20,9 @@ describe('ExpirePremiumUseCase', () => {
     useCase = module.get(ExpirePremiumUseCase);
   });
 
-  it('resets plan/premiumUntil for every user whose premiumUntil has passed', async () => {
+  it("resets plan/premiumUntil for every user whose premiumUntil has passed", async () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-09-01T00:00:00.000Z'));
+    vi.setSystemTime(new Date("2026-09-01T00:00:00.000Z"));
     prisma.user.updateMany.mockResolvedValue({ count: 3 });
 
     try {
@@ -30,10 +30,10 @@ describe('ExpirePremiumUseCase', () => {
 
       expect(prisma.user.updateMany).toHaveBeenCalledWith({
         where: {
-          plan: 'premium',
-          premiumUntil: { lt: new Date('2026-09-01T00:00:00.000Z') },
+          plan: "premium",
+          premiumUntil: { lt: new Date("2026-09-01T00:00:00.000Z") },
         },
-        data: { plan: 'basic', premiumUntil: null },
+        data: { plan: "basic", premiumUntil: null },
       });
       expect(result).toEqual({ expired: 3 });
     } finally {
@@ -41,7 +41,7 @@ describe('ExpirePremiumUseCase', () => {
     }
   });
 
-  it('returns expired: 0 when nothing has expired', async () => {
+  it("returns expired: 0 when nothing has expired", async () => {
     prisma.user.updateMany.mockResolvedValue({ count: 0 });
 
     const result = await useCase.execute();

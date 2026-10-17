@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/react";
+import { scrubOrDrop, scrubSentryEvent } from "@biasmarket/utils/sentry-scrub";
 
 // Client-side error tracking (GlitchTip). Runs in the browser before React
 // hydrates — sets up the global window error / unhandledrejection handlers so
@@ -6,6 +7,7 @@ import * as Sentry from "@sentry/react";
 // forward to. Env-gated on NEXT_PUBLIC_SENTRY_DSN (NEXT_PUBLIC_ prefix so it
 // gets inlined into the client bundle at build time).
 if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
+  const warn = (message: string) => console.warn("[sentry]", message);
   Sentry.init({
     dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
     tracesSampleRate: 0.01,
@@ -15,5 +17,10 @@ if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
     // LCP PerformanceObserver records). It's upstream noise, not an app fault —
     // drop it so it doesn't flood error tracking.
     ignoreErrors: [/reading 'startTime'/, /reportAllChanges/],
+    // The private order link (`/pedido/:token`, `/public/orders/:token`) must
+    // never reach the tracker through a URL, breadcrumb or transaction name.
+    beforeSend: (event) => scrubOrDrop(event, warn),
+    beforeSendTransaction: (event) => scrubOrDrop(event, warn),
+    beforeBreadcrumb: (breadcrumb) => scrubSentryEvent(breadcrumb),
   });
 }

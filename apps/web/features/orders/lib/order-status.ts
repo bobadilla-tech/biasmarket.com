@@ -82,10 +82,7 @@ export function getOrderStatus(
 export function paymentsLocked(order: OrderStatusFields) {
   if (order.paymentStatus === "CANCELLED") return true;
   if (order.paymentStatus === "REJECTED") return true;
-  if (
-    order.paymentStatus === "VERIFIED" &&
-    Number(order.pendingAmount) <= 0
-  ) {
+  if (order.paymentStatus === "VERIFIED" && Number(order.pendingAmount) <= 0) {
     return true;
   }
   if (order.fulfillmentStatus === "COMPLETED") return true;
@@ -100,8 +97,10 @@ export function paymentsLocked(order: OrderStatusFields) {
 export function matchesTab(order: OrderStatusFields, tab: OrdersTab) {
   if (tab === "all") return true;
   if (tab === "delivered") {
-    return order.paymentStatus === "VERIFIED" &&
-      order.fulfillmentStatus === "COMPLETED";
+    return (
+      order.paymentStatus === "VERIFIED" &&
+      order.fulfillmentStatus === "COMPLETED"
+    );
   }
   if (tab === "transit") {
     return (

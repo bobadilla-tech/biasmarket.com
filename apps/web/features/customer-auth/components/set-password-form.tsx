@@ -7,9 +7,9 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useCustomerRegister } from "../mutations/use-customer-register";
 import {
+  formErrorMessage,
   FormErrorSummary,
   FormField,
-  formErrorMessage,
 } from "@/components/shared/form-a11y";
 import {
   type CustomerRegisterInput,
@@ -21,7 +21,7 @@ const inputClassName =
 
 // Folded into the confirm page rather than a separate /register route (the
 // magic-link token needed as proof of email ownership is already loaded
-// here) — see docs/plans/2026-08-02-buyer-accounts-phase12-plan.md,
+// here) — see .artifacts/2026/08/20260802--buyer-accounts-phase12/plan.md,
 // "Frontend". `purpose` controls copy only — the backend's `register` call
 // (reused for both "confirm" and "reset" token purposes) branches on the
 // token itself, not on anything this form sends.
@@ -30,7 +30,7 @@ export function SetPasswordForm({
   token,
   purpose = "confirm",
 }: {
-  slug: string;
+  slug?: string;
   token: string;
   purpose?: "confirm" | "reset";
 }) {
@@ -76,7 +76,7 @@ export function SetPasswordForm({
           {purpose === "reset" ? t("successReset") : t("success")}
         </p>
         <Link
-          href={`/store/${slug}/account/login`}
+          href={slug ? `/store/${slug}/account/login` : "/my-purchases"}
           className="store-theme-link font-semibold text-center"
         >
           {t("goToLogin")}
