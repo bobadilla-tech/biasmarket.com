@@ -83,7 +83,8 @@
     "description": "Description",
     "availableCount": "{count} available",
     "keepBrowsing": "Keep browsing",
-    "saving": "Saving…"
+    "saving": "Saving…",
+    "notAvailable": "Unavailable"
   },
   "cart": {
     "title": "Your cart",

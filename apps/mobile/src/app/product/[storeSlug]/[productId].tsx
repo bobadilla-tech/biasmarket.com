@@ -12,6 +12,8 @@ import { useQuery } from "@tanstack/react-query";
 import { stores } from "@biasmarket/types";
 import type { PublicProductVariantResponseDto } from "@biasmarket/types";
 import { formatPrice } from "../../../features/catalog/catalog-ui";
+import { cartCount } from "@biasmarket/utils/cart";
+import { useStoreCart } from "../../../features/cart/use-store-cart";
 import { useMobileI18n } from "../../../i18n/mobile-i18n.js";
 
 export default function ProductDetailScreen() {
@@ -20,6 +22,7 @@ export default function ProductDetailScreen() {
     productId: string;
   }>();
   const router = useRouter();
+  const cart = useStoreCart(storeSlug);
   const { locale, t } = useMobileI18n();
   const productQuery = useQuery({
     queryKey: ["catalog", "product", storeSlug, productId],
@@ -39,10 +42,12 @@ export default function ProductDetailScreen() {
   if (productQuery.error || !productQuery.data) {
     return (
       <View className="flex-1 items-center justify-center gap-4 bg-brand-ink px-6">
-        <Text className="text-center text-white">{t("catalog.notFound")}</Text>
+        <Text className="text-center text-white">
+          No pudimos encontrar este producto.
+        </Text>
         <Pressable accessibilityRole="button" onPress={() => router.back()}>
           <Text className="font-semibold text-brand-pink">
-            {t("catalog.backToCatalog")}
+            Volver al catálogo
           </Text>
         </Pressable>
       </View>
@@ -63,9 +68,23 @@ export default function ProductDetailScreen() {
             ‹ {t("common.back")}
           </Text>
         </Pressable>
-        <Text numberOfLines={1} className="max-w-[65%] text-sm text-white/70">
+        <Text numberOfLines={1} className="max-w-[55%] text-sm text-white/70">
           {store.name}
         </Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${t("catalog.openCart", { count: cartCount(cart.items) })}`}
+          onPress={() =>
+            router.push({
+              pathname: "/cart/[storeSlug]",
+              params: { storeSlug },
+            })
+          }
+        >
+          <Text className="font-semibold text-brand-pink">
+            {t("catalog.cartCount", { count: cartCount(cart.items) })}
+          </Text>
+        </Pressable>
       </View>
       {product.images.length ? (
         <FlashList
@@ -125,11 +144,47 @@ export default function ProductDetailScreen() {
                 basePrice={product.price}
                 currency={product.currency}
                 variant={variant}
-                locale={locale}
-                t={t}
+                disabled={unavailable}
+                onAdd={() =>
+                  cart.add({
+                    productId: product.id,
+                    variantId: variant.id,
+                    name: product.name,
+                    variantLabel: variant.name,
+                    image: variant.imageOverride ?? product.images[0],
+                    price: Number(variant.priceOverride ?? product.price),
+                    currency: product.currency,
+                    quantity: 1,
+                  })
+                }
               />
             ))}
           </View>
+        ) : null}
+        {!product.variants.length ? (
+          <Pressable
+            accessibilityRole="button"
+            disabled={unavailable || cart.isSaving}
+            className={`rounded-xl px-5 py-4 ${unavailable ? "bg-white/15" : "bg-brand-pink"}`}
+            onPress={() =>
+              cart.add({
+                productId: product.id,
+                name: product.name,
+                image: product.images[0],
+                price: Number(product.price),
+                currency: product.currency,
+                quantity: 1,
+              })
+            }
+          >
+            <Text className="text-center font-bold text-brand-ink">
+              {unavailable
+                ? t("common.unavailable")
+                : cart.isSaving
+                  ? t("catalog.saving")
+                  : t("catalog.addToCart")}
+            </Text>
+          </Pressable>
         ) : null}
         <Pressable
           accessibilityRole="button"
@@ -137,7 +192,7 @@ export default function ProductDetailScreen() {
           onPress={() => router.push("/search")}
         >
           <Text className="text-center font-semibold text-brand-ink">
-            {t("catalog.keepBrowsing")}
+            Seguir explorando
           </Text>
         </Pressable>
       </View>
@@ -149,15 +204,16 @@ function VariantRow({
   currency,
   basePrice,
   variant,
-  locale,
-  t,
+  onAdd,
+  disabled,
 }: {
   currency: string;
   basePrice: string;
   variant: PublicProductVariantResponseDto;
-  locale: "en" | "es";
-  t: (key: string, values?: Record<string, string | number>) => string;
+  onAdd: () => void;
+  disabled: boolean;
 }) {
+  const { locale, t } = useMobileI18n();
   const attributes = Object.entries(variant.attributes)
     .map(([key, value]) => `${key}: ${String(value)}`)
     .join(" · ");
@@ -186,11 +242,26 @@ function VariantRow({
               })}
         </Text>
       </View>
-      {price ? (
-        <Text className="font-semibold text-brand-pink">
-          {formatPrice(price, currency, locale)}
-        </Text>
-      ) : null}
+      <View className="items-end gap-2">
+        {price ? (
+          <Text className="font-semibold text-brand-pink">
+            {formatPrice(price, currency, locale)}
+          </Text>
+        ) : null}
+        <Pressable
+          accessibilityRole="button"
+          disabled={
+            disabled ||
+            (variant.stock !== null && variant.stock - variant.reserved <= 0)
+          }
+          className={`rounded-lg px-3 py-2 ${disabled ? "bg-white/15" : "bg-brand-pink"}`}
+          onPress={onAdd}
+        >
+          <Text className="text-xs font-bold text-brand-ink">
+            {t("catalog.add")}
+          </Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
