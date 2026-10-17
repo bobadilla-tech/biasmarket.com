@@ -15,6 +15,7 @@ import {
   writeBuyerSession,
 } from "./session-storage";
 import { setMobileBearerToken, setUnauthorizedHandler } from "./api-client";
+import { registerBuyerPushToken, unregisterBuyerPushToken } from "./push-token";
 
 type SessionStatus = "loading" | "authenticated" | "unauthenticated";
 
@@ -92,6 +93,7 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
 
       await writeBuyerSession({ token, storeSlug: slug });
       setMobileBearerToken(token);
+      void registerBuyerPushToken(slug).catch(() => undefined);
       setStoreSlug(slug);
       setStatus("authenticated");
     },
@@ -115,8 +117,15 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
 
   const signOut = useCallback(async () => {
     setError(null);
+    if (storeSlug) {
+      try {
+        await unregisterBuyerPushToken(storeSlug);
+      } catch {
+        /* local logout must still complete */
+      }
+    }
     await clearLocalSession();
-  }, [clearLocalSession]);
+  }, [clearLocalSession, storeSlug]);
 
   const value = useMemo(
     () => ({

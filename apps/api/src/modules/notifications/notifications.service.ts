@@ -11,12 +11,43 @@ import type {
   Store,
 } from '@biasmarket/db';
 import { PrismaService } from '../../prisma/prisma.service.js';
+import { InjectQueue } from '@nestjs/bullmq';
+import type { Queue } from 'bullmq';
+import {
+  PUSH_JOB_NAME,
+  QUEUE_NAMES,
+  expoPushPayloadSchema,
+} from '@biasmarket/queue';
 
 type Client = Prisma.TransactionClient | PrismaService;
 
 @Injectable()
 export class NotificationsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @InjectQueue(QUEUE_NAMES.PUSH) private pushQueue: Queue,
+  ) {}
+
+  async pushToBuyer(
+    buyerAccountId: string | null,
+    title: string,
+    body: string,
+    data: Record<string, unknown>,
+  ) {
+    if (!buyerAccountId) return;
+    const tokens = await this.prisma.deviceToken.findMany({
+      where: { buyerAccountId },
+      select: { expoPushToken: true },
+    });
+    await Promise.all(
+      tokens.map(({ expoPushToken }) =>
+        this.pushQueue.add(
+          PUSH_JOB_NAME,
+          expoPushPayloadSchema.parse({ to: expoPushToken, title, body, data }),
+        ),
+      ),
+    );
+  }
 
   private async assertOwnership(storeId: string, userId: string) {
     const store = await this.prisma.store.findUnique({
@@ -111,7 +142,7 @@ export class NotificationsService {
       },
     });
     if (existing) return null;
-    return client.notification.create({
+    const notification = await client.notification.create({
       data: {
         storeId: params.storeId,
         type: params.type,
@@ -122,6 +153,32 @@ export class NotificationsService {
         metadata: (params.metadata ?? {}) as Prisma.InputJsonValue,
       },
     });
+    if (notification && params.type === 'PAYMENT_PROOF_SUBMITTED') {
+      const store = await this.prisma.store.findUnique({
+        where: { id: params.storeId },
+        select: { ownerId: true },
+      });
+      if (store) {
+        const tokens = await this.prisma.deviceToken.findMany({
+          where: { userId: store.ownerId },
+          select: { expoPushToken: true },
+        });
+        await Promise.all(
+          tokens.map(({ expoPushToken }) =>
+            this.pushQueue.add(
+              PUSH_JOB_NAME,
+              expoPushPayloadSchema.parse({
+                to: expoPushToken,
+                title: params.title,
+                body: params.body ?? '',
+                data: { type: params.type, entityId: params.entityId },
+              }),
+            ),
+          ),
+        );
+      }
+    }
+    return notification;
   }
 
   async resolveOpenStockAlerts(
