@@ -1,0 +1,31 @@
+appId: com.biasmarket.mobile
+---
+- launchApp:
+    clearState: true
+- openLink: biasmarket:///login?storeSlug=${STORE_SLUG}
+- tapOn: "Slug de la tienda"
+- inputText: ${STORE_SLUG}
+- tapOn: "Teléfono"
+- inputText: ${BUYER_PHONE}
+- tapOn: "Contraseña"
+- inputText: ${BUYER_PASSWORD}
+- hideKeyboard
+- tapOn: "Ingresar"
+- assertVisible: "Buscar"
+- openLink: biasmarket:///store/${STORE_SLUG}/product/${PRODUCT_ID}
+- assertVisible: ${PRODUCT_NAME}
+- tapOn: "Añadir al carrito"
+- tapOn: "Carrito (1)"
+- tapOn: "Continuar al pago"
+- assertVisible: "Finalizar compra"
+- tapOn: "Recojo"
+- tapOn: ${PICKUP_LABEL}
+- tapOn: ${PAYMENT_METHOD}
+- tapOn: "Elegir imagen"
+- tapOn:
+    point: "25%, 35%"
+- tapOn: "Confirmar pedido"
+- assertVisible: "Pedido enviado"
+- tapOn: "Ver mi pedido"
+- assertVisible: "Productos"
+- assertVisible: "Comprobante de pago privado"
