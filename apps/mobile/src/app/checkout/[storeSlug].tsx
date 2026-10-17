@@ -51,7 +51,7 @@ import {
   readStoreCart,
 } from "../../features/cart/cart-storage";
 import { useBuyerSession } from "../../features/auth/session-context";
-import { useMobileI18n } from "../../i18n/mobile-i18n.js";
+import { useMobileI18n } from "../../i18n/mobile-i18n";
 
 const emptyForm: CheckoutFormInput = {
   customerName: "",
@@ -84,11 +84,11 @@ const EMPTY_POINTS: PickupPointResponseDto[] = [];
 const EMPTY_PAYMENT_METHODS: PaymentMethodConfigResponseDto[] = [];
 
 export default function CheckoutScreen() {
+  const { locale, t } = useMobileI18n();
   const { storeSlug } = useLocalSearchParams<{ storeSlug: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
   const session = useBuyerSession();
-  const { locale, t } = useMobileI18n();
   const [form, setForm] = useState(emptyForm);
   const [fieldErrors, setFieldErrors] = useState<string[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -205,16 +205,13 @@ export default function CheckoutScreen() {
         ? await ImagePicker.launchCameraAsync({ mediaTypes: ["images"] })
         : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"] });
       if (result.canceled || !result.assets[0]) return;
-      const proof = await compressProof(result.assets[0].uri);
-      setField("paymentProof", proof);
-    } catch (error) {
-      setSubmitError(
-        error instanceof Error
-          ? error.message === "checkout.proofCompressFailed"
-            ? t("checkout.proofCompressFailed")
-            : error.message
-          : t("checkout.proofLoadFailed"),
+      const proof = await compressProof(
+        result.assets[0].uri,
+        t("checkout.proofCompressFailed"),
       );
+      setField("paymentProof", proof);
+    } catch {
+      setSubmitError(t("checkout.proofLoadFailed"));
     } finally {
       setLoadingProof(false);
     }
@@ -233,18 +230,18 @@ export default function CheckoutScreen() {
     if (!parsed.success) {
       setFieldErrors(
         parsed.error.issues.map((issue) =>
-          t(`checkout.validation.${String(issue.path[0])}`),
+          t(`checkout.validation.${String(issue.path[0] ?? "")}`),
         ),
       );
       return;
     }
     setFieldErrors([]);
     if (items.length === 0) {
-      setSubmitError(t("checkout.noItems"));
+      setSubmitError(t("cart.emptyError"));
       return;
     }
     if (hasMixedCurrencies(items)) {
-      setSubmitError(t("checkout.mixedCurrencies"));
+      setSubmitError(t("cart.mixedCurrencyError"));
       return;
     }
     if (!/^[a-z0-9-]+$/i.test(storeSlug)) {
@@ -320,10 +317,8 @@ export default function CheckoutScreen() {
           ),
         },
       });
-    } catch (error) {
-      setSubmitError(
-        error instanceof Error ? error.message : t("checkout.submitFailed"),
-      );
+    } catch {
+      setSubmitError(t("checkout.submitFailed"));
     } finally {
       setSubmitting(false);
     }
@@ -338,7 +333,9 @@ export default function CheckoutScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-brand-ink">
         <ActivityIndicator color="#f2b4c7" />
-        <Text className="mt-3 text-white/70">{t("checkout.preparing")}</Text>
+        <Text className="mt-3 text-white/70">
+          {t("common.loadingCheckout")}
+        </Text>
       </View>
     );
   }
@@ -397,7 +394,7 @@ export default function CheckoutScreen() {
             onChangeText={(value) => setField("customerName", value)}
           />
           <Field
-            label={t("checkout.phone")}
+            label={t("auth.phone")}
             keyboardType="phone-pad"
             value={
               form.customerPhone || profileQuery.data?.customer.phone || ""
@@ -672,6 +669,7 @@ export default function CheckoutScreen() {
 
 async function compressProof(
   uri: string,
+  failureMessage: string,
 ): Promise<ProofFileLike & { uri: string }> {
   for (const preset of [
     { width: 1600, compress: 0.75 },
@@ -697,7 +695,7 @@ async function compressProof(
       };
     }
   }
-  throw new Error("checkout.proofCompressFailed");
+  throw new Error(failureMessage);
 }
 
 function toShippingAddress(

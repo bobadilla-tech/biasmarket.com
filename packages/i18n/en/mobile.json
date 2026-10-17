@@ -83,8 +83,7 @@
     "description": "Description",
     "availableCount": "{count} available",
     "keepBrowsing": "Keep browsing",
-    "saving": "Saving…",
-    "notAvailable": "Unavailable"
+    "saving": "Saving…"
   },
   "cart": {
     "title": "Your cart",
@@ -142,7 +141,7 @@
     "chooseImage": "Choose image",
     "compressingImage": "Compressing image…",
     "proofReady": "Proof ready: {filename}",
-    "proofInstructions": "Attach an image of the payment receipt. It will be compressed before upload.",
+    "proofInstructions": "Attach an image of your payment receipt. It will be compressed before upload.",
     "permissionRequired": "We need permission to access your photos.",
     "proofLoadFailed": "Could not load the payment receipt.",
     "storeInvalid": "The store is invalid.",
@@ -179,14 +178,7 @@
     "orderSent": "Order placed",
     "loginToFill": "Sign in to fill in your details automatically.",
     "orderNumber": "Order: {id}",
-    "viewOrder": "View my order",
-    "phone": "Phone",
-    "paymentMethod": "Payment method",
-    "noItems": "Your cart is empty.",
-    "mixedCurrencies": "Your cart contains different currencies and cannot be charged together.",
-    "preparing": "Preparing checkout…",
-    "orderSuccessTitle": "Order placed",
-    "backToDiscover": "Back to discover"
+    "viewOrder": "View my order"
   },
   "orders": {
     "loginPrompt": "Sign in to view your orders.",
@@ -223,8 +215,7 @@
       "APPROVED": "Approved",
       "REJECTED": "Rejected",
       "N_A": "Confirmed"
-    },
-    "viewOrders": "View my orders"
+    }
   },
   "account": {
     "buyerAccount": "Buyer account",
