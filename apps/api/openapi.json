@@ -3727,6 +3727,114 @@
         "tags": ["GlobalAccount"]
       }
     },
+    "/stores/{slug}/account/devices": {
+      "post": {
+        "operationId": "CustomerDeviceTokensController_register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["CustomerDeviceTokens"]
+      },
+      "delete": {
+        "operationId": "CustomerDeviceTokensController_unregister",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["CustomerDeviceTokens"]
+      }
+    },
+    "/mobile/devices": {
+      "post": {
+        "operationId": "SellerDeviceTokensController_register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": ["SellerDeviceTokens"]
+      },
+      "delete": {
+        "operationId": "SellerDeviceTokensController_unregister",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["SellerDeviceTokens"]
+      }
+    },
     "/stores/{slug}/restock-requests": {
       "post": {
         "operationId": "RestockController_create",
@@ -8642,6 +8750,22 @@
           "storeSlug",
           "storeName"
         ]
+      },
+      "DeviceTokenDto": {
+        "type": "object",
+        "properties": {
+          "expoPushToken": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 256,
+            "pattern": "^(Exponent|Expo)PushToken\\[[A-Za-z0-9_-]+\\]$"
+          },
+          "platform": {
+            "enum": ["ios", "android"],
+            "type": "string"
+          }
+        },
+        "required": ["expoPushToken", "platform"]
       },
       "CreateRestockRequestDto": {
         "type": "object",
