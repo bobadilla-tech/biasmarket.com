@@ -1,5 +1,7 @@
 {
   "common": {
+    "brandName": "Bias Market",
+    "brandMonogram": "B",
     "back": "Back",
     "loadingCart": "Loading cart…",
     "loadingProduct": "Loading product…",
