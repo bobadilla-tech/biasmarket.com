@@ -24,6 +24,15 @@ export default function CheckoutSuccessScreen() {
       <Text className="text-sm text-white/50">Pedido: {orderId}</Text>
       <Pressable
         accessibilityRole="button"
+        className="rounded-xl border border-white/20 px-5 py-3"
+        onPress={() =>
+          router.push({ pathname: "/orders/[orderId]", params: { orderId } })
+        }
+      >
+        <Text className="font-semibold text-white">Ver mi pedido</Text>
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
         className="rounded-xl bg-brand-pink px-5 py-3"
         onPress={() => router.replace("/")}
       >

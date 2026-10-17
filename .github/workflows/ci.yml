@@ -368,6 +368,12 @@ jobs:
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=mobile
 
+      - name: Unit tests
+        run: pnpm turbo run test --filter=mobile
+
+      - name: Native component tests
+        run: pnpm --filter mobile test:components
+
       # See "Turbo cache policy" at the top of this file.
       - name: Prune turbo cache
         if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
