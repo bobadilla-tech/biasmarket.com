@@ -166,7 +166,7 @@ function DiscoverHeader({
       <View className="flex-row items-center justify-between">
         <View>
           <Text className="text-sm font-semibold uppercase tracking-widest text-brand-pink">
-            {t("common.brandName")}
+            {"t("common.brandName")}
           </Text>
           <Text className="mt-1 text-3xl font-bold text-white">
             {t("common.discover")}

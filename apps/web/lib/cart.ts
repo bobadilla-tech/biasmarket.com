@@ -1,23 +1,20 @@
-export interface CartItem {
-  productId: string;
-  variantId?: string;
-  name: string;
-  variantLabel?: string;
-  image?: string;
-  price: number;
-  currency: string;
-  quantity: number;
-}
+import {
+  addCartItem,
+  cartCount as countCartItems,
+  cartTotal,
+  hasMixedCurrencies,
+  removeCartItem,
+  updateCartItemQuantity,
+  type CartItem,
+  type CartItemIdentity,
+} from "@biasmarket/utils/cart";
 
-// Fired on window after every cart mutation so mounted UI (e.g. the header
-// CartLink badge) can re-read localStorage without waiting for a remount or
-// a window focus.
+export type { CartItem } from "@biasmarket/utils/cart";
+export { cartTotal, hasMixedCurrencies } from "@biasmarket/utils/cart";
+
 export const CART_UPDATED_EVENT = "biasmarket:cart-updated";
 
 const cartKey = (slug: string) => `biasmarket:cart:${slug}`;
-
-const itemKey = (item: Pick<CartItem, "productId" | "variantId">) =>
-  `${item.productId}:${item.variantId ?? ""}`;
 
 export function getCart(slug: string): CartItem[] {
   if (typeof window === "undefined") return [];
@@ -37,40 +34,23 @@ function saveCart(slug: string, items: CartItem[]) {
 }
 
 export function addToCart(slug: string, item: CartItem): CartItem[] {
-  const items = getCart(slug);
-  const existing = items.find((i) => itemKey(i) === itemKey(item));
-  const next = existing
-    ? items.map((i) =>
-        itemKey(i) === itemKey(item)
-          ? { ...i, quantity: i.quantity + item.quantity }
-          : i,
-      )
-    : [...items, item];
+  const next = addCartItem(getCart(slug), item);
   saveCart(slug, next);
   return next;
 }
 
 export function updateQuantity(
   slug: string,
-  target: Pick<CartItem, "productId" | "variantId">,
+  target: CartItemIdentity,
   quantity: number,
 ): CartItem[] {
-  const items = getCart(slug);
-  const next =
-    quantity <= 0
-      ? items.filter((i) => itemKey(i) !== itemKey(target))
-      : items.map((i) =>
-          itemKey(i) === itemKey(target) ? { ...i, quantity } : i,
-        );
+  const next = updateCartItemQuantity(getCart(slug), target, quantity);
   saveCart(slug, next);
   return next;
 }
 
-export function removeItem(
-  slug: string,
-  target: Pick<CartItem, "productId" | "variantId">,
-): CartItem[] {
-  const next = getCart(slug).filter((i) => itemKey(i) !== itemKey(target));
+export function removeItem(slug: string, target: CartItemIdentity): CartItem[] {
+  const next = removeCartItem(getCart(slug), target);
   saveCart(slug, next);
   return next;
 }
@@ -79,26 +59,6 @@ export function clearCart(slug: string) {
   saveCart(slug, []);
 }
 
-export function cartTotal(items: CartItem[]): number {
-  return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-}
-
-// Summed line-item quantity for a store's cart. Cheap enough to call as a
-// useSyncExternalStore snapshot (see CartLink) — it returns a primitive, so
-// React's Object.is check keeps the subscription stable with no memoization.
 export function cartCount(slug: string): number {
-  return getCart(slug).reduce((sum, item) => sum + item.quantity, 0);
-}
-
-// Returns the shared currency across all cart items, or null when the cart
-// is empty or mixes currencies (checkout can't sum different currencies into
-// one total, so callers should block submission and warn in that case).
-export function cartCurrency(items: CartItem[]): string | null {
-  if (items.length === 0) return null;
-  const currencies = new Set(items.map((item) => item.currency));
-  return currencies.size === 1 ? items[0].currency : null;
-}
-
-export function hasMixedCurrencies(items: CartItem[]): boolean {
-  return new Set(items.map((item) => item.currency)).size > 1;
+  return countCartItems(getCart(slug));
 }
