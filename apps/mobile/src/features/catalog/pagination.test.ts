@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { flattenProductPages, nextProductSearchPage } from "./pagination.js";
+import { flattenProductPages, nextProductSearchPage } from "./pagination";
 
 describe("catalog pagination", () => {
   it("requests another page while the last page has not covered the total", () => {
