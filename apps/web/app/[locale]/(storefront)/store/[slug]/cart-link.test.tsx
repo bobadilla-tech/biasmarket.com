@@ -80,6 +80,14 @@ test("renders no badge when the cart is empty", () => {
   expect(document.querySelector(".cart-badge-pulse")).toBeNull();
 });
 
+test("keeps the compact cart label visible at the desktop breakpoint", () => {
+  renderWithProviders(<CartLink slug="s" compact />);
+
+  const cart = screen.getByRole("link", { name: "Carrito" });
+  expect(cart.className).toContain("sm:size-auto");
+  expect(cart.querySelector("span")?.className).toContain("sm:not-sr-only");
+});
+
 test("updates on a same-slug cart-updated event", () => {
   seed("s", [line(1)]);
   renderWithProviders(<CartLink slug="s" />);

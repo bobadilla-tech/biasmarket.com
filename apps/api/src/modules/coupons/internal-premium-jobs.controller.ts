@@ -1,9 +1,9 @@
-import { Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
-import { ApiExcludeController } from '@nestjs/swagger';
-import { Public } from '@thallesp/nestjs-better-auth';
-import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
-import { InternalJobsSecretGuard } from '../orders/infrastructure/internal-jobs-secret.guard.js';
-import { ExpirePremiumUseCase } from './expire-premium.usecase.js';
+import { Controller, HttpCode, Post, UseGuards } from "@nestjs/common";
+import { ApiExcludeController } from "@nestjs/swagger";
+import { Public } from "@thallesp/nestjs-better-auth";
+import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
+import { InternalJobsSecretGuard } from "../orders/infrastructure/internal-jobs-secret.guard.js";
+import { ExpirePremiumUseCase } from "./expire-premium.usecase.js";
 
 // Mounted at /internal/premium/expire-sweep, deliberately outside the
 // global "api" prefix (see main.ts's setGlobalPrefix exclude) — reached
@@ -14,12 +14,12 @@ import { ExpirePremiumUseCase } from './expire-premium.usecase.js';
 @Public()
 @UseGuards(ThrottlerGuard, InternalJobsSecretGuard)
 @Throttle({ default: { ttl: 60_000, limit: 5 } })
-@Controller('internal/premium')
+@Controller("internal/premium")
 export class InternalPremiumJobsController {
   constructor(private readonly expirePremium: ExpirePremiumUseCase) {}
 
   @HttpCode(200)
-  @Post('expire-sweep')
+  @Post("expire-sweep")
   async expireSweep(): Promise<{ expired: number }> {
     return this.expirePremium.execute();
   }

@@ -1,0 +1,7 @@
+{
+  "name": "@fixture/ok",
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  }
+}

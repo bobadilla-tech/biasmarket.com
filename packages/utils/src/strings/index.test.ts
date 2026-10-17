@@ -30,8 +30,8 @@ describe("slugify", () => {
     expect(slugify("!!!___***")).toBe("");
   });
 
-  it("drops accented/unicode letters as non-alphanumeric", () => {
-    expect(slugify("Café Örnek")).toBe("caf-rnek");
+  it("normalizes accented letters before slugifying", () => {
+    expect(slugify("Café Örnek")).toBe("cafe-ornek");
   });
 });
 

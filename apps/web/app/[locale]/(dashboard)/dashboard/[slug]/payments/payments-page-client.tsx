@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { LoadingState } from "@/components/shared/loading-state";
 import { ErrorState } from "@/components/shared/error-state";
 import { EmptyState } from "@/components/shared/empty-state";
+import { BuyerNoticePrompt } from "@/features/assisted-orders/components/buyer-notice-prompt";
 import { useDashboardStore } from "@/features/stores";
 import type { OrderResponseDto } from "@biasmarket/types";
 import { PaymentMethodsBreakdown } from "@/features/stats";
@@ -455,6 +456,8 @@ export function PaymentsPageClient() {
         }}
       />
 
+      <BuyerNoticePrompt storeId={storeId} storeName={store?.name ?? ""} />
+
       <OrderDetailSheet
         open={detailsOpen}
         onOpenChange={(open) => {
@@ -466,13 +469,14 @@ export function PaymentsPageClient() {
         fulfillmentLabels={{}}
         enabledMethods={enabledMethods}
         registerPaymentSubmitting={registerPayment.isPending}
-        onRegisterPayment={(values) => {
+        onRegisterPayment={(values, options) => {
           if (!selectedOrder || paymentsLocked(selectedOrder)) {
             return Promise.resolve();
           }
           return registerPayment.mutateAsync({
             orderId: selectedOrder.id,
             values,
+            confirmDuplicate: options?.confirmDuplicate,
           });
         }}
         onPreviewPayment={setPaymentPreviewUrl}

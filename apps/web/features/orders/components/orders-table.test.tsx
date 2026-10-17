@@ -13,15 +13,19 @@ const baseOrder: OrderResponseDto = {
   id: "order-1",
   storeId: "store-1",
   customerId: null,
-  buyerAccountId: null,
   customerEmail: null,
   customerName: "Jane",
   customerPhone: "+51987654321",
+  source: "MARKETPLACE",
   totalAmount: "100.00",
   requiredAmount: "100.00",
   paidAmount: 0,
   pendingAmount: 100,
   paidPercentage: 0,
+  linkFirstOpenedAt: null,
+  claimedAt: null,
+  buyerConfirmedReceivedAt: null,
+  createdByName: null,
   currency: "PEN",
   status: "ACTIVE",
   paymentStatus: "PENDING_PAYMENT",
@@ -32,6 +36,9 @@ const baseOrder: OrderResponseDto = {
   pickupPointId: null,
   pickupDate: null,
   courierName: null,
+  trackingNumber: null,
+  trackingUrl: null,
+  packedPhotoAvailable: false,
   courierModality: null,
   paymentMethod: null,
   cancellationResolution: null,
@@ -98,7 +105,7 @@ test("reveals all order details from a keyboard-accessible mobile disclosure", (
     />,
   );
 
-  const disclosure = screen.getByRole("button", { name: "Pedido #ER-1" });
+  const disclosure = screen.getByRole("button", { name: "Pedido #RDER-1" });
   expect(disclosure.getAttribute("aria-expanded")).toBe("false");
 
   fireEvent.click(disclosure);

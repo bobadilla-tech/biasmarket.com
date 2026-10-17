@@ -6,6 +6,7 @@
 ##
 ## Steady state (100% of traffic on one color) looks like this:
 reverse_proxy api-blue:3000 {
+	header_up X-Forwarded-For {client_ip}
 	health_uri /api/health
 	health_interval 10s
 	health_timeout 5s
@@ -16,6 +17,7 @@ reverse_proxy api-blue:3000 {
 ## color while the candidate proves itself against a slice of real traffic:
 ##
 ## reverse_proxy api-blue:3000 api-green:3000 {
+## 	header_up X-Forwarded-For {client_ip}
 ## 	lb_policy weighted_round_robin 9 1
 ## 	health_uri /api/health
 ## 	health_interval 10s

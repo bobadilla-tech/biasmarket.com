@@ -3,11 +3,11 @@ import {
   addCartItem,
   cartCount,
   cartCurrency,
+  type CartItem,
   cartTotal,
   hasMixedCurrencies,
   removeCartItem,
   updateCartItemQuantity,
-  type CartItem,
 } from "./index";
 
 const item = (overrides: Partial<CartItem> = {}): CartItem => ({
@@ -41,9 +41,9 @@ describe("shared cart operations", () => {
   });
 
   it("removes only the matching product variant", () => {
-    expect(removeCartItem([item(), item({ variantId: "deluxe" })], item())).toEqual([
-      item({ variantId: "deluxe" }),
-    ]);
+    expect(
+      removeCartItem([item(), item({ variantId: "deluxe" })], item()),
+    ).toEqual([item({ variantId: "deluxe" })]);
   });
 
   it("calculates totals, count, and mixed-currency status", () => {

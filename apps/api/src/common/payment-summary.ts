@@ -1,9 +1,9 @@
-import { Prisma } from '@biasmarket/db';
+import { Prisma } from "@biasmarket/db";
 import type {
   PaymentReviewStatus,
   PaymentSource,
   PaymentStatus,
-} from '@biasmarket/db';
+} from "@biasmarket/db";
 
 export interface PaymentSummary {
   paidAmount: number;
@@ -15,18 +15,22 @@ export interface SummablePayment {
   amount: Prisma.Decimal;
   source: PaymentSource;
   reviewStatus: PaymentReviewStatus;
+  voidedAt?: Date | null;
 }
 
 // Single source of truth for "does this row count as paid" — every
 // aggregation call site that sums `OrderPayment.amount` (stats revenue,
 // customer lifetimeSpend, the featured-stores ranking, this file) must use
 // this same predicate, or an unreviewed buyer-submitted proof silently
-// inflates a different number in each place. See
-// docs/plans/2026-08-08-buyer-proof-of-payment-upload-plan.md's "Critical
+// inflates a different number in each place. Voided rows are excluded here
+// too, so payment history stays intact without counting annulled money. See
+// .artifacts/2026/08/20260808--buyer-proof-of-payment-upload/plan.md's "Critical
 // invariant" section.
 export function countsTowardPaid(payment: SummablePayment): boolean {
   return (
-    payment.source === 'SELLER_RECORDED' || payment.reviewStatus === 'APPROVED'
+    payment.voidedAt == null &&
+    (payment.source === "SELLER_RECORDED" ||
+      payment.reviewStatus === "APPROVED")
   );
 }
 
@@ -40,8 +44,8 @@ export function countsTowardPaid(payment: SummablePayment): boolean {
 // overview + analytics, customer lifetimeSpend, guest spend) applies the same
 // rule instead of each hard-coding its own status set.
 export const REVENUE_ORDER_PAYMENT_STATUSES: readonly PaymentStatus[] = [
-  'VERIFIED',
-  'PARTIALLY_PAID',
+  "VERIFIED",
+  "PARTIALLY_PAID",
 ] as const;
 
 export function countsTowardRevenue(paymentStatus: PaymentStatus): boolean {

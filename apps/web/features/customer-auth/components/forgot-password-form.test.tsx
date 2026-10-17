@@ -4,8 +4,12 @@ import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "../../../test-utils/render-with-providers";
 
 const forgotPassword = vi.fn();
+const globalForgotPassword = vi.fn();
 vi.mock("@/lib/api-client", () => ({
-  apiClient: { customerAuth: { forgotPassword } },
+  apiClient: {
+    customerAuth: { forgotPassword },
+    globalAccount: { forgotPassword: globalForgotPassword },
+  },
 }));
 
 const { ForgotPasswordForm } = await import("./forgot-password-form");
@@ -42,4 +46,27 @@ test("submits the phone and shows the generic success message", async () => {
     });
     expect(screen.getByText(/revisa tu correo para continuar/i)).toBeDefined();
   });
+});
+
+test("without a store it uses the global forgot-password endpoint and links back to My purchases", async () => {
+  globalForgotPassword.mockResolvedValueOnce({ ok: true });
+  const user = userEvent.setup();
+  renderWithProviders(<ForgotPasswordForm />);
+
+  await user.type(
+    screen.getByPlaceholderText("Teléfono (WhatsApp)"),
+    "988888888",
+  );
+  await user.click(screen.getByRole("button", { name: /enviar enlace/i }));
+
+  await waitFor(() => {
+    expect(globalForgotPassword).toHaveBeenCalledWith({
+      phone: "+51988888888",
+    });
+    expect(screen.getByText(/revisa tu correo para continuar/i)).toBeDefined();
+  });
+  expect(forgotPassword).not.toHaveBeenCalled();
+  expect(
+    screen.getByRole("link", { name: /volver/i }).getAttribute("href"),
+  ).toContain("/my-purchases");
 });

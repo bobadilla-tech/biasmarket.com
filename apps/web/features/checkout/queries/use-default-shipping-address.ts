@@ -8,7 +8,7 @@ import { apiClient } from "@/lib/api-client";
 // surface, so this never retries. Only used to prefill the inline
 // shippingAddress fields at COURIER checkout; checkout itself never reads
 // saved addresses server-side — see
-// docs/plans/2026-08-08-buyer-shipping-addresses-plan.md's "Important
+// .artifacts/2026/08/20260808--buyer-shipping-addresses/plan.md's "Important
 // correction" section.
 export function useDefaultShippingAddress(slug: string) {
   return useQuery({

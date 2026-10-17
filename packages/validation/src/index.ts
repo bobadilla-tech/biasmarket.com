@@ -22,11 +22,11 @@ export type { InquirySubmissionInput } from "./contact/inquiry-submission.schema
 export { buildCheckoutFormSchema } from "./checkout/checkout.schema.js";
 export type { CheckoutFormInput } from "./checkout/checkout.schema.js";
 export {
-  MAX_FILE_SIZE,
-  ACCEPTED_MIME_TYPES,
   ACCEPTED_EXTENSION,
-  type ProofFileLike,
+  ACCEPTED_MIME_TYPES,
   isProofFileLike,
+  MAX_FILE_SIZE,
+  type ProofFileLike,
 } from "./checkout/checkout.schema.js";
 
 export {
@@ -34,3 +34,15 @@ export {
   PAYMENT_METHOD_TYPES,
   type RegisterPaymentInput,
 } from "./payments/register-payment.schema.js";
+
+export {
+  buildSellerPaymentSchema,
+  SELLER_PAYMENT_ERRORS,
+  type SellerPaymentInput,
+} from "./payments/seller-payment.schema.js";
+
+export {
+  type AssistedOrderFormInput,
+  type AssistedOrderItemInput,
+  buildAssistedOrderSchema,
+} from "./assisted-order/assisted-order.schema.js";

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { LogOut, Search, ShoppingBag, User } from "lucide-react";
+import { LogOut, Search, ShoppingBag, Sparkles, User } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
   Popover,
@@ -89,8 +89,8 @@ function SearchForm({
         aria-label={t("search")}
         className={
           compact
-            ? "h-11 w-full rounded-lg border border-black/60 bg-white pr-3 pl-9 text-base text-foreground outline-none transition placeholder:text-[#1C1B1F]/70 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/50"
-            : "h-11 w-full rounded-full border border-black/20 bg-white pr-4 pl-10 text-base text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 md:text-sm"
+            ? "h-11 w-full rounded-lg border border-input bg-card pr-3 pl-9 text-base text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/50"
+            : "h-11 w-full rounded-full border border-input bg-card pr-4 pl-10 text-base text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 md:text-sm"
         }
       />
       <Search
@@ -194,9 +194,9 @@ function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
                 {t("myStores")}
               </p>
               {storesPending ? (
-                <div className="animate-pulse space-y-1 px-2">
-                  <div className="h-8 rounded-lg bg-muted" />
-                  <div className="h-8 rounded-lg bg-muted" />
+                <div className="space-y-1 px-2">
+                  <div className="fan-skeleton h-8 rounded-lg bg-muted" />
+                  <div className="fan-skeleton h-8 rounded-lg bg-muted" />
                 </div>
               ) : stores && stores.length > 0 ? (
                 <div className="flex flex-col">
@@ -244,6 +244,14 @@ function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
                 <User className="size-4" />
                 {t("myAccount")}
               </Link>
+              <Link
+                href="/my-purchases"
+                onClick={closeAndNavigate}
+                className={itemClassName}
+              >
+                <ShoppingBag className="size-4" />
+                {t("myPurchases")}
+              </Link>
               <button
                 type="button"
                 onClick={handleSignOut}
@@ -270,6 +278,15 @@ function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
             >
               {t("signUp")}
             </Link>
+            <Separator className="my-1" />
+            <Link
+              href="/my-purchases"
+              onClick={closeAndNavigate}
+              className={itemClassName}
+            >
+              <ShoppingBag className="size-4" />
+              {t("myPurchases")}
+            </Link>
           </div>
         )}
       </PopoverContent>
@@ -281,13 +298,14 @@ export function Navbar() {
   const t = useTranslations("marketing.navbar");
 
   return (
-    <header className="sticky top-0 z-40 border-b border-black/10 bg-white">
+    <header className="sticky top-0 z-40 border-b border-primary/10 bg-white/90 shadow-[0_5px_22px_rgb(48_29_62/6%)] backdrop-blur-xl">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:h-20 lg:gap-6 lg:px-10">
         {/* Mobile wordmark — Figma Frame 3 */}
         <Link
           href="/"
-          className="shrink-0 text-base leading-[19px] font-medium text-black lg:hidden"
+          className="inline-flex shrink-0 items-center gap-1.5 text-base leading-[19px] font-bold tracking-tight text-black lg:hidden"
         >
+          <Sparkles aria-hidden="true" className="size-4 text-primary" />
           Biasmarket
         </Link>
 

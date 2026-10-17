@@ -14,9 +14,9 @@ export default function DashboardLayout({
   if (!isReady) return <LoadingState />;
 
   return (
-    <>
+    <div className="dashboard-theme">
       <ImpersonationBanner />
       {children}
-    </>
+    </div>
   );
 }

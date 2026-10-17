@@ -6,6 +6,7 @@ import { BlogSection } from "./blog-section";
 import { CategoriesSection } from "./categories-section";
 import { DiscoverSection } from "./discover-section";
 import { Faq } from "./faq";
+import { FanJourneySection } from "./fan-journey-section";
 import { Hero } from "./hero";
 import { StoresSection } from "./stores-section";
 import { TrendsSection } from "./trends-section";
@@ -25,6 +26,7 @@ export function LandingPage({
     <div className="landing-theme min-h-screen bg-background text-foreground">
       <Hero />
       <CategoriesSection />
+      <FanJourneySection />
       <TrendsSection
         latestInitialData={latestProducts}
         bestSellersInitialData={bestSellers}

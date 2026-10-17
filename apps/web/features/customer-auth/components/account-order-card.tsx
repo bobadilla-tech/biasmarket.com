@@ -2,6 +2,7 @@ import { ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { OrderStatusBadge } from "@/features/orders";
+import { OriginLabel } from "@/features/buyer-purchases";
 import type { AccountOrderResponseDto } from "@biasmarket/types";
 
 export function AccountOrderCard({
@@ -19,8 +20,9 @@ export function AccountOrderCard({
       className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition hover:border-gray-200 hover:shadow-md sm:flex-row sm:items-center sm:justify-between"
     >
       <div>
-        <p className="text-sm font-semibold text-gray-900">
+        <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-gray-900">
           #{order.id.slice(0, 8)}
+          <OriginLabel source={order.source} />
         </p>
         <p className="text-xs text-gray-500">
           {new Date(order.createdAt).toLocaleDateString()}
