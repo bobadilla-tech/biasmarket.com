@@ -24,7 +24,8 @@
     "variableAvailability": "Availability varies",
     "backToDiscover": "Back to Discover",
     "catalogEyebrow": "Catalog",
-    "brandName": "Bias Market"
+    "brandName": "Bias Market",
+    "brandMonogram": "B"
   },
   "auth": {
     "loginTitle": "Sign in",
