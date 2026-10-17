@@ -178,9 +178,16 @@
     "orderReceivedPaymentPending": "Recibimos tu pedido. Sigue las instrucciones de pago de la tienda.",
     "orderReceived": "Recibimos tu pedido y la tienda podrá revisarlo desde su panel.",
     "orderSent": "Pedido enviado",
-    "loginToFill": "Inicia sesión para autocompletar tus datos.",
+    "loginToFill": "Inicia sesión para autocompletar tus datos",
     "orderNumber": "Pedido: {id}",
-    "viewOrder": "Ver mi pedido"
+    "viewOrder": "Ver mi pedido",
+    "phone": "Teléfono",
+    "paymentMethod": "Método de pago",
+    "noItems": "El carrito está vacío.",
+    "mixedCurrencies": "El carrito contiene monedas distintas y no se puede cobrar junto.",
+    "preparing": "Preparando checkout…",
+    "orderSuccessTitle": "Pedido enviado",
+    "backToDiscover": "Volver a descubrir"
   },
   "orders": {
     "loginPrompt": "Inicia sesión para ver tus pedidos.",

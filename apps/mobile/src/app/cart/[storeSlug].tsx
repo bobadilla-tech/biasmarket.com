@@ -152,10 +152,10 @@ export default function CartScreen() {
           <Pressable
             accessibilityRole="button"
             className="rounded-xl bg-brand-pink px-5 py-4"
-            onPress={() => router.push("/search")}
+            onPress={() => router.push({ pathname: "/checkout/[storeSlug]", params: { storeSlug } })}
           >
             <Text className="text-center font-bold text-brand-ink">
-              {t("catalog.keepBrowsing")}
+              {t("cart.continueCheckout")}
             </Text>
           </Pressable>
           {cart.error ? (

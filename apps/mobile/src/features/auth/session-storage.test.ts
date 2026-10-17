@@ -12,7 +12,7 @@ import {
   deleteBuyerSession,
   readBuyerSession,
   writeBuyerSession,
-} from "./session-storage.js";
+} from "./session-storage";
 
 describe("buyer session storage", () => {
   beforeEach(() => {
