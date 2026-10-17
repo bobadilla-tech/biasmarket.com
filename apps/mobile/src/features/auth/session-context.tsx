@@ -128,7 +128,10 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
         throw new Error(t("auth.sessionChanged"));
       }
       setMobileBearerToken(token);
-      void registerBuyerPushToken(slug).catch(() => undefined);
+      void registerBuyerPushToken(
+        slug,
+        t("notifications.defaultChannel"),
+      ).catch(() => undefined);
       setStoreSlug(slug);
       setStatus("authenticated");
     },

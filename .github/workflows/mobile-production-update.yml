@@ -19,7 +19,7 @@ jobs:
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
       EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
-      EAS_UPDATE_MESSAGE: ${{ inputs.message }}
+      UPDATE_MESSAGE: ${{ inputs.message }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -34,4 +34,4 @@ jobs:
           test -n "$EAS_PROJECT_ID" || (echo "EAS_PROJECT_ID is required in mobile-production" && exit 1)
           npm install --global eas-cli
           cd apps/mobile
-          eas update --channel production --message "$EAS_UPDATE_MESSAGE" --non-interactive
+          eas update --channel production --message "$UPDATE_MESSAGE" --non-interactive

@@ -30,9 +30,7 @@ export default function AccountScreen() {
       .catch((cause: unknown) => {
         if (!active) return;
         if (cause instanceof ApiError && cause.status === 401) return;
-        setError(
-          cause instanceof Error ? cause.message : t("common.connectionError"),
-        );
+        setError(t("common.connectionError"));
       });
     return () => {
       active = false;

@@ -62,10 +62,8 @@ export default function RegisterScreen() {
       } else {
         router.replace("/");
       }
-    } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : t("auth.registerFailed"),
-      );
+    } catch {
+      setError(t("auth.registerFailed"));
     }
   });
 

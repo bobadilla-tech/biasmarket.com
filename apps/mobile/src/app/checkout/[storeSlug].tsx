@@ -210,10 +210,8 @@ export default function CheckoutScreen() {
         t("checkout.proofCompressFailed"),
       );
       setField("paymentProof", proof);
-    } catch (error) {
-      setSubmitError(
-        error instanceof Error ? error.message : t("checkout.proofLoadFailed"),
-      );
+    } catch {
+      setSubmitError(t("checkout.proofLoadFailed"));
     } finally {
       setLoadingProof(false);
     }
@@ -319,10 +317,8 @@ export default function CheckoutScreen() {
           ),
         },
       });
-    } catch (error) {
-      setSubmitError(
-        error instanceof Error ? error.message : t("checkout.submitFailed"),
-      );
+    } catch {
+      setSubmitError(t("checkout.submitFailed"));
     } finally {
       setSubmitting(false);
     }

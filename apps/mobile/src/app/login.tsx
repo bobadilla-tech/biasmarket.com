@@ -48,8 +48,8 @@ export default function LoginScreen() {
       } else {
         router.replace("/");
       }
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t("auth.loginFailed"));
+    } catch {
+      setError(t("auth.loginFailed"));
     }
   });
 

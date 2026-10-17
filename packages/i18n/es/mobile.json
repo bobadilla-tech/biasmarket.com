@@ -220,5 +220,12 @@
     "buyerAccount": "Cuenta de comprador",
     "language": "Idioma de la aplicación",
     "greeting": "Hola, {name}"
+  },
+  "notifications": {
+    "defaultChannel": "Actualizaciones de pedidos"
+  },
+  "ios": {
+    "NSPhotoLibraryUsageDescription": "Bias Market necesita acceso a tus fotos para adjuntar un comprobante de pago.",
+    "NSCameraUsageDescription": "Bias Market necesita acceso a tu cámara para fotografiar un comprobante de pago."
   }
 }
