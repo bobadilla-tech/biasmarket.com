@@ -16,9 +16,13 @@ import { fetchPrivatePaymentProof } from "../../features/orders/private-payment-
 import { useMobileI18n } from "../../i18n/mobile-i18n.js";
 
 export default function OrderDetailScreen() {
-  const { orderId } = useLocalSearchParams<{ orderId: string }>();
+  const { orderId, storeSlug: routeStoreSlug } = useLocalSearchParams<{
+    orderId: string;
+    storeSlug?: string;
+  }>();
   const router = useRouter();
-  const { status, storeSlug } = useBuyerSession();
+  const { status, storeSlug: sessionStoreSlug } = useBuyerSession();
+  const storeSlug = routeStoreSlug ?? sessionStoreSlug;
   const { locale, t } = useMobileI18n();
   const orderQuery = useQuery({
     queryKey: ["buyer-order", storeSlug, orderId],
