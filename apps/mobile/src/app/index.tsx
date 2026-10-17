@@ -49,7 +49,7 @@ export default function HomeScreen() {
 
   return (
     <View className="flex-1 justify-center gap-4 bg-brand-ink px-6">
-      <Text className="text-3xl font-bold text-brand-pink">Bias Market</Text>
+      <Text className="text-3xl font-bold text-brand-pink">\n        {t("common.brandName")}\n      </Text>
       <Text className="text-lg text-white">
         {profile?.customer.name
           ? t("account.greeting", { name: profile.customer.name })
