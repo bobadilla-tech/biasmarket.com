@@ -49,10 +49,7 @@ export function updateQuantity(
   return next;
 }
 
-export function removeItem(
-  slug: string,
-  target: CartItemIdentity,
-): CartItem[] {
+export function removeItem(slug: string, target: CartItemIdentity): CartItem[] {
   const next = removeCartItem(getCart(slug), target);
   saveCart(slug, next);
   return next;
