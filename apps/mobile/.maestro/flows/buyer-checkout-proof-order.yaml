@@ -3,29 +3,32 @@ appId: com.biasmarket.mobile
 - launchApp:
     clearState: true
 - openLink: biasmarket:///login?storeSlug=${STORE_SLUG}
-- tapOn: "Slug de la tienda"
+- tapOn: "Store slug"
 - inputText: ${STORE_SLUG}
-- tapOn: "Teléfono"
+- tapOn: "Phone"
 - inputText: ${BUYER_PHONE}
-- tapOn: "Contraseña"
+- tapOn: "Password"
 - inputText: ${BUYER_PASSWORD}
 - hideKeyboard
-- tapOn: "Ingresar"
-- assertVisible: "Buscar"
+- tapOn: "Sign in"
+- assertVisible: "Search"
+- stopApp
+- launchApp
+- assertVisible: "Search"
 - openLink: biasmarket:///store/${STORE_SLUG}/product/${PRODUCT_ID}
 - assertVisible: ${PRODUCT_NAME}
-- tapOn: "Añadir al carrito"
-- tapOn: "Carrito (1)"
-- tapOn: "Continuar al pago"
-- assertVisible: "Finalizar compra"
-- tapOn: "Recojo"
+- tapOn: "Add to cart"
+- tapOn: "Cart (1)"
+- tapOn: "Continue to checkout"
+- assertVisible: "Checkout"
+- tapOn: "Pickup"
 - tapOn: ${PICKUP_LABEL}
 - tapOn: ${PAYMENT_METHOD}
-- tapOn: "Elegir imagen"
+- tapOn: "Choose image"
 - tapOn:
     point: "25%, 35%"
-- tapOn: "Confirmar pedido"
-- assertVisible: "Pedido enviado"
-- tapOn: "Ver mi pedido"
-- assertVisible: "Productos"
-- assertVisible: "Comprobante de pago privado"
+- tapOn: "Place order"
+- assertVisible: "Order placed"
+- tapOn: "View my order"
+- assertVisible: "Products"
+- assertVisible: "Private payment receipt"
