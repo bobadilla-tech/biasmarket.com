@@ -9,17 +9,19 @@ describe("FeaturedStoreCard", () => {
   it("shows the store identity and opens it when selected", async () => {
     const onPress = jest.fn();
     await render(
-      <FeaturedStoreCard
-        store={{
-          id: "store-1",
-          name: "Moon Shop",
-          slug: "moon-shop",
-          logoUrl: null,
-          revenue: 0,
-          orderCount: 0,
-        }}
-        onPress={onPress}
-      />,
+      <MobileI18nProvider>
+        <FeaturedStoreCard
+          store={{
+            id: "store-1",
+            name: "Moon Shop",
+            slug: "moon-shop",
+            logoUrl: null,
+            revenue: 0,
+            orderCount: 0,
+          }}
+          onPress={onPress}
+        />
+      </MobileI18nProvider>,
     );
 
     expect(screen.getByText("Moon Shop")).toBeTruthy();
