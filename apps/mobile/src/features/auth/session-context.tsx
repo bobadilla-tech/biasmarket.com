@@ -20,6 +20,7 @@ import {
   setMobileBearerToken,
   setUnauthorizedHandler,
 } from "./api-client.js";
+import { registerBuyerPushToken, unregisterBuyerPushToken } from "./push-token.js";
 
 type SessionStatus = "loading" | "authenticated" | "unauthenticated";
 
@@ -139,6 +140,7 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
         throw new Error("auth.sessionChanged");
       }
       setMobileBearerToken(token);
+      void registerBuyerPushToken(slug).catch(() => undefined);
       setStoreSlug(slug);
       setStatus("authenticated");
     },
@@ -166,8 +168,15 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
 
   const signOut = useCallback(async () => {
     setError(null);
+    if (storeSlug) {
+      try {
+        await unregisterBuyerPushToken(storeSlug);
+      } catch {
+        // Local logout must still complete.
+      }
+    }
     await clearLocalSession();
-  }, [clearLocalSession]);
+  }, [clearLocalSession, storeSlug]);
 
   const value = useMemo(
     () => ({
