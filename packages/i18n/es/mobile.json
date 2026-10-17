@@ -224,7 +224,8 @@
       "APPROVED": "Aprobado",
       "REJECTED": "Rechazado",
       "N_A": "Confirmado"
-    }
+    },
+    "viewOrders": "Ver mis pedidos"
   },
   "account": {
     "buyerAccount": "Cuenta de comprador",
