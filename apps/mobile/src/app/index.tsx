@@ -7,7 +7,7 @@ import { useBuyerSession } from "../features/auth/session-context.js";
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { status, storeSlug, signOut } = useBuyerSession();
+  const { status, storeSlug, signOut, error: sessionError } = useBuyerSession();
   const [profile, setProfile] = useState<CustomerProfileResponseDto | null>(
     null,
   );
@@ -57,16 +57,18 @@ export default function HomeScreen() {
         Tienda: {storeSlug}
         {profile ? ` · ${profile.customer.phone}` : ""}
       </Text>
-      {error ? (
+      {error || sessionError ? (
         <Text accessibilityRole="alert" className="text-sm text-red-300">
-          {error}
+          {error || sessionError}
         </Text>
       ) : null}
       <Pressable
         accessibilityRole="button"
         className="rounded-xl bg-brand-pink px-5 py-3"
         onPress={() => {
-          void signOut().then(() => router.replace("/login"));
+          void signOut()
+            .then(() => router.replace("/login"))
+            .catch(() => undefined);
         }}
       >
         <Text className="text-center font-semibold text-brand-ink">

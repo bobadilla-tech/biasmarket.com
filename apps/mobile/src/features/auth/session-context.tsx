@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type PropsWithChildren,
 } from "react";
@@ -13,7 +14,11 @@ import {
   readBuyerSession,
   writeBuyerSession,
 } from "./session-storage.js";
-import { setMobileBearerToken, setUnauthorizedHandler } from "./api-client.js";
+import {
+  isCurrentMobileAuthorization,
+  setMobileBearerToken,
+  setUnauthorizedHandler,
+} from "./api-client.js";
 
 type SessionStatus = "loading" | "authenticated" | "unauthenticated";
 
@@ -37,25 +42,57 @@ const BuyerSessionContext = createContext<BuyerSessionContextValue | null>(
 );
 
 export function BuyerSessionProvider({ children }: PropsWithChildren) {
+  const sessionGeneration = useRef(0);
+  const storageQueue = useRef<Promise<void>>(Promise.resolve());
   const [status, setStatus] = useState<SessionStatus>("loading");
   const [storeSlug, setStoreSlug] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const clearLocalSession = useCallback(async () => {
-    setMobileBearerToken(null);
-    setStoreSlug(null);
-    setStatus("unauthenticated");
-    try {
-      await deleteBuyerSession();
-    } catch {
-      setError("No se pudo borrar la sesión segura del dispositivo.");
-    }
+  const runStorageOperation = useCallback(<T,>(operation: () => Promise<T>) => {
+    const result = storageQueue.current.then(operation, operation);
+    storageQueue.current = result.then(
+      () => undefined,
+      () => undefined,
+    );
+    return result;
   }, []);
 
+  const clearLocalSession = useCallback(
+    async (authorization?: string) => {
+      if (authorization && !isCurrentMobileAuthorization(authorization)) {
+        return;
+      }
+      const generation = ++sessionGeneration.current;
+      try {
+        await runStorageOperation(deleteBuyerSession);
+      } catch (cause) {
+        if (generation === sessionGeneration.current) {
+          setError(
+            "No se pudo borrar la sesión segura del dispositivo. Inténtalo de nuevo.",
+          );
+        }
+        throw cause;
+      }
+      if (
+        generation !== sessionGeneration.current ||
+        (authorization && !isCurrentMobileAuthorization(authorization))
+      ) {
+        return;
+      }
+      setMobileBearerToken(null);
+      setStoreSlug(null);
+      setStatus("unauthenticated");
+    },
+    [runStorageOperation],
+  );
+
   useEffect(() => {
-    setUnauthorizedHandler(clearLocalSession);
-    void readBuyerSession()
+    const generation = ++sessionGeneration.current;
+    let active = true;
+    setUnauthorizedHandler((authorization) => clearLocalSession(authorization));
+    void runStorageOperation(readBuyerSession)
       .then((session) => {
+        if (!active || generation !== sessionGeneration.current) return;
         if (session) {
           setMobileBearerToken(session.token);
           setStoreSlug(session.storeSlug);
@@ -65,15 +102,19 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
         }
       })
       .catch(() => {
-        setStatus("unauthenticated");
+        if (!active || generation !== sessionGeneration.current) return;
         setError("No se pudo leer la sesión segura del dispositivo.");
       });
 
-    return () => setUnauthorizedHandler(undefined);
-  }, [clearLocalSession]);
+    return () => {
+      active = false;
+      setUnauthorizedHandler(undefined);
+    };
+  }, [clearLocalSession, runStorageOperation]);
 
   const signIn = useCallback(
     async (slug: string, phone: string, password: string) => {
+      const generation = ++sessionGeneration.current;
       setError(null);
       const response = await customerAuth.login(
         slug,
@@ -85,22 +126,38 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
         throw new Error("El servidor no devolvió el token de sesión móvil.");
       }
 
-      await writeBuyerSession({ token, storeSlug: slug });
+      if (generation !== sessionGeneration.current) {
+        throw new Error(
+          "La sesión cambió antes de completar el inicio de sesión.",
+        );
+      }
+      await runStorageOperation(() =>
+        writeBuyerSession({ token, storeSlug: slug }),
+      );
+      if (generation !== sessionGeneration.current) {
+        throw new Error(
+          "La sesión cambió antes de completar el inicio de sesión.",
+        );
+      }
       setMobileBearerToken(token);
       setStoreSlug(slug);
       setStatus("authenticated");
     },
-    [],
+    [runStorageOperation],
   );
 
   const register = useCallback(
     async (slug: string, token: string, phone: string, password: string) => {
+      const generation = ++sessionGeneration.current;
       setError(null);
       await customerAuth.register(
         slug,
         { token, password },
         { headers: { "X-Client": "mobile" } },
       );
+      if (generation !== sessionGeneration.current) {
+        throw new Error("La sesión cambió antes de completar el registro.");
+      }
       // The current registration endpoint sets the password but doesn't issue
       // a session token, so log in immediately to establish the mobile session.
       await signIn(slug, phone, password);
