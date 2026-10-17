@@ -3,22 +3,36 @@ appId: com.biasmarket.mobile
 - launchApp:
     clearState: true
 - openLink: biasmarket:///login?storeSlug=${STORE_SLUG}
-- tapOn: "Store slug"
+- tapOn: "^(?:Store slug|Slug de la tienda)$"
 - inputText: ${STORE_SLUG}
-- tapOn: "Phone"
+- tapOn: "^(?:Phone|Teléfono)$"
 - inputText: ${BUYER_PHONE}
-- tapOn: "Password"
+- tapOn: "^(?:Password|Contraseña)$"
 - inputText: ${BUYER_PASSWORD}
 - hideKeyboard
-- tapOn: "Sign in"
-- assertVisible: "Search"
+- tapOn: "^(?:Sign in|Ingresar)$"
+- assertVisible: "^(?:Search|Buscar)$"
 - stopApp
 - launchApp
 - assertVisible: "Search"
 - openLink: biasmarket:///store/${STORE_SLUG}/product/${PRODUCT_ID}
 - assertVisible: ${PRODUCT_NAME}
-- tapOn: "Add to cart"
-- tapOn: "Cart (1)"
+- tapOn: "^(?:Add to cart|Añadir al carrito)$"
+- tapOn: '^(?:Cart|Carrito) \(1\)
+- tapOn: "^(?:Continue to checkout|Continuar al pago)$"
+- assertVisible: "^(?:Checkout|Finalizar compra)$"
+- tapOn: "^(?:Pickup|Recojo)$"
+- tapOn: ${PICKUP_LABEL}
+- tapOn: ${PAYMENT_METHOD}
+- tapOn: "^(?:Choose image|Elegir imagen)$"
+- tapOn:
+    point: "25%, 35%"
+- tapOn: "^(?:Place order|Confirmar pedido)$"
+- assertVisible: "^(?:Order placed|Pedido enviado)$"
+- tapOn: "^(?:View my order|Ver mi pedido)$"
+- assertVisible: "^(?:Products|Productos)$"
+- assertVisible: "^(?:Private payment receipt|Comprobante de pago privado)$"
+
 - tapOn: "Continue to checkout"
 - assertVisible: "Checkout"
 - tapOn: "Pickup"
