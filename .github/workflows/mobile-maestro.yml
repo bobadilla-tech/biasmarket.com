@@ -1,0 +1,73 @@
+name: Mobile Maestro
+
+on:
+  push:
+    branches: [mobile-release]
+    paths:
+      - "apps/mobile/**"
+      - "packages/**"
+      - ".github/workflows/mobile-maestro.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  buyer-golden-path:
+    name: Browse, checkout, proof, order detail (staging)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    environment: mobile-staging
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
+      STORE_SLUG: ${{ secrets.MAESTRO_STORE_SLUG }}
+      PRODUCT_ID: ${{ secrets.MAESTRO_PRODUCT_ID }}
+      PRODUCT_NAME: ${{ secrets.MAESTRO_PRODUCT_NAME }}
+      BUYER_PHONE: ${{ secrets.MAESTRO_BUYER_PHONE }}
+      BUYER_PASSWORD: ${{ secrets.MAESTRO_BUYER_PASSWORD }}
+      PICKUP_LABEL: ${{ secrets.MAESTRO_PICKUP_LABEL }}
+      PAYMENT_METHOD: ${{ secrets.MAESTRO_PAYMENT_METHOD }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Start Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          script: |
+            test -n "$EXPO_TOKEN" || (echo "EXPO_TOKEN is required in mobile-staging" && exit 1)
+            test -n "$EAS_PROJECT_ID" || (echo "EAS_PROJECT_ID is required in mobile-staging" && exit 1)
+            test -n "$STORE_SLUG" || (echo "MAESTRO_STORE_SLUG is required in mobile-staging" && exit 1)
+            test -n "$PRODUCT_ID" || (echo "MAESTRO_PRODUCT_ID is required in mobile-staging" && exit 1)
+            test -n "$PRODUCT_NAME" || (echo "MAESTRO_PRODUCT_NAME is required in mobile-staging" && exit 1)
+            test -n "$BUYER_PHONE" || (echo "MAESTRO_BUYER_PHONE is required in mobile-staging" && exit 1)
+            test -n "$BUYER_PASSWORD" || (echo "MAESTRO_BUYER_PASSWORD is required in mobile-staging" && exit 1)
+            test -n "$PICKUP_LABEL" || (echo "MAESTRO_PICKUP_LABEL is required in mobile-staging" && exit 1)
+            test -n "$PAYMENT_METHOD" || (echo "MAESTRO_PAYMENT_METHOD is required in mobile-staging" && exit 1)
+            npm install --global eas-cli
+            curl -Ls "https://get.maestro.mobile.dev" | bash
+            export PATH="$PATH:$HOME/.maestro/bin"
+            cd apps/mobile
+            eas build --platform android --profile preview --non-interactive --wait
+            eas build:run --platform android --latest --non-interactive
+            adb shell mkdir -p /sdcard/Pictures
+            adb push .maestro/fixtures/payment-proof.png /sdcard/Pictures/payment-proof.png
+            adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file:///sdcard/Pictures/payment-proof.png
+            maestro test .maestro/flows/buyer-checkout-proof-order.yaml \
+              --env STORE_SLUG="$STORE_SLUG" \
+              --env PRODUCT_ID="$PRODUCT_ID" \
+              --env PRODUCT_NAME="$PRODUCT_NAME" \
+              --env BUYER_PHONE="$BUYER_PHONE" \
+              --env BUYER_PASSWORD="$BUYER_PASSWORD" \
+              --env PICKUP_LABEL="$PICKUP_LABEL" \
+              --env PAYMENT_METHOD="$PAYMENT_METHOD"
