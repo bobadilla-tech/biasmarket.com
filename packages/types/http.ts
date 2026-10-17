@@ -122,3 +122,49 @@ export async function customFetch<T>(
 
   return data as T;
 }
+
+export async function customFetchBlob(
+  url: string,
+  options: RequestOptions = {},
+): Promise<Blob> {
+  if (!config) {
+    throw new Error(
+      "configureApiClient() must be called before making API requests",
+    );
+  }
+  const { fallbackErrorMessage, ...init } = options;
+  const requestHeaders = new Headers(config.getAuthHeader?.());
+  if (init.headers) {
+    new Headers(init.headers).forEach((value, key) =>
+      requestHeaders.set(key, value),
+    );
+  }
+  const res = await fetch(`${config.baseUrl}${url}`, {
+    ...init,
+    headers: requestHeaders,
+    credentials: config.credentials ?? "include",
+  });
+
+  if (res.status === 401 && requestHeaders.has("Authorization")) {
+    try {
+      await config.onUnauthorized?.(requestHeaders.get("Authorization")!);
+    } catch {
+      // Preserve the API error even if local session cleanup fails.
+    }
+  }
+
+  if (!res.ok) {
+    const body = await res.text();
+    let data: unknown;
+    try {
+      data = body ? JSON.parse(body) : undefined;
+    } catch {
+      data = undefined;
+    }
+    throw new ApiError(
+      errorMessage(data, fallbackErrorMessage, res.status),
+      res.status,
+    );
+  }
+  return res.blob();
+}

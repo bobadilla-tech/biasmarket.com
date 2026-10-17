@@ -9,6 +9,7 @@ import {
   type PropsWithChildren,
 } from "react";
 import { customerAuth } from "@biasmarket/types";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   deleteBuyerSession,
   readBuyerSession,
@@ -42,6 +43,7 @@ const BuyerSessionContext = createContext<BuyerSessionContextValue | null>(
 );
 
 export function BuyerSessionProvider({ children }: PropsWithChildren) {
+  const queryClient = useQueryClient();
   const sessionGeneration = useRef(0);
   const storageQueue = useRef<Promise<void>>(Promise.resolve());
   const [status, setStatus] = useState<SessionStatus>("loading");
@@ -77,11 +79,14 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
       ) {
         return;
       }
+      queryClient.removeQueries({ queryKey: ["private-payment-proof"] });
+      queryClient.removeQueries({ queryKey: ["buyer"] });
+      queryClient.removeQueries({ queryKey: ["buyer-order"] });
       setMobileBearerToken(null);
       setStoreSlug(null);
       setStatus("unauthenticated");
     },
-    [runStorageOperation],
+    [queryClient, runStorageOperation],
   );
 
   useEffect(() => {
