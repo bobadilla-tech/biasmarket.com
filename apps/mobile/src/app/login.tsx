@@ -86,7 +86,7 @@ export default function LoginScreen() {
       />
       {sessionError || error ? (
         <Text accessibilityRole="alert" className="text-sm text-red-300">
-          {sessionError || error}
+          {error || (sessionError ? t(sessionError) : null)}
         </Text>
       ) : null}
       <Pressable
