@@ -8,8 +8,8 @@ import {
   customerLoginSchema,
   customerRegisterSchema,
 } from "@biasmarket/validation";
-import { useBuyerSession } from "../features/auth/session-context.js";
-import { useMobileI18n } from "../i18n/mobile-i18n.js";
+import { useBuyerSession } from "../features/auth/session-context";
+import { useMobileI18n } from "../i18n/mobile-i18n";
 
 const registerFormSchema = customerRegisterSchema.extend({
   storeSlug: z.string().min(1),
@@ -19,9 +19,13 @@ const registerFormSchema = customerRegisterSchema.extend({
 type RegisterForm = z.infer<typeof registerFormSchema>;
 
 export default function RegisterScreen() {
-  const params = useLocalSearchParams<{ slug?: string; token?: string }>();
-  const router = useRouter();
+  const params = useLocalSearchParams<{
+    slug?: string;
+    token?: string;
+    returnTo?: string;
+  }>();
   const { t } = useMobileI18n();
+  const router = useRouter();
   const { register, error: sessionError } = useBuyerSession();
   const [error, setError] = useState<string | null>(null);
   const token = Array.isArray(params.token) ? params.token[0] : params.token;
@@ -50,7 +54,14 @@ export default function RegisterScreen() {
         values.phone.trim(),
         values.password,
       );
-      router.replace("/");
+      if (params.returnTo === "checkout") {
+        router.replace({
+          pathname: "/checkout/[storeSlug]",
+          params: { storeSlug: values.storeSlug.trim() },
+        });
+      } else {
+        router.replace("/");
+      }
     } catch {
       setError(t("auth.registerFailed"));
     }
@@ -102,7 +113,7 @@ export default function RegisterScreen() {
       />
       {sessionError || error ? (
         <Text accessibilityRole="alert" className="text-sm text-red-300">
-          {error || (sessionError ? t(sessionError) : null)}
+          {sessionError || error}
         </Text>
       ) : null}
       <Pressable
@@ -115,7 +126,13 @@ export default function RegisterScreen() {
           {isSubmitting ? t("auth.saving") : t("auth.registerButton")}
         </Text>
       </Pressable>
-      <Link href="/login" className="text-center font-medium text-white">
+      <Link
+        href={{
+          pathname: "/login",
+          params: { storeSlug: slug, returnTo: params.returnTo },
+        }}
+        className="text-center font-medium text-white"
+      >
         {t("auth.alreadyHavePassword")}
       </Link>
     </ScrollView>
@@ -159,7 +176,11 @@ function RegisterField({
       />
       {error ? (
         <Text accessibilityRole="alert" className="text-sm text-red-300">
-          {error ? t("auth.requiredField") : null}
+          {name === "password" && error.includes("8")
+            ? t("auth.passwordLength")
+            : name === "confirmPassword" && error === "passwordsDontMatch"
+              ? t("auth.passwordMismatch")
+              : t("auth.requiredField")}
         </Text>
       ) : null}
     </View>
