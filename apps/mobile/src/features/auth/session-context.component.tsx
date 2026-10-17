@@ -33,6 +33,7 @@ import {
   registerBuyerPushToken,
   unregisterBuyerPushToken,
 } from "./push-token.js";
+import { MobileI18nProvider } from "../../i18n/mobile-i18n.js";
 import { BuyerSessionProvider, useBuyerSession } from "./session-context.js";
 import { configureMobileApiClient } from "./api-client.js";
 
@@ -61,11 +62,13 @@ function renderSession() {
   });
 
   return render(
-    <QueryClientProvider client={queryClient}>
-      <BuyerSessionProvider>
-        <SessionProbe />
-      </BuyerSessionProvider>
-    </QueryClientProvider>,
+    <MobileI18nProvider>
+      <QueryClientProvider client={queryClient}>
+        <BuyerSessionProvider>
+          <SessionProbe />
+        </BuyerSessionProvider>
+      </QueryClientProvider>
+    </MobileI18nProvider>,
   );
 }
 
