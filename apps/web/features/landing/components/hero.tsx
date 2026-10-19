@@ -20,7 +20,7 @@ export function Hero() {
           </h1>
           <p
             className="font-hero-accent font-semibold text-balance text-hero-accent"
-            style={{ fontSize: "clamp(22px, 3.2vw, 46px)", lineHeight: "1.1" }}
+            style={{ fontSize: "clamp(24px, 3.2vw, 46px)", lineHeight: "1.1" }}
           >
             {t("title2")}
           </p>
