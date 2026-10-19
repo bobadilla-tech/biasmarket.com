@@ -60,6 +60,10 @@
   --color-landing-gray: var(--landing-gray);
   --color-landing-link: var(--landing-link);
   --color-landing-title: var(--landing-title);
+  --color-cta: var(--cta);
+  --color-cta-hover: var(--cta-hover);
+  --color-cta-active: var(--cta-active);
+  --color-cta-strong: var(--cta-strong);
 }
 
 :root {
@@ -154,6 +158,13 @@
   --landing-gray: #d9d9d9;
   --landing-link: #750edc;
   --landing-title: #ff00b7;
+  /* Shared landing CTA pink (hero + help center buttons). White text on
+     --cta is ~3.8:1, so only use it behind large bold text (>= 18.66px).
+     Smaller CTA text uses --cta-strong (~4.7:1) to clear WCAG AA. */
+  --cta: #e8399e;
+  --cta-hover: #d4278c;
+  --cta-active: #c41d7f;
+  --cta-strong: #d4278c;
 }
 
 /* Scoped to the landing page only — remaps shadcn's semantic tokens to the
