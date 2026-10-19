@@ -37,13 +37,13 @@ export function Hero() {
 
         <div className="flex min-w-0 justify-center lg:justify-end">
           <Image
-            src="/landing/bm-props-sombra.png"
+            src="/landing/bm-props-hero.webp"
             alt=""
-            width={1152}
-            height={923}
+            width={962}
+            height={741}
             priority
             sizes="(min-width: 1346px) 640px, (min-width: 1024px) 48vw, 90vw"
-            className="pointer-events-none h-auto w-full max-w-[420px] mix-blend-multiply select-none sm:max-w-[520px] lg:max-w-[640px]"
+            className="pointer-events-none h-auto w-full max-w-[420px] select-none sm:max-w-[520px] lg:max-w-[640px]"
           />
         </div>
       </div>

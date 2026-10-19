@@ -86,9 +86,9 @@ function MobileAbout({
           </div>
         ))}
 
-        <div aria-hidden="true" className="mt-1 flex items-center gap-[7px]">
-          <span className="h-px min-w-[60px] flex-1 border-t border-white" />
-          <span className="text-[21px] leading-none font-bold text-white">
+        <div aria-hidden="true" className="mt-1 flex items-center gap-[42px]">
+          <span className="h-px min-w-[40px] flex-1 border-t border-white" />
+          <span className="w-[14px] text-center text-[21px] leading-none font-bold text-white">
             ✦
           </span>
           <span className="h-px min-w-[60px] flex-1 border-t border-white" />
@@ -97,7 +97,7 @@ function MobileAbout({
         <p className="mt-1 text-center text-2xs text-black">{helpTitle}</p>
         <Link
           href="/contact"
-          className="flex min-h-[31px] h-auto min-w-[131px] max-w-full items-center justify-center rounded-[5px] bg-[#b0006d] px-3 py-2 text-center text-[9.8px] leading-3 font-medium text-white transition-colors hover:bg-[#8f0059]"
+          className="flex min-h-[31px] h-auto min-w-[131px] max-w-full items-center justify-center rounded-[5px] bg-cta-strong px-3 py-2 text-center text-[9.8px] leading-3 font-medium text-white transition-colors hover:bg-cta-active focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cta-strong active:bg-cta-active"
         >
           {helpCta}
         </Link>
@@ -121,7 +121,7 @@ export function AboutSection() {
       />
 
       <section className="hidden w-full bg-[#FFEAF6] sm:block">
-        <div className="mx-auto max-w-[1344px] px-10 py-[51px]">
+        <div className="mx-auto max-w-[1344px] px-10 pt-[51px] pb-8">
           <div className="flex items-center justify-center gap-8">
             <div className="max-w-[1045px] text-center">
               <h2
@@ -174,19 +174,22 @@ export function AboutSection() {
               </div>
             ))}
           </div>
+        </div>
 
-          <div className="mt-8 flex flex-col items-center gap-4 text-center">
-            <div
-              aria-hidden="true"
-              className="flex w-full items-center justify-center gap-4"
-            >
-              <span className="h-0 flex-1 border-t-2 border-white" />
-              <span className="text-[42px] font-bold leading-none text-white">
-                ✦
-              </span>
-              <span className="h-0 flex-1 border-t-2 border-white" />
-            </div>
+        {/* Divider spans the section (3% side margin), wider than the cards. */}
+        <div
+          aria-hidden="true"
+          className="mx-[3%] flex items-center justify-center gap-[96px]"
+        >
+          <span className="h-0 flex-1 border-t-2 border-white" />
+          <span className="w-8 text-center text-[42px] font-bold leading-none text-white">
+            ✦
+          </span>
+          <span className="h-0 flex-1 border-t-2 border-white" />
+        </div>
 
+        <div className="mx-auto max-w-[1344px] px-10 pt-4 pb-[51px]">
+          <div className="flex flex-col items-center gap-4 text-center">
             <p
               style={{ fontWeight: 400, fontSize: 23, lineHeight: "28px" }}
               className="text-black"
@@ -195,8 +198,8 @@ export function AboutSection() {
             </p>
             <Link
               href="/contact"
-              style={{ fontWeight: 600, fontSize: 20, lineHeight: "24px" }}
-              className="flex min-h-[63px] h-auto min-w-[267px] max-w-full items-center justify-center rounded-[10.7px] bg-[#b0006d] px-6 py-4 text-center text-white transition-colors hover:bg-[#8f0059]"
+              style={{ fontWeight: 700, fontSize: 20, lineHeight: "24px" }}
+              className="flex min-h-[63px] h-auto min-w-[267px] max-w-full items-center justify-center rounded-[10.7px] bg-cta px-6 py-4 text-center text-white transition-colors hover:bg-cta-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cta-strong active:bg-cta-active"
             >
               {t("helpCta")}
             </Link>
