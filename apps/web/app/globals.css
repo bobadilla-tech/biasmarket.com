@@ -60,6 +60,11 @@
   --color-landing-gray: var(--landing-gray);
   --color-landing-link: var(--landing-link);
   --color-landing-title: var(--landing-title);
+  --color-hero-bg: var(--hero-bg);
+  --color-hero-title: var(--hero-title);
+  --color-hero-accent: var(--hero-accent);
+  --color-hero-accent-hover: var(--hero-accent-hover);
+  --font-hero-accent: var(--font-poppins), var(--font-geist-sans), sans-serif;
 }
 
 :root {
@@ -154,6 +159,13 @@
   --landing-gray: #d9d9d9;
   --landing-link: #750edc;
   --landing-title: #ff00b7;
+  /* Landing hero banner (#243). The CTA text is bold >= 19px (WCAG "large
+     text"), so white on --hero-accent (3.8:1) meets AA; the hover shade is
+     darker (5.3:1). */
+  --hero-bg: #fbf0fd;
+  --hero-title: #450f5f;
+  --hero-accent: #e8399e;
+  --hero-accent-hover: #c81f80;
 }
 
 /* Scoped to the landing page only — remaps shadcn's semantic tokens to the
