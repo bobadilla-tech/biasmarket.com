@@ -7,9 +7,9 @@ covering the Next.js frontend, the NestJS backend/API inventory, the database
 schema + order state machine, and the shared packages + payment-proof flow.
 Every claim below is evidence-based with `file:line` citations. No code was
 written or modified as part of this audit — see
-`docs/plans/2026-08-31-mobile-audit-cleanup-plan.md` and
-`docs/plans/2026-08-31-mobile-app-mvp-plan.md` for the follow-up work this audit
-generated.
+`.artifacts/2026/08/20260831--mobile-audit-cleanup/plan.md` and
+`.artifacts/2026/08/20260831--mobile-app-mvp/plan.md` for the follow-up work
+this audit generated.
 
 ---
 
@@ -244,7 +244,7 @@ that can't hold cookies — it simply isn't enabled today. The buyer side's toke
 is already conceptually bearer-shaped (self-contained, stateless, versioned);
 only its transport (cookie + Origin check) needs a native-friendly mode. Neither
 system needs a rewrite — both need an additive parallel token-issuance path.
-Full design in `docs/plans/2026-08-31-mobile-app-mvp-plan.md`.
+Full design in `.artifacts/2026/08/20260831--mobile-app-mvp/plan.md`.
 
 ---
 
@@ -324,16 +324,16 @@ and it isn't.
 ## 11. Mobile framework recommendation (summary)
 
 Full comparison and rationale live in
-`docs/plans/2026-08-31-mobile-app-mvp-plan.md` §2. Short version: **Expo + React
-Native + Expo Router + NativeWind**, added as `apps/mobile` in the existing
-Turborepo. Cross-platform UI frameworks (Tamagui, gluestack-ui) were evaluated
-and rejected — they earn their complexity when there's a large, actively-shared
-component surface between web and native, and here `packages/ui` is empty and
-`apps/web`'s real components are built on Base UI, which has no React Native
-equivalent. Adopting Tamagui would mean building a second design system from
-scratch anyway, while also taking on a new compiler and styling API — paying
-maximum-sharing complexity for a sharing benefit that doesn't exist in this repo
-today.
+`.artifacts/2026/08/20260831--mobile-app-mvp/plan.md` §2. Short version:
+**Expo + React Native + Expo Router + NativeWind**, added as `apps/mobile` in
+the existing Turborepo. Cross-platform UI frameworks (Tamagui, gluestack-ui)
+were evaluated and rejected — they earn their complexity when there's a large,
+actively-shared component surface between web and native, and here `packages/ui`
+is empty and `apps/web`'s real components are built on Base UI, which has no
+React Native equivalent. Adopting Tamagui would mean building a second design
+system from scratch anyway, while also taking on a new compiler and styling API
+— paying maximum-sharing complexity for a sharing benefit that doesn't exist in
+this repo today.
 
 ---
 
@@ -395,10 +395,10 @@ rather than blocking the mobile plan:
 
 ## 14. Recommendation
 
-See `docs/plans/2026-08-31-mobile-app-mvp-plan.md` for the full architecture
-recommendation, phased plan, effort estimate, and risk register. In one line:
-add `apps/mobile` (Expo + React Native + NativeWind) to the existing Turborepo,
-reuse `packages/types`/`packages/utils` largely unchanged, and make two scoped,
-additive backend changes — a bearer-token mode for better-auth and a
+See `.artifacts/2026/08/20260831--mobile-app-mvp/plan.md` for the full
+architecture recommendation, phased plan, effort estimate, and risk register. In
+one line: add `apps/mobile` (Expo + React Native + NativeWind) to the existing
+Turborepo, reuse `packages/types`/`packages/utils` largely unchanged, and make
+two scoped, additive backend changes — a bearer-token mode for better-auth and a
 header-token + `OriginGuard`-exemption path for `customer-auth` — before writing
 any mobile screen that needs authentication.

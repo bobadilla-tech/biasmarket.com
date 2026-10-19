@@ -315,7 +315,7 @@ export class OrderController {
 
   // Authenticated streaming read for a payment's proof image — the only
   // way to fetch one. Never redirects to a presigned URL (see
-  // docs/plans/2026-08-08-payment-proof-image-access-control-plan.md): the
+  // .artifacts/2026/08/20260808--payment-proof-image-access-control/plan.md): the
   // payment bucket is private, so `OrderPayment.imageUrl` alone is no longer
   // fetchable by anyone who obtains it, only via this ownership-gated route.
   @Get(':orderId/payments/:paymentId/image')

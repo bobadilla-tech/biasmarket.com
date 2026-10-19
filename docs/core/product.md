@@ -220,7 +220,7 @@ without it, and it's listed as an MVP deliverable in [roadmap.md](roadmap.md).
 Applies to every field a seller writes that ends up on a public storefront page:
 `Store.bio`, `Store.aboutMarkdown`, `StoreSection` `TEXT_BLOCK` / `BANNER`
 content, and product name/description/images. Scoped by
-[the store rich-content + thin-content indexing plan](../plans/2026-09-07-store-rich-content-and-thin-content-indexing-plan.md);
+[the store rich-content + thin-content indexing plan](../../.artifacts/2026/09/20260907--store-rich-content-and-thin/plan.md);
 this also closes the GSC-audit doc's Phase D Tier 3 item 4 (alt-text
 convention). The forms and the markdown renderer **enforce** the
 machine-checkable parts (non-empty `alt`, on-CDN image `src`, the tag

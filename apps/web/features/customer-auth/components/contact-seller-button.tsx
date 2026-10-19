@@ -7,7 +7,7 @@ import { usePublicStore } from "../queries/use-public-store";
 
 // Hardcoded Spanish fallback message, not the whatsapp-templates endpoint —
 // that module only supports NEW_ORDER/PAYMENT_REMINDER and 400s on anything
-// else (see docs/plans/2026-08-08-buyer-mini-dashboard-plan.md). Matches the
+// else (see .artifacts/2026/08/20260808--buyer-mini-dashboard/plan.md). Matches the
 // existing hardcoded-Spanish convention already used by every other message
 // builder in packages/utils/src/whatsapp.
 function buildContactMessage(orderId?: string): string {

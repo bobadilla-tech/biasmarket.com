@@ -26,8 +26,9 @@ The actual `command:` each service runs lives in
 [`web-dev.sh`](../../infra/docker/scripts/web-dev.sh) — pulled out of the
 compose file's inline `command:` since that YAML folded scalar previously broke
 the `concurrently` invocation once already (silently ate `\` line-continuations,
-see [docker-infra plan](../plans/2026-07-16-docker-infra.md)). Edit those
-scripts, not the compose file, to change the dev process pipeline.
+see
+[docker-infra plan](../../.artifacts/2026/07/20260716--docker-infra/plan.md)).
+Edit those scripts, not the compose file, to change the dev process pipeline.
 
 Editing `apps/api` or `apps/web` directly hot-reloads on its own
 (`nest build --watch` / `next dev`). Editing a shared workspace package

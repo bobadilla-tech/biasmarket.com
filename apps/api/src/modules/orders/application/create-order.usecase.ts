@@ -72,7 +72,7 @@ export class CreateOrderUseCase {
   // When present, the use case attaches a BUYER_SUBMITTED/PENDING_REVIEW
   // OrderPayment row for the full order total in the same transaction that
   // creates the order, so the seller's existing review surface (approve/
-  // reject, see docs/plans/2026-08-08-buyer-proof-of-payment-upload-plan.md)
+  // reject, see .artifacts/2026/08/20260808--buyer-proof-of-payment-upload/plan.md)
   // sees it immediately.
   async execute(
     slug: string,

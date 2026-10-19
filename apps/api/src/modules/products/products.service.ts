@@ -57,7 +57,7 @@ export class ProductsService {
    * Recompute `Store.publishedProductCount` from scratch and stamp
    * `contentStaleAt`. Called from every mutation that can change whether a
    * product counts as PUBLISHED / non-discontinued / non-soft-deleted (D4 of
-   * docs/plans/2026-09-07-store-rich-content-and-thin-content-indexing-plan.md).
+   * .artifacts/2026/09/20260907--store-rich-content-and-thin/plan.md).
    * A full recount (rather than scattered increment/decrement math) keeps the
    * "what counts" rule in one place; the D4 backfill migration mirrors it.
    */

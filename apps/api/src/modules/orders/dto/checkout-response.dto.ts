@@ -5,7 +5,7 @@ import { ApiProperty } from '@nestjs/swagger';
 // product/variant join on items, no payments/proofs, no computed
 // payment-summary fields. Don't reuse order-response.dto.ts's
 // OrderResponseDto/OrderStatusResponseDto here — see that file's module
-// comment and docs/plans/2026-08-05-orval-rollout-batch-4-order-checkout-plan.md.
+// comment and .artifacts/2026/08/20260805--orval-rollout-batch-4-order/plan.md.
 
 export class CheckoutOrderItemResponseDto {
   @ApiProperty()

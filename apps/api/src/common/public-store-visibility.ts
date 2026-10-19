@@ -16,7 +16,7 @@ export const PUBLIC_STORE_VISIBILITY = {
 //
 // The sitemap reads used to be deliberately exempt from any catalog/content
 // gate ("list every public store regardless of state"). D7 of
-// docs/plans/2026-09-07-store-rich-content-and-thin-content-indexing-plan.md
+// .artifacts/2026/09/20260907--store-rich-content-and-thin/plan.md
 // (parent: 2026-09-07-gsc-indexing-audit-organic-growth-plan.md Tier 3 item 1)
 // reversed that: the sitemap now spreads SITEMAP_INDEXABLE_STORE_WHERE (see
 // store-indexability.ts) so thin / near-empty stores are neither indexed nor

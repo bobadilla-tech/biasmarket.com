@@ -10,7 +10,7 @@ api.biasmarket.com {
 	}
 
 	# The API has no content Google should ever index (see
-	# docs/plans/2026-08-20-seo-strategy-review-plan.md Phase 3) — a bare
+	# .artifacts/2026/08/20260820--seo-strategy-review/plan.md Phase 3) — a bare
 	# GET / 404s under Nest's global 'api' route prefix, but nothing stopped
 	# it from being crawled in the first place. Served at the Caddy layer,
 	# not from Nest, since the global prefix would otherwise put this at

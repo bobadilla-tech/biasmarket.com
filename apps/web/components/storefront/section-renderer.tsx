@@ -36,7 +36,7 @@ export interface RenderableSection {
 
 // Shared with the real public storefront (`app/[locale]/(storefront)/store/[slug]/page.tsx`)
 // so the seller's section-builder preview can't drift from what buyers see —
-// see docs/plans/2026-08-08-storefront-section-drag-drop-preview.md. Does
+// see .artifacts/2026/08/20260808--storefront-section-drag-drop-preview/plan.md. Does
 // *not* cover the synthesized trailing catch-all section for uncollected
 // products (documented out of scope there): callers only ever pass real,
 // ordered StoreSection rows.
