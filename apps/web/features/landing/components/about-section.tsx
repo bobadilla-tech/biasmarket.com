@@ -58,6 +58,7 @@ function MobileAbout({
         <Image
           src="/landing/wand.png"
           alt=""
+          aria-hidden="true"
           width={86}
           height={137}
           className="pointer-events-none h-auto w-[86px] shrink-0 select-none object-contain"
@@ -122,7 +123,7 @@ export function AboutSection() {
 
       <section className="hidden w-full bg-[#FFEAF6] sm:block">
         <div className="mx-auto max-w-[1344px] px-10 py-[51px]">
-          <div className="flex items-center justify-center gap-8">
+          <div className="flex items-center justify-center">
             <div className="max-w-[1045px] text-center">
               <h2
                 className="font-bold text-black"
@@ -137,42 +138,53 @@ export function AboutSection() {
                 {t("subtitle").replace(/\n/g, " ")}
               </p>
             </div>
+          </div>
+
+          {/*
+            The lightstick peeks out from behind the third card: it is anchored
+            to the top edge of the card grid (not the section) and sits under the
+            cards in the stacking order, so the card's top edge hides the handle.
+            Overlap instead of cropping keeps the cut aligned if content height
+            changes.
+          */}
+          <div className="relative mt-8 md:mt-[72px] lg:mt-[104px]">
             <Image
               src="/landing/wand.png"
               alt=""
-              width={175}
-              height={280}
-              className="hidden h-[280px] w-auto shrink-0 object-contain select-none lg:block"
+              aria-hidden="true"
+              width={928}
+              height={1152}
+              className="pointer-events-none absolute right-2 bottom-[calc(100%-78px)] z-0 hidden h-[200px] w-auto select-none md:block lg:right-4 lg:bottom-[calc(100%-110px)] lg:h-[280px]"
             />
-          </div>
 
-          <div className="mt-8 grid gap-2.5 md:grid-cols-3">
-            {items.map((item, index) => (
-              <div
-                key={item.title}
-                className="flex flex-col items-center rounded-[40.8px] bg-white px-10 py-6 text-center"
-              >
-                <Image
-                  src={ILLUSTRATIONS[index]?.src ?? ILLUSTRATIONS[0].src}
-                  alt=""
-                  width={ILLUSTRATIONS[index]?.width ?? 104}
-                  height={ILLUSTRATIONS[index]?.height ?? 96}
-                  className="h-[96px] w-auto object-contain"
-                />
-                <h3
-                  className="mt-2 font-semibold text-black"
-                  style={{ fontSize: 25, lineHeight: "30px" }}
+            <div className="relative z-10 grid gap-2.5 md:grid-cols-3">
+              {items.map((item, index) => (
+                <div
+                  key={item.title}
+                  className="relative flex flex-col items-center rounded-[40.8px] bg-white px-10 py-6 text-center"
                 >
-                  {item.title}
-                </h3>
-                <p
-                  className="mt-1 text-justify font-light text-black"
-                  style={{ fontSize: 18, lineHeight: "22px" }}
-                >
-                  {item.body}
-                </p>
-              </div>
-            ))}
+                  <Image
+                    src={ILLUSTRATIONS[index]?.src ?? ILLUSTRATIONS[0].src}
+                    alt=""
+                    width={ILLUSTRATIONS[index]?.width ?? 104}
+                    height={ILLUSTRATIONS[index]?.height ?? 96}
+                    className="h-[96px] w-auto object-contain"
+                  />
+                  <h3
+                    className="mt-2 font-semibold text-black"
+                    style={{ fontSize: 25, lineHeight: "30px" }}
+                  >
+                    {item.title}
+                  </h3>
+                  <p
+                    className="mt-1 text-justify font-light text-black"
+                    style={{ fontSize: 18, lineHeight: "22px" }}
+                  >
+                    {item.body}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="mt-8 flex flex-col items-center gap-4 text-center">
