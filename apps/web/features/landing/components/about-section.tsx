@@ -15,6 +15,31 @@ const ILLUSTRATIONS = [
   { src: "/landing/shield.png", alt: "", width: 258, height: 173 },
 ];
 
+const BRAND = "BIASMARKET";
+
+/** Renders the title with the brand name wrapped in the brand gradient. */
+function BrandTitle({ title }: { title: string }) {
+  const index = title.indexOf(BRAND);
+  if (index === -1) return <>{title}</>;
+  return (
+    <>
+      {title.slice(0, index)}
+      <span
+        className="bg-clip-text text-transparent"
+        style={{
+          backgroundImage:
+            "linear-gradient(90deg, var(--brand-gradient-start) 0%, var(--brand-gradient-end) 100%)",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+        }}
+      >
+        {BRAND}
+      </span>
+      {title.slice(index + BRAND.length)}
+    </>
+  );
+}
+
 function MobileAbout({
   title,
   subtitle,
@@ -122,16 +147,16 @@ export function AboutSection() {
 
       <section className="hidden w-full bg-[#FFEAF6] sm:block">
         <div className="mx-auto max-w-[1344px] px-10 pt-[51px] pb-8">
-          <div className="flex items-center justify-center gap-8">
-            <div className="max-w-[1045px] text-center">
+          <div className="flex items-center justify-between gap-6">
+            <div className="min-w-0 flex-1 pl-4 text-left">
               <h2
                 className="font-bold text-black"
                 style={{ fontWeight: 700, fontSize: 45, lineHeight: "53px" }}
               >
-                {t("title")}
+                <BrandTitle title={t("title")} />
               </h2>
               <p
-                className="mt-1 text-black"
+                className="mt-1 text-black min-[1400px]:whitespace-nowrap"
                 style={{ fontWeight: 400, fontSize: 24, lineHeight: "28px" }}
               >
                 {t("subtitle").replace(/\n/g, " ")}
