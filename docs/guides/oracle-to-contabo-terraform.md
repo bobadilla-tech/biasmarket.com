@@ -5,8 +5,9 @@ Postgres, Redis, MinIO, Caddy, blue/green deploys) from an Oracle Cloud free
 tier VM to a paid Contabo VPS, using the migration as a real-world excuse to
 learn Terraform. Written as the work happens, so the wrong turns are in here
 too. The decision record lives in
-[the plan](../plans/2026-09-20-contabo-migration-terraform-plan.md); this file
-is the tutorial-shaped version of it, meant to be turned into a blog post.
+[the plan](../../.artifacts/2026/09/20260920--contabo-migration-terraform/plan.md);
+this file is the tutorial-shaped version of it, meant to be turned into a blog
+post.
 
 Each part has the same shape: **what we do**, **the Terraform concept it
 teaches**, **what surprised us**.
@@ -689,6 +690,7 @@ logged into interactively from outside: its two keys are locked to "rsync into
 ### Creating and managing admin users
 
 A fresh production database has no admin. Sellers register themselves, admins
+<<<<<<< HEAD
 are made from the server. You do not need a copy of the repo on the server, and you should not clone one:
 the API's admin scripts ship inside the API's Docker image, so the command just
 has to run _inside the live container_. Working out which color is live and which
@@ -696,6 +698,15 @@ image tag it runs is fiddly, so a wrapper does it. It lives in `infra/vps/bin/`,
 which CD already syncs to `/home/deploy/biasmarket/bin/` on every deploy, so it is
 automatically there and never a manual step. Run it as root (or `deploy`) from any
 directory:
+=======
+are made from the server. You do not need a copy of the repo on the server, and
+you should not clone one: the API's admin scripts ship inside the API's Docker
+image, so the command just has to run _inside the live container_. Working out
+which color is live and which image tag it runs is fiddly, so a wrapper does it.
+It lives in `infra/vps/bin/`, which CD already syncs to `/opt/biasmarket/bin/`
+on every deploy, so it is automatically there and never a manual step. Run it as
+root (or `deploy`) from any directory:
+>>>>>>> d4ebaf7 (artifacts guidelines)
 
 ```bash
 ssh root@161.97.113.35
@@ -704,11 +715,17 @@ ssh root@161.97.113.35
 /home/deploy/biasmarket/bin/admin.sh revoke  you@example.com
 ```
 
+<<<<<<< HEAD
 Or in one line from your laptop: `ssh root@161.97.113.35 /home/deploy/biasmarket/bin/admin.sh create you@example.com "Your Name"`.
+=======
+Or in one line from your laptop:
+`ssh root@161.97.113.35 /opt/biasmarket/bin/admin.sh create you@example.com "Your Name"`.
+>>>>>>> d4ebaf7 (artifacts guidelines)
 
 - It prints a generated password **once**. Copy it, then sign in at
   `https://biasmarket.com/es/login` and open `/es/admin` (users, stores,
-  coupons, inquiries). Change the password after the first login at `/es/account`.
+  coupons, inquiries). Change the password after the first login at
+  `/es/account`.
 - Already registered and just need the role? Use
   `admin.sh promote you@example.com` instead of `create`.
 - To remove admin rights: `admin.sh revoke you@example.com` (sets the role back
@@ -716,14 +733,14 @@ Or in one line from your laptop: `ssh root@161.97.113.35 /home/deploy/biasmarket
 - **Never run `seed:base` on production.** It creates admin accounts with a
   published password. It is for development databases only.
 
-**A trap we fell into while writing this:** the first version of these commands had
-`--` before the arguments (`... admin:create -- you@example.com`), which is the
-usual way to pass arguments through `pnpm run`. Here it made the script read `--`
-as the email, so it would have created an admin account with the email `--`.
-Testing the exact command against the real server (with a harmless `promote` on a
-nonexistent address) is what caught it: the error read `No user found with email --`.
-The lesson is the same as everywhere in this guide: run the documented command
-before you trust it.
+**A trap we fell into while writing this:** the first version of these commands
+had `--` before the arguments (`... admin:create -- you@example.com`), which is
+the usual way to pass arguments through `pnpm run`. Here it made the script read
+`--` as the email, so it would have created an admin account with the email
+`--`. Testing the exact command against the real server (with a harmless
+`promote` on a nonexistent address) is what caught it: the error read
+`No user found with email --`. The lesson is the same as everywhere in this
+guide: run the documented command before you trust it.
 
 ### Deploying and rolling back
 

@@ -81,7 +81,7 @@ model Store {
   themeConfig           Json
   logoUrl               String?
   // Seller-authored store copy for SEO/discovery (see
-  // docs/plans/2026-09-07-store-rich-content-and-thin-content-indexing-plan.md).
+  // .artifacts/2026/09/20260907--store-rich-content-and-thin/plan.md).
   // `bio`: short plain-text tagline, app-capped at 280.
   // `aboutMarkdown`: longer "about the store" content, MARKDOWN SUBSET,
   // app-capped at 4000. The render-time allowlist (web) is the security
@@ -90,7 +90,7 @@ model Store {
   aboutMarkdown         String?
   // Denormalised count of PUBLISHED, non-discontinued, non-soft-deleted
   // products. Kept in sync by ProductsService on every status transition
-  // (docs/plans/2026-09-07-store-rich-content-and-thin-content-indexing-plan.md
+  // (.artifacts/2026/09/20260907--store-rich-content-and-thin/plan.md
   // D4) so the sitemap indexability gate can filter without an N+1 count.
   publishedProductCount Int      @default(0)
   // Timestamp of the last storefront-VISIBLE content change (bio,
@@ -290,7 +290,7 @@ model Order {
   storeId                String
   customerId             String?
   // New global buyer identity, added alongside `customerId` rather than
-  // replacing it — see docs/plans/2026-08-08-global-buyer-account-plan.md.
+  // replacing it — see .artifacts/2026/08/20260808--global-buyer-account/plan.md.
   // `customerId` is dropped in a later follow-up migration once the backfill
   // is verified complete.
   buyerAccountId         String?
@@ -373,7 +373,7 @@ model OrderPayment {
   imageUrl     String?
   createdAt    DateTime            @default(now())
   // Buyer-submitted proof-of-payment upload — see
-  // docs/plans/2026-08-08-buyer-proof-of-payment-upload-plan.md. `source`
+  // .artifacts/2026/08/20260808--buyer-proof-of-payment-upload/plan.md. `source`
   // distinguishes who created the row; `reviewStatus` gates whether it
   // counts toward `paidAmount` (see common/payment-summary.ts's
   // `countsTowardPaid` — the single source of truth for this filter, reused
@@ -518,7 +518,7 @@ enum WhatsAppMessageType {
 }
 
 // Per-store override for the WhatsApp message a seller sends to a buyer —
-// see docs/plans/2026-08-08-configurable-whatsapp-templates-plan.md. A store
+// see .artifacts/2026/08/20260808--configurable-whatsapp-templates/plan.md. A store
 // with no row for a given type falls back to the hardcoded default template
 // in packages/utils/src/whatsapp/index.ts.
 model WhatsAppMessageTemplate {
@@ -576,7 +576,7 @@ model Customer {
 
 // Global buyer identity — one per phone number across every store, replacing
 // per-store `Customer` as the buyer-auth root. See
-// docs/plans/2026-08-08-global-buyer-account-plan.md. `Customer` itself is
+// .artifacts/2026/08/20260808--global-buyer-account/plan.md. `Customer` itself is
 // kept as a per-store "who has bought here" projection for the seller
 // Customers dashboard, decoupled from auth.
 model BuyerAccount {
@@ -601,10 +601,10 @@ model BuyerAccount {
 }
 
 // Buyer-owned, reusable across every store the BuyerAccount is linked to
-// (global identity — see docs/plans/2026-08-08-global-buyer-account-plan.md).
+// (global identity — see .artifacts/2026/08/20260808--global-buyer-account/plan.md).
 // Not read server-side during checkout; the buyer's default address is only
 // ever a client-side prefill, checkout itself accepts inline shippingAddress
-// fields — see docs/plans/2026-08-08-buyer-shipping-addresses-plan.md's
+// fields — see .artifacts/2026/08/20260808--buyer-shipping-addresses/plan.md's
 // "Important correction" section for why.
 model Address {
   id             String   @id @default(cuid())
@@ -710,7 +710,7 @@ model AuditLog {
 
 // Platform-level operational data (Uptime Kuma webhook events) — deliberately
 // outside the multi-tenancy model, no storeId: an API-down incident isn't
-// "owned" by any one store. See docs/plans/2026-08-09-uptime-kuma-monitoring-plan.md.
+// "owned" by any one store. See .artifacts/2026/08/20260809--uptime-kuma-monitoring/plan.md.
 model PlatformIncident {
   id          String    @id @default(cuid())
   monitorId   Int

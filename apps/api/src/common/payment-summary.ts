@@ -22,7 +22,7 @@ export interface SummablePayment {
 // customer lifetimeSpend, the featured-stores ranking, this file) must use
 // this same predicate, or an unreviewed buyer-submitted proof silently
 // inflates a different number in each place. See
-// docs/plans/2026-08-08-buyer-proof-of-payment-upload-plan.md's "Critical
+// .artifacts/2026/08/20260808--buyer-proof-of-payment-upload/plan.md's "Critical
 // invariant" section.
 export function countsTowardPaid(payment: SummablePayment): boolean {
   return (

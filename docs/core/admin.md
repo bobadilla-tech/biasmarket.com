@@ -121,9 +121,9 @@ the same admin-only role gate as the other screens.
 - `/enterprise` — also surfaces the same Cal.com card as a secondary CTA.
 
 Full design history / why things landed this way:
-[`2026-07-22-contact-page-cal-com-admin-inquiries.md`](../plans/2026-07-22-contact-page-cal-com-admin-inquiries.md),
-[`2026-07-22-admin-sidebar-shell.md`](../plans/2026-07-22-admin-sidebar-shell.md),
-[`2026-07-22-admin-login-redirect-impersonation-seed.md`](../plans/2026-07-22-admin-login-redirect-impersonation-seed.md).
+[`2026-07-22-contact-page-cal-com-admin-inquiries.md`](../../.artifacts/2026/07/20260722--contact-page-cal-com-admin/plan.md),
+[`2026-07-22-admin-sidebar-shell.md`](../../.artifacts/2026/07/20260722--admin-sidebar-shell/plan.md),
+[`2026-07-22-admin-login-redirect-impersonation-seed.md`](../../.artifacts/2026/07/20260722--admin-login-redirect-impersonation-seed/plan.md).
 
 ## Rate limiting & abuse
 

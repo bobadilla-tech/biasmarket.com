@@ -8,7 +8,7 @@ export type { RequestOptions } from "./http.js";
 export * from "./generated/api.schemas.js";
 
 // One namespace export per migrated tag/controller (see
-// docs/plans/2026-08-04-typed-sdk-client-followups.md). Add a line here as
+// .artifacts/2026/08/20260804--typed-sdk-client-followups/plan.md). Add a line here as
 // each further module migrates; apps/web/lib/api-client.ts assembles these
 // into a single `apiClient` object.
 export * as collections from "./generated/collections/collections.js";

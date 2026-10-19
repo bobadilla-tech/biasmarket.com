@@ -330,7 +330,7 @@ describe('customer account + customer auth (e2e)', () => {
       assertMatchesSchema(forgotRes.body, okSchema, openapi.components);
 
       // Regression coverage for the phone-normalization bug (see
-      // docs/plans/2026-08-06-buyer-phone-normalization-fix.md): a buyer
+      // .artifacts/2026/08/20260806--buyer-phone-normalization-fix/plan.md): a buyer
       // types their phone one way at checkout ("+51966666666", the constant
       // above) and a different-but-equivalent way at login/forgot-password
       // ("966666666", no dial code) — both must resolve to the same

@@ -71,13 +71,13 @@ the re-exported response/request DTO types. Still not for hand-populated
 feature-local types — those belong in `features/<name>/schemas/`.
 
 **OpenAPI-generated client**: landed 2026-08-04, reworked the same day after
-review (see `docs/plans/2026-08-04-nestjs-openapi-client-generation-plan.md` and
-`docs/plans/2026-08-04-typed-sdk-client-followups.md` for the full history — a
+review (see `.artifacts/2026/08/20260804--nestjs-openapi-client-generation/plan.md` and
+`.artifacts/2026/08/20260804--typed-sdk-client-followups/plan.md` for the full history — a
 first pass generated a raw `openapi-fetch` client that turned out to need _more_
 hand-written wiring per call site than the hand-written wrapper it replaced;
 this section describes the redo, not that first pass). `collections` was the
 pilot feature; `products` (money fields + 2 upload endpoints) migrated next per
-`docs/plans/2026-08-04-orval-client-rollout-plan.md`'s Batch 1, closing that
+`.artifacts/2026/08/20260804--orval-client-rollout/plan.md`'s Batch 1, closing that
 plan's money/upload proof-of-pattern gate. See that doc's "Batch 1 execution
 notes" for what came up migrating a module with more than one response shape
 (`create()` vs. `findAll()`/`findOne()`) and multipart endpoints. Batch 2
@@ -90,7 +90,7 @@ limiter (`vitest.config.e2e.ts` now sets `fileParallelism: false` because of it
 better-auth's rate limiter). Batch 3 (`DeliveryConfig`/`PublicDeliveryConfig`,
 `PaymentConfig`/`PublicPaymentConfig`, `PickupPoints`/`PublicPickupPoints`,
 `Stores`/`MyStores`) followed next per
-`docs/plans/2026-08-05-orval-rollout-batches-3-6-plan.md` — see that doc's
+`.artifacts/2026/08/20260805--orval-rollout-batches-3-6/plan.md` — see that doc's
 "Batch 3 execution notes" for what came up: a real `FindAllParams` naming
 collision between `Notifications` and `PaymentConfig` (fixed once, in
 `orval.config.ts`'s `operationName`, not per-tag), `Stores`' deeply-nested
@@ -98,7 +98,7 @@ collision between `Notifications` and `PaymentConfig` (fixed once, in
 (`DELETE /stores/:storeId` 400s for every store, not just ones with real data)
 found and documented, not fixed, while giving that endpoint a real response DTO.
 Batch 4 (`Order`, `Checkout`) followed per
-`docs/plans/2026-08-05-orval-rollout-batch-4-order-checkout-plan.md` — see that
+`.artifacts/2026/08/20260805--orval-rollout-batch-4-order/plan.md` — see that
 doc's execution notes for `Order`'s three real response shapes
 (`OrderResponseDto`/`OrderDetailResponseDto`/`OrderStatusResponseDto`, depending
 on whether the endpoint runs the row through
@@ -120,7 +120,7 @@ landed before Batch 5/6 below, so those batches' DTOs didn't need to carry a
 
 Batches 5 (`CustomerAuth`, `CustomerAccount`, `Customers`) and 6
 (`ProductSearch`, `Stats`, `Users`) landed together per
-`docs/plans/2026-08-06-orval-rollout-batches-5-6-plan.md` — **this was the last
+`.artifacts/2026/08/20260806--orval-rollout-batches-5-6/plan.md` — **this was the last
 batch**; every `apps/web` feature with a real backend tag is now migrated (see
 "Migrated so far" below). `CustomerAuth`'s spec-bug blocker (missing `slug`
 `@ApiParam` on `changePassword`/`logout`) was fixed with the user's explicit

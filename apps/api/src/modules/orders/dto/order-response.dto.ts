@@ -4,7 +4,7 @@ import { ApiProperty } from '@nestjs/swagger';
 // collections/dto/collection-response.dto.ts for the full rationale.
 //
 // `Order` has more than one real response shape (see
-// docs/plans/2026-08-05-orval-rollout-batch-4-order-checkout-plan.md):
+// .artifacts/2026/08/20260805--orval-rollout-batch-4-order/plan.md):
 // - `findAll`/`findOne`/`addPayment` run every row through
 //   `OrderRepository.withPaymentSummary`, adding `paidAmount`/
 //   `pendingAmount`/`paidPercentage` — plain `number`s, not the Decimal-
@@ -17,7 +17,7 @@ import { ApiProperty } from '@nestjs/swagger';
 //   `PaymentProof` model), which was deleted as dead schema (never written
 //   anywhere in apps/api — the real flow is seller-recorded `OrderPayment`
 //   instead) per
-//   docs/plans/2026-08-08-payment-proof-image-access-control-plan.md. Kept
+//   .artifacts/2026/08/20260808--payment-proof-image-access-control/plan.md. Kept
 //   as its own type in case `findOne` grows real detail-only fields later.
 // - `review`/`advance`/`cancel` return the *raw* Prisma `Order` row
 //   (`tx.order.update`/`findUniqueOrThrow`, never passed through

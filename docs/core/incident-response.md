@@ -1,7 +1,7 @@
 # Incident response
 
 Single-operator runbook for the Uptime Kuma monitoring setup described in
-[`docs/plans/2026-08-09-uptime-kuma-monitoring-plan.md`](../plans/2026-08-09-uptime-kuma-monitoring-plan.md),
+[`.artifacts/2026/08/20260809--uptime-kuma-monitoring/plan.md`](../../.artifacts/2026/08/20260809--uptime-kuma-monitoring/plan.md),
 updated for the blue/green production stack described in
 [`blue-green-migrations.md`](blue-green-migrations.md). No on-call rotation or
 escalation policy here — this is a runbook, not a paging schedule.

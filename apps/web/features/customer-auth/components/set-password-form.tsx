@@ -21,7 +21,7 @@ const inputClassName =
 
 // Folded into the confirm page rather than a separate /register route (the
 // magic-link token needed as proof of email ownership is already loaded
-// here) — see docs/plans/2026-08-02-buyer-accounts-phase12-plan.md,
+// here) — see .artifacts/2026/08/20260802--buyer-accounts-phase12/plan.md,
 // "Frontend". `purpose` controls copy only — the backend's `register` call
 // (reused for both "confirm" and "reset" token purposes) branches on the
 // token itself, not on anything this form sends.

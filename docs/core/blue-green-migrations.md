@@ -7,7 +7,7 @@ it, canary-switches Caddy, verifies, then fully switches — leaving the previou
 color running as a fast rollback target until a later scheduled cleanup. Full
 design rationale (7-lens multi-agent review, every HIGH finding and how it was
 resolved) lives in
-[`docs/plans/2026-08-10-bluegreen-zero-downtime-deploy-plan.md`](../plans/2026-08-10-bluegreen-zero-downtime-deploy-plan.md)
+[`.artifacts/2026/08/20260810--bluegreen-zero-downtime-deploy/plan.md`](../../.artifacts/2026/08/20260810--bluegreen-zero-downtime-deploy/plan.md)
 — this doc is the operator-facing "how it actually works and how to run it"
 companion, not a restatement of that plan's reasoning.
 
@@ -96,7 +96,7 @@ the actual implementation, this is the summary):
 Full design, including the state-machine edge cases (VPS reboot mid-window, two
 deploys landing in rapid succession, `deploy.sh` itself being rsynced
 mid-window) and why this isn't built on `systemd-run`/a systemd timer:
-[`2026-08-10-server-side-cleanup-scheduling-plan.md`](../plans/2026-08-10-server-side-cleanup-scheduling-plan.md).
+[`2026-08-10-server-side-cleanup-scheduling-plan.md`](../../.artifacts/2026/08/20260810--server-side-cleanup-scheduling/plan.md).
 
 ### Scheduled cleanup
 
@@ -177,7 +177,7 @@ premature teardown.
 Full design rationale, including every edge case above (rollback mid-window,
 `deploy.sh` itself being rsynced mid-window, why this isn't built on
 `systemd-run`/a systemd timer):
-[`2026-08-10-server-side-cleanup-scheduling-plan.md`](../plans/2026-08-10-server-side-cleanup-scheduling-plan.md).
+[`2026-08-10-server-side-cleanup-scheduling-plan.md`](../../.artifacts/2026/08/20260810--server-side-cleanup-scheduling/plan.md).
 
 ## Migration discipline (expand/contract)
 

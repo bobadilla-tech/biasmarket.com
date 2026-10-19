@@ -40,7 +40,7 @@ export class ApiError extends Error {
 }
 
 // Error responses aren't part of the OpenAPI generation pipeline (only 2xx
-// paths are typed — see docs/plans/2026-08-04-nestjs-openapi-client-generation-plan.md's
+// paths are typed — see .artifacts/2026/08/20260804--nestjs-openapi-client-generation/plan.md's
 // Phase 3 scope note), so the parsed error body is untyped here. Same
 // defensive shape apiFetch always used: try the backend's `message` field,
 // fall back to a caller-supplied message.

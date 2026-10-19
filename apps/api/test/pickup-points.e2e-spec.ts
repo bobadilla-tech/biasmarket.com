@@ -166,7 +166,7 @@ describe('pickup-points (e2e)', () => {
   });
 
   // Regression coverage for CreateOrderUseCase's defense-in-depth check (see
-  // docs/plans/2026-08-06-pickup-point-availability-schema-and-api.md): a
+  // .artifacts/2026/08/20260806--pickup-point-availability-schema-and/plan.md): a
   // direct API call selecting a closedOverride'd point must 400, not create
   // an order against a point the storefront wouldn't have shown as
   // selectable.

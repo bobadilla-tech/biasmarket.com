@@ -21,7 +21,7 @@ import { extractCustomerSessionToken } from './customer-session-token.js';
 // per-store `Customer`. Any endpoint that needs store scoping does its own
 // explicit check (a `CustomerStoreLink` lookup, or filtering orders by
 // `storeId`) instead of relying on the session for it. See
-// docs/plans/2026-08-08-global-buyer-account-plan.md.
+// .artifacts/2026/08/20260808--global-buyer-account/plan.md.
 export interface CustomerSessionRequest extends Request {
   customerSession: { buyerAccountId: string };
 }

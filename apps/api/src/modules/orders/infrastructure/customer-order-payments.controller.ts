@@ -51,7 +51,7 @@ const PAYMENT_METHODS: PaymentMethodType[] = [
 ];
 
 // Buyer-initiated counterpart to `OrderController.addPayment` — see
-// docs/plans/2026-08-08-buyer-proof-of-payment-upload-plan.md. Route stays
+// .artifacts/2026/08/20260808--buyer-proof-of-payment-upload/plan.md. Route stays
 // store-scoped (`stores/:slug/account/orders/...`) even though the identity
 // behind `CustomerSessionGuard` is global, mirroring
 // `customer-auth.controller.ts`/`addresses.controller.ts`'s precedent for
