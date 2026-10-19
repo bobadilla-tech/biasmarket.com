@@ -17,18 +17,19 @@ export function Hero() {
           </h1>
           <p className="text-2xl font-medium text-[#b0006d]">{t("title2")}</p>
         </div>
-        <Image
-          src="/landing/bm-props-sombra.png"
-          alt=""
-          width={1152}
-          height={923}
-          priority
-          className="pointer-events-none absolute bottom-[30px] left-1/2 z-0 h-auto w-[92%] max-w-none select-none"
-          style={{ transform: "translateX(-38%) rotate(-0.11deg)" }}
-        />
         <div
           aria-hidden="true"
           className="absolute inset-x-0 bottom-0 h-[39px] rounded-b-lg bg-gradient-to-b from-[#FEF3FF] to-[#FFC2F8]"
+        />
+        {/* Rendered after the gradient so the art (and its soft shadow) is
+            never cut by the band (#242). */}
+        <Image
+          src="/landing/bm-props-hero.webp"
+          alt=""
+          width={962}
+          height={741}
+          priority
+          className="pointer-events-none absolute bottom-[52px] left-1/2 z-0 h-auto w-[78%] max-w-none -translate-x-1/2 select-none"
         />
         <Link
           href="/search"
@@ -43,24 +44,26 @@ export function Hero() {
         <div className="relative min-h-[460px] rounded-lg bg-[#FEF3FF] sm:min-h-[525px]">
           {/* Decorative art is clipped by its own wrapper, so the box can
               grow (min-h) without the outer overflow-hidden that used to
-              crop the CTA/subtitle when the text ran tall (#165). */}
-          <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-lg">
+              crop the CTA/subtitle when the text ran tall (#165). The asset
+              has a real transparent background and no box styling, so it
+              blends into the banner (#242). */}
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex w-[44%] items-center justify-center overflow-hidden rounded-r-lg py-6 pr-4 lg:pr-10">
             <Image
-              src="/landing/bm-props-sombra.png"
+              src="/landing/bm-props-hero.webp"
               alt=""
-              width={563}
-              height={522}
+              width={962}
+              height={741}
               priority
-              className="absolute top-0 right-[-60px] h-full w-auto max-w-none select-none object-contain"
-              style={{ transform: "rotate(-0.11deg)" }}
+              sizes="(min-width: 1346px) 560px, 44vw"
+              className="h-auto max-h-full w-full select-none object-contain"
             />
           </div>
 
-          <div className="relative z-10 flex min-h-[460px] w-[849px] max-w-full flex-col items-center justify-center gap-4 px-6 pb-[115px] text-center sm:min-h-[525px] sm:px-[70px]">
+          <div className="relative z-10 flex min-h-[460px] w-[56%] flex-col items-center justify-center gap-4 px-6 py-12 text-center sm:min-h-[525px] lg:px-12">
             <h1
-              className="font-bold text-[#4C0566] xl:whitespace-nowrap"
+              className="font-bold text-[#4C0566] lg:whitespace-nowrap"
               style={{
-                fontSize: "clamp(38px, 4.8vw, 78px)",
+                fontSize: "clamp(38px, 4.8vw, 72px)",
                 lineHeight: "1.05",
               }}
             >
@@ -89,11 +92,6 @@ export function Hero() {
               {t("cta")}
             </Link>
           </div>
-
-          <div
-            aria-hidden="true"
-            className="absolute inset-x-0 bottom-0 z-0 h-[99px] rounded-b-lg bg-gradient-to-b from-[#FEF3FF] to-[#FFC2F8]"
-          />
         </div>
       </div>
     </>
