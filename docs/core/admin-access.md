@@ -6,10 +6,10 @@ Development commands use the local dev Compose stack.
 ## Production
 
 Use the wrapper that ships in `infra/vps/bin/` (CD syncs it to
-`/home/deploy/biasmarket/bin/` on every deploy). There is no source checkout on the VPS;
-the wrapper finds the live color and image tag for you and runs the API's own
-scripts inside the live API container. Run it as `root` (`ssh root@<vps>`) or
-the `deploy` user, from any directory:
+`/home/deploy/biasmarket/bin/` on every deploy). There is no source checkout on
+the VPS; the wrapper finds the live color and image tag for you and runs the
+API's own scripts inside the live API container. Run it as `root`
+(`ssh root@<vps>`) or the `deploy` user, from any directory:
 
 ```bash
 /home/deploy/biasmarket/bin/admin.sh create  you@example.com "Your Name"

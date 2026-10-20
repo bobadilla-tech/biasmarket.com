@@ -403,13 +403,14 @@ chmod 600 ~/.ssh/authorized_keys
 exit   # back to your own sudo-capable user
 ```
 
-Key B's target script (`/home/deploy/biasmarket/bin/ssh-deploy-dispatcher.sh`) won't
-exist yet — it arrives via key A's first rsync (`cd.yml`'s `sync-and-deploy`
-job, or a manual first sync, see Step 8). Make it executable once it lands:
-`sudo -u deploy chmod +x /home/deploy/biasmarket/bin/ssh-deploy-dispatcher.sh`. The
-dispatcher script itself documents its exact allowlist (see the file's header
-comment) — it never `eval`s `$SSH_ORIGINAL_COMMAND`, only matches it against
-anchored regexes for the handful of literal shapes `cd.yml` sends.
+Key B's target script (`/home/deploy/biasmarket/bin/ssh-deploy-dispatcher.sh`)
+won't exist yet — it arrives via key A's first rsync (`cd.yml`'s
+`sync-and-deploy` job, or a manual first sync, see Step 8). Make it executable
+once it lands:
+`sudo -u deploy chmod +x /home/deploy/biasmarket/bin/ssh-deploy-dispatcher.sh`.
+The dispatcher script itself documents its exact allowlist (see the file's
+header comment) — it never `eval`s `$SSH_ORIGINAL_COMMAND`, only matches it
+against anchored regexes for the handful of literal shapes `cd.yml` sends.
 
 ### Step 5 — pin `known_hosts`
 
@@ -501,7 +502,8 @@ rsync -az \
   infra/vps/ deploy@<vps-ip>:.
 ```
 
-Then, on the VPS as `deploy` (`sudo -iu deploy`, from `/home/deploy/biasmarket`):
+Then, on the VPS as `deploy` (`sudo -iu deploy`, from
+`/home/deploy/biasmarket`):
 
 ```bash
 chmod +x bin/ssh-deploy-dispatcher.sh bin/migration-watchdog.sh deploy.sh
@@ -547,10 +549,10 @@ Creates/updates: 4 static per-color internal monitors
 the external API/Web monitors (unchanged), DB/MinIO (unchanged, no color split),
 and the new `migration_pending watchdog` push monitor. The script prints that
 push monitor's URL on creation — copy it into
-`/home/deploy/biasmarket/env/watchdog.env`'s `KUMA_MIGRATION_PUSH_URL` on the VPS, then
-`sudo systemctl restart biasmarket-migration-watchdog.timer` to pick it up. See
-[`incident-response.md`](incident-response.md) for what fires when it misses a
-heartbeat. Re-run this script again after any VPS rebuild.
+`/home/deploy/biasmarket/env/watchdog.env`'s `KUMA_MIGRATION_PUSH_URL` on the
+VPS, then `sudo systemctl restart biasmarket-migration-watchdog.timer` to pick
+it up. See [`incident-response.md`](incident-response.md) for what fires when it
+misses a heartbeat. Re-run this script again after any VPS rebuild.
 
 ## First production cutover (T11)
 
@@ -571,9 +573,9 @@ Gate on all of (VPS provisioning Steps 1–8 above, in order):
       this needs at least one `cd.yml` run first, so it's normally done right
       after the first `main` push post-setup, before this cutover).
 
-Then, on the VPS as the `deploy` user, from `/home/deploy/biasmarket` (already synced by
-an initial manual rsync, or a first `cd.yml` run — either way, `--bootstrap`
-only works once, before `state/current_color` exists):
+Then, on the VPS as the `deploy` user, from `/home/deploy/biasmarket` (already
+synced by an initial manual rsync, or a first `cd.yml` run — either way,
+`--bootstrap` only works once, before `state/current_color` exists):
 
 ```bash
 ./deploy.sh --bootstrap <current main HEAD sha>
@@ -597,11 +599,12 @@ curl https://api.biasmarket.com/api/health         # {"status":"ok",...}
 The first production bootstrap (on Oracle, before the move to Contabo) exposed a
 few details worth making explicit:
 
-- The forced rsync key uses `command="/usr/local/bin/rrsync /home/deploy/biasmarket/"`.
-  With this restriction, the rsync destination must be relative:
-  `deploy@<vps-ip>:.`. Passing `/home/deploy/biasmarket/` makes `rrsync` try to resolve
-  `/home/deploy/biasmarket/home/deploy/biasmarket` and fails. The CD workflow uses `:.` for the
-  same reason.
+- The forced rsync key uses
+  `command="/usr/local/bin/rrsync /home/deploy/biasmarket/"`. With this
+  restriction, the rsync destination must be relative: `deploy@<vps-ip>:.`.
+  Passing `/home/deploy/biasmarket/` makes `rrsync` try to resolve
+  `/home/deploy/biasmarket/home/deploy/biasmarket` and fails. The CD workflow
+  uses `:.` for the same reason.
 - Run operator commands with a single login-shell command, for example
   `sudo -iu deploy bash -lc 'cd /home/deploy/biasmarket && ./deploy.sh --bootstrap <sha>'`.
   Commands typed after an interactive `sudo -iu deploy` are easy to run in the
@@ -625,8 +628,8 @@ few details worth making explicit:
   returns 401 for anonymous pulls. Compose pins Coolify's rebuild
   `ghcr.io/coollabsio/minio:RELEASE.2025-10-15T17-29-55Z` (digest-pinned, same
   ref as `scripts/ci/e2e-images.sh`) for both the `minio` server and
-  `minio-init` (`mc` is in that image). A stale `minio/minio` or Quay tag
-  fails bootstrap on a fresh machine.
+  `minio-init` (`mc` is in that image). A stale `minio/minio` or Quay tag fails
+  bootstrap on a fresh machine.
 - Point DNS at the new VPS before `--bootstrap`, so Caddy can complete ACME
   issuance as soon as it starts.
 - The private key and public key must be one matching pair. If a key is
