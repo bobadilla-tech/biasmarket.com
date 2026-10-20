@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import type { Locale } from "next-intl";
-import { Footer } from "@/features/for-sellers/components/footer";
+import { ForSellersFooter } from "@/features/for-sellers/components/footer";
 
 interface LegalSection {
   heading: string;
@@ -35,7 +35,7 @@ export async function LegalPage({
           </section>
         ))}
       </main>
-      <Footer />
+      <ForSellersFooter />
     </div>
   );
 }
