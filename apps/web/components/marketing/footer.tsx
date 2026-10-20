@@ -4,9 +4,14 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 
+interface FooterLink {
+  label: string;
+  href: string;
+}
+
 interface FooterColumn {
   heading: string;
-  links: string[];
+  links: FooterLink[];
 }
 
 interface Social {
@@ -39,11 +44,14 @@ export function Footer() {
                 {column.heading}
               </h4>
               <ul className="mt-2.5 space-y-1 sm:mt-5 sm:space-y-4">
-                {column.links.map((label) => (
-                  <li key={label}>
-                    <span className="cursor-default text-sm leading-[18px] font-normal text-[#5F5F5F] sm:text-[24px] sm:leading-[30px] sm:text-[#7A7A7A]">
-                      {label}
-                    </span>
+                {column.links.map((link) => (
+                  <li key={link.label}>
+                    <Link
+                      href={link.href}
+                      className="text-sm leading-[18px] font-normal text-[#5F5F5F] hover:text-[#181818] hover:underline sm:text-[24px] sm:leading-[30px] sm:text-[#7A7A7A]"
+                    >
+                      {link.label}
+                    </Link>
                   </li>
                 ))}
               </ul>

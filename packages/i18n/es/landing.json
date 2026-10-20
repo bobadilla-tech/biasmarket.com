@@ -135,34 +135,69 @@
       {
         "heading": "Comprar",
         "links": [
-          "Cómo comprar",
-          "Explorar productos",
-          "Categorías",
-          "Tiendas"
+          {
+            "label": "Cómo comprar",
+            "href": "/how-to-buy"
+          },
+          {
+            "label": "Explorar productos",
+            "href": "/search"
+          },
+          {
+            "label": "Categorías",
+            "href": "/search"
+          },
+          {
+            "label": "Tiendas",
+            "href": "/stores"
+          }
         ]
       },
       {
         "heading": "Vender",
         "links": [
-          "Crear tienda",
-          "Cómo vender",
-          "Preguntas frecuentes"
+          {
+            "label": "Crear tienda",
+            "href": "/onboarding"
+          },
+          {
+            "label": "Cómo vender",
+            "href": "/for-sellers"
+          },
+          {
+            "label": "Preguntas frecuentes",
+            "href": "/faq"
+          }
         ]
       },
       {
         "heading": "Biasmarket",
         "links": [
-          "Quiénes somos",
-          "Cómo funciona",
-          "Blog"
+          {
+            "label": "Quiénes somos",
+            "href": "/founder"
+          },
+          {
+            "label": "Cómo funciona",
+            "href": "/how-it-works"
+          },
+          {
+            "label": "Blog",
+            "href": "/blog"
+          }
         ]
       },
       {
         "heading": "Ayuda",
         "links": [
-          "Centro de ayuda",
-          "Contacto",
-          "Términos"
+          {
+            "label": "Centro de ayuda",
+            "href": "/help"
+          },
+          {
+            "label": "Contacto",
+            "href": "/contact"
+          }
         ]
       }
     ],
