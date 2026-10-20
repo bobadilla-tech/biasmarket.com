@@ -66,6 +66,21 @@ export const createAuth = (
         id,
       }),
     },
+    // Google sign-in for sellers. Only enabled when both credentials are set so
+    // environments without an OAuth client (CI, e2e, fresh dev setups) boot
+    // unchanged. Redirect URI to register in Google Cloud:
+    // `${BETTER_AUTH_URL}/api/auth/callback/google`. Google asserts
+    // `email_verified`, so these accounts skip the verification email.
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? {
+          socialProviders: {
+            google: {
+              clientId: process.env.GOOGLE_CLIENT_ID,
+              clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            },
+          },
+        }
+      : {}),
     emailVerification: {
       sendVerificationEmail: async ({ user, url }) => {
         await mailer.send({
