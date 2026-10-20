@@ -148,71 +148,100 @@
       "title": "Política de Privacidad",
       "sections": [
         {
-          "heading": "Quiénes somos",
+          "heading": "Quiénes somos y qué hace el servicio",
           "paragraphs": [
-            "Bias Market (\"nosotros\") es una plataforma que permite a creadores y vendedores operar tiendas en línea. Esta política explica qué datos personales tratamos cuando usas biasmarket.com, el panel y las tiendas alojadas en él. Consultas: hello@biasmarket.com."
+            "Bias Market (biasmarket.com) es una plataforma en línea que permite a creadores y vendedores independientes, principalmente de merchandising K-pop, abrir y operar sus tiendas, y a los fans explorar esas tiendas y hacer pedidos. Los vendedores gestionan productos, pedidos y la revisión manual de pagos (transferencia bancaria, Wise, PayPal) desde un panel. Esta Política de Privacidad explica qué datos personales recopilamos, cómo los usamos y protegemos, y qué opciones tienes. Contacto: hello@biasmarket.com."
           ]
         },
         {
-          "heading": "Datos que recopilamos",
+          "heading": "Información que recopilamos",
           "paragraphs": [
-            "Datos de cuenta: nombre, correo electrónico y contraseña (almacenada con hash) al registrarte como vendedor o comprador.",
-            "Inicio de sesión con Google: si eliges \"Continuar con Google\", recibimos tu nombre, correo, foto de perfil e ID de cuenta de Google. No accedemos a tus contactos, archivos, calendario ni a ningún otro dato de Google.",
-            "Datos de tienda y pedidos: productos, pedidos, datos de envío o retiro e imágenes de comprobantes de pago que los compradores suben para que el vendedor las revise.",
-            "Datos técnicos: cookies de sesión necesarias para mantenerte conectado y registros básicos (IP, navegador, fechas) usados para seguridad y prevención de abuso."
+            "Información de cuenta: tu nombre, correo electrónico y contraseña (guardada solo como hash con sal) al registrarte como vendedor o crear una cuenta de comprador.",
+            "Información del inicio de sesión con Google: si eliges \"Continuar con Google\", Google nos comparte tu nombre, correo, estado de verificación del correo, foto de perfil e identificador de cuenta de Google. Ver \"Datos de usuario de Google\" más abajo.",
+            "Información de tiendas y pedidos: para vendedores, datos de la tienda, productos, precios e imágenes; para compradores, nombre, correo, teléfono, datos de entrega o retiro e historial de pedidos.",
+            "Comprobantes de pago: imágenes o recibos que los compradores suben para acreditar un pago manual, visibles para el vendedor de ese pedido y para nosotros por soporte y prevención de fraude.",
+            "Mensajes: información que envías por formularios de contacto o correo de soporte.",
+            "Información técnica: dirección IP, tipo de navegador y dispositivo, páginas solicitadas y fechas en los registros del servidor, y cookies esenciales para mantener tu sesión."
           ]
         },
         {
-          "heading": "Cómo los usamos",
+          "heading": "Datos de usuario de Google",
           "paragraphs": [
-            "Para crear y proteger tu cuenta e iniciar sesión.",
-            "Para operar las tiendas: procesar pedidos, mostrar comprobantes de pago al vendedor dueño de la tienda y enviar correos transaccionales como la verificación de correo y actualizaciones de pedidos.",
-            "Para prevenir fraude y abuso, y cumplir obligaciones legales.",
-            "No vendemos tus datos personales ni los usamos para publicidad."
+            "Bias Market ofrece inicio de sesión con Google para vendedores. Solicitamos solo los permisos básicos openid, email y profile. No pedimos acceso a Gmail, Drive, Calendar, Contactos ni a ningún otro servicio de Google.",
+            "Qué datos obtenemos: tu nombre, correo, estado de verificación del correo, URL de la foto de perfil e ID de cuenta de Google.",
+            "Cómo los usamos: solo para crear tu cuenta de Bias Market, iniciar tu sesión y vincular un inicio de sesión posterior con Google a la misma cuenta, mostrar tu nombre y foto en tu panel y contactarte sobre tu cuenta.",
+            "Compartir: no vendemos los datos de usuario de Google, no los compartimos con anunciantes ni corredores de datos, y no los transferimos a terceros salvo a proveedores que alojan nuestra infraestructura y envían correos transaccionales, solo en lo necesario para operar el servicio, o cuando la ley lo exija.",
+            "Sin publicidad ni entrenamiento de IA: no usamos los datos de Google para publicidad, ni para decisiones de crédito o préstamos, ni para desarrollar, mejorar o entrenar modelos de inteligencia artificial o aprendizaje automático generalizados. Ninguna persona lee tus datos de Google salvo por investigaciones de seguridad, por obligación legal o con tu consentimiento.",
+            "Uso limitado: el uso y la transferencia por parte de Bias Market de la información recibida de las API de Google cumple con la Política de Datos de Usuario de los Servicios de API de Google, incluidos los requisitos de Uso Limitado.",
+            "Almacenamiento y eliminación: los datos del perfil de Google se guardan en nuestra base de datos PostgreSQL junto con el resto de tu cuenta. Puedes revocar el acceso de Bias Market en cualquier momento en https://myaccount.google.com/permissions y pedir la eliminación de tu cuenta y de los datos de Google escribiendo a hello@biasmarket.com; los eliminamos en un plazo de 30 días, salvo registros que debamos conservar por ley."
           ]
         },
         {
-          "heading": "Quién ve tus datos",
+          "heading": "Cómo usamos tu información",
           "paragraphs": [
-            "Los vendedores solo ven los datos del comprador y los comprobantes de los pedidos hechos en su propia tienda. Los datos de cada tienda están aislados de las demás.",
-            "Usamos proveedores para operar la plataforma, como alojamiento, almacenamiento de archivos y envío de correos transaccionales. Tratan los datos solo por encargo nuestro.",
-            "Podemos divulgar datos si la ley lo exige."
+            "Para prestar y proteger el servicio: crear cuentas, autenticarte, operar tiendas, procesar pedidos y permitir que los vendedores revisen comprobantes de pago.",
+            "Para comunicarnos contigo: correos de verificación, novedades de pedidos, avisos de seguridad y respuestas a tus mensajes.",
+            "Para prevenir fraude, abuso e incidentes de seguridad, y hacer cumplir nuestros Términos del Servicio.",
+            "Para mantener y mejorar la plataforma con estadísticas agregadas que no te identifican.",
+            "Para cumplir obligaciones legales.",
+            "No vendemos datos personales ni mostramos publicidad de terceros."
+          ]
+        },
+        {
+          "heading": "Cómo compartimos la información",
+          "paragraphs": [
+            "Vendedores: cada vendedor ve solo los datos del comprador, los pedidos y los comprobantes de pago de los pedidos hechos en su propia tienda. Los datos de cada tienda están separados de los de las demás.",
+            "Proveedores de servicios: usamos proveedores de alojamiento de servidores, almacenamiento de archivos y envío de correos transaccionales. Tratan los datos solo según nuestras instrucciones y bajo deber de confidencialidad.",
+            "Legal y seguridad: podemos divulgar información cuando la ley lo exija o para proteger los derechos, la seguridad de los usuarios y de la plataforma.",
+            "Transferencias del negocio: si Bias Market participa en una fusión o venta, los datos podrían transferirse y te avisaremos de cualquier cambio en su tratamiento."
           ]
         },
         {
           "heading": "Cookies",
           "paragraphs": [
-            "Usamos solo cookies esenciales para mantener tu sesión y protegerla. No usamos cookies publicitarias ni de seguimiento entre sitios."
+            "Usamos solo cookies esenciales y almacenamiento similar para mantener tu sesión, protegerla y recordar tu idioma. No usamos cookies publicitarias ni de seguimiento entre sitios."
           ]
         },
         {
-          "heading": "Conservación y eliminación",
+          "heading": "Conservación de datos",
           "paragraphs": [
-            "Conservamos tus datos mientras tu cuenta esté activa y según lo necesario por motivos legales y de prevención de fraude. Puedes pedir la eliminación de tu cuenta y datos personales en cualquier momento escribiendo a hello@biasmarket.com."
-          ]
-        },
-        {
-          "heading": "Tus derechos",
-          "paragraphs": [
-            "Según tu país, puedes tener derecho a acceder, corregir, eliminar o exportar tus datos, y a oponerte o limitar ciertos tratamientos. Escribe a hello@biasmarket.com y responderemos en un plazo razonable."
+            "Conservamos los datos de cuenta mientras tu cuenta esté activa. Tras la eliminación, borramos o anonimizamos los datos personales en un plazo de 30 días, salvo registros que debamos conservar, por ejemplo pedidos y pagos requeridos por contabilidad, impuestos o prevención de fraude."
           ]
         },
         {
           "heading": "Seguridad",
           "paragraphs": [
-            "Usamos conexiones cifradas (HTTPS), contraseñas con hash y controles de acceso por tienda. Ningún sistema es perfectamente seguro, pero trabajamos para proteger tus datos."
+            "Protegemos los datos con conexiones cifradas (HTTPS), contraseñas con hash, controles de acceso por tienda y acceso restringido a los sistemas de producción. Ningún sistema es completamente seguro, pero trabajamos para proteger tu información y notificaremos a los afectados de una brecha según lo exija la ley."
           ]
         },
         {
-          "heading": "Cambios",
+          "heading": "Transferencias internacionales",
           "paragraphs": [
-            "Podemos actualizar esta política. La fecha al inicio indica la última revisión; los cambios importantes se anunciarán en el sitio."
+            "Nuestra infraestructura puede procesar datos en países distintos al tuyo. Cuando corresponda, aplicamos salvaguardas adecuadas."
+          ]
+        },
+        {
+          "heading": "Tus derechos y opciones",
+          "paragraphs": [
+            "Según tu país, puedes tener derecho a acceder, corregir, eliminar o exportar tus datos personales y a oponerte o limitar ciertos tratamientos. Puedes actualizar tu perfil en tu cuenta, revocar el acceso de Google en tu cuenta de Google, o escribir a hello@biasmarket.com para ejercer estos derechos. Respondemos en un plazo razonable."
+          ]
+        },
+        {
+          "heading": "Menores",
+          "paragraphs": [
+            "Bias Market no está dirigido a menores de 13 años y no recopilamos sus datos a sabiendas. Si crees que un menor nos dio datos, contáctanos y los eliminaremos."
+          ]
+        },
+        {
+          "heading": "Cambios a esta política",
+          "paragraphs": [
+            "Podemos actualizar esta política. La fecha al inicio indica la última revisión y los cambios importantes se anunciarán en el sitio o por correo."
           ]
         },
         {
           "heading": "Contacto",
           "paragraphs": [
-            "Bias Market — hello@biasmarket.com"
+            "Consultas o solicitudes de privacidad: hello@biasmarket.com. Bias Market, https://biasmarket.com."
           ]
         }
       ]

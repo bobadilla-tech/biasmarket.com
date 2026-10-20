@@ -148,71 +148,100 @@
       "title": "Privacy Policy",
       "sections": [
         {
-          "heading": "Who we are",
+          "heading": "Who we are and what the service does",
           "paragraphs": [
-            "Bias Market (\"we\", \"us\") is a platform that lets creators and sellers run online stores. This policy explains what personal data we handle when you use biasmarket.com, our dashboard and the stores hosted on it. Questions: hello@biasmarket.com."
+            "Bias Market (biasmarket.com) is an online platform that lets creators and independent sellers, mainly of K-pop merchandise, open and run their own online stores, and lets fans browse those stores and place orders. Sellers manage products, orders and manual payment review (bank transfer, Wise, PayPal) from a dashboard. This Privacy Policy explains what personal data we collect, how we use and protect it, and the choices you have. Contact: hello@biasmarket.com."
           ]
         },
         {
-          "heading": "Data we collect",
+          "heading": "Information we collect",
           "paragraphs": [
-            "Account data: name, email address and password (stored hashed) when you register as a seller or buyer.",
-            "Google sign-in: if you choose \"Continue with Google\", we receive your name, email address, profile picture and Google account ID. We do not access your contacts, files, calendar or any other Google data.",
-            "Store and order data: products, orders, shipping or pickup details, and payment proof images that buyers upload for sellers to review.",
-            "Technical data: session cookies needed to keep you signed in, and basic logs (IP address, browser, timestamps) used for security and abuse prevention."
+            "Account information: your name, email address and password (stored only as a salted hash) when you register as a seller or create a buyer account.",
+            "Information from Google Sign-In: if you choose \"Continue with Google\", Google shares with us your name, email address, email-verified status, profile picture and Google account identifier. See \"Google user data\" below.",
+            "Store and order information: for sellers, store details, products, prices and images; for buyers, name, email, phone number, delivery or pickup details, and order history.",
+            "Payment proofs: images or receipts that buyers upload to show a manual payment, which are visible to the seller of that order and to us for support and fraud prevention.",
+            "Messages: information you send through contact forms or support email.",
+            "Technical information: IP address, browser and device type, pages requested and timestamps in server logs, and essential cookies that keep you signed in."
           ]
         },
         {
-          "heading": "How we use it",
+          "heading": "Google user data",
           "paragraphs": [
-            "To create and secure your account and sign you in.",
-            "To operate stores: process orders, show payment proofs to the seller who owns the store, and send transactional emails such as email verification and order updates.",
-            "To prevent fraud and abuse, and to comply with legal obligations.",
-            "We do not sell your personal data and we do not use it for advertising."
+            "Bias Market offers Google Sign-In for sellers. We request only the basic scopes openid, email and profile. We do not request access to Gmail, Drive, Calendar, Contacts or any other Google service.",
+            "What we access: your Google name, email address, email-verified status, profile picture URL and Google account ID.",
+            "How we use it: only to create your Bias Market account, to sign you in and to link a returning Google sign-in to the same account, to display your name and picture in your dashboard, and to contact you about your account.",
+            "Sharing: we do not sell Google user data, do not share it with advertisers or data brokers, and do not transfer it to third parties except to service providers that host our infrastructure and send our transactional emails, only as needed to run the service, or when required by law.",
+            "No advertising or AI training: we do not use Google user data for advertising, for credit or lending decisions, and we do not use it to develop, improve or train generalized artificial intelligence or machine-learning models. No human reads your Google data except for security investigations, to comply with the law, or with your consent.",
+            "Limited Use: Bias Market's use and transfer of information received from Google APIs to any other app adheres to the Google API Services User Data Policy, including the Limited Use requirements.",
+            "Storage and deletion: Google profile data is stored in our PostgreSQL database with the rest of your account. You can revoke Bias Market's access at any time at https://myaccount.google.com/permissions, and you can ask us to delete your account and the associated Google data by emailing hello@biasmarket.com; we delete it within 30 days, except records we must keep by law."
           ]
         },
         {
-          "heading": "Who sees your data",
+          "heading": "How we use your information",
           "paragraphs": [
-            "Sellers can see the buyer details and payment proofs of orders placed in their own store only. Each store's data is isolated from other stores.",
-            "We use service providers to run the platform, such as hosting, object storage and transactional email delivery. They process data only on our behalf.",
-            "We may disclose data if required by law."
+            "To provide and secure the service: create accounts, authenticate you, run stores, process orders and let sellers review payment proofs.",
+            "To communicate with you: verification emails, order updates, security notices and replies to your messages.",
+            "To prevent fraud, abuse and security incidents, and to enforce our Terms of Service.",
+            "To maintain and improve the platform using aggregated, non-identifying statistics.",
+            "To comply with legal obligations.",
+            "We do not sell personal data and we do not serve third-party advertising."
+          ]
+        },
+        {
+          "heading": "How we share information",
+          "paragraphs": [
+            "Sellers: a seller sees only the buyer details, orders and payment proofs for orders placed in that seller's own store. Data from each store is separated from other stores.",
+            "Service providers: we use providers for server hosting, file storage and transactional email delivery. They process data only on our instructions and under confidentiality obligations.",
+            "Legal and safety: we may disclose information when required by law or to protect the rights, safety and security of users and the platform.",
+            "Business transfers: if Bias Market is involved in a merger or sale, data may be transferred, and we will notify you of any change in how it is handled."
           ]
         },
         {
           "heading": "Cookies",
           "paragraphs": [
-            "We use only essential cookies to keep you signed in and protect your session. We do not use advertising or cross-site tracking cookies."
+            "We use only essential cookies and similar storage to keep you signed in, protect your session and remember your language. We do not use advertising or cross-site tracking cookies."
           ]
         },
         {
-          "heading": "Retention and deletion",
+          "heading": "Data retention",
           "paragraphs": [
-            "We keep your data while your account is active and as needed for legal and fraud-prevention purposes. You can ask us to delete your account and associated personal data at any time by writing to hello@biasmarket.com."
-          ]
-        },
-        {
-          "heading": "Your rights",
-          "paragraphs": [
-            "Depending on where you live, you may have the right to access, correct, delete or export your data, and to object to or restrict certain processing. Write to hello@biasmarket.com and we will respond within a reasonable time."
+            "We keep account data while your account is active. After deletion we remove or anonymize personal data within 30 days, except where we must retain records, for example order and payment records required for accounting, tax or fraud-prevention purposes."
           ]
         },
         {
           "heading": "Security",
           "paragraphs": [
-            "We use encrypted connections (HTTPS), hashed passwords and per-store access controls. No system is perfectly secure, but we work to protect your data."
+            "We protect data with encrypted connections (HTTPS), hashed passwords, per-store access controls and restricted access to production systems. No system is completely secure, but we work to protect your information and will notify affected users of a breach as required by law."
           ]
         },
         {
-          "heading": "Changes",
+          "heading": "International transfers",
           "paragraphs": [
-            "We may update this policy. The date at the top shows the latest revision; material changes will be announced on the site."
+            "Our infrastructure may process data in countries other than your own. Where required, we use appropriate safeguards for such transfers."
+          ]
+        },
+        {
+          "heading": "Your rights and choices",
+          "paragraphs": [
+            "Depending on where you live, you may have the right to access, correct, delete or export your personal data and to object to or restrict certain processing. You can update your profile in your account, revoke Google access in your Google account, or write to hello@biasmarket.com to exercise any of these rights. We respond within a reasonable time."
+          ]
+        },
+        {
+          "heading": "Children",
+          "paragraphs": [
+            "Bias Market is not directed to children under 13 and we do not knowingly collect their personal data. If you believe a child has given us data, contact us and we will delete it."
+          ]
+        },
+        {
+          "heading": "Changes to this policy",
+          "paragraphs": [
+            "We may update this policy. The date at the top shows the latest revision, and material changes will be announced on the site or by email."
           ]
         },
         {
           "heading": "Contact",
           "paragraphs": [
-            "Bias Market — hello@biasmarket.com"
+            "Questions or requests about privacy: hello@biasmarket.com. Bias Market, https://biasmarket.com."
           ]
         }
       ]
