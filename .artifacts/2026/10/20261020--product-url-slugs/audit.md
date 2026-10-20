@@ -2,8 +2,7 @@
 
 Date: 2026-10-20. Scope: why public product URLs look like
 `/en/store/korealexa/product/cmvftk21w001e01ny8qh3zc3q`, and what it takes to
-make them readable. Companion plan:
-`docs/plans/2026-10-20-product-url-slugs.md`.
+make them readable. Companion plan: `plan.md` (same folder).
 
 ## Summary
 
@@ -74,8 +73,11 @@ only has to hold within a store, same as `Collection`.
    product's slug on import.
 10. **Codegen churn.** Response DTO changes require regenerating the committed
     `apps/api/openapi.json` and `packages/types/generated/**`.
-11. **No sitemap entries for products** — not caused by this, but it caps the
-    SEO benefit; tracked as a follow-up, not part of this change.
+11. **No SEO surface for products.** Product URLs are in no sitemap, and the
+    product page sets only `title` and `alternates` (no description, Open
+    Graph/Twitter image, `BreadcrumbList`, or noindex for non-indexable stores,
+    unlike the store page). A readable URL alone gives little organic gain
+    without these; they are in scope (plan §8).
 
 ## Options considered
 

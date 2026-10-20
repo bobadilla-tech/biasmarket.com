@@ -1,8 +1,11 @@
-# Catalog JSON export / import — current-state audit
+# Catalog JSON export / import audit
 
-**Status:** Audit of the code as of 2026-10-20 (revision 3, after two review
-rounds). Planning only — no code written. Companion docs: plan
-`docs/plans/2026-10-20-catalog-export-import.md`; handoff prompt
+Date: 2026-10-20. Scope: what exists today for exporting a store's catalog and
+importing products in bulk (data model, API, storage/images, limits, jobs, web),
+what is missing, and the findings that shape the design. Companion plan:
+`.artifacts/2026/10/20261020--catalog-json-export-import/plan.md`.
+
+Status: proposed. Planning only; no code written. Handoff prompt:
 `.artifacts/2026/10/20261020--catalog-json-export-import/handoff-prompt.md`.
 Section references like "A2.4" in the plan point at this file's sections.
 
@@ -211,14 +214,36 @@ catálogo", not bare "Import").
 - BullMQ: job ids may not contain `:` (installed 6.3.4); the shared default
   options retain completed/failed jobs (count 1000), and `add()` with an
   existing id is a silent no-op — re-enqueues need a new id.
-- Sequencing hazard: `docs/plans/2026-10-20-product-url-slugs.md` (proposed)
-  adds `Product.slug` + `allocateProductSlug` in `ProductsService.create`'s
-  transaction; any bulk product creator must call it. Also uncommitted
-  migrations exist in the working tree (e.g. `BuyerAccount`); new migrations
-  must be ordered after them.
-- Infra: Terraform includes the Cloudflare provider
-  (`infra/terraform/versions.tf`); whether DNS records are proxied (100 MB body
-  / ~100 s limits) is **unverified**.
+- Sequencing hazard: the proposed product-URL-slug work
+  (`.artifacts/2026/10/20261020--product-url-slugs/plan.md`) adds
+  `Product.slug` + `allocateProductSlug` in `ProductsService.create`'s
+  transaction; `Product` has no `slug` in the schema today. Any bulk product
+  creator must call the allocator. Uncommitted migrations also exist in the
+  working tree (e.g. `BuyerAccount`); new migrations must be ordered after them.
+- Infra: Cloudflare DNS records for root, api, cdn and status are
+  `proxied = true` (`infra/terraform/cloudflare.tf`), so the ~100 MB body (lower
+  tiers) and ~100 s origin-timeout limits apply to uploads and to streamed
+  downloads (time-to-first-byte). Caddy itself adds none.
+- Public reads: `StoresService` filters collection products by
+  `status === 'PUBLISHED'` (~l.342 sections path, ~l.362 orphan products,
+  ~l.436), but `findCategoriesPublic` returns all categories with no product
+  filter — a category created by an import is publicly listed before any product
+  is published.
+- Concurrency: the repo's `FOR UPDATE` precedent locks `user`/`Coupon`/
+  `PickupPoint`; none locks `Store`, and `FOR UPDATE` on a row that other tables
+  reference blocks their FK inserts (`FOR KEY SHARE`), so a `Store` mutex must
+  use `FOR NO KEY UPDATE`. `queue.add` on the API's shared Redis connection
+  (`maxRetriesPerRequest: null`) waits in ioredis' offline queue when Redis is
+  down instead of rejecting.
+- Lifecycle: `main.ts` never calls `app.enableShutdownHooks()` and the API has
+  no `OnApplicationBootstrap`/`setInterval` provider (only `PrismaService` uses
+  `OnModuleInit`/`OnModuleDestroy`); `@nestjs/schedule` is not a dependency.
+- Auth/CSRF: `auth.config.ts` loads the `bearer()` plugin and sets no cookie
+  attributes (better-auth defaults to `SameSite=Lax`); no `Origin` handling
+  exists anywhere in `apps/api/src`; `trustedOrigins` covers only better-auth's
+  own routes.
+- No per-store product, category or collection cap exists; only `MAX_IMAGES = 6`
+  (private to `ProductsService`).
 
 ### 2.6 Background jobs
 
@@ -239,8 +264,8 @@ catálogo", not bare "Import").
   `@ApiExcludeController() @Public() @UseGuards(ThrottlerGuard,
   InternalJobsSecretGuard) @Throttle({default:{ttl:60_000,limit:5}})`.
   `InternalJobsSecretGuard` lives in `orders/infrastructure/` and each consuming
-  module re-provides it. A worker looping slices would hit that 5/min throttle —
-  the run endpoint must be exempt.
+  module re-provides it. The plan does not use this pattern for the import
+  runner (it runs in-process).
 - Blue/green: `INTERNAL_API_URL` is per color
   (`infra/vps/env/{blue,green}.runtime.env`), so a job picked up by one color's
   worker calls that color's API; during overlap the new queue is only consumed
@@ -399,9 +424,11 @@ range (`Decimal(10,2)` ⇒ max `99999999.99`), written to Prisma as strings /
 
 ### 4.6 Status / publishing
 
-Export includes `status`, but import defaults everything to `DRAFT` (matches the
-"new product is always DRAFT" invariant and avoids publishing a half-imported
-store); a "keep status" option is allowed and triggers the single recount (2.3).
+Export includes `status` informationally, but import makes everything `DRAFT`
+(the "new product is always DRAFT" invariant; avoids publishing a half-imported
+store). There is no keep-status option; sellers publish through a bulk-publish
+endpoint scoped to one import (per-product `publish` is one click per product
+and would make a 300-product import painful).
 
 ### 4.7 Categories and collections
 
@@ -415,16 +442,16 @@ within the store. Because root-level category uniqueness isn't DB-enforced
 
 ## 5. Open decisions
 
-See the plan's Decisions table (D1–D12); each has a recommended default. The
+See the plan's Decisions section (D1–D12), each with a recommended default. The
 biggest product-level one is the ZIP size ceiling vs image-heavy stores (plan:
-"Honest ceiling", measured in P0).
+"Backup ceilings", measured in P0).
 
 ---
 
 ## 6. Related prior work
 
-- `docs/plans/2026-10-20-product-url-slugs.md` — in-flight `Product.slug`;
-  import must integrate (see A2.6 sequencing note).
+- `.artifacts/2026/10/20261020--product-url-slugs/plan.md` — in-flight
+  `Product.slug`; import must integrate (see the sequencing note in 2.5).
 - `.artifacts/2026/09/20260907--store-rich-content-and-thin/plan.md` —
   `publishedProductCount` / `contentStaleAt` (2.3).
 - `.artifacts/2026/08/20260804--orval-client-rollout/plan.md` — how multipart
