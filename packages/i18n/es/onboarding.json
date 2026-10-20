@@ -27,7 +27,9 @@
     "hasAccount": "¿Ya tienes cuenta?",
     "loginLink": "Iniciar sesión",
     "checkEmailTitle": "Revisa tu correo",
-    "checkEmailBody": "Te enviamos un enlace para verificar tu cuenta. Ábrelo para poder iniciar sesión."
+    "checkEmailBody": "Te enviamos un enlace para verificar tu cuenta. Ábrelo para poder iniciar sesión.",
+    "google": "Registrarme con Google",
+    "googleError": "No se pudo registrar con Google"
   },
   "verifyEmail": {
     "successTitle": "Cuenta verificada",

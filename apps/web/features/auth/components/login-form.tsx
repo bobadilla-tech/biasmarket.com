@@ -2,7 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { authClient } from "@/lib/auth-client";
 import { Link, useRouter } from "@/i18n/navigation";
 import { Field } from "@/components/ui/field";
@@ -20,6 +20,7 @@ const inputClassName =
 export function LoginForm() {
   const t = useTranslations("onboarding.login");
   const router = useRouter();
+  const locale = useLocale();
 
   const {
     register,
@@ -41,7 +42,7 @@ export function LoginForm() {
   const onGoogle = async () => {
     const { error } = await authClient.signIn.social({
       provider: "google",
-      callbackURL: `${window.location.origin}/verify-email`,
+      callbackURL: `${window.location.origin}/${locale}/verify-email`,
     });
     if (error) {
       setError("root", { message: error.message ?? t("googleError") });

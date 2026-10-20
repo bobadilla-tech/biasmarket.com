@@ -27,7 +27,9 @@
     "hasAccount": "Already have an account?",
     "loginLink": "Log in",
     "checkEmailTitle": "Check your email",
-    "checkEmailBody": "We sent you a link to verify your account. Open it to be able to log in."
+    "checkEmailBody": "We sent you a link to verify your account. Open it to be able to log in.",
+    "google": "Sign up with Google",
+    "googleError": "Could not sign up with Google"
   },
   "verifyEmail": {
     "successTitle": "Account verified",

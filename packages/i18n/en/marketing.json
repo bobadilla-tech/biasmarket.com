@@ -321,5 +321,167 @@
         }
       ]
     }
+  },
+  "info": {
+    "howToBuy": {
+      "meta": {
+        "title": "How to buy — Bias Market",
+        "description": "How to order K-pop merch from independent sellers on Bias Market."
+      },
+      "title": "How to buy",
+      "intro": "Bias Market connects you with independent K-pop sellers. You order from a seller's store and pay the seller directly, then upload your proof of payment.",
+      "sections": [
+        {
+          "heading": "1. Find a store and products",
+          "paragraphs": [
+            "Browse stores from the Stores page or search for a specific album, photocard or lightstick from Explore products. Each store is run by an independent seller."
+          ]
+        },
+        {
+          "heading": "2. Add to cart and check out",
+          "paragraphs": [
+            "Pick your items, then enter your contact and delivery or pickup details at checkout. The seller sets which delivery methods and payment methods are available."
+          ]
+        },
+        {
+          "heading": "3. Pay the seller",
+          "paragraphs": [
+            "Bias Market does not take your payment. The checkout shows the seller's payment options, such as bank transfer, Wise or PayPal. Pay using the method you choose and keep your receipt."
+          ]
+        },
+        {
+          "heading": "4. Upload your proof of payment",
+          "paragraphs": [
+            "Upload a screenshot or photo of your receipt from your order page. Your order is held for a limited time, so submit the proof promptly or it may expire."
+          ]
+        },
+        {
+          "heading": "5. Wait for confirmation",
+          "paragraphs": [
+            "The seller reviews your proof and confirms or rejects it. You can follow the payment and delivery status of your order from your account."
+          ]
+        },
+        {
+          "heading": "Need help?",
+          "paragraphs": [
+            "See the FAQ or contact us at hello@biasmarket.com."
+          ]
+        }
+      ]
+    },
+    "howItWorks": {
+      "meta": {
+        "title": "How it works — Bias Market",
+        "description": "How Bias Market works for sellers and buyers."
+      },
+      "title": "How Bias Market works",
+      "intro": "Bias Market is a store builder for creator-led commerce, starting with K-pop merch. Payments are manual and happen directly between buyer and seller.",
+      "sections": [
+        {
+          "heading": "For sellers",
+          "paragraphs": [
+            "Create an account, set up your store, add products with photos and prices, and choose how you accept payment and deliver. Share your store link with your community. When an order comes in, review the buyer's proof of payment and move the order through fulfillment from your dashboard."
+          ]
+        },
+        {
+          "heading": "For buyers",
+          "paragraphs": [
+            "Browse stores and products, order from the seller you choose, pay the seller directly and upload proof of payment. You can track your order status after checkout."
+          ]
+        },
+        {
+          "heading": "Why manual payments",
+          "paragraphs": [
+            "Many fan sellers already use bank transfers, Wise or PayPal. Bias Market keeps that workflow and adds structure: orders, proof review, status tracking and notifications, with no payment gateway required."
+          ]
+        },
+        {
+          "heading": "Safe by design",
+          "paragraphs": [
+            "Each store's data is separated from other stores, and sellers only see orders placed in their own store. Read our Privacy Policy and Terms of Service for details."
+          ]
+        }
+      ]
+    },
+    "faq": {
+      "meta": {
+        "title": "FAQ — Bias Market",
+        "description": "Frequently asked questions about Bias Market."
+      },
+      "title": "Frequently asked questions",
+      "intro": "Quick answers about buying and selling on Bias Market.",
+      "sections": [
+        {
+          "heading": "Do I need a payment gateway?",
+          "paragraphs": [
+            "No. Buyers upload their proof of payment manually. Bank transfer, Wise, PayPal, whatever you already use."
+          ]
+        },
+        {
+          "heading": "Can I sell only photocards, not full group orders?",
+          "paragraphs": [
+            "Yes. Bias Market works for album group orders, individual photocard claims, set splits and fan-made merch drops."
+          ]
+        },
+        {
+          "heading": "Is it free?",
+          "paragraphs": [
+            "It is free for early sellers while we keep building the product."
+          ]
+        },
+        {
+          "heading": "Does Bias Market handle my payment as a buyer?",
+          "paragraphs": [
+            "No. You pay the seller directly using the methods they offer, then upload your proof of payment."
+          ]
+        },
+        {
+          "heading": "What happens if I do not upload proof in time?",
+          "paragraphs": [
+            "Orders are held for a limited time. If no proof is submitted before the hold expires, the order may be released."
+          ]
+        },
+        {
+          "heading": "Can I sign in with Google?",
+          "paragraphs": [
+            "Yes. Sellers can sign in with email and password or with Google."
+          ]
+        },
+        {
+          "heading": "How do I delete my account or data?",
+          "paragraphs": [
+            "Email hello@biasmarket.com and we will delete your account and personal data as described in our Privacy Policy."
+          ]
+        }
+      ]
+    },
+    "help": {
+      "meta": {
+        "title": "Help center — Bias Market",
+        "description": "Get help with Bias Market."
+      },
+      "title": "Help center",
+      "intro": "Find answers or reach us directly.",
+      "sections": [
+        {
+          "heading": "Guides",
+          "paragraphs": [
+            "How to buy explains ordering and paying. How it works gives the overview for buyers and sellers. The FAQ answers common questions."
+          ]
+        },
+        {
+          "heading": "Contact us",
+          "paragraphs": [
+            "Use the Contact page or email hello@biasmarket.com. For order questions, contact the seller of your store first; for account or platform issues, contact us."
+          ]
+        },
+        {
+          "heading": "Legal",
+          "paragraphs": [
+            "Read our Privacy Policy and Terms of Service."
+          ]
+        }
+      ]
+    }
   }
 }
