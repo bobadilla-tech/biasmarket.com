@@ -11,4 +11,6 @@ export const STATIC_PATHS = [
   "/contact",
   "/for-sellers",
   "/stores",
+  "/privacy",
+  "/terms",
 ] as const;

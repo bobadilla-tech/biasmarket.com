@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 
 interface FooterColumn {
   heading: string;
@@ -26,6 +27,9 @@ export function Footer() {
         </h3>
         <p className="mt-0.5 text-lg leading-[22px] text-[#5F5F5F] sm:mt-3 sm:text-[26px] sm:leading-[32px] sm:text-[#7A7A7A]">
           {t("tagline")}
+        </p>
+        <p className="mt-3 max-w-3xl text-sm leading-[20px] text-[#5F5F5F] sm:text-lg sm:leading-[26px]">
+          {t("description")}
         </p>
 
         <div className="mt-7 grid grid-cols-2 gap-x-6 gap-y-8 sm:mt-9 sm:grid-cols-3 lg:grid-cols-5 lg:gap-10">
@@ -69,6 +73,21 @@ export function Footer() {
             </div>
           </div>
         </div>
+
+        <nav
+          aria-label={t("legalNav")}
+          className="mt-8 flex flex-wrap gap-x-6 gap-y-2 border-t border-black/10 pt-6 text-sm text-[#5F5F5F] sm:text-lg"
+        >
+          <Link
+            href="/privacy"
+            className="hover:text-[#181818] hover:underline"
+          >
+            {t("privacy")}
+          </Link>
+          <Link href="/terms" className="hover:text-[#181818] hover:underline">
+            {t("terms")}
+          </Link>
+        </nav>
       </div>
     </footer>
   );
