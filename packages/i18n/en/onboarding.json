@@ -9,6 +9,8 @@
     "invalidEmail": "Enter a valid email",
     "passwordRequired": "Enter your password",
     "noAccount": "Don't have an account?",
+    "google": "Continue with Google",
+    "googleError": "Could not sign in with Google",
     "signUpLink": "Sign up"
   },
   "signup": {

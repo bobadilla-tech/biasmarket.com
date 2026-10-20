@@ -9,6 +9,8 @@
     "invalidEmail": "Ingresá un email válido",
     "passwordRequired": "Ingresá tu contraseña",
     "noAccount": "¿No tienes cuenta?",
+    "google": "Continuar con Google",
+    "googleError": "No se pudo iniciar sesión con Google",
     "signUpLink": "Regístrate"
   },
   "signup": {

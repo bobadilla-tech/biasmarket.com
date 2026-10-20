@@ -38,6 +38,16 @@ export function LoginForm() {
     router.push(await resolveSellerHomePath(data.user.role));
   };
 
+  const onGoogle = async () => {
+    const { error } = await authClient.signIn.social({
+      provider: "google",
+      callbackURL: `${window.location.origin}/verify-email`,
+    });
+    if (error) {
+      setError("root", { message: error.message ?? t("googleError") });
+    }
+  };
+
   return (
     <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-100 p-8 flex flex-col gap-5">
       <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
@@ -94,6 +104,14 @@ export function LoginForm() {
           {isSubmitting ? t("submitting") : t("submit")}
         </button>
       </form>
+
+      <button
+        type="button"
+        onClick={onGoogle}
+        className="w-full rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+      >
+        {t("google")}
+      </button>
 
       <p className="text-center text-sm text-gray-500">
         {t("noAccount")}{" "}
