@@ -24,6 +24,7 @@ describe('CustomerAuthService', () => {
       findUnique: Mock;
       findUniqueOrThrow: Mock;
       findFirst: Mock;
+      findMany: Mock;
       update: Mock;
     };
     customerStoreLink: { upsert: Mock };
@@ -47,6 +48,7 @@ describe('CustomerAuthService', () => {
         findUnique: vi.fn(),
         findUniqueOrThrow: vi.fn(),
         findFirst: vi.fn(),
+        findMany: vi.fn(),
         update: vi.fn(),
       },
       customerStoreLink: { upsert: vi.fn() },
@@ -311,6 +313,65 @@ describe('CustomerAuthService', () => {
       expect(prisma.buyerAccount.findUnique).toHaveBeenCalledWith({
         where: { phone: '+51988888888' },
       });
+    });
+  });
+
+  describe('loginWithGoogle', () => {
+    const identity = { email: 'Buyer@Example.com', name: 'Buyer Name' };
+
+    it('signs in the single matching account, verifies its email and links the store', async () => {
+      prisma.buyerAccount.findMany.mockResolvedValue([
+        { id: 'buyer-1', passwordVersion: 2, name: null },
+      ]);
+
+      const token = await service.loginWithGoogle('my-store', identity);
+
+      expect(verifyCustomerSessionToken(token, 'test-secret')).toEqual({
+        buyerAccountId: 'buyer-1',
+        passwordVersion: 2,
+      });
+      expect(prisma.buyerAccount.findMany).toHaveBeenCalledWith({
+        where: { email: { equals: identity.email, mode: 'insensitive' } },
+      });
+      expect(prisma.customerStoreLink.upsert).toHaveBeenCalled();
+      expect(prisma.buyerAccount.update).toHaveBeenCalledWith({
+        where: { id: 'buyer-1' },
+        data: { emailVerified: true, name: 'Buyer Name' },
+      });
+    });
+
+    it('keeps an existing name', async () => {
+      prisma.buyerAccount.findMany.mockResolvedValue([
+        { id: 'buyer-1', passwordVersion: 0, name: 'Already Set' },
+      ]);
+
+      await service.loginWithGoogle('my-store', identity);
+
+      expect(prisma.buyerAccount.update).toHaveBeenCalledWith({
+        where: { id: 'buyer-1' },
+        data: { emailVerified: true },
+      });
+    });
+
+    it('never creates an account when no BuyerAccount has that email', async () => {
+      prisma.buyerAccount.findMany.mockResolvedValue([]);
+
+      await expect(
+        service.loginWithGoogle('my-store', identity),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(prisma.buyerAccount.update).not.toHaveBeenCalled();
+    });
+
+    it('refuses an ambiguous email shared by several accounts', async () => {
+      prisma.buyerAccount.findMany.mockResolvedValue([
+        { id: 'a', passwordVersion: 0, name: null },
+        { id: 'b', passwordVersion: 0, name: null },
+      ]);
+
+      await expect(
+        service.loginWithGoogle('my-store', identity),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(prisma.customerStoreLink.upsert).not.toHaveBeenCalled();
     });
   });
 

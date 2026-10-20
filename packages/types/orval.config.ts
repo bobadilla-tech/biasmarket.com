@@ -57,6 +57,7 @@ export default defineConfig({
           "Coupons",
           "Couriers",
           "PublicCouriers",
+          "GlobalAccount",
         ],
       },
     },

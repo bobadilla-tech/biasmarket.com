@@ -244,6 +244,14 @@ function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
                 <User className="size-4" />
                 {t("myAccount")}
               </Link>
+              <Link
+                href="/my-purchases"
+                onClick={closeAndNavigate}
+                className={itemClassName}
+              >
+                <ShoppingBag className="size-4" />
+                {t("myPurchases")}
+              </Link>
               <button
                 type="button"
                 onClick={handleSignOut}
@@ -269,6 +277,15 @@ function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
               className={itemClassName}
             >
               {t("signUp")}
+            </Link>
+            <Separator className="my-1" />
+            <Link
+              href="/my-purchases"
+              onClick={closeAndNavigate}
+              className={itemClassName}
+            >
+              <ShoppingBag className="size-4" />
+              {t("myPurchases")}
             </Link>
           </div>
         )}

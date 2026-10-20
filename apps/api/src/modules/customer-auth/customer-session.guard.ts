@@ -56,8 +56,12 @@ export class CustomerSessionGuard implements CanActivate {
     const buyerAccount = await this.prisma.buyerAccount.findUnique({
       where: { id: verified.buyerAccountId },
     });
+    // A null passwordHash is allowed: Google sign-in issues sessions for
+    // accounts that never set a password. Tokens are only ever minted by
+    // login / changePassword / loginWithGoogle, so this can't be reached
+    // without one of them having verified the buyer.
     if (
-      !buyerAccount?.passwordHash ||
+      !buyerAccount ||
       buyerAccount.passwordVersion !== verified.passwordVersion
     ) {
       // Covers: account deleted, or (most commonly) password changed since

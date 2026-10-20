@@ -11,6 +11,7 @@ import {
   customerAuth,
   customers,
   deliveryConfig,
+  globalAccount,
   myStores,
   notifications,
   orders,
@@ -80,4 +81,5 @@ export const apiClient = {
   coupons,
   couriers,
   publicCouriers,
+  globalAccount,
 };
