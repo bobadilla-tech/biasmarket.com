@@ -32,7 +32,9 @@
     "navEnterprise": "Enterprise",
     "navContact": "Contact",
     "credit": "Developed by <name>Bobadilla Tech</name>",
-    "copyright": "© {year} Bias Market. All rights reserved."
+    "copyright": "© {year} Bias Market. All rights reserved.",
+    "navPrivacy": "Privacy",
+    "navTerms": "Terms"
   },
   "scheduleCallCard": {
     "text": "Want to talk? Schedule a 15-min intro call with Alexandra, our sales lead.",
@@ -134,6 +136,161 @@
       "heading": "Let's talk about your setup",
       "body": "Tell us about your artists, stores, and order volume, and we'll figure out the right fit together.",
       "button": "Contact us"
+    }
+  },
+  "legal": {
+    "updated": "Last updated: October 20, 2026",
+    "privacy": {
+      "meta": {
+        "title": "Privacy Policy — Bias Market",
+        "description": "How Bias Market collects, uses and protects your personal data."
+      },
+      "title": "Privacy Policy",
+      "sections": [
+        {
+          "heading": "Who we are",
+          "paragraphs": [
+            "Bias Market (\"we\", \"us\") is a platform that lets creators and sellers run online stores. This policy explains what personal data we handle when you use biasmarket.com, our dashboard and the stores hosted on it. Questions: hello@biasmarket.com."
+          ]
+        },
+        {
+          "heading": "Data we collect",
+          "paragraphs": [
+            "Account data: name, email address and password (stored hashed) when you register as a seller or buyer.",
+            "Google sign-in: if you choose \"Continue with Google\", we receive your name, email address, profile picture and Google account ID. We do not access your contacts, files, calendar or any other Google data.",
+            "Store and order data: products, orders, shipping or pickup details, and payment proof images that buyers upload for sellers to review.",
+            "Technical data: session cookies needed to keep you signed in, and basic logs (IP address, browser, timestamps) used for security and abuse prevention."
+          ]
+        },
+        {
+          "heading": "How we use it",
+          "paragraphs": [
+            "To create and secure your account and sign you in.",
+            "To operate stores: process orders, show payment proofs to the seller who owns the store, and send transactional emails such as email verification and order updates.",
+            "To prevent fraud and abuse, and to comply with legal obligations.",
+            "We do not sell your personal data and we do not use it for advertising."
+          ]
+        },
+        {
+          "heading": "Who sees your data",
+          "paragraphs": [
+            "Sellers can see the buyer details and payment proofs of orders placed in their own store only. Each store's data is isolated from other stores.",
+            "We use service providers to run the platform, such as hosting, object storage and transactional email delivery. They process data only on our behalf.",
+            "We may disclose data if required by law."
+          ]
+        },
+        {
+          "heading": "Cookies",
+          "paragraphs": [
+            "We use only essential cookies to keep you signed in and protect your session. We do not use advertising or cross-site tracking cookies."
+          ]
+        },
+        {
+          "heading": "Retention and deletion",
+          "paragraphs": [
+            "We keep your data while your account is active and as needed for legal and fraud-prevention purposes. You can ask us to delete your account and associated personal data at any time by writing to hello@biasmarket.com."
+          ]
+        },
+        {
+          "heading": "Your rights",
+          "paragraphs": [
+            "Depending on where you live, you may have the right to access, correct, delete or export your data, and to object to or restrict certain processing. Write to hello@biasmarket.com and we will respond within a reasonable time."
+          ]
+        },
+        {
+          "heading": "Security",
+          "paragraphs": [
+            "We use encrypted connections (HTTPS), hashed passwords and per-store access controls. No system is perfectly secure, but we work to protect your data."
+          ]
+        },
+        {
+          "heading": "Changes",
+          "paragraphs": [
+            "We may update this policy. The date at the top shows the latest revision; material changes will be announced on the site."
+          ]
+        },
+        {
+          "heading": "Contact",
+          "paragraphs": [
+            "Bias Market — hello@biasmarket.com"
+          ]
+        }
+      ]
+    },
+    "terms": {
+      "meta": {
+        "title": "Terms of Service — Bias Market",
+        "description": "The terms that govern your use of Bias Market."
+      },
+      "title": "Terms of Service",
+      "sections": [
+        {
+          "heading": "Acceptance",
+          "paragraphs": [
+            "By creating an account or using Bias Market you agree to these terms. If you do not agree, do not use the service."
+          ]
+        },
+        {
+          "heading": "The service",
+          "paragraphs": [
+            "Bias Market provides tools for sellers to build and run online stores, including product catalogs, orders and manual payment review (bank transfer, Wise, PayPal and similar). Bias Market is a software platform: we are not a party to sales between sellers and buyers, and we do not process or hold payments."
+          ]
+        },
+        {
+          "heading": "Accounts",
+          "paragraphs": [
+            "You must provide accurate information and keep your credentials secure. You are responsible for activity under your account. You may sign in with email and password or with Google."
+          ]
+        },
+        {
+          "heading": "Seller responsibilities",
+          "paragraphs": [
+            "Sellers are responsible for their products, prices, fulfillment, refunds, taxes and compliance with applicable laws, including consumer protection and intellectual property rules. Do not sell counterfeit, illegal or infringing goods."
+          ]
+        },
+        {
+          "heading": "Buyer responsibilities",
+          "paragraphs": [
+            "Buyers must provide accurate order details and genuine proof of payment. Submitting forged or misleading payment proofs is prohibited."
+          ]
+        },
+        {
+          "heading": "Acceptable use",
+          "paragraphs": [
+            "Do not misuse the service: no unauthorized access, scraping that harms the platform, malware, harassment, fraud, or attempts to read another store's data."
+          ]
+        },
+        {
+          "heading": "Content",
+          "paragraphs": [
+            "You keep ownership of the content you upload. You grant us a limited license to host and display it as needed to operate the service. You are responsible for having the rights to what you upload."
+          ]
+        },
+        {
+          "heading": "Suspension and termination",
+          "paragraphs": [
+            "We may suspend or terminate accounts that violate these terms or put the platform or other users at risk. You may stop using the service and request account deletion at any time."
+          ]
+        },
+        {
+          "heading": "Disclaimers and liability",
+          "paragraphs": [
+            "The service is provided \"as is\" without warranties. To the extent permitted by law, Bias Market is not liable for indirect or consequential damages, or for disputes between sellers and buyers."
+          ]
+        },
+        {
+          "heading": "Changes",
+          "paragraphs": [
+            "We may update these terms. Continued use after changes means you accept them."
+          ]
+        },
+        {
+          "heading": "Contact",
+          "paragraphs": [
+            "Bias Market — hello@biasmarket.com"
+          ]
+        }
+      ]
     }
   }
 }

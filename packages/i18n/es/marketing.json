@@ -32,7 +32,9 @@
     "navEnterprise": "Empresas",
     "navContact": "Contacto",
     "credit": "Desarrollado por <name>Bobadilla Tech</name>",
-    "copyright": "© {year} Bias Market. Todos los derechos reservados."
+    "copyright": "© {year} Bias Market. Todos los derechos reservados.",
+    "navPrivacy": "Privacidad",
+    "navTerms": "Términos"
   },
   "scheduleCallCard": {
     "text": "¿Quieres hablar? Agenda una llamada de 15 min con Alexandra, nuestra líder de ventas.",
@@ -134,6 +136,161 @@
       "heading": "Hablemos de tu caso",
       "body": "Cuéntanos sobre tus artistas, tiendas y volumen de pedidos, y juntos vemos qué encaja mejor.",
       "button": "Contáctanos"
+    }
+  },
+  "legal": {
+    "updated": "Última actualización: 20 de octubre de 2026",
+    "privacy": {
+      "meta": {
+        "title": "Política de Privacidad — Bias Market",
+        "description": "Cómo Bias Market recopila, usa y protege tus datos personales."
+      },
+      "title": "Política de Privacidad",
+      "sections": [
+        {
+          "heading": "Quiénes somos",
+          "paragraphs": [
+            "Bias Market (\"nosotros\") es una plataforma que permite a creadores y vendedores operar tiendas en línea. Esta política explica qué datos personales tratamos cuando usas biasmarket.com, el panel y las tiendas alojadas en él. Consultas: hello@biasmarket.com."
+          ]
+        },
+        {
+          "heading": "Datos que recopilamos",
+          "paragraphs": [
+            "Datos de cuenta: nombre, correo electrónico y contraseña (almacenada con hash) al registrarte como vendedor o comprador.",
+            "Inicio de sesión con Google: si eliges \"Continuar con Google\", recibimos tu nombre, correo, foto de perfil e ID de cuenta de Google. No accedemos a tus contactos, archivos, calendario ni a ningún otro dato de Google.",
+            "Datos de tienda y pedidos: productos, pedidos, datos de envío o retiro e imágenes de comprobantes de pago que los compradores suben para que el vendedor las revise.",
+            "Datos técnicos: cookies de sesión necesarias para mantenerte conectado y registros básicos (IP, navegador, fechas) usados para seguridad y prevención de abuso."
+          ]
+        },
+        {
+          "heading": "Cómo los usamos",
+          "paragraphs": [
+            "Para crear y proteger tu cuenta e iniciar sesión.",
+            "Para operar las tiendas: procesar pedidos, mostrar comprobantes de pago al vendedor dueño de la tienda y enviar correos transaccionales como la verificación de correo y actualizaciones de pedidos.",
+            "Para prevenir fraude y abuso, y cumplir obligaciones legales.",
+            "No vendemos tus datos personales ni los usamos para publicidad."
+          ]
+        },
+        {
+          "heading": "Quién ve tus datos",
+          "paragraphs": [
+            "Los vendedores solo ven los datos del comprador y los comprobantes de los pedidos hechos en su propia tienda. Los datos de cada tienda están aislados de las demás.",
+            "Usamos proveedores para operar la plataforma, como alojamiento, almacenamiento de archivos y envío de correos transaccionales. Tratan los datos solo por encargo nuestro.",
+            "Podemos divulgar datos si la ley lo exige."
+          ]
+        },
+        {
+          "heading": "Cookies",
+          "paragraphs": [
+            "Usamos solo cookies esenciales para mantener tu sesión y protegerla. No usamos cookies publicitarias ni de seguimiento entre sitios."
+          ]
+        },
+        {
+          "heading": "Conservación y eliminación",
+          "paragraphs": [
+            "Conservamos tus datos mientras tu cuenta esté activa y según lo necesario por motivos legales y de prevención de fraude. Puedes pedir la eliminación de tu cuenta y datos personales en cualquier momento escribiendo a hello@biasmarket.com."
+          ]
+        },
+        {
+          "heading": "Tus derechos",
+          "paragraphs": [
+            "Según tu país, puedes tener derecho a acceder, corregir, eliminar o exportar tus datos, y a oponerte o limitar ciertos tratamientos. Escribe a hello@biasmarket.com y responderemos en un plazo razonable."
+          ]
+        },
+        {
+          "heading": "Seguridad",
+          "paragraphs": [
+            "Usamos conexiones cifradas (HTTPS), contraseñas con hash y controles de acceso por tienda. Ningún sistema es perfectamente seguro, pero trabajamos para proteger tus datos."
+          ]
+        },
+        {
+          "heading": "Cambios",
+          "paragraphs": [
+            "Podemos actualizar esta política. La fecha al inicio indica la última revisión; los cambios importantes se anunciarán en el sitio."
+          ]
+        },
+        {
+          "heading": "Contacto",
+          "paragraphs": [
+            "Bias Market — hello@biasmarket.com"
+          ]
+        }
+      ]
+    },
+    "terms": {
+      "meta": {
+        "title": "Términos del Servicio — Bias Market",
+        "description": "Los términos que rigen el uso de Bias Market."
+      },
+      "title": "Términos del Servicio",
+      "sections": [
+        {
+          "heading": "Aceptación",
+          "paragraphs": [
+            "Al crear una cuenta o usar Bias Market aceptas estos términos. Si no estás de acuerdo, no uses el servicio."
+          ]
+        },
+        {
+          "heading": "El servicio",
+          "paragraphs": [
+            "Bias Market ofrece herramientas para que los vendedores creen y operen tiendas en línea, incluyendo catálogo de productos, pedidos y revisión manual de pagos (transferencia bancaria, Wise, PayPal y similares). Bias Market es una plataforma de software: no somos parte de las ventas entre vendedores y compradores, ni procesamos o retenemos pagos."
+          ]
+        },
+        {
+          "heading": "Cuentas",
+          "paragraphs": [
+            "Debes dar información veraz y proteger tus credenciales. Eres responsable de la actividad de tu cuenta. Puedes iniciar sesión con correo y contraseña o con Google."
+          ]
+        },
+        {
+          "heading": "Responsabilidades del vendedor",
+          "paragraphs": [
+            "Los vendedores son responsables de sus productos, precios, entregas, reembolsos, impuestos y del cumplimiento de la ley aplicable, incluida la protección al consumidor y la propiedad intelectual. No vendas productos falsificados, ilegales o que infrinjan derechos."
+          ]
+        },
+        {
+          "heading": "Responsabilidades del comprador",
+          "paragraphs": [
+            "Los compradores deben dar datos de pedido veraces y comprobantes de pago genuinos. Está prohibido enviar comprobantes falsificados o engañosos."
+          ]
+        },
+        {
+          "heading": "Uso aceptable",
+          "paragraphs": [
+            "No hagas mal uso del servicio: nada de accesos no autorizados, scraping que dañe la plataforma, malware, acoso, fraude ni intentos de leer datos de otra tienda."
+          ]
+        },
+        {
+          "heading": "Contenido",
+          "paragraphs": [
+            "Conservas la propiedad del contenido que subes. Nos otorgas una licencia limitada para alojarlo y mostrarlo según sea necesario para operar el servicio. Eres responsable de tener los derechos sobre lo que subes."
+          ]
+        },
+        {
+          "heading": "Suspensión y terminación",
+          "paragraphs": [
+            "Podemos suspender o cerrar cuentas que incumplan estos términos o pongan en riesgo la plataforma u otros usuarios. Puedes dejar de usar el servicio y pedir la eliminación de tu cuenta cuando quieras."
+          ]
+        },
+        {
+          "heading": "Descargos y responsabilidad",
+          "paragraphs": [
+            "El servicio se ofrece \"tal cual\", sin garantías. En la medida permitida por la ley, Bias Market no responde por daños indirectos o consecuentes ni por disputas entre vendedores y compradores."
+          ]
+        },
+        {
+          "heading": "Cambios",
+          "paragraphs": [
+            "Podemos actualizar estos términos. Seguir usando el servicio tras los cambios implica que los aceptas."
+          ]
+        },
+        {
+          "heading": "Contacto",
+          "paragraphs": [
+            "Bias Market — hello@biasmarket.com"
+          ]
+        }
+      ]
     }
   }
 }
