@@ -43,6 +43,7 @@ export function LoginForm() {
     const { error } = await authClient.signIn.social({
       provider: "google",
       callbackURL: `${window.location.origin}/${locale}/verify-email`,
+      errorCallbackURL: `${window.location.origin}/${locale}/auth/error`,
     });
     if (error) {
       setError("root", { message: error.message ?? t("googleError") });

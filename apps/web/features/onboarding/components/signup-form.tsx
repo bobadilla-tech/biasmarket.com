@@ -42,6 +42,7 @@ export function SignupForm({ onCheckEmail }: { onCheckEmail: () => void }) {
     const { error } = await authClient.signIn.social({
       provider: "google",
       callbackURL: `${globalThis.location.origin}/${locale}/verify-email`,
+      errorCallbackURL: `${globalThis.location.origin}/${locale}/auth/error`,
     });
     if (error) {
       setError("root", { message: error.message ?? t("googleError") });
