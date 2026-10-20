@@ -65,7 +65,19 @@ export class CustomerAuthService {
     password: string,
   ): Promise<{ ok: true }> {
     await this.findStoreBySlug(slug);
+    return this.setPasswordFromToken(token, password);
+  }
 
+  // Global (no-store) counterpart of `register` — the emailed token already
+  // identifies the buyer account, so no store is needed to redeem it.
+  resetPasswordGlobal(token: string, password: string): Promise<{ ok: true }> {
+    return this.setPasswordFromToken(token, password);
+  }
+
+  private async setPasswordFromToken(
+    token: string,
+    password: string,
+  ): Promise<{ ok: true }> {
     const secret = requiredEnv('CUSTOMER_ACCOUNT_TOKEN_SECRET');
     const verified = verifyCustomerAccountToken(token, secret);
     if (
@@ -124,6 +136,17 @@ export class CustomerAuthService {
     if (!buyerAccount?.passwordHash || !buyerAccount.email) return;
 
     await this.customerAccount.sendPasswordResetEmail(buyerAccount, store);
+  }
+
+  async forgotPasswordGlobal(phone: string): Promise<void> {
+    const buyerAccount = await this.prisma.buyerAccount.findUnique({
+      where: { phone: normalizePhone(phone) },
+    });
+
+    // Always resolves — never confirm or deny whether an account exists.
+    if (!buyerAccount?.passwordHash || !buyerAccount.email) return;
+
+    await this.customerAccount.sendPasswordResetEmail(buyerAccount, null);
   }
 
   async login(slug: string, phone: string, password: string): Promise<string> {

@@ -20,7 +20,8 @@ import {
 const inputClassName =
   "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-base text-gray-600 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 placeholder:text-gray-600 md:text-sm";
 
-export function ForgotPasswordForm({ slug }: { slug: string }) {
+// `slug` omitted: the global flow from My purchases.
+export function ForgotPasswordForm({ slug }: { slug?: string }) {
   const t = useTranslations("storefront.forgotPasswordPage");
   const forgotPassword = useCustomerForgotPassword(slug);
   const tCommon = useTranslations("common");
@@ -59,7 +60,7 @@ export function ForgotPasswordForm({ slug }: { slug: string }) {
           {t("success")}
         </p>
         <Link
-          href={`/store/${slug}/account/login`}
+          href={slug ? `/store/${slug}/account/login` : "/my-purchases"}
           className="store-theme-link font-semibold text-center"
         >
           {t("backToLogin")}
@@ -114,7 +115,7 @@ export function ForgotPasswordForm({ slug }: { slug: string }) {
         </button>
 
         <Link
-          href={`/store/${slug}/account/login`}
+          href={slug ? `/store/${slug}/account/login` : "/my-purchases"}
           className="store-theme-link text-center text-sm font-semibold"
         >
           {t("backToLogin")}

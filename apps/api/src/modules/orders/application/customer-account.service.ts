@@ -244,9 +244,11 @@ export class CustomerAccountService {
     }
   }
 
+  // `store` is null for the global (My purchases) reset flow: the email then
+  // names Bias Market and links to the global reset page instead of a store's.
   async sendPasswordResetEmail(
     buyerAccount: BuyerAccount,
-    store: Store,
+    store: Store | null,
   ): Promise<void> {
     if (!buyerAccount.email) return;
 
@@ -257,12 +259,14 @@ export class CustomerAccountService {
         secret,
         'reset',
       );
-      const url = this.confirmUrl(store.slug, token);
+      const url = store
+        ? this.confirmUrl(store.slug, token)
+        : this.globalResetUrl(token);
 
       await this.mailer.send({
         to: buyerAccount.email,
         subject: 'Restablece tu contraseña — Bias Market / Reset your password',
-        html: buildPasswordResetEmailHtml(url, store.name),
+        html: buildPasswordResetEmailHtml(url, store?.name ?? 'Bias Market'),
       });
     } catch (err) {
       this.logger.error(
@@ -331,6 +335,11 @@ export class CustomerAccountService {
         err,
       );
     }
+  }
+
+  private globalResetUrl(token: string): string {
+    const webUrl = process.env.WEB_URL ?? 'http://localhost:3001';
+    return `${webUrl}/my-purchases/reset-password?token=${token}`;
   }
 
   private confirmUrl(storeSlug: string, token: string): string {

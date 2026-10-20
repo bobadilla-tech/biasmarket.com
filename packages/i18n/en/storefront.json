@@ -197,7 +197,8 @@
       "passwordsDontMatch": "Passwords don't match",
       "genericError": "Something went wrong. Try again.",
       "goToLogin": "Log in"
-    }
+    },
+    "requestNewLink": "Request a new link"
   },
   "loginPage": {
     "title": "Log in",

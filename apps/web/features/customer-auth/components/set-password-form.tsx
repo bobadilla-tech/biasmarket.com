@@ -30,7 +30,7 @@ export function SetPasswordForm({
   token,
   purpose = "confirm",
 }: {
-  slug: string;
+  slug?: string;
   token: string;
   purpose?: "confirm" | "reset";
 }) {
@@ -76,7 +76,7 @@ export function SetPasswordForm({
           {purpose === "reset" ? t("successReset") : t("success")}
         </p>
         <Link
-          href={`/store/${slug}/account/login`}
+          href={slug ? `/store/${slug}/account/login` : "/my-purchases"}
           className="store-theme-link font-semibold text-center"
         >
           {t("goToLogin")}
