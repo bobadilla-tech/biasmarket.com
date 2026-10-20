@@ -78,6 +78,7 @@ export class CreateOrderUseCase {
     slug: string,
     dto: CreateOrderDto,
     proof?: { imageUrl: string },
+    session?: { buyerAccountId: string; passwordVersion: number },
   ) {
     const store = await this.prisma.store.findUnique({ where: { slug } });
     if (!store) throw new NotFoundException('Tienda no encontrada');
@@ -272,6 +273,7 @@ export class CreateOrderUseCase {
               dto.customerPhone,
               dto.customerEmail,
               dto.customerName,
+              session,
             );
           customerId = pendingVerificationCustomer.customer?.id;
           buyerAccountId = pendingVerificationCustomer.buyerAccount?.id;

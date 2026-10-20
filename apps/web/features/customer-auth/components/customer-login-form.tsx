@@ -22,13 +22,20 @@ const inputClassName =
 
 const googleErrorKeys = {
   unavailable: true,
-  no_account: true,
   ambiguous: true,
   failed: true,
 } as const;
 type GoogleErrorKey = keyof typeof googleErrorKeys;
 
-export function CustomerLoginForm({ slug }: { slug: string }) {
+// `slug` set: the store's own login page. Omitted: the global login on My
+// purchases, which signs in without choosing a store.
+export function CustomerLoginForm({
+  slug,
+  onSuccess,
+}: {
+  slug?: string;
+  onSuccess?: () => void;
+}) {
   const t = useTranslations("storefront.loginPage");
   const router = useRouter();
   const login = useCustomerLogin(slug);
@@ -50,7 +57,8 @@ export function CustomerLoginForm({ slug }: { slug: string }) {
   const onSubmit = async (values: CustomerLoginInput) => {
     try {
       await login.mutateAsync(values);
-      router.push(`/store/${slug}/account`);
+      if (slug) router.push(`/store/${slug}/account`);
+      onSuccess?.();
     } catch (err) {
       setError("root", {
         message: err instanceof Error ? err.message : t("invalidCredentials"),
@@ -115,12 +123,14 @@ export function CustomerLoginForm({ slug }: { slug: string }) {
           )}
         </FormField>
 
-        <Link
-          href={`/store/${slug}/account/forgot-password`}
-          className="store-theme-link text-sm font-medium -mt-3"
-        >
-          {t("forgotPasswordLink")}
-        </Link>
+        {slug && (
+          <Link
+            href={`/store/${slug}/account/forgot-password`}
+            className="store-theme-link text-sm font-medium -mt-3"
+          >
+            {t("forgotPasswordLink")}
+          </Link>
+        )}
 
         <button
           type="submit"
@@ -132,7 +142,9 @@ export function CustomerLoginForm({ slug }: { slug: string }) {
       </form>
 
       <a
-        href={`${process.env.NEXT_PUBLIC_API_URL}/api/stores/${encodeURIComponent(slug)}/account/google?locale=${locale}`}
+        href={`${process.env.NEXT_PUBLIC_API_URL}/api/${
+          slug ? `stores/${encodeURIComponent(slug)}/` : ""
+        }account/google?locale=${locale}`}
         className="w-full rounded-xl border border-gray-200 py-2.5 text-center text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
       >
         {t("google")}

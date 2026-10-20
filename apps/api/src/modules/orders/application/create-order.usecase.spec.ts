@@ -639,6 +639,7 @@ describe('CreateOrderUseCase', () => {
         dto.customerPhone,
         'jane@example.com',
         dto.customerName,
+        undefined,
       );
       expect(prisma.order.create).toHaveBeenCalledWith(
         expect.objectContaining({

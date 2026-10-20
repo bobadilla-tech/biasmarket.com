@@ -15,7 +15,12 @@ describe('CustomerAccountService', () => {
   let service: CustomerAccountService;
   let prisma: {
     customer: { findUnique: Mock; create: Mock; update: Mock };
-    buyerAccount: { findUnique: Mock; create: Mock; update: Mock };
+    buyerAccount: {
+      findUnique: Mock;
+      findFirst: Mock;
+      create: Mock;
+      update: Mock;
+    };
     customerStoreLink: { upsert: Mock };
     order: { findMany: Mock };
     store: { findUnique: Mock };
@@ -30,7 +35,12 @@ describe('CustomerAccountService', () => {
 
     prisma = {
       customer: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
-      buyerAccount: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
+      buyerAccount: {
+        findUnique: vi.fn(),
+        findFirst: vi.fn().mockResolvedValue(null),
+        create: vi.fn(),
+        update: vi.fn(),
+      },
       customerStoreLink: { upsert: vi.fn() },
       order: { findMany: vi.fn() },
       store: { findUnique: vi.fn().mockResolvedValue(store) },
@@ -49,6 +59,86 @@ describe('CustomerAccountService', () => {
   });
 
   describe('findOrCreateCustomer', () => {
+    describe('phone-less (Google) accounts', () => {
+      const session = { buyerAccountId: 'buyer-g', passwordVersion: 0 };
+      const googleAccount = {
+        id: 'buyer-g',
+        phone: null,
+        email: 'jane@example.com',
+        name: 'Jane',
+        passwordVersion: 0,
+        emailVerified: true,
+      };
+
+      it('attaches the phone to the signed-in buyer who owns the email', async () => {
+        prisma.buyerAccount.findUnique
+          .mockResolvedValueOnce(null) // no account has this phone yet
+          .mockResolvedValueOnce(googleAccount); // the session's own account
+        prisma.buyerAccount.update.mockResolvedValue({
+          ...googleAccount,
+          phone: '+51988888888',
+        });
+        prisma.customer.findUnique.mockResolvedValue(null);
+        prisma.customer.create.mockResolvedValue({ id: 'customer-1' });
+
+        const result = await service.findOrCreateCustomer(
+          prisma as never,
+          store.id,
+          '+51988888888',
+          'Jane@Example.com',
+          'Jane',
+          session,
+        );
+
+        expect(prisma.buyerAccount.create).not.toHaveBeenCalled();
+        expect(prisma.buyerAccount.update).toHaveBeenCalledWith({
+          where: { id: 'buyer-g' },
+          data: { phone: '+51988888888', name: 'Jane' },
+        });
+        expect(result.buyerAccount?.id).toBe('buyer-g');
+        expect(result.needsVerificationEmail).toBe(false);
+      });
+
+      it('does not attach the phone when the session password version is stale', async () => {
+        prisma.buyerAccount.findUnique
+          .mockResolvedValueOnce(null)
+          .mockResolvedValueOnce({ ...googleAccount, passwordVersion: 5 });
+        prisma.buyerAccount.findFirst.mockResolvedValue(googleAccount);
+
+        const result = await service.findOrCreateCustomer(
+          prisma as never,
+          store.id,
+          '+51988888888',
+          'jane@example.com',
+          'Jane',
+          session,
+        );
+
+        expect(prisma.buyerAccount.update).not.toHaveBeenCalled();
+        expect(result.buyerAccount).toBeNull();
+      });
+
+      it('falls back to a guest order instead of duplicating an unauthenticated phone-less email owner', async () => {
+        prisma.buyerAccount.findUnique.mockResolvedValue(null);
+        prisma.buyerAccount.findFirst.mockResolvedValue(googleAccount);
+
+        const result = await service.findOrCreateCustomer(
+          prisma as never,
+          store.id,
+          '+51988888888',
+          'jane@example.com',
+          'Jane',
+        );
+
+        expect(prisma.buyerAccount.create).not.toHaveBeenCalled();
+        expect(result).toEqual({
+          customer: null,
+          buyerAccount: null,
+          needsVerificationEmail: false,
+        });
+      });
+    });
+
     it('creates a new BuyerAccount, links the store, and creates the per-store Customer projection', async () => {
       prisma.buyerAccount.findUnique.mockResolvedValue(null);
       const buyerAccount = {

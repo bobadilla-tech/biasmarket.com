@@ -128,6 +128,26 @@ export class CustomerAuthService {
 
   async login(slug: string, phone: string, password: string): Promise<string> {
     const store = await this.findStoreBySlug(slug);
+    const buyerAccount = await this.authenticateByPhone(phone, password);
+
+    await this.ensureStoreLink(buyerAccount.id, store.id);
+
+    return this.issueSessionToken(
+      buyerAccount.id,
+      buyerAccount.passwordVersion,
+    );
+  }
+
+  // Global (no-store) login — same credentials, no store link to create.
+  async loginGlobal(phone: string, password: string): Promise<string> {
+    const buyerAccount = await this.authenticateByPhone(phone, password);
+    return this.issueSessionToken(
+      buyerAccount.id,
+      buyerAccount.passwordVersion,
+    );
+  }
+
+  private async authenticateByPhone(phone: string, password: string) {
     const buyerAccount = await this.prisma.buyerAccount.findUnique({
       where: { phone: normalizePhone(phone) },
     });
@@ -146,44 +166,45 @@ export class CustomerAuthService {
       throw new UnauthorizedException('Teléfono o contraseña inválidos');
     }
 
-    await this.ensureStoreLink(buyerAccount.id, store.id);
-
-    return this.issueSessionToken(
-      buyerAccount.id,
-      buyerAccount.passwordVersion,
-    );
+    return buyerAccount;
   }
 
-  // Google proves ownership of an email, not a phone number, so this only
-  // signs in a buyer whose existing BuyerAccount (created at checkout, which
-  // is where the phone is collected) already carries that email. It never
-  // creates an account. A Google-verified match also counts as email
-  // verification, and means the buyer can sign in without ever having set a
-  // password.
+  // Google proves ownership of an email, not a phone number. A buyer whose
+  // BuyerAccount already carries that email is signed in; otherwise a new
+  // account is created with the verified email and no phone (buyers add one
+  // from their profile or at checkout). A Google-verified match also counts
+  // as email verification, and the buyer can sign in without ever having set
+  // a password. `slug` is null for the global (no-store) entry point.
   async loginWithGoogle(
-    slug: string,
+    slug: string | null,
     identity: { email: string; name: string | null },
   ): Promise<string> {
-    const store = await this.findStoreBySlug(slug);
+    const store = slug ? await this.findStoreBySlug(slug) : null;
     const matches = await this.prisma.buyerAccount.findMany({
       where: { email: { equals: identity.email, mode: 'insensitive' } },
     });
-    if (matches.length === 0) {
-      throw new NotFoundException('No hay una cuenta con este correo');
-    }
     if (matches.length > 1) {
       throw new ConflictException('Hay más de una cuenta con este correo');
     }
 
-    const buyerAccount = matches[0];
-    await this.ensureStoreLink(buyerAccount.id, store.id);
-    await this.prisma.buyerAccount.update({
-      where: { id: buyerAccount.id },
-      data: {
-        emailVerified: true,
-        ...(buyerAccount.name ? {} : { name: identity.name }),
-      },
-    });
+    const existing = matches[0];
+    const buyerAccount = existing
+      ? await this.prisma.buyerAccount.update({
+          where: { id: existing.id },
+          data: {
+            emailVerified: true,
+            ...(existing.name ? {} : { name: identity.name }),
+          },
+        })
+      : await this.prisma.buyerAccount.create({
+          data: {
+            email: identity.email,
+            emailVerified: true,
+            name: identity.name,
+          },
+        });
+
+    if (store) await this.ensureStoreLink(buyerAccount.id, store.id);
 
     return this.issueSessionToken(
       buyerAccount.id,

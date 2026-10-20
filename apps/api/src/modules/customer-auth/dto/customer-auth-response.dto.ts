@@ -33,8 +33,8 @@ export class CustomerProfileCustomerResponseDto {
   @ApiProperty({ type: String, nullable: true })
   email: string | null;
 
-  @ApiProperty()
-  phone: string;
+  @ApiProperty({ type: String, nullable: true })
+  phone: string | null;
 
   @ApiProperty()
   emailVerified: boolean;

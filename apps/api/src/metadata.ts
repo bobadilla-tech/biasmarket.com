@@ -1357,7 +1357,7 @@ export default async () => {
             ConfirmAccountCustomerResponseDto: {
               name: { required: true, type: () => String, nullable: true },
               email: { required: true, type: () => String, nullable: true },
-              phone: { required: true, type: () => String },
+              phone: { required: true, type: () => String, nullable: true },
               hasPassword: { required: true, type: () => Boolean },
             },
             ConfirmAccountResponseDto: {
@@ -1988,7 +1988,7 @@ export default async () => {
             CustomerProfileCustomerResponseDto: {
               name: { required: true, type: () => String, nullable: true },
               email: { required: true, type: () => String, nullable: true },
-              phone: { required: true, type: () => String },
+              phone: { required: true, type: () => String, nullable: true },
               emailVerified: { required: true, type: () => Boolean },
               pendingEmail: {
                 required: true,
@@ -2041,7 +2041,7 @@ export default async () => {
             GlobalAccountProfileResponseDto: {
               name: { required: true, type: () => String, nullable: true },
               email: { required: true, type: () => String, nullable: true },
-              phone: { required: true, type: () => String },
+              phone: { required: true, type: () => String, nullable: true },
               emailVerified: { required: true, type: () => Boolean },
               pendingEmail: {
                 required: true,
@@ -3024,7 +3024,13 @@ export default async () => {
         ],
         [
           import('./modules/customer-auth/buyer-google.controller.js'),
-          { BuyerGoogleController: { start: {}, callback: {} } },
+          {
+            BuyerGoogleController: {
+              startForStore: {},
+              startGlobal: {},
+              callback: {},
+            },
+          },
         ],
         [
           import('./modules/customer-auth/customer-auth.controller.js'),
@@ -3087,6 +3093,16 @@ export default async () => {
                     './modules/customer-auth/dto/global-account-response.dto.js'
                   ].GlobalAccountOrderResponseDto,
                 ],
+              },
+              login: {
+                type: t[
+                  './modules/customer-auth/dto/customer-auth-response.dto.js'
+                ].OkResponseDto,
+              },
+              logout: {
+                type: t[
+                  './modules/customer-auth/dto/customer-auth-response.dto.js'
+                ].OkResponseDto,
               },
             },
           },

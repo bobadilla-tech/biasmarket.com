@@ -212,7 +212,6 @@
     "google": "Continue with Google",
     "googleErrors": {
       "unavailable": "Google sign-in is not available right now",
-      "no_account": "We could not find an account with that email. Place an order first, or log in with your phone.",
       "ambiguous": "More than one account uses that email. Log in with your phone instead.",
       "failed": "Could not log in with Google. Please try again."
     }
@@ -386,10 +385,10 @@
   "myPurchases": {
     "title": "My purchases",
     "loggedOutTitle": "Log in to see your purchases",
-    "loggedOutBody": "Your purchases from every store appear here once you log in. Log in from any store you have bought from, then come back.",
-    "browseStores": "Browse stores",
+    "loggedOutBody": "Log in with your phone and password, or continue with Google. If you are new, Google creates your buyer account in one click.",
     "empty": "You have no purchases yet.",
     "storeAccount": "Store account",
-    "pendingBalance": "Pending: {currency} {amount}"
+    "pendingBalance": "Pending: {currency} {amount}",
+    "signOut": "Sign out"
   }
 }

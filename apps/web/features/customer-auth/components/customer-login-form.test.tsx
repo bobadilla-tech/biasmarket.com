@@ -105,11 +105,18 @@ test("offers Google sign-in that starts the store-scoped buyer flow", () => {
   );
 });
 
-test("explains a Google sign-in that found no matching buyer account", () => {
-  searchParams = new URLSearchParams("google=no_account");
+test("explains a Google sign-in that matched several accounts", () => {
+  searchParams = new URLSearchParams("google=ambiguous");
   renderWithProviders(<CustomerLoginForm slug="my-store" />);
 
-  expect(
-    screen.getByText(/No encontramos una cuenta con ese correo/),
-  ).toBeDefined();
+  expect(screen.getByText(/Más de una cuenta usa ese correo/)).toBeDefined();
+});
+
+test("the global login (no slug) starts the global Google flow and hides the store-only forgot-password link", () => {
+  renderWithProviders(<CustomerLoginForm />);
+
+  const link = screen.getByRole("link", { name: "Continuar con Google" });
+  expect(link.getAttribute("href")).toContain("/api/account/google?locale=");
+  expect(link.getAttribute("href")).not.toContain("/stores/");
+  expect(screen.queryByText(/olvidaste/i)).toBeNull();
 });

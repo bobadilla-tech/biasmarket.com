@@ -3727,6 +3727,54 @@
         "tags": ["GlobalAccount"]
       }
     },
+    "/account/login": {
+      "post": {
+        "operationId": "GlobalAccountController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginCustomerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["GlobalAccount"]
+      }
+    },
+    "/account/logout": {
+      "post": {
+        "operationId": "GlobalAccountController_logout",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["GlobalAccount"]
+      }
+    },
     "/stores/{slug}/restock-requests": {
       "post": {
         "operationId": "RestockController_create",
@@ -7206,7 +7254,8 @@
             "nullable": true
           },
           "phone": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "hasPassword": {
             "type": "boolean"
@@ -8454,7 +8503,8 @@
             "nullable": true
           },
           "phone": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "emailVerified": {
             "type": "boolean"
@@ -8552,7 +8602,8 @@
             "nullable": true
           },
           "phone": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "emailVerified": {
             "type": "boolean"

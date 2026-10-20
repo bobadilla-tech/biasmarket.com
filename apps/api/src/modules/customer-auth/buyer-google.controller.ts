@@ -29,7 +29,7 @@ import {
   verifyBuyerGoogleState,
 } from './buyer-google-oauth.js';
 
-type GoogleLoginError = 'unavailable' | 'no_account' | 'ambiguous' | 'failed';
+type GoogleLoginError = 'unavailable' | 'ambiguous' | 'failed';
 
 function webUrl(): string {
   return process.env.WEB_URL ?? 'http://localhost:3001';
@@ -52,40 +52,39 @@ function parseCookie(header: string | undefined, name: string) {
 export class BuyerGoogleController {
   constructor(private customerAuth: CustomerAuthService) {}
 
+  // Only ever built from a verified slug/locale pair — never from
+  // caller-supplied URLs — so these can't become open redirects.
   private loginRedirect(
     res: Response,
-    slug: string,
+    slug: string | null,
     locale: string,
     error: GoogleLoginError,
   ): void {
-    // Only ever built from a verified slug/locale pair — never from
-    // caller-supplied URLs — so this can't become an open redirect.
-    res.redirect(
-      `${webUrl()}/${locale}/store/${encodeURIComponent(slug)}/account/login?google=${error}`,
-    );
+    const path = slug
+      ? `store/${encodeURIComponent(slug)}/account/login`
+      : 'my-purchases';
+    res.redirect(`${webUrl()}/${locale}/${path}?google=${error}`);
   }
 
-  @Public()
-  @UseGuards(ThrottlerGuard)
-  @Throttle({ default: { ttl: 60_000, limit: 10 } })
-  @Get('stores/:slug/account/google')
-  async start(
-    @Param('slug') slug: string,
-    @Query('locale') localeParam: string | undefined,
-    @Res() res: Response,
-  ): Promise<void> {
+  private successRedirect(
+    res: Response,
+    slug: string | null,
+    locale: string,
+  ): void {
+    const path = slug
+      ? `store/${encodeURIComponent(slug)}/account`
+      : 'my-purchases';
+    res.redirect(`${webUrl()}/${locale}/${path}`);
+  }
+
+  private startFlow(
+    res: Response,
+    slug: string | null,
+    localeParam: string | undefined,
+  ): void {
     const locale = normalizeBuyerGoogleLocale(localeParam);
     if (!isBuyerGoogleConfigured()) {
       return this.loginRedirect(res, slug, locale, 'unavailable');
-    }
-
-    try {
-      await this.customerAuth.assertStoreExists(slug);
-    } catch (err) {
-      if (err instanceof NotFoundException) {
-        return res.redirect(`${webUrl()}/${locale}`);
-      }
-      throw err;
     }
 
     const { state, nonce } = createBuyerGoogleState(slug, locale);
@@ -97,6 +96,41 @@ export class BuyerGoogleController {
       path: '/api/account/google',
     });
     res.redirect(buildBuyerGoogleAuthUrl(state));
+  }
+
+  @Public()
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
+  @Get('stores/:slug/account/google')
+  async startForStore(
+    @Param('slug') slug: string,
+    @Query('locale') localeParam: string | undefined,
+    @Res() res: Response,
+  ): Promise<void> {
+    try {
+      await this.customerAuth.assertStoreExists(slug);
+    } catch (err) {
+      if (err instanceof NotFoundException) {
+        return res.redirect(
+          `${webUrl()}/${normalizeBuyerGoogleLocale(localeParam)}`,
+        );
+      }
+      throw err;
+    }
+    this.startFlow(res, slug, localeParam);
+  }
+
+  // Global entry point (My purchases) — signs the buyer in without choosing a
+  // store; the store link is created later, at their first order there.
+  @Public()
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
+  @Get('account/google')
+  startGlobal(
+    @Query('locale') localeParam: string | undefined,
+    @Res() res: Response,
+  ): void {
+    this.startFlow(res, null, localeParam);
   }
 
   @Public()
@@ -135,13 +169,8 @@ export class BuyerGoogleController {
         maxAge: CUSTOMER_SESSION_TTL_MS,
         path: '/',
       });
-      res.redirect(
-        `${webUrl()}/${locale}/store/${encodeURIComponent(slug)}/account`,
-      );
+      this.successRedirect(res, slug, locale);
     } catch (err) {
-      if (err instanceof NotFoundException) {
-        return this.loginRedirect(res, slug, locale, 'no_account');
-      }
       if (err instanceof ConflictException) {
         return this.loginRedirect(res, slug, locale, 'ambiguous');
       }

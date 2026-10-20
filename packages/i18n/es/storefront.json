@@ -208,7 +208,6 @@
     "google": "Continuar con Google",
     "googleErrors": {
       "unavailable": "El inicio de sesión con Google no está disponible ahora",
-      "no_account": "No encontramos una cuenta con ese correo. Haz un pedido primero, o ingresa con tu teléfono.",
       "ambiguous": "Más de una cuenta usa ese correo. Ingresa con tu teléfono.",
       "failed": "No se pudo ingresar con Google. Inténtalo de nuevo."
     }
@@ -386,10 +385,10 @@
   "myPurchases": {
     "title": "Mis compras",
     "loggedOutTitle": "Ingresa para ver tus compras",
-    "loggedOutBody": "Tus compras de todas las tiendas aparecen aquí cuando ingresas. Ingresa desde cualquier tienda donde hayas comprado y vuelve.",
-    "browseStores": "Explorar tiendas",
+    "loggedOutBody": "Ingresa con tu teléfono y contraseña, o continúa con Google. Si eres nuevo, Google crea tu cuenta de comprador en un clic.",
     "empty": "Aún no tienes compras.",
     "storeAccount": "Cuenta en la tienda",
-    "pendingBalance": "Pendiente: {currency} {amount}"
+    "pendingBalance": "Pendiente: {currency} {amount}",
+    "signOut": "Cerrar sesión"
   }
 }

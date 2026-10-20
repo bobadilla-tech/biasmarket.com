@@ -1439,7 +1439,8 @@ export interface ConfirmAccountCustomerResponseDto {
   name: string | null;
   /** @nullable */
   email: string | null;
-  phone: string;
+  /** @nullable */
+  phone: string | null;
   hasPassword: boolean;
 }
 
@@ -2012,7 +2013,8 @@ export interface CustomerProfileCustomerResponseDto {
   name: string | null;
   /** @nullable */
   email: string | null;
-  phone: string;
+  /** @nullable */
+  phone: string | null;
   emailVerified: boolean;
   /** @nullable */
   pendingEmail: string | null;
@@ -2482,7 +2484,8 @@ export interface GlobalAccountProfileResponseDto {
   name: string | null;
   /** @nullable */
   email: string | null;
-  phone: string;
+  /** @nullable */
+  phone: string | null;
   emailVerified: boolean;
   /** @nullable */
   pendingEmail: string | null;

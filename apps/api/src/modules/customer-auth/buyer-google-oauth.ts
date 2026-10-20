@@ -6,8 +6,9 @@ export const BUYER_GOOGLE_STATE_TTL_MS = 10 * 60 * 1000;
 
 export type BuyerGoogleLocale = 'es' | 'en';
 
+// `slug` is null when the buyer started from the global (no-store) page.
 export interface BuyerGoogleState {
-  slug: string;
+  slug: string | null;
   locale: BuyerGoogleLocale;
   nonce: string;
   exp: number;
@@ -46,7 +47,7 @@ function sign(payload: string): string {
 }
 
 export function createBuyerGoogleState(
-  slug: string,
+  slug: string | null,
   locale: BuyerGoogleLocale,
   now = Date.now(),
 ): { state: string; nonce: string } {
@@ -83,7 +84,7 @@ export function verifyBuyerGoogleState(
     return null;
   }
   if (
-    typeof body.slug !== 'string' ||
+    (body.slug !== null && typeof body.slug !== 'string') ||
     typeof body.nonce !== 'string' ||
     typeof body.exp !== 'number' ||
     body.exp < now

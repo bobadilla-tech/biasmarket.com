@@ -581,7 +581,8 @@ model Customer {
 // Customers dashboard, decoupled from auth.
 model BuyerAccount {
   id              String   @id @default(cuid())
-  phone           String   @unique
+  // Null for accounts created via Google sign-in until a phone is added.
+  phone           String?  @unique
   passwordHash    String?
   // Bumped (not re-derived from the hash) on every password change and
   // embedded in the session token — the only session-revocation mechanism

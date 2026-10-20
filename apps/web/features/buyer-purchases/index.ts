@@ -4,3 +4,4 @@ export {
   useGlobalAccount,
   useGlobalOrders,
 } from "./queries/use-global-account";
+export { useGlobalLogout } from "./mutations/use-global-logout";

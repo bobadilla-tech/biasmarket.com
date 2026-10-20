@@ -25,6 +25,7 @@ describe('CustomerAuthService', () => {
       findUniqueOrThrow: Mock;
       findFirst: Mock;
       findMany: Mock;
+      create: Mock;
       update: Mock;
     };
     customerStoreLink: { upsert: Mock };
@@ -49,6 +50,7 @@ describe('CustomerAuthService', () => {
         findUniqueOrThrow: vi.fn(),
         findFirst: vi.fn(),
         findMany: vi.fn(),
+        create: vi.fn(),
         update: vi.fn(),
       },
       customerStoreLink: { upsert: vi.fn() },
@@ -323,6 +325,10 @@ describe('CustomerAuthService', () => {
       prisma.buyerAccount.findMany.mockResolvedValue([
         { id: 'buyer-1', passwordVersion: 2, name: null },
       ]);
+      prisma.buyerAccount.update.mockResolvedValue({
+        id: 'buyer-1',
+        passwordVersion: 2,
+      });
 
       const token = await service.loginWithGoogle('my-store', identity);
 
@@ -344,6 +350,10 @@ describe('CustomerAuthService', () => {
       prisma.buyerAccount.findMany.mockResolvedValue([
         { id: 'buyer-1', passwordVersion: 0, name: 'Already Set' },
       ]);
+      prisma.buyerAccount.update.mockResolvedValue({
+        id: 'buyer-1',
+        passwordVersion: 0,
+      });
 
       await service.loginWithGoogle('my-store', identity);
 
@@ -353,13 +363,40 @@ describe('CustomerAuthService', () => {
       });
     });
 
-    it('never creates an account when no BuyerAccount has that email', async () => {
+    it('creates a phone-less account when no BuyerAccount has that email', async () => {
       prisma.buyerAccount.findMany.mockResolvedValue([]);
+      prisma.buyerAccount.create.mockResolvedValue({
+        id: 'buyer-new',
+        passwordVersion: 0,
+      });
 
-      await expect(
-        service.loginWithGoogle('my-store', identity),
-      ).rejects.toBeInstanceOf(NotFoundException);
-      expect(prisma.buyerAccount.update).not.toHaveBeenCalled();
+      const token = await service.loginWithGoogle('my-store', identity);
+
+      expect(prisma.buyerAccount.create).toHaveBeenCalledWith({
+        data: {
+          email: identity.email,
+          emailVerified: true,
+          name: 'Buyer Name',
+        },
+      });
+      expect(verifyCustomerSessionToken(token, 'test-secret')).toEqual({
+        buyerAccountId: 'buyer-new',
+        passwordVersion: 0,
+      });
+      expect(prisma.customerStoreLink.upsert).toHaveBeenCalled();
+    });
+
+    it('does not link any store for the global entry point', async () => {
+      prisma.buyerAccount.findMany.mockResolvedValue([]);
+      prisma.buyerAccount.create.mockResolvedValue({
+        id: 'buyer-new',
+        passwordVersion: 0,
+      });
+
+      await service.loginWithGoogle(null, identity);
+
+      expect(prisma.store.findUnique).not.toHaveBeenCalled();
+      expect(prisma.customerStoreLink.upsert).not.toHaveBeenCalled();
     });
 
     it('refuses an ambiguous email shared by several accounts', async () => {
@@ -371,7 +408,39 @@ describe('CustomerAuthService', () => {
       await expect(
         service.loginWithGoogle('my-store', identity),
       ).rejects.toBeInstanceOf(ConflictException);
+      expect(prisma.buyerAccount.create).not.toHaveBeenCalled();
       expect(prisma.customerStoreLink.upsert).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('loginGlobal', () => {
+    it('issues a session token without linking any store', async () => {
+      const passwordHash = await hashPassword('super-secret-1');
+      prisma.buyerAccount.findUnique.mockResolvedValue({
+        id: 'buyer-1',
+        passwordHash,
+        passwordVersion: 1,
+      });
+
+      const token = await service.loginGlobal('+51988888888', 'super-secret-1');
+
+      expect(verifyCustomerSessionToken(token, 'test-secret')).toEqual({
+        buyerAccountId: 'buyer-1',
+        passwordVersion: 1,
+      });
+      expect(prisma.customerStoreLink.upsert).not.toHaveBeenCalled();
+    });
+
+    it('rejects a wrong password with the generic error', async () => {
+      prisma.buyerAccount.findUnique.mockResolvedValue({
+        id: 'buyer-1',
+        passwordHash: await hashPassword('super-secret-1'),
+        passwordVersion: 1,
+      });
+
+      await expect(
+        service.loginGlobal('+51988888888', 'nope-nope-1'),
+      ).rejects.toBeInstanceOf(UnauthorizedException);
     });
   });
 

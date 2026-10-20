@@ -1,12 +1,16 @@
 "use client";
 
 import { ChevronRight } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import type { GlobalAccountOrderResponseDto } from "@biasmarket/types";
 import { Link } from "@/i18n/navigation";
 import { OrderStatusBadge } from "@/features/orders";
+import { CustomerLoginForm } from "@/features/customer-auth";
 import { LoadingState } from "@/components/shared/loading-state";
+import { useGlobalLogout } from "../mutations/use-global-logout";
 import {
+  globalAccountKeys,
   useGlobalAccount,
   useGlobalOrders,
 } from "../queries/use-global-account";
@@ -38,22 +42,29 @@ export function MyPurchases() {
   const t = useTranslations("storefront.myPurchases");
   const profile = useGlobalAccount();
   const orders = useGlobalOrders(Boolean(profile.data));
+  const logout = useGlobalLogout();
+  const queryClient = useQueryClient();
 
   if (profile.isPending) return <LoadingState />;
 
   if (profile.isError) {
     return (
-      <div className="rounded-2xl border border-gray-100 bg-white p-8 text-center shadow-sm">
-        <h1 className="text-2xl font-bold text-gray-900">
-          {t("loggedOutTitle")}
-        </h1>
-        <p className="mt-2 text-sm text-gray-600">{t("loggedOutBody")}</p>
-        <Link
-          href="/stores"
-          className="mt-5 inline-block rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800"
-        >
-          {t("browseStores")}
-        </Link>
+      <div className="flex flex-col items-center gap-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900">
+            {t("loggedOutTitle")}
+          </h1>
+          <p className="mt-2 max-w-md text-sm text-gray-600">
+            {t("loggedOutBody")}
+          </p>
+        </div>
+        <CustomerLoginForm
+          onSuccess={() =>
+            queryClient.invalidateQueries({
+              queryKey: globalAccountKeys.profile,
+            })
+          }
+        />
       </div>
     );
   }
@@ -62,11 +73,21 @@ export function MyPurchases() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">{t("title")}</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          {profile.data.name ?? profile.data.phone}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">{t("title")}</h1>
+          <p className="mt-1 text-sm text-gray-600">
+            {profile.data.name ?? profile.data.email ?? profile.data.phone}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => logout.mutate()}
+          disabled={logout.isPending}
+          className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-60"
+        >
+          {t("signOut")}
+        </button>
       </div>
 
       {orders.isPending ? (

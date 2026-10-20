@@ -8,6 +8,8 @@
 import type {
   GlobalAccountOrderResponseDto,
   GlobalAccountProfileResponseDto,
+  LoginCustomerDto,
+  OkResponseDto,
 } from "../api.schemas.js";
 
 import { customFetch } from "../../http.js";
@@ -35,5 +37,58 @@ export const orders = async (
   return customFetch<GlobalAccountOrderResponseDto[]>(getOrdersUrl(), {
     ...options,
     method: "GET",
+  });
+};
+
+export const getLoginUrl = () => {
+  return `/account/login`;
+};
+
+export const login = async (
+  loginCustomerDto: LoginCustomerDto,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OkResponseDto> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<OkResponseDto>(getLoginUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(loginCustomerDto),
+  });
+};
+
+export const getLogoutUrl = () => {
+  return `/account/logout`;
+};
+
+export const logout = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OkResponseDto> => {
+  return customFetch<OkResponseDto>(getLogoutUrl(), {
+    ...options,
+    method: "POST",
   });
 };
