@@ -50,17 +50,17 @@ theme, including custom radius aliases; `packages/design-tokens/src/spacing.ts`,
 - `pnpm --filter web typecheck` — passed.
 - `NEXT_PUBLIC_API_URL=http://localhost:3000 pnpm --filter web exec next build --webpack`
   — passed, including CSS compilation and static page generation.
-- Captured reduced-motion Playwright screenshots for `/en` and
-  `/en/for-sellers` at 1440×1000 and 390×844. ImageMagick reported zero
-  differing pixels for all four before/after pairs.
+- Captured reduced-motion Playwright screenshots for `/en` and `/en/for-sellers`
+  at 1440×1000 and 390×844. ImageMagick reported zero differing pixels for all
+  four before/after pairs.
 - `git diff --check` — clean before the implementation record was added.
 
 ## Deviations and limits
 
-- The default Turbopack build could not complete in this environment because
-  it could not fetch Google Fonts in the sandbox and its elevated retry hit an
-  OS process-port permission error. The Webpack build completed successfully
-  with the local API URL supplied for configuration.
+- The default Turbopack build could not complete in this environment because it
+  could not fetch Google Fonts in the sandbox and its elevated retry hit an OS
+  process-port permission error. The Webpack build completed successfully with
+  the local API URL supplied for configuration.
 - Screenshot comparison covered public landing pages. Dashboard and storefront
   routes need authenticated or API-backed state that was not available in this
   local run.

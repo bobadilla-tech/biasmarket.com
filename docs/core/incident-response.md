@@ -23,16 +23,16 @@ degraded while benched. If it refuses, the sidelined color itself needs manual
 attention (check its logs:
 `IMAGE_TAG="$(cat state/current_sha)" docker compose
 --env-file env/shared.env logs api-<color>`
-from `/home/deploy/biasmarket`) before a rollback is possible; at that point you're
-choosing between fixing the sidelined color or rolling forward with another
-`deploy.sh <sha>` deploy.
+from `/home/deploy/biasmarket`) before a rollback is possible; at that point
+you're choosing between fixing the sidelined color or rolling forward with
+another `deploy.sh <sha>` deploy.
 
 Rollback does **not** undo an already-applied database migration — Prisma
 generates no down-migrations for `migrate deploy`. If the incident is
 migration-related (the new schema broke something), the pre-migration snapshot
-in `/home/deploy/biasmarket/releases/pre-migrate-*.sql.gz` is the real recovery path,
-and it's a manual, deliberate restore — not something `deploy.sh --rollback`
-attempts automatically. See
+in `/home/deploy/biasmarket/releases/pre-migrate-*.sql.gz` is the real recovery
+path, and it's a manual, deliberate restore — not something
+`deploy.sh --rollback` attempts automatically. See
 [`blue-green-migrations.md`](blue-green-migrations.md#migration-discipline-expandcontract)
 for why expand/contract discipline is the actual prevention here, not the
 recovery mechanism.
@@ -41,23 +41,24 @@ recovery mechanism.
 
 A deploy that applied its migration but never finished cutting over (crashed,
 hung, or lost its SSH/systemd session mid-phase) leaves
-`/home/deploy/biasmarket/state/migration_pending` in place. This is alertable: an
-independent systemd timer (`biasmarket-migration-watchdog.timer`, deliberately
-**not** part of `deploy.sh` itself) pings a dedicated Kuma push monitor once a
-minute, but only while `migration_pending` is absent or younger than ~3 minutes
-— once it's older than that, the timer withholds the ping, the push monitor
-misses its heartbeat, and Kuma's own state-transition notification fires the
-same real-time Slack/Discord alert the existing HTTP/TCP monitors already use.
+`/home/deploy/biasmarket/state/migration_pending` in place. This is alertable:
+an independent systemd timer (`biasmarket-migration-watchdog.timer`,
+deliberately **not** part of `deploy.sh` itself) pings a dedicated Kuma push
+monitor once a minute, but only while `migration_pending` is absent or younger
+than ~3 minutes — once it's older than that, the timer withholds the ping, the
+push monitor misses its heartbeat, and Kuma's own state-transition notification
+fires the same real-time Slack/Discord alert the existing HTTP/TCP monitors
+already use.
 
 On this alert: SSH to the VPS, check `state/deploy.lock.meta` (who/what was
 running and at what phase) and `state/migration_pending`'s contents (which
 SHA/color), then
 `IMAGE_TAG="$(cat state/current_sha)" docker compose --env-file env/shared.env
 logs api-<candidate-color>`
-from `/home/deploy/biasmarket` to see what actually happened. Do not blindly re-run
-`deploy.sh <sha>` against a stuck lock — check `state/deploy.lock.meta` first;
-if the previous process is genuinely dead (not just slow), the flock releases on
-its own once that process's file descriptor closes.
+from `/home/deploy/biasmarket` to see what actually happened. Do not blindly
+re-run `deploy.sh <sha>` against a stuck lock — check `state/deploy.lock.meta`
+first; if the previous process is genuinely dead (not just slow), the flock
+releases on its own once that process's file descriptor closes.
 
 ## The monitors
 
@@ -81,8 +82,8 @@ only the colored services exist, replaced by 4 static per-color monitors.
 One of the two internal monitors for a given app is expected to show down
 whenever only one color is running (the normal steady state between deploys) —
 that's not an incident on its own; check which color is currently live
-(`cat /home/deploy/biasmarket/state/current_color` on the VPS) before treating an
-internal monitor's down state as a problem.
+(`cat /home/deploy/biasmarket/state/current_color` on the VPS) before treating
+an internal monitor's down state as a problem.
 
 ## First triage step: isolate edge vs. app
 
@@ -143,7 +144,8 @@ further (see the plan doc's "Decision" sections for why).
 
 The secret lives in two places that don't sync automatically:
 
-1. `/home/deploy/biasmarket/env/shared.env`, read by the live `api-<color>` services.
+1. `/home/deploy/biasmarket/env/shared.env`, read by the live `api-<color>`
+   services.
 2. Kuma's own Webhook notification-provider config (Settings → Notifications →
    the webhook provider → edit the `X-Webhook-Secret` header value), stored in
    Kuma's SQLite.

@@ -4,17 +4,17 @@
 
 ## Context
 
-Issue [#213](https://github.com/bobadilla-tech/biasmarket.com/issues/213)
-tracks one shared source for Bias Market's core brand colors across web and
-mobile. The design token package already exposed `APP_PALETTE` for mobile. Web
-defined the core colors in `apps/web/app/globals.css` using OKLCH, and the
-landing theme scoped its own violet and pink values.
+Issue [#213](https://github.com/bobadilla-tech/biasmarket.com/issues/213) tracks
+one shared source for Bias Market's core brand colors across web and mobile. The
+design token package already exposed `APP_PALETTE` for mobile. Web defined the
+core colors in `apps/web/app/globals.css` using OKLCH, and the landing theme
+scoped its own violet and pink values.
 
 The web root theme was selected as the source of truth. Its portable sRGB values
 are ink `#10091c`, violet `#822dda`, pink `#f72fa7`, and gold `#f7c243`. The
 landing's existing violet and pink remain scoped overrides to preserve its
-current appearance. Merchant colors and Expo template colors remain outside
-this change.
+current appearance. Merchant colors and Expo template colors remain outside this
+change.
 
 ## Decisions
 
@@ -28,11 +28,11 @@ this change.
 
 ## Changes
 
-1. Renamed `app-palette.ts` to `brand-palette.ts` and exported
-   `BRAND_PALETTE` / `BrandPaletteToken` from the package barrel.
+1. Renamed `app-palette.ts` to `brand-palette.ts` and exported `BRAND_PALETTE` /
+   `BrandPaletteToken` from the package barrel.
 2. Extended `buildTailwindThemeCss()` to emit the four `--brand-*` root
-   variables. Regenerated `src/theme.css` and added palette output assertions
-   to the generator test.
+   variables. Regenerated `src/theme.css` and added palette output assertions to
+   the generator test.
 3. Updated `apps/mobile/tailwind.config.ts` to use `BRAND_PALETTE` under
    `brand`, and migrated the starter screen from `app-*` to `brand-*` classes.
 4. Removed duplicate brand values from the web root theme. Web consumes the
@@ -57,9 +57,9 @@ this change.
   — passed, including CSS compilation and static page generation.
 - Opened the local web application in Chromium. `/en` and `/en/for-sellers`
   returned HTTP 200 at 1440×1000 and 390×844; both had a visible main region and
-  page heading. Computed styles showed the landing's scoped pair
-  `#8d2feb` / `#ff3db1` and the canonical root pair `#822dda` / `#f72fa7` on
-  for-sellers, with ink and gold matching on both routes.
+  page heading. Computed styles showed the landing's scoped pair `#8d2feb` /
+  `#ff3db1` and the canonical root pair `#822dda` / `#f72fa7` on for-sellers,
+  with ink and gold matching on both routes.
 - Captured reduced-motion screenshots before and after at desktop and mobile
   viewports. Same-mode development captures showed 0 changed pixels on the
   landing desktop image, 1 on landing mobile, and 351 / 118 pixels on
