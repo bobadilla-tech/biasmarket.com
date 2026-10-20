@@ -112,11 +112,13 @@ test("explains a Google sign-in that matched several accounts", () => {
   expect(screen.getByText(/Más de una cuenta usa ese correo/)).toBeDefined();
 });
 
-test("the global login (no slug) starts the global Google flow and hides the store-only forgot-password link", () => {
+test("the global login (no slug) starts the global Google flow and links to the global forgot-password page", () => {
   renderWithProviders(<CustomerLoginForm />);
 
   const link = screen.getByRole("link", { name: "Continuar con Google" });
   expect(link.getAttribute("href")).toContain("/api/account/google?locale=");
   expect(link.getAttribute("href")).not.toContain("/stores/");
-  expect(screen.queryByText(/olvidaste/i)).toBeNull();
+  expect(
+    screen.getByRole("link", { name: /olvidaste/i }).getAttribute("href"),
+  ).toContain("/my-purchases/forgot-password");
 });

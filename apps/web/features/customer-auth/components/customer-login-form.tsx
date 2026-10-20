@@ -123,14 +123,16 @@ export function CustomerLoginForm({
           )}
         </FormField>
 
-        {slug && (
-          <Link
-            href={`/store/${slug}/account/forgot-password`}
-            className="store-theme-link text-sm font-medium -mt-3"
-          >
-            {t("forgotPasswordLink")}
-          </Link>
-        )}
+        <Link
+          href={
+            slug
+              ? `/store/${slug}/account/forgot-password`
+              : "/my-purchases/forgot-password"
+          }
+          className="store-theme-link text-sm font-medium -mt-3"
+        >
+          {t("forgotPasswordLink")}
+        </Link>
 
         <button
           type="submit"

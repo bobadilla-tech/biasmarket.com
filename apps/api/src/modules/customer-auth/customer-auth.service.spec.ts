@@ -413,6 +413,78 @@ describe('CustomerAuthService', () => {
     });
   });
 
+  describe('forgotPasswordGlobal', () => {
+    it('sends a store-less reset email when the phone matches a registered buyer', async () => {
+      const buyerAccount = {
+        id: 'buyer-1',
+        email: 'jane@example.com',
+        passwordHash: 'already-set',
+      };
+      prisma.buyerAccount.findUnique.mockResolvedValue(buyerAccount);
+
+      await service.forgotPasswordGlobal('+51988888888');
+
+      expect(customerAccount.sendPasswordResetEmail).toHaveBeenCalledWith(
+        buyerAccount,
+        null,
+      );
+      expect(prisma.store.findUnique).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['an unknown phone', null],
+      [
+        'an account that never set a password',
+        { id: 'b', email: 'a@b.c', passwordHash: null },
+      ],
+      [
+        'an account without an email',
+        { id: 'b', email: null, passwordHash: 'x' },
+      ],
+    ])('silently no-ops for %s', async (_label, account) => {
+      prisma.buyerAccount.findUnique.mockResolvedValue(account);
+
+      await expect(
+        service.forgotPasswordGlobal('+51900000000'),
+      ).resolves.toBeUndefined();
+      expect(customerAccount.sendPasswordResetEmail).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('resetPasswordGlobal', () => {
+    it('redeems a reset token without needing a store', async () => {
+      const token = createCustomerAccountToken(
+        'buyer-1',
+        'test-secret',
+        'reset',
+      );
+      prisma.buyerAccount.findUnique.mockResolvedValue({
+        id: 'buyer-1',
+        passwordHash: 'old',
+      });
+
+      await expect(
+        service.resetPasswordGlobal(token, 'super-secret-1'),
+      ).resolves.toEqual({ ok: true });
+
+      expect(prisma.store.findUnique).not.toHaveBeenCalled();
+      expect(prisma.buyerAccount.update).toHaveBeenCalledWith({
+        where: { id: 'buyer-1' },
+        data: {
+          passwordHash: expect.any(String),
+          passwordVersion: { increment: 1 },
+        },
+      });
+    });
+
+    it('rejects an invalid or expired token', async () => {
+      await expect(
+        service.resetPasswordGlobal('not-a-token', 'super-secret-1'),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(prisma.buyerAccount.update).not.toHaveBeenCalled();
+    });
+  });
+
   describe('loginGlobal', () => {
     it('issues a session token without linking any store', async () => {
       const passwordHash = await hashPassword('super-secret-1');

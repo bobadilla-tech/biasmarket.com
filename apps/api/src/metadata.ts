@@ -3104,6 +3104,16 @@ export default async () => {
                   './modules/customer-auth/dto/customer-auth-response.dto.js'
                 ].OkResponseDto,
               },
+              forgotPassword: {
+                type: t[
+                  './modules/customer-auth/dto/customer-auth-response.dto.js'
+                ].OkResponseDto,
+              },
+              resetPassword: {
+                type: t[
+                  './modules/customer-auth/dto/customer-auth-response.dto.js'
+                ].OkResponseDto,
+              },
             },
           },
         ],

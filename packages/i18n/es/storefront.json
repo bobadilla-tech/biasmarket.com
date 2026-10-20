@@ -193,7 +193,8 @@
       "passwordsDontMatch": "Las contraseñas no coinciden",
       "genericError": "Algo salió mal. Intenta de nuevo.",
       "goToLogin": "Ingresar"
-    }
+    },
+    "requestNewLink": "Pedir un nuevo enlace"
   },
   "loginPage": {
     "title": "Ingresar",

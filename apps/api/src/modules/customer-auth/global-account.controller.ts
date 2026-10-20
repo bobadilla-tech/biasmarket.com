@@ -16,6 +16,8 @@ import { CustomerSessionGuard } from './customer-session.guard.js';
 import { CustomerSession } from './customer-session.decorator.js';
 import { AllowNoOrigin, OriginGuard } from './origin.guard.js';
 import { LoginCustomerDto } from './dto/login-customer.dto.js';
+import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
+import { RegisterCustomerDto } from './dto/register-customer.dto.js';
 import { OkResponseDto } from './dto/customer-auth-response.dto.js';
 import {
   CUSTOMER_SESSION_COOKIE,
@@ -87,5 +89,25 @@ export class GlobalAccountController {
   logout(@Res({ passthrough: true }) res: Response): OkResponseDto {
     res.clearCookie(CUSTOMER_SESSION_COOKIE, { path: '/' });
     return { ok: true };
+  }
+
+  @Public()
+  @AllowNoOrigin()
+  @UseGuards(OriginGuard, ThrottlerGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
+  @Post('forgot-password')
+  async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<OkResponseDto> {
+    await this.customerAuth.forgotPasswordGlobal(dto.phone);
+    return { ok: true };
+  }
+
+  // Redeems the emailed token from the global forgot-password flow.
+  @Public()
+  @AllowNoOrigin()
+  @UseGuards(OriginGuard, ThrottlerGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
+  @Post('reset-password')
+  resetPassword(@Body() dto: RegisterCustomerDto): Promise<OkResponseDto> {
+    return this.customerAuth.resetPasswordGlobal(dto.token, dto.password);
   }
 }

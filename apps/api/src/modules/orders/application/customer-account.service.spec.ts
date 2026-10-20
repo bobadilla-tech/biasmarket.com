@@ -649,6 +649,21 @@ describe('CustomerAccountService', () => {
       );
     });
 
+    it('links to the global reset page, naming Bias Market, when there is no store', async () => {
+      const buyerAccount = { id: 'buyer-1', email: 'jane@example.com' };
+
+      await service.sendPasswordResetEmail(buyerAccount as never, null);
+
+      expect(mailer.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: 'jane@example.com',
+          html: expect.stringContaining(
+            'https://web.example.com/my-purchases/reset-password?token=',
+          ),
+        }),
+      );
+    });
+
     it('does nothing when the account has no email', async () => {
       const buyerAccount = { id: 'buyer-1', email: null };
 

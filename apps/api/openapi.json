@@ -3775,6 +3775,64 @@
         "tags": ["GlobalAccount"]
       }
     },
+    "/account/forgot-password": {
+      "post": {
+        "operationId": "GlobalAccountController_forgotPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["GlobalAccount"]
+      }
+    },
+    "/account/reset-password": {
+      "post": {
+        "operationId": "GlobalAccountController_resetPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterCustomerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["GlobalAccount"]
+      }
+    },
     "/stores/{slug}/restock-requests": {
       "post": {
         "operationId": "RestockController_create",
