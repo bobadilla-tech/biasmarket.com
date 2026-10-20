@@ -7,6 +7,7 @@ import type { Auth } from '@thallesp/nestjs-better-auth';
 import { escapeHtml } from '@biasmarket/utils/strings';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { MailerService } from '../mailer/mailer.service.js';
+import { discardUnverifiedCredentials } from './google-link-cleanup.js';
 
 const logger = new Logger('auth');
 
@@ -144,6 +145,31 @@ export const createAuth = (
       },
     },
     trustedOrigins: [process.env.WEB_URL ?? 'http://localhost:3001'],
+    // OAuth failures (cancelled consent, expired state, unlinkable account…)
+    // would otherwise land on the API's own root as raw JSON. Send them to the
+    // site's explanatory error screen instead; the web app passes a
+    // locale-specific `errorCallbackURL` per request, this is the fallback.
+    onAPIError: {
+      errorURL: `${process.env.WEB_URL ?? 'http://localhost:3001'}/auth/error`,
+    },
+    account: {
+      accountLinking: {
+        enabled: true,
+        trustedProviders: ['google'],
+        // See google-link-cleanup.ts — unverified local passwords are discarded
+        // when Google is linked, which is what makes relaxing this safe.
+        requireLocalEmailVerified: false,
+      },
+    },
+    databaseHooks: {
+      account: {
+        create: {
+          after: async (account) => {
+            await discardUnverifiedCredentials(prisma, account);
+          },
+        },
+      },
+    },
     // Better-auth mounts its handler via `httpAdapter.use()` inside its own
     // module's `onModuleInit` (raw Express middleware, before Nest's router
     // even runs) — so a Nest `@nestjs/throttler` guard can never reach

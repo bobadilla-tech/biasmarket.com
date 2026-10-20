@@ -80,5 +80,54 @@
     "deleteError": "Something went wrong deleting the store",
     "networkDeleteError": "Network error while deleting",
     "confirmDelete": "Are you sure you want to delete this store?"
+  },
+  "authError": {
+    "pageTitle": "Sign-in problem",
+    "nextSteps": "What you can do",
+    "retryGoogle": "Try Google again",
+    "loginWithEmail": "Log in with email and password",
+    "contact": "Contact us",
+    "existingAccount": {
+      "title": "This email already has an account",
+      "body": "You already created an account with this email using a password, and we couldn't connect Google to it automatically.",
+      "steps": [
+        "Log in with your email and password.",
+        "Forgot the password? Contact us and we'll help you get back in.",
+        "Once logged in you keep using the same account."
+      ]
+    },
+    "cancelled": {
+      "title": "You cancelled the Google sign-in",
+      "body": "Nothing was changed and no account was created. You can try again whenever you like.",
+      "steps": [
+        "Try Google again and accept the permissions Google shows.",
+        "Or log in with your email and password."
+      ]
+    },
+    "expired": {
+      "title": "The sign-in session expired",
+      "body": "The Google sign-in took too long, was opened in another browser or tab, or was interrupted halfway.",
+      "steps": [
+        "Start the sign-in again from this same browser.",
+        "Make sure cookies are enabled and avoid switching tabs or browsers midway."
+      ]
+    },
+    "googleProblem": {
+      "title": "We couldn't use your Google account",
+      "body": "Google didn't give us a verified email address, or the account couldn't be connected.",
+      "steps": [
+        "Try again with a Google account that has a verified email.",
+        "Or sign up with an email and password instead.",
+        "If it keeps happening, contact us."
+      ]
+    },
+    "generic": {
+      "title": "Something went wrong",
+      "body": "We couldn't complete your sign-in because of a problem on our side. Your account hasn't been changed.",
+      "steps": [
+        "Try again in a few minutes.",
+        "If it keeps happening, contact us and tell us when it happened."
+      ]
+    }
   }
 }
