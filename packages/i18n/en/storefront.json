@@ -208,7 +208,14 @@
     "invalidCredentials": "Invalid phone or password",
     "submit": "Log in",
     "submitting": "Logging in...",
-    "forgotPasswordLink": "Forgot your password?"
+    "forgotPasswordLink": "Forgot your password?",
+    "google": "Continue with Google",
+    "googleErrors": {
+      "unavailable": "Google sign-in is not available right now",
+      "no_account": "We could not find an account with that email. Place an order first, or log in with your phone.",
+      "ambiguous": "More than one account uses that email. Log in with your phone instead.",
+      "failed": "Could not log in with Google. Please try again."
+    }
   },
   "forgotPasswordPage": {
     "title": "Reset password",
@@ -375,5 +382,14 @@
     "inTransit": "In transit",
     "ready": "Ready for pickup",
     "delivered": "Delivered"
+  },
+  "myPurchases": {
+    "title": "My purchases",
+    "loggedOutTitle": "Log in to see your purchases",
+    "loggedOutBody": "Your purchases from every store appear here once you log in. Log in from any store you have bought from, then come back.",
+    "browseStores": "Browse stores",
+    "empty": "You have no purchases yet.",
+    "storeAccount": "Store account",
+    "pendingBalance": "Pending: {currency} {amount}"
   }
 }

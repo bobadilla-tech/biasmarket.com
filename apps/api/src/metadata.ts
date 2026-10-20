@@ -3023,6 +3023,10 @@ export default async () => {
           },
         ],
         [
+          import('./modules/customer-auth/buyer-google.controller.js'),
+          { BuyerGoogleController: { start: {}, callback: {} } },
+        ],
+        [
           import('./modules/customer-auth/customer-auth.controller.js'),
           {
             CustomerAuthController: {

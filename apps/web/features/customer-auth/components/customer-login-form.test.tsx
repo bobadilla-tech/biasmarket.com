@@ -5,8 +5,10 @@ import { renderWithProviders } from "../../../test-utils/render-with-providers";
 import { axe, expectNoA11yViolations } from "../../../test-utils/axe";
 
 const push = vi.fn();
+let searchParams = new URLSearchParams();
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push, replace: vi.fn() }),
+  useSearchParams: () => searchParams,
   usePathname: () => "/",
   redirect: vi.fn(),
   permanentRedirect: vi.fn(),
@@ -21,6 +23,7 @@ const { CustomerLoginForm } = await import("./customer-login-form");
 
 afterEach(() => {
   vi.clearAllMocks();
+  searchParams = new URLSearchParams();
 });
 
 test("labels the split phone control and announces submit errors", async () => {
@@ -91,4 +94,22 @@ test("surfaces a root error on invalid credentials without redirecting", async (
     expect(screen.getByText("Teléfono o contraseña inválidos")).toBeDefined();
   });
   expect(push).not.toHaveBeenCalled();
+});
+
+test("offers Google sign-in that starts the store-scoped buyer flow", () => {
+  renderWithProviders(<CustomerLoginForm slug="my-store" />);
+
+  const link = screen.getByRole("link", { name: "Continuar con Google" });
+  expect(link.getAttribute("href")).toContain(
+    "/api/stores/my-store/account/google?locale=",
+  );
+});
+
+test("explains a Google sign-in that found no matching buyer account", () => {
+  searchParams = new URLSearchParams("google=no_account");
+  renderWithProviders(<CustomerLoginForm slug="my-store" />);
+
+  expect(
+    screen.getByText(/No encontramos una cuenta con ese correo/),
+  ).toBeDefined();
 });

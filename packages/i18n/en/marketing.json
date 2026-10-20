@@ -23,7 +23,8 @@
     "account": "My account",
     "signOut": "Sign out",
     "myStores": "My stores",
-    "createStore": "Create a store"
+    "createStore": "Create a store",
+    "myPurchases": "My purchases"
   },
   "footer": {
     "navHeading": "Site",

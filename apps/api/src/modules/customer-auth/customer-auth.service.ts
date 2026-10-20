@@ -32,6 +32,10 @@ export class CustomerAuthService {
     return store;
   }
 
+  async assertStoreExists(slug: string): Promise<void> {
+    await this.findStoreBySlug(slug);
+  }
+
   private issueSessionToken(
     buyerAccountId: string,
     passwordVersion: number,
@@ -143,6 +147,43 @@ export class CustomerAuthService {
     }
 
     await this.ensureStoreLink(buyerAccount.id, store.id);
+
+    return this.issueSessionToken(
+      buyerAccount.id,
+      buyerAccount.passwordVersion,
+    );
+  }
+
+  // Google proves ownership of an email, not a phone number, so this only
+  // signs in a buyer whose existing BuyerAccount (created at checkout, which
+  // is where the phone is collected) already carries that email. It never
+  // creates an account. A Google-verified match also counts as email
+  // verification, and means the buyer can sign in without ever having set a
+  // password.
+  async loginWithGoogle(
+    slug: string,
+    identity: { email: string; name: string | null },
+  ): Promise<string> {
+    const store = await this.findStoreBySlug(slug);
+    const matches = await this.prisma.buyerAccount.findMany({
+      where: { email: { equals: identity.email, mode: 'insensitive' } },
+    });
+    if (matches.length === 0) {
+      throw new NotFoundException('No hay una cuenta con este correo');
+    }
+    if (matches.length > 1) {
+      throw new ConflictException('Hay más de una cuenta con este correo');
+    }
+
+    const buyerAccount = matches[0];
+    await this.ensureStoreLink(buyerAccount.id, store.id);
+    await this.prisma.buyerAccount.update({
+      where: { id: buyerAccount.id },
+      data: {
+        emailVerified: true,
+        ...(buyerAccount.name ? {} : { name: identity.name }),
+      },
+    });
 
     return this.issueSessionToken(
       buyerAccount.id,

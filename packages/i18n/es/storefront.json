@@ -204,7 +204,14 @@
     "invalidCredentials": "Teléfono o contraseña inválidos",
     "submit": "Ingresar",
     "submitting": "Ingresando...",
-    "forgotPasswordLink": "¿Olvidaste tu contraseña?"
+    "forgotPasswordLink": "¿Olvidaste tu contraseña?",
+    "google": "Continuar con Google",
+    "googleErrors": {
+      "unavailable": "El inicio de sesión con Google no está disponible ahora",
+      "no_account": "No encontramos una cuenta con ese correo. Haz un pedido primero, o ingresa con tu teléfono.",
+      "ambiguous": "Más de una cuenta usa ese correo. Ingresa con tu teléfono.",
+      "failed": "No se pudo ingresar con Google. Inténtalo de nuevo."
+    }
   },
   "forgotPasswordPage": {
     "title": "Restablecer contraseña",
@@ -375,5 +382,14 @@
     "inTransit": "En camino",
     "ready": "Listo para recojo",
     "delivered": "Entregado"
+  },
+  "myPurchases": {
+    "title": "Mis compras",
+    "loggedOutTitle": "Ingresa para ver tus compras",
+    "loggedOutBody": "Tus compras de todas las tiendas aparecen aquí cuando ingresas. Ingresa desde cualquier tienda donde hayas comprado y vuelve.",
+    "browseStores": "Explorar tiendas",
+    "empty": "Aún no tienes compras.",
+    "storeAccount": "Cuenta en la tienda",
+    "pendingBalance": "Pendiente: {currency} {amount}"
   }
 }

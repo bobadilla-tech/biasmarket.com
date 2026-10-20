@@ -2471,3 +2471,58 @@ export type MonitoringControllerfindAllParams = {
   limit?: string;
   page?: string;
 };
+
+export interface LinkedStoreResponseDto {
+  slug: string;
+  name: string;
+}
+
+export interface GlobalAccountProfileResponseDto {
+  /** @nullable */
+  name: string | null;
+  /** @nullable */
+  email: string | null;
+  phone: string;
+  emailVerified: boolean;
+  /** @nullable */
+  pendingEmail: string | null;
+  /** @nullable */
+  pendingPhone: string | null;
+  stores: LinkedStoreResponseDto[];
+}
+
+export type GlobalAccountOrderResponseDtoPaymentStatus =
+  (typeof GlobalAccountOrderResponseDtoPaymentStatus)[keyof typeof GlobalAccountOrderResponseDtoPaymentStatus];
+
+export const GlobalAccountOrderResponseDtoPaymentStatus = {
+  PENDING_PAYMENT: "PENDING_PAYMENT",
+  PARTIALLY_PAID: "PARTIALLY_PAID",
+  PAYMENT_SUBMITTED: "PAYMENT_SUBMITTED",
+  VERIFIED: "VERIFIED",
+  REJECTED: "REJECTED",
+  CANCELLED: "CANCELLED",
+} as const;
+
+export type GlobalAccountOrderResponseDtoFulfillmentStatus =
+  (typeof GlobalAccountOrderResponseDtoFulfillmentStatus)[keyof typeof GlobalAccountOrderResponseDtoFulfillmentStatus];
+
+export const GlobalAccountOrderResponseDtoFulfillmentStatus = {
+  ORDERING: "ORDERING",
+  IN_TRANSIT: "IN_TRANSIT",
+  READY: "READY",
+  COMPLETED: "COMPLETED",
+} as const;
+
+export interface GlobalAccountOrderResponseDto {
+  id: string;
+  paymentStatus: GlobalAccountOrderResponseDtoPaymentStatus;
+  fulfillmentStatus: GlobalAccountOrderResponseDtoFulfillmentStatus;
+  totalAmount: string;
+  currency: string;
+  createdAt: string;
+  paidAmount: number;
+  pendingAmount: number;
+  paidPercentage: number;
+  storeSlug: string;
+  storeName: string;
+}
