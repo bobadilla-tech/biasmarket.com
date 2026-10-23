@@ -22,6 +22,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     const response = context.getResponse<Response>();
     const request = context.getRequest<Request>();
+    // `@Header()` on the public-order routes does not run when a guard or
+    // the body parser rejects the request. These two still have to be set
+    // on 400/404/429 for a token URL.
+    const path = request.url?.split('?')[0] ?? '';
+    if (/\/public\/orders\//i.test(path)) {
+      response.setHeader('Cache-Control', 'no-store');
+      response.setHeader('Referrer-Policy', 'no-referrer');
+    }
 
     if (exception instanceof InvalidOrderTransitionError) {
       const httpException = new BadRequestException(exception.message);
@@ -38,7 +46,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     captureException(exception);
 
     this.logger.error(
-      `Unhandled exception on ${request.method} ${request.url}`,
+      `Unhandled exception on ${request.method} ${scrubRequestUrl(request.url)}`,
       stringifyError(exception),
     );
 
@@ -60,8 +68,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
     return response.status(status).json({
       statusCode: status,
       message,
-      path: request.url,
+      path: scrubRequestUrl(request.url),
       timestamp: now.toString(),
     });
   }
+}
+
+// Private-link tokens live in `/public/orders/:token` and in query strings
+// (account confirm, password reset). Neither belongs in stdout or an error body.
+export function scrubRequestUrl(url: string): string {
+  const path = url.split('?')[0] ?? url;
+  return path.replace(/\/public\/orders\/[^/]+/gi, '/public/orders/:token');
 }

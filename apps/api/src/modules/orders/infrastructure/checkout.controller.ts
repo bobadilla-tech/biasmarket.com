@@ -21,6 +21,7 @@ import { isPaymentMethodConfigured } from '@biasmarket/utils/payment-methods';
 import { CreateOrderUseCase } from '../application/create-order.usecase.js';
 import { CreateOrderDto } from '../dto/create-order.dto.js';
 import { StorageService } from '../../../storage/storage.service.js';
+import { pickPublicOrderFields } from './order.controller.js';
 import { requiredEnv } from '../../../config/env.validation.js';
 import { extractCustomerSessionToken } from '../../customer-auth/customer-session-token.js';
 import { PaymentConfigService } from '../../payment-config/payment-config.service.js';
@@ -61,6 +62,7 @@ interface CheckoutOrderRow {
   customerEmail: string | null;
   customerPhone: string;
   customerName: string | null;
+  source: 'MARKETPLACE' | 'VENDOR_ASSISTED';
   deliveryMethodType: 'PICKUP' | 'COURIER';
   deliveryDetails: unknown;
   pickupPointId: string | null;
@@ -103,7 +105,7 @@ function toCheckoutItemDto(
 
 function toCheckoutOrderDto(order: CheckoutOrderRow): CheckoutOrderResponseDto {
   return {
-    ...order,
+    ...pickPublicOrderFields(order),
     deliveryDetails: order.deliveryDetails as Record<string, unknown> | null,
     pickupDate: order.pickupDate?.toISOString() ?? null,
     retainedAmount: order.retainedAmount?.toString() ?? null,

@@ -13,6 +13,7 @@ import {
   buildWhatsAppOrderMessage,
   buildWhatsAppUrl,
 } from '@biasmarket/utils/whatsapp';
+import { normalizePhone } from '@biasmarket/utils/phone-country';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { getBusinessDate } from '../../../common/business-time.js';
 import type { CreateOrderDto } from '../dto/create-order.dto.js';
@@ -446,6 +447,7 @@ export class CreateOrderUseCase {
             buyerAccountId,
             customerEmail: dto.customerEmail,
             customerPhone: dto.customerPhone,
+            customerPhoneNormalized: normalizePhone(dto.customerPhone),
             customerName: dto.customerName,
             deliveryMethodType: dto.deliveryMethodType,
             paymentMethod: dto.paymentMethod,

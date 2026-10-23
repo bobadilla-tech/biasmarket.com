@@ -8,6 +8,7 @@ import { join } from 'node:path';
 import { AppModule } from './../src/app.module.js';
 import {
   assertMatchesSchema,
+  deleteOrders,
   mailerDevDir,
   waitForNewMailerFile,
 } from './schema-assert.js';
@@ -162,7 +163,7 @@ describe('orders + checkout (e2e)', () => {
       await prisma.orderItem.deleteMany({
         where: { orderId: { in: orderIds } },
       });
-      await prisma.order.deleteMany({ where: { id: { in: orderIds } } });
+      await deleteOrders(prisma, { id: { in: orderIds } });
     }
     if (productId) {
       // A failed assertion or a checkout that completed before the test saw
@@ -171,7 +172,7 @@ describe('orders + checkout (e2e)', () => {
       // OrderItem.productId is RESTRICT by design.
       await prisma.orderPayment.deleteMany({ where: { storeId } });
       await prisma.orderItem.deleteMany({ where: { storeId } });
-      await prisma.order.deleteMany({ where: { storeId } });
+      await deleteOrders(prisma, { storeId });
       await prisma.productVariant.deleteMany({ where: { productId } });
       await prisma.product.deleteMany({ where: { id: productId } });
     }
@@ -667,7 +668,7 @@ describe('orders + checkout (e2e)', () => {
     // dangling `OrderItem_productId_fkey`.
     await prisma.orderItem.deleteMany({ where: { orderId } });
     await prisma.orderPayment.deleteMany({ where: { orderId } });
-    await prisma.order.deleteMany({ where: { id: orderId } });
+    await deleteOrders(prisma, { id: orderId });
     orderIds.splice(orderIds.indexOf(orderId), 1);
     await prisma.productVariant.deleteMany({
       where: { productId: precisionProductId },
@@ -876,7 +877,7 @@ describe('orders + checkout (e2e)', () => {
     expect(variant.stock).toBe(1);
 
     await prisma.orderItem.deleteMany({ where: { orderId: winningOrderId } });
-    await prisma.order.deleteMany({ where: { id: winningOrderId } });
+    await deleteOrders(prisma, { id: winningOrderId });
     await prisma.productVariant.deleteMany({
       where: { productId: raceProductId },
     });

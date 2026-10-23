@@ -6,7 +6,11 @@ import request from 'supertest';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { AppModule } from './../src/app.module.js';
-import { mailerDevDir, waitForNewMailerFile } from './schema-assert.js';
+import {
+  deleteOrders,
+  mailerDevDir,
+  waitForNewMailerFile,
+} from './schema-assert.js';
 
 // Regression coverage for the over-submission race in
 // CustomerOrderPaymentsController.submit (the buyer proof-upload endpoint):
@@ -152,7 +156,7 @@ describe('buyer proof submission race (e2e)', () => {
     if (orderId) {
       await prisma.orderPayment.deleteMany({ where: { orderId } });
       await prisma.orderItem.deleteMany({ where: { orderId } });
-      await prisma.order.deleteMany({ where: { id: orderId } });
+      await deleteOrders(prisma, { id: orderId });
     }
     if (storeId) {
       await prisma.notification.deleteMany({ where: { storeId } });

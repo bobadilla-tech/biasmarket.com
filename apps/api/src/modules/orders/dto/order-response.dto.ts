@@ -198,6 +198,9 @@ export class OrderResponseDto {
   @ApiProperty({ type: String, nullable: true })
   customerName: string | null;
 
+  @ApiProperty({ enum: ['MARKETPLACE', 'VENDOR_ASSISTED'] })
+  source: 'MARKETPLACE' | 'VENDOR_ASSISTED';
+
   @ApiProperty({ enum: ['PICKUP', 'COURIER'] })
   deliveryMethodType: 'PICKUP' | 'COURIER';
 
@@ -332,6 +335,9 @@ export class OrderStatusResponseDto {
 
   @ApiProperty({ type: String, nullable: true })
   customerName: string | null;
+
+  @ApiProperty({ enum: ['MARKETPLACE', 'VENDOR_ASSISTED'] })
+  source: 'MARKETPLACE' | 'VENDOR_ASSISTED';
 
   @ApiProperty({ enum: ['PICKUP', 'COURIER'] })
   deliveryMethodType: 'PICKUP' | 'COURIER';

@@ -44,6 +44,7 @@ export default defineConfig({
           "MyStores",
           "Order",
           "Checkout",
+          "PublicOrderEvents",
           "CustomerAuth",
           "CustomerAccount",
           "Customers",

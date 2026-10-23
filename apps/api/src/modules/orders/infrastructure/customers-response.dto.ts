@@ -54,6 +54,17 @@ export class CustomerDetailCustomerResponseDto {
   createdAt: string;
 }
 
+export class CustomerLookupResponseDto {
+  @ApiProperty()
+  normalizedPhone: string;
+
+  @ApiProperty()
+  previousOrders: number;
+
+  @ApiProperty({ type: String, nullable: true })
+  lastAlias: string | null;
+}
+
 // `findOne`'s shape (`CustomersService.findOneForStore`). `orders` reuses
 // `Order`'s own `OrderResponseDto` rather than a local duplicate: reading
 // `findOneForStore` alongside `OrderRepository.findManyForStore` confirms the
