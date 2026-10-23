@@ -36,6 +36,7 @@ describe('PublicOrderService', () => {
     pickupDate: null,
     courierName: 'Olva',
     courierModality: 'HOME',
+    linkFirstOpenedAt: null,
     store: {
       name: 'Tienda',
       slug: 'tienda',
@@ -144,9 +145,29 @@ describe('PublicOrderService', () => {
       expect.objectContaining({ type: 'LINK_OPENED', actor: 'BUYER' }),
     );
 
-    prisma.order.updateMany.mockResolvedValueOnce({ count: 0 });
     events.record.mockClear();
+    prisma.order.findUnique.mockResolvedValue({
+      ...orderRow,
+      linkFirstOpenedAt: new Date('2026-10-02T00:00:00.000Z'),
+    });
     await service.getByToken('raw-token');
+    expect(events.record).not.toHaveBeenCalled();
+  });
+
+  it('skips the open-marking write on a repeat read of an already-opened link', async () => {
+    events.requireOrderForToken.mockResolvedValue({
+      id: 'order-1',
+      storeId: 'store-1',
+    });
+    prisma.order.findUnique.mockResolvedValue({
+      ...orderRow,
+      linkFirstOpenedAt: new Date('2026-10-02T00:00:00.000Z'),
+    });
+
+    await service.getByToken('raw-token');
+
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(prisma.order.updateMany).not.toHaveBeenCalled();
     expect(events.record).not.toHaveBeenCalled();
   });
 

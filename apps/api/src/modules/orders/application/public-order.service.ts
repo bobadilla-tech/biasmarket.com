@@ -41,20 +41,25 @@ export class PublicOrderService {
     });
     if (!order) throw new NotFoundException('Pedido no encontrado');
 
-    await this.prisma.$transaction(async (tx) => {
-      const opened = await tx.order.updateMany({
-        where: { id: order.id, linkFirstOpenedAt: null },
-        data: { linkFirstOpenedAt: new Date() },
-      });
-      if (opened.count === 1) {
-        await this.events.record(tx, {
-          orderId: order.id,
-          storeId: order.storeId,
-          type: 'LINK_OPENED',
-          actor: 'BUYER',
+    // `linkFirstOpenedAt` came back with the row above, so repeat reads of a
+    // rate-limited public page skip the write entirely. The conditional
+    // `updateMany` still guards two concurrent first opens.
+    if (order.linkFirstOpenedAt === null) {
+      await this.prisma.$transaction(async (tx) => {
+        const opened = await tx.order.updateMany({
+          where: { id: order.id, linkFirstOpenedAt: null },
+          data: { linkFirstOpenedAt: new Date() },
         });
-      }
-    });
+        if (opened.count === 1) {
+          await this.events.record(tx, {
+            orderId: order.id,
+            storeId: order.storeId,
+            type: 'LINK_OPENED',
+            actor: 'BUYER',
+          });
+        }
+      });
+    }
 
     const paymentMethods = await this.prisma.paymentMethodConfig.findMany({
       where: { storeId: order.storeId, enabled: true },
