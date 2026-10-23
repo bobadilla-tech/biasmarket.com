@@ -42,7 +42,7 @@ export class CustomersController {
     @Query('phone') phone: string | undefined,
     @Session() session: UserSession,
   ): Promise<CustomerLookupResponseDto> {
-    if (!phone?.trim()) {
+    if (typeof phone !== 'string' || !phone.trim()) {
       throw new BadRequestException('El teléfono es requerido');
     }
     return this.customers.lookupByPhone(storeId, session.user.id, phone);
