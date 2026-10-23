@@ -63,4 +63,24 @@ describe('AllExceptionsFilter', () => {
     });
     expect(loggerError).not.toHaveBeenCalled();
   });
+
+  it('does not log a public-order token or a query string', () => {
+    const filter = new AllExceptionsFilter();
+    const loggerError = vi
+      .spyOn(Logger.prototype, 'error')
+      .mockImplementation(() => {});
+    const { host, response } = mockHost(
+      '/api/public/orders/sekret-token?token=also-secret',
+    );
+
+    filter.catch(new Error('boom'), host);
+
+    const logged = String(loggerError.mock.calls[0]?.[0]);
+    expect(logged).toContain('/api/public/orders/:token');
+    expect(logged).not.toContain('sekret-token');
+    expect(logged).not.toContain('also-secret');
+    expect(response.json).toHaveBeenCalledWith(
+      expect.objectContaining({ path: '/api/public/orders/:token' }),
+    );
+  });
 });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_PHONE_COUNTRY,
+  maskPhone,
   normalizePhone,
   parsePhoneValue,
   validatePhone,
@@ -120,5 +121,10 @@ describe("validatePhone", () => {
       ok: true,
       phone: "+12025550123",
     });
+  });
+
+  it("masks a Peru mobile as dial code, first digit, and last three digits", () => {
+    expect(maskPhone("+51987654321")).toBe("+51 9** *** 321");
+    expect(maskPhone("987654321")).toBe("+51 9** *** 321");
   });
 });

@@ -119,3 +119,27 @@ export function validatePhone(value: string): PhoneValidation {
 
   return { ok: true, phone };
 }
+
+// Shows the dial code, the first national digit, and the last three digits.
+// A Peru mobile +51987654321 becomes "+51 9** *** 321".
+export function maskPhone(phone: string): string {
+  const normalized = normalizePhone(phone);
+  const { country, nationalNumber } = parsePhoneValue(normalized);
+  if (nationalNumber.length <= 4) return `${country.dialCode} ***`;
+
+  const first = nationalNumber[0];
+  const last = nationalNumber.slice(-3);
+  const hidden = nationalNumber.slice(1, -3);
+  const groups: string[] = [];
+  let rest = "*".repeat(hidden.length);
+  while (rest.length > 3) {
+    groups.unshift(rest.slice(-3));
+    rest = rest.slice(0, -3);
+  }
+  if (rest) groups.unshift(rest);
+
+  return `${country.dialCode} ${first}${groups[0]} ${groups.slice(1).join(" ")} ${last}`.replace(
+    /\s+/g,
+    " ",
+  );
+}

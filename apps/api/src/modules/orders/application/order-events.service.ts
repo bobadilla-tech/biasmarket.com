@@ -60,17 +60,18 @@ type EventWriter = {
 export function sanitizeOrderEventPayload(
   input: Record<string, unknown> | null | undefined,
 ): Prisma.InputJsonObject {
-  const payload: Prisma.InputJsonObject = {};
+  const payload: Record<string, string | number | boolean | null> = {};
   if (!input) return payload;
   for (const [key, value] of Object.entries(input)) {
     if (!ALLOWED_PAYLOAD_KEYS.has(key)) continue;
     if (
-      value == null ||
       typeof value === 'string' ||
       typeof value === 'number' ||
       typeof value === 'boolean'
     ) {
       payload[key] = value;
+    } else if (value === null) {
+      payload[key] = null;
     }
   }
   return payload;

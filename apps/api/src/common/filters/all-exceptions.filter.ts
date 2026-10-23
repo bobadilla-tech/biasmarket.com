@@ -38,7 +38,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     captureException(exception);
 
     this.logger.error(
-      `Unhandled exception on ${request.method} ${request.url}`,
+      `Unhandled exception on ${request.method} ${scrubRequestUrl(request.url)}`,
       stringifyError(exception),
     );
 
@@ -60,8 +60,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
     return response.status(status).json({
       statusCode: status,
       message,
-      path: request.url,
+      path: scrubRequestUrl(request.url),
       timestamp: now.toString(),
     });
   }
+}
+
+// Private-link tokens live in `/public/orders/:token` and in query strings
+// (account confirm, password reset). Neither belongs in stdout or an error body.
+export function scrubRequestUrl(url: string): string {
+  const path = url.split('?')[0] ?? url;
+  return path.replace(/\/public\/orders\/[^/]+/g, '/public/orders/:token');
 }
