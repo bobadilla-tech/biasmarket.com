@@ -18,6 +18,7 @@ const order = (overrides: Record<string, unknown> = {}) => ({
 
 describe('ExpireOrdersUseCase', () => {
   let useCase: ExpireOrdersUseCase;
+  let events: { record: Mock };
   let prisma: {
     order: { findMany: Mock; updateMany: Mock };
     auditLog: { create: Mock };
@@ -40,6 +41,7 @@ describe('ExpireOrdersUseCase', () => {
       $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(prisma)),
     };
 
+    events = { record: vi.fn() };
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ExpireOrdersUseCase,
@@ -48,7 +50,7 @@ describe('ExpireOrdersUseCase', () => {
           provide: NotificationsService,
           useValue: { syncStockAlerts: vi.fn() },
         },
-        { provide: OrderEventsService, useValue: { record: vi.fn() } },
+        { provide: OrderEventsService, useValue: events },
       ],
     }).compile();
 
@@ -103,7 +105,37 @@ describe('ExpireOrdersUseCase', () => {
         },
       },
     });
+    expect(events.record).toHaveBeenCalledWith(prisma, {
+      orderId: 'order-1',
+      storeId: 'store-1',
+      type: 'ORDER_CANCELLED',
+      actor: 'SYSTEM',
+      payload: { resolution: 'RETAINED' },
+    });
     expect(result).toEqual({ cancelled: 1 });
+  });
+
+  it('rejects the expiry transaction when the cancellation event fails to record', async () => {
+    prisma.order.findMany.mockResolvedValue([
+      order({ id: 'order-1', items: [] }),
+    ]);
+    events.record.mockRejectedValue(new Error('schema mismatch'));
+    let callbackRejected = false;
+    prisma.$transaction.mockImplementation(
+      async (cb: (tx: unknown) => unknown) => {
+        try {
+          return await cb(prisma);
+        } catch (error) {
+          callbackRejected = true;
+          throw error;
+        }
+      },
+    );
+
+    await useCase.execute();
+
+    expect(callbackRejected).toBe(true);
+    expect(prisma.order.updateMany).toHaveBeenCalled();
   });
 
   it('skips releasing stock for unlimited (null stock) variants', async () => {

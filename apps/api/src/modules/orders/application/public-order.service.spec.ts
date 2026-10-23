@@ -140,6 +140,63 @@ describe('PublicOrderService', () => {
     expect(result).not.toHaveProperty('createdByUserId');
   });
 
+  it('returns only payment methods that are actually configured', async () => {
+    events.requireOrderForToken.mockResolvedValue({
+      id: 'order-1',
+      storeId: 'store-1',
+    });
+    prisma.order.findUnique.mockResolvedValue(orderRow);
+    prisma.paymentMethodConfig.findMany.mockResolvedValue([
+      {
+        method: 'YAPE',
+        depositPercent: 50,
+        details: { phoneNumber: '999888777' },
+      },
+      { method: 'PLIN', depositPercent: 50, details: {} },
+      { method: 'CASH', depositPercent: 100, details: {} },
+    ]);
+
+    const result = await service.getByToken('raw-token');
+
+    expect(result.paymentMethods.map((method) => method.method)).toEqual([
+      'YAPE',
+      'CASH',
+    ]);
+    expect(result.paymentInstructions).toBe('Yape al número de la tienda');
+  });
+
+  it('omits payment instructions and methods once the order is cancelled', async () => {
+    events.requireOrderForToken.mockResolvedValue({
+      id: 'order-1',
+      storeId: 'store-1',
+    });
+    prisma.order.findUnique.mockResolvedValue({
+      ...orderRow,
+      status: 'CANCELLED',
+      paymentStatus: 'CANCELLED',
+    });
+
+    const result = await service.getByToken('raw-token');
+
+    expect(result.paymentMethods).toEqual([]);
+    expect(result.paymentInstructions).toBeNull();
+    expect(prisma.paymentMethodConfig.findMany).not.toHaveBeenCalled();
+  });
+
+  it('still returns the order when recording the first open fails', async () => {
+    events.requireOrderForToken.mockResolvedValue({
+      id: 'order-1',
+      storeId: 'store-1',
+    });
+    prisma.order.findUnique.mockResolvedValue(orderRow);
+    prisma.$transaction.mockRejectedValueOnce(new Error('insert failed'));
+
+    const result = await service.getByToken('raw-token');
+
+    expect(result.customerPhone).toBe('+51 9** *** 321');
+    expect(events.record).not.toHaveBeenCalled();
+  });
+
   it('projects deliveryDetails to an allow-list instead of the stored blob', async () => {
     events.requireOrderForToken.mockResolvedValue({
       id: 'order-1',

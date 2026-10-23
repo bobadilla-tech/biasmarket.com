@@ -32,7 +32,7 @@ export function parsePhoneValue(value: string): {
   nationalNumber: string;
 } {
   const match = COUNTRIES_BY_DIAL_CODE_LENGTH_DESC.find((country) =>
-    value.startsWith(country.dialCode)
+    value.startsWith(country.dialCode),
   );
 
   if (!match) {
@@ -43,6 +43,31 @@ export function parsePhoneValue(value: string): {
   }
 
   return { country: match, nationalNumber: value.slice(match.dialCode.length) };
+}
+
+function digitsOf(value: string): string {
+  return value.replace(/\D/g, "");
+}
+
+// A leading "+" or "00" is an explicit international prefix. A bare national
+// number ("987654321") and a dial code typed without one ("51987654321") are
+// not: those keep the default-country fallback below.
+function explicitInternational(value: string): string | null {
+  const trimmed = value.trim();
+  if (trimmed.startsWith("+")) return `+${digitsOf(trimmed.slice(1))}`;
+  const digits = digitsOf(trimmed);
+  if (digits.startsWith("00")) return `+${digits.slice(2)}`;
+  return null;
+}
+
+function countryForInternational(e164: string): PhoneCountry | null {
+  return (
+    COUNTRIES_BY_DIAL_CODE_LENGTH_DESC.find(
+      (country) =>
+        e164.startsWith(country.dialCode) &&
+        e164.length > country.dialCode.length,
+    ) ?? null
+  );
 }
 
 // Buyers type phone numbers in whatever shape they like across checkout,
@@ -57,7 +82,15 @@ export function parsePhoneValue(value: string): {
 // "987654321") falls back to DEFAULT_PHONE_COUNTRY exactly like
 // parsePhoneValue already does for a "+"-prefixed unmatched value.
 export function normalizePhone(value: string): string {
-  const digitsOnly = value.replace(/\D/g, "");
+  let digitsOnly = digitsOf(value);
+  // "00 51 987654321" is the same number as "+51 987654321". Only drop the
+  // trunk prefix when what follows is a dial code we actually support, so an
+  // unknown "0044…" does not collapse into a Peru number.
+  if (digitsOnly.startsWith("00")) {
+    const international = `+${digitsOnly.slice(2)}`;
+    if (countryForInternational(international))
+      digitsOnly = digitsOnly.slice(2);
+  }
   const { country, nationalNumber } = parsePhoneValue(`+${digitsOnly}`);
   return `${country.dialCode}${nationalNumber}`;
 }
@@ -65,8 +98,9 @@ export function normalizePhone(value: string): string {
 // National-number length after the dial code. Peru is the strict case
 // (WhatsApp mobiles: exactly 9 digits starting with 9). Every other country
 // in PHONE_COUNTRIES is accepted when its national number falls in the range
-// below — no carrier-prefix rules. A number that matches no dial code is
-// normalized as Peru and then judged by the Peru rules.
+// below — no carrier-prefix rules. A number with no explicit prefix is
+// normalized as Peru and then judged by the Peru rules. An explicit "+" or
+// "00" prefix that matches no supported dial code is rejected instead.
 const NATIONAL_LENGTH: Record<string, { min: number; max: number }> = {
   PE: { min: 9, max: 9 },
   MX: { min: 10, max: 10 },
@@ -84,12 +118,27 @@ const NATIONAL_LENGTH: Record<string, { min: number; max: number }> = {
 };
 
 export type PhoneValidation =
-  | { ok: true; phone: string }
-  | { ok: false; message: string };
+  { ok: true; phone: string } | { ok: false; message: string };
+
+const PHONE_CHARACTERS = /^[0-9+()\-.\s]*$/;
 
 export function validatePhone(value: string): PhoneValidation {
   if (/[a-zA-Z]/.test(value)) {
     return { ok: false, message: "El número no puede contener letras" };
+  }
+  if (!PHONE_CHARACTERS.test(value)) {
+    return { ok: false, message: "El número contiene caracteres no válidos" };
+  }
+
+  const international = explicitInternational(value);
+  if (
+    international !== null &&
+    countryForInternational(international) === null
+  ) {
+    return { ok: false, message: "Prefijo no soportado" };
+  }
+  if (!digitsOf(value)) {
+    return { ok: false, message: "El número no tiene un largo válido" };
   }
 
   const phone = normalizePhone(value);
@@ -123,9 +172,19 @@ export function validatePhone(value: string): PhoneValidation {
 // Shows the dial code, the first national digit, and the last three digits.
 // A Peru mobile +51987654321 becomes "+51 9** *** 321".
 export function maskPhone(phone: string): string {
+  const international = explicitInternational(phone);
+  if (
+    international !== null &&
+    countryForInternational(international) === null
+  ) {
+    return "***";
+  }
+
   const normalized = normalizePhone(phone);
   const { country, nationalNumber } = parsePhoneValue(normalized);
-  if (nationalNumber.length <= 4) return `${country.dialCode} ***`;
+  // First digit + last three only hides the middle once there is a middle.
+  // A 5-digit national number would otherwise show 4 of its 5 digits.
+  if (nationalNumber.length < 7) return `${country.dialCode} ***`;
 
   const first = nationalNumber[0];
   const last = nationalNumber.slice(-3);

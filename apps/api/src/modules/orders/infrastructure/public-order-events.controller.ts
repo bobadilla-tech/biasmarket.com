@@ -3,9 +3,11 @@ import {
   Controller,
   Get,
   Header,
+  Headers,
   HttpCode,
   Param,
   Post,
+  UnsupportedMediaTypeException,
   UseGuards,
 } from '@nestjs/common';
 import { ApiNoContentResponse, ApiOkResponse } from '@nestjs/swagger';
@@ -46,8 +48,14 @@ export class PublicOrderEventsController {
   @Throttle({ default: { ttl: 60_000, limit: 20 } })
   async recordInvite(
     @Param('token') token: string,
+    @Headers('content-type') contentType: string | undefined,
     @Body() dto: RecordInviteEventDto,
   ): Promise<void> {
+    // The beacon is JSON. urlencoded posts would otherwise validate and
+    // write an event, because the global body parser accepts both.
+    if (!contentType?.toLowerCase().startsWith('application/json')) {
+      throw new UnsupportedMediaTypeException();
+    }
     await this.events.recordInvite(token, dto.type);
   }
 }

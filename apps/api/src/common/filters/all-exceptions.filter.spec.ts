@@ -6,6 +6,7 @@ function mockHost(url: string) {
   const response = {
     status: vi.fn().mockReturnThis(),
     json: vi.fn(),
+    setHeader: vi.fn(),
   };
   const request = { method: 'GET', url };
   const host = {
@@ -81,6 +82,32 @@ describe('AllExceptionsFilter', () => {
     expect(logged).not.toContain('also-secret');
     expect(response.json).toHaveBeenCalledWith(
       expect.objectContaining({ path: '/api/public/orders/:token' }),
+    );
+    expect(response.setHeader).toHaveBeenCalledWith(
+      'Cache-Control',
+      'no-store',
+    );
+    expect(response.setHeader).toHaveBeenCalledWith(
+      'Referrer-Policy',
+      'no-referrer',
+    );
+  });
+
+  it('scrubs a public-order token when the path casing differs', () => {
+    const filter = new AllExceptionsFilter();
+    vi.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
+    const { host, response } = mockHost(
+      '/api/Public/Orders/sekret-token?token=also-secret',
+    );
+
+    filter.catch(new NotFoundException('nope'), host);
+
+    expect(response.json).toHaveBeenCalledWith(
+      expect.objectContaining({ path: '/api/public/orders/:token' }),
+    );
+    expect(response.setHeader).toHaveBeenCalledWith(
+      'Cache-Control',
+      'no-store',
     );
   });
 });

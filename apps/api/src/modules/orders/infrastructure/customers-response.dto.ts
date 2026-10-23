@@ -54,16 +54,6 @@ export class CustomerDetailCustomerResponseDto {
   createdAt: string;
 }
 
-// `findOne`'s shape (`CustomersService.findOneForStore`). `orders` reuses
-// `Order`'s own `OrderResponseDto` rather than a local duplicate: reading
-// `findOneForStore` alongside `OrderRepository.findManyForStore` confirms the
-// two run the exact same `withPaymentSummary`-over-`{items: {product,
-// variant}, payments}` shape (no `proofs` on either side) — a genuine
-// same-shape case, not just a similar one, so a cross-module import was
-// chosen over re-declaring nine-plus fields a second time. This is the first
-// case in this rollout where two tags share an entire response shape, not
-// just a nested piece of one (see
-// .artifacts/2026/08/20260806--orval-rollout-batches-5-6/plan.md's Batch 5 section).
 export class CustomerLookupResponseDto {
   @ApiProperty()
   normalizedPhone: string;
@@ -75,6 +65,16 @@ export class CustomerLookupResponseDto {
   lastAlias: string | null;
 }
 
+// `findOne`'s shape (`CustomersService.findOneForStore`). `orders` reuses
+// `Order`'s own `OrderResponseDto` rather than a local duplicate: reading
+// `findOneForStore` alongside `OrderRepository.findManyForStore` confirms the
+// two run the exact same `withPaymentSummary`-over-`{items: {product,
+// variant}, payments}` shape (no `proofs` on either side) — a genuine
+// same-shape case, not just a similar one, so a cross-module import was
+// chosen over re-declaring nine-plus fields a second time. This is the first
+// case in this rollout where two tags share an entire response shape, not
+// just a nested piece of one (see
+// .artifacts/2026/08/20260806--orval-rollout-batches-5-6/plan.md's Batch 5 section).
 export class CustomerDetailResponseDto {
   @ApiProperty({ type: CustomerDetailCustomerResponseDto })
   customer: CustomerDetailCustomerResponseDto;

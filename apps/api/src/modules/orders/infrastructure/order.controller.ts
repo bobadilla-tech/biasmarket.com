@@ -79,25 +79,56 @@ type CancellationResolutionLiteral = 'REFUNDED' | 'RETAINED' | 'STORE_CREDIT';
 type PaymentMethodLiteral = 'YAPE' | 'PLIN' | 'TRANSFER' | 'CASH';
 type OrderSourceLiteral = 'MARKETPLACE' | 'VENDOR_ASSISTED';
 
-// Present on every Prisma Order row. The seller and checkout responses keep
-// `source` and drop the private-link columns: the hash is not a credential
-// the client should see, and the rest is not part of these response shapes.
-const PRIVATE_ORDER_COLUMNS = [
-  'accessTokenHash',
-  'accessTokenRevokedAt',
-  'linkFirstOpenedAt',
-  'claimedAt',
-  'phoneVerified',
-  'createdByUserId',
-  'customerPhoneNormalized',
+// Seller and checkout responses copy these fields and nothing else. A new
+// column on `Order` stays off the wire until it is added here, including the
+// private-link columns (`accessTokenHash`, `createdByUserId`,
+// `customerPhoneNormalized`, …).
+const PUBLIC_ORDER_FIELDS = [
+  'id',
+  'storeId',
+  'customerId',
+  'buyerAccountId',
+  'customerEmail',
+  'customerPhone',
+  'customerName',
+  'source',
+  'deliveryMethodType',
+  'deliveryDetails',
+  'pickupPointId',
+  'pickupDate',
+  'courierName',
+  'courierModality',
+  'paymentMethod',
+  'paymentStatus',
+  'paymentRejectionReason',
+  'fulfillmentStatus',
+  'status',
+  'cancellationResolution',
+  'cancellationReason',
+  'retainedAmount',
+  'releasedAmount',
+  'releasedResolution',
+  'totalAmount',
+  'requiredAmount',
+  'currency',
+  'expiresAt',
+  'createdAt',
+  'paidAmount',
+  'pendingAmount',
+  'paidPercentage',
+  'items',
+  'payments',
 ] as const;
 
-export function withoutPrivateOrderColumns<T extends object>(row: T): T {
-  const copy = { ...row };
-  for (const key of PRIVATE_ORDER_COLUMNS) {
-    delete (copy as Record<string, unknown>)[key];
+export function pickPublicOrderFields<T extends object>(row: T): T {
+  const source = row as Record<string, unknown>;
+  const copy: Record<string, unknown> = {};
+  for (const key of PUBLIC_ORDER_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(source, key)) {
+      copy[key] = source[key];
+    }
   }
-  return copy;
+  return copy as T;
 }
 
 export interface OrderProductRow {
@@ -269,7 +300,7 @@ export function toOrderPaymentDto(
 
 export function toOrderDto(row: OrderRow): OrderResponseDto {
   return {
-    ...withoutPrivateOrderColumns(row),
+    ...pickPublicOrderFields(row),
     deliveryDetails: row.deliveryDetails as Record<string, unknown> | null,
     pickupDate: row.pickupDate?.toISOString() ?? null,
     retainedAmount: row.retainedAmount?.toString() ?? null,
@@ -290,7 +321,7 @@ function toOrderDetailDto(row: OrderRow): OrderDetailResponseDto {
 
 function toOrderStatusDto(row: OrderStatusRow): OrderStatusResponseDto {
   return {
-    ...withoutPrivateOrderColumns(row),
+    ...pickPublicOrderFields(row),
     deliveryDetails: row.deliveryDetails as Record<string, unknown> | null,
     pickupDate: row.pickupDate?.toISOString() ?? null,
     retainedAmount: row.retainedAmount?.toString() ?? null,

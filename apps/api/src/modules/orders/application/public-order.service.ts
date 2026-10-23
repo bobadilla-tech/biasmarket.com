@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@biasmarket/db';
 import { maskPhone } from '@biasmarket/utils/phone-country';
+import { isPaymentMethodConfigured } from '@biasmarket/utils/payment-methods';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { computePaymentSummary } from '../../../common/payment-summary.js';
 import { OrderEventsService } from './order-events.service.js';
@@ -32,6 +33,8 @@ function toPublicDeliveryDetails(
 
 @Injectable()
 export class PublicOrderService {
+  private readonly logger = new Logger(PublicOrderService.name);
+
   constructor(
     private prisma: PrismaService,
     private events: OrderEventsService,
@@ -67,30 +70,54 @@ export class PublicOrderService {
     });
     if (!order) throw new NotFoundException('Pedido no encontrado');
 
-    // `linkFirstOpenedAt` came back with the row above, so repeat reads of a
-    // rate-limited public page skip the write entirely. The conditional
-    // `updateMany` still guards two concurrent first opens.
+    // #262 records the open on the first valid read. Repeat reads skip the
+    // write. A failed insert must not turn that read into a 500: the
+    // conditional update rolls back with it, so the next read retries.
+    // Link-preview fetches count as that first read; B3 keys phone
+    // correction off the flag, and the issue requires the read itself to
+    // set it.
     if (order.linkFirstOpenedAt === null) {
-      await this.prisma.$transaction(async (tx) => {
-        const opened = await tx.order.updateMany({
-          where: { id: order.id, linkFirstOpenedAt: null },
-          data: { linkFirstOpenedAt: new Date() },
-        });
-        if (opened.count === 1) {
-          await this.events.record(tx, {
-            orderId: order.id,
-            storeId: order.storeId,
-            type: 'LINK_OPENED',
-            actor: 'BUYER',
+      try {
+        await this.prisma.$transaction(async (tx) => {
+          const opened = await tx.order.updateMany({
+            where: { id: order.id, linkFirstOpenedAt: null },
+            data: { linkFirstOpenedAt: new Date() },
           });
-        }
-      });
+          if (opened.count === 1) {
+            await this.events.record(tx, {
+              orderId: order.id,
+              storeId: order.storeId,
+              type: 'LINK_OPENED',
+              actor: 'BUYER',
+            });
+          }
+        });
+      } catch (error) {
+        this.logger.warn(
+          `Failed to record the first open of order ${order.id}`,
+          error instanceof Error ? error.message : String(error),
+        );
+      }
     }
 
-    const paymentMethods = await this.prisma.paymentMethodConfig.findMany({
-      where: { storeId: order.storeId, enabled: true },
-      select: { method: true, depositPercent: true, details: true },
-    });
+    // Cancelled and expired orders are not payable. Checkout uses the same
+    // "configured" check: an enabled row with empty details is not a method
+    // the buyer can pay with.
+    const payable =
+      order.status !== 'CANCELLED' && order.paymentStatus !== 'CANCELLED';
+    const paymentMethods = payable
+      ? (
+          await this.prisma.paymentMethodConfig.findMany({
+            where: { storeId: order.storeId, enabled: true },
+            select: { method: true, depositPercent: true, details: true },
+          })
+        ).filter((config) =>
+          isPaymentMethodConfigured(
+            config.method,
+            config.details as Record<string, unknown> | null,
+          ),
+        )
+      : [];
     const summary = computePaymentSummary(order.requiredAmount, order.payments);
 
     return {
@@ -115,7 +142,7 @@ export class PublicOrderService {
       paymentStatus: order.paymentStatus,
       fulfillmentStatus: order.fulfillmentStatus,
       status: order.status,
-      paymentInstructions: order.store.paymentInstructions,
+      paymentInstructions: payable ? order.store.paymentInstructions : null,
       paymentMethods: paymentMethods.map((config) => ({
         method: config.method,
         depositPercent: config.depositPercent,

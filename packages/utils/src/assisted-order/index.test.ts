@@ -35,7 +35,7 @@ describe("assertVendorAssistedOrder", () => {
         source: "MARKETPLACE",
         customerPhone: "987654321",
         createdByUserId: null,
-      })
+      }),
     ).not.toThrow();
   });
 
@@ -45,7 +45,7 @@ describe("assertVendorAssistedOrder", () => {
         source: "VENDOR_ASSISTED",
         customerPhone: "+51987654321",
         createdByUserId: "seller-1",
-      })
+      }),
     ).not.toThrow();
   });
 
@@ -56,7 +56,7 @@ describe("assertVendorAssistedOrder", () => {
           source: "VENDOR_ASSISTED",
           customerPhone,
           createdByUserId: "seller-1",
-        })
+        }),
       ).toThrow(AssistedOrderInvariantError);
     }
   });
@@ -68,7 +68,7 @@ describe("assertVendorAssistedOrder", () => {
           source: "VENDOR_ASSISTED",
           customerPhone: "+51987654321",
           createdByUserId,
-        })
+        }),
       ).toThrow(AssistedOrderInvariantError);
     }
   });

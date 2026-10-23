@@ -69,6 +69,11 @@ describe("normalizePhone", () => {
     );
   });
 
+  it("treats a 00 international prefix like a leading +", () => {
+    expect(normalizePhone("00 51 987 654 321")).toBe("+51987654321");
+    expect(normalizePhone("0051987654321")).toBe("+51987654321");
+  });
+
   it("normalizes the seller-typed shapes from the assisted-order form", () => {
     for (const value of [
       "987654321",
@@ -111,6 +116,29 @@ describe("validatePhone", () => {
     });
   });
 
+  it("rejects an empty value, an unsupported prefix, and characters outside the phone set", () => {
+    expect(validatePhone("")).toEqual({
+      ok: false,
+      message: "El número no tiene un largo válido",
+    });
+    expect(validatePhone("+44 20 7946 0958")).toEqual({
+      ok: false,
+      message: "Prefijo no soportado",
+    });
+    expect(validatePhone("00442079460958")).toEqual({
+      ok: false,
+      message: "Prefijo no soportado",
+    });
+    expect(validatePhone("00 51 987 654 321")).toEqual({
+      ok: true,
+      phone: "+51987654321",
+    });
+    expect(validatePhone("98765432é1")).toEqual({
+      ok: false,
+      message: "El número contiene caracteres no válidos",
+    });
+  });
+
   it("accepts other PHONE_COUNTRIES numbers inside their national length and rejects the rest", () => {
     expect(validatePhone("+52 55 1234 5678")).toEqual({
       ok: true,
@@ -126,5 +154,10 @@ describe("validatePhone", () => {
   it("masks a Peru mobile as dial code, first digit, and last three digits", () => {
     expect(maskPhone("+51987654321")).toBe("+51 9** *** 321");
     expect(maskPhone("987654321")).toBe("+51 9** *** 321");
+  });
+
+  it("hides short national numbers and unknown prefixes", () => {
+    expect(maskPhone("+51 98765")).toBe("+51 ***");
+    expect(maskPhone("+44 20 7946 0958")).toBe("***");
   });
 });

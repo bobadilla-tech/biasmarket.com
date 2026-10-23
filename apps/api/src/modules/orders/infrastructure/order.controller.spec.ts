@@ -13,7 +13,7 @@ vi.mock('@nestjs/throttler', async (importOriginal) => {
 });
 
 import { NotFoundException } from '@nestjs/common';
-import { OrderController } from './order.controller.js';
+import { OrderController, pickPublicOrderFields } from './order.controller.js';
 import { OrderRepository } from './order.repository.js';
 import { ReviewPaymentUseCase } from '../application/review-payment.usecase.js';
 import { AdvanceFulfillmentUseCase } from '../application/advance-fulfillment.usecase.js';
@@ -627,5 +627,31 @@ describe('OrderController.reviewPaymentProof', () => {
     );
 
     expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+});
+
+describe('pickPublicOrderFields', () => {
+  it('copies the public order fields and drops everything else', () => {
+    const row = {
+      id: 'order-1',
+      storeId: 'store-1',
+      customerPhone: '+51987654321',
+      source: 'VENDOR_ASSISTED',
+      accessTokenHash: 'hash',
+      accessTokenRevokedAt: new Date(),
+      linkFirstOpenedAt: new Date(),
+      claimedAt: new Date(),
+      phoneVerified: true,
+      createdByUserId: 'seller-1',
+      customerPhoneNormalized: '+51987654321',
+      secretFutureColumn: 'leak',
+    };
+
+    expect(pickPublicOrderFields(row)).toEqual({
+      id: 'order-1',
+      storeId: 'store-1',
+      customerPhone: '+51987654321',
+      source: 'VENDOR_ASSISTED',
+    });
   });
 });

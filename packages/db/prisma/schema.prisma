@@ -368,6 +368,8 @@ model Order {
   @@index([storeId, customerPhoneNormalized, createdAt])
   @@index([paymentStatus, expiresAt])
   @@index([buyerAccountId])
+  // ON DELETE SET NULL walks this column when a user is deleted.
+  @@index([createdByUserId])
 }
 
 enum OrderEventActor {

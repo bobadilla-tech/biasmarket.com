@@ -31,15 +31,27 @@ describe('sanitizeOrderEventPayload', () => {
 describe('OrderEventsService', () => {
   let service: OrderEventsService;
   let prisma: {
-    orderEvent: { create: Mock; findMany: Mock };
+    orderEvent: { create: Mock; findMany: Mock; findFirst: Mock };
     order: { findUnique: Mock };
     $transaction: Mock;
   };
 
   beforeEach(async () => {
     prisma = {
-      orderEvent: { create: vi.fn(), findMany: vi.fn() },
-      order: { findUnique: vi.fn() },
+      orderEvent: {
+        create: vi.fn(),
+        findMany: vi.fn(),
+        findFirst: vi.fn().mockResolvedValue(null),
+      },
+      order: {
+        findUnique: vi.fn().mockResolvedValue({
+          id: 'order-1',
+          storeId: 'store-1',
+          accessTokenRevokedAt: null,
+          status: 'ACTIVE',
+          paymentStatus: 'PENDING_PAYMENT',
+        }),
+      },
       $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(prisma)),
     };
     const module: TestingModule = await Test.createTestingModule({
@@ -79,8 +91,52 @@ describe('OrderEventsService', () => {
         type: 'PAYMENT_VALIDATED',
         visibleToBuyer: true,
         payload: { amount: 10 },
+        storeId: 'store-1',
       }),
     });
+  });
+
+  it('writes the order store id when the caller passes a different one', async () => {
+    prisma.order.findUnique.mockResolvedValue({ storeId: 'store-from-order' });
+
+    await service.record(prisma, {
+      orderId: 'order-1',
+      storeId: 'store-from-caller',
+      type: 'PAYMENT_VALIDATED',
+      actor: 'SELLER',
+    });
+
+    expect(prisma.orderEvent.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ storeId: 'store-from-order' }),
+    });
+  });
+
+  it('records INVITE_SHOWN once and skips a cancelled order', async () => {
+    const { token } = createOrderAccessToken();
+    prisma.order.findUnique.mockResolvedValue({
+      id: 'order-1',
+      storeId: 'store-1',
+      accessTokenRevokedAt: null,
+      status: 'ACTIVE',
+      paymentStatus: 'PENDING_PAYMENT',
+    });
+
+    await service.recordInvite(token, 'INVITE_SHOWN');
+    expect(prisma.orderEvent.create).toHaveBeenCalledTimes(1);
+
+    prisma.orderEvent.findFirst.mockResolvedValue({ id: 'event-1' });
+    await service.recordInvite(token, 'INVITE_SHOWN');
+    expect(prisma.orderEvent.create).toHaveBeenCalledTimes(1);
+
+    prisma.order.findUnique.mockResolvedValue({
+      id: 'order-1',
+      storeId: 'store-1',
+      accessTokenRevokedAt: null,
+      status: 'CANCELLED',
+      paymentStatus: 'CANCELLED',
+    });
+    await service.recordInvite(token, 'INVITE_CLICKED');
+    expect(prisma.orderEvent.create).toHaveBeenCalledTimes(1);
   });
 
   it('lists only events marked visible to the buyer', async () => {
@@ -113,7 +169,13 @@ describe('OrderEventsService', () => {
 
     expect(prisma.order.findUnique).toHaveBeenCalledWith({
       where: { accessTokenHash: tokenHash },
-      select: { id: true, storeId: true, accessTokenRevokedAt: true },
+      select: {
+        id: true,
+        storeId: true,
+        accessTokenRevokedAt: true,
+        status: true,
+        paymentStatus: true,
+      },
     });
   });
 });

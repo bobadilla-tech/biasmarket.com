@@ -50,6 +50,12 @@ const ALLOWED_PAYLOAD_KEYS = new Set([
 export type InviteEventType = (typeof INVITE_EVENT_TYPES)[number];
 
 type EventWriter = {
+  order: {
+    findUnique: (args: {
+      where: { id: string };
+      select: { storeId: true };
+    }) => Promise<{ storeId: string } | null>;
+  };
   orderEvent: {
     create: (args: {
       data: Prisma.OrderEventUncheckedCreateInput;
@@ -91,10 +97,19 @@ export class OrderEventsService {
       payload?: Record<string, unknown>;
     },
   ) {
+    // `storeId` on the event is the order's store, not whatever the caller
+    // passed. Callers still pass it (they already loaded the order), but a
+    // mismatch cannot write a row whose store disagrees with the order.
+    const order = await tx.order.findUnique({
+      where: { id: input.orderId },
+      select: { storeId: true },
+    });
+    if (!order) throw new NotFoundException('Pedido no encontrado');
+
     await tx.orderEvent.create({
       data: {
         orderId: input.orderId,
-        storeId: input.storeId,
+        storeId: order.storeId,
         type: input.type,
         actor: input.actor,
         visibleToBuyer: BUYER_VISIBLE.has(input.type),
@@ -115,7 +130,13 @@ export class OrderEventsService {
     const tokenHash = hashOrderAccessToken(token ?? '');
     const order = await this.prisma.order.findUnique({
       where: { accessTokenHash: tokenHash },
-      select: { id: true, storeId: true, accessTokenRevokedAt: true },
+      select: {
+        id: true,
+        storeId: true,
+        accessTokenRevokedAt: true,
+        status: true,
+        paymentStatus: true,
+      },
     });
     if (!order || order.accessTokenRevokedAt) {
       throw new NotFoundException('Pedido no encontrado');
@@ -125,6 +146,20 @@ export class OrderEventsService {
 
   async recordInvite(token: string, type: InviteEventType) {
     const order = await this.requireOrderForToken(token);
+    // A cancelled or expired order is not an invite funnel. Counting those
+    // posts would inflate D3/F2.
+    if (order.status === 'CANCELLED' || order.paymentStatus === 'CANCELLED') {
+      return;
+    }
+    // INVITE_SHOWN is "the invite was shown", not a page-view counter. One
+    // client retrying the beacon must not write a row per retry.
+    if (type === 'INVITE_SHOWN') {
+      const existing = await this.prisma.orderEvent.findFirst({
+        where: { orderId: order.id, type: 'INVITE_SHOWN' },
+        select: { id: true },
+      });
+      if (existing) return;
+    }
     await this.prisma.$transaction((tx) =>
       this.record(tx, {
         orderId: order.id,

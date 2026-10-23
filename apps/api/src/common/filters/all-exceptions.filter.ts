@@ -22,6 +22,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     const response = context.getResponse<Response>();
     const request = context.getRequest<Request>();
+    // `@Header()` on the public-order routes does not run when a guard or
+    // the body parser rejects the request. These two still have to be set
+    // on 400/404/429 for a token URL.
+    const path = request.url?.split('?')[0] ?? '';
+    if (/\/public\/orders\//i.test(path)) {
+      response.setHeader('Cache-Control', 'no-store');
+      response.setHeader('Referrer-Policy', 'no-referrer');
+    }
 
     if (exception instanceof InvalidOrderTransitionError) {
       const httpException = new BadRequestException(exception.message);
@@ -70,5 +78,5 @@ export class AllExceptionsFilter implements ExceptionFilter {
 // (account confirm, password reset). Neither belongs in stdout or an error body.
 export function scrubRequestUrl(url: string): string {
   const path = url.split('?')[0] ?? url;
-  return path.replace(/\/public\/orders\/[^/]+/g, '/public/orders/:token');
+  return path.replace(/\/public\/orders\/[^/]+/gi, '/public/orders/:token');
 }
