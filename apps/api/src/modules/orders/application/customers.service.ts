@@ -318,7 +318,7 @@ export class CustomersService {
         this.prisma.order.findFirst({
           where,
           orderBy: { createdAt: 'desc' },
-          select: { customerName: true },
+          select: { customerName: true, createdAt: true },
         }),
         // Only orders the previous release inserted between this migration
         // and the traffic switch can still be NULL here; backfilled rows and
@@ -333,15 +333,18 @@ export class CustomersService {
       (order) => normalizePhone(order.customerPhone) === phone,
     );
     legacyMatches.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    const latestLegacyOrder = legacyMatches[0];
+    const newestOrder =
+      latestOrder &&
+      (!latestLegacyOrder ||
+        latestOrder.createdAt >= latestLegacyOrder.createdAt)
+        ? latestOrder
+        : latestLegacyOrder;
 
     return {
       normalizedPhone: phone,
       previousOrders: previousOrders + legacyMatches.length,
-      lastAlias:
-        customer?.name ??
-        latestOrder?.customerName ??
-        legacyMatches[0]?.customerName ??
-        null,
+      lastAlias: customer?.name ?? newestOrder?.customerName ?? null,
     };
   }
 
