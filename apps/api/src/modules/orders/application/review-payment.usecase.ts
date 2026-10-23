@@ -10,6 +10,7 @@ import { OrderRepository } from '../infrastructure/order.repository.js';
 import { Order } from '../domain/order.entity.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
 import { MailerService } from '../../../mailer/mailer.service.js';
+import { OrderEventsService } from './order-events.service.js';
 
 function buildPaymentStatusEmailHtml(
   decision: 'approve' | 'reject',
@@ -43,6 +44,7 @@ export class ReviewPaymentUseCase {
     private orders: OrderRepository,
     private notifications: NotificationsService,
     private mailer: MailerService,
+    private events: OrderEventsService,
   ) {}
 
   async execute(
@@ -150,6 +152,12 @@ export class ReviewPaymentUseCase {
           entityId: orderId,
           metadata: {},
         },
+      });
+      await this.events.record(tx, {
+        orderId,
+        storeId,
+        type: decision === 'approve' ? 'PAYMENT_VALIDATED' : 'PAYMENT_REJECTED',
+        actor: 'SELLER',
       });
 
       return updated;

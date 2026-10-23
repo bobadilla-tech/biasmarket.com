@@ -19,6 +19,7 @@ import { AdvanceFulfillmentUseCase } from '../application/advance-fulfillment.us
 import { CancelOrderUseCase } from '../application/cancel-order.usecase.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { StorageService } from '../../../storage/storage.service.js';
+import { OrderEventsService } from '../application/order-events.service.js';
 
 describe('OrderController.addPayment', () => {
   let controller: OrderController;
@@ -101,6 +102,7 @@ describe('OrderController.addPayment', () => {
         { provide: CancelOrderUseCase, useValue: { execute: vi.fn() } },
         { provide: PrismaService, useValue: prisma },
         { provide: StorageService, useValue: storage },
+        { provide: OrderEventsService, useValue: { record: vi.fn() } },
       ],
     }).compile();
 
@@ -335,6 +337,7 @@ describe('OrderController.getPaymentImage', () => {
         { provide: CancelOrderUseCase, useValue: { execute: vi.fn() } },
         { provide: PrismaService, useValue: {} },
         { provide: StorageService, useValue: storage },
+        { provide: OrderEventsService, useValue: { record: vi.fn() } },
       ],
     }).compile();
 

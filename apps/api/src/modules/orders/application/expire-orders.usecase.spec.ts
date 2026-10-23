@@ -4,6 +4,7 @@ import { Prisma } from '@biasmarket/db';
 import { ExpireOrdersUseCase } from './expire-orders.usecase.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
+import { OrderEventsService } from './order-events.service.js';
 
 const order = (overrides: Record<string, unknown> = {}) => ({
   id: 'order-1',
@@ -47,6 +48,7 @@ describe('ExpireOrdersUseCase', () => {
           provide: NotificationsService,
           useValue: { syncStockAlerts: vi.fn() },
         },
+        { provide: OrderEventsService, useValue: { record: vi.fn() } },
       ],
     }).compile();
 

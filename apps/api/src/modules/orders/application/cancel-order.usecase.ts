@@ -8,6 +8,7 @@ import { PrismaService } from '../../../prisma/prisma.service.js';
 import { OrderRepository } from '../infrastructure/order.repository.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
 import { Order } from '../domain/order.entity.js';
+import { OrderEventsService } from './order-events.service.js';
 
 const RESERVED_HOLD_STATUSES = new Set([
   'PENDING_PAYMENT',
@@ -21,6 +22,7 @@ export class CancelOrderUseCase {
     private prisma: PrismaService,
     private orders: OrderRepository,
     private notifications: NotificationsService,
+    private events: OrderEventsService,
   ) {}
 
   async execute(
@@ -161,6 +163,13 @@ export class CancelOrderUseCase {
             reason: dto.reason ?? null,
           },
         },
+      });
+      await this.events.record(tx, {
+        orderId,
+        storeId,
+        type: 'ORDER_CANCELLED',
+        actor: 'SELLER',
+        payload: { resolution: dto.resolution },
       });
 
       return tx.order.findUniqueOrThrow({ where: { id: orderId } });

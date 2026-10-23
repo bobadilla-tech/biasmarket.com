@@ -32,6 +32,7 @@ import { OrderRepository } from './order.repository.js';
 import { ReviewPaymentUseCase } from '../application/review-payment.usecase.js';
 import { AdvanceFulfillmentUseCase } from '../application/advance-fulfillment.usecase.js';
 import { CancelOrderUseCase } from '../application/cancel-order.usecase.js';
+import { OrderEventsService } from '../application/order-events.service.js';
 import { ReviewPaymentDto } from '../dto/review-payment.dto.js';
 import { AdvanceFulfillmentDto } from '../dto/advance-fulfillment.dto.js';
 import { CancelOrderDto } from '../dto/cancel-order.dto.js';
@@ -282,6 +283,7 @@ export class OrderController {
     private cancelOrder: CancelOrderUseCase,
     private prisma: PrismaService,
     private storage: StorageService,
+    private events: OrderEventsService,
   ) {}
 
   @ApiQuery({ name: 'paymentStatus', required: false, type: String })
@@ -513,6 +515,13 @@ export class OrderController {
               },
             },
           });
+          await this.events.record(tx, {
+            orderId,
+            storeId,
+            type: 'PAYMENT_SUBMITTED',
+            actor: 'SELLER',
+            payload: { amount: numericAmount, method },
+          });
         } else if (nextStatus === 'PARTIALLY_PAID') {
           await this.orders.saveStatus(
             orderId,
@@ -532,6 +541,13 @@ export class OrderController {
                 resultingPaymentStatus: nextStatus,
               },
             },
+          });
+          await this.events.record(tx, {
+            orderId,
+            storeId,
+            type: 'PAYMENT_SUBMITTED',
+            actor: 'SELLER',
+            payload: { amount: numericAmount, method },
           });
         }
       });
@@ -606,6 +622,12 @@ export class OrderController {
           entityId: paymentId,
           metadata: { reason: dto.reason ?? null },
         },
+      });
+      await this.events.record(tx, {
+        orderId,
+        storeId,
+        type: dto.decision === 'approve' ? 'PAYMENT_VALIDATED' : 'PAYMENT_REJECTED',
+        actor: 'SELLER',
       });
     });
 

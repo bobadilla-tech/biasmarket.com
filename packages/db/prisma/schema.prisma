@@ -356,11 +356,55 @@ model Order {
   pickupPoint  PickupPoint?   @relation(fields: [pickupPointId], references: [id], onDelete: SetNull)
   items        OrderItem[]
   payments     OrderPayment[]
+  events       OrderEvent[]
 
   @@index([storeId, paymentStatus])
   @@index([storeId, createdAt])
   @@index([paymentStatus, expiresAt])
   @@index([buyerAccountId])
+}
+
+enum OrderEventActor {
+  SELLER
+  BUYER
+  SYSTEM
+}
+
+enum OrderEventType {
+  CREATED
+  LINK_OPENED
+  LINK_REGENERATED
+  PHONE_CORRECTED
+  PAYMENT_SUBMITTED
+  PAYMENT_VALIDATED
+  PAYMENT_REJECTED
+  PAYMENT_VOIDED
+  FULFILLMENT_ADVANCED
+  PACKED_PHOTO_ADDED
+  TRACKING_ADDED
+  BUYER_NOTIFIED
+  RECEIPT_CONFIRMED
+  CLAIMED
+  INVITE_SHOWN
+  INVITE_CLICKED
+  INVITE_DISMISSED
+  ORDER_CANCELLED
+}
+
+model OrderEvent {
+  id             String          @id @default(cuid())
+  orderId        String
+  storeId        String
+  type           OrderEventType
+  actor          OrderEventActor
+  visibleToBuyer Boolean
+  payload        Json            @default("{}")
+  createdAt      DateTime        @default(now())
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([orderId, createdAt])
+  @@index([storeId, type, createdAt])
 }
 
 model OrderItem {
