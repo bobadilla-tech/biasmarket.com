@@ -2,7 +2,10 @@ import { Test, type TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { type Mock, vi } from 'vitest';
 import { createOrderAccessToken } from '@biasmarket/utils/assisted-order';
-import { OrderEventsService, sanitizeOrderEventPayload } from './order-events.service.js';
+import {
+  OrderEventsService,
+  sanitizeOrderEventPayload,
+} from './order-events.service.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 
 describe('sanitizeOrderEventPayload', () => {

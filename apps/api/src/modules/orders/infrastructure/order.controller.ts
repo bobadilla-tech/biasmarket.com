@@ -626,7 +626,8 @@ export class OrderController {
       await this.events.record(tx, {
         orderId,
         storeId,
-        type: dto.decision === 'approve' ? 'PAYMENT_VALIDATED' : 'PAYMENT_REJECTED',
+        type:
+          dto.decision === 'approve' ? 'PAYMENT_VALIDATED' : 'PAYMENT_REJECTED',
         actor: 'SELLER',
       });
     });

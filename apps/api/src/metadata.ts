@@ -675,6 +675,17 @@ export default async () => {
         ],
         [import('./modules/orders/domain/order.entity.js'), { Order: {} }],
         [
+          import('./modules/orders/dto/record-invite-event.dto.js'),
+          {
+            RecordInviteEventDto: {
+              type: {
+                required: true,
+                enum: ['INVITE_SHOWN', 'INVITE_CLICKED', 'INVITE_DISMISSED'],
+              },
+            },
+          },
+        ],
+        [
           import('./modules/orders/dto/cancel-order.dto.js'),
           {
             CancelOrderDto: {
@@ -1407,6 +1418,11 @@ export default async () => {
               email: { required: true, type: () => String, nullable: true },
               emailVerified: { required: true, type: () => Boolean },
               createdAt: { required: true, type: () => String },
+            },
+            CustomerLookupResponseDto: {
+              normalizedPhone: { required: true, type: () => String },
+              previousOrders: { required: true, type: () => Number },
+              lastAlias: { required: true, type: () => String, nullable: true },
             },
             CustomerDetailResponseDto: {
               customer: {
@@ -2744,6 +2760,11 @@ export default async () => {
                     .CustomerListItemResponseDto,
                 ],
               },
+              lookup: {
+                type: t[
+                  './modules/orders/infrastructure/customers-response.dto.js'
+                ].CustomerLookupResponseDto,
+              },
               findOne: {
                 type: t[
                   './modules/orders/infrastructure/customers-response.dto.js'
@@ -2767,6 +2788,10 @@ export default async () => {
         [
           import('./modules/orders/infrastructure/internal-jobs.controller.js'),
           { InternalJobsController: { expireSweep: {} } },
+        ],
+        [
+          import('./modules/orders/infrastructure/public-order-events.controller.js'),
+          { PublicOrderEventsController: { getByToken: {}, recordInvite: {} } },
         ],
         [
           import('./modules/payment-config/payment-config.controller.js'),

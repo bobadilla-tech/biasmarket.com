@@ -60,10 +60,7 @@ export class PublicOrderService {
       where: { storeId: order.storeId, enabled: true },
       select: { method: true, depositPercent: true, details: true },
     });
-    const summary = computePaymentSummary(
-      order.requiredAmount,
-      order.payments,
-    );
+    const summary = computePaymentSummary(order.requiredAmount, order.payments);
 
     return {
       store: {

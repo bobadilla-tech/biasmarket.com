@@ -1938,6 +1938,42 @@
         "tags": ["Customers"]
       }
     },
+    "/stores/{storeId}/customers/lookup": {
+      "get": {
+        "operationId": "CustomersController_lookup",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "phone",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerLookupResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Customers"]
+      }
+    },
     "/stores/{storeId}/customers/{customerId}": {
       "get": {
         "operationId": "CustomersController_findOne",
@@ -2069,6 +2105,58 @@
           }
         ],
         "tags": ["CustomerOrderPayments"]
+      }
+    },
+    "/public/orders/{token}": {
+      "get": {
+        "operationId": "PublicOrderEventsController_getByToken",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": ["PublicOrderEvents"]
+      }
+    },
+    "/public/orders/{token}/events": {
+      "post": {
+        "operationId": "PublicOrderEventsController_recordInvite",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordInviteEventDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": ["PublicOrderEvents"]
       }
     },
     "/stores/{storeId}/payment-methods": {
@@ -7441,6 +7529,22 @@
           "lastOrderAt"
         ]
       },
+      "CustomerLookupResponseDto": {
+        "type": "object",
+        "properties": {
+          "normalizedPhone": {
+            "type": "string"
+          },
+          "previousOrders": {
+            "type": "number"
+          },
+          "lastAlias": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": ["normalizedPhone", "previousOrders", "lastAlias"]
+      },
       "CustomerDetailCustomerResponseDto": {
         "type": "object",
         "properties": {
@@ -7489,6 +7593,16 @@
           }
         },
         "required": ["customer", "orders"]
+      },
+      "RecordInviteEventDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["INVITE_SHOWN", "INVITE_CLICKED", "INVITE_DISMISSED"]
+          }
+        },
+        "required": ["type"]
       },
       "PaymentMethodConfigResponseDto": {
         "type": "object",
