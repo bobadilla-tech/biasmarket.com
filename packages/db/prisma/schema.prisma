@@ -26,6 +26,7 @@ model User {
   sessions          Session[]
   accounts          Account[]
   stores            Store[]
+  ordersCreated     Order[]
   createdCoupons    Coupon[]           @relation("CouponCreatedBy")
   couponRedemptions CouponRedemption[]
 
@@ -285,6 +286,11 @@ model StoreSection {
   @@index([storeId, position])
 }
 
+enum OrderSource {
+  MARKETPLACE
+  VENDOR_ASSISTED
+}
+
 model Order {
   id                     String                  @id @default(cuid())
   storeId                String
@@ -295,8 +301,21 @@ model Order {
   // is verified complete.
   buyerAccountId         String?
   customerEmail          String?
+  // Also the assisted-order phone and alias. Do not add buyerPhone/buyerAlias.
   customerPhone          String
   customerName           String?
+  source                 OrderSource             @default(MARKETPLACE)
+  // Seller who created a VENDOR_ASSISTED order. Null for marketplace checkout.
+  createdByUserId        String?
+  // SHA-256 of the private-link token. The raw token is never stored.
+  accessTokenHash        String?                 @unique
+  accessTokenRevokedAt   DateTime?
+  // First time the private link was opened. Null until then.
+  linkFirstOpenedAt      DateTime?
+  // When a buyer claimed the order. Who claimed it is buyerAccountId.
+  claimedAt              DateTime?
+  // Not set by Google sign-in. Stays false until a later verification step.
+  phoneVerified          Boolean                 @default(false)
   deliveryMethodType     DeliveryMethodType
   deliveryDetails        Json
   pickupPointId          String?
@@ -333,6 +352,7 @@ model Order {
   store        Store          @relation(fields: [storeId], references: [id])
   customer     Customer?      @relation(fields: [customerId], references: [id])
   buyerAccount BuyerAccount?  @relation(fields: [buyerAccountId], references: [id])
+  createdBy    User?          @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
   pickupPoint  PickupPoint?   @relation(fields: [pickupPointId], references: [id], onDelete: SetNull)
   items        OrderItem[]
   payments     OrderPayment[]
