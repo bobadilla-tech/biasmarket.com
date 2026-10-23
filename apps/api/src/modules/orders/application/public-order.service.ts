@@ -1,8 +1,34 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import type { Prisma } from '@biasmarket/db';
 import { maskPhone } from '@biasmarket/utils/phone-country';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { computePaymentSummary } from '../../../common/payment-summary.js';
 import { OrderEventsService } from './order-events.service.js';
+import type {
+  PublicOrderDeliveryDetailsResponseDto,
+  PublicOrderResponseDto,
+} from '../dto/public-order-response.dto.js';
+
+// Allow-list projection of the stored `deliveryDetails` blob. The COURIER
+// variant also holds `shippingAddress.recipientName` / `phone` /
+// `documentNumber` — the recipient can be a third party, and this page is
+// reachable with nothing but a token that gets forwarded over WhatsApp.
+function toPublicDeliveryDetails(
+  details: Prisma.JsonValue | null,
+): PublicOrderDeliveryDetailsResponseDto {
+  const raw = (details ?? {}) as Record<string, unknown>;
+  const address = (raw.shippingAddress ?? {}) as Record<string, unknown>;
+  const text = (value: unknown) =>
+    typeof value === 'string' && value.trim() ? value : null;
+
+  return {
+    line1: text(address.line1),
+    district: text(address.district),
+    city: text(address.city),
+    reference: text(address.reference),
+    pickupPointLabel: text(raw.pickupPointLabel),
+  };
+}
 
 @Injectable()
 export class PublicOrderService {
@@ -11,7 +37,7 @@ export class PublicOrderService {
     private events: OrderEventsService,
   ) {}
 
-  async getByToken(token: string) {
+  async getByToken(token: string): Promise<PublicOrderResponseDto> {
     const access = await this.events.requireOrderForToken(token);
     const order = await this.prisma.order.findUnique({
       where: { id: access.id },
@@ -90,9 +116,13 @@ export class PublicOrderService {
       fulfillmentStatus: order.fulfillmentStatus,
       status: order.status,
       paymentInstructions: order.store.paymentInstructions,
-      paymentMethods,
+      paymentMethods: paymentMethods.map((config) => ({
+        method: config.method,
+        depositPercent: config.depositPercent,
+        details: config.details as Record<string, unknown>,
+      })),
       deliveryMethodType: order.deliveryMethodType,
-      deliveryDetails: order.deliveryDetails,
+      deliveryDetails: toPublicDeliveryDetails(order.deliveryDetails),
       pickupDate: order.pickupDate?.toISOString() ?? null,
       courierName: order.courierName,
       courierModality: order.courierModality,

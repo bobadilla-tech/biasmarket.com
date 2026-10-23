@@ -21,6 +21,7 @@ import {
   productSearch,
   publicCouriers,
   publicDeliveryConfig,
+  publicOrders,
   publicPaymentConfig,
   publicPickupPoints,
   restock,
@@ -81,5 +82,6 @@ export const apiClient = {
   coupons,
   couriers,
   publicCouriers,
+  publicOrders,
   globalAccount,
 };

@@ -32,7 +32,17 @@ describe('PublicOrderService', () => {
     fulfillmentStatus: 'ORDERING',
     status: 'ACTIVE',
     deliveryMethodType: 'COURIER',
-    deliveryDetails: { shippingAddress: { line1: 'Jr. Lima 1' } },
+    deliveryDetails: {
+      shippingAddress: {
+        line1: 'Jr. Lima 1',
+        district: 'Lima',
+        city: 'Lima',
+        reference: 'Portón azul',
+        recipientName: 'Ana',
+        phone: '+51987654321',
+        documentNumber: '12345678',
+      },
+    },
     pickupDate: null,
     courierName: 'Olva',
     courierModality: 'HOME',
@@ -128,6 +138,26 @@ describe('PublicOrderService', () => {
     expect(JSON.stringify(result)).not.toContain('internal');
     expect(result).not.toHaveProperty('storeId');
     expect(result).not.toHaveProperty('createdByUserId');
+  });
+
+  it('projects deliveryDetails to an allow-list instead of the stored blob', async () => {
+    events.requireOrderForToken.mockResolvedValue({
+      id: 'order-1',
+      storeId: 'store-1',
+    });
+    prisma.order.findUnique.mockResolvedValue(orderRow);
+
+    const result = await service.getByToken('raw-token');
+
+    expect(result.deliveryDetails).toEqual({
+      line1: 'Jr. Lima 1',
+      district: 'Lima',
+      city: 'Lima',
+      reference: 'Portón azul',
+      pickupPointLabel: null,
+    });
+    expect(JSON.stringify(result)).not.toContain('12345678');
+    expect(JSON.stringify(result)).not.toContain('recipientName');
   });
 
   it('records LINK_OPENED once, on the first read', async () => {

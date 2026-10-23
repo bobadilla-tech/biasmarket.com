@@ -8,12 +8,13 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { ApiNoContentResponse } from '@nestjs/swagger';
+import { ApiNoContentResponse, ApiOkResponse } from '@nestjs/swagger';
 import { Public } from '@thallesp/nestjs-better-auth';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { OrderEventsService } from '../application/order-events.service.js';
 import { PublicOrderService } from '../application/public-order.service.js';
 import { RecordInviteEventDto } from '../dto/record-invite-event.dto.js';
+import { PublicOrderResponseDto } from '../dto/public-order-response.dto.js';
 
 @Controller('public/orders')
 export class PublicOrderEventsController {
@@ -26,9 +27,12 @@ export class PublicOrderEventsController {
   @Get(':token')
   @Header('Cache-Control', 'no-store')
   @Header('Referrer-Policy', 'no-referrer')
+  @ApiOkResponse({ type: PublicOrderResponseDto })
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { ttl: 60_000, limit: 30 } })
-  async getByToken(@Param('token') token: string) {
+  async getByToken(
+    @Param('token') token: string,
+  ): Promise<PublicOrderResponseDto> {
     return this.orders.getByToken(token);
   }
 
