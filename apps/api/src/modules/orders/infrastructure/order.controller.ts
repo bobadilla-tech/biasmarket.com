@@ -89,6 +89,7 @@ const PRIVATE_ORDER_COLUMNS = [
   'claimedAt',
   'phoneVerified',
   'createdByUserId',
+  'customerPhoneNormalized',
 ] as const;
 
 export function withoutPrivateOrderColumns<T extends object>(row: T): T {

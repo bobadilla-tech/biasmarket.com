@@ -302,33 +302,46 @@ export class CustomersService {
     });
   }
 
+  // Counts every order that matches the phone, cancelled and expired ones
+  // included: this is order history, not completed purchases.
   async lookupByPhone(storeId: string, userId: string, rawPhone: string) {
     await this.assertOwnership(storeId, userId);
     const phone = this.requirePhone(rawPhone);
+    const where = { storeId, customerPhoneNormalized: phone };
 
-    const [customer, orders] = await Promise.all([
-      this.prisma.customer.findUnique({
-        where: { storeId_phone: { storeId, phone } },
-      }),
-      this.prisma.order.findMany({
-        where: { storeId },
-        select: {
-          customerPhone: true,
-          customerName: true,
-          createdAt: true,
-        },
-      }),
-    ]);
+    const [customer, previousOrders, latestOrder, legacyOrders] =
+      await Promise.all([
+        this.prisma.customer.findUnique({
+          where: { storeId_phone: { storeId, phone } },
+        }),
+        this.prisma.order.count({ where }),
+        this.prisma.order.findFirst({
+          where,
+          orderBy: { createdAt: 'desc' },
+          select: { customerName: true },
+        }),
+        // Only orders the previous release inserted between this migration
+        // and the traffic switch can still be NULL here; backfilled rows and
+        // everything written since are covered by the indexed queries above.
+        this.prisma.order.findMany({
+          where: { storeId, customerPhoneNormalized: null },
+          select: { customerPhone: true, customerName: true, createdAt: true },
+        }),
+      ]);
 
-    const matching = orders.filter(
+    const legacyMatches = legacyOrders.filter(
       (order) => normalizePhone(order.customerPhone) === phone,
     );
-    matching.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    legacyMatches.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
     return {
       normalizedPhone: phone,
-      previousOrders: matching.length,
-      lastAlias: customer?.name ?? matching[0]?.customerName ?? null,
+      previousOrders: previousOrders + legacyMatches.length,
+      lastAlias:
+        customer?.name ??
+        latestOrder?.customerName ??
+        legacyMatches[0]?.customerName ??
+        null,
     };
   }
 

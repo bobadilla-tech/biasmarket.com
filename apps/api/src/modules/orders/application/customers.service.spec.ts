@@ -15,7 +15,7 @@ describe('CustomersService', () => {
     store: { findUnique: Mock };
     customer: { findMany: Mock; findUnique: Mock; upsert: Mock };
     buyerAccount: { create: Mock; upsert: Mock; update: Mock };
-    order: { groupBy: Mock; findMany: Mock };
+    order: { groupBy: Mock; findMany: Mock; count: Mock; findFirst: Mock };
     orderPayment: { findMany: Mock };
   };
 
@@ -27,7 +27,12 @@ describe('CustomersService', () => {
       store: { findUnique: vi.fn() },
       customer: { findMany: vi.fn(), findUnique: vi.fn(), upsert: vi.fn() },
       buyerAccount: { create: vi.fn(), upsert: vi.fn(), update: vi.fn() },
-      order: { groupBy: vi.fn(), findMany: vi.fn() },
+      order: {
+        groupBy: vi.fn(),
+        findMany: vi.fn(),
+        count: vi.fn(),
+        findFirst: vi.fn(),
+      },
       orderPayment: { findMany: vi.fn() },
     };
     // Guest orders are fetched in `findAllForStore` and have their own
@@ -553,17 +558,36 @@ describe('CustomersService', () => {
       await expect(
         service.lookupByPhone(storeId, ownerId, '987654321'),
       ).rejects.toThrow(ForbiddenException);
-      expect(prisma.order.findMany).not.toHaveBeenCalled();
+      expect(prisma.order.count).not.toHaveBeenCalled();
     });
 
-    it('counts this store only, normalizing older unformatted phones', async () => {
+    it('counts this store only, through the canonical phone column', async () => {
       prisma.customer.findUnique.mockResolvedValue(null);
+      prisma.order.count.mockResolvedValue(2);
+      prisma.order.findFirst.mockResolvedValue({ customerName: 'Anita' });
+
+      const result = await service.lookupByPhone(storeId, ownerId, '987654321');
+
+      expect(prisma.order.count).toHaveBeenCalledWith({
+        where: { storeId, customerPhoneNormalized: '+51987654321' },
+      });
+      expect(prisma.order.findFirst).toHaveBeenCalledWith({
+        where: { storeId, customerPhoneNormalized: '+51987654321' },
+        orderBy: { createdAt: 'desc' },
+        select: { customerName: true },
+      });
+      expect(result).toEqual({
+        normalizedPhone: '+51987654321',
+        previousOrders: 2,
+        lastAlias: 'Anita',
+      });
+    });
+
+    it('still resolves orders written before the normalizing column was backfilled', async () => {
+      prisma.customer.findUnique.mockResolvedValue(null);
+      prisma.order.count.mockResolvedValue(0);
+      prisma.order.findFirst.mockResolvedValue(null);
       prisma.order.findMany.mockResolvedValue([
-        {
-          customerPhone: '987 654 321',
-          customerName: 'Ana',
-          createdAt: new Date('2026-01-01'),
-        },
         {
           customerPhone: '+51 987 654 321',
           customerName: 'Anita',
@@ -578,25 +602,21 @@ describe('CustomersService', () => {
 
       const result = await service.lookupByPhone(storeId, ownerId, '987654321');
 
-      expect(prisma.order.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { storeId } }),
-      );
+      expect(prisma.order.findMany).toHaveBeenCalledWith({
+        where: { storeId, customerPhoneNormalized: null },
+        select: { customerPhone: true, customerName: true, createdAt: true },
+      });
       expect(result).toEqual({
         normalizedPhone: '+51987654321',
-        previousOrders: 2,
+        previousOrders: 1,
         lastAlias: 'Anita',
       });
     });
 
     it('prefers the stored Customer alias over the latest order name', async () => {
       prisma.customer.findUnique.mockResolvedValue({ name: 'Ana P.' });
-      prisma.order.findMany.mockResolvedValue([
-        {
-          customerPhone: '+51987654321',
-          customerName: 'Anita',
-          createdAt: new Date('2026-02-01'),
-        },
-      ]);
+      prisma.order.count.mockResolvedValue(1);
+      prisma.order.findFirst.mockResolvedValue({ customerName: 'Anita' });
 
       const result = await service.lookupByPhone(
         storeId,
