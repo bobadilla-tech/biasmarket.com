@@ -31,6 +31,7 @@ describe('OrderController.addPayment', () => {
   };
   let reviewPayment: { execute: Mock };
   let storage: { uploadPaymentImage: Mock; getPaymentImageStream: Mock };
+  let events: { record: Mock };
   let prisma: {
     $transaction: Mock;
     orderPayment: { create: Mock };
@@ -92,6 +93,7 @@ describe('OrderController.addPayment', () => {
     };
     reviewPayment = { execute: vi.fn() };
     storage = { uploadPaymentImage: vi.fn(), getPaymentImageStream: vi.fn() };
+    events = { record: vi.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [OrderController],
@@ -102,7 +104,7 @@ describe('OrderController.addPayment', () => {
         { provide: CancelOrderUseCase, useValue: { execute: vi.fn() } },
         { provide: PrismaService, useValue: prisma },
         { provide: StorageService, useValue: storage },
-        { provide: OrderEventsService, useValue: { record: vi.fn() } },
+        { provide: OrderEventsService, useValue: events },
       ],
     }).compile();
 
@@ -150,6 +152,14 @@ describe('OrderController.addPayment', () => {
       },
     });
     expect(reviewPayment.execute).not.toHaveBeenCalled();
+    expect(events.record).toHaveBeenCalledTimes(1);
+    expect(events.record).toHaveBeenCalledWith(tx, {
+      orderId,
+      storeId,
+      type: 'PAYMENT_SUBMITTED',
+      actor: 'SELLER',
+      payload: { amount: 40, method: 'YAPE' },
+    });
   });
 
   it('a payment reaching the required amount routes through ReviewPaymentUseCase instead of writing VERIFIED directly', async () => {
@@ -180,6 +190,14 @@ describe('OrderController.addPayment', () => {
       userId,
       'approve',
     );
+    expect(events.record).toHaveBeenCalledTimes(1);
+    expect(events.record).toHaveBeenCalledWith(tx, {
+      orderId,
+      storeId,
+      type: 'PAYMENT_SUBMITTED',
+      actor: 'SELLER',
+      payload: { amount: 40, method: 'YAPE' },
+    });
   });
 
   it("accepts a payment for exactly the displayed pendingAmount even when it's a float-trap value like 59.99", async () => {
@@ -258,6 +276,14 @@ describe('OrderController.addPayment', () => {
           resultingPaymentStatus: 'VERIFIED',
         },
       },
+    });
+    expect(events.record).toHaveBeenCalledTimes(1);
+    expect(events.record).toHaveBeenCalledWith(tx, {
+      orderId,
+      storeId,
+      type: 'PAYMENT_SUBMITTED',
+      actor: 'SELLER',
+      payload: { amount: 27, method: 'YAPE' },
     });
   });
 

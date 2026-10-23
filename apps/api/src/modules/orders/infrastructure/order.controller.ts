@@ -538,13 +538,6 @@ export class OrderController {
               },
             },
           });
-          await this.events.record(tx, {
-            orderId,
-            storeId,
-            type: 'PAYMENT_SUBMITTED',
-            actor: 'SELLER',
-            payload: { amount: numericAmount, method },
-          });
         } else if (nextStatus === 'PARTIALLY_PAID') {
           await this.orders.saveStatus(
             orderId,
@@ -565,14 +558,20 @@ export class OrderController {
               },
             },
           });
-          await this.events.record(tx, {
-            orderId,
-            storeId,
-            type: 'PAYMENT_SUBMITTED',
-            actor: 'SELLER',
-            payload: { amount: numericAmount, method },
-          });
         }
+
+        // Recorded once, after the branches: every payment row gets exactly
+        // one PAYMENT_SUBMITTED, including the one that settles the balance
+        // (`!alreadyVerified && nextStatus === 'VERIFIED'`), which matches no
+        // branch above. Inside this transaction so it commits with the
+        // payment row, per security-payments.md §9.
+        await this.events.record(tx, {
+          orderId,
+          storeId,
+          type: 'PAYMENT_SUBMITTED',
+          actor: 'SELLER',
+          payload: { amount: numericAmount, method },
+        });
       });
     } catch (e) {
       throw new BadRequestException(e instanceof Error ? e.message : String(e));
