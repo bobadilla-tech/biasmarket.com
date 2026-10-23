@@ -853,6 +853,10 @@ export default async () => {
                 type: () => String,
                 nullable: true,
               },
+              source: {
+                required: true,
+                enum: ['MARKETPLACE', 'VENDOR_ASSISTED'],
+              },
               deliveryMethodType: {
                 required: true,
                 enum: ['PICKUP', 'COURIER'],
@@ -981,6 +985,10 @@ export default async () => {
                 required: true,
                 type: () => String,
                 nullable: true,
+              },
+              source: {
+                required: true,
+                enum: ['MARKETPLACE', 'VENDOR_ASSISTED'],
               },
               deliveryMethodType: {
                 required: true,
@@ -1252,6 +1260,10 @@ export default async () => {
                 required: true,
                 type: () => String,
                 nullable: true,
+              },
+              source: {
+                required: true,
+                enum: ['MARKETPLACE', 'VENDOR_ASSISTED'],
               },
               deliveryMethodType: {
                 required: true,

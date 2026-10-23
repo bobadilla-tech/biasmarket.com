@@ -71,6 +71,27 @@ type FulfillmentStatusLiteral =
 type DeliveryMethodTypeLiteral = 'PICKUP' | 'COURIER';
 type CancellationResolutionLiteral = 'REFUNDED' | 'RETAINED' | 'STORE_CREDIT';
 type PaymentMethodLiteral = 'YAPE' | 'PLIN' | 'TRANSFER' | 'CASH';
+type OrderSourceLiteral = 'MARKETPLACE' | 'VENDOR_ASSISTED';
+
+// Present on every Prisma Order row. The seller and checkout responses keep
+// `source` and drop the private-link columns: the hash is not a credential
+// the client should see, and the rest is not part of these response shapes.
+const PRIVATE_ORDER_COLUMNS = [
+  'accessTokenHash',
+  'accessTokenRevokedAt',
+  'linkFirstOpenedAt',
+  'claimedAt',
+  'phoneVerified',
+  'createdByUserId',
+] as const;
+
+export function withoutPrivateOrderColumns<T extends object>(row: T): T {
+  const copy = { ...row };
+  for (const key of PRIVATE_ORDER_COLUMNS) {
+    delete (copy as Record<string, unknown>)[key];
+  }
+  return copy;
+}
 
 export interface OrderProductRow {
   id: string;
@@ -138,6 +159,7 @@ export interface OrderRow {
   customerEmail: string | null;
   customerPhone: string;
   customerName: string | null;
+  source: OrderSourceLiteral;
   deliveryMethodType: DeliveryMethodTypeLiteral;
   deliveryDetails: unknown;
   pickupPointId: string | null;
@@ -174,6 +196,7 @@ interface OrderStatusRow {
   customerEmail: string | null;
   customerPhone: string;
   customerName: string | null;
+  source: OrderSourceLiteral;
   deliveryMethodType: DeliveryMethodTypeLiteral;
   deliveryDetails: unknown;
   pickupPointId: string | null;
@@ -239,7 +262,7 @@ export function toOrderPaymentDto(
 
 export function toOrderDto(row: OrderRow): OrderResponseDto {
   return {
-    ...row,
+    ...withoutPrivateOrderColumns(row),
     deliveryDetails: row.deliveryDetails as Record<string, unknown> | null,
     pickupDate: row.pickupDate?.toISOString() ?? null,
     retainedAmount: row.retainedAmount?.toString() ?? null,
@@ -260,7 +283,7 @@ function toOrderDetailDto(row: OrderRow): OrderDetailResponseDto {
 
 function toOrderStatusDto(row: OrderStatusRow): OrderStatusResponseDto {
   return {
-    ...row,
+    ...withoutPrivateOrderColumns(row),
     deliveryDetails: row.deliveryDetails as Record<string, unknown> | null,
     pickupDate: row.pickupDate?.toISOString() ?? null,
     retainedAmount: row.retainedAmount?.toString() ?? null,

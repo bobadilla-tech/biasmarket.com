@@ -6513,6 +6513,10 @@
             "type": "string",
             "nullable": true
           },
+          "source": {
+            "enum": ["MARKETPLACE", "VENDOR_ASSISTED"],
+            "type": "string"
+          },
           "deliveryMethodType": {
             "enum": ["PICKUP", "COURIER"],
             "type": "string"
@@ -6637,6 +6641,7 @@
           "customerEmail",
           "customerPhone",
           "customerName",
+          "source",
           "deliveryMethodType",
           "deliveryDetails",
           "pickupPointId",
@@ -6693,6 +6698,10 @@
             "type": "string",
             "nullable": true
           },
+          "source": {
+            "enum": ["MARKETPLACE", "VENDOR_ASSISTED"],
+            "type": "string"
+          },
           "deliveryMethodType": {
             "enum": ["PICKUP", "COURIER"],
             "type": "string"
@@ -6817,6 +6826,7 @@
           "customerEmail",
           "customerPhone",
           "customerName",
+          "source",
           "deliveryMethodType",
           "deliveryDetails",
           "pickupPointId",
@@ -6887,6 +6897,10 @@
             "type": "string",
             "nullable": true
           },
+          "source": {
+            "enum": ["MARKETPLACE", "VENDOR_ASSISTED"],
+            "type": "string"
+          },
           "deliveryMethodType": {
             "enum": ["PICKUP", "COURIER"],
             "type": "string"
@@ -6990,6 +7004,7 @@
           "customerEmail",
           "customerPhone",
           "customerName",
+          "source",
           "deliveryMethodType",
           "deliveryDetails",
           "pickupPointId",
@@ -7242,6 +7257,10 @@
             "type": "string",
             "nullable": true
           },
+          "source": {
+            "enum": ["MARKETPLACE", "VENDOR_ASSISTED"],
+            "type": "string"
+          },
           "deliveryMethodType": {
             "enum": ["PICKUP", "COURIER"],
             "type": "string"
@@ -7351,6 +7370,7 @@
           "customerEmail",
           "customerPhone",
           "customerName",
+          "source",
           "deliveryMethodType",
           "deliveryDetails",
           "pickupPointId",
