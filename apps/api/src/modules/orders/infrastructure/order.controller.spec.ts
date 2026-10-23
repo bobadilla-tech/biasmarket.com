@@ -1,5 +1,6 @@
 import { Test, type TestingModule } from '@nestjs/testing';
 import { type Mock, vi } from 'vitest';
+import { Prisma } from '@biasmarket/db';
 
 vi.mock('@thallesp/nestjs-better-auth', () => ({
   AuthGuard: class AuthGuard {},
@@ -427,5 +428,204 @@ describe('OrderController.getPaymentImage', () => {
     );
     expect(result.getStream()).toBe(body);
     expect(result.getHeaders().type).toBe('image/jpeg');
+  });
+});
+
+describe('OrderController.reviewPaymentProof', () => {
+  let controller: OrderController;
+  let orders: {
+    assertOwnership: Mock;
+    findPaymentForStore: Mock;
+    findRowByIdForStore: Mock;
+    saveStatus: Mock;
+  };
+  let reviewPayment: { execute: Mock };
+  let events: { record: Mock };
+  let prisma: { $transaction: Mock };
+  let tx: {
+    order: { findUniqueOrThrow: Mock };
+    orderPayment: { update: Mock; findMany: Mock };
+    auditLog: { create: Mock };
+  };
+
+  const storeId = 'store-1';
+  const orderId = 'order-1';
+  const paymentId = 'payment-1';
+  const userId = 'user-1';
+  const session = { user: { id: userId } } as any;
+
+  const detailFixture = {
+    id: orderId,
+    storeId,
+    deliveryDetails: null,
+    pickupDate: null,
+    retainedAmount: null,
+    releasedAmount: null,
+    releasedResolution: null,
+    totalAmount: { toString: () => '100.00' },
+    requiredAmount: { toString: () => '100.00' },
+    expiresAt: new Date('2026-08-10T00:00:00.000Z'),
+    createdAt: new Date('2026-08-05T00:00:00.000Z'),
+    items: [],
+    payments: [],
+  };
+
+  beforeEach(async () => {
+    tx = {
+      order: { findUniqueOrThrow: vi.fn() },
+      orderPayment: { update: vi.fn(), findMany: vi.fn() },
+      auditLog: { create: vi.fn() },
+    };
+    prisma = {
+      $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(tx)),
+    };
+    orders = {
+      assertOwnership: vi.fn(),
+      findPaymentForStore: vi.fn().mockResolvedValue({
+        id: paymentId,
+        orderId,
+        storeId,
+        source: 'BUYER_SUBMITTED',
+        reviewStatus: 'PENDING_REVIEW',
+      }),
+      findRowByIdForStore: vi.fn().mockResolvedValue(detailFixture),
+      saveStatus: vi.fn(),
+    };
+    reviewPayment = { execute: vi.fn() };
+    events = { record: vi.fn() };
+
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [OrderController],
+      providers: [
+        { provide: OrderRepository, useValue: orders },
+        { provide: ReviewPaymentUseCase, useValue: reviewPayment },
+        { provide: AdvanceFulfillmentUseCase, useValue: { execute: vi.fn() } },
+        { provide: CancelOrderUseCase, useValue: { execute: vi.fn() } },
+        { provide: PrismaService, useValue: prisma },
+        {
+          provide: StorageService,
+          useValue: {
+            uploadPaymentImage: vi.fn(),
+            getPaymentImageStream: vi.fn(),
+          },
+        },
+        { provide: OrderEventsService, useValue: events },
+      ],
+    }).compile();
+
+    controller = module.get(OrderController);
+  });
+
+  it('writes PARTIALLY_PAID inside the review transaction and records one PAYMENT_VALIDATED with the paymentId', async () => {
+    tx.order.findUniqueOrThrow.mockResolvedValue({
+      paymentStatus: 'PENDING_PAYMENT',
+      requiredAmount: new Prisma.Decimal('100.00'),
+    });
+    tx.orderPayment.findMany.mockResolvedValue([
+      {
+        amount: new Prisma.Decimal('40.00'),
+        source: 'BUYER_SUBMITTED',
+        reviewStatus: 'APPROVED',
+      },
+    ]);
+
+    await controller.reviewPaymentProof(storeId, orderId, paymentId, session, {
+      decision: 'approve',
+    });
+
+    expect(events.record).toHaveBeenCalledTimes(1);
+    expect(events.record).toHaveBeenCalledWith(tx, {
+      orderId,
+      storeId,
+      type: 'PAYMENT_VALIDATED',
+      actor: 'SELLER',
+      payload: { paymentId },
+    });
+    expect(orders.saveStatus).toHaveBeenCalledWith(
+      orderId,
+      { paymentStatus: 'PARTIALLY_PAID' },
+      tx,
+    );
+    expect(reviewPayment.execute).not.toHaveBeenCalled();
+  });
+
+  it('lets ReviewPaymentUseCase settle a proof that clears the balance without a second PAYMENT_VALIDATED', async () => {
+    tx.order.findUniqueOrThrow.mockResolvedValue({
+      paymentStatus: 'PARTIALLY_PAID',
+      requiredAmount: new Prisma.Decimal('100.00'),
+    });
+    tx.orderPayment.findMany.mockResolvedValue([
+      {
+        amount: new Prisma.Decimal('60.00'),
+        source: 'SELLER_RECORDED',
+        reviewStatus: 'N_A',
+      },
+      {
+        amount: new Prisma.Decimal('40.00'),
+        source: 'BUYER_SUBMITTED',
+        reviewStatus: 'APPROVED',
+      },
+    ]);
+
+    await controller.reviewPaymentProof(storeId, orderId, paymentId, session, {
+      decision: 'approve',
+    });
+
+    expect(events.record).toHaveBeenCalledTimes(1);
+    expect(events.record).toHaveBeenCalledWith(
+      tx,
+      expect.objectContaining({
+        type: 'PAYMENT_VALIDATED',
+        payload: { paymentId },
+      }),
+    );
+    expect(orders.saveStatus).not.toHaveBeenCalled();
+    expect(reviewPayment.execute).toHaveBeenCalledWith(
+      orderId,
+      storeId,
+      userId,
+      'approve',
+      undefined,
+      { recordEvent: false },
+    );
+  });
+
+  it('records PAYMENT_REJECTED and leaves the order status alone when the proof is rejected', async () => {
+    await controller.reviewPaymentProof(storeId, orderId, paymentId, session, {
+      decision: 'reject',
+      reason: 'Comprobante ilegible',
+    });
+
+    expect(events.record).toHaveBeenCalledTimes(1);
+    expect(events.record).toHaveBeenCalledWith(tx, {
+      orderId,
+      storeId,
+      type: 'PAYMENT_REJECTED',
+      actor: 'SELLER',
+      payload: { paymentId },
+    });
+    expect(tx.order.findUniqueOrThrow).not.toHaveBeenCalled();
+    expect(orders.saveStatus).not.toHaveBeenCalled();
+    expect(reviewPayment.execute).not.toHaveBeenCalled();
+  });
+
+  it('refuses a proof that was not submitted by the buyer', async () => {
+    orders.findPaymentForStore.mockResolvedValueOnce({
+      id: paymentId,
+      orderId,
+      storeId,
+      source: 'SELLER_RECORDED',
+      reviewStatus: 'PENDING_REVIEW',
+    });
+
+    await expect(
+      controller.reviewPaymentProof(storeId, orderId, paymentId, session, {
+        decision: 'approve',
+      }),
+    ).rejects.toThrow(
+      'Solo se pueden revisar comprobantes enviados por el comprador',
+    );
+
+    expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 });

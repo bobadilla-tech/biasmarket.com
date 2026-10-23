@@ -53,6 +53,7 @@ export class ReviewPaymentUseCase {
     userId: string,
     decision: 'approve' | 'reject',
     reason?: string,
+    options: { recordEvent?: boolean } = {},
   ) {
     await this.orders.assertOwnership(storeId, userId);
 
@@ -153,12 +154,21 @@ export class ReviewPaymentUseCase {
           metadata: {},
         },
       });
-      await this.events.record(tx, {
-        orderId,
-        storeId,
-        type: decision === 'approve' ? 'PAYMENT_VALIDATED' : 'PAYMENT_REJECTED',
-        actor: 'SELLER',
-      });
+      // Order-level approvals stand in for the payment decision itself
+      // (`PATCH :orderId/review`), so they always record it. Callers that
+      // already recorded the same seller action — `reviewPaymentProof`
+      // approves one proof row and then settles the balance — pass
+      // `recordEvent: false` so the buyer timeline shows it once, with the
+      // proof's `paymentId`.
+      if (options.recordEvent !== false) {
+        await this.events.record(tx, {
+          orderId,
+          storeId,
+          type:
+            decision === 'approve' ? 'PAYMENT_VALIDATED' : 'PAYMENT_REJECTED',
+          actor: 'SELLER',
+        });
+      }
 
       return updated;
     });

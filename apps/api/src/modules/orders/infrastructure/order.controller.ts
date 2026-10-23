@@ -53,11 +53,17 @@ import {
   UploadedFileValidationPipe,
   type ValidatedUploadedFile,
 } from '../../../common/uploaded-file-validation.pipe.js';
+import { computePaymentSummary } from '../../../common/payment-summary.js';
 
 const OPTIONAL_PAYMENT_IMAGE_PIPE = new UploadedFileValidationPipe({
   allowedMimeTypes: IMAGE_UPLOAD_MIME_TYPES,
   fileIsRequired: false,
 });
+
+// Money boundary comparisons compare in cents, not raw floats, so a residual
+// float-conversion artifact can never reject (or accept) a payment that's
+// actually exact to the cent.
+const toCents = (n: number) => Math.round(n * 100);
 
 type PaymentStatusLiteral =
   | 'PENDING_PAYMENT'
@@ -429,7 +435,6 @@ export class OrderController {
     // not raw floats, so a residual float-conversion artifact in
     // `numericAmount`/`pendingAmount` can never reject (or accept) a payment
     // that's actually exact to the cent.
-    const toCents = (n: number) => Math.round(n * 100);
     if (toCents(numericAmount) > toCents(order.pendingAmount)) {
       throw new BadRequestException('El abono excede el saldo pendiente');
     }
@@ -623,6 +628,7 @@ export class OrderController {
     }
 
     const reviewStatus = dto.decision === 'approve' ? 'APPROVED' : 'REJECTED';
+    let settlesOrder = false;
     await this.prisma.$transaction(async (tx) => {
       await tx.orderPayment.update({
         where: { id: paymentId },
@@ -651,38 +657,67 @@ export class OrderController {
         type:
           dto.decision === 'approve' ? 'PAYMENT_VALIDATED' : 'PAYMENT_REJECTED',
         actor: 'SELLER',
+        payload: { paymentId },
       });
+
+      if (dto.decision !== 'approve') return;
+
+      // Re-derive the order's status from the new total in this same
+      // transaction, so a partial approval records its PARTIALLY_PAID write
+      // and its event atomically. Only auto-advance from the two "still
+      // collecting money" states — mirrors the domain guard in
+      // order-status.vo.ts (VERIFIED/REJECTED/CANCELLED have no outgoing
+      // transitions). A proof left PENDING_REVIEW while the order moved on for
+      // an unrelated reason (e.g. the seller rejected it separately) still
+      // gets marked APPROVED above for the record, it just doesn't try to
+      // re-drive an order that can no longer legally change state.
+      const [order, payments] = await Promise.all([
+        tx.order.findUniqueOrThrow({
+          where: { id: orderId },
+          select: { paymentStatus: true, requiredAmount: true },
+        }),
+        tx.orderPayment.findMany({
+          where: { orderId },
+          select: { amount: true, source: true, reviewStatus: true },
+        }),
+      ]);
+      if (
+        order.paymentStatus !== 'PENDING_PAYMENT' &&
+        order.paymentStatus !== 'PARTIALLY_PAID'
+      ) {
+        return;
+      }
+
+      const { paidAmount } = computePaymentSummary(
+        order.requiredAmount,
+        payments,
+      );
+      if (toCents(paidAmount) >= toCents(Number(order.requiredAmount))) {
+        // Settling also has to convert the soft-hold `reserved` into real
+        // `stock`, run the domain transition guard and email the buyer —
+        // ReviewPaymentUseCase owns that, and it is called after this commit.
+        // The PAYMENT_VALIDATED above already represents this seller action
+        // (with the proof's paymentId), so that call is told not to record a
+        // second one.
+        settlesOrder = true;
+      } else if (paidAmount > 0) {
+        await this.orders.saveStatus(
+          orderId,
+          { paymentStatus: 'PARTIALLY_PAID' },
+          tx,
+        );
+      }
     });
 
-    if (dto.decision === 'approve') {
-      const order = await this.orders.findRowByIdForStore(orderId, storeId);
-      const toCents = (n: number) => Math.round(n * 100);
-      // Only auto-advance status from the two "still collecting money" states
-      // — mirrors the domain guard in order-status.vo.ts (VERIFIED/REJECTED/
-      // CANCELLED have no outgoing transitions). A proof left PENDING_REVIEW
-      // while the order moved on for an unrelated reason (e.g. the seller
-      // rejected it separately) still gets marked APPROVED above for the
-      // record, it just doesn't try to re-drive an order that can no longer
-      // legally change state.
-      if (
-        order.paymentStatus === 'PENDING_PAYMENT' ||
-        order.paymentStatus === 'PARTIALLY_PAID'
-      ) {
-        if (
-          toCents(order.paidAmount) >= toCents(Number(order.requiredAmount))
-        ) {
-          await this.reviewPayment.execute(
-            orderId,
-            storeId,
-            session.user.id,
-            'approve',
-          );
-        } else if (order.paidAmount > 0) {
-          await this.orders.saveStatus(orderId, {
-            paymentStatus: 'PARTIALLY_PAID',
-          });
-        }
-      }
+    if (settlesOrder) {
+      await this.reviewPayment.execute(
+        orderId,
+        storeId,
+        session.user.id,
+        'approve',
+        undefined,
+        { recordEvent: false },
+      );
     }
 
     const updated = await this.orders.findRowByIdForStore(orderId, storeId);
