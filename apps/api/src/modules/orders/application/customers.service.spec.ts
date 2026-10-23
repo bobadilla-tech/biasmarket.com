@@ -1,5 +1,9 @@
 import { Test, type TestingModule } from '@nestjs/testing';
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { type Mock, vi } from 'vitest';
 import { Prisma } from '@biasmarket/db';
 import { CustomersService } from './customers.service.js';
@@ -9,7 +13,8 @@ describe('CustomersService', () => {
   let service: CustomersService;
   let prisma: {
     store: { findUnique: Mock };
-    customer: { findMany: Mock; findUnique: Mock };
+    customer: { findMany: Mock; findUnique: Mock; upsert: Mock };
+    buyerAccount: { create: Mock; upsert: Mock; update: Mock };
     order: { groupBy: Mock; findMany: Mock };
     orderPayment: { findMany: Mock };
   };
@@ -20,7 +25,8 @@ describe('CustomersService', () => {
   beforeEach(async () => {
     prisma = {
       store: { findUnique: vi.fn() },
-      customer: { findMany: vi.fn(), findUnique: vi.fn() },
+      customer: { findMany: vi.fn(), findUnique: vi.fn(), upsert: vi.fn() },
+      buyerAccount: { create: vi.fn(), upsert: vi.fn(), update: vi.fn() },
       order: { groupBy: vi.fn(), findMany: vi.fn() },
       orderPayment: { findMany: vi.fn() },
     };
@@ -532,6 +538,115 @@ describe('CustomersService', () => {
       expect(result.orders).toEqual([
         expect.objectContaining({ id: 'order-1' }),
       ]);
+    });
+  });
+
+  describe('lookupByPhone', () => {
+    beforeEach(() => stubOwnedStore());
+
+    it('rejects a seller who does not own the store', async () => {
+      prisma.store.findUnique.mockResolvedValue({
+        id: storeId,
+        ownerId: 'someone-else',
+      });
+
+      await expect(
+        service.lookupByPhone(storeId, ownerId, '987654321'),
+      ).rejects.toThrow(ForbiddenException);
+      expect(prisma.order.findMany).not.toHaveBeenCalled();
+    });
+
+    it('counts this store only, normalizing older unformatted phones', async () => {
+      prisma.customer.findUnique.mockResolvedValue(null);
+      prisma.order.findMany.mockResolvedValue([
+        {
+          customerPhone: '987 654 321',
+          customerName: 'Ana',
+          createdAt: new Date('2026-01-01'),
+        },
+        {
+          customerPhone: '+51 987 654 321',
+          customerName: 'Anita',
+          createdAt: new Date('2026-02-01'),
+        },
+        {
+          customerPhone: '+51911111111',
+          customerName: 'Otro',
+          createdAt: new Date('2026-03-01'),
+        },
+      ]);
+
+      const result = await service.lookupByPhone(storeId, ownerId, '987654321');
+
+      expect(prisma.order.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { storeId } }),
+      );
+      expect(result).toEqual({
+        normalizedPhone: '+51987654321',
+        previousOrders: 2,
+        lastAlias: 'Anita',
+      });
+    });
+
+    it('prefers the stored Customer alias over the latest order name', async () => {
+      prisma.customer.findUnique.mockResolvedValue({ name: 'Ana P.' });
+      prisma.order.findMany.mockResolvedValue([
+        {
+          customerPhone: '+51987654321',
+          customerName: 'Anita',
+          createdAt: new Date('2026-02-01'),
+        },
+      ]);
+
+      const result = await service.lookupByPhone(
+        storeId,
+        ownerId,
+        '+51987654321',
+      );
+
+      expect(result.lastAlias).toBe('Ana P.');
+    });
+
+    it('rejects a phone that fails validation', async () => {
+      await expect(
+        service.lookupByPhone(storeId, ownerId, '812345678'),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('upsertStoreContact', () => {
+    beforeEach(() => stubOwnedStore());
+
+    it('upserts the store contact and does not touch BuyerAccount', async () => {
+      prisma.customer.upsert.mockResolvedValue({ id: 'customer-1' });
+
+      await service.upsertStoreContact(
+        storeId,
+        ownerId,
+        '987 654 321',
+        '  Ana  ',
+      );
+
+      expect(prisma.customer.upsert).toHaveBeenCalledWith({
+        where: { storeId_phone: { storeId, phone: '+51987654321' } },
+        create: { storeId, phone: '+51987654321', name: 'Ana' },
+        update: { name: 'Ana' },
+      });
+      expect(prisma.buyerAccount.create).not.toHaveBeenCalled();
+      expect(prisma.buyerAccount.upsert).not.toHaveBeenCalled();
+      expect(prisma.buyerAccount.update).not.toHaveBeenCalled();
+    });
+
+    it('rejects a seller who does not own the store', async () => {
+      prisma.store.findUnique.mockResolvedValue({
+        id: storeId,
+        ownerId: 'someone-else',
+      });
+
+      await expect(
+        service.upsertStoreContact(storeId, ownerId, '987654321', 'Ana'),
+      ).rejects.toThrow(ForbiddenException);
+      expect(prisma.customer.upsert).not.toHaveBeenCalled();
     });
   });
 });

@@ -1,11 +1,8 @@
 import { createHash, randomBytes } from "node:crypto";
-import { normalizePhone } from "../phone-country/index.js";
+import { validatePhone } from "../phone-country/index.js";
 
 // 32 bytes is 256 bits, above the 128-bit floor for the private link.
 const TOKEN_BYTES = 32;
-
-// E.164: leading +, first digit 1-9, at most 15 digits total.
-const E164 = /^\+[1-9]\d{7,14}$/;
 
 export type OrderSource = "MARKETPLACE" | "VENDOR_ASSISTED";
 
@@ -41,13 +38,12 @@ export function assertVendorAssistedOrder(input: {
     );
   }
 
-  if (!isCanonicalE164(input.customerPhone)) {
+  const validated = validatePhone(input.customerPhone);
+  if (!validated.ok || validated.phone !== input.customerPhone) {
     throw new AssistedOrderInvariantError(
-      "Un pedido asistido requiere el teléfono en formato E.164",
+      validated.ok
+        ? "Un pedido asistido requiere el teléfono ya normalizado"
+        : validated.message,
     );
   }
-}
-
-function isCanonicalE164(phone: string): boolean {
-  return E164.test(phone) && phone === normalizePhone(phone);
 }

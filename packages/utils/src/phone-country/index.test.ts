@@ -3,6 +3,7 @@ import {
   DEFAULT_PHONE_COUNTRY,
   normalizePhone,
   parsePhoneValue,
+  validatePhone,
 } from "./index";
 
 describe("parsePhoneValue", () => {
@@ -65,5 +66,59 @@ describe("normalizePhone", () => {
     expect(normalizePhone("+51+987-65-4-3-21")).toBe(
       normalizePhone("51987654321"),
     );
+  });
+
+  it("normalizes the seller-typed shapes from the assisted-order form", () => {
+    for (const value of [
+      "987654321",
+      "987 654 321",
+      "+51 987 654 321",
+      "51987654321",
+    ]) {
+      expect(normalizePhone(value)).toBe("+51987654321");
+    }
+  });
+});
+
+describe("validatePhone", () => {
+  it("accepts those same shapes as one canonical Peru mobile", () => {
+    for (const value of [
+      "987654321",
+      "987 654 321",
+      "+51 987 654 321",
+      "51987654321",
+    ]) {
+      expect(validatePhone(value)).toEqual({
+        ok: true,
+        phone: "+51987654321",
+      });
+    }
+  });
+
+  it("rejects letters, a Peru number that does not start with 9, and a bad length", () => {
+    expect(validatePhone("98765a4321")).toEqual({
+      ok: false,
+      message: "El número no puede contener letras",
+    });
+    expect(validatePhone("812345678")).toEqual({
+      ok: false,
+      message: "Un celular de Perú debe empezar con 9",
+    });
+    expect(validatePhone("98765432")).toEqual({
+      ok: false,
+      message: "El número no tiene un largo válido",
+    });
+  });
+
+  it("accepts other PHONE_COUNTRIES numbers inside their national length and rejects the rest", () => {
+    expect(validatePhone("+52 55 1234 5678")).toEqual({
+      ok: true,
+      phone: "+525512345678",
+    });
+    expect(validatePhone("+52551234567").ok).toBe(false);
+    expect(validatePhone("+1 202 555 0123")).toEqual({
+      ok: true,
+      phone: "+12025550123",
+    });
   });
 });

@@ -64,6 +64,17 @@ export class CustomerDetailCustomerResponseDto {
 // case in this rollout where two tags share an entire response shape, not
 // just a nested piece of one (see
 // .artifacts/2026/08/20260806--orval-rollout-batches-5-6/plan.md's Batch 5 section).
+export class CustomerLookupResponseDto {
+  @ApiProperty()
+  normalizedPhone: string;
+
+  @ApiProperty()
+  previousOrders: number;
+
+  @ApiProperty({ type: String, nullable: true })
+  lastAlias: string | null;
+}
+
 export class CustomerDetailResponseDto {
   @ApiProperty({ type: CustomerDetailCustomerResponseDto })
   customer: CustomerDetailCustomerResponseDto;

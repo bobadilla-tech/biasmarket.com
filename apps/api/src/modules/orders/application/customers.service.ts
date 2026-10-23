@@ -1,10 +1,11 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@biasmarket/db';
-import { normalizePhone } from '@biasmarket/utils/phone-country';
+import { normalizePhone, validatePhone } from '@biasmarket/utils/phone-country';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import {
   countsTowardPaid,
@@ -280,5 +281,60 @@ export class CustomersService {
       },
       orders: orders.map((order) => withPaymentSummary(order)),
     };
+  }
+
+  // Seller-created orders attach a per-store Customer only. Do not call
+  // CustomerAccountService.findOrCreateCustomer from here: that path also
+  // creates or links a BuyerAccount, and an assisted order must not.
+  async upsertStoreContact(
+    storeId: string,
+    userId: string,
+    rawPhone: string,
+    alias: string | null,
+  ) {
+    await this.assertOwnership(storeId, userId);
+    const phone = this.requirePhone(rawPhone);
+    const name = alias?.trim() || null;
+    return this.prisma.customer.upsert({
+      where: { storeId_phone: { storeId, phone } },
+      create: { storeId, phone, name },
+      update: name ? { name } : {},
+    });
+  }
+
+  async lookupByPhone(storeId: string, userId: string, rawPhone: string) {
+    await this.assertOwnership(storeId, userId);
+    const phone = this.requirePhone(rawPhone);
+
+    const [customer, orders] = await Promise.all([
+      this.prisma.customer.findUnique({
+        where: { storeId_phone: { storeId, phone } },
+      }),
+      this.prisma.order.findMany({
+        where: { storeId },
+        select: {
+          customerPhone: true,
+          customerName: true,
+          createdAt: true,
+        },
+      }),
+    ]);
+
+    const matching = orders.filter(
+      (order) => normalizePhone(order.customerPhone) === phone,
+    );
+    matching.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    return {
+      normalizedPhone: phone,
+      previousOrders: matching.length,
+      lastAlias: customer?.name ?? matching[0]?.customerName ?? null,
+    };
+  }
+
+  private requirePhone(rawPhone: string): string {
+    const validated = validatePhone(rawPhone);
+    if (!validated.ok) throw new BadRequestException(validated.message);
+    return validated.phone;
   }
 }
