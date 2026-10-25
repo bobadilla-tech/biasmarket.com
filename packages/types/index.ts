@@ -28,6 +28,7 @@ export * as stores from "./generated/stores/stores.js";
 export * as myStores from "./generated/my-stores/my-stores.js";
 export * as orders from "./generated/order/order.js";
 export * as checkout from "./generated/checkout/checkout.js";
+export * as publicOrders from "./generated/public-order-events/public-order-events.js";
 export * as customerAuth from "./generated/customer-auth/customer-auth.js";
 export * as customerAccount from "./generated/customer-account/customer-account.js";
 export * as customers from "./generated/customers/customers.js";

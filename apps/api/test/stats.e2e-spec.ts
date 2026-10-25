@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { AppModule } from './../src/app.module.js';
 import {
   assertMatchesSchema,
+  deleteOrders,
   mailerDevDir,
   waitForNewMailerFile,
 } from './schema-assert.js';
@@ -137,7 +138,7 @@ describe('stats (e2e)', () => {
     if (orderId) {
       await prisma.orderPayment.deleteMany({ where: { orderId } });
       await prisma.orderItem.deleteMany({ where: { orderId } });
-      await prisma.order.deleteMany({ where: { id: orderId } });
+      await deleteOrders(prisma, { id: orderId });
     }
     if (productId) {
       await prisma.productVariant.deleteMany({ where: { productId } });

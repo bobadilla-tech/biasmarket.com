@@ -8,6 +8,7 @@ import { AppModule } from './../src/app.module.js';
 import {
   assertMatchesSchema,
   cleanupBuyerTestData,
+  deleteOrders,
   mailerDevDir,
   waitForNewMailerFile,
 } from './schema-assert.js';
@@ -178,7 +179,7 @@ describe('customers (e2e)', () => {
         await prisma.orderItem.deleteMany({
           where: { orderId: orderIdToDelete },
         });
-        await prisma.order.deleteMany({ where: { id: orderIdToDelete } });
+        await deleteOrders(prisma, { id: orderIdToDelete });
       }
     }
     if (customerId) {
@@ -187,7 +188,7 @@ describe('customers (e2e)', () => {
     if (productId) {
       await prisma.orderPayment.deleteMany({ where: { storeId } });
       await prisma.orderItem.deleteMany({ where: { storeId } });
-      await prisma.order.deleteMany({ where: { storeId } });
+      await deleteOrders(prisma, { storeId });
       await prisma.productVariant.deleteMany({ where: { productId } });
       await prisma.product.deleteMany({ where: { id: productId } });
     }

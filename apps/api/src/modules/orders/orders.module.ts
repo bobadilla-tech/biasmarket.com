@@ -15,6 +15,9 @@ import { AdvanceFulfillmentUseCase } from './application/advance-fulfillment.use
 import { CancelOrderUseCase } from './application/cancel-order.usecase.js';
 import { ExpireOrdersUseCase } from './application/expire-orders.usecase.js';
 import { CustomerAccountService } from './application/customer-account.service.js';
+import { OrderEventsService } from './application/order-events.service.js';
+import { PublicOrderService } from './application/public-order.service.js';
+import { PublicOrderEventsController } from './infrastructure/public-order-events.controller.js';
 import { NotificationsModule } from '../notifications/notifications.module.js';
 import { PaymentConfigModule } from '../payment-config/payment-config.module.js';
 
@@ -31,6 +34,7 @@ import { PaymentConfigModule } from '../payment-config/payment-config.module.js'
     CustomersController,
     CustomerOrderPaymentsController,
     InternalJobsController,
+    PublicOrderEventsController,
   ],
   providers: [
     OrderRepository,
@@ -42,6 +46,8 @@ import { PaymentConfigModule } from '../payment-config/payment-config.module.js'
     InternalJobsSecretGuard,
     CustomerAccountService,
     CustomersService,
+    OrderEventsService,
+    PublicOrderService,
   ],
   exports: [CustomerAccountService, OrderRepository],
 })

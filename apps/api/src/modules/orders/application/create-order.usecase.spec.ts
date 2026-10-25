@@ -269,6 +269,7 @@ describe('CreateOrderUseCase', () => {
         data: expect.objectContaining({
           storeId: store.id,
           customerPhone: dto.customerPhone,
+          customerPhoneNormalized: dto.customerPhone,
           totalAmount: expect.any(FakeDecimal),
           requiredAmount: expect.any(FakeDecimal),
         }),

@@ -32,6 +32,7 @@ import { OrderRepository } from './order.repository.js';
 import { ReviewPaymentUseCase } from '../application/review-payment.usecase.js';
 import { AdvanceFulfillmentUseCase } from '../application/advance-fulfillment.usecase.js';
 import { CancelOrderUseCase } from '../application/cancel-order.usecase.js';
+import { OrderEventsService } from '../application/order-events.service.js';
 import { ReviewPaymentDto } from '../dto/review-payment.dto.js';
 import { AdvanceFulfillmentDto } from '../dto/advance-fulfillment.dto.js';
 import { CancelOrderDto } from '../dto/cancel-order.dto.js';
@@ -52,11 +53,17 @@ import {
   UploadedFileValidationPipe,
   type ValidatedUploadedFile,
 } from '../../../common/uploaded-file-validation.pipe.js';
+import { computePaymentSummary } from '../../../common/payment-summary.js';
 
 const OPTIONAL_PAYMENT_IMAGE_PIPE = new UploadedFileValidationPipe({
   allowedMimeTypes: IMAGE_UPLOAD_MIME_TYPES,
   fileIsRequired: false,
 });
+
+// Money boundary comparisons compare in cents, not raw floats, so a residual
+// float-conversion artifact can never reject (or accept) a payment that's
+// actually exact to the cent.
+const toCents = (n: number) => Math.round(n * 100);
 
 type PaymentStatusLiteral =
   | 'PENDING_PAYMENT'
@@ -70,6 +77,59 @@ type FulfillmentStatusLiteral =
 type DeliveryMethodTypeLiteral = 'PICKUP' | 'COURIER';
 type CancellationResolutionLiteral = 'REFUNDED' | 'RETAINED' | 'STORE_CREDIT';
 type PaymentMethodLiteral = 'YAPE' | 'PLIN' | 'TRANSFER' | 'CASH';
+type OrderSourceLiteral = 'MARKETPLACE' | 'VENDOR_ASSISTED';
+
+// Seller and checkout responses copy these fields and nothing else. A new
+// column on `Order` stays off the wire until it is added here, including the
+// private-link columns (`accessTokenHash`, `createdByUserId`,
+// `customerPhoneNormalized`, …).
+const PUBLIC_ORDER_FIELDS = [
+  'id',
+  'storeId',
+  'customerId',
+  'buyerAccountId',
+  'customerEmail',
+  'customerPhone',
+  'customerName',
+  'source',
+  'deliveryMethodType',
+  'deliveryDetails',
+  'pickupPointId',
+  'pickupDate',
+  'courierName',
+  'courierModality',
+  'paymentMethod',
+  'paymentStatus',
+  'paymentRejectionReason',
+  'fulfillmentStatus',
+  'status',
+  'cancellationResolution',
+  'cancellationReason',
+  'retainedAmount',
+  'releasedAmount',
+  'releasedResolution',
+  'totalAmount',
+  'requiredAmount',
+  'currency',
+  'expiresAt',
+  'createdAt',
+  'paidAmount',
+  'pendingAmount',
+  'paidPercentage',
+  'items',
+  'payments',
+] as const;
+
+export function pickPublicOrderFields<T extends object>(row: T): T {
+  const source = row as Record<string, unknown>;
+  const copy: Record<string, unknown> = {};
+  for (const key of PUBLIC_ORDER_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(source, key)) {
+      copy[key] = source[key];
+    }
+  }
+  return copy as T;
+}
 
 export interface OrderProductRow {
   id: string;
@@ -137,6 +197,7 @@ export interface OrderRow {
   customerEmail: string | null;
   customerPhone: string;
   customerName: string | null;
+  source: OrderSourceLiteral;
   deliveryMethodType: DeliveryMethodTypeLiteral;
   deliveryDetails: unknown;
   pickupPointId: string | null;
@@ -173,6 +234,7 @@ interface OrderStatusRow {
   customerEmail: string | null;
   customerPhone: string;
   customerName: string | null;
+  source: OrderSourceLiteral;
   deliveryMethodType: DeliveryMethodTypeLiteral;
   deliveryDetails: unknown;
   pickupPointId: string | null;
@@ -238,7 +300,7 @@ export function toOrderPaymentDto(
 
 export function toOrderDto(row: OrderRow): OrderResponseDto {
   return {
-    ...row,
+    ...pickPublicOrderFields(row),
     deliveryDetails: row.deliveryDetails as Record<string, unknown> | null,
     pickupDate: row.pickupDate?.toISOString() ?? null,
     retainedAmount: row.retainedAmount?.toString() ?? null,
@@ -259,7 +321,7 @@ function toOrderDetailDto(row: OrderRow): OrderDetailResponseDto {
 
 function toOrderStatusDto(row: OrderStatusRow): OrderStatusResponseDto {
   return {
-    ...row,
+    ...pickPublicOrderFields(row),
     deliveryDetails: row.deliveryDetails as Record<string, unknown> | null,
     pickupDate: row.pickupDate?.toISOString() ?? null,
     retainedAmount: row.retainedAmount?.toString() ?? null,
@@ -282,6 +344,7 @@ export class OrderController {
     private cancelOrder: CancelOrderUseCase,
     private prisma: PrismaService,
     private storage: StorageService,
+    private events: OrderEventsService,
   ) {}
 
   @ApiQuery({ name: 'paymentStatus', required: false, type: String })
@@ -404,7 +467,6 @@ export class OrderController {
     // not raw floats, so a residual float-conversion artifact in
     // `numericAmount`/`pendingAmount` can never reject (or accept) a payment
     // that's actually exact to the cent.
-    const toCents = (n: number) => Math.round(n * 100);
     if (toCents(numericAmount) > toCents(order.pendingAmount)) {
       throw new BadRequestException('El abono excede el saldo pendiente');
     }
@@ -534,6 +596,19 @@ export class OrderController {
             },
           });
         }
+
+        // Recorded once, after the branches: every payment row gets exactly
+        // one PAYMENT_SUBMITTED, including the one that settles the balance
+        // (`!alreadyVerified && nextStatus === 'VERIFIED'`), which matches no
+        // branch above. Inside this transaction so it commits with the
+        // payment row, per security-payments.md §9.
+        await this.events.record(tx, {
+          orderId,
+          storeId,
+          type: 'PAYMENT_SUBMITTED',
+          actor: 'SELLER',
+          payload: { amount: numericAmount, method },
+        });
       });
     } catch (e) {
       throw new BadRequestException(e instanceof Error ? e.message : String(e));
@@ -585,6 +660,7 @@ export class OrderController {
     }
 
     const reviewStatus = dto.decision === 'approve' ? 'APPROVED' : 'REJECTED';
+    let settlesOrder = false;
     await this.prisma.$transaction(async (tx) => {
       await tx.orderPayment.update({
         where: { id: paymentId },
@@ -607,37 +683,73 @@ export class OrderController {
           metadata: { reason: dto.reason ?? null },
         },
       });
+      await this.events.record(tx, {
+        orderId,
+        storeId,
+        type:
+          dto.decision === 'approve' ? 'PAYMENT_VALIDATED' : 'PAYMENT_REJECTED',
+        actor: 'SELLER',
+        payload: { paymentId },
+      });
+
+      if (dto.decision !== 'approve') return;
+
+      // Re-derive the order's status from the new total in this same
+      // transaction, so a partial approval records its PARTIALLY_PAID write
+      // and its event atomically. Only auto-advance from the two "still
+      // collecting money" states — mirrors the domain guard in
+      // order-status.vo.ts (VERIFIED/REJECTED/CANCELLED have no outgoing
+      // transitions). A proof left PENDING_REVIEW while the order moved on for
+      // an unrelated reason (e.g. the seller rejected it separately) still
+      // gets marked APPROVED above for the record, it just doesn't try to
+      // re-drive an order that can no longer legally change state.
+      const [order, payments] = await Promise.all([
+        tx.order.findUniqueOrThrow({
+          where: { id: orderId },
+          select: { paymentStatus: true, requiredAmount: true },
+        }),
+        tx.orderPayment.findMany({
+          where: { orderId },
+          select: { amount: true, source: true, reviewStatus: true },
+        }),
+      ]);
+      if (
+        order.paymentStatus !== 'PENDING_PAYMENT' &&
+        order.paymentStatus !== 'PARTIALLY_PAID'
+      ) {
+        return;
+      }
+
+      const { paidAmount } = computePaymentSummary(
+        order.requiredAmount,
+        payments,
+      );
+      if (toCents(paidAmount) >= toCents(Number(order.requiredAmount))) {
+        // Settling also has to convert the soft-hold `reserved` into real
+        // `stock`, run the domain transition guard and email the buyer —
+        // ReviewPaymentUseCase owns that, and it is called after this commit.
+        // The PAYMENT_VALIDATED above already represents this seller action
+        // (with the proof's paymentId), so that call is told not to record a
+        // second one.
+        settlesOrder = true;
+      } else if (paidAmount > 0) {
+        await this.orders.saveStatus(
+          orderId,
+          { paymentStatus: 'PARTIALLY_PAID' },
+          tx,
+        );
+      }
     });
 
-    if (dto.decision === 'approve') {
-      const order = await this.orders.findRowByIdForStore(orderId, storeId);
-      const toCents = (n: number) => Math.round(n * 100);
-      // Only auto-advance status from the two "still collecting money" states
-      // — mirrors the domain guard in order-status.vo.ts (VERIFIED/REJECTED/
-      // CANCELLED have no outgoing transitions). A proof left PENDING_REVIEW
-      // while the order moved on for an unrelated reason (e.g. the seller
-      // rejected it separately) still gets marked APPROVED above for the
-      // record, it just doesn't try to re-drive an order that can no longer
-      // legally change state.
-      if (
-        order.paymentStatus === 'PENDING_PAYMENT' ||
-        order.paymentStatus === 'PARTIALLY_PAID'
-      ) {
-        if (
-          toCents(order.paidAmount) >= toCents(Number(order.requiredAmount))
-        ) {
-          await this.reviewPayment.execute(
-            orderId,
-            storeId,
-            session.user.id,
-            'approve',
-          );
-        } else if (order.paidAmount > 0) {
-          await this.orders.saveStatus(orderId, {
-            paymentStatus: 'PARTIALLY_PAID',
-          });
-        }
-      }
+    if (settlesOrder) {
+      await this.reviewPayment.execute(
+        orderId,
+        storeId,
+        session.user.id,
+        'approve',
+        undefined,
+        { recordEvent: false },
+      );
     }
 
     const updated = await this.orders.findRowByIdForStore(orderId, storeId);

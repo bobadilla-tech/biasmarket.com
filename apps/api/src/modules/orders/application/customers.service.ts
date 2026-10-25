@@ -1,10 +1,11 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@biasmarket/db';
-import { normalizePhone } from '@biasmarket/utils/phone-country';
+import { normalizePhone, validatePhone } from '@biasmarket/utils/phone-country';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import {
   countsTowardPaid,
@@ -280,5 +281,76 @@ export class CustomersService {
       },
       orders: orders.map((order) => withPaymentSummary(order)),
     };
+  }
+
+  // Seller-created orders attach a per-store Customer only. Do not call
+  // CustomerAccountService.findOrCreateCustomer from here: that path also
+  // creates or links a BuyerAccount, and an assisted order must not.
+  async upsertStoreContact(
+    storeId: string,
+    userId: string,
+    rawPhone: string,
+    alias: string | null,
+  ) {
+    await this.assertOwnership(storeId, userId);
+    const phone = this.requirePhone(rawPhone);
+    const name = alias?.trim() || null;
+    return this.prisma.customer.upsert({
+      where: { storeId_phone: { storeId, phone } },
+      create: { storeId, phone, name },
+      update: name ? { name } : {},
+    });
+  }
+
+  // Counts every order that matches the phone, cancelled and expired ones
+  // included: this is order history, not completed purchases.
+  async lookupByPhone(storeId: string, userId: string, rawPhone: string) {
+    await this.assertOwnership(storeId, userId);
+    const phone = this.requirePhone(rawPhone);
+    const where = { storeId, customerPhoneNormalized: phone };
+
+    const [customer, previousOrders, latestOrder, legacyOrders] =
+      await Promise.all([
+        this.prisma.customer.findUnique({
+          where: { storeId_phone: { storeId, phone } },
+        }),
+        this.prisma.order.count({ where }),
+        this.prisma.order.findFirst({
+          where,
+          orderBy: { createdAt: 'desc' },
+          select: { customerName: true, createdAt: true },
+        }),
+        // Only orders the previous release inserted between this migration
+        // and the traffic switch can still be NULL here; backfilled rows and
+        // everything written since are covered by the indexed queries above.
+        this.prisma.order.findMany({
+          where: { storeId, customerPhoneNormalized: null },
+          select: { customerPhone: true, customerName: true, createdAt: true },
+        }),
+      ]);
+
+    const legacyMatches = legacyOrders.filter(
+      (order) => normalizePhone(order.customerPhone) === phone,
+    );
+    legacyMatches.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    const latestLegacyOrder = legacyMatches[0];
+    const newestOrder =
+      latestOrder &&
+      (!latestLegacyOrder ||
+        latestOrder.createdAt >= latestLegacyOrder.createdAt)
+        ? latestOrder
+        : latestLegacyOrder;
+
+    return {
+      normalizedPhone: phone,
+      previousOrders: previousOrders + legacyMatches.length,
+      lastAlias: customer?.name ?? newestOrder?.customerName ?? null,
+    };
+  }
+
+  private requirePhone(rawPhone: string): string {
+    const validated = validatePhone(rawPhone);
+    if (!validated.ok) throw new BadRequestException(validated.message);
+    return validated.phone;
   }
 }
