@@ -95,6 +95,7 @@ export default function CartScreen() {
                 <View className="flex-row items-center gap-4">
                   <Pressable
                     accessibilityRole="button"
+                    disabled={cart.isSaving}
                     accessibilityLabel={t("cart.decreaseQuantity", {
                       item: item.name,
                     })}
@@ -111,6 +112,7 @@ export default function CartScreen() {
                   </Text>
                   <Pressable
                     accessibilityRole="button"
+                    disabled={cart.isSaving}
                     accessibilityLabel={t("cart.increaseQuantity", {
                       item: item.name,
                     })}
@@ -158,16 +160,16 @@ export default function CartScreen() {
               {t("catalog.keepBrowsing")}
             </Text>
           </Pressable>
-          {cart.error ? (
-            <Text
-              accessibilityRole="alert"
-              className="text-center text-sm text-red-200"
-            >
-              {t("cart.saveFailed")}
-            </Text>
-          ) : null}
         </View>
       )}
+      {cart.error ? (
+        <Text
+          accessibilityRole="alert"
+          className="mx-5 mt-4 text-center text-sm text-red-200"
+        >
+          {t("cart.saveFailed")}
+        </Text>
+      ) : null}
     </ScrollView>
   );
 }

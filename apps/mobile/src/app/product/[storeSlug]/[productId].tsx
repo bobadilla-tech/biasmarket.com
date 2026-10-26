@@ -142,7 +142,7 @@ export default function ProductDetailScreen() {
                 basePrice={product.price}
                 currency={product.currency}
                 variant={variant}
-                disabled={unavailable}
+                disabled={unavailable || cart.isSaving}
                 onAdd={() =>
                   cart.add({
                     productId: product.id,
@@ -183,6 +183,14 @@ export default function ProductDetailScreen() {
                   : t("catalog.addToCart")}
             </Text>
           </Pressable>
+        ) : null}
+        {cart.error ? (
+          <Text
+            accessibilityRole="alert"
+            className="text-center text-sm text-red-200"
+          >
+            {t("cart.saveFailed")}
+          </Text>
         ) : null}
         <Pressable
           accessibilityRole="button"
