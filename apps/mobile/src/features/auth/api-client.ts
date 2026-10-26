@@ -8,6 +8,8 @@ let configured = false;
 let bearerToken: string | null = null;
 let unauthorizedHandler:
   ((authorization: string) => void | Promise<void>) | undefined;
+let sessionRefreshHandler:
+  ((authorization: string, token: string) => void | Promise<void>) | undefined;
 
 export function configureMobileApiClient(): void {
   if (configured) return;
@@ -18,6 +20,7 @@ export function configureMobileApiClient(): void {
     getAuthHeader: () =>
       bearerToken ? { Authorization: `Bearer ${bearerToken}` } : undefined,
     onUnauthorized: (authorization) => unauthorizedHandler?.(authorization),
+    onSessionRefresh: (authorization, token) => sessionRefreshHandler?.(authorization, token),
   });
   configured = true;
 }
@@ -34,4 +37,10 @@ export function setUnauthorizedHandler(
   handler: ((authorization: string) => void | Promise<void>) | undefined,
 ): void {
   unauthorizedHandler = handler;
+}
+
+export function setSessionRefreshHandler(
+  handler: ((authorization: string, token: string) => void | Promise<void>) | undefined,
+): void {
+  sessionRefreshHandler = handler;
 }
