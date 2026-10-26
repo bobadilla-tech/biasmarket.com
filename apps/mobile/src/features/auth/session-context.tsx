@@ -85,6 +85,17 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
     [runStorageOperation],
   );
 
+  const refreshSessionToken = useCallback(async (authorization: string, token: string) => {
+    if (!isCurrentMobileAuthorization(authorization)) return;
+    const session = await runStorageOperation(readBuyerSession);
+    if (!session || !isCurrentMobileAuthorization(authorization)) return;
+    const generation = sessionGeneration.current;
+    await runStorageOperation(() => writeBuyerSession({ ...session, token }));
+    if (generation === sessionGeneration.current && isCurrentMobileAuthorization(authorization)) {
+      setMobileBearerToken(token);
+    }
+  }, [runStorageOperation]);
+
   useEffect(() => {
     const generation = ++sessionGeneration.current;
     let active = true;
@@ -112,17 +123,6 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
       setSessionRefreshHandler(undefined);
     };
   }, [clearLocalSession, refreshSessionToken, runStorageOperation]);
-
-  const refreshSessionToken = useCallback(async (authorization: string, token: string) => {
-    if (!isCurrentMobileAuthorization(authorization)) return;
-    const session = await runStorageOperation(readBuyerSession);
-    if (!session || !isCurrentMobileAuthorization(authorization)) return;
-    const generation = sessionGeneration.current;
-    await runStorageOperation(() => writeBuyerSession({ ...session, token }));
-    if (generation === sessionGeneration.current && isCurrentMobileAuthorization(authorization)) {
-      setMobileBearerToken(token);
-    }
-  }, [runStorageOperation]);
 
   const signIn = useCallback(
     async (slug: string, phone: string, password: string) => {
