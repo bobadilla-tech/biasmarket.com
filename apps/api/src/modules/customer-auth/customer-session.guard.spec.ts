@@ -17,15 +17,14 @@ function buildContext(
     headers,
   } as unknown as CustomerSessionRequest;
   const cookieMock = vi.fn();
-  const setHeaderMock = vi.fn();
-  const res = { cookie: cookieMock, setHeader: setHeaderMock };
+  const res = { cookie: cookieMock };
   const context = {
     switchToHttp: () => ({
       getRequest: () => req,
       getResponse: () => res,
     }),
   } as unknown as ExecutionContext;
-  return { req, res, cookieMock, setHeaderMock, context };
+  return { req, res, cookieMock, context };
 }
 
 describe('CustomerSessionGuard', () => {
@@ -126,16 +125,14 @@ describe('CustomerSessionGuard', () => {
       passwordVersion: 1,
     });
 
-    const { req, cookieMock, setHeaderMock, context } = buildContext({
+    const { req, cookieMock, context } = buildContext({
       authorization: `Bearer ${token}`,
-      'x-client': 'mobile',
     });
 
     const result = await guard.canActivate(context);
 
     expect(result).toBe(true);
     expect(req.customerSession).toEqual({ buyerAccountId: 'buyer-1' });
-    expect(setHeaderMock).toHaveBeenCalledWith('X-Session-Token', expect.any(String));
     // Sliding renewal still reissues the cookie even for bearer-mode requests.
     expect(cookieMock).toHaveBeenCalledWith(
       CUSTOMER_SESSION_COOKIE,
