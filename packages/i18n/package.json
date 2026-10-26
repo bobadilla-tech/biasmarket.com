@@ -11,5 +11,15 @@
   },
   "devDependencies": {
     "typescript": "^7.0.2"
+  },
+  "exports": {
+    "./mobile": {
+      "types": "./dist/mobile.d.ts",
+      "default": "./dist/mobile.js"
+    },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   }
 }
