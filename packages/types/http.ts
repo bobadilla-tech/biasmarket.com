@@ -10,6 +10,8 @@ export interface ApiClientConfig {
   // Called for a 401 response to a request that carried a bearer token.
   // Native apps use this to clear stale SecureStore credentials.
   onUnauthorized?: (authorization: string) => void | Promise<void>;
+  // Called when an authenticated response rotates the bearer session token.
+  onSessionRefresh?: (authorization: string, token: string) => void | Promise<void>;
 }
 
 let config: ApiClientConfig | undefined;
@@ -81,15 +83,27 @@ export async function customFetch<T>(
       requestHeaders.set(key, value),
     );
   }
+  const authorization = requestHeaders.get("Authorization");
   const res = await fetch(`${config.baseUrl}${url}`, {
     ...init,
     headers: requestHeaders,
     credentials: config.credentials ?? "include",
   });
 
-  if (res.status === 401 && requestHeaders.has("Authorization")) {
+  if (res.ok && authorization) {
+    const refreshedToken = res.headers.get("X-Session-Token");
+    if (refreshedToken) {
+      try {
+        await config.onSessionRefresh?.(authorization, refreshedToken);
+      } catch {
+        // Preserve the API response if persisting a renewed token fails.
+      }
+    }
+  }
+
+  if (res.status === 401 && authorization) {
     try {
-      await config.onUnauthorized?.(requestHeaders.get("Authorization")!);
+      await config.onUnauthorized?.(authorization);
     } catch {
       // Preserve the API error even if local session cleanup fails.
     }
