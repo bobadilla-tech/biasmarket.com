@@ -60,7 +60,9 @@
     "sessionReadFailed": "No se pudo leer la sesión segura del dispositivo.",
     "missingSessionToken": "El servidor no devolvió el token de sesión móvil.",
     "sessionChanged": "La sesión cambió antes de completar el inicio de sesión.",
-    "registrationSessionChanged": "La sesión cambió antes de completar el registro."
+    "registrationSessionChanged": "La sesión cambió antes de completar el registro.",
+    "registrationComplete": "Tu contraseña se guardó, pero no se pudo iniciar sesión. Ingresa con tu tienda, teléfono y nueva contraseña.",
+    "accountAlreadyRegistered": "Esta cuenta ya tiene contraseña. Inicia sesión."
   },
   "catalog": {
     "featuredStores": "Tiendas destacadas",
