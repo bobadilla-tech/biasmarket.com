@@ -1214,6 +1214,14 @@
         "operationId": "ProductSearchController_search",
         "parameters": [
           {
+            "name": "store",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "sort",
             "required": false,
             "in": "query",
