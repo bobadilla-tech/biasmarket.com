@@ -23,7 +23,7 @@ export class ProductSearchService {
     q: string | undefined,
     category: string | undefined,
     sort: ProductSort = 'latest',
-    storeSlug: string | undefined,
+    storeSlug?: string,
   ) {
     const where: Prisma.ProductWhereInput = {
       status: 'PUBLISHED',
