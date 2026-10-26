@@ -173,10 +173,7 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
       try {
         await signIn(slug, phone, password);
       } catch (cause) {
-        if (generation === sessionGeneration.current) {
-          throw new Error("auth.registrationCompleteSignInFailed", { cause });
-        }
-        throw cause;
+        throw new Error("auth.registrationCompleteSignInFailed", { cause });
       }
     },
     [signIn],
