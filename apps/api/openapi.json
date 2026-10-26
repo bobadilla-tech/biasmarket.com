@@ -322,14 +322,6 @@
             }
           },
           {
-            "name": "store",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "q",
             "required": false,
             "in": "query",
@@ -1214,14 +1206,6 @@
         "operationId": "ProductSearchController_search",
         "parameters": [
           {
-            "name": "store",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "sort",
             "required": false,
             "in": "query",
@@ -1248,6 +1232,14 @@
           },
           {
             "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "store",
             "required": false,
             "in": "query",
             "schema": {
