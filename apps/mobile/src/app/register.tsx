@@ -4,6 +4,7 @@ import { useForm, Controller } from "react-hook-form";
 import { useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { z } from "zod";
+import { ApiError } from "@biasmarket/types";
 import {
   customerLoginSchema,
   customerRegisterSchema,
@@ -51,7 +52,15 @@ export default function RegisterScreen() {
         values.password,
       );
       router.replace("/");
-    } catch {
+    } catch (cause) {
+      if (cause instanceof Error && cause.message === "auth.registrationCompleteSignInFailed") {
+        router.replace({ pathname: "/login", params: { slug: values.storeSlug.trim(), notice: "registration-complete" } });
+        return;
+      }
+      if (cause instanceof ApiError && cause.status === 409) {
+        router.replace({ pathname: "/login", params: { slug: values.storeSlug.trim(), notice: "account-already-registered" } });
+        return;
+      }
       setError(t("auth.registerFailed"));
     }
   });
