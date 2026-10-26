@@ -85,6 +85,8 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
     [runStorageOperation],
   );
 
+
+
   const refreshSessionToken = useCallback(async (authorization: string, token: string) => {
     if (!isCurrentMobileAuthorization(authorization)) return;
     const session = await runStorageOperation(readBuyerSession);
