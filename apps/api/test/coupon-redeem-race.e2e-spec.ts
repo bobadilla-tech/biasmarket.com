@@ -6,7 +6,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { AppModule } from './../src/app.module.js';
 import { mailerDevDir, waitForNewMailerFile } from './schema-assert.js';
 
-// Regression coverage for H2/M1 (docs/plans/2026-08-15-premium-coupon-system-audit.md):
+// Regression coverage for H2/M1 (.artifacts/2026/08/20260815--premium-coupon-system/plan.md):
 // redeemCoupon's maxUses/duplicate check ran inside a $transaction, but under
 // Postgres' default READ COMMITTED isolation that alone doesn't serialize two
 // concurrent transactions — two different users could both count() before

@@ -1,9 +1,9 @@
 # BiasMarket — Product, Engineering & Business Audit
 
 **Date:** 2026-08-09 **Scope:** `apps/api`, `apps/web`, `packages/*`,
-`docs/core`, `docs/plans`, git history **Method:** full-repo read, code treated
-as ground truth over documentation. `docs/audits/` was deliberately excluded as
-a source for this review, per the review brief, to get a fresh read.
+`docs/core`, the dated plan archive, git history **Method:** full-repo read,
+code treated as ground truth over documentation. `docs/audits/` was deliberately
+excluded as a source for this review, per the review brief, to get a fresh read.
 
 A fresh, code-first read of where BiasMarket actually stands: what's built,
 what's real vs. aspirational in the docs, and what the next 30 days should focus
@@ -54,8 +54,8 @@ Instagram DMs, WhatsApp, and screenshots (`product.md:25-31`).
 What surprised this audit most is how recently and deliberately the team closed
 gaps a prior audit
 (`docs/audits/product-engineering-business-audit-2026-08-08.md`, excluded from
-this review by design but visible as a citation inside `docs/plans/`) had
-flagged. The git log for the last ~40 commits and the `docs/plans/` directory
+this review by design but visible as a citation inside `.artifacts/`) had
+flagged. The git log for the last ~40 commits and the `.artifacts/` directory
 both show a tight Aug 6–9 cluster: global buyer account, shipping addresses,
 buyer payment-proof upload, security baseline (helmet/CSRF/rate-limiting),
 observability + env validation, orders-module hardening, payment-proof access
@@ -102,7 +102,7 @@ write paths that bypass its own guard rails, and documentation that no longer
 matches what ships. None of that is a rewrite. All of it is small, bounded work.
 
 What's genuinely missing is not code — it's proof that a real, non-team seller
-has run a real sale through this loop. Nothing in `docs/plans/`, the git log, or
+has run a real sale through this loop. Nothing in `.artifacts/`, the git log, or
 the product doc's roadmap points to a validated seller yet. `roadmap.md:75-90`
 already names the exact risk this creates: _stock griefing_ (buyers creating
 unpaid orders to hold scarce stock) is called out as a risk on paper, and this
@@ -319,11 +319,11 @@ idea.
   aggregates in `Decimal` space, and only converts to `Number` at the very end —
   a comment there records the exact float bug this replaced
   (`59.989999999999995` instead of `59.99`). This wasn't theoretical:
-  `docs/plans/2026-08-06-order-payment-precision-bug-fix-plan.md` is a real
-  retrospective on it, and
-  `docs/plans/2026-08-06-order-approval-without-payment-guard.md` documents a
-  second, related bug (an order could show `VERIFIED` with zero payment
-  recorded) that was also found and fixed.
+  `.artifacts/2026/08/20260806--order-payment-precision-bug-fix/plan.md` is a
+  real retrospective on it, and
+  `.artifacts/2026/08/20260806--order-approval-without-payment-guard/plan.md`
+  documents a second, related bug (an order could show `VERIFIED` with zero
+  payment recorded) that was also found and fixed.
 - **Storage is correctly private.** Proof images live in a dedicated
   `S3_PAYMENT_BUCKET` that never gets a public-read policy (confirmed in
   `docker-compose.yml`'s `minio-init` step, unlike the product-image and logo
@@ -581,7 +581,7 @@ found already fixed with an inline comment explaining why (§6).
 | No Multer `limits.fileSize` on upload endpoints                            | Low–Medium          | Full request body buffers into memory before the app-level 5MB check runs, on 6 endpoints including one `@Public()` route. Real memory-exhaustion vector, not currently mitigated.                                                                                                                     |
 | Missing `OriginGuard` on `addresses.controller.ts` and buyer proof-submit  | Low                 | Inconsistent application of a pattern the team otherwise follows carefully (e.g. `change-password`, `PATCH /me` both have it). `SameSite=Lax` on the session cookie is the primary defense and already blocks the classic cross-site POST vector, so this is a defense-in-depth gap, not an open hole. |
 | No global rate limiting on authenticated seller mutations                  | Low                 | Product/category/collection/order-review writes have no throttle beyond requiring a valid session. Blast radius is limited to the attacker's own store unless a seller session is compromised.                                                                                                         |
-| No app-wide CSRF token scheme                                              | Low, accepted       | Documented and deliberately deferred (`docs/plans/2026-08-08-security-baseline-csrf-helmet-rate-limiting-plan.md`). Mitigated by `SameSite=Lax` plus `OriginGuard` on the routes that have it. Reasonable risk acceptance for current scale.                                                           |
+| No app-wide CSRF token scheme                                              | Low, accepted       | Documented and deliberately deferred (`.artifacts/2026/08/20260808--security-baseline-csrf-helmet-rate/plan.md`). Mitigated by `SameSite=Lax` plus `OriginGuard` on the routes that have it. Reasonable risk acceptance for current scale.                                                             |
 | `CLAUDE.md` claims "no CSRF/helmet, no env validation"                     | Documentation drift | Both are live and correctly implemented. No security impact, but misleads anyone treating `CLAUDE.md` as ground truth for the current threat model.                                                                                                                                                    |
 | `security-payments.md` / `product.md` claim buyer proof upload "not built" | Documentation drift | Fully implemented as of the day this audit was requested. Same category of risk: stale docs steering a reviewer or new engineer toward a wrong mental model.                                                                                                                                           |
 
@@ -822,7 +822,7 @@ documentation that's drifted from a codebase this actively maintained.
 
 **MVP readiness 6/10** — "readiness" means both "built" and "validated." The
 build side scores well; the validation side is at zero. `roadmap.md` and
-`docs/plans/` themselves never mention a real seller having used the loop yet.
+`.artifacts/` themselves never mention a real seller having used the loop yet.
 
 **Manual payment readiness 8/10** — genuinely the strongest subsystem in the
 repo: dual-source proof model, Decimal-safe aggregation with two documented

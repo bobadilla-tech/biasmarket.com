@@ -1,10 +1,19 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiQuery } from '@nestjs/swagger';
 import { AuthGuard, Session } from '@thallesp/nestjs-better-auth';
 import type { UserSession } from '@thallesp/nestjs-better-auth';
 import { CustomersService } from '../application/customers.service.js';
 import {
   CustomerDetailResponseDto,
   CustomerListItemResponseDto,
+  CustomerLookupResponseDto,
 } from './customers-response.dto.js';
 import { toOrderDto } from './order.controller.js';
 
@@ -24,6 +33,19 @@ export class CustomersController {
       createdAt: row.createdAt.toISOString(),
       lastOrderAt: row.lastOrderAt?.toISOString() ?? null,
     }));
+  }
+
+  @Get('lookup')
+  @ApiQuery({ name: 'phone', required: true, type: String })
+  async lookup(
+    @Param('storeId') storeId: string,
+    @Query('phone') phone: string | undefined,
+    @Session() session: UserSession,
+  ): Promise<CustomerLookupResponseDto> {
+    if (typeof phone !== 'string' || !phone.trim()) {
+      throw new BadRequestException('El teléfono es requerido');
+    }
+    return this.customers.lookupByPhone(storeId, session.user.id, phone);
   }
 
   @Get(':customerId')

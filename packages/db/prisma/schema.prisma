@@ -26,6 +26,7 @@ model User {
   sessions          Session[]
   accounts          Account[]
   stores            Store[]
+  ordersCreated     Order[]
   createdCoupons    Coupon[]           @relation("CouponCreatedBy")
   couponRedemptions CouponRedemption[]
 
@@ -81,7 +82,7 @@ model Store {
   themeConfig           Json
   logoUrl               String?
   // Seller-authored store copy for SEO/discovery (see
-  // docs/plans/2026-09-07-store-rich-content-and-thin-content-indexing-plan.md).
+  // .artifacts/2026/09/20260907--store-rich-content-and-thin/plan.md).
   // `bio`: short plain-text tagline, app-capped at 280.
   // `aboutMarkdown`: longer "about the store" content, MARKDOWN SUBSET,
   // app-capped at 4000. The render-time allowlist (web) is the security
@@ -90,7 +91,7 @@ model Store {
   aboutMarkdown         String?
   // Denormalised count of PUBLISHED, non-discontinued, non-soft-deleted
   // products. Kept in sync by ProductsService on every status transition
-  // (docs/plans/2026-09-07-store-rich-content-and-thin-content-indexing-plan.md
+  // (.artifacts/2026/09/20260907--store-rich-content-and-thin/plan.md
   // D4) so the sitemap indexability gate can filter without an N+1 count.
   publishedProductCount Int      @default(0)
   // Timestamp of the last storefront-VISIBLE content change (bio,
@@ -285,62 +286,133 @@ model StoreSection {
   @@index([storeId, position])
 }
 
+enum OrderSource {
+  MARKETPLACE
+  VENDOR_ASSISTED
+}
+
 model Order {
-  id                     String                  @id @default(cuid())
-  storeId                String
-  customerId             String?
+  id                      String                  @id @default(cuid())
+  storeId                 String
+  customerId              String?
   // New global buyer identity, added alongside `customerId` rather than
-  // replacing it — see docs/plans/2026-08-08-global-buyer-account-plan.md.
+  // replacing it — see .artifacts/2026/08/20260808--global-buyer-account/plan.md.
   // `customerId` is dropped in a later follow-up migration once the backfill
   // is verified complete.
-  buyerAccountId         String?
-  customerEmail          String?
-  customerPhone          String
-  customerName           String?
-  deliveryMethodType     DeliveryMethodType
-  deliveryDetails        Json
-  pickupPointId          String?
+  buyerAccountId          String?
+  customerEmail           String?
+  // Also the assisted-order phone and alias. Do not add buyerPhone/buyerAlias.
+  customerPhone           String
+  // `customerPhone` run through `normalizePhone`, so seller lookups hit an
+  // index instead of normalizing every order of the store in memory.
+  // Nullable: the previous release's INSERTs during a blue/green window
+  // do not write it, and legacy rows are filled by the backfill migration.
+  customerPhoneNormalized String?
+  customerName            String?
+  source                  OrderSource             @default(MARKETPLACE)
+  // Seller who created a VENDOR_ASSISTED order. Null for marketplace checkout.
+  createdByUserId         String?
+  // SHA-256 of the private-link token. The raw token is never stored.
+  accessTokenHash         String?                 @unique
+  accessTokenRevokedAt    DateTime?
+  // First time the private link was opened. Null until then.
+  linkFirstOpenedAt       DateTime?
+  // When a buyer claimed the order. Who claimed it is buyerAccountId.
+  claimedAt               DateTime?
+  // Not set by Google sign-in. Stays false until a later verification step.
+  phoneVerified           Boolean                 @default(false)
+  deliveryMethodType      DeliveryMethodType
+  deliveryDetails         Json
+  pickupPointId           String?
   // Snapshot of the courier name at order-creation time (seller-defined,
   // e.g. "Olva"). Null for PICKUP orders or legacy COURIER orders created
   // before this field existed.
-  courierName            String?
+  courierName             String?
   // Snapshot of the selected courier modality: AGENCY (recojo en agencia)
   // or HOME (envío a domicilio). Null for PICKUP orders or legacy COURIER
   // orders.
-  courierModality        CourierModalityType?
+  courierModality         CourierModalityType?
   // Set only when the buyer chose a pickup point that isn't open today —
   // the future date they committed to, validated against that point's
   // openDays at checkout. Null for same-day pickup (today is implied).
-  pickupDate             DateTime?
+  pickupDate              DateTime?
   // Buyer's chosen payment method at checkout — optional since older
   // orders (created before this field existed) never captured one.
-  paymentMethod          PaymentMethodType?
-  paymentStatus          PaymentStatus           @default(PENDING_PAYMENT)
-  paymentRejectionReason String?
-  fulfillmentStatus      FulfillmentStatus       @default(ORDERING)
-  status                 OrderStatus             @default(ACTIVE)
-  cancellationResolution CancellationResolution?
-  cancellationReason     String?
-  retainedAmount         Decimal?                @db.Decimal(10, 2)
-  releasedAmount         Decimal?                @db.Decimal(10, 2)
-  releasedResolution     CancellationResolution?
-  totalAmount            Decimal                 @db.Decimal(10, 2)
-  requiredAmount         Decimal                 @db.Decimal(10, 2)
-  currency               String
-  expiresAt              DateTime
-  createdAt              DateTime                @default(now())
+  paymentMethod           PaymentMethodType?
+  paymentStatus           PaymentStatus           @default(PENDING_PAYMENT)
+  paymentRejectionReason  String?
+  fulfillmentStatus       FulfillmentStatus       @default(ORDERING)
+  status                  OrderStatus             @default(ACTIVE)
+  cancellationResolution  CancellationResolution?
+  cancellationReason      String?
+  retainedAmount          Decimal?                @db.Decimal(10, 2)
+  releasedAmount          Decimal?                @db.Decimal(10, 2)
+  releasedResolution      CancellationResolution?
+  totalAmount             Decimal                 @db.Decimal(10, 2)
+  requiredAmount          Decimal                 @db.Decimal(10, 2)
+  currency                String
+  expiresAt               DateTime
+  createdAt               DateTime                @default(now())
 
-  store        Store          @relation(fields: [storeId], references: [id])
-  customer     Customer?      @relation(fields: [customerId], references: [id])
-  buyerAccount BuyerAccount?  @relation(fields: [buyerAccountId], references: [id])
-  pickupPoint  PickupPoint?   @relation(fields: [pickupPointId], references: [id], onDelete: SetNull)
-  items        OrderItem[]
-  payments     OrderPayment[]
+  store                   Store          @relation(fields: [storeId], references: [id])
+  customer                Customer?      @relation(fields: [customerId], references: [id])
+  buyerAccount            BuyerAccount?  @relation(fields: [buyerAccountId], references: [id])
+  createdBy               User?          @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+  pickupPoint             PickupPoint?   @relation(fields: [pickupPointId], references: [id], onDelete: SetNull)
+  items                   OrderItem[]
+  payments                OrderPayment[]
+  events                  OrderEvent[]
 
   @@index([storeId, paymentStatus])
   @@index([storeId, createdAt])
+  @@index([storeId, customerPhoneNormalized, createdAt])
   @@index([paymentStatus, expiresAt])
   @@index([buyerAccountId])
+  // ON DELETE SET NULL walks this column when a user is deleted.
+  @@index([createdByUserId])
+}
+
+enum OrderEventActor {
+  SELLER
+  BUYER
+  SYSTEM
+}
+
+enum OrderEventType {
+  CREATED
+  LINK_OPENED
+  LINK_REGENERATED
+  PHONE_CORRECTED
+  PAYMENT_SUBMITTED
+  PAYMENT_VALIDATED
+  PAYMENT_REJECTED
+  PAYMENT_VOIDED
+  FULFILLMENT_ADVANCED
+  PACKED_PHOTO_ADDED
+  TRACKING_ADDED
+  BUYER_NOTIFIED
+  RECEIPT_CONFIRMED
+  CLAIMED
+  INVITE_SHOWN
+  INVITE_CLICKED
+  INVITE_DISMISSED
+  ORDER_CANCELLED
+}
+
+model OrderEvent {
+  id             String          @id @default(cuid())
+  orderId        String
+  storeId        String
+  type           OrderEventType
+  actor          OrderEventActor
+  visibleToBuyer Boolean
+  payload        Json            @default("{}")
+  createdAt      DateTime        @default(now())
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([orderId, createdAt])
+  @@index([storeId, type, createdAt])
 }
 
 model OrderItem {
@@ -373,7 +445,7 @@ model OrderPayment {
   imageUrl     String?
   createdAt    DateTime            @default(now())
   // Buyer-submitted proof-of-payment upload — see
-  // docs/plans/2026-08-08-buyer-proof-of-payment-upload-plan.md. `source`
+  // .artifacts/2026/08/20260808--buyer-proof-of-payment-upload/plan.md. `source`
   // distinguishes who created the row; `reviewStatus` gates whether it
   // counts toward `paidAmount` (see common/payment-summary.ts's
   // `countsTowardPaid` — the single source of truth for this filter, reused
@@ -518,7 +590,7 @@ enum WhatsAppMessageType {
 }
 
 // Per-store override for the WhatsApp message a seller sends to a buyer —
-// see docs/plans/2026-08-08-configurable-whatsapp-templates-plan.md. A store
+// see .artifacts/2026/08/20260808--configurable-whatsapp-templates/plan.md. A store
 // with no row for a given type falls back to the hardcoded default template
 // in packages/utils/src/whatsapp/index.ts.
 model WhatsAppMessageTemplate {
@@ -576,12 +648,13 @@ model Customer {
 
 // Global buyer identity — one per phone number across every store, replacing
 // per-store `Customer` as the buyer-auth root. See
-// docs/plans/2026-08-08-global-buyer-account-plan.md. `Customer` itself is
+// .artifacts/2026/08/20260808--global-buyer-account/plan.md. `Customer` itself is
 // kept as a per-store "who has bought here" projection for the seller
 // Customers dashboard, decoupled from auth.
 model BuyerAccount {
   id              String   @id @default(cuid())
-  phone           String   @unique
+  // Null for accounts created via Google sign-in until a phone is added.
+  phone           String?  @unique
   passwordHash    String?
   // Bumped (not re-derived from the hash) on every password change and
   // embedded in the session token — the only session-revocation mechanism
@@ -601,10 +674,10 @@ model BuyerAccount {
 }
 
 // Buyer-owned, reusable across every store the BuyerAccount is linked to
-// (global identity — see docs/plans/2026-08-08-global-buyer-account-plan.md).
+// (global identity — see .artifacts/2026/08/20260808--global-buyer-account/plan.md).
 // Not read server-side during checkout; the buyer's default address is only
 // ever a client-side prefill, checkout itself accepts inline shippingAddress
-// fields — see docs/plans/2026-08-08-buyer-shipping-addresses-plan.md's
+// fields — see .artifacts/2026/08/20260808--buyer-shipping-addresses/plan.md's
 // "Important correction" section for why.
 model Address {
   id             String   @id @default(cuid())
@@ -710,7 +783,7 @@ model AuditLog {
 
 // Platform-level operational data (Uptime Kuma webhook events) — deliberately
 // outside the multi-tenancy model, no storeId: an API-down incident isn't
-// "owned" by any one store. See docs/plans/2026-08-09-uptime-kuma-monitoring-plan.md.
+// "owned" by any one store. See .artifacts/2026/08/20260809--uptime-kuma-monitoring/plan.md.
 model PlatformIncident {
   id          String    @id @default(cuid())
   monitorId   Int

@@ -193,7 +193,8 @@
       "passwordsDontMatch": "Las contraseñas no coinciden",
       "genericError": "Algo salió mal. Intenta de nuevo.",
       "goToLogin": "Ingresar"
-    }
+    },
+    "requestNewLink": "Pedir un nuevo enlace"
   },
   "loginPage": {
     "title": "Ingresar",
@@ -204,7 +205,13 @@
     "invalidCredentials": "Teléfono o contraseña inválidos",
     "submit": "Ingresar",
     "submitting": "Ingresando...",
-    "forgotPasswordLink": "¿Olvidaste tu contraseña?"
+    "forgotPasswordLink": "¿Olvidaste tu contraseña?",
+    "google": "Continuar con Google",
+    "googleErrors": {
+      "unavailable": "El inicio de sesión con Google no está disponible ahora",
+      "ambiguous": "Más de una cuenta usa ese correo. Ingresa con tu teléfono.",
+      "failed": "No se pudo ingresar con Google. Inténtalo de nuevo."
+    }
   },
   "forgotPasswordPage": {
     "title": "Restablecer contraseña",
@@ -375,5 +382,14 @@
     "inTransit": "En camino",
     "ready": "Listo para recojo",
     "delivered": "Entregado"
+  },
+  "myPurchases": {
+    "title": "Mis compras",
+    "loggedOutTitle": "Ingresa para ver tus compras",
+    "loggedOutBody": "Ingresa con tu teléfono y contraseña, o continúa con Google. Si eres nuevo, Google crea tu cuenta de comprador en un clic.",
+    "empty": "Aún no tienes compras.",
+    "storeAccount": "Cuenta en la tienda",
+    "pendingBalance": "Pendiente: {currency} {amount}",
+    "signOut": "Cerrar sesión"
   }
 }

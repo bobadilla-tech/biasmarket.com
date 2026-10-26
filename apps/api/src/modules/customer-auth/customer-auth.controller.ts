@@ -110,7 +110,7 @@ export class CustomerAuthController {
   // `slug` isn't read by `changePassword` (the customer session already
   // carries `storeId`), but Orval's spec validator needs a declared path
   // parameter for every `{slug}` segment in the route — see
-  // docs/plans/2026-08-06-orval-rollout-batches-5-6-plan.md's Batch 5 section
+  // .artifacts/2026/08/20260806--orval-rollout-batches-5-6/plan.md's Batch 5 section
   // for the full story. `@ApiParam` is pure Swagger metadata, zero behavior
   // change; adding an unused `@Param("slug") slug: string` instead was
   // considered and rejected as needless dead code once `@ApiParam` alone was
@@ -154,7 +154,7 @@ export class CustomerAuthController {
   // Reuses `Order`'s own `toOrderDto`/`OrderDetailResponseDto` rather than a
   // buyer-safe subset DTO — confirmed `OrderDetailResponseDto` carries no
   // seller-only/internal fields on top of `OrderResponseDto` (see
-  // docs/plans/2026-08-08-buyer-mini-dashboard-plan.md). Ownership is
+  // .artifacts/2026/08/20260808--buyer-mini-dashboard/plan.md). Ownership is
   // `order.buyerAccountId === session.buyerAccountId`, enforced in
   // `CustomerAuthService.getOrderDetail`.
   @Public()

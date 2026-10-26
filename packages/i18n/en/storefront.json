@@ -197,7 +197,8 @@
       "passwordsDontMatch": "Passwords don't match",
       "genericError": "Something went wrong. Try again.",
       "goToLogin": "Log in"
-    }
+    },
+    "requestNewLink": "Request a new link"
   },
   "loginPage": {
     "title": "Log in",
@@ -208,7 +209,13 @@
     "invalidCredentials": "Invalid phone or password",
     "submit": "Log in",
     "submitting": "Logging in...",
-    "forgotPasswordLink": "Forgot your password?"
+    "forgotPasswordLink": "Forgot your password?",
+    "google": "Continue with Google",
+    "googleErrors": {
+      "unavailable": "Google sign-in is not available right now",
+      "ambiguous": "More than one account uses that email. Log in with your phone instead.",
+      "failed": "Could not log in with Google. Please try again."
+    }
   },
   "forgotPasswordPage": {
     "title": "Reset password",
@@ -375,5 +382,14 @@
     "inTransit": "In transit",
     "ready": "Ready for pickup",
     "delivered": "Delivered"
+  },
+  "myPurchases": {
+    "title": "My purchases",
+    "loggedOutTitle": "Log in to see your purchases",
+    "loggedOutBody": "Log in with your phone and password, or continue with Google. If you are new, Google creates your buyer account in one click.",
+    "empty": "You have no purchases yet.",
+    "storeAccount": "Store account",
+    "pendingBalance": "Pending: {currency} {amount}",
+    "signOut": "Sign out"
   }
 }

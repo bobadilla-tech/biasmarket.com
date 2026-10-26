@@ -653,9 +653,9 @@ surface) is a growing-team argument, not a today-emergency.
 ## 13. References
 
 - `docs/core/deploy.md`, `docs/core/blue-green-migrations.md`
-- `docs/plans/2026-08-10-bluegreen-zero-downtime-deploy-plan.md`
-- `docs/plans/2026-08-10-server-side-cleanup-scheduling-plan.md`
-- `docs/plans/2026-08-28-e2e-ci-merge-gate-cd-block-plan.md`
+- `.artifacts/2026/08/20260810--bluegreen-zero-downtime-deploy/plan.md`
+- `.artifacts/2026/08/20260810--server-side-cleanup-scheduling/plan.md`
+- `.artifacts/2026/08/20260828--e2e-ci-merge-gate-cd/plan.md`
 - `infra/vps/deploy.sh`, `infra/vps/lib/*.sh`, `infra/vps/bin/*.sh`,
   `infra/vps/Caddyfile`
 - `.github/workflows/cd.yml`, `.github/workflows/cleanup-fallback.yml`

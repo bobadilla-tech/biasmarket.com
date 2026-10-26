@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { AppModule } from './../src/app.module.js';
 import {
   assertMatchesSchema,
+  deleteOrders,
   mailerDevDir,
   waitForNewMailerFile,
 } from './schema-assert.js';
@@ -126,7 +127,7 @@ describe('whatsapp-templates (e2e)', () => {
       await prisma.orderItem.deleteMany({
         where: { orderId: { in: orderIds } },
       });
-      await prisma.order.deleteMany({ where: { id: { in: orderIds } } });
+      await deleteOrders(prisma, { id: { in: orderIds } });
     }
     if (storeId) {
       await prisma.whatsAppMessageTemplate.deleteMany({ where: { storeId } });
@@ -285,9 +286,7 @@ describe('whatsapp-templates (e2e)', () => {
       await prisma.orderItem.deleteMany({
         where: { orderId: { in: orderIds } },
       });
-      await prisma.order.deleteMany({
-        where: { id: { in: orderIds } },
-      });
+      await deleteOrders(prisma, { id: { in: orderIds } });
       orderIds.length = 0;
       await prisma.notification.deleteMany({
         where: { storeId: noOverrideStoreId },

@@ -3,12 +3,14 @@ import type { FulfillmentStatus } from '@biasmarket/db';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { OrderRepository } from '../infrastructure/order.repository.js';
 import { Order } from '../domain/order.entity.js';
+import { OrderEventsService } from './order-events.service.js';
 
 @Injectable()
 export class AdvanceFulfillmentUseCase {
   constructor(
     private prisma: PrismaService,
     private orders: OrderRepository,
+    private events: OrderEventsService,
   ) {}
 
   async execute(
@@ -47,6 +49,13 @@ export class AdvanceFulfillmentUseCase {
           entityId: orderId,
           metadata: { fromStatus, toStatus },
         },
+      });
+      await this.events.record(tx, {
+        orderId,
+        storeId,
+        type: 'FULFILLMENT_ADVANCED',
+        actor: 'SELLER',
+        payload: { fromStatus, toStatus },
       });
 
       return updated;

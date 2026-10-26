@@ -7,6 +7,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { AppModule } from './../src/app.module.js';
 import {
   cleanupBuyerTestData,
+  deleteOrders,
   mailerDevDir,
   waitForNewMailerFile,
 } from './schema-assert.js';
@@ -65,7 +66,7 @@ describe('seller bearer auth (e2e)', () => {
     if (productId) {
       await prisma.orderPayment.deleteMany({ where: { storeId: storeId! } });
       await prisma.orderItem.deleteMany({ where: { storeId: storeId! } });
-      await prisma.order.deleteMany({ where: { storeId: storeId! } });
+      await deleteOrders(prisma, { storeId: storeId! });
       await prisma.productVariant.deleteMany({ where: { productId } });
       await prisma.product.deleteMany({ where: { id: productId } });
     }

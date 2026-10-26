@@ -41,6 +41,7 @@ const order: OrderResponseDto = {
   customerEmail: null,
   customerName: "Jane",
   customerPhone: "+51987654321",
+  source: "MARKETPLACE",
   totalAmount: "100.00",
   requiredAmount: "100.00",
   paidAmount: 100,

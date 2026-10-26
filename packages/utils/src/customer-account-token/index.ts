@@ -23,7 +23,7 @@ function sign(payload: string, secret: string): string {
 // `buyerAccountId` — these tokens (confirm/reset/change-email/change-phone)
 // identify a global `BuyerAccount`, not a per-store `Customer`, since buyer
 // auth moved onto the global identity model (see
-// docs/plans/2026-08-08-global-buyer-account-plan.md).
+// .artifacts/2026/08/20260808--global-buyer-account/plan.md).
 export function createCustomerAccountToken(
   buyerAccountId: string,
   secret: string,

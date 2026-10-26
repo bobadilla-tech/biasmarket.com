@@ -19,7 +19,7 @@ import { ordersKeys } from "../queries/use-orders";
 // Approve/reject a single buyer-submitted proof row (`OrderPayment.source ===
 // "BUYER_SUBMITTED"`) — distinct from `useReviewPayment`, which reviews the
 // order's overall paymentStatus. See
-// docs/plans/2026-08-08-buyer-proof-of-payment-upload-plan.md.
+// .artifacts/2026/08/20260808--buyer-proof-of-payment-upload/plan.md.
 export function useReviewPaymentProof(
   storeId: string | undefined,
   fallbackErrorMessage?: string,

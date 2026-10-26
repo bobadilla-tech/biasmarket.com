@@ -213,7 +213,7 @@ automatically on container boot. Full runbook: `docs/core/deploy.md`.
   manual payment flow state machine (implemented — see the Database section
   above for where)
 - `docs/core/product.md`, `docs/core/roadmap.md`, `docs/core/i18n.md`
-- `docs/plans/` — dated implementation-plan records as work lands
+- `.artifacts/` — historical plans, audits, handoff prompts, implementation logs, and other work records; read `.artifacts/README.md` and `.artifacts/AGENTS.md`
 - `apps/web/AGENTS.md` — flags that the installed Next.js version has breaking
   changes vs. training data; check `node_modules/next/dist/docs/` before writing
   Next.js code

@@ -2,7 +2,7 @@
 # Dev entrypoint for the `api` service (docker-compose.dev.yml). Pulled out of
 # the compose file's inline `command:` because that YAML folded scalar has
 # already broken the `concurrently` invocation once (silently ate `\`
-# line-continuations — see docs/plans/2026-07-16-docker-infra.md) and is hard
+# line-continuations — see .artifacts/2026/07/20260716--docker-infra/plan.md) and is hard
 # to edit safely. A real script gets normal shell quoting instead.
 set -e
 
@@ -22,7 +22,7 @@ pnpm --filter api exec nest build
 #   schema - re-runs `prisma generate` when schema.prisma changes, so editing
 #            the schema no longer requires a manual `docker compose restart
 #            api` (previously a documented, manual-only gap — see
-#            docs/plans/2026-07-29-multi-point-pickup-locations.md)
+#            .artifacts/2026/07/20260729--multi-point-pickup-locations/plan.md)
 #   build  - Nest's own compile-only watch (no run)
 #   run    - restarts `node dist/main.js` on any dependency dist change,
 #            including the regenerated Prisma client from the `schema`

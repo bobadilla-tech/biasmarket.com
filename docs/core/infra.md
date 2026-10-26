@@ -63,7 +63,7 @@ exists for host mode — everything documented here assumes `docker:dev`.
   every install (a known upstream pnpm bug, not something this repo can work
   around). Fix: `npx pnpm@10.11.0 install` instead of bare `pnpm install`. Full
   root cause:
-  [pnpm-lockfile-corruption plan](../plans/2026-07-19-pnpm-lockfile-corruption.md).
+  [pnpm-lockfile-corruption plan](../../.artifacts/2026/07/20260719--pnpm-lockfile-corruption/plan.md).
 - **`role "biasmarket" does not exist` / migrations hit the wrong DB.** If you
   also have a native Postgres running on the host, it can silently win the
   connection on `localhost:5432` ahead of the Docker one. Either stop the native

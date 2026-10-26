@@ -9,6 +9,7 @@ import { AppModule } from './../src/app.module.js';
 import {
   assertMatchesSchema,
   cleanupBuyerTestData,
+  deleteOrders,
   mailerDevDir,
   waitForNewMailerFile,
 } from './schema-assert.js';
@@ -138,7 +139,7 @@ describe('customer account + customer auth (e2e)', () => {
   afterAll(async () => {
     if (orderId) {
       await prisma.orderItem.deleteMany({ where: { orderId } });
-      await prisma.order.deleteMany({ where: { id: orderId } });
+      await deleteOrders(prisma, { id: orderId });
     }
     if (customerId) {
       await prisma.customer.deleteMany({ where: { id: customerId } });
@@ -146,19 +147,19 @@ describe('customer account + customer auth (e2e)', () => {
     if (productId) {
       await prisma.orderPayment.deleteMany({ where: { storeId } });
       await prisma.orderItem.deleteMany({ where: { storeId } });
-      await prisma.order.deleteMany({ where: { storeId } });
+      await deleteOrders(prisma, { storeId });
       await prisma.productVariant.deleteMany({ where: { productId } });
       await prisma.product.deleteMany({ where: { id: productId } });
     }
 
     if (orderBId) {
       await prisma.orderItem.deleteMany({ where: { orderId: orderBId } });
-      await prisma.order.deleteMany({ where: { id: orderBId } });
+      await deleteOrders(prisma, { id: orderBId });
     }
     if (productBId) {
       await prisma.orderPayment.deleteMany({ where: { storeId: storeBId! } });
       await prisma.orderItem.deleteMany({ where: { storeId: storeBId! } });
-      await prisma.order.deleteMany({ where: { storeId: storeBId! } });
+      await deleteOrders(prisma, { storeId: storeBId! });
       await prisma.productVariant.deleteMany({
         where: { productId: productBId },
       });
@@ -330,7 +331,7 @@ describe('customer account + customer auth (e2e)', () => {
       assertMatchesSchema(forgotRes.body, okSchema, openapi.components);
 
       // Regression coverage for the phone-normalization bug (see
-      // docs/plans/2026-08-06-buyer-phone-normalization-fix.md): a buyer
+      // .artifacts/2026/08/20260806--buyer-phone-normalization-fix/plan.md): a buyer
       // types their phone one way at checkout ("+51966666666", the constant
       // above) and a different-but-equivalent way at login/forgot-password
       // ("966666666", no dial code) — both must resolve to the same
@@ -618,9 +619,7 @@ describe('customer account + customer auth (e2e)', () => {
           await bearerPrisma!.orderItem.deleteMany({
             where: { orderId: bearerOrder },
           });
-          await bearerPrisma!.order.deleteMany({
-            where: { id: bearerOrder },
-          });
+          await deleteOrders(bearerPrisma!, { id: bearerOrder });
         }
         if (bearerProductId) {
           await bearerPrisma!.orderPayment.deleteMany({
@@ -629,9 +628,7 @@ describe('customer account + customer auth (e2e)', () => {
           await bearerPrisma!.orderItem.deleteMany({
             where: { storeId: bearerStoreId! },
           });
-          await bearerPrisma!.order.deleteMany({
-            where: { storeId: bearerStoreId! },
-          });
+          await deleteOrders(bearerPrisma!, { storeId: bearerStoreId! });
           await bearerPrisma!.productVariant.deleteMany({
             where: { productId: bearerProductId },
           });

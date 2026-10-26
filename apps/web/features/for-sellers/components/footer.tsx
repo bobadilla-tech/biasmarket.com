@@ -35,6 +35,12 @@ export function ForSellersFooter() {
             <Link href="/contact" className="hover:text-foreground">
               {t("navContact")}
             </Link>
+            <Link href="/privacy" className="hover:text-foreground">
+              {t("navPrivacy")}
+            </Link>
+            <Link href="/terms" className="hover:text-foreground">
+              {t("navTerms")}
+            </Link>
           </nav>
         </div>
 

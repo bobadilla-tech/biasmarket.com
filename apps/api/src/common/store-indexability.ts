@@ -1,5 +1,5 @@
 // Track C core of
-// docs/plans/2026-09-07-store-rich-content-and-thin-content-indexing-plan.md
+// .artifacts/2026/09/20260907--store-rich-content-and-thin/plan.md
 // (Part 5.3). Single source of truth for "should Google index this store page".
 //
 // Deliberate REVERSAL of public-store-visibility.ts's note that the sitemap

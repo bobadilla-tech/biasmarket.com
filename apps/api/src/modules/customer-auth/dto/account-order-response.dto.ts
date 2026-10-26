@@ -53,7 +53,7 @@ export class AccountOrderResponseDto {
 // Structural, not `Prisma.Order` — both call sites select this exact field
 // set via a Prisma `select`, and typing this against the real Prisma model
 // (or its enum types) is what breaks `PluginMetadataGenerator` (see
-// docs/plans/2026-08-04-nestjs-openapi-client-generation-plan.md's Phase 0/1
+// .artifacts/2026/08/20260804--nestjs-openapi-client-generation/plan.md's Phase 0/1
 // execution notes).
 export interface AccountOrderRow {
   id: string;

@@ -29,6 +29,7 @@ import { OrderRepository } from './order.repository.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { StorageService } from '../../../storage/storage.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
+import { OrderEventsService } from '../application/order-events.service.js';
 import { toOrderPaymentDto } from './order.controller.js';
 import { countsTowardPaid } from '../../../common/payment-summary.js';
 import type { OrderPaymentResponseDto } from '../dto/order-response.dto.js';
@@ -51,7 +52,7 @@ const PAYMENT_METHODS: PaymentMethodType[] = [
 ];
 
 // Buyer-initiated counterpart to `OrderController.addPayment` — see
-// docs/plans/2026-08-08-buyer-proof-of-payment-upload-plan.md. Route stays
+// .artifacts/2026/08/20260808--buyer-proof-of-payment-upload/plan.md. Route stays
 // store-scoped (`stores/:slug/account/orders/...`) even though the identity
 // behind `CustomerSessionGuard` is global, mirroring
 // `customer-auth.controller.ts`/`addresses.controller.ts`'s precedent for
@@ -65,6 +66,7 @@ export class CustomerOrderPaymentsController {
     private prisma: PrismaService,
     private storage: StorageService,
     private notifications: NotificationsService,
+    private events: OrderEventsService,
   ) {}
 
   private async findStoreBySlug(slug: string) {
@@ -200,6 +202,17 @@ export class CustomerOrderPaymentsController {
           imageUrl,
           source: 'BUYER_SUBMITTED',
           reviewStatus: 'PENDING_REVIEW',
+        },
+      });
+      await this.events.record(tx, {
+        orderId,
+        storeId: store.id,
+        type: 'PAYMENT_SUBMITTED',
+        actor: 'BUYER',
+        payload: {
+          paymentId: created.id,
+          amount: numericAmount,
+          method,
         },
       });
       // Dedups against an already-open notification for this order (see

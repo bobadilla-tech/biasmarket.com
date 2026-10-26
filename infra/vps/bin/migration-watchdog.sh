@@ -2,7 +2,7 @@
 # Runs every minute via infra/vps/systemd/biasmarket-migration-watchdog.timer,
 # deliberately INDEPENDENT of deploy.sh itself — so a wedged deploy can't
 # also silence its own alarm (decision 9 in
-# docs/plans/2026-08-10-bluegreen-zero-downtime-deploy-plan.md).
+# .artifacts/2026/08/20260810--bluegreen-zero-downtime-deploy/plan.md).
 #
 # Pings a Kuma push monitor's heartbeat URL ONLY when
 # state/migration_pending is absent, or present but younger than

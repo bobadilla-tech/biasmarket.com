@@ -7,6 +7,7 @@ import type { Auth } from '@thallesp/nestjs-better-auth';
 import { escapeHtml } from '@biasmarket/utils/strings';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { MailerService } from '../mailer/mailer.service.js';
+import { discardUnverifiedCredentials } from './google-link-cleanup.js';
 
 const logger = new Logger('auth');
 
@@ -66,6 +67,21 @@ export const createAuth = (
         id,
       }),
     },
+    // Google sign-in for sellers. Only enabled when both credentials are set so
+    // environments without an OAuth client (CI, e2e, fresh dev setups) boot
+    // unchanged. Redirect URI to register in Google Cloud:
+    // `${BETTER_AUTH_URL}/api/auth/callback/google`. Google asserts
+    // `email_verified`, so these accounts skip the verification email.
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? {
+          socialProviders: {
+            google: {
+              clientId: process.env.GOOGLE_CLIENT_ID,
+              clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            },
+          },
+        }
+      : {}),
     emailVerification: {
       sendVerificationEmail: async ({ user, url }) => {
         await mailer.send({
@@ -129,6 +145,31 @@ export const createAuth = (
       },
     },
     trustedOrigins: [process.env.WEB_URL ?? 'http://localhost:3001'],
+    // OAuth failures (cancelled consent, expired state, unlinkable account…)
+    // would otherwise land on the API's own root as raw JSON. Send them to the
+    // site's explanatory error screen instead; the web app passes a
+    // locale-specific `errorCallbackURL` per request, this is the fallback.
+    onAPIError: {
+      errorURL: `${process.env.WEB_URL ?? 'http://localhost:3001'}/auth/error`,
+    },
+    account: {
+      accountLinking: {
+        enabled: true,
+        trustedProviders: ['google'],
+        // See google-link-cleanup.ts — unverified local passwords are discarded
+        // when Google is linked, which is what makes relaxing this safe.
+        requireLocalEmailVerified: false,
+      },
+    },
+    databaseHooks: {
+      account: {
+        create: {
+          after: async (account) => {
+            await discardUnverifiedCredentials(prisma, account);
+          },
+        },
+      },
+    },
     // Better-auth mounts its handler via `httpAdapter.use()` inside its own
     // module's `onModuleInit` (raw Express middleware, before Nest's router
     // even runs) — so a Nest `@nestjs/throttler` guard can never reach

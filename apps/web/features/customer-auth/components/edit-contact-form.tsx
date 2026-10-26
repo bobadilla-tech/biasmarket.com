@@ -43,7 +43,7 @@ export function EditContactForm({
     defaultValues: {
       name: profile.customer.name ?? "",
       email: profile.customer.email ?? "",
-      phone: profile.customer.phone,
+      phone: profile.customer.phone ?? "",
     },
   });
 

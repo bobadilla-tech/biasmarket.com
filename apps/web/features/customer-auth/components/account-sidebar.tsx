@@ -32,7 +32,10 @@ export function AccountSidebar({
 }) {
   const t = useTranslations("storefront.accountPage");
   const displayName =
-    profile.customer.name ?? profile.customer.email ?? profile.customer.phone;
+    profile.customer.name ??
+    profile.customer.email ??
+    profile.customer.phone ??
+    "";
 
   return (
     <>
@@ -96,7 +99,7 @@ export function AccountSidebar({
                 {displayName}
               </p>
               <p className="truncate text-xs text-gray-500">
-                {profile.customer.email ?? profile.customer.phone}
+                {profile.customer.email ?? profile.customer.phone ?? ""}
               </p>
             </div>
           </div>

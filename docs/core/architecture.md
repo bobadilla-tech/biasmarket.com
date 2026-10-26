@@ -412,12 +412,12 @@ discipline, and recovery.
   counters shared across instances, store-config cache mentioned above.
 - **Queues**: ✅ Implemented — `apps/workers` (NestJS + BullMQ, Redis-backed), a
   shared `packages/queue` contracts package, Redis wired into both dev and prod
-  Docker stacks (`docs/plans/2026-08-09-workers-infra-setup-plan.md`), and two
-  real jobs moved off `apps/api`'s request path
-  (`docs/plans/2026-08-09-migrate-background-jobs-to-workers-plan.md`): all 7
-  transactional-email call sites (`MailerService.send()` now enqueues instead of
-  sending inline) and the order-expiration cron sweep (`apps/workers` owns
-  scheduling via a BullMQ repeatable job, dispatching to a new internal
+  Docker stacks (`.artifacts/2026/08/20260809--workers-infra-setup/plan.md`),
+  and two real jobs moved off `apps/api`'s request path
+  (`.artifacts/2026/08/20260809--migrate-background-jobs-to-workers/plan.md`):
+  all 7 transactional-email call sites (`MailerService.send()` now enqueues
+  instead of sending inline) and the order-expiration cron sweep (`apps/workers`
+  owns scheduling via a BullMQ repeatable job, dispatching to a new internal
   `apps/api` endpoint reached only over the Docker network, behind a Caddy block
   and a shared-secret guard — the sweep's own domain logic stays in `apps/api`'s
   `orders` module). Remaining candidates flagged but out of scope: payment-proof

@@ -38,6 +38,17 @@ export function SignupForm({ onCheckEmail }: { onCheckEmail: () => void }) {
     router.push("/onboarding/create-store");
   };
 
+  const onGoogle = async () => {
+    const { error } = await authClient.signIn.social({
+      provider: "google",
+      callbackURL: `${globalThis.location.origin}/${locale}/verify-email`,
+      errorCallbackURL: `${globalThis.location.origin}/${locale}/auth/error`,
+    });
+    if (error) {
+      setError("root", { message: error.message ?? t("googleError") });
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="contents">
       <div className="flex flex-col gap-1">
@@ -105,6 +116,14 @@ export function SignupForm({ onCheckEmail }: { onCheckEmail: () => void }) {
         className="w-full rounded-xl bg-emerald-700 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:opacity-60"
       >
         {t("submit")}
+      </button>
+
+      <button
+        type="button"
+        onClick={onGoogle}
+        className="w-full rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+      >
+        {t("google")}
       </button>
     </form>
   );

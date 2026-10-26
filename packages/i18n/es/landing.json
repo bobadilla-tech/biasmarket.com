@@ -1,5 +1,8 @@
 {
-  "languageToggle": { "en": "EN", "es": "ES" },
+  "languageToggle": {
+    "en": "EN",
+    "es": "ES"
+  },
   "hero": {
     "title1": "Tu mundo K-Pop",
     "title2": "Todo en un solo lugar",
@@ -14,7 +17,9 @@
     "blogSubtitle": "Noticias, guías y todo sobre el mundo del K-pop",
     "blogCta": "Leer Blog"
   },
-  "products": { "viewStore": "Ver en {name}" },
+  "products": {
+    "viewStore": "Ver en {name}"
+  },
   "trends": {
     "title": "Tendencias",
     "latestTitle": "Nuevos Productos",
@@ -33,10 +38,18 @@
     "title": "Biasmarket Blog",
     "cta": "Ver más",
     "items": [
-      { "title": "¿Conoces a Biasmarket?" },
-      { "title": "¿Qué significa Bias?" },
-      { "title": "Eventos del mes" },
-      { "title": "¿Grupos más conocidos?" }
+      {
+        "title": "¿Conoces a Biasmarket?"
+      },
+      {
+        "title": "¿Qué significa Bias?"
+      },
+      {
+        "title": "Eventos del mes"
+      },
+      {
+        "title": "¿Grupos más conocidos?"
+      }
     ]
   },
   "categories": {
@@ -46,12 +59,30 @@
     "subtitle": "Explora por categoría y descubre tu próxima merch favorita",
     "explore": "Explorar todo",
     "items": [
-      { "key": "photocards", "name": "Photocards" },
-      { "key": "albums", "name": "Albums" },
-      { "key": "lightsticks", "name": "Lightsticks" },
-      { "key": "concert", "name": "Concert" },
-      { "key": "magazine", "name": "Magazine" },
-      { "key": "otros", "name": "Otros" }
+      {
+        "key": "photocards",
+        "name": "Photocards"
+      },
+      {
+        "key": "albums",
+        "name": "Albums"
+      },
+      {
+        "key": "lightsticks",
+        "name": "Lightsticks"
+      },
+      {
+        "key": "concert",
+        "name": "Concert"
+      },
+      {
+        "key": "magazine",
+        "name": "Magazine"
+      },
+      {
+        "key": "otros",
+        "name": "Otros"
+      }
     ]
   },
   "discover": {
@@ -103,25 +134,90 @@
     "columns": [
       {
         "heading": "Comprar",
-        "links": ["Cómo comprar", "Explorar productos", "Categorías", "Tiendas"]
+        "links": [
+          {
+            "label": "Cómo comprar",
+            "href": "/how-to-buy"
+          },
+          {
+            "label": "Explorar productos",
+            "href": "/search"
+          },
+          {
+            "label": "Categorías",
+            "href": "/search"
+          },
+          {
+            "label": "Tiendas",
+            "href": "/stores"
+          }
+        ]
       },
       {
         "heading": "Vender",
-        "links": ["Crear tienda", "Cómo vender", "Preguntas frecuentes"]
+        "links": [
+          {
+            "label": "Crear tienda",
+            "href": "/onboarding"
+          },
+          {
+            "label": "Cómo vender",
+            "href": "/for-sellers"
+          },
+          {
+            "label": "Preguntas frecuentes",
+            "href": "/faq"
+          }
+        ]
       },
       {
         "heading": "Biasmarket",
-        "links": ["Quiénes somos", "Cómo funciona", "Blog"]
+        "links": [
+          {
+            "label": "Quiénes somos",
+            "href": "/founder"
+          },
+          {
+            "label": "Cómo funciona",
+            "href": "/how-it-works"
+          },
+          {
+            "label": "Blog",
+            "href": "/blog"
+          }
+        ]
       },
       {
         "heading": "Ayuda",
-        "links": ["Centro de ayuda", "Contacto", "Términos"]
+        "links": [
+          {
+            "label": "Centro de ayuda",
+            "href": "/help"
+          },
+          {
+            "label": "Contacto",
+            "href": "/contact"
+          }
+        ]
       }
     ],
     "socials": [
-      { "label": "Facebook", "image": "/landing/social-fb.png" },
-      { "label": "Instagram", "image": "/landing/social-ig.png" },
-      { "label": "X", "image": "/landing/social-x.png" }
-    ]
+      {
+        "label": "Facebook",
+        "image": "/landing/social-fb.png"
+      },
+      {
+        "label": "Instagram",
+        "image": "/landing/social-ig.png"
+      },
+      {
+        "label": "X",
+        "image": "/landing/social-x.png"
+      }
+    ],
+    "privacy": "Política de Privacidad",
+    "terms": "Términos del Servicio",
+    "description": "Bias Market es una plataforma en línea donde creadores y vendedores independientes de merchandising K-pop abren sus propias tiendas y los fans las descubren y hacen pedidos. Los vendedores pueden iniciar sesión con correo o Google.",
+    "legalNav": "Legal"
   }
 }
