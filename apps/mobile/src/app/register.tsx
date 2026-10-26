@@ -168,7 +168,7 @@ function RegisterField({
       />
       {error ? (
         <Text accessibilityRole="alert" className="text-sm text-red-300">
-          {error ? t("auth.requiredField") : null}
+          {error ? t(error === "passwordsDontMatch" ? "auth.passwordMismatch" : "auth.requiredField") : null}
         </Text>
       ) : null}
     </View>
