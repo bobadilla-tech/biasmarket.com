@@ -15,7 +15,10 @@ import {
   CUSTOMER_SESSION_TTL_MS,
 } from './customer-session.constants.js';
 import { requiredEnv } from '../../config/env.validation.js';
-import { extractCustomerSessionToken } from './customer-session-token.js';
+import {
+  extractBearerTokenFromAuthorization,
+  extractCustomerSessionToken,
+} from './customer-session-token.js';
 
 // No `storeId` here — the session identifies a global `BuyerAccount`, not a
 // per-store `Customer`. Any endpoint that needs store scoping does its own
@@ -81,6 +84,12 @@ export class CustomerSessionGuard implements CanActivate {
       buyerAccount.passwordVersion,
       secret,
     );
+    if (
+      req.headers['x-client'] === 'mobile' &&
+      extractBearerTokenFromAuthorization(req.headers.authorization) === token
+    ) {
+      res.setHeader('X-Session-Token', fresh);
+    }
     res.cookie(CUSTOMER_SESSION_COOKIE, fresh, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
