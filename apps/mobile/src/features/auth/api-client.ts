@@ -18,7 +18,9 @@ export function configureMobileApiClient(): void {
     baseUrl: API_BASE_URL,
     credentials: "omit",
     getAuthHeader: () =>
-      bearerToken ? { Authorization: `Bearer ${bearerToken}` } : undefined,
+      bearerToken
+        ? { Authorization: `Bearer ${bearerToken}`, "X-Client": "mobile" }
+        : undefined,
     onUnauthorized: (authorization) => unauthorizedHandler?.(authorization),
     onSessionRefresh: (authorization, token) => sessionRefreshHandler?.(authorization, token),
   });
