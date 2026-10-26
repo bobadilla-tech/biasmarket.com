@@ -90,7 +90,7 @@ export async function customFetch<T>(
     credentials: config.credentials ?? "include",
   });
 
-  if (res.ok && authorization) {
+  if (authorization) {
     const refreshedToken = res.headers.get("X-Session-Token");
     if (refreshedToken) {
       try {
