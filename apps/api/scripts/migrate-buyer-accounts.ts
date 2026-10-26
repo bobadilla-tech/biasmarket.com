@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-// One-time backfill for docs/plans/2026-08-08-global-buyer-account-plan.md:
+// One-time backfill for .artifacts/2026/08/20260808--global-buyer-account/plan.md:
 // collapses existing per-store `Customer` rows into global `BuyerAccount`
 // rows, one per normalized phone number, with a `CustomerStoreLink` per
 // original `Customer` row and every linkable `Order.customerId` repointed to

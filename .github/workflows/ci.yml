@@ -8,6 +8,7 @@ on:
       - "*.md"
       - "**/*.md"
   pull_request:
+    branches: [main]
   workflow_dispatch:
     inputs:
       run_e2e:
@@ -58,6 +59,7 @@ jobs:
       query: ${{ steps.filter.outputs.query }}
       mobile: ${{ steps.filter.outputs.mobile }}
       web_e2e: ${{ steps.filter.outputs.web_e2e }}
+      api_e2e: ${{ steps.filter.outputs.api_e2e }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -181,6 +183,29 @@ jobs:
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
               - 'turbo.json'
+              - 'package.json'
+              - '.github/workflows/ci.yml'
+            # The API E2E suite builds and runs the API and workers against
+            # Postgres, Redis, and MinIO, so run it when either app, its shared
+            # runtime packages, the test harness, or its build configuration changes.
+            api_e2e:
+              - 'apps/api/**'
+              - 'apps/workers/**'
+              - 'packages/db/**'
+              - 'packages/queue/**'
+              - 'packages/types/**'
+              - 'packages/utils/**'
+              - 'scripts/ci/check-openapi-drift.sh'
+              - 'scripts/ci/e2e.sh'
+              - 'scripts/ci/e2e-datastores.sh'
+              - 'scripts/ci/e2e-images.sh'
+              - 'scripts/ci/e2e.env.example'
+              - 'scripts/ci/load-e2e-env.sh'
+              - 'scripts/ci/minio-e2e.sh'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'turbo.json'
+              - 'tsconfig.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
 
@@ -907,20 +932,18 @@ jobs:
 
   e2e:
     name: E2E (API)
-    # The full suite runs on every PR update and every push to main,
-    # regardless of which packages changed, so regressions are caught before
-    # merge rather than after (the repo is public: hosted-runner minutes are
-    # free, and the job runs in parallel with the per-package jobs).
-    # It intentionally has no `needs` dependency or detect-changes output,
-    # avoiding a skip vector and allowing the suite to start immediately.
+    # Run on pushes to main, relevant pull request changes, and explicit
+    # workflow_dispatch requests. The paths filter keeps unrelated automation
+    # and documentation changes from starting the database-backed suite.
     # `inputs.run_e2e` is a boolean context value; do not use
     # `github.event.inputs.run_e2e`, whose string "false" is truthy. Keep the
     # event-name guard in front of the input read because `inputs` is null on
     # push and pull_request.
     if: >-
       github.event_name == 'push' ||
-      github.event_name == 'pull_request' ||
+      (github.event_name == 'pull_request' && needs.detect-changes.outputs.api_e2e == 'true') ||
       (github.event_name == 'workflow_dispatch' && inputs.run_e2e)
+    needs: detect-changes
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # Never set continue-on-error here: a red E2E job must make the CI run red
@@ -1185,6 +1208,7 @@ jobs:
           VALIDATION_CHANGED: ${{ needs.detect-changes.outputs.validation }}
           QUERY_CHANGED: ${{ needs.detect-changes.outputs.query }}
           WEB_E2E_CHANGED: ${{ needs.detect-changes.outputs.web_e2e }}
+          API_E2E_CHANGED: ${{ needs.detect-changes.outputs.api_e2e }}
           EVENT_NAME: ${{ github.event_name }}
           # Guard the boolean input with the event name; on push, inputs is null.
           RUN_E2E: ${{ github.event_name == 'workflow_dispatch' && inputs.run_e2e || false }}

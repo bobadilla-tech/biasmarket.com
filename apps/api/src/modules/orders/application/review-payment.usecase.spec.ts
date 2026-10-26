@@ -13,6 +13,7 @@ import { InvalidOrderTransitionError } from '../domain/order-status.vo.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
 import { MailerService } from '../../../mailer/mailer.service.js';
+import { OrderEventsService } from './order-events.service.js';
 
 describe('ReviewPaymentUseCase', () => {
   let useCase: ReviewPaymentUseCase;
@@ -24,6 +25,7 @@ describe('ReviewPaymentUseCase', () => {
     auditLog: { create: Mock };
     $transaction: Mock;
   };
+  let events: { record: Mock };
   let notifications: { syncStockAlerts: Mock };
   let mailer: {
     send: Mock<
@@ -53,6 +55,7 @@ describe('ReviewPaymentUseCase', () => {
       auditLog: { create: vi.fn() },
       $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(prisma)),
     };
+    events = { record: vi.fn() };
     notifications = { syncStockAlerts: vi.fn() };
     mailer = { send: vi.fn().mockResolvedValue({ id: 'email-1' }) };
 
@@ -63,6 +66,7 @@ describe('ReviewPaymentUseCase', () => {
         { provide: PrismaService, useValue: prisma },
         { provide: NotificationsService, useValue: notifications },
         { provide: MailerService, useValue: mailer },
+        { provide: OrderEventsService, useValue: events },
       ],
     }).compile();
 
@@ -159,6 +163,39 @@ describe('ReviewPaymentUseCase', () => {
       expect.objectContaining({ id: 'product-1' }),
       expect.objectContaining({ id: 'variant-1' }),
     );
+    expect(events.record).toHaveBeenCalledTimes(1);
+    expect(events.record).toHaveBeenCalledWith(
+      prisma,
+      expect.objectContaining({ type: 'PAYMENT_VALIDATED', actor: 'SELLER' }),
+    );
+  });
+
+  it('skips its own PAYMENT_VALIDATED when the caller already recorded the action', async () => {
+    prisma.order.findUnique.mockResolvedValue({
+      id: orderId,
+      storeId,
+      paymentStatus: 'PARTIALLY_PAID',
+      fulfillmentStatus: 'ORDERING',
+      requiredAmount,
+      payments: [
+        {
+          amount: requiredAmount,
+          source: 'BUYER_SUBMITTED',
+          reviewStatus: 'APPROVED',
+        },
+      ],
+      items: [],
+    });
+    prisma.order.findUniqueOrThrow.mockResolvedValue({
+      id: orderId,
+      paymentStatus: 'VERIFIED',
+    });
+
+    await useCase.execute(orderId, storeId, ownerId, 'approve', undefined, {
+      recordEvent: false,
+    });
+
+    expect(events.record).not.toHaveBeenCalled();
   });
 
   it('reject() releases reserved stock without touching real stock', async () => {

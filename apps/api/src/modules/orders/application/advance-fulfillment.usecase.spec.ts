@@ -6,9 +6,11 @@ import { AdvanceFulfillmentUseCase } from './advance-fulfillment.usecase.js';
 import { OrderRepository } from '../infrastructure/order.repository.js';
 import { InvalidOrderTransitionError } from '../domain/order-status.vo.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
+import { OrderEventsService } from './order-events.service.js';
 
 describe('AdvanceFulfillmentUseCase', () => {
   let useCase: AdvanceFulfillmentUseCase;
+  let events: { record: Mock };
   let prisma: {
     store: { findUnique: Mock };
     order: { findUnique: Mock; update: Mock };
@@ -28,12 +30,14 @@ describe('AdvanceFulfillmentUseCase', () => {
       auditLog: { create: vi.fn() },
       $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(prisma)),
     };
+    events = { record: vi.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AdvanceFulfillmentUseCase,
         OrderRepository,
         { provide: PrismaService, useValue: prisma },
+        { provide: OrderEventsService, useValue: events },
       ],
     }).compile();
 
@@ -97,6 +101,14 @@ describe('AdvanceFulfillmentUseCase', () => {
         metadata: { fromStatus: 'ORDERING', toStatus: 'IN_TRANSIT' },
       },
     });
+    expect(events.record).toHaveBeenCalledWith(
+      prisma,
+      expect.objectContaining({
+        type: 'FULFILLMENT_ADVANCED',
+        actor: 'SELLER',
+        payload: { fromStatus: 'ORDERING', toStatus: 'IN_TRANSIT' },
+      }),
+    );
   });
 
   it('rejects skipping a fulfillment state', async () => {

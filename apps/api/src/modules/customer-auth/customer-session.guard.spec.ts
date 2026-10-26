@@ -99,13 +99,9 @@ describe('CustomerSessionGuard', () => {
     void res;
   });
 
-  it('rejects when the account has no password set (deleted/never-registered)', async () => {
+  it('rejects when the account no longer exists', async () => {
     const token = createCustomerSessionToken('buyer-1', 0, 'test-secret');
-    prisma.buyerAccount.findUnique.mockResolvedValue({
-      id: 'buyer-1',
-      passwordHash: null,
-      passwordVersion: 0,
-    });
+    prisma.buyerAccount.findUnique.mockResolvedValue(null);
 
     const { context } = buildContext({
       cookie: `${CUSTOMER_SESSION_COOKIE}=${token}`,
@@ -114,6 +110,22 @@ describe('CustomerSessionGuard', () => {
     await expect(guard.canActivate(context)).rejects.toBeInstanceOf(
       UnauthorizedException,
     );
+  });
+
+  it('accepts an account without a password (Google sign-in) when the version matches', async () => {
+    const token = createCustomerSessionToken('buyer-1', 0, 'test-secret');
+    prisma.buyerAccount.findUnique.mockResolvedValue({
+      id: 'buyer-1',
+      passwordHash: null,
+      passwordVersion: 0,
+    });
+
+    const { context, req } = buildContext({
+      cookie: `${CUSTOMER_SESSION_COOKIE}=${token}`,
+    });
+
+    await expect(guard.canActivate(context)).resolves.toBe(true);
+    expect(req.customerSession).toEqual({ buyerAccountId: 'buyer-1' });
   });
 
   it('accepts a valid token presented via Authorization: Bearer header (mobile path)', async () => {

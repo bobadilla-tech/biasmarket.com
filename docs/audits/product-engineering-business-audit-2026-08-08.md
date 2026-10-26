@@ -197,7 +197,7 @@ schema. The real mechanism is `OrderPayment.imageUrl`, populated when a
 private S3/MinIO bucket, no presigned URLs, single streaming endpoint gated by
 `assertOwnership` + store/order-scoped lookup (`order.controller.ts:301-323`,
 hardened just today per
-`docs/plans/2026-08-08-payment-proof-image-access-control-plan.md`).
+`.artifacts/2026/08/20260808--payment-proof-image-access-control/plan.md`).
 
 Multiple payments are supported (`OrderPayment` is one-to-many off `Order`, no
 count limit) — this correctly models partial/deposit payments toward

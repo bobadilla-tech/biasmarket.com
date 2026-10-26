@@ -48,11 +48,12 @@ export default function SearchScreen() {
     enabled: Boolean(storeSlug),
   });
   const resultQuery = useInfiniteQuery({
-    queryKey: ["catalog", "product-search", debouncedQuery, category],
+    queryKey: ["catalog", "product-search", storeSlug, debouncedQuery, category],
     initialPageParam: 1,
     queryFn: ({ pageParam }) =>
       productSearch.search({
         q: debouncedQuery || undefined,
+        store: storeSlug || undefined,
         category: category || undefined,
         page: String(pageParam),
         limit: String(PAGE_SIZE),

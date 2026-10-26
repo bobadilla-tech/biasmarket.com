@@ -46,7 +46,7 @@ export async function cleanupBuyerTestData(
       await prisma.orderItem.deleteMany({
         where: { orderId: { in: orderIds } },
       });
-      await prisma.order.deleteMany({ where: { id: { in: orderIds } } });
+      await deleteOrders(prisma, { id: { in: orderIds } });
     }
     await prisma.customerStoreLink.deleteMany({
       where: { buyerAccountId: { in: accountIds } },
@@ -59,6 +59,30 @@ export async function cleanupBuyerTestData(
   if (accountIds.length > 0) {
     await prisma.buyerAccount.deleteMany({ where: { id: { in: accountIds } } });
   }
+}
+
+// OrderEvent.orderId is ON DELETE RESTRICT, so events have to go before the
+// order row. Every e2e cleanup that deletes orders goes through here.
+export async function deleteOrders(
+  prisma: {
+    orderEvent: {
+      deleteMany: (args: {
+        where: { orderId?: string | { in: string[] }; storeId?: string };
+      }) => Promise<unknown>;
+    };
+    order: {
+      deleteMany: (args: {
+        where: { id?: string | { in: string[] }; storeId?: string };
+      }) => Promise<unknown>;
+    };
+  },
+  where: { id: string | { in: string[] } } | { storeId: string },
+) {
+  await prisma.orderEvent.deleteMany({
+    where:
+      'storeId' in where ? { storeId: where.storeId } : { orderId: where.id },
+  });
+  await prisma.order.deleteMany({ where });
 }
 
 // `vitest.config.e2e.ts` sets `fileParallelism: false`, so specs run

@@ -1239,6 +1239,14 @@
             }
           },
           {
+            "name": "store",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "q",
             "required": false,
             "in": "query",
@@ -1938,6 +1946,42 @@
         "tags": ["Customers"]
       }
     },
+    "/stores/{storeId}/customers/lookup": {
+      "get": {
+        "operationId": "CustomersController_lookup",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "phone",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerLookupResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Customers"]
+      }
+    },
     "/stores/{storeId}/customers/{customerId}": {
       "get": {
         "operationId": "CustomersController_findOne",
@@ -2069,6 +2113,65 @@
           }
         ],
         "tags": ["CustomerOrderPayments"]
+      }
+    },
+    "/public/orders/{token}": {
+      "get": {
+        "operationId": "PublicOrderEventsController_getByToken",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicOrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["PublicOrderEvents"]
+      }
+    },
+    "/public/orders/{token}/events": {
+      "post": {
+        "operationId": "PublicOrderEventsController_recordInvite",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordInviteEventDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": ["PublicOrderEvents"]
       }
     },
     "/stores/{storeId}/payment-methods": {
@@ -3724,6 +3827,112 @@
             "bearer": []
           }
         ],
+        "tags": ["GlobalAccount"]
+      }
+    },
+    "/account/login": {
+      "post": {
+        "operationId": "GlobalAccountController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginCustomerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["GlobalAccount"]
+      }
+    },
+    "/account/logout": {
+      "post": {
+        "operationId": "GlobalAccountController_logout",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["GlobalAccount"]
+      }
+    },
+    "/account/forgot-password": {
+      "post": {
+        "operationId": "GlobalAccountController_forgotPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["GlobalAccount"]
+      }
+    },
+    "/account/reset-password": {
+      "post": {
+        "operationId": "GlobalAccountController_resetPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterCustomerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponseDto"
+                }
+              }
+            }
+          }
+        },
         "tags": ["GlobalAccount"]
       }
     },
@@ -6319,6 +6528,10 @@
             "type": "string",
             "nullable": true
           },
+          "source": {
+            "enum": ["MARKETPLACE", "VENDOR_ASSISTED"],
+            "type": "string"
+          },
           "deliveryMethodType": {
             "enum": ["PICKUP", "COURIER"],
             "type": "string"
@@ -6443,6 +6656,7 @@
           "customerEmail",
           "customerPhone",
           "customerName",
+          "source",
           "deliveryMethodType",
           "deliveryDetails",
           "pickupPointId",
@@ -6499,6 +6713,10 @@
             "type": "string",
             "nullable": true
           },
+          "source": {
+            "enum": ["MARKETPLACE", "VENDOR_ASSISTED"],
+            "type": "string"
+          },
           "deliveryMethodType": {
             "enum": ["PICKUP", "COURIER"],
             "type": "string"
@@ -6623,6 +6841,7 @@
           "customerEmail",
           "customerPhone",
           "customerName",
+          "source",
           "deliveryMethodType",
           "deliveryDetails",
           "pickupPointId",
@@ -6693,6 +6912,10 @@
             "type": "string",
             "nullable": true
           },
+          "source": {
+            "enum": ["MARKETPLACE", "VENDOR_ASSISTED"],
+            "type": "string"
+          },
           "deliveryMethodType": {
             "enum": ["PICKUP", "COURIER"],
             "type": "string"
@@ -6796,6 +7019,7 @@
           "customerEmail",
           "customerPhone",
           "customerName",
+          "source",
           "deliveryMethodType",
           "deliveryDetails",
           "pickupPointId",
@@ -7048,6 +7272,10 @@
             "type": "string",
             "nullable": true
           },
+          "source": {
+            "enum": ["MARKETPLACE", "VENDOR_ASSISTED"],
+            "type": "string"
+          },
           "deliveryMethodType": {
             "enum": ["PICKUP", "COURIER"],
             "type": "string"
@@ -7157,6 +7385,7 @@
           "customerEmail",
           "customerPhone",
           "customerName",
+          "source",
           "deliveryMethodType",
           "deliveryDetails",
           "pickupPointId",
@@ -7206,7 +7435,8 @@
             "nullable": true
           },
           "phone": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "hasPassword": {
             "type": "boolean"
@@ -7334,6 +7564,22 @@
           "lastOrderAt"
         ]
       },
+      "CustomerLookupResponseDto": {
+        "type": "object",
+        "properties": {
+          "normalizedPhone": {
+            "type": "string"
+          },
+          "previousOrders": {
+            "type": "number"
+          },
+          "lastAlias": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": ["normalizedPhone", "previousOrders", "lastAlias"]
+      },
       "CustomerDetailCustomerResponseDto": {
         "type": "object",
         "properties": {
@@ -7382,6 +7628,233 @@
           }
         },
         "required": ["customer", "orders"]
+      },
+      "PublicOrderStoreResponseDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "logoUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "whatsappNumber": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": ["name", "slug", "logoUrl", "whatsappNumber"]
+      },
+      "PublicOrderItemResponseDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unitPrice": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          }
+        },
+        "required": ["name", "quantity", "unitPrice", "currency"]
+      },
+      "PublicOrderPaymentMethodResponseDto": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "enum": ["YAPE", "PLIN", "TRANSFER", "CASH"],
+            "type": "string"
+          },
+          "depositPercent": {
+            "type": "number"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": ["method", "depositPercent", "details"]
+      },
+      "PublicOrderDeliveryDetailsResponseDto": {
+        "type": "object",
+        "properties": {
+          "line1": {
+            "type": "string",
+            "nullable": true
+          },
+          "district": {
+            "type": "string",
+            "nullable": true
+          },
+          "city": {
+            "type": "string",
+            "nullable": true
+          },
+          "reference": {
+            "type": "string",
+            "nullable": true
+          },
+          "pickupPointLabel": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "line1",
+          "district",
+          "city",
+          "reference",
+          "pickupPointLabel"
+        ]
+      },
+      "PublicOrderPaymentResponseDto": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "enum": ["SELLER_RECORDED", "BUYER_SUBMITTED"],
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reviewStatus": {
+            "enum": ["N_A", "PENDING_REVIEW", "APPROVED", "REJECTED"],
+            "type": "string"
+          }
+        },
+        "required": ["source", "amount", "createdAt", "reviewStatus"]
+      },
+      "PublicOrderResponseDto": {
+        "type": "object",
+        "properties": {
+          "store": {
+            "$ref": "#/components/schemas/PublicOrderStoreResponseDto"
+          },
+          "customerPhone": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicOrderItemResponseDto"
+            }
+          },
+          "totalAmount": {
+            "type": "string"
+          },
+          "requiredAmount": {
+            "type": "string"
+          },
+          "paidAmount": {
+            "type": "number"
+          },
+          "pendingAmount": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "paymentStatus": {
+            "enum": [
+              "PENDING_PAYMENT",
+              "PARTIALLY_PAID",
+              "PAYMENT_SUBMITTED",
+              "VERIFIED",
+              "REJECTED",
+              "CANCELLED"
+            ],
+            "type": "string"
+          },
+          "fulfillmentStatus": {
+            "enum": ["ORDERING", "IN_TRANSIT", "READY", "COMPLETED"],
+            "type": "string"
+          },
+          "status": {
+            "enum": ["ACTIVE", "CANCELLED"],
+            "type": "string"
+          },
+          "paymentInstructions": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentMethods": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicOrderPaymentMethodResponseDto"
+            }
+          },
+          "deliveryMethodType": {
+            "enum": ["PICKUP", "COURIER"],
+            "type": "string"
+          },
+          "deliveryDetails": {
+            "$ref": "#/components/schemas/PublicOrderDeliveryDetailsResponseDto"
+          },
+          "pickupDate": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "courierName": {
+            "type": "string",
+            "nullable": true
+          },
+          "courierModality": {
+            "nullable": true,
+            "enum": ["AGENCY", "HOME"],
+            "type": "string"
+          },
+          "payments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicOrderPaymentResponseDto"
+            }
+          }
+        },
+        "required": [
+          "store",
+          "customerPhone",
+          "items",
+          "totalAmount",
+          "requiredAmount",
+          "paidAmount",
+          "pendingAmount",
+          "currency",
+          "paymentStatus",
+          "fulfillmentStatus",
+          "status",
+          "paymentInstructions",
+          "paymentMethods",
+          "deliveryMethodType",
+          "deliveryDetails",
+          "pickupDate",
+          "courierName",
+          "courierModality",
+          "payments"
+        ]
+      },
+      "RecordInviteEventDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["INVITE_SHOWN", "INVITE_CLICKED", "INVITE_DISMISSED"]
+          }
+        },
+        "required": ["type"]
       },
       "PaymentMethodConfigResponseDto": {
         "type": "object",
@@ -8454,7 +8927,8 @@
             "nullable": true
           },
           "phone": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "emailVerified": {
             "type": "boolean"
@@ -8552,7 +9026,8 @@
             "nullable": true
           },
           "phone": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "emailVerified": {
             "type": "boolean"

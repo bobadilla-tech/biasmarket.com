@@ -48,7 +48,7 @@ export class StoreSectionsService {
   /**
    * Store sections are storefront-visible, so any create/update/delete/reorder
    * moves the sitemap's per-store `lastModified` (D4 of
-   * docs/plans/2026-09-07-store-rich-content-and-thin-content-indexing-plan.md).
+   * .artifacts/2026/09/20260907--store-rich-content-and-thin/plan.md).
    * Kept off Prisma `@updatedAt` on purpose — unrelated store edits must not
    * nudge Google to recrawl.
    */

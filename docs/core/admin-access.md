@@ -6,10 +6,10 @@ Development commands use the local dev Compose stack.
 ## Production
 
 Use the wrapper that ships in `infra/vps/bin/` (CD syncs it to
-`/home/deploy/biasmarket/bin/` on every deploy). There is no source checkout on the VPS;
-the wrapper finds the live color and image tag for you and runs the API's own
-scripts inside the live API container. Run it as `root` (`ssh root@<vps>`) or the
-`deploy` user, from any directory:
+`/home/deploy/biasmarket/bin/` on every deploy). There is no source checkout on
+the VPS; the wrapper finds the live color and image tag for you and runs the
+API's own scripts inside the live API container. Run it as `root`
+(`ssh root@<vps>`) or the `deploy` user, from any directory:
 
 ```bash
 /home/deploy/biasmarket/bin/admin.sh create  you@example.com "Your Name"
@@ -28,10 +28,10 @@ IMAGE_TAG="$tag" docker compose --env-file env/shared.env exec -T "api-$color" \
 ```
 
 > **Do not put `--` before the arguments.** pnpm passes it through, the scripts
-> read `process.argv[2]` as the email, and `admin:create -- you@example.com` would
-> create an admin whose email is literally `--`. (The dev shortcuts,
-> `pnpm admin:create:dev <email>`, never had the `--`.) An earlier version of this
-> page had it.
+> read `process.argv[2]` as the email, and `admin:create -- you@example.com`
+> would create an admin whose email is literally `--`. (The dev shortcuts,
+> `pnpm admin:create:dev <email>`, never had the `--`.) An earlier version of
+> this page had it.
 
 `admin:create` refuses to overwrite an existing account and prints the generated
 password once. `admin:promote` changes an existing account's role. Both commands
@@ -46,8 +46,8 @@ yourself, copy the password it prints (it is not stored or shown again), then
 sign in at `https://biasmarket.com/es/login` (or `/en/login`) and open
 `https://biasmarket.com/es/admin`, which has users, stores, coupons and
 inquiries. Change the password after the first login, on the account page
-(`/es/account`, it has a change-password form). To make someone who
-already registered an admin, use `admin:promote` with their email instead.
+(`/es/account`, it has a change-password form). To make someone who already
+registered an admin, use `admin:promote` with their email instead.
 
 ## Development
 

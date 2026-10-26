@@ -14,6 +14,7 @@ export class ProductSearchController {
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { ttl: 60_000, limit: 60 } })
   @ApiQuery({ name: 'q', required: false, type: String })
+  @ApiQuery({ name: 'store', required: false, type: String })
   @ApiQuery({ name: 'page', required: false, type: String })
   @ApiQuery({ name: 'limit', required: false, type: String })
   @ApiQuery({ name: 'category', required: false, type: String })
@@ -25,6 +26,7 @@ export class ProductSearchController {
     @Query('limit') limit: string | undefined,
     @Query('category') category: string | undefined,
     @Query('sort') sort: string | undefined,
+    @Query('store') storeSlug: string | undefined,
   ): Promise<ProductSearchResultResponseDto> {
     const parsed = parsePublicListQuery(limit, page, q, category, sort);
     const result = await this.productSearch.search(
@@ -33,6 +35,7 @@ export class ProductSearchController {
       parsed.q,
       parsed.category,
       parsed.sort,
+      storeSlug,
     );
     return {
       ...result,

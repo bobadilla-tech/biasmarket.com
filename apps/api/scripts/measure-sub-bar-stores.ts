@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // One-off measurement for D5 (see
-// docs/plans/2026-09-07-store-rich-content-and-thin-content-indexing-plan.md
+// .artifacts/2026/09/20260907--store-rich-content-and-thin/plan.md
 // Part 7 step 2): how many currently-public (isPublic && !isDemo) stores FAIL
 // the `isStoreIndexable` bar. Run this once against prod to sanity-check the
 // threshold before D6 flips the gate on. NOT a scheduled job.

@@ -28,7 +28,7 @@ export class StoreResponseDto {
   logoUrl: string | null;
 
   // Seller-authored store copy — see
-  // docs/plans/2026-09-07-store-rich-content-and-thin-content-indexing-plan.md.
+  // .artifacts/2026/09/20260907--store-rich-content-and-thin/plan.md.
   @ApiProperty({ type: String, nullable: true })
   bio: string | null;
 
@@ -363,7 +363,7 @@ export class StorePublicDetailResponseDto extends StoreResponseDto {
   sections: StoreSectionWithCollectionResponseDto[];
 
   // D5 (report-only, see
-  // docs/plans/2026-09-07-store-rich-content-and-thin-content-indexing-plan.md
+  // .artifacts/2026/09/20260907--store-rich-content-and-thin/plan.md
   // Part 5.3 / Part 7 step 2): the full `isStoreIndexable` verdict. Computed
   // here because this read already loads section bodies. Nothing consumes it
   // yet — D6 makes the storefront page emit `robots: { index: false }` when

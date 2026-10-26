@@ -54,6 +54,17 @@ export class CustomerDetailCustomerResponseDto {
   createdAt: string;
 }
 
+export class CustomerLookupResponseDto {
+  @ApiProperty()
+  normalizedPhone: string;
+
+  @ApiProperty()
+  previousOrders: number;
+
+  @ApiProperty({ type: String, nullable: true })
+  lastAlias: string | null;
+}
+
 // `findOne`'s shape (`CustomersService.findOneForStore`). `orders` reuses
 // `Order`'s own `OrderResponseDto` rather than a local duplicate: reading
 // `findOneForStore` alongside `OrderRepository.findManyForStore` confirms the
@@ -63,7 +74,7 @@ export class CustomerDetailCustomerResponseDto {
 // chosen over re-declaring nine-plus fields a second time. This is the first
 // case in this rollout where two tags share an entire response shape, not
 // just a nested piece of one (see
-// docs/plans/2026-08-06-orval-rollout-batches-5-6-plan.md's Batch 5 section).
+// .artifacts/2026/08/20260806--orval-rollout-batches-5-6/plan.md's Batch 5 section).
 export class CustomerDetailResponseDto {
   @ApiProperty({ type: CustomerDetailCustomerResponseDto })
   customer: CustomerDetailCustomerResponseDto;

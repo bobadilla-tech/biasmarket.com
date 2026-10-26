@@ -13,7 +13,7 @@ export class LinkedStoreResponseDto {
 }
 
 // `GET account/me` — the first slug-independent buyer endpoint. See
-// docs/plans/2026-08-08-global-buyer-account-plan.md.
+// .artifacts/2026/08/20260808--global-buyer-account/plan.md.
 export class GlobalAccountProfileResponseDto {
   @ApiProperty({ type: String, nullable: true })
   name: string | null;
@@ -21,8 +21,8 @@ export class GlobalAccountProfileResponseDto {
   @ApiProperty({ type: String, nullable: true })
   email: string | null;
 
-  @ApiProperty()
-  phone: string;
+  @ApiProperty({ type: String, nullable: true })
+  phone: string | null;
 
   @ApiProperty()
   emailVerified: boolean;

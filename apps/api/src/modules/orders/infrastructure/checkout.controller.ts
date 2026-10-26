@@ -4,11 +4,14 @@ import {
   Controller,
   Param,
   Post,
+  Req,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import type { Request } from 'express';
+import { verifyCustomerSessionToken } from '@biasmarket/utils/customer-account-token';
 import { ApiBody, ApiConsumes } from '@nestjs/swagger';
 import { Public } from '@thallesp/nestjs-better-auth';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
@@ -18,6 +21,9 @@ import { isPaymentMethodConfigured } from '@biasmarket/utils/payment-methods';
 import { CreateOrderUseCase } from '../application/create-order.usecase.js';
 import { CreateOrderDto } from '../dto/create-order.dto.js';
 import { StorageService } from '../../../storage/storage.service.js';
+import { pickPublicOrderFields } from './order.controller.js';
+import { requiredEnv } from '../../../config/env.validation.js';
+import { extractCustomerSessionToken } from '../../customer-auth/customer-session-token.js';
 import { PaymentConfigService } from '../../payment-config/payment-config.service.js';
 import type {
   CheckoutOrderItemResponseDto,
@@ -56,6 +62,7 @@ interface CheckoutOrderRow {
   customerEmail: string | null;
   customerPhone: string;
   customerName: string | null;
+  source: 'MARKETPLACE' | 'VENDOR_ASSISTED';
   deliveryMethodType: 'PICKUP' | 'COURIER';
   deliveryDetails: unknown;
   pickupPointId: string | null;
@@ -98,7 +105,7 @@ function toCheckoutItemDto(
 
 function toCheckoutOrderDto(order: CheckoutOrderRow): CheckoutOrderResponseDto {
   return {
-    ...order,
+    ...pickPublicOrderFields(order),
     deliveryDetails: order.deliveryDetails as Record<string, unknown> | null,
     pickupDate: order.pickupDate?.toISOString() ?? null,
     retainedAmount: order.retainedAmount?.toString() ?? null,
@@ -190,6 +197,7 @@ export class CheckoutController {
     @Body() body: Record<string, unknown>,
     @UploadedFile(CHECKOUT_PROOF_PIPE)
     file: ValidatedUploadedFile | undefined,
+    @Req() req: Request,
   ): Promise<CheckoutResultResponseDto> {
     const dto = await buildValidatedDto(body ?? {});
 
@@ -221,7 +229,24 @@ export class CheckoutController {
       slug,
       dto,
       proofImageUrl ? { imageUrl: proofImageUrl } : undefined,
+      this.sessionFromRequest(req),
     );
     return { order: toCheckoutOrderDto(order), whatsappUrl };
+  }
+
+  // Checkout is public, but a signed-in buyer's cookie is honoured to attach
+  // their phone to a phone-less (Google) account. The token is only trusted
+  // after the signature check here and a passwordVersion match in the service.
+  private sessionFromRequest(
+    req: Request,
+  ): { buyerAccountId: string; passwordVersion: number } | undefined {
+    const token = extractCustomerSessionToken(req);
+    if (!token) return undefined;
+    return (
+      verifyCustomerSessionToken(
+        token,
+        requiredEnv('CUSTOMER_ACCOUNT_TOKEN_SECRET'),
+      ) ?? undefined
+    );
   }
 }
