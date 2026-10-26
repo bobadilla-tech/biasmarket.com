@@ -23,12 +23,17 @@ export class ProductSearchService {
     q: string | undefined,
     category: string | undefined,
     sort: ProductSort = 'latest',
+    storeSlug: string | undefined,
   ) {
     const where: Prisma.ProductWhereInput = {
       status: 'PUBLISHED',
       deletedAt: null,
       discontinued: false,
-      store: { ...PUBLIC_STORE_VISIBILITY, owner: { banned: { not: true } } },
+      store: {
+        ...PUBLIC_STORE_VISIBILITY,
+        owner: { banned: { not: true } },
+        ...(storeSlug && { slug: storeSlug }),
+      },
       ...(q && { name: { contains: q, mode: 'insensitive' as const } }),
       ...(category && {
         categories: {
