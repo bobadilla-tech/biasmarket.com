@@ -5,8 +5,9 @@ Postgres, Redis, MinIO, Caddy, blue/green deploys) from an Oracle Cloud free
 tier VM to a paid Contabo VPS, using the migration as a real-world excuse to
 learn Terraform. Written as the work happens, so the wrong turns are in here
 too. The decision record lives in
-[the plan](../plans/2026-09-20-contabo-migration-terraform-plan.md); this file
-is the tutorial-shaped version of it, meant to be turned into a blog post.
+[the plan](../../.artifacts/2026/09/20260920--contabo-migration-terraform/plan.md);
+this file is the tutorial-shaped version of it, meant to be turned into a blog
+post.
 
 Each part has the same shape: **what we do**, **the Terraform concept it
 teaches**, **what surprised us**.
@@ -339,8 +340,8 @@ knew its fingerprint before the machine existed. That removes the awkward
 "verify the fingerprint through a web console" step from the runbook.
 
 Then the checks on the server: Docker 29, `deploy` user in the `docker` group,
-`ufw` active on 22/80/443, 4 GB swap, `/home/deploy/biasmarket` owned by `deploy`, and
-`sshd -T` reporting password login off.
+`ufw` active on 22/80/443, 4 GB swap, `/home/deploy/biasmarket` owned by
+`deploy`, and `sshd -T` reporting password login off.
 
 **Surprises.**
 
@@ -605,10 +606,11 @@ single container: `pull access denied for minio/mc, repository does not exist`.
 MinIO had stopped publishing images on Docker Hub. The stack only ever worked on
 the old server because the layers were already cached there, and the compose
 file used the floating `latest` tag. A fresh machine is the first honest test of
-"can I rebuild this from nothing?" and this is what it found. The images still
-exist on `quay.io/minio/*`, so the fix was to repoint both services and to _pin_
-the tags instead of trusting `latest`. It is also a small piece of
-infrastructure hygiene worth remembering: pin what you depend on, because the
+"can I rebuild this from nothing?" and this is what it found. The first fix was
+to pin `quay.io/minio/*`. Quay later started returning 401 for anonymous pulls
+(September 2026), so compose now pins Coolify's GHCR rebuild
+`ghcr.io/coollabsio/minio:RELEASE.2025-10-15T17-29-55Z` (digest-pinned; that
+image also provides `mc` for `minio-init`). Pin what you depend on, because the
 registry can take it away.
 
 **4. Hot-patching, and the debt it creates.** To keep moving, the fixed compose
@@ -683,18 +685,22 @@ sudo -iu deploy bash -l                     # the user the app runs as
 
 Password login is off. Root logs in with your key only. `deploy` cannot be
 logged into interactively from outside: its two keys are locked to "rsync into
-`/home/deploy/biasmarket`" and "run the deploy script", and belong to GitHub Actions.
+`/home/deploy/biasmarket`" and "run the deploy script", and belong to GitHub
+Actions.
 
 ### Creating and managing admin users
 
-A fresh production database has no admin. Sellers register themselves, admins
-are made from the server. You do not need a copy of the repo on the server, and you should not clone one:
-the API's admin scripts ship inside the API's Docker image, so the command just
-has to run _inside the live container_. Working out which color is live and which
-image tag it runs is fiddly, so a wrapper does it. It lives in `infra/vps/bin/`,
-which CD already syncs to `/home/deploy/biasmarket/bin/` on every deploy, so it is
-automatically there and never a manual step. Run it as root (or `deploy`) from any
-directory:
+# A fresh production database has no admin. Sellers register themselves, admins <<<<<<< HEAD are made from the server. You do not need a copy of the repo on the server, and you should not clone one: the API's admin scripts ship inside the API's Docker image, so the command just has to run _inside the live container_. Working out which color is live and which image tag it runs is fiddly, so a wrapper does it. It lives in `infra/vps/bin/`, which CD already syncs to `/home/deploy/biasmarket/bin/` on every deploy, so it is automatically there and never a manual step. Run it as root (or `deploy`) from any directory:
+
+are made from the server. You do not need a copy of the repo on the server, and
+you should not clone one: the API's admin scripts ship inside the API's Docker
+image, so the command just has to run _inside the live container_. Working out
+which color is live and which image tag it runs is fiddly, so a wrapper does it.
+It lives in `infra/vps/bin/`, which CD already syncs to `/opt/biasmarket/bin/`
+on every deploy, so it is automatically there and never a manual step. Run it as
+root (or `deploy`) from any directory:
+
+>>>>>>> d4ebaf7 (artifacts guidelines)
 
 ```bash
 ssh root@161.97.113.35
@@ -703,11 +709,17 @@ ssh root@161.97.113.35
 /home/deploy/biasmarket/bin/admin.sh revoke  you@example.com
 ```
 
-Or in one line from your laptop: `ssh root@161.97.113.35 /home/deploy/biasmarket/bin/admin.sh create you@example.com "Your Name"`.
+# <<<<<<< HEAD Or in one line from your laptop: `ssh root@161.97.113.35 /home/deploy/biasmarket/bin/admin.sh create you@example.com "Your Name"`.
+
+Or in one line from your laptop:
+`ssh root@161.97.113.35 /opt/biasmarket/bin/admin.sh create you@example.com "Your Name"`.
+
+>>>>>>> d4ebaf7 (artifacts guidelines)
 
 - It prints a generated password **once**. Copy it, then sign in at
   `https://biasmarket.com/es/login` and open `/es/admin` (users, stores,
-  coupons, inquiries). Change the password after the first login at `/es/account`.
+  coupons, inquiries). Change the password after the first login at
+  `/es/account`.
 - Already registered and just need the role? Use
   `admin.sh promote you@example.com` instead of `create`.
 - To remove admin rights: `admin.sh revoke you@example.com` (sets the role back
@@ -715,14 +727,14 @@ Or in one line from your laptop: `ssh root@161.97.113.35 /home/deploy/biasmarket
 - **Never run `seed:base` on production.** It creates admin accounts with a
   published password. It is for development databases only.
 
-**A trap we fell into while writing this:** the first version of these commands had
-`--` before the arguments (`... admin:create -- you@example.com`), which is the
-usual way to pass arguments through `pnpm run`. Here it made the script read `--`
-as the email, so it would have created an admin account with the email `--`.
-Testing the exact command against the real server (with a harmless `promote` on a
-nonexistent address) is what caught it: the error read `No user found with email --`.
-The lesson is the same as everywhere in this guide: run the documented command
-before you trust it.
+**A trap we fell into while writing this:** the first version of these commands
+had `--` before the arguments (`... admin:create -- you@example.com`), which is
+the usual way to pass arguments through `pnpm run`. Here it made the script read
+`--` as the email, so it would have created an admin account with the email
+`--`. Testing the exact command against the real server (with a harmless
+`promote` on a nonexistent address) is what caught it: the error read
+`No user found with email --`. The lesson is the same as everywhere in this
+guide: run the documented command before you trust it.
 
 ### Deploying and rolling back
 

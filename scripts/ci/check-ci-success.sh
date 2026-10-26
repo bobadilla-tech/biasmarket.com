@@ -4,6 +4,7 @@ set -euo pipefail
 
 : "${DETECT_RESULT:?DETECT_RESULT is required}"
 : "${E2E_RESULT:?E2E_RESULT is required}"
+: "${API_E2E_CHANGED:?API_E2E_CHANGED is required}"
 : "${EVENT_NAME:?EVENT_NAME is required}"
 : "${RUN_E2E:?RUN_E2E is required}"
 
@@ -40,14 +41,21 @@ for index in "${!package_names[@]}"; do
 done
 
 expected_e2e="skipped"
-if [[ "$EVENT_NAME" == "push" || "$EVENT_NAME" == "pull_request" ]]; then
+if [[ "$API_E2E_CHANGED" != "true" && "$API_E2E_CHANGED" != "false" ]]; then
+  echo "API E2E changed output is invalid: $API_E2E_CHANGED"
+  exit 1
+fi
+
+if [[ "$EVENT_NAME" == "push" ]]; then
+  expected_e2e="success"
+elif [[ "$EVENT_NAME" == "pull_request" && "$API_E2E_CHANGED" == "true" ]]; then
   expected_e2e="success"
 elif [[ "$EVENT_NAME" == "workflow_dispatch" && "$RUN_E2E" == "true" ]]; then
   expected_e2e="success"
 fi
 
 if [[ "$E2E_RESULT" != "$expected_e2e" ]]; then
-  echo "E2E result is $E2E_RESULT; expected $expected_e2e for $EVENT_NAME (run_e2e=$RUN_E2E)"
+  echo "E2E result is $E2E_RESULT; expected $expected_e2e for $EVENT_NAME (api_e2e_changed=$API_E2E_CHANGED, run_e2e=$RUN_E2E)"
   exit 1
 fi
 

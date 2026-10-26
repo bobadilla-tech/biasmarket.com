@@ -72,7 +72,7 @@ export class OrderRepository {
   // plus a `buyerAccountId` check so a buyer can only ever reach their own
   // orders. Guest orders (`buyerAccountId === null`) can never match a real
   // session's `buyerAccountId`, so they 404 here too — expected, per
-  // docs/plans/2026-08-08-buyer-proof-of-payment-upload-plan.md's stated
+  // .artifacts/2026/08/20260808--buyer-proof-of-payment-upload/plan.md's stated
   // non-goal (guest orders don't have a buyer session to authenticate this
   // endpoint with in the first place).
   async findOrderForBuyer(

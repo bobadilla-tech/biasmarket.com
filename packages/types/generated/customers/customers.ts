@@ -8,6 +8,8 @@
 import type {
   CustomerDetailResponseDto,
   CustomerListItemResponseDto,
+  CustomerLookupResponseDto,
+  CustomersControllerlookupParams,
 } from "../api.schemas.js";
 
 import { customFetch } from "../../http.js";
@@ -21,6 +23,36 @@ export const findAll = async (
   options?: Parameters<typeof customFetch>[1],
 ): Promise<CustomerListItemResponseDto[]> => {
   return customFetch<CustomerListItemResponseDto[]>(getFindAllUrl(storeId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getLookupUrl = (
+  storeId: string,
+  params: CustomersControllerlookupParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/stores/${storeId}/customers/lookup?${stringifiedParams}`
+    : `/stores/${storeId}/customers/lookup`;
+};
+
+export const lookup = async (
+  storeId: string,
+  params: CustomersControllerlookupParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CustomerLookupResponseDto> => {
+  return customFetch<CustomerLookupResponseDto>(getLookupUrl(storeId, params), {
     ...options,
     method: "GET",
   });

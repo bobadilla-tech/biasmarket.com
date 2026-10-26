@@ -60,6 +60,15 @@
   --color-landing-gray: var(--landing-gray);
   --color-landing-link: var(--landing-link);
   --color-landing-title: var(--landing-title);
+  --color-hero-bg: var(--hero-bg);
+  --color-hero-title: var(--hero-title);
+  --color-hero-accent: var(--hero-accent);
+  --color-hero-accent-hover: var(--hero-accent-hover);
+  --font-hero-accent: var(--font-poppins), var(--font-geist-sans), sans-serif;
+  --color-cta: var(--cta);
+  --color-cta-hover: var(--cta-hover);
+  --color-cta-active: var(--cta-active);
+  --color-cta-strong: var(--cta-strong);
 }
 
 :root {
@@ -154,6 +163,20 @@
   --landing-gray: #d9d9d9;
   --landing-link: #750edc;
   --landing-title: #ff00b7;
+  /* Shared landing CTA pink (hero + help center buttons). White text on
+     --cta is ~3.8:1, so only use it behind large bold text (>= 18.66px).
+     Smaller CTA text uses --cta-strong (~4.7:1) to clear WCAG AA. */
+  --cta: #e8399e;
+  --cta-hover: #d4278c;
+  --cta-active: #c41d7f;
+  --cta-strong: #d4278c;
+  /* Landing hero banner (#243). The hero accent reuses the shared CTA pink;
+     the CTA text is bold >= 19px (WCAG "large text") and the subtitle is
+     >= 24px, so 3:1 is enough against white and --hero-bg. */
+  --hero-bg: #fbf0fd;
+  --hero-title: #450f5f;
+  --hero-accent: var(--cta);
+  --hero-accent-hover: var(--cta-active);
 }
 
 /* Scoped to the landing page only — remaps shadcn's semantic tokens to the
@@ -164,6 +187,9 @@
   /* Keep the landing's existing light palette scoped to its surfaces. */
   --brand-violet: #8d2feb;
   --brand-pink: #ff3db1;
+  /* Brand-name gradient used in landing headings ("BIASMARKET"). */
+  --brand-gradient-start: #7b1fe0;
+  --brand-gradient-end: #d62ba8;
   --background: #ffffff;
   --foreground: #000000;
   --card: #ffffff;

@@ -24,6 +24,8 @@ describe('CustomerAuthService', () => {
       findUnique: Mock;
       findUniqueOrThrow: Mock;
       findFirst: Mock;
+      findMany: Mock;
+      create: Mock;
       update: Mock;
     };
     customerStoreLink: { upsert: Mock };
@@ -47,6 +49,8 @@ describe('CustomerAuthService', () => {
         findUnique: vi.fn(),
         findUniqueOrThrow: vi.fn(),
         findFirst: vi.fn(),
+        findMany: vi.fn(),
+        create: vi.fn(),
         update: vi.fn(),
       },
       customerStoreLink: { upsert: vi.fn() },
@@ -311,6 +315,204 @@ describe('CustomerAuthService', () => {
       expect(prisma.buyerAccount.findUnique).toHaveBeenCalledWith({
         where: { phone: '+51988888888' },
       });
+    });
+  });
+
+  describe('loginWithGoogle', () => {
+    const identity = { email: 'Buyer@Example.com', name: 'Buyer Name' };
+
+    it('signs in the single matching account, verifies its email and links the store', async () => {
+      prisma.buyerAccount.findMany.mockResolvedValue([
+        { id: 'buyer-1', passwordVersion: 2, name: null },
+      ]);
+      prisma.buyerAccount.update.mockResolvedValue({
+        id: 'buyer-1',
+        passwordVersion: 2,
+      });
+
+      const token = await service.loginWithGoogle('my-store', identity);
+
+      expect(verifyCustomerSessionToken(token, 'test-secret')).toEqual({
+        buyerAccountId: 'buyer-1',
+        passwordVersion: 2,
+      });
+      expect(prisma.buyerAccount.findMany).toHaveBeenCalledWith({
+        where: { email: { equals: identity.email, mode: 'insensitive' } },
+      });
+      expect(prisma.customerStoreLink.upsert).toHaveBeenCalled();
+      expect(prisma.buyerAccount.update).toHaveBeenCalledWith({
+        where: { id: 'buyer-1' },
+        data: { emailVerified: true, name: 'Buyer Name' },
+      });
+    });
+
+    it('keeps an existing name', async () => {
+      prisma.buyerAccount.findMany.mockResolvedValue([
+        { id: 'buyer-1', passwordVersion: 0, name: 'Already Set' },
+      ]);
+      prisma.buyerAccount.update.mockResolvedValue({
+        id: 'buyer-1',
+        passwordVersion: 0,
+      });
+
+      await service.loginWithGoogle('my-store', identity);
+
+      expect(prisma.buyerAccount.update).toHaveBeenCalledWith({
+        where: { id: 'buyer-1' },
+        data: { emailVerified: true },
+      });
+    });
+
+    it('creates a phone-less account when no BuyerAccount has that email', async () => {
+      prisma.buyerAccount.findMany.mockResolvedValue([]);
+      prisma.buyerAccount.create.mockResolvedValue({
+        id: 'buyer-new',
+        passwordVersion: 0,
+      });
+
+      const token = await service.loginWithGoogle('my-store', identity);
+
+      expect(prisma.buyerAccount.create).toHaveBeenCalledWith({
+        data: {
+          email: identity.email,
+          emailVerified: true,
+          name: 'Buyer Name',
+        },
+      });
+      expect(verifyCustomerSessionToken(token, 'test-secret')).toEqual({
+        buyerAccountId: 'buyer-new',
+        passwordVersion: 0,
+      });
+      expect(prisma.customerStoreLink.upsert).toHaveBeenCalled();
+    });
+
+    it('does not link any store for the global entry point', async () => {
+      prisma.buyerAccount.findMany.mockResolvedValue([]);
+      prisma.buyerAccount.create.mockResolvedValue({
+        id: 'buyer-new',
+        passwordVersion: 0,
+      });
+
+      await service.loginWithGoogle(null, identity);
+
+      expect(prisma.store.findUnique).not.toHaveBeenCalled();
+      expect(prisma.customerStoreLink.upsert).not.toHaveBeenCalled();
+    });
+
+    it('refuses an ambiguous email shared by several accounts', async () => {
+      prisma.buyerAccount.findMany.mockResolvedValue([
+        { id: 'a', passwordVersion: 0, name: null },
+        { id: 'b', passwordVersion: 0, name: null },
+      ]);
+
+      await expect(
+        service.loginWithGoogle('my-store', identity),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(prisma.buyerAccount.create).not.toHaveBeenCalled();
+      expect(prisma.customerStoreLink.upsert).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('forgotPasswordGlobal', () => {
+    it('sends a store-less reset email when the phone matches a registered buyer', async () => {
+      const buyerAccount = {
+        id: 'buyer-1',
+        email: 'jane@example.com',
+        passwordHash: 'already-set',
+      };
+      prisma.buyerAccount.findUnique.mockResolvedValue(buyerAccount);
+
+      await service.forgotPasswordGlobal('+51988888888');
+
+      expect(customerAccount.sendPasswordResetEmail).toHaveBeenCalledWith(
+        buyerAccount,
+        null,
+      );
+      expect(prisma.store.findUnique).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['an unknown phone', null],
+      [
+        'an account that never set a password',
+        { id: 'b', email: 'a@b.c', passwordHash: null },
+      ],
+      [
+        'an account without an email',
+        { id: 'b', email: null, passwordHash: 'x' },
+      ],
+    ])('silently no-ops for %s', async (_label, account) => {
+      prisma.buyerAccount.findUnique.mockResolvedValue(account);
+
+      await expect(
+        service.forgotPasswordGlobal('+51900000000'),
+      ).resolves.toBeUndefined();
+      expect(customerAccount.sendPasswordResetEmail).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('resetPasswordGlobal', () => {
+    it('redeems a reset token without needing a store', async () => {
+      const token = createCustomerAccountToken(
+        'buyer-1',
+        'test-secret',
+        'reset',
+      );
+      prisma.buyerAccount.findUnique.mockResolvedValue({
+        id: 'buyer-1',
+        passwordHash: 'old',
+      });
+
+      await expect(
+        service.resetPasswordGlobal(token, 'super-secret-1'),
+      ).resolves.toEqual({ ok: true });
+
+      expect(prisma.store.findUnique).not.toHaveBeenCalled();
+      expect(prisma.buyerAccount.update).toHaveBeenCalledWith({
+        where: { id: 'buyer-1' },
+        data: {
+          passwordHash: expect.any(String),
+          passwordVersion: { increment: 1 },
+        },
+      });
+    });
+
+    it('rejects an invalid or expired token', async () => {
+      await expect(
+        service.resetPasswordGlobal('not-a-token', 'super-secret-1'),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(prisma.buyerAccount.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('loginGlobal', () => {
+    it('issues a session token without linking any store', async () => {
+      const passwordHash = await hashPassword('super-secret-1');
+      prisma.buyerAccount.findUnique.mockResolvedValue({
+        id: 'buyer-1',
+        passwordHash,
+        passwordVersion: 1,
+      });
+
+      const token = await service.loginGlobal('+51988888888', 'super-secret-1');
+
+      expect(verifyCustomerSessionToken(token, 'test-secret')).toEqual({
+        buyerAccountId: 'buyer-1',
+        passwordVersion: 1,
+      });
+      expect(prisma.customerStoreLink.upsert).not.toHaveBeenCalled();
+    });
+
+    it('rejects a wrong password with the generic error', async () => {
+      prisma.buyerAccount.findUnique.mockResolvedValue({
+        id: 'buyer-1',
+        passwordHash: await hashPassword('super-secret-1'),
+        passwordVersion: 1,
+      });
+
+      await expect(
+        service.loginGlobal('+51988888888', 'nope-nope-1'),
+      ).rejects.toBeInstanceOf(UnauthorizedException);
     });
   });
 

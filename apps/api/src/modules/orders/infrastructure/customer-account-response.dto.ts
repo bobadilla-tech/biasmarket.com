@@ -14,8 +14,8 @@ export class ConfirmAccountCustomerResponseDto {
   @ApiProperty({ type: String, nullable: true })
   email: string | null;
 
-  @ApiProperty()
-  phone: string;
+  @ApiProperty({ type: String, nullable: true })
+  phone: string | null;
 
   @ApiProperty()
   hasPassword: boolean;

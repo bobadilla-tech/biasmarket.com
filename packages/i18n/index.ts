@@ -18,8 +18,6 @@ import storefrontEn from "./en/storefront.json" with { type: "json" };
 import storefrontEs from "./es/storefront.json" with { type: "json" };
 import couponsEn from "./en/coupons.json" with { type: "json" };
 import couponsEs from "./es/coupons.json" with { type: "json" };
-import mobileEn from "./en/mobile.json" with { type: "json" };
-import mobileEs from "./es/mobile.json" with { type: "json" };
 
 const messages = {
   en: {
@@ -33,7 +31,6 @@ const messages = {
     onboarding: onboardingEn,
     storefront: storefrontEn,
     coupons: couponsEn,
-    mobile: mobileEn,
   },
   es: {
     admin: adminEs,
@@ -46,7 +43,6 @@ const messages = {
     onboarding: onboardingEs,
     storefront: storefrontEs,
     coupons: couponsEs,
-    mobile: mobileEs,
   },
 } as const;
 

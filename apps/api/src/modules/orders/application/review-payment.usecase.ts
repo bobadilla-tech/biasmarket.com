@@ -10,6 +10,7 @@ import { OrderRepository } from '../infrastructure/order.repository.js';
 import { Order } from '../domain/order.entity.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
 import { MailerService } from '../../../mailer/mailer.service.js';
+import { OrderEventsService } from './order-events.service.js';
 
 function buildPaymentStatusEmailHtml(
   decision: 'approve' | 'reject',
@@ -43,6 +44,7 @@ export class ReviewPaymentUseCase {
     private orders: OrderRepository,
     private notifications: NotificationsService,
     private mailer: MailerService,
+    private events: OrderEventsService,
   ) {}
 
   async execute(
@@ -51,6 +53,7 @@ export class ReviewPaymentUseCase {
     userId: string,
     decision: 'approve' | 'reject',
     reason?: string,
+    options: { recordEvent?: boolean } = {},
   ) {
     await this.orders.assertOwnership(storeId, userId);
 
@@ -151,6 +154,21 @@ export class ReviewPaymentUseCase {
           metadata: {},
         },
       });
+      // Order-level approvals stand in for the payment decision itself
+      // (`PATCH :orderId/review`), so they always record it. Callers that
+      // already recorded the same seller action — `reviewPaymentProof`
+      // approves one proof row and then settles the balance — pass
+      // `recordEvent: false` so the buyer timeline shows it once, with the
+      // proof's `paymentId`.
+      if (options.recordEvent !== false) {
+        await this.events.record(tx, {
+          orderId,
+          storeId,
+          type:
+            decision === 'approve' ? 'PAYMENT_VALIDATED' : 'PAYMENT_REJECTED',
+          actor: 'SELLER',
+        });
+      }
 
       return updated;
     });

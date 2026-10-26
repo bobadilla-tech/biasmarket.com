@@ -107,6 +107,7 @@ export class CustomerAccountService {
     phone: string,
     email: string,
     name: string | undefined,
+    session?: { buyerAccountId: string; passwordVersion: number },
   ): Promise<{
     customer: Customer | null;
     buyerAccount: BuyerAccount | null;
@@ -121,10 +122,47 @@ export class CustomerAccountService {
     let needsVerificationEmail: boolean;
 
     if (!existing) {
-      buyerAccount = await tx.buyerAccount.create({
-        data: { phone: normalizedPhone, email, name, emailVerified: false },
-      });
-      needsVerificationEmail = true;
+      // A signed-in buyer who joined with Google has no phone yet: this
+      // checkout is where it gets attached to their existing account, so
+      // their orders show up under it. Only ever for the verified session
+      // owner, never from an unauthenticated request.
+      const own = session
+        ? await tx.buyerAccount.findUnique({
+            where: { id: session.buyerAccountId },
+          })
+        : null;
+      const sessionOwnsEmail =
+        own !== null &&
+        own.passwordVersion === session?.passwordVersion &&
+        own.phone === null &&
+        own.email?.toLowerCase() === email.toLowerCase();
+
+      if (own && sessionOwnsEmail) {
+        buyerAccount = await tx.buyerAccount.update({
+          where: { id: own.id },
+          data: { phone: normalizedPhone, name: own.name ?? name },
+        });
+        needsVerificationEmail = false;
+      } else {
+        // An unauthenticated checkout must not create a second account for an
+        // email that already belongs to a phone-less (Google) account — that
+        // would make the email ambiguous. Falls back to a guest order, like
+        // the email-mismatch case below.
+        const phoneLessOwner = await tx.buyerAccount.findFirst({
+          where: { phone: null, email: { equals: email, mode: 'insensitive' } },
+        });
+        if (phoneLessOwner) {
+          return {
+            customer: null,
+            buyerAccount: null,
+            needsVerificationEmail: false,
+          };
+        }
+        buyerAccount = await tx.buyerAccount.create({
+          data: { phone: normalizedPhone, email, name, emailVerified: false },
+        });
+        needsVerificationEmail = true;
+      }
     } else if (existing.email !== email) {
       // Matching phone with a different email than what's on file — could be
       // a typo, or someone else's checkout using a phone number they know
@@ -206,9 +244,11 @@ export class CustomerAccountService {
     }
   }
 
+  // `store` is null for the global (My purchases) reset flow: the email then
+  // names Bias Market and links to the global reset page instead of a store's.
   async sendPasswordResetEmail(
     buyerAccount: BuyerAccount,
-    store: Store,
+    store: Store | null,
   ): Promise<void> {
     if (!buyerAccount.email) return;
 
@@ -219,12 +259,14 @@ export class CustomerAccountService {
         secret,
         'reset',
       );
-      const url = this.confirmUrl(store.slug, token);
+      const url = store
+        ? this.confirmUrl(store.slug, token)
+        : this.globalResetUrl(token);
 
       await this.mailer.send({
         to: buyerAccount.email,
         subject: 'Restablece tu contraseña — Bias Market / Reset your password',
-        html: buildPasswordResetEmailHtml(url, store.name),
+        html: buildPasswordResetEmailHtml(url, store?.name ?? 'Bias Market'),
       });
     } catch (err) {
       this.logger.error(
@@ -293,6 +335,11 @@ export class CustomerAccountService {
         err,
       );
     }
+  }
+
+  private globalResetUrl(token: string): string {
+    const webUrl = process.env.WEB_URL ?? 'http://localhost:3001';
+    return `${webUrl}/my-purchases/reset-password?token=${token}`;
   }
 
   private confirmUrl(storeSlug: string, token: string): string {

@@ -6,7 +6,7 @@ import { CustomerSessionGuard } from './customer-session.guard.js';
 
 // `AuthGuard`/`Session` are needed too, not just `Public` — this spec's
 // controller imports `toOrderDto` from `order.controller.ts` (see
-// docs/plans/2026-08-08-buyer-mini-dashboard-plan.md), which uses both at
+// .artifacts/2026/08/20260808--buyer-mini-dashboard/plan.md), which uses both at
 // module-load time (`@UseGuards(AuthGuard)`, `@Session() session`).
 vi.mock('@thallesp/nestjs-better-auth', () => ({
   Public: () => () => undefined,

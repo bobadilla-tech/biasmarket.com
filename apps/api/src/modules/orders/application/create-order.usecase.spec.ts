@@ -269,6 +269,7 @@ describe('CreateOrderUseCase', () => {
         data: expect.objectContaining({
           storeId: store.id,
           customerPhone: dto.customerPhone,
+          customerPhoneNormalized: dto.customerPhone,
           totalAmount: expect.any(FakeDecimal),
           requiredAmount: expect.any(FakeDecimal),
         }),
@@ -639,6 +640,7 @@ describe('CreateOrderUseCase', () => {
         dto.customerPhone,
         'jane@example.com',
         dto.customerName,
+        undefined,
       );
       expect(prisma.order.create).toHaveBeenCalledWith(
         expect.objectContaining({

@@ -72,7 +72,7 @@ export class StorageService {
 
   // Streams a payment image for the authenticated GET endpoint in
   // order.controller.ts — never redirects to a presigned URL (see
-  // docs/plans/2026-08-08-payment-proof-image-access-control-plan.md's
+  // .artifacts/2026/08/20260808--payment-proof-image-access-control/plan.md's
   // feasibility analysis: S3_ENDPOINT is the internal `minio:9000` Docker
   // hostname in prod, so a presigned URL signed against the existing client
   // would point somewhere the browser can't reach). Parses bucket + key from

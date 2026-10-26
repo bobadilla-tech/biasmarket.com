@@ -31,7 +31,7 @@ export class CreateOrderItemDto {
 // Snapshotted verbatim into Order.deliveryDetails at order-creation time —
 // never read back server-side afterwards. Guests and logged-in buyers submit
 // the same inline shape; there is no addressId picker. See
-// docs/plans/2026-08-08-buyer-shipping-addresses-plan.md's "Important
+// .artifacts/2026/08/20260808--buyer-shipping-addresses/plan.md's "Important
 // correction" section for why a saved-address FK reference was dropped from
 // this DTO.
 //

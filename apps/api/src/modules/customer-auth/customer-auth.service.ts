@@ -32,6 +32,10 @@ export class CustomerAuthService {
     return store;
   }
 
+  async assertStoreExists(slug: string): Promise<void> {
+    await this.findStoreBySlug(slug);
+  }
+
   private issueSessionToken(
     buyerAccountId: string,
     passwordVersion: number,
@@ -61,7 +65,19 @@ export class CustomerAuthService {
     password: string,
   ): Promise<{ ok: true }> {
     await this.findStoreBySlug(slug);
+    return this.setPasswordFromToken(token, password);
+  }
 
+  // Global (no-store) counterpart of `register` — the emailed token already
+  // identifies the buyer account, so no store is needed to redeem it.
+  resetPasswordGlobal(token: string, password: string): Promise<{ ok: true }> {
+    return this.setPasswordFromToken(token, password);
+  }
+
+  private async setPasswordFromToken(
+    token: string,
+    password: string,
+  ): Promise<{ ok: true }> {
     const secret = requiredEnv('CUSTOMER_ACCOUNT_TOKEN_SECRET');
     const verified = verifyCustomerAccountToken(token, secret);
     if (
@@ -122,8 +138,39 @@ export class CustomerAuthService {
     await this.customerAccount.sendPasswordResetEmail(buyerAccount, store);
   }
 
+  async forgotPasswordGlobal(phone: string): Promise<void> {
+    const buyerAccount = await this.prisma.buyerAccount.findUnique({
+      where: { phone: normalizePhone(phone) },
+    });
+
+    // Always resolves — never confirm or deny whether an account exists.
+    if (!buyerAccount?.passwordHash || !buyerAccount.email) return;
+
+    await this.customerAccount.sendPasswordResetEmail(buyerAccount, null);
+  }
+
   async login(slug: string, phone: string, password: string): Promise<string> {
     const store = await this.findStoreBySlug(slug);
+    const buyerAccount = await this.authenticateByPhone(phone, password);
+
+    await this.ensureStoreLink(buyerAccount.id, store.id);
+
+    return this.issueSessionToken(
+      buyerAccount.id,
+      buyerAccount.passwordVersion,
+    );
+  }
+
+  // Global (no-store) login — same credentials, no store link to create.
+  async loginGlobal(phone: string, password: string): Promise<string> {
+    const buyerAccount = await this.authenticateByPhone(phone, password);
+    return this.issueSessionToken(
+      buyerAccount.id,
+      buyerAccount.passwordVersion,
+    );
+  }
+
+  private async authenticateByPhone(phone: string, password: string) {
     const buyerAccount = await this.prisma.buyerAccount.findUnique({
       where: { phone: normalizePhone(phone) },
     });
@@ -142,7 +189,45 @@ export class CustomerAuthService {
       throw new UnauthorizedException('Teléfono o contraseña inválidos');
     }
 
-    await this.ensureStoreLink(buyerAccount.id, store.id);
+    return buyerAccount;
+  }
+
+  // Google proves ownership of an email, not a phone number. A buyer whose
+  // BuyerAccount already carries that email is signed in; otherwise a new
+  // account is created with the verified email and no phone (buyers add one
+  // from their profile or at checkout). A Google-verified match also counts
+  // as email verification, and the buyer can sign in without ever having set
+  // a password. `slug` is null for the global (no-store) entry point.
+  async loginWithGoogle(
+    slug: string | null,
+    identity: { email: string; name: string | null },
+  ): Promise<string> {
+    const store = slug ? await this.findStoreBySlug(slug) : null;
+    const matches = await this.prisma.buyerAccount.findMany({
+      where: { email: { equals: identity.email, mode: 'insensitive' } },
+    });
+    if (matches.length > 1) {
+      throw new ConflictException('Hay más de una cuenta con este correo');
+    }
+
+    const existing = matches[0];
+    const buyerAccount = existing
+      ? await this.prisma.buyerAccount.update({
+          where: { id: existing.id },
+          data: {
+            emailVerified: true,
+            ...(existing.name ? {} : { name: identity.name }),
+          },
+        })
+      : await this.prisma.buyerAccount.create({
+          data: {
+            email: identity.email,
+            emailVerified: true,
+            name: identity.name,
+          },
+        });
+
+    if (store) await this.ensureStoreLink(buyerAccount.id, store.id);
 
     return this.issueSessionToken(
       buyerAccount.id,

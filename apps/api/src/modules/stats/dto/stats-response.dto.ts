@@ -81,7 +81,7 @@ export class OutstandingPartialPaymentResponseDto {
 // `Order`'s own `OrderResponseDto` — `StatsService.getOverview` runs the same
 // `{items: {product, variant}, payments}` include through the shared
 // `withPaymentSummary` helper that `Order.findAll`/`Customers.findOne` do
-// (see docs/plans/2026-08-06-orval-rollout-batches-5-6-plan.md's Batch 5/6
+// (see .artifacts/2026/08/20260806--orval-rollout-batches-5-6/plan.md's Batch 5/6
 // section), so this is the same genuine same-shape case as `Customers`, not
 // a coincidence worth re-modeling.
 export class StatsOverviewResponseDto {

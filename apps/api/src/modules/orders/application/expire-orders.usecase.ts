@@ -5,6 +5,7 @@ import { computePaymentSummary } from '../../../common/payment-summary.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
 import { Order } from '../domain/order.entity.js';
+import { OrderEventsService } from './order-events.service.js';
 
 // Mirrors CancelOrderUseCase's RESERVED_HOLD_STATUSES: all statuses that keep
 // stock soft-held (reserved). Orders holding stock past expiresAt must release
@@ -21,6 +22,7 @@ export class ExpireOrdersUseCase {
   constructor(
     private prisma: PrismaService,
     private notifications: NotificationsService,
+    private events: OrderEventsService,
   ) {}
 
   async execute() {
@@ -88,6 +90,13 @@ export class ExpireOrdersUseCase {
                 releasedAmount: 0,
               },
             },
+          });
+          await this.events.record(tx, {
+            orderId: order.id,
+            storeId: order.storeId,
+            type: 'ORDER_CANCELLED',
+            actor: 'SYSTEM',
+            payload: { resolution: 'RETAINED' },
           });
 
           const store = await tx.store.findUnique({
