@@ -89,11 +89,24 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
 
   const refreshSessionToken = useCallback(async (authorization: string, token: string) => {
     if (!isCurrentMobileAuthorization(authorization)) return;
-    const session = await runStorageOperation(readBuyerSession);
-    if (!session || !isCurrentMobileAuthorization(authorization)) return;
     const generation = sessionGeneration.current;
-    await runStorageOperation(() => writeBuyerSession({ ...session, token }));
-    if (generation === sessionGeneration.current && isCurrentMobileAuthorization(authorization)) {
+    const refreshed = await runStorageOperation(async () => {
+      if (
+        generation !== sessionGeneration.current ||
+        !isCurrentMobileAuthorization(authorization)
+      ) {
+        return false;
+      }
+      const session = await readBuyerSession();
+      if (!session) return false;
+      await writeBuyerSession({ ...session, token });
+      return true;
+    });
+    if (
+      refreshed &&
+      generation === sessionGeneration.current &&
+      isCurrentMobileAuthorization(authorization)
+    ) {
       setMobileBearerToken(token);
     }
   }, [runStorageOperation]);
@@ -117,6 +130,7 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
       .catch(() => {
         if (!active || generation !== sessionGeneration.current) return;
         setError("auth.sessionReadFailed");
+        setStatus("unauthenticated");
       });
 
     return () => {
