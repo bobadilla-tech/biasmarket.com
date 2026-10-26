@@ -6,8 +6,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "build": "tsc && tsc -p tsconfig.mobile.json",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.mobile.json --noEmit"
   },
   "devDependencies": {
     "typescript": "^7.0.2"
