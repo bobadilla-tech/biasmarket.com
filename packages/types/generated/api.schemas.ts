@@ -2686,6 +2686,7 @@ export type ProductsControlleruploadImageParams = {
 
 export type ProductSearchControllersearchParams = {
   sort?: ProductSearchControllersearchSort;
+  store?: string;
   category?: string;
   limit?: string;
   page?: string;

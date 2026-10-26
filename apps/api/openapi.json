@@ -1239,6 +1239,14 @@
             }
           },
           {
+            "name": "store",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "q",
             "required": false,
             "in": "query",
