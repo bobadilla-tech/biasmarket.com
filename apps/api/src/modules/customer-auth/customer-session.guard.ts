@@ -77,6 +77,9 @@ export class CustomerSessionGuard implements CanActivate {
       buyerAccount.passwordVersion,
       secret,
     );
+    if (req.headers['x-client'] === 'mobile' && req.headers.authorization?.startsWith('Bearer ')) {
+      res.setHeader('X-Session-Token', fresh);
+    }
     res.cookie(CUSTOMER_SESSION_COOKIE, fresh, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
