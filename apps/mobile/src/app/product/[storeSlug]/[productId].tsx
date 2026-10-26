@@ -42,12 +42,10 @@ export default function ProductDetailScreen() {
   if (productQuery.error || !productQuery.data) {
     return (
       <View className="flex-1 items-center justify-center gap-4 bg-brand-ink px-6">
-        <Text className="text-center text-white">
-          No pudimos encontrar este producto.
-        </Text>
+        <Text className="text-center text-white">{t("catalog.notFound")}</Text>
         <Pressable accessibilityRole="button" onPress={() => router.back()}>
           <Text className="font-semibold text-brand-pink">
-            Volver al catálogo
+            {t("catalog.backToCatalog")}
           </Text>
         </Pressable>
       </View>
@@ -192,7 +190,7 @@ export default function ProductDetailScreen() {
           onPress={() => router.push("/search")}
         >
           <Text className="text-center font-semibold text-brand-ink">
-            Seguir explorando
+            {t("catalog.keepBrowsing")}
           </Text>
         </Pressable>
       </View>
@@ -214,6 +212,7 @@ function VariantRow({
   disabled: boolean;
 }) {
   const { locale, t } = useMobileI18n();
+  const soldOut = disabled || (variant.stock !== null && variant.stock - variant.reserved <= 0);
   const attributes = Object.entries(variant.attributes)
     .map(([key, value]) => `${key}: ${String(value)}`)
     .join(" · ");
@@ -250,11 +249,8 @@ function VariantRow({
         ) : null}
         <Pressable
           accessibilityRole="button"
-          disabled={
-            disabled ||
-            (variant.stock !== null && variant.stock - variant.reserved <= 0)
-          }
-          className={`rounded-lg px-3 py-2 ${disabled ? "bg-white/15" : "bg-brand-pink"}`}
+          disabled={soldOut}
+          className={`rounded-lg px-3 py-2 ${soldOut ? "bg-white/15" : "bg-brand-pink"}`}
           onPress={onAdd}
         >
           <Text className="text-xs font-bold text-brand-ink">
