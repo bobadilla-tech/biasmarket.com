@@ -39,17 +39,7 @@ export default async function StoreLayout({
   return (
     <div className="storefront-theme" style={themeStyle}>
       <StorefrontThemeVars style={themeStyle} />
-      {store && (
-        <StorefrontHeader
-          slug={slug}
-          name={store.name}
-          logoUrl={store.logoUrl}
-          instagramUrl={store.instagramUrl}
-          facebookUrl={store.facebookUrl}
-          tiktokUrl={store.tiktokUrl}
-          twitterUrl={store.twitterUrl}
-        />
-      )}
+      {store && <StorefrontHeader slug={slug} />}
       {children}
     </div>
   );
