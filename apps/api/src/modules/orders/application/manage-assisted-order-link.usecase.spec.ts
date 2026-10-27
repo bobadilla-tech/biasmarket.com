@@ -75,6 +75,29 @@ describe('ManageAssistedOrderLinkUseCase', () => {
       );
     });
 
+    it('treats a hold order expiring exactly now as expired', async () => {
+      vi.useFakeTimers();
+      try {
+        const now = new Date('2026-10-27T12:00:00.000Z');
+        vi.setSystemTime(now);
+        await expect(
+          setup(makeOrder({ expiresAt: new Date(now) })).useCase.regenerate(
+            store,
+            'seller1',
+            'o1',
+          ),
+        ).rejects.toBeInstanceOf(ConflictException);
+        // One millisecond later it is still live.
+        await expect(
+          setup(
+            makeOrder({ expiresAt: new Date(now.getTime() + 1) }),
+          ).useCase.regenerate(store, 'seller1', 'o1'),
+        ).resolves.toBeDefined();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
     it('answers 404 for a missing/foreign order and for a marketplace order', async () => {
       await expect(
         setup(null, false).useCase.regenerate(store, 'seller1', 'o1'),

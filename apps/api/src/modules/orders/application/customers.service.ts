@@ -226,6 +226,7 @@ export class CustomersService {
           include: {
             items: { include: { product: true, variant: true } },
             payments: { orderBy: { createdAt: 'desc' } },
+            createdBy: { select: { name: true } },
           },
         });
         const guestOrders = orders.filter(
@@ -267,6 +268,7 @@ export class CustomersService {
       include: {
         items: { include: { product: true, variant: true } },
         payments: { orderBy: { createdAt: 'desc' } },
+        createdBy: { select: { name: true } },
       },
     });
 
