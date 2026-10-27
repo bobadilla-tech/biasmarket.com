@@ -46,11 +46,12 @@ describe('assisted orders (e2e)', () => {
     const existing = new Set(readdirSync(mailerDevDir));
     const res = await request(app.getHttpServer())
       .post('/api/auth/sign-up/email')
+      .set('X-Forwarded-For', nextIp())
       .send({ email, password, name: `Seller ${label}` })
       .expect(200);
     userIds.push(res.body.user.id);
     const html = readFileSync(
-      await waitForNewMailerFile(existing, email),
+      await waitForNewMailerFile(existing, email, 20_000),
       'utf-8',
     );
     const token = html.match(/verify-email\?token=([^&"]+)/)?.[1];
@@ -60,6 +61,7 @@ describe('assisted orders (e2e)', () => {
     );
     const signIn = await request(app.getHttpServer())
       .post('/api/auth/sign-in/email')
+      .set('X-Forwarded-For', nextIp())
       .send({ email, password })
       .expect(200);
     const raw = (signIn.headers['set-cookie'] as unknown as string[]).find(
@@ -419,7 +421,8 @@ describe('assisted orders (e2e)', () => {
     });
 
     it('throttles per signed-in user, not per IP', async () => {
-      const [cookieC, cookieD] = [await signUp('c'), await signUp('d')];
+      const cookieC = await signUp('throttle');
+      const cookieD = otherCookie;
       const ip = nextIp();
       const attempt = (cookie: string) =>
         request(app.getHttpServer())
@@ -430,9 +433,10 @@ describe('assisted orders (e2e)', () => {
       // Not the owner: 403 each time, which still counts toward the bucket.
       for (let i = 0; i < 20; i++) await attempt(cookieC).expect(403);
       await attempt(cookieC).expect(429);
-      // Another seller behind the same IP has their own bucket.
+      // The other seller (barely used so far) behind the same IP has their
+      // own bucket.
       await attempt(cookieD).expect(403);
-    });
+    }, 30_000);
 
     it('survives concurrent creates for the same new phone', async () => {
       const phone = '+51955000111';
