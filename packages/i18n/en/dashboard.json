@@ -462,7 +462,7 @@
       },
       "assistedOrderLink": {
         "title": "Assisted order link message",
-        "description": "Used when you create an order for a buyer and send them their private link. Required variable: the link ({{link}})."
+        "description": "Used when you create an order for a buyer and send them their private link. Required variable: the link ('{{link}}')."
       }
     }
   },
