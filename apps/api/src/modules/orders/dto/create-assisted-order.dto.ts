@@ -75,8 +75,11 @@ export class CreateAssistedOrderDto {
   @Transform(trimString)
   @IsString()
   @MaxLength(60)
-  @Matches(/^[^\p{Cc}]*$/u, {
-    message: 'El nombre no puede contener caracteres de control',
+  // Control characters, bidi overrides/isolates, zero-width spaces, line and
+  // paragraph separators and the BOM would end up in the WhatsApp greeting.
+  // ZWJ/ZWNJ stay allowed: emoji sequences and some scripts need them.
+  @Matches(/^[^\p{Cc}\u200B\u2028\u2029\u202A-\u202E\u2066-\u2069\uFEFF]*$/u, {
+    message: 'El nombre no puede contener caracteres de control o invisibles',
   })
   customerName?: string;
 
