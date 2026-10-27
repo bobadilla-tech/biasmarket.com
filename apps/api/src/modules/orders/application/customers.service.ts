@@ -346,7 +346,10 @@ export class CustomersService {
     return {
       normalizedPhone: phone,
       previousOrders: previousOrders + legacyMatches.length,
-      lastAlias: customer?.name ?? newestOrder?.customerName ?? null,
+      // Customer.name can be the registered buyer's canonical name. The
+      // newest order carries the alias used for that order and should win for
+      // assisted-order prefilling without renaming the registered contact.
+      lastAlias: newestOrder?.customerName ?? customer?.name ?? null,
     };
   }
 
