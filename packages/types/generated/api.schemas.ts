@@ -809,6 +809,14 @@ export interface OrderPaymentResponseDto {
   /** @nullable */
   imageUrl: string | null;
   createdAt: string;
+  /** @nullable */
+  operationCode: string | null;
+  /** @nullable */
+  paidAt: string | null;
+  /** @nullable */
+  voidedAt: string | null;
+  /** @nullable */
+  voidReason: string | null;
   source: OrderPaymentResponseDtoSource;
   reviewStatus: OrderPaymentResponseDtoReviewStatus;
   /** @nullable */
@@ -1825,6 +1833,8 @@ export interface PublicOrderPaymentResponseDto {
   source: PublicOrderPaymentResponseDtoSource;
   amount: string;
   createdAt: string;
+  /** @nullable */
+  voidedAt: string | null;
   reviewStatus: PublicOrderPaymentResponseDtoReviewStatus;
 }
 

@@ -76,30 +76,26 @@ export class StatsService {
     await this.assertOwnership(storeId, userId);
 
     const [
-      revenueAgg,
+      revenuePayments,
       paymentGroups,
       fulfillmentGroups,
       lowStockCount,
       recentOrdersRaw,
       partialPaymentOrdersRaw,
     ] = await Promise.all([
-      this.prisma.orderPayment.aggregate({
+      this.prisma.orderPayment.findMany({
         where: {
           storeId,
-          // Revenue is money actually collected and verified — VERIFIED and
-          // PARTIALLY_PAID orders both qualify, but a partial payment only
-          // ever contributes its own paid amount, not the full order total.
-          // The `OR` below is `countsTowardPaid`: it excludes a
-          // buyer-submitted proof still awaiting seller review — see
-          // common/payment-summary.ts's `countsTowardRevenue` +
-          // `countsTowardPaid`, the same predicates every other revenue/spend
-          // aggregate in this codebase filters by.
           order: {
             paymentStatus: { in: [...REVENUE_ORDER_PAYMENT_STATUSES] },
           },
-          OR: [{ source: 'SELLER_RECORDED' }, { reviewStatus: 'APPROVED' }],
         },
-        _sum: { amount: true },
+        select: {
+          amount: true,
+          source: true,
+          reviewStatus: true,
+          voidedAt: true,
+        },
       }),
       this.prisma.order.groupBy({
         by: ['paymentStatus'],
@@ -167,7 +163,13 @@ export class StatsService {
     );
 
     return {
-      revenue: Number(revenueAgg._sum.amount ?? 0),
+      revenue: revenuePayments
+        .filter(countsTowardPaid)
+        .reduce(
+          (sum, payment) => sum.plus(payment.amount),
+          new Prisma.Decimal(0),
+        )
+        .toNumber(),
       totalOrders,
       paymentStatusCounts,
       fulfillmentStatusCounts,
@@ -226,13 +228,25 @@ export class StatsService {
         this.prisma.orderPayment.findMany({
           where: {
             storeId,
-            createdAt: { gte: rangeStart, lt: rangeEnd },
-            OR: [{ source: 'SELLER_RECORDED' }, { reviewStatus: 'APPROVED' }],
+            OR: [
+              { paidAt: { gte: rangeStart, lt: rangeEnd } },
+              {
+                paidAt: null,
+                createdAt: { gte: rangeStart, lt: rangeEnd },
+              },
+            ],
             order: {
               paymentStatus: { in: [...REVENUE_ORDER_PAYMENT_STATUSES] },
             },
           },
-          select: { amount: true, createdAt: true },
+          select: {
+            amount: true,
+            createdAt: true,
+            paidAt: true,
+            source: true,
+            reviewStatus: true,
+            voidedAt: true,
+          },
         }),
       ]);
 
@@ -255,9 +269,10 @@ export class StatsService {
       );
 
       const revenue = rangePayments
-        .filter(
-          (payment) => payment.createdAt >= start && payment.createdAt < end,
-        )
+        .filter((payment) => {
+          const paidAt = payment.paidAt ?? payment.createdAt;
+          return countsTowardPaid(payment) && paidAt >= start && paidAt < end;
+        })
         .reduce(
           (sum, payment) => sum.plus(payment.amount),
           new Prisma.Decimal(0),
@@ -315,23 +330,49 @@ export class StatsService {
   ): Promise<PaymentMethodsBreakdown> {
     await this.assertOwnership(storeId, userId);
 
-    const rows = await this.prisma.orderPayment.groupBy({
-      by: ['method'],
+    const payments = await this.prisma.orderPayment.findMany({
       where: {
         storeId,
-        createdAt: { gte: from, lt: to },
+        OR: [
+          { paidAt: { gte: from, lt: to } },
+          { paidAt: null, createdAt: { gte: from, lt: to } },
+        ],
         order: { status: 'ACTIVE' },
       },
-      _sum: { amount: true },
-      _count: true,
+      select: {
+        method: true,
+        amount: true,
+        paidAt: true,
+        source: true,
+        reviewStatus: true,
+        voidedAt: true,
+      },
     });
 
-    const totalAmountDecimal = rows.reduce(
-      (sum, row) => sum.plus(row._sum.amount ?? 0),
+    const totalsByMethod = new Map<
+      PaymentMethodType | null,
+      { amount: Prisma.Decimal; count: number }
+    >();
+    for (const payment of payments.filter(countsTowardPaid)) {
+      const current = totalsByMethod.get(payment.method) ?? {
+        amount: new Prisma.Decimal(0),
+        count: 0,
+      };
+      totalsByMethod.set(payment.method, {
+        amount: current.amount.plus(payment.amount),
+        count: current.count + 1,
+      });
+    }
+
+    const totalAmountDecimal = [...totalsByMethod.values()].reduce(
+      (sum, row) => sum.plus(row.amount),
       new Prisma.Decimal(0),
     );
     const totalAmount = totalAmountDecimal.toNumber();
-    const totalCount = rows.reduce((sum, row) => sum + row._count, 0);
+    const totalCount = [...totalsByMethod.values()].reduce(
+      (sum, row) => sum + row.count,
+      0,
+    );
 
     const percentageOf = (amount: Prisma.Decimal) =>
       totalAmountDecimal.greaterThan(0)
@@ -340,26 +381,26 @@ export class StatsService {
 
     const byMethod: PaymentMethodBreakdownRow[] = KNOWN_PAYMENT_METHODS.map(
       (method) => {
-        const row = rows.find((r) => r.method === method);
-        const amount = new Prisma.Decimal(row?._sum.amount ?? 0);
+        const row = totalsByMethod.get(method);
+        const amount = row?.amount ?? new Prisma.Decimal(0);
         return {
           method,
           amount: amount.toNumber(),
-          count: row?._count ?? 0,
+          count: row?.count ?? 0,
           percentage: percentageOf(amount),
         };
       },
     );
 
-    for (const row of rows) {
-      if (row.method !== null && KNOWN_PAYMENT_METHODS.includes(row.method)) {
+    for (const [method, row] of totalsByMethod) {
+      if (method !== null && KNOWN_PAYMENT_METHODS.includes(method)) {
         continue;
       }
-      const amount = new Prisma.Decimal(row._sum.amount ?? 0);
+      const amount = row.amount;
       byMethod.push({
-        method: row.method,
+        method,
         amount: amount.toNumber(),
-        count: row._count,
+        count: row.count,
         percentage: percentageOf(amount),
       });
     }

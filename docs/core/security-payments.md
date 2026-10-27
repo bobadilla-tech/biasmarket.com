@@ -153,6 +153,9 @@ as a confirmed sale at each step.
      [§5.5](product.md#55-delivery-methods-seller-panel))
    - `expiresAt` is set from `Store.holdWindowHours` (default 48h,
      store-configurable)
+   - Seller-assisted orders use the V1 rule: pickup may require a 30% deposit
+     when the seller selects `PARTIAL`; courier orders require the full amount.
+     Buyer checkout continues to use the store's configured deposit rule.
 2. **Checkout collects proof when the payment method is configured, then offers
    a WhatsApp handoff** — Yape/Plin/transfer checkouts with complete account
    details require an in-app JPEG/PNG/PDF proof, stored as a
@@ -170,6 +173,11 @@ as a confirmed sale at each step.
    ownership-checked endpoint above. A partial amount → `PARTIALLY_PAID`;
    recording enough to reach `requiredAmount` routes straight through the
    approve path (next step) → `VERIFIED`
+   - A seller may void a recorded or approved payment only while fulfillment
+     is still `ORDERING`. Voiding records the actor, timestamp and reason,
+     keeps the payment in history, and recalculates the payment status from the
+     remaining non-voided payments. This includes reverting `VERIFIED` to
+     `PARTIALLY_PAID` or `PENDING_PAYMENT` when its threshold is no longer met.
 4. **Seller approves / rejects** —
    `PATCH /stores/:storeId/orders/:orderId/review`
    (`review-payment.usecase.ts`):

@@ -160,6 +160,18 @@ export class OrderPaymentResponseDto {
   @ApiProperty({ type: String, format: 'date-time' })
   createdAt: string;
 
+  @ApiProperty({ type: String, nullable: true })
+  operationCode: string | null;
+
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  paidAt: string | null;
+
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  voidedAt: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  voidReason: string | null;
+
   @ApiProperty({ enum: ['SELLER_RECORDED', 'BUYER_SUBMITTED'] })
   source: 'SELLER_RECORDED' | 'BUYER_SUBMITTED';
 

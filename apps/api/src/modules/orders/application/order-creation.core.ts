@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { Prisma } from '@biasmarket/db';
+import { assistedRequiredAmountCents } from '@biasmarket/utils/assisted-order-payment';
 import type {
   CourierConfig,
   DeliveryMethodConfig,
@@ -291,6 +292,7 @@ export async function reserveItems(
   notifications: NotificationsService,
   store: Store,
   input: ReserveItemsInput,
+  paymentRule: 'STORE_CONFIG' | 'ASSISTED_ORDER_V1' = 'STORE_CONFIG',
 ) {
   const { deliveryConfig, courierConfig, pickupPoint, pickupDate } = input;
   const messageItems: {
@@ -421,6 +423,24 @@ export async function reserveItems(
   // silently re-pricing the order as FULL.
   let requiredAmount = finalAmount;
   if (input.paymentType === 'PARTIAL') {
+    if (paymentRule === 'ASSISTED_ORDER_V1') {
+      if (
+        assistedRequiredAmountCents(
+          finalAmount.times(100).toNumber(),
+          input.deliveryMethodType,
+          input.paymentType,
+        ) === null
+      ) {
+        throw new BadRequestException(
+          'Los pedidos por courier requieren el pago completo',
+        );
+      }
+      if (!input.paymentMethod || input.paymentMethod === 'CASH') {
+        throw new BadRequestException(
+          'Selecciona un método electrónico para registrar el adelanto',
+        );
+      }
+    }
     const paymentConfig = input.paymentMethod
       ? await tx.paymentMethodConfig.findUnique({
           where: {
@@ -435,13 +455,27 @@ export async function reserveItems(
       !paymentConfig ||
       !paymentConfig.enabled ||
       paymentConfig.method === 'CASH' ||
-      paymentConfig.depositPercent >= 100
+      (paymentRule === 'STORE_CONFIG' && paymentConfig.depositPercent >= 100)
     ) {
       throw new BadRequestException(
         'Este método de pago no soporta pago parcial',
       );
     }
-    requiredAmount = finalAmount.times(paymentConfig.depositPercent).div(100);
+    if (paymentRule === 'ASSISTED_ORDER_V1') {
+      const amountCents = assistedRequiredAmountCents(
+        finalAmount.times(100).toNumber(),
+        input.deliveryMethodType,
+        input.paymentType,
+      );
+      if (amountCents === null) {
+        throw new BadRequestException(
+          'Los pedidos por courier requieren el pago completo',
+        );
+      }
+      requiredAmount = new Prisma.Decimal(amountCents).div(100);
+    } else {
+      requiredAmount = finalAmount.times(paymentConfig.depositPercent).div(100);
+    }
     // Round to 2 decimal places to avoid floating point issues
     requiredAmount = new Prisma.Decimal(requiredAmount.toFixed(2));
   }

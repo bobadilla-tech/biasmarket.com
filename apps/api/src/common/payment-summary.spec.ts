@@ -40,6 +40,18 @@ describe('countsTowardPaid', () => {
     expect(countsTowardPaid(rejectedBuyerPayment('10'))).toBe(false);
     expect(countsTowardPaid(approvedBuyerPayment('10'))).toBe(true);
   });
+
+  it('does not count a voided payment, regardless of source or review status', () => {
+    expect(
+      countsTowardPaid({ ...sellerPayment('10'), voidedAt: new Date() }),
+    ).toBe(false);
+    expect(
+      countsTowardPaid({
+        ...approvedBuyerPayment('10'),
+        voidedAt: new Date(),
+      }),
+    ).toBe(false);
+  });
 });
 
 describe('computePaymentSummary', () => {

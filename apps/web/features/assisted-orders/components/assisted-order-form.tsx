@@ -6,6 +6,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { formatPhone, validatePhone } from "@biasmarket/utils/phone-country";
+import {
+  ASSISTED_PICKUP_DEPOSIT_PERCENT,
+  assistedRequiredAmountCents,
+} from "@biasmarket/utils/assisted-order-payment";
 import { isPaymentMethodConfigured } from "@biasmarket/utils/payment-methods";
 import type { CreateAssistedOrderResponseDto } from "@biasmarket/types";
 import {
@@ -20,8 +24,6 @@ import { FormErrorSummary, FormField } from "@/components/shared/form-a11y";
 import { useDeliveryOptions } from "@/features/checkout/queries/use-delivery-options";
 import {
   computeDeliveryCost,
-  depositPercentOf,
-  isPartialAvailable,
   pickupDateBlocking,
   pointsRequiringDate as getPointsRequiringDate,
 } from "@/features/checkout/lib/delivery-rules";
@@ -184,8 +186,16 @@ export function AssistedOrderForm({
   const selectedPayment = paymentMethods.find(
     (m) => m.method === paymentMethod,
   );
-  const partialAvailable = isPartialAvailable(paymentMethod, selectedPayment);
-  const depositPercent = depositPercentOf(selectedPayment);
+  const partialAvailable =
+    deliveryMethodType === "PICKUP" &&
+    paymentMethod !== "CASH" &&
+    selectedPayment != null;
+  const depositPercent = ASSISTED_PICKUP_DEPOSIT_PERCENT;
+  const partialRequiredCents = assistedRequiredAmountCents(
+    totalCents,
+    deliveryMethodType === "COURIER" ? "COURIER" : "PICKUP",
+    "PARTIAL",
+  );
 
   // Defaults, applied once the public delivery options load -----------------
   useEffect(() => {
@@ -863,7 +873,7 @@ export function AssistedOrderForm({
           {paymentType === "PARTIAL" && partialAvailable ? (
             <div className="flex justify-between">
               <dt>{t("summary.toPayNow")}</dt>
-              <dd>{money(Math.round((totalCents * depositPercent) / 100))}</dd>
+              <dd>{money(partialRequiredCents ?? totalCents)}</dd>
             </div>
           ) : null}
         </dl>

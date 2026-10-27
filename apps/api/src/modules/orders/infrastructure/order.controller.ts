@@ -183,6 +183,10 @@ export interface OrderPaymentRow {
   note: string | null;
   imageUrl: string | null;
   createdAt: Date;
+  operationCode?: string | null;
+  paidAt?: Date | null;
+  voidedAt?: Date | null;
+  voidReason?: string | null;
   source: 'SELLER_RECORDED' | 'BUYER_SUBMITTED';
   reviewStatus: 'N_A' | 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED';
   reviewedAt: Date | null;
@@ -297,6 +301,10 @@ export function toOrderPaymentDto(
     ...payment,
     amount: payment.amount.toString(),
     createdAt: payment.createdAt.toISOString(),
+    operationCode: payment.operationCode ?? null,
+    paidAt: payment.paidAt?.toISOString() ?? null,
+    voidedAt: payment.voidedAt?.toISOString() ?? null,
+    voidReason: payment.voidReason ?? null,
     reviewedAt: payment.reviewedAt?.toISOString() ?? null,
   };
 }
@@ -505,8 +513,15 @@ export class OrderController {
 
     try {
       await this.prisma.$transaction(async (tx) => {
-        // Re-read the order under the transaction's snapshot so concurrent
-        // requests serialize on this row.
+        // Lock the order so concurrent add/void/review operations serialize
+        // before reading the credited payment total.
+        const [locked] = await tx.$queryRaw<Array<{ id: string }>>`
+          SELECT "id" FROM "Order"
+          WHERE "id" = ${orderId} AND "storeId" = ${storeId}
+          FOR UPDATE
+        `;
+        if (!locked) throw new NotFoundException('Orden no encontrada');
+
         const current = await tx.order.findUniqueOrThrow({
           where: { id: orderId },
           select: {
@@ -521,15 +536,21 @@ export class OrderController {
         // not raw floats, so a residual float-conversion artifact in
         // `numericAmount`/`pendingAmount` can never reject (or accept) a payment
         // that's actually exact to the cent.
-        const paidSummary = await tx.orderPayment.aggregate({
-          _sum: { amount: true },
-          where: {
-            orderId,
-            reviewStatus: { notIn: ['REJECTED'] },
+        const payments = await tx.orderPayment.findMany({
+          where: { orderId },
+          select: {
+            amount: true,
+            source: true,
+            reviewStatus: true,
+            voidedAt: true,
           },
         });
-        const currentPaid = Number(paidSummary._sum.amount ?? 0);
-        const currentPending = Number(current.requiredAmount) - currentPaid;
+        const paymentSummary = computePaymentSummary(
+          current.requiredAmount,
+          payments,
+        );
+        const currentPaid = paymentSummary.paidAmount;
+        const currentPending = paymentSummary.pendingAmount;
         if (toCents(numericAmount) > toCents(currentPending)) {
           throw new Error('El abono excede el saldo pendiente');
         }
@@ -555,6 +576,8 @@ export class OrderController {
             currency: current.currency,
             method: method as PaymentMethodType,
             note,
+            paidAt: new Date(),
+            recordedBy: session.user.id,
             ...(imageUrl && { imageUrl }),
           },
         });
@@ -685,6 +708,10 @@ export class OrderController {
           reviewStatus,
           reviewedAt: new Date(),
           reviewedBy: session.user.id,
+          ...(dto.decision === 'approve' && {
+            paidAt: new Date(),
+            recordedBy: session.user.id,
+          }),
         },
       });
       if (claimed.count === 0) {
@@ -738,7 +765,12 @@ export class OrderController {
       // PARTIALLY_PAID write and its event atomically.
       const payments = await tx.orderPayment.findMany({
         where: { orderId },
-        select: { amount: true, source: true, reviewStatus: true },
+        select: {
+          amount: true,
+          source: true,
+          reviewStatus: true,
+          voidedAt: true,
+        },
       });
 
       const { paidAmount } = computePaymentSummary(

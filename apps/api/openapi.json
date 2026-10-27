@@ -6740,6 +6740,24 @@
             "type": "string",
             "format": "date-time"
           },
+          "operationCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "paidAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "voidedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "voidReason": {
+            "type": "string",
+            "nullable": true
+          },
           "source": {
             "enum": ["SELLER_RECORDED", "BUYER_SUBMITTED"],
             "type": "string"
@@ -6768,6 +6786,10 @@
           "note",
           "imageUrl",
           "createdAt",
+          "operationCode",
+          "paidAt",
+          "voidedAt",
+          "voidReason",
           "source",
           "reviewStatus",
           "reviewedAt",
@@ -8133,12 +8155,23 @@
             "type": "string",
             "format": "date-time"
           },
+          "voidedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
           "reviewStatus": {
             "enum": ["N_A", "PENDING_REVIEW", "APPROVED", "REJECTED"],
             "type": "string"
           }
         },
-        "required": ["source", "amount", "createdAt", "reviewStatus"]
+        "required": [
+          "source",
+          "amount",
+          "createdAt",
+          "voidedAt",
+          "reviewStatus"
+        ]
       },
       "PublicOrderResponseDto": {
         "type": "object",

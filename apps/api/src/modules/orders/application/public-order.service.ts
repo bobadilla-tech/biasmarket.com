@@ -70,6 +70,7 @@ export class PublicOrderService {
             source: true,
             reviewStatus: true,
             createdAt: true,
+            voidedAt: true,
           },
         },
       },
@@ -178,6 +179,7 @@ export class PublicOrderService {
         amount: payment.amount.toString(),
         createdAt: payment.createdAt.toISOString(),
         reviewStatus: payment.reviewStatus,
+        voidedAt: payment.voidedAt?.toISOString() ?? null,
       })),
     };
   }
