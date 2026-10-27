@@ -591,6 +591,7 @@ model CourierConfig {
 enum WhatsAppMessageType {
   NEW_ORDER
   PAYMENT_REMINDER
+  ASSISTED_ORDER_LINK
 }
 
 // Per-store override for the WhatsApp message a seller sends to a buyer —

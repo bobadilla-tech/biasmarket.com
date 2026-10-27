@@ -2437,7 +2437,10 @@ export default async () => {
             WhatsAppTemplateResponseDto: {
               id: { required: true, type: () => String },
               storeId: { required: true, type: () => String },
-              type: { required: true, enum: ['NEW_ORDER', 'PAYMENT_REMINDER'] },
+              type: {
+                required: true,
+                enum: ['NEW_ORDER', 'PAYMENT_REMINDER', 'ASSISTED_ORDER_LINK'],
+              },
               template: { required: true, type: () => String },
               updatedAt: { required: true, type: () => String },
             },

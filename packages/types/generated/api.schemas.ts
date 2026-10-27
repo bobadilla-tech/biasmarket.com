@@ -2498,6 +2498,7 @@ export type WhatsAppTemplateResponseDtoType =
 export const WhatsAppTemplateResponseDtoType = {
   NEW_ORDER: "NEW_ORDER",
   PAYMENT_REMINDER: "PAYMENT_REMINDER",
+  ASSISTED_ORDER_LINK: "ASSISTED_ORDER_LINK",
 } as const;
 
 export interface WhatsAppTemplateResponseDto {

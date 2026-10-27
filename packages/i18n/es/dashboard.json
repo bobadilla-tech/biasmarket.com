@@ -459,6 +459,10 @@
       "paymentReminder": {
         "title": "Mensaje de recordatorio de pago",
         "description": "Se usa cuando contactas a un comprador por un saldo pendiente. Variables requeridas: la referencia del pedido y el monto pendiente."
+      },
+      "assistedOrderLink": {
+        "title": "Mensaje de enlace de pedido asistido",
+        "description": "Se usa cuando creas un pedido por un comprador y le envías su enlace privado. Variable requerida: el enlace ({{link}})."
       }
     }
   },

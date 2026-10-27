@@ -1,12 +1,19 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { WhatsAppMessageType } from "@biasmarket/utils/whatsapp";
 import { settingsApi } from "../api/settings.api";
 import { whatsappTemplatesKeys } from "../queries/use-whatsapp-templates";
 
+const TEMPLATE_KEY = {
+  NEW_ORDER: "newOrder",
+  PAYMENT_REMINDER: "paymentReminder",
+  ASSISTED_ORDER_LINK: "assistedOrderLink",
+} as const satisfies Record<WhatsAppMessageType, string>;
+
 export function useSaveWhatsAppTemplate(
   storeId: string | undefined,
-  type: "NEW_ORDER" | "PAYMENT_REMINDER",
+  type: WhatsAppMessageType,
 ) {
   const queryClient = useQueryClient();
 
@@ -16,15 +23,12 @@ export function useSaveWhatsAppTemplate(
     onSuccess: (saved) => {
       const key = whatsappTemplatesKeys.byStore(storeId as string);
       queryClient.setQueryData<
-        {
-          newOrder: unknown;
-          paymentReminder: unknown;
-        } | undefined
+        Record<(typeof TEMPLATE_KEY)[WhatsAppMessageType], unknown> | undefined
       >(key, (current) => {
         if (!current) return current;
         return {
           ...current,
-          [type === "NEW_ORDER" ? "newOrder" : "paymentReminder"]: saved,
+          [TEMPLATE_KEY[type]]: saved,
         };
       });
     },

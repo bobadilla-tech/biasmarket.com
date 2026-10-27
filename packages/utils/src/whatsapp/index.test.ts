@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  WHATSAPP_MESSAGE_TOKENS,
+  WHATSAPP_REQUIRED_TOKENS,
+  type WhatsAppMessageType,
+  buildWhatsAppAssistedOrderLinkMessage,
   buildWhatsAppOrderMessage,
   buildWhatsAppPaymentReminderMessage,
   buildWhatsAppUrl,
@@ -126,9 +130,9 @@ describe("buildWhatsAppUrl", () => {
   it("URL-encodes the message", () => {
     const url = buildWhatsAppUrl("51999999999", "line one\nline two");
     expect(url).toBe(
-      `https://wa.me/51999999999?text=${
-        encodeURIComponent("line one\nline two")
-      }`,
+      `https://wa.me/51999999999?text=${encodeURIComponent(
+        "line one\nline two",
+      )}`,
     );
   });
 });
@@ -160,12 +164,16 @@ describe("extractTokens", () => {
 
 describe("getMissingRequiredTokens", () => {
   it("NEW_ORDER requires orderRef and items", () => {
-    expect(getMissingRequiredTokens("NEW_ORDER", "{{orderRef}} {{items}}"))
-      .toEqual([]);
-    expect(getMissingRequiredTokens("NEW_ORDER", "solo {{items}}"))
-      .toEqual(["orderRef"]);
-    expect(getMissingRequiredTokens("NEW_ORDER", "sin variables"))
-      .toEqual(["orderRef", "items"]);
+    expect(
+      getMissingRequiredTokens("NEW_ORDER", "{{orderRef}} {{items}}"),
+    ).toEqual([]);
+    expect(getMissingRequiredTokens("NEW_ORDER", "solo {{items}}")).toEqual([
+      "orderRef",
+    ]);
+    expect(getMissingRequiredTokens("NEW_ORDER", "sin variables")).toEqual([
+      "orderRef",
+      "items",
+    ]);
   });
 
   it("PAYMENT_REMINDER requires orderRef and pendingAmount", () => {
@@ -175,13 +183,15 @@ describe("getMissingRequiredTokens", () => {
         "{{orderRef}} {{pendingAmount}}",
       ),
     ).toEqual([]);
-    expect(getMissingRequiredTokens("PAYMENT_REMINDER", "{{orderRef}}"))
-      .toEqual(["pendingAmount"]);
+    expect(
+      getMissingRequiredTokens("PAYMENT_REMINDER", "{{orderRef}}"),
+    ).toEqual(["pendingAmount"]);
   });
 
   it("treats whitespace-padded tokens as present", () => {
-    expect(getMissingRequiredTokens("NEW_ORDER", "{{ orderRef }} {{ items }}"))
-      .toEqual([]);
+    expect(
+      getMissingRequiredTokens("NEW_ORDER", "{{ orderRef }} {{ items }}"),
+    ).toEqual([]);
   });
 });
 
@@ -303,5 +313,89 @@ describe("buildWhatsAppPaymentReminderMessage with a custom template", () => {
       "Hola {{customerName}}",
     );
     expect(message).toBe("Hola ");
+  });
+});
+
+describe("buildWhatsAppAssistedOrderLinkMessage", () => {
+  const link = "https://biasmarket.com/es/store/k-store/pedido/tok_-123";
+  const base = {
+    orderId: "order-abcdef",
+    storeName: "K-Store",
+    totalAmount: 50,
+    currency: "PEN",
+    customerName: "Sofi",
+    link,
+  };
+
+  it("greets by alias and includes the order ref, store, total and link", () => {
+    const message = buildWhatsAppAssistedOrderLinkMessage(base);
+    expect(message).toContain("¡Hola Sofi! 💜");
+    expect(message).toContain("#ABCDEF");
+    expect(message).toContain("K-Store");
+    expect(message).toContain("50.00 PEN");
+    expect(message.endsWith(link)).toBe(true);
+  });
+
+  it("gives a clean greeting without an alias (empty, blank or null)", () => {
+    for (const customerName of ["", "   ", null, undefined]) {
+      const message = buildWhatsAppAssistedOrderLinkMessage({
+        ...base,
+        customerName,
+      });
+      expect(message.startsWith("¡Hola! 💜\n")).toBe(true);
+      expect(message).not.toContain("¡Hola !");
+    }
+  });
+
+  it("renders a custom template as written, with the same tokenizer", () => {
+    expect(
+      buildWhatsAppAssistedOrderLinkMessage(
+        base,
+        "Hola {{customerName}}: {{orderRef}} {{totalAmount}} {{currency}} en {{storeName}} {{link}}",
+      ),
+    ).toBe(`Hola Sofi: #ABCDEF 50.00 PEN en K-Store ${link}`);
+    expect(
+      buildWhatsAppAssistedOrderLinkMessage(
+        { ...base, customerName: "" },
+        "Hola {{customerName}}!",
+      ),
+    ).toBe("Hola !");
+  });
+
+  it("requires {{link}} in a saved template", () => {
+    expect(
+      getMissingRequiredTokens("ASSISTED_ORDER_LINK", "{{orderRef}}"),
+    ).toEqual(["link"]);
+    expect(
+      getMissingRequiredTokens("ASSISTED_ORDER_LINK", "ver {{ link }}"),
+    ).toEqual([]);
+  });
+
+  it("survives wa.me URL encoding of accents, emoji, & and ?#", () => {
+    const message = buildWhatsAppAssistedOrderLinkMessage({
+      ...base,
+      storeName: "Café & Más ?#",
+    });
+    const url = buildWhatsAppUrl("+51 987 654 321", message);
+    expect(url.startsWith("https://wa.me/51987654321?text=")).toBe(true);
+    const text = new URL(url).searchParams.get("text");
+    expect(text).toBe(message);
+    expect(url).not.toMatch(/text=.*[ &?#]/);
+  });
+});
+
+describe("message type token tables", () => {
+  const types = Object.keys(WHATSAPP_REQUIRED_TOKENS) as WhatsAppMessageType[];
+
+  it("covers the same types in both tables", () => {
+    expect(Object.keys(WHATSAPP_MESSAGE_TOKENS).sort()).toEqual(types.sort());
+  });
+
+  it("offers every required token as an available token", () => {
+    for (const type of types) {
+      for (const token of WHATSAPP_REQUIRED_TOKENS[type]) {
+        expect(WHATSAPP_MESSAGE_TOKENS[type]).toContain(token);
+      }
+    }
   });
 });

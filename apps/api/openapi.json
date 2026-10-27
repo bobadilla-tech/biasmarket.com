@@ -4226,7 +4226,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "enum": ["NEW_ORDER", "PAYMENT_REMINDER"],
+              "enum": ["NEW_ORDER", "PAYMENT_REMINDER", "ASSISTED_ORDER_LINK"],
               "type": "string"
             }
           }
@@ -4266,7 +4266,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "enum": ["NEW_ORDER", "PAYMENT_REMINDER"],
+              "enum": ["NEW_ORDER", "PAYMENT_REMINDER", "ASSISTED_ORDER_LINK"],
               "type": "string"
             }
           }
@@ -9645,7 +9645,7 @@
             "type": "string"
           },
           "type": {
-            "enum": ["NEW_ORDER", "PAYMENT_REMINDER"],
+            "enum": ["NEW_ORDER", "PAYMENT_REMINDER", "ASSISTED_ORDER_LINK"],
             "type": "string"
           },
           "template": {

@@ -1,5 +1,6 @@
 import { apiClient } from "@/lib/api-client";
 import { customFetch } from "@biasmarket/types";
+import type { WhatsAppMessageType } from "@biasmarket/utils/whatsapp";
 import type { ProfileFormInput } from "../schemas/profile.schema";
 import { isNewPickupPoint, type PickupPoint } from "../schemas/delivery.schema";
 import type { StoreThemeConfig } from "@/lib/store-theme";
@@ -171,16 +172,17 @@ export const settingsApi = {
   // A type with no override row resolves to null — callers fall back to the
   // hardcoded default template.
   async getWhatsAppTemplates(storeId: string) {
-    const [newOrder, paymentReminder] = await Promise.all([
+    const [newOrder, paymentReminder, assistedOrderLink] = await Promise.all([
       apiClient.whatsappTemplates.findOne(storeId, "NEW_ORDER"),
       apiClient.whatsappTemplates.findOne(storeId, "PAYMENT_REMINDER"),
+      apiClient.whatsappTemplates.findOne(storeId, "ASSISTED_ORDER_LINK"),
     ]);
-    return { newOrder, paymentReminder };
+    return { newOrder, paymentReminder, assistedOrderLink };
   },
 
   saveWhatsAppTemplate: (
     storeId: string,
-    type: "NEW_ORDER" | "PAYMENT_REMINDER",
+    type: WhatsAppMessageType,
     template: string,
   ) => apiClient.whatsappTemplates.upsert(storeId, type, { template }),
 };
