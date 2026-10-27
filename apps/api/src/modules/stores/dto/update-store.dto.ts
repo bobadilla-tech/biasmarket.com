@@ -59,6 +59,16 @@ export class UpdateStoreDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(60)
+  locationLabel?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  publicOwnerName?: string | null;
+
+  @IsOptional()
+  @IsString()
   paymentInstructions?: string;
 
   @IsOptional()

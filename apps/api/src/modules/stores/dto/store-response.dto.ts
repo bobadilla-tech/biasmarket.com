@@ -27,6 +27,18 @@ export class StoreResponseDto {
   @ApiProperty({ type: String, nullable: true })
   logoUrl: string | null;
 
+  @ApiProperty({ type: String, nullable: true })
+  bannerUrl: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  locationLabel: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  publicOwnerName: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  publicOwnerAvatarUrl: string | null;
+
   // Seller-authored store copy — see
   // .artifacts/2026/09/20260907--store-rich-content-and-thin/plan.md.
   @ApiProperty({ type: String, nullable: true })
@@ -186,8 +198,8 @@ export class PublicCategoryResponseDto {
 }
 
 // Shared by findPublicProduct and the section->collection->products join in
-// findPublicBySlug — both read `{ include: { variants: true } }`, no
-// category join. Local to this module (not the products module's own
+// findPublicBySlug — both include variants and category names for storefront
+// filtering. Local to this module (not the products module's own
 // response DTOs) — same "each module owns its nested join shapes"
 // convention collections' ProductInCollectionResponseDto already
 // established, avoiding a cross-module coupling that isn't needed here.
@@ -218,6 +230,19 @@ export class PublicProductVariantResponseDto {
 
   @ApiProperty({ type: 'object', additionalProperties: true })
   attributes: Record<string, unknown>;
+}
+
+export class PublicProductCategoryNameResponseDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  name: string;
+}
+
+export class PublicProductCategoryResponseDto {
+  @ApiProperty({ type: PublicProductCategoryNameResponseDto })
+  category: PublicProductCategoryNameResponseDto;
 }
 
 export class PublicProductWithVariantsResponseDto {
@@ -262,6 +287,9 @@ export class PublicProductWithVariantsResponseDto {
 
   @ApiProperty({ type: [PublicProductVariantResponseDto] })
   variants: PublicProductVariantResponseDto[];
+
+  @ApiProperty({ type: [PublicProductCategoryResponseDto] })
+  categories: PublicProductCategoryResponseDto[];
 }
 
 // findPublicProduct's shape.

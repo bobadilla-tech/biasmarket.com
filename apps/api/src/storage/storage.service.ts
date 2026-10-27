@@ -37,6 +37,17 @@ export class StorageService {
     return this.upload(this.logoBucket, 'logos', buffer, mimeType);
   }
 
+  async uploadStoreBanner(buffer: Buffer, mimeType: string): Promise<string> {
+    return this.upload(this.bucket, 'store-banners', buffer, mimeType);
+  }
+
+  async uploadStoreOwnerAvatar(
+    buffer: Buffer,
+    mimeType: string,
+  ): Promise<string> {
+    return this.upload(this.bucket, 'store-owner-avatars', buffer, mimeType);
+  }
+
   // Inline images embedded in a seller's `Store.aboutMarkdown` copy. Same
   // public `bucket` as product images (the storefront renders them straight
   // from the CDN host), just a distinct `store-content/` key prefix.

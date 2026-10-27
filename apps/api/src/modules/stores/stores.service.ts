@@ -32,6 +32,10 @@ function textBlockBody(content: unknown): string {
   return '';
 }
 
+function normalizeOptionalText(value: string | null | undefined) {
+  return value === undefined ? undefined : value?.trim() || null;
+}
+
 @Injectable()
 export class StoresService {
   constructor(private prisma: PrismaService) {}
@@ -117,15 +121,22 @@ export class StoresService {
       facebookUrl,
       tiktokUrl,
       twitterUrl,
+      locationLabel: rawLocationLabel,
+      publicOwnerName: rawPublicOwnerName,
       ...rest
     } = dto;
+    const locationLabel = normalizeOptionalText(rawLocationLabel);
+    const publicOwnerName = normalizeOptionalText(rawPublicOwnerName);
     // Seller-authored storefront copy changed → move the sitemap's per-store
     // `lastModified` (D4). Compare against the loaded row so a no-op save
     // (settings form re-submitted unchanged) doesn't bump it.
     const contentChanged =
       (dto.bio !== undefined && dto.bio !== store.bio) ||
       (dto.aboutMarkdown !== undefined &&
-        dto.aboutMarkdown !== store.aboutMarkdown);
+        dto.aboutMarkdown !== store.aboutMarkdown) ||
+      (locationLabel !== undefined && locationLabel !== store.locationLabel) ||
+      (publicOwnerName !== undefined &&
+        publicOwnerName !== store.publicOwnerName);
     return this.prisma.store.update({
       where: { id: storeId },
       data: {
@@ -143,6 +154,8 @@ export class StoresService {
         ...(twitterUrl !== undefined && {
           twitterUrl: twitterUrl || null,
         }),
+        ...(locationLabel !== undefined && { locationLabel }),
+        ...(publicOwnerName !== undefined && { publicOwnerName }),
         ...(themeConfig !== undefined && {
           themeConfig: themeConfig as Prisma.InputJsonValue,
         }),
@@ -323,7 +336,18 @@ export class StoresService {
           include: {
             products: {
               orderBy: { position: 'asc' },
-              include: { product: { include: { variants: true } } },
+              include: {
+                product: {
+                  include: {
+                    variants: true,
+                    categories: {
+                      include: {
+                        category: { select: { id: true, name: true } },
+                      },
+                    },
+                  },
+                },
+              },
             },
           },
         },
@@ -364,7 +388,12 @@ export class StoresService {
         discontinued: false,
         id: { notIn: coveredProductIds },
       },
-      include: { variants: true },
+      include: {
+        variants: true,
+        categories: {
+          include: { category: { select: { id: true, name: true } } },
+        },
+      },
     });
 
     if (orphanProducts.length > 0) {
@@ -460,7 +489,12 @@ export class StoresService {
 
     const product = await this.prisma.product.findUnique({
       where: { id: productId },
-      include: { variants: true },
+      include: {
+        variants: true,
+        categories: {
+          include: { category: { select: { id: true, name: true } } },
+        },
+      },
     });
     if (
       !product ||
@@ -479,16 +513,23 @@ export class StoresService {
   }
 
   async updateLogo(storeId: string, userId: string, url: string) {
-    const store = await this.prisma.store.findUnique({
-      where: { id: storeId },
-    });
-    if (!store) throw new NotFoundException('Store no encontrada');
-    if (store.ownerId !== userId) {
-      throw new ForbiddenException('No eres dueño de esta store');
-    }
+    await this.assertOwnership(storeId, userId);
     return this.prisma.store.update({
       where: { id: storeId },
       data: { logoUrl: url },
+    });
+  }
+
+  async updatePublicHeaderImage(
+    storeId: string,
+    userId: string,
+    field: 'bannerUrl' | 'publicOwnerAvatarUrl',
+    url: string,
+  ) {
+    await this.assertOwnership(storeId, userId);
+    return this.prisma.store.update({
+      where: { id: storeId },
+      data: { [field]: url, contentStaleAt: new Date() },
     });
   }
 }
