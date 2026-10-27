@@ -81,23 +81,23 @@ export function DefaultsSection({ store }: { store: DashboardStore }) {
 
         <ToggleRow
           label={t("defaults.visibilityToggleLabel")}
-          description={
-            isPublic
-              ? t("defaults.visibilityToggleDescriptionPublic")
-              : t("defaults.visibilityToggleDescriptionPrivate")
-          }
+          description={isPublic
+            ? t("defaults.visibilityToggleDescriptionPublic")
+            : t("defaults.visibilityToggleDescriptionPrivate")}
           enabled={isPublic}
           onChange={setIsPublic}
         />
       </div>
 
-      {saveVisibility.isError ? (
-        <p className="mt-4 text-sm text-[#b24368]">
-          {saveVisibility.error instanceof Error
-            ? saveVisibility.error.message
-            : String(saveVisibility.error)}
-        </p>
-      ) : null}
+      {saveVisibility.isError
+        ? (
+          <p className="mt-4 text-sm text-[#b24368]">
+            {saveVisibility.error instanceof Error
+              ? saveVisibility.error.message
+              : String(saveVisibility.error)}
+          </p>
+        )
+        : null}
 
       <Separator className="my-5 bg-[#f0e7f8]" />
 
@@ -110,8 +110,8 @@ export function DefaultsSection({ store }: { store: DashboardStore }) {
           {saveVisibility.isSuccess
             ? t("saved")
             : saveVisibility.isPending
-              ? t("saving")
-              : t("save")}
+            ? t("saving")
+            : t("save")}
         </Button>
       </div>
     </SectionCard>
