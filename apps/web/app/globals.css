@@ -364,6 +364,17 @@
 }
 
 .storefront-placeholder {
-  background: var(--store-surface);
-  color: var(--store-placeholder);
+  background-color: var(--store-surface);
+  background-image:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--store-accent) 58%, white),
+      color-mix(in srgb, var(--store-primary) 76%, white)
+    ),
+    radial-gradient(rgba(255, 255, 255, 0.45) 1px, transparent 1.35px);
+  background-size:
+    auto,
+    22px 22px;
+  background-blend-mode: normal, screen;
+  color: white;
 }

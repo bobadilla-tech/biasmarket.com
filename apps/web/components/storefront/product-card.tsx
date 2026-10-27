@@ -103,13 +103,13 @@ export function ProductCard({
   };
 
   return (
-    <article className="rounded-xl border border-(--store-border) bg-(--store-card) p-3 sm:p-4">
+    <article className="rounded-2xl border border-(--store-border) bg-(--store-card) p-2 shadow-[0_1px_2px_rgba(40,20,60,0.04)] transition duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-2">
       <Link href={`/store/${slug}/product/${product.id}`}>
         {(() => {
           const imageUrl =
             selectedVariant?.imageOverride ?? product.images?.[0];
           return imageUrl ? (
-            <div className="relative aspect-square w-full overflow-hidden rounded-lg mb-3">
+            <div className="relative mb-3 aspect-square w-full overflow-hidden rounded-xl">
               <Image
                 src={imageUrl}
                 alt={product.name}

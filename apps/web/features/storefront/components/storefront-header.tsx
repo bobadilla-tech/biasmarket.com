@@ -23,13 +23,17 @@ export function StorefrontHeader({ slug }: StorefrontHeaderProps) {
         <Link
           href="/"
           aria-label={t("header.biasMarketHome")}
-          className="flex min-h-11 shrink-0 items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2"
+          className="flex min-h-11 shrink-0 items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2"
         >
-          <img
-            src="/logos/horizontal.png"
-            alt="Bias Market"
-            className="h-9 w-auto object-contain"
-          />
+          <span
+            aria-hidden="true"
+            className="grid size-8 place-items-center rounded-xl bg-(--store-primary) text-sm font-extrabold text-white shadow-sm"
+          >
+            B
+          </span>
+          <span className="text-base font-bold tracking-tight text-(--store-text)">
+            Bias Market
+          </span>
         </Link>
         <div className="flex items-center gap-2">
           <CartLink slug={slug} />
