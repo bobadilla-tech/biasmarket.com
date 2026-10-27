@@ -175,7 +175,9 @@ export const settingsApi = {
     const [newOrder, paymentReminder, assistedOrderLink] = await Promise.all([
       apiClient.whatsappTemplates.findOne(storeId, "NEW_ORDER"),
       apiClient.whatsappTemplates.findOne(storeId, "PAYMENT_REMINDER"),
-      apiClient.whatsappTemplates.findOne(storeId, "ASSISTED_ORDER_LINK"),
+      apiClient.whatsappTemplates
+        .findOne(storeId, "ASSISTED_ORDER_LINK")
+        .catch(() => null),
     ]);
     return { newOrder, paymentReminder, assistedOrderLink };
   },
