@@ -38,7 +38,11 @@ describe('OrderController.addPayment', () => {
     orderPayment: { create: Mock };
   };
   let tx: {
-    order: { findUniqueOrThrow: Mock };
+    order: {
+      findUniqueOrThrow: Mock;
+      findFirst: Mock;
+      updateMany: Mock;
+    };
     orderPayment: { create: Mock; aggregate: Mock };
     auditLog: { create: Mock };
   };
@@ -55,15 +59,29 @@ describe('OrderController.addPayment', () => {
     customerEmail: null,
     customerPhone: '+51999999999',
     customerName: null,
+    source: 'MARKETPLACE',
     deliveryMethodType: 'COURIER',
     deliveryDetails: {},
     pickupPointId: null,
+    pickupDate: null,
+    courierName: null,
+    courierModality: null,
+    trackingNumber: null,
+    trackingUrl: null,
+    packedPhotoUrl: null,
+    paymentMethod: null,
     paymentStatus: 'PARTIALLY_PAID',
     paymentRejectionReason: null,
     fulfillmentStatus: 'ORDERING',
     status: 'ACTIVE',
     cancellationResolution: null,
     cancellationReason: null,
+    retainedAmount: null,
+    releasedAmount: null,
+    releasedResolution: null,
+    linkFirstOpenedAt: null,
+    claimedAt: null,
+    createdBy: null,
     totalAmount: { toString: () => '100.00' },
     requiredAmount: { toString: () => '100.00' },
     currency: 'PEN',
@@ -78,7 +96,11 @@ describe('OrderController.addPayment', () => {
 
   beforeEach(async () => {
     tx = {
-      order: { findUniqueOrThrow: vi.fn() },
+      order: {
+        findUniqueOrThrow: vi.fn(),
+        findFirst: vi.fn(),
+        updateMany: vi.fn(),
+      },
       orderPayment: { create: vi.fn(), aggregate: vi.fn() },
       auditLog: { create: vi.fn() },
     };
@@ -428,6 +450,168 @@ describe('OrderController.getPaymentImage', () => {
     );
     expect(result.getStream()).toBe(body);
     expect(result.getHeaders().type).toBe('image/jpeg');
+  });
+});
+
+describe('OrderController.shipping', () => {
+  let controller: OrderController;
+  let orders: { assertOwnership: Mock; findRowByIdForStore: Mock };
+  let storage: { uploadPaymentImage: Mock; getPaymentImageStream: Mock };
+  let events: { record: Mock };
+  let tx: { order: { findFirst: Mock; updateMany: Mock } };
+  let prisma: { $transaction: Mock };
+
+  const storeId = 'store-1';
+  const orderId = 'order-1';
+  const userId = 'user-1';
+  const session = { user: { id: userId } } as any;
+  const orderFixture = {
+    id: orderId,
+    storeId,
+    customerId: null,
+    buyerAccountId: null,
+    customerEmail: null,
+    customerPhone: '+51999999999',
+    customerName: null,
+    source: 'MARKETPLACE',
+    deliveryMethodType: 'COURIER',
+    deliveryDetails: {},
+    pickupPointId: null,
+    pickupDate: null,
+    courierName: null,
+    courierModality: null,
+    trackingNumber: null,
+    trackingUrl: null,
+    packedPhotoUrl: null,
+    paymentMethod: null,
+    paymentStatus: 'PARTIALLY_PAID',
+    paymentRejectionReason: null,
+    fulfillmentStatus: 'ORDERING',
+    status: 'ACTIVE',
+    cancellationResolution: null,
+    cancellationReason: null,
+    retainedAmount: null,
+    releasedAmount: null,
+    releasedResolution: null,
+    totalAmount: { toString: () => '100.00' },
+    requiredAmount: { toString: () => '100.00' },
+    currency: 'PEN',
+    expiresAt: new Date('2026-08-10T00:00:00.000Z'),
+    createdAt: new Date('2026-08-05T00:00:00.000Z'),
+    paidAmount: 40,
+    pendingAmount: 60,
+    paidPercentage: 40,
+    linkFirstOpenedAt: null,
+    claimedAt: null,
+    createdBy: null,
+    items: [],
+    payments: [],
+  };
+
+  beforeEach(async () => {
+    tx = {
+      order: {
+        findFirst: vi.fn().mockResolvedValue({ trackingNumber: null }),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
+    };
+    prisma = {
+      $transaction: vi.fn((cb: (transaction: unknown) => unknown) => cb(tx)),
+    };
+    orders = {
+      assertOwnership: vi.fn(),
+      findRowByIdForStore: vi.fn().mockResolvedValue(orderFixture),
+    };
+    storage = {
+      uploadPaymentImage: vi.fn().mockResolvedValue('private/packed/photo.jpg'),
+      getPaymentImageStream: vi.fn(),
+    };
+    events = { record: vi.fn() };
+
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [OrderController],
+      providers: [
+        { provide: OrderRepository, useValue: orders },
+        { provide: ReviewPaymentUseCase, useValue: { execute: vi.fn() } },
+        { provide: AdvanceFulfillmentUseCase, useValue: { execute: vi.fn() } },
+        { provide: CancelOrderUseCase, useValue: { execute: vi.fn() } },
+        { provide: PrismaService, useValue: prisma },
+        { provide: StorageService, useValue: storage },
+        { provide: OrderEventsService, useValue: events },
+      ],
+    }).compile();
+
+    controller = module.get(OrderController);
+  });
+
+  it('rejects tracking edits before reading or updating an order without store ownership', async () => {
+    orders.assertOwnership.mockRejectedValueOnce(new Error('not owner'));
+
+    await expect(
+      controller.updateShipping(storeId, orderId, session, {
+        trackingNumber: 'TRK-1',
+      } as any),
+    ).rejects.toThrow('not owner');
+
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('stores tracking details and records TRACKING_ADDED only when a number is added', async () => {
+    const result = await controller.updateShipping(storeId, orderId, session, {
+      trackingNumber: 'TRK-1',
+      trackingUrl: 'https://track.example/TRK-1',
+    } as any);
+
+    expect(orders.assertOwnership).toHaveBeenCalledWith(storeId, userId);
+    expect(tx.order.findFirst).toHaveBeenCalledWith({
+      where: { id: orderId, storeId },
+      select: { trackingNumber: true },
+    });
+    expect(tx.order.updateMany).toHaveBeenCalledWith({
+      where: { id: orderId, storeId },
+      data: {
+        trackingNumber: 'TRK-1',
+        trackingUrl: 'https://track.example/TRK-1',
+      },
+    });
+    expect(events.record).toHaveBeenCalledWith(tx, {
+      orderId,
+      storeId,
+      type: 'TRACKING_ADDED',
+      actor: 'SELLER',
+    });
+    expect(result).not.toHaveProperty('packedPhotoUrl');
+  });
+
+  it('requires ownership before package-photo storage and records PACKED_PHOTO_ADDED', async () => {
+    orders.assertOwnership.mockRejectedValueOnce(new Error('not owner'));
+    await expect(
+      controller.uploadPackedPhoto(storeId, orderId, session, {
+        buffer: Buffer.from('jpeg'),
+        detectedMimeType: 'image/jpeg',
+      } as any),
+    ).rejects.toThrow('not owner');
+    expect(storage.uploadPaymentImage).not.toHaveBeenCalled();
+
+    orders.assertOwnership.mockResolvedValueOnce(undefined);
+    const result = await controller.uploadPackedPhoto(
+      storeId,
+      orderId,
+      session,
+      { buffer: Buffer.from('jpeg'), detectedMimeType: 'image/jpeg' } as any,
+    );
+
+    expect(storage.uploadPaymentImage).toHaveBeenCalledWith(
+      expect.any(Buffer),
+      'image/jpeg',
+    );
+    expect(events.record).toHaveBeenCalledWith(tx, {
+      orderId,
+      storeId,
+      type: 'PACKED_PHOTO_ADDED',
+      actor: 'SELLER',
+    });
+    expect(result).not.toHaveProperty('packedPhotoUrl');
   });
 });
 

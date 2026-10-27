@@ -72,6 +72,42 @@ export const ordersApi = {
     return `${apiUrl()}/api/stores/${storeId}/orders/${orderId}/payments/${paymentId}/image`;
   },
 
+  packedPhotoUrl(storeId: string, orderId: string) {
+    return `${apiUrl()}/api/stores/${storeId}/orders/${orderId}/shipping/photo`;
+  },
+
+  async updateShipping(
+    storeId: string,
+    orderId: string,
+    data: { trackingNumber: string | null; trackingUrl: string | null },
+    fallbackErrorMessage?: string,
+  ) {
+    return apiClient.orders.updateShipping(storeId, orderId, data, {
+      fallbackErrorMessage,
+    });
+  },
+
+  async uploadPackedPhoto(
+    storeId: string,
+    orderId: string,
+    file: File,
+    fallbackErrorMessage?: string,
+  ) {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch(
+      `${apiUrl()}/api/stores/${storeId}/orders/${orderId}/shipping/photo`,
+      { method: "POST", credentials: "include", body: formData },
+    );
+    const result = await res.json().catch(() => null);
+    if (!res.ok) {
+      throw new Error(
+        result?.message ?? fallbackErrorMessage ?? "Network error",
+      );
+    }
+    return result;
+  },
+
   cancelOrder(
     storeId: string,
     orderId: string,

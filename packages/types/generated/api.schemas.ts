@@ -840,6 +840,11 @@ export interface OrderResponseDto {
   /** @nullable */
   courierName: string | null;
   /** @nullable */
+  trackingNumber: string | null;
+  /** @nullable */
+  trackingUrl: string | null;
+  packedPhotoAvailable: boolean;
+  /** @nullable */
   courierModality: OrderResponseDtoCourierModality;
   /** @nullable */
   paymentMethod: OrderResponseDtoPaymentMethod;
@@ -1012,6 +1017,11 @@ export interface OrderDetailResponseDto {
   pickupDate: string | null;
   /** @nullable */
   courierName: string | null;
+  /** @nullable */
+  trackingNumber: string | null;
+  /** @nullable */
+  trackingUrl: string | null;
+  packedPhotoAvailable: boolean;
   /** @nullable */
   courierModality: OrderDetailResponseDtoCourierModality;
   /** @nullable */
@@ -1199,6 +1209,11 @@ export interface OrderStatusResponseDto {
   pickupDate: string | null;
   /** @nullable */
   courierName: string | null;
+  /** @nullable */
+  trackingNumber: string | null;
+  /** @nullable */
+  trackingUrl: string | null;
+  packedPhotoAvailable: boolean;
   /** @nullable */
   courierModality: OrderStatusResponseDtoCourierModality;
   /** @nullable */
@@ -1850,8 +1865,20 @@ export interface PublicOrderResponseDto {
   /** @nullable */
   courierName: string | null;
   /** @nullable */
+  trackingNumber: string | null;
+  /** @nullable */
+  trackingUrl: string | null;
+  packedPhotoAvailable: boolean;
+  /** @nullable */
   courierModality: PublicOrderResponseDtoCourierModality;
   payments: PublicOrderPaymentResponseDto[];
+}
+
+export interface UpdateOrderShippingDto {
+  /** @nullable @maxLength 120 */
+  trackingNumber?: string | null;
+  /** @nullable @maxLength 2048 */
+  trackingUrl?: string | null;
 }
 
 export type RecordInviteEventDtoType =
