@@ -51,8 +51,9 @@ describe("unconfiguredManualMethods", () => {
 
   test("is empty when everything is configured", () => {
     expect(
-      unconfiguredManualMethods([{ method: "YAPE", details: { phoneNumber: "999" } }])
-        .size,
+      unconfiguredManualMethods([
+        { method: "YAPE", details: { phoneNumber: "999" } },
+      ]).size,
     ).toBe(0);
   });
 });
