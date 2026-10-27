@@ -796,7 +796,10 @@
       "decrease": "Disminuir cantidad",
       "noProducts": "No tienes productos publicados para vender.",
       "lineTotal": "Subtotal: {amount}",
-      "stockLeft": "Quedan {count}"
+      "stockLeft": "Quedan {count}",
+      "detailsLoading": "Cargando detalles del producto…",
+      "detailsFailed": "No se pudieron cargar el precio y las variantes.",
+      "retry": "Reintentar"
     },
     "delivery": {
       "title": "Entrega",

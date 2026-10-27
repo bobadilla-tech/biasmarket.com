@@ -56,6 +56,11 @@ function toDateInputValue(date: Date): string {
   return `${date.getFullYear()}-${month}-${day}`;
 }
 
+function validatedNormalizedPhone(value: string): string {
+  const result = validatePhone(value);
+  return result.ok ? result.phone : "";
+}
+
 const EMPTY_ITEM = { productId: "", variantId: "", quantity: 1 };
 
 function Section({
@@ -148,10 +153,11 @@ export function AssistedOrderForm({
   const errors = form.formState.errors;
 
   // Money -----------------------------------------------------------------
-  const details = useProductDetails(
+  const productDetails = useProductDetails(
     storeId,
     items.map((item) => item.productId),
   );
+  const details = productDetails.details;
   const priced = useMemo(() => {
     const map = new Map<string, PricedProduct>();
     details.forEach((detail, id) => map.set(id, detail));
@@ -243,12 +249,22 @@ export function AssistedOrderForm({
   // Buyer lookup: hint + alias prefill (never over something the seller typed).
   const lookup = useBuyerLookup(storeId, customerPhone);
   const aliasEdited = useRef(false);
+  const generatedAliasPhone = useRef<string | null>(null);
+  const normalizedPhone = validatedNormalizedPhone(customerPhone);
   useEffect(() => {
-    const lastAlias = lookup.data?.lastAlias;
-    if (lastAlias && !aliasEdited.current && !form.getValues("customerName")) {
-      form.setValue("customerName", lastAlias);
+    const lookupResult = lookup.data;
+    if (
+      normalizedPhone &&
+      lookup.isSuccess &&
+      lookupResult?.normalizedPhone === normalizedPhone &&
+      lookupResult.lastAlias &&
+      !aliasEdited.current &&
+      !form.getValues("customerName")
+    ) {
+      form.setValue("customerName", lookupResult.lastAlias);
+      generatedAliasPhone.current = normalizedPhone;
     }
-  }, [lookup.data, form]);
+  }, [lookup.data, lookup.isSuccess, normalizedPhone, form]);
 
   const validatedPhone = validatePhone(customerPhone);
   const dateBlocking = pickupDateBlocking({
@@ -324,8 +340,26 @@ export function AssistedOrderForm({
         : t("errors.generic")
       : undefined;
   const hasFieldErrors = Object.keys(errors).length > 0;
+  const selectedProductDetailsReady = items.every((item) => {
+    if (!item.productId) return true;
+    const detail = details.get(item.productId);
+    if (
+      !detail ||
+      productDetails.queryStates.get(item.productId)?.status !== "success"
+    ) {
+      return false;
+    }
+    return (
+      detail.variants.length === 0 ||
+      detail.variants.some((variant) => variant.id === item.variantId)
+    );
+  });
   const submitBlocked =
-    createOrder.isPending || totalCents <= 0 || mixedCurrencies || dateBlocking;
+    createOrder.isPending ||
+    totalCents <= 0 ||
+    mixedCurrencies ||
+    dateBlocking ||
+    !selectedProductDetailsReady;
 
   const onSubmit = form.handleSubmit(async (values) => {
     // The server requires a variant whenever the product has any.
@@ -404,7 +438,17 @@ export function AssistedOrderForm({
                 <PhoneInput
                   {...props}
                   value={field.value}
-                  onChange={field.onChange}
+                  onChange={(value) => {
+                    const nextPhone = validatedNormalizedPhone(value);
+                    if (
+                      generatedAliasPhone.current &&
+                      generatedAliasPhone.current !== nextPhone
+                    ) {
+                      form.setValue("customerName", "");
+                      generatedAliasPhone.current = null;
+                    }
+                    field.onChange(value);
+                  }}
                   countryLabel={t("phone.country")}
                   selectClassName={controlClass}
                   inputClassName={cn(controlClass, "px-3")}
@@ -429,6 +473,7 @@ export function AssistedOrderForm({
               {...form.register("customerName", {
                 onChange: () => {
                   aliasEdited.current = true;
+                  generatedAliasPhone.current = null;
                 },
               })}
             />
@@ -452,6 +497,7 @@ export function AssistedOrderForm({
             const value = items[index] ?? EMPTY_ITEM;
             const itemErrors = errors.items?.[index];
             const product = priced.get(value.productId);
+            const detailQuery = productDetails.queryStates.get(value.productId);
             return (
               <OrderItemRow
                 key={field.id}
@@ -459,6 +505,9 @@ export function AssistedOrderForm({
                 value={value}
                 products={productsQuery.products}
                 detail={details.get(value.productId)}
+                detailLoading={detailQuery?.status === "pending"}
+                detailError={detailQuery?.status === "error"}
+                onRetryDetails={() => void detailQuery?.refetch()}
                 errors={{
                   productId: errorText(itemErrors?.productId?.message),
                   variantId: errorText(itemErrors?.variantId?.message),
