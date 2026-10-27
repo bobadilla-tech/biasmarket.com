@@ -1,3 +1,4 @@
+/* tsqllint-disable set-quoted-identifier: this migration runs on PostgreSQL, not SQL Server. */
 -- AlterEnum
 -- Only statement in this migration, and nothing here uses the new value: a new
 -- enum value cannot be used in the transaction that adds it.
