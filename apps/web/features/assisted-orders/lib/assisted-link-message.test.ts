@@ -2,7 +2,6 @@ import { describe, expect, test } from "vitest";
 import {
   buildAssistedLinkMessage,
   buildAssistedLinkWhatsAppUrl,
-  sameOriginHref,
 } from "./assisted-link-message";
 
 const link = "https://biasmarket.com/es/store/k/pedido/tok_-1";
@@ -57,16 +56,5 @@ describe("buildAssistedLinkMessage", () => {
     expect(url).toBe(
       `https://wa.me/51987654321?text=${encodeURIComponent("Hola & ¡qué tal? #1")}`,
     );
-  });
-});
-
-describe("sameOriginHref", () => {
-  test("accepts only the app's own origin", () => {
-    expect(sameOriginHref(link, "https://biasmarket.com")).toBe(link);
-    expect(sameOriginHref(link, "https://evil.example")).toBeNull();
-    expect(
-      sameOriginHref("javascript:alert(1)", "https://biasmarket.com"),
-    ).toBeNull();
-    expect(sameOriginHref("not a url", "https://biasmarket.com")).toBeNull();
   });
 });

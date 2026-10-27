@@ -21,5 +21,8 @@ export function useAssistedLinkTemplate(storeId: string | undefined) {
       return row?.template ?? null;
     },
     enabled: !!storeId,
+    // A failed lookup falls back to the default message; don't make the
+    // seller wait through the default retry backoff first.
+    retry: 1,
   });
 }

@@ -37,13 +37,3 @@ export function buildAssistedLinkWhatsAppUrl(
 ): string {
   return buildWhatsAppUrl(phone, message);
 }
-
-// The link is rendered as text; it only becomes an `href` when it points at
-// this app, so a tampered or unexpected URL can never become a navigable link.
-export function sameOriginHref(url: string, appOrigin: string): string | null {
-  try {
-    return new URL(url).origin === appOrigin ? url : null;
-  } catch {
-    return null;
-  }
-}

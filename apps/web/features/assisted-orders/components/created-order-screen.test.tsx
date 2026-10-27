@@ -117,20 +117,57 @@ test("when the clipboard is unavailable it explains and keeps the text selectabl
   expect(box.value).toContain(link);
 });
 
-test("only a same-origin link becomes an href, and the token is never stored", async () => {
-  const setItem = vi.spyOn(Storage.prototype, "setItem");
+test("shows the order summary with a single #", async () => {
   setup();
   await messageBox();
-  const anchor = screen.getByRole("link", { name: "Ver como comprador" });
-  expect(anchor.getAttribute("href")).toBe(link);
-  expect(anchor.getAttribute("rel")).toContain("noopener");
+  expect(screen.getByText("Pedido #CDEF · PEN 50.00")).toBeTruthy();
+});
+
+test("the private link is text only (never an anchor, so the seller can't stamp the first open) and is never stored", async () => {
+  const setItem = vi.spyOn(Storage.prototype, "setItem");
+  setup();
+  const box = await messageBox();
+  expect(screen.queryAllByRole("link")).toHaveLength(0);
+  expect(document.querySelector(`a[href*="tok_-123"]`)).toBeNull();
+  expect(box.value).toContain(link);
   expect(setItem).not.toHaveBeenCalled();
 });
 
-test("a foreign-origin link is shown in the message but never linked", async () => {
-  setup(created({ accessUrl: "https://evil.example/es/store/k/pedido/tok" }));
-  await messageBox();
-  expect(screen.queryByRole("link", { name: "Ver como comprador" })).toBeNull();
+test("holds Abrir WhatsApp until the template has loaded, so a custom template is never bypassed", async () => {
+  findTemplate.mockReturnValue(new Promise(() => {}));
+  setup();
+  await screen.findByText("Preparando el mensaje…");
+  expect(
+    (
+      screen.getByRole("button", {
+        name: "Abrir WhatsApp",
+      }) as HTMLButtonElement
+    ).disabled,
+  ).toBe(true);
+  expect(
+    (
+      screen.getByRole("button", {
+        name: "Copiar mensaje",
+      }) as HTMLButtonElement
+    ).disabled,
+  ).toBe(true);
+});
+
+test("a custom template reaches the wa.me text once loaded", async () => {
+  findTemplate.mockResolvedValue({ template: "Custom {{orderRef}} {{link}}" });
+  const open = vi.spyOn(window, "open").mockReturnValue(null);
+  const { user } = setup();
+  const box = await screen.findByDisplayValue(`Custom #ABCDEF ${link}`);
+  expect(box).toBeTruthy();
+  await user.click(screen.getByRole("button", { name: "Abrir WhatsApp" }));
+  await user.click(
+    await screen.findByRole("button", { name: "Sí, abrir WhatsApp" }),
+  );
+  expect(open).toHaveBeenCalledWith(
+    `https://wa.me/51987654321?text=${encodeURIComponent(`Custom #ABCDEF ${link}`)}`,
+    "_blank",
+    "noopener,noreferrer",
+  );
 });
 
 test("create another and fix number hand control back to the page", async () => {

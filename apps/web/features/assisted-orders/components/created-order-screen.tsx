@@ -7,15 +7,14 @@ import type { CreateAssistedOrderResponseDto } from "@biasmarket/types";
 import { Button } from "@/components/ui/button";
 import { getOrderNumber } from "@/features/orders/lib/order-format";
 import { useAssistedLinkTemplate } from "../queries/use-assisted-link-template";
-import {
-  buildAssistedLinkMessage,
-  sameOriginHref,
-} from "../lib/assisted-link-message";
+import { buildAssistedLinkMessage } from "../lib/assisted-link-message";
 import { ConfirmNumberAndOpenWhatsApp } from "./confirm-number-and-open-whatsapp";
 
 // Shown right after creation. The private link exists only in this response,
 // so it is held in component state, rendered as text, and never written to
-// storage, the URL, a redirect or the query cache.
+// storage, the URL, a redirect or the query cache. It is deliberately not an
+// anchor: opening it as the seller would stamp the first open and lock number
+// correction before the buyer ever saw it.
 export function CreatedOrderScreen({
   storeId,
   storeName,
@@ -46,11 +45,6 @@ export function CreatedOrderScreen({
       }),
     [order, storeName, accessUrl, template.data],
   );
-  const href =
-    typeof window === "undefined"
-      ? null
-      : sameOriginHref(accessUrl, window.location.origin);
-
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(message);
@@ -101,6 +95,7 @@ export function CreatedOrderScreen({
 
       <div className="flex flex-col gap-2 sm:flex-row">
         <ConfirmNumberAndOpenWhatsApp
+          disabled={!ready}
           phone={order.customerPhone}
           message={message}
           onFixNumber={onFixNumber}
@@ -126,16 +121,6 @@ export function CreatedOrderScreen({
       </div>
 
       <div className="flex flex-wrap items-center gap-4 border-t border-[#f0e7f8] pt-3 text-sm">
-        {href ? (
-          <a
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="min-h-11 inline-flex items-center font-medium text-[#5a3d82] underline"
-          >
-            {t("openLink")}
-          </a>
-        ) : null}
         <button
           type="button"
           onClick={onCreateAnother}
