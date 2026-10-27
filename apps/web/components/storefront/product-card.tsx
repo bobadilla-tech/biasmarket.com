@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { addToCart } from "@/lib/cart";
 import { RestockInterestDialog } from "@/features/restock";
 import { isProductOutOfStock } from "@/features/discovery/lib/product-stock";
+import { ImagePlaceholder } from "@/features/storefront/components/storefront";
 
 interface Variant {
   id: string;
@@ -101,7 +102,7 @@ export function ProductCard({
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-4">
+    <article className="rounded-xl border border-(--store-border) bg-(--store-card) p-3 sm:p-4">
       <Link href={`/store/${slug}/product/${product.id}`}>
         {(() => {
           const imageUrl =
@@ -120,7 +121,7 @@ export function ProductCard({
               />
               {outOfStock && (
                 <div className="absolute inset-x-0 top-2 flex justify-center">
-                  <span className="flex items-center gap-1 rounded-full border border-gray-300 bg-white/90 px-3 py-1 text-xs font-semibold text-gray-500">
+                  <span className="flex items-center gap-1 rounded-full border border-(--store-border) bg-(--store-card) px-3 py-1 text-xs font-semibold text-(--store-muted)">
                     <Clock className="size-3.5" />
                     {t("soldOut")}
                   </span>
@@ -128,16 +129,21 @@ export function ProductCard({
               )}
             </div>
           ) : (
-            <div className="aspect-square bg-gray-100 rounded-lg mb-3" />
+            <ImagePlaceholder
+              alt={t("productImageAlt", { name: product.name })}
+              className="mb-3 rounded-lg"
+            />
           );
         })()}
-        <p className="font-semibold text-gray-900 text-sm">{product.name}</p>
+        <h3 className="text-sm font-bold uppercase text-(--store-text)">
+          {product.name}
+        </h3>
         <p className="store-theme-active-text font-bold text-sm">
           {showFromPrice ? `${t("fromPrice")} ` : ""}
           {price} {product.currency}
         </p>
         {product.availableUntil && (
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-(--store-muted)">
             {t("availableUntil", {
               date: new Date(product.availableUntil).toLocaleDateString(),
             })}
@@ -151,7 +157,7 @@ export function ProductCard({
           onChange={(e) => setVariantId(e.target.value)}
           aria-label={t("chooseVariant", { product: product.name })}
           className="mt-2 min-h-11 w-full"
-          selectClassName="rounded-lg border border-gray-200 py-1.5 pl-2 text-base text-gray-600"
+          selectClassName="rounded-lg border border-(--store-border) py-1.5 pl-2 text-base text-(--store-muted)"
         >
           {product.variants.map((v) => (
             <option key={v.id} value={v.id} disabled={availableStock(v) <= 0}>
@@ -167,7 +173,7 @@ export function ProductCard({
           type="button"
           ref={restockTriggerRef}
           onClick={() => setRestockOpen(true)}
-          className="mt-2 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2"
+          className="mt-2 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-(--store-border) bg-(--store-card) px-3 py-1.5 text-sm font-semibold text-(--store-muted) transition hover:bg-(--store-surface) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2"
         >
           <Bell className="size-3.5" />
           {t("registerInterest")}
@@ -192,6 +198,6 @@ export function ProductCard({
         productName={product.name}
         variantLabel={selectedVariant?.name}
       />
-    </div>
+    </article>
   );
 }

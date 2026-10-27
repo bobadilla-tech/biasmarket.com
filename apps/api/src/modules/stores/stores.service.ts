@@ -125,7 +125,11 @@ export class StoresService {
     const contentChanged =
       (dto.bio !== undefined && dto.bio !== store.bio) ||
       (dto.aboutMarkdown !== undefined &&
-        dto.aboutMarkdown !== store.aboutMarkdown);
+        dto.aboutMarkdown !== store.aboutMarkdown) ||
+      (dto.locationLabel !== undefined &&
+        dto.locationLabel !== store.locationLabel) ||
+      (dto.publicOwnerName !== undefined &&
+        dto.publicOwnerName !== store.publicOwnerName);
     return this.prisma.store.update({
       where: { id: storeId },
       data: {
@@ -323,7 +327,18 @@ export class StoresService {
           include: {
             products: {
               orderBy: { position: 'asc' },
-              include: { product: { include: { variants: true } } },
+              include: {
+                product: {
+                  include: {
+                    variants: true,
+                    categories: {
+                      include: {
+                        category: { select: { id: true, name: true } },
+                      },
+                    },
+                  },
+                },
+              },
             },
           },
         },
@@ -364,7 +379,12 @@ export class StoresService {
         discontinued: false,
         id: { notIn: coveredProductIds },
       },
-      include: { variants: true },
+      include: {
+        variants: true,
+        categories: {
+          include: { category: { select: { id: true, name: true } } },
+        },
+      },
     });
 
     if (orphanProducts.length > 0) {
@@ -460,7 +480,12 @@ export class StoresService {
 
     const product = await this.prisma.product.findUnique({
       where: { id: productId },
-      include: { variants: true },
+      include: {
+        variants: true,
+        categories: {
+          include: { category: { select: { id: true, name: true } } },
+        },
+      },
     });
     if (
       !product ||
@@ -479,16 +504,23 @@ export class StoresService {
   }
 
   async updateLogo(storeId: string, userId: string, url: string) {
-    const store = await this.prisma.store.findUnique({
-      where: { id: storeId },
-    });
-    if (!store) throw new NotFoundException('Store no encontrada');
-    if (store.ownerId !== userId) {
-      throw new ForbiddenException('No eres dueño de esta store');
-    }
+    await this.assertOwnership(storeId, userId);
     return this.prisma.store.update({
       where: { id: storeId },
       data: { logoUrl: url },
+    });
+  }
+
+  async updatePublicHeaderImage(
+    storeId: string,
+    userId: string,
+    field: 'bannerUrl' | 'publicOwnerAvatarUrl',
+    url: string,
+  ) {
+    await this.assertOwnership(storeId, userId);
+    return this.prisma.store.update({
+      where: { id: storeId },
+      data: { [field]: url, contentStaleAt: new Date() },
     });
   }
 }

@@ -261,6 +261,48 @@ describe('StoresService', () => {
     });
   });
 
+  describe('updatePublicHeaderImage()', () => {
+    it('rejects a different store owner before changing the image field', async () => {
+      prisma.store.findUnique.mockResolvedValue({
+        id: 'store-2',
+        ownerId: 'other-user',
+      });
+
+      await expect(
+        service.updatePublicHeaderImage(
+          'store-2',
+          ownerId,
+          'bannerUrl',
+          'https://cdn/banner.jpg',
+        ),
+      ).rejects.toThrow(ForbiddenException);
+      expect(prisma.store.update).not.toHaveBeenCalled();
+    });
+
+    it('updates only the requested public image field for its owner', async () => {
+      prisma.store.findUnique.mockResolvedValue({ id: 'store-1', ownerId });
+      prisma.store.update.mockResolvedValue({
+        id: 'store-1',
+        bannerUrl: 'https://cdn/banner.jpg',
+      });
+
+      await service.updatePublicHeaderImage(
+        'store-1',
+        ownerId,
+        'bannerUrl',
+        'https://cdn/banner.jpg',
+      );
+
+      expect(prisma.store.update).toHaveBeenCalledWith({
+        where: { id: 'store-1' },
+        data: {
+          bannerUrl: 'https://cdn/banner.jpg',
+          contentStaleAt: expect.any(Date),
+        },
+      });
+    });
+  });
+
   describe('update()', () => {
     it('throws NotFoundException when the store does not exist', async () => {
       prisma.store.findUnique.mockResolvedValue(null);
@@ -473,7 +515,12 @@ describe('StoresService', () => {
           discontinued: false,
           id: { notIn: [] },
         },
-        include: { variants: true },
+        include: {
+          variants: true,
+          categories: {
+            include: { category: { select: { id: true, name: true } } },
+          },
+        },
       });
       expect(result.sections).toHaveLength(1);
       const productIds = result.sections[0].collection?.products.map(
@@ -514,7 +561,12 @@ describe('StoresService', () => {
           discontinued: false,
           id: { notIn: [productA.id] },
         },
-        include: { variants: true },
+        include: {
+          variants: true,
+          categories: {
+            include: { category: { select: { id: true, name: true } } },
+          },
+        },
       });
       expect(result.sections).toHaveLength(2);
       expect(result.sections[0].collection?.name).toBe('Destacados');

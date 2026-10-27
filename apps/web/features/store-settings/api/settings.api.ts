@@ -43,6 +43,33 @@ export const settingsApi = {
     return { url: data.url };
   },
 
+  async uploadHeaderImage(
+    storeId: string,
+    kind: "banner" | "public-owner-avatar",
+    file: File,
+    fallbackErrorMessage?: string,
+  ): Promise<{ bannerUrl?: string; publicOwnerAvatarUrl?: string }> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch(`${apiUrl()}/api/stores/${storeId}/${kind}`, {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    });
+    const data = (await res.json().catch(() => null)) as {
+      bannerUrl?: string | null;
+      publicOwnerAvatarUrl?: string | null;
+      message?: string;
+    } | null;
+    if (!res.ok || !data) {
+      throw new Error(data?.message ?? fallbackErrorMessage ?? "Network error");
+    }
+    return {
+      bannerUrl: data.bannerUrl ?? undefined,
+      publicOwnerAvatarUrl: data.publicOwnerAvatarUrl ?? undefined,
+    };
+  },
+
   updateAppearance: (storeId: string, themeConfig: StoreThemeConfig) =>
     apiClient.stores.update(storeId, { themeConfig }),
 

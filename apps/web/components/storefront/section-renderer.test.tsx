@@ -1,12 +1,18 @@
 import { render } from "@testing-library/react";
+import { NextIntlClientProvider } from "next-intl";
 import { describe, expect, it } from "vitest";
+import { getMessages } from "@biasmarket/i18n";
 import {
   type RenderableSection,
   StoreSectionRenderer,
 } from "./section-renderer";
 
 function renderSections(sections: RenderableSection[]) {
-  return render(<StoreSectionRenderer slug="demo" sections={sections} />);
+  return render(
+    <NextIntlClientProvider locale="es" messages={getMessages("es")}>
+      <StoreSectionRenderer slug="demo" sections={sections} />
+    </NextIntlClientProvider>,
+  );
 }
 
 describe("StoreSectionRenderer — TEXT_BLOCK", () => {

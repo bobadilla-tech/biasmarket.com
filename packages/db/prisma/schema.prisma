@@ -81,6 +81,10 @@ model Store {
   ownerId               String
   themeConfig           Json
   logoUrl               String?
+  bannerUrl             String?
+  locationLabel         String?
+  publicOwnerName       String?
+  publicOwnerAvatarUrl  String?
   // Seller-authored store copy for SEO/discovery (see
   // .artifacts/2026/09/20260907--store-rich-content-and-thin/plan.md).
   // `bio`: short plain-text tagline, app-capped at 280.

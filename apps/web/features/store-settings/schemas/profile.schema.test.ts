@@ -59,3 +59,24 @@ test("rejects invalid social link URL", () => {
   });
   expect(result.success).toBe(false);
 });
+
+test("validates public location and owner name up to 60 characters", () => {
+  const base = {
+    name: "My Store",
+    whatsappNumber: "+51987654321",
+    paymentInstructions: "",
+    defaultCurrency: "PEN",
+    locale: "es",
+  };
+  expect(
+    profileFormSchema.safeParse({ ...base, locationLabel: "Lima" }).success,
+  ).toBe(true);
+  expect(
+    profileFormSchema.safeParse({ ...base, publicOwnerName: "A".repeat(61) })
+      .success,
+  ).toBe(false);
+  expect(
+    profileFormSchema.safeParse({ ...base, locationLabel: "A".repeat(61) })
+      .success,
+  ).toBe(false);
+});
