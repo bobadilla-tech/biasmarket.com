@@ -42,6 +42,9 @@ export class CustomersController {
     @Query('phone') phone: string | undefined,
     @Session() session: UserSession,
   ): Promise<CustomerLookupResponseDto> {
+    // A literal "+" in ?phone=+51… decodes to a space; clients should send
+    // %2B. Harmless here because normalizePhone strips every non-digit, so
+    // don't "fix" it by rejecting spaces.
     if (typeof phone !== 'string' || !phone.trim()) {
       throw new BadRequestException('El teléfono es requerido');
     }

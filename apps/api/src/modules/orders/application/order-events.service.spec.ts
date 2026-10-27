@@ -34,6 +34,7 @@ describe('OrderEventsService', () => {
     orderEvent: { create: Mock; findMany: Mock; findFirst: Mock };
     order: { findUnique: Mock };
     $transaction: Mock;
+    $executeRaw: Mock;
   };
 
   beforeEach(async () => {
@@ -52,6 +53,7 @@ describe('OrderEventsService', () => {
           paymentStatus: 'PENDING_PAYMENT',
         }),
       },
+      $executeRaw: vi.fn(),
       $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(prisma)),
     };
     const module: TestingModule = await Test.createTestingModule({
@@ -123,6 +125,11 @@ describe('OrderEventsService', () => {
 
     await service.recordInvite(token, 'INVITE_SHOWN');
     expect(prisma.orderEvent.create).toHaveBeenCalledTimes(1);
+    expect(prisma.orderEvent.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ type: 'INVITE_SHOWN', actor: 'BUYER' }),
+    });
+    // The dedupe check runs under the per-order advisory lock.
+    expect(prisma.$executeRaw).toHaveBeenCalledTimes(1);
 
     prisma.orderEvent.findFirst.mockResolvedValue({ id: 'event-1' });
     await service.recordInvite(token, 'INVITE_SHOWN');
