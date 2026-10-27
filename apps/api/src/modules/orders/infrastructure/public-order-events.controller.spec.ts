@@ -39,6 +39,9 @@ describe('PublicOrderEventsController rate limit', () => {
       new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
     );
     app.useGlobalFilters(new AllExceptionsFilter());
+    // Production trusts one hop (main.ts). The socket is that hop, so the
+    // rightmost X-Forwarded-For address is the client.
+    app.getHttpAdapter().getInstance().set('trust proxy', 1);
     await app.init();
   });
 
@@ -96,6 +99,25 @@ describe('PublicOrderEventsController rate limit', () => {
       .send({ type: 'INVITE_SHOWN' })
       .expect(415);
     expect(recordInvite).toHaveBeenCalledTimes(1);
+  });
+
+  it('gives each client IP its own bucket and ignores a spoofed prefix', async () => {
+    const client = '198.51.100.10';
+    const other = '198.51.100.20';
+    const get = (forwardedFor: string) =>
+      request(app.getHttpServer())
+        .get('/public/orders/tok')
+        .set('X-Forwarded-For', forwardedFor);
+
+    for (let i = 0; i < 29; i++) {
+      await get(client).expect(200);
+    }
+    // The leftmost address is whatever the visitor sent. The rightmost is the
+    // one Caddy appends, and that is the bucket.
+    await get(`203.0.113.9, ${client}`).expect(200);
+    const limited = await get(`203.0.113.8, ${client}`).expect(429);
+    expect(limited.headers['cache-control']).toBe('no-store');
+    await get(other).expect(200);
   });
 
   it('rejects the invite beacon after its own per-IP limit', async () => {

@@ -11,6 +11,7 @@ import type { Response } from 'express';
 import { Temporal } from '@js-temporal/polyfill';
 import { extractMessage, stringifyError } from '@biasmarket/utils/errors';
 import { captureException } from '../error-tracking.js';
+import { scrubRequestUrl } from '../scrub-request-url.js';
 import { InvalidOrderTransitionError } from '../../modules/orders/domain/order-status.vo.js';
 
 @Catch()
@@ -74,9 +75,4 @@ export class AllExceptionsFilter implements ExceptionFilter {
   }
 }
 
-// Private-link tokens live in `/public/orders/:token` and in query strings
-// (account confirm, password reset). Neither belongs in stdout or an error body.
-export function scrubRequestUrl(url: string): string {
-  const path = url.split('?')[0] ?? url;
-  return path.replace(/\/public\/orders\/[^/]+/gi, '/public/orders/:token');
-}
+export { scrubRequestUrl };

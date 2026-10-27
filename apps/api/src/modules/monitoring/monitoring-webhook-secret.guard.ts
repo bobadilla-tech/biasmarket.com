@@ -12,12 +12,9 @@ import { requiredEnv } from '../../config/env.validation.js';
 const MONITORING_WEBHOOK_SECRET_HEADER = 'x-webhook-secret';
 
 // Kuma isn't a logged-in user, so this is a shared-secret header rather than
-// session/role auth. The @nestjs/throttler guard on this route is
-// defense-in-depth, not the primary control — main.ts never calls
-// `app.set("trust proxy", ...)`, so behind Caddy every external request's
-// req.ip is Caddy's own socket address, making the per-IP throttle bucket
-// effectively one shared global bucket. This secret comparison is what
-// actually stops an attacker here.
+// session/role auth. The throttler on this route is per client IP: main.ts
+// trusts one proxy hop, and Caddy only accepts Cloudflare's CF-Connecting-IP
+// (infra/vps/Caddyfile). The secret comparison is what authorizes the caller.
 @Injectable()
 export class MonitoringWebhookSecretGuard implements CanActivate {
   private readonly logger = new Logger(MonitoringWebhookSecretGuard.name);
