@@ -50,6 +50,10 @@ describe("store theme", () => {
         contrastRatio(style["--store-tab-active"], "#ffffff"),
       ).toBeGreaterThanOrEqual(4.5);
       expect(
+        contrastRatio(style["--store-tab-active"], palette.colors.surface),
+      ).toBeGreaterThanOrEqual(4.5);
+      expect(style["--store-placeholder"]).toBe(style["--store-tab-active"]);
+      expect(
         contrastRatio(style["--store-gradient-start"], "#ffffff"),
       ).toBeGreaterThanOrEqual(4.5);
       expect(

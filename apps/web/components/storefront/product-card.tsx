@@ -33,6 +33,7 @@ interface Product {
   images: string[];
 }
 
+/** Renders a themed product card with variant selection, cart, and restock actions. */
 export function ProductCard({
   slug,
   product,

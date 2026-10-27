@@ -5,6 +5,7 @@ import { Search } from "lucide-react";
 
 export type StorefrontCategory = { id: string; name: string };
 
+/** Renders the storefront title and optional seller-authored biography. */
 export function StoreHeader({ name, bio }: { name: string; bio: string }) {
   return bio ? (
     <header className="space-y-2">
@@ -18,6 +19,7 @@ export function StoreHeader({ name, bio }: { name: string; bio: string }) {
   );
 }
 
+/** Shows the store banner, public owner details, and location when available. */
 export function StorePublicProfile({
   storeName,
   bannerUrl,
@@ -66,6 +68,7 @@ export function StorePublicProfile({
   );
 }
 
+/** Displays a themed owner card when the store has a description. */
 export function OwnerCard({
   name,
   description,
@@ -85,6 +88,7 @@ export function OwnerCard({
   );
 }
 
+/** Renders accessible product and category tabs for the storefront catalog. */
 export function StoreTabs({
   categories,
   active,
@@ -119,6 +123,7 @@ export function StoreTabs({
   );
 }
 
+/** Provides the labeled search input used to filter catalog products. */
 export function StoreSearchBar({
   value,
   onChange,
@@ -141,6 +146,7 @@ export function StoreSearchBar({
   );
 }
 
+/** Renders accessible category chips for filtering the product catalog. */
 export function CategoryFilter({
   categories,
   selected,
@@ -176,6 +182,7 @@ export function CategoryFilter({
   );
 }
 
+/** Displays a category image and title using the store theme. */
 export function CategoryCard({
   category,
   imageUrl,
@@ -197,6 +204,7 @@ export function CategoryCard({
   );
 }
 
+/** Presents a short themed title and optional descriptive text. */
 export function ReferenceCard({
   title,
   description,
@@ -214,6 +222,7 @@ export function ReferenceCard({
   );
 }
 
+/** Renders an image or an accessible themed placeholder when it is missing. */
 export function ImagePlaceholder({
   src,
   alt,

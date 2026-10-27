@@ -16,6 +16,7 @@ import {
   storeMarkdownToPlainText,
 } from "@/lib/store-markdown";
 
+/** Fetches a store's public storefront data, returning null when unavailable. */
 async function getStore(slug: string) {
   const apiUrl =
     process.env.INTERNAL_API_URL ??
@@ -41,6 +42,7 @@ async function getStore(slug: string) {
   }
 }
 
+/** Collects unique active products that belong in the main catalog. */
 function collectProducts(store: any): any[] {
   const seen = new Map<string, any>();
   for (const section of store.sections ?? []) {
@@ -57,6 +59,7 @@ function collectProducts(store: any): any[] {
   return Array.from(seen.values());
 }
 
+/** Selects the store banner, falling back to its first non-empty banner section. */
 function firstBannerImageUrl(store: any): string | null {
   if (typeof store.bannerUrl === "string" && store.bannerUrl.trim() !== "") {
     return store.bannerUrl;
@@ -69,6 +72,7 @@ function firstBannerImageUrl(store: any): string | null {
   return null;
 }
 
+/** Collects unique sold-out products for the separate coming-soon section. */
 function collectSoldOutProducts(store: any): any[] {
   const seen = new Map<string, any>();
   for (const section of store.sections ?? []) {
@@ -85,6 +89,7 @@ function collectSoldOutProducts(store: any): any[] {
   return Array.from(seen.values());
 }
 
+/** Builds localized SEO metadata and indexing directives for a public store. */
 export async function generateMetadata({
   params,
 }: {
@@ -134,6 +139,7 @@ export async function generateMetadata({
   };
 }
 
+/** Creates OnlineStore and breadcrumb structured data for the storefront. */
 function buildJsonLd(locale: string, slug: string, store: any) {
   const pageUrl = `${SITE_URL}/${locale}/store/${slug}`;
   const products = collectProducts(store);

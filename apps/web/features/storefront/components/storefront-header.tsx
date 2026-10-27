@@ -25,6 +25,7 @@ interface StorefrontHeaderProps {
 
 const SOCIAL_ORDER = ["instagram", "facebook", "tiktok", "twitter"] as const;
 
+/** Renders the shared store, social, cart, and account navigation. */
 export function StorefrontHeader({
   slug,
   name,

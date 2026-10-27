@@ -33,6 +33,7 @@ export interface RenderableSectionProduct {
   categories?: { category: StorefrontCategory }[];
 }
 
+/** Normalizes catalog text so searches ignore case and diacritical marks. */
 function normalizeSearchText(value: string) {
   return value
     .normalize("NFD")
@@ -56,6 +57,7 @@ export interface RenderableSection {
 // *not* cover the synthesized trailing catch-all section for uncollected
 // products (documented out of scope there): callers only ever pass real,
 // ordered StoreSection rows.
+/** Renders ordered storefront sections with optional search and category filters. */
 export function StoreSectionRenderer({
   slug,
   sections,

@@ -91,11 +91,16 @@ function readableTextColor(hex: string) {
   return darken(hex, 0.8);
 }
 
+/** Maps a store palette to accessible CSS custom properties for its storefront. */
 export function getStoreThemeStyle(themeConfig?: unknown): CSSProperties {
   const palette = resolveStorePalette(themeConfig);
   const primary = palette.colors.primary;
   const price = ensureContrast(primary, "#ffffff", 4.5);
-  const active = ensureContrast(primary, "#ffffff", 4.5);
+  const active = ensureContrast(
+    ensureContrast(primary, palette.colors.surface, 4.5),
+    "#ffffff",
+    4.5,
+  );
   const accent = ensureContrast(palette.colors.accent, "#ffffff", 4.5);
 
   return {
@@ -103,7 +108,7 @@ export function getStoreThemeStyle(themeConfig?: unknown): CSSProperties {
     "--store-accent": palette.colors.accent,
     "--store-price": price,
     "--store-tab-active": active,
-    "--store-placeholder": "#6b6472",
+    "--store-placeholder": active,
     "--store-muted": "#6b6472",
     "--store-card": "#ffffff",
     "--store-on-active": "#ffffff",
@@ -133,6 +138,7 @@ function relativeLuminance(hex: string) {
   return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
 }
 
+/** Returns the WCAG contrast ratio between two colors. */
 export function contrastRatio(foreground: string, background: string) {
   const values = [
     relativeLuminance(foreground),
@@ -141,6 +147,7 @@ export function contrastRatio(foreground: string, background: string) {
   return (values[0] + 0.05) / (values[1] + 0.05);
 }
 
+/** Adjusts a foreground color until it meets the requested contrast ratio. */
 export function ensureContrast(
   foreground: string,
   background: string,
