@@ -39,6 +39,14 @@ function tokenEvent(): ErrorEvent {
       query_string: 'token=also-secret',
     },
     transaction: `GET /api/public/orders/${TOKEN}`,
+    contexts: {
+      trace: {
+        data: {
+          'http.target': `/api/public/orders/${TOKEN}?token=also-secret`,
+          'http.query': 'token=also-secret',
+        },
+      },
+    },
     tags: {
       url: `https://api.biasmarket.com/api/public/orders/${TOKEN}`,
       'url.full': `/api/Public/Orders/${TOKEN}?x=1`,

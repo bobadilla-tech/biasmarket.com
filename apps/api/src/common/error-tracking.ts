@@ -32,6 +32,22 @@ export function scrubSentryEvent<T extends Event>(event: T): T {
       }
     }
   }
+  const traceData = event.contexts?.trace?.data;
+  if (traceData) {
+    if (
+      Object.values(traceData).some(
+        (value) => typeof value === 'string' && PUBLIC_ORDER_PATH.test(value),
+      )
+    ) {
+      delete traceData['url.query'];
+      delete traceData['http.query'];
+    }
+    for (const [key, value] of Object.entries(traceData)) {
+      if (typeof value === 'string') {
+        traceData[key] = scrubTrackedText(value);
+      }
+    }
+  }
   for (const span of event.spans ?? []) {
     if (typeof span.description === 'string') {
       span.description = scrubTrackedText(span.description);
