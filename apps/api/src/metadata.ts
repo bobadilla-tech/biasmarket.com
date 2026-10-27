@@ -1242,7 +1242,8 @@ export default async () => {
                 required: false,
                 type: () => String,
                 maxLength: 60,
-                pattern: '^[^\\p{Cc}]*$',
+                pattern:
+                  '^[^\\p{Cc}\\u200B\\u2028\\u2029\\u202A-\\u202E\\u2066-\\u2069\\uFEFF]*$',
               },
               shippingAddress: {
                 required: false,
