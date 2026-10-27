@@ -34,6 +34,9 @@ export function OrderItemRow({
   value,
   products,
   detail,
+  detailLoading,
+  detailError,
+  onRetryDetails,
   errors,
   canRemove,
   lineTotal,
@@ -44,6 +47,9 @@ export function OrderItemRow({
   value: ItemRowValue;
   products: ProductOption[];
   detail: ProductDetailResponseDto | undefined;
+  detailLoading: boolean;
+  detailError: boolean;
+  onRetryDetails: () => void;
   errors: { productId?: string; variantId?: string; quantity?: string };
   canRemove: boolean;
   lineTotal: string | null;
@@ -93,6 +99,24 @@ export function OrderItemRow({
           </Select>
         )}
       </FormField>
+
+      {value.productId && detailLoading ? (
+        <p role="status" className="text-sm text-[#6b5a85]">
+          {t("detailsLoading")}
+        </p>
+      ) : null}
+      {value.productId && detailError ? (
+        <div role="alert" className="flex flex-col items-start gap-2 text-sm text-error-foreground">
+          <p>{t("detailsFailed")}</p>
+          <button
+            type="button"
+            onClick={onRetryDetails}
+            className="min-h-11 rounded-xl underline underline-offset-2"
+          >
+            {t("retry")}
+          </button>
+        </div>
+      ) : null}
 
       {variants.length > 0 ? (
         <FormField

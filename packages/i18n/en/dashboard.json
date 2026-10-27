@@ -797,7 +797,10 @@
       "decrease": "Decrease quantity",
       "noProducts": "You have no published products to sell.",
       "lineTotal": "Subtotal: {amount}",
-      "stockLeft": "{count} left"
+      "stockLeft": "{count} left",
+      "detailsLoading": "Loading product details…",
+      "detailsFailed": "Could not load price and variants.",
+      "retry": "Retry"
     },
     "delivery": {
       "title": "Delivery",
