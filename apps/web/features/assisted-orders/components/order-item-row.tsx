@@ -62,12 +62,13 @@ export function OrderItemRow({
   const available = availableUnits(selectedVariant);
   const maxQuantity = available ?? Infinity;
   const base = `assisted-item-${index}`;
+  const clampQuantity = (quantity: number) =>
+    Number.isFinite(quantity)
+      ? Math.max(1, Math.min(Math.trunc(quantity), maxQuantity))
+      : Number.NaN;
 
   const setQuantity = (quantity: number) =>
-    onChange({
-      ...value,
-      quantity: Math.max(1, Math.min(quantity, maxQuantity)),
-    });
+    onChange({ ...value, quantity: clampQuantity(quantity) });
 
   return (
     <li className="flex flex-col gap-3 rounded-2xl border border-[#f0e7f8] bg-[#fcf9ff] p-3">
@@ -84,7 +85,7 @@ export function OrderItemRow({
               onChange({
                 productId: event.target.value,
                 variantId: "",
-                quantity: value.quantity,
+                quantity: 1,
               })
             }
             className="w-full"
@@ -132,7 +133,11 @@ export function OrderItemRow({
               {...props}
               value={value.variantId}
               onChange={(event) =>
-                onChange({ ...value, variantId: event.target.value })
+                onChange({
+                  ...value,
+                  variantId: event.target.value,
+                  quantity: 1,
+                })
               }
               className="w-full"
               selectClassName={controlClass}
@@ -186,7 +191,7 @@ export function OrderItemRow({
                   onChange({
                     ...value,
                     quantity: event.target.value
-                      ? Number(event.target.value)
+                      ? clampQuantity(Number(event.target.value))
                       : Number.NaN,
                   })
                 }

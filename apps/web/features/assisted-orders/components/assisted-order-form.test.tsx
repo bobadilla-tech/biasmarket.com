@@ -217,6 +217,60 @@ test("quantity controls and live total include shipping", async () => {
   );
 });
 
+test("bounds typed quantity and resets it when product or variant changes", async () => {
+  const secondProduct = { ...product(), id: "p2", name: "Álbum v2" };
+  const variants = [
+    {
+      id: "v1",
+      name: "Default",
+      stock: 10,
+      reserved: 0,
+      priceOverride: null,
+    },
+    {
+      id: "v2",
+      name: "Small",
+      stock: 3,
+      reserved: 0,
+      priceOverride: null,
+    },
+  ];
+  m.findProducts.mockResolvedValue([product(), secondProduct]);
+  m.findProduct.mockImplementation((_storeId, id: string) =>
+    Promise.resolve({
+      ...detail(),
+      id,
+      name: id === "p2" ? "Álbum v2" : "Álbum v1",
+      variants,
+    }),
+  );
+
+  const { user } = await renderForm();
+  await user.selectOptions(screen.getByLabelText("Producto"), "p1");
+  await screen.findByRole("option", { name: "Small" });
+  await user.selectOptions(screen.getByLabelText("Variante"), "v2");
+  let quantity = screen.getByLabelText("Cantidad") as HTMLInputElement;
+  const variantSelect = screen.getByLabelText("Variante");
+  await waitFor(() =>
+    expect((variantSelect as HTMLSelectElement).value).toBe("v2"),
+  );
+  expect(screen.getByText("Quedan 3")).toBeTruthy();
+  await user.clear(quantity);
+  await user.type(quantity, "20");
+  await waitFor(() => expect(quantity.value).toBe("3"));
+
+  await user.selectOptions(screen.getByLabelText("Variante"), "v1");
+  quantity = screen.getByLabelText("Cantidad") as HTMLInputElement;
+  expect(quantity.value).toBe("1");
+  await user.click(screen.getByRole("button", { name: "Aumentar cantidad" }));
+  await user.click(screen.getByRole("button", { name: "Aumentar cantidad" }));
+  expect(quantity.value).toBe("3");
+
+  await user.selectOptions(screen.getByLabelText("Producto"), "p2");
+  quantity = screen.getByLabelText("Cantidad") as HTMLInputElement;
+  expect(quantity.value).toBe("1");
+});
+
 test("a total of 0 blocks submit and says why", async () => {
   m.findProducts.mockResolvedValue([product("0.00")]);
   m.findProduct.mockResolvedValue(detail("0.00"));

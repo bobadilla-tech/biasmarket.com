@@ -36,7 +36,7 @@ describe('assisted orders (e2e)', () => {
   // BuyerAccount (which would skip the Customer upsert under test).
   const racePhones = Array.from(
     { length: 5 },
-    () => `+519${String(randomInt(0, 1e8)).padStart(8, '0')}`,
+    () => `+519${String(randomInt(1e8)).padStart(8, '0')}`,
   );
 
   const nextIp = () => `198.51.101.${++ipCounter}`;

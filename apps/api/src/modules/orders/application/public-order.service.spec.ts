@@ -1,5 +1,8 @@
 import { Test, type TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
+import {
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { type Mock, vi } from 'vitest';
 import { Prisma } from '@biasmarket/db';
 import { hashOrderAccessToken } from '@biasmarket/utils/assisted-order';
@@ -184,7 +187,7 @@ describe('PublicOrderService', () => {
     expect(prisma.paymentMethodConfig.findMany).not.toHaveBeenCalled();
   });
 
-  it('still returns the order when recording the first open fails', async () => {
+  it('fails closed when recording the first open fails', async () => {
     events.requireOrderForToken.mockResolvedValue({
       id: 'order-1',
       storeId: 'store-1',
@@ -192,9 +195,10 @@ describe('PublicOrderService', () => {
     prisma.order.findUnique.mockResolvedValue(orderRow);
     prisma.$transaction.mockRejectedValueOnce(new Error('insert failed'));
 
-    const result = await service.getByToken('raw-token');
+    await expect(service.getByToken('raw-token')).rejects.toBeInstanceOf(
+      InternalServerErrorException,
+    );
 
-    expect(result.customerPhone).toBe('+51 9** *** 321');
     expect(events.record).not.toHaveBeenCalled();
   });
 
@@ -228,6 +232,9 @@ describe('PublicOrderService', () => {
 
     await service.getByToken('raw-token');
 
+    expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Function), {
+      timeout: 15_000,
+    });
     expect(prisma.order.updateMany).toHaveBeenCalledWith({
       where: {
         id: 'order-1',

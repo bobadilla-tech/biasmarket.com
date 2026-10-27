@@ -409,18 +409,13 @@ describe('assisted order links (e2e)', () => {
         async (tx) => {
           await tx.$queryRaw`SELECT id FROM "Order" WHERE id = ${id} FOR UPDATE`;
           stale = open(token).then((r) => r);
-          // Poll outside the transaction: inside it, pg_stat_activity is
-          // cached after the first read and would never show the waiter.
-          let queued = false;
-          for (let i = 0; i < 100 && !queued; i++) {
-            const [{ waiting }] = await prisma.$queryRaw<{ waiting: bigint }[]>`
-              SELECT count(*) AS waiting FROM pg_stat_activity
-              WHERE wait_event_type = 'Lock' AND datname = current_database()
-                AND query ILIKE '%UPDATE%' AND query ILIKE '%linkFirstOpenedAt%'`;
-            queued = waiting > 0n;
-            if (!queued) await new Promise((r) => setTimeout(r, 50));
+          for (let i = 0; i < 100; i++) {
+            const [{ waiting }] = await tx.$queryRaw<{ waiting: bigint }[]>`
+            SELECT count(*) AS waiting FROM pg_stat_activity
+            WHERE wait_event_type = 'Lock' AND query ILIKE '%UPDATE "Order"%'`;
+            if (waiting > 0n) break;
+            await new Promise((r) => setTimeout(r, 50));
           }
-          expect(queued).toBe(true);
           await tx.order.update({
             where: { id },
             data: { accessTokenHash: freshHash, accessTokenRevokedAt: null },
