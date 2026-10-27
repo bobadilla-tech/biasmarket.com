@@ -149,7 +149,11 @@ export function StorePublicProfile({
         {socials.length > 0 ? (
           <nav
             aria-label={t("social.storeLinks")}
-            className="col-span-2 row-start-2 flex items-center gap-2 sm:col-span-1 sm:col-start-1 sm:row-start-2"
+            className={
+              publicOwnerName?.trim()
+                ? "col-span-2 row-start-2 flex items-center gap-2 sm:col-span-1 sm:col-start-1 sm:row-start-2"
+                : "col-start-2 row-start-1 flex items-center justify-self-end gap-2"
+            }
           >
             {socials.map(({ platform, url }) => (
               <a

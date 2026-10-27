@@ -50,6 +50,10 @@ test("shows only configured public links and labels them for assistive technolog
   expect(instagram.getAttribute("target")).toBe("_blank");
   expect(instagram.getAttribute("rel")).toBe("noopener noreferrer");
   expect(
+    screen.getByRole("navigation", { name: "Redes sociales de la tienda" })
+      .className,
+  ).toContain("col-start-2 row-start-1");
+  expect(
     screen.queryByRole("link", { name: /TikTok|Facebook|^X / }),
   ).toBeNull();
 });
