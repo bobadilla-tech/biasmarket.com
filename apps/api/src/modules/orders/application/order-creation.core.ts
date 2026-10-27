@@ -189,6 +189,9 @@ export async function lockAndValidate(
   let pickupPoint: { id: string; label: string } | null = null;
   let pickupDate: Date | null = null;
 
+  // Defense-in-depth against a stale client cache or a direct API call
+  // bypassing whatever the storefront shows — mirrors the zero-payment
+  // guard's placement in ReviewPaymentUseCase. Runs inside the
   // order-creation transaction and locks the row (SELECT ... FOR
   // UPDATE) so validation reflects the latest committed state; the
   // weekday comes from the same `new Date().getDay()` source the
