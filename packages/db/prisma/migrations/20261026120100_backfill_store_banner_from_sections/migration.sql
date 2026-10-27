@@ -1,3 +1,4 @@
+/* tsqllint-disable set-quoted-identifier */
 -- One-time backfill from each store's first visible banner section.
 WITH first_banner AS (
   SELECT DISTINCT ON ("storeId")

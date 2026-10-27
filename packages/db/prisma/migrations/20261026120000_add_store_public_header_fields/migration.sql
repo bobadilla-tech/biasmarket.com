@@ -1,3 +1,4 @@
+/* tsqllint-disable set-quoted-identifier */
 -- Expand-only: nullable fields keep the previous application version
 -- compatible during the blue/green rollback window.
 ALTER TABLE "Store"
