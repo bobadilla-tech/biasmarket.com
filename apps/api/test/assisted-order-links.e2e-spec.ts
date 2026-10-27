@@ -1,6 +1,7 @@
 import { Test, type TestingModule } from '@nestjs/testing';
 import { ValidationPipe, type INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import { randomUUID } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import { createOrderAccessToken } from '@biasmarket/utils/assisted-order';
 import type { PaymentStatus } from '@biasmarket/db';
@@ -18,7 +19,7 @@ import {
 describe('assisted order links (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
-  const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const runId = `${Date.now()}-${randomUUID().slice(0, 8)}`;
   const password = 'correcthorsebatterystaple';
   const userIds: string[] = [];
   const storeIds: string[] = [];
