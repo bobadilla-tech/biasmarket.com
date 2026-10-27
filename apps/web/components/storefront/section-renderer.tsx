@@ -1,7 +1,15 @@
 "use client";
 
-import { ProductCard } from "./product-card";
+import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
+import { ProductCard } from "@/features/storefront/components/product-card";
 import { isProductOutOfStock } from "@/features/discovery/lib/product-stock";
+import {
+  CategoryFilter,
+  StoreSearchBar,
+  StoreTabs,
+  type StorefrontCategory,
+} from "@/features/storefront/components/storefront";
 
 export interface RenderableSectionVariant {
   id: string;
@@ -22,6 +30,14 @@ export interface RenderableSectionProduct {
   variants: RenderableSectionVariant[];
   availableUntil: string | null;
   images: string[];
+  categories?: { category: StorefrontCategory }[];
+}
+
+function normalizeSearchText(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLocaleLowerCase();
 }
 
 export interface RenderableSection {
@@ -43,12 +59,59 @@ export interface RenderableSection {
 export function StoreSectionRenderer({
   slug,
   sections,
+  catalogControls = false,
 }: {
   slug: string;
   sections: RenderableSection[];
+  catalogControls?: boolean;
 }) {
+  const t = useTranslations("storefront");
+  const [query, setQuery] = useState("");
+  const [categoryId, setCategoryId] = useState("");
+  const categories = useMemo(() => {
+    const byId = new Map<string, StorefrontCategory>();
+    for (const section of sections) {
+      for (const item of section.collection?.products ?? []) {
+        for (const relation of item.product.categories ?? []) {
+          byId.set(relation.category.id, relation.category);
+        }
+      }
+    }
+    return [...byId.values()];
+  }, [sections]);
+  const normalizedQuery = catalogControls
+    ? normalizeSearchText(query.trim())
+    : "";
+  const hasVisibleProducts = sections.some((section) =>
+    (section.collection?.products ?? []).some(
+      ({ product }) =>
+        !product.discontinued &&
+        !isProductOutOfStock(product) &&
+        (!normalizedQuery ||
+          normalizeSearchText(product.name).includes(normalizedQuery)) &&
+        (!catalogControls ||
+          !categoryId ||
+          product.categories?.some((item) => item.category.id === categoryId)),
+    ),
+  );
+
   return (
     <>
+      {catalogControls && (
+        <div className="mb-6 space-y-4">
+          <StoreTabs
+            categories={categories}
+            active={categoryId}
+            onChange={setCategoryId}
+          />
+          <StoreSearchBar value={query} onChange={setQuery} />
+          <CategoryFilter
+            categories={categories}
+            selected={categoryId}
+            onChange={setCategoryId}
+          />
+        </div>
+      )}
       {sections.map((section) => {
         if (section.type === "COLLECTION") {
           const products = [...(section.collection?.products ?? [])].sort(
@@ -59,20 +122,34 @@ export function StoreSectionRenderer({
 
           if (products.length === 0) return null;
 
-          const visible = products.filter(
-            (cp) =>
-              !cp.product.discontinued && !isProductOutOfStock(cp.product),
-          );
+          const visible = products.filter((cp) => {
+            if (cp.product.discontinued || isProductOutOfStock(cp.product))
+              return false;
+            if (
+              normalizedQuery &&
+              !normalizeSearchText(cp.product.name).includes(normalizedQuery)
+            )
+              return false;
+            if (
+              catalogControls &&
+              categoryId &&
+              !cp.product.categories?.some(
+                (item) => item.category.id === categoryId,
+              )
+            )
+              return false;
+            return true;
+          });
           if (visible.length === 0) return null;
 
           return (
             <section key={section.id}>
               {section.collection?.name && (
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                <h2 className="mb-4 text-lg font-bold uppercase text-(--store-text)">
                   {section.collection.name}
                 </h2>
               )}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                 {visible.map((cp) => (
                   <ProductCard
                     key={cp.product.id}
@@ -92,7 +169,10 @@ export function StoreSectionRenderer({
                 <a href={(section.content?.linkUrl as string) ?? "#"}>
                   <img
                     src={section.content?.imageUrl as string}
-                    alt={(section.content?.alt as string) ?? ""}
+                    alt={
+                      (section.content?.alt as string) ||
+                      t("bannerImageGenericAlt")
+                    }
                     className="w-full rounded-xl object-cover"
                   />
                 </a>
@@ -117,6 +197,15 @@ export function StoreSectionRenderer({
           </section>
         );
       })}
+      {(normalizedQuery || categoryId) && !hasVisibleProducts ? (
+        <p
+          role="status"
+          aria-live="polite"
+          className="rounded-2xl bg-(--store-card) px-4 py-12 text-center text-sm text-(--store-muted)"
+        >
+          {t("noSearchResults")}
+        </p>
+      ) : null}
     </>
   );
 }

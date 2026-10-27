@@ -58,15 +58,19 @@ export function StorefrontHeader({
         <Link
           href={`/store/${slug}`}
           aria-label={t("header.storeHome", { name })}
-          className="flex min-h-11 shrink-0 items-center gap-2 rounded-full border border-gray-100 bg-white/90 px-2.5 py-1.5 shadow-sm backdrop-blur transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2"
+          className="flex min-h-11 shrink-0 items-center gap-2 rounded-full border border-(--store-border) bg-(--store-card) px-2.5 py-1.5 shadow-sm backdrop-blur transition hover:bg-(--store-surface) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2"
         >
           <StoreLogo
             name={name}
             logoUrl={logoUrl}
             size={28}
             className="text-[10px]"
+            gradient={{
+              from: "var(--store-gradient-start)",
+              to: "var(--store-gradient-end)",
+            }}
           />
-          <span className="hidden text-sm font-semibold text-gray-900 sm:inline">
+          <span className="hidden text-sm font-semibold text-(--store-text) sm:inline">
             {name}
           </span>
         </Link>
@@ -82,7 +86,7 @@ export function StorefrontHeader({
                 aria-label={t("social.linkLabel", {
                   platform: socialLabels[key],
                 })}
-                className="flex size-11 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white/90 text-gray-600 shadow-sm backdrop-blur transition hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2"
+                className="flex size-11 shrink-0 items-center justify-center rounded-full border border-(--store-border) bg-(--store-card) text-(--store-muted) shadow-sm backdrop-blur transition hover:border-(--store-primary) hover:bg-(--store-surface) hover:text-(--store-primary-text) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2"
               >
                 <SocialIcon platform={key} />
               </a>
