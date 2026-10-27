@@ -1,14 +1,26 @@
 # Handoff prompt: review the assisted order PR stack (review session)
 
 Work unit: review the PRs opened by the implementation session for
-`.artifacts/2026/10/20261027--assisted-order-seller-flow/plan.md`. The implementer fills the
-`<PR LIST>` block below at the end of their session; if it is still a placeholder, list the open PRs with
+Work unit: review the PRs opened by the implementation session for
+`.artifacts/2026/10/20261027--assisted-order-seller-flow/plan.md`. The PR list was filled at the end of that session; if anything looks stale, list the open PRs with
 `gh pr list --state open --json number,title,headRefName,baseRefName,headRefOid` and find the
 `feat/assisted-order-*`, `refactor/checkout-delivery-rules` and `chore/implementation-plan-skill` branches.
 
-<PR LIST>
-(PR number | branch | base | head SHA | tip SHA recorded for rebases | local verification noted in body)
-</PR LIST>
+PR LIST (opened 2026-10-27; repo bobadilla-tech/biasmarket.com; stack is linear; tip SHA = head SHA at open, record before any rebase)
+
+| PR | Branch | Base | Head/tip SHA | Local verification (see each PR body) |
+|---|---|---|---|---|
+| 0 | `chore/implementation-plan-skill` | main | NOT OPENED: the branch already existed (local + origin, `d13c5cac`, no PR) and also commits `.artifacts/`; the user chose to skip PR0 | n/a |
+| #324 | `feat/assisted-order-core-extraction` | main | `25ab30ec` | api typecheck/lint, `vitest src/modules/orders` 182/182, `orders.e2e-spec.ts` 21/21; GitHub CI on this PR: API + E2E (API) pass |
+| #325 | `feat/assisted-order-create-endpoint` | #324 | `c3c98df0` | api/types/web typecheck, api unit 673, openapi drift rc=0, full API e2e 28 files / 94 tests |
+| #326 | `feat/assisted-order-link-endpoints` | #325 | `6e41746c` | typecheck x3, lint, api unit 684, web 42, drift rc=0, full e2e 29 files / 112 tests |
+| #327 | `feat/assisted-order-whatsapp-template` | #326 | `b0605abe` | typecheck x4, utils 92, web settings 14, api unit 686, destructive-migration gate rc=0, drift rc=0, migrate deploy on seeded DB, full e2e 29 files / 113 tests |
+| #328 | `refactor/checkout-delivery-rules` | #327 | `d836cd7e` | web typecheck/lint, `features/checkout` 54 tests, `checkout-form.test.tsx` diff empty |
+| #329 | `feat/assisted-order-new-order-form` | #328 | `c5edc352` | typecheck x5, lint, utils 95, validation 53, web assisted-orders 20 + i18n parity 12, new unpublished-store e2e 5/5 |
+| #330 | `feat/assisted-order-created-screen` | #329 | `269a0b60` | web typecheck/lint, assisted-orders 38 + orders page 3 |
+| #331 | `feat/assisted-order-detail-actions` | #330 | `bc0966f3` | web typecheck/lint, assisted-orders + orders 82 |
+
+Notes for the reviewer: GitHub CI has run only for #324; the rest need the local checks (CI starts after the user merges the base and the PR is retargeted). Web suite has 8 pre-existing failures in `features/products/components/image-gallery.test.tsx` (`next/image` hostname), identical on #327-#331 (not checked on main). Issue comments posted on #265 and #268. Q4 buyer URL path confirmed by the user.
 
 ---
 
