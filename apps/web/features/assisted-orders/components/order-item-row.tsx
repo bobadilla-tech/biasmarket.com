@@ -106,7 +106,10 @@ export function OrderItemRow({
         </p>
       ) : null}
       {value.productId && detailError ? (
-        <div role="alert" className="flex flex-col items-start gap-2 text-sm text-error-foreground">
+        <div
+          role="alert"
+          className="flex flex-col items-start gap-2 text-sm text-error-foreground"
+        >
           <p>{t("detailsFailed")}</p>
           <button
             type="button"

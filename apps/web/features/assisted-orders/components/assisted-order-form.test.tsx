@@ -248,8 +248,10 @@ test("blocks submission while selected product details are loading even when del
   const { user } = await renderForm();
   await user.selectOptions(screen.getByLabelText("Producto"), "p1");
 
-  expect(await screen.findByText("Cargando detalles del producto…")).toBeTruthy();
-  expect(screen.getByText("PEN 10.00", { selector: "dd" })).toBeTruthy();
+  expect(
+    await screen.findByText("Cargando detalles del producto…"),
+  ).toBeTruthy();
+  expect(screen.getAllByText("PEN 10.00", { selector: "dd" })).toHaveLength(2);
   expect((submitButton() as HTMLButtonElement).disabled).toBe(true);
 
   resolveDetail(detail());
@@ -312,12 +314,16 @@ test("clears a lookup-generated alias immediately when the phone changes", async
   const alias = screen.getByLabelText(/Nombre o apodo/);
 
   await user.type(phone, "987654321");
-  await waitFor(() => expect((alias as HTMLInputElement).value).toBe("Compradora A"));
+  await waitFor(() =>
+    expect((alias as HTMLInputElement).value).toBe("Compradora A"),
+  );
 
   await user.clear(phone);
   await user.type(phone, "912345678");
   expect((alias as HTMLInputElement).value).toBe("");
-  await waitFor(() => expect((alias as HTMLInputElement).value).toBe("Compradora B"));
+  await waitFor(() =>
+    expect((alias as HTMLInputElement).value).toBe("Compradora B"),
+  );
 });
 
 test("preserves seller-edited alias text when the phone changes", async () => {
@@ -333,7 +339,9 @@ test("preserves seller-edited alias text when the phone changes", async () => {
   const alias = screen.getByLabelText(/Nombre o apodo/);
 
   await user.type(phone, "987654321");
-  await waitFor(() => expect((alias as HTMLInputElement).value).toBe("Compradora A"));
+  await waitFor(() =>
+    expect((alias as HTMLInputElement).value).toBe("Compradora A"),
+  );
   await user.clear(alias);
   await user.type(alias, "Nombre manual");
   await user.clear(phone);
