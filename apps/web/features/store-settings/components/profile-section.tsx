@@ -133,7 +133,6 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
       >
         <div className="flex flex-col items-start gap-3">
           {store.publicOwnerAvatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={store.publicOwnerAvatarUrl}
               alt={t("profile.ownerAvatarPreviewAlt")}
@@ -182,7 +181,6 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
             {t("profile.bannerLabel")}
           </p>
           {store.bannerUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={store.bannerUrl}
               alt={t("profile.bannerPreviewAlt")}
@@ -415,6 +413,7 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
             <div className="relative">
               <MapPin className="absolute left-3 top-4 size-4 text-muted-foreground" />
               <Input
+                id="settings-profile-location"
                 maxLength={60}
                 {...register("locationLabel")}
                 className="store-theme-input h-12 rounded-2xl pl-10"
@@ -426,11 +425,16 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
             label={t("profile.publicOwnerNameLabel")}
           >
             <Input
+              id="settings-profile-public-owner"
+              aria-describedby="settings-profile-public-owner-help"
               maxLength={60}
               {...register("publicOwnerName")}
               className="store-theme-input h-12 rounded-2xl"
             />
-            <p className="text-xs text-muted-foreground">
+            <p
+              id="settings-profile-public-owner-help"
+              className="text-xs text-muted-foreground"
+            >
               {t("profile.publicOwnerHelp")}
             </p>
           </Field>

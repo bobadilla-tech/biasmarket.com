@@ -32,6 +32,10 @@ function textBlockBody(content: unknown): string {
   return '';
 }
 
+function normalizeOptionalText(value: string | null | undefined) {
+  return value === undefined ? undefined : value?.trim() || null;
+}
+
 @Injectable()
 export class StoresService {
   constructor(private prisma: PrismaService) {}
@@ -117,8 +121,12 @@ export class StoresService {
       facebookUrl,
       tiktokUrl,
       twitterUrl,
+      locationLabel: rawLocationLabel,
+      publicOwnerName: rawPublicOwnerName,
       ...rest
     } = dto;
+    const locationLabel = normalizeOptionalText(rawLocationLabel);
+    const publicOwnerName = normalizeOptionalText(rawPublicOwnerName);
     // Seller-authored storefront copy changed → move the sitemap's per-store
     // `lastModified` (D4). Compare against the loaded row so a no-op save
     // (settings form re-submitted unchanged) doesn't bump it.
@@ -126,10 +134,9 @@ export class StoresService {
       (dto.bio !== undefined && dto.bio !== store.bio) ||
       (dto.aboutMarkdown !== undefined &&
         dto.aboutMarkdown !== store.aboutMarkdown) ||
-      (dto.locationLabel !== undefined &&
-        dto.locationLabel !== store.locationLabel) ||
-      (dto.publicOwnerName !== undefined &&
-        dto.publicOwnerName !== store.publicOwnerName);
+      (locationLabel !== undefined && locationLabel !== store.locationLabel) ||
+      (publicOwnerName !== undefined &&
+        publicOwnerName !== store.publicOwnerName);
     return this.prisma.store.update({
       where: { id: storeId },
       data: {
@@ -147,6 +154,8 @@ export class StoresService {
         ...(twitterUrl !== undefined && {
           twitterUrl: twitterUrl || null,
         }),
+        ...(locationLabel !== undefined && { locationLabel }),
+        ...(publicOwnerName !== undefined && { publicOwnerName }),
         ...(themeConfig !== undefined && {
           themeConfig: themeConfig as Prisma.InputJsonValue,
         }),

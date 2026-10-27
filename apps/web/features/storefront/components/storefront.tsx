@@ -37,7 +37,6 @@ export function StorePublicProfile({
   return (
     <section className="space-y-4" aria-label={t("publicStoreProfile")}>
       {bannerUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={bannerUrl}
           alt={t("bannerImageAlt", { storeName })}
@@ -46,7 +45,6 @@ export function StorePublicProfile({
       ) : null}
       <div className="flex flex-wrap items-center gap-3">
         {ownerAvatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={ownerAvatarUrl}
             alt={

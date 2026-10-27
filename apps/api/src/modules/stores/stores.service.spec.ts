@@ -396,6 +396,52 @@ describe('StoresService', () => {
       });
     });
 
+    it('normalizes blank public profile text to null without bumping contentStaleAt', async () => {
+      prisma.store.findUnique.mockResolvedValue({
+        id: 'store-1',
+        ownerId,
+        locationLabel: null,
+        publicOwnerName: null,
+        bio: null,
+        aboutMarkdown: null,
+      });
+      prisma.store.update.mockResolvedValue({ id: 'store-1' });
+
+      await service.update('store-1', ownerId, {
+        locationLabel: '  \t',
+        publicOwnerName: '   ',
+      });
+
+      expect(prisma.store.update).toHaveBeenCalledWith({
+        where: { id: 'store-1' },
+        data: { locationLabel: null, publicOwnerName: null },
+      });
+    });
+
+    it('trims public profile text before persisting and checking sitemap changes', async () => {
+      prisma.store.findUnique.mockResolvedValue({
+        id: 'store-1',
+        ownerId,
+        locationLabel: null,
+        publicOwnerName: null,
+      });
+      prisma.store.update.mockResolvedValue({ id: 'store-1' });
+
+      await service.update('store-1', ownerId, {
+        locationLabel: '  Lima  ',
+        publicOwnerName: '  Ana  ',
+      });
+
+      expect(prisma.store.update).toHaveBeenCalledWith({
+        where: { id: 'store-1' },
+        data: {
+          locationLabel: 'Lima',
+          publicOwnerName: 'Ana',
+          contentStaleAt: expect.any(Date),
+        },
+      });
+    });
+
     it('updates locale and social links when provided', async () => {
       prisma.store.findUnique.mockResolvedValue({ id: 'store-1', ownerId });
       prisma.store.update.mockResolvedValue({ id: 'store-1' });

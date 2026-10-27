@@ -33,6 +33,13 @@ export interface RenderableSectionProduct {
   categories?: { category: StorefrontCategory }[];
 }
 
+function normalizeSearchText(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLocaleLowerCase();
+}
+
 export interface RenderableSection {
   id: string;
   type: "COLLECTION" | "BANNER" | "TEXT_BLOCK";
@@ -73,7 +80,7 @@ export function StoreSectionRenderer({
     return [...byId.values()];
   }, [sections]);
   const normalizedQuery = catalogControls
-    ? query.trim().toLocaleLowerCase()
+    ? normalizeSearchText(query.trim())
     : "";
   const hasVisibleProducts = sections.some((section) =>
     (section.collection?.products ?? []).some(
@@ -81,7 +88,7 @@ export function StoreSectionRenderer({
         !product.discontinued &&
         !isProductOutOfStock(product) &&
         (!normalizedQuery ||
-          product.name.toLocaleLowerCase().includes(normalizedQuery)) &&
+          normalizeSearchText(product.name).includes(normalizedQuery)) &&
         (!catalogControls ||
           !categoryId ||
           product.categories?.some((item) => item.category.id === categoryId)),
@@ -120,7 +127,7 @@ export function StoreSectionRenderer({
               return false;
             if (
               normalizedQuery &&
-              !cp.product.name.toLocaleLowerCase().includes(normalizedQuery)
+              !normalizeSearchText(cp.product.name).includes(normalizedQuery)
             )
               return false;
             if (
@@ -191,7 +198,11 @@ export function StoreSectionRenderer({
         );
       })}
       {(normalizedQuery || categoryId) && !hasVisibleProducts ? (
-        <p className="rounded-2xl bg-(--store-card) px-4 py-12 text-center text-sm text-(--store-muted)">
+        <p
+          role="status"
+          aria-live="polite"
+          className="rounded-2xl bg-(--store-card) px-4 py-12 text-center text-sm text-(--store-muted)"
+        >
           {t("noSearchResults")}
         </p>
       ) : null}
