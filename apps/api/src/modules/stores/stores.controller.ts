@@ -70,6 +70,9 @@ const STORE_LOGO_PIPE = new UploadedFileValidationPipe({
 const STORE_CONTENT_IMAGE_PIPE = new UploadedFileValidationPipe({
   allowedMimeTypes: IMAGE_UPLOAD_MIME_TYPES,
 });
+const STORE_HEADER_IMAGE_PIPE = new UploadedFileValidationPipe({
+  allowedMimeTypes: IMAGE_UPLOAD_MIME_TYPES,
+});
 
 interface VariantRow {
   id: string;
@@ -98,6 +101,7 @@ interface PublicProductRow {
   deletedAt: Date | null;
   createdAt: Date;
   variants: VariantRow[];
+  categories: { category: { id: string; name: string } }[];
 }
 
 interface SectionRow {
@@ -144,6 +148,7 @@ function toPublicProductDto(
     deletedAt: product.deletedAt?.toISOString() ?? null,
     createdAt: product.createdAt.toISOString(),
     variants: product.variants.map(toVariantDto),
+    categories: product.categories,
   };
 }
 
@@ -350,6 +355,54 @@ export class StoresController {
     );
     const store = await this.stores.updateLogo(storeId, session.user.id, url);
     return toStoreDto(store);
+  }
+
+  @UseGuards(AuthGuard)
+  @Post(':storeId/banner')
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadBanner(
+    @Param('storeId') storeId: string,
+    @Session() session: UserSession,
+    @UploadedFile(STORE_HEADER_IMAGE_PIPE) file: ValidatedUploadedFile,
+  ): Promise<StoreResponseDto> {
+    await this.stores.assertOwnership(storeId, session.user.id);
+    const url = await this.storage.uploadStoreBanner(
+      file.buffer,
+      file.detectedMimeType,
+    );
+    return toStoreDto(
+      await this.stores.updatePublicHeaderImage(
+        storeId,
+        session.user.id,
+        'bannerUrl',
+        url,
+      ),
+    );
+  }
+
+  @UseGuards(AuthGuard)
+  @Post(':storeId/public-owner-avatar')
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadPublicOwnerAvatar(
+    @Param('storeId') storeId: string,
+    @Session() session: UserSession,
+    @UploadedFile(STORE_HEADER_IMAGE_PIPE) file: ValidatedUploadedFile,
+  ): Promise<StoreResponseDto> {
+    await this.stores.assertOwnership(storeId, session.user.id);
+    const url = await this.storage.uploadStoreOwnerAvatar(
+      file.buffer,
+      file.detectedMimeType,
+    );
+    return toStoreDto(
+      await this.stores.updatePublicHeaderImage(
+        storeId,
+        session.user.id,
+        'publicOwnerAvatarUrl',
+        url,
+      ),
+    );
   }
 
   // Raw-FormData carve-out (see apps/web/AGENTS.md): the dashboard's

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Store, Upload } from "lucide-react";
+import { MapPin, Store, Upload } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { SUPPORTED_CURRENCIES } from "@biasmarket/utils/currency";
@@ -17,6 +17,7 @@ import { StoreLogo } from "@/components/store-logo";
 import type { DashboardStore } from "@/features/stores";
 import { useSaveProfile } from "../mutations/use-save-profile";
 import { useUploadStoreLogo } from "../mutations/use-upload-store-logo";
+import { useUploadStoreHeaderImage } from "../mutations/use-upload-store-header-image";
 import {
   type ProfileFormInput,
   profileFormSchema,
@@ -28,11 +29,25 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
   const tCommon = useTranslations("common");
   const { locale, slug } = useParams<{ locale: string; slug: string }>();
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+  const ownerAvatarInputRef = useRef<HTMLInputElement>(null);
 
   const saveProfile = useSaveProfile(store.id, slug);
   const uploadLogo = useUploadStoreLogo(
     store.id,
     slug,
+    tCommon("networkError"),
+  );
+  const uploadBanner = useUploadStoreHeaderImage(
+    store.id,
+    slug,
+    "banner",
+    tCommon("networkError"),
+  );
+  const uploadOwnerAvatar = useUploadStoreHeaderImage(
+    store.id,
+    slug,
+    "public-owner-avatar",
     tCommon("networkError"),
   );
 
@@ -57,6 +72,8 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
       facebookUrl: store.facebookUrl ?? "",
       tiktokUrl: store.tiktokUrl ?? "",
       twitterUrl: store.twitterUrl ?? "",
+      locationLabel: store.locationLabel ?? "",
+      publicOwnerName: store.publicOwnerName ?? "",
     },
   });
 
@@ -73,6 +90,8 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
       facebookUrl: store.facebookUrl ?? "",
       tiktokUrl: store.tiktokUrl ?? "",
       twitterUrl: store.twitterUrl ?? "",
+      locationLabel: store.locationLabel ?? "",
+      publicOwnerName: store.publicOwnerName ?? "",
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -85,6 +104,8 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
     store.facebookUrl,
     store.tiktokUrl,
     store.twitterUrl,
+    store.locationLabel,
+    store.publicOwnerName,
     reset,
   ]);
 
@@ -110,7 +131,14 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
         className="mb-6 flex flex-col gap-4 rounded-[24px] p-4 sm:flex-row sm:items-center sm:justify-between"
         style={{ backgroundColor: "var(--store-surface)" }}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col items-start gap-3">
+          {store.publicOwnerAvatarUrl ? (
+            <img
+              src={store.publicOwnerAvatarUrl}
+              alt={t("profile.ownerAvatarPreviewAlt")}
+              className="size-16 rounded-full object-cover"
+            />
+          ) : null}
           <StoreLogo
             name={storeName}
             logoUrl={store.logoUrl ?? null}
@@ -145,6 +173,74 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
           <Upload className="size-4" />
           {uploadLogo.isPending ? t("profile.uploading") : t("profile.upload")}
         </Button>
+      </div>
+
+      <div className="mb-6 grid gap-4 sm:grid-cols-2">
+        <div>
+          <p className="mb-2 text-sm font-semibold">
+            {t("profile.bannerLabel")}
+          </p>
+          {store.bannerUrl ? (
+            <img
+              src={store.bannerUrl}
+              alt={t("profile.bannerPreviewAlt")}
+              className="mb-3 aspect-[3/1] w-full rounded-2xl object-cover"
+            />
+          ) : (
+            <div className="mb-3 grid aspect-[3/1] place-items-center rounded-2xl bg-muted text-sm text-muted-foreground">
+              {t("profile.bannerEmpty")}
+            </div>
+          )}
+          <p className="mb-2 text-xs text-muted-foreground">
+            {t("profile.bannerHelp")}
+          </p>
+          <input
+            ref={bannerInputRef}
+            type="file"
+            accept="image/png,image/jpeg"
+            aria-label={t("profile.bannerUpload")}
+            className="sr-only"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) uploadBanner.mutate(file);
+            }}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => bannerInputRef.current?.click()}
+            className="store-theme-secondary-button rounded-2xl"
+          >
+            <Upload className="size-4" />
+            {uploadBanner.isPending
+              ? t("profile.uploading")
+              : t("profile.bannerUpload")}
+          </Button>
+        </div>
+        <div className="flex items-center gap-4">
+          <input
+            ref={ownerAvatarInputRef}
+            type="file"
+            accept="image/png,image/jpeg"
+            aria-label={t("profile.ownerAvatarUpload")}
+            className="sr-only"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) uploadOwnerAvatar.mutate(file);
+            }}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => ownerAvatarInputRef.current?.click()}
+            className="store-theme-secondary-button rounded-2xl"
+          >
+            <Upload className="size-4" />
+            {uploadOwnerAvatar.isPending
+              ? t("profile.uploading")
+              : t("profile.ownerAvatarUpload")}
+          </Button>
+        </div>
       </div>
 
       <form onSubmit={onSubmit}>
@@ -309,6 +405,41 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
           </Field>
         </div>
 
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <Field
+            id="settings-profile-location"
+            label={t("profile.locationLabel")}
+          >
+            <div className="relative">
+              <MapPin className="absolute left-3 top-4 size-4 text-muted-foreground" />
+              <Input
+                id="settings-profile-location"
+                maxLength={60}
+                {...register("locationLabel")}
+                className="store-theme-input h-12 rounded-2xl pl-10"
+              />
+            </div>
+          </Field>
+          <Field
+            id="settings-profile-public-owner"
+            label={t("profile.publicOwnerNameLabel")}
+          >
+            <Input
+              id="settings-profile-public-owner"
+              aria-describedby="settings-profile-public-owner-help"
+              maxLength={60}
+              {...register("publicOwnerName")}
+              className="store-theme-input h-12 rounded-2xl"
+            />
+            <p
+              id="settings-profile-public-owner-help"
+              className="text-xs text-muted-foreground"
+            >
+              {t("profile.publicOwnerHelp")}
+            </p>
+          </Field>
+        </div>
+
         <div className="mt-4">
           <Field
             id="settings-profile-instructions"
@@ -323,10 +454,21 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
           </Field>
         </div>
 
-        {saveProfile.isError || uploadLogo.isError ? (
+        {saveProfile.isError ||
+        uploadLogo.isError ||
+        uploadBanner.isError ||
+        uploadOwnerAvatar.isError ? (
           <p role="alert" className="mt-4 text-sm text-[#b24368]">
-            {(saveProfile.error ?? uploadLogo.error) instanceof Error
-              ? ((saveProfile.error ?? uploadLogo.error) as Error).message
+            {(saveProfile.error ??
+              uploadLogo.error ??
+              uploadBanner.error ??
+              uploadOwnerAvatar.error) instanceof Error
+              ? (
+                  (saveProfile.error ??
+                    uploadLogo.error ??
+                    uploadBanner.error ??
+                    uploadOwnerAvatar.error) as Error
+                ).message
               : tCommon("networkError")}
           </p>
         ) : null}

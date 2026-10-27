@@ -1,14 +1,13 @@
 import { apiClient } from "@/lib/api-client";
+import { customFetch } from "@biasmarket/types";
 import type { ProfileFormInput } from "../schemas/profile.schema";
 import { isNewPickupPoint, type PickupPoint } from "../schemas/delivery.schema";
 import type { StoreThemeConfig } from "@/lib/store-theme";
 
 const PAYMENT_METHOD_TYPES = ["YAPE", "PLIN", "TRANSFER", "CASH"] as const;
 
-// Multipart carve-out (see apps/web/AGENTS.md): the aboutMarkdown editor's
-// image button uploads through here, then splices the returned CDN URL into
-// the markdown. A file body doesn't fit the generated JSON client, so this
-// stays on raw fetch + FormData like `products`' image uploads.
+// Multipart carve-out (see apps/web/AGENTS.md): file bodies use FormData with
+// the shared configured fetch client instead of the generated JSON methods.
 function apiUrl() {
   return process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
 }
@@ -41,6 +40,28 @@ export const settingsApi = {
       throw new Error(data?.message ?? fallbackErrorMessage ?? "Network error");
     }
     return { url: data.url };
+  },
+
+  async uploadHeaderImage(
+    storeId: string,
+    kind: "banner" | "public-owner-avatar",
+    file: File,
+    fallbackErrorMessage?: string,
+  ): Promise<{ bannerUrl?: string; publicOwnerAvatarUrl?: string }> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const data = await customFetch<{
+      bannerUrl?: string | null;
+      publicOwnerAvatarUrl?: string | null;
+    }>(`/stores/${storeId}/${kind}`, {
+      method: "POST",
+      body: formData,
+      fallbackErrorMessage,
+    });
+    return {
+      bannerUrl: data.bannerUrl ?? undefined,
+      publicOwnerAvatarUrl: data.publicOwnerAvatarUrl ?? undefined,
+    };
   },
 
   updateAppearance: (storeId: string, themeConfig: StoreThemeConfig) =>

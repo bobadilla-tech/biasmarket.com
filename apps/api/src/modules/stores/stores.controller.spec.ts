@@ -18,14 +18,29 @@ vi.mock('@thallesp/nestjs-better-auth', () => ({
 
 describe('StoresController', () => {
   let controller: StoresController;
-  let service: { create: Mock; assertOwnership: Mock };
-  let storage: { uploadImage: Mock; uploadStoreContentImage: Mock };
+  let service: {
+    create: Mock;
+    assertOwnership: Mock;
+    updatePublicHeaderImage: Mock;
+  };
+  let storage: {
+    uploadImage: Mock;
+    uploadStoreContentImage: Mock;
+    uploadStoreBanner: Mock;
+    uploadStoreOwnerAvatar: Mock;
+  };
 
   beforeEach(async () => {
-    service = { create: vi.fn(), assertOwnership: vi.fn() };
+    service = {
+      create: vi.fn(),
+      assertOwnership: vi.fn(),
+      updatePublicHeaderImage: vi.fn(),
+    };
     storage = {
       uploadImage: vi.fn(),
       uploadStoreContentImage: vi.fn(),
+      uploadStoreBanner: vi.fn(),
+      uploadStoreOwnerAvatar: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -106,6 +121,70 @@ describe('StoresController', () => {
         controller.uploadContentImage('store-1', session, file),
       ).rejects.toThrow('forbidden');
       expect(storage.uploadStoreContentImage).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('public header image uploads', () => {
+    const session = { user: { id: 'user-1' } } as never;
+    const file = {
+      buffer: Buffer.from('image'),
+      detectedMimeType: 'image/png',
+    } as never;
+
+    it('checks ownership before storing a banner and persists it to that store', async () => {
+      storage.uploadStoreBanner.mockResolvedValue(
+        'https://cdn.example/banner.png',
+      );
+      service.updatePublicHeaderImage.mockResolvedValue({
+        id: 'store-1',
+        name: 'Store',
+        slug: 'store',
+        locale: 'es',
+        ownerId: 'user-1',
+        themeConfig: {},
+        logoUrl: null,
+        bannerUrl: 'https://cdn.example/banner.png',
+        locationLabel: null,
+        publicOwnerName: null,
+        publicOwnerAvatarUrl: null,
+        bio: null,
+        aboutMarkdown: null,
+        paymentInstructions: '',
+        whatsappNumber: null,
+        instagramUrl: null,
+        facebookUrl: null,
+        tiktokUrl: null,
+        twitterUrl: null,
+        defaultCurrency: 'PEN',
+        holdWindowHours: 48,
+        lowStockThreshold: 5,
+        lowStockAlertsEnabled: true,
+        isPublic: true,
+        isDemo: false,
+        createdAt: new Date(),
+      });
+
+      const result = await controller.uploadBanner('store-1', session, file);
+
+      expect(service.assertOwnership).toHaveBeenCalledWith('store-1', 'user-1');
+      expect(service.assertOwnership.mock.invocationCallOrder[0]).toBeLessThan(
+        storage.uploadStoreBanner.mock.invocationCallOrder[0],
+      );
+      expect(service.updatePublicHeaderImage).toHaveBeenCalledWith(
+        'store-1',
+        'user-1',
+        'bannerUrl',
+        'https://cdn.example/banner.png',
+      );
+      expect(result.bannerUrl).toBe('https://cdn.example/banner.png');
+    });
+
+    it('does not store a public avatar when ownership fails', async () => {
+      service.assertOwnership.mockRejectedValue(new Error('forbidden'));
+      await expect(
+        controller.uploadPublicOwnerAvatar('store-2', session, file),
+      ).rejects.toThrow('forbidden');
+      expect(storage.uploadStoreOwnerAvatar).not.toHaveBeenCalled();
     });
   });
 });

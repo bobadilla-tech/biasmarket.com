@@ -120,6 +120,18 @@ export default async () => {
                 type: () => String,
                 maxLength: 4000,
               },
+              locationLabel: {
+                required: false,
+                type: () => String,
+                nullable: true,
+                maxLength: 60,
+              },
+              publicOwnerName: {
+                required: false,
+                type: () => String,
+                nullable: true,
+                maxLength: 60,
+              },
               paymentInstructions: { required: false, type: () => String },
               defaultCurrency: { required: false, type: () => String },
               themeConfig: {
@@ -172,6 +184,22 @@ export default async () => {
                 additionalProperties: true,
               },
               logoUrl: { required: true, type: () => String, nullable: true },
+              bannerUrl: { required: true, type: () => String, nullable: true },
+              locationLabel: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              publicOwnerName: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              publicOwnerAvatarUrl: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
               bio: { required: true, type: () => String, nullable: true },
               aboutMarkdown: {
                 required: true,
@@ -284,6 +312,18 @@ export default async () => {
                 additionalProperties: true,
               },
             },
+            PublicProductCategoryNameResponseDto: {
+              id: { required: true, type: () => String },
+              name: { required: true, type: () => String },
+            },
+            PublicProductCategoryResponseDto: {
+              category: {
+                required: true,
+                type: () =>
+                  t['./modules/stores/dto/store-response.dto.js']
+                    .PublicProductCategoryNameResponseDto,
+              },
+            },
             PublicProductWithVariantsResponseDto: {
               id: { required: true, type: () => String },
               storeId: { required: true, type: () => String },
@@ -307,6 +347,13 @@ export default async () => {
                 type: () => [
                   t['./modules/stores/dto/store-response.dto.js']
                     .PublicProductVariantResponseDto,
+                ],
+              },
+              categories: {
+                required: true,
+                type: () => [
+                  t['./modules/stores/dto/store-response.dto.js']
+                    .PublicProductCategoryResponseDto,
                 ],
               },
             },
@@ -2685,6 +2732,14 @@ export default async () => {
                   .PublicProductPageResponseDto,
               },
               uploadLogo: {
+                type: t['./modules/stores/dto/store-response.dto.js']
+                  .StoreResponseDto,
+              },
+              uploadBanner: {
+                type: t['./modules/stores/dto/store-response.dto.js']
+                  .StoreResponseDto,
+              },
+              uploadPublicOwnerAvatar: {
                 type: t['./modules/stores/dto/store-response.dto.js']
                   .StoreResponseDto,
               },

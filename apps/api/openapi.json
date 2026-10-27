@@ -468,6 +468,62 @@
         "tags": ["Stores"]
       }
     },
+    "/stores/{storeId}/banner": {
+      "post": {
+        "operationId": "StoresController_uploadBanner",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Stores"]
+      }
+    },
+    "/stores/{storeId}/public-owner-avatar": {
+      "post": {
+        "operationId": "StoresController_uploadPublicOwnerAvatar",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Stores"]
+      }
+    },
     "/stores/{storeId}/content-images": {
       "post": {
         "operationId": "StoresController_uploadContentImage",
@@ -4847,6 +4903,22 @@
             "type": "string",
             "nullable": true
           },
+          "bannerUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "locationLabel": {
+            "type": "string",
+            "nullable": true
+          },
+          "publicOwnerName": {
+            "type": "string",
+            "nullable": true
+          },
+          "publicOwnerAvatarUrl": {
+            "type": "string",
+            "nullable": true
+          },
           "bio": {
             "type": "string",
             "nullable": true
@@ -4909,6 +4981,10 @@
           "ownerId",
           "themeConfig",
           "logoUrl",
+          "bannerUrl",
+          "locationLabel",
+          "publicOwnerName",
+          "publicOwnerAvatarUrl",
           "bio",
           "aboutMarkdown",
           "paymentInstructions",
@@ -4965,6 +5041,22 @@
             "additionalProperties": true
           },
           "logoUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "bannerUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "locationLabel": {
+            "type": "string",
+            "nullable": true
+          },
+          "publicOwnerName": {
+            "type": "string",
+            "nullable": true
+          },
+          "publicOwnerAvatarUrl": {
             "type": "string",
             "nullable": true
           },
@@ -5033,6 +5125,10 @@
           "ownerId",
           "themeConfig",
           "logoUrl",
+          "bannerUrl",
+          "locationLabel",
+          "publicOwnerName",
+          "publicOwnerAvatarUrl",
           "bio",
           "aboutMarkdown",
           "paymentInstructions",
@@ -5090,6 +5186,16 @@
           "aboutMarkdown": {
             "type": "string",
             "maxLength": 4000
+          },
+          "locationLabel": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 60
+          },
+          "publicOwnerName": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 60
           },
           "paymentInstructions": {
             "type": "string"
@@ -5290,6 +5396,27 @@
           "attributes"
         ]
       },
+      "PublicProductCategoryNameResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "name"]
+      },
+      "PublicProductCategoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/PublicProductCategoryNameResponseDto"
+          }
+        },
+        "required": ["category"]
+      },
       "PublicProductWithVariantsResponseDto": {
         "type": "object",
         "properties": {
@@ -5346,6 +5473,12 @@
             "items": {
               "$ref": "#/components/schemas/PublicProductVariantResponseDto"
             }
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicProductCategoryResponseDto"
+            }
           }
         },
         "required": [
@@ -5362,7 +5495,8 @@
           "discontinued",
           "deletedAt",
           "createdAt",
-          "variants"
+          "variants",
+          "categories"
         ]
       },
       "SectionCollectionProductResponseDto": {
@@ -5501,6 +5635,22 @@
             "type": "string",
             "nullable": true
           },
+          "bannerUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "locationLabel": {
+            "type": "string",
+            "nullable": true
+          },
+          "publicOwnerName": {
+            "type": "string",
+            "nullable": true
+          },
+          "publicOwnerAvatarUrl": {
+            "type": "string",
+            "nullable": true
+          },
           "bio": {
             "type": "string",
             "nullable": true
@@ -5572,6 +5722,10 @@
           "ownerId",
           "themeConfig",
           "logoUrl",
+          "bannerUrl",
+          "locationLabel",
+          "publicOwnerName",
+          "publicOwnerAvatarUrl",
           "bio",
           "aboutMarkdown",
           "paymentInstructions",

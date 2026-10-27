@@ -13,6 +13,8 @@ export const profileFormSchema = z.object({
   facebookUrl: optionalUrlSchema,
   tiktokUrl: optionalUrlSchema,
   twitterUrl: optionalUrlSchema,
+  locationLabel: z.string().max(60).optional(),
+  publicOwnerName: z.string().max(60).optional(),
 });
 
 export type ProfileFormInput = z.infer<typeof profileFormSchema>;
