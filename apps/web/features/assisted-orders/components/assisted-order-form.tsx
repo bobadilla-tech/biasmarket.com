@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Select } from "@/components/ui/select";
+import { ErrorState } from "@/components/shared/error-state";
 import { FormErrorSummary, FormField } from "@/components/shared/form-a11y";
 import { useDeliveryOptions } from "@/features/checkout/queries/use-delivery-options";
 import {
@@ -343,15 +344,12 @@ export function AssistedOrderForm({
   const selectedProductDetailsReady = items.every((item) => {
     if (!item.productId) return true;
     const detail = details.get(item.productId);
-    if (
-      !detail ||
-      productDetails.queryStates.get(item.productId)?.status !== "success"
-    ) {
-      return false;
-    }
+    // Only loading/error blocks here. A missing variant choice is left to
+    // onSubmit, which shows the field error instead of a silent disabled
+    // button.
     return (
-      detail.variants.length === 0 ||
-      detail.variants.some((variant) => variant.id === item.variantId)
+      !!detail &&
+      productDetails.queryStates.get(item.productId)?.status === "success"
     );
   });
   const submitBlocked =
@@ -359,6 +357,7 @@ export function AssistedOrderForm({
     totalCents <= 0 ||
     mixedCurrencies ||
     dateBlocking ||
+    !deliveryOptions.isSuccess ||
     !selectedProductDetailsReady;
 
   const onSubmit = form.handleSubmit(async (values) => {
@@ -540,7 +539,17 @@ export function AssistedOrderForm({
       </Section>
 
       <Section title={t("delivery.title")}>
-        {deliveryOptions.isSuccess && methods.length === 0 ? (
+        {deliveryOptions.isPending ? (
+          <p role="status" className="text-sm text-[#6b5a85]">
+            {t("delivery.loading")}
+          </p>
+        ) : deliveryOptions.isError ? (
+          <ErrorState
+            message={t("delivery.loadFailed")}
+            retry={() => void deliveryOptions.refetch()}
+            retryLabel={t("delivery.retry")}
+          />
+        ) : deliveryOptions.isSuccess && methods.length === 0 ? (
           <p role="status" className="text-sm text-[#b24368]">
             {t("delivery.noMethods")}
           </p>
