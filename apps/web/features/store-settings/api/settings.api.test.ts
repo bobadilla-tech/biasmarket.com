@@ -8,11 +8,13 @@ const pickupPointsMock = {
   remove: vi.fn(),
 };
 const paymentConfigMock = { findAll: vi.fn(), upsert: vi.fn() };
+const whatsappTemplatesMock = { findOne: vi.fn(), upsert: vi.fn() };
 vi.mock("@/lib/api-client", () => ({
   apiClient: {
     deliveryConfig: deliveryConfigMock,
     pickupPoints: pickupPointsMock,
     paymentConfig: paymentConfigMock,
+    whatsappTemplates: whatsappTemplatesMock,
   },
 }));
 
@@ -27,6 +29,8 @@ afterEach(() => {
   pickupPointsMock.remove.mockReset();
   paymentConfigMock.findAll.mockReset();
   paymentConfigMock.upsert.mockReset();
+  whatsappTemplatesMock.findOne.mockReset();
+  whatsappTemplatesMock.upsert.mockReset();
 });
 
 test("saveDeliverySettings creates new points, updates existing ones, and deletes removed ones", async () => {
@@ -131,4 +135,36 @@ test("getEnabledPaymentMethods hits the enabled=1 filter and returns a plain met
     { fallbackErrorMessage: undefined },
   );
   expect(result).toEqual(["YAPE", "CASH"]);
+});
+
+test("getWhatsAppTemplates keeps existing templates when the optional assisted-order type is unsupported", async () => {
+  whatsappTemplatesMock.findOne.mockImplementation(
+    (_storeId: string, type: string) => {
+      if (type === "ASSISTED_ORDER_LINK") {
+        return Promise.reject(new Error("unsupported message type"));
+      }
+      return Promise.resolve({ type });
+    },
+  );
+
+  await expect(settingsApi.getWhatsAppTemplates("store-1")).resolves.toEqual({
+    newOrder: { type: "NEW_ORDER" },
+    paymentReminder: { type: "PAYMENT_REMINDER" },
+    assistedOrderLink: null,
+  });
+});
+
+test("getWhatsAppTemplates still fails when an existing template request fails", async () => {
+  whatsappTemplatesMock.findOne.mockImplementation(
+    (_storeId: string, type: string) => {
+      if (type === "NEW_ORDER") {
+        return Promise.reject(new Error("existing template unavailable"));
+      }
+      return Promise.resolve(null);
+    },
+  );
+
+  await expect(settingsApi.getWhatsAppTemplates("store-1")).rejects.toThrow(
+    "existing template unavailable",
+  );
 });
