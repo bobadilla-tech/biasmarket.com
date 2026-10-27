@@ -41,6 +41,8 @@ function tokenEvent(): ErrorEvent {
     transaction: `GET /api/public/orders/${TOKEN}`,
     contexts: {
       trace: {
+        span_id: 'trace-span',
+        trace_id: 'trace-id',
         data: {
           'http.target': `/api/public/orders/${TOKEN}?token=also-secret`,
           'http.query': 'token=also-secret',
