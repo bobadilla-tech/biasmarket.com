@@ -17,6 +17,10 @@
   "storeLogoPlaceholder": "{storeName} logo not configured",
   "publicOwnerAvatarAlt": "Photo of {name}",
   "publicOwnerAvatarGenericAlt": "Store owner photo",
+  "publicOwner": {
+    "title": "Store owner",
+    "contact": "Contact"
+  },
   "storeOwner": "About the store",
   "soldOut": "Sold out",
   "comingSoonSection": {

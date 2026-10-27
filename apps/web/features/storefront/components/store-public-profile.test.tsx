@@ -1,15 +1,21 @@
 import { render, screen } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 import { getMessages } from "@biasmarket/i18n";
-import { StorePublicProfile } from "./storefront";
+
+const { usePublicStore } = vi.hoisted(() => ({ usePublicStore: vi.fn() }));
+vi.mock("@/features/customer-auth/queries/use-public-store", () => ({
+  usePublicStore: (...args: unknown[]) => usePublicStore(...args),
+}));
+
+const { StorePublicProfile } = await import("./storefront");
 
 function renderProfile(
   props: Partial<Parameters<typeof StorePublicProfile>[0]> = {},
 ) {
   return render(
     <NextIntlClientProvider locale="es" messages={getMessages("es")}>
-      <StorePublicProfile storeName="Luna Shop" {...props} />
+      <StorePublicProfile storeName="Luna Shop" slug="luna" {...props} />
     </NextIntlClientProvider>,
   );
 }
@@ -48,7 +54,44 @@ test("shows only configured public links and labels them for assistive technolog
   ).toBeNull();
 });
 
-test("hides the location line when it is not configured", () => {
+test("hides the location line when it is blank", () => {
   renderProfile({ locationLabel: "   " });
+  expect(screen.queryByRole("img", { name: "Ubicación" })).toBeNull();
   expect(screen.queryByText("   ")).toBeNull();
+});
+
+test("does not render an owner block when public owner name is missing", () => {
+  renderProfile({ publicOwnerAvatarUrl: "https://cdn.example.com/avatar.png" });
+  expect(
+    screen.queryByRole("complementary", { name: "Dueño de la tienda" }),
+  ).toBeNull();
+  expect(screen.queryByRole("link", { name: "Contactar" })).toBeNull();
+});
+
+test("renders the public owner and reuses the WhatsApp contact button", () => {
+  usePublicStore.mockReturnValue({
+    data: { whatsappNumber: "+51 999 123 456" },
+  });
+  renderProfile({ publicOwnerName: "Luna", publicOwnerAvatarUrl: null });
+
+  expect(
+    screen.getByRole("complementary", { name: "Dueño de la tienda" }),
+  ).toBeTruthy();
+  expect(screen.getByText("Luna")).toBeTruthy();
+  expect(
+    screen.getByRole("img", { name: "Foto del dueño de la tienda" }),
+  ).toBeTruthy();
+  const contact = screen.getByRole("link", { name: "Contactar" });
+  expect(contact.getAttribute("href")).toContain("https://wa.me/51999123456");
+  expect(contact.getAttribute("target")).toBe("_blank");
+});
+
+test("keeps the public owner block but hides contact when WhatsApp is missing", () => {
+  usePublicStore.mockReturnValue({ data: { whatsappNumber: null } });
+  renderProfile({ publicOwnerName: "Luna" });
+
+  expect(
+    screen.getByRole("complementary", { name: "Dueño de la tienda" }),
+  ).toBeTruthy();
+  expect(screen.queryByRole("link", { name: "Contactar" })).toBeNull();
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageCircle } from "lucide-react";
+import { Mail, MessageCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { buildWhatsAppUrl } from "@biasmarket/utils/whatsapp";
 import { usePublicStore } from "../queries/use-public-store";
@@ -16,13 +16,19 @@ function buildContactMessage(orderId?: string): string {
     : "Hola, tengo una consulta sobre mis pedidos";
 }
 
-export function ContactSellerButton(
-  { slug, orderId, className }: {
-    slug: string;
-    orderId?: string;
-    className?: string;
-  },
-) {
+export function ContactSellerButton({
+  slug,
+  orderId,
+  className,
+  label,
+  icon = "message",
+}: {
+  slug: string;
+  orderId?: string;
+  className?: string;
+  label?: string;
+  icon?: "mail" | "message";
+}) {
   const t = useTranslations("storefront.accountPage");
   const { data: store } = usePublicStore(slug);
 
@@ -36,11 +42,17 @@ export function ContactSellerButton(
       )}
       target="_blank"
       rel="noopener noreferrer"
-      className={className ??
-        "inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"}
+      className={
+        className ??
+        "inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
+      }
     >
-      <MessageCircle className="size-4" />
-      {t("contactSeller")}
+      {icon === "mail" ? (
+        <Mail aria-hidden="true" className="size-4" />
+      ) : (
+        <MessageCircle aria-hidden="true" className="size-4" />
+      )}
+      {label ?? t("contactSeller")}
     </a>
   );
 }

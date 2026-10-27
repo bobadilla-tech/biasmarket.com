@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { MapPin, MessageCircle, Search } from "lucide-react";
+import { ContactSellerButton } from "@/features/customer-auth";
 import { SocialIcon, socialLabels } from "./social-icon";
 
 export type StorefrontCategory = { id: string; name: string };
@@ -18,6 +19,9 @@ export function StorePublicProfile({
   tiktokUrl,
   twitterUrl,
   whatsappNumber,
+  slug,
+  publicOwnerName,
+  publicOwnerAvatarUrl,
 }: {
   storeName: string;
   bannerUrl?: string | null;
@@ -29,6 +33,9 @@ export function StorePublicProfile({
   tiktokUrl?: string | null;
   twitterUrl?: string | null;
   whatsappNumber?: string | null;
+  slug: string;
+  publicOwnerName?: string | null;
+  publicOwnerAvatarUrl?: string | null;
 }) {
   const t = useTranslations("storefront");
   const location = locationLabel?.trim();
@@ -69,8 +76,8 @@ export function StorePublicProfile({
           className="aspect-[2/1] w-full rounded-3xl bg-neutral-200 sm:aspect-[3/1]"
         />
       )}
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-center gap-4">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-x-8">
+        <div className="col-start-1 row-start-1 flex min-w-0 items-center gap-3 sm:gap-4">
           {logo ? (
             <img
               src={logo}
@@ -87,7 +94,7 @@ export function StorePublicProfile({
             </div>
           )}
           <div className="min-w-0 space-y-1">
-            <h1 className="truncate text-2xl font-extrabold uppercase tracking-tight text-(--store-text) sm:text-3xl">
+            <h1 className="truncate text-xl font-extrabold uppercase tracking-tight text-(--store-text) sm:text-3xl">
               {storeName}
             </h1>
             {location ? (
@@ -98,10 +105,48 @@ export function StorePublicProfile({
             ) : null}
           </div>
         </div>
+        {publicOwnerName?.trim() ? (
+          <aside
+            aria-label={t("publicOwner.title")}
+            className="col-start-2 row-start-1 flex max-w-[10rem] flex-col items-end gap-1.5 text-right sm:row-span-2 sm:max-w-none"
+          >
+            <h2 className="text-[10px] font-semibold leading-tight text-(--store-muted) sm:text-xs">
+              {t("publicOwner.title")}
+            </h2>
+            <div className="flex items-center gap-2">
+              {publicOwnerAvatarUrl?.trim() ? (
+                <img
+                  src={publicOwnerAvatarUrl}
+                  alt={t("publicOwnerAvatarAlt", {
+                    name: publicOwnerName.trim(),
+                  })}
+                  className="size-9 shrink-0 rounded-full object-cover sm:size-10"
+                />
+              ) : (
+                <span
+                  role="img"
+                  aria-label={t("publicOwnerAvatarGenericAlt")}
+                  className="flex size-9 shrink-0 items-center justify-center rounded-full bg-neutral-200 text-xs font-semibold text-neutral-500 sm:size-10"
+                >
+                  {publicOwnerName.trim().slice(0, 1).toLocaleUpperCase()}
+                </span>
+              )}
+              <span className="max-w-20 truncate text-xs font-semibold text-(--store-text) sm:max-w-36 sm:text-sm">
+                {publicOwnerName.trim()}
+              </span>
+            </div>
+            <ContactSellerButton
+              slug={slug}
+              label={t("publicOwner.contact")}
+              icon="mail"
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-(--store-primary) px-3 py-2 text-xs font-semibold text-(--store-primary-text) transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2"
+            />
+          </aside>
+        ) : null}
         {socials.length > 0 ? (
           <nav
             aria-label={t("social.storeLinks")}
-            className="flex items-center gap-2"
+            className="col-span-2 row-start-2 flex items-center gap-2 sm:col-span-1 sm:col-start-1 sm:row-start-2"
           >
             {socials.map(({ platform, url }) => (
               <a

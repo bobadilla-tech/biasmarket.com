@@ -17,6 +17,14 @@
   "storeLogoPlaceholder": "Logo de {storeName} no configurado",
   "publicOwnerAvatarAlt": "Foto de {name}",
   "publicOwnerAvatarGenericAlt": "Foto del dueño de la tienda",
+  "publicOwner": {
+    "title": "Dueño de la tienda",
+    "contact": "Contactar"
+  },
+  "publicOwner": {
+    "title": "Dueño de la tienda",
+    "contact": "Contactar"
+  },
   "storeOwner": "Sobre la tienda",
   "soldOut": "Agotado",
   "fromPrice": "Desde",

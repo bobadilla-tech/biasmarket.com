@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { MapPin, Store, Upload } from "lucide-react";
+import { MapPin, Store, Upload, UserRound } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { SUPPORTED_CURRENCIES } from "@biasmarket/utils/currency";
@@ -132,13 +132,6 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
         style={{ backgroundColor: "var(--store-surface)" }}
       >
         <div className="flex flex-col items-start gap-3">
-          {store.publicOwnerAvatarUrl ? (
-            <img
-              src={store.publicOwnerAvatarUrl}
-              alt={t("profile.ownerAvatarPreviewAlt")}
-              className="size-16 rounded-full object-cover"
-            />
-          ) : null}
           <StoreLogo
             name={storeName}
             logoUrl={store.logoUrl ?? null}
@@ -215,30 +208,6 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
             {uploadBanner.isPending
               ? t("profile.uploading")
               : t("profile.bannerUpload")}
-          </Button>
-        </div>
-        <div className="flex items-center gap-4">
-          <input
-            ref={ownerAvatarInputRef}
-            type="file"
-            accept="image/png,image/jpeg"
-            aria-label={t("profile.ownerAvatarUpload")}
-            className="sr-only"
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) uploadOwnerAvatar.mutate(file);
-            }}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => ownerAvatarInputRef.current?.click()}
-            className="store-theme-secondary-button rounded-2xl"
-          >
-            <Upload className="size-4" />
-            {uploadOwnerAvatar.isPending
-              ? t("profile.uploading")
-              : t("profile.ownerAvatarUpload")}
           </Button>
         </div>
       </div>
@@ -405,7 +374,7 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
           </Field>
         </div>
 
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="mt-4 max-w-xl">
           <Field
             id="settings-profile-location"
             label={t("profile.locationLabel")}
@@ -420,25 +389,86 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
               />
             </div>
           </Field>
-          <Field
-            id="settings-profile-public-owner"
-            label={t("profile.publicOwnerNameLabel")}
-          >
-            <Input
-              id="settings-profile-public-owner"
-              aria-describedby="settings-profile-public-owner-help"
-              maxLength={60}
-              {...register("publicOwnerName")}
-              className="store-theme-input h-12 rounded-2xl"
-            />
-            <p
-              id="settings-profile-public-owner-help"
-              className="text-xs text-muted-foreground"
-            >
-              {t("profile.publicOwnerHelp")}
-            </p>
-          </Field>
         </div>
+
+        <section
+          aria-labelledby="settings-profile-public-owner-title"
+          className="mt-6 rounded-2xl border border-border bg-card p-4 sm:p-5"
+        >
+          <h3
+            id="settings-profile-public-owner-title"
+            className="font-semibold text-foreground"
+          >
+            {t("profile.publicOwnerProfileTitle")}
+          </h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {t("profile.publicOwnerProfileHelp")}
+          </p>
+          <div className="mt-4 grid gap-5 sm:grid-cols-2 sm:items-end">
+            <Field
+              id="settings-profile-public-owner"
+              label={t("profile.publicOwnerNameLabel")}
+            >
+              <Input
+                id="settings-profile-public-owner"
+                aria-describedby="settings-profile-public-owner-help"
+                maxLength={60}
+                {...register("publicOwnerName")}
+                className="store-theme-input h-12 rounded-2xl"
+              />
+              <p
+                id="settings-profile-public-owner-help"
+                className="text-xs text-muted-foreground"
+              >
+                {t("profile.publicOwnerHelp")}
+              </p>
+            </Field>
+            <div>
+              <p className="mb-2 text-sm font-medium">
+                {t("profile.ownerAvatarUpload")}
+              </p>
+              <div className="flex flex-wrap items-center gap-3">
+                {store.publicOwnerAvatarUrl ? (
+                  <img
+                    src={store.publicOwnerAvatarUrl}
+                    alt={t("profile.ownerAvatarPreviewAlt")}
+                    className="size-14 rounded-full object-cover"
+                  />
+                ) : (
+                  <div
+                    role="img"
+                    aria-label={t("profile.ownerAvatarPlaceholder")}
+                    className="grid size-14 place-items-center rounded-full bg-muted text-muted-foreground"
+                  >
+                    <UserRound aria-hidden="true" className="size-6" />
+                  </div>
+                )}
+                <input
+                  ref={ownerAvatarInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg"
+                  aria-label={t("profile.ownerAvatarUpload")}
+                  className="sr-only"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) uploadOwnerAvatar.mutate(file);
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => ownerAvatarInputRef.current?.click()}
+                  className="store-theme-secondary-button rounded-2xl"
+                >
+                  <Upload aria-hidden="true" className="size-4" />
+                  {uploadOwnerAvatar.isPending
+                    ? t("profile.uploading")
+                    : t("profile.ownerAvatarUpload")}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
 
         <div className="mt-4">
           <Field

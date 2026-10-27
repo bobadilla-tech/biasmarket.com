@@ -266,6 +266,9 @@ export default async function StorePage({
             tiktokUrl={store.tiktokUrl}
             twitterUrl={store.twitterUrl}
             whatsappNumber={store.whatsappNumber}
+            slug={slug}
+            publicOwnerName={store.publicOwnerName}
+            publicOwnerAvatarUrl={store.publicOwnerAvatarUrl}
           />
           {aboutNode && (
             <section className="prose max-w-none">{aboutNode}</section>
@@ -300,6 +303,9 @@ export default async function StorePage({
           tiktokUrl={store.tiktokUrl}
           twitterUrl={store.twitterUrl}
           whatsappNumber={store.whatsappNumber}
+          slug={slug}
+          publicOwnerName={store.publicOwnerName}
+          publicOwnerAvatarUrl={store.publicOwnerAvatarUrl}
         />
         {aboutNode && (
           <section className="prose max-w-none">{aboutNode}</section>
