@@ -764,5 +764,116 @@
     "sortCount": "Más solicitados",
     "countLabel": "{count} interesados",
     "contact": "WhatsApp"
+  },
+  "assistedOrder": {
+    "title": "Nuevo pedido",
+    "subtitle": "Crea un pedido para un comprador que te escribió por WhatsApp y envíale su enlace.",
+    "back": "Volver a pedidos",
+    "loading": "Cargando la tienda…",
+    "phone": {
+      "label": "WhatsApp del comprador",
+      "description": "El número con el que te escribió.",
+      "review": "Se enviará a {phone}",
+      "country": "Código de país"
+    },
+    "lookup": {
+      "returning": "Este número ya tiene {count} pedidos en tu tienda.",
+      "first": "Es el primer pedido de este número."
+    },
+    "alias": {
+      "label": "Nombre o apodo (opcional)",
+      "description": "Solo sirve para saludar al comprador en el mensaje. Si lo dejas vacío, el saludo será genérico."
+    },
+    "items": {
+      "title": "Productos",
+      "add": "Agregar producto",
+      "remove": "Quitar producto",
+      "product": "Producto",
+      "selectProduct": "Elige un producto",
+      "variant": "Variante",
+      "selectVariant": "Elige una variante",
+      "quantity": "Cantidad",
+      "increase": "Aumentar cantidad",
+      "decrease": "Disminuir cantidad",
+      "noProducts": "No tienes productos publicados para vender.",
+      "lineTotal": "Subtotal: {amount}",
+      "stockLeft": "Quedan {count}"
+    },
+    "delivery": {
+      "title": "Entrega",
+      "method": "Método de entrega",
+      "pickup": "Retiro presencial",
+      "courier": "Envío a domicilio",
+      "pickupPoint": "Punto de recojo",
+      "selectPickupPoint": "Elige un punto",
+      "pickupDate": "Fecha de recojo",
+      "pickupDateInvalidWeekday": "El punto no abre ese día.",
+      "courierName": "Courier",
+      "selectCourier": "Elige un courier",
+      "courierModality": "Modalidad",
+      "selectModality": "Elige una modalidad",
+      "AGENCY": "Agencia",
+      "HOME": "Domicilio",
+      "recipientName": "Nombre de quien recibe",
+      "recipientPhone": "Teléfono de quien recibe",
+      "agencyName": "Agencia de destino",
+      "line1": "Dirección",
+      "city": "Ciudad",
+      "district": "Distrito",
+      "reference": "Referencia (opcional)",
+      "noMethods": "Esta tienda no tiene métodos de entrega activos."
+    },
+    "payment": {
+      "title": "Pago",
+      "method": "Método de pago",
+      "selectMethod": "Elige un método",
+      "type": "Tipo de pago",
+      "full": "Pago completo",
+      "partial": "Adelanto de {percent}%",
+      "noMethods": "Esta tienda no tiene métodos de pago configurados: el comprador no verá cómo pagar. Configúralos en Pagos.",
+      "labels": {
+        "YAPE": "Yape",
+        "PLIN": "Plin",
+        "TRANSFER": "Transferencia bancaria",
+        "CASH": "Efectivo"
+      }
+    },
+    "summary": {
+      "subtotal": "Productos",
+      "delivery": "Envío",
+      "total": "Total del pedido",
+      "toPayNow": "A pagar ahora",
+      "totalZero": "El total debe ser mayor a 0 para crear el pedido."
+    },
+    "submit": "Crear pedido",
+    "submitting": "Creando pedido…",
+    "errors": {
+      "phoneRequired": "Ingresa el WhatsApp del comprador.",
+      "phoneInvalid": "El número no es válido.",
+      "aliasTooLong": "Máximo 60 caracteres.",
+      "aliasInvalid": "El nombre tiene caracteres no permitidos.",
+      "itemsRequired": "Agrega al menos un producto.",
+      "productRequired": "Elige un producto.",
+      "variantRequired": "Elige una variante.",
+      "quantityInvalid": "La cantidad debe ser 1 o más.",
+      "deliveryRequired": "Elige un método de entrega.",
+      "pickupPointRequired": "Elige un punto de recojo.",
+      "pickupDateRequired": "Elige una fecha de recojo.",
+      "paymentMethodRequired": "Elige un método de pago.",
+      "courierNameRequired": "Elige un courier.",
+      "courierModalityRequired": "Elige una modalidad.",
+      "recipientRequired": "Ingresa quién recibe.",
+      "shippingPhoneRequired": "Ingresa el teléfono de quien recibe.",
+      "addressRequired": "Ingresa la dirección.",
+      "cityRequired": "Ingresa la ciudad.",
+      "agencyRequired": "Ingresa la agencia.",
+      "generic": "No se pudo crear el pedido. Intenta de nuevo.",
+      "mixedCurrencies": "No se pueden combinar productos con distinta moneda en un mismo pedido."
+    },
+    "created": {
+      "title": "Pedido creado",
+      "linkLabel": "Enlace privado del comprador",
+      "linkNotice": "Este enlace solo se muestra aquí: cópialo antes de salir. Después podrás generar uno nuevo desde el pedido."
+    }
   }
 }
