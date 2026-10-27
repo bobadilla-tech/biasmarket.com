@@ -32,6 +32,12 @@ describe('assisted orders (e2e)', () => {
   let otherVariantId: string;
   let ipCounter = 0;
   const extraStoreIds: string[] = [];
+  // Fresh numbers per run so a reused database never finds the checkout's
+  // BuyerAccount (which would skip the Customer upsert under test).
+  const racePhones = Array.from(
+    { length: 5 },
+    () => `+519${String(Math.floor(Math.random() * 1e8)).padStart(8, '0')}`,
+  );
 
   const nextIp = () => `198.51.101.${++ipCounter}`;
 
@@ -129,6 +135,14 @@ describe('assisted orders (e2e)', () => {
       await prisma.deliveryMethodConfig.deleteMany({ where: { storeId: id } });
       await prisma.store.deleteMany({ where: { id } });
     }
+    await prisma.buyerAccount.deleteMany({
+      where: {
+        OR: [
+          { phone: { in: racePhones } },
+          { email: { startsWith: 'race-', endsWith: `-${runId}@example.com` } },
+        ],
+      },
+    });
     await prisma.user.deleteMany({ where: { id: { in: userIds } } });
     await app.close();
   });
@@ -214,7 +228,10 @@ describe('assisted orders (e2e)', () => {
       deliveryMethodType: 'PICKUP',
       paymentMethod: null,
     });
-    const serialized = JSON.stringify([audit.metadata, events]);
+    const serialized = JSON.stringify([
+      audit.metadata,
+      events.map((e) => e.payload),
+    ]);
     expect(serialized).not.toMatch(/\d{8,}/);
     expect(serialized).not.toContain(token);
     expect(serialized).not.toContain('Sofi');
@@ -232,6 +249,9 @@ describe('assisted orders (e2e)', () => {
     await post(body({ customerPhone: '12345' })).expect(400);
     await post(body({ customerName: 'x'.repeat(61) })).expect(400);
     await post(body({ customerName: 'bad\u0000name' })).expect(400);
+    await post(body({ customerName: 'bad\u202Ename' })).expect(400);
+    await post(body({ customerName: 'bad\u200Bname' })).expect(400);
+    await post(body({ customerName: 'bad\u2028name' })).expect(400);
     await post(body({ items: [{ productId, variantId, quantity: 0 }] })).expect(
       400,
     );
@@ -377,10 +397,41 @@ describe('assisted orders (e2e)', () => {
           expiresAt: new Date(Date.now() + 3_600_000),
         },
       });
+      // Same legacy shape in another store: the unindexed branch must also
+      // filter by storeId.
+      await prisma.order.create({
+        data: {
+          storeId: otherStoreId,
+          customerPhone: '944555666',
+          customerPhoneNormalized: null,
+          deliveryMethodType: 'PICKUP',
+          deliveryDetails: {},
+          totalAmount: 10,
+          requiredAmount: 10,
+          currency: 'PEN',
+          expiresAt: new Date(Date.now() + 3_600_000),
+        },
+      });
       const res = await post(body({ customerPhone: '944 555 666' })).expect(
         201,
       );
       expect(res.body.previousOrders).toBe(3);
+    });
+
+    it('throttles per signed-in user, not per IP', async () => {
+      const [cookieC, cookieD] = [await signUp('c'), await signUp('d')];
+      const ip = nextIp();
+      const attempt = (cookie: string) =>
+        request(app.getHttpServer())
+          .post(`/stores/${storeId}/orders/assisted`)
+          .set('Cookie', cookie)
+          .set('X-Forwarded-For', ip)
+          .send(body());
+      // Not the owner: 403 each time, which still counts toward the bucket.
+      for (let i = 0; i < 20; i++) await attempt(cookieC).expect(403);
+      await attempt(cookieC).expect(429);
+      // Another seller behind the same IP has their own bucket.
+      await attempt(cookieD).expect(403);
     });
 
     it('survives concurrent creates for the same new phone', async () => {
@@ -408,7 +459,7 @@ describe('assisted orders (e2e)', () => {
           );
 
       for (let i = 0; i < 5; i++) {
-        const phone = `+5196600${String(i).padStart(4, '0')}`;
+        const phone = racePhones[i]!;
         // The checkout's own Customer create-if-missing is a separate, older
         // race (P2002 when two requests create the same new phone), so the
         // contact exists up front. A null name makes the assisted flow update
