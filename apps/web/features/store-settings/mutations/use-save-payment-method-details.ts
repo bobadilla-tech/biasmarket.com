@@ -8,12 +8,13 @@ export function useSavePaymentMethodDetails(storeId: string | undefined) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (
-      { method, details }: {
-        method: "YAPE" | "PLIN" | "TRANSFER" | "CASH";
-        details: Record<string, unknown>;
-      },
-    ) =>
+    mutationFn: ({
+      method,
+      details,
+    }: {
+      method: "YAPE" | "PLIN" | "TRANSFER" | "CASH";
+      details: Record<string, unknown>;
+    }) =>
       settingsApi.savePaymentMethodDetails(storeId as string, method, details),
     onSuccess: () => {
       if (!storeId) return;

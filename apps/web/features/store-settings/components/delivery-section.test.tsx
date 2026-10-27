@@ -58,9 +58,7 @@ test("toggling a weekday off and marking closedOverride, then saving, persists b
 
   await screen.findByDisplayValue("Alameda 28 de Julio");
 
-  await user.click(
-    screen.getByRole("button", { name: /disponibilidad/i }),
-  );
+  await user.click(screen.getByRole("button", { name: /disponibilidad/i }));
 
   const dialog = screen.getByRole("dialog");
   await user.click(within(dialog).getByRole("button", { name: "Lun" }));
