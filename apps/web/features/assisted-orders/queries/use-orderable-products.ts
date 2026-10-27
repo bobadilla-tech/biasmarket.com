@@ -50,5 +50,21 @@ export function useProductDetails(
     });
     return map;
   }, [results, unique]);
-  return details;
+  const queryStates = useMemo(
+    () =>
+      new Map(
+        unique.map((productId, index) => {
+          const result = results[index];
+          return [
+            productId,
+            {
+              status: result?.status ?? "pending",
+              refetch: result?.refetch ?? (() => Promise.resolve()),
+            },
+          ] as const;
+        }),
+      ),
+    [results, unique],
+  );
+  return { details, queryStates };
 }

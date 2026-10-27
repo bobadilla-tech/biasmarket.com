@@ -234,6 +234,122 @@ test("a total of 0 blocks submit and says why", async () => {
   expect((submitButton() as HTMLButtonElement).disabled).toBe(true);
 });
 
+test("blocks submission while selected product details are loading even when delivery has a fee", async () => {
+  let resolveDetail!: (value: ReturnType<typeof detail>) => void;
+  m.findProduct.mockReturnValue(
+    new Promise((resolve) => {
+      resolveDetail = resolve;
+    }),
+  );
+  m.findDelivery.mockResolvedValue([
+    { type: "PICKUP", enabled: true, details: { estimatedCost: 10 } },
+  ]);
+
+  const { user } = await renderForm();
+  await user.selectOptions(screen.getByLabelText("Producto"), "p1");
+
+  expect(
+    await screen.findByText("Cargando detalles del producto…"),
+  ).toBeTruthy();
+  expect(screen.getAllByText("PEN 10.00", { selector: "dd" })).toHaveLength(2);
+  expect((submitButton() as HTMLButtonElement).disabled).toBe(true);
+
+  resolveDetail(detail());
+  await screen.findByText(/Subtotal: PEN 25\.00/);
+  await waitFor(() =>
+    expect((submitButton() as HTMLButtonElement).disabled).toBe(false),
+  );
+});
+
+test("keeps submission blocked after product details fail and allows retry", async () => {
+  m.findProduct.mockRejectedValueOnce(new Error("details unavailable"));
+
+  const { user } = await renderForm();
+  await user.selectOptions(screen.getByLabelText("Producto"), "p1");
+  expect(
+    await screen.findByText("No se pudieron cargar el precio y las variantes."),
+  ).toBeTruthy();
+  expect((submitButton() as HTMLButtonElement).disabled).toBe(true);
+
+  m.findProduct.mockResolvedValueOnce(detail());
+  await user.click(screen.getByRole("button", { name: "Reintentar" }));
+  await screen.findByText(/Subtotal: PEN 25\.00/);
+  await waitFor(() =>
+    expect((submitButton() as HTMLButtonElement).disabled).toBe(false),
+  );
+});
+
+test("blocks submission until a required product variant is selected", async () => {
+  m.findProduct.mockResolvedValue({
+    ...detail(),
+    variants: [
+      { id: "v1", name: "Small", stock: 10, reserved: 0, priceOverride: null },
+      { id: "v2", name: "Large", stock: 10, reserved: 0, priceOverride: null },
+    ],
+  });
+
+  const { user } = await renderForm();
+  await user.selectOptions(screen.getByLabelText("Producto"), "p1");
+  const variant = await screen.findByLabelText("Variante");
+  expect((submitButton() as HTMLButtonElement).disabled).toBe(true);
+
+  await user.selectOptions(variant, "v1");
+  await waitFor(() =>
+    expect((submitButton() as HTMLButtonElement).disabled).toBe(false),
+  );
+});
+
+test("clears a lookup-generated alias immediately when the phone changes", async () => {
+  m.lookup.mockImplementation((_storeId, { phone }: { phone: string }) =>
+    Promise.resolve({
+      normalizedPhone: phone,
+      previousOrders: 1,
+      lastAlias: phone === "+51987654321" ? "Compradora A" : "Compradora B",
+    }),
+  );
+  const { user } = await renderForm();
+  const phone = screen.getByLabelText(/WhatsApp del comprador/i, {
+    selector: "input",
+  });
+  const alias = screen.getByLabelText(/Nombre o apodo/);
+
+  await user.type(phone, "987654321");
+  await waitFor(() =>
+    expect((alias as HTMLInputElement).value).toBe("Compradora A"),
+  );
+
+  await user.clear(phone);
+  await user.type(phone, "912345678");
+  expect((alias as HTMLInputElement).value).toBe("");
+  await waitFor(() =>
+    expect((alias as HTMLInputElement).value).toBe("Compradora B"),
+  );
+});
+
+test("preserves seller-edited alias text when the phone changes", async () => {
+  m.lookup.mockResolvedValue({
+    normalizedPhone: "+51987654321",
+    previousOrders: 1,
+    lastAlias: "Compradora A",
+  });
+  const { user } = await renderForm();
+  const phone = screen.getByLabelText(/WhatsApp del comprador/i, {
+    selector: "input",
+  });
+  const alias = screen.getByLabelText(/Nombre o apodo/);
+
+  await user.type(phone, "987654321");
+  await waitFor(() =>
+    expect((alias as HTMLInputElement).value).toBe("Compradora A"),
+  );
+  await user.clear(alias);
+  await user.type(alias, "Nombre manual");
+  await user.clear(phone);
+  await user.type(phone, "912345678");
+
+  expect((alias as HTMLInputElement).value).toBe("Nombre manual");
+});
+
 test("warns when the store has no payment methods configured", async () => {
   m.findPayments.mockResolvedValue([]);
   await renderForm();

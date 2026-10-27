@@ -20,7 +20,9 @@ vi.mock("@/features/stores", () => ({
   }),
 }));
 vi.mock("@/lib/api-client", () => ({
-  apiClient: { customers: { findAll: findAllCustomers, findOne: findCustomer } },
+  apiClient: {
+    customers: { findAll: findAllCustomers, findOne: findCustomer },
+  },
 }));
 
 const { CustomersPageClient } = await import("./customers-page-client");

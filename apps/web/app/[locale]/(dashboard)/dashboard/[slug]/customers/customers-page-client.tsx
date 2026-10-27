@@ -19,10 +19,11 @@ export function CustomersPageClient() {
   const tCommon = useTranslations("common");
   const { store, storeId, loading: storeLoading } = useDashboardStore();
   const searchParams = useSearchParams();
-  const { data: customers, isPending: customersLoading, error } = useCustomers(
-    storeId,
-    tCommon("networkError"),
-  );
+  const {
+    data: customers,
+    isPending: customersLoading,
+    error,
+  } = useCustomers(storeId, tCommon("networkError"));
 
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
     null,
@@ -66,9 +67,9 @@ export function CustomersPageClient() {
     return (
       <div className="px-5 py-6 lg:px-8 lg:py-8">
         <ErrorState
-          message={error instanceof Error
-            ? error.message
-            : tCommon("networkError")}
+          message={
+            error instanceof Error ? error.message : tCommon("networkError")
+          }
         />
       </div>
     );
@@ -86,20 +87,20 @@ export function CustomersPageClient() {
           </h1>
         </div>
 
-        {!customers || customers.length === 0
-          ? <EmptyState message={t("empty")} />
-          : (
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {customers.map((customer) => (
-                <CustomerCard
-                  key={customer.id}
-                  customer={customer}
-                  currency={currency}
-                  onView={handleView}
-                />
-              ))}
-            </div>
-          )}
+        {!customers || customers.length === 0 ? (
+          <EmptyState message={t("empty")} />
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {customers.map((customer) => (
+              <CustomerCard
+                key={customer.id}
+                customer={customer}
+                currency={currency}
+                onView={handleView}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       <CustomerDetailSheet

@@ -102,7 +102,9 @@ test("shows the badge, creator and the formatted buyer number", () => {
   expect(screen.getByText("Creado por Mica Seller")).toBeTruthy();
   expect(screen.getByText("+51 987 654 321")).toBeTruthy();
   expect(
-    screen.getByRole("link", { name: "Ver historial del cliente" }).getAttribute("href"),
+    screen
+      .getByRole("link", { name: "Ver historial del cliente" })
+      .getAttribute("href"),
   ).toBe("/es/dashboard/mi-tienda/customers?customer=c1");
 });
 
