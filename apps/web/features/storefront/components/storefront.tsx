@@ -1,7 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { MapPin, MessageCircle, Search } from "lucide-react";
+import { MapPin, MessageCircle, Search, Sparkles } from "lucide-react";
+import { ContactSellerButton } from "@/features/customer-auth";
 import { SocialIcon, socialLabels } from "./social-icon";
 
 export type StorefrontCategory = { id: string; name: string };
@@ -18,6 +19,9 @@ export function StorePublicProfile({
   tiktokUrl,
   twitterUrl,
   whatsappNumber,
+  slug,
+  publicOwnerName,
+  publicOwnerAvatarUrl,
 }: {
   storeName: string;
   bannerUrl?: string | null;
@@ -29,11 +33,16 @@ export function StorePublicProfile({
   tiktokUrl?: string | null;
   twitterUrl?: string | null;
   whatsappNumber?: string | null;
+  slug: string;
+  publicOwnerName?: string | null;
+  publicOwnerAvatarUrl?: string | null;
 }) {
   const t = useTranslations("storefront");
   const location = locationLabel?.trim();
   const banner = bannerUrl?.trim();
   const logo = logoUrl?.trim();
+  const publicOwner = publicOwnerName?.trim();
+  const hasPublicOwner = Boolean(publicOwner);
   const configuredSocials: {
     platform: keyof typeof socialLabels;
     url: string | null | undefined;
@@ -60,17 +69,48 @@ export function StorePublicProfile({
         <img
           src={banner}
           alt={t("bannerImageAlt", { storeName })}
-          className="aspect-[2/1] w-full rounded-3xl object-cover sm:aspect-[3/1]"
+          className="h-52 w-full rounded-2xl object-cover sm:h-[300px]"
         />
       ) : (
         <div
           role="img"
           aria-label={t("bannerImageAlt", { storeName })}
-          className="aspect-[2/1] w-full rounded-3xl bg-neutral-200 sm:aspect-[3/1]"
-        />
+          className="relative flex h-52 w-full items-center overflow-hidden rounded-2xl border border-(--store-border) px-8 text-white sm:h-[300px] sm:px-12"
+          style={{
+            backgroundImage:
+              "radial-gradient(rgba(255,255,255,.68) 1px, transparent 1.35px), linear-gradient(108deg, var(--store-sidebar-end) 0%, var(--store-primary) 54%, var(--store-accent) 100%)",
+            backgroundSize: "26px 26px, auto",
+            backgroundBlendMode: "screen, normal",
+          }}
+        >
+          <div className="relative z-10 max-w-[62%] space-y-3 sm:max-w-[58%]">
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/80 sm:text-xs">
+              {t("publicStoreEyebrow")}
+            </p>
+            <p className="line-clamp-2 text-3xl font-extrabold uppercase leading-tight tracking-tight sm:text-5xl">
+              {storeName}
+            </p>
+            {bio ? (
+              <p className="line-clamp-2 max-w-xl text-sm font-medium text-white/90 sm:text-base">
+                {bio}
+              </p>
+            ) : null}
+          </div>
+          <div
+            aria-hidden="true"
+            className="absolute right-[10%] top-1/2 flex size-36 -translate-y-1/2 items-center justify-center rounded-full border border-white/70 sm:size-56"
+          >
+            <div className="flex size-[82%] items-center justify-center rounded-full border border-white/70">
+              <Sparkles
+                className="size-12 fill-white/70 text-white/80 sm:size-20"
+                strokeWidth={1.2}
+              />
+            </div>
+          </div>
+        </div>
       )}
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-center gap-4">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-4 sm:gap-x-8">
+        <div className="col-start-1 row-start-1 flex min-w-0 items-center gap-3 sm:gap-4">
           {logo ? (
             <img
               src={logo}
@@ -81,13 +121,13 @@ export function StorePublicProfile({
             <div
               role="img"
               aria-label={t("storeLogoPlaceholder", { storeName })}
-              className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-neutral-200 text-lg font-bold text-neutral-500 sm:size-20"
+              className="flex size-16 shrink-0 items-center justify-center rounded-[1.1rem] bg-(--store-primary) text-2xl font-bold text-white shadow-sm sm:size-20 sm:text-3xl"
             >
               {storeName.trim().slice(0, 2).toLocaleUpperCase()}
             </div>
           )}
           <div className="min-w-0 space-y-1">
-            <h1 className="truncate text-2xl font-extrabold uppercase tracking-tight text-(--store-text) sm:text-3xl">
+            <h1 className="truncate text-xl font-extrabold uppercase tracking-tight text-(--store-text) sm:text-3xl">
               {storeName}
             </h1>
             {location ? (
@@ -98,10 +138,55 @@ export function StorePublicProfile({
             ) : null}
           </div>
         </div>
+        {publicOwner ? (
+          <aside
+            aria-label={t("publicOwner.title")}
+            className="col-start-2 row-start-1 flex max-w-[10rem] flex-col items-end gap-2 text-right sm:row-span-2 sm:max-w-none"
+          >
+            <h2 className="text-[10px] font-semibold leading-tight text-(--store-muted) sm:text-xs">
+              {t("publicOwner.title")}
+            </h2>
+            <div className="flex items-center gap-2">
+              {publicOwnerAvatarUrl?.trim() ? (
+                <img
+                  src={publicOwnerAvatarUrl}
+                  alt={t("publicOwnerAvatarAlt", {
+                    name: publicOwner,
+                  })}
+                  className="size-9 shrink-0 rounded-full object-cover sm:size-10"
+                />
+              ) : (
+                <span
+                  role="img"
+                  aria-label={t("publicOwnerAvatarGenericAlt")}
+                  className="flex size-9 shrink-0 items-center justify-center rounded-full bg-(--store-surface) text-xs font-semibold text-(--store-primary-text) sm:size-10"
+                >
+                  {publicOwner?.slice(0, 1).toLocaleUpperCase()}
+                </span>
+              )}
+              <span className="max-w-20 truncate text-xs font-semibold text-(--store-text) sm:max-w-36 sm:text-sm">
+                {publicOwner}
+              </span>
+            </div>
+            <ContactSellerButton
+              slug={slug}
+              label={t("publicOwner.contact")}
+              message={t("publicOwner.contactMessage", {
+                storeName: storeName.trim(),
+              })}
+              icon="mail"
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-(--store-primary) px-3 py-2 text-xs font-semibold text-(--store-primary-text) transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2"
+            />
+          </aside>
+        ) : null}
         {socials.length > 0 ? (
           <nav
             aria-label={t("social.storeLinks")}
-            className="flex items-center gap-2"
+            className={
+              hasPublicOwner
+                ? "col-span-2 row-start-2 flex items-center gap-2 sm:col-span-1 sm:col-start-1 sm:row-start-2"
+                : "col-span-2 row-start-2 flex items-center gap-2 sm:col-span-1 sm:col-start-2 sm:row-start-1 sm:justify-self-end"
+            }
           >
             {socials.map(({ platform, url }) => (
               <a
@@ -124,7 +209,9 @@ export function StorePublicProfile({
           </nav>
         ) : null}
       </div>
-      {bio ? <p className="max-w-2xl text-(--store-muted)">{bio}</p> : null}
+      {bio && banner ? (
+        <p className="max-w-2xl text-(--store-muted)">{bio}</p>
+      ) : null}
     </header>
   );
 }

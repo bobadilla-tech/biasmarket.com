@@ -12,11 +12,17 @@
   "productImageAlt": "Image of {name}",
   "bannerImageAlt": "{storeName} store banner",
   "bannerImageGenericAlt": "Store banner",
+  "publicStoreEyebrow": "CURATED WITH CARE · BIAS MARKET",
   "publicStoreProfile": "Public store profile",
   "storeLogoAlt": "{storeName} logo",
   "storeLogoPlaceholder": "{storeName} logo not configured",
   "publicOwnerAvatarAlt": "Photo of {name}",
   "publicOwnerAvatarGenericAlt": "Store owner photo",
+  "publicOwner": {
+    "title": "Store owner",
+    "contact": "Contact",
+    "contactMessage": "Hi, I have a question about {storeName}."
+  },
   "storeOwner": "About the store",
   "soldOut": "Sold out",
   "comingSoonSection": {

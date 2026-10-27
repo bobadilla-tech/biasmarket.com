@@ -80,3 +80,15 @@ test("validates public location and owner name up to 60 characters", () => {
       .success,
   ).toBe(false);
 });
+
+test("allows saving the public profile without a WhatsApp number", () => {
+  const result = profileFormSchema.safeParse({
+    name: "My Store",
+    whatsappNumber: "",
+    paymentInstructions: "",
+    defaultCurrency: "PEN",
+    locale: "es",
+    publicOwnerName: "Store Owner",
+  });
+  expect(result.success).toBe(true);
+});
