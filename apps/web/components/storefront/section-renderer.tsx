@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
+import { ArrowUpRight, Images, Shapes } from "lucide-react";
 import { ProductCard } from "@/features/storefront/components/product-card";
 import { isProductOutOfStock } from "@/features/discovery/lib/product-stock";
 import {
@@ -238,30 +239,57 @@ export function StoreSectionRenderer({
           hidden={activeTab !== "categorias"}
           className="space-y-5"
         >
-          <header>
-            <h2 className="text-xl font-bold text-(--store-text)">
-              {t("categoriesTab")}
-            </h2>
-            <p className="mt-1 text-sm text-(--store-muted)">
-              {t("categoriesTabSubtitle")}
-            </p>
+          <header className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="text-xl font-bold tracking-tight text-(--store-text)">
+                {t("categoriesTab")}
+              </h2>
+              <p className="mt-1 text-sm text-(--store-muted)">
+                {t("categoriesTabSubtitle")}
+              </p>
+            </div>
+            {categories.length > 0 && (
+              <span className="rounded-full bg-(--store-card) px-3 py-1 text-xs font-semibold text-(--store-muted)">
+                {t("categoriesCount", { count: categories.length })}
+              </span>
+            )}
           </header>
           {categories.length ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {categories.map((category) => (
                 <a
                   key={category.id}
                   href={`?tab=productos&categoria=${encodeURIComponent(category.id)}`}
-                  className="flex min-h-16 items-center rounded-xl border border-(--store-border) bg-(--store-card) px-4 py-3 text-sm font-semibold text-(--store-text) transition hover:border-(--store-primary) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary)"
+                  className="group flex min-h-[76px] items-center gap-3 rounded-2xl border border-(--store-border) bg-(--store-card) p-3 text-left text-sm font-semibold text-(--store-text) shadow-sm transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-(--store-primary) hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) motion-reduce:transform-none motion-reduce:transition-none"
                 >
-                  {category.name}
+                  <span
+                    aria-hidden="true"
+                    className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-(--store-surface) text-lg font-bold text-(--store-primary)"
+                  >
+                    {category.name.trim().slice(0, 1).toLocaleUpperCase() || (
+                      <Shapes className="size-5" />
+                    )}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate">
+                    {category.name}
+                  </span>
+                  <ArrowUpRight
+                    aria-hidden="true"
+                    className="size-4 shrink-0 text-(--store-muted) transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 motion-reduce:transition-none"
+                  />
                 </a>
               ))}
             </div>
           ) : (
-            <p className="rounded-xl border border-(--store-border) bg-(--store-card) px-4 py-10 text-center text-sm text-(--store-muted)">
-              {t("categoriesEmpty")}
-            </p>
+            <div className="rounded-2xl border border-dashed border-(--store-border) bg-(--store-card) px-6 py-12 text-center">
+              <Shapes
+                aria-hidden="true"
+                className="mx-auto size-8 text-(--store-primary)"
+              />
+              <p className="mt-3 text-sm font-medium text-(--store-muted)">
+                {t("categoriesEmpty")}
+              </p>
+            </div>
           )}
         </section>
       )}
@@ -281,9 +309,21 @@ export function StoreSectionRenderer({
               {t("referencesSubtitle")}
             </p>
           </header>
-          <p className="rounded-xl border border-(--store-border) bg-(--store-card) px-4 py-10 text-center text-sm text-(--store-muted)">
-            {t("referencesEmpty")}
-          </p>
+          <div className="relative isolate overflow-hidden rounded-3xl border border-(--store-border) bg-(--store-card) px-6 py-12 text-center shadow-sm sm:py-16">
+            <div
+              aria-hidden="true"
+              className="absolute -right-12 -top-16 -z-10 size-48 rounded-full bg-(--store-surface) blur-2xl"
+            />
+            <span className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-(--store-surface) text-(--store-primary)">
+              <Images aria-hidden="true" className="size-6" />
+            </span>
+            <p className="mt-4 text-base font-semibold text-(--store-text)">
+              {t("referencesEmptyTitle")}
+            </p>
+            <p className="mx-auto mt-1 max-w-md text-sm leading-6 text-(--store-muted)">
+              {t("referencesEmpty")}
+            </p>
+          </div>
         </section>
       )}
     </>

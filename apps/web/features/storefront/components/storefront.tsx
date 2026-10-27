@@ -283,27 +283,29 @@ export function StoreTabs() {
 
   return (
     <div className="border-b border-(--store-border)">
-      <div
-        role="tablist"
-        aria-label={t("storeSectionsLabel")}
-        className="flex gap-2 overflow-x-auto pb-2"
-      >
-        {storeTabs.map((tab, index) => (
-          <button
-            id={`store-tab-${tab}`}
-            key={tab}
-            type="button"
-            role="tab"
-            aria-selected={active === tab}
-            aria-controls={`store-panel-${tab}`}
-            tabIndex={active === tab ? 0 : -1}
-            onClick={() => selectTab(tab)}
-            onKeyDown={(event) => handleKeyDown(event, index)}
-            className={`shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) ${active === tab ? "bg-(--store-primary) text-(--store-primary-text)" : "text-(--store-muted) hover:bg-(--store-card) hover:text-(--store-text)"}`}
-          >
-            {labels[tab]}
-          </button>
-        ))}
+      <div className="-mb-px overflow-x-auto pb-2">
+        <div
+          role="tablist"
+          aria-label={t("storeSectionsLabel")}
+          className="flex w-max min-w-full items-center gap-1 rounded-full bg-(--store-card) p-1 sm:min-w-0"
+        >
+          {storeTabs.map((tab, index) => (
+            <button
+              id={`store-tab-${tab}`}
+              key={tab}
+              type="button"
+              role="tab"
+              aria-selected={active === tab}
+              aria-controls={`store-panel-${tab}`}
+              tabIndex={active === tab ? 0 : -1}
+              onClick={() => selectTab(tab)}
+              onKeyDown={(event) => handleKeyDown(event, index)}
+              className={`min-h-11 shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold transition-[background-color,color,box-shadow] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) motion-reduce:transition-none ${active === tab ? "bg-(--store-primary) text-(--store-primary-text) shadow-sm" : "text-(--store-muted) hover:bg-(--store-surface) hover:text-(--store-text)"}`}
+            >
+              {labels[tab]}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
