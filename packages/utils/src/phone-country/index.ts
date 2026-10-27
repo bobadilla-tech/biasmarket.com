@@ -169,6 +169,20 @@ export function validatePhone(value: string): PhoneValidation {
   return { ok: true, phone };
 }
 
+// Human-readable grouping for confirming a number: +51987654321 becomes
+// "+51 987 654 321". Groups of three from the left; a lone trailing digit
+// joins the previous group instead of standing alone ("+52 123 456 7890").
+export function formatPhone(phone: string): string {
+  const normalized = normalizePhone(phone);
+  const { country, nationalNumber } = parsePhoneValue(normalized);
+  const groups = nationalNumber.match(/\d{1,3}/g) ?? [];
+  if (groups.length > 1 && groups[groups.length - 1]!.length === 1) {
+    const last = groups.pop()!;
+    groups[groups.length - 1] += last;
+  }
+  return [country.dialCode, ...groups].join(" ");
+}
+
 // Shows the dial code, the first national digit, and the last three digits.
 // A Peru mobile +51987654321 becomes "+51 9** *** 321".
 export function maskPhone(phone: string): string {

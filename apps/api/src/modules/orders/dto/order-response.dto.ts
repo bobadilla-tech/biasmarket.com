@@ -301,6 +301,29 @@ export class OrderResponseDto {
   @ApiProperty()
   paidPercentage: number;
 
+  @ApiProperty({
+    type: String,
+    format: 'date-time',
+    nullable: true,
+    description: 'First time the buyer opened the private link.',
+  })
+  linkFirstOpenedAt: string | null;
+
+  @ApiProperty({
+    type: String,
+    format: 'date-time',
+    nullable: true,
+    description: 'When the buyer claimed the order into an account.',
+  })
+  claimedAt: string | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'Display name of the seller who created an assisted order.',
+  })
+  createdByName: string | null;
+
   @ApiProperty({ type: [OrderItemResponseDto] })
   items: OrderItemResponseDto[];
 

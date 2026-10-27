@@ -34,3 +34,9 @@ export {
   PAYMENT_METHOD_TYPES,
   type RegisterPaymentInput,
 } from "./payments/register-payment.schema.js";
+
+export {
+  buildAssistedOrderSchema,
+  type AssistedOrderFormInput,
+  type AssistedOrderItemInput,
+} from "./assisted-order/assisted-order.schema.js";

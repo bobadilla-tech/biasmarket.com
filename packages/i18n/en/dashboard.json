@@ -459,6 +459,10 @@
       "paymentReminder": {
         "title": "Payment reminder message",
         "description": "Used when you contact a buyer about a pending balance. Required variables: the order reference and the pending amount."
+      },
+      "assistedOrderLink": {
+        "title": "Assisted order link message",
+        "description": "Used when you create an order for a buyer and send them their private link. Required variable: the link ('{{link}}')."
       }
     }
   },
@@ -576,7 +580,6 @@
     "subtitle": "Order management",
     "titleWithCount": "All orders ({count})",
     "newOrder": "New order",
-    "newOrderSoon": "Coming soon",
     "view": "View",
     "empty": "No orders yet.",
     "unknownProduct": "Product",
@@ -760,5 +763,159 @@
     "sortCount": "Most requested",
     "countLabel": "{count} interested",
     "contact": "WhatsApp"
+  },
+  "assistedOrder": {
+    "title": "New order",
+    "subtitle": "Create an order for a buyer who messaged you on WhatsApp and send them their link.",
+    "back": "Back to orders",
+    "loading": "Loading the store…",
+    "phone": {
+      "label": "Buyer's WhatsApp",
+      "description": "The number they wrote to you from.",
+      "review": "It will be sent to {phone}",
+      "country": "Country code"
+    },
+    "lookup": {
+      "returning": "This number already has {count} orders in your store.",
+      "first": "This is the first order for this number."
+    },
+    "alias": {
+      "label": "Name or nickname (optional)",
+      "description": "Only used to greet the buyer in the message. If you leave it empty, the greeting will be generic."
+    },
+    "items": {
+      "title": "Products",
+      "add": "Add product",
+      "remove": "Remove product",
+      "product": "Product",
+      "selectProduct": "Choose a product",
+      "variant": "Variant",
+      "selectVariant": "Choose a variant",
+      "quantity": "Quantity",
+      "increase": "Increase quantity",
+      "decrease": "Decrease quantity",
+      "noProducts": "You have no published products to sell.",
+      "lineTotal": "Subtotal: {amount}",
+      "stockLeft": "{count} left",
+      "detailsLoading": "Loading product details…",
+      "detailsFailed": "Could not load price and variants.",
+      "retry": "Retry"
+    },
+    "delivery": {
+      "title": "Delivery",
+      "method": "Delivery method",
+      "pickup": "In-person pickup",
+      "courier": "Home delivery",
+      "pickupPoint": "Pickup point",
+      "selectPickupPoint": "Choose a point",
+      "pickupDate": "Pickup date",
+      "pickupDateInvalidWeekday": "The point is closed that day.",
+      "courierName": "Courier",
+      "selectCourier": "Choose a courier",
+      "courierModality": "Modality",
+      "selectModality": "Choose a modality",
+      "AGENCY": "Agency",
+      "HOME": "Home",
+      "recipientName": "Recipient's name",
+      "recipientPhone": "Recipient's phone",
+      "agencyName": "Destination agency",
+      "line1": "Address",
+      "city": "City",
+      "district": "District",
+      "reference": "Reference (optional)",
+      "noMethods": "This store has no active delivery methods.",
+      "loading": "Loading delivery and payment options…",
+      "loadFailed": "We could not load the store's delivery and payment options.",
+      "retry": "Retry"
+    },
+    "payment": {
+      "title": "Payment",
+      "method": "Payment method",
+      "selectMethod": "Choose a method",
+      "type": "Payment type",
+      "full": "Full payment",
+      "partial": "{percent}% deposit",
+      "noMethods": "This store has no payment methods set up: the buyer won't see how to pay. Set them up in Payments.",
+      "labels": {
+        "YAPE": "Yape",
+        "PLIN": "Plin",
+        "TRANSFER": "Bank transfer",
+        "CASH": "Cash"
+      }
+    },
+    "summary": {
+      "subtotal": "Products",
+      "delivery": "Shipping",
+      "total": "Order total",
+      "toPayNow": "To pay now",
+      "totalZero": "The total must be greater than 0 to create the order."
+    },
+    "submit": "Create order",
+    "submitting": "Creating order…",
+    "errors": {
+      "phoneRequired": "Enter the buyer's WhatsApp.",
+      "phoneInvalid": "The number is not valid.",
+      "aliasTooLong": "Maximum 60 characters.",
+      "aliasInvalid": "The name has characters that are not allowed.",
+      "itemsRequired": "Add at least one product.",
+      "productRequired": "Choose a product.",
+      "variantRequired": "Choose a variant.",
+      "quantityInvalid": "Quantity must be 1 or more.",
+      "deliveryRequired": "Choose a delivery method.",
+      "pickupPointRequired": "Choose a pickup point.",
+      "pickupDateRequired": "Choose a pickup date.",
+      "paymentMethodRequired": "Choose a payment method.",
+      "courierNameRequired": "Choose a courier.",
+      "courierModalityRequired": "Choose a modality.",
+      "recipientRequired": "Enter who receives it.",
+      "shippingPhoneRequired": "Enter the recipient's phone.",
+      "addressRequired": "Enter the address.",
+      "cityRequired": "Enter the city.",
+      "agencyRequired": "Enter the agency.",
+      "generic": "The order could not be created. Try again.",
+      "mixedCurrencies": "Products with different currencies can't be combined in one order."
+    },
+    "created": {
+      "title": "Order created",
+      "linkLabel": "Buyer's private link",
+      "linkNotice": "This link is only shown here: copy it before you leave. You can generate a new one from the order later.",
+      "summary": "Order {ref} · {total}",
+      "messageLabel": "Message for the buyer",
+      "messageDescription": "It includes their private link. You can copy it or open it straight in WhatsApp.",
+      "openWhatsapp": "Open WhatsApp",
+      "copyMessage": "Copy message",
+      "copied": "Message copied",
+      "copyFailed": "Couldn't copy. Select the message above and copy it by hand.",
+      "confirmTitle": "Confirm the number",
+      "confirmBody": "It will be sent to {phone}. Is that right?",
+      "confirmYes": "Yes, open WhatsApp",
+      "fixNumber": "Fix number",
+      "newOrder": "Create another order",
+      "templateLoading": "Preparing the message…"
+    },
+    "detail": {
+      "badge": "Assisted order",
+      "createdBy": "Created by {name}",
+      "buyerNumber": "Buyer's WhatsApp",
+      "customers": "View customer history",
+      "linkTitle": "Buyer's link",
+      "sendLink": "Send or copy link",
+      "sendLinkWarning": "Creates a new link: the previous one stops working.",
+      "regenerate": "Regenerate link",
+      "regenerateTitle": "Regenerate the link?",
+      "regenerateBody": "The previous link will stop working. If you already sent it to the buyer, you'll need to send them the new one.",
+      "regenerateConfirm": "Yes, regenerate",
+      "cancel": "Cancel",
+      "working": "Generating…",
+      "linkReady": "New link ready",
+      "correctNumber": "Fix number",
+      "correctDisabledOpened": "The buyer already opened the link: the number can no longer be corrected.",
+      "correctDisabledClaimed": "The buyer already claimed the order: the number can no longer be corrected.",
+      "correctDisabledClosed": "The order is cancelled or expired: the number can no longer be corrected.",
+      "closed": "The order is cancelled or expired: a link can no longer be sent.",
+      "correctTitle": "Fix the number",
+      "correctBody": "Enter the right WhatsApp. A new link is created and the previous one stops working.",
+      "correctSubmit": "Save number"
+    }
   }
 }

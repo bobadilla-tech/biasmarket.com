@@ -866,6 +866,21 @@ export interface OrderResponseDto {
   paidAmount: number;
   pendingAmount: number;
   paidPercentage: number;
+  /**
+   * First time the buyer opened the private link.
+   * @nullable
+   */
+  linkFirstOpenedAt: string | null;
+  /**
+   * When the buyer claimed the order into an account.
+   * @nullable
+   */
+  claimedAt: string | null;
+  /**
+   * Display name of the seller who created an assisted order.
+   * @nullable
+   */
+  createdByName: string | null;
   items: OrderItemResponseDto[];
   payments: OrderPaymentResponseDto[];
 }
@@ -1024,6 +1039,21 @@ export interface OrderDetailResponseDto {
   paidAmount: number;
   pendingAmount: number;
   paidPercentage: number;
+  /**
+   * First time the buyer opened the private link.
+   * @nullable
+   */
+  linkFirstOpenedAt: string | null;
+  /**
+   * When the buyer claimed the order into an account.
+   * @nullable
+   */
+  claimedAt: string | null;
+  /**
+   * Display name of the seller who created an assisted order.
+   * @nullable
+   */
+  createdByName: string | null;
   items: OrderItemResponseDto[];
   payments: OrderPaymentResponseDto[];
 }
@@ -1241,6 +1271,60 @@ export interface CancelOrderDto {
   releasedResolution?: CancelOrderDtoReleasedResolution;
   /** @maxLength 500 */
   reason?: string;
+}
+
+export type CreateAssistedOrderDtoDeliveryMethodType =
+  (typeof CreateAssistedOrderDtoDeliveryMethodType)[keyof typeof CreateAssistedOrderDtoDeliveryMethodType];
+
+export const CreateAssistedOrderDtoDeliveryMethodType = {
+  PICKUP: "PICKUP",
+  COURIER: "COURIER",
+} as const;
+
+export type CreateAssistedOrderDtoPaymentMethod =
+  (typeof CreateAssistedOrderDtoPaymentMethod)[keyof typeof CreateAssistedOrderDtoPaymentMethod];
+
+export const CreateAssistedOrderDtoPaymentMethod = {
+  YAPE: "YAPE",
+  PLIN: "PLIN",
+  TRANSFER: "TRANSFER",
+  CASH: "CASH",
+} as const;
+
+export type CreateAssistedOrderDtoPaymentType =
+  (typeof CreateAssistedOrderDtoPaymentType)[keyof typeof CreateAssistedOrderDtoPaymentType];
+
+export const CreateAssistedOrderDtoPaymentType = {
+  FULL: "FULL",
+  PARTIAL: "PARTIAL",
+} as const;
+
+export type CreateAssistedOrderDtoCourierModality =
+  (typeof CreateAssistedOrderDtoCourierModality)[keyof typeof CreateAssistedOrderDtoCourierModality];
+
+export const CreateAssistedOrderDtoCourierModality = {
+  AGENCY: "AGENCY",
+  HOME: "HOME",
+} as const;
+
+export interface CreateAssistedOrderDto {
+  deliveryMethodType: CreateAssistedOrderDtoDeliveryMethodType;
+  pickupPointId?: string;
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
+  pickupDate?: string;
+  paymentMethod?: CreateAssistedOrderDtoPaymentMethod;
+  paymentType?: CreateAssistedOrderDtoPaymentType;
+  customerPhone: string;
+  /**
+   * @maxLength 60
+   * @pattern ^[^\p{Cc}\u200B\u2028\u2029\u202A-\u202E\u2066-\u2069\uFEFF]*$
+   */
+  customerName?: string;
+  shippingAddress?: ShippingAddressDto;
+  courierName?: string;
+  courierModality?: CreateAssistedOrderDtoCourierModality;
+  /** @minItems 1 */
+  items: CreateOrderItemDto[];
 }
 
 export type CreateOrderDtoDeliveryMethodType =
@@ -1502,6 +1586,24 @@ export interface CheckoutResultResponseDto {
   order: CheckoutOrderResponseDto;
   /** @nullable */
   whatsappUrl: string | null;
+}
+
+export interface CreateAssistedOrderResponseDto {
+  order: CheckoutOrderResponseDto;
+  /** SECRET: private buyer link. Returned only when the link is created; only its hash is stored, so it cannot be shown again. */
+  accessUrl: string;
+  /** Earlier orders of this store for the same WhatsApp number (advisory). */
+  previousOrders: number;
+}
+
+export interface AssistedOrderLinkResponseDto {
+  order: OrderDetailResponseDto;
+  /** SECRET: the new private buyer link. The previous link stops working. Returned only when the link is created; only its hash is stored. */
+  accessUrl: string;
+}
+
+export interface CorrectBuyerPhoneDto {
+  customerPhone: string;
 }
 
 export type ConfirmAccountResponseDtoPurpose =
@@ -2396,6 +2498,7 @@ export type WhatsAppTemplateResponseDtoType =
 export const WhatsAppTemplateResponseDtoType = {
   NEW_ORDER: "NEW_ORDER",
   PAYMENT_REMINDER: "PAYMENT_REMINDER",
+  ASSISTED_ORDER_LINK: "ASSISTED_ORDER_LINK",
 } as const;
 
 export interface WhatsAppTemplateResponseDto {

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { OrderController } from './infrastructure/order.controller.js';
+import { AssistedOrdersController } from './infrastructure/assisted-orders.controller.js';
 import { CheckoutController } from './infrastructure/checkout.controller.js';
 import { CustomerAccountController } from './infrastructure/customer-account.controller.js';
 import { CustomersController } from './infrastructure/customers.controller.js';
@@ -10,6 +11,8 @@ import { InternalJobsSecretGuard } from './infrastructure/internal-jobs-secret.g
 import { OrderRepository } from './infrastructure/order.repository.js';
 import { CustomersService } from './application/customers.service.js';
 import { CreateOrderUseCase } from './application/create-order.usecase.js';
+import { CreateAssistedOrderUseCase } from './application/create-assisted-order.usecase.js';
+import { ManageAssistedOrderLinkUseCase } from './application/manage-assisted-order-link.usecase.js';
 import { ReviewPaymentUseCase } from './application/review-payment.usecase.js';
 import { AdvanceFulfillmentUseCase } from './application/advance-fulfillment.usecase.js';
 import { CancelOrderUseCase } from './application/cancel-order.usecase.js';
@@ -29,6 +32,7 @@ import { PaymentConfigModule } from '../payment-config/payment-config.module.js'
   ],
   controllers: [
     OrderController,
+    AssistedOrdersController,
     CheckoutController,
     CustomerAccountController,
     CustomersController,
@@ -39,6 +43,8 @@ import { PaymentConfigModule } from '../payment-config/payment-config.module.js'
   providers: [
     OrderRepository,
     CreateOrderUseCase,
+    CreateAssistedOrderUseCase,
+    ManageAssistedOrderLinkUseCase,
     ReviewPaymentUseCase,
     AdvanceFulfillmentUseCase,
     CancelOrderUseCase,

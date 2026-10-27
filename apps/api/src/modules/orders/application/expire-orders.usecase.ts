@@ -1,20 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import type { PaymentStatus } from '@biasmarket/db';
 import { Prisma } from '@biasmarket/db';
 import { computePaymentSummary } from '../../../common/payment-summary.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
 import { Order } from '../domain/order.entity.js';
 import { OrderEventsService } from './order-events.service.js';
-
-// Mirrors CancelOrderUseCase's RESERVED_HOLD_STATUSES: all statuses that keep
-// stock soft-held (reserved). Orders holding stock past expiresAt must release
-// it, regardless of whether the buyer paid a partial deposit.
-const RESERVED_HOLD_STATUSES: PaymentStatus[] = [
-  'PENDING_PAYMENT',
-  'PARTIALLY_PAID',
-  'PAYMENT_SUBMITTED',
-];
+import { RESERVED_HOLD_STATUSES } from '../domain/hold-statuses.js';
 
 @Injectable()
 export class ExpireOrdersUseCase {
@@ -28,7 +19,7 @@ export class ExpireOrdersUseCase {
   async execute() {
     const expired = await this.prisma.order.findMany({
       where: {
-        paymentStatus: { in: RESERVED_HOLD_STATUSES },
+        paymentStatus: { in: [...RESERVED_HOLD_STATUSES] },
         expiresAt: { lt: new Date() },
       },
       include: { items: true, payments: true },
@@ -63,7 +54,7 @@ export class ExpireOrdersUseCase {
           const guard = await tx.order.updateMany({
             where: {
               id: order.id,
-              paymentStatus: { in: RESERVED_HOLD_STATUSES },
+              paymentStatus: { in: [...RESERVED_HOLD_STATUSES] },
             },
             data: {
               status: 'CANCELLED',

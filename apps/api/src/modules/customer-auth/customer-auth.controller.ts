@@ -152,8 +152,9 @@ export class CustomerAuthController {
   }
 
   // Reuses `Order`'s own `toOrderDto`/`OrderDetailResponseDto` rather than a
-  // buyer-safe subset DTO — confirmed `OrderDetailResponseDto` carries no
-  // seller-only/internal fields on top of `OrderResponseDto` (see
+  // buyer-safe subset DTO, but blanks the seller-only fields that
+  // `toOrderDto` carries for assisted orders (creator name, link telemetry)
+  // so they never reach a buyer session (see
   // .artifacts/2026/08/20260808--buyer-mini-dashboard/plan.md). Ownership is
   // `order.buyerAccountId === session.buyerAccountId`, enforced in
   // `CustomerAuthService.getOrderDetail`.
@@ -167,7 +168,12 @@ export class CustomerAuthController {
     @CustomerSession() session: { buyerAccountId: string },
   ): Promise<OrderDetailResponseDto> {
     const row = await this.customerAuth.getOrderDetail(slug, session, orderId);
-    return toOrderDto(row);
+    return {
+      ...toOrderDto(row),
+      createdByName: null,
+      linkFirstOpenedAt: null,
+      claimedAt: null,
+    };
   }
 
   @Public()

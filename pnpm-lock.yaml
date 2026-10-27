@@ -480,6 +480,9 @@ importers:
       eslint-plugin-react-hooks:
         specifier: ^7.1.1
         version: 7.1.1(eslint@9.39.5(jiti@2.7.0))
+      intl-messageformat:
+        specifier: ^11.2.15
+        version: 11.2.15
       globals:
         specifier: ^17.12.0
         version: 17.13.0

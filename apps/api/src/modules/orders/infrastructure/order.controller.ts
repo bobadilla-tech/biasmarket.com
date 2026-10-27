@@ -219,6 +219,9 @@ export interface OrderRow {
   currency: string;
   expiresAt: Date;
   createdAt: Date;
+  linkFirstOpenedAt: Date | null;
+  claimedAt: Date | null;
+  createdBy?: { name: string | null } | null;
   paidAmount: number;
   pendingAmount: number;
   paidPercentage: number;
@@ -310,6 +313,12 @@ export function toOrderDto(row: OrderRow): OrderResponseDto {
     requiredAmount: row.requiredAmount.toString(),
     expiresAt: row.expiresAt.toISOString(),
     createdAt: row.createdAt.toISOString(),
+    // Not in PUBLIC_ORDER_FIELDS: that list also shapes the checkout and
+    // status responses, which must not grow these. The creator is shown by
+    // display name only, never by user id.
+    linkFirstOpenedAt: row.linkFirstOpenedAt?.toISOString() ?? null,
+    claimedAt: row.claimedAt?.toISOString() ?? null,
+    createdByName: row.createdBy?.name ?? null,
     items: row.items.map(toOrderItemDto),
     payments: row.payments.map(toOrderPaymentDto),
   };

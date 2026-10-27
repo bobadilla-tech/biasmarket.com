@@ -22,6 +22,9 @@ import {
 import { paymentsLocked } from "../lib/order-status";
 import { RegisterPaymentForm } from "./register-payment-form";
 import { PaymentHistoryList } from "./payment-history-list";
+// Deep path rather than the feature barrel, so the sheet does not load the
+// new-order form and its navigation dependencies.
+import { AssistedOrderSection } from "@/features/assisted-orders/components/assisted-order-section";
 import type { OrderResponseDto } from "@biasmarket/types";
 import type { RegisterPaymentInput } from "@biasmarket/validation";
 
@@ -39,6 +42,8 @@ export function OrderDetailSheet({
   onReject,
   onAdvance: _onAdvance,
   onCancel,
+  storeId,
+  storeName = "",
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -53,6 +58,9 @@ export function OrderDetailSheet({
   onReject: () => void;
   onAdvance: () => void;
   onCancel: () => void;
+  // Needed only for seller-assisted orders (their link actions).
+  storeId?: string;
+  storeName?: string;
 }) {
   const t = useTranslations("dashboard.orders");
   const { locale } = useParams<{ locale: string }>();
@@ -186,6 +194,15 @@ export function OrderDetailSheet({
                   );
                 })()}
               </div>
+
+              {order.source === "VENDOR_ASSISTED" && storeId ? (
+                <AssistedOrderSection
+                  key={order.id}
+                  order={order}
+                  storeId={storeId}
+                  storeName={storeName}
+                />
+              ) : null}
 
               <div className="space-y-4 rounded-[24px] border border-[#eadcf8] bg-white p-5 shadow-sm">
                 <div className="flex items-center gap-2 text-[#2d1649]">

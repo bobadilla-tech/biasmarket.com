@@ -9,13 +9,13 @@ import { WhatsAppTemplateResponseDto } from './dto/whatsapp-template-response.dt
 const WHATSAPP_MESSAGE_TYPE_PARAM = {
   name: 'type',
   type: String,
-  enum: ['NEW_ORDER', 'PAYMENT_REMINDER'],
+  enum: ['NEW_ORDER', 'PAYMENT_REMINDER', 'ASSISTED_ORDER_LINK'],
 };
 
 interface WhatsAppTemplateRow {
   id: string;
   storeId: string;
-  type: 'NEW_ORDER' | 'PAYMENT_REMINDER';
+  type: 'NEW_ORDER' | 'PAYMENT_REMINDER' | 'ASSISTED_ORDER_LINK';
   template: string;
   updatedAt: Date;
 }

@@ -11,8 +11,10 @@ export class WhatsAppTemplateResponseDto {
   @ApiProperty()
   storeId: string;
 
-  @ApiProperty({ enum: ['NEW_ORDER', 'PAYMENT_REMINDER'] })
-  type: 'NEW_ORDER' | 'PAYMENT_REMINDER';
+  @ApiProperty({
+    enum: ['NEW_ORDER', 'PAYMENT_REMINDER', 'ASSISTED_ORDER_LINK'],
+  })
+  type: 'NEW_ORDER' | 'PAYMENT_REMINDER' | 'ASSISTED_ORDER_LINK';
 
   @ApiProperty()
   template: string;

@@ -85,4 +85,32 @@ describe('WhatsappTemplatesController', () => {
     );
     expect(result?.updatedAt).toBe('2026-08-09T12:00:00.000Z');
   });
+
+  it('upsert() accepts the ASSISTED_ORDER_LINK type', async () => {
+    const updatedAt = new Date('2026-10-27T12:00:00.000Z');
+    service.upsert.mockResolvedValue({
+      id: 'tmpl-2',
+      storeId: 'store-1',
+      type: 'ASSISTED_ORDER_LINK',
+      template: 'Tu pedido: {{link}}',
+      updatedAt,
+    });
+    const session = { user: { id: 'user-1' } } as never;
+    const dto = { template: 'Tu pedido: {{link}}' };
+
+    const result = await controller.upsert(
+      'store-1',
+      'ASSISTED_ORDER_LINK',
+      session,
+      dto,
+    );
+
+    expect(service.upsert).toHaveBeenCalledWith(
+      'store-1',
+      'user-1',
+      'ASSISTED_ORDER_LINK',
+      dto,
+    );
+    expect(result?.type).toBe('ASSISTED_ORDER_LINK');
+  });
 });

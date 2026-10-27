@@ -26,11 +26,13 @@ export class OrderRepository {
   async findRowByIdForStore(orderId: string, storeId: string) {
     const includeWithPayments = {
       items: { include: { product: true, variant: true } },
+      createdBy: { select: { name: true } },
       payments: { orderBy: { createdAt: 'desc' } },
     } as const;
 
     const includeWithoutPayments = {
       items: { include: { product: true, variant: true } },
+      createdBy: { select: { name: true } },
     } as const;
 
     let order: any;
@@ -126,11 +128,13 @@ export class OrderRepository {
 
     const includeWithPayments = {
       items: { include: { product: true, variant: true } },
+      createdBy: { select: { name: true } },
       payments: { orderBy: { createdAt: 'desc' } },
     } as const;
 
     const includeWithoutPayments = {
       items: { include: { product: true, variant: true } },
+      createdBy: { select: { name: true } },
     } as const;
 
     try {
