@@ -41,6 +41,8 @@ export function StorePublicProfile({
   const location = locationLabel?.trim();
   const banner = bannerUrl?.trim();
   const logo = logoUrl?.trim();
+  const publicOwner = publicOwnerName?.trim();
+  const hasPublicOwner = Boolean(publicOwner);
   const configuredSocials: {
     platform: keyof typeof socialLabels;
     url: string | null | undefined;
@@ -136,7 +138,7 @@ export function StorePublicProfile({
             ) : null}
           </div>
         </div>
-        {publicOwnerName?.trim() ? (
+        {publicOwner ? (
           <aside
             aria-label={t("publicOwner.title")}
             className="col-start-2 row-start-1 flex max-w-[10rem] flex-col items-end gap-2 text-right sm:row-span-2 sm:max-w-none"
@@ -149,7 +151,7 @@ export function StorePublicProfile({
                 <img
                   src={publicOwnerAvatarUrl}
                   alt={t("publicOwnerAvatarAlt", {
-                    name: publicOwnerName.trim(),
+                    name: publicOwner,
                   })}
                   className="size-9 shrink-0 rounded-full object-cover sm:size-10"
                 />
@@ -159,11 +161,11 @@ export function StorePublicProfile({
                   aria-label={t("publicOwnerAvatarGenericAlt")}
                   className="flex size-9 shrink-0 items-center justify-center rounded-full bg-(--store-surface) text-xs font-semibold text-(--store-primary-text) sm:size-10"
                 >
-                  {publicOwnerName.trim().slice(0, 1).toLocaleUpperCase()}
+                  {publicOwner?.slice(0, 1).toLocaleUpperCase()}
                 </span>
               )}
               <span className="max-w-20 truncate text-xs font-semibold text-(--store-text) sm:max-w-36 sm:text-sm">
-                {publicOwnerName.trim()}
+                {publicOwner}
               </span>
             </div>
             <ContactSellerButton
@@ -180,7 +182,11 @@ export function StorePublicProfile({
         {socials.length > 0 ? (
           <nav
             aria-label={t("social.storeLinks")}
-            className="col-span-2 row-start-2 flex items-center gap-2 sm:col-span-1 sm:col-start-1 sm:row-start-2"
+            className={
+              hasPublicOwner
+                ? "col-span-2 row-start-2 flex items-center gap-2 sm:col-span-1 sm:col-start-1 sm:row-start-2"
+                : "col-span-2 row-start-2 flex items-center gap-2 sm:col-span-1 sm:col-start-2 sm:row-start-1 sm:justify-self-end"
+            }
           >
             {socials.map(({ platform, url }) => (
               <a

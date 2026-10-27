@@ -59,6 +59,10 @@ test("shows only configured public links and labels them for assistive technolog
       .className,
   ).toContain("row-start-2");
   expect(
+    screen.getByRole("navigation", { name: "Redes sociales de la tienda" })
+      .className,
+  ).toContain("sm:col-start-2 sm:row-start-1 sm:justify-self-end");
+  expect(
     screen.queryByRole("link", { name: /TikTok|Facebook|^X / }),
   ).toBeNull();
 });
