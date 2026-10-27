@@ -54,18 +54,23 @@ const SAMPLE_ASSISTED_LINK_INPUT: WhatsAppAssistedOrderLinkInput = {
   link: "https://biasmarket.com/es/store/k-store/pedido/enlace-de-ejemplo",
 };
 
-// One builder per message type; adding a type without one fails to compile.
-const BUILD_PREVIEW: Record<
-  WhatsAppMessageType,
-  (template?: string) => string
-> = {
-  NEW_ORDER: (template) =>
-    buildWhatsAppOrderMessage(SAMPLE_NEW_ORDER_INPUT, template),
-  PAYMENT_REMINDER: (template) =>
-    buildWhatsAppPaymentReminderMessage(SAMPLE_REMINDER_INPUT, template),
-  ASSISTED_ORDER_LINK: (template) =>
-    buildWhatsAppAssistedOrderLinkMessage(SAMPLE_ASSISTED_LINK_INPUT, template),
-};
+// Exhaustive on purpose: adding a message type without a preview fails to compile.
+function buildPreview(type: WhatsAppMessageType, template?: string): string {
+  switch (type) {
+    case "NEW_ORDER":
+      return buildWhatsAppOrderMessage(SAMPLE_NEW_ORDER_INPUT, template);
+    case "PAYMENT_REMINDER":
+      return buildWhatsAppPaymentReminderMessage(
+        SAMPLE_REMINDER_INPUT,
+        template,
+      );
+    case "ASSISTED_ORDER_LINK":
+      return buildWhatsAppAssistedOrderLinkMessage(
+        SAMPLE_ASSISTED_LINK_INPUT,
+        template,
+      );
+  }
+}
 
 function MessageTemplateEditor({
   type,
@@ -96,7 +101,7 @@ function MessageTemplateEditor({
     [type, text, hasCustomTemplate],
   );
 
-  const preview = BUILD_PREVIEW[type](hasCustomTemplate ? text : undefined);
+  const preview = buildPreview(type, hasCustomTemplate ? text : undefined);
 
   const insertToken = (token: string) => {
     setText(
