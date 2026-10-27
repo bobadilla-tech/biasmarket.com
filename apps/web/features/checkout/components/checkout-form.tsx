@@ -17,7 +17,6 @@ import {
   Wallet,
 } from "lucide-react";
 import { isPaymentMethodConfigured } from "@biasmarket/utils/payment-methods";
-import type { CheckoutPaymentMethod } from "@biasmarket/utils/payment-methods";
 import { PhoneInput } from "@/components/ui/phone-input";
 import {
   FormErrorSummary,
@@ -33,6 +32,15 @@ import {
   getPickupAvailability,
   nextDateForWeekday,
 } from "../lib/pickup-availability";
+import {
+  buildShippingAddressPayload,
+  computeDeliveryCost,
+  depositPercentOf,
+  isPartialAvailable,
+  pickupDateBlocking,
+  pointsRequiringDate as getPointsRequiringDate,
+  unconfiguredManualMethods as getUnconfiguredManualMethods,
+} from "../lib/delivery-rules";
 import {
   RadioCard,
   RadioCardGroup,
@@ -174,16 +182,7 @@ export function CheckoutForm({
     [points, weekday],
   );
   const pointsRequiringDate = useMemo(
-    () =>
-      new Set(
-        points
-          .filter(
-            (point) =>
-              weekday !== undefined &&
-              !getPickupAvailability(point, weekday).availableToday,
-          )
-          .map((point) => point.id),
-      ),
+    () => getPointsRequiringDate(points, weekday),
     [points, weekday],
   );
 
@@ -191,16 +190,7 @@ export function CheckoutForm({
   // details) can't collect a real proof of payment against — checkout falls
   // back to WhatsApp coordination for it instead of blocking on an upload.
   const unconfiguredManualMethods = useMemo(
-    () =>
-      new Set(
-        paymentMethods
-          .filter(
-            (m) =>
-              m.method !== "CASH" &&
-              !isPaymentMethodConfigured(m.method, m.details),
-          )
-          .map((m) => m.method as CheckoutPaymentMethod),
-      ),
+    () => getUnconfiguredManualMethods(paymentMethods),
     [paymentMethods],
   );
 
@@ -321,36 +311,34 @@ export function CheckoutForm({
         : undefined;
 
   // Compute the deposit percentage for the selected payment method
-  const depositPercent = useMemo(() => {
-    if (!selectedPaymentConfig) return 100;
-    return typeof selectedPaymentConfig.depositPercent === "number"
-      ? selectedPaymentConfig.depositPercent
-      : 100;
-  }, [selectedPaymentConfig]);
+  const depositPercent = useMemo(
+    () => depositPercentOf(selectedPaymentConfig),
+    [selectedPaymentConfig],
+  );
 
   // Server-equivalent delivery cost for the selected method — same
   // `Number(details?.estimatedCost ?? 0)` the use case applies before
   // computing requiredAmount.
-  const deliveryCost = useMemo(() => {
-    if (deliveryMethodType === "COURIER" && courierName && courierModality) {
-      const courier = couriers.find((c) => c.name === courierName);
-      const modality = courier?.modalities.find(
-        (m) => m.modality === courierModality,
-      );
-      return Number(modality?.price ?? 0);
-    }
-    const selectedDelivery = methods.find((m) => m.type === deliveryMethodType);
-    return Number(selectedDelivery?.details?.estimatedCost ?? 0);
-  }, [methods, deliveryMethodType, couriers, courierName, courierModality]);
+  const deliveryCost = useMemo(
+    () =>
+      computeDeliveryCost({
+        deliveryMethodType,
+        courierName,
+        courierModality,
+        methods,
+        couriers,
+      }),
+    [methods, deliveryMethodType, couriers, courierName, courierModality],
+  );
 
   // Whether partial payment is available: only a non-CASH electronic method
   // with an existing configuration that explicitly lowers the deposit below
   // 100 — the same rule CreateOrderUseCase enforces server-side (a PARTIAL
   // order on CASH or an ineligible config is rejected there).
-  const partialAvailable =
-    paymentMethod !== "CASH" &&
-    selectedPaymentConfig != null &&
-    depositPercent < 100;
+  const partialAvailable = isPartialAvailable(
+    paymentMethod,
+    selectedPaymentConfig,
+  );
 
   // Reset payment type to FULL when partial is not available
   useEffect(() => {
@@ -450,21 +438,14 @@ export function CheckoutForm({
   // manually closed point (closedOverride, no future date to offer) always
   // blocks: the API rejects any pickupDate against it, so it must never be
   // submittable even when a stale pickupDate happens to match its openDays.
-  const pickupDateBlocking =
-    deliveryMethodType === "PICKUP" &&
-    pickupPointId !== "" &&
-    pointsRequiringDate.has(pickupPointId) &&
-    (() => {
-      if (!pickupDate) return true;
-      const point = points.find((p) => p.id === pickupPointId);
-      if (!point || weekday === undefined) return true;
-      const availability = getPickupAvailability(point, weekday);
-      if (availability.nextAvailableDay === null) return true;
-      const selectedWeekday = new Date(`${pickupDate}T00:00:00Z`).getUTCDay();
-      return (
-        point.openDays.length > 0 && !point.openDays.includes(selectedWeekday)
-      );
-    })();
+  const dateBlocking = pickupDateBlocking({
+    deliveryMethodType,
+    pickupPointId,
+    pickupDate,
+    points,
+    weekday,
+    requiringDate: pointsRequiringDate,
+  });
 
   const onSubmit = form.handleSubmit(async (values) => {
     const result = await submitCheckout.mutateAsync({
@@ -494,29 +475,7 @@ export function CheckoutForm({
           : undefined,
       shippingAddress:
         values.deliveryMethodType === "COURIER"
-          ? {
-              recipientName: values.shippingRecipientName,
-              recipientSurnames: values.shippingRecipientSurnames || undefined,
-              phone: values.shippingPhone,
-              documentType: (values.shippingDocumentType || undefined) as
-                "DNI" | "PASSPORT" | undefined,
-              documentNumber: values.shippingDocumentNumber || undefined,
-              department: values.shippingDepartment || undefined,
-              province: values.shippingProvince || undefined,
-              district: values.shippingDistrict || undefined,
-              agencyName:
-                values.courierModality === "AGENCY"
-                  ? values.shippingAgencyName
-                  : undefined,
-              line1:
-                values.courierModality === "HOME"
-                  ? values.shippingLine1
-                  : undefined,
-              line2: values.shippingLine2 || undefined,
-              city: values.shippingCity || undefined,
-              region: values.shippingRegion || undefined,
-              reference: values.shippingReference || undefined,
-            }
+          ? buildShippingAddressPayload(values)
           : undefined,
       items,
     });
@@ -1363,7 +1322,7 @@ export function CheckoutForm({
           (deliveryMethodType === "PICKUP" &&
             points.length > 0 &&
             !pickupPointId) ||
-          pickupDateBlocking ||
+          dateBlocking ||
           (paymentMethods.length > 0 && !paymentMethod) ||
           (paymentMethod !== "" &&
             paymentMethod !== "CASH" &&
