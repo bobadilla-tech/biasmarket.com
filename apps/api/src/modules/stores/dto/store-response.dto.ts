@@ -193,8 +193,14 @@ export class PublicCategoryResponseDto {
   @ApiProperty()
   name: string;
 
+  @ApiProperty()
+  slug: string;
+
   @ApiProperty({ type: String, nullable: true })
   parentId: string | null;
+
+  @ApiProperty()
+  productCount: number;
 }
 
 // Shared by findPublicProduct and the section->collection->products join in
@@ -238,6 +244,23 @@ export class PublicProductCategoryNameResponseDto {
 
   @ApiProperty()
   name: string;
+
+  @ApiProperty()
+  slug: string;
+}
+
+export class StoreCatalogResponseDto {
+  @ApiProperty({ type: () => [PublicProductWithVariantsResponseDto] })
+  items: PublicProductWithVariantsResponseDto[];
+
+  @ApiProperty()
+  total: number;
+
+  @ApiProperty()
+  page: number;
+
+  @ApiProperty()
+  limit: number;
 }
 
 export class PublicProductCategoryResponseDto {

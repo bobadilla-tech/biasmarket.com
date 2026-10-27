@@ -241,6 +241,7 @@ export interface PublicProductVariantResponseDto {
 export interface PublicProductCategoryNameResponseDto {
   id: string;
   name: string;
+  slug: string;
 }
 
 export interface PublicProductCategoryResponseDto {
@@ -265,6 +266,13 @@ export interface PublicProductWithVariantsResponseDto {
   createdAt: string;
   variants: PublicProductVariantResponseDto[];
   categories: PublicProductCategoryResponseDto[];
+}
+
+export interface StoreCatalogResponseDto {
+  items: PublicProductWithVariantsResponseDto[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
 export interface SectionCollectionProductResponseDto {
@@ -348,8 +356,10 @@ export interface StorePublicDetailResponseDto {
 export interface PublicCategoryResponseDto {
   id: string;
   name: string;
+  slug: string;
   /** @nullable */
   parentId: string | null;
+  productCount: number;
 }
 
 export interface PublicProductStoreResponseDto {
@@ -2044,6 +2054,7 @@ export interface CategoryResponseDto {
   /** @nullable */
   parentId: string | null;
   name: string;
+  slug: string;
   createdAt: string;
 }
 
@@ -2912,6 +2923,13 @@ export type StatsControllerpaymentMethodsParams =
   StatsControllerPaymentMethodsParams;
 export type StoresControllerfindDirectoryParams =
   StoresControllerFindDirectoryParams;
+export type StoresControllerfindPublicCatalogParams = {
+  limit?: string;
+  page?: string;
+  sort?: "recientes" | "precio_asc" | "precio_desc" | "nombre_asc";
+  categorias?: string[];
+  q?: string;
+};
 export type StoresControllerfindFeaturedParams =
   StoresControllerFindFeaturedParams;
 export type StoresControllerfindPublicSitemapPageParams =

@@ -12,6 +12,7 @@ describe('StoresService', () => {
   let service: StoresService;
   let prisma: {
     store: {
+      findFirst: Mock;
       findUnique: Mock;
       create: Mock;
       findMany: Mock;
@@ -24,6 +25,7 @@ describe('StoresService', () => {
     product: { findMany: Mock; findUnique: Mock };
     order: { findMany: Mock };
     $transaction: Mock;
+    $queryRaw: Mock;
   };
 
   const ownerId = 'user-1';
@@ -31,6 +33,7 @@ describe('StoresService', () => {
   beforeEach(async () => {
     prisma = {
       store: {
+        findFirst: vi.fn(),
         findUnique: vi.fn(),
         create: vi.fn(),
         findMany: vi.fn(),
@@ -43,6 +46,7 @@ describe('StoresService', () => {
       product: { findMany: vi.fn(), findUnique: vi.fn() },
       order: { findMany: vi.fn() },
       $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(prisma)),
+      $queryRaw: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -564,7 +568,9 @@ describe('StoresService', () => {
         include: {
           variants: true,
           categories: {
-            include: { category: { select: { id: true, name: true } } },
+            include: {
+              category: { select: { id: true, name: true, slug: true } },
+            },
           },
         },
       });
@@ -610,7 +616,9 @@ describe('StoresService', () => {
         include: {
           variants: true,
           categories: {
-            include: { category: { select: { id: true, name: true } } },
+            include: {
+              category: { select: { id: true, name: true, slug: true } },
+            },
           },
         },
       });
@@ -880,6 +888,83 @@ describe('StoresService', () => {
       const where = prisma.store.findMany.mock.calls[0][0].where;
       expect(where.isPublic).toBe(true);
       expect(where.isDemo).toBe(false);
+    });
+  });
+
+  describe('findPublicCatalog', () => {
+    const query = {
+      page: 2,
+      limit: 12,
+      q: 'Álbum',
+      categories: ['photocards', 'bts'],
+      sort: 'precio_asc' as const,
+    };
+
+    beforeEach(() => {
+      prisma.store.findFirst.mockResolvedValue({ id: 'store-1' });
+      prisma.$queryRaw
+        .mockResolvedValueOnce([{ total: 1n }])
+        .mockResolvedValueOnce([{ id: 'product-1' }]);
+      prisma.product.findMany.mockResolvedValue([
+        { id: 'product-1', name: 'Album', variants: [], categories: [] },
+      ]);
+    });
+
+    it('filters by visible store, normalized text and category slugs and returns paginated products', async () => {
+      const result = await service.findPublicCatalog('my-store', query);
+      expect(prisma.store.findFirst).toHaveBeenCalledWith({
+        where: {
+          slug: 'my-store',
+          isPublic: true,
+          isDemo: false,
+          owner: { banned: { not: true } },
+        },
+        select: { id: true },
+      });
+      const idSql = prisma.$queryRaw.mock.calls[1][0];
+      const sqlText = idSql.strings.join(' ');
+      expect(sqlText).toContain('TRANSLATE(LOWER');
+      expect(sqlText).toContain('c."slug" IN');
+      expect(idSql.values).toContain('%album%');
+      expect(idSql.values).toContain('photocards');
+      expect(idSql.values).toContain('bts');
+      expect(result).toEqual({
+        items: [
+          { id: 'product-1', name: 'Album', variants: [], categories: [] },
+        ],
+        total: 1,
+        page: 2,
+        limit: 12,
+      });
+    });
+
+    it.each([
+      ['recientes', 'p."createdAt" DESC'],
+      ['precio_asc', 'COALESCE'],
+      ['precio_desc', 'COALESCE'],
+      ['nombre_asc', 'LOWER(p."name") ASC'],
+    ] as const)('applies %s ordering', async (sort, expectedSql) => {
+      prisma.$queryRaw.mockReset();
+      prisma.$queryRaw
+        .mockResolvedValueOnce([{ total: 0n }])
+        .mockResolvedValueOnce([]);
+      await service.findPublicCatalog('my-store', {
+        ...query,
+        q: undefined,
+        categories: [],
+        sort,
+      });
+      expect(prisma.$queryRaw.mock.calls[1][0].strings.join(' ')).toContain(
+        expectedSql,
+      );
+    });
+
+    it('hides a nonexistent or nonpublic store', async () => {
+      prisma.store.findFirst.mockResolvedValue(null);
+      await expect(service.findPublicCatalog('missing', query)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(prisma.$queryRaw).not.toHaveBeenCalled();
     });
   });
 

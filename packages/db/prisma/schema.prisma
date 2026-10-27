@@ -216,6 +216,7 @@ model Category {
   storeId   String
   parentId  String?
   name      String
+  slug      String
   createdAt DateTime @default(now())
 
   store    Store             @relation(fields: [storeId], references: [id])
@@ -224,6 +225,7 @@ model Category {
   products ProductCategory[]
 
   @@unique([storeId, parentId, name])
+  @@unique([storeId, slug])
   @@index([storeId])
   @@index([parentId])
 }

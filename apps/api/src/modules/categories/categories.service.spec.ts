@@ -76,6 +76,7 @@ describe('CategoriesService', () => {
   describe('create()', () => {
     beforeEach(() => {
       prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
+      prisma.category.findMany.mockResolvedValue([]);
     });
 
     it('creates a top-level category when no parentId is given', async () => {
@@ -84,7 +85,21 @@ describe('CategoriesService', () => {
       await service.create(storeId, ownerId, { name: 'Photocards' });
 
       expect(prisma.category.create).toHaveBeenCalledWith({
-        data: { name: 'Photocards', parentId: undefined, storeId },
+        data: {
+          name: 'Photocards',
+          parentId: undefined,
+          storeId,
+          slug: 'photocards',
+        },
+      });
+    });
+
+    it('creates a unique, accent-insensitive slug', async () => {
+      prisma.category.findMany.mockResolvedValue([{ slug: 'nino' }]);
+      prisma.category.create.mockResolvedValue({ id: categoryId });
+      await service.create(storeId, ownerId, { name: 'Niño' });
+      expect(prisma.category.create).toHaveBeenCalledWith({
+        data: { name: 'Niño', parentId: undefined, storeId, slug: 'nino-2' },
       });
     });
 
