@@ -405,21 +405,29 @@ describe('assisted order links (e2e)', () => {
       // Hold the row the way the regenerate use case does, start the open
       // with the old token, and rotate only once the open's conditional
       // update is queued behind our lock.
-      await prisma.$transaction(async (tx) => {
-        await tx.$queryRaw`SELECT id FROM "Order" WHERE id = ${id} FOR UPDATE`;
-        stale = open(token).then((r) => r);
-        for (let i = 0; i < 100; i++) {
-          const [{ waiting }] = await tx.$queryRaw<{ waiting: bigint }[]>`
-            SELECT count(*) AS waiting FROM pg_stat_activity
-            WHERE wait_event_type = 'Lock' AND query ILIKE '%UPDATE "Order"%'`;
-          if (waiting > 0n) break;
-          await new Promise((r) => setTimeout(r, 50));
-        }
-        await tx.order.update({
-          where: { id },
-          data: { accessTokenHash: freshHash, accessTokenRevokedAt: null },
-        });
-      });
+      await prisma.$transaction(
+        async (tx) => {
+          await tx.$queryRaw`SELECT id FROM "Order" WHERE id = ${id} FOR UPDATE`;
+          stale = open(token).then((r) => r);
+          // Poll outside the transaction: inside it, pg_stat_activity is
+          // cached after the first read and would never show the waiter.
+          let queued = false;
+          for (let i = 0; i < 100 && !queued; i++) {
+            const [{ waiting }] = await prisma.$queryRaw<{ waiting: bigint }[]>`
+              SELECT count(*) AS waiting FROM pg_stat_activity
+              WHERE wait_event_type = 'Lock' AND datname = current_database()
+                AND query ILIKE '%UPDATE%' AND query ILIKE '%linkFirstOpenedAt%'`;
+            queued = waiting > 0n;
+            if (!queued) await new Promise((r) => setTimeout(r, 50));
+          }
+          expect(queued).toBe(true);
+          await tx.order.update({
+            where: { id },
+            data: { accessTokenHash: freshHash, accessTokenRevokedAt: null },
+          });
+        },
+        { timeout: 15_000 },
+      );
       expect((await stale!).status).toBe(200);
       const row = await prisma.order.findUniqueOrThrow({ where: { id } });
       expect(row.linkFirstOpenedAt).toBeNull();
@@ -428,7 +436,7 @@ describe('assisted order links (e2e)', () => {
           where: { orderId: id, type: 'LINK_OPENED' },
         }),
       ).toBe(0);
-    });
+    }, 20_000);
 
     it('shows the opened and claimed timestamps and the creator to the seller', async () => {
       const { id, token } = await seedOrder();
