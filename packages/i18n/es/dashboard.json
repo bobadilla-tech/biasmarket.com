@@ -823,7 +823,10 @@
       "city": "Ciudad",
       "district": "Distrito",
       "reference": "Referencia (opcional)",
-      "noMethods": "Esta tienda no tiene métodos de entrega activos."
+      "noMethods": "Esta tienda no tiene métodos de entrega activos.",
+      "loading": "Cargando opciones de entrega y pago…",
+      "loadFailed": "No pudimos cargar las opciones de entrega y pago de la tienda.",
+      "retry": "Reintentar"
     },
     "payment": {
       "title": "Pago",

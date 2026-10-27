@@ -279,7 +279,7 @@ test("keeps submission blocked after product details fail and allows retry", asy
   );
 });
 
-test("blocks submission until a required product variant is selected", async () => {
+test("explains a missing required variant instead of silently disabling submit", async () => {
   m.findProduct.mockResolvedValue({
     ...detail(),
     variants: [
@@ -289,14 +289,58 @@ test("blocks submission until a required product variant is selected", async () 
   });
 
   const { user } = await renderForm();
-  await user.selectOptions(screen.getByLabelText("Producto"), "p1");
+  await fillValidOrder(user);
   const variant = await screen.findByLabelText("Variante");
-  expect((submitButton() as HTMLButtonElement).disabled).toBe(true);
+
+  // Loaded details keep the button enabled; the click surfaces the reason.
+  expect((submitButton() as HTMLButtonElement).disabled).toBe(false);
+  await user.click(submitButton());
+  expect(await screen.findByText("Elige una variante.")).toBeTruthy();
+  expect(m.createAssisted).not.toHaveBeenCalled();
 
   await user.selectOptions(variant, "v1");
-  await waitFor(() =>
-    expect((submitButton() as HTMLButtonElement).disabled).toBe(false),
+  await user.click(submitButton());
+  await waitFor(() => expect(m.createAssisted).toHaveBeenCalledTimes(1));
+});
+
+test("shows a loading state while the delivery and payment options load and blocks submit", async () => {
+  m.findStore.mockReturnValue(new Promise(() => {}));
+  renderWithProviders(
+    <AssistedOrderForm
+      storeId="store-1"
+      slug="mi-tienda"
+      onCreated={vi.fn()}
+    />,
   );
+
+  expect(
+    await screen.findByText("Cargando opciones de entrega y pago…"),
+  ).toBeTruthy();
+  expect((submitButton() as HTMLButtonElement).disabled).toBe(true);
+});
+
+test("shows an error with retry when the delivery options fail and blocks submit", async () => {
+  m.findStore.mockRejectedValueOnce(new Error("store unavailable"));
+  const user = userEvent.setup();
+  renderWithProviders(
+    <AssistedOrderForm
+      storeId="store-1"
+      slug="mi-tienda"
+      onCreated={vi.fn()}
+    />,
+  );
+
+  const alert = await screen.findByRole("alert");
+  expect(
+    within(alert).getByText(
+      "No pudimos cargar las opciones de entrega y pago de la tienda.",
+    ),
+  ).toBeTruthy();
+  expect((submitButton() as HTMLButtonElement).disabled).toBe(true);
+
+  await user.click(within(alert).getByRole("button", { name: "Reintentar" }));
+  await screen.findByRole("option", { name: "Retiro presencial" });
+  expect(screen.queryByRole("alert")).toBeNull();
 });
 
 test("clears a lookup-generated alias immediately when the phone changes", async () => {

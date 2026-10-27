@@ -19,6 +19,7 @@ vi.mock("@/lib/api-client", () => ({
 }));
 
 const { settingsApi } = await import("./settings.api");
+const { ApiError } = await import("@biasmarket/types");
 
 afterEach(() => {
   deliveryConfigMock.findAll.mockReset();
@@ -141,7 +142,7 @@ test("getWhatsAppTemplates keeps existing templates when the optional assisted-o
   whatsappTemplatesMock.findOne.mockImplementation(
     (_storeId: string, type: string) => {
       if (type === "ASSISTED_ORDER_LINK") {
-        return Promise.reject(new Error("unsupported message type"));
+        return Promise.reject(new ApiError("unsupported message type", 400));
       }
       return Promise.resolve({ type });
     },
@@ -166,5 +167,33 @@ test("getWhatsAppTemplates still fails when an existing template request fails",
 
   await expect(settingsApi.getWhatsAppTemplates("store-1")).rejects.toThrow(
     "existing template unavailable",
+  );
+});
+
+test("getWhatsAppTemplates surfaces a non-400 failure of the assisted-order template", async () => {
+  whatsappTemplatesMock.findOne.mockImplementation(
+    (_storeId: string, type: string) => {
+      if (type === "ASSISTED_ORDER_LINK") {
+        return Promise.reject(new ApiError("boom", 500));
+      }
+      return Promise.resolve(null);
+    },
+  );
+
+  await expect(settingsApi.getWhatsAppTemplates("store-1")).rejects.toThrow(
+    "boom",
+  );
+});
+
+test("getWhatsAppTemplates surfaces a network failure of the assisted-order template", async () => {
+  whatsappTemplatesMock.findOne.mockImplementation(
+    (_storeId: string, type: string) =>
+      type === "ASSISTED_ORDER_LINK"
+        ? Promise.reject(new TypeError("fetch failed"))
+        : Promise.resolve(null),
+  );
+
+  await expect(settingsApi.getWhatsAppTemplates("store-1")).rejects.toThrow(
+    "fetch failed",
   );
 });

@@ -823,7 +823,10 @@
       "city": "City",
       "district": "District",
       "reference": "Reference (optional)",
-      "noMethods": "This store has no active delivery methods."
+      "noMethods": "This store has no active delivery methods.",
+      "loading": "Loading delivery and payment options…",
+      "loadFailed": "We could not load the store's delivery and payment options.",
+      "retry": "Retry"
     },
     "payment": {
       "title": "Payment",
