@@ -143,12 +143,14 @@ export function AssistedOrderSection({
         </span>
       </div>
       {slug && locale ? (
-        <Link
-          href={`/${locale}/dashboard/${slug}/customers`}
-          className="inline-flex min-h-11 items-center text-sm font-medium text-[#5a3d82] underline"
-        >
-          {t("customers")}
-        </Link>
+        order.customerId ? (
+          <Link
+            href={`/${locale}/dashboard/${slug}/customers?customer=${encodeURIComponent(order.customerId)}`}
+            className="inline-flex min-h-11 items-center text-sm font-medium text-[#5a3d82] underline"
+          >
+            {t("customers")}
+          </Link>
+        ) : null
       ) : null}
 
       <div className="space-y-3 border-t border-[#f3ebff] pt-4">
@@ -222,7 +224,9 @@ export function AssistedOrderSection({
             message={message}
             phone={result.order.customerPhone}
             ready={template.isSuccess || template.isError}
-            onFixNumber={correctBlockedReason ? () => undefined : openFix}
+            onFixNumber={openFix}
+            fixNumberDisabled={correctBlockedReason !== null}
+            fixNumberDisabledReason={correctBlockedReason ?? undefined}
           />
         </div>
       ) : null}

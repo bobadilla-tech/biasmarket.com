@@ -22,10 +22,14 @@ export function ConfirmNumberAndOpenWhatsApp({
   phone,
   message,
   onFixNumber,
+  fixNumberDisabled = false,
+  fixNumberDisabledReason,
 }: {
   phone: string;
   message: string;
   onFixNumber: () => void;
+  fixNumberDisabled?: boolean;
+  fixNumberDisabledReason?: string;
 }) {
   const t = useTranslations("dashboard.assistedOrder.created");
   const [open, setOpen] = useState(false);
@@ -65,6 +69,10 @@ export function ConfirmNumberAndOpenWhatsApp({
                 setOpen(false);
                 onFixNumber();
               }}
+              disabled={fixNumberDisabled}
+              aria-describedby={
+                fixNumberDisabled ? "assisted-confirm-fix-reason" : undefined
+              }
               className="min-h-11 rounded-xl"
             >
               {t("fixNumber")}
@@ -81,6 +89,15 @@ export function ConfirmNumberAndOpenWhatsApp({
               {t("confirmYes")}
             </AlertDialogClose>
           </AlertDialogFooter>
+          {fixNumberDisabled && fixNumberDisabledReason ? (
+            <p
+              id="assisted-confirm-fix-reason"
+              role="status"
+              className="text-sm text-[#8f7da8]"
+            >
+              {fixNumberDisabledReason}
+            </p>
+          ) : null}
         </AlertDialogContent>
       </AlertDialog>
     </>

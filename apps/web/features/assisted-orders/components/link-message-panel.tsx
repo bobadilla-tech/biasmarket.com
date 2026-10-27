@@ -15,11 +15,15 @@ export function LinkMessagePanel({
   phone,
   ready,
   onFixNumber,
+  fixNumberDisabled = false,
+  fixNumberDisabledReason,
 }: {
   message: string;
   phone: string;
   ready: boolean;
   onFixNumber: () => void;
+  fixNumberDisabled?: boolean;
+  fixNumberDisabledReason?: string;
 }) {
   const t = useTranslations("dashboard.assistedOrder.created");
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">(
@@ -70,6 +74,8 @@ export function LinkMessagePanel({
           phone={phone}
           message={message}
           onFixNumber={onFixNumber}
+          fixNumberDisabled={fixNumberDisabled}
+          fixNumberDisabledReason={fixNumberDisabledReason}
         />
         <Button
           type="button"

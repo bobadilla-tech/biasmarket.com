@@ -892,7 +892,7 @@
       "badge": "Pedido asistido",
       "createdBy": "Creado por {name}",
       "buyerNumber": "WhatsApp del comprador",
-      "customers": "Ver clientes",
+      "customers": "Ver historial del cliente",
       "linkTitle": "Enlace del comprador",
       "sendLink": "Enviar o copiar enlace",
       "sendLinkWarning": "Genera un enlace nuevo: el anterior deja de funcionar.",

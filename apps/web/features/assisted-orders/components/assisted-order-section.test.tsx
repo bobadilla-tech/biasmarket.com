@@ -102,8 +102,8 @@ test("shows the badge, creator and the formatted buyer number", () => {
   expect(screen.getByText("Creado por Mica Seller")).toBeTruthy();
   expect(screen.getByText("+51 987 654 321")).toBeTruthy();
   expect(
-    screen.getByRole("link", { name: "Ver clientes" }).getAttribute("href"),
-  ).toBe("/es/dashboard/mi-tienda/customers");
+    screen.getByRole("link", { name: "Ver historial del cliente" }).getAttribute("href"),
+  ).toBe("/es/dashboard/mi-tienda/customers?customer=c1");
 });
 
 test("send or copy is always available, warns about the new link and shows the message", async () => {
@@ -155,6 +155,28 @@ test("correct number is disabled with its reason once the buyer opened the link"
   expect(button.disabled).toBe(true);
   const reasonId = button.getAttribute("aria-describedby");
   expect(reasonId).toBeTruthy();
+  expect(document.getElementById(reasonId!)?.textContent).toBe(
+    "El comprador ya abrió el enlace: ya no se puede corregir el número.",
+  );
+});
+
+test("the WhatsApp confirmation keeps correction disabled with the same reason", async () => {
+  const { user } = setup({
+    ...base,
+    linkFirstOpenedAt: "2026-10-02T00:00:00.000Z",
+  } as OrderResponseDto);
+  await user.click(
+    screen.getByRole("button", { name: "Enviar o copiar enlace" }),
+  );
+  await box();
+  await user.click(screen.getByRole("button", { name: "Abrir WhatsApp" }));
+
+  const dialog = await screen.findByRole("alertdialog");
+  const correction = within(dialog).getByRole("button", {
+    name: "Corregir número",
+  }) as HTMLButtonElement;
+  expect(correction.disabled).toBe(true);
+  const reasonId = correction.getAttribute("aria-describedby");
   expect(document.getElementById(reasonId!)?.textContent).toBe(
     "El comprador ya abrió el enlace: ya no se puede corregir el número.",
   );
