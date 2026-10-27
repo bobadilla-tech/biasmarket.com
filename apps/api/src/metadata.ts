@@ -15,10 +15,10 @@ export default async () => {
       await import('./modules/orders/dto/order-response.dto.js'),
     ['./modules/orders/dto/create-order.dto.js']:
       await import('./modules/orders/dto/create-order.dto.js'),
-    ['./modules/payment-config/dto/payment-method-details.dto.js']:
-      await import('./modules/payment-config/dto/payment-method-details.dto.js'),
     ['./modules/orders/dto/checkout-response.dto.js']:
       await import('./modules/orders/dto/checkout-response.dto.js'),
+    ['./modules/payment-config/dto/payment-method-details.dto.js']:
+      await import('./modules/payment-config/dto/payment-method-details.dto.js'),
     ['./modules/orders/infrastructure/customer-account-response.dto.js']:
       await import('./modules/orders/infrastructure/customer-account-response.dto.js'),
     ['./modules/customer-auth/dto/account-order-response.dto.js']:
@@ -59,6 +59,8 @@ export default async () => {
       await import('./modules/notifications/dto/notification-response.dto.js'),
     ['./modules/users/dto/user-store-count-response.dto.js']:
       await import('./modules/users/dto/user-store-count-response.dto.js'),
+    ['./modules/orders/dto/assisted-order-response.dto.js']:
+      await import('./modules/orders/dto/assisted-order-response.dto.js'),
     ['./modules/payment-config/dto/payment-method-response.dto.js']:
       await import('./modules/payment-config/dto/payment-method-response.dto.js'),
     ['./modules/delivery-config/dto/delivery-method-response.dto.js']:
@@ -1206,68 +1208,46 @@ export default async () => {
           },
         ],
         [
-          import('./modules/customer-auth/dto/account-order-response.dto.js'),
+          import('./modules/orders/dto/create-assisted-order.dto.js'),
           {
-            AccountOrderResponseDto: {
-              id: { required: true, type: () => String },
-              paymentStatus: {
+            CreateAssistedOrderDto: {
+              deliveryMethodType: {
                 required: true,
-                enum: [
-                  'PENDING_PAYMENT',
-                  'PARTIALLY_PAID',
-                  'PAYMENT_SUBMITTED',
-                  'VERIFIED',
-                  'REJECTED',
-                  'CANCELLED',
-                ],
+                enum: ['PICKUP', 'COURIER'],
               },
-              fulfillmentStatus: {
-                required: true,
-                enum: ['ORDERING', 'IN_TRANSIT', 'READY', 'COMPLETED'],
+              pickupPointId: { required: false, type: () => String },
+              pickupDate: {
+                required: false,
+                type: () => String,
+                pattern: '^\\d{4}-\\d{2}-\\d{2}$',
               },
-              totalAmount: { required: true, type: () => String },
-              currency: { required: true, type: () => String },
-              createdAt: { required: true, type: () => String },
-              paidAmount: { required: true, type: () => Number },
-              pendingAmount: { required: true, type: () => Number },
-              paidPercentage: { required: true, type: () => Number },
-            },
-          },
-        ],
-        [
-          import('./modules/payment-config/dto/payment-method-details.dto.js'),
-          {
-            PaymentMethodDetailsDto: {
-              bankName: { required: false, type: () => String },
-              accountNumber: { required: false, type: () => String },
-              accountHolder: { required: false, type: () => String },
-              accountType: { required: false, type: () => String },
-              phoneNumber: { required: false, type: () => String },
-              qrImageUrl: { required: false, type: () => String },
-            },
-          },
-        ],
-        [
-          import('./modules/payment-config/dto/upsert-payment-method.dto.js'),
-          {
-            UpsertPaymentMethodDto: {
-              method: {
-                required: true,
+              paymentMethod: {
+                required: false,
                 enum: ['YAPE', 'PLIN', 'TRANSFER', 'CASH'],
               },
-              enabled: { required: false, type: () => Boolean },
-              details: {
+              paymentType: { required: false, enum: ['FULL', 'PARTIAL'] },
+              customerPhone: { required: true, type: () => String },
+              customerName: {
+                required: false,
+                type: () => String,
+                maxLength: 60,
+                pattern: '^[^\\p{Cc}]*$',
+              },
+              shippingAddress: {
                 required: false,
                 type: () =>
-                  t[
-                    './modules/payment-config/dto/payment-method-details.dto.js'
-                  ].PaymentMethodDetailsDto,
+                  t['./modules/orders/dto/create-order.dto.js']
+                    .ShippingAddressDto,
               },
-              depositPercent: {
-                required: false,
-                type: () => Number,
-                minimum: 1,
-                maximum: 100,
+              courierName: { required: false, type: () => String },
+              courierModality: { required: false, enum: ['AGENCY', 'HOME'] },
+              items: {
+                required: true,
+                type: () => [
+                  t['./modules/orders/dto/create-order.dto.js']
+                    .CreateOrderItemDto,
+                ],
+                minItems: 1,
               },
             },
           },
@@ -1419,6 +1399,88 @@ export default async () => {
                 required: true,
                 type: () => String,
                 nullable: true,
+              },
+            },
+          },
+        ],
+        [
+          import('./modules/orders/dto/assisted-order-response.dto.js'),
+          {
+            CreateAssistedOrderResponseDto: {
+              order: {
+                required: true,
+                type: () =>
+                  t['./modules/orders/dto/checkout-response.dto.js']
+                    .CheckoutOrderResponseDto,
+              },
+              accessUrl: { required: true, type: () => String },
+              previousOrders: { required: true, type: () => Number },
+            },
+          },
+        ],
+        [
+          import('./modules/customer-auth/dto/account-order-response.dto.js'),
+          {
+            AccountOrderResponseDto: {
+              id: { required: true, type: () => String },
+              paymentStatus: {
+                required: true,
+                enum: [
+                  'PENDING_PAYMENT',
+                  'PARTIALLY_PAID',
+                  'PAYMENT_SUBMITTED',
+                  'VERIFIED',
+                  'REJECTED',
+                  'CANCELLED',
+                ],
+              },
+              fulfillmentStatus: {
+                required: true,
+                enum: ['ORDERING', 'IN_TRANSIT', 'READY', 'COMPLETED'],
+              },
+              totalAmount: { required: true, type: () => String },
+              currency: { required: true, type: () => String },
+              createdAt: { required: true, type: () => String },
+              paidAmount: { required: true, type: () => Number },
+              pendingAmount: { required: true, type: () => Number },
+              paidPercentage: { required: true, type: () => Number },
+            },
+          },
+        ],
+        [
+          import('./modules/payment-config/dto/payment-method-details.dto.js'),
+          {
+            PaymentMethodDetailsDto: {
+              bankName: { required: false, type: () => String },
+              accountNumber: { required: false, type: () => String },
+              accountHolder: { required: false, type: () => String },
+              accountType: { required: false, type: () => String },
+              phoneNumber: { required: false, type: () => String },
+              qrImageUrl: { required: false, type: () => String },
+            },
+          },
+        ],
+        [
+          import('./modules/payment-config/dto/upsert-payment-method.dto.js'),
+          {
+            UpsertPaymentMethodDto: {
+              method: {
+                required: true,
+                enum: ['YAPE', 'PLIN', 'TRANSFER', 'CASH'],
+              },
+              enabled: { required: false, type: () => Boolean },
+              details: {
+                required: false,
+                type: () =>
+                  t[
+                    './modules/payment-config/dto/payment-method-details.dto.js'
+                  ].PaymentMethodDetailsDto,
+              },
+              depositPercent: {
+                required: false,
+                type: () => Number,
+                minimum: 1,
+                maximum: 100,
               },
             },
           },
@@ -2940,6 +3002,17 @@ export default async () => {
               create: {
                 type: t['./modules/orders/dto/checkout-response.dto.js']
                   .CheckoutResultResponseDto,
+              },
+            },
+          },
+        ],
+        [
+          import('./modules/orders/infrastructure/assisted-orders.controller.js'),
+          {
+            AssistedOrdersController: {
+              createAssisted: {
+                type: t['./modules/orders/dto/assisted-order-response.dto.js']
+                  .CreateAssistedOrderResponseDto,
               },
             },
           },

@@ -1243,6 +1243,60 @@ export interface CancelOrderDto {
   reason?: string;
 }
 
+export type CreateAssistedOrderDtoDeliveryMethodType =
+  (typeof CreateAssistedOrderDtoDeliveryMethodType)[keyof typeof CreateAssistedOrderDtoDeliveryMethodType];
+
+export const CreateAssistedOrderDtoDeliveryMethodType = {
+  PICKUP: "PICKUP",
+  COURIER: "COURIER",
+} as const;
+
+export type CreateAssistedOrderDtoPaymentMethod =
+  (typeof CreateAssistedOrderDtoPaymentMethod)[keyof typeof CreateAssistedOrderDtoPaymentMethod];
+
+export const CreateAssistedOrderDtoPaymentMethod = {
+  YAPE: "YAPE",
+  PLIN: "PLIN",
+  TRANSFER: "TRANSFER",
+  CASH: "CASH",
+} as const;
+
+export type CreateAssistedOrderDtoPaymentType =
+  (typeof CreateAssistedOrderDtoPaymentType)[keyof typeof CreateAssistedOrderDtoPaymentType];
+
+export const CreateAssistedOrderDtoPaymentType = {
+  FULL: "FULL",
+  PARTIAL: "PARTIAL",
+} as const;
+
+export type CreateAssistedOrderDtoCourierModality =
+  (typeof CreateAssistedOrderDtoCourierModality)[keyof typeof CreateAssistedOrderDtoCourierModality];
+
+export const CreateAssistedOrderDtoCourierModality = {
+  AGENCY: "AGENCY",
+  HOME: "HOME",
+} as const;
+
+export interface CreateAssistedOrderDto {
+  deliveryMethodType: CreateAssistedOrderDtoDeliveryMethodType;
+  pickupPointId?: string;
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
+  pickupDate?: string;
+  paymentMethod?: CreateAssistedOrderDtoPaymentMethod;
+  paymentType?: CreateAssistedOrderDtoPaymentType;
+  customerPhone: string;
+  /**
+   * @maxLength 60
+   * @pattern ^[^\p{Cc}]*$
+   */
+  customerName?: string;
+  shippingAddress?: ShippingAddressDto;
+  courierName?: string;
+  courierModality?: CreateAssistedOrderDtoCourierModality;
+  /** @minItems 1 */
+  items: CreateOrderItemDto[];
+}
+
 export type CreateOrderDtoDeliveryMethodType =
   (typeof CreateOrderDtoDeliveryMethodType)[keyof typeof CreateOrderDtoDeliveryMethodType];
 
@@ -1502,6 +1556,14 @@ export interface CheckoutResultResponseDto {
   order: CheckoutOrderResponseDto;
   /** @nullable */
   whatsappUrl: string | null;
+}
+
+export interface CreateAssistedOrderResponseDto {
+  order: CheckoutOrderResponseDto;
+  /** SECRET: private buyer link. Returned only when the link is created; only its hash is stored, so it cannot be shown again. */
+  accessUrl: string;
+  /** Earlier orders of this store for the same WhatsApp number (advisory). */
+  previousOrders: number;
 }
 
 export type ConfirmAccountResponseDtoPurpose =

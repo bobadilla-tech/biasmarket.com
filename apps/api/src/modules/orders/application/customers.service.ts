@@ -348,6 +348,26 @@ export class CustomersService {
     };
   }
 
+  // Count-only variant of `lookupByPhone` for callers that already verified
+  // ownership. Includes legacy rows whose `customerPhoneNormalized` is null.
+  async countPreviousOrders(storeId: string, phone: string): Promise<number> {
+    const [indexed, legacyOrders] = await Promise.all([
+      this.prisma.order.count({
+        where: { storeId, customerPhoneNormalized: phone },
+      }),
+      this.prisma.order.findMany({
+        where: { storeId, customerPhoneNormalized: null },
+        select: { customerPhone: true },
+      }),
+    ]);
+    return (
+      indexed +
+      legacyOrders.filter(
+        (order) => normalizePhone(order.customerPhone) === phone,
+      ).length
+    );
+  }
+
   private requirePhone(rawPhone: string): string {
     const validated = validatePhone(rawPhone);
     if (!validated.ok) throw new BadRequestException(validated.message);

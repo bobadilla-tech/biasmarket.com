@@ -8,6 +8,8 @@
 import type {
   AdvanceFulfillmentDto,
   CancelOrderDto,
+  CreateAssistedOrderDto,
+  CreateAssistedOrderResponseDto,
   OrderControllerfindAllParams,
   OrderDetailResponseDto,
   OrderResponseDto,
@@ -178,4 +180,24 @@ export const cancel = async (
     headers: { "Content-Type": "application/json", ...options?.headers },
     body: JSON.stringify(cancelOrderDto),
   });
+};
+
+export const getCreateAssistedUrl = (storeId: string) => {
+  return `/stores/${storeId}/orders/assisted`;
+};
+
+export const createAssisted = async (
+  storeId: string,
+  createAssistedOrderDto: CreateAssistedOrderDto,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CreateAssistedOrderResponseDto> => {
+  return customFetch<CreateAssistedOrderResponseDto>(
+    getCreateAssistedUrl(storeId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createAssistedOrderDto),
+    },
+  );
 };
