@@ -887,6 +887,30 @@
       "openLink": "Ver como comprador",
       "newOrder": "Crear otro pedido",
       "templateLoading": "Preparando el mensaje…"
+    },
+    "detail": {
+      "badge": "Pedido asistido",
+      "createdBy": "Creado por {name}",
+      "buyerNumber": "WhatsApp del comprador",
+      "customers": "Ver clientes",
+      "linkTitle": "Enlace del comprador",
+      "sendLink": "Enviar o copiar enlace",
+      "sendLinkWarning": "Genera un enlace nuevo: el anterior deja de funcionar.",
+      "regenerate": "Regenerar enlace",
+      "regenerateTitle": "¿Regenerar el enlace?",
+      "regenerateBody": "El enlace anterior dejará de funcionar. Si ya se lo enviaste al comprador, tendrás que enviarle el nuevo.",
+      "regenerateConfirm": "Sí, regenerar",
+      "cancel": "Cancelar",
+      "working": "Generando…",
+      "linkReady": "Enlace nuevo listo",
+      "correctNumber": "Corregir número",
+      "correctDisabledOpened": "El comprador ya abrió el enlace: ya no se puede corregir el número.",
+      "correctDisabledClaimed": "El comprador ya reclamó el pedido: ya no se puede corregir el número.",
+      "correctDisabledClosed": "El pedido está cancelado o venció: ya no se puede corregir el número.",
+      "closed": "El pedido está cancelado o venció: ya no se puede enviar un enlace.",
+      "correctTitle": "Corregir el número",
+      "correctBody": "Ingresa el WhatsApp correcto. Se genera un enlace nuevo y el anterior deja de funcionar.",
+      "correctSubmit": "Guardar número"
     }
   }
 }

@@ -34,7 +34,7 @@ function errorMessage(error: unknown) {
 export function OrdersPageClient() {
   const t = useTranslations("dashboard.orders");
   const tCommon = useTranslations("common");
-  const { storeId, slug, loading: storeLoading } = useDashboardStore();
+  const { store, storeId, slug, loading: storeLoading } = useDashboardStore();
   const searchParams = useSearchParams();
 
   const ordersQuery = useOrders(storeId, tCommon("networkError"));
@@ -269,6 +269,8 @@ export function OrdersPageClient() {
             if (!open) setSelectedOrderId(null);
           }}
           order={selectedOrder}
+          storeId={storeId}
+          storeName={store?.name ?? ""}
           isPending={selectedOrder ? !!pending[selectedOrder.id] : false}
           fulfillmentLabels={fulfillmentLabels}
           enabledMethods={enabledMethods}

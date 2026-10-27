@@ -887,6 +887,30 @@
       "openLink": "View as buyer",
       "newOrder": "Create another order",
       "templateLoading": "Preparing the message…"
+    },
+    "detail": {
+      "badge": "Assisted order",
+      "createdBy": "Created by {name}",
+      "buyerNumber": "Buyer's WhatsApp",
+      "customers": "View customers",
+      "linkTitle": "Buyer's link",
+      "sendLink": "Send or copy link",
+      "sendLinkWarning": "Creates a new link: the previous one stops working.",
+      "regenerate": "Regenerate link",
+      "regenerateTitle": "Regenerate the link?",
+      "regenerateBody": "The previous link will stop working. If you already sent it to the buyer, you'll need to send them the new one.",
+      "regenerateConfirm": "Yes, regenerate",
+      "cancel": "Cancel",
+      "working": "Generating…",
+      "linkReady": "New link ready",
+      "correctNumber": "Fix number",
+      "correctDisabledOpened": "The buyer already opened the link: the number can no longer be corrected.",
+      "correctDisabledClaimed": "The buyer already claimed the order: the number can no longer be corrected.",
+      "correctDisabledClosed": "The order is cancelled or expired: the number can no longer be corrected.",
+      "closed": "The order is cancelled or expired: a link can no longer be sent.",
+      "correctTitle": "Fix the number",
+      "correctBody": "Enter the right WhatsApp. A new link is created and the previous one stops working.",
+      "correctSubmit": "Save number"
     }
   }
 }
