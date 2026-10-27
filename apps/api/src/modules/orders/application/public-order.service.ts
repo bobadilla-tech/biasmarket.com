@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@biasmarket/db';
 import { maskPhone } from '@biasmarket/utils/phone-country';
+import { hashOrderAccessToken } from '@biasmarket/utils/assisted-order';
 import { isPaymentMethodConfigured } from '@biasmarket/utils/payment-methods';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { computePaymentSummary } from '../../../common/payment-summary.js';
@@ -75,12 +76,19 @@ export class PublicOrderService {
     // conditional update rolls back with it, so the next read retries.
     // Link-preview fetches count as that first read; B3 keys phone
     // correction off the flag, and the issue requires the read itself to
-    // set it.
+    // set it. The update is keyed by the presented token's hash: a reader
+    // holding an old token whose update lands after the seller rotated the
+    // link must not stamp the new link as opened.
     if (order.linkFirstOpenedAt === null) {
       try {
         await this.prisma.$transaction(async (tx) => {
           const opened = await tx.order.updateMany({
-            where: { id: order.id, linkFirstOpenedAt: null },
+            where: {
+              id: order.id,
+              accessTokenHash: hashOrderAccessToken(token),
+              accessTokenRevokedAt: null,
+              linkFirstOpenedAt: null,
+            },
             data: { linkFirstOpenedAt: new Date() },
           });
           if (opened.count === 1) {
