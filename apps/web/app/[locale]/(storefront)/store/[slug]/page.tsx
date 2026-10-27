@@ -270,10 +270,17 @@ export default async function StorePage({
             publicOwnerName={store.publicOwnerName}
             publicOwnerAvatarUrl={store.publicOwnerAvatarUrl}
           />
-          {aboutNode && (
-            <section className="prose max-w-none">{aboutNode}</section>
-          )}
-          <p className="text-center text-(--store-muted)">{t("noProducts")}</p>
+          <StoreSectionRenderer
+            slug={slug}
+            storeName={store.name}
+            intro={
+              aboutNode ? (
+                <section className="prose max-w-none">{aboutNode}</section>
+              ) : undefined
+            }
+            sections={[]}
+            catalogControls
+          />
         </main>
       </div>
     );
@@ -307,22 +314,17 @@ export default async function StorePage({
           publicOwnerName={store.publicOwnerName}
           publicOwnerAvatarUrl={store.publicOwnerAvatarUrl}
         />
-        {aboutNode && (
-          <section className="prose max-w-none">{aboutNode}</section>
-        )}
-        {visibleSections.length === 0 ? (
-          soldOutProducts.length > 0 ? null : (
-            <p className="text-center text-(--store-muted)">
-              {t("noProducts")}
-            </p>
-          )
-        ) : (
-          <StoreSectionRenderer
-            slug={slug}
-            sections={visibleSections}
-            catalogControls
-          />
-        )}
+        <StoreSectionRenderer
+          slug={slug}
+          storeName={store.name}
+          intro={
+            aboutNode ? (
+              <section className="prose max-w-none">{aboutNode}</section>
+            ) : undefined
+          }
+          sections={visibleSections}
+          catalogControls
+        />
         {/* Sold-out section rendered after visible sections */}
         {soldOutProducts.length > 0 && (
           <section
