@@ -1,7 +1,7 @@
 import { Test, type TestingModule } from '@nestjs/testing';
 import { ValidationPipe, type INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { createHash, randomUUID } from 'node:crypto';
+import { createHash, randomInt, randomUUID } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { AppModule } from './../src/app.module.js';
@@ -36,7 +36,7 @@ describe('assisted orders (e2e)', () => {
   // BuyerAccount (which would skip the Customer upsert under test).
   const racePhones = Array.from(
     { length: 5 },
-    () => `+519${String(Math.floor(Math.random() * 1e8)).padStart(8, '0')}`,
+    () => `+519${String(randomInt(0, 1e8)).padStart(8, '0')}`,
   );
 
   const nextIp = () => `198.51.101.${++ipCounter}`;
