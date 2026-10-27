@@ -257,7 +257,7 @@
       "ownerAvatarPreviewAlt": "Vista previa del avatar público del dueño",
       "ownerAvatarPlaceholder": "Avatar público del dueño no configurado",
       "publicOwnerProfileTitle": "Perfil público",
-      "publicOwnerProfileHelp": "El nombre y la foto son opcionales. Se mostrarán en el encabezado de tu tienda; tu perfil personal permanece privado.",
+      "publicOwnerProfileHelp": "El nombre y la foto son opcionales. La foto aparece en el encabezado solo cuando defines un nombre público. Tu perfil personal permanece privado.",
       "locationLabel": "Ubicación pública",
       "publicOwnerNameLabel": "Nombre público del dueño",
       "publicOwnerHelp": "Este nombre aparece en tu tienda y no cambia tu nombre de cuenta.",

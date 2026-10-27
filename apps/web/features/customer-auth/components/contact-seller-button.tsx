@@ -10,7 +10,8 @@ import { usePublicStore } from "../queries/use-public-store";
 // else (see .artifacts/2026/08/20260808--buyer-mini-dashboard/plan.md). Matches the
 // existing hardcoded-Spanish convention already used by every other message
 // builder in packages/utils/src/whatsapp.
-function buildContactMessage(orderId?: string): string {
+function buildContactMessage(orderId?: string, message?: string): string {
+  if (message?.trim()) return message.trim();
   return orderId
     ? `Hola, tengo una consulta sobre mi pedido #${orderId.slice(0, 8)}`
     : "Hola, tengo una consulta sobre mis pedidos";
@@ -21,12 +22,14 @@ export function ContactSellerButton({
   orderId,
   className,
   label,
+  message,
   icon = "message",
 }: {
   slug: string;
   orderId?: string;
   className?: string;
   label?: string;
+  message?: string;
   icon?: "mail" | "message";
 }) {
   const t = useTranslations("storefront.accountPage");
@@ -38,7 +41,7 @@ export function ContactSellerButton({
     <a
       href={buildWhatsAppUrl(
         store.whatsappNumber,
-        buildContactMessage(orderId),
+        buildContactMessage(orderId, message),
       )}
       target="_blank"
       rel="noopener noreferrer"

@@ -19,7 +19,8 @@
   "publicOwnerAvatarGenericAlt": "Store owner photo",
   "publicOwner": {
     "title": "Store owner",
-    "contact": "Contact"
+    "contact": "Contact",
+    "contactMessage": "Hi, I have a question about {storeName}."
   },
   "storeOwner": "About the store",
   "soldOut": "Sold out",

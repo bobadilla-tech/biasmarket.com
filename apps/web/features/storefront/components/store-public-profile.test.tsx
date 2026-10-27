@@ -82,7 +82,11 @@ test("renders the public owner and reuses the WhatsApp contact button", () => {
     screen.getByRole("img", { name: "Foto del dueño de la tienda" }),
   ).toBeTruthy();
   const contact = screen.getByRole("link", { name: "Contactar" });
-  expect(contact.getAttribute("href")).toContain("https://wa.me/51999123456");
+  const contactUrl = contact.getAttribute("href") ?? "";
+  expect(contactUrl).toContain("https://wa.me/51999123456");
+  expect(decodeURIComponent(contactUrl)).toContain(
+    "Hola, tengo una consulta sobre la tienda Luna Shop.",
+  );
   expect(contact.getAttribute("target")).toBe("_blank");
 });
 

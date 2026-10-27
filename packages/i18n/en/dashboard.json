@@ -257,7 +257,7 @@
       "ownerAvatarPreviewAlt": "Public owner avatar preview",
       "ownerAvatarPlaceholder": "Public owner avatar not configured",
       "publicOwnerProfileTitle": "Public profile",
-      "publicOwnerProfileHelp": "The name and photo are optional. They appear in your store header; your personal account profile stays private.",
+      "publicOwnerProfileHelp": "The name and photo are optional. The photo appears in the store header only when you set a public name. Your personal account profile stays private.",
       "locationLabel": "Public location",
       "publicOwnerNameLabel": "Public owner name",
       "publicOwnerHelp": "This name appears in your store and does not change your account name.",

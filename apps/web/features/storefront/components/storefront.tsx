@@ -138,7 +138,10 @@ export function StorePublicProfile({
             <ContactSellerButton
               slug={slug}
               label={t("publicOwner.contact")}
-              icon="mail"
+              message={t("publicOwner.contactMessage", {
+                storeName: storeName.trim(),
+              })}
+              icon="message"
               className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-(--store-primary) px-3 py-2 text-xs font-semibold text-(--store-primary-text) transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2"
             />
           </aside>

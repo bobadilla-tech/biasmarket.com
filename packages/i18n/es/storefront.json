@@ -19,11 +19,8 @@
   "publicOwnerAvatarGenericAlt": "Foto del dueño de la tienda",
   "publicOwner": {
     "title": "Dueño de la tienda",
-    "contact": "Contactar"
-  },
-  "publicOwner": {
-    "title": "Dueño de la tienda",
-    "contact": "Contactar"
+    "contact": "Contactar",
+    "contactMessage": "Hola, tengo una consulta sobre la tienda {storeName}."
   },
   "storeOwner": "Sobre la tienda",
   "soldOut": "Agotado",
