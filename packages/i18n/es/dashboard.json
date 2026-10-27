@@ -465,7 +465,7 @@
       },
       "assistedOrderLink": {
         "title": "Mensaje de enlace de pedido asistido",
-        "description": "Se usa cuando creas un pedido por un comprador y le envías su enlace privado. Variable requerida: el enlace ('{{link}}')."
+        "description": "Se usa cuando creas un pedido por un comprador y le envías su enlace privado. Variable requerida: '{{link}}'."
       }
     }
   },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -28,6 +28,12 @@ import { buildAssistedLinkMessage } from "../lib/assisted-link-message";
 import { LinkMessagePanel } from "./link-message-panel";
 
 type LinkResult = AssistedOrderLinkResponseDto;
+
+const RESERVED_HOLD_STATUSES: readonly OrderResponseDto["paymentStatus"][] = [
+  "PENDING_PAYMENT",
+  "PARTIALLY_PAID",
+  "PAYMENT_SUBMITTED",
+];
 
 function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback;
@@ -58,8 +64,21 @@ export function AssistedOrderSection({
   const [phone, setPhone] = useState("+51");
   const [phoneError, setPhoneError] = useState<string | undefined>();
 
+  const expiredReservedHold =
+    RESERVED_HOLD_STATUSES.includes(order.paymentStatus) &&
+    new Date(order.expiresAt).getTime() <= Date.now();
   const closed =
-    order.status === "CANCELLED" || order.paymentStatus === "CANCELLED";
+    order.status === "CANCELLED" ||
+    order.paymentStatus === "CANCELLED" ||
+    expiredReservedHold;
+
+  useEffect(() => {
+    if (closed) {
+      setResult(null);
+      setConfirmRegenerate(false);
+      setFixOpen(false);
+    }
+  }, [closed]);
   const correctBlockedReason = closed
     ? t("correctDisabledClosed")
     : order.claimedAt
@@ -68,17 +87,18 @@ export function AssistedOrderSection({
         ? t("correctDisabledOpened")
         : null;
 
+  const visibleResult = closed ? null : result;
   const message = useMemo(
     () =>
-      result
+      visibleResult
         ? buildAssistedLinkMessage({
-            order: result.order,
+            order: visibleResult.order,
             storeName,
-            accessUrl: result.accessUrl,
+            accessUrl: visibleResult.accessUrl,
             template: template.data,
           })
         : "",
-    [result, storeName, template.data],
+    [visibleResult, storeName, template.data],
   );
 
   const runRegenerate = async () => {
@@ -215,14 +235,14 @@ export function AssistedOrderSection({
         </div>
       </div>
 
-      {result ? (
+      {visibleResult ? (
         <div className="space-y-4 border-t border-[#f3ebff] pt-4">
           <p role="status" className="text-sm font-semibold text-[#159a63]">
             {t("linkReady")}
           </p>
           <LinkMessagePanel
             message={message}
-            phone={result.order.customerPhone}
+            phone={visibleResult.order.customerPhone}
             ready={template.isSuccess || template.isError}
             onFixNumber={openFix}
             fixNumberDisabled={correctBlockedReason !== null}

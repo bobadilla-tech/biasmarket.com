@@ -616,13 +616,27 @@ describe('CustomersService', () => {
       });
     });
 
-    it('prefers the stored Customer alias over the latest order name', async () => {
+    it('prefers the latest order alias while preserving a stored customer name', async () => {
       prisma.customer.findUnique.mockResolvedValue({ name: 'Ana P.' });
       prisma.order.count.mockResolvedValue(1);
       prisma.order.findFirst.mockResolvedValue({
         customerName: 'Anita',
         createdAt: new Date('2026-02-01'),
       });
+
+      const result = await service.lookupByPhone(
+        storeId,
+        ownerId,
+        '+51987654321',
+      );
+
+      expect(result.lastAlias).toBe('Anita');
+    });
+
+    it('falls back to the stored customer name when there are no orders', async () => {
+      prisma.customer.findUnique.mockResolvedValue({ name: 'Ana P.' });
+      prisma.order.count.mockResolvedValue(0);
+      prisma.order.findFirst.mockResolvedValue(null);
 
       const result = await service.lookupByPhone(
         storeId,
