@@ -5,15 +5,14 @@ import { useTranslations } from "next-intl";
 import type { CreateAssistedOrderResponseDto } from "@biasmarket/types";
 import { getOrderNumber } from "@/features/orders/lib/order-format";
 import { useAssistedLinkTemplate } from "../queries/use-assisted-link-template";
-import {
-  buildAssistedLinkMessage,
-  sameOriginHref,
-} from "../lib/assisted-link-message";
+import { buildAssistedLinkMessage } from "../lib/assisted-link-message";
 import { LinkMessagePanel } from "./link-message-panel";
 
 // Shown right after creation. The private link exists only in this response,
 // so it is held in component state, rendered as text, and never written to
-// storage, the URL, a redirect or the query cache.
+// storage, the URL, a redirect or the query cache. It is deliberately not an
+// anchor: opening it as the seller would stamp the first open and lock number
+// correction before the buyer ever saw it.
 export function CreatedOrderScreen({
   storeId,
   storeName,
@@ -41,10 +40,6 @@ export function CreatedOrderScreen({
       }),
     [order, storeName, accessUrl, template.data],
   );
-  const href =
-    typeof window === "undefined"
-      ? null
-      : sameOriginHref(accessUrl, window.location.origin);
 
   return (
     <section className="flex flex-col gap-4 rounded-3xl border border-[#f0e7f8] bg-white p-4 sm:p-5">
@@ -63,16 +58,6 @@ export function CreatedOrderScreen({
       />
 
       <div className="flex flex-wrap items-center gap-4 border-t border-[#f0e7f8] pt-3 text-sm">
-        {href ? (
-          <a
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="min-h-11 inline-flex items-center font-medium text-[#5a3d82] underline"
-          >
-            {t("openLink")}
-          </a>
-        ) : null}
         <button
           type="button"
           onClick={onCreateAnother}

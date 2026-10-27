@@ -77,14 +77,20 @@ describe('public store options for an unpublished store (e2e)', () => {
     ['pickup points', 'public/pickup-points'],
     ['payment methods', 'public/payment-methods'],
     ['couriers', 'public/couriers'],
-  ])('serves %s', async (_label, path) => {
+  ])('serves %s', async (label, path) => {
     const store = await prisma.store.findUniqueOrThrow({
       where: { id: storeId },
     });
     expect(store.isPublic).toBe(false);
-    await request(app.getHttpServer())
+    const res = await request(app.getHttpServer())
       .get(`/stores/${slug}/${path}`)
       .expect(200);
+    // Store creation seeds default delivery and payment rows; a future gate
+    // that answered `200 []` for unpublished stores must not pass. Pickup
+    // points and couriers start empty, so only the status is meaningful there.
+    if (label === 'delivery methods' || label === 'payment methods') {
+      expect(res.body.length).toBeGreaterThan(0);
+    }
   });
 
   it('serves the public store detail the checkout options also read', async () => {

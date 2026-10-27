@@ -71,6 +71,7 @@ export function LinkMessagePanel({
 
       <div className="flex flex-col gap-2 sm:flex-row">
         <ConfirmNumberAndOpenWhatsApp
+          disabled={!ready}
           phone={phone}
           message={message}
           onFixNumber={onFixNumber}

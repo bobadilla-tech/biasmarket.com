@@ -18,15 +18,19 @@ import { buildAssistedLinkWhatsAppUrl } from "../lib/assisted-link-message";
 
 // The link goes to a stranger's WhatsApp, so the seller re-reads the number
 // before anything opens. "Corregir número" hands off to the order detail.
+// `disabled` holds the trigger until the final message is known, so a custom
+// template still loading can't be bypassed with the default text.
 export function ConfirmNumberAndOpenWhatsApp({
   phone,
   message,
+  disabled = false,
   onFixNumber,
   fixNumberDisabled = false,
   fixNumberDisabledReason,
 }: {
   phone: string;
   message: string;
+  disabled?: boolean;
   onFixNumber: () => void;
   fixNumberDisabled?: boolean;
   fixNumberDisabledReason?: string;
@@ -48,6 +52,7 @@ export function ConfirmNumberAndOpenWhatsApp({
       <Button
         type="button"
         onClick={() => setOpen(true)}
+        disabled={disabled}
         className="store-theme-primary-button min-h-11 rounded-2xl px-5 text-sm font-semibold hover:opacity-100"
       >
         <MessageCircle aria-hidden="true" className="size-4" />

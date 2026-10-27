@@ -823,7 +823,10 @@
       "city": "Ciudad",
       "district": "Distrito",
       "reference": "Referencia (opcional)",
-      "noMethods": "Esta tienda no tiene métodos de entrega activos."
+      "noMethods": "Esta tienda no tiene métodos de entrega activos.",
+      "loading": "Cargando opciones de entrega y pago…",
+      "loadFailed": "No pudimos cargar las opciones de entrega y pago de la tienda.",
+      "retry": "Reintentar"
     },
     "payment": {
       "title": "Pago",
@@ -876,7 +879,7 @@
       "title": "Pedido creado",
       "linkLabel": "Enlace privado del comprador",
       "linkNotice": "Este enlace solo se muestra aquí: cópialo antes de salir. Después podrás generar uno nuevo desde el pedido.",
-      "summary": "Pedido #{ref} · {total}",
+      "summary": "Pedido {ref} · {total}",
       "messageLabel": "Mensaje para el comprador",
       "messageDescription": "Incluye su enlace privado. Puedes copiarlo o abrirlo directo en WhatsApp.",
       "openWhatsapp": "Abrir WhatsApp",
@@ -887,7 +890,6 @@
       "confirmBody": "Se enviará a {phone}. ¿Es correcto?",
       "confirmYes": "Sí, abrir WhatsApp",
       "fixNumber": "Corregir número",
-      "openLink": "Ver como comprador",
       "newOrder": "Crear otro pedido",
       "templateLoading": "Preparando el mensaje…"
     },

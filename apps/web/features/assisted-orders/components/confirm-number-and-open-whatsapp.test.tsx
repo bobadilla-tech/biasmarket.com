@@ -55,3 +55,21 @@ test("Corregir número goes to the order instead of opening WhatsApp", async () 
   expect(onFixNumber).toHaveBeenCalledTimes(1);
   expect(open).not.toHaveBeenCalled();
 });
+
+test("a disabled trigger cannot open the confirmation", async () => {
+  const open = vi.spyOn(window, "open").mockReturnValue(null);
+  const user = userEvent.setup();
+  renderWithProviders(
+    <ConfirmNumberAndOpenWhatsApp
+      disabled
+      phone="+51987654321"
+      message="hola"
+      onFixNumber={vi.fn()}
+    />,
+  );
+  const trigger = screen.getByRole("button", { name: "Abrir WhatsApp" });
+  expect((trigger as HTMLButtonElement).disabled).toBe(true);
+  await user.click(trigger);
+  expect(screen.queryByText(/Se enviará a/)).toBeNull();
+  expect(open).not.toHaveBeenCalled();
+});
