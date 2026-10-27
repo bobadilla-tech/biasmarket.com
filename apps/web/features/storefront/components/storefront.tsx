@@ -1,6 +1,8 @@
 "use client";
 
+import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useTranslations } from "next-intl";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { MapPin, MessageCircle, Search, Sparkles } from "lucide-react";
 import { ContactSellerButton } from "@/features/customer-auth";
 import { SocialIcon, socialLabels } from "./social-icon";
@@ -236,38 +238,74 @@ export function OwnerCard({
   );
 }
 
-/** Renders accessible product and category tabs for the storefront catalog. */
-export function StoreTabs({
-  categories,
-  active,
-  onChange,
-}: {
-  categories: StorefrontCategory[];
-  active: string;
-  onChange: (id: string) => void;
-}) {
+export type StoreTab = "productos" | "categorias" | "referencias";
+
+const storeTabs: StoreTab[] = ["productos", "categorias", "referencias"];
+
+export function normalizeStoreTab(value: string | null): StoreTab {
+  return storeTabs.includes(value as StoreTab)
+    ? (value as StoreTab)
+    : "productos";
+}
+
+/** Keeps the selected storefront tab in the shareable URL and browser history. */
+export function StoreTabs() {
   const t = useTranslations("storefront");
-  const tabs: { id: string; label: string }[] = [
-    { id: "", label: t("productsTab") },
-    ...categories.map(({ id, name }) => ({ id, label: name })),
-  ];
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const active = normalizeStoreTab(searchParams.get("tab"));
+  const labels: Record<StoreTab, string> = {
+    productos: t("productsTab"),
+    categorias: t("categoriesTab"),
+    referencias: t("referencesTab"),
+  };
+
+  function selectTab(tab: StoreTab) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", tab);
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  }
+
+  function handleKeyDown(
+    event: ReactKeyboardEvent<HTMLButtonElement>,
+    currentIndex: number,
+  ) {
+    if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+    event.preventDefault();
+    const direction = event.key === "ArrowRight" ? 1 : -1;
+    const nextIndex =
+      (currentIndex + direction + storeTabs.length) % storeTabs.length;
+    const nextTab = storeTabs[nextIndex];
+    document.getElementById(`store-tab-${nextTab}`)?.focus();
+    selectTab(nextTab);
+  }
+
   return (
-    <nav
-      aria-label={t("storeSectionsLabel")}
-      className="flex gap-2 overflow-x-auto border-b border-(--store-border)"
-    >
-      {tabs.map(({ id, label }) => (
-        <button
-          key={id || "all-products"}
-          type="button"
-          aria-pressed={active === id}
-          onClick={() => onChange(id)}
-          className={`shrink-0 border-b-2 px-4 py-3 text-sm font-bold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) ${active === id ? "border-(--store-tab-active) text-(--store-tab-active)" : "border-transparent text-(--store-muted) hover:text-(--store-text)"}`}
-        >
-          {label}
-        </button>
-      ))}
-    </nav>
+    <div className="border-b border-(--store-border)">
+      <div
+        role="tablist"
+        aria-label={t("storeSectionsLabel")}
+        className="flex gap-2 overflow-x-auto pb-2"
+      >
+        {storeTabs.map((tab, index) => (
+          <button
+            id={`store-tab-${tab}`}
+            key={tab}
+            type="button"
+            role="tab"
+            aria-selected={active === tab}
+            aria-controls={`store-panel-${tab}`}
+            tabIndex={active === tab ? 0 : -1}
+            onClick={() => selectTab(tab)}
+            onKeyDown={(event) => handleKeyDown(event, index)}
+            className={`shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) ${active === tab ? "bg-(--store-primary) text-(--store-primary-text)" : "text-(--store-muted) hover:bg-(--store-card) hover:text-(--store-text)"}`}
+          >
+            {labels[tab]}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 
