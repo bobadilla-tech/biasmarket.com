@@ -580,7 +580,6 @@
     "subtitle": "Gestión de pedidos",
     "titleWithCount": "Todos los pedidos ({count})",
     "newOrder": "Nuevo pedido",
-    "newOrderSoon": "Pronto",
     "view": "Ver",
     "empty": "Todavía no hay pedidos.",
     "unknownProduct": "Producto",
@@ -873,7 +872,21 @@
     "created": {
       "title": "Pedido creado",
       "linkLabel": "Enlace privado del comprador",
-      "linkNotice": "Este enlace solo se muestra aquí: cópialo antes de salir. Después podrás generar uno nuevo desde el pedido."
+      "linkNotice": "Este enlace solo se muestra aquí: cópialo antes de salir. Después podrás generar uno nuevo desde el pedido.",
+      "summary": "Pedido #{ref} · {total}",
+      "messageLabel": "Mensaje para el comprador",
+      "messageDescription": "Incluye su enlace privado. Puedes copiarlo o abrirlo directo en WhatsApp.",
+      "openWhatsapp": "Abrir WhatsApp",
+      "copyMessage": "Copiar mensaje",
+      "copied": "Mensaje copiado",
+      "copyFailed": "No se pudo copiar. Selecciona el mensaje de arriba y cópialo a mano.",
+      "confirmTitle": "Confirma el número",
+      "confirmBody": "Se enviará a {phone}. ¿Es correcto?",
+      "confirmYes": "Sí, abrir WhatsApp",
+      "fixNumber": "Corregir número",
+      "openLink": "Ver como comprador",
+      "newOrder": "Crear otro pedido",
+      "templateLoading": "Preparando el mensaje…"
     }
   }
 }

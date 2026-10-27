@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Plus } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { NewOrderButton } from "@/features/assisted-orders";
 import { useDashboardStore } from "@/features/stores";
 import type { OrderResponseDto } from "@biasmarket/types";
 import { useCancelOrder } from "@/features/orders";
@@ -33,7 +34,8 @@ function errorMessage(error: unknown) {
 export function OrdersPageClient() {
   const t = useTranslations("dashboard.orders");
   const tCommon = useTranslations("common");
-  const { storeId, loading: storeLoading } = useDashboardStore();
+  const { storeId, slug, loading: storeLoading } = useDashboardStore();
+  const searchParams = useSearchParams();
 
   const ordersQuery = useOrders(storeId, tCommon("networkError"));
   const orders = ordersQuery.data ?? [];
@@ -165,6 +167,16 @@ export function OrdersPageClient() {
     [orders, selectedOrderId],
   );
 
+  // "Corregir número" on the created screen lands here with ?order=<id> to
+  // open that order's detail.
+  const requestedOrderId = searchParams.get("order");
+  useEffect(() => {
+    if (!requestedOrderId) return;
+    if (!orders.some((order) => order.id === requestedOrderId)) return;
+    setSelectedOrderId(requestedOrderId);
+    setDetailsOpen(true);
+  }, [requestedOrderId, orders]);
+
   if (storeLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center px-6 text-sm text-[#8f7da8]">
@@ -185,14 +197,7 @@ export function OrdersPageClient() {
               {t("titleWithCount", { count: orders.length })}
             </h1>
           </div>
-          <Button
-            type="button"
-            onClick={() => alert(t("newOrderSoon"))}
-            className="store-theme-primary-button h-11 rounded-2xl px-5 text-sm font-semibold hover:opacity-100"
-          >
-            <Plus className="size-4" />
-            {t("newOrder")}
-          </Button>
+          <NewOrderButton slug={slug} />
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3">

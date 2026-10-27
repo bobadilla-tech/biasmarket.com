@@ -580,7 +580,6 @@
     "subtitle": "Order management",
     "titleWithCount": "All orders ({count})",
     "newOrder": "New order",
-    "newOrderSoon": "Coming soon",
     "view": "View",
     "empty": "No orders yet.",
     "unknownProduct": "Product",
@@ -873,7 +872,21 @@
     "created": {
       "title": "Order created",
       "linkLabel": "Buyer's private link",
-      "linkNotice": "This link is only shown here: copy it before you leave. You can generate a new one from the order later."
+      "linkNotice": "This link is only shown here: copy it before you leave. You can generate a new one from the order later.",
+      "summary": "Order #{ref} · {total}",
+      "messageLabel": "Message for the buyer",
+      "messageDescription": "It includes their private link. You can copy it or open it straight in WhatsApp.",
+      "openWhatsapp": "Open WhatsApp",
+      "copyMessage": "Copy message",
+      "copied": "Message copied",
+      "copyFailed": "Couldn't copy. Select the message above and copy it by hand.",
+      "confirmTitle": "Confirm the number",
+      "confirmBody": "It will be sent to {phone}. Is that right?",
+      "confirmYes": "Yes, open WhatsApp",
+      "fixNumber": "Fix number",
+      "openLink": "View as buyer",
+      "newOrder": "Create another order",
+      "templateLoading": "Preparing the message…"
     }
   }
 }

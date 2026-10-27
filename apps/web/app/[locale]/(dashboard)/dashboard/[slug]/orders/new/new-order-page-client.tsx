@@ -5,13 +5,17 @@ import { ArrowLeft } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { CreateAssistedOrderResponseDto } from "@biasmarket/types";
 import { LoadingState } from "@/components/shared/loading-state";
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { useDashboardStore } from "@/features/stores";
-import { AssistedOrderForm } from "@/features/assisted-orders";
+import {
+  AssistedOrderForm,
+  CreatedOrderScreen,
+} from "@/features/assisted-orders";
 
 export function NewOrderPageClient() {
   const t = useTranslations("dashboard.assistedOrder");
-  const { storeId, slug, loading } = useDashboardStore();
+  const { store, storeId, slug, loading } = useDashboardStore();
+  const router = useRouter();
   // The private link is returned once, so it lives in component state only:
   // never in the URL, storage or the query cache.
   const [created, setCreated] = useState<CreateAssistedOrderResponseDto | null>(
@@ -42,23 +46,15 @@ export function NewOrderPageClient() {
         {loading || !storeId || !slug ? (
           <LoadingState variant="inline" label={t("loading")} />
         ) : created ? (
-          <section className="flex flex-col gap-3 rounded-3xl border border-[#f0e7f8] bg-white p-5">
-            <p className="text-sm font-medium text-[#341b55]">
-              {t("created.linkLabel")}
-            </p>
-            <p className="break-all rounded-xl bg-[#fcf9ff] p-3 font-mono text-xs text-[#5a3d82] select-all">
-              {created.accessUrl}
-            </p>
-            <p role="note" className="text-sm text-[#b24368]">
-              {t("created.linkNotice")}
-            </p>
-            <Link
-              href={backHref}
-              className="store-theme-primary-button inline-flex min-h-11 items-center justify-center rounded-2xl px-4 text-sm font-semibold hover:opacity-100"
-            >
-              {t("back")}
-            </Link>
-          </section>
+          <CreatedOrderScreen
+            storeId={storeId}
+            storeName={store?.name ?? ""}
+            created={created}
+            onFixNumber={() =>
+              router.push(`/dashboard/${slug}/orders?order=${created.order.id}`)
+            }
+            onCreateAnother={() => setCreated(null)}
+          />
         ) : (
           <AssistedOrderForm
             storeId={storeId}
