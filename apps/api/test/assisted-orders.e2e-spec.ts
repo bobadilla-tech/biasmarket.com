@@ -1,7 +1,7 @@
 import { Test, type TestingModule } from '@nestjs/testing';
 import { ValidationPipe, type INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { AppModule } from './../src/app.module.js';
@@ -18,7 +18,7 @@ import {
 describe('assisted orders (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
-  const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const runId = `${Date.now()}-${randomUUID().slice(0, 8)}`;
   const password = 'correcthorsebatterystaple';
   const userIds: string[] = [];
   let sellerCookie: string;
