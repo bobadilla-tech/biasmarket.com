@@ -120,6 +120,7 @@ describe('assisted orders (e2e)', () => {
       await prisma.orderItem.deleteMany({ where: { storeId: id } });
       await deleteOrders(prisma, { storeId: id });
       await prisma.auditLog.deleteMany({ where: { storeId: id } });
+      await prisma.customerStoreLink.deleteMany({ where: { storeId: id } });
       await prisma.customer.deleteMany({ where: { storeId: id } });
       await prisma.productVariant.deleteMany({ where: { storeId: id } });
       await prisma.product.deleteMany({ where: { storeId: id } });
