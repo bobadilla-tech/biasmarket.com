@@ -225,6 +225,9 @@ describe('CustomerAuthController', () => {
       paidPercentage: 0,
       items: [],
       payments: [],
+      linkFirstOpenedAt: new Date('2026-01-01'),
+      claimedAt: new Date('2026-01-01'),
+      createdBy: { name: 'Seller a' },
     };
     service.getOrderDetail.mockResolvedValue(row);
 
@@ -236,6 +239,12 @@ describe('CustomerAuthController', () => {
       'order-1',
     );
     expect(result).toEqual(expect.objectContaining({ id: 'order-1' }));
+    // Assisted-order seller data never reaches a buyer session.
+    expect(result).toMatchObject({
+      createdByName: null,
+      linkFirstOpenedAt: null,
+      claimedAt: null,
+    });
   });
 
   it('logout() clears the session cookie', () => {

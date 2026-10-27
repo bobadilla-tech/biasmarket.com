@@ -398,6 +398,38 @@ describe('assisted order links (e2e)', () => {
       ).toBe(1);
     });
 
+    it('a stale-token first open racing a rotation stamps nothing', async () => {
+      const { id, token } = await seedOrder();
+      const { tokenHash: freshHash } = createOrderAccessToken();
+      let stale: Promise<request.Response> | undefined;
+      // Hold the row the way the regenerate use case does, start the open
+      // with the old token, and rotate only once the open's conditional
+      // update is queued behind our lock.
+      await prisma.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT id FROM "Order" WHERE id = ${id} FOR UPDATE`;
+        stale = open(token).then((r) => r);
+        for (let i = 0; i < 100; i++) {
+          const [{ waiting }] = await tx.$queryRaw<{ waiting: bigint }[]>`
+            SELECT count(*) AS waiting FROM pg_stat_activity
+            WHERE wait_event_type = 'Lock' AND query ILIKE '%UPDATE "Order"%'`;
+          if (waiting > 0n) break;
+          await new Promise((r) => setTimeout(r, 50));
+        }
+        await tx.order.update({
+          where: { id },
+          data: { accessTokenHash: freshHash, accessTokenRevokedAt: null },
+        });
+      });
+      expect((await stale!).status).toBe(200);
+      const row = await prisma.order.findUniqueOrThrow({ where: { id } });
+      expect(row.linkFirstOpenedAt).toBeNull();
+      expect(
+        await prisma.orderEvent.count({
+          where: { orderId: id, type: 'LINK_OPENED' },
+        }),
+      ).toBe(0);
+    });
+
     it('shows the opened and claimed timestamps and the creator to the seller', async () => {
       const { id, token } = await seedOrder();
       await open(token).expect(200);
