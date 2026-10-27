@@ -13,6 +13,8 @@
   "bannerImageAlt": "Banner de la tienda {storeName}",
   "bannerImageGenericAlt": "Banner de tienda",
   "publicStoreProfile": "Perfil público de la tienda",
+  "storeLogoAlt": "Logo de {storeName}",
+  "storeLogoPlaceholder": "Logo de {storeName} no configurado",
   "publicOwnerAvatarAlt": "Foto de {name}",
   "publicOwnerAvatarGenericAlt": "Foto del dueño de la tienda",
   "storeOwner": "Sobre la tienda",
@@ -28,10 +30,12 @@
   "cartCount": "{count} productos en el carrito",
   "header": {
     "storeHome": "Ir a la página principal de {name}",
-    "navigation": "Navegación de la tienda"
+    "navigation": "Navegación de la tienda",
+    "biasMarketHome": "Ir al inicio de Bias Market"
   },
   "social": {
-    "linkLabel": "{platform} (se abre en una pestaña nueva)"
+    "linkLabel": "{platform} (se abre en una pestaña nueva)",
+    "storeLinks": "Redes sociales de la tienda"
   },
   "gallery": {
     "previousImage": "Imagen anterior",

@@ -1,70 +1,131 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Search } from "lucide-react";
+import { MapPin, MessageCircle, Search } from "lucide-react";
+import { SocialIcon, socialLabels } from "./social-icon";
 
 export type StorefrontCategory = { id: string; name: string };
 
-/** Renders the storefront title and optional seller-authored biography. */
-export function StoreHeader({ name, bio }: { name: string; bio: string }) {
-  return bio ? (
-    <header className="space-y-2">
-      <h1 className="text-2xl font-bold uppercase text-(--store-text) sm:text-3xl">
-        {name}
-      </h1>
-      <p className="max-w-2xl text-(--store-muted)">{bio}</p>
-    </header>
-  ) : (
-    <h1 className="sr-only">{name}</h1>
-  );
-}
-
-/** Shows the store banner, public owner details, and location when available. */
+/** Renders the public store identity shared by its catalog tabs. */
 export function StorePublicProfile({
   storeName,
   bannerUrl,
-  ownerName,
-  ownerAvatarUrl,
+  logoUrl,
+  bio,
   locationLabel,
+  instagramUrl,
+  facebookUrl,
+  tiktokUrl,
+  twitterUrl,
+  whatsappNumber,
 }: {
   storeName: string;
   bannerUrl?: string | null;
-  ownerName?: string | null;
-  ownerAvatarUrl?: string | null;
+  logoUrl?: string | null;
+  bio?: string;
   locationLabel?: string | null;
+  instagramUrl?: string | null;
+  facebookUrl?: string | null;
+  tiktokUrl?: string | null;
+  twitterUrl?: string | null;
+  whatsappNumber?: string | null;
 }) {
   const t = useTranslations("storefront");
-  if (!bannerUrl && !ownerName && !ownerAvatarUrl && !locationLabel)
-    return null;
+  const location = locationLabel?.trim();
+  const banner = bannerUrl?.trim();
+  const logo = logoUrl?.trim();
+  const configuredSocials: {
+    platform: keyof typeof socialLabels;
+    url: string | null | undefined;
+  }[] = [
+    { platform: "instagram", url: instagramUrl },
+    { platform: "tiktok", url: tiktokUrl },
+    { platform: "twitter", url: twitterUrl },
+    {
+      platform: "whatsapp",
+      url: whatsappNumber?.replace(/\D/g, "")
+        ? `https://wa.me/${whatsappNumber.replace(/\D/g, "")}`
+        : null,
+    },
+    { platform: "facebook", url: facebookUrl },
+  ];
+  const socials = configuredSocials.flatMap(
+    (item): { platform: keyof typeof socialLabels; url: string }[] =>
+      item.url?.trim() ? [{ ...item, url: item.url.trim() }] : [],
+  );
+
   return (
-    <section className="space-y-4" aria-label={t("publicStoreProfile")}>
-      {bannerUrl ? (
+    <header className="space-y-5" aria-label={t("publicStoreProfile")}>
+      {banner ? (
         <img
-          src={bannerUrl}
+          src={banner}
           alt={t("bannerImageAlt", { storeName })}
-          className="aspect-[3/1] w-full rounded-3xl object-cover"
+          className="aspect-[2/1] w-full rounded-3xl object-cover sm:aspect-[3/1]"
         />
-      ) : null}
-      <div className="flex flex-wrap items-center gap-3">
-        {ownerAvatarUrl ? (
-          <img
-            src={ownerAvatarUrl}
-            alt={
-              ownerName
-                ? t("publicOwnerAvatarAlt", { name: ownerName })
-                : t("publicOwnerAvatarGenericAlt")
-            }
-            className="size-12 rounded-full object-cover"
-          />
-        ) : null}
-        {ownerName ? (
-          <p className="font-semibold text-(--store-text)">{ownerName}</p>
-        ) : null}
-        {locationLabel ? (
-          <p className="text-sm text-(--store-muted)">{locationLabel}</p>
+      ) : (
+        <div
+          role="img"
+          aria-label={t("bannerImageAlt", { storeName })}
+          className="aspect-[2/1] w-full rounded-3xl bg-neutral-200 sm:aspect-[3/1]"
+        />
+      )}
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-4">
+          {logo ? (
+            <img
+              src={logo}
+              alt={t("storeLogoAlt", { storeName })}
+              className="size-16 shrink-0 rounded-2xl object-cover sm:size-20"
+            />
+          ) : (
+            <div
+              role="img"
+              aria-label={t("storeLogoPlaceholder", { storeName })}
+              className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-neutral-200 text-lg font-bold text-neutral-500 sm:size-20"
+            >
+              {storeName.trim().slice(0, 2).toLocaleUpperCase()}
+            </div>
+          )}
+          <div className="min-w-0 space-y-1">
+            <h1 className="truncate text-2xl font-extrabold uppercase tracking-tight text-(--store-text) sm:text-3xl">
+              {storeName}
+            </h1>
+            {location ? (
+              <p className="flex items-center gap-1.5 text-sm text-(--store-muted)">
+                <MapPin aria-hidden="true" className="size-4 shrink-0" />
+                <span>{location}</span>
+              </p>
+            ) : null}
+          </div>
+        </div>
+        {socials.length > 0 ? (
+          <nav
+            aria-label={t("social.storeLinks")}
+            className="flex items-center gap-2"
+          >
+            {socials.map(({ platform, url }) => (
+              <a
+                key={platform}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={t("social.linkLabel", {
+                  platform: socialLabels[platform],
+                })}
+                className="flex size-11 shrink-0 items-center justify-center rounded-full border border-(--store-border) bg-(--store-card) text-(--store-muted) transition hover:border-(--store-primary) hover:text-(--store-primary-text) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2"
+              >
+                {platform === "whatsapp" ? (
+                  <MessageCircle aria-hidden="true" className="size-4" />
+                ) : (
+                  <SocialIcon platform={platform} />
+                )}
+              </a>
+            ))}
+          </nav>
         ) : null}
       </div>
-    </section>
+      {bio ? <p className="max-w-2xl text-(--store-muted)">{bio}</p> : null}
+    </header>
   );
 }
 

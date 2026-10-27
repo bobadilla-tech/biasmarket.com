@@ -5,10 +5,7 @@ import { isProductOutOfStock } from "@/features/discovery/lib/product-stock";
 import { canonicalUrl, localeAlternates, SITE_URL } from "@/lib/site-config";
 import { ProductCard } from "@/components/storefront/product-card";
 import { StoreSectionRenderer } from "@/components/storefront/section-renderer";
-import {
-  StoreHeader,
-  StorePublicProfile,
-} from "@/features/storefront/components/storefront";
+import { StorePublicProfile } from "@/features/storefront/components/storefront";
 import { buildProductJsonLd, serializeJsonLd } from "@/lib/product-json-ld";
 import {
   firstStoreMarkdownImage,
@@ -258,13 +255,17 @@ export default async function StorePage({
           tabIndex={-1}
           className="mx-auto max-w-5xl space-y-10 px-4 pt-24 pb-8 sm:pt-20"
         >
-          <StoreHeader name={store.name} bio={bio} />
           <StorePublicProfile
             storeName={store.name}
-            bannerUrl={store.bannerUrl}
-            ownerName={store.publicOwnerName}
-            ownerAvatarUrl={store.publicOwnerAvatarUrl}
+            bannerUrl={firstBannerImageUrl(store)}
+            logoUrl={store.logoUrl}
+            bio={bio}
             locationLabel={store.locationLabel}
+            instagramUrl={store.instagramUrl}
+            facebookUrl={store.facebookUrl}
+            tiktokUrl={store.tiktokUrl}
+            twitterUrl={store.twitterUrl}
+            whatsappNumber={store.whatsappNumber}
           />
           {aboutNode && (
             <section className="prose max-w-none">{aboutNode}</section>
@@ -288,13 +289,17 @@ export default async function StorePage({
         tabIndex={-1}
         className="mx-auto max-w-7xl space-y-10 px-4 pt-24 pb-8 sm:pt-20"
       >
-        <StoreHeader name={store.name} bio={bio} />
         <StorePublicProfile
           storeName={store.name}
-          bannerUrl={store.bannerUrl}
-          ownerName={store.publicOwnerName}
-          ownerAvatarUrl={store.publicOwnerAvatarUrl}
+          bannerUrl={firstBannerImageUrl(store)}
+          logoUrl={store.logoUrl}
+          bio={bio}
           locationLabel={store.locationLabel}
+          instagramUrl={store.instagramUrl}
+          facebookUrl={store.facebookUrl}
+          tiktokUrl={store.tiktokUrl}
+          twitterUrl={store.twitterUrl}
+          whatsappNumber={store.whatsappNumber}
         />
         {aboutNode && (
           <section className="prose max-w-none">{aboutNode}</section>

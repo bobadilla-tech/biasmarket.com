@@ -13,6 +13,8 @@
   "bannerImageAlt": "{storeName} store banner",
   "bannerImageGenericAlt": "Store banner",
   "publicStoreProfile": "Public store profile",
+  "storeLogoAlt": "{storeName} logo",
+  "storeLogoPlaceholder": "{storeName} logo not configured",
   "publicOwnerAvatarAlt": "Photo of {name}",
   "publicOwnerAvatarGenericAlt": "Store owner photo",
   "storeOwner": "About the store",
@@ -32,10 +34,12 @@
   "cartCount": "{count} items in cart",
   "header": {
     "storeHome": "Go to {name} home page",
-    "navigation": "Store navigation"
+    "navigation": "Store navigation",
+    "biasMarketHome": "Go to Bias Market home"
   },
   "social": {
-    "linkLabel": "{platform} (opens in a new tab)"
+    "linkLabel": "{platform} (opens in a new tab)",
+    "storeLinks": "Store social links"
   },
   "gallery": {
     "previousImage": "Previous image",
