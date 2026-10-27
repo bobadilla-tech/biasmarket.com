@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
@@ -170,11 +170,27 @@ export function OrdersPageClient() {
   // "Corregir número" on the created screen lands here with ?order=<id> to
   // open that order's detail.
   const requestedOrderId = searchParams.get("order");
+  const consumedOrderId = useRef<string | null>(null);
   useEffect(() => {
-    if (!requestedOrderId) return;
+    if (!requestedOrderId) {
+      consumedOrderId.current = null;
+      return;
+    }
+    if (consumedOrderId.current === requestedOrderId) return;
     if (!orders.some((order) => order.id === requestedOrderId)) return;
+    consumedOrderId.current = requestedOrderId;
     setSelectedOrderId(requestedOrderId);
     setDetailsOpen(true);
+    const nextUrl = new URL(window.location.href);
+    if (nextUrl.searchParams.get("order") === requestedOrderId) {
+      nextUrl.searchParams.delete("order");
+      const query = nextUrl.searchParams.toString();
+      window.history.replaceState(
+        window.history.state,
+        "",
+        `${nextUrl.pathname}${query ? `?${query}` : ""}${nextUrl.hash}`,
+      );
+    }
   }, [requestedOrderId, orders]);
 
   if (storeLoading) {

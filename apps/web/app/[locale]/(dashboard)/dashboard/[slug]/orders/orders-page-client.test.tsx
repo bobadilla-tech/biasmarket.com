@@ -1,7 +1,10 @@
 import { afterEach, expect, test, vi } from "vitest";
-import { screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import type { OrderResponseDto } from "@biasmarket/types";
-import { renderWithProviders } from "../../../../../../test-utils/render-with-providers";
+import { NextIntlClientProvider } from "next-intl";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { getMessages } from "@biasmarket/i18n";
 
 const { findAllOrders, findAllPayments, searchParams } = vi.hoisted(() => ({
   findAllOrders: vi.fn(),
@@ -80,7 +83,21 @@ afterEach(() => {
 function setup() {
   findAllOrders.mockResolvedValue([order]);
   findAllPayments.mockResolvedValue([]);
-  renderWithProviders(<OrdersPageClient />);
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: Infinity } },
+  });
+  const view = renderWithProvidersHarness(queryClient);
+  return { queryClient, ...view };
+}
+
+function renderWithProvidersHarness(queryClient: QueryClient) {
+  return render(
+    <NextIntlClientProvider locale="es" messages={getMessages("es")}>
+      <QueryClientProvider client={queryClient}>
+        <OrdersPageClient />
+      </QueryClientProvider>
+    </NextIntlClientProvider>,
+  );
 }
 
 test("the 'Nuevo pedido' button is a real action, not the old 'coming soon' stub", async () => {
@@ -91,10 +108,38 @@ test("the 'Nuevo pedido' button is a real action, not the old 'coming soon' stub
   expect(alert).not.toHaveBeenCalled();
 });
 
-test("?order=<id> opens that order's detail sheet (Corregir número lands here)", async () => {
-  searchParams.value = "order=order-1";
+test("?order=<id> opens the order and removes only that parameter from the URL", async () => {
+  searchParams.value = "keep=1&order=order-1";
+  window.history.replaceState(
+    window.history.state,
+    "",
+    "/es/dashboard/my-store/orders?keep=1&order=order-1#orders",
+  );
   setup();
   expect(await screen.findByRole("dialog")).toBeTruthy();
+  expect(window.location.pathname).toBe("/es/dashboard/my-store/orders");
+  expect(window.location.search).toBe("?keep=1");
+  expect(window.location.hash).toBe("#orders");
+});
+
+test("closing a deep-linked order stays closed after the order list refreshes", async () => {
+  const user = userEvent.setup();
+  searchParams.value = "order=order-1";
+  window.history.replaceState(
+    window.history.state,
+    "",
+    "/es/dashboard/my-store/orders?order=order-1",
+  );
+  const { queryClient } = setup();
+  expect(await screen.findByRole("dialog")).toBeTruthy();
+
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+
+  findAllOrders.mockResolvedValue([{ ...order, totalAmount: "101.00" }]);
+  await queryClient.invalidateQueries();
+  await waitFor(() => expect(findAllOrders).toHaveBeenCalledTimes(2));
+  expect(screen.queryByRole("dialog")).toBeNull();
 });
 
 test("without ?order no detail sheet is open", async () => {
