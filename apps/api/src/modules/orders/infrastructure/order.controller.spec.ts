@@ -13,7 +13,12 @@ vi.mock('@nestjs/throttler', async (importOriginal) => {
 });
 
 import { NotFoundException } from '@nestjs/common';
-import { OrderController, pickPublicOrderFields } from './order.controller.js';
+import {
+  OrderController,
+  pickPublicOrderFields,
+  toOrderPaymentDto,
+  type OrderPaymentRow,
+} from './order.controller.js';
 import { OrderRepository } from './order.repository.js';
 import { ReviewPaymentUseCase } from '../application/review-payment.usecase.js';
 import { AdvanceFulfillmentUseCase } from '../application/advance-fulfillment.usecase.js';
@@ -21,6 +26,37 @@ import { CancelOrderUseCase } from '../application/cancel-order.usecase.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { StorageService } from '../../../storage/storage.service.js';
 import { OrderEventsService } from '../application/order-events.service.js';
+
+describe('toOrderPaymentDto', () => {
+  it('does not expose private payment actor ids', () => {
+    const payment = {
+      id: 'payment-1',
+      orderId: 'order-1',
+      storeId: 'store-1',
+      amount: { toString: () => '12.00' },
+      currency: 'PEN',
+      method: 'YAPE',
+      note: null,
+      imageUrl: null,
+      createdAt: new Date('2026-10-27T00:00:00.000Z'),
+      operationCode: null,
+      paidAt: null,
+      voidedAt: null,
+      voidReason: null,
+      source: 'SELLER_RECORDED',
+      reviewStatus: 'N_A',
+      reviewedAt: null,
+      reviewedBy: null,
+      recordedBy: 'seller-1',
+      voidedBy: 'seller-1',
+    } as OrderPaymentRow;
+
+    const response = toOrderPaymentDto(payment);
+
+    expect(response).not.toHaveProperty('recordedBy');
+    expect(response).not.toHaveProperty('voidedBy');
+  });
+});
 
 describe('OrderController.addPayment', () => {
   let controller: OrderController;

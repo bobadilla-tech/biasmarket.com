@@ -298,14 +298,23 @@ export function toOrderPaymentDto(
   payment: OrderPaymentRow,
 ): OrderPaymentResponseDto {
   return {
-    ...payment,
+    id: payment.id,
+    orderId: payment.orderId,
+    storeId: payment.storeId,
     amount: payment.amount.toString(),
+    currency: payment.currency,
+    method: payment.method,
+    note: payment.note,
+    imageUrl: payment.imageUrl,
     createdAt: payment.createdAt.toISOString(),
     operationCode: payment.operationCode ?? null,
     paidAt: payment.paidAt?.toISOString() ?? null,
     voidedAt: payment.voidedAt?.toISOString() ?? null,
     voidReason: payment.voidReason ?? null,
+    source: payment.source,
+    reviewStatus: payment.reviewStatus,
     reviewedAt: payment.reviewedAt?.toISOString() ?? null,
+    reviewedBy: payment.reviewedBy,
   };
 }
 
