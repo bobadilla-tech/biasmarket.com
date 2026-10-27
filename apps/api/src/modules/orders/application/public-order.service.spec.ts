@@ -2,6 +2,7 @@ import { Test, type TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { type Mock, vi } from 'vitest';
 import { Prisma } from '@biasmarket/db';
+import { hashOrderAccessToken } from '@biasmarket/utils/assisted-order';
 import { PublicOrderService } from './public-order.service.js';
 import { OrderEventsService } from './order-events.service.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
@@ -227,6 +228,15 @@ describe('PublicOrderService', () => {
 
     await service.getByToken('raw-token');
 
+    expect(prisma.order.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: 'order-1',
+        accessTokenHash: hashOrderAccessToken('raw-token'),
+        accessTokenRevokedAt: null,
+        linkFirstOpenedAt: null,
+      },
+      data: { linkFirstOpenedAt: expect.any(Date) },
+    });
     expect(events.record).toHaveBeenCalledWith(
       prisma,
       expect.objectContaining({ type: 'LINK_OPENED', actor: 'BUYER' }),
@@ -238,6 +248,20 @@ describe('PublicOrderService', () => {
       linkFirstOpenedAt: new Date('2026-10-02T00:00:00.000Z'),
     });
     await service.getByToken('raw-token');
+    expect(events.record).not.toHaveBeenCalled();
+  });
+
+  it('stamps nothing and records no event when the token was rotated mid-read', async () => {
+    events.requireOrderForToken.mockResolvedValue({
+      id: 'order-1',
+      storeId: 'store-1',
+    });
+    prisma.order.findUnique.mockResolvedValue(orderRow);
+    prisma.order.updateMany.mockResolvedValueOnce({ count: 0 });
+
+    const result = await service.getByToken('old-token');
+
+    expect(result.customerPhone).toBe('+51 9** *** 321');
     expect(events.record).not.toHaveBeenCalled();
   });
 

@@ -6,7 +6,7 @@ import { buildWhatsAppUrl } from "@biasmarket/utils/whatsapp";
 import { usePublicStore } from "../queries/use-public-store";
 
 // Hardcoded Spanish fallback message, not the whatsapp-templates endpoint —
-// that module only supports NEW_ORDER/PAYMENT_REMINDER and 400s on anything
+// that module only supports NEW_ORDER/PAYMENT_REMINDER/ASSISTED_ORDER_LINK and 400s on anything
 // else (see .artifacts/2026/08/20260808--buyer-mini-dashboard/plan.md). Matches the
 // existing hardcoded-Spanish convention already used by every other message
 // builder in packages/utils/src/whatsapp.

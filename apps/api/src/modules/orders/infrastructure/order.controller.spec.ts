@@ -443,8 +443,9 @@ describe('OrderController.reviewPaymentProof', () => {
   let events: { record: Mock };
   let prisma: { $transaction: Mock };
   let tx: {
+    $queryRaw: Mock;
     order: { findUniqueOrThrow: Mock };
-    orderPayment: { update: Mock; findMany: Mock };
+    orderPayment: { updateMany: Mock; findMany: Mock };
     auditLog: { create: Mock };
   };
 
@@ -472,8 +473,17 @@ describe('OrderController.reviewPaymentProof', () => {
 
   beforeEach(async () => {
     tx = {
-      order: { findUniqueOrThrow: vi.fn() },
-      orderPayment: { update: vi.fn(), findMany: vi.fn() },
+      $queryRaw: vi.fn(),
+      order: {
+        findUniqueOrThrow: vi.fn().mockResolvedValue({
+          paymentStatus: 'PENDING_PAYMENT',
+          requiredAmount: new Prisma.Decimal('100.00'),
+        }),
+      },
+      orderPayment: {
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        findMany: vi.fn(),
+      },
       auditLog: { create: vi.fn() },
     };
     prisma = {
@@ -604,7 +614,52 @@ describe('OrderController.reviewPaymentProof', () => {
       actor: 'SELLER',
       payload: { paymentId },
     });
-    expect(tx.order.findUniqueOrThrow).not.toHaveBeenCalled();
+    expect(tx.orderPayment.findMany).not.toHaveBeenCalled();
+    expect(orders.saveStatus).not.toHaveBeenCalled();
+    expect(reviewPayment.execute).not.toHaveBeenCalled();
+  });
+
+  it('locks the order row before reading the paid total', async () => {
+    tx.orderPayment.findMany.mockResolvedValue([]);
+    const order: string[] = [];
+    tx.$queryRaw.mockImplementation(async () => void order.push('lock'));
+    tx.orderPayment.findMany.mockImplementation(async () => {
+      order.push('read');
+      return [];
+    });
+
+    await controller.reviewPaymentProof(storeId, orderId, paymentId, session, {
+      decision: 'approve',
+    });
+
+    expect(order).toEqual(['lock', 'read']);
+  });
+
+  it('rejects a proof another request already reviewed and records no event', async () => {
+    tx.orderPayment.updateMany.mockResolvedValue({ count: 0 });
+
+    await expect(
+      controller.reviewPaymentProof(storeId, orderId, paymentId, session, {
+        decision: 'approve',
+      }),
+    ).rejects.toThrow('Este comprobante ya fue revisado');
+
+    expect(events.record).not.toHaveBeenCalled();
+    expect(tx.auditLog.create).not.toHaveBeenCalled();
+  });
+
+  it('marks the proof reviewed on a cancelled order without a buyer-visible event', async () => {
+    tx.order.findUniqueOrThrow.mockResolvedValue({
+      paymentStatus: 'CANCELLED',
+      requiredAmount: new Prisma.Decimal('100.00'),
+    });
+
+    await controller.reviewPaymentProof(storeId, orderId, paymentId, session, {
+      decision: 'approve',
+    });
+
+    expect(tx.orderPayment.updateMany).toHaveBeenCalled();
+    expect(events.record).not.toHaveBeenCalled();
     expect(orders.saveStatus).not.toHaveBeenCalled();
     expect(reviewPayment.execute).not.toHaveBeenCalled();
   });

@@ -219,6 +219,9 @@ export interface OrderRow {
   currency: string;
   expiresAt: Date;
   createdAt: Date;
+  linkFirstOpenedAt: Date | null;
+  claimedAt: Date | null;
+  createdBy?: { name: string | null } | null;
   paidAmount: number;
   pendingAmount: number;
   paidPercentage: number;
@@ -310,6 +313,12 @@ export function toOrderDto(row: OrderRow): OrderResponseDto {
     requiredAmount: row.requiredAmount.toString(),
     expiresAt: row.expiresAt.toISOString(),
     createdAt: row.createdAt.toISOString(),
+    // Not in PUBLIC_ORDER_FIELDS: that list also shapes the checkout and
+    // status responses, which must not grow these. The creator is shown by
+    // display name only, never by user id.
+    linkFirstOpenedAt: row.linkFirstOpenedAt?.toISOString() ?? null,
+    claimedAt: row.claimedAt?.toISOString() ?? null,
+    createdByName: row.createdBy?.name ?? null,
     items: row.items.map(toOrderItemDto),
     payments: row.payments.map(toOrderPaymentDto),
   };
@@ -662,14 +671,25 @@ export class OrderController {
     const reviewStatus = dto.decision === 'approve' ? 'APPROVED' : 'REJECTED';
     let settlesOrder = false;
     await this.prisma.$transaction(async (tx) => {
-      await tx.orderPayment.update({
-        where: { id: paymentId },
+      // Serialise concurrent reviews of the same order. Without the row lock
+      // two overlapping approvals of two half proofs each sum only their own
+      // approval and both write PARTIALLY_PAID, leaving a fully-paid order
+      // stuck. Same lock customer-order-payments.controller.ts takes.
+      await tx.$queryRaw`SELECT id FROM "Order" WHERE id = ${orderId} AND "storeId" = ${storeId} FOR UPDATE`;
+
+      // Guarded on PENDING_REVIEW so a double approve (or approve racing a
+      // reject) of the same proof changes one row and records one event.
+      const claimed = await tx.orderPayment.updateMany({
+        where: { id: paymentId, orderId, reviewStatus: 'PENDING_REVIEW' },
         data: {
           reviewStatus,
           reviewedAt: new Date(),
           reviewedBy: session.user.id,
         },
       });
+      if (claimed.count === 0) {
+        throw new BadRequestException('Este comprobante ya fue revisado');
+      }
       await tx.auditLog.create({
         data: {
           actorId: session.user.id,
@@ -683,6 +703,25 @@ export class OrderController {
           metadata: { reason: dto.reason ?? null },
         },
       });
+
+      // Only auto-advance from the two "still collecting money" states —
+      // mirrors the domain guard in order-status.vo.ts (VERIFIED/REJECTED/
+      // CANCELLED have no outgoing transitions). A proof left PENDING_REVIEW
+      // while the order moved on for an unrelated reason (e.g. cancelled) still
+      // gets marked reviewed above for the record, but emits no buyer-visible
+      // event and does not try to re-drive an order that can no longer legally
+      // change state.
+      const order = await tx.order.findUniqueOrThrow({
+        where: { id: orderId },
+        select: { paymentStatus: true, requiredAmount: true },
+      });
+      if (
+        order.paymentStatus !== 'PENDING_PAYMENT' &&
+        order.paymentStatus !== 'PARTIALLY_PAID'
+      ) {
+        return;
+      }
+
       await this.events.record(tx, {
         orderId,
         storeId,
@@ -695,30 +734,12 @@ export class OrderController {
       if (dto.decision !== 'approve') return;
 
       // Re-derive the order's status from the new total in this same
-      // transaction, so a partial approval records its PARTIALLY_PAID write
-      // and its event atomically. Only auto-advance from the two "still
-      // collecting money" states — mirrors the domain guard in
-      // order-status.vo.ts (VERIFIED/REJECTED/CANCELLED have no outgoing
-      // transitions). A proof left PENDING_REVIEW while the order moved on for
-      // an unrelated reason (e.g. the seller rejected it separately) still
-      // gets marked APPROVED above for the record, it just doesn't try to
-      // re-drive an order that can no longer legally change state.
-      const [order, payments] = await Promise.all([
-        tx.order.findUniqueOrThrow({
-          where: { id: orderId },
-          select: { paymentStatus: true, requiredAmount: true },
-        }),
-        tx.orderPayment.findMany({
-          where: { orderId },
-          select: { amount: true, source: true, reviewStatus: true },
-        }),
-      ]);
-      if (
-        order.paymentStatus !== 'PENDING_PAYMENT' &&
-        order.paymentStatus !== 'PARTIALLY_PAID'
-      ) {
-        return;
-      }
+      // transaction (under the lock above), so a partial approval records its
+      // PARTIALLY_PAID write and its event atomically.
+      const payments = await tx.orderPayment.findMany({
+        where: { orderId },
+        select: { amount: true, source: true, reviewStatus: true },
+      });
 
       const { paidAmount } = computePaymentSummary(
         order.requiredAmount,

@@ -228,6 +228,10 @@ describe('ReviewPaymentUseCase', () => {
         data: expect.objectContaining({ action: 'payment.rejected' }),
       }),
     );
+    expect(events.record).toHaveBeenCalledWith(
+      prisma,
+      expect.objectContaining({ type: 'PAYMENT_REJECTED', actor: 'SELLER' }),
+    );
   });
 
   it('skips stock adjustment for items with unlimited (null) stock variants', async () => {

@@ -9,12 +9,7 @@ import { OrderRepository } from '../infrastructure/order.repository.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
 import { Order } from '../domain/order.entity.js';
 import { OrderEventsService } from './order-events.service.js';
-
-const RESERVED_HOLD_STATUSES = new Set([
-  'PENDING_PAYMENT',
-  'PARTIALLY_PAID',
-  'PAYMENT_SUBMITTED',
-]);
+import { RESERVED_HOLD_STATUSES } from '../domain/hold-statuses.js';
 
 @Injectable()
 export class CancelOrderUseCase {
@@ -90,7 +85,7 @@ export class CancelOrderUseCase {
     );
     entity.cancel();
 
-    const releaseStock = RESERVED_HOLD_STATUSES.has(row.paymentStatus);
+    const releaseStock = RESERVED_HOLD_STATUSES.includes(row.paymentStatus);
 
     return this.prisma.$transaction(async (tx) => {
       // Guard against a concurrent cancel/review/advance of the same order:

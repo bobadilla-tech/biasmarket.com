@@ -173,6 +173,27 @@ describe('whatsapp-templates (e2e)', () => {
       .expect(400);
   });
 
+  it('accepts, stores and returns an ASSISTED_ORDER_LINK template; rejects one without {{link}}', async () => {
+    await request(app.getHttpServer())
+      .put(`/stores/${storeId}/whatsapp-templates/ASSISTED_ORDER_LINK`)
+      .set('Cookie', sessionCookie)
+      .send({ template: 'Hola {{customerName}}, pedido {{orderRef}}' })
+      .expect(400);
+    const template = 'Hola {{customerName}}, tu pedido {{orderRef}}: {{link}}';
+    const putRes = await request(app.getHttpServer())
+      .put(`/stores/${storeId}/whatsapp-templates/ASSISTED_ORDER_LINK`)
+      .set('Cookie', sessionCookie)
+      .send({ template })
+      .expect(200);
+    assertMatchesSchema(putRes.body, templateSchema, openapi.components);
+    expect(putRes.body.type).toBe('ASSISTED_ORDER_LINK');
+    const getRes = await request(app.getHttpServer())
+      .get(`/stores/${storeId}/whatsapp-templates/ASSISTED_ORDER_LINK`)
+      .set('Cookie', sessionCookie)
+      .expect(200);
+    expect(getRes.body.template).toBe(template);
+  });
+
   it('rejects an unknown message type', async () => {
     await request(app.getHttpServer())
       .put(`/stores/${storeId}/whatsapp-templates/ORDER_INQUIRY`)

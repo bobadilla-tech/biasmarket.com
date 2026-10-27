@@ -1897,6 +1897,126 @@
         "tags": ["Order"]
       }
     },
+    "/stores/{storeId}/orders/assisted": {
+      "post": {
+        "operationId": "AssistedOrdersController_createAssisted",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAssistedOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateAssistedOrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Order"]
+      }
+    },
+    "/stores/{storeId}/orders/{orderId}/access-link": {
+      "post": {
+        "operationId": "AssistedOrdersController_regenerateAccessLink",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistedOrderLinkResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Order"]
+      }
+    },
+    "/stores/{storeId}/orders/{orderId}/buyer-phone": {
+      "patch": {
+        "operationId": "AssistedOrdersController_correctBuyerPhone",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorrectBuyerPhoneDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistedOrderLinkResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Order"]
+      }
+    },
     "/stores/{slug}/checkout": {
       "post": {
         "operationId": "CheckoutController_create",
@@ -4106,7 +4226,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "enum": ["NEW_ORDER", "PAYMENT_REMINDER"],
+              "enum": ["NEW_ORDER", "PAYMENT_REMINDER", "ASSISTED_ORDER_LINK"],
               "type": "string"
             }
           }
@@ -4146,7 +4266,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "enum": ["NEW_ORDER", "PAYMENT_REMINDER"],
+              "enum": ["NEW_ORDER", "PAYMENT_REMINDER", "ASSISTED_ORDER_LINK"],
               "type": "string"
             }
           }
@@ -6789,6 +6909,23 @@
           "paidPercentage": {
             "type": "number"
           },
+          "linkFirstOpenedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "First time the buyer opened the private link."
+          },
+          "claimedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "When the buyer claimed the order into an account."
+          },
+          "createdByName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Display name of the seller who created an assisted order."
+          },
           "items": {
             "type": "array",
             "items": {
@@ -6835,6 +6972,9 @@
           "paidAmount",
           "pendingAmount",
           "paidPercentage",
+          "linkFirstOpenedAt",
+          "claimedAt",
+          "createdByName",
           "items",
           "payments"
         ]
@@ -6974,6 +7114,23 @@
           "paidPercentage": {
             "type": "number"
           },
+          "linkFirstOpenedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "First time the buyer opened the private link."
+          },
+          "claimedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "When the buyer claimed the order into an account."
+          },
+          "createdByName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Display name of the seller who created an assisted order."
+          },
           "items": {
             "type": "array",
             "items": {
@@ -7020,6 +7177,9 @@
           "paidAmount",
           "pendingAmount",
           "paidPercentage",
+          "linkFirstOpenedAt",
+          "claimedAt",
+          "createdByName",
           "items",
           "payments"
         ]
@@ -7300,7 +7460,7 @@
         },
         "required": ["productId", "quantity"]
       },
-      "CreateOrderDto": {
+      "CreateAssistedOrderDto": {
         "type": "object",
         "properties": {
           "deliveryMethodType": {
@@ -7323,15 +7483,12 @@
             "enum": ["FULL", "PARTIAL"]
           },
           "customerPhone": {
-            "type": "string",
-            "minLength": 6
-          },
-          "customerName": {
             "type": "string"
           },
-          "customerEmail": {
+          "customerName": {
             "type": "string",
-            "format": "email"
+            "maxLength": 60,
+            "pattern": "^[^\\p{Cc}\\u200B\\u2028\\u2029\\u202A-\\u202E\\u2066-\\u2069\\uFEFF]*$"
           },
           "shippingAddress": {
             "$ref": "#/components/schemas/ShippingAddressDto"
@@ -7563,6 +7720,98 @@
           "createdAt",
           "items"
         ]
+      },
+      "CreateAssistedOrderResponseDto": {
+        "type": "object",
+        "properties": {
+          "order": {
+            "$ref": "#/components/schemas/CheckoutOrderResponseDto"
+          },
+          "accessUrl": {
+            "type": "string",
+            "description": "SECRET: private buyer link. Returned only when the link is created; only its hash is stored, so it cannot be shown again."
+          },
+          "previousOrders": {
+            "type": "number",
+            "description": "Earlier orders of this store for the same WhatsApp number (advisory)."
+          }
+        },
+        "required": ["order", "accessUrl", "previousOrders"]
+      },
+      "AssistedOrderLinkResponseDto": {
+        "type": "object",
+        "properties": {
+          "order": {
+            "$ref": "#/components/schemas/OrderDetailResponseDto"
+          },
+          "accessUrl": {
+            "type": "string",
+            "description": "SECRET: the new private buyer link. The previous link stops working. Returned only when the link is created; only its hash is stored."
+          }
+        },
+        "required": ["order", "accessUrl"]
+      },
+      "CorrectBuyerPhoneDto": {
+        "type": "object",
+        "properties": {
+          "customerPhone": {
+            "type": "string"
+          }
+        },
+        "required": ["customerPhone"]
+      },
+      "CreateOrderDto": {
+        "type": "object",
+        "properties": {
+          "deliveryMethodType": {
+            "type": "string",
+            "enum": ["PICKUP", "COURIER"]
+          },
+          "pickupPointId": {
+            "type": "string"
+          },
+          "pickupDate": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "paymentMethod": {
+            "type": "string",
+            "enum": ["YAPE", "PLIN", "TRANSFER", "CASH"]
+          },
+          "paymentType": {
+            "type": "string",
+            "enum": ["FULL", "PARTIAL"]
+          },
+          "customerPhone": {
+            "type": "string",
+            "minLength": 6
+          },
+          "customerName": {
+            "type": "string"
+          },
+          "customerEmail": {
+            "type": "string",
+            "format": "email"
+          },
+          "shippingAddress": {
+            "$ref": "#/components/schemas/ShippingAddressDto"
+          },
+          "courierName": {
+            "type": "string"
+          },
+          "courierModality": {
+            "type": "string",
+            "enum": ["AGENCY", "HOME"]
+          },
+          "items": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateOrderItemDto"
+            }
+          }
+        },
+        "required": ["deliveryMethodType", "customerPhone", "items"]
       },
       "CheckoutResultResponseDto": {
         "type": "object",
@@ -9396,7 +9645,7 @@
             "type": "string"
           },
           "type": {
-            "enum": ["NEW_ORDER", "PAYMENT_REMINDER"],
+            "enum": ["NEW_ORDER", "PAYMENT_REMINDER", "ASSISTED_ORDER_LINK"],
             "type": "string"
           },
           "template": {

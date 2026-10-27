@@ -7,7 +7,11 @@
  */
 import type {
   AdvanceFulfillmentDto,
+  AssistedOrderLinkResponseDto,
   CancelOrderDto,
+  CorrectBuyerPhoneDto,
+  CreateAssistedOrderDto,
+  CreateAssistedOrderResponseDto,
   OrderControllerfindAllParams,
   OrderDetailResponseDto,
   OrderResponseDto,
@@ -178,4 +182,66 @@ export const cancel = async (
     headers: { "Content-Type": "application/json", ...options?.headers },
     body: JSON.stringify(cancelOrderDto),
   });
+};
+
+export const getCreateAssistedUrl = (storeId: string) => {
+  return `/stores/${storeId}/orders/assisted`;
+};
+
+export const createAssisted = async (
+  storeId: string,
+  createAssistedOrderDto: CreateAssistedOrderDto,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CreateAssistedOrderResponseDto> => {
+  return customFetch<CreateAssistedOrderResponseDto>(
+    getCreateAssistedUrl(storeId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createAssistedOrderDto),
+    },
+  );
+};
+
+export const getRegenerateAccessLinkUrl = (
+  storeId: string,
+  orderId: string,
+) => {
+  return `/stores/${storeId}/orders/${orderId}/access-link`;
+};
+
+export const regenerateAccessLink = async (
+  storeId: string,
+  orderId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<AssistedOrderLinkResponseDto> => {
+  return customFetch<AssistedOrderLinkResponseDto>(
+    getRegenerateAccessLinkUrl(storeId, orderId),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getCorrectBuyerPhoneUrl = (storeId: string, orderId: string) => {
+  return `/stores/${storeId}/orders/${orderId}/buyer-phone`;
+};
+
+export const correctBuyerPhone = async (
+  storeId: string,
+  orderId: string,
+  correctBuyerPhoneDto: CorrectBuyerPhoneDto,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<AssistedOrderLinkResponseDto> => {
+  return customFetch<AssistedOrderLinkResponseDto>(
+    getCorrectBuyerPhoneUrl(storeId, orderId),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(correctBuyerPhoneDto),
+    },
+  );
 };

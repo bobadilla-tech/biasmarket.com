@@ -4,11 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import { MessageCircle, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
+  buildWhatsAppAssistedOrderLinkMessage,
   buildWhatsAppOrderMessage,
   buildWhatsAppPaymentReminderMessage,
   getMissingRequiredTokens,
   WHATSAPP_MESSAGE_TOKENS,
   type WhatsAppMessageType,
+  type WhatsAppAssistedOrderLinkInput,
   type WhatsAppOrderInput,
   type WhatsAppPaymentReminderInput,
 } from "@biasmarket/utils/whatsapp";
@@ -43,6 +45,33 @@ const SAMPLE_REMINDER_INPUT: WhatsAppPaymentReminderInput = {
   customerName: "Cliente Ejemplo",
 };
 
+const SAMPLE_ASSISTED_LINK_INPUT: WhatsAppAssistedOrderLinkInput = {
+  orderId: "sample-order-123456",
+  storeName: "K-Store",
+  totalAmount: 35,
+  currency: "PEN",
+  customerName: "Cliente Ejemplo",
+  link: "https://biasmarket.com/es/store/k-store/pedido/enlace-de-ejemplo",
+};
+
+// Exhaustive on purpose: adding a message type without a preview fails to compile.
+function buildPreview(type: WhatsAppMessageType, template?: string): string {
+  switch (type) {
+    case "NEW_ORDER":
+      return buildWhatsAppOrderMessage(SAMPLE_NEW_ORDER_INPUT, template);
+    case "PAYMENT_REMINDER":
+      return buildWhatsAppPaymentReminderMessage(
+        SAMPLE_REMINDER_INPUT,
+        template,
+      );
+    case "ASSISTED_ORDER_LINK":
+      return buildWhatsAppAssistedOrderLinkMessage(
+        SAMPLE_ASSISTED_LINK_INPUT,
+        template,
+      );
+  }
+}
+
 function MessageTemplateEditor({
   type,
   storeId,
@@ -72,13 +101,7 @@ function MessageTemplateEditor({
     [type, text, hasCustomTemplate],
   );
 
-  const preview = hasCustomTemplate
-    ? type === "NEW_ORDER"
-      ? buildWhatsAppOrderMessage(SAMPLE_NEW_ORDER_INPUT, text)
-      : buildWhatsAppPaymentReminderMessage(SAMPLE_REMINDER_INPUT, text)
-    : type === "NEW_ORDER"
-      ? buildWhatsAppOrderMessage(SAMPLE_NEW_ORDER_INPUT)
-      : buildWhatsAppPaymentReminderMessage(SAMPLE_REMINDER_INPUT);
+  const preview = buildPreview(type, hasCustomTemplate ? text : undefined);
 
   const insertToken = (token: string) => {
     setText(
@@ -175,7 +198,12 @@ export function WhatsAppMessagesSection({
 }: {
   storeId: string;
   templates:
-    { newOrder: string | null; paymentReminder: string | null } | undefined;
+    | {
+        newOrder: string | null;
+        paymentReminder: string | null;
+        assistedOrderLink: string | null;
+      }
+    | undefined;
   loading: boolean;
 }) {
   const t = useTranslations("dashboard.settings.whatsappMessages");
@@ -204,6 +232,14 @@ export function WhatsAppMessagesSection({
             initialTemplate={templates.paymentReminder}
             title={t("paymentReminder.title")}
             description={t("paymentReminder.description")}
+          />
+          <Separator className="bg-[#f0e7f8]" />
+          <MessageTemplateEditor
+            type="ASSISTED_ORDER_LINK"
+            storeId={storeId}
+            initialTemplate={templates.assistedOrderLink}
+            title={t("assistedOrderLink.title")}
+            description={t("assistedOrderLink.description")}
           />
         </div>
       )}

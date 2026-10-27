@@ -226,6 +226,7 @@ export class CustomersService {
           include: {
             items: { include: { product: true, variant: true } },
             payments: { orderBy: { createdAt: 'desc' } },
+            createdBy: { select: { name: true } },
           },
         });
         const guestOrders = orders.filter(
@@ -267,6 +268,7 @@ export class CustomersService {
       include: {
         items: { include: { product: true, variant: true } },
         payments: { orderBy: { createdAt: 'desc' } },
+        createdBy: { select: { name: true } },
       },
     });
 
@@ -346,6 +348,26 @@ export class CustomersService {
       previousOrders: previousOrders + legacyMatches.length,
       lastAlias: customer?.name ?? newestOrder?.customerName ?? null,
     };
+  }
+
+  // Count-only variant of `lookupByPhone` for callers that already verified
+  // ownership. Includes legacy rows whose `customerPhoneNormalized` is null.
+  async countPreviousOrders(storeId: string, phone: string): Promise<number> {
+    const [indexed, legacyOrders] = await Promise.all([
+      this.prisma.order.count({
+        where: { storeId, customerPhoneNormalized: phone },
+      }),
+      this.prisma.order.findMany({
+        where: { storeId, customerPhoneNormalized: null },
+        select: { customerPhone: true },
+      }),
+    ]);
+    return (
+      indexed +
+      legacyOrders.filter(
+        (order) => normalizePhone(order.customerPhone) === phone,
+      ).length
+    );
   }
 
   private requirePhone(rawPhone: string): string {

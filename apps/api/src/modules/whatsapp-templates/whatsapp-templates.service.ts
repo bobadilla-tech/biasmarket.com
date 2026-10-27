@@ -12,6 +12,7 @@ import type { UpdateWhatsAppTemplateDto } from './dto/update-whatsapp-template.d
 const WHATSAPP_MESSAGE_TYPES: WhatsAppMessageType[] = [
   'NEW_ORDER',
   'PAYMENT_REMINDER',
+  'ASSISTED_ORDER_LINK',
 ];
 
 function parseType(type: string): WhatsAppMessageType {

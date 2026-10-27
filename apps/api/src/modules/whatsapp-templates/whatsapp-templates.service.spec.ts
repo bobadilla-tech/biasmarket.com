@@ -91,6 +91,29 @@ describe('WhatsappTemplatesService', () => {
     );
   });
 
+  it('rejects an ASSISTED_ORDER_LINK template missing {{link}} and accepts one with it', async () => {
+    const error = await service
+      .upsert(storeId, userId, 'ASSISTED_ORDER_LINK', {
+        template: 'Hola {{customerName}}, pedido {{orderRef}}',
+      })
+      .catch((e: Error) => e);
+    expect(error).toBeInstanceOf(BadRequestException);
+    expect((error as BadRequestException).message).toContain('{{link}}');
+
+    prisma.whatsAppMessageTemplate.upsert.mockResolvedValue({
+      id: 'tmpl-2',
+      storeId,
+      type: 'ASSISTED_ORDER_LINK',
+      template: 'Tu pedido {{orderRef}}: {{link}}',
+      updatedAt: new Date(),
+    });
+    await expect(
+      service.upsert(storeId, userId, 'ASSISTED_ORDER_LINK', {
+        template: 'Tu pedido {{orderRef}}: {{link}}',
+      }),
+    ).resolves.toMatchObject({ type: 'ASSISTED_ORDER_LINK' });
+  });
+
   it('accepts a template containing all required tokens', async () => {
     prisma.whatsAppMessageTemplate.upsert.mockResolvedValue({
       id: 'tmpl-1',

@@ -54,7 +54,7 @@ interface CheckoutOrderItemRow {
   createdAt: Date;
 }
 
-interface CheckoutOrderRow {
+export interface CheckoutOrderRow {
   id: string;
   storeId: string;
   customerId: string | null;
@@ -103,7 +103,9 @@ function toCheckoutItemDto(
   };
 }
 
-function toCheckoutOrderDto(order: CheckoutOrderRow): CheckoutOrderResponseDto {
+export function toCheckoutOrderDto(
+  order: CheckoutOrderRow,
+): CheckoutOrderResponseDto {
   return {
     ...pickPublicOrderFields(order),
     deliveryDetails: order.deliveryDetails as Record<string, unknown> | null,

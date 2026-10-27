@@ -125,6 +125,7 @@ export class StatsService {
         include: {
           items: { include: { product: true, variant: true } },
           payments: { orderBy: { createdAt: 'desc' } },
+          createdBy: { select: { name: true } },
         },
       }),
       // Every order still collecting money, with the same per-order

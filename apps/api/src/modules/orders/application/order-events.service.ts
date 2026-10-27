@@ -151,22 +151,25 @@ export class OrderEventsService {
     if (order.status === 'CANCELLED' || order.paymentStatus === 'CANCELLED') {
       return;
     }
-    // INVITE_SHOWN is "the invite was shown", not a page-view counter. One
-    // client retrying the beacon must not write a row per retry.
-    if (type === 'INVITE_SHOWN') {
-      const existing = await this.prisma.orderEvent.findFirst({
-        where: { orderId: order.id, type: 'INVITE_SHOWN' },
-        select: { id: true },
-      });
-      if (existing) return;
-    }
-    await this.prisma.$transaction((tx) =>
-      this.record(tx, {
+    await this.prisma.$transaction(async (tx) => {
+      // INVITE_SHOWN is "the invite was shown", not a page-view counter. One
+      // client retrying the beacon must not write a row per retry, so the
+      // check-then-insert runs under a per-order advisory lock: concurrent
+      // beacons queue up and all but the first see the existing row.
+      if (type === 'INVITE_SHOWN') {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`invite-shown:${order.id}`}))`;
+        const existing = await tx.orderEvent.findFirst({
+          where: { orderId: order.id, type: 'INVITE_SHOWN' },
+          select: { id: true },
+        });
+        if (existing) return;
+      }
+      await this.record(tx, {
         orderId: order.id,
         storeId: order.storeId,
         type,
         actor: 'BUYER',
-      }),
-    );
+      });
+    });
   }
 }
