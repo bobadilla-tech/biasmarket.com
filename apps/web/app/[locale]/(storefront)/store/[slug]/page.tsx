@@ -5,6 +5,10 @@ import { isProductOutOfStock } from "@/features/discovery/lib/product-stock";
 import { canonicalUrl, localeAlternates, SITE_URL } from "@/lib/site-config";
 import { ProductCard } from "@/components/storefront/product-card";
 import { StoreSectionRenderer } from "@/components/storefront/section-renderer";
+import {
+  StoreHeader,
+  StorePublicProfile,
+} from "@/features/storefront/components/storefront";
 import { buildProductJsonLd, serializeJsonLd } from "@/lib/product-json-ld";
 import {
   firstStoreMarkdownImage,
@@ -12,6 +16,7 @@ import {
   storeMarkdownToPlainText,
 } from "@/lib/store-markdown";
 
+/** Fetches a store's public storefront data, returning null when unavailable. */
 async function getStore(slug: string) {
   const apiUrl =
     process.env.INTERNAL_API_URL ??
@@ -37,6 +42,7 @@ async function getStore(slug: string) {
   }
 }
 
+/** Collects unique active products that belong in the main catalog. */
 function collectProducts(store: any): any[] {
   const seen = new Map<string, any>();
   for (const section of store.sections ?? []) {
@@ -53,7 +59,11 @@ function collectProducts(store: any): any[] {
   return Array.from(seen.values());
 }
 
+/** Selects the store banner, falling back to its first non-empty banner section. */
 function firstBannerImageUrl(store: any): string | null {
+  if (typeof store.bannerUrl === "string" && store.bannerUrl.trim() !== "") {
+    return store.bannerUrl;
+  }
   for (const section of store.sections ?? []) {
     if (section?.type !== "BANNER") continue;
     const url = section.content?.imageUrl;
@@ -62,6 +72,7 @@ function firstBannerImageUrl(store: any): string | null {
   return null;
 }
 
+/** Collects unique sold-out products for the separate coming-soon section. */
 function collectSoldOutProducts(store: any): any[] {
   const seen = new Map<string, any>();
   for (const section of store.sections ?? []) {
@@ -78,21 +89,7 @@ function collectSoldOutProducts(store: any): any[] {
   return Array.from(seen.values());
 }
 
-// The store page owns the single visible <h1>. When the seller has written a
-// bio, promote the name to a visible heading with the bio as a sub-line;
-// otherwise keep it screen-reader-only (a bare store has nothing to show).
-function StoreHeading({ name, bio }: { name: string; bio: string }) {
-  if (!bio) return <h1 className="sr-only">{name}</h1>;
-  return (
-    <header className="space-y-2">
-      <h1 className="text-2xl font-semibold text-gray-900 sm:text-3xl">
-        {name}
-      </h1>
-      <p className="max-w-2xl text-gray-600">{bio}</p>
-    </header>
-  );
-}
-
+/** Builds localized SEO metadata and indexing directives for a public store. */
 export async function generateMetadata({
   params,
 }: {
@@ -142,6 +139,7 @@ export async function generateMetadata({
   };
 }
 
+/** Creates OnlineStore and breadcrumb structured data for the storefront. */
 function buildJsonLd(locale: string, slug: string, store: any) {
   const pageUrl = `${SITE_URL}/${locale}/store/${slug}`;
   const products = collectProducts(store);
@@ -254,24 +252,31 @@ export default async function StorePage({
 
   if (visibleSections.length === 0 && soldOutProducts.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-(--store-surface)">
         <main
           id="main-content"
           tabIndex={-1}
           className="mx-auto max-w-5xl space-y-10 px-4 pt-24 pb-8 sm:pt-20"
         >
-          <StoreHeading name={store.name} bio={bio} />
+          <StoreHeader name={store.name} bio={bio} />
+          <StorePublicProfile
+            storeName={store.name}
+            bannerUrl={store.bannerUrl}
+            ownerName={store.publicOwnerName}
+            ownerAvatarUrl={store.publicOwnerAvatarUrl}
+            locationLabel={store.locationLabel}
+          />
           {aboutNode && (
             <section className="prose max-w-none">{aboutNode}</section>
           )}
-          <p className="text-gray-500 text-center">{t("noProducts")}</p>
+          <p className="text-center text-(--store-muted)">{t("noProducts")}</p>
         </main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-dvh bg-gray-50">
+    <div className="min-h-dvh bg-(--store-surface)">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -281,32 +286,45 @@ export default async function StorePage({
       <main
         id="main-content"
         tabIndex={-1}
-        className="mx-auto max-w-5xl space-y-10 px-4 pt-24 pb-8 sm:pt-20"
+        className="mx-auto max-w-7xl space-y-10 px-4 pt-24 pb-8 sm:pt-20"
       >
-        <StoreHeading name={store.name} bio={bio} />
+        <StoreHeader name={store.name} bio={bio} />
+        <StorePublicProfile
+          storeName={store.name}
+          bannerUrl={store.bannerUrl}
+          ownerName={store.publicOwnerName}
+          ownerAvatarUrl={store.publicOwnerAvatarUrl}
+          locationLabel={store.locationLabel}
+        />
         {aboutNode && (
           <section className="prose max-w-none">{aboutNode}</section>
         )}
         {visibleSections.length === 0 ? (
           soldOutProducts.length > 0 ? null : (
-            <p className="text-gray-500 text-center">{t("noProducts")}</p>
+            <p className="text-center text-(--store-muted)">
+              {t("noProducts")}
+            </p>
           )
         ) : (
-          <StoreSectionRenderer slug={slug} sections={visibleSections} />
+          <StoreSectionRenderer
+            slug={slug}
+            sections={visibleSections}
+            catalogControls
+          />
         )}
         {/* Sold-out section rendered after visible sections */}
         {soldOutProducts.length > 0 && (
           <section
             aria-label={t("comingSoonSection.title")}
-            className="mt-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm"
+            className="mt-8 rounded-2xl border border-(--store-border) bg-(--store-card) p-6 shadow-sm"
           >
-            <h2 className="text-base font-semibold text-gray-400">
+            <h2 className="text-base font-semibold text-(--store-muted)">
               {t("comingSoonSection.title")}
             </h2>
-            <p className="mt-1 text-sm text-gray-400">
+            <p className="mt-1 text-sm text-(--store-muted)">
               {t("comingSoonSection.subtitle")}
             </p>
-            <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {soldOutProducts.map((p: any) => (
                 <ProductCard key={p.id} slug={slug} product={p} />
               ))}
