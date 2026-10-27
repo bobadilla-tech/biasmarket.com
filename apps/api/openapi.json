@@ -1935,6 +1935,88 @@
         "tags": ["Order"]
       }
     },
+    "/stores/{storeId}/orders/{orderId}/access-link": {
+      "post": {
+        "operationId": "AssistedOrdersController_regenerateAccessLink",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistedOrderLinkResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Order"]
+      }
+    },
+    "/stores/{storeId}/orders/{orderId}/buyer-phone": {
+      "patch": {
+        "operationId": "AssistedOrdersController_correctBuyerPhone",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorrectBuyerPhoneDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistedOrderLinkResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Order"]
+      }
+    },
     "/stores/{slug}/checkout": {
       "post": {
         "operationId": "CheckoutController_create",
@@ -6827,6 +6909,23 @@
           "paidPercentage": {
             "type": "number"
           },
+          "linkFirstOpenedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "First time the buyer opened the private link."
+          },
+          "claimedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "When the buyer claimed the order into an account."
+          },
+          "createdByName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Display name of the seller who created an assisted order."
+          },
           "items": {
             "type": "array",
             "items": {
@@ -6873,6 +6972,9 @@
           "paidAmount",
           "pendingAmount",
           "paidPercentage",
+          "linkFirstOpenedAt",
+          "claimedAt",
+          "createdByName",
           "items",
           "payments"
         ]
@@ -7012,6 +7114,23 @@
           "paidPercentage": {
             "type": "number"
           },
+          "linkFirstOpenedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "First time the buyer opened the private link."
+          },
+          "claimedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "When the buyer claimed the order into an account."
+          },
+          "createdByName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Display name of the seller who created an assisted order."
+          },
           "items": {
             "type": "array",
             "items": {
@@ -7058,6 +7177,9 @@
           "paidAmount",
           "pendingAmount",
           "paidPercentage",
+          "linkFirstOpenedAt",
+          "claimedAt",
+          "createdByName",
           "items",
           "payments"
         ]
@@ -7615,6 +7737,28 @@
           }
         },
         "required": ["order", "accessUrl", "previousOrders"]
+      },
+      "AssistedOrderLinkResponseDto": {
+        "type": "object",
+        "properties": {
+          "order": {
+            "$ref": "#/components/schemas/OrderDetailResponseDto"
+          },
+          "accessUrl": {
+            "type": "string",
+            "description": "SECRET: the new private buyer link. The previous link stops working. Returned only when the link is created; only its hash is stored."
+          }
+        },
+        "required": ["order", "accessUrl"]
+      },
+      "CorrectBuyerPhoneDto": {
+        "type": "object",
+        "properties": {
+          "customerPhone": {
+            "type": "string"
+          }
+        },
+        "required": ["customerPhone"]
       },
       "CreateOrderDto": {
         "type": "object",

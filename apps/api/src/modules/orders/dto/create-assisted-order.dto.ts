@@ -7,35 +7,11 @@ import {
   IsString,
   Matches,
   MaxLength,
-  ValidateBy,
   ValidateIf,
   ValidateNested,
-  type ValidationOptions,
 } from 'class-validator';
-import { validatePhone } from '@biasmarket/utils/phone-country';
+import { IsValidBuyerPhone } from './is-valid-buyer-phone.js';
 import { CreateOrderItemDto, ShippingAddressDto } from './create-order.dto.js';
-
-// Same rule and Spanish message as GET /stores/:id/customers/lookup, so the
-// form shows one error regardless of which endpoint rejects the number.
-function IsValidBuyerPhone(options?: ValidationOptions): PropertyDecorator {
-  return ValidateBy(
-    {
-      name: 'isValidBuyerPhone',
-      validator: {
-        validate: (value: unknown) =>
-          typeof value === 'string' && validatePhone(value).ok,
-        defaultMessage: (args) => {
-          const result =
-            typeof args?.value === 'string' ? validatePhone(args.value) : null;
-          return result && !result.ok
-            ? result.message
-            : 'Ingresa un teléfono válido';
-        },
-      },
-    },
-    options,
-  );
-}
 
 const trimString = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.trim() : value;

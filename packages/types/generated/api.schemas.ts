@@ -866,6 +866,21 @@ export interface OrderResponseDto {
   paidAmount: number;
   pendingAmount: number;
   paidPercentage: number;
+  /**
+   * First time the buyer opened the private link.
+   * @nullable
+   */
+  linkFirstOpenedAt: string | null;
+  /**
+   * When the buyer claimed the order into an account.
+   * @nullable
+   */
+  claimedAt: string | null;
+  /**
+   * Display name of the seller who created an assisted order.
+   * @nullable
+   */
+  createdByName: string | null;
   items: OrderItemResponseDto[];
   payments: OrderPaymentResponseDto[];
 }
@@ -1024,6 +1039,21 @@ export interface OrderDetailResponseDto {
   paidAmount: number;
   pendingAmount: number;
   paidPercentage: number;
+  /**
+   * First time the buyer opened the private link.
+   * @nullable
+   */
+  linkFirstOpenedAt: string | null;
+  /**
+   * When the buyer claimed the order into an account.
+   * @nullable
+   */
+  claimedAt: string | null;
+  /**
+   * Display name of the seller who created an assisted order.
+   * @nullable
+   */
+  createdByName: string | null;
   items: OrderItemResponseDto[];
   payments: OrderPaymentResponseDto[];
 }
@@ -1564,6 +1594,16 @@ export interface CreateAssistedOrderResponseDto {
   accessUrl: string;
   /** Earlier orders of this store for the same WhatsApp number (advisory). */
   previousOrders: number;
+}
+
+export interface AssistedOrderLinkResponseDto {
+  order: OrderDetailResponseDto;
+  /** SECRET: the new private buyer link. The previous link stops working. Returned only when the link is created; only its hash is stored. */
+  accessUrl: string;
+}
+
+export interface CorrectBuyerPhoneDto {
+  customerPhone: string;
 }
 
 export type ConfirmAccountResponseDtoPurpose =

@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { CheckoutOrderResponseDto } from './checkout-response.dto.js';
+import { OrderDetailResponseDto } from './order-response.dto.js';
 
 // `CreateAssistedOrderUseCase` returns the same narrow
 // `order.create({ include: { items: true } })` shape as the checkout, so it
@@ -20,4 +21,18 @@ export class CreateAssistedOrderResponseDto {
       'Earlier orders of this store for the same WhatsApp number (advisory).',
   })
   previousOrders: number;
+}
+
+// `regenerate` and `correct-phone` return the full seller order (as the
+// detail endpoint does) plus the new private link.
+export class AssistedOrderLinkResponseDto {
+  @ApiProperty({ type: () => OrderDetailResponseDto })
+  order: OrderDetailResponseDto;
+
+  @ApiProperty({
+    description:
+      'SECRET: the new private buyer link. The previous link stops working. ' +
+      'Returned only when the link is created; only its hash is stored.',
+  })
+  accessUrl: string;
 }

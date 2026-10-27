@@ -997,6 +997,17 @@ export default async () => {
               paidAmount: { required: true, type: () => Number },
               pendingAmount: { required: true, type: () => Number },
               paidPercentage: { required: true, type: () => Number },
+              linkFirstOpenedAt: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              claimedAt: { required: true, type: () => String, nullable: true },
+              createdByName: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
               items: {
                 required: true,
                 type: () => [
@@ -1253,6 +1264,14 @@ export default async () => {
           },
         ],
         [
+          import('./modules/orders/dto/correct-buyer-phone.dto.js'),
+          {
+            CorrectBuyerPhoneDto: {
+              customerPhone: { required: true, type: () => String },
+            },
+          },
+        ],
+        [
           import('./modules/orders/dto/checkout-response.dto.js'),
           {
             CheckoutOrderItemResponseDto: {
@@ -1415,6 +1434,15 @@ export default async () => {
               },
               accessUrl: { required: true, type: () => String },
               previousOrders: { required: true, type: () => Number },
+            },
+            AssistedOrderLinkResponseDto: {
+              order: {
+                required: true,
+                type: () =>
+                  t['./modules/orders/dto/order-response.dto.js']
+                    .OrderDetailResponseDto,
+              },
+              accessUrl: { required: true, type: () => String },
             },
           },
         ],
@@ -3013,6 +3041,14 @@ export default async () => {
               createAssisted: {
                 type: t['./modules/orders/dto/assisted-order-response.dto.js']
                   .CreateAssistedOrderResponseDto,
+              },
+              regenerateAccessLink: {
+                type: t['./modules/orders/dto/assisted-order-response.dto.js']
+                  .AssistedOrderLinkResponseDto,
+              },
+              correctBuyerPhone: {
+                type: t['./modules/orders/dto/assisted-order-response.dto.js']
+                  .AssistedOrderLinkResponseDto,
               },
             },
           },
