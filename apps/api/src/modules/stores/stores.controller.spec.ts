@@ -22,6 +22,7 @@ describe('StoresController', () => {
     create: Mock;
     assertOwnership: Mock;
     updatePublicHeaderImage: Mock;
+    findPublicCatalog: Mock;
   };
   let storage: {
     uploadImage: Mock;
@@ -35,6 +36,7 @@ describe('StoresController', () => {
       create: vi.fn(),
       assertOwnership: vi.fn(),
       updatePublicHeaderImage: vi.fn(),
+      findPublicCatalog: vi.fn(),
     };
     storage = {
       uploadImage: vi.fn(),
@@ -56,6 +58,63 @@ describe('StoresController', () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
+  });
+
+  it('parses catalog filters and serializes public product values', async () => {
+    service.findPublicCatalog.mockResolvedValue({
+      page: 2,
+      limit: 12,
+      total: 1,
+      items: [
+        {
+          id: 'product-1',
+          price: { toString: () => '12.50' },
+          availableUntil: new Date('2026-10-01T00:00:00.000Z'),
+          deletedAt: null,
+          createdAt: new Date('2026-09-01T00:00:00.000Z'),
+          discontinued: false,
+          variants: [
+            {
+              id: 'variant-1',
+              priceOverride: { toString: () => '11.00' },
+              attributes: {},
+            },
+          ],
+          categories: [],
+        },
+      ],
+    });
+
+    const result = await controller.findPublicCatalog(
+      'my-store',
+      ' album ',
+      ['photocards', 'bts'],
+      'precio_asc',
+      '2',
+      '12',
+    );
+
+    expect(service.findPublicCatalog).toHaveBeenCalledWith('my-store', {
+      page: 2,
+      limit: 12,
+      q: 'album',
+      categories: ['photocards', 'bts'],
+      sort: 'precio_asc',
+    });
+    expect(result).toMatchObject({
+      page: 2,
+      limit: 12,
+      total: 1,
+      items: [
+        {
+          id: 'product-1',
+          price: '12.50',
+          availableUntil: '2026-10-01T00:00:00.000Z',
+          createdAt: '2026-09-01T00:00:00.000Z',
+          variants: [{ id: 'variant-1', priceOverride: '11.00' }],
+        },
+      ],
+    });
   });
 
   it('create() delegates to service.create with userId and the dto', async () => {
