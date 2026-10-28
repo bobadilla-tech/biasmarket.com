@@ -869,6 +869,13 @@ environmental), `pnpm --filter web test`, `pnpm --filter web test:e2e`,
 - **#345/#347 interplay**: the public DTO now carries `trackingNumber`,
   `trackingUrl`, a packed-photo flag and per-payment `voidedAt`; PR3 must not
   render the photo or any DTO-sourced href (tests in 7) until #270 designs it.
+  For #270: allow only https `trackingUrl` hrefs with
+  `rel="noopener noreferrer"`, and load the packed photo via fetch/blob or
+  `referrerPolicy="no-referrer"` (the route sends
+  `Cross-Origin-Resource-Policy:
+  cross-origin`; `next/image` would proxy the
+  token through the web server). The malformed-token 404 also covers
+  `/public/orders/:token/packed-photo` (add one test line in PR-A).
 - **Hidden/unpublished stores**: the storefront still renders for them
   (`findPublicBySlug` ignores `isPublic`); the buyer page works for them too.
 
