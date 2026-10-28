@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { MapPin, MessageCircle, Search, Sparkles } from "lucide-react";
@@ -376,7 +376,6 @@ export function StoreSearchBar({
   );
 }
 
-/** Renders accessible category chips for filtering the product catalog. */
 /** Renders the visible category chips used to filter the product catalog. */
 export function CategoryFilter({
   categories,
