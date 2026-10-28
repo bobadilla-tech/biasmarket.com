@@ -220,10 +220,8 @@ describe("storefront empty states", () => {
     );
   });
 
-  it("clears a selected category from both navigation and filter chips", () => {
-    navigation.url = "/es/store/tienda?tab=productos&categoria=albumes";
-    navigation.push.mockClear();
-    withMessages(
+  it("clears a selected category from navigation and filter chips", () => {
+    const renderer = (
       <StoreSectionRenderer
         slug="tienda"
         sections={[]}
@@ -232,8 +230,11 @@ describe("storefront empty states", () => {
           { id: "1", slug: "albumes", name: "Álbumes" },
           { id: "2", slug: "photocards", name: "Photocards" },
         ]}
-      />,
+      />
     );
+    navigation.url = "/es/store/tienda?tab=productos&categoria=albumes";
+    navigation.push.mockClear();
+    const view = withMessages(renderer);
 
     const categoryTabs = within(
       screen.getByRole("navigation", { name: "Categorías" }),
@@ -253,7 +254,21 @@ describe("storefront empty states", () => {
     ).toBe("true");
 
     fireEvent.click(categoryTabs.getByRole("button", { name: "Álbumes" }));
-    fireEvent.click(categoryChips.getByRole("button", { name: "Álbumes" }));
+    expect(navigation.push).toHaveBeenLastCalledWith(
+      "/es/store/tienda?tab=productos",
+      { scroll: false },
+    );
+
+    view.unmount();
+    navigation.url = "/es/store/tienda?tab=productos&categoria=albumes";
+    navigation.push.mockClear();
+    withMessages(renderer);
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "Categorías" })).getByRole(
+        "button",
+        { name: "Álbumes" },
+      ),
+    );
     expect(navigation.push).toHaveBeenLastCalledWith(
       "/es/store/tienda?tab=productos",
       { scroll: false },
