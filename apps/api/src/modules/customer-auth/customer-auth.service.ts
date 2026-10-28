@@ -5,6 +5,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { Prisma } from '@biasmarket/db';
 import { hashPassword, verifyPassword } from 'better-auth/crypto';
 import {
   createCustomerSessionToken,
@@ -192,40 +193,22 @@ export class CustomerAuthService {
     return buyerAccount;
   }
 
-  // Google proves ownership of an email, not a phone number. A buyer whose
-  // BuyerAccount already carries that email is signed in; otherwise a new
-  // account is created with the verified email and no phone (buyers add one
-  // from their profile or at checkout). A Google-verified match also counts
-  // as email verification, and the buyer can sign in without ever having set
-  // a password. `slug` is null for the global (no-store) entry point.
+  // Google proves ownership of an email, not a phone number. Resolution
+  // order: (1) the account already bound to this Google `sub`; (2) exactly one
+  // account with that email whose email is already VERIFIED, which gets bound
+  // to the `sub`; (3) otherwise a new phone-less account. An unverified
+  // same-email account is never linked nor flipped to verified: anyone can
+  // register a phone account with a victim's email (unverified) and a password
+  // they know, so linking it would hand the victim's Google login to them.
+  // Runs on its own statements (no surrounding transaction) because a P2002
+  // aborts a Postgres transaction and could not be recovered from.
+  // `slug` is null for the global (no-store) entry point.
   async loginWithGoogle(
     slug: string | null,
-    identity: { email: string; name: string | null },
+    identity: { sub: string; email: string; name: string | null },
   ): Promise<string> {
     const store = slug ? await this.findStoreBySlug(slug) : null;
-    const matches = await this.prisma.buyerAccount.findMany({
-      where: { email: { equals: identity.email, mode: 'insensitive' } },
-    });
-    if (matches.length > 1) {
-      throw new ConflictException('Hay más de una cuenta con este correo');
-    }
-
-    const existing = matches[0];
-    const buyerAccount = existing
-      ? await this.prisma.buyerAccount.update({
-          where: { id: existing.id },
-          data: {
-            emailVerified: true,
-            ...(existing.name ? {} : { name: identity.name }),
-          },
-        })
-      : await this.prisma.buyerAccount.create({
-          data: {
-            email: identity.email,
-            emailVerified: true,
-            name: identity.name,
-          },
-        });
+    const buyerAccount = await this.resolveGoogleAccount(identity);
 
     if (store) await this.ensureStoreLink(buyerAccount.id, store.id);
 
@@ -233,6 +216,74 @@ export class CustomerAuthService {
       buyerAccount.id,
       buyerAccount.passwordVersion,
     );
+  }
+
+  private async resolveGoogleAccount(identity: {
+    sub: string;
+    email: string;
+    name: string | null;
+  }): Promise<{ id: string; passwordVersion: number }> {
+    const bySub = await this.prisma.buyerAccount.findUnique({
+      where: { googleSub: identity.sub },
+    });
+    if (bySub) return bySub;
+
+    const matches = await this.prisma.buyerAccount.findMany({
+      where: {
+        email: { equals: identity.email, mode: 'insensitive' },
+        emailVerified: true,
+      },
+    });
+    if (matches.length > 1) {
+      throw new ConflictException('Hay más de una cuenta con este correo');
+    }
+
+    const existing = matches[0];
+    if (existing) {
+      // Bound to this very identity (a concurrent first login won the race
+      // after our `googleSub` lookup): sign in. Bound to another one: not ours
+      // to take over.
+      if (existing.googleSub === identity.sub) return existing;
+      if (existing.googleSub) {
+        throw new ConflictException('Esta cuenta ya está vinculada a Google');
+      }
+      const { count } = await this.prisma.buyerAccount.updateMany({
+        where: { id: existing.id, googleSub: null },
+        data: {
+          googleSub: identity.sub,
+          ...(existing.name ? {} : { name: identity.name }),
+        },
+      });
+      if (count === 1) return existing;
+      // Lost a race with another first login: whoever bound the sub wins.
+      const winner = await this.prisma.buyerAccount.findUnique({
+        where: { googleSub: identity.sub },
+      });
+      if (winner) return winner;
+      throw new ConflictException('Esta cuenta ya está vinculada a Google');
+    }
+
+    try {
+      return await this.prisma.buyerAccount.create({
+        data: {
+          email: identity.email,
+          emailVerified: true,
+          name: identity.name,
+          googleSub: identity.sub,
+        },
+      });
+    } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2002'
+      ) {
+        const winner = await this.prisma.buyerAccount.findUnique({
+          where: { googleSub: identity.sub },
+        });
+        if (winner) return winner;
+      }
+      throw err;
+    }
   }
 
   async changePassword(
