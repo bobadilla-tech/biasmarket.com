@@ -1,13 +1,13 @@
 "use client";
 
-import type { KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { MapPin, MessageCircle, Search, Sparkles } from "lucide-react";
 import { ContactSellerButton } from "@/features/customer-auth";
 import { SocialIcon, socialLabels } from "./social-icon";
 
-export type StorefrontCategory = { id: string; name: string };
+export type StorefrontCategory = { id: string; name: string; slug?: string };
 
 /** Renders the public store identity shared by its catalog tabs. */
 export function StorePublicProfile({
@@ -238,32 +238,52 @@ export function OwnerCard({
   );
 }
 
-export type StoreTab = "productos" | "categorias" | "referencias";
+export type StoreTab = "productos" | "categorias" | "referencias" | "acerca";
 
-const storeTabs: StoreTab[] = ["productos", "categorias", "referencias"];
+const baseStoreTabs: StoreTab[] = ["productos", "categorias", "referencias"];
 
-export function normalizeStoreTab(value: string | null): StoreTab {
-  return storeTabs.includes(value as StoreTab)
-    ? (value as StoreTab)
-    : "productos";
+export function normalizeStoreTab(
+  value: string | null,
+  showAbout = false,
+): StoreTab {
+  const tabs = showAbout
+    ? [...baseStoreTabs, "acerca" as const]
+    : baseStoreTabs;
+  return tabs.includes(value as StoreTab) ? (value as StoreTab) : "productos";
 }
 
 /** Keeps the selected storefront tab in the shareable URL and browser history. */
-export function StoreTabs() {
+export function StoreTabs({ showAbout = false }: { showAbout?: boolean }) {
   const t = useTranslations("storefront");
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const active = normalizeStoreTab(searchParams.get("tab"));
+  const storeTabs = showAbout
+    ? [...baseStoreTabs, "acerca" as const]
+    : baseStoreTabs;
+  const active = normalizeStoreTab(searchParams.get("tab"), showAbout);
   const labels: Record<StoreTab, string> = {
     productos: t("productsTab"),
     categorias: t("categoriesTab"),
     referencias: t("referencesTab"),
+    acerca: t("aboutTab"),
   };
 
   function selectTab(tab: StoreTab) {
     const params = new URLSearchParams(searchParams.toString());
+    params.set(`orden_${active}`, params.get("orden") ?? "recientes");
+    const currentQuery = params.get("q");
+    if (currentQuery) params.set(`q_${active}`, currentQuery);
+    else params.delete(`q_${active}`);
     params.set("tab", tab);
+    const nextQuery = params.get(`q_${tab}`);
+    if (nextQuery) params.set("q", nextQuery);
+    else params.delete("q");
+    params.set(
+      "orden",
+      params.get(`orden_${tab}`) ??
+        (tab === "categorias" ? "nombre_asc" : "recientes"),
+    );
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
@@ -315,22 +335,44 @@ export function StoreTabs() {
 export function StoreSearchBar({
   value,
   onChange,
+  sort,
+  onSortChange,
 }: {
   value: string;
   onChange: (value: string) => void;
+  sort?: string;
+  onSortChange?: (value: string) => void;
 }) {
   const t = useTranslations("storefront");
   return (
-    <label className="flex items-center gap-2 rounded-xl border border-(--store-border) bg-(--store-card) px-3 focus-within:border-(--store-primary) focus-within:ring-2 focus-within:ring-(--store-ring)">
-      <Search aria-hidden="true" className="size-4 text-(--store-muted)" />
-      <span className="sr-only">{t("searchLabel")}</span>
-      <input
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={t("searchPlaceholder")}
-        className="h-11 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-(--store-placeholder)"
-      />
-    </label>
+    <div className="flex flex-col gap-2 sm:flex-row">
+      <label className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-(--store-border) bg-(--store-card) px-3 focus-within:border-(--store-primary) focus-within:ring-2 focus-within:ring-(--store-ring)">
+        <Search aria-hidden="true" className="size-4 text-(--store-muted)" />
+        <span className="sr-only">{t("searchLabel")}</span>
+        <input
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={t("searchStorePlaceholder")}
+          className="h-11 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-(--store-placeholder)"
+        />
+      </label>
+      {sort !== undefined && onSortChange && (
+        <label className="flex min-h-11 items-center gap-2 rounded-xl border border-(--store-border) bg-(--store-card) px-3 text-sm text-(--store-muted) focus-within:border-(--store-primary) focus-within:ring-2 focus-within:ring-(--store-ring)">
+          <span className="shrink-0">{t("sortBy")}</span>
+          <select
+            aria-label={t("sortBy")}
+            value={sort}
+            onChange={(event) => onSortChange(event.target.value)}
+            className="min-w-0 flex-1 bg-transparent font-semibold text-(--store-text) outline-none"
+          >
+            <option value="recientes">{t("sortRecent")}</option>
+            <option value="precio_asc">{t("sortPriceAsc")}</option>
+            <option value="precio_desc">{t("sortPriceDesc")}</option>
+            <option value="nombre_asc">{t("sortNameAsc")}</option>
+          </select>
+        </label>
+      )}
+    </div>
   );
 }
 
@@ -341,32 +383,105 @@ export function CategoryFilter({
   onChange,
 }: {
   categories: StorefrontCategory[];
-  selected: string;
-  onChange: (id: string) => void;
+  selected: string[];
+  onChange: (ids: string[]) => void;
 }) {
   const t = useTranslations("storefront");
-  const items: StorefrontCategory[] = [
-    { id: "", name: t("allCategories") },
-    ...categories,
-  ];
+  const [expanded, setExpanded] = useState(false);
+
+  function toggleCategory(id: string) {
+    onChange(
+      selected.includes(id)
+        ? selected.filter((selectedId) => selectedId !== id)
+        : [...selected, id],
+    );
+  }
+
   return (
-    <div
-      role="group"
-      className="flex gap-2 overflow-x-auto py-1"
-      aria-label={t("categories")}
-    >
-      {items.map(({ id, name }) => (
+    <>
+      <aside
+        aria-label={t("filterByCategory")}
+        className="hidden rounded-2xl border border-(--store-border) bg-(--store-card) p-4 lg:block"
+      >
         <button
-          key={id || "all"}
           type="button"
-          aria-pressed={selected === id}
-          onClick={() => onChange(id)}
-          className={`min-h-10 shrink-0 rounded-full border px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) ${selected === id ? "border-transparent bg-(--store-tab-active) text-(--store-on-active)" : "border-(--store-border) bg-(--store-card) text-(--store-muted) hover:border-(--store-primary)"}`}
+          aria-expanded={expanded}
+          onClick={() => setExpanded((value) => !value)}
+          className="flex min-h-11 w-full items-center justify-between gap-3 text-left text-sm font-bold text-(--store-text) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary)"
         >
-          {name}
+          <span>{t("filterByCategory")}</span>
+          <span aria-hidden="true" className="text-lg text-(--store-primary)">
+            {expanded ? "−" : "+"}
+          </span>
         </button>
-      ))}
-    </div>
+        {expanded && (
+          <div
+            role="group"
+            aria-label={t("filterByCategory")}
+            className="mt-3 max-h-80 space-y-1 overflow-y-auto border-t border-(--store-border) pt-3"
+          >
+            <label className="flex min-h-10 cursor-pointer items-center gap-3 rounded-lg px-2 text-sm text-(--store-muted) hover:bg-(--store-surface)">
+              <input
+                type="checkbox"
+                checked={selected.length === 0}
+                onChange={() => onChange([])}
+                className="size-4 accent-(--store-primary)"
+              />
+              <span>{t("allCategories")}</span>
+            </label>
+            {categories.map((category) => {
+              const id = category.slug ?? category.id;
+              return (
+                <label
+                  key={id}
+                  className="flex min-h-10 cursor-pointer items-center gap-3 rounded-lg px-2 text-sm text-(--store-text) hover:bg-(--store-surface)"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selected.includes(id)}
+                    onChange={() => toggleCategory(id)}
+                    className="size-4 accent-(--store-primary)"
+                  />
+                  <span className="min-w-0 flex-1 truncate">
+                    {category.name}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        )}
+      </aside>
+
+      <div
+        role="group"
+        className="flex gap-2 overflow-x-auto py-1 lg:hidden"
+        aria-label={t("categories")}
+      >
+        <button
+          type="button"
+          aria-pressed={selected.length === 0}
+          onClick={() => onChange([])}
+          className={`min-h-10 shrink-0 rounded-full border px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) ${selected.length === 0 ? "border-transparent bg-(--store-tab-active) text-(--store-on-active)" : "border-(--store-border) bg-(--store-card) text-(--store-muted) hover:border-(--store-primary)"}`}
+        >
+          {t("allCategories")}
+        </button>
+        {categories.map((category) => {
+          const id = category.slug ?? category.id;
+          const active = selected.includes(id);
+          return (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={active}
+              onClick={() => onChange(active ? [] : [id])}
+              className={`min-h-10 shrink-0 rounded-full border px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) ${active ? "border-transparent bg-(--store-tab-active) text-(--store-on-active)" : "border-(--store-border) bg-(--store-card) text-(--store-muted) hover:border-(--store-primary)"}`}
+            >
+              {category.name}
+            </button>
+          );
+        })}
+      </div>
+    </>
   );
 }
 

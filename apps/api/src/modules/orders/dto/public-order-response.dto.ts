@@ -156,6 +156,17 @@ export class PublicOrderResponseDto {
   @ApiProperty({ type: String, nullable: true })
   courierName: string | null;
 
+  @ApiProperty({ type: String, nullable: true })
+  trackingNumber: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  trackingUrl: string | null;
+
+  @ApiProperty({
+    description: 'Whether a private packed-package photo is available.',
+  })
+  packedPhotoAvailable: boolean;
+
   @ApiProperty({ enum: ['AGENCY', 'HOME'], nullable: true })
   courierModality: 'AGENCY' | 'HOME' | null;
 

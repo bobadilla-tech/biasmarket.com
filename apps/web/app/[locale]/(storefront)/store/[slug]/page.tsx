@@ -3,6 +3,7 @@ import type { Locale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { isProductOutOfStock } from "@/features/discovery/lib/product-stock";
 import { canonicalUrl, localeAlternates, SITE_URL } from "@/lib/site-config";
+import { isStorefrontRedesignEnabled } from "@/lib/storefront-redesign";
 import { ProductCard } from "@/components/storefront/product-card";
 import { StoreSectionRenderer } from "@/components/storefront/section-renderer";
 import { StorePublicProfile } from "@/features/storefront/components/storefront";
@@ -13,19 +14,52 @@ import {
   storeMarkdownToPlainText,
 } from "@/lib/store-markdown";
 
-/** Fetches a store's public storefront data, returning null when unavailable. */
-async function getStore(slug: string) {
-  const apiUrl =
+const STORE_SLUG_PATTERN = /^[a-z0-9][a-z0-9_-]*$/i;
+
+/** Resolve fixed API endpoints without allowing route input to change the URL. */
+function publicStoreApiUrl(
+  endpointName: "public" | "catalog" | "categories",
+): URL | null {
+  const configuredApiUrl =
     process.env.INTERNAL_API_URL ??
     process.env.NEXT_PUBLIC_API_URL ??
     (process.env.NODE_ENV === "development"
       ? "http://localhost:3000"
       : undefined);
-
-  if (!apiUrl) return null;
+  if (!configuredApiUrl) return null;
 
   try {
-    const res = await fetch(`${apiUrl}/api/stores/${slug}/public`, {
+    const apiBase = new URL(configuredApiUrl);
+    if (
+      (apiBase.protocol !== "http:" && apiBase.protocol !== "https:") ||
+      apiBase.username ||
+      apiBase.password
+    ) {
+      return null;
+    }
+    const basePath = apiBase.pathname.endsWith("/")
+      ? apiBase.pathname
+      : `${apiBase.pathname}/`;
+    const endpoint = new URL(
+      `api/stores/storefront/${endpointName}`,
+      new URL(basePath, apiBase.origin),
+    );
+    return endpoint.origin === apiBase.origin ? endpoint : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Fetches a store's public storefront data, returning null when unavailable. */
+async function getStore(slug: string) {
+  const endpoint = publicStoreApiUrl("public");
+  if (!endpoint || !STORE_SLUG_PATTERN.test(slug)) return null;
+
+  try {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ slug }),
       cache: "no-store",
     });
 
@@ -36,6 +70,41 @@ async function getStore(slug: string) {
     return await res.json();
   } catch {
     return null;
+  }
+}
+
+async function getCatalog(
+  slug: string,
+  params: Record<string, string | string[] | undefined>,
+) {
+  const endpoint = publicStoreApiUrl("catalog");
+  if (!endpoint || !STORE_SLUG_PATTERN.test(slug)) return null;
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ slug, query: params }),
+      cache: "no-store",
+    });
+    return response.ok ? await response.json() : null;
+  } catch {
+    return null;
+  }
+}
+
+async function getPublicCategories(slug: string) {
+  const endpoint = publicStoreApiUrl("categories");
+  if (!endpoint || !STORE_SLUG_PATTERN.test(slug)) return [];
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ slug }),
+      cache: "no-store",
+    });
+    return response.ok ? await response.json() : [];
+  } catch {
+    return [];
   }
 }
 
@@ -97,10 +166,12 @@ export async function generateMetadata({
 
   if (!store) return { robots: { index: false, follow: false } };
 
+  const t = await getTranslations({ locale, namespace: "storefront" });
   const products = collectProducts(store);
-  const boilerplateDescription = `Shop ${store.name} — ${products.length} product${
-    products.length === 1 ? "" : "s"
-  } available.`;
+  const boilerplateDescription = t("shopProductsAvailable", {
+    storeName: store.name,
+    count: products.length,
+  });
   // Seller-authored copy wins: short bio first, then a flattened lede from the
   // "about" markdown, then the generic boilerplate.
   const description =
@@ -137,9 +208,16 @@ export async function generateMetadata({
 }
 
 /** Creates OnlineStore and breadcrumb structured data for the storefront. */
-function buildJsonLd(locale: string, slug: string, store: any) {
+function buildJsonLd(
+  locale: string,
+  slug: string,
+  store: any,
+  catalogProducts: any[],
+  catalogTotal: number,
+  breadcrumbHomeLabel: string,
+  breadcrumbStoresLabel: string,
+) {
   const pageUrl = `${SITE_URL}/${locale}/store/${slug}`;
-  const products = collectProducts(store);
 
   const storeDescription =
     (typeof store.bio === "string" && store.bio.trim()) ||
@@ -175,13 +253,13 @@ function buildJsonLd(locale: string, slug: string, store: any) {
           {
             "@type": "ListItem",
             position: 1,
-            name: "Home",
+            name: breadcrumbHomeLabel,
             item: `${SITE_URL}/${locale}`,
           },
           {
             "@type": "ListItem",
             position: 2,
-            name: "Stores",
+            name: breadcrumbStoresLabel,
             item: `${SITE_URL}/${locale}/stores`,
           },
           {
@@ -192,7 +270,23 @@ function buildJsonLd(locale: string, slug: string, store: any) {
           },
         ],
       },
-      ...products.map((product: any) =>
+      {
+        "@type": "ItemList",
+        "@id": `${pageUrl}#products`,
+        name: store.name,
+        url: pageUrl,
+        numberOfItems: catalogTotal,
+        itemListOrder: "https://schema.org/ItemListOrderAscending",
+        itemListElement: catalogProducts.map((product: any, index: number) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          url: `${pageUrl}/product/${encodeURIComponent(product.id)}`,
+          item: {
+            "@id": `${pageUrl}/product/${encodeURIComponent(product.id)}`,
+          },
+        })),
+      },
+      ...catalogProducts.map((product: any) =>
         buildProductJsonLd(
           product,
           `${pageUrl}/product/${encodeURIComponent(product.id)}`,
@@ -204,14 +298,38 @@ function buildJsonLd(locale: string, slug: string, store: any) {
 
 export default async function StorePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: Locale; slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { locale, slug } = await params;
-  const [store, t] = await Promise.all([
-    getStore(slug),
-    getTranslations({ locale, namespace: "storefront" }),
-  ]);
+  const queryParams = await searchParams;
+  const redesignedStore = isStorefrontRedesignEnabled(slug);
+  const tab =
+    typeof queryParams.tab === "string" ? queryParams.tab : "productos";
+  const catalogQuery = {
+    ...(typeof queryParams.q === "string" && queryParams.q.trim()
+      ? { q: queryParams.q.trim() }
+      : {}),
+    ...(typeof queryParams.categoria === "string" && queryParams.categoria
+      ? { categorias: queryParams.categoria }
+      : {}),
+    ...(typeof queryParams.orden === "string"
+      ? { sort: queryParams.orden }
+      : {}),
+    ...(typeof queryParams.page === "string" ? { page: queryParams.page } : {}),
+  };
+  const [store, t, catalog, publicCategories, firstPageCatalog] =
+    await Promise.all([
+      getStore(slug),
+      getTranslations({ locale, namespace: "storefront" }),
+      redesignedStore && tab === "productos"
+        ? getCatalog(slug, catalogQuery)
+        : Promise.resolve(null),
+      redesignedStore ? getPublicCategories(slug) : Promise.resolve([]),
+      redesignedStore ? getCatalog(slug, {}) : Promise.resolve(null),
+    ]);
 
   if (!store) {
     return (
@@ -230,7 +348,8 @@ export default async function StorePage({
 
   // Build visible sections by excluding discontinued and sold-out products so
   // the UI can show a friendly empty state when nothing is visible.
-  const visibleSections = (store.sections ?? [])
+  const originalSections = store.sections ?? [];
+  const visibleSections = originalSections
     .map((section: any) => {
       if (section.type !== "COLLECTION" || !section.collection) return null;
       const visible = (section.collection.products ?? []).filter(
@@ -245,55 +364,63 @@ export default async function StorePage({
     })
     .filter(Boolean);
 
-  const soldOutProducts = collectSoldOutProducts(store);
-
-  if (visibleSections.length === 0 && soldOutProducts.length === 0) {
-    return (
-      <div className="min-h-screen bg-(--store-surface)">
-        <main
-          id="main-content"
-          tabIndex={-1}
-          className="mx-auto max-w-7xl space-y-6 px-4 pt-24 pb-8 sm:pt-24"
-        >
-          <StorePublicProfile
-            storeName={store.name}
-            bannerUrl={firstBannerImageUrl(store)}
-            logoUrl={store.logoUrl}
-            bio={bio}
-            locationLabel={store.locationLabel}
-            instagramUrl={store.instagramUrl}
-            facebookUrl={store.facebookUrl}
-            tiktokUrl={store.tiktokUrl}
-            twitterUrl={store.twitterUrl}
-            whatsappNumber={store.whatsappNumber}
-            slug={slug}
-            publicOwnerName={store.publicOwnerName}
-            publicOwnerAvatarUrl={store.publicOwnerAvatarUrl}
-          />
-          <StoreSectionRenderer
-            slug={slug}
-            storeName={store.name}
-            intro={
-              aboutNode ? (
-                <section className="prose max-w-none">{aboutNode}</section>
-              ) : undefined
-            }
-            sections={[]}
-            catalogControls
-          />
-        </main>
-      </div>
-    );
-  }
+  const catalogSections =
+    catalog && Array.isArray(catalog.items)
+      ? [
+          {
+            id: "public-catalog",
+            type: "COLLECTION" as const,
+            collection: {
+              name: "",
+              products: catalog.items.map((product: any) => ({
+                productId: product.id,
+                product,
+              })),
+            },
+          },
+        ]
+      : visibleSections;
+  const productSections = redesignedStore
+    ? tab === "productos"
+      ? catalogSections
+      : visibleSections
+    : originalSections;
+  const aboutSections = originalSections.filter(
+    (section: any) =>
+      section.type === "BANNER" || section.type === "TEXT_BLOCK",
+  );
+  const hasAboutContent = Boolean(
+    (typeof store.aboutMarkdown === "string" && store.aboutMarkdown.trim()) ||
+    aboutSections.length > 0,
+  );
+  const soldOutProducts =
+    redesignedStore && (catalog || tab !== "productos")
+      ? []
+      : collectSoldOutProducts(store);
+  const schemaProducts =
+    firstPageCatalog && Array.isArray(firstPageCatalog.items)
+      ? firstPageCatalog.items
+      : collectProducts(store).slice(0, 24);
+  const schemaProductCount =
+    typeof firstPageCatalog?.total === "number"
+      ? firstPageCatalog.total
+      : collectProducts(store).length;
 
   return (
     <div className="min-h-dvh bg-(--store-surface)">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: serializeJsonLd(buildJsonLd(locale, slug, store)),
-        }}
-      />
+      <script type="application/ld+json">
+        {serializeJsonLd(
+          buildJsonLd(
+            locale,
+            slug,
+            store,
+            schemaProducts,
+            schemaProductCount,
+            t("breadcrumbHome"),
+            t("breadcrumbStores"),
+          ),
+        )}
+      </script>
       <main
         id="main-content"
         tabIndex={-1}
@@ -318,12 +445,30 @@ export default async function StorePage({
           slug={slug}
           storeName={store.name}
           intro={
-            aboutNode ? (
+            !redesignedStore && aboutNode ? (
               <section className="prose max-w-none">{aboutNode}</section>
             ) : undefined
           }
-          sections={visibleSections}
-          catalogControls
+          aboutContent={
+            redesignedStore && aboutNode ? (
+              <section className="prose max-w-none">{aboutNode}</section>
+            ) : undefined
+          }
+          aboutSections={redesignedStore ? aboutSections : []}
+          showAbout={redesignedStore && hasAboutContent}
+          sections={productSections}
+          storeCategories={publicCategories}
+          catalogPagination={
+            catalog
+              ? {
+                  page: catalog.page,
+                  limit: catalog.limit,
+                  total: catalog.total,
+                }
+              : null
+          }
+          serverSorted={Boolean(catalog)}
+          catalogControls={redesignedStore}
         />
         {/* Sold-out section rendered after visible sections */}
         {soldOutProducts.length > 0 && (

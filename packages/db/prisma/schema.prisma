@@ -338,6 +338,10 @@ model Order {
   // or HOME (envío a domicilio). Null for PICKUP orders or legacy COURIER
   // orders.
   courierModality         CourierModalityType?
+  trackingNumber          String?
+  trackingUrl             String?
+  // Stored in the private payment-image bucket; never expose this URL to clients.
+  packedPhotoUrl          String?
   // Set only when the buyer chose a pickup point that isn't open today —
   // the future date they committed to, validated against that point's
   // openDays at checkout. Null for same-day pickup (today is implied).

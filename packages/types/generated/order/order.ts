@@ -18,6 +18,7 @@ import type {
   OrderStatusResponseDto,
   ReviewPaymentDto,
   VoidOrderPaymentDto,
+  UpdateOrderShippingDto,
 } from "../api.schemas.js";
 
 import { customFetch } from "../../http.js";
@@ -269,6 +270,27 @@ export const correctBuyerPhone = async (
       method: "PATCH",
       headers: { "Content-Type": "application/json", ...options?.headers },
       body: JSON.stringify(correctBuyerPhoneDto),
+    },
+  );
+};
+
+export const getUpdateShippingUrl = (storeId: string, orderId: string) => {
+  return `/stores/${storeId}/orders/${orderId}/shipping`;
+};
+
+export const updateShipping = async (
+  storeId: string,
+  orderId: string,
+  updateOrderShippingDto: UpdateOrderShippingDto,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OrderDetailResponseDto> => {
+  return customFetch<OrderDetailResponseDto>(
+    getUpdateShippingUrl(storeId, orderId),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateOrderShippingDto),
     },
   );
 };

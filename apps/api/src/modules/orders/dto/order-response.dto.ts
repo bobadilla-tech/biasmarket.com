@@ -232,6 +232,15 @@ export class OrderResponseDto {
   @ApiProperty({ type: String, nullable: true })
   courierName: string | null;
 
+  @ApiProperty({ type: String, nullable: true })
+  trackingNumber: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  trackingUrl: string | null;
+
+  @ApiProperty()
+  packedPhotoAvailable: boolean;
+
   @ApiProperty({ enum: ['AGENCY', 'HOME'], nullable: true })
   courierModality: 'AGENCY' | 'HOME' | null;
 
@@ -392,6 +401,15 @@ export class OrderStatusResponseDto {
   // `deliveryDetails.courierName` was never written.
   @ApiProperty({ type: String, nullable: true })
   courierName: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  trackingNumber: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  trackingUrl: string | null;
+
+  @ApiProperty()
+  packedPhotoAvailable: boolean;
 
   @ApiProperty({ enum: ['AGENCY', 'HOME'], nullable: true })
   courierModality: 'AGENCY' | 'HOME' | null;

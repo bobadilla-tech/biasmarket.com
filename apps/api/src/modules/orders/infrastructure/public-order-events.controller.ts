@@ -7,22 +7,29 @@ import {
   HttpCode,
   Param,
   Post,
+  StreamableFile,
   UnsupportedMediaTypeException,
   UseGuards,
 } from '@nestjs/common';
-import { ApiNoContentResponse, ApiOkResponse } from '@nestjs/swagger';
+import {
+  ApiNoContentResponse,
+  ApiOkResponse,
+  ApiProduces,
+} from '@nestjs/swagger';
 import { Public } from '@thallesp/nestjs-better-auth';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { OrderEventsService } from '../application/order-events.service.js';
 import { PublicOrderService } from '../application/public-order.service.js';
 import { RecordInviteEventDto } from '../dto/record-invite-event.dto.js';
 import { PublicOrderResponseDto } from '../dto/public-order-response.dto.js';
+import { StorageService } from '../../../storage/storage.service.js';
 
 @Controller('public/orders')
 export class PublicOrderEventsController {
   constructor(
     private events: OrderEventsService,
     private orders: PublicOrderService,
+    private storage: StorageService,
   ) {}
 
   @Public()
@@ -36,6 +43,22 @@ export class PublicOrderEventsController {
     @Param('token') token: string,
   ): Promise<PublicOrderResponseDto> {
     return this.orders.getByToken(token);
+  }
+
+  @Public()
+  @Get(':token/packed-photo')
+  @Header('Cache-Control', 'no-store')
+  @Header('Referrer-Policy', 'no-referrer')
+  @Header('Cross-Origin-Resource-Policy', 'cross-origin')
+  @ApiOkResponse({ schema: { type: 'string', format: 'binary' } })
+  @ApiProduces('image/jpeg', 'image/png')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 30 } })
+  async getPackedPhoto(@Param('token') token: string): Promise<StreamableFile> {
+    const imageUrl = await this.orders.getPackedPhotoUrlByToken(token);
+    const { body, contentType } =
+      await this.storage.getPaymentImageStream(imageUrl);
+    return new StreamableFile(body, { type: contentType });
   }
 
   @Public()

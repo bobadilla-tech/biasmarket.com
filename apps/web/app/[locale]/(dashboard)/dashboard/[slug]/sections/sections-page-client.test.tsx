@@ -8,6 +8,16 @@ const { useSensorMock } = vi.hoisted(() => ({
   useSensorMock: vi.fn(),
 }));
 
+vi.mock("next/navigation", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("next/navigation")>();
+  return {
+    ...actual,
+    usePathname: () => "/es/dashboard/my-store/sections",
+    useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+    useSearchParams: () => new URLSearchParams(),
+  };
+});
+
 vi.mock("@dnd-kit/core", async () => {
   const actual =
     await vi.importActual<typeof import("@dnd-kit/core")>("@dnd-kit/core");

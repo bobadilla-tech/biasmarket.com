@@ -994,6 +994,17 @@ export default async () => {
                 type: () => String,
                 nullable: true,
               },
+              trackingNumber: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              trackingUrl: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              packedPhotoAvailable: { required: true, type: () => Boolean },
               courierModality: {
                 required: true,
                 nullable: true,
@@ -1138,6 +1149,17 @@ export default async () => {
                 type: () => String,
                 nullable: true,
               },
+              trackingNumber: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              trackingUrl: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              packedPhotoAvailable: { required: true, type: () => Boolean },
               courierModality: {
                 required: true,
                 nullable: true,
@@ -1199,6 +1221,26 @@ export default async () => {
               currency: { required: true, type: () => String },
               expiresAt: { required: true, type: () => String },
               createdAt: { required: true, type: () => String },
+            },
+          },
+        ],
+        [
+          import('./modules/orders/dto/update-order-shipping.dto.js'),
+          {
+            UpdateOrderShippingDto: {
+              trackingNumber: {
+                required: false,
+                type: () => String,
+                nullable: true,
+                maxLength: 120,
+              },
+              trackingUrl: {
+                required: false,
+                type: () => String,
+                nullable: true,
+                maxLength: 2048,
+                format: 'uri',
+              },
             },
           },
         ],
@@ -1777,6 +1819,17 @@ export default async () => {
                 type: () => String,
                 nullable: true,
               },
+              trackingNumber: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              trackingUrl: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              packedPhotoAvailable: { required: true, type: () => Boolean },
               courierModality: {
                 required: true,
                 nullable: true,
@@ -3085,6 +3138,15 @@ export default async () => {
                   .OrderDetailResponseDto,
               },
               getPaymentImage: {},
+              updateShipping: {
+                type: t['./modules/orders/dto/order-response.dto.js']
+                  .OrderDetailResponseDto,
+              },
+              uploadPackedPhoto: {
+                type: t['./modules/orders/dto/order-response.dto.js']
+                  .OrderDetailResponseDto,
+              },
+              getPackedPhoto: {},
               addPayment: {
                 type: t['./modules/orders/dto/order-response.dto.js']
                   .OrderDetailResponseDto,
@@ -3201,6 +3263,7 @@ export default async () => {
                 type: t['./modules/orders/dto/public-order-response.dto.js']
                   .PublicOrderResponseDto,
               },
+              getPackedPhoto: {},
               recordInvite: {},
             },
           },
