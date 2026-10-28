@@ -2,6 +2,7 @@ import { Test, type TestingModule } from '@nestjs/testing';
 import { type INestApplication, ValidationPipe } from '@nestjs/common';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import request from 'supertest';
+import { randomUUID } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import { AppModule } from './../src/app.module.js';
 import { AllExceptionsFilter } from '../src/common/filters/all-exceptions.filter.js';
@@ -26,7 +27,7 @@ describe('public orders (e2e)', () => {
   let productVariantId: string;
   const orderIds: string[] = [];
 
-  const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const runId = randomUUID();
   const email = `public-orders-e2e-${runId}@example.com`;
   const customerPhone = '+51987654321';
   const recipientPhone = '+51933333333';
