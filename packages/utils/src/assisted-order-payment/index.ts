@@ -11,5 +11,8 @@ export function assistedRequiredAmountCents(
 ): number | null {
   if (paymentType !== "PARTIAL") return totalCents;
   if (deliveryMethodType !== "PICKUP") return null;
-  return Math.round((totalCents * ASSISTED_PICKUP_DEPOSIT_PERCENT) / 100);
+  const depositCents = Math.round(
+    (totalCents * ASSISTED_PICKUP_DEPOSIT_PERCENT) / 100,
+  );
+  return totalCents > 0 ? Math.max(1, depositCents) : depositCents;
 }

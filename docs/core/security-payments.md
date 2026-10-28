@@ -174,10 +174,11 @@ as a confirmed sale at each step.
    recording enough to reach `requiredAmount` routes straight through the
    approve path (next step) → `VERIFIED`
    - A seller may void a recorded or approved payment only while fulfillment
-     is still `ORDERING`. Voiding records the actor, timestamp and reason,
+     is still `ORDERING` and before the order is `VERIFIED`. Voiding records
+     the actor, timestamp and reason,
      keeps the payment in history, and recalculates the payment status from the
-     remaining non-voided payments. This includes reverting `VERIFIED` to
-     `PARTIALLY_PAID` or `PENDING_PAYMENT` when its threshold is no longer met.
+     remaining non-voided payments. The result may be `PARTIALLY_PAID`,
+     `PAYMENT_SUBMITTED` when an unreviewed proof remains, or `PENDING_PAYMENT`.
 4. **Seller approves / rejects** —
    `PATCH /stores/:storeId/orders/:orderId/review`
    (`review-payment.usecase.ts`):

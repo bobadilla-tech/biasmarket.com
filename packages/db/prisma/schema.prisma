@@ -471,6 +471,7 @@ model OrderPayment {
   @@index([orderId, createdAt])
   @@index([storeId, createdAt])
   @@index([storeId, operationCode])
+  @@index([storeId, paidAt])
 }
 
 enum PaymentSource {

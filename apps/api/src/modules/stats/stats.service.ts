@@ -76,26 +76,24 @@ export class StatsService {
     await this.assertOwnership(storeId, userId);
 
     const [
-      revenuePayments,
+      revenueAggregate,
       paymentGroups,
       fulfillmentGroups,
       lowStockCount,
       recentOrdersRaw,
       partialPaymentOrdersRaw,
     ] = await Promise.all([
-      this.prisma.orderPayment.findMany({
+      this.prisma.orderPayment.aggregate({
         where: {
           storeId,
+          // Must mirror `countsTowardPaid` in common/payment-summary.ts.
+          voidedAt: null,
+          OR: [{ source: 'SELLER_RECORDED' }, { reviewStatus: 'APPROVED' }],
           order: {
             paymentStatus: { in: [...REVENUE_ORDER_PAYMENT_STATUSES] },
           },
         },
-        select: {
-          amount: true,
-          source: true,
-          reviewStatus: true,
-          voidedAt: true,
-        },
+        _sum: { amount: true },
       }),
       this.prisma.order.groupBy({
         by: ['paymentStatus'],
@@ -163,13 +161,7 @@ export class StatsService {
     );
 
     return {
-      revenue: revenuePayments
-        .filter(countsTowardPaid)
-        .reduce(
-          (sum, payment) => sum.plus(payment.amount),
-          new Prisma.Decimal(0),
-        )
-        .toNumber(),
+      revenue: revenueAggregate._sum.amount?.toNumber() ?? 0,
       totalOrders,
       paymentStatusCounts,
       fulfillmentStatusCounts,

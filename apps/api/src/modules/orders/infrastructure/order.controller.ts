@@ -36,6 +36,8 @@ import { OrderEventsService } from '../application/order-events.service.js';
 import { ReviewPaymentDto } from '../dto/review-payment.dto.js';
 import { AdvanceFulfillmentDto } from '../dto/advance-fulfillment.dto.js';
 import { CancelOrderDto } from '../dto/cancel-order.dto.js';
+import { VoidOrderPaymentDto } from '../dto/void-order-payment.dto.js';
+import { VoidOrderPaymentUseCase } from '../application/void-order-payment.usecase.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { StorageService } from '../../../storage/storage.service.js';
@@ -371,6 +373,7 @@ export class OrderController {
     private prisma: PrismaService,
     private storage: StorageService,
     private events: OrderEventsService,
+    private voidOrderPayment: VoidOrderPaymentUseCase,
   ) {}
 
   @ApiQuery({ name: 'paymentStatus', required: false, type: String })
@@ -816,6 +819,26 @@ export class OrderController {
 
     const updated = await this.orders.findRowByIdForStore(orderId, storeId);
     return toOrderDetailDto(updated);
+  }
+
+  @Patch(':orderId/payments/:paymentId/void')
+  async voidPayment(
+    @Param('storeId') storeId: string,
+    @Param('orderId') orderId: string,
+    @Param('paymentId') paymentId: string,
+    @Session() session: UserSession,
+    @Body() dto: VoidOrderPaymentDto,
+  ): Promise<OrderDetailResponseDto> {
+    await this.voidOrderPayment.execute(
+      orderId,
+      paymentId,
+      storeId,
+      session.user.id,
+      dto.reason,
+    );
+    return toOrderDetailDto(
+      await this.orders.findRowByIdForStore(orderId, storeId),
+    );
   }
 
   @Patch(':orderId/review')

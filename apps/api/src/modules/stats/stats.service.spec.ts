@@ -69,45 +69,40 @@ describe('StatsService', () => {
     beforeEach(() => {
       stubOwnedStore();
       prisma.orderPayment.findMany.mockResolvedValue([]);
+      prisma.orderPayment.aggregate.mockResolvedValue({
+        _sum: { amount: null },
+      });
       prisma.order.groupBy.mockResolvedValue([]);
       prisma.notification.count.mockResolvedValue(2);
       prisma.order.findMany.mockResolvedValue([]);
     });
 
-    it('loads revenue candidates for the store and applies countsTowardPaid in memory', async () => {
+    it('aggregates counted revenue in the database', async () => {
       await service.getOverview(storeId, ownerId);
 
-      expect(prisma.orderPayment.findMany).toHaveBeenCalledWith({
+      expect(prisma.orderPayment.aggregate).toHaveBeenCalledWith({
         where: {
           storeId,
+          voidedAt: null,
+          OR: [{ source: 'SELLER_RECORDED' }, { reviewStatus: 'APPROVED' }],
           order: {
             paymentStatus: { in: ['VERIFIED', 'PARTIALLY_PAID'] },
           },
         },
-        select: {
-          amount: true,
-          source: true,
-          reviewStatus: true,
-          voidedAt: true,
-        },
+        _sum: { amount: true },
       });
     });
 
     it('sums the verified amount of PARTIALLY_PAID orders into revenue, never the full order total', async () => {
-      prisma.orderPayment.findMany.mockResolvedValue([
-        {
-          amount: new Prisma.Decimal(30),
-          source: 'SELLER_RECORDED',
-          reviewStatus: 'N_A',
-          voidedAt: null,
-        },
-      ]);
+      prisma.orderPayment.aggregate.mockResolvedValue({
+        _sum: { amount: new Prisma.Decimal(30) },
+      });
 
       const result = await service.getOverview(storeId, ownerId);
 
       // A 30% deposit on a 100 order contributes exactly 30 to revenue — the
-      // service's job is to aggregate the verified payment rows, so the 30
-      // here mirrors the query-level filter (the aggregate itself is stubbed).
+      // service reads the database aggregate, which applies the verified
+      // payment predicate in the query.
       expect(result.revenue).toBe(30);
     });
 

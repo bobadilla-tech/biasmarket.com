@@ -62,6 +62,11 @@ export class VoidOrderPaymentUseCase {
           'No se pueden anular pagos de una orden cancelada o rechazada',
         );
       }
+      if (order.paymentStatus === 'VERIFIED') {
+        throw new BadRequestException(
+          'No se pueden anular pagos de una orden ya verificada',
+        );
+      }
 
       const payment = await tx.orderPayment.findFirst({
         where: { id: paymentId, orderId, storeId },

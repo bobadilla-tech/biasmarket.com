@@ -160,8 +160,8 @@ describe('CustomersService', () => {
         },
       ]);
       prisma.order.groupBy.mockResolvedValue([]);
-      // Non-collecting orders are excluded at the query level; payment rows
-      // still pass through countsTowardPaid for proof and void filtering.
+      // Non-collecting orders and non-counting payment rows are excluded at
+      // the query level, matching countsTowardPaid.
       prisma.orderPayment.findMany.mockResolvedValue([]);
 
       const result = await service.findAllForStore(storeId, ownerId);
@@ -169,6 +169,8 @@ describe('CustomersService', () => {
       expect(prisma.orderPayment.findMany).toHaveBeenCalledWith({
         where: {
           storeId,
+          voidedAt: null,
+          OR: [{ source: 'SELLER_RECORDED' }, { reviewStatus: 'APPROVED' }],
           order: {
             paymentStatus: { in: ['VERIFIED', 'PARTIALLY_PAID'] },
             customerId: { not: null },
@@ -176,9 +178,6 @@ describe('CustomersService', () => {
         },
         select: {
           amount: true,
-          source: true,
-          reviewStatus: true,
-          voidedAt: true,
           order: { select: { customerId: true } },
         },
       });

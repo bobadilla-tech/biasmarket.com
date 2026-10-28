@@ -23,6 +23,7 @@ import { OrderRepository } from './order.repository.js';
 import { ReviewPaymentUseCase } from '../application/review-payment.usecase.js';
 import { AdvanceFulfillmentUseCase } from '../application/advance-fulfillment.usecase.js';
 import { CancelOrderUseCase } from '../application/cancel-order.usecase.js';
+import { VoidOrderPaymentUseCase } from '../application/void-order-payment.usecase.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { StorageService } from '../../../storage/storage.service.js';
 import { OrderEventsService } from '../application/order-events.service.js';
@@ -141,6 +142,7 @@ describe('OrderController.addPayment', () => {
         { provide: ReviewPaymentUseCase, useValue: reviewPayment },
         { provide: AdvanceFulfillmentUseCase, useValue: { execute: vi.fn() } },
         { provide: CancelOrderUseCase, useValue: { execute: vi.fn() } },
+        { provide: VoidOrderPaymentUseCase, useValue: { execute: vi.fn() } },
         { provide: PrismaService, useValue: prisma },
         { provide: StorageService, useValue: storage },
         { provide: OrderEventsService, useValue: events },
@@ -406,6 +408,7 @@ describe('OrderController.getPaymentImage', () => {
         { provide: ReviewPaymentUseCase, useValue: { execute: vi.fn() } },
         { provide: AdvanceFulfillmentUseCase, useValue: { execute: vi.fn() } },
         { provide: CancelOrderUseCase, useValue: { execute: vi.fn() } },
+        { provide: VoidOrderPaymentUseCase, useValue: { execute: vi.fn() } },
         { provide: PrismaService, useValue: {} },
         { provide: StorageService, useValue: storage },
         { provide: OrderEventsService, useValue: { record: vi.fn() } },
@@ -555,6 +558,7 @@ describe('OrderController.reviewPaymentProof', () => {
         { provide: ReviewPaymentUseCase, useValue: reviewPayment },
         { provide: AdvanceFulfillmentUseCase, useValue: { execute: vi.fn() } },
         { provide: CancelOrderUseCase, useValue: { execute: vi.fn() } },
+        { provide: VoidOrderPaymentUseCase, useValue: { execute: vi.fn() } },
         { provide: PrismaService, useValue: prisma },
         {
           provide: StorageService,

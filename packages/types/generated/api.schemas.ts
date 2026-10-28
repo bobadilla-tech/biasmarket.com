@@ -1080,6 +1080,11 @@ export interface ReviewPaymentDto {
   reason?: string;
 }
 
+export interface VoidOrderPaymentDto {
+  /** @minLength 1 @maxLength 500 */
+  reason: string;
+}
+
 export type OrderStatusResponseDtoSource =
   (typeof OrderStatusResponseDtoSource)[keyof typeof OrderStatusResponseDtoSource];
 

@@ -25,7 +25,7 @@ describe('VoidOrderPaymentUseCase', () => {
       $queryRaw: vi.fn().mockResolvedValue([{ id: orderId }]),
       order: {
         findFirst: vi.fn().mockResolvedValue({
-          paymentStatus: 'VERIFIED',
+          paymentStatus: 'PARTIALLY_PAID',
           fulfillmentStatus: 'ORDERING',
           requiredAmount: new Prisma.Decimal(100),
         }),
@@ -69,7 +69,7 @@ describe('VoidOrderPaymentUseCase', () => {
     );
   });
 
-  it('allows voiding on VERIFIED before fulfillment advances and recalculates to PARTIALLY_PAID', async () => {
+  it('allows voiding a payment before fulfillment advances and recalculates to PARTIALLY_PAID', async () => {
     const result = await useCase.execute(
       orderId,
       paymentId,
@@ -102,6 +102,20 @@ describe('VoidOrderPaymentUseCase', () => {
       }),
     });
     expect(result.paymentStatus).toBe('PARTIALLY_PAID');
+  });
+
+  it('rejects voiding after an order has been verified', async () => {
+    tx.order.findFirst.mockResolvedValueOnce({
+      paymentStatus: 'VERIFIED',
+      fulfillmentStatus: 'ORDERING',
+      requiredAmount: new Prisma.Decimal(100),
+    });
+
+    await expect(
+      useCase.execute(orderId, paymentId, storeId, userId, 'Mistake'),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(tx.orderPayment.update).not.toHaveBeenCalled();
+    expect(tx.auditLog.create).not.toHaveBeenCalled();
   });
 
   it('rejects voiding after fulfillment advances', async () => {
