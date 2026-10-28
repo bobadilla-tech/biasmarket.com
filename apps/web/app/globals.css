@@ -412,7 +412,7 @@
 }
 
 .dashboard-theme
-  :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]) {
+  :is(input, select, textarea):not([type="checkbox"], [type="radio"]) {
   transition:
     border-color 160ms ease,
     box-shadow 160ms ease,
