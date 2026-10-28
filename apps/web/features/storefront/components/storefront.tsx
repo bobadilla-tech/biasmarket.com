@@ -1,6 +1,6 @@
 "use client";
 
-import type { KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { MapPin, MessageCircle, Search, Sparkles } from "lucide-react";
@@ -375,36 +375,110 @@ export function CategoryFilter({
   onChange,
 }: {
   categories: StorefrontCategory[];
-  selected: string;
-  onChange: (id: string) => void;
+  selected: string[];
+  onChange: (ids: string[]) => void;
 }) {
   const t = useTranslations("storefront");
-  const items: StorefrontCategory[] = [
-    { id: "", name: t("allCategories") },
-    ...categories,
-  ];
+  const [expanded, setExpanded] = useState(false);
+
+  function toggleCategory(id: string) {
+    onChange(
+      selected.includes(id)
+        ? selected.filter((selectedId) => selectedId !== id)
+        : [...selected, id],
+    );
+  }
+
   return (
-    <div
-      role="group"
-      className="flex gap-2 overflow-x-auto py-1"
-      aria-label={t("categories")}
-    >
-      {items.map(({ id, name }) => (
+    <>
+      <aside
+        aria-label={t("filterByCategory")}
+        className="hidden rounded-2xl border border-(--store-border) bg-(--store-card) p-4 lg:block"
+      >
         <button
-          key={id || "all"}
           type="button"
-          aria-pressed={selected === id}
-          onClick={() => onChange(id)}
-          className={`min-h-10 shrink-0 rounded-full border px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) ${selected === id ? "border-transparent bg-(--store-tab-active) text-(--store-on-active)" : "border-(--store-border) bg-(--store-card) text-(--store-muted) hover:border-(--store-primary)"}`}
+          aria-expanded={expanded}
+          onClick={() => setExpanded((value) => !value)}
+          className="flex min-h-11 w-full items-center justify-between gap-3 text-left text-sm font-bold text-(--store-text) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary)"
         >
-          {name}
+          <span>{t("filterByCategory")}</span>
+          <span aria-hidden="true" className="text-lg text-(--store-primary)">
+            {expanded ? "−" : "+"}
+          </span>
         </button>
-      ))}
-    </div>
+        {expanded && (
+          <div
+            role="group"
+            aria-label={t("filterByCategory")}
+            className="mt-3 max-h-80 space-y-1 overflow-y-auto border-t border-(--store-border) pt-3"
+          >
+            <label className="flex min-h-10 cursor-pointer items-center gap-3 rounded-lg px-2 text-sm text-(--store-muted) hover:bg-(--store-surface)">
+              <input
+                type="checkbox"
+                checked={selected.length === 0}
+                onChange={() => onChange([])}
+                className="size-4 accent-(--store-primary)"
+              />
+              <span>{t("allCategories")}</span>
+            </label>
+            {categories.map((category) => {
+              const id = category.slug ?? category.id;
+              return (
+                <label
+                  key={id}
+                  className="flex min-h-10 cursor-pointer items-center gap-3 rounded-lg px-2 text-sm text-(--store-text) hover:bg-(--store-surface)"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selected.includes(id)}
+                    onChange={() => toggleCategory(id)}
+                    className="size-4 accent-(--store-primary)"
+                  />
+                  <span className="min-w-0 flex-1 truncate">
+                    {category.name}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        )}
+      </aside>
+
+      <div
+        role="group"
+        className="flex gap-2 overflow-x-auto py-1 lg:hidden"
+        aria-label={t("categories")}
+      >
+        <button
+          type="button"
+          aria-pressed={selected.length === 0}
+          onClick={() => onChange([])}
+          className={`min-h-10 shrink-0 rounded-full border px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) ${selected.length === 0 ? "border-transparent bg-(--store-tab-active) text-(--store-on-active)" : "border-(--store-border) bg-(--store-card) text-(--store-muted) hover:border-(--store-primary)"}`}
+        >
+          {t("allCategories")}
+        </button>
+        {categories.map((category) => {
+          const id = category.slug ?? category.id;
+          const active = selected.includes(id);
+          return (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={active}
+              onClick={() => onChange(active ? [] : [id])}
+              className={`min-h-10 shrink-0 rounded-full border px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) ${active ? "border-transparent bg-(--store-tab-active) text-(--store-on-active)" : "border-(--store-border) bg-(--store-card) text-(--store-muted) hover:border-(--store-primary)"}`}
+            >
+              {category.name}
+            </button>
+          );
+        })}
+      </div>
+    </>
   );
 }
 
 /** Displays a category image and title using the store theme. */
+
 export function CategoryCard({
   category,
   imageUrl,

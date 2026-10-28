@@ -168,11 +168,10 @@ describe("storefront empty states", () => {
     expect(screen.queryByRole("status")).toBeNull();
   });
 
-  it("debounces store search in the URL and exposes the order menu", async () => {
+  it("debounces store search through router navigation and exposes the order menu", async () => {
     vi.useFakeTimers();
     navigation.url = "/es/store/tienda?tab=productos";
-    window.history.replaceState(null, "", "/es/store/tienda?tab=productos");
-    const replaceState = vi.spyOn(window.history, "replaceState");
+    navigation.replace.mockClear();
     withMessages(
       <StoreSectionRenderer slug="tienda" sections={[]} catalogControls />,
     );
@@ -180,22 +179,50 @@ describe("storefront empty states", () => {
     expect(input.getAttribute("placeholder")).toBe("Buscar en esta tienda");
     expect(screen.getByRole("combobox", { name: "Ordenar por" })).toBeTruthy();
     fireEvent.change(input, { target: { value: "álbum" } });
-    expect(replaceState).not.toHaveBeenCalled();
+    expect(navigation.replace).not.toHaveBeenCalled();
     await act(async () => {
       vi.advanceTimersByTime(300);
     });
-    expect(replaceState).toHaveBeenCalledWith(
-      null,
-      "",
+    expect(navigation.replace).toHaveBeenCalledWith(
       "/es/store/tienda?tab=productos&q=%C3%A1lbum&orden=recientes",
+      { scroll: false },
     );
-    replaceState.mockRestore();
     vi.useRealTimers();
   });
 
   it("renders an accessible placeholder when an image is missing", () => {
     withMessages(<ImagePlaceholder alt="Categoría Álbumes" />);
     expect(screen.getByRole("img", { name: "Categoría Álbumes" })).toBeTruthy();
+  });
+
+  it("keeps the desktop category panel collapsed and supports multi-select", () => {
+    navigation.url = "/es/store/tienda?tab=productos";
+    navigation.push.mockClear();
+    const renderer = (
+      <StoreSectionRenderer
+        slug="tienda"
+        sections={[]}
+        catalogControls
+        storeCategories={[
+          { id: "1", slug: "albumes", name: "Álbumes" },
+          { id: "2", slug: "photocards", name: "Photocards" },
+        ]}
+      />
+    );
+    withMessages(renderer);
+
+    expect(screen.queryByRole("checkbox", { name: "Álbumes" })).toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Filtrar por categoría" }),
+    );
+    const albums = screen.getByRole("checkbox", { name: "Álbumes" });
+    fireEvent.click(albums);
+    fireEvent.click(screen.getByRole("checkbox", { name: "Photocards" }));
+
+    expect(navigation.push).toHaveBeenLastCalledWith(
+      "/es/store/tienda?tab=productos&categoria=albumes%2Cphotocards",
+      { scroll: false },
+    );
   });
 
   it("filters and sorts public categories by their names and links by slug", () => {
@@ -261,41 +288,26 @@ describe("storefront empty states", () => {
     });
   });
 
-  it("updates pagination in browser history and disables the last page", () => {
-    navigation.url = "/es/store/tienda?tab=productos&page=2";
-    window.history.replaceState(null, "", navigation.url);
-    const pushState = vi.spyOn(window.history, "pushState");
+  it("loads the next product page without replacing the current grid", () => {
+    navigation.url = "/es/store/tienda?tab=productos&page=1";
+    navigation.push.mockClear();
     withMessages(
       <StoreSectionRenderer
         slug="tienda"
         sections={[]}
         catalogControls
         serverSorted
-        catalogPagination={{ page: 2, limit: 24, total: 60 }}
+        catalogPagination={{ page: 1, limit: 24, total: 60 }}
       />,
     );
 
-    expect(
-      screen.getByRole("navigation", { name: "Páginas de productos" }),
-    ).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Anterior" }));
-    expect(pushState).toHaveBeenCalledWith(
-      null,
-      "",
-      "/es/store/tienda?tab=productos&page=1",
+    fireEvent.click(
+      screen.getByRole("button", { name: "Cargar más productos" }),
     );
-    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
-    expect(pushState).toHaveBeenCalledWith(
-      null,
-      "",
-      "/es/store/tienda?tab=productos&page=3",
+    expect(navigation.push).toHaveBeenCalledWith(
+      "/es/store/tienda?tab=productos&page=2",
+      { scroll: false },
     );
-    expect(
-      screen
-        .getByRole("button", { name: "Siguiente" })
-        .hasAttribute("disabled"),
-    ).toBe(false);
-    pushState.mockRestore();
   });
 
   it("sorts saved catalog products by availability, effective price, and name", () => {
