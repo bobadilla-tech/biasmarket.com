@@ -585,6 +585,7 @@ describe('OrderController.shipping', () => {
         { provide: PrismaService, useValue: prisma },
         { provide: StorageService, useValue: storage },
         { provide: OrderEventsService, useValue: events },
+        { provide: VoidOrderPaymentUseCase, useValue: { execute: vi.fn() } },
       ],
     }).compile();
 
