@@ -50,6 +50,7 @@ import type {
 } from '../dto/order-response.dto.js';
 import {
   IMAGE_UPLOAD_MIME_TYPES,
+  MAX_UPLOAD_SIZE_BYTES,
   UploadedFileValidationPipe,
   type ValidatedUploadedFile,
 } from '../../../common/uploaded-file-validation.pipe.js';
@@ -488,7 +489,9 @@ export class OrderController {
   @Post(':orderId/shipping/photo')
   @ApiConsumes('multipart/form-data')
   @ApiOkResponse({ type: OrderDetailResponseDto })
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: MAX_UPLOAD_SIZE_BYTES } }),
+  )
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { ttl: 60_000, limit: 20 } })
   async uploadPackedPhoto(
