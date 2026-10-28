@@ -242,10 +242,14 @@ describe("storefront empty states", () => {
       screen.getByRole("group", { name: "Categorías" }),
     );
     expect(
-      categoryTabs.getByRole("button", { name: "Álbumes" }).getAttribute("aria-pressed"),
+      categoryTabs
+        .getByRole("button", { name: "Álbumes" })
+        .getAttribute("aria-pressed"),
     ).toBe("true");
     expect(
-      categoryChips.getByRole("button", { name: "Álbumes" }).getAttribute("aria-pressed"),
+      categoryChips
+        .getByRole("button", { name: "Álbumes" })
+        .getAttribute("aria-pressed"),
     ).toBe("true");
 
     fireEvent.click(categoryTabs.getByRole("button", { name: "Álbumes" }));
