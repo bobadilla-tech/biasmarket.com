@@ -149,12 +149,12 @@ Scratch worktree `<scratchpad>/wt` (detached `origin/main`), own Postgres 17 on
 :55432 and Redis on :56379 (containers `pl-pg`, `pl-redis`). Probe code:
 `<scratchpad>/probe-333.keep.ts` (absolute path in review-log).
 
-| #   | What ran                                                                                                                                        | Result                                                                                                                                                                                                                                                  | Changed in plan                                                     |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| P1  | vitest e2e on the real AppModule (rows seeded via prisma): 5 rounds of 2 parallel `POST /stores/:slug/checkout`, same brand-new phone and email | every round `201` + `500`; `BuyerAccount_phone_key` (P2002)                                                                                                                                                                                             | fix covers BuyerAccount                                             |
-| P2  | same file: verified BuyerAccount (same email) exists, no Customer/link, 2 parallel checkouts x5                                                 | every round `201` + `500`; `CustomerStoreLink_buyerAccountId_storeId_key` from `customerStoreLink.upsert`                                                                                                                                               | fix covers link + Customer; Prisma `upsert` is not race-safe here   |
-| P3  | stub page + `headers()` rule `/:locale/store/:slug/pedido/:token` + `next dev` + curl                                                           | 200; `Referrer-Policy: no-referrer` applied; `noindex, nofollow` and `referrer` meta from `generateMetadata`; next-intl adds `Link: hreflang` (contains the token) and `NEXT_LOCALE` cookie. **`Cache-Control` was `no-cache, must-revalidate` in dev** | prod verification is a CI-asserted test (4.2), route forced dynamic |
-| P4  | `grep`/diff of Caddyfile on main and #343                                                                                                       | no `log` directive                                                                                                                                                                                                                                      | PR4 is probe-first                                                  |
+| #  | What ran                                                                                                                                        | Result                                                                                                                                                                                                                                                  | Changed in plan                                                     |
+| -- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| P1 | vitest e2e on the real AppModule (rows seeded via prisma): 5 rounds of 2 parallel `POST /stores/:slug/checkout`, same brand-new phone and email | every round `201` + `500`; `BuyerAccount_phone_key` (P2002)                                                                                                                                                                                             | fix covers BuyerAccount                                             |
+| P2 | same file: verified BuyerAccount (same email) exists, no Customer/link, 2 parallel checkouts x5                                                 | every round `201` + `500`; `CustomerStoreLink_buyerAccountId_storeId_key` from `customerStoreLink.upsert`                                                                                                                                               | fix covers link + Customer; Prisma `upsert` is not race-safe here   |
+| P3 | stub page + `headers()` rule `/:locale/store/:slug/pedido/:token` + `next dev` + curl                                                           | 200; `Referrer-Policy: no-referrer` applied; `noindex, nofollow` and `referrer` meta from `generateMetadata`; next-intl adds `Link: hreflang` (contains the token) and `NEXT_LOCALE` cookie. **`Cache-Control` was `no-cache, must-revalidate` in dev** | prod verification is a CI-asserted test (4.2), route forced dynamic |
+| P4 | `grep`/diff of Caddyfile on main and #343                                                                                                       | no `log` directive                                                                                                                                                                                                                                      | PR4 is probe-first                                                  |
 
 Not probed (covered by verification steps): production `Cache-Control` and the
 RSC variant; the real shape of a browser Sentry event; Caddy error-log content.
@@ -275,9 +275,8 @@ All new unless noted:
   `export async function generateMetadata()` (literal form
   `canonical-regression.test.ts` greps) with generic title,
   `robots: { index: false,
-follow: false }`, `referrer: "no-referrer"`,
-  generic openGraph/twitter. Awaits `params`; renders
-  `<PublicOrderPage slug token />`.
+follow: false }`, `referrer: "no-referrer"`, generic
+  openGraph/twitter. Awaits `params`; renders `<PublicOrderPage slug token />`.
 - `features/public-order/`:
   - `queries/use-public-order.ts`: `useQuery` over
     `apiClient.publicOrders.getByToken(token, { credentials: "omit" })`. This
@@ -500,8 +499,8 @@ AND phone IS NULL RETURNING *`;
 4. Customer find-or-create (`:198-214`): the pattern of
    `assisted-customer.ts:17-49`
    (`INSERT ... ON CONFLICT ("storeId","phone") DO
-NOTHING`, `findUnique`,
-   one retry, else `ConflictException`), then keep the existing unconditional
+NOTHING`, `findUnique`, one
+   retry, else `ConflictException`), then keep the existing unconditional
    `customer.update({ email, name, emailVerified })` (checkout overwrites today;
    not the assisted `name: null`-only update).
 5. The `change-phone` confirm (`customer-account.service.ts:~387-405`:
@@ -553,8 +552,8 @@ repeat checkouts); say so in the PR.
   `createdAt desc`, `take: 10`, plus a separate `count`; legacy rows
   (`customerPhoneNormalized: null`, **with `storeId` in the where**,
   `orderBy
-createdAt desc`, new cap 500 (main has none), documented: `total`
-  is a lower bound beyond it) are normalised in memory as
+createdAt desc`, new cap 500 (main has none), documented: `total` is
+  a lower bound beyond it) are normalised in memory as
   `customers.service.ts:328-342` does, **excluding `orderId`** (the current
   order can itself be a legacy row), and merged: sort desc, slice 10,
   `total = indexedCount + legacyMatches`. The items query and the count are two
@@ -646,10 +645,9 @@ state`, same for 345; re-read the collision table.
 1. PR1. Signal: the new e2e fails on the base commit (paste output in the PR)
    and passes after; `pnpm --filter api test`, then `pnpm --filter api lint`,
    then `pnpm --filter api
-typecheck` (separate invocations; api
-   `pretypecheck` regenerates `apps/api/src/metadata.ts`: commit that diff if it
-   is part of the change; `lint` diffs against `origin/main`, so keep it
-   fetched) ok.
+typecheck` (separate invocations; api `pretypecheck`
+   regenerates `apps/api/src/metadata.ts`: commit that diff if it is part of the
+   change; `lint` diffs against `origin/main`, so keep it fetched) ok.
 2. PR-S. Signal: fake-transport test green (the server test forces
    `tracesSampleRate: 1` to get a transaction); `pnpm --filter web test`,
    `lint`, `typecheck` as separate invocations.
