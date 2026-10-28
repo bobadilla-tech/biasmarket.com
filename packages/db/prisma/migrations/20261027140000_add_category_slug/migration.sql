@@ -1,3 +1,4 @@
+/* tsqllint-disable — this migration targets PostgreSQL, not SQL Server. */
 ALTER TABLE "Category" ADD COLUMN "slug" TEXT;
 
 WITH normalized AS (
