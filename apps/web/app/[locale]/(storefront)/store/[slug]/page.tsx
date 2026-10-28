@@ -13,19 +13,52 @@ import {
   storeMarkdownToPlainText,
 } from "@/lib/store-markdown";
 
-/** Fetches a store's public storefront data, returning null when unavailable. */
-async function getStore(slug: string) {
-  const apiUrl =
+const STORE_SLUG_PATTERN = /^[a-z0-9][a-z0-9_-]*$/i;
+
+/** Resolve fixed API endpoints without allowing route input to change the URL. */
+function publicStoreApiUrl(
+  endpointName: "public" | "catalog" | "categories",
+): URL | null {
+  const configuredApiUrl =
     process.env.INTERNAL_API_URL ??
     process.env.NEXT_PUBLIC_API_URL ??
     (process.env.NODE_ENV === "development"
       ? "http://localhost:3000"
       : undefined);
-
-  if (!apiUrl) return null;
+  if (!configuredApiUrl) return null;
 
   try {
-    const res = await fetch(`${apiUrl}/api/stores/${slug}/public`, {
+    const apiBase = new URL(configuredApiUrl);
+    if (
+      (apiBase.protocol !== "http:" && apiBase.protocol !== "https:") ||
+      apiBase.username ||
+      apiBase.password
+    ) {
+      return null;
+    }
+    const basePath = apiBase.pathname.endsWith("/")
+      ? apiBase.pathname
+      : `${apiBase.pathname}/`;
+    const endpoint = new URL(
+      `api/stores/storefront/${endpointName}`,
+      new URL(basePath, apiBase.origin),
+    );
+    return endpoint.origin === apiBase.origin ? endpoint : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Fetches a store's public storefront data, returning null when unavailable. */
+async function getStore(slug: string) {
+  const endpoint = publicStoreApiUrl("public");
+  if (!endpoint || !STORE_SLUG_PATTERN.test(slug)) return null;
+
+  try {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ slug }),
       cache: "no-store",
     });
 
@@ -36,6 +69,41 @@ async function getStore(slug: string) {
     return await res.json();
   } catch {
     return null;
+  }
+}
+
+async function getCatalog(
+  slug: string,
+  params: Record<string, string | string[] | undefined>,
+) {
+  const endpoint = publicStoreApiUrl("catalog");
+  if (!endpoint || !STORE_SLUG_PATTERN.test(slug)) return null;
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ slug, query: params }),
+      cache: "no-store",
+    });
+    return response.ok ? await response.json() : null;
+  } catch {
+    return null;
+  }
+}
+
+async function getPublicCategories(slug: string) {
+  const endpoint = publicStoreApiUrl("categories");
+  if (!endpoint || !STORE_SLUG_PATTERN.test(slug)) return [];
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ slug }),
+      cache: "no-store",
+    });
+    return response.ok ? await response.json() : [];
+  } catch {
+    return [];
   }
 }
 
@@ -204,13 +272,34 @@ function buildJsonLd(locale: string, slug: string, store: any) {
 
 export default async function StorePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: Locale; slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { locale, slug } = await params;
-  const [store, t] = await Promise.all([
+  const queryParams = await searchParams;
+  const tab =
+    typeof queryParams.tab === "string" ? queryParams.tab : "productos";
+  const catalogQuery = {
+    ...(typeof queryParams.q === "string" && queryParams.q.trim()
+      ? { q: queryParams.q.trim() }
+      : {}),
+    ...(typeof queryParams.categoria === "string" && queryParams.categoria
+      ? { categorias: queryParams.categoria }
+      : {}),
+    ...(typeof queryParams.orden === "string"
+      ? { sort: queryParams.orden }
+      : {}),
+    ...(typeof queryParams.page === "string" ? { page: queryParams.page } : {}),
+  };
+  const [store, t, catalog, publicCategories] = await Promise.all([
     getStore(slug),
     getTranslations({ locale, namespace: "storefront" }),
+    tab === "productos"
+      ? getCatalog(slug, catalogQuery)
+      : Promise.resolve(null),
+    getPublicCategories(slug),
   ]);
 
   if (!store) {
@@ -245,9 +334,27 @@ export default async function StorePage({
     })
     .filter(Boolean);
 
-  const soldOutProducts = collectSoldOutProducts(store);
+  const catalogSections =
+    catalog && Array.isArray(catalog.items)
+      ? [
+          {
+            id: "public-catalog",
+            type: "COLLECTION" as const,
+            collection: {
+              name: "",
+              products: catalog.items.map((product: any) => ({
+                productId: product.id,
+                product,
+              })),
+            },
+          },
+        ]
+      : visibleSections;
+  const productSections =
+    tab === "productos" ? catalogSections : visibleSections;
+  const soldOutProducts = catalog ? [] : collectSoldOutProducts(store);
 
-  if (visibleSections.length === 0 && soldOutProducts.length === 0) {
+  if (productSections.length === 0 && soldOutProducts.length === 0) {
     return (
       <div className="min-h-screen bg-(--store-surface)">
         <main
@@ -278,7 +385,18 @@ export default async function StorePage({
                 <section className="prose max-w-none">{aboutNode}</section>
               ) : undefined
             }
-            sections={[]}
+            sections={productSections}
+            storeCategories={publicCategories}
+            catalogPagination={
+              catalog
+                ? {
+                    page: catalog.page,
+                    limit: catalog.limit,
+                    total: catalog.total,
+                  }
+                : null
+            }
+            serverSorted={Boolean(catalog)}
             catalogControls
           />
         </main>
@@ -322,7 +440,18 @@ export default async function StorePage({
               <section className="prose max-w-none">{aboutNode}</section>
             ) : undefined
           }
-          sections={visibleSections}
+          sections={productSections}
+          storeCategories={publicCategories}
+          catalogPagination={
+            catalog
+              ? {
+                  page: catalog.page,
+                  limit: catalog.limit,
+                  total: catalog.total,
+                }
+              : null
+          }
+          serverSorted={Boolean(catalog)}
           catalogControls
         />
         {/* Sold-out section rendered after visible sections */}
