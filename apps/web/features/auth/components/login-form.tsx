@@ -15,7 +15,7 @@ import { resolveSellerHomePath } from "../lib/seller-home-path";
 import { type LoginInput, loginSchema } from "../schemas/login.schema";
 
 const inputClassName =
-  "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-base text-gray-600 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 placeholder:text-gray-600 md:text-sm";
+  "w-full rounded-xl border border-input bg-card px-4 py-2.5 text-base text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 md:text-sm";
 
 export function LoginForm() {
   const t = useTranslations("onboarding.login");
@@ -51,8 +51,11 @@ export function LoginForm() {
   };
 
   return (
-    <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-100 p-8 flex flex-col gap-5">
-      <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+    <div
+      data-auth-card
+      className="w-full max-w-sm border bg-white p-8 flex flex-col gap-5"
+    >
+      <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
         <FormErrorSummary
@@ -101,7 +104,7 @@ export function LoginForm() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full rounded-xl bg-emerald-700 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:opacity-60"
+          className="w-full min-h-11 rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_8px_18px_rgb(120_73_158/20%)] transition-[transform,box-shadow,background-color] hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgb(120_73_158/26%)] disabled:opacity-60"
         >
           {isSubmitting ? t("submitting") : t("submit")}
         </button>
@@ -110,16 +113,16 @@ export function LoginForm() {
       <button
         type="button"
         onClick={onGoogle}
-        className="w-full rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+        className="w-full min-h-11 rounded-xl border border-border py-2.5 text-sm font-semibold text-foreground transition hover:border-primary/25 hover:bg-secondary"
       >
         {t("google")}
       </button>
 
-      <p className="text-center text-sm text-gray-500">
+      <p className="text-center text-sm text-muted-foreground">
         {t("noAccount")}{" "}
         <Link
           href="/onboarding"
-          className="font-medium text-emerald-700 hover:underline"
+          className="font-semibold text-primary underline-offset-4 hover:underline"
         >
           {t("signUpLink")}
         </Link>

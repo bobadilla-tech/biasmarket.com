@@ -16,8 +16,11 @@ export function OnboardingPageClient() {
 
   if (checkEmail) {
     return (
-      <div className="min-h-dvh flex items-start justify-center bg-gray-50 px-4 py-10 sm:items-center">
-        <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-100 p-8 flex flex-col gap-3 text-center">
+      <div className="auth-theme flex min-h-dvh items-start justify-center px-4 py-10 sm:items-center">
+        <div
+          data-auth-card
+          className="flex w-full max-w-sm flex-col gap-3 border bg-white p-8 text-center"
+        >
           <ol aria-label={t("progressLabel")} className="sr-only">
             <li>{t("title")}</li>
             <li aria-current="step">{t("checkEmailTitle")}</li>
@@ -25,11 +28,11 @@ export function OnboardingPageClient() {
           <h1
             ref={headingRef}
             tabIndex={-1}
-            className="text-2xl font-bold text-gray-900 outline-none"
+            className="text-2xl font-bold text-foreground outline-none"
           >
             {t("checkEmailTitle")}
           </h1>
-          <p role="status" className="text-sm text-gray-600">
+          <p role="status" className="text-sm text-muted-foreground">
             {t("checkEmailBody")}
           </p>
         </div>
@@ -38,8 +41,11 @@ export function OnboardingPageClient() {
   }
 
   return (
-    <div className="min-h-dvh flex items-start justify-center bg-gray-50 px-4 py-10 sm:items-center">
-      <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-100 p-8 flex flex-col gap-5 ">
+    <div className="auth-theme flex min-h-dvh items-start justify-center px-4 py-10 sm:items-center">
+      <div
+        data-auth-card
+        className="flex w-full max-w-sm flex-col gap-5 border bg-white p-8"
+      >
         <ol aria-label={t("progressLabel")} className="sr-only">
           <li aria-current="step">{t("title")}</li>
           <li>{t("checkEmailTitle")}</li>
@@ -47,18 +53,18 @@ export function OnboardingPageClient() {
         <h1
           ref={headingRef}
           tabIndex={-1}
-          className="text-2xl font-bold text-gray-900 outline-none"
+          className="text-2xl font-bold text-foreground outline-none"
         >
           {t("title")}
         </h1>
 
         <SignupForm onCheckEmail={() => setCheckEmail(true)} />
 
-        <p className="text-center text-sm text-gray-500">
+        <p className="text-center text-sm text-muted-foreground">
           {t("hasAccount")}{" "}
           <Link
             href="/login"
-            className="text-emerald-700 font-medium hover:underline"
+            className="font-semibold text-primary underline-offset-4 hover:underline"
           >
             {t("loginLink")}
           </Link>
