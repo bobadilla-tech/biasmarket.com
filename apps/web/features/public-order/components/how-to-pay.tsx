@@ -18,20 +18,22 @@ export function HowToPay({
   const hasMethods = order.paymentMethods.length > 0;
   const money = (amount: string | number) => `${order.currency} ${amount}`;
 
-  // Amounts come from the order, never from a method's `depositPercent` (that
-  // is the store's per-method config, not this order's adelanto).
+  // The buyer still owes `pendingAmount`, not `requiredAmount`: recorded or
+  // approved payments already reduced it, and a rejected proof on a
+  // partially-paid order leaves the status at REJECTED, not PARTIALLY_PAID.
+  // The wording keeps the order's shape (deposit plan vs. full total), but
+  // every amount shown is what still needs to be paid.
+  const due = money(order.pendingAmount);
   let amountLine: string;
   if (order.paymentStatus === "PARTIALLY_PAID") {
-    amountLine = t("howToPay.amountDue", {
-      amount: money(order.pendingAmount),
-    });
+    amountLine = t("howToPay.amountDue", { amount: due });
   } else if (Number(order.requiredAmount) < Number(order.totalAmount)) {
     amountLine = t("howToPay.amountDeposit", {
-      deposit: money(order.requiredAmount),
+      deposit: due,
       total: money(order.totalAmount),
     });
   } else {
-    amountLine = t("howToPay.amountTotal", { total: money(order.totalAmount) });
+    amountLine = t("howToPay.amountTotal", { total: due });
   }
 
   return (

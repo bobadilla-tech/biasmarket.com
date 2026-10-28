@@ -199,6 +199,34 @@ test("rejected shows its banner and the how-to-pay block", async () => {
   expect(screen.getByText("Cómo pagar")).toBeTruthy();
 });
 
+test("asks only for what is still due when a payment was already recorded", async () => {
+  // REJECTED is reachable from PARTIALLY_PAID, so the order can owe less than
+  // `requiredAmount` without ever being in the PARTIALLY_PAID status.
+  getByToken.mockResolvedValue(
+    makeOrder({
+      paymentStatus: "REJECTED",
+      paidAmount: 10,
+      pendingAmount: 20,
+      payments: [
+        {
+          source: "SELLER_RECORDED",
+          amount: "10",
+          createdAt: "2026-09-01T12:00:00.000Z",
+          reviewStatus: "N_A",
+          voidedAt: null,
+        },
+      ],
+    }),
+  );
+  renderPage();
+  expect(
+    await screen.findByText("Adelanto: PEN 20 (o el total: PEN 100)"),
+  ).toBeTruthy();
+  expect(
+    screen.queryByText("Adelanto: PEN 30 (o el total: PEN 100)"),
+  ).toBeNull();
+});
+
 test("cancelled shows the banner, no timeline and no how-to-pay", async () => {
   getByToken.mockResolvedValue(
     makeOrder({
