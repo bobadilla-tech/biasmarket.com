@@ -77,7 +77,7 @@ function TrendBand({
           {ROW_SKELETON_KEYS.map((key) => (
             <div
               key={key}
-              className="w-[150px] shrink-0 animate-pulse rounded-lg bg-white/70 p-[9.5px]"
+              className="fan-skeleton w-[150px] shrink-0 rounded-lg bg-white/70 p-[9.5px]"
             >
               <div className="aspect-square w-full rounded-lg bg-muted" />
               <div className="mt-2 h-3 w-4/5 rounded bg-muted" />
@@ -142,7 +142,7 @@ function TrendBandStripe({
             {Array.from({ length: 6 }, (_, index) => (
               <div
                 key={`stripe-skeleton-${index}`}
-                className="animate-pulse rounded-lg bg-white/70 p-[11.6px]"
+                className="fan-skeleton rounded-lg bg-white/70 p-[11.6px]"
               >
                 <div className="aspect-square w-full rounded-[12.3px] bg-muted" />
                 <div className="mt-2 h-3 w-4/5 rounded bg-muted" />

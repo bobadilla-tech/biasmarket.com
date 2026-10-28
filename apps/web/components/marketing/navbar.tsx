@@ -194,9 +194,9 @@ function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
                 {t("myStores")}
               </p>
               {storesPending ? (
-                <div className="animate-pulse space-y-1 px-2">
-                  <div className="h-8 rounded-lg bg-muted" />
-                  <div className="h-8 rounded-lg bg-muted" />
+                <div className="space-y-1 px-2">
+                  <div className="fan-skeleton h-8 rounded-lg bg-muted" />
+                  <div className="fan-skeleton h-8 rounded-lg bg-muted" />
                 </div>
               ) : stores && stores.length > 0 ? (
                 <div className="flex flex-col">

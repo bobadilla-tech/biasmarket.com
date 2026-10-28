@@ -36,7 +36,7 @@ export function DiscoverSection({
             ? ROW_PLACEHOLDER_KEYS.map((key) => (
                 <div
                   key={key}
-                  className="animate-pulse rounded-lg bg-muted p-[9.5px]"
+                  className="fan-skeleton rounded-lg bg-muted p-[9.5px]"
                 >
                   <div className="aspect-square w-full rounded-lg" />
                 </div>
@@ -73,7 +73,7 @@ export function DiscoverSection({
             ? PLACEHOLDER_KEYS.slice(0, 6).map((key) => (
                 <div
                   key={key}
-                  className="aspect-square w-full rounded-lg border border-landing-graphite bg-white"
+                  className="fan-skeleton aspect-square w-full rounded-lg border border-landing-graphite bg-white"
                 />
               ))
             : products
