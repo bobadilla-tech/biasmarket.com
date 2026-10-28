@@ -683,6 +683,10 @@ model BuyerAccount {
   passwordVersion Int      @default(0)
   email           String?
   emailVerified   Boolean  @default(false)
+  // Google's stable `sub` claim. Linking by this (not by email alone) means a
+  // later email change or an unverified duplicate can never redirect a Google
+  // login into another account.
+  googleSub       String?  @unique
   pendingEmail    String?
   pendingPhone    String?
   name            String?
