@@ -408,22 +408,19 @@ export default async function StorePage({
 
   return (
     <div className="min-h-dvh bg-(--store-surface)">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: serializeJsonLd(
-            buildJsonLd(
-              locale,
-              slug,
-              store,
-              schemaProducts,
-              schemaProductCount,
-              t("breadcrumbHome"),
-              t("breadcrumbStores"),
-            ),
+      <script type="application/ld+json">
+        {serializeJsonLd(
+          buildJsonLd(
+            locale,
+            slug,
+            store,
+            schemaProducts,
+            schemaProductCount,
+            t("breadcrumbHome"),
+            t("breadcrumbStores"),
           ),
-        }}
-      />
+        )}
+      </script>
       <main
         id="main-content"
         tabIndex={-1}

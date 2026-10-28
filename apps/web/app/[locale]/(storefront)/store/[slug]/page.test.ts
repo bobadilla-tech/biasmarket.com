@@ -268,9 +268,7 @@ describe("store page catalog requests", () => {
       ),
     ).toEqual(["store-banner", "store-text"]);
     expect(renderer?.props.aboutContent).toBeTruthy();
-    const jsonLd = JSON.parse(
-      jsonLdScript?.props.dangerouslySetInnerHTML.__html,
-    );
+    const jsonLd = JSON.parse(jsonLdScript?.props.children);
     const itemList = jsonLd["@graph"].find(
       (entry: { "@type": string }) => entry["@type"] === "ItemList",
     );
