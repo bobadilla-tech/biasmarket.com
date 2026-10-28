@@ -434,7 +434,7 @@ describe('CustomerAuthService', () => {
 
       const token = await service.loginWithGoogle('my-store', identity);
 
-      expect(sessionOf(token).buyerAccountId).toBe('buyer-new');
+      expect(sessionOf(token)?.buyerAccountId).toBe('buyer-new');
       expect(prisma.buyerAccount.create).toHaveBeenCalledWith({
         data: {
           email: identity.email,
@@ -462,7 +462,7 @@ describe('CustomerAuthService', () => {
 
       const token = await service.loginWithGoogle('my-store', identity);
 
-      expect(sessionOf(token).buyerAccountId).toBe('owner');
+      expect(sessionOf(token)?.buyerAccountId).toBe('owner');
     });
 
     it('creates a phone-less account carrying the googleSub when nothing matches', async () => {
@@ -504,7 +504,7 @@ describe('CustomerAuthService', () => {
 
       const token = await service.loginWithGoogle('my-store', identity);
 
-      expect(sessionOf(token).buyerAccountId).toBe('winner');
+      expect(sessionOf(token)?.buyerAccountId).toBe('winner');
     });
 
     it('does not swallow other create errors', async () => {
