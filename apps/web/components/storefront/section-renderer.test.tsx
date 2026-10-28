@@ -1,11 +1,21 @@
 import { render } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { getMessages } from "@biasmarket/i18n";
 import {
   type RenderableSection,
   StoreSectionRenderer,
 } from "./section-renderer";
+
+vi.mock("next/navigation", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("next/navigation")>();
+  return {
+    ...actual,
+    usePathname: () => "/es/store/demo",
+    useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+    useSearchParams: () => new URLSearchParams(),
+  };
+});
 
 function renderSections(sections: RenderableSection[]) {
   return render(

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowUpRight, Images, Search, Shapes } from "lucide-react";
 import { ProductCard } from "@/features/storefront/components/product-card";
 import { isProductOutOfStock } from "@/features/discovery/lib/product-stock";
@@ -44,6 +44,43 @@ function normalizeSearchText(value: string) {
     .toLocaleLowerCase();
 }
 
+function parseCategorySlugs(value: string | null): string[] {
+  return [
+    ...new Set(
+      (value ?? "")
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean),
+    ),
+  ];
+}
+
+function mergeCatalogPages(
+  previous: RenderableSection[],
+  next: RenderableSection[],
+): RenderableSection[] {
+  const products = new Map<
+    string,
+    { productId: string; product: RenderableSectionProduct }
+  >();
+  for (const section of [...previous, ...next]) {
+    for (const item of section.collection?.products ?? []) {
+      products.set(item.productId, item);
+    }
+  }
+  const section = next[0] ?? previous[0];
+  if (!section) return [];
+  return [
+    {
+      ...section,
+      collection: {
+        name: "",
+        products: [...products.values()],
+      },
+    },
+  ];
+}
+
 export interface RenderableSection {
   id: string;
   type: "COLLECTION" | "BANNER" | "TEXT_BLOCK";
@@ -66,6 +103,9 @@ export function StoreSectionRenderer({
   storeName = "",
   intro,
   sections,
+  aboutContent,
+  aboutSections = [],
+  showAbout = false,
   catalogControls = false,
   storeCategories = [],
   catalogPagination,
@@ -75,27 +115,64 @@ export function StoreSectionRenderer({
   storeName?: string;
   intro?: ReactNode;
   sections: RenderableSection[];
+  aboutContent?: ReactNode;
+  aboutSections?: RenderableSection[];
+  showAbout?: boolean;
   catalogControls?: boolean;
   storeCategories?: StorefrontCategory[];
   catalogPagination?: { page: number; limit: number; total: number } | null;
   serverSorted?: boolean;
 }) {
   const t = useTranslations("storefront");
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const searchString = searchParams?.toString() ?? "";
+  const tabValue = searchParams?.get("tab") ?? null;
   const activeTab = catalogControls
-    ? normalizeStoreTab(searchParams?.get("tab") ?? null)
+    ? normalizeStoreTab(tabValue, showAbout)
     : "productos";
   const [query, setQuery] = useState(searchParams?.get("q") ?? "");
   const [sort, setSort] = useState(searchParams?.get("orden") ?? "recientes");
-  const [categoryId, setCategoryId] = useState(
-    searchParams?.get("categoria") ?? "",
+  const [categoryIds, setCategoryIds] = useState(() =>
+    parseCategorySlugs(searchParams?.get("categoria") ?? null),
   );
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const catalogQueryKey = new URLSearchParams(searchString);
+  catalogQueryKey.delete("page");
+  const catalogKey = catalogQueryKey.toString();
+  const [loadedCatalog, setLoadedCatalog] = useState({
+    key: catalogKey,
+    sections,
+  });
+  const displayedSections =
+    serverSorted && loadedCatalog.key === catalogKey
+      ? loadedCatalog.sections
+      : sections;
   useEffect(() => {
-    setCategoryId(searchParams?.get("categoria") ?? "");
+    setCategoryIds(parseCategorySlugs(searchParams?.get("categoria") ?? null));
     setQuery(searchParams?.get("q") ?? "");
     setSort(searchParams?.get("orden") ?? "recientes");
   }, [searchString]);
+
+  useEffect(() => {
+    setIsLoadingMore(false);
+    if (!serverSorted) {
+      setLoadedCatalog({ key: catalogKey, sections });
+      return;
+    }
+
+    setLoadedCatalog((previous) => {
+      if (previous.key !== catalogKey || (catalogPagination?.page ?? 1) <= 1) {
+        return { key: catalogKey, sections };
+      }
+      return {
+        key: catalogKey,
+        sections: mergeCatalogPages(previous.sections, sections),
+      };
+    });
+  }, [catalogKey, catalogPagination?.page, sections, serverSorted]);
+
   useEffect(() => {
     if (!catalogControls) return;
     const timeout = window.setTimeout(() => {
@@ -106,27 +183,25 @@ export function StoreSectionRenderer({
       if (sort) params.set("orden", sort);
       params.delete("page");
       if (params.toString() !== searchString) {
-        window.history.replaceState(
-          null,
-          "",
-          `${window.location.pathname}?${params.toString()}`,
-        );
+        const queryString = params.toString();
+        router.replace(queryString ? `${pathname}?${queryString}` : pathname, {
+          scroll: false,
+        });
       }
     }, 300);
     return () => window.clearTimeout(timeout);
-  }, [catalogControls, query, searchString, sort]);
+  }, [catalogControls, pathname, query, router, searchString, sort]);
 
-  function updateCategory(value: string) {
-    setCategoryId(value);
+  function updateCategories(values: string[]) {
+    setCategoryIds(values);
     const params = new URLSearchParams(searchString);
-    if (value) params.set("categoria", value);
+    if (values.length) params.set("categoria", values.join(","));
     else params.delete("categoria");
     params.delete("page");
-    window.history.replaceState(
-      null,
-      "",
-      `${window.location.pathname}?${params.toString()}`,
-    );
+    const queryString = params.toString();
+    router.push(queryString ? `${pathname}?${queryString}` : pathname, {
+      scroll: false,
+    });
   }
   const categories = useMemo(() => {
     const byId = new Map<string, StorefrontCategory>(
@@ -153,7 +228,7 @@ export function StoreSectionRenderer({
   const normalizedQuery = catalogControls
     ? normalizeSearchText(query.trim())
     : "";
-  const hasVisibleProducts = sections.some((section) =>
+  const hasVisibleProducts = displayedSections.some((section) =>
     (section.collection?.products ?? []).some(
       ({ product }) =>
         !product.discontinued &&
@@ -163,16 +238,125 @@ export function StoreSectionRenderer({
           normalizeSearchText(product.name).includes(normalizedQuery)) &&
         (!catalogControls ||
           serverSorted ||
-          !categoryId ||
-          product.categories?.some(
-            (item) => (item.category.slug ?? item.category.id) === categoryId,
+          !categoryIds.length ||
+          product.categories?.some((item) =>
+            categoryIds.includes(item.category.slug ?? item.category.id),
           )),
     ),
   );
 
+  function renderSections() {
+    return displayedSections.map((section) => {
+      if (section.type === "COLLECTION") {
+        const products = [...(section.collection?.products ?? [])].sort(
+          (a, b) => {
+            if (serverSorted) return 0;
+            const effectivePrice = (product: RenderableSectionProduct) =>
+              Math.min(
+                Number(product.price),
+                ...product.variants.map((variant) =>
+                  Number(variant.priceOverride ?? product.price),
+                ),
+              );
+            if (sort === "precio_asc")
+              return effectivePrice(a.product) - effectivePrice(b.product);
+            if (sort === "precio_desc")
+              return effectivePrice(b.product) - effectivePrice(a.product);
+            if (sort === "nombre_asc")
+              return a.product.name.localeCompare(b.product.name);
+            return (
+              Number(isProductOutOfStock(a.product)) -
+              Number(isProductOutOfStock(b.product))
+            );
+          },
+        );
+
+        if (products.length === 0) return null;
+
+        const visible = products.filter((cp) => {
+          if (
+            cp.product.discontinued ||
+            (!catalogControls && isProductOutOfStock(cp.product))
+          )
+            return false;
+          if (
+            !serverSorted &&
+            normalizedQuery &&
+            !normalizeSearchText(cp.product.name).includes(normalizedQuery)
+          )
+            return false;
+          if (
+            catalogControls &&
+            !serverSorted &&
+            categoryIds.length &&
+            !cp.product.categories?.some((item) =>
+              categoryIds.includes(item.category.slug ?? item.category.id),
+            )
+          )
+            return false;
+          return true;
+        });
+        if (visible.length === 0) return null;
+
+        return (
+          <section key={section.id}>
+            {section.collection?.name && (
+              <h2 className="mb-4 text-lg font-bold uppercase text-(--store-text)">
+                {section.collection.name}
+              </h2>
+            )}
+            <div
+              className={`grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 ${catalogControls ? "lg:grid-cols-4 xl:grid-cols-5" : "lg:grid-cols-4"}`}
+            >
+              {visible.map((cp) => (
+                <ProductCard
+                  key={cp.product.id}
+                  slug={slug}
+                  product={cp.product}
+                />
+              ))}
+            </div>
+          </section>
+        );
+      }
+
+      if (section.type === "BANNER") {
+        return (
+          <section key={section.id}>
+            {Boolean(section.content?.imageUrl) && (
+              <a href={(section.content?.linkUrl as string) ?? "#"}>
+                <img
+                  src={section.content?.imageUrl as string}
+                  alt={
+                    (section.content?.alt as string) ||
+                    t("bannerImageGenericAlt")
+                  }
+                  className="w-full rounded-xl object-cover"
+                />
+              </a>
+            )}
+          </section>
+        );
+      }
+
+      const paragraphs = String(section.content?.body ?? "")
+        .split(/\n{2,}/)
+        .map((para) => para.trim())
+        .filter(Boolean);
+
+      return (
+        <section key={section.id} className="prose max-w-none">
+          {paragraphs.map((para, index) => (
+            <p key={index}>{para}</p>
+          ))}
+        </section>
+      );
+    });
+  }
+
   return (
     <>
-      {catalogControls && <StoreTabs />}
+      {catalogControls && <StoreTabs showAbout={showAbout} />}
       <section
         id="store-panel-productos"
         role={catalogControls ? "tabpanel" : undefined}
@@ -180,210 +364,85 @@ export function StoreSectionRenderer({
         hidden={catalogControls && activeTab !== "productos"}
         className="space-y-6"
       >
-        {intro}
-        {catalogControls && (
-          <div className="space-y-4">
-            <StoreSearchBar
-              value={query}
-              onChange={setQuery}
-              sort={sort}
-              onSortChange={setSort}
-            />
+        {catalogControls ? (
+          <div className="grid gap-4 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-6">
             <CategoryFilter
               categories={categories}
-              selected={categoryId}
-              onChange={updateCategory}
+              selected={categoryIds}
+              onChange={updateCategories}
             />
-          </div>
-        )}
-        {sections.map((section) => {
-          if (section.type === "COLLECTION") {
-            const products = [...(section.collection?.products ?? [])].sort(
-              (a, b) => {
-                if (serverSorted) return 0;
-                const effectivePrice = (product: RenderableSectionProduct) =>
-                  Math.min(
-                    Number(product.price),
-                    ...product.variants.map((variant) =>
-                      Number(variant.priceOverride ?? product.price),
-                    ),
-                  );
-                if (sort === "precio_asc")
-                  return effectivePrice(a.product) - effectivePrice(b.product);
-                if (sort === "precio_desc")
-                  return effectivePrice(b.product) - effectivePrice(a.product);
-                if (sort === "nombre_asc")
-                  return a.product.name.localeCompare(b.product.name);
-                return (
-                  Number(isProductOutOfStock(a.product)) -
-                  Number(isProductOutOfStock(b.product))
-                );
-              },
-            );
-
-            if (products.length === 0) return null;
-
-            const visible = products.filter((cp) => {
-              if (
-                cp.product.discontinued ||
-                (!catalogControls && isProductOutOfStock(cp.product))
-              )
-                return false;
-              if (
-                !serverSorted &&
-                normalizedQuery &&
-                !normalizeSearchText(cp.product.name).includes(normalizedQuery)
-              )
-                return false;
-              if (
-                catalogControls &&
-                !serverSorted &&
-                categoryId &&
-                !cp.product.categories?.some(
-                  (item) =>
-                    (item.category.slug ?? item.category.id) === categoryId,
-                )
-              )
-                return false;
-              return true;
-            });
-            if (visible.length === 0) return null;
-
-            return (
-              <section key={section.id}>
-                {section.collection?.name && (
-                  <h2 className="mb-4 text-lg font-bold uppercase text-(--store-text)">
-                    {section.collection.name}
-                  </h2>
-                )}
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                  {visible.map((cp) => (
-                    <ProductCard
-                      key={cp.product.id}
-                      slug={slug}
-                      product={cp.product}
-                    />
-                  ))}
+            <div className="min-w-0 space-y-5">
+              <StoreSearchBar
+                value={query}
+                onChange={setQuery}
+                sort={sort}
+                onSortChange={setSort}
+              />
+              {renderSections()}
+              {(normalizedQuery || categoryIds.length > 0) &&
+              !hasVisibleProducts ? (
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="rounded-2xl bg-(--store-card) px-4 py-10 text-center text-sm text-(--store-muted)"
+                >
+                  <p>{t("noSearchResults")}</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQuery("");
+                      updateCategories([]);
+                    }}
+                    className="mt-3 min-h-10 rounded-full bg-(--store-primary) px-4 font-semibold text-(--store-primary-text)"
+                  >
+                    {t("clearFilters")}
+                  </button>
                 </div>
-              </section>
-            );
-          }
-
-          if (section.type === "BANNER") {
-            return (
-              <section key={section.id}>
-                {Boolean(section.content?.imageUrl) && (
-                  <a href={(section.content?.linkUrl as string) ?? "#"}>
-                    <img
-                      src={section.content?.imageUrl as string}
-                      alt={
-                        (section.content?.alt as string) ||
-                        t("bannerImageGenericAlt")
-                      }
-                      className="w-full rounded-xl object-cover"
-                    />
-                  </a>
+              ) : displayedSections.every(
+                  (section) => section.collection?.products.length === 0,
+                ) ? (
+                <p className="text-center text-(--store-muted)">
+                  {t("noProducts")}
+                </p>
+              ) : null}
+              {catalogPagination &&
+                catalogPagination.page * catalogPagination.limit <
+                  catalogPagination.total && (
+                  <nav
+                    aria-label={t("catalogPagination")}
+                    className="flex justify-center pt-2"
+                  >
+                    <button
+                      type="button"
+                      disabled={isLoadingMore}
+                      onClick={() => {
+                        const params = new URLSearchParams(searchString);
+                        params.set("page", String(catalogPagination.page + 1));
+                        setIsLoadingMore(true);
+                        router.push(`${pathname}?${params.toString()}`, {
+                          scroll: false,
+                        });
+                      }}
+                      className="store-theme-primary-button min-h-11 rounded-full px-6 text-sm font-semibold disabled:cursor-wait disabled:opacity-60"
+                    >
+                      {isLoadingMore ? t("loadingMore") : t("loadMore")}
+                    </button>
+                  </nav>
                 )}
-              </section>
-            );
-          }
-
-          // Back-compat: existing rows are `{ body: "line\n\nline" }` — a single
-          // string. Split on blank lines so each paragraph gets its own <p>
-          // instead of one flat block with collapsed line breaks.
-          const paragraphs = String(section.content?.body ?? "")
-            .split(/\n{2,}/)
-            .map((para) => para.trim())
-            .filter(Boolean);
-
-          return (
-            <section key={section.id} className="prose max-w-none">
-              {paragraphs.map((para, index) => (
-                <p key={index}>{para}</p>
-              ))}
-            </section>
-          );
-        })}
-        {(normalizedQuery || categoryId) && !hasVisibleProducts ? (
-          <div
-            role="status"
-            aria-live="polite"
-            className="rounded-2xl bg-(--store-card) px-4 py-10 text-center text-sm text-(--store-muted)"
-          >
-            <p>{t("noSearchResults")}</p>
-            <button
-              type="button"
-              onClick={() => {
-                setQuery("");
-                updateCategory("");
-              }}
-              className="mt-3 min-h-10 rounded-full bg-(--store-primary) px-4 font-semibold text-(--store-primary-text)"
-            >
-              {t("clearFilters")}
-            </button>
+            </div>
           </div>
-        ) : serverSorted &&
-          sections.every(
-            (section) => section.collection?.products.length === 0,
-          ) ? (
-          <p className="text-center text-(--store-muted)">{t("noProducts")}</p>
-        ) : sections.length === 0 ? (
-          <p className="text-center text-(--store-muted)">{t("noProducts")}</p>
-        ) : null}
-      </section>
-      {catalogControls &&
-        activeTab === "productos" &&
-        catalogPagination &&
-        catalogPagination.total > catalogPagination.limit && (
-          <nav
-            aria-label={t("catalogPagination")}
-            className="flex items-center justify-center gap-4"
-          >
-            <button
-              type="button"
-              disabled={catalogPagination.page <= 1}
-              onClick={() => {
-                const params = new URLSearchParams(searchString);
-                params.set("page", String(catalogPagination.page - 1));
-                window.history.pushState(
-                  null,
-                  "",
-                  `${window.location.pathname}?${params.toString()}`,
-                );
-              }}
-              className="min-h-10 rounded-full border border-(--store-border) bg-(--store-card) px-4 text-sm font-semibold text-(--store-text) disabled:opacity-40"
-            >
-              {t("previousPage")}
-            </button>
-            <span className="text-sm text-(--store-muted)">
-              {t("pageOf", {
-                page: catalogPagination.page,
-                pages: Math.ceil(
-                  catalogPagination.total / catalogPagination.limit,
-                ),
-              })}
-            </span>
-            <button
-              type="button"
-              disabled={
-                catalogPagination.page * catalogPagination.limit >=
-                catalogPagination.total
-              }
-              onClick={() => {
-                const params = new URLSearchParams(searchString);
-                params.set("page", String(catalogPagination.page + 1));
-                window.history.pushState(
-                  null,
-                  "",
-                  `${window.location.pathname}?${params.toString()}`,
-                );
-              }}
-              className="min-h-10 rounded-full border border-(--store-border) bg-(--store-card) px-4 text-sm font-semibold text-(--store-text) disabled:opacity-40"
-            >
-              {t("nextPage")}
-            </button>
-          </nav>
+        ) : (
+          <>
+            {intro}
+            {renderSections()}
+            {sections.length === 0 && (
+              <p className="text-center text-(--store-muted)">
+                {t("noProducts")}
+              </p>
+            )}
+          </>
         )}
+      </section>
       {catalogControls && (
         <section
           id="store-panel-categorias"
@@ -527,6 +586,63 @@ export function StoreSectionRenderer({
           </div>
         </section>
       )}
+      {catalogControls && showAbout && (
+        <section
+          id="store-panel-acerca"
+          role="tabpanel"
+          aria-labelledby="store-tab-acerca"
+          hidden={activeTab !== "acerca"}
+          className="space-y-6"
+        >
+          <header>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-(--store-primary)">
+              {t("aboutEyebrow")}
+            </p>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight text-(--store-text)">
+              {t("aboutTab")}
+            </h2>
+          </header>
+          {aboutContent}
+          {renderSectionsForAbout()}
+        </section>
+      )}
     </>
   );
+
+  function renderSectionsForAbout() {
+    // Keep the legacy banner and prose sections in their original order under
+    // the About tab, while collections are represented by the paginated grid.
+    return aboutSections.map((section) => {
+      if (section.type === "COLLECTION") return null;
+      if (section.type === "BANNER") {
+        return (
+          <section key={section.id}>
+            {Boolean(section.content?.imageUrl) && (
+              <a href={(section.content?.linkUrl as string) ?? "#"}>
+                <img
+                  src={section.content?.imageUrl as string}
+                  alt={
+                    (section.content?.alt as string) ||
+                    t("bannerImageGenericAlt")
+                  }
+                  className="w-full rounded-2xl object-cover"
+                />
+              </a>
+            )}
+          </section>
+        );
+      }
+      const paragraphs = String(section.content?.body ?? "")
+        .split(/\n{2,}/)
+        .map((paragraph) => paragraph.trim())
+        .filter(Boolean);
+      return (
+        <section key={section.id} className="prose max-w-none">
+          {paragraphs.map((paragraph, index) => (
+            <p key={index}>{paragraph}</p>
+          ))}
+        </section>
+      );
+    });
+  }
 }
