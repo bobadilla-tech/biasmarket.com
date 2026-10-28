@@ -1741,7 +1741,9 @@
             "description": "",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/OrderDetailResponseDto" }
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDetailResponseDto"
+                }
               }
             }
           }
