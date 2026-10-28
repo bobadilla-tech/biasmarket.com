@@ -1,9 +1,9 @@
 import { Image } from "expo-image";
 import {
   Pressable,
+  type StyleProp,
   Text,
   View,
-  type StyleProp,
   type ViewStyle,
 } from "react-native";
 import type {
@@ -35,7 +35,9 @@ export function StoreImage({
       className="items-center justify-center rounded-2xl bg-white/10"
       style={{ width: size, height: size }}
     >
-      <Text className="text-lg font-bold text-brand-pink">{t("common.brandMonogram")}</Text>
+      <Text className="text-lg font-bold text-brand-pink">
+        {t("common.brandMonogram")}
+      </Text>
     </View>
   );
 }

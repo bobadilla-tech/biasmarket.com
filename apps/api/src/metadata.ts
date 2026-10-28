@@ -289,7 +289,9 @@ export default async () => {
             PublicCategoryResponseDto: {
               id: { required: true, type: () => String },
               name: { required: true, type: () => String },
+              slug: { required: true, type: () => String },
               parentId: { required: true, type: () => String, nullable: true },
+              productCount: { required: true, type: () => Number },
             },
             PublicProductVariantResponseDto: {
               id: { required: true, type: () => String },
@@ -317,6 +319,19 @@ export default async () => {
             PublicProductCategoryNameResponseDto: {
               id: { required: true, type: () => String },
               name: { required: true, type: () => String },
+              slug: { required: true, type: () => String },
+            },
+            StoreCatalogResponseDto: {
+              items: {
+                required: true,
+                type: () => [
+                  t['./modules/stores/dto/store-response.dto.js']
+                    .PublicProductWithVariantsResponseDto,
+                ],
+              },
+              total: { required: true, type: () => Number },
+              page: { required: true, type: () => Number },
+              limit: { required: true, type: () => Number },
             },
             PublicProductCategoryResponseDto: {
               category: {
@@ -466,6 +481,25 @@ export default async () => {
             },
             SitemapStoreCountDto: {
               total: { required: true, type: () => Number },
+            },
+          },
+        ],
+        [
+          import('./modules/stores/dto/storefront-request.dto.js'),
+          {
+            StorefrontRequestDto: {
+              slug: {
+                required: true,
+                type: () => String,
+                pattern: '^[a-z0-9][a-z0-9_-]*$',
+              },
+            },
+            StorefrontCatalogRequestDto: {
+              query: {
+                required: false,
+                type: 'object',
+                additionalProperties: true,
+              },
             },
           },
         ],
@@ -1958,6 +1992,7 @@ export default async () => {
               storeId: { required: true, type: () => String },
               parentId: { required: true, type: () => String, nullable: true },
               name: { required: true, type: () => String },
+              slug: { required: true, type: () => String },
               createdAt: { required: true, type: () => String },
             },
           },
@@ -2864,11 +2899,29 @@ export default async () => {
                 type: t['./modules/stores/dto/store-response.dto.js']
                   .StoreDirectoryResponseDto,
               },
+              findPublicCatalog: {
+                type: t['./modules/stores/dto/store-response.dto.js']
+                  .StoreCatalogResponseDto,
+              },
+              findStorefrontCatalog: {
+                type: t['./modules/stores/dto/store-response.dto.js']
+                  .StoreCatalogResponseDto,
+              },
               findPublic: {
                 type: t['./modules/stores/dto/store-response.dto.js']
                   .StorePublicDetailResponseDto,
               },
+              findStorefrontPublic: {
+                type: t['./modules/stores/dto/store-response.dto.js']
+                  .StorePublicDetailResponseDto,
+              },
               findCategoriesPublic: {
+                type: [
+                  t['./modules/stores/dto/store-response.dto.js']
+                    .PublicCategoryResponseDto,
+                ],
+              },
+              findStorefrontCategories: {
                 type: [
                   t['./modules/stores/dto/store-response.dto.js']
                     .PublicCategoryResponseDto,

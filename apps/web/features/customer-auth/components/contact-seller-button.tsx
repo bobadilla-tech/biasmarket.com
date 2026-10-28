@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageCircle } from "lucide-react";
+import { Mail, MessageCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { buildWhatsAppUrl } from "@biasmarket/utils/whatsapp";
 import { usePublicStore } from "../queries/use-public-store";
@@ -10,7 +10,8 @@ import { usePublicStore } from "../queries/use-public-store";
 // else (see .artifacts/2026/08/20260808--buyer-mini-dashboard/plan.md). Matches the
 // existing hardcoded-Spanish convention already used by every other message
 // builder in packages/utils/src/whatsapp.
-function buildContactMessage(orderId?: string): string {
+function buildContactMessage(orderId?: string, message?: string): string {
+  if (message?.trim()) return message.trim();
   return orderId
     ? `Hola, tengo una consulta sobre mi pedido #${orderId.slice(0, 8)}`
     : "Hola, tengo una consulta sobre mis pedidos";
@@ -20,10 +21,16 @@ export function ContactSellerButton({
   slug,
   orderId,
   className,
+  label,
+  message,
+  icon = "message",
 }: {
   slug: string;
   orderId?: string;
   className?: string;
+  label?: string;
+  message?: string;
+  icon?: "mail" | "message";
 }) {
   const t = useTranslations("storefront.accountPage");
   const { data: store } = usePublicStore(slug);
@@ -34,7 +41,7 @@ export function ContactSellerButton({
     <a
       href={buildWhatsAppUrl(
         store.whatsappNumber,
-        buildContactMessage(orderId),
+        buildContactMessage(orderId, message),
       )}
       target="_blank"
       rel="noopener noreferrer"
@@ -43,8 +50,12 @@ export function ContactSellerButton({
         "inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
       }
     >
-      <MessageCircle className="size-4" />
-      {t("contactSeller")}
+      {icon === "mail" ? (
+        <Mail aria-hidden="true" className="size-4" />
+      ) : (
+        <MessageCircle aria-hidden="true" className="size-4" />
+      )}
+      {label ?? t("contactSeller")}
     </a>
   );
 }

@@ -1,10 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   addCartItem,
-  removeCartItem,
-  updateCartItemQuantity,
   type CartItem,
   type CartItemIdentity,
+  removeCartItem,
+  updateCartItemQuantity,
 } from "@biasmarket/utils/cart";
 
 const storageKey = (storeSlug: string) => `biasmarket:cart:${storeSlug}`;
@@ -37,7 +37,8 @@ function isCartItem(value: unknown): value is CartItem {
     typeof item.quantity === "number" &&
     Number.isFinite(item.quantity) &&
     (item.variantId === undefined || typeof item.variantId === "string") &&
-    (item.variantLabel === undefined || typeof item.variantLabel === "string") &&
+    (item.variantLabel === undefined ||
+      typeof item.variantLabel === "string") &&
     (item.image === undefined || typeof item.image === "string")
   );
 }

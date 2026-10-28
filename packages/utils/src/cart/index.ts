@@ -17,7 +17,9 @@ export function cartItemKey(item: CartItemIdentity): string {
 
 export function addCartItem(items: CartItem[], item: CartItem): CartItem[] {
   const existingKey = cartItemKey(item);
-  const existing = items.find((current) => cartItemKey(current) === existingKey);
+  const existing = items.find(
+    (current) => cartItemKey(current) === existingKey,
+  );
   return existing
     ? items.map((current) =>
         cartItemKey(current) === existingKey

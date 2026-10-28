@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
-import { useForm, Controller } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { z } from "zod";
@@ -53,12 +53,27 @@ export default function RegisterScreen() {
       );
       router.replace("/");
     } catch (cause) {
-      if (cause instanceof Error && cause.message === "auth.registrationCompleteSignInFailed") {
-        router.replace({ pathname: "/login", params: { slug: values.storeSlug.trim(), notice: "registration-complete" } });
+      if (
+        cause instanceof Error &&
+        cause.message === "auth.registrationCompleteSignInFailed"
+      ) {
+        router.replace({
+          pathname: "/login",
+          params: {
+            slug: values.storeSlug.trim(),
+            notice: "registration-complete",
+          },
+        });
         return;
       }
       if (cause instanceof ApiError && cause.status === 409) {
-        router.replace({ pathname: "/login", params: { slug: values.storeSlug.trim(), notice: "account-already-registered" } });
+        router.replace({
+          pathname: "/login",
+          params: {
+            slug: values.storeSlug.trim(),
+            notice: "account-already-registered",
+          },
+        });
         return;
       }
       setError(t("auth.registerFailed"));
@@ -168,7 +183,13 @@ function RegisterField({
       />
       {error ? (
         <Text accessibilityRole="alert" className="text-sm text-red-300">
-          {error ? t(error === "passwordsDontMatch" ? "auth.passwordMismatch" : "auth.requiredField") : null}
+          {error
+            ? t(
+                error === "passwordsDontMatch"
+                  ? "auth.passwordMismatch"
+                  : "auth.requiredField",
+              )
+            : null}
         </Text>
       ) : null}
     </View>

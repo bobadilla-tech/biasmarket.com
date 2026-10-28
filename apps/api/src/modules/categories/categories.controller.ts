@@ -20,6 +20,7 @@ interface CategoryRow {
   storeId: string;
   parentId: string | null;
   name: string;
+  slug: string;
   createdAt: Date;
 }
 

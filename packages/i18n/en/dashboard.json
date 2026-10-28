@@ -255,9 +255,12 @@
       "bannerUpload": "Upload banner",
       "ownerAvatarUpload": "Upload public owner avatar",
       "ownerAvatarPreviewAlt": "Public owner avatar preview",
+      "ownerAvatarPlaceholder": "Public owner avatar not configured",
+      "publicOwnerProfileTitle": "Public profile",
+      "publicOwnerProfileHelp": "The name and photo are optional. The photo appears in the store header only when you set a public name. Your personal account profile stays private.",
       "locationLabel": "Public location",
       "publicOwnerNameLabel": "Public owner name",
-      "publicOwnerHelp": "Only the name entered here is shown; your personal profile stays private.",
+      "publicOwnerHelp": "This name appears in your store and does not change your account name.",
       "nameLabel": "Store name",
       "urlLabel": "Store URL",
       "whatsappLabel": "Contact WhatsApp",
@@ -462,7 +465,7 @@
       },
       "assistedOrderLink": {
         "title": "Assisted order link message",
-        "description": "Used when you create an order for a buyer and send them their private link. Required variable: the link ('{{link}}')."
+        "description": "Used when you create an order for a buyer and send them their private link. Required variable: '{{link}}'."
       }
     }
   },

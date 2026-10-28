@@ -44,7 +44,7 @@ test("renders the assisted-order editor with its literal token description and a
     screen.getByText("Mensaje de enlace de pedido asistido"),
   ).toBeDefined();
   // ICU-quoted in the catalog: the braces render literally.
-  expect(screen.getByText(/el enlace \(\{\{link\}\}\)/)).toBeDefined();
+  expect(screen.getByText(/Variable requerida: \{\{link\}\}/)).toBeDefined();
   const editor = screen.getByLabelText("Mensaje de enlace de pedido asistido");
   fireEvent.change(editor, { target: { value: "Hola {{name}} {{link}}" } });
   expect(

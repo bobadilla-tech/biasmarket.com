@@ -521,7 +521,17 @@ export function AssistedOrderForm({
                       )
                     : null
                 }
-                onChange={(next) => itemsArray.update(index, next)}
+                onChange={(next) => {
+                  form.setValue(`items.${index}.productId`, next.productId, {
+                    shouldDirty: true,
+                  });
+                  form.setValue(`items.${index}.variantId`, next.variantId, {
+                    shouldDirty: true,
+                  });
+                  form.setValue(`items.${index}.quantity`, next.quantity, {
+                    shouldDirty: true,
+                  });
+                }}
                 onRemove={() => itemsArray.remove(index)}
               />
             );

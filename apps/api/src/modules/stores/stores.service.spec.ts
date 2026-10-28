@@ -12,6 +12,7 @@ describe('StoresService', () => {
   let service: StoresService;
   let prisma: {
     store: {
+      findFirst: Mock;
       findUnique: Mock;
       create: Mock;
       findMany: Mock;
@@ -22,8 +23,10 @@ describe('StoresService', () => {
     paymentMethodConfig: { createMany: Mock };
     storeSection: { findMany: Mock };
     product: { findMany: Mock; findUnique: Mock };
+    category: { findMany: Mock };
     order: { findMany: Mock };
     $transaction: Mock;
+    $queryRaw: Mock;
   };
 
   const ownerId = 'user-1';
@@ -31,6 +34,7 @@ describe('StoresService', () => {
   beforeEach(async () => {
     prisma = {
       store: {
+        findFirst: vi.fn(),
         findUnique: vi.fn(),
         create: vi.fn(),
         findMany: vi.fn(),
@@ -41,8 +45,10 @@ describe('StoresService', () => {
       paymentMethodConfig: { createMany: vi.fn() },
       storeSection: { findMany: vi.fn() },
       product: { findMany: vi.fn(), findUnique: vi.fn() },
+      category: { findMany: vi.fn() },
       order: { findMany: vi.fn() },
       $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(prisma)),
+      $queryRaw: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -564,7 +570,9 @@ describe('StoresService', () => {
         include: {
           variants: true,
           categories: {
-            include: { category: { select: { id: true, name: true } } },
+            include: {
+              category: { select: { id: true, name: true, slug: true } },
+            },
           },
         },
       });
@@ -610,7 +618,9 @@ describe('StoresService', () => {
         include: {
           variants: true,
           categories: {
-            include: { category: { select: { id: true, name: true } } },
+            include: {
+              category: { select: { id: true, name: true, slug: true } },
+            },
           },
         },
       });
@@ -880,6 +890,134 @@ describe('StoresService', () => {
       const where = prisma.store.findMany.mock.calls[0][0].where;
       expect(where.isPublic).toBe(true);
       expect(where.isDemo).toBe(false);
+    });
+  });
+
+  describe('findPublicCatalog', () => {
+    const query = {
+      page: 2,
+      limit: 12,
+      q: 'Álbum',
+      categories: ['photocards', 'bts'],
+      sort: 'precio_asc' as const,
+    };
+
+    beforeEach(() => {
+      prisma.store.findFirst.mockResolvedValue({ id: 'store-1' });
+      prisma.$queryRaw
+        .mockResolvedValueOnce([{ total: 1n }])
+        .mockResolvedValueOnce([{ id: 'product-1' }]);
+      prisma.product.findMany.mockResolvedValue([
+        { id: 'product-1', name: 'Album', variants: [], categories: [] },
+      ]);
+    });
+
+    it('resolves direct-link stores, normalizes text and filters category slugs', async () => {
+      const result = await service.findPublicCatalog('my-store', query);
+      expect(prisma.store.findFirst).toHaveBeenCalledWith({
+        where: { slug: 'my-store' },
+        select: { id: true },
+      });
+      const idSql = prisma.$queryRaw.mock.calls[1][0];
+      const sqlText = idSql.strings.join(' ');
+      expect(sqlText).toContain('TRANSLATE(LOWER');
+      expect(sqlText).toContain('c."slug" IN');
+      expect(idSql.values).toContain('%album%');
+      expect(idSql.values).toContain('photocards');
+      expect(idSql.values).toContain('bts');
+      expect(result).toEqual({
+        items: [
+          { id: 'product-1', name: 'Album', variants: [], categories: [] },
+        ],
+        total: 1,
+        page: 2,
+        limit: 12,
+      });
+    });
+
+    it.each([
+      ['recientes', 'p."createdAt" DESC'],
+      ['precio_asc', 'COALESCE'],
+      ['precio_desc', 'COALESCE'],
+      ['nombre_asc', 'LOWER(p."name") ASC'],
+    ] as const)('applies %s ordering', async (sort, expectedSql) => {
+      prisma.$queryRaw.mockReset();
+      prisma.$queryRaw
+        .mockResolvedValueOnce([{ total: 0n }])
+        .mockResolvedValueOnce([]);
+      await service.findPublicCatalog('my-store', {
+        ...query,
+        q: undefined,
+        categories: [],
+        sort,
+      });
+      expect(prisma.$queryRaw.mock.calls[1][0].strings.join(' ')).toContain(
+        expectedSql,
+      );
+    });
+
+    it('escapes LIKE metacharacters and drops catalog IDs missing from the detail read', async () => {
+      prisma.$queryRaw.mockReset();
+      prisma.$queryRaw
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ id: 'deleted-after-query' }]);
+      prisma.product.findMany.mockResolvedValue([]);
+
+      const result = await service.findPublicCatalog('my-store', {
+        ...query,
+        q: '50%_\\',
+        categories: [],
+      });
+
+      const idSql = prisma.$queryRaw.mock.calls[1][0];
+      expect(idSql.values).toContain('%50\\%\\_\\\\%');
+      expect(result).toEqual({ items: [], total: 0, page: 2, limit: 12 });
+    });
+
+    it('hides a nonexistent or nonpublic store', async () => {
+      prisma.store.findFirst.mockResolvedValue(null);
+      await expect(service.findPublicCatalog('missing', query)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(prisma.$queryRaw).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('findCategoriesPublic', () => {
+    it('returns public categories with published product counts', async () => {
+      prisma.store.findFirst.mockResolvedValue({ id: 'store-1' });
+      prisma.category.findMany.mockResolvedValue([
+        {
+          id: 'category-1',
+          name: 'Photocards',
+          slug: 'photocards',
+          parentId: null,
+          _count: { products: 3 },
+        },
+      ]);
+
+      const result = await service.findCategoriesPublic('my-store');
+
+      expect(prisma.store.findFirst).toHaveBeenCalledWith({
+        where: { slug: 'my-store' },
+        select: { id: true },
+      });
+
+      expect(prisma.category.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { storeId: 'store-1' },
+          orderBy: { name: 'asc' },
+        }),
+      );
+      expect(result).toEqual([
+        {
+          id: 'category-1',
+          name: 'Photocards',
+          slug: 'photocards',
+          parentId: null,
+          productCount: 3,
+        },
+      ]);
     });
   });
 

@@ -10,9 +10,7 @@ import { LinkMessagePanel } from "./link-message-panel";
 
 // Shown right after creation. The private link exists only in this response,
 // so it is held in component state, rendered as text, and never written to
-// storage, the URL, a redirect or the query cache. It is deliberately not an
-// anchor: opening it as the seller would stamp the first open and lock number
-// correction before the buyer ever saw it.
+// storage, the URL, a redirect or the query cache.
 export function CreatedOrderScreen({
   storeId,
   storeName,
@@ -40,7 +38,6 @@ export function CreatedOrderScreen({
       }),
     [order, storeName, accessUrl, template.data],
   );
-
   return (
     <section className="flex flex-col gap-4 rounded-3xl border border-[#f0e7f8] bg-white p-4 sm:p-5">
       <p className="text-sm font-medium text-[#6b5a85]">

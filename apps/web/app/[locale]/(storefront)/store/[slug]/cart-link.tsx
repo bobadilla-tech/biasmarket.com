@@ -43,13 +43,14 @@ export function CartLink({ slug }: { slug: string }) {
     <Link
       href={`/store/${slug}/cart`}
       aria-label={t("cart")}
-      className="relative flex size-11 shrink-0 items-center justify-center rounded-full border border-gray-100 bg-white text-gray-700 shadow-sm transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2"
+      className="relative flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full border border-(--store-border) bg-(--store-card) px-4 text-sm font-semibold text-(--store-text) transition hover:bg-(--store-surface) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2"
     >
       <ShoppingCart className="size-4" />
+      <span>{t("cart")}</span>
       {count > 0 && (
         <span
           key={count}
-          className="cart-badge-pulse absolute -top-1 -right-1 flex min-w-4 items-center justify-center rounded-full bg-[var(--store-primary)] px-1 text-[10px] leading-4 font-bold text-white"
+          className="cart-badge-pulse absolute -right-1 -top-1 flex min-w-4 items-center justify-center rounded-full bg-[var(--store-primary)] px-1 text-[10px] leading-4 font-bold text-white"
         >
           {count > 99 ? "99+" : count}
         </span>

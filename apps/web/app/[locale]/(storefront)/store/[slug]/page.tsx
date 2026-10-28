@@ -253,7 +253,7 @@ export default async function StorePage({
         <main
           id="main-content"
           tabIndex={-1}
-          className="mx-auto max-w-5xl space-y-10 px-4 pt-24 pb-8 sm:pt-20"
+          className="mx-auto max-w-7xl space-y-6 px-4 pt-24 pb-8 sm:pt-24"
         >
           <StorePublicProfile
             storeName={store.name}
@@ -266,11 +266,21 @@ export default async function StorePage({
             tiktokUrl={store.tiktokUrl}
             twitterUrl={store.twitterUrl}
             whatsappNumber={store.whatsappNumber}
+            slug={slug}
+            publicOwnerName={store.publicOwnerName}
+            publicOwnerAvatarUrl={store.publicOwnerAvatarUrl}
           />
-          {aboutNode && (
-            <section className="prose max-w-none">{aboutNode}</section>
-          )}
-          <p className="text-center text-(--store-muted)">{t("noProducts")}</p>
+          <StoreSectionRenderer
+            slug={slug}
+            storeName={store.name}
+            intro={
+              aboutNode ? (
+                <section className="prose max-w-none">{aboutNode}</section>
+              ) : undefined
+            }
+            sections={[]}
+            catalogControls
+          />
         </main>
       </div>
     );
@@ -287,7 +297,7 @@ export default async function StorePage({
       <main
         id="main-content"
         tabIndex={-1}
-        className="mx-auto max-w-7xl space-y-10 px-4 pt-24 pb-8 sm:pt-20"
+        className="mx-auto max-w-7xl space-y-6 px-4 pt-24 pb-8 sm:pt-24"
       >
         <StorePublicProfile
           storeName={store.name}
@@ -300,23 +310,21 @@ export default async function StorePage({
           tiktokUrl={store.tiktokUrl}
           twitterUrl={store.twitterUrl}
           whatsappNumber={store.whatsappNumber}
+          slug={slug}
+          publicOwnerName={store.publicOwnerName}
+          publicOwnerAvatarUrl={store.publicOwnerAvatarUrl}
         />
-        {aboutNode && (
-          <section className="prose max-w-none">{aboutNode}</section>
-        )}
-        {visibleSections.length === 0 ? (
-          soldOutProducts.length > 0 ? null : (
-            <p className="text-center text-(--store-muted)">
-              {t("noProducts")}
-            </p>
-          )
-        ) : (
-          <StoreSectionRenderer
-            slug={slug}
-            sections={visibleSections}
-            catalogControls
-          />
-        )}
+        <StoreSectionRenderer
+          slug={slug}
+          storeName={store.name}
+          intro={
+            aboutNode ? (
+              <section className="prose max-w-none">{aboutNode}</section>
+            ) : undefined
+          }
+          sections={visibleSections}
+          catalogControls
+        />
         {/* Sold-out section rendered after visible sections */}
         {soldOutProducts.length > 0 && (
           <section

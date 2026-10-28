@@ -22,6 +22,12 @@ async function bootstrap() {
     bodyParser: false,
   });
 
+  // Caddy is the only proxy that reaches this process, and it replaces the
+  // forwarding headers with the visitor IP (see infra/vps/Caddyfile). One hop.
+  // `true` would take the leftmost X-Forwarded-For entry, which the visitor
+  // can set. Docs: docs/core/security-payments.md §7.4.
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
+
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
   );

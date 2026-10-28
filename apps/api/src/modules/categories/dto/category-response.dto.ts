@@ -16,6 +16,9 @@ export class CategoryResponseDto {
   @ApiProperty()
   name: string;
 
+  @ApiProperty()
+  slug: string;
+
   @ApiProperty({ type: String, format: 'date-time' })
   createdAt: string;
 }

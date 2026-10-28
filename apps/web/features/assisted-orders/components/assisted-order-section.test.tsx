@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { useState } from "react";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { OrderResponseDto } from "@biasmarket/types";
@@ -78,6 +79,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   vi.clearAllMocks();
+  vi.restoreAllMocks();
 });
 
 function setup(order: OrderResponseDto = base) {
@@ -126,6 +128,30 @@ test("send or copy is always available, warns about the new link and shows the m
   expect(message.value).toContain("¡Hola Sofi! 💜");
   expect(message.value.endsWith(newLink)).toBe(true);
   expect(screen.getByText("Enlace nuevo listo")).toBeTruthy();
+});
+
+test("holds WhatsApp and copy actions until the template has loaded", async () => {
+  findTemplate.mockReturnValue(new Promise(() => {}));
+  const { user } = setup();
+  await user.click(
+    screen.getByRole("button", { name: "Enviar o copiar enlace" }),
+  );
+  await screen.findByText("Preparando el mensaje…");
+
+  expect(
+    (
+      screen.getByRole("button", {
+        name: "Abrir WhatsApp",
+      }) as HTMLButtonElement
+    ).disabled,
+  ).toBe(true);
+  expect(
+    (
+      screen.getByRole("button", {
+        name: "Copiar mensaje",
+      }) as HTMLButtonElement
+    ).disabled,
+  ).toBe(true);
 });
 
 test("regenerate asks for confirmation and does nothing when cancelled", async () => {
@@ -251,6 +277,85 @@ test("a cancelled order offers no link actions", () => {
     screen.queryByRole("button", { name: "Enviar o copiar enlace" }),
   ).toBeNull();
   expect(screen.getByText(/ya no se puede enviar un enlace/)).toBeTruthy();
+});
+
+test("clears a generated link when the open order becomes cancelled", async () => {
+  function CancellableSection() {
+    const [order, setOrder] = useState(base);
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() =>
+            setOrder({ ...base, status: "CANCELLED" } as OrderResponseDto)
+          }
+        >
+          Simulate cancellation
+        </button>
+        <AssistedOrderSection
+          order={order}
+          storeId="store-1"
+          storeName="K-Store"
+        />
+      </>
+    );
+  }
+  renderWithProviders(<CancellableSection />);
+  const user = userEvent.setup();
+  await user.click(
+    screen.getByRole("button", { name: "Enviar o copiar enlace" }),
+  );
+  await box();
+  expect(screen.getByText("Enlace nuevo listo")).toBeTruthy();
+
+  await user.click(
+    screen.getByRole("button", { name: "Simulate cancellation" }),
+  );
+
+  expect(screen.queryByLabelText("Mensaje para el comprador")).toBeNull();
+  expect(screen.queryByText("Enlace nuevo listo")).toBeNull();
+  expect(
+    screen.queryByRole("button", { name: "Enviar o copiar enlace" }),
+  ).toBeNull();
+  expect(screen.getByText(/ya no se puede enviar un enlace/)).toBeTruthy();
+});
+
+test("blocks link and correction actions at the reserved-hold expiry boundary", () => {
+  const expiry = Date.parse("2026-10-27T22:00:00.000Z");
+  vi.spyOn(Date, "now").mockReturnValue(expiry);
+  setup({
+    ...base,
+    expiresAt: new Date(expiry).toISOString(),
+  } as OrderResponseDto);
+
+  expect(
+    screen.queryByRole("button", { name: "Enviar o copiar enlace" }),
+  ).toBeNull();
+  const correction = screen.getByRole("button", {
+    name: "Corregir número",
+  }) as HTMLButtonElement;
+  expect(correction.disabled).toBe(true);
+  expect(screen.getByText(/ya no se puede enviar un enlace/)).toBeTruthy();
+});
+
+test("does not apply hold expiry to a verified order", () => {
+  vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-27T22:00:00.000Z"));
+  setup({
+    ...base,
+    paymentStatus: "VERIFIED",
+    expiresAt: "2026-10-26T22:00:00.000Z",
+  } as OrderResponseDto);
+
+  expect(
+    screen.getByRole("button", { name: "Enviar o copiar enlace" }),
+  ).toBeTruthy();
+  expect(
+    (
+      screen.getByRole("button", {
+        name: "Corregir número",
+      }) as HTMLButtonElement
+    ).disabled,
+  ).toBe(false);
 });
 
 function renderSheet(order: OrderResponseDto) {

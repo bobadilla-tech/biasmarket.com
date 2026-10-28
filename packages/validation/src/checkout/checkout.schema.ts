@@ -1,18 +1,18 @@
 import { z } from "zod";
 import type { CheckoutPaymentMethod } from "@biasmarket/utils/payment-methods";
 import {
-  MAX_FILE_SIZE,
-  type ProofFileLike,
   isAllowedProof,
   isValidProofFile,
+  MAX_FILE_SIZE,
+  type ProofFileLike,
 } from "./file-proof.js";
 
 export {
-  MAX_FILE_SIZE,
-  ACCEPTED_MIME_TYPES,
   ACCEPTED_EXTENSION,
-  type ProofFileLike,
+  ACCEPTED_MIME_TYPES,
   isProofFileLike,
+  MAX_FILE_SIZE,
+  type ProofFileLike,
 } from "./file-proof.js";
 
 const MANUAL_METHODS = ["YAPE", "PLIN", "TRANSFER"];

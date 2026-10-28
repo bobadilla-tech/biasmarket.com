@@ -2,11 +2,11 @@ import { type Locale } from "@biasmarket/i18n";
 import { getMobileMessages } from "@biasmarket/i18n/mobile";
 import {
   createContext,
+  type PropsWithChildren,
   useCallback,
   useContext,
   useMemo,
   useState,
-  type PropsWithChildren,
 } from "react";
 
 const MobileI18nContext = createContext<{

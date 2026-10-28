@@ -197,8 +197,7 @@ export class CheckoutController {
   async create(
     @Param('slug') slug: string,
     @Body() body: Record<string, unknown>,
-    @UploadedFile(CHECKOUT_PROOF_PIPE)
-    file: ValidatedUploadedFile | undefined,
+    @UploadedFile(CHECKOUT_PROOF_PIPE) file: ValidatedUploadedFile | undefined,
     @Req() req: Request,
   ): Promise<CheckoutResultResponseDto> {
     const dto = await buildValidatedDto(body ?? {});

@@ -1,7 +1,7 @@
 import {
+  isStoreIndexable,
   MIN_INDEXABLE_PRODUCTS,
   SITEMAP_INDEXABLE_STORE_WHERE,
-  isStoreIndexable,
   type StoreIndexabilityInput,
 } from './store-indexability.js';
 

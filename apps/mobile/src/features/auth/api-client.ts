@@ -22,7 +22,8 @@ export function configureMobileApiClient(): void {
         ? { Authorization: `Bearer ${bearerToken}`, "X-Client": "mobile" }
         : undefined,
     onUnauthorized: (authorization) => unauthorizedHandler?.(authorization),
-    onSessionRefresh: (authorization, token) => sessionRefreshHandler?.(authorization, token),
+    onSessionRefresh: (authorization, token) =>
+      sessionRefreshHandler?.(authorization, token),
   });
   configured = true;
 }
@@ -42,7 +43,9 @@ export function setUnauthorizedHandler(
 }
 
 export function setSessionRefreshHandler(
-  handler: ((authorization: string, token: string) => void | Promise<void>) | undefined,
+  handler:
+    | ((authorization: string, token: string) => void | Promise<void>)
+    | undefined,
 ): void {
   sessionRefreshHandler = handler;
 }
