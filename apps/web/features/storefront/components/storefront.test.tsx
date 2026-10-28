@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { NextIntlClientProvider } from "next-intl";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -195,7 +195,7 @@ describe("storefront empty states", () => {
     expect(screen.getByRole("img", { name: "Categoría Álbumes" })).toBeTruthy();
   });
 
-  it("shows category filter chips on desktop and mobile with single selection", () => {
+  it("renders category tabs and single-select filter chips", () => {
     navigation.url = "/es/store/tienda?tab=productos";
     navigation.push.mockClear();
     withMessages(
@@ -210,7 +210,8 @@ describe("storefront empty states", () => {
       />,
     );
 
-    const albums = screen.getByRole("button", { name: "Álbumes" });
+    const chips = within(screen.getByRole("group", { name: "Categorías" }));
+    const albums = chips.getByRole("button", { name: "Álbumes" });
     expect(albums.getAttribute("aria-pressed")).toBe("false");
     fireEvent.click(albums);
     expect(navigation.push).toHaveBeenLastCalledWith(
