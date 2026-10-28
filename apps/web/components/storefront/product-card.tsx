@@ -51,7 +51,10 @@ export function ProductCard({
   const [restockOpen, setRestockOpen] = useState(false);
   const restockTriggerRef = useRef<HTMLButtonElement>(null);
 
-  const selectedVariant = product.variants.find((v) => v.id === variantId);
+  const selectedVariant =
+    product.variants.length === 1
+      ? product.variants[0]
+      : product.variants.find((v) => v.id === variantId);
   const effectivePrices = product.variants.map((v) =>
     Number(v.priceOverride ?? product.price),
   );
@@ -167,7 +170,7 @@ export function ProductCard({
         </Select>
       )}
 
-      {product.variants.length > 1 && !selectedVariant ? (
+      {product.variants.length > 1 && !selectedVariant && !outOfStock ? (
         <button
           type="button"
           disabled

@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { act, render } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
 import { describe, expect, it, vi } from "vitest";
 import { getMessages } from "@biasmarket/i18n";
@@ -7,23 +7,55 @@ import {
   StoreSectionRenderer,
 } from "./section-renderer";
 
+const navigation = vi.hoisted(() => ({
+  push: vi.fn(),
+  replace: vi.fn(),
+  search: "",
+}));
+
 vi.mock("next/navigation", async (importOriginal) => {
   const actual = await importOriginal<typeof import("next/navigation")>();
   return {
     ...actual,
     usePathname: () => "/es/store/demo",
-    useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
-    useSearchParams: () => new URLSearchParams(),
+    useRouter: () => ({ push: navigation.push, replace: navigation.replace }),
+    useSearchParams: () => new URLSearchParams(navigation.search),
   };
 });
 
-function renderSections(sections: RenderableSection[]) {
+function renderSections(
+  sections: RenderableSection[],
+  catalogControls = false,
+) {
   return render(
     <NextIntlClientProvider locale="es" messages={getMessages("es")}>
-      <StoreSectionRenderer slug="demo" sections={sections} />
+      <StoreSectionRenderer
+        slug="demo"
+        sections={sections}
+        catalogControls={catalogControls}
+      />
     </NextIntlClientProvider>,
   );
 }
+
+describe("StoreSectionRenderer catalog URL state", () => {
+  it("keeps the categories default sort out of the URL", async () => {
+    vi.useFakeTimers();
+    navigation.search = "tab=categorias";
+    navigation.replace.mockClear();
+
+    try {
+      renderSections([], true);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(350);
+      });
+      expect(navigation.replace).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+      navigation.search = "";
+    }
+  });
+});
 
 describe("StoreSectionRenderer — TEXT_BLOCK", () => {
   it("splits a body on blank lines into one <p> per paragraph", () => {

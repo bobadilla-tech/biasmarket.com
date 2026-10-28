@@ -394,7 +394,9 @@ export default async function StorePage({
     aboutSections.length > 0,
   );
   const soldOutProducts =
-    catalog && redesignedStore ? [] : collectSoldOutProducts(store);
+    redesignedStore && (catalog || tab !== "productos")
+      ? []
+      : collectSoldOutProducts(store);
   const schemaProducts =
     firstPageCatalog && Array.isArray(firstPageCatalog.items)
       ? firstPageCatalog.items

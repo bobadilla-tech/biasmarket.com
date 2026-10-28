@@ -132,8 +132,9 @@ export function StoreSectionRenderer({
   const activeTab = catalogControls
     ? normalizeStoreTab(tabValue, showAbout)
     : "productos";
+  const defaultSort = activeTab === "categorias" ? "nombre_asc" : "recientes";
   const [query, setQuery] = useState(searchParams?.get("q") ?? "");
-  const [sort, setSort] = useState(searchParams?.get("orden") ?? "recientes");
+  const [sort, setSort] = useState(searchParams?.get("orden") ?? defaultSort);
   const [categoryIds, setCategoryIds] = useState(() =>
     parseCategorySlugs(searchParams?.get("categoria") ?? null),
   );
@@ -152,8 +153,8 @@ export function StoreSectionRenderer({
   useEffect(() => {
     setCategoryIds(parseCategorySlugs(searchParams?.get("categoria") ?? null));
     setQuery(searchParams?.get("q") ?? "");
-    setSort(searchParams?.get("orden") ?? "recientes");
-  }, [searchString]);
+    setSort(searchParams?.get("orden") ?? defaultSort);
+  }, [defaultSort, searchString]);
 
   useEffect(() => {
     setIsLoadingMore(false);
@@ -178,6 +179,12 @@ export function StoreSectionRenderer({
     const timeout = window.setTimeout(() => {
       const params = new URLSearchParams(searchString);
       const trimmed = query.trim();
+      if (
+        trimmed === (params.get("q") ?? "") &&
+        sort === (params.get("orden") ?? defaultSort)
+      ) {
+        return;
+      }
       if (trimmed) params.set("q", trimmed);
       else params.delete("q");
       if (sort) params.set("orden", sort);
@@ -190,7 +197,7 @@ export function StoreSectionRenderer({
       }
     }, 300);
     return () => window.clearTimeout(timeout);
-  }, [catalogControls, pathname, query, router, searchString, sort]);
+  }, [catalogControls, defaultSort, pathname, query, router, searchString, sort]);
 
   function updateCategories(values: string[]) {
     setCategoryIds(values);
