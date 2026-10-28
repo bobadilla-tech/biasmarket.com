@@ -895,7 +895,7 @@
       "linkNotice": "This link is only shown here: copy it before you leave. You can generate a new one from the order later.",
       "summary": "Order {ref} · {total}",
       "messageLabel": "Message for the buyer",
-      "messageDescription": "It includes their private link. You can copy it or open it straight in WhatsApp.",
+      "messageDescription": "It includes their private link. You can copy it or open it straight in WhatsApp. Don't open the link yourself: once it's opened you can no longer fix the number.",
       "openWhatsapp": "Open WhatsApp",
       "copyMessage": "Copy message",
       "copied": "Message copied",
