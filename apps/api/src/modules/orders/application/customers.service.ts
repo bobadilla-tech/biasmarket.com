@@ -7,6 +7,7 @@ import {
 import { Prisma } from '@biasmarket/db';
 import { normalizePhone, validatePhone } from '@biasmarket/utils/phone-country';
 import { PrismaService } from '../../../prisma/prisma.service.js';
+import { upsertAssistedCustomer } from './assisted-customer.js';
 import {
   countsTowardPaid,
   countsTowardRevenue,
@@ -310,10 +311,15 @@ export class CustomersService {
     await this.assertOwnership(storeId, userId);
     const phone = this.requirePhone(rawPhone);
     const name = alias?.trim() || null;
-    return this.prisma.customer.upsert({
-      where: { storeId_phone: { storeId, phone } },
-      create: { storeId, phone, name },
-      update: name ? { name } : {},
+    // `ON CONFLICT DO NOTHING` insert (a plain upsert races on
+    // `Customer_storeId_phone_key` against a concurrent checkout), then the
+    // given name overwrites, as the old upsert did.
+    return this.prisma.$transaction(async (tx) => {
+      await upsertAssistedCustomer(tx, storeId, phone, null);
+      return tx.customer.update({
+        where: { storeId_phone: { storeId, phone } },
+        data: name ? { name } : {},
+      });
     });
   }
 

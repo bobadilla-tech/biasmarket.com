@@ -13,10 +13,12 @@ describe('CustomersService', () => {
   let service: CustomersService;
   let prisma: {
     store: { findUnique: Mock };
-    customer: { findMany: Mock; findUnique: Mock; upsert: Mock };
+    customer: { findMany: Mock; findUnique: Mock; update: Mock };
     buyerAccount: { create: Mock; upsert: Mock; update: Mock };
     order: { groupBy: Mock; findMany: Mock; count: Mock; findFirst: Mock };
     orderPayment: { findMany: Mock };
+    $executeRaw: Mock;
+    $transaction: Mock;
   };
 
   const ownerId = 'user-1';
@@ -25,7 +27,7 @@ describe('CustomersService', () => {
   beforeEach(async () => {
     prisma = {
       store: { findUnique: vi.fn() },
-      customer: { findMany: vi.fn(), findUnique: vi.fn(), upsert: vi.fn() },
+      customer: { findMany: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
       buyerAccount: { create: vi.fn(), upsert: vi.fn(), update: vi.fn() },
       order: {
         groupBy: vi.fn(),
@@ -34,7 +36,12 @@ describe('CustomersService', () => {
         findFirst: vi.fn(),
       },
       orderPayment: { findMany: vi.fn() },
+      $executeRaw: vi.fn().mockResolvedValue(1),
+      $transaction: vi.fn(),
     };
+    prisma.$transaction.mockImplementation(
+      async (fn: (tx: unknown) => unknown) => fn(prisma),
+    );
     // Guest orders are fetched in `findAllForStore` and have their own
     // aggregation; tests that don't care about them still need a default so
     // the iteration over them doesn't blow up on `undefined`.
@@ -730,8 +737,9 @@ describe('CustomersService', () => {
   describe('upsertStoreContact', () => {
     beforeEach(() => stubOwnedStore());
 
-    it('upserts the store contact and does not touch BuyerAccount', async () => {
-      prisma.customer.upsert.mockResolvedValue({ id: 'customer-1' });
+    it('upserts the store contact without touching BuyerAccount', async () => {
+      prisma.customer.findUnique.mockResolvedValue({ id: 'customer-1' });
+      prisma.customer.update.mockResolvedValue({ id: 'customer-1' });
 
       await service.upsertStoreContact(
         storeId,
@@ -740,10 +748,14 @@ describe('CustomersService', () => {
         '  Ana  ',
       );
 
-      expect(prisma.customer.upsert).toHaveBeenCalledWith({
+      const [strings, ...values] = prisma.$executeRaw.mock.calls[0];
+      expect(strings.join('?')).toContain('INSERT INTO "Customer"');
+      expect(strings.join('?')).toContain('ON CONFLICT ("storeId", "phone")');
+      expect(values).toContain(storeId);
+      expect(values).toContain('+51987654321');
+      expect(prisma.customer.update).toHaveBeenCalledWith({
         where: { storeId_phone: { storeId, phone: '+51987654321' } },
-        create: { storeId, phone: '+51987654321', name: 'Ana' },
-        update: { name: 'Ana' },
+        data: { name: 'Ana' },
       });
       expect(prisma.buyerAccount.create).not.toHaveBeenCalled();
       expect(prisma.buyerAccount.upsert).not.toHaveBeenCalled();
@@ -759,7 +771,7 @@ describe('CustomersService', () => {
       await expect(
         service.upsertStoreContact(storeId, ownerId, '987654321', 'Ana'),
       ).rejects.toThrow(ForbiddenException);
-      expect(prisma.customer.upsert).not.toHaveBeenCalled();
+      expect(prisma.$executeRaw).not.toHaveBeenCalled();
     });
   });
 });
