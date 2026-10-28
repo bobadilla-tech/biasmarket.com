@@ -7,6 +7,7 @@ import {
 import { Prisma } from '@biasmarket/db';
 import { normalizePhone, validatePhone } from '@biasmarket/utils/phone-country';
 import { PrismaService } from '../../../prisma/prisma.service.js';
+import { upsertAssistedCustomer } from './assisted-customer.js';
 import {
   countsTowardPaid,
   countsTowardRevenue,
@@ -66,6 +67,10 @@ export class CustomersService {
       this.prisma.orderPayment.findMany({
         where: {
           storeId,
+          voidedAt: null,
+          // Keep this predicate aligned with `countsTowardPaid` below so
+          // non-counting rows are filtered before they cross into Node.
+          OR: [{ source: 'SELLER_RECORDED' }, { reviewStatus: 'APPROVED' }],
           // Money actually collected and verified only — partial-payment
           // orders count their paid amount, never the full order total, the
           // same business rule `countsTowardRevenue` applies everywhere.
@@ -73,11 +78,14 @@ export class CustomersService {
             paymentStatus: { in: [...REVENUE_ORDER_PAYMENT_STATUSES] },
             customerId: { not: null },
           },
-          // Excludes a buyer-submitted proof still awaiting seller review —
-          // see common/payment-summary.ts's `countsTowardPaid`.
-          OR: [{ source: 'SELLER_RECORDED' }, { reviewStatus: 'APPROVED' }],
         },
-        select: { amount: true, order: { select: { customerId: true } } },
+        select: {
+          amount: true,
+          source: true,
+          reviewStatus: true,
+          voidedAt: true,
+          order: { select: { customerId: true } },
+        },
       }),
       this.prisma.order.findMany({
         where: { storeId, customerId: null },
@@ -88,7 +96,12 @@ export class CustomersService {
           paymentStatus: true,
           createdAt: true,
           payments: {
-            select: { amount: true, source: true, reviewStatus: true },
+            select: {
+              amount: true,
+              source: true,
+              reviewStatus: true,
+              voidedAt: true,
+            },
           },
         },
       }),
@@ -105,6 +118,7 @@ export class CustomersService {
     );
     const spendByCustomer = new Map<string, Prisma.Decimal>();
     for (const payment of payments) {
+      if (!countsTowardPaid(payment)) continue;
       const customerId = payment.order.customerId;
       if (!customerId) continue;
       const current = spendByCustomer.get(customerId) ?? new Prisma.Decimal(0);
@@ -205,7 +219,32 @@ export class CustomersService {
       });
     }
 
-    return rows.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    // Hide ghost contacts (#337): a `Customer` with no orders (counting guest
+    // orders folded in above, so this runs after the fold) that never
+    // registered anything, e.g. the leftover of a seller who typed a number on
+    // the new-order screen and abandoned it. The `rows` objects do not carry
+    // the credential columns, so keepability is decided from the records.
+    // A name-only zero-order contact is hidden too. `findOneForStore` is
+    // unchanged, so a stale id still resolves.
+    const keepable = new Set(
+      customers
+        .filter(
+          (customer) =>
+            customer.email ||
+            customer.passwordHash ||
+            customer.pendingEmail ||
+            customer.pendingPhone ||
+            customer.emailVerified,
+        )
+        .map((customer) => customer.id),
+    );
+    const visibleRows = rows.filter(
+      (row) => row.orderCount > 0 || keepable.has(row.id),
+    );
+
+    return visibleRows.sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+    );
   }
 
   async findOneForStore(customerId: string, storeId: string, userId: string) {
@@ -226,6 +265,7 @@ export class CustomersService {
           include: {
             items: { include: { product: true, variant: true } },
             payments: { orderBy: { createdAt: 'desc' } },
+            createdBy: { select: { name: true } },
           },
         });
         const guestOrders = orders.filter(
@@ -267,6 +307,7 @@ export class CustomersService {
       include: {
         items: { include: { product: true, variant: true } },
         payments: { orderBy: { createdAt: 'desc' } },
+        createdBy: { select: { name: true } },
       },
     });
 
@@ -295,10 +336,15 @@ export class CustomersService {
     await this.assertOwnership(storeId, userId);
     const phone = this.requirePhone(rawPhone);
     const name = alias?.trim() || null;
-    return this.prisma.customer.upsert({
-      where: { storeId_phone: { storeId, phone } },
-      create: { storeId, phone, name },
-      update: name ? { name } : {},
+    // `ON CONFLICT DO NOTHING` insert (a plain upsert races on
+    // `Customer_storeId_phone_key` against a concurrent checkout), then the
+    // given name overwrites, as the old upsert did.
+    return this.prisma.$transaction(async (tx) => {
+      await upsertAssistedCustomer(tx, storeId, phone, null);
+      return tx.customer.update({
+        where: { storeId_phone: { storeId, phone } },
+        data: name ? { name } : {},
+      });
     });
   }
 
@@ -344,8 +390,31 @@ export class CustomersService {
     return {
       normalizedPhone: phone,
       previousOrders: previousOrders + legacyMatches.length,
-      lastAlias: customer?.name ?? newestOrder?.customerName ?? null,
+      // Customer.name can be the registered buyer's canonical name. The
+      // newest order carries the alias used for that order and should win for
+      // assisted-order prefilling without renaming the registered contact.
+      lastAlias: newestOrder?.customerName ?? customer?.name ?? null,
     };
+  }
+
+  // Count-only variant of `lookupByPhone` for callers that already verified
+  // ownership. Includes legacy rows whose `customerPhoneNormalized` is null.
+  async countPreviousOrders(storeId: string, phone: string): Promise<number> {
+    const [indexed, legacyOrders] = await Promise.all([
+      this.prisma.order.count({
+        where: { storeId, customerPhoneNormalized: phone },
+      }),
+      this.prisma.order.findMany({
+        where: { storeId, customerPhoneNormalized: null },
+        select: { customerPhone: true },
+      }),
+    ]);
+    return (
+      indexed +
+      legacyOrders.filter(
+        (order) => normalizePhone(order.customerPhone) === phone,
+      ).length
+    );
   }
 
   private requirePhone(rawPhone: string): string {

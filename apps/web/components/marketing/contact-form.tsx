@@ -7,9 +7,9 @@ import { useTranslations } from "next-intl";
 import { buttonVariants } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import {
+  formErrorMessage,
   FormErrorSummary,
   FormField,
-  formErrorMessage,
 } from "@/components/shared/form-a11y";
 import {
   type InquirySubmissionInput,

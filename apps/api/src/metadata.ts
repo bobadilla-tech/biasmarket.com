@@ -11,14 +11,16 @@ export default async () => {
       await import('./modules/products/dto/product-response.dto.js'),
     ['./modules/products/dto/product-search-response.dto.js']:
       await import('./modules/products/dto/product-search-response.dto.js'),
+    ['./modules/orders/dto/related-orders-response.dto.js']:
+      await import('./modules/orders/dto/related-orders-response.dto.js'),
     ['./modules/orders/dto/order-response.dto.js']:
       await import('./modules/orders/dto/order-response.dto.js'),
     ['./modules/orders/dto/create-order.dto.js']:
       await import('./modules/orders/dto/create-order.dto.js'),
-    ['./modules/payment-config/dto/payment-method-details.dto.js']:
-      await import('./modules/payment-config/dto/payment-method-details.dto.js'),
     ['./modules/orders/dto/checkout-response.dto.js']:
       await import('./modules/orders/dto/checkout-response.dto.js'),
+    ['./modules/payment-config/dto/payment-method-details.dto.js']:
+      await import('./modules/payment-config/dto/payment-method-details.dto.js'),
     ['./modules/orders/infrastructure/customer-account-response.dto.js']:
       await import('./modules/orders/infrastructure/customer-account-response.dto.js'),
     ['./modules/customer-auth/dto/account-order-response.dto.js']:
@@ -59,6 +61,8 @@ export default async () => {
       await import('./modules/notifications/dto/notification-response.dto.js'),
     ['./modules/users/dto/user-store-count-response.dto.js']:
       await import('./modules/users/dto/user-store-count-response.dto.js'),
+    ['./modules/orders/dto/assisted-order-response.dto.js']:
+      await import('./modules/orders/dto/assisted-order-response.dto.js'),
     ['./modules/payment-config/dto/payment-method-response.dto.js']:
       await import('./modules/payment-config/dto/payment-method-response.dto.js'),
     ['./modules/delivery-config/dto/delivery-method-response.dto.js']:
@@ -287,7 +291,9 @@ export default async () => {
             PublicCategoryResponseDto: {
               id: { required: true, type: () => String },
               name: { required: true, type: () => String },
+              slug: { required: true, type: () => String },
               parentId: { required: true, type: () => String, nullable: true },
+              productCount: { required: true, type: () => Number },
             },
             PublicProductVariantResponseDto: {
               id: { required: true, type: () => String },
@@ -315,6 +321,19 @@ export default async () => {
             PublicProductCategoryNameResponseDto: {
               id: { required: true, type: () => String },
               name: { required: true, type: () => String },
+              slug: { required: true, type: () => String },
+            },
+            StoreCatalogResponseDto: {
+              items: {
+                required: true,
+                type: () => [
+                  t['./modules/stores/dto/store-response.dto.js']
+                    .PublicProductWithVariantsResponseDto,
+                ],
+              },
+              total: { required: true, type: () => Number },
+              page: { required: true, type: () => Number },
+              limit: { required: true, type: () => Number },
             },
             PublicProductCategoryResponseDto: {
               category: {
@@ -464,6 +483,25 @@ export default async () => {
             },
             SitemapStoreCountDto: {
               total: { required: true, type: () => Number },
+            },
+          },
+        ],
+        [
+          import('./modules/stores/dto/storefront-request.dto.js'),
+          {
+            StorefrontRequestDto: {
+              slug: {
+                required: true,
+                type: () => String,
+                pattern: '^[a-z0-9][a-z0-9_-]*$',
+              },
+            },
+            StorefrontCatalogRequestDto: {
+              query: {
+                required: false,
+                type: 'object',
+                additionalProperties: true,
+              },
             },
           },
         ],
@@ -724,6 +762,48 @@ export default async () => {
         ],
         [import('./modules/orders/domain/order.entity.js'), { Order: {} }],
         [
+          import('./modules/orders/dto/related-orders-response.dto.js'),
+          {
+            RelatedOrderResponseDto: {
+              id: { required: true, type: () => String },
+              orderNumber: { required: true, type: () => String },
+              createdAt: { required: true, type: () => String },
+              status: { required: true, enum: ['CANCELLED', 'ACTIVE'] },
+              paymentStatus: {
+                required: true,
+                enum: [
+                  'PENDING_PAYMENT',
+                  'PARTIALLY_PAID',
+                  'PAYMENT_SUBMITTED',
+                  'VERIFIED',
+                  'REJECTED',
+                  'CANCELLED',
+                ],
+              },
+              fulfillmentStatus: {
+                required: true,
+                enum: ['ORDERING', 'IN_TRANSIT', 'READY', 'COMPLETED'],
+              },
+              totalAmount: { required: true, type: () => String },
+              currency: { required: true, type: () => String },
+              source: {
+                required: true,
+                enum: ['MARKETPLACE', 'VENDOR_ASSISTED'],
+              },
+            },
+            RelatedOrdersResponseDto: {
+              items: {
+                required: true,
+                type: () => [
+                  t['./modules/orders/dto/related-orders-response.dto.js']
+                    .RelatedOrderResponseDto,
+                ],
+              },
+              total: { required: true, type: () => Number },
+            },
+          },
+        ],
+        [
           import('./modules/orders/dto/record-invite-event.dto.js'),
           {
             RecordInviteEventDto: {
@@ -772,6 +852,19 @@ export default async () => {
               status: {
                 required: true,
                 enum: ['IN_TRANSIT', 'READY', 'COMPLETED'],
+              },
+            },
+          },
+        ],
+        [
+          import('./modules/orders/dto/void-order-payment.dto.js'),
+          {
+            VoidOrderPaymentDto: {
+              reason: {
+                required: true,
+                type: () => String,
+                minLength: 1,
+                maxLength: 500,
               },
             },
           },
@@ -859,6 +952,18 @@ export default async () => {
               note: { required: true, type: () => String, nullable: true },
               imageUrl: { required: true, type: () => String, nullable: true },
               createdAt: { required: true, type: () => String },
+              operationCode: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              paidAt: { required: true, type: () => String, nullable: true },
+              voidedAt: { required: true, type: () => String, nullable: true },
+              voidReason: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
               source: {
                 required: true,
                 enum: ['SELLER_RECORDED', 'BUYER_SUBMITTED'],
@@ -931,6 +1036,17 @@ export default async () => {
                 type: () => String,
                 nullable: true,
               },
+              trackingNumber: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              trackingUrl: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              packedPhotoAvailable: { required: true, type: () => Boolean },
               courierModality: {
                 required: true,
                 nullable: true,
@@ -995,6 +1111,17 @@ export default async () => {
               paidAmount: { required: true, type: () => Number },
               pendingAmount: { required: true, type: () => Number },
               paidPercentage: { required: true, type: () => Number },
+              linkFirstOpenedAt: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              claimedAt: { required: true, type: () => String, nullable: true },
+              createdByName: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
               items: {
                 required: true,
                 type: () => [
@@ -1064,6 +1191,17 @@ export default async () => {
                 type: () => String,
                 nullable: true,
               },
+              trackingNumber: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              trackingUrl: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              packedPhotoAvailable: { required: true, type: () => Boolean },
               courierModality: {
                 required: true,
                 nullable: true,
@@ -1125,6 +1263,26 @@ export default async () => {
               currency: { required: true, type: () => String },
               expiresAt: { required: true, type: () => String },
               createdAt: { required: true, type: () => String },
+            },
+          },
+        ],
+        [
+          import('./modules/orders/dto/update-order-shipping.dto.js'),
+          {
+            UpdateOrderShippingDto: {
+              trackingNumber: {
+                required: false,
+                type: () => String,
+                nullable: true,
+                maxLength: 120,
+              },
+              trackingUrl: {
+                required: false,
+                type: () => String,
+                nullable: true,
+                maxLength: 2048,
+                format: 'uri',
+              },
             },
           },
         ],
@@ -1206,69 +1364,56 @@ export default async () => {
           },
         ],
         [
-          import('./modules/customer-auth/dto/account-order-response.dto.js'),
+          import('./modules/orders/dto/create-assisted-order.dto.js'),
           {
-            AccountOrderResponseDto: {
-              id: { required: true, type: () => String },
-              paymentStatus: {
+            CreateAssistedOrderDto: {
+              deliveryMethodType: {
                 required: true,
-                enum: [
-                  'PENDING_PAYMENT',
-                  'PARTIALLY_PAID',
-                  'PAYMENT_SUBMITTED',
-                  'VERIFIED',
-                  'REJECTED',
-                  'CANCELLED',
-                ],
+                enum: ['PICKUP', 'COURIER'],
               },
-              fulfillmentStatus: {
-                required: true,
-                enum: ['ORDERING', 'IN_TRANSIT', 'READY', 'COMPLETED'],
+              pickupPointId: { required: false, type: () => String },
+              pickupDate: {
+                required: false,
+                type: () => String,
+                pattern: '^\\d{4}-\\d{2}-\\d{2}$',
               },
-              totalAmount: { required: true, type: () => String },
-              currency: { required: true, type: () => String },
-              createdAt: { required: true, type: () => String },
-              paidAmount: { required: true, type: () => Number },
-              pendingAmount: { required: true, type: () => Number },
-              paidPercentage: { required: true, type: () => Number },
-            },
-          },
-        ],
-        [
-          import('./modules/payment-config/dto/payment-method-details.dto.js'),
-          {
-            PaymentMethodDetailsDto: {
-              bankName: { required: false, type: () => String },
-              accountNumber: { required: false, type: () => String },
-              accountHolder: { required: false, type: () => String },
-              accountType: { required: false, type: () => String },
-              phoneNumber: { required: false, type: () => String },
-              qrImageUrl: { required: false, type: () => String },
-            },
-          },
-        ],
-        [
-          import('./modules/payment-config/dto/upsert-payment-method.dto.js'),
-          {
-            UpsertPaymentMethodDto: {
-              method: {
-                required: true,
+              paymentMethod: {
+                required: false,
                 enum: ['YAPE', 'PLIN', 'TRANSFER', 'CASH'],
               },
-              enabled: { required: false, type: () => Boolean },
-              details: {
+              paymentType: { required: false, enum: ['FULL', 'PARTIAL'] },
+              customerPhone: { required: true, type: () => String },
+              customerName: {
+                required: false,
+                type: () => String,
+                maxLength: 60,
+                pattern:
+                  '^[^\\p{Cc}\\u200B\\u2028\\u2029\\u202A-\\u202E\\u2066-\\u2069\\uFEFF\\u2060-\\u2064\\u00AD\\u180E\\u034F\\uFFFC\\uFFF9-\\uFFFB\\u3164\\u115F\\u1160\\u2800]*$',
+              },
+              shippingAddress: {
                 required: false,
                 type: () =>
-                  t[
-                    './modules/payment-config/dto/payment-method-details.dto.js'
-                  ].PaymentMethodDetailsDto,
+                  t['./modules/orders/dto/create-order.dto.js']
+                    .ShippingAddressDto,
               },
-              depositPercent: {
-                required: false,
-                type: () => Number,
-                minimum: 1,
-                maximum: 100,
+              courierName: { required: false, type: () => String },
+              courierModality: { required: false, enum: ['AGENCY', 'HOME'] },
+              items: {
+                required: true,
+                type: () => [
+                  t['./modules/orders/dto/create-order.dto.js']
+                    .CreateOrderItemDto,
+                ],
+                minItems: 1,
               },
+            },
+          },
+        ],
+        [
+          import('./modules/orders/dto/correct-buyer-phone.dto.js'),
+          {
+            CorrectBuyerPhoneDto: {
+              customerPhone: { required: true, type: () => String },
             },
           },
         ],
@@ -1424,6 +1569,97 @@ export default async () => {
           },
         ],
         [
+          import('./modules/orders/dto/assisted-order-response.dto.js'),
+          {
+            CreateAssistedOrderResponseDto: {
+              order: {
+                required: true,
+                type: () =>
+                  t['./modules/orders/dto/checkout-response.dto.js']
+                    .CheckoutOrderResponseDto,
+              },
+              accessUrl: { required: true, type: () => String },
+              previousOrders: { required: true, type: () => Number },
+            },
+            AssistedOrderLinkResponseDto: {
+              order: {
+                required: true,
+                type: () =>
+                  t['./modules/orders/dto/order-response.dto.js']
+                    .OrderDetailResponseDto,
+              },
+              accessUrl: { required: true, type: () => String },
+            },
+          },
+        ],
+        [
+          import('./modules/customer-auth/dto/account-order-response.dto.js'),
+          {
+            AccountOrderResponseDto: {
+              id: { required: true, type: () => String },
+              paymentStatus: {
+                required: true,
+                enum: [
+                  'PENDING_PAYMENT',
+                  'PARTIALLY_PAID',
+                  'PAYMENT_SUBMITTED',
+                  'VERIFIED',
+                  'REJECTED',
+                  'CANCELLED',
+                ],
+              },
+              fulfillmentStatus: {
+                required: true,
+                enum: ['ORDERING', 'IN_TRANSIT', 'READY', 'COMPLETED'],
+              },
+              totalAmount: { required: true, type: () => String },
+              currency: { required: true, type: () => String },
+              createdAt: { required: true, type: () => String },
+              paidAmount: { required: true, type: () => Number },
+              pendingAmount: { required: true, type: () => Number },
+              paidPercentage: { required: true, type: () => Number },
+            },
+          },
+        ],
+        [
+          import('./modules/payment-config/dto/payment-method-details.dto.js'),
+          {
+            PaymentMethodDetailsDto: {
+              bankName: { required: false, type: () => String },
+              accountNumber: { required: false, type: () => String },
+              accountHolder: { required: false, type: () => String },
+              accountType: { required: false, type: () => String },
+              phoneNumber: { required: false, type: () => String },
+              qrImageUrl: { required: false, type: () => String },
+            },
+          },
+        ],
+        [
+          import('./modules/payment-config/dto/upsert-payment-method.dto.js'),
+          {
+            UpsertPaymentMethodDto: {
+              method: {
+                required: true,
+                enum: ['YAPE', 'PLIN', 'TRANSFER', 'CASH'],
+              },
+              enabled: { required: false, type: () => Boolean },
+              details: {
+                required: false,
+                type: () =>
+                  t[
+                    './modules/payment-config/dto/payment-method-details.dto.js'
+                  ].PaymentMethodDetailsDto,
+              },
+              depositPercent: {
+                required: false,
+                type: () => Number,
+                minimum: 1,
+                maximum: 100,
+              },
+            },
+          },
+        ],
+        [
           import('./modules/orders/infrastructure/customer-account-response.dto.js'),
           {
             ConfirmAccountCustomerResponseDto: {
@@ -1528,6 +1764,7 @@ export default async () => {
               },
               amount: { required: true, type: () => String },
               createdAt: { required: true, type: () => String },
+              voidedAt: { required: true, type: () => String, nullable: true },
               reviewStatus: {
                 required: true,
                 enum: ['REJECTED', 'N_A', 'PENDING_REVIEW', 'APPROVED'],
@@ -1569,6 +1806,8 @@ export default async () => {
                 type: () => String,
                 nullable: true,
               },
+              orderNumber: { required: true, type: () => String },
+              createdAt: { required: true, type: () => String },
               items: {
                 required: true,
                 type: () => [
@@ -1629,6 +1868,17 @@ export default async () => {
                 type: () => String,
                 nullable: true,
               },
+              trackingNumber: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              trackingUrl: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              packedPhotoAvailable: { required: true, type: () => Boolean },
               courierModality: {
                 required: true,
                 nullable: true,
@@ -1819,6 +2069,7 @@ export default async () => {
               storeId: { required: true, type: () => String },
               parentId: { required: true, type: () => String, nullable: true },
               name: { required: true, type: () => String },
+              slug: { required: true, type: () => String },
               createdAt: { required: true, type: () => String },
             },
           },
@@ -2352,7 +2603,10 @@ export default async () => {
             WhatsAppTemplateResponseDto: {
               id: { required: true, type: () => String },
               storeId: { required: true, type: () => String },
-              type: { required: true, enum: ['NEW_ORDER', 'PAYMENT_REMINDER'] },
+              type: {
+                required: true,
+                enum: ['NEW_ORDER', 'PAYMENT_REMINDER', 'ASSISTED_ORDER_LINK'],
+              },
               template: { required: true, type: () => String },
               updatedAt: { required: true, type: () => String },
             },
@@ -2722,11 +2976,29 @@ export default async () => {
                 type: t['./modules/stores/dto/store-response.dto.js']
                   .StoreDirectoryResponseDto,
               },
+              findPublicCatalog: {
+                type: t['./modules/stores/dto/store-response.dto.js']
+                  .StoreCatalogResponseDto,
+              },
+              findStorefrontCatalog: {
+                type: t['./modules/stores/dto/store-response.dto.js']
+                  .StoreCatalogResponseDto,
+              },
               findPublic: {
                 type: t['./modules/stores/dto/store-response.dto.js']
                   .StorePublicDetailResponseDto,
               },
+              findStorefrontPublic: {
+                type: t['./modules/stores/dto/store-response.dto.js']
+                  .StorePublicDetailResponseDto,
+              },
               findCategoriesPublic: {
+                type: [
+                  t['./modules/stores/dto/store-response.dto.js']
+                    .PublicCategoryResponseDto,
+                ],
+              },
+              findStorefrontCategories: {
                 type: [
                   t['./modules/stores/dto/store-response.dto.js']
                     .PublicCategoryResponseDto,
@@ -2914,12 +3186,29 @@ export default async () => {
                 type: t['./modules/orders/dto/order-response.dto.js']
                   .OrderDetailResponseDto,
               },
+              findRelated: {
+                type: t['./modules/orders/dto/related-orders-response.dto.js']
+                  .RelatedOrdersResponseDto,
+              },
               getPaymentImage: {},
+              updateShipping: {
+                type: t['./modules/orders/dto/order-response.dto.js']
+                  .OrderDetailResponseDto,
+              },
+              uploadPackedPhoto: {
+                type: t['./modules/orders/dto/order-response.dto.js']
+                  .OrderDetailResponseDto,
+              },
+              getPackedPhoto: {},
               addPayment: {
                 type: t['./modules/orders/dto/order-response.dto.js']
                   .OrderDetailResponseDto,
               },
               reviewPaymentProof: {
+                type: t['./modules/orders/dto/order-response.dto.js']
+                  .OrderDetailResponseDto,
+              },
+              voidPayment: {
                 type: t['./modules/orders/dto/order-response.dto.js']
                   .OrderDetailResponseDto,
               },
@@ -2945,6 +3234,25 @@ export default async () => {
               create: {
                 type: t['./modules/orders/dto/checkout-response.dto.js']
                   .CheckoutResultResponseDto,
+              },
+            },
+          },
+        ],
+        [
+          import('./modules/orders/infrastructure/assisted-orders.controller.js'),
+          {
+            AssistedOrdersController: {
+              createAssisted: {
+                type: t['./modules/orders/dto/assisted-order-response.dto.js']
+                  .CreateAssistedOrderResponseDto,
+              },
+              regenerateAccessLink: {
+                type: t['./modules/orders/dto/assisted-order-response.dto.js']
+                  .AssistedOrderLinkResponseDto,
+              },
+              correctBuyerPhone: {
+                type: t['./modules/orders/dto/assisted-order-response.dto.js']
+                  .AssistedOrderLinkResponseDto,
               },
             },
           },
@@ -3008,6 +3316,7 @@ export default async () => {
                 type: t['./modules/orders/dto/public-order-response.dto.js']
                   .PublicOrderResponseDto,
               },
+              getPackedPhoto: {},
               recordInvite: {},
             },
           },

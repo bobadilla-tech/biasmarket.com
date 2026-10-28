@@ -13,10 +13,12 @@ describe('CustomersService', () => {
   let service: CustomersService;
   let prisma: {
     store: { findUnique: Mock };
-    customer: { findMany: Mock; findUnique: Mock; upsert: Mock };
+    customer: { findMany: Mock; findUnique: Mock; update: Mock };
     buyerAccount: { create: Mock; upsert: Mock; update: Mock };
     order: { groupBy: Mock; findMany: Mock; count: Mock; findFirst: Mock };
     orderPayment: { findMany: Mock };
+    $executeRaw: Mock;
+    $transaction: Mock;
   };
 
   const ownerId = 'user-1';
@@ -25,7 +27,7 @@ describe('CustomersService', () => {
   beforeEach(async () => {
     prisma = {
       store: { findUnique: vi.fn() },
-      customer: { findMany: vi.fn(), findUnique: vi.fn(), upsert: vi.fn() },
+      customer: { findMany: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
       buyerAccount: { create: vi.fn(), upsert: vi.fn(), update: vi.fn() },
       order: {
         groupBy: vi.fn(),
@@ -34,7 +36,12 @@ describe('CustomersService', () => {
         findFirst: vi.fn(),
       },
       orderPayment: { findMany: vi.fn() },
+      $executeRaw: vi.fn().mockResolvedValue(1),
+      $transaction: vi.fn(),
     };
+    prisma.$transaction.mockImplementation(
+      async (fn: (tx: unknown) => unknown) => fn(prisma),
+    );
     // Guest orders are fetched in `findAllForStore` and have their own
     // aggregation; tests that don't care about them still need a default so
     // the iteration over them doesn't blow up on `undefined`.
@@ -123,6 +130,13 @@ describe('CustomersService', () => {
           reviewStatus: 'N_A',
           order: { customerId: 'customer-1' },
         },
+        {
+          amount: 90,
+          source: 'SELLER_RECORDED',
+          reviewStatus: 'N_A',
+          voidedAt: new Date(),
+          order: { customerId: 'customer-1' },
+        },
       ]);
 
       const result = await service.findAllForStore(storeId, ownerId);
@@ -147,14 +161,14 @@ describe('CustomersService', () => {
           id: 'customer-1',
           name: 'Ana',
           phone: '+51987654321',
-          email: null,
-          emailVerified: false,
+          email: 'ana@example.com',
+          emailVerified: true,
           createdAt: new Date(),
         },
       ]);
       prisma.order.groupBy.mockResolvedValue([]);
-      // orderPayment.findMany is called with a where that already excludes
-      // non-VERIFIED orders at the query level, so simulate that filter here.
+      // Non-collecting orders and non-counting payment rows are excluded at
+      // the query level, matching countsTowardPaid.
       prisma.orderPayment.findMany.mockResolvedValue([]);
 
       const result = await service.findAllForStore(storeId, ownerId);
@@ -162,13 +176,20 @@ describe('CustomersService', () => {
       expect(prisma.orderPayment.findMany).toHaveBeenCalledWith({
         where: {
           storeId,
+          voidedAt: null,
+          OR: [{ source: 'SELLER_RECORDED' }, { reviewStatus: 'APPROVED' }],
           order: {
             paymentStatus: { in: ['VERIFIED', 'PARTIALLY_PAID'] },
             customerId: { not: null },
           },
-          OR: [{ source: 'SELLER_RECORDED' }, { reviewStatus: 'APPROVED' }],
         },
-        select: { amount: true, order: { select: { customerId: true } } },
+        select: {
+          amount: true,
+          source: true,
+          reviewStatus: true,
+          voidedAt: true,
+          order: { select: { customerId: true } },
+        },
       });
       expect(result[0].lifetimeSpend).toBe(0);
     });
@@ -365,6 +386,116 @@ describe('CustomersService', () => {
           lastOrderAt: new Date('2026-06-01'),
         }),
       );
+    });
+  });
+
+  describe('findAllForStore: ghost customers (#337)', () => {
+    beforeEach(() => stubOwnedStore());
+
+    const customer = (id: string, phone: string, extra: object = {}) => ({
+      id,
+      name: null,
+      phone,
+      email: null,
+      emailVerified: false,
+      passwordHash: null,
+      pendingEmail: null,
+      pendingPhone: null,
+      createdAt: new Date('2026-01-01'),
+      ...extra,
+    });
+
+    it('hides a zero-order contact with no email, password or verification, even if it has a name', async () => {
+      prisma.customer.findMany.mockResolvedValue([
+        customer('orphan', '+51911000001'),
+        customer('named-orphan', '+51911000002', { name: 'Ana' }),
+      ]);
+      prisma.order.groupBy.mockResolvedValue([]);
+      prisma.orderPayment.findMany.mockResolvedValue([]);
+
+      expect(await service.findAllForStore(storeId, ownerId)).toEqual([]);
+    });
+
+    it.each([
+      ['email', { email: 'a@example.com' }],
+      ['passwordHash', { passwordHash: 'hash' }],
+      ['pendingEmail', { pendingEmail: 'b@example.com' }],
+      ['pendingPhone', { pendingPhone: '+51911000009' }],
+      ['emailVerified', { emailVerified: true }],
+    ])('keeps a registered zero-order customer (%s)', async (_label, extra) => {
+      prisma.customer.findMany.mockResolvedValue([
+        customer('registered', '+51911000003', extra),
+      ]);
+      prisma.order.groupBy.mockResolvedValue([]);
+      prisma.orderPayment.findMany.mockResolvedValue([]);
+
+      const result = await service.findAllForStore(storeId, ownerId);
+
+      expect(result.map((r) => r.id)).toEqual(['registered']);
+    });
+
+    it('keeps a contact whose only orders are guest orders folded in by phone', async () => {
+      prisma.customer.findMany.mockResolvedValue([
+        customer('folded', '+51987654321'),
+      ]);
+      prisma.order.groupBy.mockResolvedValue([]);
+      prisma.orderPayment.findMany.mockResolvedValue([]);
+      prisma.order.findMany.mockResolvedValue([
+        {
+          customerPhone: '51987654321',
+          customerName: null,
+          customerEmail: null,
+          paymentStatus: 'PENDING_PAYMENT',
+          createdAt: new Date('2026-06-01'),
+          payments: [],
+        },
+      ]);
+
+      const result = await service.findAllForStore(storeId, ownerId);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual(
+        expect.objectContaining({ id: 'folded', orderCount: 1 }),
+      );
+    });
+
+    it('keeps a contact with orders of its own', async () => {
+      prisma.customer.findMany.mockResolvedValue([
+        customer('with-orders', '+51911000004'),
+      ]);
+      prisma.order.groupBy.mockResolvedValue([
+        {
+          customerId: 'with-orders',
+          _count: 2,
+          _max: { createdAt: new Date('2026-02-01') },
+        },
+      ]);
+      prisma.orderPayment.findMany.mockResolvedValue([]);
+
+      const result = await service.findAllForStore(storeId, ownerId);
+
+      expect(result.map((r) => r.id)).toEqual(['with-orders']);
+    });
+
+    it('still emits guest synthetic rows for guest-only phones', async () => {
+      prisma.customer.findMany.mockResolvedValue([]);
+      prisma.order.groupBy.mockResolvedValue([]);
+      prisma.orderPayment.findMany.mockResolvedValue([]);
+      prisma.order.findMany.mockResolvedValue([
+        {
+          customerPhone: '+51911000005',
+          customerName: 'Guest',
+          customerEmail: null,
+          paymentStatus: 'PENDING_PAYMENT',
+          createdAt: new Date('2026-06-01'),
+          payments: [],
+        },
+      ]);
+
+      const result = await service.findAllForStore(storeId, ownerId);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]!.id).toMatch(/^guest_/);
     });
   });
 
@@ -616,13 +747,27 @@ describe('CustomersService', () => {
       });
     });
 
-    it('prefers the stored Customer alias over the latest order name', async () => {
+    it('prefers the latest order alias while preserving a stored customer name', async () => {
       prisma.customer.findUnique.mockResolvedValue({ name: 'Ana P.' });
       prisma.order.count.mockResolvedValue(1);
       prisma.order.findFirst.mockResolvedValue({
         customerName: 'Anita',
         createdAt: new Date('2026-02-01'),
       });
+
+      const result = await service.lookupByPhone(
+        storeId,
+        ownerId,
+        '+51987654321',
+      );
+
+      expect(result.lastAlias).toBe('Anita');
+    });
+
+    it('falls back to the stored customer name when there are no orders', async () => {
+      prisma.customer.findUnique.mockResolvedValue({ name: 'Ana P.' });
+      prisma.order.count.mockResolvedValue(0);
+      prisma.order.findFirst.mockResolvedValue(null);
 
       const result = await service.lookupByPhone(
         storeId,
@@ -702,8 +847,9 @@ describe('CustomersService', () => {
   describe('upsertStoreContact', () => {
     beforeEach(() => stubOwnedStore());
 
-    it('upserts the store contact and does not touch BuyerAccount', async () => {
-      prisma.customer.upsert.mockResolvedValue({ id: 'customer-1' });
+    it('upserts the store contact without touching BuyerAccount', async () => {
+      prisma.customer.findUnique.mockResolvedValue({ id: 'customer-1' });
+      prisma.customer.update.mockResolvedValue({ id: 'customer-1' });
 
       await service.upsertStoreContact(
         storeId,
@@ -712,10 +858,14 @@ describe('CustomersService', () => {
         '  Ana  ',
       );
 
-      expect(prisma.customer.upsert).toHaveBeenCalledWith({
+      const [strings, ...values] = prisma.$executeRaw.mock.calls[0];
+      expect(strings.join('?')).toContain('INSERT INTO "Customer"');
+      expect(strings.join('?')).toContain('ON CONFLICT ("storeId", "phone")');
+      expect(values).toContain(storeId);
+      expect(values).toContain('+51987654321');
+      expect(prisma.customer.update).toHaveBeenCalledWith({
         where: { storeId_phone: { storeId, phone: '+51987654321' } },
-        create: { storeId, phone: '+51987654321', name: 'Ana' },
-        update: { name: 'Ana' },
+        data: { name: 'Ana' },
       });
       expect(prisma.buyerAccount.create).not.toHaveBeenCalled();
       expect(prisma.buyerAccount.upsert).not.toHaveBeenCalled();
@@ -731,7 +881,7 @@ describe('CustomersService', () => {
       await expect(
         service.upsertStoreContact(storeId, ownerId, '987654321', 'Ana'),
       ).rejects.toThrow(ForbiddenException);
-      expect(prisma.customer.upsert).not.toHaveBeenCalled();
+      expect(prisma.$executeRaw).not.toHaveBeenCalled();
     });
   });
 });

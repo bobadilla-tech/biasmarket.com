@@ -1,7 +1,11 @@
 import { Test, type TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
+import {
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { type Mock, vi } from 'vitest';
 import { Prisma } from '@biasmarket/db';
+import { hashOrderAccessToken } from '@biasmarket/utils/assisted-order';
 import { PublicOrderService } from './public-order.service.js';
 import { OrderEventsService } from './order-events.service.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
@@ -31,6 +35,7 @@ describe('PublicOrderService', () => {
     paymentStatus: 'PENDING_PAYMENT',
     fulfillmentStatus: 'ORDERING',
     status: 'ACTIVE',
+    createdAt: new Date('2026-09-30T12:00:00.000Z'),
     deliveryMethodType: 'COURIER',
     deliveryDetails: {
       shippingAddress: {
@@ -45,6 +50,9 @@ describe('PublicOrderService', () => {
     },
     pickupDate: null,
     courierName: 'Olva',
+    trackingNumber: 'OLV123456',
+    trackingUrl: 'https://tracking.example/OLV123456',
+    packedPhotoUrl: 'https://private.example/packed.jpg',
     courierModality: 'HOME',
     linkFirstOpenedAt: null,
     store: {
@@ -68,6 +76,7 @@ describe('PublicOrderService', () => {
         source: 'SELLER_RECORDED',
         reviewStatus: 'N_A',
         createdAt: new Date('2026-10-01T00:00:00.000Z'),
+        voidedAt: null,
         imageUrl: 'https://private.example/proof.jpg',
         note: 'internal',
       },
@@ -108,6 +117,8 @@ describe('PublicOrderService', () => {
 
     expect(result.customerPhone).toBe('+51 9** *** 321');
     expect(result.customerAlias).toBe('Ana');
+    expect(result.orderNumber).toBe('ER-1');
+    expect(result.createdAt).toBe('2026-09-30T12:00:00.000Z');
     expect(result.store).toEqual({
       name: 'Tienda',
       slug: 'tienda',
@@ -128,18 +139,88 @@ describe('PublicOrderService', () => {
         amount: '40',
         createdAt: '2026-10-01T00:00:00.000Z',
         reviewStatus: 'N_A',
+        voidedAt: null,
       },
     ]);
     expect(result.paidAmount).toBe(40);
     expect(result.pendingAmount).toBe(60);
+    expect(result.trackingNumber).toBe('OLV123456');
+    expect(result.trackingUrl).toBe('https://tracking.example/OLV123456');
+    expect(result.packedPhotoAvailable).toBe(true);
     expect(JSON.stringify(result)).not.toContain('store-1');
     expect(JSON.stringify(result)).not.toContain('seller-1');
     expect(JSON.stringify(result)).not.toContain('buyer@example.com');
-    expect(result).not.toHaveProperty('customerEmail');
     expect(JSON.stringify(result)).not.toContain('proof.jpg');
+    expect(JSON.stringify(result)).not.toContain('packed.jpg');
     expect(JSON.stringify(result)).not.toContain('internal');
     expect(result).not.toHaveProperty('storeId');
     expect(result).not.toHaveProperty('createdByUserId');
+  });
+
+  it('returns exactly the allow-listed keys and never the order id', async () => {
+    events.requireOrderForToken.mockResolvedValue({
+      id: 'order-1',
+      storeId: 'store-1',
+    });
+    prisma.order.findUnique.mockResolvedValue({
+      ...orderRow,
+      id: 'cmabcdefgh1234wxyz',
+      accessTokenHash: 'hash-secret',
+    });
+
+    const result = await service.getByToken('raw-token');
+
+    expect(Object.keys(result).sort()).toEqual(
+      [
+        'store',
+        'customerPhone',
+        'customerAlias',
+        'orderNumber',
+        'createdAt',
+        'items',
+        'totalAmount',
+        'requiredAmount',
+        'paidAmount',
+        'pendingAmount',
+        'currency',
+        'paymentStatus',
+        'fulfillmentStatus',
+        'status',
+        'paymentInstructions',
+        'paymentMethods',
+        'deliveryMethodType',
+        'deliveryDetails',
+        'pickupDate',
+        'courierName',
+        'trackingNumber',
+        'trackingUrl',
+        'packedPhotoAvailable',
+        'courierModality',
+        'payments',
+      ].sort(),
+    );
+    expect(result.orderNumber).toBe('WXYZ');
+    expect(JSON.stringify(result)).not.toContain('cmabcdefgh1234wxyz');
+    expect(JSON.stringify(result)).not.toContain('hash-secret');
+  });
+
+  it('sanitises the alias and yields null for a blank name', async () => {
+    events.requireOrderForToken.mockResolvedValue({
+      id: 'order-1',
+      storeId: 'store-1',
+    });
+    prisma.order.findUnique.mockResolvedValueOnce({
+      ...orderRow,
+      customerName: '\u202E  Sofi\n\tLee ',
+    });
+    expect((await service.getByToken('raw-token')).customerAlias).toBe(
+      'Sofi Lee',
+    );
+    prisma.order.findUnique.mockResolvedValueOnce({
+      ...orderRow,
+      customerName: null,
+    });
+    expect((await service.getByToken('raw-token')).customerAlias).toBeNull();
   });
 
   it('returns only payment methods that are actually configured', async () => {
@@ -185,7 +266,7 @@ describe('PublicOrderService', () => {
     expect(prisma.paymentMethodConfig.findMany).not.toHaveBeenCalled();
   });
 
-  it('still returns the order when recording the first open fails', async () => {
+  it('fails closed when recording the first open fails', async () => {
     events.requireOrderForToken.mockResolvedValue({
       id: 'order-1',
       storeId: 'store-1',
@@ -193,9 +274,10 @@ describe('PublicOrderService', () => {
     prisma.order.findUnique.mockResolvedValue(orderRow);
     prisma.$transaction.mockRejectedValueOnce(new Error('insert failed'));
 
-    const result = await service.getByToken('raw-token');
+    await expect(service.getByToken('raw-token')).rejects.toBeInstanceOf(
+      InternalServerErrorException,
+    );
 
-    expect(result.customerPhone).toBe('+51 9** *** 321');
     expect(events.record).not.toHaveBeenCalled();
   });
 
@@ -229,6 +311,18 @@ describe('PublicOrderService', () => {
 
     await service.getByToken('raw-token');
 
+    expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Function), {
+      timeout: 15_000,
+    });
+    expect(prisma.order.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: 'order-1',
+        accessTokenHash: hashOrderAccessToken('raw-token'),
+        accessTokenRevokedAt: null,
+        linkFirstOpenedAt: null,
+      },
+      data: { linkFirstOpenedAt: expect.any(Date) },
+    });
     expect(events.record).toHaveBeenCalledWith(
       prisma,
       expect.objectContaining({ type: 'LINK_OPENED', actor: 'BUYER' }),
@@ -240,6 +334,20 @@ describe('PublicOrderService', () => {
       linkFirstOpenedAt: new Date('2026-10-02T00:00:00.000Z'),
     });
     await service.getByToken('raw-token');
+    expect(events.record).not.toHaveBeenCalled();
+  });
+
+  it('stamps nothing and records no event when the token was rotated mid-read', async () => {
+    events.requireOrderForToken.mockResolvedValue({
+      id: 'order-1',
+      storeId: 'store-1',
+    });
+    prisma.order.findUnique.mockResolvedValue(orderRow);
+    prisma.order.updateMany.mockResolvedValueOnce({ count: 0 });
+
+    const result = await service.getByToken('old-token');
+
+    expect(result.customerPhone).toBe('+51 9** *** 321');
     expect(events.record).not.toHaveBeenCalled();
   });
 

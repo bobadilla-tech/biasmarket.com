@@ -282,4 +282,103 @@ describe('customers (e2e)', () => {
     expect(res.body.orders[0].paidAmount).toBe(40);
     expect(res.body.orders[0].pendingAmount).toBe(0);
   });
+  describe('ghost customers (#337)', () => {
+    const list = async () =>
+      (
+        await request(app.getHttpServer())
+          .get(`/stores/${storeId}/customers`)
+          .set('Cookie', sellerSessionCookie)
+          .expect(200)
+      ).body as { id: string; phone: string }[];
+
+    it('hides zero-order contacts, keeps registered ones, and ignores the same phone in another store', async () => {
+      const ghostPhone = '+51944000001';
+      const registeredPhone = '+51944000002';
+      const otherStoreSlug = `customers-e2e-other-${runId}`;
+      const otherStore = await request(app.getHttpServer())
+        .post('/stores')
+        .set('Cookie', sellerSessionCookie)
+        .send({
+          name: 'Other Store',
+          slug: otherStoreSlug,
+          whatsappNumber: '+51900000001',
+        })
+        .expect(201);
+      const otherStoreId = otherStore.body.id as string;
+      try {
+        // A name-only contact and a registered one in this store; the same
+        // ghost phone as a registered customer with an order-less history in
+        // the other store must not make it visible here.
+        await prisma.customer.create({
+          data: { storeId, phone: ghostPhone, name: 'Ghost' },
+        });
+        await prisma.customer.create({
+          data: {
+            storeId,
+            phone: registeredPhone,
+            email: `registered-${runId}@example.com`,
+          },
+        });
+        await prisma.customer.create({
+          data: {
+            storeId: otherStoreId,
+            phone: ghostPhone,
+            email: `elsewhere-${runId}@example.com`,
+            emailVerified: true,
+          },
+        });
+
+        const rows = await list();
+        const phones = rows.map((r) => r.phone);
+        expect(phones).not.toContain(ghostPhone);
+        expect(phones).toContain(registeredPhone);
+        // Existing rows are unaffected.
+        expect(rows.some((r) => r.id === customerId)).toBe(true);
+        expect(rows.some((r) => r.id === 'guest_51987654322')).toBe(true);
+
+        // The other store still lists its own registered customer.
+        const otherRows = (
+          await request(app.getHttpServer())
+            .get(`/stores/${otherStoreId}/customers`)
+            .set('Cookie', sellerSessionCookie)
+            .expect(200)
+        ).body as { phone: string }[];
+        expect(otherRows.map((r) => r.phone)).toEqual([ghostPhone]);
+      } finally {
+        await prisma.customer.deleteMany({
+          where: {
+            storeId: { in: [storeId, otherStoreId] },
+            phone: { in: [ghostPhone, registeredPhone] },
+          },
+        });
+        await prisma.notification.deleteMany({
+          where: { storeId: otherStoreId },
+        });
+        await prisma.paymentMethodConfig.deleteMany({
+          where: { storeId: otherStoreId },
+        });
+        await prisma.deliveryMethodConfig.deleteMany({
+          where: { storeId: otherStoreId },
+        });
+        await prisma.store.deleteMany({ where: { id: otherStoreId } });
+      }
+    });
+
+    it('keeps a name-only contact once it has orders (guest orders folded in by phone)', async () => {
+      const foldedPhone = '+51987654322'; // the guest buyer from beforeAll
+      await prisma.customer.create({
+        data: { storeId, phone: foldedPhone, name: 'Folded' },
+      });
+      try {
+        const rows = await list();
+        const matching = rows.filter((r) => r.phone === foldedPhone);
+        expect(matching).toHaveLength(1);
+        expect(matching[0]!.id).not.toMatch(/^guest_/);
+      } finally {
+        await prisma.customer.deleteMany({
+          where: { storeId, phone: foldedPhone },
+        });
+      }
+    });
+  });
 });

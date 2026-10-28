@@ -6,7 +6,13 @@ import {
 import type { FulfillmentStatus, PaymentStatus, Prisma } from '@biasmarket/db';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { Order } from '../domain/order.entity.js';
+import { normalizePhone } from '@biasmarket/utils/phone-country';
 import { withPaymentSummary } from '../../../common/payment-summary.js';
+import type { RelatedOrdersResponseDto } from '../dto/related-orders-response.dto.js';
+
+const RELATED_ORDERS_LIMIT = 10;
+// Main had no cap on the legacy scan; documented as a lower bound beyond it.
+const LEGACY_SCAN_CAP = 500;
 
 @Injectable()
 export class OrderRepository {
@@ -26,11 +32,13 @@ export class OrderRepository {
   async findRowByIdForStore(orderId: string, storeId: string) {
     const includeWithPayments = {
       items: { include: { product: true, variant: true } },
+      createdBy: { select: { name: true } },
       payments: { orderBy: { createdAt: 'desc' } },
     } as const;
 
     const includeWithoutPayments = {
       items: { include: { product: true, variant: true } },
+      createdBy: { select: { name: true } },
     } as const;
 
     let order: any;
@@ -66,6 +74,81 @@ export class OrderRepository {
       throw new NotFoundException('Pago no encontrado');
     }
     return payment;
+  }
+
+  // Other orders of the same buyer phone in the same store (never across
+  // stores: every query carries `storeId`). Indexed rows come from
+  // `(storeId, customerPhoneNormalized, createdAt)`; rows written before that
+  // column existed are normalised in memory, bounded by LEGACY_SCAN_CAP, so for
+  // legacy rows both `items` and `total` are best-effort. The items query and
+  // the count are separate statements without a shared snapshot, so a
+  // concurrent insert can make them differ by one.
+  async findRelatedForStore(
+    storeId: string,
+    order: {
+      id: string;
+      customerPhone: string;
+      customerPhoneNormalized: string | null;
+    },
+    limit = RELATED_ORDERS_LIMIT,
+  ): Promise<RelatedOrdersResponseDto> {
+    const phone =
+      order.customerPhoneNormalized ?? normalizePhone(order.customerPhone);
+    const where = {
+      storeId,
+      customerPhoneNormalized: phone,
+      id: { not: order.id },
+    };
+    const select = {
+      id: true,
+      createdAt: true,
+      status: true,
+      paymentStatus: true,
+      fulfillmentStatus: true,
+      totalAmount: true,
+      currency: true,
+      source: true,
+    } as const;
+
+    const [indexed, indexedCount, legacy] = await Promise.all([
+      this.prisma.order.findMany({
+        where,
+        select,
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+      }),
+      this.prisma.order.count({ where }),
+      this.prisma.order.findMany({
+        where: {
+          storeId,
+          customerPhoneNormalized: null,
+          id: { not: order.id },
+        },
+        select: { ...select, customerPhone: true },
+        orderBy: { createdAt: 'desc' },
+        take: LEGACY_SCAN_CAP,
+      }),
+    ]);
+    const legacyMatches = legacy.filter(
+      (row) => normalizePhone(row.customerPhone) === phone,
+    );
+
+    const items = [...indexed, ...legacyMatches]
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, limit)
+      .map((row) => ({
+        id: row.id,
+        orderNumber: row.id.slice(-4).toUpperCase(),
+        createdAt: row.createdAt.toISOString(),
+        status: row.status,
+        paymentStatus: row.paymentStatus,
+        fulfillmentStatus: row.fulfillmentStatus,
+        totalAmount: row.totalAmount.toString(),
+        currency: row.currency,
+        source: row.source,
+      }));
+
+    return { items, total: indexedCount + legacyMatches.length };
   }
 
   // Buyer-facing equivalent of `findRowByIdForStore` — same store-scoped 404,
@@ -126,11 +209,13 @@ export class OrderRepository {
 
     const includeWithPayments = {
       items: { include: { product: true, variant: true } },
+      createdBy: { select: { name: true } },
       payments: { orderBy: { createdAt: 'desc' } },
     } as const;
 
     const includeWithoutPayments = {
       items: { include: { product: true, variant: true } },
+      createdBy: { select: { name: true } },
     } as const;
 
     try {

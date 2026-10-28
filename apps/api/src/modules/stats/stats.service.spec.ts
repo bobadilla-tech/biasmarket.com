@@ -68,24 +68,26 @@ describe('StatsService', () => {
   describe('getOverview', () => {
     beforeEach(() => {
       stubOwnedStore();
+      prisma.orderPayment.findMany.mockResolvedValue([]);
       prisma.orderPayment.aggregate.mockResolvedValue({
-        _sum: { amount: 150 },
+        _sum: { amount: null },
       });
       prisma.order.groupBy.mockResolvedValue([]);
       prisma.notification.count.mockResolvedValue(2);
       prisma.order.findMany.mockResolvedValue([]);
     });
 
-    it('scopes the revenue aggregate to VERIFIED/PARTIALLY_PAID payments for the store', async () => {
+    it('aggregates counted revenue in the database', async () => {
       await service.getOverview(storeId, ownerId);
 
       expect(prisma.orderPayment.aggregate).toHaveBeenCalledWith({
         where: {
           storeId,
+          voidedAt: null,
+          OR: [{ source: 'SELLER_RECORDED' }, { reviewStatus: 'APPROVED' }],
           order: {
             paymentStatus: { in: ['VERIFIED', 'PARTIALLY_PAID'] },
           },
-          OR: [{ source: 'SELLER_RECORDED' }, { reviewStatus: 'APPROVED' }],
         },
         _sum: { amount: true },
       });
@@ -93,21 +95,26 @@ describe('StatsService', () => {
 
     it('sums the verified amount of PARTIALLY_PAID orders into revenue, never the full order total', async () => {
       prisma.orderPayment.aggregate.mockResolvedValue({
-        _sum: { amount: 30 },
+        _sum: { amount: new Prisma.Decimal(30) },
       });
 
       const result = await service.getOverview(storeId, ownerId);
 
       // A 30% deposit on a 100 order contributes exactly 30 to revenue — the
-      // service's job is to aggregate the verified payment rows, so the 30
-      // here mirrors the query-level filter (the aggregate itself is stubbed).
+      // service reads the database aggregate, which applies the verified
+      // payment predicate in the query.
       expect(result.revenue).toBe(30);
     });
 
     it('exposes PARTIALLY_PAID orders with their paid/total/remaining summary', async () => {
-      prisma.orderPayment.aggregate.mockResolvedValue({
-        _sum: { amount: 30 },
-      });
+      prisma.orderPayment.findMany.mockResolvedValue([
+        {
+          amount: new Prisma.Decimal(30),
+          source: 'SELLER_RECORDED',
+          reviewStatus: 'N_A',
+          voidedAt: null,
+        },
+      ]);
       prisma.order.findMany
         .mockResolvedValueOnce([]) // recentOrders
         .mockResolvedValueOnce([
@@ -346,10 +353,15 @@ describe('StatsService', () => {
             createdAt: new Date('2026-08-15T02:00:00Z'),
           },
         ]);
-      // Revenue rows come from the orderPayment query — the VERIFIED order's
-      // seller-recorded 40 (the PENDING_PAYMENT order contributes no rows).
+      // Only the verified order's seller-recorded payment is in range.
       prisma.orderPayment.findMany.mockResolvedValue([
-        { amount: 40, createdAt: new Date('2026-08-15T01:00:00Z') },
+        {
+          amount: 40,
+          createdAt: new Date('2026-08-15T01:00:00Z'),
+          source: 'SELLER_RECORDED',
+          reviewStatus: 'N_A',
+          voidedAt: null,
+        },
       ]);
       prisma.orderItem.groupBy.mockResolvedValue([]);
       prisma.product.findMany.mockResolvedValue([]);
@@ -381,10 +393,22 @@ describe('StatsService', () => {
             createdAt: new Date('2026-08-15T01:00:00Z'),
           },
         ]);
-      // The PENDING_REVIEW 1000 never reaches the query — the WHERE only
-      // admits SELLER_RECORDED / APPROVED rows — so only the 40 counts.
+      // Candidate rows are filtered by countsTowardPaid after loading.
       prisma.orderPayment.findMany.mockResolvedValue([
-        { amount: 40, createdAt: new Date('2026-08-15T01:00:00Z') },
+        {
+          amount: 40,
+          createdAt: new Date('2026-08-15T01:00:00Z'),
+          source: 'SELLER_RECORDED',
+          reviewStatus: 'N_A',
+          voidedAt: null,
+        },
+        {
+          amount: 1000,
+          createdAt: new Date('2026-08-15T01:00:00Z'),
+          source: 'BUYER_SUBMITTED',
+          reviewStatus: 'PENDING_REVIEW',
+          voidedAt: null,
+        },
       ]);
       prisma.orderItem.groupBy.mockResolvedValue([]);
       prisma.product.findMany.mockResolvedValue([]);
@@ -425,7 +449,13 @@ describe('StatsService', () => {
         ]);
       // The 100 order's 30 deposit is the only revenue row in range.
       prisma.orderPayment.findMany.mockResolvedValue([
-        { amount: 30, createdAt: new Date('2026-08-15T01:00:00Z') },
+        {
+          amount: 30,
+          createdAt: new Date('2026-08-15T01:00:00Z'),
+          source: 'SELLER_RECORDED',
+          reviewStatus: 'N_A',
+          voidedAt: null,
+        },
       ]);
       prisma.orderItem.groupBy.mockResolvedValue([]);
       prisma.product.findMany.mockResolvedValue([]);
@@ -463,7 +493,13 @@ describe('StatsService', () => {
       // Payment collected today, five days after the order was placed —
       // must land in today's bucket, not the order's day.
       prisma.orderPayment.findMany.mockResolvedValue([
-        { amount: 100, createdAt: new Date('2026-08-15T10:00:00Z') },
+        {
+          amount: 100,
+          createdAt: new Date('2026-08-15T10:00:00Z'),
+          source: 'SELLER_RECORDED',
+          reviewStatus: 'N_A',
+          voidedAt: null,
+        },
       ]);
       prisma.orderItem.groupBy.mockResolvedValue([]);
       prisma.product.findMany.mockResolvedValue([]);
@@ -550,10 +586,29 @@ describe('StatsService', () => {
       stubOwnedStore();
     });
 
-    it('aggregates active-order payments scoped to store and date range, zero-filling known methods', async () => {
-      prisma.orderPayment.groupBy.mockResolvedValue([
-        { method: 'YAPE', _sum: { amount: 60 }, _count: 2 },
-        { method: 'CASH', _sum: { amount: 40 }, _count: 1 },
+    it('applies countsTowardPaid to active-order payments, zero-filling known methods', async () => {
+      prisma.orderPayment.findMany.mockResolvedValue([
+        {
+          method: 'YAPE',
+          amount: 30,
+          source: 'SELLER_RECORDED',
+          reviewStatus: 'N_A',
+          voidedAt: null,
+        },
+        {
+          method: 'YAPE',
+          amount: 30,
+          source: 'SELLER_RECORDED',
+          reviewStatus: 'N_A',
+          voidedAt: null,
+        },
+        {
+          method: 'CASH',
+          amount: 40,
+          source: 'SELLER_RECORDED',
+          reviewStatus: 'N_A',
+          voidedAt: null,
+        },
       ]);
 
       const result = await service.getPaymentMethodsBreakdown(
@@ -563,15 +618,23 @@ describe('StatsService', () => {
         to,
       );
 
-      expect(prisma.orderPayment.groupBy).toHaveBeenCalledWith({
-        by: ['method'],
+      expect(prisma.orderPayment.findMany).toHaveBeenCalledWith({
         where: {
           storeId,
-          createdAt: { gte: from, lt: to },
+          OR: [
+            { paidAt: { gte: from, lt: to } },
+            { paidAt: null, createdAt: { gte: from, lt: to } },
+          ],
           order: { status: 'ACTIVE' },
         },
-        _sum: { amount: true },
-        _count: true,
+        select: {
+          method: true,
+          amount: true,
+          paidAt: true,
+          source: true,
+          reviewStatus: true,
+          voidedAt: true,
+        },
       });
 
       expect(result.totalAmount).toBe(100);
@@ -585,7 +648,7 @@ describe('StatsService', () => {
     });
 
     it('returns zero totals when there are no payments in the range', async () => {
-      prisma.orderPayment.groupBy.mockResolvedValue([]);
+      prisma.orderPayment.findMany.mockResolvedValue([]);
 
       const result = await service.getPaymentMethodsBreakdown(
         storeId,
@@ -600,8 +663,14 @@ describe('StatsService', () => {
     });
 
     it('keeps legacy rows whose method is outside the known set', async () => {
-      prisma.orderPayment.groupBy.mockResolvedValue([
-        { method: null, _sum: { amount: 25 }, _count: 1 },
+      prisma.orderPayment.findMany.mockResolvedValue([
+        {
+          method: null,
+          amount: 25,
+          source: 'SELLER_RECORDED',
+          reviewStatus: 'N_A',
+          voidedAt: null,
+        },
       ]);
 
       const result = await service.getPaymentMethodsBreakdown(

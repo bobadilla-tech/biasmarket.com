@@ -345,6 +345,109 @@
         "tags": ["Stores"]
       }
     },
+    "/stores/{slug}/products/public": {
+      "get": {
+        "operationId": "StoresController_findPublicCatalog",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maximum": 48,
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": ["recientes", "precio_asc", "precio_desc", "nombre_asc"],
+              "type": "string"
+            }
+          },
+          {
+            "name": "categorias",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreCatalogResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Stores"]
+      }
+    },
+    "/stores/storefront/catalog": {
+      "post": {
+        "operationId": "StoresController_findStorefrontCatalog",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StorefrontCatalogRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreCatalogResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Stores"]
+      }
+    },
     "/stores/{slug}/public": {
       "get": {
         "operationId": "StoresController_findPublic",
@@ -373,6 +476,35 @@
         "tags": ["Stores"]
       }
     },
+    "/stores/storefront/public": {
+      "post": {
+        "operationId": "StoresController_findStorefrontPublic",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StorefrontRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorePublicDetailResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Stores"]
+      }
+    },
     "/stores/{slug}/categories/public": {
       "get": {
         "operationId": "StoresController_findCategoriesPublic",
@@ -386,6 +518,38 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicCategoryResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Stores"]
+      }
+    },
+    "/stores/storefront/categories": {
+      "post": {
+        "operationId": "StoresController_findStorefrontCategories",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StorefrontRequestDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -1618,6 +1782,42 @@
         "tags": ["Order"]
       }
     },
+    "/stores/{storeId}/orders/{orderId}/related": {
+      "get": {
+        "operationId": "OrderController_findRelated",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelatedOrdersResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Order"]
+      }
+    },
     "/stores/{storeId}/orders/{orderId}/payments/{paymentId}/image": {
       "get": {
         "operationId": "OrderController_getPaymentImage",
@@ -1640,6 +1840,129 @@
           },
           {
             "name": "paymentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Order"]
+      }
+    },
+    "/stores/{storeId}/orders/{orderId}/shipping": {
+      "patch": {
+        "operationId": "OrderController_updateShipping",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOrderShippingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDetailResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Order"]
+      }
+    },
+    "/stores/{storeId}/orders/{orderId}/shipping/photo": {
+      "post": {
+        "operationId": "OrderController_uploadPackedPhoto",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDetailResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Order"]
+      },
+      "get": {
+        "operationId": "OrderController_getPackedPhoto",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderId",
             "required": true,
             "in": "path",
             "schema": {
@@ -1692,6 +2015,52 @@
         ],
         "responses": {
           "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDetailResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Order"]
+      }
+    },
+    "/stores/{storeId}/orders/{orderId}/payments/{paymentId}/void": {
+      "patch": {
+        "operationId": "OrderController_voidPayment",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "paymentId",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/VoidOrderPaymentDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
             "description": "",
             "content": {
               "application/json": {
@@ -1889,6 +2258,126 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OrderStatusResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Order"]
+      }
+    },
+    "/stores/{storeId}/orders/assisted": {
+      "post": {
+        "operationId": "AssistedOrdersController_createAssisted",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAssistedOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateAssistedOrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Order"]
+      }
+    },
+    "/stores/{storeId}/orders/{orderId}/access-link": {
+      "post": {
+        "operationId": "AssistedOrdersController_regenerateAccessLink",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistedOrderLinkResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Order"]
+      }
+    },
+    "/stores/{storeId}/orders/{orderId}/buyer-phone": {
+      "patch": {
+        "operationId": "AssistedOrdersController_correctBuyerPhone",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorrectBuyerPhoneDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistedOrderLinkResponseDto"
                 }
               }
             }
@@ -2191,6 +2680,41 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PublicOrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["PublicOrderEvents"]
+      }
+    },
+    "/public/orders/{token}/packed-photo": {
+      "get": {
+        "operationId": "PublicOrderEventsController_getPackedPhoto",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
                 }
               }
             }
@@ -4106,7 +4630,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "enum": ["NEW_ORDER", "PAYMENT_REMINDER"],
+              "enum": ["NEW_ORDER", "PAYMENT_REMINDER", "ASSISTED_ORDER_LINK"],
               "type": "string"
             }
           }
@@ -4146,7 +4670,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "enum": ["NEW_ORDER", "PAYMENT_REMINDER"],
+              "enum": ["NEW_ORDER", "PAYMENT_REMINDER", "ASSISTED_ORDER_LINK"],
               "type": "string"
             }
           }
@@ -5404,9 +5928,12 @@
           },
           "name": {
             "type": "string"
+          },
+          "slug": {
+            "type": "string"
           }
         },
-        "required": ["id", "name"]
+        "required": ["id", "name", "slug"]
       },
       "PublicProductCategoryResponseDto": {
         "type": "object",
@@ -5498,6 +6025,41 @@
           "variants",
           "categories"
         ]
+      },
+      "StoreCatalogResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicProductWithVariantsResponseDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": ["items", "total", "page", "limit"]
+      },
+      "StorefrontCatalogRequestDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          },
+          "query": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": ["slug"]
       },
       "SectionCollectionProductResponseDto": {
         "type": "object",
@@ -5745,6 +6307,16 @@
           "indexable"
         ]
       },
+      "StorefrontRequestDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          }
+        },
+        "required": ["slug"]
+      },
       "PublicCategoryResponseDto": {
         "type": "object",
         "properties": {
@@ -5754,12 +6326,18 @@
           "name": {
             "type": "string"
           },
+          "slug": {
+            "type": "string"
+          },
           "parentId": {
             "type": "string",
             "nullable": true
+          },
+          "productCount": {
+            "type": "number"
           }
         },
-        "required": ["id", "name", "parentId"]
+        "required": ["id", "name", "slug", "parentId", "productCount"]
       },
       "PublicProductStoreResponseDto": {
         "type": "object",
@@ -6620,6 +7198,24 @@
             "type": "string",
             "format": "date-time"
           },
+          "operationCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "paidAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "voidedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "voidReason": {
+            "type": "string",
+            "nullable": true
+          },
           "source": {
             "enum": ["SELLER_RECORDED", "BUYER_SUBMITTED"],
             "type": "string"
@@ -6648,6 +7244,10 @@
           "note",
           "imageUrl",
           "createdAt",
+          "operationCode",
+          "paidAt",
+          "voidedAt",
+          "voidReason",
           "source",
           "reviewStatus",
           "reviewedAt",
@@ -6708,6 +7308,17 @@
             "type": "string",
             "nullable": true
           },
+          "trackingNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "trackingUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "packedPhotoAvailable": {
+            "type": "boolean"
+          },
           "courierModality": {
             "nullable": true,
             "enum": ["AGENCY", "HOME"],
@@ -6789,6 +7400,23 @@
           "paidPercentage": {
             "type": "number"
           },
+          "linkFirstOpenedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "First time the buyer opened the private link."
+          },
+          "claimedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "When the buyer claimed the order into an account."
+          },
+          "createdByName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Display name of the seller who created an assisted order."
+          },
           "items": {
             "type": "array",
             "items": {
@@ -6816,6 +7444,9 @@
           "pickupPointId",
           "pickupDate",
           "courierName",
+          "trackingNumber",
+          "trackingUrl",
+          "packedPhotoAvailable",
           "courierModality",
           "paymentMethod",
           "paymentStatus",
@@ -6835,6 +7466,9 @@
           "paidAmount",
           "pendingAmount",
           "paidPercentage",
+          "linkFirstOpenedAt",
+          "claimedAt",
+          "createdByName",
           "items",
           "payments"
         ]
@@ -6893,6 +7527,17 @@
             "type": "string",
             "nullable": true
           },
+          "trackingNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "trackingUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "packedPhotoAvailable": {
+            "type": "boolean"
+          },
           "courierModality": {
             "nullable": true,
             "enum": ["AGENCY", "HOME"],
@@ -6974,6 +7619,23 @@
           "paidPercentage": {
             "type": "number"
           },
+          "linkFirstOpenedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "First time the buyer opened the private link."
+          },
+          "claimedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "When the buyer claimed the order into an account."
+          },
+          "createdByName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Display name of the seller who created an assisted order."
+          },
           "items": {
             "type": "array",
             "items": {
@@ -7001,6 +7663,9 @@
           "pickupPointId",
           "pickupDate",
           "courierName",
+          "trackingNumber",
+          "trackingUrl",
+          "packedPhotoAvailable",
           "courierModality",
           "paymentMethod",
           "paymentStatus",
@@ -7020,9 +7685,98 @@
           "paidAmount",
           "pendingAmount",
           "paidPercentage",
+          "linkFirstOpenedAt",
+          "claimedAt",
+          "createdByName",
           "items",
           "payments"
         ]
+      },
+      "RelatedOrderResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "orderNumber": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "enum": ["ACTIVE", "CANCELLED"],
+            "type": "string"
+          },
+          "paymentStatus": {
+            "enum": [
+              "PENDING_PAYMENT",
+              "PARTIALLY_PAID",
+              "PAYMENT_SUBMITTED",
+              "VERIFIED",
+              "REJECTED",
+              "CANCELLED"
+            ],
+            "type": "string"
+          },
+          "fulfillmentStatus": {
+            "enum": ["ORDERING", "IN_TRANSIT", "READY", "COMPLETED"],
+            "type": "string"
+          },
+          "totalAmount": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "source": {
+            "enum": ["MARKETPLACE", "VENDOR_ASSISTED"],
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "orderNumber",
+          "createdAt",
+          "status",
+          "paymentStatus",
+          "fulfillmentStatus",
+          "totalAmount",
+          "currency",
+          "source"
+        ]
+      },
+      "RelatedOrdersResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RelatedOrderResponseDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": ["items", "total"]
+      },
+      "UpdateOrderShippingDto": {
+        "type": "object",
+        "properties": {
+          "trackingNumber": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 120
+          },
+          "trackingUrl": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 2048,
+            "format": "uri"
+          }
+        }
       },
       "ReviewPaymentDto": {
         "type": "object",
@@ -7092,6 +7846,17 @@
             "type": "string",
             "nullable": true
           },
+          "trackingNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "trackingUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "packedPhotoAvailable": {
+            "type": "boolean"
+          },
           "courierModality": {
             "nullable": true,
             "enum": ["AGENCY", "HOME"],
@@ -7179,6 +7944,9 @@
           "pickupPointId",
           "pickupDate",
           "courierName",
+          "trackingNumber",
+          "trackingUrl",
+          "packedPhotoAvailable",
           "courierModality",
           "paymentMethod",
           "paymentStatus",
@@ -7232,6 +8000,13 @@
           }
         },
         "required": ["resolution"]
+      },
+      "VoidOrderPaymentDto": {
+        "type": "object",
+        "properties": {
+          "reason": { "type": "string", "minLength": 1, "maxLength": 500 }
+        },
+        "required": ["reason"]
       },
       "ShippingAddressDto": {
         "type": "object",
@@ -7300,7 +8075,7 @@
         },
         "required": ["productId", "quantity"]
       },
-      "CreateOrderDto": {
+      "CreateAssistedOrderDto": {
         "type": "object",
         "properties": {
           "deliveryMethodType": {
@@ -7323,15 +8098,12 @@
             "enum": ["FULL", "PARTIAL"]
           },
           "customerPhone": {
-            "type": "string",
-            "minLength": 6
-          },
-          "customerName": {
             "type": "string"
           },
-          "customerEmail": {
+          "customerName": {
             "type": "string",
-            "format": "email"
+            "maxLength": 60,
+            "pattern": "^[^\\p{Cc}\\u200B\\u2028\\u2029\\u202A-\\u202E\\u2066-\\u2069\\uFEFF\\u2060-\\u2064\\u00AD\\u180E\\u034F\\uFFFC\\uFFF9-\\uFFFB\\u3164\\u115F\\u1160\\u2800]*$"
           },
           "shippingAddress": {
             "$ref": "#/components/schemas/ShippingAddressDto"
@@ -7563,6 +8335,98 @@
           "createdAt",
           "items"
         ]
+      },
+      "CreateAssistedOrderResponseDto": {
+        "type": "object",
+        "properties": {
+          "order": {
+            "$ref": "#/components/schemas/CheckoutOrderResponseDto"
+          },
+          "accessUrl": {
+            "type": "string",
+            "description": "SECRET: private buyer link. Returned only when the link is created; only its hash is stored, so it cannot be shown again."
+          },
+          "previousOrders": {
+            "type": "number",
+            "description": "Earlier orders of this store for the same WhatsApp number (advisory)."
+          }
+        },
+        "required": ["order", "accessUrl", "previousOrders"]
+      },
+      "AssistedOrderLinkResponseDto": {
+        "type": "object",
+        "properties": {
+          "order": {
+            "$ref": "#/components/schemas/OrderDetailResponseDto"
+          },
+          "accessUrl": {
+            "type": "string",
+            "description": "SECRET: the new private buyer link. The previous link stops working. Returned only when the link is created; only its hash is stored."
+          }
+        },
+        "required": ["order", "accessUrl"]
+      },
+      "CorrectBuyerPhoneDto": {
+        "type": "object",
+        "properties": {
+          "customerPhone": {
+            "type": "string"
+          }
+        },
+        "required": ["customerPhone"]
+      },
+      "CreateOrderDto": {
+        "type": "object",
+        "properties": {
+          "deliveryMethodType": {
+            "type": "string",
+            "enum": ["PICKUP", "COURIER"]
+          },
+          "pickupPointId": {
+            "type": "string"
+          },
+          "pickupDate": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "paymentMethod": {
+            "type": "string",
+            "enum": ["YAPE", "PLIN", "TRANSFER", "CASH"]
+          },
+          "paymentType": {
+            "type": "string",
+            "enum": ["FULL", "PARTIAL"]
+          },
+          "customerPhone": {
+            "type": "string",
+            "minLength": 6
+          },
+          "customerName": {
+            "type": "string"
+          },
+          "customerEmail": {
+            "type": "string",
+            "format": "email"
+          },
+          "shippingAddress": {
+            "$ref": "#/components/schemas/ShippingAddressDto"
+          },
+          "courierName": {
+            "type": "string"
+          },
+          "courierModality": {
+            "type": "string",
+            "enum": ["AGENCY", "HOME"]
+          },
+          "items": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateOrderItemDto"
+            }
+          }
+        },
+        "required": ["deliveryMethodType", "customerPhone", "items"]
       },
       "CheckoutResultResponseDto": {
         "type": "object",
@@ -7884,12 +8748,23 @@
             "type": "string",
             "format": "date-time"
           },
+          "voidedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
           "reviewStatus": {
             "enum": ["N_A", "PENDING_REVIEW", "APPROVED", "REJECTED"],
             "type": "string"
           }
         },
-        "required": ["source", "amount", "createdAt", "reviewStatus"]
+        "required": [
+          "source",
+          "amount",
+          "createdAt",
+          "voidedAt",
+          "reviewStatus"
+        ]
       },
       "PublicOrderResponseDto": {
         "type": "object",
@@ -7903,6 +8778,13 @@
           "customerAlias": {
             "type": "string",
             "nullable": true
+          },
+          "orderNumber": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
           },
           "items": {
             "type": "array",
@@ -7970,6 +8852,18 @@
             "type": "string",
             "nullable": true
           },
+          "trackingNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "trackingUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "packedPhotoAvailable": {
+            "type": "boolean",
+            "description": "Whether a private packed-package photo is available."
+          },
           "courierModality": {
             "nullable": true,
             "enum": ["AGENCY", "HOME"],
@@ -7986,6 +8880,8 @@
           "store",
           "customerPhone",
           "customerAlias",
+          "orderNumber",
+          "createdAt",
           "items",
           "totalAmount",
           "requiredAmount",
@@ -8001,6 +8897,9 @@
           "deliveryDetails",
           "pickupDate",
           "courierName",
+          "trackingNumber",
+          "trackingUrl",
+          "packedPhotoAvailable",
           "courierModality",
           "payments"
         ]
@@ -8353,12 +9252,15 @@
           "name": {
             "type": "string"
           },
+          "slug": {
+            "type": "string"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
           }
         },
-        "required": ["id", "storeId", "parentId", "name", "createdAt"]
+        "required": ["id", "storeId", "parentId", "name", "slug", "createdAt"]
       },
       "UpdateCategoryDto": {
         "type": "object",
@@ -9401,7 +10303,7 @@
             "type": "string"
           },
           "type": {
-            "enum": ["NEW_ORDER", "PAYMENT_REMINDER"],
+            "enum": ["NEW_ORDER", "PAYMENT_REMINDER", "ASSISTED_ORDER_LINK"],
             "type": "string"
           },
           "template": {

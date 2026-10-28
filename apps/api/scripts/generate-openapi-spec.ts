@@ -47,7 +47,8 @@ import { format } from 'prettier';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const distDir = join(__dirname, '..', 'dist');
-const outputPath = join(__dirname, '..', 'openapi.json');
+const outputPath =
+  process.env.OPENAPI_OUTPUT_PATH ?? join(__dirname, '..', 'openapi.json');
 
 async function main() {
   const { AppModule } = await import(join(distDir, 'app.module.js'));

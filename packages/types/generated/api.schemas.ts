@@ -241,6 +241,7 @@ export interface PublicProductVariantResponseDto {
 export interface PublicProductCategoryNameResponseDto {
   id: string;
   name: string;
+  slug: string;
 }
 
 export interface PublicProductCategoryResponseDto {
@@ -265,6 +266,13 @@ export interface PublicProductWithVariantsResponseDto {
   createdAt: string;
   variants: PublicProductVariantResponseDto[];
   categories: PublicProductCategoryResponseDto[];
+}
+
+export interface StoreCatalogResponseDto {
+  items: PublicProductWithVariantsResponseDto[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
 export interface SectionCollectionProductResponseDto {
@@ -348,8 +356,10 @@ export interface StorePublicDetailResponseDto {
 export interface PublicCategoryResponseDto {
   id: string;
   name: string;
+  slug: string;
   /** @nullable */
   parentId: string | null;
+  productCount: number;
 }
 
 export interface PublicProductStoreResponseDto {
@@ -809,6 +819,14 @@ export interface OrderPaymentResponseDto {
   /** @nullable */
   imageUrl: string | null;
   createdAt: string;
+  /** @nullable */
+  operationCode: string | null;
+  /** @nullable */
+  paidAt: string | null;
+  /** @nullable */
+  voidedAt: string | null;
+  /** @nullable */
+  voidReason: string | null;
   source: OrderPaymentResponseDtoSource;
   reviewStatus: OrderPaymentResponseDtoReviewStatus;
   /** @nullable */
@@ -840,6 +858,11 @@ export interface OrderResponseDto {
   /** @nullable */
   courierName: string | null;
   /** @nullable */
+  trackingNumber: string | null;
+  /** @nullable */
+  trackingUrl: string | null;
+  packedPhotoAvailable: boolean;
+  /** @nullable */
   courierModality: OrderResponseDtoCourierModality;
   /** @nullable */
   paymentMethod: OrderResponseDtoPaymentMethod;
@@ -866,6 +889,21 @@ export interface OrderResponseDto {
   paidAmount: number;
   pendingAmount: number;
   paidPercentage: number;
+  /**
+   * First time the buyer opened the private link.
+   * @nullable
+   */
+  linkFirstOpenedAt: string | null;
+  /**
+   * When the buyer claimed the order into an account.
+   * @nullable
+   */
+  claimedAt: string | null;
+  /**
+   * Display name of the seller who created an assisted order.
+   * @nullable
+   */
+  createdByName: string | null;
   items: OrderItemResponseDto[];
   payments: OrderPaymentResponseDto[];
 }
@@ -998,6 +1036,11 @@ export interface OrderDetailResponseDto {
   /** @nullable */
   courierName: string | null;
   /** @nullable */
+  trackingNumber: string | null;
+  /** @nullable */
+  trackingUrl: string | null;
+  packedPhotoAvailable: boolean;
+  /** @nullable */
   courierModality: OrderDetailResponseDtoCourierModality;
   /** @nullable */
   paymentMethod: OrderDetailResponseDtoPaymentMethod;
@@ -1024,8 +1067,78 @@ export interface OrderDetailResponseDto {
   paidAmount: number;
   pendingAmount: number;
   paidPercentage: number;
+  /**
+   * First time the buyer opened the private link.
+   * @nullable
+   */
+  linkFirstOpenedAt: string | null;
+  /**
+   * When the buyer claimed the order into an account.
+   * @nullable
+   */
+  claimedAt: string | null;
+  /**
+   * Display name of the seller who created an assisted order.
+   * @nullable
+   */
+  createdByName: string | null;
   items: OrderItemResponseDto[];
   payments: OrderPaymentResponseDto[];
+}
+
+export type RelatedOrderResponseDtoStatus =
+  (typeof RelatedOrderResponseDtoStatus)[keyof typeof RelatedOrderResponseDtoStatus];
+
+export const RelatedOrderResponseDtoStatus = {
+  ACTIVE: "ACTIVE",
+  CANCELLED: "CANCELLED",
+} as const;
+
+export type RelatedOrderResponseDtoPaymentStatus =
+  (typeof RelatedOrderResponseDtoPaymentStatus)[keyof typeof RelatedOrderResponseDtoPaymentStatus];
+
+export const RelatedOrderResponseDtoPaymentStatus = {
+  PENDING_PAYMENT: "PENDING_PAYMENT",
+  PARTIALLY_PAID: "PARTIALLY_PAID",
+  PAYMENT_SUBMITTED: "PAYMENT_SUBMITTED",
+  VERIFIED: "VERIFIED",
+  REJECTED: "REJECTED",
+  CANCELLED: "CANCELLED",
+} as const;
+
+export type RelatedOrderResponseDtoFulfillmentStatus =
+  (typeof RelatedOrderResponseDtoFulfillmentStatus)[keyof typeof RelatedOrderResponseDtoFulfillmentStatus];
+
+export const RelatedOrderResponseDtoFulfillmentStatus = {
+  ORDERING: "ORDERING",
+  IN_TRANSIT: "IN_TRANSIT",
+  READY: "READY",
+  COMPLETED: "COMPLETED",
+} as const;
+
+export type RelatedOrderResponseDtoSource =
+  (typeof RelatedOrderResponseDtoSource)[keyof typeof RelatedOrderResponseDtoSource];
+
+export const RelatedOrderResponseDtoSource = {
+  MARKETPLACE: "MARKETPLACE",
+  VENDOR_ASSISTED: "VENDOR_ASSISTED",
+} as const;
+
+export interface RelatedOrderResponseDto {
+  id: string;
+  orderNumber: string;
+  createdAt: string;
+  status: RelatedOrderResponseDtoStatus;
+  paymentStatus: RelatedOrderResponseDtoPaymentStatus;
+  fulfillmentStatus: RelatedOrderResponseDtoFulfillmentStatus;
+  totalAmount: string;
+  currency: string;
+  source: RelatedOrderResponseDtoSource;
+}
+
+export interface RelatedOrdersResponseDto {
+  items: RelatedOrderResponseDto[];
+  total: number;
 }
 
 export type ReviewPaymentDtoDecision =
@@ -1040,6 +1153,11 @@ export interface ReviewPaymentDto {
   decision: ReviewPaymentDtoDecision;
   /** @maxLength 500 */
   reason?: string;
+}
+
+export interface VoidOrderPaymentDto {
+  /** @minLength 1 @maxLength 500 */
+  reason: string;
 }
 
 export type OrderStatusResponseDtoSource =
@@ -1170,6 +1288,11 @@ export interface OrderStatusResponseDto {
   /** @nullable */
   courierName: string | null;
   /** @nullable */
+  trackingNumber: string | null;
+  /** @nullable */
+  trackingUrl: string | null;
+  packedPhotoAvailable: boolean;
+  /** @nullable */
   courierModality: OrderStatusResponseDtoCourierModality;
   /** @nullable */
   paymentMethod: OrderStatusResponseDtoPaymentMethod;
@@ -1241,6 +1364,60 @@ export interface CancelOrderDto {
   releasedResolution?: CancelOrderDtoReleasedResolution;
   /** @maxLength 500 */
   reason?: string;
+}
+
+export type CreateAssistedOrderDtoDeliveryMethodType =
+  (typeof CreateAssistedOrderDtoDeliveryMethodType)[keyof typeof CreateAssistedOrderDtoDeliveryMethodType];
+
+export const CreateAssistedOrderDtoDeliveryMethodType = {
+  PICKUP: "PICKUP",
+  COURIER: "COURIER",
+} as const;
+
+export type CreateAssistedOrderDtoPaymentMethod =
+  (typeof CreateAssistedOrderDtoPaymentMethod)[keyof typeof CreateAssistedOrderDtoPaymentMethod];
+
+export const CreateAssistedOrderDtoPaymentMethod = {
+  YAPE: "YAPE",
+  PLIN: "PLIN",
+  TRANSFER: "TRANSFER",
+  CASH: "CASH",
+} as const;
+
+export type CreateAssistedOrderDtoPaymentType =
+  (typeof CreateAssistedOrderDtoPaymentType)[keyof typeof CreateAssistedOrderDtoPaymentType];
+
+export const CreateAssistedOrderDtoPaymentType = {
+  FULL: "FULL",
+  PARTIAL: "PARTIAL",
+} as const;
+
+export type CreateAssistedOrderDtoCourierModality =
+  (typeof CreateAssistedOrderDtoCourierModality)[keyof typeof CreateAssistedOrderDtoCourierModality];
+
+export const CreateAssistedOrderDtoCourierModality = {
+  AGENCY: "AGENCY",
+  HOME: "HOME",
+} as const;
+
+export interface CreateAssistedOrderDto {
+  deliveryMethodType: CreateAssistedOrderDtoDeliveryMethodType;
+  pickupPointId?: string;
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
+  pickupDate?: string;
+  paymentMethod?: CreateAssistedOrderDtoPaymentMethod;
+  paymentType?: CreateAssistedOrderDtoPaymentType;
+  customerPhone: string;
+  /**
+   * @maxLength 60
+   * @pattern ^[^\p{Cc}\u200B\u2028\u2029\u202A-\u202E\u2066-\u2069\uFEFF\u2060-\u2064\u00AD\u180E\u034F\uFFFC\uFFF9-\uFFFB\u3164\u115F\u1160\u2800]*$
+   */
+  customerName?: string;
+  shippingAddress?: ShippingAddressDto;
+  courierName?: string;
+  courierModality?: CreateAssistedOrderDtoCourierModality;
+  /** @minItems 1 */
+  items: CreateOrderItemDto[];
 }
 
 export type CreateOrderDtoDeliveryMethodType =
@@ -1504,6 +1681,24 @@ export interface CheckoutResultResponseDto {
   whatsappUrl: string | null;
 }
 
+export interface CreateAssistedOrderResponseDto {
+  order: CheckoutOrderResponseDto;
+  /** SECRET: private buyer link. Returned only when the link is created; only its hash is stored, so it cannot be shown again. */
+  accessUrl: string;
+  /** Earlier orders of this store for the same WhatsApp number (advisory). */
+  previousOrders: number;
+}
+
+export interface AssistedOrderLinkResponseDto {
+  order: OrderDetailResponseDto;
+  /** SECRET: the new private buyer link. The previous link stops working. Returned only when the link is created; only its hash is stored. */
+  accessUrl: string;
+}
+
+export interface CorrectBuyerPhoneDto {
+  customerPhone: string;
+}
+
 export type ConfirmAccountResponseDtoPurpose =
   (typeof ConfirmAccountResponseDtoPurpose)[keyof typeof ConfirmAccountResponseDtoPurpose];
 
@@ -1723,6 +1918,8 @@ export interface PublicOrderPaymentResponseDto {
   source: PublicOrderPaymentResponseDtoSource;
   amount: string;
   createdAt: string;
+  /** @nullable */
+  voidedAt: string | null;
   reviewStatus: PublicOrderPaymentResponseDtoReviewStatus;
 }
 
@@ -1731,6 +1928,8 @@ export interface PublicOrderResponseDto {
   customerPhone: string;
   /** @nullable */
   customerAlias: string | null;
+  orderNumber: string;
+  createdAt: string;
   items: PublicOrderItemResponseDto[];
   totalAmount: string;
   requiredAmount: string;
@@ -1750,8 +1949,20 @@ export interface PublicOrderResponseDto {
   /** @nullable */
   courierName: string | null;
   /** @nullable */
+  trackingNumber: string | null;
+  /** @nullable */
+  trackingUrl: string | null;
+  packedPhotoAvailable: boolean;
+  /** @nullable */
   courierModality: PublicOrderResponseDtoCourierModality;
   payments: PublicOrderPaymentResponseDto[];
+}
+
+export interface UpdateOrderShippingDto {
+  /** @nullable @maxLength 120 */
+  trackingNumber?: string | null;
+  /** @nullable @maxLength 2048 */
+  trackingUrl?: string | null;
 }
 
 export type RecordInviteEventDtoType =
@@ -1944,6 +2155,7 @@ export interface CategoryResponseDto {
   /** @nullable */
   parentId: string | null;
   name: string;
+  slug: string;
   createdAt: string;
 }
 
@@ -2398,6 +2610,7 @@ export type WhatsAppTemplateResponseDtoType =
 export const WhatsAppTemplateResponseDtoType = {
   NEW_ORDER: "NEW_ORDER",
   PAYMENT_REMINDER: "PAYMENT_REMINDER",
+  ASSISTED_ORDER_LINK: "ASSISTED_ORDER_LINK",
 } as const;
 
 export interface WhatsAppTemplateResponseDto {
@@ -2811,6 +3024,13 @@ export type StatsControllerpaymentMethodsParams =
   StatsControllerPaymentMethodsParams;
 export type StoresControllerfindDirectoryParams =
   StoresControllerFindDirectoryParams;
+export type StoresControllerfindPublicCatalogParams = {
+  limit?: string;
+  page?: string;
+  sort?: "recientes" | "precio_asc" | "precio_desc" | "nombre_asc";
+  categorias?: string[];
+  q?: string;
+};
 export type StoresControllerfindFeaturedParams =
   StoresControllerFindFeaturedParams;
 export type StoresControllerfindPublicSitemapPageParams =

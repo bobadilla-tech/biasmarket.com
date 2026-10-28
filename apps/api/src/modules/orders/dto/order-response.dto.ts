@@ -160,6 +160,18 @@ export class OrderPaymentResponseDto {
   @ApiProperty({ type: String, format: 'date-time' })
   createdAt: string;
 
+  @ApiProperty({ type: String, nullable: true })
+  operationCode: string | null;
+
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  paidAt: string | null;
+
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  voidedAt: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  voidReason: string | null;
+
   @ApiProperty({ enum: ['SELLER_RECORDED', 'BUYER_SUBMITTED'] })
   source: 'SELLER_RECORDED' | 'BUYER_SUBMITTED';
 
@@ -219,6 +231,15 @@ export class OrderResponseDto {
   // `deliveryDetails.courierName` was never written.
   @ApiProperty({ type: String, nullable: true })
   courierName: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  trackingNumber: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  trackingUrl: string | null;
+
+  @ApiProperty()
+  packedPhotoAvailable: boolean;
 
   @ApiProperty({ enum: ['AGENCY', 'HOME'], nullable: true })
   courierModality: 'AGENCY' | 'HOME' | null;
@@ -301,6 +322,29 @@ export class OrderResponseDto {
   @ApiProperty()
   paidPercentage: number;
 
+  @ApiProperty({
+    type: String,
+    format: 'date-time',
+    nullable: true,
+    description: 'First time the buyer opened the private link.',
+  })
+  linkFirstOpenedAt: string | null;
+
+  @ApiProperty({
+    type: String,
+    format: 'date-time',
+    nullable: true,
+    description: 'When the buyer claimed the order into an account.',
+  })
+  claimedAt: string | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'Display name of the seller who created an assisted order.',
+  })
+  createdByName: string | null;
+
   @ApiProperty({ type: [OrderItemResponseDto] })
   items: OrderItemResponseDto[];
 
@@ -357,6 +401,15 @@ export class OrderStatusResponseDto {
   // `deliveryDetails.courierName` was never written.
   @ApiProperty({ type: String, nullable: true })
   courierName: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  trackingNumber: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  trackingUrl: string | null;
+
+  @ApiProperty()
+  packedPhotoAvailable: boolean;
 
   @ApiProperty({ enum: ['AGENCY', 'HOME'], nullable: true })
   courierModality: 'AGENCY' | 'HOME' | null;

@@ -48,6 +48,9 @@ export class PublicOrderPaymentResponseDto {
   @ApiProperty({ type: String, format: 'date-time' })
   createdAt: string;
 
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  voidedAt: string | null;
+
   @ApiProperty({
     enum: ['N_A', 'PENDING_REVIEW', 'APPROVED', 'REJECTED'],
   })
@@ -93,10 +96,17 @@ export class PublicOrderResponseDto {
   @ApiProperty()
   customerPhone: string;
 
-  // Buyer-provided alias only. Keep email, full phone and recipient details
-  // out of the public token response.
+  // `Order.customerName` sanitised for display: single line, no control or
+  // bidi characters, at most 40 graphemes. Null when empty.
   @ApiProperty({ type: String, nullable: true })
   customerAlias: string | null;
+
+  // Last 4 characters of the order id, uppercase, without `#`.
+  @ApiProperty()
+  orderNumber: string;
+
+  @ApiProperty({ type: String, format: 'date-time' })
+  createdAt: string;
 
   @ApiProperty({ type: [PublicOrderItemResponseDto] })
   items: PublicOrderItemResponseDto[];
@@ -157,6 +167,17 @@ export class PublicOrderResponseDto {
 
   @ApiProperty({ type: String, nullable: true })
   courierName: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  trackingNumber: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  trackingUrl: string | null;
+
+  @ApiProperty({
+    description: 'Whether a private packed-package photo is available.',
+  })
+  packedPhotoAvailable: boolean;
 
   @ApiProperty({ enum: ['AGENCY', 'HOME'], nullable: true })
   courierModality: 'AGENCY' | 'HOME' | null;

@@ -71,7 +71,9 @@ export default function ProductDetailScreen() {
         </Text>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`${t("catalog.openCart", { count: cartCount(cart.items) })}`}
+          accessibilityLabel={`${t("catalog.openCart", {
+            count: cartCount(cart.items),
+          })}`}
           onPress={() =>
             router.push({
               pathname: "/cart/[storeSlug]",
@@ -112,7 +114,9 @@ export default function ProductDetailScreen() {
             {formatPrice(product.price, product.currency, locale)}
           </Text>
           <Text
-            className={`text-sm font-semibold ${unavailable ? "text-red-300" : "text-emerald-300"}`}
+            className={`text-sm font-semibold ${
+              unavailable ? "text-red-300" : "text-emerald-300"
+            }`}
           >
             {product.discontinued
               ? t("common.discontinued")
@@ -163,7 +167,9 @@ export default function ProductDetailScreen() {
           <Pressable
             accessibilityRole="button"
             disabled={unavailable || cart.isSaving}
-            className={`rounded-xl px-5 py-4 ${unavailable ? "bg-white/15" : "bg-brand-pink"}`}
+            className={`rounded-xl px-5 py-4 ${
+              unavailable ? "bg-white/15" : "bg-brand-pink"
+            }`}
             onPress={() =>
               cart.add({
                 productId: product.id,
@@ -220,7 +226,9 @@ function VariantRow({
   disabled: boolean;
 }) {
   const { locale, t } = useMobileI18n();
-  const soldOut = disabled || (variant.stock !== null && variant.stock - variant.reserved <= 0);
+  const soldOut =
+    disabled ||
+    (variant.stock !== null && variant.stock - variant.reserved <= 0);
   const attributes = Object.entries(variant.attributes)
     .map(([key, value]) => `${key}: ${String(value)}`)
     .join(" · ");
@@ -258,7 +266,9 @@ function VariantRow({
         <Pressable
           accessibilityRole="button"
           disabled={soldOut}
-          className={`rounded-lg px-3 py-2 ${soldOut ? "bg-white/15" : "bg-brand-pink"}`}
+          className={`rounded-lg px-3 py-2 ${
+            soldOut ? "bg-white/15" : "bg-brand-pink"
+          }`}
           onPress={onAdd}
         >
           <Text className="text-xs font-bold text-brand-ink">

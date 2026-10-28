@@ -280,7 +280,12 @@ export class CustomerAuthService {
         currency: true,
         createdAt: true,
         payments: {
-          select: { amount: true, source: true, reviewStatus: true },
+          select: {
+            amount: true,
+            source: true,
+            reviewStatus: true,
+            voidedAt: true,
+          },
         },
       },
     });
@@ -434,7 +439,12 @@ export class CustomerAuthService {
         createdAt: true,
         store: { select: { slug: true, name: true } },
         payments: {
-          select: { amount: true, source: true, reviewStatus: true },
+          select: {
+            amount: true,
+            source: true,
+            reviewStatus: true,
+            voidedAt: true,
+          },
         },
       },
     });

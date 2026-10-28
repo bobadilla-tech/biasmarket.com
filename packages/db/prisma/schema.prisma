@@ -216,6 +216,7 @@ model Category {
   storeId   String
   parentId  String?
   name      String
+  slug      String
   createdAt DateTime @default(now())
 
   store    Store             @relation(fields: [storeId], references: [id])
@@ -224,6 +225,7 @@ model Category {
   products ProductCategory[]
 
   @@unique([storeId, parentId, name])
+  @@unique([storeId, slug])
   @@index([storeId])
   @@index([parentId])
 }
@@ -336,6 +338,10 @@ model Order {
   // or HOME (envío a domicilio). Null for PICKUP orders or legacy COURIER
   // orders.
   courierModality         CourierModalityType?
+  trackingNumber          String?
+  trackingUrl             String?
+  // Stored in the private payment-image bucket; never expose this URL to clients.
+  packedPhotoUrl          String?
   // Set only when the buyer chose a pickup point that isn't open today —
   // the future date they committed to, validated against that point's
   // openDays at checkout. Null for same-day pickup (today is implied).
@@ -439,30 +445,39 @@ model OrderItem {
 }
 
 model OrderPayment {
-  id           String              @id @default(cuid())
-  orderId      String
-  storeId      String
-  amount       Decimal             @db.Decimal(10, 2)
-  currency     String
-  method       PaymentMethodType?
-  note         String?
-  imageUrl     String?
-  createdAt    DateTime            @default(now())
+  id            String              @id @default(cuid())
+  orderId       String
+  storeId       String
+  amount        Decimal             @db.Decimal(10, 2)
+  currency      String
+  method        PaymentMethodType?
+  note          String?
+  imageUrl      String?
+  createdAt     DateTime            @default(now())
   // Buyer-submitted proof-of-payment upload — see
   // .artifacts/2026/08/20260808--buyer-proof-of-payment-upload/plan.md. `source`
-  // distinguishes who created the row; `reviewStatus` gates whether it
-  // counts toward `paidAmount` (see common/payment-summary.ts's
+  // distinguishes who created the row; `reviewStatus` gates buyer-submitted
+  // rows and `voidedAt` excludes annulled payments from `paidAmount` (see
+  // common/payment-summary.ts's
   // `countsTowardPaid` — the single source of truth for this filter, reused
   // by every aggregation call site so this invariant can't drift per-site).
-  source       PaymentSource       @default(SELLER_RECORDED)
-  reviewStatus PaymentReviewStatus @default(N_A)
-  reviewedAt   DateTime?
-  reviewedBy   String?
+  source        PaymentSource       @default(SELLER_RECORDED)
+  reviewStatus  PaymentReviewStatus @default(N_A)
+  reviewedAt    DateTime?
+  reviewedBy    String?
+  operationCode String?
+  paidAt        DateTime?
+  recordedBy    String?
+  voidedAt      DateTime?
+  voidedBy      String?
+  voidReason    String?
 
   order Order @relation(fields: [orderId], references: [id])
 
   @@index([orderId, createdAt])
   @@index([storeId, createdAt])
+  @@index([storeId, operationCode])
+  @@index([storeId, paidAt])
 }
 
 enum PaymentSource {
@@ -591,6 +606,7 @@ model CourierConfig {
 enum WhatsAppMessageType {
   NEW_ORDER
   PAYMENT_REMINDER
+  ASSISTED_ORDER_LINK
 }
 
 // Per-store override for the WhatsApp message a seller sends to a buyer —

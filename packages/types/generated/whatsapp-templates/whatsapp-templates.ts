@@ -14,14 +14,14 @@ import { customFetch } from "../../http.js";
 
 export const getFindOneUrl = (
   storeId: string,
-  type: "NEW_ORDER" | "PAYMENT_REMINDER",
+  type: "NEW_ORDER" | "PAYMENT_REMINDER" | "ASSISTED_ORDER_LINK",
 ) => {
   return `/stores/${storeId}/whatsapp-templates/${type}`;
 };
 
 export const findOne = async (
   storeId: string,
-  type: "NEW_ORDER" | "PAYMENT_REMINDER",
+  type: "NEW_ORDER" | "PAYMENT_REMINDER" | "ASSISTED_ORDER_LINK",
   options?: Parameters<typeof customFetch>[1],
 ): Promise<WhatsAppTemplateResponseDto | null> => {
   return customFetch<WhatsAppTemplateResponseDto | null>(
@@ -35,14 +35,14 @@ export const findOne = async (
 
 export const getUpsertUrl = (
   storeId: string,
-  type: "NEW_ORDER" | "PAYMENT_REMINDER",
+  type: "NEW_ORDER" | "PAYMENT_REMINDER" | "ASSISTED_ORDER_LINK",
 ) => {
   return `/stores/${storeId}/whatsapp-templates/${type}`;
 };
 
 export const upsert = async (
   storeId: string,
-  type: "NEW_ORDER" | "PAYMENT_REMINDER",
+  type: "NEW_ORDER" | "PAYMENT_REMINDER" | "ASSISTED_ORDER_LINK",
   updateWhatsAppTemplateDto: UpdateWhatsAppTemplateDto,
   options?: Parameters<typeof customFetch>[1],
 ): Promise<WhatsAppTemplateResponseDto> => {

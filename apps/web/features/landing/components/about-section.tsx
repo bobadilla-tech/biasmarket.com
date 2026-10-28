@@ -54,7 +54,7 @@ function MobileAbout({
   items: AboutItem[];
 }) {
   return (
-    <div className="flex flex-col bg-[#FFEAF6] p-[25px] sm:hidden">
+    <div className="flex flex-col bg-landing-rose p-[25px] sm:hidden">
       <div className="flex w-full items-start justify-between gap-5">
         <div className="min-w-0">
           <h2 className="text-[21px] leading-[25px] font-bold text-black">
@@ -65,7 +65,7 @@ function MobileAbout({
                   className="bg-clip-text text-transparent"
                   style={{
                     backgroundImage:
-                      "linear-gradient(90deg, #FC17A0 0%, var(--brand-violet) 100%)",
+                      "linear-gradient(90deg, var(--brand-pink) 0%, var(--brand-violet) 100%)",
                   }}
                 >
                   BIASMARKET
@@ -146,7 +146,7 @@ export function AboutSection() {
         items={items}
       />
 
-      <section className="hidden w-full bg-[#FFEAF6] sm:block">
+      <section className="hidden w-full bg-landing-rose sm:block">
         <div className="mx-auto max-w-[1344px] px-10 pt-[51px] pb-8">
           <div className="flex items-center">
             <div className="min-w-0 flex-1 pl-4 text-left">
@@ -186,7 +186,7 @@ export function AboutSection() {
               {items.map((item, index) => (
                 <div
                   key={item.title}
-                  className="relative flex flex-col items-center rounded-[40.8px] bg-white px-10 py-6 text-center"
+                  className="relative flex flex-col items-center rounded-[32px] border border-white/80 bg-card px-10 py-6 text-center shadow-[var(--shadow-soft)]"
                 >
                   <Image
                     src={ILLUSTRATIONS[index]?.src ?? ILLUSTRATIONS[0].src}

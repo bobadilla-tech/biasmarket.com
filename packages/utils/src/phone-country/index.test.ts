@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  formatPhone,
   DEFAULT_PHONE_COUNTRY,
   maskPhone,
   normalizePhone,
@@ -159,5 +160,27 @@ describe("validatePhone", () => {
   it("hides short national numbers and unknown prefixes", () => {
     expect(maskPhone("+51 98765")).toBe("+51 ***");
     expect(maskPhone("+44 20 7946 0958")).toBe("***");
+  });
+});
+
+describe("formatPhone", () => {
+  it("groups a Peru mobile in threes", () => {
+    expect(formatPhone("+51987654321")).toBe("+51 987 654 321");
+  });
+
+  it("accepts every shape normalizePhone does", () => {
+    for (const input of [
+      "987654321",
+      "987 654 321",
+      "51987654321",
+      "0051987654321",
+    ]) {
+      expect(formatPhone(input)).toBe("+51 987 654 321");
+    }
+  });
+
+  it("does not leave a lone trailing digit", () => {
+    expect(formatPhone("+525512345678")).toBe("+52 551 234 5678");
+    expect(formatPhone("+5491112345678")).toBe("+54 911 123 456 78");
   });
 });

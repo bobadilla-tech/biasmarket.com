@@ -7,9 +7,9 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useCustomerRegister } from "../mutations/use-customer-register";
 import {
+  formErrorMessage,
   FormErrorSummary,
   FormField,
-  formErrorMessage,
 } from "@/components/shared/form-a11y";
 import {
   type CustomerRegisterInput,

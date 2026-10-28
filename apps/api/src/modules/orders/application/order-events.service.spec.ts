@@ -182,6 +182,7 @@ describe('OrderEventsService', () => {
         accessTokenRevokedAt: true,
         status: true,
         paymentStatus: true,
+        packedPhotoUrl: true,
       },
     });
   });

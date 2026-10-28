@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { Prisma } from '@biasmarket/db';
+import { Prisma } from '@biasmarket/db';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { countsTowardPaid } from '../../common/payment-summary.js';
 import {
@@ -18,8 +18,23 @@ import {
 import { slugify } from '@biasmarket/utils/strings';
 import type { UpdateStoreDto } from './dto/update-store.dto.js';
 import type { CreateStoreDto } from './dto/create-store.dto.js';
+import type { StoreCatalogQuery } from './store-catalog-query.js';
 
 const RESERVED_SLUGS = ['www', 'api', 'admin', 'app'];
+
+function catalogOrder(sort: StoreCatalogQuery['sort']) {
+  if (sort === 'precio_asc' || sort === 'precio_desc') {
+    const direction =
+      sort === 'precio_asc' ? Prisma.sql`ASC` : Prisma.sql`DESC`;
+    return Prisma.sql`COALESCE(
+      (SELECT MIN(COALESCE(v."priceOverride", p."price"))
+       FROM "ProductVariant" AS v WHERE v."productId" = p."id"),
+      p."price"
+    ) ${direction}`;
+  }
+  if (sort === 'nombre_asc') return Prisma.sql`LOWER(p."name") ASC`;
+  return Prisma.sql`p."createdAt" DESC`;
+}
 
 // A TEXT_BLOCK section stores `{ body: string }` in its Json `content`. Narrow
 // at the read site (same convention as the storefront renderer and
@@ -261,7 +276,12 @@ export class StoresService {
       select: {
         storeId: true,
         payments: {
-          select: { amount: true, source: true, reviewStatus: true },
+          select: {
+            amount: true,
+            source: true,
+            reviewStatus: true,
+            voidedAt: true,
+          },
         },
       },
     });
@@ -342,7 +362,9 @@ export class StoresService {
                     variants: true,
                     categories: {
                       include: {
-                        category: { select: { id: true, name: true } },
+                        category: {
+                          select: { id: true, name: true, slug: true },
+                        },
                       },
                     },
                   },
@@ -391,7 +413,9 @@ export class StoresService {
       include: {
         variants: true,
         categories: {
-          include: { category: { select: { id: true, name: true } } },
+          include: {
+            category: { select: { id: true, name: true, slug: true } },
+          },
         },
       },
     });
@@ -474,13 +498,118 @@ export class StoresService {
       }));
   }
 
-  async findCategoriesPublic(slug: string) {
-    const store = await this.prisma.store.findUnique({ where: { slug } });
-    if (!store) throw new NotFoundException('Tienda no encontrada');
-    return this.prisma.category.findMany({
-      where: { storeId: store.id },
-      select: { id: true, name: true, parentId: true },
+  async findPublicCatalog(slug: string, query: StoreCatalogQuery) {
+    const store = await this.prisma.store.findFirst({
+      where: {
+        slug,
+      },
+      select: { id: true },
     });
+    if (!store) throw new NotFoundException('Tienda no encontrada');
+
+    const normalizedQuery = query.q
+      ?.normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .toLowerCase();
+    const escapedQuery = normalizedQuery?.replace(/[\\%_]/g, '\\$&');
+    const searchFilter = escapedQuery
+      ? Prisma.sql`AND TRANSLATE(LOWER(CONCAT_WS(' ', p."name", p."description")), 'áàäâãåéèëêíìïîóòöôõúùüûñç', 'aaaaaaeeeeiiiiooooouuuunc') LIKE ${`%${escapedQuery}%`} ESCAPE '\\'`
+      : Prisma.empty;
+    const categoryFilter = query.categories.length
+      ? Prisma.sql`AND EXISTS (
+          SELECT 1 FROM "ProductCategory" AS pc
+          JOIN "Category" AS c ON c."id" = pc."categoryId"
+          WHERE pc."productId" = p."id"
+            AND c."storeId" = p."storeId"
+            AND c."slug" IN (${Prisma.join(query.categories)})
+        )`
+      : Prisma.empty;
+    const filters = Prisma.sql`
+      p."storeId" = ${store.id}
+      AND p."status" = 'PUBLISHED'
+      AND p."deletedAt" IS NULL
+      AND p."discontinued" = false
+      ${searchFilter}
+      ${categoryFilter}
+    `;
+    const [countRows, idRows] = await Promise.all([
+      this.prisma.$queryRaw<{ total: bigint }[]>(Prisma.sql`
+        SELECT COUNT(*)::bigint AS total FROM "Product" AS p WHERE ${filters}
+      `),
+      this.prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
+        SELECT p."id" FROM "Product" AS p WHERE ${filters}
+        ORDER BY ${catalogOrder(query.sort)}, p."id" ASC
+        OFFSET ${(query.page - 1) * query.limit} LIMIT ${query.limit}
+      `),
+    ]);
+    const ids = idRows.map(({ id }) => id);
+    const products = ids.length
+      ? await this.prisma.product.findMany({
+          where: {
+            id: { in: ids },
+            storeId: store.id,
+            status: 'PUBLISHED',
+            deletedAt: null,
+            discontinued: false,
+          },
+          include: {
+            variants: true,
+            categories: {
+              include: {
+                category: { select: { id: true, name: true, slug: true } },
+              },
+            },
+          },
+        })
+      : [];
+    const byId = new Map(products.map((product) => [product.id, product]));
+    return {
+      items: ids.flatMap((id) => {
+        const product = byId.get(id);
+        return product ? [product] : [];
+      }),
+      total: Number(countRows[0]?.total ?? 0),
+      page: query.page,
+      limit: query.limit,
+    };
+  }
+
+  async findCategoriesPublic(slug: string) {
+    const store = await this.prisma.store.findFirst({
+      where: {
+        slug,
+      },
+      select: { id: true },
+    });
+    if (!store) throw new NotFoundException('Tienda no encontrada');
+    const categories = await this.prisma.category.findMany({
+      where: { storeId: store.id },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        parentId: true,
+        _count: {
+          select: {
+            products: {
+              where: {
+                product: {
+                  status: 'PUBLISHED',
+                  deletedAt: null,
+                  discontinued: false,
+                  storeId: store.id,
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { name: 'asc' },
+    });
+    return categories.map(({ _count, ...category }) => ({
+      ...category,
+      productCount: _count.products,
+    }));
   }
 
   async findPublicProduct(slug: string, productId: string) {
@@ -492,7 +621,9 @@ export class StoresService {
       include: {
         variants: true,
         categories: {
-          include: { category: { select: { id: true, name: true } } },
+          include: {
+            category: { select: { id: true, name: true, slug: true } },
+          },
         },
       },
     });

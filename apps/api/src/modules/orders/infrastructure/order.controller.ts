@@ -36,11 +36,14 @@ import { OrderEventsService } from '../application/order-events.service.js';
 import { ReviewPaymentDto } from '../dto/review-payment.dto.js';
 import { AdvanceFulfillmentDto } from '../dto/advance-fulfillment.dto.js';
 import { CancelOrderDto } from '../dto/cancel-order.dto.js';
+import { VoidOrderPaymentDto } from '../dto/void-order-payment.dto.js';
+import { VoidOrderPaymentUseCase } from '../application/void-order-payment.usecase.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { StorageService } from '../../../storage/storage.service.js';
+import { OrderDetailResponseDto } from '../dto/order-response.dto.js';
+import { RelatedOrdersResponseDto } from '../dto/related-orders-response.dto.js';
 import type {
-  OrderDetailResponseDto,
   OrderItemResponseDto,
   OrderPaymentResponseDto,
   OrderProductResponseDto,
@@ -50,14 +53,19 @@ import type {
 } from '../dto/order-response.dto.js';
 import {
   IMAGE_UPLOAD_MIME_TYPES,
+  MAX_UPLOAD_SIZE_BYTES,
   UploadedFileValidationPipe,
   type ValidatedUploadedFile,
 } from '../../../common/uploaded-file-validation.pipe.js';
 import { computePaymentSummary } from '../../../common/payment-summary.js';
+import { UpdateOrderShippingDto } from '../dto/update-order-shipping.dto.js';
 
 const OPTIONAL_PAYMENT_IMAGE_PIPE = new UploadedFileValidationPipe({
   allowedMimeTypes: IMAGE_UPLOAD_MIME_TYPES,
   fileIsRequired: false,
+});
+const PACKED_PHOTO_PIPE = new UploadedFileValidationPipe({
+  allowedMimeTypes: IMAGE_UPLOAD_MIME_TYPES,
 });
 
 // Money boundary comparisons compare in cents, not raw floats, so a residual
@@ -183,6 +191,10 @@ export interface OrderPaymentRow {
   note: string | null;
   imageUrl: string | null;
   createdAt: Date;
+  operationCode?: string | null;
+  paidAt?: Date | null;
+  voidedAt?: Date | null;
+  voidReason?: string | null;
   source: 'SELLER_RECORDED' | 'BUYER_SUBMITTED';
   reviewStatus: 'N_A' | 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED';
   reviewedAt: Date | null;
@@ -204,6 +216,9 @@ export interface OrderRow {
   pickupDate: Date | null;
   courierName: string | null;
   courierModality: 'AGENCY' | 'HOME' | null;
+  trackingNumber: string | null;
+  trackingUrl: string | null;
+  packedPhotoUrl: string | null;
   paymentMethod: PaymentMethodLiteral | null;
   paymentStatus: PaymentStatusLiteral;
   paymentRejectionReason: string | null;
@@ -219,6 +234,9 @@ export interface OrderRow {
   currency: string;
   expiresAt: Date;
   createdAt: Date;
+  linkFirstOpenedAt: Date | null;
+  claimedAt: Date | null;
+  createdBy?: { name: string | null } | null;
   paidAmount: number;
   pendingAmount: number;
   paidPercentage: number;
@@ -241,6 +259,9 @@ interface OrderStatusRow {
   pickupDate: Date | null;
   courierName: string | null;
   courierModality: 'AGENCY' | 'HOME' | null;
+  trackingNumber: string | null;
+  trackingUrl: string | null;
+  packedPhotoUrl: string | null;
   paymentMethod: PaymentMethodLiteral | null;
   paymentStatus: PaymentStatusLiteral;
   paymentRejectionReason: string | null;
@@ -291,10 +312,23 @@ export function toOrderPaymentDto(
   payment: OrderPaymentRow,
 ): OrderPaymentResponseDto {
   return {
-    ...payment,
+    id: payment.id,
+    orderId: payment.orderId,
+    storeId: payment.storeId,
     amount: payment.amount.toString(),
+    currency: payment.currency,
+    method: payment.method,
+    note: payment.note,
+    imageUrl: payment.imageUrl,
     createdAt: payment.createdAt.toISOString(),
+    operationCode: payment.operationCode ?? null,
+    paidAt: payment.paidAt?.toISOString() ?? null,
+    voidedAt: payment.voidedAt?.toISOString() ?? null,
+    voidReason: payment.voidReason ?? null,
+    source: payment.source,
+    reviewStatus: payment.reviewStatus,
     reviewedAt: payment.reviewedAt?.toISOString() ?? null,
+    reviewedBy: payment.reviewedBy,
   };
 }
 
@@ -306,10 +340,19 @@ export function toOrderDto(row: OrderRow): OrderResponseDto {
     retainedAmount: row.retainedAmount?.toString() ?? null,
     releasedAmount: row.releasedAmount?.toString() ?? null,
     releasedResolution: row.releasedResolution ?? null,
+    trackingNumber: row.trackingNumber,
+    trackingUrl: row.trackingUrl,
     totalAmount: row.totalAmount.toString(),
     requiredAmount: row.requiredAmount.toString(),
     expiresAt: row.expiresAt.toISOString(),
     createdAt: row.createdAt.toISOString(),
+    // Not in PUBLIC_ORDER_FIELDS: that list also shapes the checkout and
+    // status responses, which must not grow these. The creator is shown by
+    // display name only, never by user id.
+    linkFirstOpenedAt: row.linkFirstOpenedAt?.toISOString() ?? null,
+    claimedAt: row.claimedAt?.toISOString() ?? null,
+    createdByName: row.createdBy?.name ?? null,
+    packedPhotoAvailable: Boolean(row.packedPhotoUrl),
     items: row.items.map(toOrderItemDto),
     payments: row.payments.map(toOrderPaymentDto),
   };
@@ -327,10 +370,13 @@ function toOrderStatusDto(row: OrderStatusRow): OrderStatusResponseDto {
     retainedAmount: row.retainedAmount?.toString() ?? null,
     releasedAmount: row.releasedAmount?.toString() ?? null,
     releasedResolution: row.releasedResolution ?? null,
+    trackingNumber: row.trackingNumber,
+    trackingUrl: row.trackingUrl,
     totalAmount: row.totalAmount.toString(),
     requiredAmount: row.requiredAmount.toString(),
     expiresAt: row.expiresAt.toISOString(),
     createdAt: row.createdAt.toISOString(),
+    packedPhotoAvailable: Boolean(row.packedPhotoUrl),
   };
 }
 
@@ -345,6 +391,7 @@ export class OrderController {
     private prisma: PrismaService,
     private storage: StorageService,
     private events: OrderEventsService,
+    private voidOrderPayment: VoidOrderPaymentUseCase,
   ) {}
 
   @ApiQuery({ name: 'paymentStatus', required: false, type: String })
@@ -374,6 +421,20 @@ export class OrderController {
     await this.orders.assertOwnership(storeId, session.user.id);
     const row = await this.orders.findRowByIdForStore(orderId, storeId);
     return toOrderDetailDto(row);
+  }
+
+  // Other orders of the same buyer phone in this store. Ownership first, then
+  // the order is resolved inside the store, so a foreign or missing order is
+  // the same 404 as `findOne`.
+  @Get(':orderId/related')
+  async findRelated(
+    @Param('storeId') storeId: string,
+    @Param('orderId') orderId: string,
+    @Session() session: UserSession,
+  ): Promise<RelatedOrdersResponseDto> {
+    await this.orders.assertOwnership(storeId, session.user.id);
+    const row = await this.orders.findRowByIdForStore(orderId, storeId);
+    return this.orders.findRelatedForStore(storeId, row);
   }
 
   // Authenticated streaming read for a payment's proof image — the only
@@ -411,6 +472,117 @@ export class OrderController {
     return new StreamableFile(body, { type: contentType });
   }
 
+  @Patch(':orderId/shipping')
+  @ApiOkResponse({ type: OrderDetailResponseDto })
+  async updateShipping(
+    @Param('storeId') storeId: string,
+    @Param('orderId') orderId: string,
+    @Session() session: UserSession,
+    @Body() dto: UpdateOrderShippingDto,
+  ): Promise<OrderDetailResponseDto> {
+    await this.orders.assertOwnership(storeId, session.user.id);
+    if (dto.trackingNumber === undefined && dto.trackingUrl === undefined) {
+      throw new BadRequestException('Ingresa los datos de seguimiento');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      const order = await tx.order.findFirst({
+        where: { id: orderId, storeId },
+        select: { trackingNumber: true },
+      });
+      if (!order) throw new NotFoundException('Orden no encontrada');
+
+      const data = {
+        ...(dto.trackingNumber !== undefined && {
+          trackingNumber: dto.trackingNumber,
+        }),
+        ...(dto.trackingUrl !== undefined && { trackingUrl: dto.trackingUrl }),
+      };
+      const updated = await tx.order.updateMany({
+        where: { id: orderId, storeId },
+        data,
+      });
+      if (updated.count !== 1) {
+        throw new NotFoundException('Orden no encontrada');
+      }
+
+      if (dto.trackingNumber && dto.trackingNumber !== order.trackingNumber) {
+        await this.events.record(tx, {
+          orderId,
+          storeId,
+          type: 'TRACKING_ADDED',
+          actor: 'SELLER',
+        });
+      }
+    });
+
+    return toOrderDetailDto(
+      await this.orders.findRowByIdForStore(orderId, storeId),
+    );
+  }
+
+  @Post(':orderId/shipping/photo')
+  @ApiConsumes('multipart/form-data')
+  @ApiOkResponse({ type: OrderDetailResponseDto })
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: MAX_UPLOAD_SIZE_BYTES } }),
+  )
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 20 } })
+  async uploadPackedPhoto(
+    @Param('storeId') storeId: string,
+    @Param('orderId') orderId: string,
+    @Session() session: UserSession,
+    @UploadedFile(PACKED_PHOTO_PIPE) file: ValidatedUploadedFile,
+  ): Promise<OrderDetailResponseDto> {
+    await this.orders.assertOwnership(storeId, session.user.id);
+    const imageUrl = await this.storage.uploadPaymentImage(
+      file.buffer,
+      file.detectedMimeType,
+    );
+
+    await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.order.updateMany({
+        where: { id: orderId, storeId },
+        data: { packedPhotoUrl: imageUrl },
+      });
+      if (updated.count !== 1) {
+        throw new NotFoundException('Orden no encontrada');
+      }
+      await this.events.record(tx, {
+        orderId,
+        storeId,
+        type: 'PACKED_PHOTO_ADDED',
+        actor: 'SELLER',
+      });
+    });
+
+    return toOrderDetailDto(
+      await this.orders.findRowByIdForStore(orderId, storeId),
+    );
+  }
+
+  @Get(':orderId/shipping/photo')
+  @ApiOkResponse({ schema: { type: 'string', format: 'binary' } })
+  @ApiProduces('image/jpeg', 'image/png')
+  @Header('Cache-Control', 'no-store')
+  @Header('Cross-Origin-Resource-Policy', 'cross-origin')
+  async getPackedPhoto(
+    @Param('storeId') storeId: string,
+    @Param('orderId') orderId: string,
+    @Session() session: UserSession,
+  ): Promise<StreamableFile> {
+    await this.orders.assertOwnership(storeId, session.user.id);
+    const order = await this.orders.findRowByIdForStore(orderId, storeId);
+    if (!order.packedPhotoUrl) {
+      throw new NotFoundException('Este pedido no tiene foto del paquete');
+    }
+    const { body, contentType } = await this.storage.getPaymentImageStream(
+      order.packedPhotoUrl,
+    );
+    return new StreamableFile(body, { type: contentType });
+  }
+
   @Post(':orderId/payments')
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file'))
@@ -423,8 +595,7 @@ export class OrderController {
     @Body('amount') amount: string,
     @Body('method') method: string,
     @Body('note') note?: string,
-    @UploadedFile(OPTIONAL_PAYMENT_IMAGE_PIPE)
-    file?: ValidatedUploadedFile,
+    @UploadedFile(OPTIONAL_PAYMENT_IMAGE_PIPE) file?: ValidatedUploadedFile,
   ): Promise<OrderDetailResponseDto> {
     await this.orders.assertOwnership(storeId, session.user.id);
     const order = await this.orders.findRowByIdForStore(orderId, storeId);
@@ -496,8 +667,15 @@ export class OrderController {
 
     try {
       await this.prisma.$transaction(async (tx) => {
-        // Re-read the order under the transaction's snapshot so concurrent
-        // requests serialize on this row.
+        // Lock the order so concurrent add/void/review operations serialize
+        // before reading the credited payment total.
+        const [locked] = await tx.$queryRaw<Array<{ id: string }>>`
+          SELECT "id" FROM "Order"
+          WHERE "id" = ${orderId} AND "storeId" = ${storeId}
+          FOR UPDATE
+        `;
+        if (!locked) throw new NotFoundException('Orden no encontrada');
+
         const current = await tx.order.findUniqueOrThrow({
           where: { id: orderId },
           select: {
@@ -512,15 +690,21 @@ export class OrderController {
         // not raw floats, so a residual float-conversion artifact in
         // `numericAmount`/`pendingAmount` can never reject (or accept) a payment
         // that's actually exact to the cent.
-        const paidSummary = await tx.orderPayment.aggregate({
-          _sum: { amount: true },
-          where: {
-            orderId,
-            reviewStatus: { notIn: ['REJECTED'] },
+        const payments = await tx.orderPayment.findMany({
+          where: { orderId },
+          select: {
+            amount: true,
+            source: true,
+            reviewStatus: true,
+            voidedAt: true,
           },
         });
-        const currentPaid = Number(paidSummary._sum.amount ?? 0);
-        const currentPending = Number(current.requiredAmount) - currentPaid;
+        const paymentSummary = computePaymentSummary(
+          current.requiredAmount,
+          payments,
+        );
+        const currentPaid = paymentSummary.paidAmount;
+        const currentPending = paymentSummary.pendingAmount;
         if (toCents(numericAmount) > toCents(currentPending)) {
           throw new Error('El abono excede el saldo pendiente');
         }
@@ -546,6 +730,8 @@ export class OrderController {
             currency: current.currency,
             method: method as PaymentMethodType,
             note,
+            paidAt: new Date(),
+            recordedBy: session.user.id,
             ...(imageUrl && { imageUrl }),
           },
         });
@@ -676,6 +862,10 @@ export class OrderController {
           reviewStatus,
           reviewedAt: new Date(),
           reviewedBy: session.user.id,
+          ...(dto.decision === 'approve' && {
+            paidAt: new Date(),
+            recordedBy: session.user.id,
+          }),
         },
       });
       if (claimed.count === 0) {
@@ -729,7 +919,12 @@ export class OrderController {
       // PARTIALLY_PAID write and its event atomically.
       const payments = await tx.orderPayment.findMany({
         where: { orderId },
-        select: { amount: true, source: true, reviewStatus: true },
+        select: {
+          amount: true,
+          source: true,
+          reviewStatus: true,
+          voidedAt: true,
+        },
       });
 
       const { paidAmount } = computePaymentSummary(
@@ -766,6 +961,26 @@ export class OrderController {
 
     const updated = await this.orders.findRowByIdForStore(orderId, storeId);
     return toOrderDetailDto(updated);
+  }
+
+  @Patch(':orderId/payments/:paymentId/void')
+  async voidPayment(
+    @Param('storeId') storeId: string,
+    @Param('orderId') orderId: string,
+    @Param('paymentId') paymentId: string,
+    @Session() session: UserSession,
+    @Body() dto: VoidOrderPaymentDto,
+  ): Promise<OrderDetailResponseDto> {
+    await this.voidOrderPayment.execute(
+      orderId,
+      paymentId,
+      storeId,
+      session.user.id,
+      dto.reason,
+    );
+    return toOrderDetailDto(
+      await this.orders.findRowByIdForStore(orderId, storeId),
+    );
   }
 
   @Patch(':orderId/review')

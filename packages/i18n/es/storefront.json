@@ -1,22 +1,59 @@
 {
   "notFound": "Tienda no encontrada.",
+  "shopProductsAvailable": "Compra en {storeName} — {count, plural, one {# producto disponible} other {# productos disponibles}}.",
+  "breadcrumbHome": "Inicio",
+  "breadcrumbStores": "Tiendas",
   "noProducts": "Todavía no hay productos publicados.",
   "noSearchResults": "No encontramos productos con esos filtros.",
   "productsTab": "Productos",
+  "categoriesTab": "Categorías",
+  "referencesTab": "Referencias",
+  "aboutTab": "Acerca de la tienda",
+  "aboutEyebrow": "Nuestra historia",
   "storeSectionsLabel": "Secciones de la tienda",
+  "categoriesTabSubtitle": "Explora las categorías disponibles en esta tienda.",
+  "categoriesCount": "{count} {count, plural, one {categoría} other {categorías}}",
+  "categoriesEmpty": "Esta tienda todavía no tiene categorías.",
+  "referencesTitle": "Referencias de {storeName}",
+  "referencesSubtitle": "Opiniones y evidencias de entrega.",
+  "referencesEmptyTitle": "Pronto podrás ver las referencias",
+  "referencesEmpty": "Esta tienda todavía no ha publicado fotos de sus entregas.",
   "searchLabel": "Buscar productos",
   "searchPlaceholder": "Buscar productos...",
+  "searchStorePlaceholder": "Buscar en esta tienda",
+  "searchCategories": "Buscar categorías...",
+  "sortBy": "Ordenar por",
+  "sortRecent": "Más recientes",
+  "sortOldest": "Más antiguas",
+  "sortPriceAsc": "Precio: menor a mayor",
+  "sortPriceDesc": "Precio: mayor a menor",
+  "sortNameAsc": "Nombre: A a Z",
+  "sortNameDesc": "Nombre: Z a A",
+  "clearFilters": "Limpiar filtros",
+  "catalogPagination": "Páginas de productos",
+  "previousPage": "Anterior",
+  "nextPage": "Siguiente",
+  "pageOf": "Página {page} de {pages}",
+  "filterByCategory": "Filtrar por categoría",
+  "loadMore": "Cargar más productos",
+  "loadingMore": "Cargando productos...",
   "categories": "Categorías",
   "allCategories": "Todas",
   "categoryImageAlt": "Categoría {name}",
   "productImageAlt": "Imagen de {name}",
   "bannerImageAlt": "Banner de la tienda {storeName}",
   "bannerImageGenericAlt": "Banner de tienda",
+  "publicStoreEyebrow": "SELECCIÓN CUIDADA · BIAS MARKET",
   "publicStoreProfile": "Perfil público de la tienda",
   "storeLogoAlt": "Logo de {storeName}",
   "storeLogoPlaceholder": "Logo de {storeName} no configurado",
   "publicOwnerAvatarAlt": "Foto de {name}",
   "publicOwnerAvatarGenericAlt": "Foto del dueño de la tienda",
+  "publicOwner": {
+    "title": "Dueño de la tienda",
+    "contact": "Contactar",
+    "contactMessage": "Hola, tengo una consulta sobre la tienda {storeName}."
+  },
   "storeOwner": "Sobre la tienda",
   "soldOut": "Agotado",
   "fromPrice": "Desde",
@@ -25,6 +62,7 @@
   "addToCart": "Agregar al carrito",
   "addedToCart": "Agregado ✓",
   "selectVariant": "Selecciona una variante",
+  "chooseOption": "Elige una opción",
   "chooseVariant": "Elige una variante para {product}",
   "cart": "Carrito",
   "cartCount": "{count} productos en el carrito",
@@ -346,53 +384,6 @@
       "pendingPhone": "Confirmación pendiente para {phone}"
     }
   },
-  "publicOrder": {
-    "pageTitle": "Detalle de tu pedido",
-    "storeLabel": "Tu tienda",
-    "greeting": "Aquí está tu pedido",
-    "greetingWithAlias": "Hola, {alias}. Aquí está tu pedido",
-    "itemsTitle": "Productos",
-    "quantity": "Cantidad: {quantity}",
-    "total": "Total del pedido",
-    "paid": "Pagado hasta ahora",
-    "balance": "Saldo pendiente",
-    "progressTitle": "Estado del pedido",
-    "phoneTitle": "Teléfono del pedido",
-    "phone": "Pedido para {phone}",
-    "wrongPhone": "¿No es tu número? Avísale a la tienda.",
-    "paymentTitle": "Cómo pagar",
-    "payAmount": "Paga ahora: {amount}",
-    "depositPercent": "Adelanto: {percentage}%",
-    "noPaymentMethods": "La tienda todavía no configuró métodos de pago. Escríbele para coordinar.",
-    "notPayable": "Este pedido ya no acepta pagos.",
-    "viewQr": "Ver código QR de pago",
-    "invalidTitle": "Este enlace ya no está disponible",
-    "invalidBody": "El enlace puede ser incorrecto, vencido o revocado. Contacta a la tienda para recibir ayuda.",
-    "unavailableTitle": "No pudimos cargar el pedido",
-    "unavailableBody": "Inténtalo de nuevo más tarde o contacta a la tienda para recibir ayuda.",
-    "paymentStatus": {
-      "pending_payment": "Pendiente de pago",
-      "partially_paid": "Pago parcial",
-      "payment_submitted": "Pago enviado para revisión",
-      "verified": "Pago confirmado",
-      "rejected": "Pago rechazado",
-      "cancelled": "Pedido cancelado"
-    },
-    "orderStatus": { "active": "Activo", "cancelled": "Cancelado" },
-    "methods": {
-      "yape": "Yape",
-      "plin": "Plin",
-      "transfer": "Transferencia bancaria",
-      "cash": "Efectivo"
-    },
-    "details": {
-      "phoneNumber": "Número",
-      "accountHolder": "Titular",
-      "bankName": "Banco",
-      "accountNumber": "Número de cuenta",
-      "accountType": "Tipo de cuenta"
-    }
-  },
   "storeDirectory": {
     "title": "Descubre tiendas",
     "subtitle": "Explora todas las tiendas que venden en Bias Market.",
@@ -457,5 +448,82 @@
     "storeAccount": "Cuenta en la tienda",
     "pendingBalance": "Pendiente: {currency} {amount}",
     "signOut": "Cerrar sesión"
+  },
+  "publicOrder": {
+    "metaTitle": "Tu pedido",
+    "metaDescription": "Revisa el estado de tu pedido.",
+    "noscript": "Activa JavaScript para ver tu pedido, o escríbele a la tienda.",
+    "loading": "Cargando tu pedido",
+    "retry": "Reintentar",
+    "invalid": {
+      "title": "Este enlace no es válido",
+      "body": "Este enlace no es válido o fue reemplazado. Pídele a la tienda uno nuevo.",
+      "contact": "Escribir a la tienda"
+    },
+    "rateLimited": {
+      "title": "Demasiados intentos",
+      "body": "Hiciste muchas consultas seguidas. Espera un momento e inténtalo de nuevo."
+    },
+    "error": {
+      "title": "No pudimos cargar tu pedido",
+      "body": "Hubo un problema al cargar tu pedido. Inténtalo de nuevo."
+    },
+    "greeting": "Hola, {name}",
+    "greetingGeneric": "Hola",
+    "orderNumber": "Pedido #{number}",
+    "banner": {
+      "pendingPayment": "Tu pedido está esperando el pago. Abajo te mostramos cómo pagar.",
+      "partiallyPaid": "Recibimos parte de tu pago. Falta completar el adelanto.",
+      "paymentSubmitted": "Recibimos tu pago y está en revisión.",
+      "verified": "Tu pago está confirmado. Estamos preparando tu pedido.",
+      "rejected": "No pudimos confirmar tu pago. Escríbele a la tienda.",
+      "cancelled": "Este pedido fue cancelado.",
+      "ready": "Tu pedido está listo.",
+      "completed": "Tu pedido fue entregado."
+    },
+    "progress": "Avance del pedido",
+    "items": "Tu pedido",
+    "total": "Total",
+    "deposit": "Adelanto",
+    "paid": "Pagado",
+    "pending": "Falta pagar",
+    "pendingDeposit": "Falta del adelanto",
+    "payments": {
+      "title": "Pagos",
+      "voided": "Anulado",
+      "pendingReview": "En revisión",
+      "rejected": "Rechazado",
+      "recorded": "Registrado",
+      "bySelf": "Enviado por ti",
+      "byStore": "Registrado por la tienda",
+      "rejectedNote": "Escríbele a la tienda para resolverlo."
+    },
+    "howToPay": {
+      "title": "Cómo pagar",
+      "amountTotal": "Total a pagar: {total}",
+      "amountDeposit": "Adelanto: {deposit} (o el total: {total})",
+      "amountDue": "Falta pagar: {amount}",
+      "rejectedNote": "Tu último pago no fue aceptado. Escríbele a la tienda.",
+      "noMethods": "La tienda aún no configuró métodos de pago, escríbele.",
+      "paidButton": "Ya pagué, avisar a la tienda",
+      "paidMessage": "Hola, ya pagué el pedido #{number}"
+    },
+    "delivery": {
+      "title": "Entrega",
+      "pickup": "Recojo",
+      "courier": "Envío por courier",
+      "courierNamed": "Envío por {name}"
+    },
+    "phoneLine": "Pedido para {phone}",
+    "notYourNumber": {
+      "summary": "¿No es tu número? Avísale a la tienda",
+      "body": "Si este pedido no es para ti, avísale a la tienda para que lo corrija.",
+      "button": "Avisar a la tienda",
+      "message": "Hola, el pedido #{number} no es para mi número"
+    },
+    "date": {
+      "today": "Hoy {time}",
+      "yesterday": "Ayer {time}"
+    }
   }
 }

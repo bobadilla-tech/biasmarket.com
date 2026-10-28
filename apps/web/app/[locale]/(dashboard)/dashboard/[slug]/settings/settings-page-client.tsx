@@ -79,6 +79,8 @@ export function SettingsPageClient() {
                       newOrder: whatsappTemplates.newOrder?.template ?? null,
                       paymentReminder:
                         whatsappTemplates.paymentReminder?.template ?? null,
+                      assistedOrderLink:
+                        whatsappTemplates.assistedOrderLink?.template ?? null,
                     }
                   : undefined
               }

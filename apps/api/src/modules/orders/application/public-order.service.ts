@@ -1,10 +1,17 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import type { Prisma } from '@biasmarket/db';
 import { maskPhone } from '@biasmarket/utils/phone-country';
+import { hashOrderAccessToken } from '@biasmarket/utils/assisted-order';
 import { isPaymentMethodConfigured } from '@biasmarket/utils/payment-methods';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { computePaymentSummary } from '../../../common/payment-summary.js';
 import { OrderEventsService } from './order-events.service.js';
+import { toPublicCustomerAlias } from './public-order-alias.js';
 import type {
   PublicOrderDeliveryDetailsResponseDto,
   PublicOrderResponseDto,
@@ -64,6 +71,7 @@ export class PublicOrderService {
             source: true,
             reviewStatus: true,
             createdAt: true,
+            voidedAt: true,
           },
         },
       },
@@ -71,31 +79,46 @@ export class PublicOrderService {
     if (!order) throw new NotFoundException('Pedido no encontrado');
 
     // #262 records the open on the first valid read. Repeat reads skip the
-    // write. A failed insert must not turn that read into a 500: the
-    // conditional update rolls back with it, so the next read retries.
-    // Link-preview fetches count as that first read; B3 keys phone
-    // correction off the flag, and the issue requires the read itself to
-    // set it.
+    // write. If this transaction fails, do not serve a page whose open was
+    // not persisted: sellers use this marker to decide whether the phone can
+    // still be corrected.
+    // The web page fetches this endpoint from the browser, never from the
+    // server, so link-preview crawlers (which do not run JS) do not count as
+    // that first read; B3 keys phone correction off the flag, and the issue
+    // requires the read itself to set it. The update is keyed by the presented token's hash: a reader
+    // holding an old token whose update lands after the seller rotated the
+    // link must not stamp the new link as opened.
     if (order.linkFirstOpenedAt === null) {
       try {
-        await this.prisma.$transaction(async (tx) => {
-          const opened = await tx.order.updateMany({
-            where: { id: order.id, linkFirstOpenedAt: null },
-            data: { linkFirstOpenedAt: new Date() },
-          });
-          if (opened.count === 1) {
-            await this.events.record(tx, {
-              orderId: order.id,
-              storeId: order.storeId,
-              type: 'LINK_OPENED',
-              actor: 'BUYER',
+        await this.prisma.$transaction(
+          async (tx) => {
+            const opened = await tx.order.updateMany({
+              where: {
+                id: order.id,
+                accessTokenHash: hashOrderAccessToken(token),
+                accessTokenRevokedAt: null,
+                linkFirstOpenedAt: null,
+              },
+              data: { linkFirstOpenedAt: new Date() },
             });
-          }
-        });
+            if (opened.count === 1) {
+              await this.events.record(tx, {
+                orderId: order.id,
+                storeId: order.storeId,
+                type: 'LINK_OPENED',
+                actor: 'BUYER',
+              });
+            }
+          },
+          { timeout: 15_000 },
+        );
       } catch (error) {
         this.logger.warn(
           `Failed to record the first open of order ${order.id}`,
           error instanceof Error ? error.message : String(error),
+        );
+        throw new InternalServerErrorException(
+          'No se pudo registrar la apertura del pedido',
         );
       }
     }
@@ -128,7 +151,11 @@ export class PublicOrderService {
         whatsappNumber: order.store.whatsappNumber,
       },
       customerPhone: maskPhone(order.customerPhone),
-      customerAlias: order.customerName?.trim() || null,
+      customerAlias: toPublicCustomerAlias(order.customerName),
+      // Same rule as web `getOrderNumber` (last 4 of the id, uppercase, no
+      // `#`); change both together (#339). A display ref, never a lookup key.
+      orderNumber: order.id.slice(-4).toUpperCase(),
+      createdAt: order.createdAt.toISOString(),
       items: order.items.map((item) => ({
         name: item.product.name,
         quantity: item.quantity,
@@ -153,13 +180,25 @@ export class PublicOrderService {
       deliveryDetails: toPublicDeliveryDetails(order.deliveryDetails),
       pickupDate: order.pickupDate?.toISOString() ?? null,
       courierName: order.courierName,
+      trackingNumber: order.trackingNumber,
+      trackingUrl: order.trackingUrl,
+      packedPhotoAvailable: Boolean(order.packedPhotoUrl),
       courierModality: order.courierModality,
       payments: order.payments.map((payment) => ({
         source: payment.source,
         amount: payment.amount.toString(),
         createdAt: payment.createdAt.toISOString(),
         reviewStatus: payment.reviewStatus,
+        voidedAt: payment.voidedAt?.toISOString() ?? null,
       })),
     };
+  }
+
+  async getPackedPhotoUrlByToken(token: string): Promise<string> {
+    const order = await this.events.requireOrderForToken(token);
+    if (!order.packedPhotoUrl) {
+      throw new NotFoundException('Foto del paquete no encontrada');
+    }
+    return order.packedPhotoUrl;
   }
 }

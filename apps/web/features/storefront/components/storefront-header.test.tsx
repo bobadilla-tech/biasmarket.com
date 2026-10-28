@@ -23,13 +23,11 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-test("renders the Bias Market logo, cart, and account link", () => {
+test("renders the Bias Market brand, cart, and account link", () => {
   useCustomerProfile.mockReturnValue({ data: undefined, isPending: false });
   renderWithProviders(<StorefrontHeader slug="my-store" />);
 
-  expect(
-    screen.getByRole("img", { name: "Bias Market" }).getAttribute("src"),
-  ).toBe("/logos/horizontal.png");
+  expect(screen.getByText("Bias Market")).toBeTruthy();
   expect(
     screen
       .getByRole("link", { name: "Ir al inicio de Bias Market" })

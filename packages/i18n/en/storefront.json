@@ -1,22 +1,59 @@
 {
   "notFound": "Store not found.",
+  "shopProductsAvailable": "Shop {storeName} — {count, plural, one {# product available} other {# products available}}.",
+  "breadcrumbHome": "Home",
+  "breadcrumbStores": "Stores",
   "noProducts": "No products published yet.",
   "noSearchResults": "No products match these filters.",
   "productsTab": "Products",
+  "categoriesTab": "Categories",
+  "referencesTab": "References",
+  "aboutTab": "About",
+  "aboutEyebrow": "Our story",
   "storeSectionsLabel": "Store sections",
+  "categoriesTabSubtitle": "Explore the categories available in this store.",
+  "categoriesCount": "{count} {count, plural, one {category} other {categories}}",
+  "categoriesEmpty": "This store has no categories yet.",
+  "referencesTitle": "{storeName} references",
+  "referencesSubtitle": "Reviews and delivery evidence.",
+  "referencesEmptyTitle": "Delivery references coming soon",
+  "referencesEmpty": "This store has not posted any delivery photos yet.",
   "searchLabel": "Search products",
   "searchPlaceholder": "Search products...",
+  "searchStorePlaceholder": "Search in this store",
+  "searchCategories": "Search categories...",
+  "sortBy": "Sort by",
+  "sortRecent": "Newest",
+  "sortOldest": "Oldest",
+  "sortPriceAsc": "Price: low to high",
+  "sortPriceDesc": "Price: high to low",
+  "sortNameAsc": "Name: A to Z",
+  "sortNameDesc": "Name: Z to A",
+  "clearFilters": "Clear filters",
+  "catalogPagination": "Product pages",
+  "previousPage": "Previous",
+  "nextPage": "Next",
+  "pageOf": "Page {page} of {pages}",
+  "filterByCategory": "Filter by category",
+  "loadMore": "Load more products",
+  "loadingMore": "Loading products...",
   "categories": "Categories",
   "allCategories": "All",
   "categoryImageAlt": "{name} category",
   "productImageAlt": "Image of {name}",
   "bannerImageAlt": "{storeName} store banner",
   "bannerImageGenericAlt": "Store banner",
+  "publicStoreEyebrow": "CURATED WITH CARE · BIAS MARKET",
   "publicStoreProfile": "Public store profile",
   "storeLogoAlt": "{storeName} logo",
   "storeLogoPlaceholder": "{storeName} logo not configured",
   "publicOwnerAvatarAlt": "Photo of {name}",
   "publicOwnerAvatarGenericAlt": "Store owner photo",
+  "publicOwner": {
+    "title": "Store owner",
+    "contact": "Contact",
+    "contactMessage": "Hi, I have a question about {storeName}."
+  },
   "storeOwner": "About the store",
   "soldOut": "Sold out",
   "comingSoonSection": {
@@ -29,6 +66,7 @@
   "addToCart": "Add to cart",
   "addedToCart": "Added ✓",
   "selectVariant": "Select a variant",
+  "chooseOption": "Choose an option",
   "chooseVariant": "Choose a variant for {product}",
   "cart": "Cart",
   "cartCount": "{count} items in cart",
@@ -350,53 +388,6 @@
       "pendingPhone": "Confirmation pending for {phone}"
     }
   },
-  "publicOrder": {
-    "pageTitle": "Your order details",
-    "storeLabel": "Your store",
-    "greeting": "Here is your order",
-    "greetingWithAlias": "Hi, {alias}. Here is your order",
-    "itemsTitle": "Items",
-    "quantity": "Quantity: {quantity}",
-    "total": "Order total",
-    "paid": "Paid so far",
-    "balance": "Remaining balance",
-    "progressTitle": "Order status",
-    "phoneTitle": "Order phone number",
-    "phone": "Order for {phone}",
-    "wrongPhone": "Isn't this your number? Let the store know.",
-    "paymentTitle": "How to pay",
-    "payAmount": "Pay now: {amount}",
-    "depositPercent": "Deposit: {percentage}%",
-    "noPaymentMethods": "The store hasn't set up payment methods yet. Contact them to arrange payment.",
-    "notPayable": "This order no longer accepts payments.",
-    "viewQr": "View payment QR code",
-    "invalidTitle": "This link is no longer available",
-    "invalidBody": "The link may be incorrect, expired, or revoked. Contact the store for help.",
-    "unavailableTitle": "We couldn't load this order",
-    "unavailableBody": "Try again later or contact the store for help.",
-    "paymentStatus": {
-      "pending_payment": "Awaiting payment",
-      "partially_paid": "Partially paid",
-      "payment_submitted": "Payment submitted for review",
-      "verified": "Payment confirmed",
-      "rejected": "Payment rejected",
-      "cancelled": "Order cancelled"
-    },
-    "orderStatus": { "active": "Active", "cancelled": "Cancelled" },
-    "methods": {
-      "yape": "Yape",
-      "plin": "Plin",
-      "transfer": "Bank transfer",
-      "cash": "Cash"
-    },
-    "details": {
-      "phoneNumber": "Number",
-      "accountHolder": "Account holder",
-      "bankName": "Bank",
-      "accountNumber": "Account number",
-      "accountType": "Account type"
-    }
-  },
   "storeDirectory": {
     "title": "Discover stores",
     "subtitle": "Browse every store selling on Bias Market.",
@@ -457,5 +448,82 @@
     "storeAccount": "Store account",
     "pendingBalance": "Pending: {currency} {amount}",
     "signOut": "Sign out"
+  },
+  "publicOrder": {
+    "metaTitle": "Your order",
+    "metaDescription": "Check the status of your order.",
+    "noscript": "Turn on JavaScript to see your order, or message the store.",
+    "loading": "Loading your order",
+    "retry": "Try again",
+    "invalid": {
+      "title": "This link is not valid",
+      "body": "This link is not valid or was replaced. Ask the store for a new one.",
+      "contact": "Message the store"
+    },
+    "rateLimited": {
+      "title": "Too many attempts",
+      "body": "You made too many requests in a row. Wait a moment and try again."
+    },
+    "error": {
+      "title": "We couldn't load your order",
+      "body": "Something went wrong loading your order. Please try again."
+    },
+    "greeting": "Hi, {name}",
+    "greetingGeneric": "Hi",
+    "orderNumber": "Order #{number}",
+    "banner": {
+      "pendingPayment": "Your order is waiting for payment. See below how to pay.",
+      "partiallyPaid": "We received part of your payment. The deposit is not complete yet.",
+      "paymentSubmitted": "We received your payment and it is under review.",
+      "verified": "Your payment is confirmed. We are preparing your order.",
+      "rejected": "We could not confirm your payment. Message the store.",
+      "cancelled": "This order was cancelled.",
+      "ready": "Your order is ready.",
+      "completed": "Your order was delivered."
+    },
+    "progress": "Order progress",
+    "items": "Your order",
+    "total": "Total",
+    "deposit": "Deposit",
+    "paid": "Paid",
+    "pending": "Left to pay",
+    "pendingDeposit": "Left on the deposit",
+    "payments": {
+      "title": "Payments",
+      "voided": "Voided",
+      "pendingReview": "Under review",
+      "rejected": "Rejected",
+      "recorded": "Recorded",
+      "bySelf": "Sent by you",
+      "byStore": "Recorded by the store",
+      "rejectedNote": "Message the store to sort it out."
+    },
+    "howToPay": {
+      "title": "How to pay",
+      "amountTotal": "Total to pay: {total}",
+      "amountDeposit": "Deposit: {deposit} (or the full total: {total})",
+      "amountDue": "Left to pay: {amount}",
+      "rejectedNote": "Your last payment was not accepted. Message the store.",
+      "noMethods": "The store has not set up payment methods yet, message them.",
+      "paidButton": "I already paid, tell the store",
+      "paidMessage": "Hi, I already paid order #{number}"
+    },
+    "delivery": {
+      "title": "Delivery",
+      "pickup": "Pickup",
+      "courier": "Courier shipping",
+      "courierNamed": "Shipping with {name}"
+    },
+    "phoneLine": "Order for {phone}",
+    "notYourNumber": {
+      "summary": "Not your number? Tell the store",
+      "body": "If this order is not for you, tell the store so they can fix it.",
+      "button": "Tell the store",
+      "message": "Hi, order #{number} is not for my number"
+    },
+    "date": {
+      "today": "Today {time}",
+      "yesterday": "Yesterday {time}"
+    }
   }
 }

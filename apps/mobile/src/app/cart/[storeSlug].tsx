@@ -83,7 +83,9 @@ export default function CartScreen() {
                 </View>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={t("cart.removeItem", { item: item.name })}
+                  accessibilityLabel={t("cart.removeItem", {
+                    item: item.name,
+                  })}
                   onPress={() => cart.remove(item)}
                 >
                   <Text className="text-sm text-red-300">

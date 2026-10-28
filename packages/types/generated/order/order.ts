@@ -7,12 +7,19 @@
  */
 import type {
   AdvanceFulfillmentDto,
+  AssistedOrderLinkResponseDto,
   CancelOrderDto,
+  CorrectBuyerPhoneDto,
+  CreateAssistedOrderDto,
+  CreateAssistedOrderResponseDto,
   OrderControllerfindAllParams,
   OrderDetailResponseDto,
   OrderResponseDto,
   OrderStatusResponseDto,
+  RelatedOrdersResponseDto,
   ReviewPaymentDto,
+  VoidOrderPaymentDto,
+  UpdateOrderShippingDto,
 } from "../api.schemas.js";
 
 import { customFetch } from "../../http.js";
@@ -60,6 +67,24 @@ export const findOne = async (
     ...options,
     method: "GET",
   });
+};
+
+export const getFindRelatedUrl = (storeId: string, orderId: string) => {
+  return `/stores/${storeId}/orders/${orderId}/related`;
+};
+
+export const findRelated = async (
+  storeId: string,
+  orderId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<RelatedOrdersResponseDto> => {
+  return customFetch<RelatedOrdersResponseDto>(
+    getFindRelatedUrl(storeId, orderId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
 };
 
 export const getGetPaymentImageUrl = (
@@ -126,6 +151,32 @@ export const reviewPaymentProof = async (
   );
 };
 
+export const getVoidPaymentUrl = (
+  storeId: string,
+  orderId: string,
+  paymentId: string,
+) => {
+  return `/stores/${storeId}/orders/${orderId}/payments/${paymentId}/void`;
+};
+
+export const voidPayment = async (
+  storeId: string,
+  orderId: string,
+  paymentId: string,
+  voidOrderPaymentDto: VoidOrderPaymentDto,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OrderDetailResponseDto> => {
+  return customFetch<OrderDetailResponseDto>(
+    getVoidPaymentUrl(storeId, orderId, paymentId),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(voidOrderPaymentDto),
+    },
+  );
+};
+
 export const getReviewUrl = (storeId: string, orderId: string) => {
   return `/stores/${storeId}/orders/${orderId}/review`;
 };
@@ -178,4 +229,87 @@ export const cancel = async (
     headers: { "Content-Type": "application/json", ...options?.headers },
     body: JSON.stringify(cancelOrderDto),
   });
+};
+
+export const getCreateAssistedUrl = (storeId: string) => {
+  return `/stores/${storeId}/orders/assisted`;
+};
+
+export const createAssisted = async (
+  storeId: string,
+  createAssistedOrderDto: CreateAssistedOrderDto,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CreateAssistedOrderResponseDto> => {
+  return customFetch<CreateAssistedOrderResponseDto>(
+    getCreateAssistedUrl(storeId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createAssistedOrderDto),
+    },
+  );
+};
+
+export const getRegenerateAccessLinkUrl = (
+  storeId: string,
+  orderId: string,
+) => {
+  return `/stores/${storeId}/orders/${orderId}/access-link`;
+};
+
+export const regenerateAccessLink = async (
+  storeId: string,
+  orderId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<AssistedOrderLinkResponseDto> => {
+  return customFetch<AssistedOrderLinkResponseDto>(
+    getRegenerateAccessLinkUrl(storeId, orderId),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getCorrectBuyerPhoneUrl = (storeId: string, orderId: string) => {
+  return `/stores/${storeId}/orders/${orderId}/buyer-phone`;
+};
+
+export const correctBuyerPhone = async (
+  storeId: string,
+  orderId: string,
+  correctBuyerPhoneDto: CorrectBuyerPhoneDto,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<AssistedOrderLinkResponseDto> => {
+  return customFetch<AssistedOrderLinkResponseDto>(
+    getCorrectBuyerPhoneUrl(storeId, orderId),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(correctBuyerPhoneDto),
+    },
+  );
+};
+
+export const getUpdateShippingUrl = (storeId: string, orderId: string) => {
+  return `/stores/${storeId}/orders/${orderId}/shipping`;
+};
+
+export const updateShipping = async (
+  storeId: string,
+  orderId: string,
+  updateOrderShippingDto: UpdateOrderShippingDto,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OrderDetailResponseDto> => {
+  return customFetch<OrderDetailResponseDto>(
+    getUpdateShippingUrl(storeId, orderId),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateOrderShippingDto),
+    },
+  );
 };

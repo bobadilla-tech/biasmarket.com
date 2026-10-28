@@ -11,8 +11,8 @@
 import { PrismaClient } from '@biasmarket/db';
 import { PrismaPg } from '@prisma/adapter-pg';
 import {
-  MIN_INDEXABLE_PRODUCTS,
   isStoreIndexable,
+  MIN_INDEXABLE_PRODUCTS,
 } from '../src/common/store-indexability.js';
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
@@ -68,10 +68,12 @@ for (const s of stores) {
     continue;
   }
   if (ownerBanned) failOwnerBanned.push(s.slug);
-  if (s.publishedProductCount < MIN_INDEXABLE_PRODUCTS)
+  if (s.publishedProductCount < MIN_INDEXABLE_PRODUCTS) {
     failBelowProductBar.push(s.slug);
-  if (!s.bio?.trim() && !s.aboutMarkdown?.trim() && !hasRealTextBlockSection)
+  }
+  if (!s.bio?.trim() && !s.aboutMarkdown?.trim() && !hasRealTextBlockSection) {
     failNoProse.push(s.slug);
+  }
 }
 
 const total = stores.length;
@@ -97,8 +99,9 @@ if (fail > 0) {
     ...failBelowProductBar,
     ...failNoProse,
     ...failOwnerBanned,
-  ]))
+  ])) {
     console.log(`  ${slug}`);
+  }
 }
 
 await prisma.$disconnect();

@@ -47,7 +47,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
     captureException(exception);
 
     this.logger.error(
-      `Unhandled exception on ${request.method} ${scrubRequestUrl(request.url)}`,
+      `Unhandled exception on ${request.method} ${scrubRequestUrl(
+        request.url,
+      )}`,
       stringifyError(exception),
     );
 

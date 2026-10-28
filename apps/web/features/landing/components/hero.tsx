@@ -10,7 +10,7 @@ export function Hero() {
 
   return (
     <section className="mx-auto w-full max-w-[1346px] px-4 pt-6 pb-10 sm:px-10 sm:pt-[35px]">
-      <div className="grid items-center gap-8 overflow-hidden rounded-lg bg-hero-bg px-5 pt-8 pb-6 sm:px-10 sm:pt-12 lg:min-h-[525px] lg:grid-cols-2 lg:gap-16 lg:py-12 lg:pr-6 lg:pl-[70px]">
+      <div className="grid items-center gap-8 overflow-hidden rounded-2xl border border-white/80 bg-hero-bg px-5 pt-8 pb-6 shadow-[var(--shadow-soft)] transition-shadow duration-300 hover:shadow-[var(--shadow-raised)] sm:px-10 sm:pt-12 lg:min-h-[525px] lg:grid-cols-2 lg:gap-16 lg:py-12 lg:pr-6 lg:pl-[70px]">
         <div className="flex min-w-0 flex-col items-center gap-3 text-center sm:gap-4">
           <h1
             className="font-extrabold tracking-tight text-balance text-hero-title"
@@ -24,7 +24,7 @@ export function Hero() {
           >
             {t("title2")}
           </p>
-          <p className="max-w-[420px] text-base leading-snug font-light text-black sm:text-lg lg:text-xl">
+          <p className="max-w-[420px] text-base leading-snug font-light text-landing-ink sm:text-lg lg:text-xl">
             {t("subtitle")}
           </p>
           <Link

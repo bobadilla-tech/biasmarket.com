@@ -1,12 +1,12 @@
 import {
   createContext,
+  type PropsWithChildren,
   useCallback,
   useContext,
   useEffect,
   useMemo,
   useRef,
   useState,
-  type PropsWithChildren,
 } from "react";
 import { customerAuth } from "@biasmarket/types";
 import {
@@ -17,8 +17,8 @@ import {
 import {
   isCurrentMobileAuthorization,
   setMobileBearerToken,
-  setUnauthorizedHandler,
   setSessionRefreshHandler,
+  setUnauthorizedHandler,
 } from "./api-client.js";
 
 type SessionStatus = "loading" | "authenticated" | "unauthenticated";
@@ -85,31 +85,32 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
     [runStorageOperation],
   );
 
-
-
-  const refreshSessionToken = useCallback(async (authorization: string, token: string) => {
-    if (!isCurrentMobileAuthorization(authorization)) return;
-    const generation = sessionGeneration.current;
-    const refreshed = await runStorageOperation(async () => {
+  const refreshSessionToken = useCallback(
+    async (authorization: string, token: string) => {
+      if (!isCurrentMobileAuthorization(authorization)) return;
+      const generation = sessionGeneration.current;
+      const refreshed = await runStorageOperation(async () => {
+        if (
+          generation !== sessionGeneration.current ||
+          !isCurrentMobileAuthorization(authorization)
+        ) {
+          return false;
+        }
+        const session = await readBuyerSession();
+        if (!session) return false;
+        await writeBuyerSession({ ...session, token });
+        return true;
+      });
       if (
-        generation !== sessionGeneration.current ||
-        !isCurrentMobileAuthorization(authorization)
+        refreshed &&
+        generation === sessionGeneration.current &&
+        isCurrentMobileAuthorization(authorization)
       ) {
-        return false;
+        setMobileBearerToken(token);
       }
-      const session = await readBuyerSession();
-      if (!session) return false;
-      await writeBuyerSession({ ...session, token });
-      return true;
-    });
-    if (
-      refreshed &&
-      generation === sessionGeneration.current &&
-      isCurrentMobileAuthorization(authorization)
-    ) {
-      setMobileBearerToken(token);
-    }
-  }, [runStorageOperation]);
+    },
+    [runStorageOperation],
+  );
 
   useEffect(() => {
     const generation = ++sessionGeneration.current;

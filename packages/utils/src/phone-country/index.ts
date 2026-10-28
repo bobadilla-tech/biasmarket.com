@@ -88,8 +88,9 @@ export function normalizePhone(value: string): string {
   // unknown "0044…" does not collapse into a Peru number.
   if (digitsOnly.startsWith("00")) {
     const international = `+${digitsOnly.slice(2)}`;
-    if (countryForInternational(international))
+    if (countryForInternational(international)) {
       digitsOnly = digitsOnly.slice(2);
+    }
   }
   const { country, nationalNumber } = parsePhoneValue(`+${digitsOnly}`);
   return `${country.dialCode}${nationalNumber}`;
@@ -118,7 +119,11 @@ const NATIONAL_LENGTH: Record<string, { min: number; max: number }> = {
 };
 
 export type PhoneValidation =
-  { ok: true; phone: string } | { ok: false; message: string };
+  | { ok: true; phone: string }
+  | {
+      ok: false;
+      message: string;
+    };
 
 const PHONE_CHARACTERS = /^[0-9+()\-.\s]*$/;
 
@@ -169,6 +174,20 @@ export function validatePhone(value: string): PhoneValidation {
   return { ok: true, phone };
 }
 
+// Human-readable grouping for confirming a number: +51987654321 becomes
+// "+51 987 654 321". Groups of three from the left; a lone trailing digit
+// joins the previous group instead of standing alone ("+52 123 456 7890").
+export function formatPhone(phone: string): string {
+  const normalized = normalizePhone(phone);
+  const { country, nationalNumber } = parsePhoneValue(normalized);
+  const groups = nationalNumber.match(/\d{1,3}/g) ?? [];
+  if (groups.length > 1 && groups[groups.length - 1]!.length === 1) {
+    const last = groups.pop()!;
+    groups[groups.length - 1] += last;
+  }
+  return [country.dialCode, ...groups].join(" ");
+}
+
 // Shows the dial code, the first national digit, and the last three digits.
 // A Peru mobile +51987654321 becomes "+51 9** *** 321".
 export function maskPhone(phone: string): string {
@@ -197,8 +216,7 @@ export function maskPhone(phone: string): string {
   }
   if (rest) groups.unshift(rest);
 
-  return `${country.dialCode} ${first}${groups[0]} ${groups.slice(1).join(" ")} ${last}`.replace(
-    /\s+/g,
-    " ",
-  );
+  return `${country.dialCode} ${first}${groups[0]} ${groups
+    .slice(1)
+    .join(" ")} ${last}`.replace(/\s+/g, " ");
 }
