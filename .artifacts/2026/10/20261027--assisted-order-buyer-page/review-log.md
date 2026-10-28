@@ -216,3 +216,24 @@ Round 8 had important findings: clean-round counter stays 0.
 | 123 | P    | confirmed    | Token rotation keys the first-open stamp by presented hash; Sentry regex covers casing/query/hash; API scrub gap (headers/breadcrumbs) is low risk; seller UI never leaks `accessUrl`                                                 |                                                           | none        | -                                                                                    |
 
 Round 9 had important findings: clean-round counter stays 0.
+
+## Round 10 (fresh eyes on plan v10) - latest-edit check (L), implementer simulation of PR4/PR1 (I)
+
+| #   | Lens | Sev          | Finding                                                                                                                                                                           | Evidence                                            | Decision | Plan change (v11) |
+| --- | ---- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- | -------- | ----------------- |
+| 124 | L    | important    | `PaymentMethodDetails` prop is the full config DTO; widening must be mandatory (and checkout tests run)                                                                           | prop type vs public DTO element                     | fix      | 4.2               |
+| 125 | L    | important    | Amount line: `depositPercent` is the store config, not the order's adelanto; show "o el total" only when `requiredAmount < totalAmount`; PARTIALLY_PAID shows `pendingAmount`     | `ASSISTED_PICKUP_DEPOSIT_PERCENT`=30                | fix      | 4.2               |
+| 126 | L    | non-blocking | `decodeURIComponent` can throw; synthetic error must map to `invalid`; CANCELLED = `status` or `paymentStatus`; legend Q11; epic #253 already closed; duplicated fragment         |                                                     | fix      | applied           |
+| 127 | I    | important    | PR4: how to validate the NEW host file (docker cp + validate inside the running container so the absolute `import` resolves)                                                      |                                                     | fix      | 4.3               |
+| 128 | I    | important    | PR4: `caddy adapt` is offline (file content only); live config via admin API `:2019/config/`                                                                                      |                                                     | fix      | 4.3               |
+| 129 | I    | important    | PR4: no pure-reload path with a single-file mount; the directory-mount alternative needs caddy.sh changes: dropped; every Caddyfile-changing deploy recreates Caddy               |                                                     | fix      | 4.3               |
+| 130 | I    | important    | PR1: use typed `updateMany` for the guarded updates instead of raw `RETURNING` (the row would not be a `BuyerAccount`)                                                            | `sendVerificationEmail` takes a full `BuyerAccount` | fix      | 4.4               |
+| 131 | I    | important    | PR1: the unit spec needs a rewrite (assertions on create/upsert/update, `$transaction`, `$executeRaw` mocks); customer step inserts `(id, storeId, phone)` then updates           | `customer-account.service.spec.ts`                  | fix      | 4.4               |
+| 132 | L+I  | confirmed    | `PaymentMethodDetails`, `ContactSellerButton`, `FulfillmentTimeline` are safe on a tokenised page; `compose()` is a pass-through; `IMAGE_TAG` exported before the insertion point |                                                     | none     | -                 |
+
+**Review state at the end of the session: the exit criterion (two consecutive
+rounds with no blocking or important findings) was NOT met.** Rounds 1-10 each
+produced important findings; severities moved from design (round 1-3) to
+implementation detail (rounds 8-10: typing, test mechanics, deploy-script
+mechanics). Remaining uncertainty is listed in the final reply and in plan.md
+section 8.

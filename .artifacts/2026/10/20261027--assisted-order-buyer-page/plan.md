@@ -1,7 +1,8 @@
 # Plan: Pedido asistido, buyer page (#268) and leftovers
 
-Status: draft v10 (rounds 1-9 findings applied; see review-log.md for review
-state)
+Status: v11, ready for implementation WITH CAVEATS (rounds 1-10 findings
+applied; the "two consecutive clean rounds" bar was NOT met, see review-log.md;
+see review-log.md for review state)
 
 Date: 2026-10-28. Planned against `origin/main` @ `d88be078` (includes #343,
 #345, #347, #321, #344). Re-check `git log origin/main` before starting; main
@@ -12,8 +13,8 @@ Written for: the implementation session (a fresh agent), not the user.
 Legend: PR names are PR1, PR-S, PR4, PR-A, PR3, PR5, PR6 (no PR2: it was folded
 into PR-A/PR3). Section 5 is **merge order**; section 6 is **build order**. "E1"
 = issue #279 (security review); "D3"/"F2" = issues #276/#278; "D-12" = the wiki
-decision for the route; open questions Q1-Q8 and Q10 are in section 10 (Q9 was
-resolved by main).
+decision for the route; open questions Q1-Q8, Q10 and Q11 are in section 10 (Q9
+was resolved by main).
 
 ## 0. Hard rules (CLAUDE.md, restated)
 
@@ -87,7 +88,7 @@ Facts verified on `origin/main` (not trusted from the handoff):
   `BuyerAccount`, and `GET /stores/:storeId/customers/lookup`). The handoff's
   "post the leftovers map and close #258" is moot; nothing is posted. The only
   remnant is a possible missing store-isolation e2e for the lookup, which PR5
-  adds only if absent (check first). Epic #253 stays open.
+  adds only if absent (check first). Epic #253 is already closed (2026-10-28).
 - Open issues: #268, #333, #337, #336, #339, #340, #269-#271 (#334 closed by
   #343).
 - **#321** (`ContactSellerButton` gained `label`/`message`/`icon` props, the
@@ -305,10 +306,12 @@ follow: false }`, `referrer: "no-referrer"`, generic
     showing the order after the seller rotates the link); on a 404 call
     `queryClient.removeQueries`; any refetch error (404/429/500) hides the order
     and shows the matching state. Do the slug check inside `queryFn` (compare
-    `decodeURIComponent(params.slug).toLowerCase()` with `dto.store.slug`) and
-    throw a synthetic invalid error, so mismatched data never enters the cache.
-    Test: first fetch 200, then a focus refetch returns a real `ApiError` 404:
-    the DOM shows the invalid state and none of the order text. Classify by
+    `decodeURIComponent(params.slug).toLowerCase()` with `dto.store.slug`; wrap
+    the decode in try/catch: a malformed `%` throws `URIError`, treat it as a
+    mismatch) and throw a synthetic invalid error (the classifier must map it to
+    `invalid`, it is not an `ApiError`), so mismatched data never enters the
+    cache. Test: first fetch 200, then a focus refetch returns a real `ApiError`
+    404: the DOM shows the invalid state and none of the order text. Classify by
     `error instanceof ApiError`: status 404 -> `invalid`, 429 -> `rateLimited`
     (status only, never the message), anything else (incl. 500 from a failed
     first-open stamp, network errors) -> `error` with retry and copy that does
@@ -353,23 +356,31 @@ follow: false }`, `referrer: "no-referrer"`, generic
     known keys only (`bankName`, `accountNumber`, `accountHolder`,
     `accountType`, `phoneNumber`, `qrImageUrl`) as inert text, a copy button,
     the QR through `next/image` (restricted `remotePatterns`) and a "not
-    configured" banner; unknown keys are never rendered. If its prop type needs
-    more than `method`/`details`, widen it to
-    `Pick<PaymentMethodConfigResponseDto,
-    "method" | "details">` (tiny
-    change). `paymentInstructions` goes in `whitespace-pre-wrap` plain text, no
-    markdown, no linkify. Amount line: "adelanto S/X (o el total S/Y)" from
-    `requiredAmount`/`totalAmount`. If no configured methods and no
-    instructions: "La tienda aun no configuro metodos de pago, escribele".
-    Include a second `ContactSellerButton` here with `message` = "Hola, ya pague
-    el pedido #XXXX" (order ref only): upload (#269) is out of scope, so "I
-    paid, here is my proof" goes through WhatsApp. A `REJECTED` payment row also
-    shows a one-line "escribele a la tienda".
+    configured" banner; unknown keys are never rendered. Its prop type is
+    `method: PaymentMethodConfigResponseDto` (also `id`, `storeId`, `enabled`,
+    `createdAt`) but the public DTO element has only `method`, `depositPercent`,
+    `details`: **widen it** to
+    `Pick<PaymentMethodConfigResponseDto, "method" | "details">` (checkout still
+    passes a full DTO, which satisfies the Pick) and run the checkout tests
+    since the change touches a checkout file. `paymentInstructions` goes in
+    `whitespace-pre-wrap` plain text, no markdown, no linkify. Amount line from
+    `requiredAmount`/`totalAmount`/`pendingAmount`, **never from
+    `depositPercent`** (that is the store's per-method config, not the order's
+    adelanto; assisted orders use 30 % fixed at creation): show "adelanto S/X (o
+    el total S/Y)" only when `requiredAmount < totalAmount`, otherwise just
+    "Total S/Y"; for PARTIALLY_PAID show `pendingAmount` as the amount due. If
+    no configured methods and no instructions: "La tienda aun no configuro
+    metodos de pago, escribele". Include a second `ContactSellerButton` here
+    with `message` = "Hola, ya pague el pedido #XXXX" (order ref only): upload
+    (#269) is out of scope, so "I paid, here is my proof" goes through WhatsApp.
+    A `REJECTED` payment row also shows a one-line "escribele a la tienda".
   - Status matrix (one banner string per state, es/en): PENDING_PAYMENT,
     PARTIALLY_PAID, PAYMENT_SUBMITTED ("en revision"), VERIFIED, REJECTED,
-    CANCELLED (also covers expired), plus fulfillment READY and COMPLETED.
-    `FulfillmentTimeline` is hidden for CANCELLED (it always shows "received"
-    with a green check); for unpaid orders it is shown (accepted).
+    CANCELLED (`status` or `paymentStatus` CANCELLED, which also covers expired;
+    the same predicate hides `FulfillmentTimeline` and the banner), plus
+    fulfillment READY and COMPLETED. `FulfillmentTimeline` is hidden for
+    CANCELLED (it always shows "received" with a green check); for unpaid orders
+    it is shown (accepted).
   - Contact: `<ContactSellerButton slug message=... label=... />` with `message`
     = "Hola, el pedido #XXXX no es para mi numero" (**only the order ref, never
     the page URL or token**; the order number comes from `dto.orderNumber`, so
@@ -491,29 +502,50 @@ Desktop (macOS resolves by path). Step 1 of section 6 reproduces it on a Linux
 runner first; if nobody can provide one, ship the guard anyway (it is a no-op
 when the hashes match) and mark the evidence as unverified. #343's
 `trusted_proxies` change merged on 2026-10-28 and may therefore not be live
-(Q10). PR4 adds to `infra/vps/deploy.sh`, in `cmd_deploy` right after
-`assert_production_topology` (under the deploy lock, before migrations,
-candidate start and any `active/*.caddy` write; **never inside the canary window
-or `cmd_rollback`**, where a Caddy restart would drop in-flight traffic and
-break the `compose exec` calls under `set -e`): compare `sha256sum` of the host
-Caddyfile with the file in the container (`compose exec -T caddy
-sha256sum`,
-written as `if ! ...; then die`), `caddy validate` the new file, and only if the
-hashes differ run `compose up -d --no-deps --force-recreate caddy` (1-5 s on
-80/443; named volumes keep certificates; never `down -v`), then re-run the
-topology check. Post-deploy:
-`compose exec -T caddy caddy adapt
---config /etc/caddy/Caddyfile` must contain
-the filter (match the stable substring `request>uri`, retry up to 3 times, treat
-an unreachable admin API as a warning when the hashes match). Alternative: move
-the file to `infra/vps/caddy/Caddyfile` and mount the directory (a one-time
-recreate is still needed); keep the hash guard as a backstop. This changes
-production deploy tooling: needs the supervised path in `docs/core/deploy.md`
-and the user's explicit approval before merge and deploy (Q10). No tests exist
-for `infra/vps` scripts: paste `caddy validate`/`adapt` output and the probe
-logs in the PR body and shellcheck the changed scripts; hosted CI for an
-`infra/**`-only PR runs nothing meaningful. Do not edit `caddy.sh`'s generated
-`active/*.caddy` logic. Rollback: revert + a supervised deploy.
+(Q10). PR4 adds a helper `ensure_caddyfile_current` to `infra/vps/lib/caddy.sh`
+(next to `reload_caddy`; do not change `reload_caddy` or the generated
+`active/*.caddy` functions) and calls it in `cmd_deploy` on the line after
+`assert_production_topology` (~deploy.sh:214; under the deploy lock, before
+`run_migration_phase`, candidate start and any `active/*.caddy` write; **never
+inside the canary window or `cmd_rollback`**, where a Caddy restart would drop
+in-flight traffic and break the `compose exec` calls under `set -e`), followed
+by a second `assert_production_topology` and a `phase "caddyfile_current"`. The
+helper: hash the host file (`sha256sum "$ROOT_DIR/Caddyfile"`; `ROOT_DIR` is the
+directory `docker-compose.yml` mounts from, and cd.yml's rsync has already run)
+and the container file (`compose exec -T caddy sha256sum /etc/caddy/Caddyfile`,
+written `if ! ...; then die`); if equal, return. If different, **validate the
+NEW host file**: validating `/etc/caddy/Caddyfile` in the container would check
+the stale file, and a bare `docker run` with only the Caddyfile fails on its
+absolute `import /etc/caddy/active/*.caddy`; so
+`docker cp "$ROOT_DIR/Caddyfile"
+"$cid:/tmp/Caddyfile.new"` (`cid` from the
+compose container lookup) and
+`compose
+exec -T caddy caddy validate --config /tmp/Caddyfile.new --adapter caddyfile`,
+`die` on failure before any recreate. Then
+`compose up -d --no-deps --force-recreate caddy` (1-5 s on 80/443; named volumes
+keep certificates; never `down -v`; every deploy that changes the Caddyfile now
+recreates Caddy: say so in the PR body and `docs/core/deploy.md`; do not reload
+instead, a reload would read the stale inode). There is no directory-mount
+alternative in this PR (it would need `reload_caddy`'s hard-coded path and a
+`command:` override, i.e. caddy.sh changes, and `deploy.sh` never runs `up` for
+caddy anyway). Post-deploy checks, each with its limit:
+`compose exec -T caddy caddy adapt --config /etc/caddy/Caddyfile | grep -F
+'request>uri'`
+proves only the file content (adapt is offline); the live config is
+`compose exec -T caddy wget -qO- http://localhost:2019/config/ | grep -F
+'request>uri'`
+(port 2019 is already required by `reload_caddy`; retry 3 times; on failure warn
+when the hashes match). Supervised deploy per `docs/core/deploy.md`
+(`sudo -iu deploy bash -lc 'cd /home/deploy/biasmarket && ./deploy.sh <sha>'`):
+first the read-only pre-check from Q10, afterwards `docker compose logs caddy`
+and the live check. This changes production deploy tooling: it needs the user's
+explicit approval before merge and deploy (Q10). There is no dry-run flag, no
+test harness and no shellcheck in CI for `infra/vps`: run `shellcheck -x`
+locally, and paste `caddy
+validate`/`adapt` output and the probe logs in the PR
+body; hosted CI for an `infra/**`-only PR runs nothing meaningful. Rollback:
+revert + a supervised deploy.
 
 ### 4.4 PR1: checkout race (`Closes #333`)
 
@@ -564,20 +596,20 @@ Five writers of `BuyerAccount.phone` / link / Customer, plus
    branch logic on the found row**.
 2. The Google-session attach `buyerAccount.update({ data: { phone } })`
    (`~:129-148`): runs under the advisory lock, **and** is guarded on its own
-   row:
-   `UPDATE "BuyerAccount" SET phone = ..., name = COALESCE(name, ...) WHERE id = ...
-AND phone IS NULL RETURNING *`;
-   0 rows (the session lost the attach) -> return the **guest result**
-   `{ customer: null, buyerAccount: null, needsVerificationEmail: false }`;
-   never fall through to the create path (the account now holds the other phone,
-   so `phoneLessOwner` would miss it and a second BuyerAccount with the same
-   email would be minted: `BuyerAccount.email` is not unique). `RETURNING *` via
-   `$queryRaw` is untyped: select the columns the branch code reads
-   (`id, phone, email, name,
-   emailVerified, passwordVersion, pendingPhone`)
-   and map them to that shape. Needed because the same Google session posting
-   two checkouts with phones P and Q takes two different advisory locks and
-   would otherwise lose an update (probed: final phone P while Q's order is
+   row with typed Prisma (no raw `RETURNING`, which would yield an untyped
+   partial row that `sendVerificationEmail` cannot take):
+   `const { count } = await
+   tx.buyerAccount.updateMany({ where: { id: own.id, phone: null }, data: { phone:
+   normalizedPhone, name: own.name ?? name } })`;
+   `count === 0` (the session lost the attach) -> return the **guest result**
+   `{ customer: null, buyerAccount: null,
+   needsVerificationEmail: false }`;
+   otherwise `findUniqueOrThrow` for the typed row. Never fall through to the
+   create path (the account now holds the other phone, so `phoneLessOwner` would
+   miss it and a second BuyerAccount with the same email would be minted:
+   `BuyerAccount.email` is not unique). Needed because the same Google session
+   posting two checkouts with phones P and Q takes two different advisory locks
+   and would otherwise lose an update (probed: final phone P while Q's order is
    linked to the account). Lock order inside the step is always advisory lock
    first, then the row; never the reverse.
 3. `customerStoreLink.upsert` (`:190-196`):
@@ -593,9 +625,30 @@ NOTHING`, `findUnique`, one
 5. The `change-phone` confirm (`customer-account.service.ts:~387-405`:
    `findUnique` then `buyerAccount.update({ phone })`, outside the checkout tx):
    wrap in `$transaction`, take the same advisory lock for the new phone,
-   re-check, then update guarded by `AND "pendingPhone" IS NOT NULL` (a
-   double-clicked confirm must not misapply); a conflict still maps to the
-   existing 409.
+   re-check, then update with
+   `tx.buyerAccount.updateMany({ where: { id, pendingPhone: { not: null } }, data: { phone, pendingPhone: null } })`
+   and check `count` (a double-clicked confirm must not misapply); a conflict
+   still maps to the existing 409.
+
+Typing: `tx` is `Prisma.TransactionClient | PrismaService`; both expose
+`$executeRaw`/`$queryRaw`. Keep the return shape
+`{ customer, buyerAccount, needsVerificationEmail }` so
+`create-order.usecase.ts` and its spec need no change. For the Customer step
+insert only `(id, storeId, phone)` as `assisted-customer.ts` does and keep the
+unconditional `customer.update({ email, name, emailVerified })`; do not extend
+`upsertAssistedCustomer`'s signature (it would touch the assisted flow). Run
+`tsc` early. The unit spec `customer-account.service.spec.ts` needs a rewrite,
+not just additions: today's assertions on `buyerAccount.create`,
+`customerStoreLink.upsert`, `customer.create` and the Google-attach
+`buyerAccount.update` fail after the restructure; the mock needs
+`$executeRaw: vi.fn().mockResolvedValue(1)`, `buyerAccount.updateMany`,
+`buyerAccount.findUniqueOrThrow`, `customer.updateMany`, and
+`$transaction: vi.fn(async (fn) => fn(prisma))` for the `confirmAccount` tests;
+`mockResolvedValueOnce` chains must be rebuilt because the `findUnique` sequence
+gains a re-find. "Every raw statement includes `storeId`" is testable:
+`$executeRaw` receives `(strings, ...values)`, assert `strings.join('?')`
+contains `"storeId"` and `values` contains the store id (as the
+assisted-customer spec does).
 
 Raw SQL gotchas (probed against the DB): `BuyerAccount`, `Customer` and
 `CustomerStoreLink` have no `updatedAt`/`role` columns and no id default;
@@ -687,7 +740,7 @@ in another store does not affect the result.
 #258 was closed by another account on 2026-10-27 (see section 1); do not post
 anything. In PR5, grep `apps/api/test/*.e2e-spec.ts` and the lookup unit specs
 for a cross-store isolation case on `customers/lookup`; add the e2e only if none
-exists. Epic #253 stays open until the buyer side lands.
+exists. Epic #253 is already closed (2026-10-28); nothing to do.
 
 ## 5. PR stack (no stacked branches; every PR targets `main`)
 
@@ -781,12 +834,12 @@ rather than trust them.
    unit/component tests, `pnpm --filter
    @biasmarket/types test` (mutator,
    plus an assertion that the default stays `include`), mobile `lint` and
-   `typecheck`, lint, typecheck, `next build`; the `next
-   start` header curl
-   block green in `scripts/ci/web-e2e.sh` (it runs in the `web-e2e` job, gated
-   on `detect-changes` output `web_e2e`, `ci.yml:~1046`; confirm the filter near
-   `ci.yml:~173` covers `apps/web/**` and the script so a web-only PR triggers
-   it); Playwright invalid-state spec (reuse the seeded slug
+   `typecheck`, web `lint`, `typecheck`, `next build`; the `next
+   start`
+   header curl block green in `scripts/ci/web-e2e.sh` (it runs in the `web-e2e`
+   job, gated on `detect-changes` output `web_e2e`, `ci.yml:~1046`; confirm the
+   filter near `ci.yml:~173` covers `apps/web/**` and the script so a web-only
+   PR triggers it); Playwright invalid-state spec (reuse the seeded slug
    `demo-tienda-de-camila` via `WEB_E2E_STORE_SLUG`; the API is up on :3000 in
    that job, so the 404 assertion is real); manual: seed a real assisted order
    (reuse the assisted-order e2e seed or `/run`), open the page URL with `curl`
@@ -1043,12 +1096,10 @@ environmental), `pnpm --filter web test`, `pnpm --filter web test:e2e`,
   or rollback: compare the host and container Caddyfile hash, `caddy validate`
   the new file, then `compose up -d --no-deps --force-recreate caddy` only if
   they differ, a 1-5 s blip on 80/443; named volumes `caddy_data`/`caddy_config`
-  keep the certificates). Alternative: move the file to
-  `infra/vps/caddy/Caddyfile` and mount the directory (needs a one-time recreate
-  anyway, so keep the hash guard as a backstop). Default: implement the guard;
-  **do not merge or deploy PR4 without the user's explicit approval** (deploy is
-  supervised per `docs/core/deploy.md`). No existing tests cover `infra/vps`
-  scripts: do not imply they do.
+  keep the certificates). Default: implement the guard; **do not merge or deploy
+  PR4 without the user's explicit approval** (deploy is supervised per
+  `docs/core/deploy.md`). No existing tests cover `infra/vps` scripts: do not
+  imply they do.
 - **Q11** Keep `deliveryDetails.line1` and `reference` (street line and
   reference) in the public DTO? Default: keep (the roadmap's C1 requires "su
   dirección si la ingresó" and #262 allow-listed it); the alternative is to drop
