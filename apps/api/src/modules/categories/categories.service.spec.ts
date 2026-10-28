@@ -103,6 +103,21 @@ describe('CategoriesService', () => {
       });
     });
 
+    it('uses a fallback slug when the category name has no latin characters', async () => {
+      prisma.category.create.mockResolvedValue({ id: categoryId });
+
+      await service.create(storeId, ownerId, { name: '🎨' });
+
+      expect(prisma.category.create).toHaveBeenCalledWith({
+        data: {
+          name: '🎨',
+          parentId: undefined,
+          storeId,
+          slug: 'categoria',
+        },
+      });
+    });
+
     it('increments the slug suffix until it finds an unused category slug', async () => {
       prisma.category.findMany.mockResolvedValue([
         { slug: 'photocards' },
