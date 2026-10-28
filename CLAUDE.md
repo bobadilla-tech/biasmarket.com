@@ -128,12 +128,12 @@ Flat NestJS `controller/service/dto` per module for most of
 `products`, `restock`, `stats`, `store-sections`, `stores`, `users`, and
 `whatsapp-templates`). The buyer-facing `global-account.controller.ts` lives
 inside `customer-auth`: it handles global buyer identity, while the neighboring
-customer-auth controller handles per-store buyer sessions.
-`orders` is the one module using the DDD-lite layering
-(`domain/application/infrastructure`) described in `docs/core/architecture.md` —
-it owns the payment/fulfillment state machine, which warranted the extra
-structure. Don't apply that layering to CRUD-style modules, and don't retrofit
-it onto existing flat modules unless asked.
+customer-auth controller handles per-store buyer sessions. `orders` is the one
+module using the DDD-lite layering (`domain/application/infrastructure`)
+described in `docs/core/architecture.md` — it owns the payment/fulfillment state
+machine, which warranted the extra structure. Don't apply that layering to
+CRUD-style modules, and don't retrofit it onto existing flat modules unless
+asked.
 
 - `main.ts`: global
   `ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })`, global
@@ -169,8 +169,8 @@ features.
 
 Core models: `User`, `Store`, `Product`, `ProductVariant`, `Category`,
 `Collection`, `StoreSection`, `Order`, `OrderItem`, `OrderPayment`,
-`PaymentMethodConfig`, `DeliveryMethodConfig`, `PickupPoint`,
-`Customer`, `ContactInquiry`, `Notification`, `AuditLog`, plus better-auth's
+`PaymentMethodConfig`, `DeliveryMethodConfig`, `PickupPoint`, `Customer`,
+`ContactInquiry`, `Notification`, `AuditLog`, plus better-auth's
 `Session`/`Account`/`Verification`. Money fields are `Decimal`, never `Float`.
 
 `Order` implements the state machine from `docs/core/security-payments.md` §9:
@@ -196,9 +196,9 @@ checks against `Store.ownerId`), not global middleware. Slug strategy is
 ### Deployment
 
 Single Contabo Cloud VPS (x86_64, provisioned with Terraform from
-`infra/terraform/`), blue/green containers for `api`, `web`, and `workers`,
-plus shared `db`, `redis`, `minio`, `uptime-kuma`, and `caddy` (S3-compatible
-object storage — product/logo/payment-proof images, see
+`infra/terraform/`), blue/green containers for `api`, `web`, and `workers`, plus
+shared `db`, `redis`, `minio`, `uptime-kuma`, and `caddy` (S3-compatible object
+storage — product/logo/payment-proof images, see
 `apps/api/src/storage/storage.service.ts`). Production definitions live in
 `infra/vps/docker-compose.yml`; Caddy does TLS termination for `biasmarket.com`,
 `api.biasmarket.com`, `cdn.biasmarket.com`, and `status.biasmarket.com`.
@@ -213,7 +213,9 @@ automatically on container boot. Full runbook: `docs/core/deploy.md`.
   manual payment flow state machine (implemented — see the Database section
   above for where)
 - `docs/core/product.md`, `docs/core/roadmap.md`, `docs/core/i18n.md`
-- `.artifacts/` — historical plans, audits, handoff prompts, implementation logs, and other work records; read `.artifacts/README.md` and `.artifacts/AGENTS.md`
+- `.artifacts/` — historical plans, audits, handoff prompts, implementation
+  logs, and other work records; read `.artifacts/README.md` and
+  `.artifacts/AGENTS.md`
 - `apps/web/AGENTS.md` — flags that the installed Next.js version has breaking
   changes vs. training data; check `node_modules/next/dist/docs/` before writing
   Next.js code

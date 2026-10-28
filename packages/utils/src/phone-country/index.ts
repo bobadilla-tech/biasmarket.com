@@ -88,8 +88,9 @@ export function normalizePhone(value: string): string {
   // unknown "0044…" does not collapse into a Peru number.
   if (digitsOnly.startsWith("00")) {
     const international = `+${digitsOnly.slice(2)}`;
-    if (countryForInternational(international))
+    if (countryForInternational(international)) {
       digitsOnly = digitsOnly.slice(2);
+    }
   }
   const { country, nationalNumber } = parsePhoneValue(`+${digitsOnly}`);
   return `${country.dialCode}${nationalNumber}`;
@@ -118,7 +119,11 @@ const NATIONAL_LENGTH: Record<string, { min: number; max: number }> = {
 };
 
 export type PhoneValidation =
-  { ok: true; phone: string } | { ok: false; message: string };
+  | { ok: true; phone: string }
+  | {
+      ok: false;
+      message: string;
+    };
 
 const PHONE_CHARACTERS = /^[0-9+()\-.\s]*$/;
 
@@ -211,8 +216,7 @@ export function maskPhone(phone: string): string {
   }
   if (rest) groups.unshift(rest);
 
-  return `${country.dialCode} ${first}${groups[0]} ${groups.slice(1).join(" ")} ${last}`.replace(
-    /\s+/g,
-    " ",
-  );
+  return `${country.dialCode} ${first}${groups[0]} ${groups
+    .slice(1)
+    .join(" ")} ${last}`.replace(/\s+/g, " ");
 }

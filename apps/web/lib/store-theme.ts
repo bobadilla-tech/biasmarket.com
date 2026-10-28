@@ -84,8 +84,9 @@ function readableTextColor(hex: string) {
         Math.round(g * ratio),
         Math.round(b * ratio),
       ) >= 4.5
-    )
+    ) {
       return candidate;
+    }
   }
 
   return darken(hex, 0.8);

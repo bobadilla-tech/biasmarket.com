@@ -21,7 +21,9 @@ describe('seller email verification auto sign-in (e2e)', () => {
   const runId = randomUUID();
   const sellerEmail = `sev-e2e-${runId}@example.com`;
   const password = 'correcthorsebatterystaple';
-  const callbackURL = `${process.env.WEB_URL ?? 'http://localhost:3001'}/en/verify-email`;
+  const callbackURL = `${
+    process.env.WEB_URL ?? 'http://localhost:3001'
+  }/en/verify-email`;
 
   function sessionCookie(res: request.Response): string | undefined {
     const setCookie = res.headers['set-cookie'] as unknown as

@@ -89,8 +89,9 @@ export function isAllowedStoreImageSrc(
   if (url.protocol === "https:" && url.host === CDN_HOST) return true;
   // Also accept the hard-coded production host even if CDN_URL is overridden,
   // so committed seller content keeps resolving across env changes.
-  if (url.protocol === "https:" && url.host === "cdn.biasmarket.com")
+  if (url.protocol === "https:" && url.host === "cdn.biasmarket.com") {
     return true;
+  }
   if (
     process.env.NODE_ENV !== "production" &&
     (url.protocol === "http:" || url.protocol === "https:") &&

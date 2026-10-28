@@ -1,12 +1,12 @@
 import {
   addCartItem,
   cartCount as countCartItems,
+  type CartItem,
+  type CartItemIdentity,
   cartTotal,
   hasMixedCurrencies,
   removeCartItem,
   updateCartItemQuantity,
-  type CartItem,
-  type CartItemIdentity,
 } from "@biasmarket/utils/cart";
 
 export type { CartItem } from "@biasmarket/utils/cart";

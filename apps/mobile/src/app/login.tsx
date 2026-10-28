@@ -1,12 +1,12 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
-import { useForm, Controller } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { z } from "zod";
 import {
-  customerLoginSchema,
   type CustomerLoginInput,
+  customerLoginSchema,
 } from "@biasmarket/validation";
 import { useBuyerSession } from "../features/auth/session-context.js";
 import { useMobileI18n } from "../i18n/mobile-i18n.js";
@@ -15,7 +15,9 @@ export default function LoginScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ slug?: string; notice?: string }>();
   const initialSlug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
-  const notice = Array.isArray(params.notice) ? params.notice[0] : params.notice;
+  const notice = Array.isArray(params.notice)
+    ? params.notice[0]
+    : params.notice;
   const { t } = useMobileI18n();
   const { signIn, error: sessionError } = useBuyerSession();
   const [error, setError] = useState<string | null>(null);
@@ -51,9 +53,14 @@ export default function LoginScreen() {
       <Text className="text-sm text-white/80">
         {t("auth.loginAccountDescription")}
       </Text>
-      {notice === "registration-complete" || notice === "account-already-registered" ? (
+      {notice === "registration-complete" ||
+      notice === "account-already-registered" ? (
         <Text accessibilityRole="alert" className="text-sm text-emerald-200">
-          {t(notice === "registration-complete" ? "auth.registrationComplete" : "auth.accountAlreadyRegistered")}
+          {t(
+            notice === "registration-complete"
+              ? "auth.registrationComplete"
+              : "auth.accountAlreadyRegistered",
+          )}
         </Text>
       ) : null}
       <LoginField
