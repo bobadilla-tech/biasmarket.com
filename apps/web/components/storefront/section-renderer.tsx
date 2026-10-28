@@ -381,6 +381,36 @@ export function StoreSectionRenderer({
       >
         {catalogControls ? (
           <div className="space-y-5">
+            {categories.length > 0 && (
+              <nav
+                aria-label={t("categories")}
+                className="flex gap-7 overflow-x-auto border-b border-(--store-border)"
+              >
+                <button
+                  type="button"
+                  aria-pressed={categoryIds.length === 0}
+                  onClick={() => updateCategories([])}
+                  className={`min-h-11 shrink-0 border-b-2 px-1 py-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) ${categoryIds.length === 0 ? "border-(--store-primary) text-(--store-primary)" : "border-transparent text-(--store-muted) hover:text-(--store-text)"}`}
+                >
+                  {t("productsTab")}
+                </button>
+                {categories.map((category) => {
+                  const id = category.slug ?? category.id;
+                  const active = categoryIds.includes(id);
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => updateCategories(active ? [] : [id])}
+                      className={`min-h-11 shrink-0 border-b-2 px-1 py-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) ${active ? "border-(--store-primary) text-(--store-primary)" : "border-transparent text-(--store-muted) hover:text-(--store-text)"}`}
+                    >
+                      {category.name}
+                    </button>
+                  );
+                })}
+              </nav>
+            )}
             <StoreSearchBar
               value={query}
               onChange={setQuery}
