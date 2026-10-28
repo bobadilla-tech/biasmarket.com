@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -19,6 +20,7 @@ import {
 } from '@thallesp/nestjs-better-auth';
 import type { UserSession } from '@thallesp/nestjs-better-auth';
 import {
+  ApiBody,
   ApiConsumes,
   ApiHeader,
   ApiOkResponse,
@@ -34,13 +36,22 @@ import { parsePublicListQuery } from '../../common/public-list-query.js';
 import { toStoreDto } from './stores.mapper.js';
 import { SitemapInternalTokenGuard } from './sitemap-internal-token.guard.js';
 import { parseSitemapPagination } from './sitemap-pagination.js';
+import { parseStoreCatalogQuery } from './store-catalog-query.js';
 import {
   SitemapStoreCountDto,
   SitemapStorePageDto,
 } from './dto/sitemap-response.dto.js';
+import {
+  PublicCategoryResponseDto,
+  StoreCatalogResponseDto,
+  StorePublicDetailResponseDto,
+} from './dto/store-response.dto.js';
+import {
+  StorefrontCatalogRequestDto,
+  StorefrontRequestDto,
+} from './dto/storefront-request.dto.js';
 import type {
   FeaturedStoreResponseDto,
-  PublicCategoryResponseDto,
   PublicCollectionListingResponseDto,
   PublicProductPageResponseDto,
   PublicProductVariantResponseDto,
@@ -48,9 +59,8 @@ import type {
   PublicStoreListingResponseDto,
   SectionCollectionProductResponseDto,
   SectionCollectionResponseDto,
-  StoreContentImageResponseDto,
   StoreDirectoryResponseDto,
-  StorePublicDetailResponseDto,
+  StoreContentImageResponseDto,
   StoreResponseDto,
   StoreSectionWithCollectionResponseDto,
   StoreWithOwnerResponseDto,
@@ -73,6 +83,24 @@ const STORE_CONTENT_IMAGE_PIPE = new UploadedFileValidationPipe({
 const STORE_HEADER_IMAGE_PIPE = new UploadedFileValidationPipe({
   allowedMimeTypes: IMAGE_UPLOAD_MIME_TYPES,
 });
+
+function readCatalogQueryValue(
+  query: Record<string, unknown>,
+  key: string,
+  allowRepeated = false,
+): string | string[] | undefined {
+  const value = query[key];
+  if (value === undefined) return undefined;
+  if (typeof value === 'string') return value;
+  if (
+    allowRepeated &&
+    Array.isArray(value) &&
+    value.every((item): item is string => typeof item === 'string')
+  ) {
+    return value;
+  }
+  throw new BadRequestException(`${key} inválido`);
+}
 
 interface VariantRow {
   id: string;
@@ -101,7 +129,7 @@ interface PublicProductRow {
   deletedAt: Date | null;
   createdAt: Date;
   variants: VariantRow[];
-  categories: { category: { id: string; name: string } }[];
+  categories: { category: { id: string; name: string; slug: string } }[];
 }
 
 interface SectionRow {
@@ -306,6 +334,60 @@ export class StoresController {
   }
 
   @Public()
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 60 } })
+  @ApiQuery({ name: 'q', required: false, type: String, maxLength: 100 })
+  @ApiQuery({ name: 'categorias', required: false, type: [String] })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    enum: ['recientes', 'precio_asc', 'precio_desc', 'nombre_asc'],
+  })
+  @ApiQuery({ name: 'page', required: false, type: String })
+  @ApiQuery({ name: 'limit', required: false, type: String, maximum: 48 })
+  @ApiOkResponse({ type: StoreCatalogResponseDto })
+  @Get(':slug/products/public')
+  async findPublicCatalog(
+    @Param('slug') slug: string,
+    @Query('q') q: string | string[] | undefined,
+    @Query('categorias') categories: string | string[] | undefined,
+    @Query('sort') sort: string | undefined,
+    @Query('page') page: string | undefined,
+    @Query('limit') limit: string | undefined,
+  ): Promise<StoreCatalogResponseDto> {
+    const parsed = parseStoreCatalogQuery(page, limit, q, categories, sort);
+    const result = await this.stores.findPublicCatalog(slug, parsed);
+    return {
+      ...result,
+      items: result.items.map((product) => toPublicProductDto(product)),
+    };
+  }
+
+  @Public()
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 60 } })
+  @ApiBody({ type: StorefrontCatalogRequestDto })
+  @ApiOkResponse({ type: StoreCatalogResponseDto })
+  @Post('storefront/catalog')
+  async findStorefrontCatalog(
+    @Body() body: StorefrontCatalogRequestDto,
+  ): Promise<StoreCatalogResponseDto> {
+    const query = body.query ?? {};
+    const parsed = parseStoreCatalogQuery(
+      readCatalogQueryValue(query, 'page') as string | undefined,
+      readCatalogQueryValue(query, 'limit') as string | undefined,
+      readCatalogQueryValue(query, 'q', true),
+      readCatalogQueryValue(query, 'categorias', true),
+      readCatalogQueryValue(query, 'sort') as string | undefined,
+    );
+    const result = await this.stores.findPublicCatalog(body.slug, parsed);
+    return {
+      ...result,
+      items: result.items.map((product) => toPublicProductDto(product)),
+    };
+  }
+
+  @Public()
   @Get(':slug/public')
   async findPublic(
     @Param('slug') slug: string,
@@ -320,11 +402,35 @@ export class StoresController {
   }
 
   @Public()
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 60 } })
+  @ApiBody({ type: StorefrontRequestDto })
+  @ApiOkResponse({ type: StorePublicDetailResponseDto })
+  @Post('storefront/public')
+  findStorefrontPublic(
+    @Body() body: StorefrontRequestDto,
+  ): Promise<StorePublicDetailResponseDto> {
+    return this.findPublic(body.slug);
+  }
+
+  @Public()
   @Get(':slug/categories/public')
   findCategoriesPublic(
     @Param('slug') slug: string,
   ): Promise<PublicCategoryResponseDto[]> {
     return this.stores.findCategoriesPublic(slug);
+  }
+
+  @Public()
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 60 } })
+  @ApiBody({ type: StorefrontRequestDto })
+  @ApiOkResponse({ type: [PublicCategoryResponseDto] })
+  @Post('storefront/categories')
+  findStorefrontCategories(
+    @Body() body: StorefrontRequestDto,
+  ): Promise<PublicCategoryResponseDto[]> {
+    return this.stores.findCategoriesPublic(body.slug);
   }
 
   @Public()

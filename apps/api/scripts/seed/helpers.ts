@@ -13,6 +13,7 @@ import type {
 } from '@biasmarket/db';
 import type { Prisma } from '@biasmarket/db';
 import { hashPassword } from 'better-auth/crypto';
+import { slugify } from '@biasmarket/utils/strings';
 
 function json(value: Record<string, unknown>): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
@@ -233,34 +234,26 @@ export async function ensureCategory(
   prisma: PrismaClient,
   input: { storeId: string; parentId: string | null; name: string },
 ) {
-  // Prisma's compound-unique `where` on `[storeId, parentId, name]` requires
-  // a non-null parentId (Postgres treats every NULL as distinct, so the
-  // constraint can't be used to look up a single top-level row) — fall back
-  // to find-then-create/update for top-level categories (parentId: null).
-  if (input.parentId === null) {
-    const existing = await prisma.category.findFirst({
-      where: { storeId: input.storeId, parentId: null, name: input.name },
-    });
-    if (existing) return existing;
-    return prisma.category.create({
-      data: { storeId: input.storeId, parentId: null, name: input.name },
-    });
-  }
-
-  return prisma.category.upsert({
+  const existing = await prisma.category.findFirst({
     where: {
-      storeId_parentId_name: {
-        storeId: input.storeId,
-        parentId: input.parentId,
-        name: input.name,
-      },
-    },
-    update: {},
-    create: {
       storeId: input.storeId,
       parentId: input.parentId,
       name: input.name,
     },
+  });
+  if (existing) return existing;
+
+  const base = slugify(input.name) || 'categoria';
+  const existingSlugs = await prisma.category.findMany({
+    where: { storeId: input.storeId, slug: { startsWith: base } },
+    select: { slug: true },
+  });
+  const used = new Set(existingSlugs.map(({ slug }) => slug));
+  let slug = base;
+  let suffix = 2;
+  while (used.has(slug)) slug = `${base}-${suffix++}`;
+  return prisma.category.create({
+    data: { ...input, slug },
   });
 }
 

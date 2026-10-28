@@ -16,12 +16,14 @@ import type {
   SitemapStorePageDto,
   StoreContentImageResponseDto,
   StoreDirectoryResponseDto,
+  StoreCatalogResponseDto,
   StorePublicDetailResponseDto,
   StoreResponseDto,
+  StoreWithOwnerResponseDto,
   StoresControllerfindDirectoryParams,
+  StoresControllerfindPublicCatalogParams,
   StoresControllerfindFeaturedParams,
   StoresControllerfindPublicSitemapPageParams,
-  StoreWithOwnerResponseDto,
   UpdateStoreDto,
 } from "../api.schemas.js";
 
@@ -239,6 +241,35 @@ export const findPublic = async (
     ...options,
     method: "GET",
   });
+};
+
+export const getFindPublicCatalogUrl = (
+  slug: string,
+  params?: StoresControllerfindPublicCatalogParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value === undefined) return;
+    if (Array.isArray(value)) {
+      value.forEach((item) => normalizedParams.append(key, item));
+      return;
+    }
+    normalizedParams.append(key, value === null ? "null" : String(value));
+  });
+  const stringifiedParams = normalizedParams.toString();
+  const path = `/stores/${slug}/products/public`;
+  return stringifiedParams.length > 0 ? `${path}?${stringifiedParams}` : path;
+};
+
+export const findPublicCatalog = async (
+  slug: string,
+  params?: StoresControllerfindPublicCatalogParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<StoreCatalogResponseDto> => {
+  return customFetch<StoreCatalogResponseDto>(
+    getFindPublicCatalogUrl(slug, params),
+    { ...options, method: "GET" },
+  );
 };
 
 export const getFindCategoriesPublicUrl = (slug: string) => {
