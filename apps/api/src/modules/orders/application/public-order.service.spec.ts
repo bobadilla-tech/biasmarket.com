@@ -35,6 +35,7 @@ describe('PublicOrderService', () => {
     paymentStatus: 'PENDING_PAYMENT',
     fulfillmentStatus: 'ORDERING',
     status: 'ACTIVE',
+    createdAt: new Date('2026-09-30T12:00:00.000Z'),
     deliveryMethodType: 'COURIER',
     deliveryDetails: {
       shippingAddress: {
@@ -115,6 +116,9 @@ describe('PublicOrderService', () => {
     const result = await service.getByToken('raw-token');
 
     expect(result.customerPhone).toBe('+51 9** *** 321');
+    expect(result.customerAlias).toBe('Ana');
+    expect(result.orderNumber).toBe('ER-1');
+    expect(result.createdAt).toBe('2026-09-30T12:00:00.000Z');
     expect(result.store).toEqual({
       name: 'Tienda',
       slug: 'tienda',
@@ -151,6 +155,72 @@ describe('PublicOrderService', () => {
     expect(JSON.stringify(result)).not.toContain('internal');
     expect(result).not.toHaveProperty('storeId');
     expect(result).not.toHaveProperty('createdByUserId');
+  });
+
+  it('returns exactly the allow-listed keys and never the order id', async () => {
+    events.requireOrderForToken.mockResolvedValue({
+      id: 'order-1',
+      storeId: 'store-1',
+    });
+    prisma.order.findUnique.mockResolvedValue({
+      ...orderRow,
+      id: 'cmabcdefgh1234wxyz',
+      accessTokenHash: 'hash-secret',
+    });
+
+    const result = await service.getByToken('raw-token');
+
+    expect(Object.keys(result).sort()).toEqual(
+      [
+        'store',
+        'customerPhone',
+        'customerAlias',
+        'orderNumber',
+        'createdAt',
+        'items',
+        'totalAmount',
+        'requiredAmount',
+        'paidAmount',
+        'pendingAmount',
+        'currency',
+        'paymentStatus',
+        'fulfillmentStatus',
+        'status',
+        'paymentInstructions',
+        'paymentMethods',
+        'deliveryMethodType',
+        'deliveryDetails',
+        'pickupDate',
+        'courierName',
+        'trackingNumber',
+        'trackingUrl',
+        'packedPhotoAvailable',
+        'courierModality',
+        'payments',
+      ].sort(),
+    );
+    expect(result.orderNumber).toBe('WXYZ');
+    expect(JSON.stringify(result)).not.toContain('cmabcdefgh1234wxyz');
+    expect(JSON.stringify(result)).not.toContain('hash-secret');
+  });
+
+  it('sanitises the alias and yields null for a blank name', async () => {
+    events.requireOrderForToken.mockResolvedValue({
+      id: 'order-1',
+      storeId: 'store-1',
+    });
+    prisma.order.findUnique.mockResolvedValueOnce({
+      ...orderRow,
+      customerName: '\u202E  Sofi\n\tLee ',
+    });
+    expect((await service.getByToken('raw-token')).customerAlias).toBe(
+      'Sofi Lee',
+    );
+    prisma.order.findUnique.mockResolvedValueOnce({
+      ...orderRow,
+      customerName: null,
+    });
+    expect((await service.getByToken('raw-token')).customerAlias).toBeNull();
   });
 
   it('returns only payment methods that are actually configured', async () => {

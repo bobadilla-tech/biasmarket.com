@@ -8669,6 +8669,17 @@
           "customerPhone": {
             "type": "string"
           },
+          "customerAlias": {
+            "type": "string",
+            "nullable": true
+          },
+          "orderNumber": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
           "items": {
             "type": "array",
             "items": {
@@ -8762,6 +8773,9 @@
         "required": [
           "store",
           "customerPhone",
+          "customerAlias",
+          "orderNumber",
+          "createdAt",
           "items",
           "totalAmount",
           "requiredAmount",

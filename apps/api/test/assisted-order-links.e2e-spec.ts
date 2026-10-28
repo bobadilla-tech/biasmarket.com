@@ -390,7 +390,25 @@ describe('assisted order links (e2e)', () => {
       const { id, token } = await seedOrder();
       const res = await open(token).expect(200);
       const serialized = JSON.stringify(res.body);
-      expect(serialized).not.toContain('Sofi');
+      expect(res.body.customerAlias).toBe('Sofi');
+      expect(res.body.orderNumber).toBe(id.slice(-4).toUpperCase());
+      expect(new Date(res.body.createdAt).toISOString()).toBe(
+        res.body.createdAt,
+      );
+      for (const key of [
+        'id',
+        'orderId',
+        'storeId',
+        'customerId',
+        'createdByName',
+        'createdByUserId',
+        'linkFirstOpenedAt',
+        'claimedAt',
+        'accessTokenHash',
+      ]) {
+        expect(res.body).not.toHaveProperty(key);
+      }
+      expect(serialized).not.toContain(id);
       expect(serialized).not.toContain('createdBy');
       expect(serialized).not.toContain('Seller a');
       expect(serialized).not.toContain('@');
@@ -402,6 +420,12 @@ describe('assisted order links (e2e)', () => {
           where: { orderId: id, type: 'LINK_OPENED' },
         }),
       ).toBe(1);
+    });
+
+    it('shows the same 404 for a malformed token as for an unknown one', async () => {
+      const unknown = await open(createOrderAccessToken().token).expect(404);
+      const malformed = await open('x'.repeat(4000)).expect(404);
+      expect(malformed.body.message).toBe(unknown.body.message);
     });
 
     it('a stale-token first open racing a rotation stamps nothing', async () => {

@@ -1871,6 +1871,10 @@ export interface PublicOrderPaymentResponseDto {
 export interface PublicOrderResponseDto {
   store: PublicOrderStoreResponseDto;
   customerPhone: string;
+  /** @nullable */
+  customerAlias: string | null;
+  orderNumber: string;
+  createdAt: string;
   items: PublicOrderItemResponseDto[];
   totalAmount: string;
   requiredAmount: string;

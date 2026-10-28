@@ -17,8 +17,6 @@ export default async () => {
       await import('./modules/orders/dto/create-order.dto.js'),
     ['./modules/orders/dto/checkout-response.dto.js']:
       await import('./modules/orders/dto/checkout-response.dto.js'),
-    ['./modules/orders/dto/void-order-payment.dto.js']:
-      await import('./modules/orders/dto/void-order-payment.dto.js'),
     ['./modules/payment-config/dto/payment-method-details.dto.js']:
       await import('./modules/payment-config/dto/payment-method-details.dto.js'),
     ['./modules/orders/infrastructure/customer-account-response.dto.js']:
@@ -804,6 +802,17 @@ export default async () => {
           },
         ],
         [
+          import('./modules/orders/dto/advance-fulfillment.dto.js'),
+          {
+            AdvanceFulfillmentDto: {
+              status: {
+                required: true,
+                enum: ['IN_TRANSIT', 'READY', 'COMPLETED'],
+              },
+            },
+          },
+        ],
+        [
           import('./modules/orders/dto/void-order-payment.dto.js'),
           {
             VoidOrderPaymentDto: {
@@ -812,17 +821,6 @@ export default async () => {
                 type: () => String,
                 minLength: 1,
                 maxLength: 500,
-              },
-            },
-          },
-        ],
-        [
-          import('./modules/orders/dto/advance-fulfillment.dto.js'),
-          {
-            AdvanceFulfillmentDto: {
-              status: {
-                required: true,
-                enum: ['IN_TRANSIT', 'READY', 'COMPLETED'],
               },
             },
           },
@@ -1759,6 +1757,13 @@ export default async () => {
                     .PublicOrderStoreResponseDto,
               },
               customerPhone: { required: true, type: () => String },
+              customerAlias: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              orderNumber: { required: true, type: () => String },
+              createdAt: { required: true, type: () => String },
               items: {
                 required: true,
                 type: () => [
