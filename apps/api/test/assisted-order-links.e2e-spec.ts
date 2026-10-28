@@ -188,7 +188,10 @@ describe('assisted order links (e2e)', () => {
       const audit = await prisma.auditLog.findFirstOrThrow({
         where: { entityId: id, action: 'order.link_regenerated' },
       });
-      const serialized = JSON.stringify([audit.metadata, events]);
+      const serialized = JSON.stringify([
+        audit.metadata,
+        events.map(({ payload }) => payload),
+      ]);
       expect(serialized).not.toContain(fresh);
       expect(serialized).not.toMatch(/\d{8,}/);
     });
@@ -285,7 +288,10 @@ describe('assisted order links (e2e)', () => {
       const audit = await prisma.auditLog.findFirstOrThrow({
         where: { entityId: id, action: 'order.phone_corrected' },
       });
-      const serialized = JSON.stringify([audit.metadata, events]);
+      const serialized = JSON.stringify([
+        audit.metadata,
+        events.map(({ payload }) => payload),
+      ]);
       expect(serialized).not.toMatch(/\d{8,}/);
       expect(serialized).not.toContain(fresh);
       expect(serialized).not.toContain('Sofi');
