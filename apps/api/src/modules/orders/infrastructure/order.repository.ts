@@ -129,13 +129,9 @@ export class OrderRepository {
         take: LEGACY_SCAN_CAP,
       }),
     ]);
-    const legacyMatches = legacy.filter((row) => {
-      try {
-        return normalizePhone(row.customerPhone) === phone;
-      } catch {
-        return false;
-      }
-    });
+    const legacyMatches = legacy.filter(
+      (row) => normalizePhone(row.customerPhone) === phone,
+    );
 
     const items = [...indexed, ...legacyMatches]
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
