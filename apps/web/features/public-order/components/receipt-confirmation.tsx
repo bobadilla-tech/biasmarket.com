@@ -11,10 +11,12 @@ export function ReceiptConfirmation({
   slug,
   token,
   order,
+  onConfirmed,
 }: {
   slug: string;
   token: string;
   order: PublicOrderResponseDto;
+  onConfirmed?: () => void;
 }) {
   const t = useTranslations("storefront.publicOrder");
   const locale = useLocale();
@@ -56,7 +58,9 @@ export function ReceiptConfirmation({
       <div className="flex flex-col gap-2 sm:flex-row">
         <button
           type="button"
-          onClick={() => confirm.mutate()}
+          onClick={() =>
+            confirm.mutate(undefined, { onSuccess: () => onConfirmed?.() })
+          }
           disabled={confirm.isPending}
           className="rounded-2xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
         >

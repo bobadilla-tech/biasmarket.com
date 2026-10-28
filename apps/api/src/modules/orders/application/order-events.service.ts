@@ -16,6 +16,7 @@ import { PrismaService } from '../../../prisma/prisma.service.js';
 import { countsTowardPaid } from '../../../common/payment-summary.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
 import { INVITE_EVENT_TYPES } from '../dto/record-invite-event.dto.js';
+import type { ClaimMoment } from '../../customer-auth/claim-ticket.js';
 
 // Which later issue writes each type. G2 reads the buyer-visible rows.
 // F2 counts them and must keep using the sanitized payload.
@@ -164,6 +165,8 @@ export class OrderEventsService {
         status: true,
         paymentStatus: true,
         fulfillmentStatus: true,
+        claimedAt: true,
+        buyerAccountId: true,
         packedPhotoUrl: true,
       },
     });
@@ -231,22 +234,40 @@ export class OrderEventsService {
     }
   }
 
-  async recordInvite(token: string, type: InviteEventType) {
+  async recordInvite(
+    token: string,
+    type: InviteEventType,
+    moment?: ClaimMoment,
+  ) {
     const order = await this.requireOrderForToken(token);
-    // A cancelled or expired order is not an invite funnel. Counting those
-    // posts would inflate D3/F2.
-    if (order.status === 'CANCELLED' || order.paymentStatus === 'CANCELLED') {
+    // A cancelled or expired order is not an invite funnel, and neither is one
+    // that was already saved: counting those posts would inflate D3/F2.
+    if (
+      order.status === 'CANCELLED' ||
+      order.paymentStatus === 'CANCELLED' ||
+      order.claimedAt ||
+      order.buyerAccountId
+    ) {
       return;
     }
     await this.prisma.$transaction(async (tx) => {
       // INVITE_SHOWN is "the invite was shown", not a page-view counter. One
       // client retrying the beacon must not write a row per retry, so the
-      // check-then-insert runs under a per-order advisory lock: concurrent
-      // beacons queue up and all but the first see the existing row.
+      // check-then-insert runs under an advisory lock: concurrent beacons
+      // queue up and all but the first see the existing row. It is once per
+      // order AND moment, so the first-validation block and a later banner
+      // each count.
       if (type === 'INVITE_SHOWN') {
-        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`invite-shown:${order.id}`}))`;
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`invite-shown:${order.id}:${moment ?? ''}`}))`;
         const existing = await tx.orderEvent.findFirst({
-          where: { orderId: order.id, type: 'INVITE_SHOWN' },
+          where: {
+            orderId: order.id,
+            type: 'INVITE_SHOWN',
+            // Without a moment (older clients) it stays once per order.
+            ...(moment
+              ? { payload: { path: ['moment'], equals: moment } }
+              : {}),
+          },
           select: { id: true },
         });
         if (existing) return;
@@ -256,6 +277,7 @@ export class OrderEventsService {
         storeId: order.storeId,
         type,
         actor: 'BUYER',
+        payload: moment ? { moment } : {},
       });
     });
   }

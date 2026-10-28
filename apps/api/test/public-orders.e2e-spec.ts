@@ -443,6 +443,60 @@ describe('public orders (e2e)', () => {
       await prisma.order.update({ where: { id }, data: { claimedAt: null } });
     });
 
+    it('stores only the moment on invite events, dedupes SHOWN per moment, and ignores a claimed order', async () => {
+      const { token, id } = await deliverable();
+      await prisma.orderEvent.deleteMany({
+        where: {
+          orderId: id,
+          type: { in: ['INVITE_SHOWN', 'INVITE_CLICKED'] },
+        },
+      });
+      const post = (body: Record<string, unknown>) =>
+        request(app.getHttpServer())
+          .post(`/api/public/orders/${token}/events`)
+          .send(body);
+
+      await post({ type: 'INVITE_SHOWN', moment: 'pago_validado' }).expect(204);
+      await post({ type: 'INVITE_SHOWN', moment: 'pago_validado' }).expect(204);
+      await post({ type: 'INVITE_SHOWN', moment: 'banner' }).expect(204);
+      await post({ type: 'INVITE_CLICKED', moment: 'banner' }).expect(204);
+
+      const rows = await prisma.orderEvent.findMany({
+        where: {
+          orderId: id,
+          type: { in: ['INVITE_SHOWN', 'INVITE_CLICKED'] },
+        },
+        orderBy: { createdAt: 'asc' },
+      });
+      expect(rows.map((r) => [r.type, r.payload])).toEqual([
+        ['INVITE_SHOWN', { moment: 'pago_validado' }],
+        ['INVITE_SHOWN', { moment: 'banner' }],
+        ['INVITE_CLICKED', { moment: 'banner' }],
+      ]);
+      expect(rows.every((r) => r.visibleToBuyer === false)).toBe(true);
+
+      // Closed set: nothing free-form reaches the stored payload.
+      await post({ type: 'INVITE_SHOWN', moment: 'a@b.com' }).expect(400);
+      await post({
+        type: 'INVITE_SHOWN',
+        moment: 'banner',
+        phone: '+519',
+      }).expect(400);
+
+      // A claimed order is not an invite funnel any more.
+      await prisma.order.update({
+        where: { id },
+        data: { claimedAt: new Date() },
+      });
+      await post({ type: 'INVITE_SHOWN', moment: 'entrega' }).expect(204);
+      expect(
+        await prisma.orderEvent.count({
+          where: { orderId: id, type: 'INVITE_SHOWN' },
+        }),
+      ).toBe(2);
+      await prisma.order.update({ where: { id }, data: { claimedAt: null } });
+    });
+
     it('answers unknown and revoked tokens with the same 404, and rejects a form body', async () => {
       const unknown = await confirm(createOrderAccessToken().token).expect(404);
       const revoked = await deliverable({ accessTokenRevokedAt: new Date() });

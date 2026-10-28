@@ -143,7 +143,30 @@ describe('PublicOrderEventsController rate limit', () => {
       .post('/public/orders/tok/events')
       .send({ type: 'INVITE_CLICKED' })
       .expect(204);
-    expect(recordInvite).toHaveBeenCalledWith('tok', 'INVITE_CLICKED');
+    expect(recordInvite).toHaveBeenCalledWith(
+      'tok',
+      'INVITE_CLICKED',
+      undefined,
+    );
+
+    await request(app.getHttpServer())
+      .post('/public/orders/tok/events')
+      .send({ type: 'INVITE_SHOWN', moment: 'banner' })
+      .expect(204);
+    expect(recordInvite).toHaveBeenLastCalledWith(
+      'tok',
+      'INVITE_SHOWN',
+      'banner',
+    );
+    // Only the closed set of moments; nothing free-form gets through.
+    await request(app.getHttpServer())
+      .post('/public/orders/tok/events')
+      .send({ type: 'INVITE_SHOWN', moment: 'x@y.com' })
+      .expect(400);
+    await request(app.getHttpServer())
+      .post('/public/orders/tok/events')
+      .send({ type: 'INVITE_SHOWN', moment: 'banner', phone: '+51987654321' })
+      .expect(400);
 
     const invalid = await request(app.getHttpServer())
       .post('/public/orders/tok/events')
@@ -157,7 +180,7 @@ describe('PublicOrderEventsController rate limit', () => {
       .type('form')
       .send({ type: 'INVITE_SHOWN' })
       .expect(415);
-    expect(recordInvite).toHaveBeenCalledTimes(1);
+    expect(recordInvite).toHaveBeenCalledTimes(2);
   });
 
   it('gives each client IP its own bucket and ignores a spoofed prefix', async () => {

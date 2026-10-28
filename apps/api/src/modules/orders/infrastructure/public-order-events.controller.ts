@@ -92,7 +92,7 @@ export class PublicOrderEventsController {
     if (!contentType?.toLowerCase().startsWith('application/json')) {
       throw new UnsupportedMediaTypeException();
     }
-    await this.events.recordInvite(token, dto.type);
+    await this.events.recordInvite(token, dto.type, dto.moment);
   }
 
   @Public()

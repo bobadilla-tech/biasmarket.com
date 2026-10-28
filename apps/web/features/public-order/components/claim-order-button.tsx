@@ -16,9 +16,13 @@ import { publicOrderKeys } from "../queries/use-public-order";
 export function ClaimOrderButton({
   token,
   moment,
+  onStart,
 }: {
   token: string;
   moment?: ClaimMoment;
+  // Called as the buyer presses the button, before the ticket request: used
+  // to report the click while the page can still send it.
+  onStart?: () => void;
 }) {
   const t = useTranslations("storefront.publicOrder.claim");
   const locale = useLocale();
@@ -37,6 +41,7 @@ export function ClaimOrderButton({
   if (unavailable) return null;
 
   const start = () => {
+    onStart?.();
     claim.mutate(moment, {
       onSuccess: () => window.location.assign(claimStartUrl(locale)),
       onError: (error) => {
