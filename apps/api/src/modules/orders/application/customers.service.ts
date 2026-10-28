@@ -219,7 +219,32 @@ export class CustomersService {
       });
     }
 
-    return rows.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    // Hide ghost contacts (#337): a `Customer` with no orders (counting guest
+    // orders folded in above, so this runs after the fold) that never
+    // registered anything, e.g. the leftover of a seller who typed a number on
+    // the new-order screen and abandoned it. The `rows` objects do not carry
+    // the credential columns, so keepability is decided from the records.
+    // A name-only zero-order contact is hidden too. `findOneForStore` is
+    // unchanged, so a stale id still resolves.
+    const keepable = new Set(
+      customers
+        .filter(
+          (customer) =>
+            customer.email ||
+            customer.passwordHash ||
+            customer.pendingEmail ||
+            customer.pendingPhone ||
+            customer.emailVerified,
+        )
+        .map((customer) => customer.id),
+    );
+    const visibleRows = rows.filter(
+      (row) => row.orderCount > 0 || keepable.has(row.id),
+    );
+
+    return visibleRows.sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+    );
   }
 
   async findOneForStore(customerId: string, storeId: string, userId: string) {
