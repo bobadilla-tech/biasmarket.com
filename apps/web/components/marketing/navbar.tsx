@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { LogOut, Search, ShoppingBag, User } from "lucide-react";
+import { LogOut, Search, ShoppingBag, Sparkles, User } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
   Popover,
@@ -298,13 +298,14 @@ export function Navbar() {
   const t = useTranslations("marketing.navbar");
 
   return (
-    <header className="sticky top-0 z-40 border-b border-black/10 bg-white">
+    <header className="sticky top-0 z-40 border-b border-primary/10 bg-white/90 shadow-[0_5px_22px_rgb(48_29_62/6%)] backdrop-blur-xl">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:h-20 lg:gap-6 lg:px-10">
         {/* Mobile wordmark — Figma Frame 3 */}
         <Link
           href="/"
-          className="shrink-0 text-base leading-[19px] font-medium text-black lg:hidden"
+          className="inline-flex shrink-0 items-center gap-1.5 text-base leading-[19px] font-bold tracking-tight text-black lg:hidden"
         >
+          <Sparkles aria-hidden="true" className="size-4 text-primary" />
           Biasmarket
         </Link>
 

@@ -2,6 +2,7 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import type { PublicOrderResponseDto } from "@biasmarket/types";
+import { Sparkles } from "lucide-react";
 import { StoreLogo } from "@/components/store-logo";
 import { ContactSellerButton } from "@/features/customer-auth/components/contact-seller-button";
 import { FulfillmentTimeline } from "@/features/orders/components/fulfillment-timeline";
@@ -45,6 +46,7 @@ export function PublicOrderView({
   const money = (amount: string | number) => `${order.currency} ${amount}`;
   const cancelled = isCancelled(order);
   const bannerKey = getBannerKey(order);
+  const isMilestone = ["verified", "ready", "completed"].includes(bannerKey);
   // Defensive: an API that predates these fields simply omits them.
   const orderNumber = order.orderNumber ? order.orderNumber : null;
   const depositDiffers =
@@ -90,9 +92,15 @@ export function PublicOrderView({
 
       <div
         role="status"
-        className={`rounded-2xl border p-4 text-sm font-medium ${BANNER_TONE[bannerKey]}`}
+        className={`purchase-milestone flex items-center gap-2.5 rounded-2xl border p-4 text-sm font-semibold ${BANNER_TONE[bannerKey]}`}
       >
-        {t(`banner.${bannerKey}`)}
+        {isMilestone && (
+          <Sparkles
+            aria-hidden="true"
+            className="fan-sparkle size-5 shrink-0 text-amber-500"
+          />
+        )}
+        <span>{t(`banner.${bannerKey}`)}</span>
       </div>
 
       {!cancelled && (

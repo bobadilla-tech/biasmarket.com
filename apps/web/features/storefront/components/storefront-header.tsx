@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { Sparkles } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { AccountNavLink } from "@/features/customer-auth";
 import { CartLink } from "@/app/[locale]/(storefront)/store/[slug]/cart-link";
@@ -27,9 +28,9 @@ export function StorefrontHeader({ slug }: StorefrontHeaderProps) {
         >
           <span
             aria-hidden="true"
-            className="grid size-8 place-items-center rounded-xl bg-(--store-primary) text-sm font-extrabold text-white shadow-sm"
+            className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-(--store-accent) to-(--store-primary) text-white shadow-[0_5px_14px_var(--store-shadow)] transition-transform duration-200 hover:rotate-6 hover:scale-105"
           >
-            B
+            <Sparkles aria-hidden="true" className="size-[18px]" />
           </span>
           <span className="text-base font-bold tracking-tight text-(--store-text)">
             Bias Market
