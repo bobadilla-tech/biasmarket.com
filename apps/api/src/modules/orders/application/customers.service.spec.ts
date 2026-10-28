@@ -178,6 +178,9 @@ describe('CustomersService', () => {
         },
         select: {
           amount: true,
+          source: true,
+          reviewStatus: true,
+          voidedAt: true,
           order: { select: { customerId: true } },
         },
       });

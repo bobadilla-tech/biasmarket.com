@@ -117,6 +117,7 @@ export class CustomersService {
     );
     const spendByCustomer = new Map<string, Prisma.Decimal>();
     for (const payment of payments) {
+      if (!countsTowardPaid(payment)) continue;
       const customerId = payment.order.customerId;
       if (!customerId) continue;
       const current = spendByCustomer.get(customerId) ?? new Prisma.Decimal(0);
