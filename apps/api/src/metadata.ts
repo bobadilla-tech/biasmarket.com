@@ -1798,6 +1798,36 @@ export default async () => {
                 enum: ['REJECTED', 'N_A', 'PENDING_REVIEW', 'APPROVED'],
               },
             },
+            PublicOrderTimelineItemDto: {
+              type: {
+                required: true,
+                enum: [
+                  'PAYMENT_SUBMITTED',
+                  'RECEIPT_CONFIRMED',
+                  'CREATED',
+                  'PAYMENT_VALIDATED',
+                  'PAYMENT_REJECTED',
+                  'PAYMENT_VOIDED',
+                  'FULFILLMENT_ADVANCED',
+                  'PACKED_PHOTO_ADDED',
+                  'TRACKING_ADDED',
+                  'CLAIMED',
+                  'ORDER_CANCELLED',
+                ],
+              },
+              at: { required: true, type: () => String },
+              toStatus: {
+                required: true,
+                nullable: true,
+                enum: ['ORDERING', 'IN_TRANSIT', 'READY', 'COMPLETED'],
+              },
+              amount: { required: true, type: () => String, nullable: true },
+              resolution: {
+                required: true,
+                nullable: true,
+                enum: ['REFUNDED', 'RETAINED', 'STORE_CREDIT'],
+              },
+            },
             PublicOrderPaymentMethodResponseDto: {
               method: {
                 required: true,
@@ -1912,6 +1942,16 @@ export default async () => {
                 type: () => String,
                 nullable: true,
               },
+              claimed: { required: true, type: () => Boolean },
+              lastUpdateAt: { required: true, type: () => String },
+              timeline: {
+                required: true,
+                type: () => [
+                  t['./modules/orders/dto/public-order-response.dto.js']
+                    .PublicOrderTimelineItemDto,
+                ],
+              },
+              hasValidatedPayment: { required: true, type: () => Boolean },
               courierModality: {
                 required: true,
                 nullable: true,

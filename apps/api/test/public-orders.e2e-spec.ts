@@ -390,6 +390,59 @@ describe('public orders (e2e)', () => {
       }
     });
 
+    it('serves the timeline only for a claimed order, picked fields only, still no-store', async () => {
+      const { token, id } = await deliverable();
+      await prisma.orderEvent.deleteMany({ where: { orderId: id } });
+      await prisma.orderEvent.createMany({
+        data: [
+          {
+            orderId: id,
+            storeId,
+            type: 'PAYMENT_VOIDED',
+            actor: 'SELLER',
+            visibleToBuyer: true,
+            payload: { amount: 20, currency: 'PEN', paymentId: 'pay-secret' },
+          },
+          {
+            orderId: id,
+            storeId,
+            type: 'BUYER_NOTIFIED',
+            actor: 'SELLER',
+            visibleToBuyer: true,
+            payload: { notice: 'ASSISTED_READY' },
+          },
+        ],
+      });
+
+      const unclaimed = await request(app.getHttpServer())
+        .get(`/api/public/orders/${token}`)
+        .expect(200);
+      privateLinkHeaders(unclaimed);
+      expect(unclaimed.body.claimed).toBe(false);
+      expect(unclaimed.body.timeline).toEqual([]);
+
+      await prisma.order.update({
+        where: { id },
+        data: { claimedAt: new Date() },
+      });
+      const claimed = await request(app.getHttpServer())
+        .get(`/api/public/orders/${token}`)
+        .expect(200);
+      privateLinkHeaders(claimed);
+      expect(claimed.body.claimed).toBe(true);
+      expect(claimed.body.timeline).toHaveLength(1);
+      expect(Object.keys(claimed.body.timeline[0]).sort()).toEqual(
+        ['amount', 'at', 'resolution', 'toStatus', 'type'].sort(),
+      );
+      expect(claimed.body.timeline[0].type).toBe('PAYMENT_VOIDED');
+      expect(claimed.body.timeline[0].amount).toBe('20');
+      expect(JSON.stringify(claimed.body)).not.toMatch(/pay-secret|ASSISTED/);
+
+      // The token link still works, with the same essentials, after a claim.
+      expect(claimed.body.orderNumber).toBe(unclaimed.body.orderNumber);
+      await prisma.order.update({ where: { id }, data: { claimedAt: null } });
+    });
+
     it('answers unknown and revoked tokens with the same 404, and rejects a form body', async () => {
       const unknown = await confirm(createOrderAccessToken().token).expect(404);
       const revoked = await deliverable({ accessTokenRevokedAt: new Date() });

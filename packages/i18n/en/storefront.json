@@ -533,6 +533,37 @@
       "thanks": "Thanks for confirming!",
       "confirmedOn": "You confirmed receipt on {date}.",
       "error": "Could not confirm. Please try again."
+    },
+    "timeline": {
+      "title": "Your order history",
+      "lastUpdate": "Last update: {date}",
+      "teaser": "Save your order to see the full history with dates.",
+      "types": {
+        "CREATED": "Order created",
+        "PAYMENT_SUBMITTED": "Payment submitted",
+        "PAYMENT_VALIDATED": "Payment validated",
+        "PAYMENT_REJECTED": "Payment rejected",
+        "PAYMENT_VOIDED": "Payment voided",
+        "FULFILLMENT_ADVANCED": "Status updated",
+        "PACKED_PHOTO_ADDED": "Package photo added",
+        "TRACKING_ADDED": "Tracking added",
+        "RECEIPT_CONFIRMED": "Receipt confirmed",
+        "CLAIMED": "Order saved",
+        "ORDER_CANCELLED": "Order cancelled"
+      },
+      "fulfillment": {
+        "ORDERING": "Order received",
+        "IN_TRANSIT": "Your order is on its way",
+        "READY": "Your order is ready",
+        "COMPLETED": "Order delivered"
+      }
+    },
+    "shipping": {
+      "title": "Shipping",
+      "trackingNumber": "Tracking code: {number}",
+      "trackLink": "Track my shipment",
+      "packedPhoto": "Photo of your package",
+      "packedPhotoAlt": "Photo of your order's package"
     }
   }
 }

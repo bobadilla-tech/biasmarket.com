@@ -533,6 +533,37 @@
       "thanks": "¡Gracias por confirmar!",
       "confirmedOn": "Confirmaste la recepción el {date}.",
       "error": "No se pudo confirmar. Inténtalo de nuevo."
+    },
+    "timeline": {
+      "title": "Historial de tu pedido",
+      "lastUpdate": "Última actualización: {date}",
+      "teaser": "Guarda tu pedido para ver el historial completo con fechas.",
+      "types": {
+        "CREATED": "Pedido creado",
+        "PAYMENT_SUBMITTED": "Pago enviado",
+        "PAYMENT_VALIDATED": "Pago validado",
+        "PAYMENT_REJECTED": "Pago rechazado",
+        "PAYMENT_VOIDED": "Pago anulado",
+        "FULFILLMENT_ADVANCED": "Estado actualizado",
+        "PACKED_PHOTO_ADDED": "Foto del paquete agregada",
+        "TRACKING_ADDED": "Seguimiento agregado",
+        "RECEIPT_CONFIRMED": "Recepción confirmada",
+        "CLAIMED": "Pedido guardado",
+        "ORDER_CANCELLED": "Pedido cancelado"
+      },
+      "fulfillment": {
+        "ORDERING": "Pedido recibido",
+        "IN_TRANSIT": "Tu pedido va en camino",
+        "READY": "Tu pedido está listo",
+        "COMPLETED": "Pedido entregado"
+      }
+    },
+    "shipping": {
+      "title": "Envío",
+      "trackingNumber": "Código de seguimiento: {number}",
+      "trackLink": "Seguir mi envío",
+      "packedPhoto": "Foto de tu paquete",
+      "packedPhotoAlt": "Foto del paquete de tu pedido"
     }
   }
 }
