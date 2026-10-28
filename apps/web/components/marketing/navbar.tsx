@@ -89,8 +89,8 @@ function SearchForm({
         aria-label={t("search")}
         className={
           compact
-            ? "h-11 w-full rounded-lg border border-black/60 bg-white pr-3 pl-9 text-base text-foreground outline-none transition placeholder:text-[#1C1B1F]/70 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/50"
-            : "h-11 w-full rounded-full border border-black/20 bg-white pr-4 pl-10 text-base text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 md:text-sm"
+            ? "h-11 w-full rounded-lg border border-input bg-card pr-3 pl-9 text-base text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/50"
+            : "h-11 w-full rounded-full border border-input bg-card pr-4 pl-10 text-base text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 md:text-sm"
         }
       />
       <Search

@@ -119,7 +119,7 @@ export function getStoreThemeStyle(themeConfig?: unknown): CSSProperties {
     "--store-surface": palette.colors.surface,
     "--store-text": palette.colors.text,
     "--store-ring": rgba(palette.colors.primary, 0.18),
-    "--store-shadow": rgba(palette.colors.primary, 0.24),
+    "--store-shadow": rgba(palette.colors.primary, 0.16),
     "--store-soft-border": rgba(palette.colors.primary, 0.18),
     "--store-primary-text": readableTextColor(palette.colors.primary),
     "--store-sidebar-start": darken(palette.colors.primary, 0.58),

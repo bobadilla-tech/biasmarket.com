@@ -37,7 +37,7 @@ export function ContactPage() {
               {t("emailBody")}{" "}
               <a
                 href={`mailto:${CONTACT_EMAIL}`}
-                className="text-foreground hover:underline"
+                className="text-[#241c29] underline decoration-current underline-offset-2"
               >
                 {CONTACT_EMAIL}
               </a>

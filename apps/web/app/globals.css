@@ -60,6 +60,7 @@
   --color-landing-gray: var(--landing-gray);
   --color-landing-link: var(--landing-link);
   --color-landing-title: var(--landing-title);
+  --color-landing-ink: var(--landing-ink);
   --color-hero-bg: var(--hero-bg);
   --color-hero-title: var(--hero-title);
   --color-hero-accent: var(--hero-accent);
@@ -72,25 +73,25 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --background: #fcfafd;
+  --foreground: #2d2632;
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: #2d2632;
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --popover-foreground: #2d2632;
+  --primary: #704194;
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --secondary: #f3edf7;
+  --secondary-foreground: #4b3858;
+  --muted: #f6f3f7;
+  --muted-foreground: #716977;
+  --accent: #f8eef4;
+  --accent-foreground: #56394e;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --focus-ring: #8b5cf6;
+  --border: #e8e0eb;
+  --input: #e5dce8;
+  --ring: #9468b5;
+  --focus-ring: #8051a3;
   --error-foreground: #b42318;
   --warning-foreground: #8a4b00;
   --chart-1: oklch(0.87 0 0);
@@ -98,7 +99,7 @@
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
+  --radius: 0.75rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -110,6 +111,9 @@
   --sidebar-muted-foreground: #eadcff;
   --sidebar-subtle-foreground: #dcc7f2;
   --sidebar-badge-foreground: #f7efff;
+  --shadow-soft: 0 2px 8px rgb(52 35 62 / 5%), 0 10px 24px rgb(52 35 62 / 4%);
+  --shadow-raised:
+    0 14px 30px rgb(52 35 62 / 10%), 0 3px 8px rgb(52 35 62 / 5%);
 }
 
 .dark {
@@ -150,31 +154,33 @@
   --sidebar-muted-foreground: #eadcff;
   --sidebar-subtle-foreground: #dcc7f2;
   --sidebar-badge-foreground: #f7efff;
+  --shadow-soft: 0 2px 8px rgb(0 0 0 / 18%), 0 10px 24px rgb(0 0 0 / 12%);
+  --shadow-raised: 0 14px 30px rgb(0 0 0 / 28%), 0 3px 8px rgb(0 0 0 / 16%);
 }
 
 :root {
-  --landing-pink: #ffeafe;
-  --landing-violet: #eadaff;
-  --landing-purple: #d7d2fb;
-  --landing-rose: #ffe7f3;
-  --landing-blush: #ffe7f8;
-  --landing-graphite: #8c8c8c;
-  --landing-footer: #e8e8e8;
-  --landing-gray: #d9d9d9;
-  --landing-link: #750edc;
-  --landing-title: #ff00b7;
-  /* Shared landing CTA pink (hero + help center buttons). White text on
-     --cta is ~3.8:1, so only use it behind large bold text (>= 18.66px).
-     Smaller CTA text uses --cta-strong (~4.7:1) to clear WCAG AA. */
-  --cta: #e8399e;
-  --cta-hover: #d4278c;
-  --cta-active: #c41d7f;
-  --cta-strong: #d4278c;
+  --landing-pink: #f7e9f1;
+  --landing-violet: #eee9f6;
+  --landing-purple: #e9e6f4;
+  --landing-rose: #fbecf2;
+  --landing-blush: #f9edf5;
+  --landing-graphite: #e6dfe8;
+  --landing-footer: #f8f5f7;
+  --landing-gray: #eee9ef;
+  --landing-link: #75518d;
+  --landing-title: #a34278;
+  --landing-ink: #302735;
+  /* Reserve the lighter CTA for large labels; the darker variant supports
+     smaller button text. */
+  --cta: #d95391;
+  --cta-hover: #c94883;
+  --cta-active: #b83b74;
+  --cta-strong: #b33b76;
   /* Landing hero banner (#243). The hero accent reuses the shared CTA pink;
      the CTA text is bold >= 19px (WCAG "large text") and the subtitle is
      >= 24px, so 3:1 is enough against white and --hero-bg. */
-  --hero-bg: #fbf0fd;
-  --hero-title: #450f5f;
+  --hero-bg: #f8f0f8;
+  --hero-title: #492d55;
   --hero-accent: var(--cta);
   --hero-accent-hover: var(--cta-active);
 }
@@ -184,32 +190,36 @@
    dashboard, login, and storefront (which don't opt in) keep their look. */
 .landing-theme {
   font-family: var(--font-inter), var(--font-geist-sans), sans-serif;
-  /* Keep the landing's existing light palette scoped to its surfaces. */
-  --brand-violet: #8d2feb;
-  --brand-pink: #ff3db1;
+  /* Keep the landing's K-pop palette lively while taking the edge off neon tones. */
+  --brand-violet: #79549e;
+  --brand-pink: #dc639c;
   /* Brand-name gradient used in landing headings ("BIASMARKET"). */
-  --brand-gradient-start: #7b1fe0;
-  --brand-gradient-end: #d62ba8;
-  --background: #ffffff;
-  --foreground: #000000;
+  --brand-gradient-start: #704795;
+  --brand-gradient-end: #c45691;
+  --background: #fffdfd;
+  --foreground: var(--landing-ink);
   --card: #ffffff;
-  --card-foreground: #000000;
+  --card-foreground: var(--landing-ink);
   --popover: #ffffff;
-  --popover-foreground: #000000;
+  --popover-foreground: var(--landing-ink);
   --primary: var(--brand-pink);
-  /* Black on the pink primary clears the WCAG AA contrast threshold. */
-  --primary-foreground: #181818;
+  --primary-foreground: #2e1b28;
   --secondary: var(--brand-violet);
   --secondary-foreground: #ffffff;
-  --muted: #f5f5f5;
-  --muted-foreground: #6b7280;
+  --muted: #f7f3f8;
+  --muted-foreground: #716878;
   --accent: var(--brand-violet);
   --accent-foreground: #ffffff;
   --destructive: oklch(0.577 0.245 27.325);
   --border: var(--landing-graphite);
-  --input: var(--landing-graphite);
+  --input: #e2d8e5;
   --ring: var(--brand-pink);
   color-scheme: light;
+}
+
+/* Existing landing sections use text-black; keep their contrast softer. */
+.landing-theme .text-black {
+  color: var(--landing-ink);
 }
 
 /* Scoped to the for-sellers page — restores the original dark K-pop/photocard
@@ -287,7 +297,7 @@
   --store-surface: #faf5ff;
   --store-text: #2d1649;
   --store-ring: rgba(109, 40, 217, 0.18);
-  --store-shadow: rgba(109, 40, 217, 0.24);
+  --store-shadow: rgba(109, 40, 217, 0.16);
   --store-soft-border: rgba(109, 40, 217, 0.18);
   --store-sidebar-start: rgb(45, 16, 90);
   --store-sidebar-mid: rgb(36, 12, 72);
@@ -306,29 +316,44 @@
     var(--store-gradient-end) 100%
   );
   color: var(--store-on-active);
-  box-shadow: 0 14px 30px var(--store-shadow);
+  box-shadow: 0 8px 20px var(--store-shadow);
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    filter 180ms ease;
 }
 
 .store-theme-primary-button:hover {
-  filter: brightness(0.98);
+  filter: brightness(1.02);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px var(--store-shadow);
 }
 
 .store-theme-primary-button:disabled {
   box-shadow: none;
+  filter: none;
+  transform: none;
 }
 
 .store-theme-secondary-button {
   background: var(--store-surface);
   color: var(--store-primary-text, var(--store-primary));
   border-color: var(--store-soft-border);
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease;
 }
 
 .store-theme-secondary-button:hover {
-  filter: brightness(0.98);
+  filter: brightness(0.99);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-soft);
 }
 
 .store-theme-link {
   color: var(--store-primary-text, var(--store-primary));
+  transition: color 160ms ease;
 }
 
 .store-theme-active-text {

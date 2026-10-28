@@ -103,7 +103,7 @@ export function ProductCard({
   };
 
   return (
-    <article className="rounded-2xl border border-(--store-border) bg-(--store-card) p-2 shadow-[0_1px_2px_rgba(40,20,60,0.04)] transition duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-2">
+    <article className="group rounded-2xl border border-(--store-border) bg-(--store-card) p-2 shadow-[0_2px_8px_rgba(40,20,60,0.05)] transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_12px_28px_rgba(40,20,60,0.11)] sm:p-2">
       <Link href={`/store/${slug}/product/${product.id}`}>
         {(() => {
           const imageUrl =
@@ -116,7 +116,7 @@ export function ProductCard({
                 fill
                 sizes="(min-width: 768px) 220px, 50vw"
                 className={cn(
-                  "object-cover",
+                  "object-cover transition-transform duration-500 ease-out group-hover:scale-[1.035]",
                   outOfStock && "opacity-70 grayscale",
                 )}
               />

@@ -28,7 +28,7 @@ export function DiscoverSection({
   return (
     <section className="mx-auto max-w-7xl px-6 py-8 sm:px-10 sm:py-14">
       <div className="sm:hidden">
-        <h2 className="text-[21px] leading-[26px] font-bold text-black">
+        <h2 className="text-[21px] leading-[26px] font-bold text-landing-ink">
           {t("title")}
         </h2>
         <div className="mt-3 grid grid-cols-2 gap-2.5">
@@ -55,7 +55,7 @@ export function DiscoverSection({
         <div className="mt-5 flex justify-center">
           <Link
             href="/search"
-            className="flex min-h-[39px] h-auto min-w-[186px] max-w-full items-center justify-center rounded-lg bg-[#b0006d] px-6 py-3 text-center text-sm font-medium text-white transition-colors hover:bg-[#8f0059]"
+            className="flex min-h-[39px] h-auto min-w-[186px] max-w-full items-center justify-center rounded-lg bg-cta-strong px-6 py-3 text-center text-sm font-medium text-white shadow-[var(--shadow-soft)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-cta-active hover:shadow-[var(--shadow-raised)]"
           >
             {t("cta")}
           </Link>
@@ -64,7 +64,7 @@ export function DiscoverSection({
 
       {/* Tablet/desktop — Figma "Más por descubrir" */}
       <div className="hidden sm:block">
-        <h2 className="text-[41px] leading-[50px] font-bold text-black">
+        <h2 className="text-[41px] leading-[50px] font-bold text-landing-ink">
           {t("title")}
         </h2>
 
@@ -91,7 +91,7 @@ export function DiscoverSection({
         <div className="mt-8 flex justify-center sm:mt-10">
           <Link
             href="/search"
-            className="flex min-h-[74px] h-auto min-w-[416px] max-w-full items-center justify-center rounded-[16.6px] bg-[#b0006d] px-8 py-5 text-center text-[24px] leading-[29px] font-medium text-white transition-colors hover:bg-[#8f0059]"
+            className="flex min-h-[74px] h-auto min-w-[416px] max-w-full items-center justify-center rounded-2xl bg-cta px-8 py-5 text-center text-[24px] leading-[29px] font-medium text-white shadow-[var(--shadow-soft)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-cta-hover hover:shadow-[var(--shadow-raised)]"
           >
             {t("cta")}
           </Link>
