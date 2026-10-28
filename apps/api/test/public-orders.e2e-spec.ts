@@ -269,19 +269,36 @@ describe('public orders (e2e)', () => {
   });
 
   describe('receipt confirmation', () => {
-    async function deliverable(patch: Record<string, unknown> = {}) {
+    // Checkout is throttled, so one order is created for the whole block and
+    // reset to a delivered, unconfirmed state before every case.
+    let shared: { token: string; tokenHash: string; id: string };
+
+    beforeAll(async () => {
       const link = createOrderAccessToken();
       const id = await checkout();
       await attachToken(id, link.tokenHash);
+      shared = { ...link, id };
+    });
+
+    async function deliverable(patch: Record<string, unknown> = {}) {
+      await prisma.orderEvent.deleteMany({
+        where: { orderId: shared.id, type: 'RECEIPT_CONFIRMED' },
+      });
+      await prisma.notification.deleteMany({
+        where: { entityId: shared.id, type: 'RECEIPT_CONFIRMED' },
+      });
       await prisma.order.update({
-        where: { id },
+        where: { id: shared.id },
         data: {
+          status: 'ACTIVE',
           paymentStatus: 'VERIFIED',
           fulfillmentStatus: 'IN_TRANSIT',
+          buyerConfirmedReceivedAt: null,
+          accessTokenRevokedAt: null,
           ...patch,
         },
       });
-      return { ...link, id };
+      return shared;
     }
 
     const confirm = (token: string) =>
