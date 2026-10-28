@@ -10,10 +10,17 @@ const ordersApiMock = vi.hoisted(() => ({
   review: vi.fn(),
   advance: vi.fn(),
 }));
+const apiClientMock = vi.hoisted(() => ({
+  reviewPaymentProof: vi.fn(),
+}));
+vi.mock("@/lib/api-client", () => ({
+  apiClient: { orders: apiClientMock },
+}));
 vi.mock("../api/orders.api", () => ({ ordersApi: ordersApiMock }));
 
 const { useReviewPayment } = await import("./use-review-payment");
 const { useAdvanceFulfillment } = await import("./use-advance-fulfillment");
+const { useReviewPaymentProof } = await import("./use-review-payment-proof");
 const { setBuyerNoticeOffer } =
   await import("@/features/assisted-orders/lib/buyer-notice-offer");
 const offers = vi.hoisted(() => ({ last: null as unknown }));
@@ -99,4 +106,36 @@ test("advancing to a step with a notice offers it, but not for a marketplace ord
   await waitFor(() => expect(ordersApiMock.advance).toHaveBeenCalledTimes(2));
   await new Promise((resolve) => setTimeout(resolve, 20));
   expect(setBuyerNoticeOffer).not.toHaveBeenCalled();
+});
+
+test("approving a buyer-submitted proof offers the payment-validated notice, rejecting does not", async () => {
+  apiClientMock.reviewPaymentProof.mockResolvedValue({});
+  const { result } = renderHook(() => useReviewPaymentProof("store-1"), {
+    wrapper: setup([assisted]),
+  });
+  act(() =>
+    result.current.mutate({
+      orderId: "o1",
+      paymentId: "p1",
+      decision: "reject",
+      reason: "x",
+    }),
+  );
+  await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  expect(setBuyerNoticeOffer).not.toHaveBeenCalled();
+
+  act(() =>
+    result.current.mutate({
+      orderId: "o1",
+      paymentId: "p1",
+      decision: "approve",
+    }),
+  );
+  await waitFor(() =>
+    expect(setBuyerNoticeOffer).toHaveBeenCalledWith({
+      storeId: "store-1",
+      orderId: "o1",
+      notice: "ASSISTED_PAYMENT_VALIDATED",
+    }),
+  );
 });

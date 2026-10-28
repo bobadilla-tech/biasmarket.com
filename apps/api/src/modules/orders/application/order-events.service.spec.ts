@@ -27,6 +27,16 @@ describe('sanitizeOrderEventPayload', () => {
       }),
     ).toEqual({ amount: 40, method: 'YAPE' });
   });
+
+  it('keeps the buyer-notice enum and nothing else of a notice event', () => {
+    expect(
+      sanitizeOrderEventPayload({
+        notice: 'ASSISTED_IN_TRANSIT',
+        link: 'https://example.com/pedido/secret',
+        phone: '+51987654321',
+      }),
+    ).toEqual({ notice: 'ASSISTED_IN_TRANSIT' });
+  });
 });
 
 describe('OrderEventsService', () => {
