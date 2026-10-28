@@ -22,6 +22,7 @@ import {
 import { paymentsLocked } from "../lib/order-status";
 import { RegisterPaymentForm } from "./register-payment-form";
 import { PaymentHistoryList } from "./payment-history-list";
+import { OrderShippingSection } from "./order-shipping-section";
 // Deep path rather than the feature barrel, so the sheet does not load the
 // new-order form and its navigation dependencies.
 import { AssistedOrderSection } from "@/features/assisted-orders/components/assisted-order-section";
@@ -203,6 +204,8 @@ export function OrderDetailSheet({
                   storeName={storeName}
                 />
               ) : null}
+
+              <OrderShippingSection order={order} storeId={storeId} />
 
               <div className="space-y-4 rounded-[24px] border border-[#eadcf8] bg-white p-5 shadow-sm">
                 <div className="flex items-center gap-2 text-[#2d1649]">

@@ -49,6 +49,9 @@ describe('PublicOrderService', () => {
     },
     pickupDate: null,
     courierName: 'Olva',
+    trackingNumber: 'OLV123456',
+    trackingUrl: 'https://tracking.example/OLV123456',
+    packedPhotoUrl: 'https://private.example/packed.jpg',
     courierModality: 'HOME',
     linkFirstOpenedAt: null,
     store: {
@@ -135,10 +138,14 @@ describe('PublicOrderService', () => {
     ]);
     expect(result.paidAmount).toBe(40);
     expect(result.pendingAmount).toBe(60);
+    expect(result.trackingNumber).toBe('OLV123456');
+    expect(result.trackingUrl).toBe('https://tracking.example/OLV123456');
+    expect(result.packedPhotoAvailable).toBe(true);
     expect(JSON.stringify(result)).not.toContain('store-1');
     expect(JSON.stringify(result)).not.toContain('seller-1');
     expect(JSON.stringify(result)).not.toContain('buyer@example.com');
     expect(JSON.stringify(result)).not.toContain('proof.jpg');
+    expect(JSON.stringify(result)).not.toContain('packed.jpg');
     expect(JSON.stringify(result)).not.toContain('internal');
     expect(result).not.toHaveProperty('storeId');
     expect(result).not.toHaveProperty('createdByUserId');

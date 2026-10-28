@@ -39,8 +39,8 @@ import { CancelOrderDto } from '../dto/cancel-order.dto.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { StorageService } from '../../../storage/storage.service.js';
+import { OrderDetailResponseDto } from '../dto/order-response.dto.js';
 import type {
-  OrderDetailResponseDto,
   OrderItemResponseDto,
   OrderPaymentResponseDto,
   OrderProductResponseDto,
@@ -50,14 +50,19 @@ import type {
 } from '../dto/order-response.dto.js';
 import {
   IMAGE_UPLOAD_MIME_TYPES,
+  MAX_UPLOAD_SIZE_BYTES,
   UploadedFileValidationPipe,
   type ValidatedUploadedFile,
 } from '../../../common/uploaded-file-validation.pipe.js';
 import { computePaymentSummary } from '../../../common/payment-summary.js';
+import { UpdateOrderShippingDto } from '../dto/update-order-shipping.dto.js';
 
 const OPTIONAL_PAYMENT_IMAGE_PIPE = new UploadedFileValidationPipe({
   allowedMimeTypes: IMAGE_UPLOAD_MIME_TYPES,
   fileIsRequired: false,
+});
+const PACKED_PHOTO_PIPE = new UploadedFileValidationPipe({
+  allowedMimeTypes: IMAGE_UPLOAD_MIME_TYPES,
 });
 
 // Money boundary comparisons compare in cents, not raw floats, so a residual
@@ -204,6 +209,9 @@ export interface OrderRow {
   pickupDate: Date | null;
   courierName: string | null;
   courierModality: 'AGENCY' | 'HOME' | null;
+  trackingNumber: string | null;
+  trackingUrl: string | null;
+  packedPhotoUrl: string | null;
   paymentMethod: PaymentMethodLiteral | null;
   paymentStatus: PaymentStatusLiteral;
   paymentRejectionReason: string | null;
@@ -244,6 +252,9 @@ interface OrderStatusRow {
   pickupDate: Date | null;
   courierName: string | null;
   courierModality: 'AGENCY' | 'HOME' | null;
+  trackingNumber: string | null;
+  trackingUrl: string | null;
+  packedPhotoUrl: string | null;
   paymentMethod: PaymentMethodLiteral | null;
   paymentStatus: PaymentStatusLiteral;
   paymentRejectionReason: string | null;
@@ -309,6 +320,8 @@ export function toOrderDto(row: OrderRow): OrderResponseDto {
     retainedAmount: row.retainedAmount?.toString() ?? null,
     releasedAmount: row.releasedAmount?.toString() ?? null,
     releasedResolution: row.releasedResolution ?? null,
+    trackingNumber: row.trackingNumber,
+    trackingUrl: row.trackingUrl,
     totalAmount: row.totalAmount.toString(),
     requiredAmount: row.requiredAmount.toString(),
     expiresAt: row.expiresAt.toISOString(),
@@ -319,6 +332,7 @@ export function toOrderDto(row: OrderRow): OrderResponseDto {
     linkFirstOpenedAt: row.linkFirstOpenedAt?.toISOString() ?? null,
     claimedAt: row.claimedAt?.toISOString() ?? null,
     createdByName: row.createdBy?.name ?? null,
+    packedPhotoAvailable: Boolean(row.packedPhotoUrl),
     items: row.items.map(toOrderItemDto),
     payments: row.payments.map(toOrderPaymentDto),
   };
@@ -336,10 +350,13 @@ function toOrderStatusDto(row: OrderStatusRow): OrderStatusResponseDto {
     retainedAmount: row.retainedAmount?.toString() ?? null,
     releasedAmount: row.releasedAmount?.toString() ?? null,
     releasedResolution: row.releasedResolution ?? null,
+    trackingNumber: row.trackingNumber,
+    trackingUrl: row.trackingUrl,
     totalAmount: row.totalAmount.toString(),
     requiredAmount: row.requiredAmount.toString(),
     expiresAt: row.expiresAt.toISOString(),
     createdAt: row.createdAt.toISOString(),
+    packedPhotoAvailable: Boolean(row.packedPhotoUrl),
   };
 }
 
@@ -416,6 +433,117 @@ export class OrderController {
     }
     const { body, contentType } = await this.storage.getPaymentImageStream(
       payment.imageUrl,
+    );
+    return new StreamableFile(body, { type: contentType });
+  }
+
+  @Patch(':orderId/shipping')
+  @ApiOkResponse({ type: OrderDetailResponseDto })
+  async updateShipping(
+    @Param('storeId') storeId: string,
+    @Param('orderId') orderId: string,
+    @Session() session: UserSession,
+    @Body() dto: UpdateOrderShippingDto,
+  ): Promise<OrderDetailResponseDto> {
+    await this.orders.assertOwnership(storeId, session.user.id);
+    if (dto.trackingNumber === undefined && dto.trackingUrl === undefined) {
+      throw new BadRequestException('Ingresa los datos de seguimiento');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      const order = await tx.order.findFirst({
+        where: { id: orderId, storeId },
+        select: { trackingNumber: true },
+      });
+      if (!order) throw new NotFoundException('Orden no encontrada');
+
+      const data = {
+        ...(dto.trackingNumber !== undefined && {
+          trackingNumber: dto.trackingNumber,
+        }),
+        ...(dto.trackingUrl !== undefined && { trackingUrl: dto.trackingUrl }),
+      };
+      const updated = await tx.order.updateMany({
+        where: { id: orderId, storeId },
+        data,
+      });
+      if (updated.count !== 1) {
+        throw new NotFoundException('Orden no encontrada');
+      }
+
+      if (dto.trackingNumber && dto.trackingNumber !== order.trackingNumber) {
+        await this.events.record(tx, {
+          orderId,
+          storeId,
+          type: 'TRACKING_ADDED',
+          actor: 'SELLER',
+        });
+      }
+    });
+
+    return toOrderDetailDto(
+      await this.orders.findRowByIdForStore(orderId, storeId),
+    );
+  }
+
+  @Post(':orderId/shipping/photo')
+  @ApiConsumes('multipart/form-data')
+  @ApiOkResponse({ type: OrderDetailResponseDto })
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: MAX_UPLOAD_SIZE_BYTES } }),
+  )
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 20 } })
+  async uploadPackedPhoto(
+    @Param('storeId') storeId: string,
+    @Param('orderId') orderId: string,
+    @Session() session: UserSession,
+    @UploadedFile(PACKED_PHOTO_PIPE) file: ValidatedUploadedFile,
+  ): Promise<OrderDetailResponseDto> {
+    await this.orders.assertOwnership(storeId, session.user.id);
+    const imageUrl = await this.storage.uploadPaymentImage(
+      file.buffer,
+      file.detectedMimeType,
+    );
+
+    await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.order.updateMany({
+        where: { id: orderId, storeId },
+        data: { packedPhotoUrl: imageUrl },
+      });
+      if (updated.count !== 1) {
+        throw new NotFoundException('Orden no encontrada');
+      }
+      await this.events.record(tx, {
+        orderId,
+        storeId,
+        type: 'PACKED_PHOTO_ADDED',
+        actor: 'SELLER',
+      });
+    });
+
+    return toOrderDetailDto(
+      await this.orders.findRowByIdForStore(orderId, storeId),
+    );
+  }
+
+  @Get(':orderId/shipping/photo')
+  @ApiOkResponse({ schema: { type: 'string', format: 'binary' } })
+  @ApiProduces('image/jpeg', 'image/png')
+  @Header('Cache-Control', 'no-store')
+  @Header('Cross-Origin-Resource-Policy', 'cross-origin')
+  async getPackedPhoto(
+    @Param('storeId') storeId: string,
+    @Param('orderId') orderId: string,
+    @Session() session: UserSession,
+  ): Promise<StreamableFile> {
+    await this.orders.assertOwnership(storeId, session.user.id);
+    const order = await this.orders.findRowByIdForStore(orderId, storeId);
+    if (!order.packedPhotoUrl) {
+      throw new NotFoundException('Este pedido no tiene foto del paquete');
+    }
+    const { body, contentType } = await this.storage.getPaymentImageStream(
+      order.packedPhotoUrl,
     );
     return new StreamableFile(body, { type: contentType });
   }

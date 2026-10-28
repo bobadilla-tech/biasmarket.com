@@ -172,6 +172,9 @@ export class PublicOrderService {
       deliveryDetails: toPublicDeliveryDetails(order.deliveryDetails),
       pickupDate: order.pickupDate?.toISOString() ?? null,
       courierName: order.courierName,
+      trackingNumber: order.trackingNumber,
+      trackingUrl: order.trackingUrl,
+      packedPhotoAvailable: Boolean(order.packedPhotoUrl),
       courierModality: order.courierModality,
       payments: order.payments.map((payment) => ({
         source: payment.source,
@@ -180,5 +183,13 @@ export class PublicOrderService {
         reviewStatus: payment.reviewStatus,
       })),
     };
+  }
+
+  async getPackedPhotoUrlByToken(token: string): Promise<string> {
+    const order = await this.events.requireOrderForToken(token);
+    if (!order.packedPhotoUrl) {
+      throw new NotFoundException('Foto del paquete no encontrada');
+    }
+    return order.packedPhotoUrl;
   }
 }
