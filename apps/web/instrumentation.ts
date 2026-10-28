@@ -1,4 +1,8 @@
 import type { Instrumentation } from "next";
+import {
+  redactPublicOrderToken,
+  redactSentryEvent,
+} from "./lib/sentry-redaction";
 
 // Server-side error tracking (GlitchTip, Sentry-protocol-compatible).
 // Env-gated on WEB_SENTRY_DSN so local dev/CI never needs a GlitchTip
@@ -26,32 +30,14 @@ export async function register() {
     dsn,
     tracesSampleRate: 0.01,
     beforeSend(event) {
-      redactEvent(event);
+      redactSentryEvent(event);
       return event;
     },
     beforeSendTransaction(event) {
-      redactEvent(event);
+      redactSentryEvent(event);
       return event;
     },
   });
-}
-
-function redactPublicOrderToken(value: string): string {
-  return value.replace(
-    /(\/(?:en|es)\/store\/[^/?#]+\/pedido\/|\/api\/public\/orders\/)[^/?#]+/g,
-    "$1[redacted]",
-  );
-}
-
-function redactEvent(value: unknown): void {
-  if (!value || typeof value !== "object") return;
-  for (const [key, child] of Object.entries(value)) {
-    if (typeof child === "string") {
-      (value as Record<string, unknown>)[key] = redactPublicOrderToken(child);
-    } else if (child && typeof child === "object") {
-      redactEvent(child);
-    }
-  }
 }
 
 // Captures errors Next surfaces during Server Component rendering, route

@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/react";
+import { redactSentryEvent } from "./lib/sentry-redaction";
 
 // Client-side error tracking (GlitchTip). Runs in the browser before React
 // hydrates — sets up the global window error / unhandledrejection handlers so
@@ -16,30 +17,12 @@ if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
     // drop it so it doesn't flood error tracking.
     ignoreErrors: [/reading 'startTime'/, /reportAllChanges/],
     beforeSend(event) {
-      redactEvent(event);
+      redactSentryEvent(event);
       return event;
     },
     beforeSendTransaction(event) {
-      redactEvent(event);
+      redactSentryEvent(event);
       return event;
     },
   });
-}
-
-function redactPublicOrderToken(value: string): string {
-  return value.replace(
-    /(\/(?:en|es)\/store\/[^/?#]+\/pedido\/|\/api\/public\/orders\/)[^/?#]+/g,
-    "$1[redacted]",
-  );
-}
-
-function redactEvent(value: unknown): void {
-  if (!value || typeof value !== "object") return;
-  for (const [key, child] of Object.entries(value)) {
-    if (typeof child === "string") {
-      (value as Record<string, unknown>)[key] = redactPublicOrderToken(child);
-    } else if (child && typeof child === "object") {
-      redactEvent(child);
-    }
-  }
 }
