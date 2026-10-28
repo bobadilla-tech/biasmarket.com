@@ -1422,6 +1422,22 @@ export default async () => {
           },
         ],
         [
+          import('./modules/orders/dto/buyer-notice.dto.js'),
+          {
+            BuyerNoticeDto: {
+              notice: {
+                required: true,
+                enum: [
+                  'ASSISTED_PAYMENT_VALIDATED',
+                  'ASSISTED_IN_TRANSIT',
+                  'ASSISTED_READY',
+                  'ASSISTED_DELIVERED',
+                ],
+              },
+            },
+          },
+        ],
+        [
           import('./modules/orders/dto/correct-buyer-phone.dto.js'),
           {
             CorrectBuyerPhoneDto: {
@@ -2630,7 +2646,15 @@ export default async () => {
               storeId: { required: true, type: () => String },
               type: {
                 required: true,
-                enum: ['NEW_ORDER', 'PAYMENT_REMINDER', 'ASSISTED_ORDER_LINK'],
+                enum: [
+                  'ASSISTED_PAYMENT_VALIDATED',
+                  'ASSISTED_IN_TRANSIT',
+                  'ASSISTED_READY',
+                  'ASSISTED_DELIVERED',
+                  'NEW_ORDER',
+                  'PAYMENT_REMINDER',
+                  'ASSISTED_ORDER_LINK',
+                ],
               },
               template: { required: true, type: () => String },
               updatedAt: { required: true, type: () => String },
@@ -3279,6 +3303,7 @@ export default async () => {
                 type: t['./modules/orders/dto/assisted-order-response.dto.js']
                   .AssistedOrderLinkResponseDto,
               },
+              recordBuyerNotice: {},
             },
           },
         ],

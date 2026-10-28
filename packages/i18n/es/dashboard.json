@@ -466,6 +466,24 @@
       "assistedOrderLink": {
         "title": "Mensaje de enlace de pedido asistido",
         "description": "Se usa cuando creas un pedido por un comprador y le envías su enlace privado. Variable requerida: '{{link}}'."
+      },
+      "buyerNotices": {
+        "paymentValidated": {
+          "title": "Aviso al comprador: pago validado",
+          "description": "Se usa cuando validas el pago de un pedido asistido y avisas al comprador. No lleva enlace: el comprador ya tiene el suyo. '{{saveInvite}}' agrega la invitación a guardar el pedido y queda vacío si ya lo guardó."
+        },
+        "inTransit": {
+          "title": "Aviso al comprador: pedido en camino",
+          "description": "Se usa cuando el pedido pasa a en camino. '{{trackingNumber}}' es el código de seguimiento, si lo registraste."
+        },
+        "ready": {
+          "title": "Aviso al comprador: pedido listo",
+          "description": "Se usa cuando el pedido queda listo para recoger."
+        },
+        "delivered": {
+          "title": "Aviso al comprador: pedido entregado",
+          "description": "Se usa cuando marcas el pedido como entregado. '{{saveInvite}}' agrega la invitación a guardar el pedido y queda vacío si ya lo guardó."
+        }
       }
     }
   },
@@ -948,6 +966,17 @@
         }
       },
       "receiptConfirmed": "El comprador confirmó la recepción el {date}"
+    },
+    "buyerNotice": {
+      "title": "Avisar al comprador",
+      "notNow": "Ahora no",
+      "dismiss": "Cerrar",
+      "reason": {
+        "ASSISTED_PAYMENT_VALIDATED": "Validaste su pago. Avísale por WhatsApp si quieres.",
+        "ASSISTED_IN_TRANSIT": "El pedido va en camino. Avísale por WhatsApp si quieres.",
+        "ASSISTED_READY": "El pedido está listo. Avísale por WhatsApp si quieres.",
+        "ASSISTED_DELIVERED": "Marcaste el pedido como entregado. Avísale por WhatsApp si quieres."
+      }
     }
   }
 }

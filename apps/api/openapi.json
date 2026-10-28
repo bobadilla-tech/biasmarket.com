@@ -2394,6 +2394,45 @@
         "tags": ["Order"]
       }
     },
+    "/stores/{storeId}/orders/{orderId}/buyer-notices": {
+      "post": {
+        "operationId": "AssistedOrdersController_recordBuyerNotice",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BuyerNoticeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": ["Order"]
+      }
+    },
     "/stores/{slug}/checkout": {
       "post": {
         "operationId": "CheckoutController_create",
@@ -4666,7 +4705,15 @@
             "required": true,
             "in": "path",
             "schema": {
-              "enum": ["NEW_ORDER", "PAYMENT_REMINDER", "ASSISTED_ORDER_LINK"],
+              "enum": [
+                "NEW_ORDER",
+                "PAYMENT_REMINDER",
+                "ASSISTED_ORDER_LINK",
+                "ASSISTED_PAYMENT_VALIDATED",
+                "ASSISTED_IN_TRANSIT",
+                "ASSISTED_READY",
+                "ASSISTED_DELIVERED"
+              ],
               "type": "string"
             }
           }
@@ -4706,7 +4753,15 @@
             "required": true,
             "in": "path",
             "schema": {
-              "enum": ["NEW_ORDER", "PAYMENT_REMINDER", "ASSISTED_ORDER_LINK"],
+              "enum": [
+                "NEW_ORDER",
+                "PAYMENT_REMINDER",
+                "ASSISTED_ORDER_LINK",
+                "ASSISTED_PAYMENT_VALIDATED",
+                "ASSISTED_IN_TRANSIT",
+                "ASSISTED_READY",
+                "ASSISTED_DELIVERED"
+              ],
               "type": "string"
             }
           }
@@ -8432,6 +8487,21 @@
         },
         "required": ["customerPhone"]
       },
+      "BuyerNoticeDto": {
+        "type": "object",
+        "properties": {
+          "notice": {
+            "enum": [
+              "ASSISTED_PAYMENT_VALIDATED",
+              "ASSISTED_IN_TRANSIT",
+              "ASSISTED_READY",
+              "ASSISTED_DELIVERED"
+            ],
+            "type": "string"
+          }
+        },
+        "required": ["notice"]
+      },
       "CreateOrderDto": {
         "type": "object",
         "properties": {
@@ -10376,7 +10446,15 @@
             "type": "string"
           },
           "type": {
-            "enum": ["NEW_ORDER", "PAYMENT_REMINDER", "ASSISTED_ORDER_LINK"],
+            "enum": [
+              "NEW_ORDER",
+              "PAYMENT_REMINDER",
+              "ASSISTED_ORDER_LINK",
+              "ASSISTED_PAYMENT_VALIDATED",
+              "ASSISTED_IN_TRANSIT",
+              "ASSISTED_READY",
+              "ASSISTED_DELIVERED"
+            ],
             "type": "string"
           },
           "template": {

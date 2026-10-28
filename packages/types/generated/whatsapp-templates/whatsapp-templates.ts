@@ -14,14 +14,28 @@ import { customFetch } from "../../http.js";
 
 export const getFindOneUrl = (
   storeId: string,
-  type: "NEW_ORDER" | "PAYMENT_REMINDER" | "ASSISTED_ORDER_LINK",
+  type:
+    | "NEW_ORDER"
+    | "PAYMENT_REMINDER"
+    | "ASSISTED_ORDER_LINK"
+    | "ASSISTED_PAYMENT_VALIDATED"
+    | "ASSISTED_IN_TRANSIT"
+    | "ASSISTED_READY"
+    | "ASSISTED_DELIVERED",
 ) => {
   return `/stores/${storeId}/whatsapp-templates/${type}`;
 };
 
 export const findOne = async (
   storeId: string,
-  type: "NEW_ORDER" | "PAYMENT_REMINDER" | "ASSISTED_ORDER_LINK",
+  type:
+    | "NEW_ORDER"
+    | "PAYMENT_REMINDER"
+    | "ASSISTED_ORDER_LINK"
+    | "ASSISTED_PAYMENT_VALIDATED"
+    | "ASSISTED_IN_TRANSIT"
+    | "ASSISTED_READY"
+    | "ASSISTED_DELIVERED",
   options?: Parameters<typeof customFetch>[1],
 ): Promise<WhatsAppTemplateResponseDto | null> => {
   return customFetch<WhatsAppTemplateResponseDto | null>(
@@ -35,14 +49,28 @@ export const findOne = async (
 
 export const getUpsertUrl = (
   storeId: string,
-  type: "NEW_ORDER" | "PAYMENT_REMINDER" | "ASSISTED_ORDER_LINK",
+  type:
+    | "NEW_ORDER"
+    | "PAYMENT_REMINDER"
+    | "ASSISTED_ORDER_LINK"
+    | "ASSISTED_PAYMENT_VALIDATED"
+    | "ASSISTED_IN_TRANSIT"
+    | "ASSISTED_READY"
+    | "ASSISTED_DELIVERED",
 ) => {
   return `/stores/${storeId}/whatsapp-templates/${type}`;
 };
 
 export const upsert = async (
   storeId: string,
-  type: "NEW_ORDER" | "PAYMENT_REMINDER" | "ASSISTED_ORDER_LINK",
+  type:
+    | "NEW_ORDER"
+    | "PAYMENT_REMINDER"
+    | "ASSISTED_ORDER_LINK"
+    | "ASSISTED_PAYMENT_VALIDATED"
+    | "ASSISTED_IN_TRANSIT"
+    | "ASSISTED_READY"
+    | "ASSISTED_DELIVERED",
   updateWhatsAppTemplateDto: UpdateWhatsAppTemplateDto,
   options?: Parameters<typeof customFetch>[1],
 ): Promise<WhatsAppTemplateResponseDto> => {

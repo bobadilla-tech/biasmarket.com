@@ -9,6 +9,10 @@ const TEMPLATE_KEY = {
   NEW_ORDER: "newOrder",
   PAYMENT_REMINDER: "paymentReminder",
   ASSISTED_ORDER_LINK: "assistedOrderLink",
+  ASSISTED_PAYMENT_VALIDATED: "paymentValidated",
+  ASSISTED_IN_TRANSIT: "inTransit",
+  ASSISTED_READY: "ready",
+  ASSISTED_DELIVERED: "delivered",
 } as const satisfies Record<WhatsAppMessageType, string>;
 
 export function useSaveWhatsAppTemplate(

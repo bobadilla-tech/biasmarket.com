@@ -610,6 +610,10 @@ enum WhatsAppMessageType {
   NEW_ORDER
   PAYMENT_REMINDER
   ASSISTED_ORDER_LINK
+  ASSISTED_PAYMENT_VALIDATED
+  ASSISTED_IN_TRANSIT
+  ASSISTED_READY
+  ASSISTED_DELIVERED
 }
 
 // Per-store override for the WhatsApp message a seller sends to a buyer —

@@ -152,6 +152,29 @@ test("getWhatsAppTemplates keeps existing templates when the optional assisted-o
     newOrder: { type: "NEW_ORDER" },
     paymentReminder: { type: "PAYMENT_REMINDER" },
     assistedOrderLink: null,
+    paymentValidated: { type: "ASSISTED_PAYMENT_VALIDATED" },
+    inTransit: { type: "ASSISTED_IN_TRANSIT" },
+    ready: { type: "ASSISTED_READY" },
+    delivered: { type: "ASSISTED_DELIVERED" },
+  });
+});
+
+test("getWhatsAppTemplates degrades each buyer-notice type to null on a 400 from an older API", async () => {
+  whatsappTemplatesMock.findOne.mockImplementation(
+    (_storeId: string, type: string) =>
+      type.startsWith("ASSISTED_") && type !== "ASSISTED_ORDER_LINK"
+        ? Promise.reject(new ApiError("unsupported message type", 400))
+        : Promise.resolve({ type }),
+  );
+
+  await expect(settingsApi.getWhatsAppTemplates("store-1")).resolves.toEqual({
+    newOrder: { type: "NEW_ORDER" },
+    paymentReminder: { type: "PAYMENT_REMINDER" },
+    assistedOrderLink: { type: "ASSISTED_ORDER_LINK" },
+    paymentValidated: null,
+    inTransit: null,
+    ready: null,
+    delivered: null,
   });
 });
 

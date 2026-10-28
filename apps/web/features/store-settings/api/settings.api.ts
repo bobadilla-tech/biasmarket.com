@@ -172,21 +172,43 @@ export const settingsApi = {
   // A type with no override row resolves to null — callers fall back to the
   // hardcoded default template.
   async getWhatsAppTemplates(storeId: string) {
-    const [newOrder, paymentReminder, assistedOrderLink] = await Promise.all([
-      apiClient.whatsappTemplates.findOne(storeId, "NEW_ORDER"),
-      apiClient.whatsappTemplates.findOne(storeId, "PAYMENT_REMINDER"),
-      // Mixed-version rollout: a previous API rejects the unknown enum with a
-      // 400. Only that case degrades to "no override"; any other failure
-      // must surface so a seller never edits the default over a custom
-      // template they could not load.
+    // Mixed-version rollout: a previous API rejects an unknown enum with a
+    // 400. Only that case degrades to "no override"; any other failure
+    // must surface so a seller never edits the default over a custom
+    // template they could not load.
+    const optional = (type: WhatsAppMessageType) =>
       apiClient.whatsappTemplates
-        .findOne(storeId, "ASSISTED_ORDER_LINK")
+        .findOne(storeId, type)
         .catch((error: unknown) => {
           if (error instanceof ApiError && error.status === 400) return null;
           throw error;
-        }),
+        });
+    const [
+      newOrder,
+      paymentReminder,
+      assistedOrderLink,
+      paymentValidated,
+      inTransit,
+      ready,
+      delivered,
+    ] = await Promise.all([
+      apiClient.whatsappTemplates.findOne(storeId, "NEW_ORDER"),
+      apiClient.whatsappTemplates.findOne(storeId, "PAYMENT_REMINDER"),
+      optional("ASSISTED_ORDER_LINK"),
+      optional("ASSISTED_PAYMENT_VALIDATED"),
+      optional("ASSISTED_IN_TRANSIT"),
+      optional("ASSISTED_READY"),
+      optional("ASSISTED_DELIVERED"),
     ]);
-    return { newOrder, paymentReminder, assistedOrderLink };
+    return {
+      newOrder,
+      paymentReminder,
+      assistedOrderLink,
+      paymentValidated,
+      inTransit,
+      ready,
+      delivered,
+    };
   },
 
   saveWhatsAppTemplate: (

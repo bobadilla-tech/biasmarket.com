@@ -8,6 +8,7 @@
 import type {
   AdvanceFulfillmentDto,
   AssistedOrderLinkResponseDto,
+  BuyerNoticeDto,
   CancelOrderDto,
   CorrectBuyerPhoneDto,
   CreateAssistedOrderDto,
@@ -291,6 +292,24 @@ export const correctBuyerPhone = async (
       body: JSON.stringify(correctBuyerPhoneDto),
     },
   );
+};
+
+export const getRecordBuyerNoticeUrl = (storeId: string, orderId: string) => {
+  return `/stores/${storeId}/orders/${orderId}/buyer-notices`;
+};
+
+export const recordBuyerNotice = async (
+  storeId: string,
+  orderId: string,
+  buyerNoticeDto: BuyerNoticeDto,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<void> => {
+  return customFetch<void>(getRecordBuyerNoticeUrl(storeId, orderId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(buyerNoticeDto),
+  });
 };
 
 export const getUpdateShippingUrl = (storeId: string, orderId: string) => {

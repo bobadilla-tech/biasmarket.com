@@ -56,6 +56,7 @@ const ALLOWED_PAYLOAD_KEYS = new Set([
   'method',
   'resolution',
   'paymentId',
+  'notice',
 ]);
 
 const RECEIPT_FULFILLMENT_STATES = new Set<FulfillmentStatus>([
