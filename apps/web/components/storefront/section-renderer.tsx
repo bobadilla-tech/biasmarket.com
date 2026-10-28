@@ -103,6 +103,9 @@ export function StoreSectionRenderer({
   storeName = "",
   intro,
   sections,
+  aboutContent,
+  aboutSections = [],
+  showAbout = false,
   catalogControls = false,
   storeCategories = [],
   catalogPagination,
@@ -112,6 +115,9 @@ export function StoreSectionRenderer({
   storeName?: string;
   intro?: ReactNode;
   sections: RenderableSection[];
+  aboutContent?: ReactNode;
+  aboutSections?: RenderableSection[];
+  showAbout?: boolean;
   catalogControls?: boolean;
   storeCategories?: StorefrontCategory[];
   catalogPagination?: { page: number; limit: number; total: number } | null;
@@ -123,7 +129,9 @@ export function StoreSectionRenderer({
   const searchParams = useSearchParams();
   const searchString = searchParams?.toString() ?? "";
   const tabValue = searchParams?.get("tab") ?? null;
-  const activeTab = catalogControls ? normalizeStoreTab(tabValue) : "productos";
+  const activeTab = catalogControls
+    ? normalizeStoreTab(tabValue, showAbout)
+    : "productos";
   const [query, setQuery] = useState(searchParams?.get("q") ?? "");
   const [sort, setSort] = useState(searchParams?.get("orden") ?? "recientes");
   const [categoryIds, setCategoryIds] = useState(() =>
@@ -348,7 +356,7 @@ export function StoreSectionRenderer({
 
   return (
     <>
-      {catalogControls && <StoreTabs />}
+      {catalogControls && <StoreTabs showAbout={showAbout} />}
       <section
         id="store-panel-productos"
         role={catalogControls ? "tabpanel" : undefined}
@@ -578,6 +586,63 @@ export function StoreSectionRenderer({
           </div>
         </section>
       )}
+      {catalogControls && showAbout && (
+        <section
+          id="store-panel-acerca"
+          role="tabpanel"
+          aria-labelledby="store-tab-acerca"
+          hidden={activeTab !== "acerca"}
+          className="space-y-6"
+        >
+          <header>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-(--store-primary)">
+              {t("aboutEyebrow")}
+            </p>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight text-(--store-text)">
+              {t("aboutTab")}
+            </h2>
+          </header>
+          {aboutContent}
+          {renderSectionsForAbout()}
+        </section>
+      )}
     </>
   );
+
+  function renderSectionsForAbout() {
+    // Keep the legacy banner and prose sections in their original order under
+    // the About tab, while collections are represented by the paginated grid.
+    return aboutSections.map((section) => {
+      if (section.type === "COLLECTION") return null;
+      if (section.type === "BANNER") {
+        return (
+          <section key={section.id}>
+            {Boolean(section.content?.imageUrl) && (
+              <a href={(section.content?.linkUrl as string) ?? "#"}>
+                <img
+                  src={section.content?.imageUrl as string}
+                  alt={
+                    (section.content?.alt as string) ||
+                    t("bannerImageGenericAlt")
+                  }
+                  className="w-full rounded-2xl object-cover"
+                />
+              </a>
+            )}
+          </section>
+        );
+      }
+      const paragraphs = String(section.content?.body ?? "")
+        .split(/\n{2,}/)
+        .map((paragraph) => paragraph.trim())
+        .filter(Boolean);
+      return (
+        <section key={section.id} className="prose max-w-none">
+          {paragraphs.map((paragraph, index) => (
+            <p key={index}>{paragraph}</p>
+          ))}
+        </section>
+      );
+    });
+  }
 }

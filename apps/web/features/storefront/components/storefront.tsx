@@ -238,27 +238,35 @@ export function OwnerCard({
   );
 }
 
-export type StoreTab = "productos" | "categorias" | "referencias";
+export type StoreTab = "productos" | "categorias" | "referencias" | "acerca";
 
-const storeTabs: StoreTab[] = ["productos", "categorias", "referencias"];
+const baseStoreTabs: StoreTab[] = ["productos", "categorias", "referencias"];
 
-export function normalizeStoreTab(value: string | null): StoreTab {
-  return storeTabs.includes(value as StoreTab)
-    ? (value as StoreTab)
-    : "productos";
+export function normalizeStoreTab(
+  value: string | null,
+  showAbout = false,
+): StoreTab {
+  const tabs = showAbout
+    ? [...baseStoreTabs, "acerca" as const]
+    : baseStoreTabs;
+  return tabs.includes(value as StoreTab) ? (value as StoreTab) : "productos";
 }
 
 /** Keeps the selected storefront tab in the shareable URL and browser history. */
-export function StoreTabs() {
+export function StoreTabs({ showAbout = false }: { showAbout?: boolean }) {
   const t = useTranslations("storefront");
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const active = normalizeStoreTab(searchParams.get("tab"));
+  const storeTabs = showAbout
+    ? [...baseStoreTabs, "acerca" as const]
+    : baseStoreTabs;
+  const active = normalizeStoreTab(searchParams.get("tab"), showAbout);
   const labels: Record<StoreTab, string> = {
     productos: t("productsTab"),
     categorias: t("categoriesTab"),
     referencias: t("referencesTab"),
+    acerca: t("aboutTab"),
   };
 
   function selectTab(tab: StoreTab) {
@@ -478,7 +486,6 @@ export function CategoryFilter({
 }
 
 /** Displays a category image and title using the store theme. */
-
 export function CategoryCard({
   category,
   imageUrl,

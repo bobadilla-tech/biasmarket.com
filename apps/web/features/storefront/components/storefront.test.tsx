@@ -310,6 +310,33 @@ describe("storefront empty states", () => {
     );
   });
 
+  it("keeps legacy text blocks in the accessible About tab", () => {
+    navigation.url = "/es/store/tienda?tab=acerca";
+    withMessages(
+      <StoreSectionRenderer
+        slug="tienda"
+        sections={[]}
+        catalogControls
+        showAbout
+        aboutSections={[
+          {
+            id: "about-text",
+            type: "TEXT_BLOCK",
+            content: { body: "A little about this shop." },
+          },
+        ]}
+      />,
+    );
+
+    expect(
+      screen.getByRole("tab", { name: "Acerca de la tienda" }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("tabpanel", { name: "Acerca de la tienda" }),
+    ).toBeTruthy();
+    expect(screen.getByText("A little about this shop.")).toBeTruthy();
+  });
+
   it("sorts saved catalog products by availability, effective price, and name", () => {
     navigation.url = "/es/store/tienda?tab=productos";
     withMessages(
