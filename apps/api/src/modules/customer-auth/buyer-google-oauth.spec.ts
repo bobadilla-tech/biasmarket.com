@@ -66,6 +66,7 @@ describe('buyer google oauth', () => {
     const valid = {
       iss: 'https://accounts.google.com',
       aud: 'client-id',
+      sub: '110169484474386276334',
       exp: future,
       email: 'buyer@example.com',
       email_verified: true,
@@ -76,7 +77,11 @@ describe('buyer google oauth', () => {
       const fetchImpl = fetchReturning({ id_token: idToken(valid) });
 
       await expect(exchangeBuyerGoogleCode('code', fetchImpl)).resolves.toEqual(
-        { email: 'buyer@example.com', name: 'Buyer' },
+        {
+          sub: '110169484474386276334',
+          email: 'buyer@example.com',
+          name: 'Buyer',
+        },
       );
     });
 
@@ -86,6 +91,9 @@ describe('buyer google oauth', () => {
       ['wrong issuer', { ...valid, iss: 'https://evil.example' }],
       ['expired token', { ...valid, exp: 1 }],
       ['no email', { ...valid, email: undefined }],
+      ['no sub', { ...valid, sub: undefined }],
+      ['empty sub', { ...valid, sub: '' }],
+      ['numeric sub', { ...valid, sub: 1234 }],
     ])('rejects %s', async (_label, claims) => {
       const fetchImpl = fetchReturning({ id_token: idToken(claims) });
 

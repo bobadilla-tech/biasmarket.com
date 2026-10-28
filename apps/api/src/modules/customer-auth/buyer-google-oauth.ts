@@ -115,6 +115,7 @@ export function buildBuyerGoogleAuthUrl(state: string): string {
 }
 
 export interface GoogleIdentity {
+  sub: string;
   email: string;
   name: string | null;
 }
@@ -149,6 +150,7 @@ export async function exchangeBuyerGoogleCode(
   let claims: {
     iss?: string;
     aud?: string;
+    sub?: string;
     exp?: number;
     email?: string;
     email_verified?: boolean | string;
@@ -169,10 +171,12 @@ export async function exchangeBuyerGoogleCode(
     typeof claims.exp !== 'number' ||
     claims.exp * 1000 < Date.now() ||
     !claims.email ||
+    typeof claims.sub !== 'string' ||
+    !claims.sub ||
     !verified
   ) {
     return null;
   }
 
-  return { email: claims.email, name: claims.name ?? null };
+  return { sub: claims.sub, email: claims.email, name: claims.name ?? null };
 }

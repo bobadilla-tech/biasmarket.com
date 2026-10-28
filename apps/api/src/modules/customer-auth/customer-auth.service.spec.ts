@@ -27,6 +27,7 @@ describe('CustomerAuthService', () => {
       findMany: Mock;
       create: Mock;
       update: Mock;
+      updateMany: Mock;
     };
     customerStoreLink: { upsert: Mock };
     store: { findUnique: Mock };
@@ -52,6 +53,7 @@ describe('CustomerAuthService', () => {
         findMany: vi.fn(),
         create: vi.fn(),
         update: vi.fn(),
+        updateMany: vi.fn(),
       },
       customerStoreLink: { upsert: vi.fn() },
       store: { findUnique: vi.fn().mockResolvedValue(store) },
@@ -319,51 +321,152 @@ describe('CustomerAuthService', () => {
   });
 
   describe('loginWithGoogle', () => {
-    const identity = { email: 'Buyer@Example.com', name: 'Buyer Name' };
+    const identity = {
+      sub: 'google-sub-1',
+      email: 'Buyer@Example.com',
+      name: 'Buyer Name',
+    };
+    const emailLookup = {
+      email: { equals: identity.email, mode: 'insensitive' },
+      emailVerified: true,
+    };
 
-    it('signs in the single matching account, verifies its email and links the store', async () => {
-      prisma.buyerAccount.findMany.mockResolvedValue([
-        { id: 'buyer-1', passwordVersion: 2, name: null },
-      ]);
-      prisma.buyerAccount.update.mockResolvedValue({
+    function sessionOf(token: string) {
+      return verifyCustomerSessionToken(token, 'test-secret');
+    }
+
+    it('signs in the account that already carries the googleSub, without an email lookup', async () => {
+      prisma.buyerAccount.findUnique.mockResolvedValue({
         id: 'buyer-1',
         passwordVersion: 2,
       });
 
       const token = await service.loginWithGoogle('my-store', identity);
 
-      expect(verifyCustomerSessionToken(token, 'test-secret')).toEqual({
+      expect(sessionOf(token)).toEqual({
+        buyerAccountId: 'buyer-1',
+        passwordVersion: 2,
+      });
+      expect(prisma.buyerAccount.findUnique).toHaveBeenCalledWith({
+        where: { googleSub: 'google-sub-1' },
+      });
+      expect(prisma.buyerAccount.findMany).not.toHaveBeenCalled();
+      expect(prisma.buyerAccount.create).not.toHaveBeenCalled();
+      expect(prisma.customerStoreLink.upsert).toHaveBeenCalled();
+    });
+
+    it('links the single VERIFIED same-email account by setting googleSub, never overwriting one', async () => {
+      prisma.buyerAccount.findUnique.mockResolvedValue(null);
+      prisma.buyerAccount.findMany.mockResolvedValue([
+        { id: 'buyer-1', passwordVersion: 2, name: null, googleSub: null },
+      ]);
+      prisma.buyerAccount.updateMany.mockResolvedValue({ count: 1 });
+      prisma.buyerAccount.findUniqueOrThrow.mockResolvedValue({
+        id: 'buyer-1',
+        passwordVersion: 2,
+      });
+
+      const token = await service.loginWithGoogle('my-store', identity);
+
+      expect(sessionOf(token)).toEqual({
         buyerAccountId: 'buyer-1',
         passwordVersion: 2,
       });
       expect(prisma.buyerAccount.findMany).toHaveBeenCalledWith({
-        where: { email: { equals: identity.email, mode: 'insensitive' } },
+        where: emailLookup,
       });
-      expect(prisma.customerStoreLink.upsert).toHaveBeenCalled();
-      expect(prisma.buyerAccount.update).toHaveBeenCalledWith({
-        where: { id: 'buyer-1' },
-        data: { emailVerified: true, name: 'Buyer Name' },
+      expect(prisma.buyerAccount.updateMany).toHaveBeenCalledWith({
+        where: { id: 'buyer-1', googleSub: null },
+        data: { googleSub: 'google-sub-1', name: 'Buyer Name' },
       });
+      expect(prisma.buyerAccount.create).not.toHaveBeenCalled();
     });
 
-    it('keeps an existing name', async () => {
+    it('keeps an existing name when linking', async () => {
+      prisma.buyerAccount.findUnique.mockResolvedValue(null);
       prisma.buyerAccount.findMany.mockResolvedValue([
-        { id: 'buyer-1', passwordVersion: 0, name: 'Already Set' },
+        {
+          id: 'buyer-1',
+          passwordVersion: 0,
+          name: 'Already Set',
+          googleSub: null,
+        },
       ]);
-      prisma.buyerAccount.update.mockResolvedValue({
+      prisma.buyerAccount.updateMany.mockResolvedValue({ count: 1 });
+      prisma.buyerAccount.findUniqueOrThrow.mockResolvedValue({
         id: 'buyer-1',
         passwordVersion: 0,
       });
 
       await service.loginWithGoogle('my-store', identity);
 
-      expect(prisma.buyerAccount.update).toHaveBeenCalledWith({
-        where: { id: 'buyer-1' },
-        data: { emailVerified: true },
+      expect(prisma.buyerAccount.updateMany).toHaveBeenCalledWith({
+        where: { id: 'buyer-1', googleSub: null },
+        data: { googleSub: 'google-sub-1' },
       });
     });
 
-    it('creates a phone-less account when no BuyerAccount has that email', async () => {
+    it('does NOT link or verify an unverified same-email account (pre-hijack); creates a new one', async () => {
+      // The DB-level filter excludes unverified rows; model that faithfully:
+      // the only same-email row is unverified, so a verified-only query is empty.
+      const rows = [
+        {
+          id: 'attacker',
+          passwordVersion: 0,
+          name: null,
+          googleSub: null,
+          emailVerified: false,
+        },
+      ];
+      prisma.buyerAccount.findUnique.mockResolvedValue(null);
+      prisma.buyerAccount.findMany.mockImplementation(
+        async ({ where }: { where: { emailVerified?: boolean } }) =>
+          rows.filter(
+            (r) =>
+              where.emailVerified === undefined ||
+              r.emailVerified === where.emailVerified,
+          ),
+      );
+      prisma.buyerAccount.create.mockResolvedValue({
+        id: 'buyer-new',
+        passwordVersion: 0,
+      });
+
+      const token = await service.loginWithGoogle('my-store', identity);
+
+      expect(sessionOf(token)?.buyerAccountId).toBe('buyer-new');
+      expect(prisma.buyerAccount.create).toHaveBeenCalledWith({
+        data: {
+          email: identity.email,
+          emailVerified: true,
+          name: 'Buyer Name',
+          googleSub: 'google-sub-1',
+        },
+      });
+      const touched = [
+        ...prisma.buyerAccount.update.mock.calls,
+        ...prisma.buyerAccount.updateMany.mock.calls,
+      ];
+      expect(touched).toEqual([]);
+    });
+
+    it('a googleSub match wins over a later-verified duplicate of the same email', async () => {
+      prisma.buyerAccount.findUnique.mockResolvedValue({
+        id: 'owner',
+        passwordVersion: 1,
+      });
+      prisma.buyerAccount.findMany.mockResolvedValue([
+        { id: 'owner', googleSub: 'google-sub-1' },
+        { id: 'duplicate', googleSub: null },
+      ]);
+
+      const token = await service.loginWithGoogle('my-store', identity);
+
+      expect(sessionOf(token)?.buyerAccountId).toBe('owner');
+    });
+
+    it('creates a phone-less account carrying the googleSub when nothing matches', async () => {
+      prisma.buyerAccount.findUnique.mockResolvedValue(null);
       prisma.buyerAccount.findMany.mockResolvedValue([]);
       prisma.buyerAccount.create.mockResolvedValue({
         id: 'buyer-new',
@@ -377,16 +480,45 @@ describe('CustomerAuthService', () => {
           email: identity.email,
           emailVerified: true,
           name: 'Buyer Name',
+          googleSub: 'google-sub-1',
         },
       });
-      expect(verifyCustomerSessionToken(token, 'test-secret')).toEqual({
+      expect(sessionOf(token)).toEqual({
         buyerAccountId: 'buyer-new',
         passwordVersion: 0,
       });
       expect(prisma.customerStoreLink.upsert).toHaveBeenCalled();
     });
 
+    it('recovers from a concurrent first login (P2002 on googleSub) by re-reading the winner', async () => {
+      prisma.buyerAccount.findUnique
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ id: 'winner', passwordVersion: 0 });
+      prisma.buyerAccount.findMany.mockResolvedValue([]);
+      prisma.buyerAccount.create.mockRejectedValue(
+        new Prisma.PrismaClientKnownRequestError('unique', {
+          code: 'P2002',
+          clientVersion: 'test',
+        }),
+      );
+
+      const token = await service.loginWithGoogle('my-store', identity);
+
+      expect(sessionOf(token)?.buyerAccountId).toBe('winner');
+    });
+
+    it('does not swallow other create errors', async () => {
+      prisma.buyerAccount.findUnique.mockResolvedValue(null);
+      prisma.buyerAccount.findMany.mockResolvedValue([]);
+      prisma.buyerAccount.create.mockRejectedValue(new Error('db down'));
+
+      await expect(
+        service.loginWithGoogle('my-store', identity),
+      ).rejects.toThrow('db down');
+    });
+
     it('does not link any store for the global entry point', async () => {
+      prisma.buyerAccount.findUnique.mockResolvedValue(null);
       prisma.buyerAccount.findMany.mockResolvedValue([]);
       prisma.buyerAccount.create.mockResolvedValue({
         id: 'buyer-new',
@@ -399,10 +531,11 @@ describe('CustomerAuthService', () => {
       expect(prisma.customerStoreLink.upsert).not.toHaveBeenCalled();
     });
 
-    it('refuses an ambiguous email shared by several accounts', async () => {
+    it('refuses an ambiguous email shared by several verified accounts', async () => {
+      prisma.buyerAccount.findUnique.mockResolvedValue(null);
       prisma.buyerAccount.findMany.mockResolvedValue([
-        { id: 'a', passwordVersion: 0, name: null },
-        { id: 'b', passwordVersion: 0, name: null },
+        { id: 'a', passwordVersion: 0, name: null, googleSub: null },
+        { id: 'b', passwordVersion: 0, name: null, googleSub: null },
       ]);
 
       await expect(
@@ -410,6 +543,80 @@ describe('CustomerAuthService', () => {
       ).rejects.toBeInstanceOf(ConflictException);
       expect(prisma.buyerAccount.create).not.toHaveBeenCalled();
       expect(prisma.customerStoreLink.upsert).not.toHaveBeenCalled();
+    });
+
+    it('signs in a verified same-email account that a concurrent first login already bound to this sub', async () => {
+      prisma.buyerAccount.findUnique.mockResolvedValue(null);
+      prisma.buyerAccount.findMany.mockResolvedValue([
+        {
+          id: 'buyer-1',
+          passwordVersion: 3,
+          name: null,
+          googleSub: 'google-sub-1',
+        },
+      ]);
+
+      const token = await service.loginWithGoogle('my-store', identity);
+
+      expect(sessionOf(token)).toEqual({
+        buyerAccountId: 'buyer-1',
+        passwordVersion: 3,
+      });
+      expect(prisma.buyerAccount.updateMany).not.toHaveBeenCalled();
+      expect(prisma.buyerAccount.create).not.toHaveBeenCalled();
+    });
+
+    it('returns the winner when the conditional link update loses a race', async () => {
+      prisma.buyerAccount.findUnique
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ id: 'winner', passwordVersion: 0 });
+      prisma.buyerAccount.findMany.mockResolvedValue([
+        { id: 'buyer-1', passwordVersion: 0, name: null, googleSub: null },
+      ]);
+      prisma.buyerAccount.updateMany.mockResolvedValue({ count: 0 });
+
+      const token = await service.loginWithGoogle('my-store', identity);
+
+      expect(sessionOf(token)?.buyerAccountId).toBe('winner');
+    });
+
+    it('conflicts when the link update loses a race and nobody holds the sub', async () => {
+      prisma.buyerAccount.findUnique.mockResolvedValue(null);
+      prisma.buyerAccount.findMany.mockResolvedValue([
+        { id: 'buyer-1', passwordVersion: 0, name: null, googleSub: null },
+      ]);
+      prisma.buyerAccount.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(
+        service.loginWithGoogle('my-store', identity),
+      ).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('rethrows a create P2002 when no account holds the sub', async () => {
+      prisma.buyerAccount.findUnique.mockResolvedValue(null);
+      prisma.buyerAccount.findMany.mockResolvedValue([]);
+      const p2002 = new Prisma.PrismaClientKnownRequestError('unique', {
+        code: 'P2002',
+        clientVersion: 'test',
+      });
+      prisma.buyerAccount.create.mockRejectedValue(p2002);
+
+      await expect(service.loginWithGoogle('my-store', identity)).rejects.toBe(
+        p2002,
+      );
+    });
+
+    it('refuses to link when the only verified account already has a different googleSub', async () => {
+      prisma.buyerAccount.findUnique.mockResolvedValue(null);
+      prisma.buyerAccount.findMany.mockResolvedValue([
+        { id: 'a', passwordVersion: 0, name: null, googleSub: 'other-sub' },
+      ]);
+
+      await expect(
+        service.loginWithGoogle('my-store', identity),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(prisma.buyerAccount.updateMany).not.toHaveBeenCalled();
+      expect(prisma.buyerAccount.create).not.toHaveBeenCalled();
     });
   });
 
