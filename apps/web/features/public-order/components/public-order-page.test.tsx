@@ -380,3 +380,55 @@ test("the logo goes through StoreLogo and the view has no packed photo or raw im
     expect(src, f).not.toMatch(/trackingUrl|packedPhoto/);
   }
 });
+
+test("the pickup date renders in UTC whatever the browser time zone", async () => {
+  const previous = process.env.TZ;
+  process.env.TZ = "America/Lima";
+  try {
+    getByToken.mockResolvedValue(
+      makeOrder({
+        deliveryMethodType: "PICKUP",
+        pickupDate: "2026-09-05T00:00:00.000Z",
+      }),
+    );
+    renderPage();
+    expect(await screen.findByText(/5 sept 2026/)).toBeTruthy();
+  } finally {
+    if (previous === undefined) delete process.env.TZ;
+    else process.env.TZ = previous;
+  }
+});
+
+test("a paid-adelanto order with nothing pending is not asked to pay again", async () => {
+  getByToken.mockResolvedValue(
+    makeOrder({ paymentStatus: "PARTIALLY_PAID", pendingAmount: 0 }),
+  );
+  renderPage();
+  expect(await screen.findByText("Hola, Sofi")).toBeTruthy();
+  expect(screen.queryByText("Cómo pagar")).toBeNull();
+});
+
+test("an expired order (only paymentStatus CANCELLED) reads as cancelled", async () => {
+  getByToken.mockResolvedValue(
+    makeOrder({ status: "ACTIVE", paymentStatus: "CANCELLED" }),
+  );
+  renderPage();
+  expect(await screen.findByText("Este pedido fue cancelado.")).toBeTruthy();
+  expect(screen.queryByText("Cómo pagar")).toBeNull();
+});
+
+test("a cancelled order stays cancelled even if fulfillment says READY", async () => {
+  getByToken.mockResolvedValue(
+    makeOrder({ status: "CANCELLED", fulfillmentStatus: "READY" }),
+  );
+  renderPage();
+  expect(await screen.findByText("Este pedido fue cancelado.")).toBeTruthy();
+  expect(screen.queryByText("Tu pedido está listo.")).toBeNull();
+});
+
+test("a non-ACTIVE order never shows how to pay", async () => {
+  getByToken.mockResolvedValue(makeOrder({ status: "COMPLETED" as never }));
+  renderPage();
+  expect(await screen.findByText("Hola, Sofi")).toBeTruthy();
+  expect(screen.queryByText("Cómo pagar")).toBeNull();
+});

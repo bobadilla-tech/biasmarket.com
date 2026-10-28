@@ -221,6 +221,9 @@ export function PublicOrderView({
               <p className="text-gray-600">
                 {new Intl.DateTimeFormat(locale, {
                   dateStyle: "medium",
+                  // Stored as UTC midnight: the browser zone would show the
+                  // previous day west of UTC.
+                  timeZone: "UTC",
                 }).format(new Date(order.pickupDate))}
               </p>
             )}

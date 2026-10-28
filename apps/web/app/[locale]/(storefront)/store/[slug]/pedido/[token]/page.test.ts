@@ -5,6 +5,8 @@ import { describe, expect, test } from "vitest";
 // page.tsx must never call the API: a server-side fetch would make
 // link-preview crawlers count as the buyer's first open (which locks the
 // seller's "Corregir numero"). The browser fetches the order instead.
+// This is a source-text check: it catches accidental edits, not a deliberately
+// obfuscated fetch (the import allow-list below blocks a direct apiClient).
 const source = fs
   .readFileSync(path.join(__dirname, "page.tsx"), "utf8")
   .replace(/\/\*[\s\S]*?\*\//g, "")
