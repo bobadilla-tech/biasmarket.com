@@ -90,6 +90,7 @@
     "cta": "Ver más productos",
     "empty": "Aún no hay productos.",
     "error": "Algo salió mal. Inténtalo de nuevo.",
+    "loading": "Cargando productos para descubrir",
     "retry": "Reintentar"
   },
   "about": {

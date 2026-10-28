@@ -7,11 +7,13 @@ export function ErrorState({
   message,
   retry,
   retryLabel = "Retry",
+  retrying = false,
 }: {
   title?: string;
   message: string;
   retry?: () => void;
   retryLabel?: string;
+  retrying?: boolean;
 }) {
   return (
     <Alert variant="destructive" role="alert">
@@ -25,7 +27,10 @@ export function ErrorState({
             variant="outline"
             size="sm"
             className="mt-2"
-            onClick={retry}
+            aria-disabled={retrying}
+            onClick={() => {
+              if (!retrying) retry();
+            }}
           >
             {retryLabel}
           </Button>
