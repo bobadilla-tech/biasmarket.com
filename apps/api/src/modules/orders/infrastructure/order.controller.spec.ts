@@ -13,14 +13,51 @@ vi.mock('@nestjs/throttler', async (importOriginal) => {
 });
 
 import { NotFoundException } from '@nestjs/common';
-import { OrderController, pickPublicOrderFields } from './order.controller.js';
+import {
+  OrderController,
+  pickPublicOrderFields,
+  toOrderPaymentDto,
+  type OrderPaymentRow,
+} from './order.controller.js';
 import { OrderRepository } from './order.repository.js';
 import { ReviewPaymentUseCase } from '../application/review-payment.usecase.js';
 import { AdvanceFulfillmentUseCase } from '../application/advance-fulfillment.usecase.js';
 import { CancelOrderUseCase } from '../application/cancel-order.usecase.js';
+import { VoidOrderPaymentUseCase } from '../application/void-order-payment.usecase.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { StorageService } from '../../../storage/storage.service.js';
 import { OrderEventsService } from '../application/order-events.service.js';
+
+describe('toOrderPaymentDto', () => {
+  it('does not expose private payment actor ids', () => {
+    const payment = {
+      id: 'payment-1',
+      orderId: 'order-1',
+      storeId: 'store-1',
+      amount: { toString: () => '12.00' },
+      currency: 'PEN',
+      method: 'YAPE',
+      note: null,
+      imageUrl: null,
+      createdAt: new Date('2026-10-27T00:00:00.000Z'),
+      operationCode: null,
+      paidAt: null,
+      voidedAt: null,
+      voidReason: null,
+      source: 'SELLER_RECORDED',
+      reviewStatus: 'N_A',
+      reviewedAt: null,
+      reviewedBy: null,
+      recordedBy: 'seller-1',
+      voidedBy: 'seller-1',
+    } as OrderPaymentRow;
+
+    const response = toOrderPaymentDto(payment);
+
+    expect(response).not.toHaveProperty('recordedBy');
+    expect(response).not.toHaveProperty('voidedBy');
+  });
+});
 
 describe('OrderController.addPayment', () => {
   let controller: OrderController;
@@ -38,12 +75,13 @@ describe('OrderController.addPayment', () => {
     orderPayment: { create: Mock };
   };
   let tx: {
+    $queryRaw: Mock;
     order: {
       findUniqueOrThrow: Mock;
       findFirst: Mock;
       updateMany: Mock;
     };
-    orderPayment: { create: Mock; aggregate: Mock };
+    orderPayment: { create: Mock; findMany: Mock; aggregate: Mock };
     auditLog: { create: Mock };
   };
 
@@ -96,12 +134,13 @@ describe('OrderController.addPayment', () => {
 
   beforeEach(async () => {
     tx = {
+      $queryRaw: vi.fn().mockResolvedValue([{ id: orderId }]),
       order: {
         findUniqueOrThrow: vi.fn(),
         findFirst: vi.fn(),
         updateMany: vi.fn(),
       },
-      orderPayment: { create: vi.fn(), aggregate: vi.fn() },
+      orderPayment: { create: vi.fn(), findMany: vi.fn(), aggregate: vi.fn() },
       auditLog: { create: vi.fn() },
     };
     prisma = {
@@ -125,6 +164,7 @@ describe('OrderController.addPayment', () => {
         { provide: ReviewPaymentUseCase, useValue: reviewPayment },
         { provide: AdvanceFulfillmentUseCase, useValue: { execute: vi.fn() } },
         { provide: CancelOrderUseCase, useValue: { execute: vi.fn() } },
+        { provide: VoidOrderPaymentUseCase, useValue: { execute: vi.fn() } },
         { provide: PrismaService, useValue: prisma },
         { provide: StorageService, useValue: storage },
         { provide: OrderEventsService, useValue: events },
@@ -146,12 +186,10 @@ describe('OrderController.addPayment', () => {
 
     tx.order.findUniqueOrThrow.mockResolvedValueOnce({
       paymentStatus: 'PARTIALLY_PAID',
-      requiredAmount: '100.00',
+      requiredAmount: new Prisma.Decimal('100.00'),
       currency: 'PEN',
     });
-    tx.orderPayment.aggregate.mockResolvedValueOnce({
-      _sum: { amount: 0 },
-    });
+    tx.orderPayment.findMany.mockResolvedValueOnce([]);
 
     await controller.addPayment(storeId, orderId, session, '40', 'YAPE');
 
@@ -197,12 +235,17 @@ describe('OrderController.addPayment', () => {
 
     tx.order.findUniqueOrThrow.mockResolvedValueOnce({
       paymentStatus: 'PARTIALLY_PAID',
-      requiredAmount: '100.00',
+      requiredAmount: new Prisma.Decimal('100.00'),
       currency: 'PEN',
     });
-    tx.orderPayment.aggregate.mockResolvedValueOnce({
-      _sum: { amount: 60 },
-    });
+    tx.orderPayment.findMany.mockResolvedValueOnce([
+      {
+        amount: new Prisma.Decimal(60),
+        source: 'SELLER_RECORDED',
+        reviewStatus: 'N_A',
+        voidedAt: null,
+      },
+    ]);
 
     await controller.addPayment(storeId, orderId, session, '40', 'YAPE');
 
@@ -235,12 +278,17 @@ describe('OrderController.addPayment', () => {
 
     tx.order.findUniqueOrThrow.mockResolvedValueOnce({
       paymentStatus: 'PARTIALLY_PAID',
-      requiredAmount: '99.99',
+      requiredAmount: new Prisma.Decimal('99.99'),
       currency: 'PEN',
     });
-    tx.orderPayment.aggregate.mockResolvedValueOnce({
-      _sum: { amount: 40 },
-    });
+    tx.orderPayment.findMany.mockResolvedValueOnce([
+      {
+        amount: new Prisma.Decimal(40),
+        source: 'SELLER_RECORDED',
+        reviewStatus: 'N_A',
+        voidedAt: null,
+      },
+    ]);
 
     await controller.addPayment(storeId, orderId, session, '59.99', 'YAPE');
 
@@ -265,12 +313,10 @@ describe('OrderController.addPayment', () => {
 
     tx.order.findUniqueOrThrow.mockResolvedValueOnce({
       paymentStatus: 'VERIFIED',
-      requiredAmount: '47.00',
+      requiredAmount: new Prisma.Decimal('47.00'),
       currency: 'PEN',
     });
-    tx.orderPayment.aggregate.mockResolvedValueOnce({
-      _sum: { amount: 0 },
-    });
+    tx.orderPayment.findMany.mockResolvedValueOnce([]);
 
     await controller.addPayment(storeId, orderId, session, '27', 'YAPE');
 
@@ -284,6 +330,8 @@ describe('OrderController.addPayment', () => {
         currency: 'PEN',
         method: 'YAPE',
         note: undefined,
+        paidAt: expect.any(Date),
+        recordedBy: userId,
       },
     });
     expect(tx.auditLog.create).toHaveBeenCalledWith({
@@ -323,12 +371,10 @@ describe('OrderController.addPayment', () => {
 
     tx.order.findUniqueOrThrow.mockResolvedValueOnce({
       paymentStatus: 'VERIFIED',
-      requiredAmount: '47.00',
+      requiredAmount: new Prisma.Decimal('47.00'),
       currency: 'PEN',
     });
-    tx.orderPayment.aggregate.mockResolvedValueOnce({
-      _sum: { amount: 0 },
-    });
+    tx.orderPayment.findMany.mockResolvedValueOnce([]);
 
     await controller.addPayment(storeId, orderId, session, '47', 'YAPE');
 
@@ -384,6 +430,7 @@ describe('OrderController.getPaymentImage', () => {
         { provide: ReviewPaymentUseCase, useValue: { execute: vi.fn() } },
         { provide: AdvanceFulfillmentUseCase, useValue: { execute: vi.fn() } },
         { provide: CancelOrderUseCase, useValue: { execute: vi.fn() } },
+        { provide: VoidOrderPaymentUseCase, useValue: { execute: vi.fn() } },
         { provide: PrismaService, useValue: {} },
         { provide: StorageService, useValue: storage },
         { provide: OrderEventsService, useValue: { record: vi.fn() } },
@@ -538,6 +585,7 @@ describe('OrderController.shipping', () => {
         { provide: PrismaService, useValue: prisma },
         { provide: StorageService, useValue: storage },
         { provide: OrderEventsService, useValue: events },
+        { provide: VoidOrderPaymentUseCase, useValue: { execute: vi.fn() } },
       ],
     }).compile();
 
@@ -695,6 +743,7 @@ describe('OrderController.reviewPaymentProof', () => {
         { provide: ReviewPaymentUseCase, useValue: reviewPayment },
         { provide: AdvanceFulfillmentUseCase, useValue: { execute: vi.fn() } },
         { provide: CancelOrderUseCase, useValue: { execute: vi.fn() } },
+        { provide: VoidOrderPaymentUseCase, useValue: { execute: vi.fn() } },
         { provide: PrismaService, useValue: prisma },
         {
           provide: StorageService,

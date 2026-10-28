@@ -17,6 +17,8 @@ export default async () => {
       await import('./modules/orders/dto/create-order.dto.js'),
     ['./modules/orders/dto/checkout-response.dto.js']:
       await import('./modules/orders/dto/checkout-response.dto.js'),
+    ['./modules/orders/dto/void-order-payment.dto.js']:
+      await import('./modules/orders/dto/void-order-payment.dto.js'),
     ['./modules/payment-config/dto/payment-method-details.dto.js']:
       await import('./modules/payment-config/dto/payment-method-details.dto.js'),
     ['./modules/orders/infrastructure/customer-account-response.dto.js']:
@@ -802,6 +804,19 @@ export default async () => {
           },
         ],
         [
+          import('./modules/orders/dto/void-order-payment.dto.js'),
+          {
+            VoidOrderPaymentDto: {
+              reason: {
+                required: true,
+                type: () => String,
+                minLength: 1,
+                maxLength: 500,
+              },
+            },
+          },
+        ],
+        [
           import('./modules/orders/dto/advance-fulfillment.dto.js'),
           {
             AdvanceFulfillmentDto: {
@@ -895,6 +910,18 @@ export default async () => {
               note: { required: true, type: () => String, nullable: true },
               imageUrl: { required: true, type: () => String, nullable: true },
               createdAt: { required: true, type: () => String },
+              operationCode: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              paidAt: { required: true, type: () => String, nullable: true },
+              voidedAt: { required: true, type: () => String, nullable: true },
+              voidReason: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
               source: {
                 required: true,
                 enum: ['SELLER_RECORDED', 'BUYER_SUBMITTED'],
@@ -1695,6 +1722,7 @@ export default async () => {
               },
               amount: { required: true, type: () => String },
               createdAt: { required: true, type: () => String },
+              voidedAt: { required: true, type: () => String, nullable: true },
               reviewStatus: {
                 required: true,
                 enum: ['REJECTED', 'N_A', 'PENDING_REVIEW', 'APPROVED'],
@@ -3124,6 +3152,10 @@ export default async () => {
                   .OrderDetailResponseDto,
               },
               reviewPaymentProof: {
+                type: t['./modules/orders/dto/order-response.dto.js']
+                  .OrderDetailResponseDto,
+              },
+              voidPayment: {
                 type: t['./modules/orders/dto/order-response.dto.js']
                   .OrderDetailResponseDto,
               },

@@ -1992,6 +1992,52 @@
         "tags": ["Order"]
       }
     },
+    "/stores/{storeId}/orders/{orderId}/payments/{paymentId}/void": {
+      "patch": {
+        "operationId": "OrderController_voidPayment",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "paymentId",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/VoidOrderPaymentDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDetailResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Order"]
+      }
+    },
     "/stores/{storeId}/orders/{orderId}/payments/{paymentId}/review": {
       "patch": {
         "operationId": "OrderController_reviewPaymentProof",
@@ -7116,6 +7162,24 @@
             "type": "string",
             "format": "date-time"
           },
+          "operationCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "paidAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "voidedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "voidReason": {
+            "type": "string",
+            "nullable": true
+          },
           "source": {
             "enum": ["SELLER_RECORDED", "BUYER_SUBMITTED"],
             "type": "string"
@@ -7144,6 +7208,10 @@
           "note",
           "imageUrl",
           "createdAt",
+          "operationCode",
+          "paidAt",
+          "voidedAt",
+          "voidReason",
           "source",
           "reviewStatus",
           "reviewedAt",
@@ -7826,6 +7894,13 @@
           }
         },
         "required": ["resolution"]
+      },
+      "VoidOrderPaymentDto": {
+        "type": "object",
+        "properties": {
+          "reason": { "type": "string", "minLength": 1, "maxLength": 500 }
+        },
+        "required": ["reason"]
       },
       "ShippingAddressDto": {
         "type": "object",
@@ -8567,12 +8642,23 @@
             "type": "string",
             "format": "date-time"
           },
+          "voidedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
           "reviewStatus": {
             "enum": ["N_A", "PENDING_REVIEW", "APPROVED", "REJECTED"],
             "type": "string"
           }
         },
-        "required": ["source", "amount", "createdAt", "reviewStatus"]
+        "required": [
+          "source",
+          "amount",
+          "createdAt",
+          "voidedAt",
+          "reviewStatus"
+        ]
       },
       "PublicOrderResponseDto": {
         "type": "object",

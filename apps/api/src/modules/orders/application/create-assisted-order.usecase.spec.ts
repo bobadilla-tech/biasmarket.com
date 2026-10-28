@@ -55,6 +55,14 @@ describe('CreateAssistedOrderUseCase', () => {
     const { useCase, tx, prisma, events } = setup({ lte: () => false });
     const result = await useCase.execute(store, 'user1', dto);
 
+    expect(core.reserveItems).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      store,
+      expect.objectContaining({ deliveryMethodType: 'PICKUP' }),
+      'ASSISTED_ORDER_V1',
+    );
+
     const token = result.accessUrl.split('/').pop()!;
     const data = tx.order.create.mock.calls[0]![0].data;
     expect(data).toMatchObject({

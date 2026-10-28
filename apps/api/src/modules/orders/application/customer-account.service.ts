@@ -417,7 +417,12 @@ export class CustomerAccountService {
         currency: true,
         createdAt: true,
         payments: {
-          select: { amount: true, source: true, reviewStatus: true },
+          select: {
+            amount: true,
+            source: true,
+            reviewStatus: true,
+            voidedAt: true,
+          },
         },
       },
     });

@@ -48,6 +48,9 @@ export class PublicOrderPaymentResponseDto {
   @ApiProperty({ type: String, format: 'date-time' })
   createdAt: string;
 
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  voidedAt: string | null;
+
   @ApiProperty({
     enum: ['N_A', 'PENDING_REVIEW', 'APPROVED', 'REJECTED'],
   })

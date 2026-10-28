@@ -123,6 +123,13 @@ describe('CustomersService', () => {
           reviewStatus: 'N_A',
           order: { customerId: 'customer-1' },
         },
+        {
+          amount: 90,
+          source: 'SELLER_RECORDED',
+          reviewStatus: 'N_A',
+          voidedAt: new Date(),
+          order: { customerId: 'customer-1' },
+        },
       ]);
 
       const result = await service.findAllForStore(storeId, ownerId);
@@ -153,8 +160,8 @@ describe('CustomersService', () => {
         },
       ]);
       prisma.order.groupBy.mockResolvedValue([]);
-      // orderPayment.findMany is called with a where that already excludes
-      // non-VERIFIED orders at the query level, so simulate that filter here.
+      // Non-collecting orders and non-counting payment rows are excluded at
+      // the query level, matching countsTowardPaid.
       prisma.orderPayment.findMany.mockResolvedValue([]);
 
       const result = await service.findAllForStore(storeId, ownerId);
@@ -162,13 +169,20 @@ describe('CustomersService', () => {
       expect(prisma.orderPayment.findMany).toHaveBeenCalledWith({
         where: {
           storeId,
+          voidedAt: null,
+          OR: [{ source: 'SELLER_RECORDED' }, { reviewStatus: 'APPROVED' }],
           order: {
             paymentStatus: { in: ['VERIFIED', 'PARTIALLY_PAID'] },
             customerId: { not: null },
           },
-          OR: [{ source: 'SELLER_RECORDED' }, { reviewStatus: 'APPROVED' }],
         },
-        select: { amount: true, order: { select: { customerId: true } } },
+        select: {
+          amount: true,
+          source: true,
+          reviewStatus: true,
+          voidedAt: true,
+          order: { select: { customerId: true } },
+        },
       });
       expect(result[0].lifetimeSpend).toBe(0);
     });

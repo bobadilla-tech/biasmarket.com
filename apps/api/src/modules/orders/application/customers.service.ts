@@ -66,6 +66,10 @@ export class CustomersService {
       this.prisma.orderPayment.findMany({
         where: {
           storeId,
+          voidedAt: null,
+          // Keep this predicate aligned with `countsTowardPaid` below so
+          // non-counting rows are filtered before they cross into Node.
+          OR: [{ source: 'SELLER_RECORDED' }, { reviewStatus: 'APPROVED' }],
           // Money actually collected and verified only — partial-payment
           // orders count their paid amount, never the full order total, the
           // same business rule `countsTowardRevenue` applies everywhere.
@@ -73,11 +77,14 @@ export class CustomersService {
             paymentStatus: { in: [...REVENUE_ORDER_PAYMENT_STATUSES] },
             customerId: { not: null },
           },
-          // Excludes a buyer-submitted proof still awaiting seller review —
-          // see common/payment-summary.ts's `countsTowardPaid`.
-          OR: [{ source: 'SELLER_RECORDED' }, { reviewStatus: 'APPROVED' }],
         },
-        select: { amount: true, order: { select: { customerId: true } } },
+        select: {
+          amount: true,
+          source: true,
+          reviewStatus: true,
+          voidedAt: true,
+          order: { select: { customerId: true } },
+        },
       }),
       this.prisma.order.findMany({
         where: { storeId, customerId: null },
@@ -88,7 +95,12 @@ export class CustomersService {
           paymentStatus: true,
           createdAt: true,
           payments: {
-            select: { amount: true, source: true, reviewStatus: true },
+            select: {
+              amount: true,
+              source: true,
+              reviewStatus: true,
+              voidedAt: true,
+            },
           },
         },
       }),
@@ -105,6 +117,7 @@ export class CustomersService {
     );
     const spendByCustomer = new Map<string, Prisma.Decimal>();
     for (const payment of payments) {
+      if (!countsTowardPaid(payment)) continue;
       const customerId = payment.order.customerId;
       if (!customerId) continue;
       const current = spendByCustomer.get(customerId) ?? new Prisma.Decimal(0);

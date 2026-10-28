@@ -75,6 +75,7 @@ describe('PublicOrderService', () => {
         source: 'SELLER_RECORDED',
         reviewStatus: 'N_A',
         createdAt: new Date('2026-10-01T00:00:00.000Z'),
+        voidedAt: null,
         imageUrl: 'https://private.example/proof.jpg',
         note: 'internal',
       },
@@ -134,6 +135,7 @@ describe('PublicOrderService', () => {
         amount: '40',
         createdAt: '2026-10-01T00:00:00.000Z',
         reviewStatus: 'N_A',
+        voidedAt: null,
       },
     ]);
     expect(result.paidAmount).toBe(40);

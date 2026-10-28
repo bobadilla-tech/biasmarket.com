@@ -19,6 +19,8 @@ import { CancelOrderUseCase } from './application/cancel-order.usecase.js';
 import { ExpireOrdersUseCase } from './application/expire-orders.usecase.js';
 import { CustomerAccountService } from './application/customer-account.service.js';
 import { OrderEventsService } from './application/order-events.service.js';
+import { OrderPaymentsService } from './application/order-payments.service.js';
+import { VoidOrderPaymentUseCase } from './application/void-order-payment.usecase.js';
 import { PublicOrderService } from './application/public-order.service.js';
 import { PublicOrderEventsController } from './infrastructure/public-order-events.controller.js';
 import { NotificationsModule } from '../notifications/notifications.module.js';
@@ -53,8 +55,10 @@ import { PaymentConfigModule } from '../payment-config/payment-config.module.js'
     CustomerAccountService,
     CustomersService,
     OrderEventsService,
+    OrderPaymentsService,
+    VoidOrderPaymentUseCase,
     PublicOrderService,
   ],
-  exports: [CustomerAccountService, OrderRepository],
+  exports: [CustomerAccountService, OrderRepository, OrderPaymentsService],
 })
 export class OrdersModule {}

@@ -177,13 +177,20 @@ export class CustomerOrderPaymentsController {
       // row, so the available balance (credited + reserved) is authoritative.
       const payments = await tx.orderPayment.findMany({
         where: { orderId },
-        select: { amount: true, source: true, reviewStatus: true },
+        select: {
+          amount: true,
+          source: true,
+          reviewStatus: true,
+          voidedAt: true,
+        },
       });
       const creditedCents = payments
         .filter(countsTowardPaid)
         .reduce((sum, p) => sum + toCents(Number(p.amount)), 0);
       const reservedCents = payments
-        .filter((p) => p.reviewStatus === 'PENDING_REVIEW')
+        .filter(
+          (p) => p.voidedAt == null && p.reviewStatus === 'PENDING_REVIEW',
+        )
         .reduce((sum, p) => sum + toCents(Number(p.amount)), 0);
       const availableCents =
         toCents(Number(order.requiredAmount)) - creditedCents - reservedCents;

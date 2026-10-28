@@ -276,7 +276,12 @@ export class StoresService {
       select: {
         storeId: true,
         payments: {
-          select: { amount: true, source: true, reviewStatus: true },
+          select: {
+            amount: true,
+            source: true,
+            reviewStatus: true,
+            voidedAt: true,
+          },
         },
       },
     });

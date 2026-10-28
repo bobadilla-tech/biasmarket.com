@@ -17,6 +17,7 @@ import type {
   OrderResponseDto,
   OrderStatusResponseDto,
   ReviewPaymentDto,
+  VoidOrderPaymentDto,
   UpdateOrderShippingDto,
 } from "../api.schemas.js";
 
@@ -127,6 +128,32 @@ export const reviewPaymentProof = async (
       method: "PATCH",
       headers: { "Content-Type": "application/json", ...options?.headers },
       body: JSON.stringify(reviewPaymentDto),
+    },
+  );
+};
+
+export const getVoidPaymentUrl = (
+  storeId: string,
+  orderId: string,
+  paymentId: string,
+) => {
+  return `/stores/${storeId}/orders/${orderId}/payments/${paymentId}/void`;
+};
+
+export const voidPayment = async (
+  storeId: string,
+  orderId: string,
+  paymentId: string,
+  voidOrderPaymentDto: VoidOrderPaymentDto,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OrderDetailResponseDto> => {
+  return customFetch<OrderDetailResponseDto>(
+    getVoidPaymentUrl(storeId, orderId, paymentId),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(voidOrderPaymentDto),
     },
   );
 };

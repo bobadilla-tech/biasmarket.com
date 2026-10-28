@@ -819,6 +819,14 @@ export interface OrderPaymentResponseDto {
   /** @nullable */
   imageUrl: string | null;
   createdAt: string;
+  /** @nullable */
+  operationCode: string | null;
+  /** @nullable */
+  paidAt: string | null;
+  /** @nullable */
+  voidedAt: string | null;
+  /** @nullable */
+  voidReason: string | null;
   source: OrderPaymentResponseDtoSource;
   reviewStatus: OrderPaymentResponseDtoReviewStatus;
   /** @nullable */
@@ -1090,6 +1098,11 @@ export interface ReviewPaymentDto {
   decision: ReviewPaymentDtoDecision;
   /** @maxLength 500 */
   reason?: string;
+}
+
+export interface VoidOrderPaymentDto {
+  /** @minLength 1 @maxLength 500 */
+  reason: string;
 }
 
 export type OrderStatusResponseDtoSource =
@@ -1850,6 +1863,8 @@ export interface PublicOrderPaymentResponseDto {
   source: PublicOrderPaymentResponseDtoSource;
   amount: string;
   createdAt: string;
+  /** @nullable */
+  voidedAt: string | null;
   reviewStatus: PublicOrderPaymentResponseDtoReviewStatus;
 }
 

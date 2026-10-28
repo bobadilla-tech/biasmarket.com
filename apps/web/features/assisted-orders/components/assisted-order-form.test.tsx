@@ -140,6 +140,16 @@ test("loads delivery options from the public endpoints for the store slug", asyn
   expect(m.findPayments).toHaveBeenCalledWith("mi-tienda");
 });
 
+test("uses the fixed 30% deposit for assisted pickup orders", async () => {
+  const { user } = await renderForm();
+  await fillValidOrder(user);
+  const paymentType = screen.getByLabelText(/Tipo de pago/i);
+  await user.selectOptions(paymentType, "PARTIAL");
+
+  expect(await screen.findByText("PEN 7.50")).toBeTruthy();
+  expect(screen.getByRole("option", { name: /30%/ })).toBeTruthy();
+});
+
 test("phone comes first, defaults to +51 and shows a readable review line", async () => {
   const { user } = await renderForm();
   const fields = screen.getAllByRole("textbox");

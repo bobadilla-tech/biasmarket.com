@@ -64,6 +64,7 @@ export class CreateAssistedOrderUseCase {
           this.notifications,
           store,
           { ...dto, ...pre, ...locked },
+          'ASSISTED_ORDER_V1',
         );
         // Rolls the whole transaction back, releasing the reserved stock.
         if (finalAmount.lte(0)) {
