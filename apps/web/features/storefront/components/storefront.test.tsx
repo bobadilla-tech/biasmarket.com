@@ -195,10 +195,10 @@ describe("storefront empty states", () => {
     expect(screen.getByRole("img", { name: "Categoría Álbumes" })).toBeTruthy();
   });
 
-  it("keeps the desktop category panel collapsed and supports multi-select", () => {
+  it("shows category filter chips on desktop and mobile with single selection", () => {
     navigation.url = "/es/store/tienda?tab=productos";
     navigation.push.mockClear();
-    const renderer = (
+    withMessages(
       <StoreSectionRenderer
         slug="tienda"
         sections={[]}
@@ -207,20 +207,14 @@ describe("storefront empty states", () => {
           { id: "1", slug: "albumes", name: "Álbumes" },
           { id: "2", slug: "photocards", name: "Photocards" },
         ]}
-      />
+      />,
     );
-    withMessages(renderer);
 
-    expect(screen.queryByRole("checkbox", { name: "Álbumes" })).toBeNull();
-    fireEvent.click(
-      screen.getByRole("button", { name: "Filtrar por categoría" }),
-    );
-    const albums = screen.getByRole("checkbox", { name: "Álbumes" });
+    const albums = screen.getByRole("button", { name: "Álbumes" });
+    expect(albums.getAttribute("aria-pressed")).toBe("false");
     fireEvent.click(albums);
-    fireEvent.click(screen.getByRole("checkbox", { name: "Photocards" }));
-
     expect(navigation.push).toHaveBeenLastCalledWith(
-      "/es/store/tienda?tab=productos&categoria=albumes%2Cphotocards",
+      "/es/store/tienda?tab=productos&categoria=albumes",
       { scroll: false },
     );
   });
