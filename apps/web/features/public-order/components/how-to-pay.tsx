@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import type { PublicOrderResponseDto } from "@biasmarket/types";
 import { ContactSellerButton } from "@/features/customer-auth/components/contact-seller-button";
 import { PaymentMethodDetails } from "@/features/checkout/components/payment-method-details";
+import { remainingTotalAmount } from "../lib/order-state";
 
 export function HowToPay({
   slug,
@@ -21,8 +22,8 @@ export function HowToPay({
   // The buyer still owes `pendingAmount`, not `requiredAmount`: recorded or
   // approved payments already reduced it, and a rejected proof on a
   // partially-paid order leaves the status at REJECTED, not PARTIALLY_PAID.
-  // The wording keeps the order's shape (deposit plan vs. full total), but
-  // every amount shown is what still needs to be paid.
+  // The same holds for the "or the total" option, which is the balance left on
+  // the order rather than its original total.
   const due = money(order.pendingAmount);
   let amountLine: string;
   if (order.paymentStatus === "PARTIALLY_PAID") {
@@ -30,7 +31,7 @@ export function HowToPay({
   } else if (Number(order.requiredAmount) < Number(order.totalAmount)) {
     amountLine = t("howToPay.amountDeposit", {
       deposit: due,
-      total: money(order.totalAmount),
+      total: money(remainingTotalAmount(order)),
     });
   } else {
     amountLine = t("howToPay.amountTotal", { total: due });

@@ -220,11 +220,32 @@ test("asks only for what is still due when a payment was already recorded", asyn
   );
   renderPage();
   expect(
-    await screen.findByText("Adelanto: PEN 20 (o el total: PEN 100)"),
+    await screen.findByText("Adelanto: PEN 20 (o el total: PEN 90)"),
   ).toBeTruthy();
   expect(
     screen.queryByText("Adelanto: PEN 30 (o el total: PEN 100)"),
   ).toBeNull();
+  expect(
+    screen.queryByText("Adelanto: PEN 20 (o el total: PEN 100)"),
+  ).toBeNull();
+});
+
+test("computes the remaining total in cents so no float artifact is shown", async () => {
+  // 149.90 - 60.1 is 89.80000000000001 in plain float arithmetic. REJECTED
+  // (reachable from PARTIALLY_PAID) is what takes the deposit-plan branch.
+  getByToken.mockResolvedValue(
+    makeOrder({
+      paymentStatus: "REJECTED",
+      totalAmount: "149.90",
+      requiredAmount: "80",
+      paidAmount: 60.1,
+      pendingAmount: 19.9,
+    }),
+  );
+  renderPage();
+  expect(
+    await screen.findByText("Adelanto: PEN 19.9 (o el total: PEN 89.8)"),
+  ).toBeTruthy();
 });
 
 test("cancelled shows the banner, no timeline and no how-to-pay", async () => {
