@@ -1,14 +1,19 @@
 # Plan: Pedido asistido, buyer page (#268) and leftovers
 
-Status: draft v6 (rounds 1-5 findings applied; see review-log.md for review
-state) Date: 2026-10-27. Planned against `origin/main` @ `5edc2583` (merge of
-#321, on top of #344 `36c54e2f`). Re-check `git log origin/main` before
-starting. PR names: PR1, PR-S, PR4, PR-A, PR3, PR5, PR6 (there is no PR2: it was
-folded into PR-A/PR3). Section 5 is **merge order**; section 6 is **build
-order**. "E1" = issue #279 (security review), "D3"/"F2" = issues #276/#278,
-"D-12" = the wiki decision for the route; open questions Q1-Q9 are in
-section 10. Written for: the implementation session (a fresh agent), not the
-user.
+Status: draft v8 (rounds 1-7 findings applied; see review-log.md for review
+state)
+
+Date: 2026-10-28. Planned against `origin/main` @ `d88be078` (includes #343,
+#345, #347, #321, #344). Re-check `git log origin/main` before starting; main
+moved four times during planning.
+
+Written for: the implementation session (a fresh agent), not the user.
+
+Legend: PR names are PR1, PR-S, PR4, PR-A, PR3, PR5, PR6 (no PR2: it was folded
+into PR-A/PR3). Section 5 is **merge order**; section 6 is **build order**. "E1"
+= issue #279 (security review); "D3"/"F2" = issues #276/#278; "D-12" = the wiki
+decision for the route; open questions Q1-Q8 and Q10 are in section 10 (Q9 was
+resolved by main).
 
 ## 0. Hard rules (CLAUDE.md, restated)
 
@@ -45,10 +50,10 @@ user.
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | checkout customer logic        | `apps/api/src/modules/orders/application/customer-account.service.ts` (`findOrCreateCustomer` 104-217, `change-phone` confirm ~387-405)                                                                                                     |
 | assisted Customer helper       | `apps/api/src/modules/orders/application/assisted-customer.ts`                                                                                                                                                                              |
-| customers service              | `apps/api/src/modules/orders/application/customers.service.ts` (`findAllForStore` 52-209, `upsertStoreContact` ~291-300, `lookupByPhone` 309-382)                                                                                           |
+| customers service              | `apps/api/src/modules/orders/application/customers.service.ts` (`findAllForStore` 52-209, `upsertStoreContact` 304-313, `lookupByPhone` 322-)                                                                                               |
 | checkout use case / lock order | `.../application/create-order.usecase.ts:48`, `.../application/order-creation.core.ts:17-20`                                                                                                                                                |
 | public order                   | `.../application/public-order.service.ts`, `.../application/order-events.service.ts:129-145`, `.../infrastructure/public-order-events.controller.ts`, `.../dto/public-order-response.dto.ts`                                                |
-| SDK mutator (hand-written)     | `packages/types/http.ts` (`credentials` at line 90), test `packages/types/http.test.ts`                                                                                                                                                     |
+| SDK mutator (hand-written)     | `packages/types/http.ts` (`credentials` at line 93), test `packages/types/http.test.ts`                                                                                                                                                     |
 | generated SDK                  | `packages/types/generated/public-order-events/public-order-events.ts`, `apps/api/openapi.json`, `apps/api/src/metadata.ts`                                                                                                                  |
 | web error tracking             | `apps/web/instrumentation.ts`, `apps/web/instrumentation-client.ts`                                                                                                                                                                         |
 | web storefront                 | `apps/web/app/[locale]/(storefront)/store/[slug]/layout.tsx`, `apps/web/app/[locale]/error.tsx`, `loading.tsx`, `apps/web/proxy.ts`, `apps/web/next.config.ts`, `apps/web/app/robots.ts`, `apps/web/__tests__/canonical-regression.test.ts` |
@@ -63,49 +68,42 @@ leftover items from the seller stack.
 
 Facts verified on `origin/main` (not trusted from the handoff):
 
-- **main moved**: `36c54e2f` (#344) landed after `d7a40893`. It made first-open
-  fail-closed (`public-order.service.ts`: a failed stamp returns 500 and the
-  page is not served) and changed `customers.service.ts`.
+- **main moved repeatedly during planning.** Landed since the handoff: #344
+  (first-open fail-closed: a failed stamp returns 500 and the page is not
+  served), #321 (storefront redesign), #343 (`trust proxy` 1 + Caddy
+  `CF-Connecting-IP` trusted ranges + API-side token scrub; verified:
+  `main.ts:29` sets `trust proxy` 1), #345 (B5 tracking number/URL + private
+  package photo; the public DTO now carries `trackingNumber`, `trackingUrl`,
+  `packedPhotoAvailable`, and `GET /public/orders/:token/packed-photo` exists),
+  #347 (A4 payment rules and voids: public payments now carry `voidedAt`). The
+  previous "wait for #343/#345" prerequisites are therefore **done on main**;
+  see the deploy caveat below for #343.
 - **Hosted CI runs only for PRs whose base is `main`**
   (`.github/workflows/ci.yml:10-11` `pull_request: branches: [main]`). The
   handoff's "stack PRs do get hosted CI" is not true for a PR based on another
   feature branch. This plan therefore avoids stacked branches (section 5).
-- **Open PRs that collide**:
-  - #343 (`fix/public-order-client-ip-and-token-scrub`, CI state changes: check
-    `gh pr view 343` before relying on it): `trust proxy` 1 + Caddy
-    `CF-Connecting-IP` trusted ranges, API-side GlitchTip token scrub, edits
-    `infra/vps/Caddyfile`, `infra/vps/lib/caddy.sh`, `apps/api/src/main.ts`,
-    `public-orders.e2e-spec.ts`, `orders.e2e-spec.ts`. **Without it the public
-    GET throttle (30/60s, `public-order-events.controller.ts:33-34`) is one
-    global bucket behind Caddy** (no `trust proxy` on main), i.e. 30 page loads
-    per minute across all buyers.
-  - #345 (B5 tracking + private package photo, CI green): adds a migration and
-    edits `public-order.service.ts`, `public-order-response.dto.ts`,
-    `public-order-events.controller.ts`, `order.controller.ts`,
-    `order-events.service.ts`, `order-response.dto.ts`, `openapi.json`,
-    `metadata.ts`, `packages/types/generated/**`, `order-detail-sheet.tsx`
-    (+test), `orders.api.ts`, `dashboard.json`. It collides with the DTO work in
-    PR3 and with PR5 (order detail sheet, dashboard i18n).
-- **#321 merged after the plan started** (`5edc2583`): storefront redesign
-  touching `storefront-header.tsx`, `contact-seller-button.tsx` (now has
-  `label`, `message`, `icon` props), `store/[slug]/page.tsx` (padding is now
-  `pt-24 ... sm:pt-24`), `cart-link.tsx`, `storefront.tsx`, `globals.css`, and
-  `packages/i18n/{es,en}/storefront.json` + `dashboard.json`. PR3 adds a
-  `storefront.publicOrder` namespace to the same i18n files: expect textual
-  conflicts if branches predate it; re-verify the header and layout claims
-  below.
-- Open issues: #268, #333, #258, #337, #336, #339, #340, #269-#271. #334 will be
-  closed by #343 when it merges.
-- #258 has **no comment** (the leftovers map was never posted). The map is
-  section **5.4** of `.../20261027--assisted-order-seller-flow/plan.md`.
+- **#258 is already closed** (completed, 2026-10-27T23:45Z, by another account
+  with a comment listing `validatePhone`, the store-isolated upsert without
+  `BuyerAccount`, and `GET /stores/:storeId/customers/lookup`). The handoff's
+  "post the leftovers map and close #258" is moot; nothing is posted. The only
+  remnant is a possible missing store-isolation e2e for the lookup, which PR5
+  adds only if absent (check first). Epic #253 stays open.
+- Open issues: #268, #333, #337, #336, #339, #340, #269-#271 (#334 closed by
+  #343).
+- **#321** (`ContactSellerButton` gained `label`/`message`/`icon` props, the
+  storefront header and `store/[slug]/page.tsx` padding `pt-24 sm:pt-24`
+  changed, `packages/i18n/{es,en}/storefront.json` + `dashboard.json` edited).
+  PR3 adds a `storefront.publicOrder` namespace to the same i18n files.
 - The wiki repo has only Roadmap, Documentacion funcional, Home and
   CATALOGO-VISUAL. "Mapa del codigo", "Decisiones y ajustes" (D-12) and "Indice"
   are not in the wiki git repo; D-12's route comes from the issue body.
-- **Caddy has no `log` directive** on main or in #343, so there are no access
-  logs (#340's literal premise is wrong), but a probe proved that Caddy's
-  default _error_ logger writes the token (request URI and `Referer`) whenever
-  an upstream is unavailable, and that a changed single-file-mounted Caddyfile
-  may not reach the container on deploy. PR4 fixes both (section 4.3).
+- **Caddy has no `log` directive**, so there are no access logs (#340's literal
+  premise is wrong), but a probe proved that Caddy's default _error_ logger
+  writes the token (request URI and `Referer`) whenever an upstream is
+  unavailable. Also, a changed single-file-mounted Caddyfile may not reach the
+  container on deploy (contested, see 4.3): **#343's Caddyfile change may not be
+  live in production**, which would leave the public throttle bucketed by the
+  proxy IP. This is for the user to check on the VPS now (Q10).
 
 ### Current behavior (file refs on origin/main)
 
@@ -121,7 +119,7 @@ no encontrado` for unknown AND revoked
 - DTO has no alias, order number, `createdAt` or id; masked phone only.
 - SDK already has `apiClient.publicOrders.getByToken(token, options?)`
   (`packages/types/generated/public-order-events/public-order-events.ts:19-27`);
-  the mutator (`packages/types/http.ts:90`) sets
+  the mutator (`packages/types/http.ts:93`) sets
   `credentials: config.credentials
 ?? "include"` **after** spreading the
   per-call init, so a per-call `credentials` is silently overwritten (verified);
@@ -154,7 +152,7 @@ Scratch worktree `<scratchpad>/wt` (detached `origin/main`), own Postgres 17 on
 | P1 | vitest e2e on the real AppModule (rows seeded via prisma): 5 rounds of 2 parallel `POST /stores/:slug/checkout`, same brand-new phone and email | every round `201` + `500`; `BuyerAccount_phone_key` (P2002)                                                                                                                                                                                             | fix covers BuyerAccount                                             |
 | P2 | same file: verified BuyerAccount (same email) exists, no Customer/link, 2 parallel checkouts x5                                                 | every round `201` + `500`; `CustomerStoreLink_buyerAccountId_storeId_key` from `customerStoreLink.upsert`                                                                                                                                               | fix covers link + Customer; Prisma `upsert` is not race-safe here   |
 | P3 | stub page + `headers()` rule `/:locale/store/:slug/pedido/:token` + `next dev` + curl                                                           | 200; `Referrer-Policy: no-referrer` applied; `noindex, nofollow` and `referrer` meta from `generateMetadata`; next-intl adds `Link: hreflang` (contains the token) and `NEXT_LOCALE` cookie. **`Cache-Control` was `no-cache, must-revalidate` in dev** | prod verification is a CI-asserted test (4.2), route forced dynamic |
-| P4 | `grep`/diff of Caddyfile on main and #343                                                                                                       | no `log` directive                                                                                                                                                                                                                                      | PR4 is probe-first                                                  |
+| P4 | `grep`/diff of Caddyfile on main and #343                                                                                                       | no `log` directive                                                                                                                                                                                                                                      | PR4 fixes the proven leak and the deploy guard                      |
 
 Not probed (covered by verification steps): production `Cache-Control` and the
 RSC variant; the real shape of a browser Sentry event; Caddy error-log content.
@@ -207,28 +205,33 @@ cross-feature import rules when importing from `features/orders` /
 D4. **Order number**: API computes `orderNumber` = last 4 chars of the id,
 uppercase (no `#`; the UI adds it), same rule as web `getOrderNumber`
 (`features/orders/lib/order-format.ts:4`). No new `packages/utils` module (it
-would widen every CI filter for one line). A unit test in api and one in web pin
-the same fixture id to the same ref; comment points at #339 (4 -> 6) so both
-change together. It is never a lookup key.
+would widen every CI filter for one line). PR-A pins the API ref with a unit
+test on a fixture id; PR3 renders `#${dto.orderNumber}` (it does not import
+`getOrderNumber`: the page has no order id) and pins the web side with a test
+asserting `getOrderNumber(fixtureId) === "#" + apiRef`; comment points at #339
+(4 -> 6) so both change together. It is never a lookup key.
 
-D5. **Optional items**: IN: related orders (PR5), #337 (PR6), the lookup
-store-isolation e2e (the only real #258 gap). OUT: `trust proxy` (#343; made a
-merge prerequisite), #336 idempotency (needs a product answer), #339 itself,
-seller-side first-open locking, API-side allow-list of
-`paymentMethods[].details` (existing #262 behavior; recorded as a follow-up
-risk).
+D5. **Optional items**: IN, as a separate Phase 2 that can be cut: related
+orders (PR5), #337 (PR6), and the lookup store-isolation e2e if missing. OUT:
+`trust
+proxy` (done by #343; effectiveness is a deploy question, see Q10), #336
+idempotency (needs a product answer), #339 itself, seller-side first-open
+locking, API-side allow-list of `paymentMethods[].details` (existing #262
+behavior; recorded as a follow-up risk).
 
-D6. **Scope limits**: no proof upload (#269), no rejection reason / tracking /
-photo / voided-payment states beyond per-payment source+status and a cancelled
-banner (#270; #345 owns the photo), no account invitation (D3/#276), no Google
-(#271).
+D6. **Scope limits**: no proof upload (#269), no rejection reason, tracking, or
+package photo UI (#270; the DTO already carries `trackingNumber`, `trackingUrl`,
+`packedPhotoAvailable` after #345: PR3 renders none of them, no DTO-sourced
+href), and per-payment source + status + a plain "Anulado" label when `voidedAt`
+is set (#347) plus a cancelled banner, no account invitation (D3/#276), no
+Google (#271).
 
 D7. **Merge order is a security requirement for PR3**, not a preference: the
 first production buyer open must not (a) fall into one global throttle bucket
-(#343), (b) put the token in GlitchTip (PR-S, plus #343's API side), (c) put it
-in Caddy logs (PR4: the probe result must be recorded; PR4 itself only needs to
-be merged if it changes the Caddyfile). PR3's body carries a "Blocked by" list
-and step 0 checks `gh pr view <n> --json state`.
+(#343 is merged; confirm it is **live**, Q10), (b) put the token in GlitchTip
+(PR-S), (c) put it in Caddy error logs (PR4 merged **and deployed**: post-deploy
+check passes). PR3's body carries a "Blocked by" list (PR-S, PR4 deployed, PR-A,
+Q10 answer) and step 0 checks `gh pr view <n> --json state`.
 
 ## 4. Design
 
@@ -302,11 +305,27 @@ follow: false }`, `referrer: "no-referrer"`, generic
     la tienda" (text only; no-JS visitors and preview bots otherwise see only
     the skeleton).
   - `components/public-order-view.tsx`: greeting ("Hola {alias}" or generic),
-    buyer-facing status banner + `FulfillmentTimeline`, items, total / adelanto
-    (`requiredAmount`) / pagado / saldo, delivery summary, store header,
-    payments list (source "Enviado por ti"/"Registrado por la tienda", amount,
-    date, status), "Pedido para {customerPhone}", disclosure "No es tu numero?
-    Avisale a la tienda" with explanation and `ContactStoreButton`.
+    buyer-facing status banner + `FulfillmentTimeline`, items, total, adelanto
+    (`requiredAmount`), pagado (`paidAmount`) and "falta del adelanto"
+    (`pendingAmount`; measured against the adelanto, not the total, so it is 0
+    once the adelanto is paid), delivery summary, store header, payments list
+    (source "Enviado por ti"/"Registrado por la tienda", amount, "Anulado" when
+    `voidedAt` is set, date, status), "Pedido para {customerPhone}", disclosure
+    "No es tu numero? Avisale a la tienda" with explanation and
+    `ContactSellerButton`.
+  - Payments and totals: use the API's `paidAmount` and `pendingAmount` as given
+    and **never sum the `payments` list client-side** (`computePaymentSummary`
+    counts a payment only when `voidedAt` is null and it is `SELLER_RECORDED` or
+    an `APPROVED` buyer submission). Label each row from `voidedAt` first
+    ("Anulado", no review label), then `reviewStatus` ("En revision" /
+    "Rechazado" / recorded or approved). The order-level banner derives from
+    `paymentStatus`/`fulfillmentStatus`/ `status` only.
+  - Dates: `formatOrderDate(createdAt, locale, t)` needs
+    `date.today`/`date.yesterday` keys that exist only in `dashboard.json`; add
+    `storefront.publicOrder.date.*` and pass
+    `useTranslations("storefront.publicOrder")` (tests use a fixed clock). Pass
+    i18n labels to `ErrorState` (`retryLabel`, default "Retry") and
+    `LoadingState` (`label`, default "Loading").
   - `components/how-to-pay.tsx`: only when the API returned methods/instructions
     (it nulls them when cancelled). **Render allow-list**: per method render
     only string/number values as plain text with fixed labels; no `href` from
@@ -315,8 +334,12 @@ follow: false }`, `referrer: "no-referrer"`, generic
     "La tienda aun no configuro metodos de pago, escribele".
   - Contact: `<ContactSellerButton slug message=... label=... />` with `message`
     = "Hola, el pedido #XXXX no es para mi numero" (**only the order ref, never
-    the page URL or token**; the component builds the `wa.me` link via
-    `buildWhatsAppUrl`). Test that the rendered href has no token and keeps
+    the page URL or token**; the order number comes from `dto.orderNumber`, so
+    only the valid state passes `message`; the invalid state passes none and its
+    copy does not reuse the numeric text; the component builds the `wa.me` link
+    via `buildWhatsAppUrl`). Add a test where the `stores.findPublic` query
+    fails or is rate-limited: the button renders nothing and the page still
+    shows the text. Test that the rendered href has no token and keeps
     `noopener noreferrer` (read the component after #321). No "share/copy link"
     controls.
   - `index.ts` barrel.
@@ -337,12 +360,13 @@ follow: false }`, `referrer: "no-referrer"`, generic
   children for an unknown slug), using `curl -sS -D- -o /dev/null`,
   case-insensitive header matches, `-H 'RSC: 1'` for the RSC variant (`?_rsc=`
   alone is not an RSC response) and `curl -sI --max-redirs 0` for the unprefixed
-  form expecting a 307 that carries the headers. Expect this to bite: Next runs
-  config `headers()` before redirects and the proxy, so the intl response can
-  override `Cache-Control`; the planned fallback is to set the headers in
-  `proxy.ts` on the intl response for that path. Cloudflare: ask the user
-  whether a "bypass cache" rule for `*/pedido/*` and `*/public/orders/*` exists
-  (Q7); `no-store` should already prevent caching.
+  form expecting a 307 that carries the headers (if absent, apply the `proxy.ts`
+  fallback). Expect this to bite: Next runs config `headers()` before redirects
+  and the proxy, so the intl response can override `Cache-Control`; the planned
+  fallback is to set the headers in `proxy.ts` on the intl response for that
+  path. Cloudflare: ask the user whether a "bypass cache" rule for `*/pedido/*`
+  and `*/public/orders/*` exists (Q7); `no-store` should already prevent
+  caching.
 - i18n: `packages/i18n/{es,en}/storefront.json` namespace `publicOrder` (parity
   and message-format tests). The next-intl `Link: hreflang` header contains the
   token; not disabled because `alternateLinks` is global (would change SEO for
@@ -364,11 +388,16 @@ for each runtime so a test can call `Sentry.init({ ...opts, transport })`;
 node environment. `apps/web/lib/scrub-order-token.ts`: a **deep-walk** scrub
 (serialize the event, replace
 `/(\/pedido\/|\/public\/orders\/)[A-Za-z0-9_-]+/gi` with `$1[redacted]`, parse
-back; return the scrubbed event, never `null`). Wire it into
-`instrumentation-client.ts` (`beforeSend`, `beforeBreadcrumb`; client
-transactions do not exist today because there is no `browserTracingIntegration`,
-so `beforeSendTransaction` is added but untestable: say so) and
-`instrumentation.ts` (server `beforeSend`, `beforeBreadcrumb` and
+back; return the scrubbed event, never `null`). **Do not `JSON.stringify` the
+event as is:** transaction events hold `sdkProcessingMetadata` with a circular
+structure, the SDK swallows the throw and silently sends a TypeError error event
+instead of the transaction (the test would pass vacuously). Stringify a copy
+without `sdkProcessingMetadata` and reattach it, or use a `WeakSet` replacer;
+the test must positively assert that a `transaction` envelope item arrived).
+Wire it into `instrumentation-client.ts` (`beforeSend`, `beforeBreadcrumb`;
+client transactions do not exist today because there is no
+`browserTracingIntegration`, so `beforeSendTransaction` is added but untestable:
+say so) and `instrumentation.ts` (server `beforeSend`, `beforeBreadcrumb` and
 **`beforeSendTransaction`**: tracing is 0.01 and those `http.server`
 transactions carry `url.full`/`http.target`; `onRequestError` scrubbing
 `pathname`, `message` and `digest`; it must keep not reading `request.headers`,
@@ -380,15 +409,16 @@ with a fake transport** (client `captureException` + a fetch breadcrumb to
 contain the token. Independent of PR3 (can merge before it, must merge before
 it).
 
-**PR4** (`Refs #340`; the user closes it, Q3): **leak proven by a probe**
-(round-5 reviewer, `caddy:2-alpine` with the repo Caddyfile and stand-in
-upstreams). Access logs are off (no `logging` in `caddy adapt`), but with the
-upstream down (503 "no upstreams available" because of `health_uri`, or a 502
-dial failure) Caddy's default logger (`http.log.error`, stderr) writes
-`request.uri` containing `/api/public/orders/<token>` or
-`/es/store/x/pedido/<token>`, **and** `request.headers.Referer` carrying the
-page URL. This happens on every blue/green cutover blip. Fix, verified with the
-same probes (token count 0, output stays JSON):
+**PR4** (`Refs #340`; the user closes it, Q3): **leak proven by a probe** (a
+code PR, not docs-only) (round-5 reviewer, `caddy:2-alpine` with the repo
+Caddyfile and stand-in upstreams). Access logs are off (no `logging` in
+`caddy adapt`), but with the upstream down (503 "no upstreams available" because
+of `health_uri`, or a 502 dial failure) Caddy's default logger
+(`http.log.error`, stderr) writes `request.uri` containing
+`/api/public/orders/<token>` or `/es/store/x/pedido/<token>`, **and**
+`request.headers.Referer` carrying the page URL. This happens on every
+blue/green cutover blip. Fix, verified with the same probes (token count 0,
+output stays JSON):
 
 ```
 {
@@ -402,33 +432,43 @@ same probes (token count 0, output stays JSON):
 }
 ```
 
-at the top of `infra/vps/Caddyfile` (it has no global options block today; merge
-with #343's block, which adds `servers { trusted_proxies ... }`: one block). A
+inside the global options block at the top of `infra/vps/Caddyfile` (#343 added
+one with `servers { trusted_proxies ... }`; extend it, keep a single block). A
 future per-site `log` directive does not inherit it: document that in
 `docs/core/deploy.md` together with the retention of the stderr logs.
 
-**Deploy mechanics (proven problem, in scope for PR4):**
+**Deploy mechanics (in scope for PR4; contested evidence):**
 `docker-compose.yml:132` bind-mounts the single file
 `./Caddyfile:/etc/caddy/Caddyfile:ro` and `cd.yml:195` rsyncs with
-`--delay-updates` (new inode). On Linux a single-file bind mount keeps the old
-inode: after `mv` replace, the container still sees the old file and
-`caddy reload` exits 0 while serving the old config (reproduced; Docker Desktop
-on macOS did not reproduce it). So any Caddyfile change, including #343's
-`trusted_proxies`, may silently not reach production. PR4 therefore adds to
-`infra/vps/deploy.sh`/`lib/caddy.sh`: compare `sha256sum` of the host Caddyfile
-with the file inside the container and, if they differ,
-`compose up -d --force-recreate
-caddy` (a brief 80/443 blip, only when the
-config changed) before/instead of the reload; and a post-deploy check
-`docker compose exec caddy caddy adapt --config
-/etc/caddy/Caddyfile | grep -c redacted`
-non-zero. Alternative: mount the directory instead of the file (needs
-`reload_caddy`, compose and docs changes). Because this changes production
-deploy tooling it needs the supervised-deployment path in `docs/core/deploy.md`
-and the user's confirmation (Q10). Do not edit `caddy.sh`'s generated
-`active/*.caddy` logic. Hosted CI for an `infra/**`-only PR runs nothing
-meaningful: paste `caddy validate`/`adapt` output and the probe logs in the PR
-body; shellcheck the changed scripts. Rollback: revert + a supervised deploy.
+`--delay-updates` (a rename onto a new inode). On Linux a single-file bind mount
+keeps the old inode, so the container may keep the old file while `caddy reload`
+exits 0. One reviewer reproduced it on a Linux VM; another could not on Docker
+Desktop (macOS resolves by path). Step 1 of section 6 reproduces it on a Linux
+runner first. #343's `trusted_proxies` change merged on 2026-10-28 and may
+therefore not be live (Q10). PR4 adds to `infra/vps/deploy.sh`, in `cmd_deploy`
+right after `assert_production_topology` (under the deploy lock, before
+migrations, candidate start and any `active/*.caddy` write; **never inside the
+canary window or `cmd_rollback`**, where a Caddy restart would drop in-flight
+traffic and break the `compose exec` calls under `set -e`): compare `sha256sum`
+of the host Caddyfile with the file in the container
+(`compose exec -T caddy
+sha256sum`, written as `if ! ...; then die`),
+`caddy validate` the new file, and only if the hashes differ run
+`compose up -d --no-deps --force-recreate caddy` (1-5 s on 80/443; named volumes
+keep certificates; never `down -v`), then re-run the topology check.
+Post-deploy: `compose exec -T caddy caddy adapt
+--config /etc/caddy/Caddyfile`
+must contain the filter (match the stable substring `request>uri`, retry up to 3
+times, treat an unreachable admin API as a warning when the hashes match).
+Alternative: move the file to `infra/vps/caddy/Caddyfile` and mount the
+directory (a one-time recreate is still needed); keep the hash guard as a
+backstop. This changes production deploy tooling: needs the supervised path in
+`docs/core/deploy.md` and the user's explicit approval before merge and deploy
+(Q10). No tests exist for `infra/vps` scripts: paste `caddy validate`/`adapt`
+output and the probe logs in the PR body and shellcheck the changed scripts;
+hosted CI for an `infra/**`-only PR runs nothing meaningful. Do not edit
+`caddy.sh`'s generated `active/*.caddy` logic. Rollback: revert + a supervised
+deploy.
 
 ### 4.4 PR1: checkout race (`Closes #333`)
 
@@ -487,12 +527,14 @@ AND phone IS NULL RETURNING *`;
    never fall through to the create path (the account now holds the other phone,
    so `phoneLessOwner` would miss it and a second BuyerAccount with the same
    email would be minted: `BuyerAccount.email` is not unique). `RETURNING *` via
-   `$queryRaw` is untyped: select the needed columns and map them to the shape
-   the branch code uses. Needed because the same Google session posting two
-   checkouts with phones P and Q takes two different advisory locks and would
-   otherwise lose an update (probed: final phone P while Q's order is linked to
-   the account). Lock order inside the step is always advisory lock first, then
-   the row; never the reverse.
+   `$queryRaw` is untyped: select the columns the branch code reads
+   (`id, phone, email, name,
+   emailVerified, passwordVersion, pendingPhone`)
+   and map them to that shape. Needed because the same Google session posting
+   two checkouts with phones P and Q takes two different advisory locks and
+   would otherwise lose an update (probed: final phone P while Q's order is
+   linked to the account). Lock order inside the step is always advisory lock
+   first, then the row; never the reverse.
 3. `customerStoreLink.upsert` (`:190-196`):
    `INSERT ... ON CONFLICT
 ("buyerAccountId","storeId") DO NOTHING` (new id).
@@ -570,7 +612,8 @@ fulfillmentStatus, totalAmount, currency, source }], total }`
 - Web: "Otros pedidos de este numero" inside `AssistedOrderSection` (assisted
   orders only, matching #265's deferral); rows open that order if the orders
   page supports it by query param, else read-only. es/en dashboard i18n.
-- Collides with #345 (sheet, dashboard i18n, generated files): merge after #345.
+- Regenerate openapi/metadata/SDK on the then-current main (#345 and #347 have
+  merged).
 - #258 gap: e2e that seller B calling `customers/lookup?phone=` for a phone that
   exists only in store A sees `previousOrders: 0`/no alias for store B and gets
   403/404 when passing store A's id.
@@ -590,91 +633,113 @@ kept, a same-phone customer in another store does not affect the result.
 
 ### 4.7 #258 housekeeping
 
-Draft comment for #258 (leftovers map, verified status) lives in review-log.md.
-**Do not post or close #258 without the user's approval (Q3).** Verified: the
-four normalisations, rejection rules and non-+51 decision are in
-`phone-country`; `upsertAssistedCustomer` + spec; legacy-phone previous-order
-count spec (`customers.service.spec.ts:564-617`); lookup guard/ownership (unit
-only; PR5 adds the isolation e2e). Epic #253 stays open until the buyer side
-lands.
+#258 was closed by another account on 2026-10-27 (see section 1); do not post
+anything. In PR5, grep `apps/api/test/*.e2e-spec.ts` and the lookup unit specs
+for a cross-store isolation case on `customers/lookup`; add the e2e only if none
+exists. Epic #253 stays open until the buyer side lands.
 
 ## 5. PR stack (no stacked branches; every PR targets `main`)
 
-Recommended merge order (give it to the user): **#343 -> PR-S -> PR4 -> #345 ->
-PR-A -> PR3 -> PR5**, with PR1 and PR6 anywhere (independent). PR-A, PR3 and PR5
-touch generated files that #345 touches: whichever merges second rebases and
-**regenerates** (never hand-merges). The implementer may build PR3 locally on a
-branch that contains PR-A's commits and open it as a draft only after PR-A
-lands. PR3's code depends on PR-A's DTO fields, so PR3 is opened (as draft) once
-PR-A is on main or, if opened earlier, it carries no DTO change and its hosted
-CI is only meaningful after PR-A merges and it is rebased.
+Recommended merge order (give it to the user):
 
-| PR   | Branch                         | Base                               | Scope                                    | Closes/Refs             |
-| ---- | ------------------------------ | ---------------------------------- | ---------------------------------------- | ----------------------- |
-| PR1  | `fix/checkout-customer-race`   | main                               | 4.4                                      | Closes #333             |
-| PR-S | `fix/web-scrub-order-token`    | main                               | 4.3 PR-S                                 | Refs #268, #279         |
-| PR4  | `fix/caddy-token-logs`         | main (after #343)                  | 4.3 PR4                                  | Refs #340 (user closes) |
-| PR-A | `feat/public-order-dto-fields` | main (after #345)                  | 4.1                                      | Refs #268               |
-| PR3  | `feat/public-order-page`       | main (after #343, PR-S, PR4, PR-A) | 4.2 + `packages/types/http.ts` one-liner | Refs #268               |
-| PR5  | `feat/order-related-orders`    | main (after #345, PR3)             | 4.5                                      | Refs #265, #258         |
-| PR6  | `fix/hide-ghost-customers`     | main                               | 4.6                                      | Closes #337             |
+1. **Check #343 is live in production** (Q10; user action, no PR needed).
+2. **PR4** (Caddy log filter + deploy-mechanics guard). Independent of the
+   others; ships first because it also decides whether Caddyfile changes
+   (including #343's) reach production.
+3. **PR-S** (web scrub), **PR-A** (API fields). Independent of each other.
+4. **PR3** (the page), after PR-S, PR4 (deployed) and PR-A.
+5. **PR1** (#333) anywhere: independent.
+6. Phase 2 (can be cut, independent of the buyer page): **PR5**, **PR6**.
 
-PR3's body carries a "Blocked by" list (#343, PR-S, PR4 outcome, PR-A) and a
-table mapping each #268 checkbox to its evidence (PR-S for the Sentry one, #343
-for the throttle, tests for the rest), and states that the checkbox "Sin login
-ni datos personales" is satisfied in the sense "no login, only a masked phone,
-the seller's alias and the delivery line". `Closes #268` is deliberately **not**
-used: the valid state has no browser e2e in CI and the manual phone-width check
-is the proof, so the user closes #268 after it (Q8). No schema/migration in any
-of these PRs (#345 carries its own). Each PR contains only its files and tests
-and is green on its own; `ci.yml` path filters decide which jobs run (`infra/**`
-runs none), so each PR body lists what was run locally.
+PR-A and PR5 regenerate openapi/metadata/SDK on top of the then-current main:
+whoever merges second rebases and **regenerates** (never hand-merges generated
+files). The implementer may build PR3 locally on a branch containing PR-A's
+commits and open it as a draft only after PR-A lands (PR3 typechecks against
+PR-A's generated DTO fields).
 
-## 6. Steps and completion signals
+| PR   | Branch                         | Base | Scope                                              | Closes/Refs             |
+| ---- | ------------------------------ | ---- | -------------------------------------------------- | ----------------------- |
+| PR4  | `fix/caddy-token-logs`         | main | 4.3 PR4 (Caddyfile + deploy scripts + docs)        | Refs #340 (user closes) |
+| PR-S | `fix/web-scrub-order-token`    | main | 4.3 PR-S                                           | Refs #268, #279         |
+| PR-A | `feat/public-order-dto-fields` | main | 4.1                                                | Refs #268               |
+| PR3  | `feat/public-order-page`       | main | 4.2 + `packages/types/http.ts` one-liner + CI curl | Refs #268               |
+| PR1  | `fix/checkout-customer-race`   | main | 4.4                                                | Closes #333             |
+| PR5  | `feat/order-related-orders`    | main | 4.5 (Phase 2)                                      | Refs #265 (closed)      |
+| PR6  | `fix/hide-ghost-customers`     | main | 4.6 (Phase 2)                                      | Closes #337             |
+
+PR3's body carries a "Blocked by" list and a table mapping each #268 checkbox to
+its evidence (PR-S for the Sentry one, #343 for the throttle, tests for the
+rest), and states that the checkbox "Sin login ni datos personales" is satisfied
+in the sense "no login, only a masked phone, the seller's alias and the delivery
+line". `Closes #268` is deliberately **not** used: the valid state has no
+browser e2e in CI and the manual phone-width check is the proof, so the user
+closes #268 after it (Q8). No schema/migration in any of these PRs. Each PR
+contains only its files and tests and is green on its own; `ci.yml` path filters
+decide which jobs run (`infra/**` runs none), so each PR body lists what was run
+locally.
+
+## 6. Steps and completion signals (build order)
+
+Refs marked `~` in this plan were not checked by every reviewer: re-verify them
+rather than trust them.
 
 0. Fresh worktree off `origin/main` under the scratchpad;
    `pnpm install
---frozen-lockfile`; own Postgres/Redis on non-default ports;
-   workers app with `MAIL_DRIVER=file` on its own `PORT` (needed only by specs
-   that sign up users); `pnpm turbo run build --filter=api` (workspace packages
+   --frozen-lockfile`; own Postgres/Redis on non-default ports;
+   workers app with `MAIL_DRIVER=file` on its own `PORT` (only specs that sign
+   up users need it); `pnpm turbo run build --filter=api` (workspace packages
    must be built before vitest/e2e: `@biasmarket/queue` etc. resolve to `dist`).
-   `gh pr view 343 --json
-state`, same for 345; re-read the collision table.
-   Signal: build green, `prisma migrate deploy` ok, `git status` clean, no
-   `pedido` directory and no `headers()` block in `apps/web` before PR3 starts.
-1. PR1. Signal: the new e2e fails on the base commit (paste output in the PR)
-   and passes after; `pnpm --filter api test`, then `pnpm --filter api lint`,
-   then `pnpm --filter api
-typecheck` (separate invocations; api `pretypecheck`
-   regenerates `apps/api/src/metadata.ts`: commit that diff if it is part of the
-   change; `lint` diffs against `origin/main`, so keep it fetched) ok.
+   Re-read the "Path table" refs and `git log origin/main`. Signal: build green,
+   `prisma migrate
+   deploy` ok, `git status` clean, no `pedido` directory and
+   no `headers()` block in `apps/web` before PR3 starts.
+1. PR4. First reproduce the stale single-file-mount behaviour on a Linux runner
+   or VM (reviewers disagreed: one reproduced it on a Linux VM, one could not on
+   Docker Desktop macOS); the remedy below is safe either way. Signals:
+   `caddy
+   validate`/`adapt` output with the filter; the 503/502 probe shows
+   no token in the container logs; shellcheck clean on changed scripts;
+   post-deploy, `caddy adapt --config /etc/caddy/Caddyfile` inside the container
+   contains the filter and the host/container `sha256sum` match, and a provoked
+   503 leaves no token in `docker logs`.
 2. PR-S. Signal: fake-transport test green (the server test forces
-   `tracesSampleRate: 1` to get a transaction); `pnpm --filter web test`,
-   `lint`, `typecheck` as separate invocations.
-3. PR4. Signal: probe logs before/after (or documented absence),
-   `caddy validate`.
-4. PR-A. Signal: `bash scripts/ci/check-openapi-drift.sh` clean after
-   regenerate; api unit + e2e; lint/typecheck.
-5. PR3 (rebase onto main after PR-A has merged; signal: `git log` shows PR-A's
+   `tracesSampleRate: 1`); `pnpm --filter web test`, `lint`, `typecheck` as
+   separate invocations.
+3. PR-A. Signal: regenerate with
+   `pnpm --filter api generate:openapi && pnpm
+   --filter @biasmarket/types generate`,
+   then `bash scripts/ci/check-openapi-drift.sh` exits 0 (read the script first:
+   it changed on main to ignore key ordering and it only diffs `openapi.json`,
+   so also confirm `metadata.ts` and the SDK diffs are committed); api unit +
+   e2e; `pnpm --filter api test`, then `lint`, then `typecheck` (separate
+   invocations; api `pretypecheck` regenerates `apps/api/src/metadata.ts`;
+   `lint` diffs against `origin/main`, so keep it fetched).
+4. PR3 (rebase onto main after PR-A has merged; signal: `git log` shows PR-A's
    commit). After editing `packages/i18n/**` run
-   `pnpm turbo run build --filter=@biasmarket/i18n` before the web typecheck (it
-   reads `dist`). The `packages/types` change also fans CI out to mobile
+   `pnpm turbo run build
+   --filter=@biasmarket/i18n` before the web typecheck
+   (it reads `dist`). The `packages/types` change also fans CI out to mobile
    lint/typecheck and the api jobs; say so in the PR body. Signal: web
-   unit/component tests, `pnpm --filter @biasmarket/types test` (mutator), lint,
-   typecheck, `next build`; the `next start` header check green in
-   `scripts/ci/web-e2e.sh` (assumption: that script can take a curl step on
-   :3001; it starts `next start` there. It runs in the `web-e2e` job, gated on
-   `detect-changes` output `web_e2e` (`ci.yml:~1046`); confirm the filter at
-   `ci.yml:~173` covers `apps/web/**` and `scripts/ci/web-e2e.sh` so a web-only
-   PR triggers it); Playwright invalid-state spec at all viewports (reuse the
-   seeded slug `demo-tienda-de-camila` via `WEB_E2E_STORE_SLUG`; the API is up
-   on :3000 in that job, so the 404 assertion is real); manual: seed a real
-   assisted order (reuse the assisted-order e2e seed or `/run`), open the page
-   URL with `curl` (no JS) and confirm `linkFirstOpenedAt` stays null, then open
-   it in a phone-width browser and confirm it stamps once.
-6. PR5, PR6: tests, drift script (PR5), lint, typecheck.
-7. After the last merge run the drift script on the merged result; hand the PR
-   list back for the review session.
+   unit/component tests, `pnpm --filter
+   @biasmarket/types test` (mutator),
+   lint, typecheck, `next build`; the `next
+   start` header curl block green in
+   `scripts/ci/web-e2e.sh` (it runs in the `web-e2e` job, gated on
+   `detect-changes` output `web_e2e`, `ci.yml:~1046`; confirm the filter near
+   `ci.yml:~173` covers `apps/web/**` and the script so a web-only PR triggers
+   it); Playwright invalid-state spec (reuse the seeded slug
+   `demo-tienda-de-camila` via `WEB_E2E_STORE_SLUG`; the API is up on :3000 in
+   that job, so the 404 assertion is real); manual: seed a real assisted order
+   (reuse the assisted-order e2e seed or `/run`), open the page URL with `curl`
+   (no JS) and confirm `linkFirstOpenedAt` stays null, then open it in a
+   phone-width browser and confirm it stamps once.
+5. PR1. Signal: the new e2e fails on the base commit (paste output in the PR)
+   and passes after; `pnpm --filter api test`, `lint`, `typecheck` ok.
+6. Phase 2. PR5: unit + e2e (isolation matrix in section 7), drift script exits
+   0, lint, typecheck. PR6: unit + e2e `customers.e2e-spec.ts` orphan case,
+   lint, typecheck.
+7. After the last merge run `bash scripts/ci/check-openapi-drift.sh` on a clean
+   checkout of main (exit 0) and hand the PR list back for the review session.
 
 ## 7. Test strategy
 
@@ -711,32 +776,39 @@ typecheck` (separate invocations; api `pretypecheck`
   already sets them for `/public/orders` paths and scrubs the path: test, do not
   rebuild). Add `apps/api/src/common/filters/all-exceptions.filter.ts` to your
   reading list.
-- **PR3**: web only. Web component tests (jsdom, mocked
-  `apiClient.publicOrders`; fresh
-  `QueryClient({ defaultOptions: { queries: {
-retry: false, gcTime: 0 } } })`
-  per test; use the **real `ApiError` class** for 404/429/500/TypeError mapping;
-  negative control proving the token reaches the mocked call): alias/no alias,
-  partial payment, cancelled -> no pay section, no methods -> notice, no store
-  number -> no button, slug mismatch -> invalid, hostile strings
-  (`<img onerror>`, `javascript:alert(1)`, very long, RTL override) in
-  alias/details/instructions render as inert text, no `<a>` whose href contains
-  the token, wa.me href has no token/URL and is `encodeURIComponent`-ed, no
-  account invitation markup; the view renders **no `<a>` with an href taken from
-  the DTO** other than the fixed wa.me link (covers `trackingUrl` once #345
-  lands) and no `<img>` for #345's packed photo; the logo goes through
+- **PR3** (web, plus the `packages/types/http.ts` one-liner and the curl block
+  in `scripts/ci/web-e2e.sh`): web component tests (jsdom, mocked
+  `apiClient.publicOrders`; a fresh QueryClient per test (`renderWithProviders`
+  already creates one with `retry: false,
+  gcTime: Infinity` but does not
+  return it: use it or a small local wrapper); use the **real `ApiError` class**
+  for 404/429/500/TypeError mapping; negative control proving the token reaches
+  the mocked call): alias/no alias, partial payment, cancelled -> no pay
+  section, no methods -> notice, no store number -> no button, slug mismatch ->
+  invalid, hostile strings (`<img onerror>`, `javascript:alert(1)`, very long,
+  RTL override) in alias/details/instructions render as inert text, no `<a>`
+  whose href contains the token, wa.me href has no token/URL and is
+  `encodeURIComponent`-ed, no account invitation markup; the view renders **no
+  `<a>` with an href taken from the DTO** other than the fixed wa.me link
+  (covers `trackingUrl`, already in the public DTO after #345) and no `<img>`
+  for the packed photo (`packedPhotoAvailable`); the logo goes through
   `StoreLogo` (`next/image`, restricted `remotePatterns`), never a raw
-  `<img src={store.logoUrl}>`, asserted by a test. Static guard test:
-  `pedido/[token]/page.tsx` imports no `apiClient` and contains no `fetch`. The
-  `refetchOnWindowFocus` behavior is tested with fake timers + a `focus` event
-  or not claimed. Robots/i18n parity/canonical-regression tests. Playwright axe
-  spec (follow `apps/web/e2e/responsive.spec.ts` and `axe-helper.ts`; use the
-  existing 3-viewport projects, do not add viewports) on a never-issued token:
-  assert the invalid-state heading/testid **and** that the
-  `/public/orders/<token>` response was 404 (so it cannot pass on any 404 page);
-  keep `retry: false`. Valid-state has **no browser e2e in CI** (`web-e2e.sh`
-  only seeds base data): covered by component tests plus a manual check on a
-  phone-width browser with a real seeded link (`/run`). Do not claim otherwise.
+  `<img src={store.logoUrl}>`, asserted by a
+  `vi.mock("@/components/store-logo")` spy or a source grep for `<img` in
+  `features/public-order`. Static guard test (`readFileSync` like
+  `canonical-regression.test.ts`): assert the file exists, strip comments, then
+  no `\bfetch\s*\(`, no `apiClient|@/lib/api-client`, and imports limited to
+  `@/features/public-order`, `next`, `next-intl`, `react` (a fetch hidden in a
+  helper would otherwise slip through). The `refetchOnWindowFocus` behavior is
+  tested with fake timers + a `focus` event or not claimed. Robots/i18n
+  parity/canonical-regression tests. Playwright axe spec (follow
+  `apps/web/e2e/responsive.spec.ts` and `axe-helper.ts`; use the existing
+  3-viewport projects, do not add viewports) on a never-issued token: assert the
+  invalid-state heading/testid **and** that the `/public/orders/<token>`
+  response was 404 (so it cannot pass on any 404 page); keep `retry: false`.
+  Valid-state has **no browser e2e in CI** (`web-e2e.sh` only seeds base data):
+  covered by component tests plus a manual check on a phone-width browser with a
+  real seeded link (`/run`). Do not claim otherwise.
 - **PR-S/PR4/PR5/PR6**: as in 4.3, 4.5, 4.6; PR5 e2e matrix: seller B asks store
   A's order via B's storeId (404), via A's storeId (403), B's storeId + A's
   orderId (404); a unit test that fails if `storeId` is missing from the related
@@ -759,7 +831,8 @@ environmental), `pnpm --filter web test`, `pnpm --filter web test:e2e`,
   Mitigation: `staleTime` 30s, no polling; limit unchanged (Q6).
 - **500 on stamp failure** (#344 design): error state with retry, copy must not
   say "invalid link".
-- **Generated files conflict with #345**: regenerate, never hand-merge.
+- **Concurrent regeneration of generated files**: regenerate on the current
+  main, never hand-merge.
 - **Cache layers**: route forced dynamic, headers asserted in CI on a production
   server; Cloudflare behavior is Q7.
 - **`credentials`**: pass `omit` for this query only; never change the shared
@@ -777,11 +850,11 @@ environmental), `pnpm --filter web test`, `pnpm --filter web test:e2e`,
 - **Pre-existing, not fixed here**: email comparison in `findOrCreateCustomer`
   is case-sensitive (a differently-cased email silently becomes a guest order);
   the Google create path races a checkout for the same email.
-- **Throttle exhaustion is exploitable until #343** (checkout 10/min and the
-  public GET 30/min are each one global bucket behind Caddy): #343's Caddy
-  `trusted_proxies` must be limited to Cloudflare ranges so a direct-to-origin
-  client cannot pick its own bucket; the token-bearing GET stays browser-side so
-  it is throttled per visitor, never per web-container IP.
+- **Throttle exhaustion is exploitable until #343 is live in production (Q10)**
+  (checkout 10/min and the public GET 30/min are each one global bucket behind
+  Caddy): #343's Caddy `trusted_proxies` must be limited to Cloudflare ranges so
+  a direct-to-origin client cannot pick its own bucket; the token-bearing GET
+  stays browser-side so it is throttled per visitor, never per web-container IP.
 - **Advisory-lock stalls** are bounded by the checkout transaction timeout
   (Prisma default 5s) and only happen when `customerEmail` is present; optional
   hardening `SET LOCAL lock_timeout = '3s'` mapped to a guest result.
@@ -793,9 +866,9 @@ environmental), `pnpm --filter web test`, `pnpm --filter web test:e2e`,
 - **Token in the HTML / RSC payload**: `token` is a prop of the client
   component, so it lands in the document and `__next_f` payload; `no-store` +
   `no-referrer` keep that between the buyer and the server.
-- **#345 interplay**: after #345 lands the public DTO carries `trackingUrl` and
-  a packed-photo flag; PR3 must not render the photo or any DTO-sourced href
-  (tests in 7) until #270 designs it.
+- **#345/#347 interplay**: the public DTO now carries `trackingNumber`,
+  `trackingUrl`, a packed-photo flag and per-payment `voidedAt`; PR3 must not
+  render the photo or any DTO-sourced href (tests in 7) until #270 designs it.
 - **Hidden/unpublished stores**: the storefront still renders for them
   (`findPublicBySlug` ignores `isPublic`); the buyer page works for them too.
 
@@ -803,9 +876,10 @@ environmental), `pnpm --filter web test`, `pnpm --filter web test:e2e`,
 
 1. [CI: component tests; manual: phone-width browser]
    `GET /es/store/{slug}/pedido/{validToken}` shows greeting/alias, status +
-   timeline, items, total/adelanto/saldo, store data, "Pedido para +51 9** ***
-   321", the "no es tu numero" disclosure with contact button, how to pay or the
-   no-methods notice, per-payment source/amount/date/status.
+   timeline, items, total/adelanto/pagado/falta del adelanto, store data,
+   "Pedido para +51 9** *** 321", the "no es tu numero" disclosure with contact
+   button, how to pay or the no-methods notice, per-payment
+   source/amount/date/status.
 2. Unknown, revoked/regenerated, malformed and wrong-slug tokens render the
    identical invalid state with a contact path (locale-prefixed URLs; an
    unprefixed token containing a dot skips the intl proxy and gets Next's 404, a
@@ -837,14 +911,14 @@ environmental), `pnpm --filter web test`, `pnpm --filter web test:e2e`,
 - **Q1** Link-preview bots / first-open: default D1 (browser-only fetch, no API
   change).
 - **Q2** Merge order: default as in section 5 (security requirement for PR3).
-- **Q3** Post the leftovers map on #258 and close it after PR5; comment/close
-  #340 if PR4 proves no leak. Default: **do not post or close anything without
-  explicit approval**; drafts are in the review log.
+- **Q3** Closing #340 after PR4 is deployed and verified: default **do not close
+  or comment on any issue without explicit approval** (#258 is already closed by
+  someone else; nothing to post).
 - **Q4** Open a tracking issue for "other orders of the same number"? Default
   no.
-- **Q5** Keep #337 (PR6) and related orders (PR5) in this slice? Default yes;
-  PR5 is sequenced after PR3 and is the first thing to cut if the user wants
-  fewer PRs.
+- **Q5** Keep #337 (PR6) and related orders (PR5)? Default: yes, as a Phase 2
+  that is independent of the buyer page and is the first thing to cut if the
+  user wants fewer PRs.
 - **Q6** Raise the public GET throttle for CGNAT? Default no (revisit with
   traffic).
 - **Q7** Is there a Cloudflare cache rule for `/pedido/*` and
@@ -853,11 +927,18 @@ environmental), `pnpm --filter web test`, `pnpm --filter web test:e2e`,
 - **Q8** Who closes #268? Default: PR3 uses `Refs #268`; the user closes it
   after the manual phone-width check and once PR-S/#343 are live (its acceptance
   list includes E1 coordination).
-- **Q9** Who drives #343 to green and merge, and what if it stalls? Default:
-  **hold PR3** (shipping it would put every buyer in one global 30/min bucket).
-  This changes ship timing, so the user should confirm before PR3 is merged.
-- **Q10** PR4 changes production deploy tooling (force-recreate of Caddy when
-  the Caddyfile hash differs, plus a post-deploy check). Default: implement
-  exactly that and deploy it in a supervised run; **also tell the user that
-  #343's Caddyfile change may not reach production without this fix** (they may
-  prefer to land the deploy fix before #343). Alternative: directory mount.
+- **Q10** Is #343's Caddyfile change actually live in production? On the VPS
+  compare `docker compose exec caddy sha256sum /etc/caddy/Caddyfile` with
+  `sha256sum ~/biasmarket/Caddyfile` (and `caddy adapt` for `trusted_proxies`).
+  If they differ the public throttle is bucketing by the proxy IP today. PR4
+  changes production deploy tooling (a pre-cutover guard in `deploy.sh`, placed
+  in `cmd_deploy` right after `assert_production_topology`, never inside canary
+  or rollback: compare the host and container Caddyfile hash, `caddy validate`
+  the new file, then `compose up -d --no-deps --force-recreate caddy` only if
+  they differ, a 1-5 s blip on 80/443; named volumes `caddy_data`/`caddy_config`
+  keep the certificates). Alternative: move the file to
+  `infra/vps/caddy/Caddyfile` and mount the directory (needs a one-time recreate
+  anyway, so keep the hash guard as a backstop). Default: implement the guard;
+  **do not merge or deploy PR4 without the user's explicit approval** (deploy is
+  supervised per `docs/core/deploy.md`). No existing tests cover `infra/vps`
+  scripts: do not imply they do.
