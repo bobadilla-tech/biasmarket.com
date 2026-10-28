@@ -9,9 +9,13 @@ import { maskPhone } from '@biasmarket/utils/phone-country';
 import { hashOrderAccessToken } from '@biasmarket/utils/assisted-order';
 import { isPaymentMethodConfigured } from '@biasmarket/utils/payment-methods';
 import { PrismaService } from '../../../prisma/prisma.service.js';
-import { computePaymentSummary } from '../../../common/payment-summary.js';
+import {
+  computePaymentSummary,
+  countsTowardPaid,
+} from '../../../common/payment-summary.js';
 import { OrderEventsService } from './order-events.service.js';
 import { toPublicCustomerAlias } from './public-order-alias.js';
+import { isTimelineEvent, toPublicTimeline } from './public-order-timeline.js';
 import type {
   PublicOrderDeliveryDetailsResponseDto,
   PublicOrderResponseDto,
@@ -142,6 +146,10 @@ export class PublicOrderService {
         )
       : [];
     const summary = computePaymentSummary(order.requiredAmount, order.payments);
+    const visibleEvents = (await this.events.listForBuyer(order.id)).filter(
+      isTimelineEvent,
+    );
+    const claimed = order.claimedAt !== null;
 
     return {
       store: {
@@ -184,6 +192,12 @@ export class PublicOrderService {
       trackingUrl: order.trackingUrl,
       packedPhotoAvailable: Boolean(order.packedPhotoUrl),
       receiptConfirmedAt: order.buyerConfirmedReceivedAt?.toISOString() ?? null,
+      claimed,
+      lastUpdateAt: (
+        visibleEvents.at(-1)?.createdAt ?? order.createdAt
+      ).toISOString(),
+      timeline: claimed ? toPublicTimeline(visibleEvents) : [],
+      hasValidatedPayment: order.payments.some(countsTowardPaid),
       courierModality: order.courierModality,
       payments: order.payments.map((payment) => ({
         source: payment.source,

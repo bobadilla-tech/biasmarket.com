@@ -169,7 +169,7 @@ describe('OrderEventsService', () => {
 
     expect(prisma.orderEvent.findMany).toHaveBeenCalledWith({
       where: { orderId: 'order-1', visibleToBuyer: true },
-      orderBy: { createdAt: 'asc' },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
       select: { type: true, createdAt: true, payload: true },
     });
   });

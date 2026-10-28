@@ -1921,6 +1921,72 @@ export interface PublicOrderDeliveryDetailsResponseDto {
   pickupPointLabel: string | null;
 }
 
+export type PublicOrderTimelineItemDtoType =
+  (typeof PublicOrderTimelineItemDtoType)[keyof typeof PublicOrderTimelineItemDtoType];
+
+export const PublicOrderTimelineItemDtoType = {
+  CREATED: "CREATED",
+  PAYMENT_SUBMITTED: "PAYMENT_SUBMITTED",
+  PAYMENT_VALIDATED: "PAYMENT_VALIDATED",
+  PAYMENT_REJECTED: "PAYMENT_REJECTED",
+  PAYMENT_VOIDED: "PAYMENT_VOIDED",
+  FULFILLMENT_ADVANCED: "FULFILLMENT_ADVANCED",
+  PACKED_PHOTO_ADDED: "PACKED_PHOTO_ADDED",
+  TRACKING_ADDED: "TRACKING_ADDED",
+  RECEIPT_CONFIRMED: "RECEIPT_CONFIRMED",
+  CLAIMED: "CLAIMED",
+  ORDER_CANCELLED: "ORDER_CANCELLED",
+} as const;
+
+/**
+ * New fulfillment step, for FULFILLMENT_ADVANCED only.
+ * @nullable
+ */
+export type PublicOrderTimelineItemDtoToStatus =
+  | (typeof PublicOrderTimelineItemDtoToStatus)[keyof typeof PublicOrderTimelineItemDtoToStatus]
+  | null;
+
+export const PublicOrderTimelineItemDtoToStatus = {
+  ORDERING: "ORDERING",
+  IN_TRANSIT: "IN_TRANSIT",
+  READY: "READY",
+  COMPLETED: "COMPLETED",
+} as const;
+
+/**
+ * Outcome of a cancellation, for ORDER_CANCELLED only.
+ * @nullable
+ */
+export type PublicOrderTimelineItemDtoResolution =
+  | (typeof PublicOrderTimelineItemDtoResolution)[keyof typeof PublicOrderTimelineItemDtoResolution]
+  | null;
+
+export const PublicOrderTimelineItemDtoResolution = {
+  REFUNDED: "REFUNDED",
+  RETAINED: "RETAINED",
+  STORE_CREDIT: "STORE_CREDIT",
+} as const;
+
+export interface PublicOrderTimelineItemDto {
+  type: PublicOrderTimelineItemDtoType;
+  at: string;
+  /**
+   * New fulfillment step, for FULFILLMENT_ADVANCED only.
+   * @nullable
+   */
+  toStatus: PublicOrderTimelineItemDtoToStatus;
+  /**
+   * Payment amount, for PAYMENT_SUBMITTED / PAYMENT_VOIDED.
+   * @nullable
+   */
+  amount: string | null;
+  /**
+   * Outcome of a cancellation, for ORDER_CANCELLED only.
+   * @nullable
+   */
+  resolution: PublicOrderTimelineItemDtoResolution;
+}
+
 export type PublicOrderPaymentResponseDtoSource =
   (typeof PublicOrderPaymentResponseDtoSource)[keyof typeof PublicOrderPaymentResponseDtoSource];
 
@@ -1983,6 +2049,14 @@ export interface PublicOrderResponseDto {
    * @nullable
    */
   receiptConfirmedAt: string | null;
+  /** Whether the order was saved to a buyer account. */
+  claimed: boolean;
+  /** Time of the latest buyer-visible step (creation if none). */
+  lastUpdateAt: string;
+  /** Dated steps, oldest first. Empty unless the order was claimed: it is an incentive to save the order, not an access control. */
+  timeline: PublicOrderTimelineItemDto[];
+  /** Whether a payment counts toward the paid amount (recorded, or an approved proof, and not voided). */
+  hasValidatedPayment: boolean;
   /** @nullable */
   courierModality: PublicOrderResponseDtoCourierModality;
   payments: PublicOrderPaymentResponseDto[];

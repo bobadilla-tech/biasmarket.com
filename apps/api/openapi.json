@@ -8861,6 +8861,49 @@
           "pickupPointLabel"
         ]
       },
+      "PublicOrderTimelineItemDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "CREATED",
+              "PAYMENT_SUBMITTED",
+              "PAYMENT_VALIDATED",
+              "PAYMENT_REJECTED",
+              "PAYMENT_VOIDED",
+              "FULFILLMENT_ADVANCED",
+              "PACKED_PHOTO_ADDED",
+              "TRACKING_ADDED",
+              "RECEIPT_CONFIRMED",
+              "CLAIMED",
+              "ORDER_CANCELLED"
+            ],
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "toStatus": {
+            "nullable": true,
+            "enum": ["ORDERING", "IN_TRANSIT", "READY", "COMPLETED"],
+            "type": "string",
+            "description": "New fulfillment step, for FULFILLMENT_ADVANCED only."
+          },
+          "amount": {
+            "type": "string",
+            "nullable": true,
+            "description": "Payment amount, for PAYMENT_SUBMITTED / PAYMENT_VOIDED."
+          },
+          "resolution": {
+            "nullable": true,
+            "enum": ["REFUNDED", "RETAINED", "STORE_CREDIT"],
+            "type": "string",
+            "description": "Outcome of a cancellation, for ORDER_CANCELLED only."
+          }
+        },
+        "required": ["type", "at", "toStatus", "amount", "resolution"]
+      },
       "PublicOrderPaymentResponseDto": {
         "type": "object",
         "properties": {
@@ -8996,6 +9039,26 @@
             "nullable": true,
             "description": "When the buyer confirmed receiving the order."
           },
+          "claimed": {
+            "type": "boolean",
+            "description": "Whether the order was saved to a buyer account."
+          },
+          "lastUpdateAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Time of the latest buyer-visible step (creation if none)."
+          },
+          "timeline": {
+            "description": "Dated steps, oldest first. Empty unless the order was claimed: it is an incentive to save the order, not an access control.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicOrderTimelineItemDto"
+            }
+          },
+          "hasValidatedPayment": {
+            "type": "boolean",
+            "description": "Whether a payment counts toward the paid amount (recorded, or an approved proof, and not voided)."
+          },
           "courierModality": {
             "nullable": true,
             "enum": ["AGENCY", "HOME"],
@@ -9033,6 +9096,10 @@
           "trackingUrl",
           "packedPhotoAvailable",
           "receiptConfirmedAt",
+          "claimed",
+          "lastUpdateAt",
+          "timeline",
+          "hasValidatedPayment",
           "courierModality",
           "payments"
         ]

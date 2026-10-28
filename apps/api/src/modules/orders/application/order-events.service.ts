@@ -144,7 +144,8 @@ export class OrderEventsService {
   async listForBuyer(orderId: string) {
     return this.prisma.orderEvent.findMany({
       where: { orderId, visibleToBuyer: true },
-      orderBy: { createdAt: 'asc' },
+      // `id` breaks ties between events written in the same millisecond.
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
       select: { type: true, createdAt: true, payload: true },
     });
   }

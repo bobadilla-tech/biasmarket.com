@@ -4,10 +4,12 @@ import { type Mock, vi } from 'vitest';
 import { VoidOrderPaymentUseCase } from './void-order-payment.usecase.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { OrderRepository } from '../infrastructure/order.repository.js';
+import { OrderEventsService } from './order-events.service.js';
 
 describe('VoidOrderPaymentUseCase', () => {
   let useCase: VoidOrderPaymentUseCase;
   let orders: { assertOwnership: Mock };
+  let events: { record: Mock };
   let tx: {
     $queryRaw: Mock;
     order: { findFirst: Mock; update: Mock };
@@ -28,6 +30,7 @@ describe('VoidOrderPaymentUseCase', () => {
           paymentStatus: 'PARTIALLY_PAID',
           fulfillmentStatus: 'ORDERING',
           requiredAmount: new Prisma.Decimal(100),
+          currency: 'PEN',
         }),
         update: vi.fn(),
       },
@@ -63,9 +66,11 @@ describe('VoidOrderPaymentUseCase', () => {
       ),
     };
     orders = { assertOwnership: vi.fn() };
+    events = { record: vi.fn() };
     useCase = new VoidOrderPaymentUseCase(
       prisma as never as PrismaService,
       orders as never as OrderRepository,
+      events as never as OrderEventsService,
     );
   });
 
@@ -102,6 +107,39 @@ describe('VoidOrderPaymentUseCase', () => {
       }),
     });
     expect(result.paymentStatus).toBe('PARTIALLY_PAID');
+  });
+
+  it('records PAYMENT_VOIDED inside the transaction without the seller reason', async () => {
+    await useCase.execute(
+      orderId,
+      paymentId,
+      storeId,
+      userId,
+      'Duplicate entry, buyer was rude',
+    );
+
+    expect(events.record).toHaveBeenCalledTimes(1);
+    expect(events.record).toHaveBeenCalledWith(tx, {
+      orderId,
+      storeId,
+      type: 'PAYMENT_VOIDED',
+      actor: 'SELLER',
+      payload: { amount: 20, currency: 'PEN', paymentId },
+    });
+    expect(JSON.stringify(events.record.mock.calls)).not.toContain('rude');
+  });
+
+  it('records nothing when the void is rejected', async () => {
+    tx.order.findFirst.mockResolvedValueOnce({
+      paymentStatus: 'VERIFIED',
+      fulfillmentStatus: 'ORDERING',
+      requiredAmount: new Prisma.Decimal(100),
+      currency: 'PEN',
+    });
+    await expect(
+      useCase.execute(orderId, paymentId, storeId, userId, 'Mistake'),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(events.record).not.toHaveBeenCalled();
   });
 
   it('rejects voiding after an order has been verified', async () => {
