@@ -61,12 +61,12 @@ function TrendBand({
   return (
     <section className={`${bandClassName} px-5 py-2.5`}>
       <div className="flex items-center justify-between gap-4 py-1.5">
-        <h2 className="text-[21px] leading-[26px] font-bold text-black">
+        <h2 className="text-[21px] leading-[26px] font-bold text-landing-ink">
           {title}
         </h2>
         <Link
           href={viewMoreHref}
-          className="flex shrink-0 items-center gap-1.5 text-[13px] leading-4 font-medium text-[#b0006d]"
+          className="flex shrink-0 items-center gap-1.5 text-[13px] leading-4 font-medium text-landing-title transition-colors hover:text-landing-link"
         >
           {t("viewMore")}
           <CircleArrowRight className="size-4" strokeWidth={1.8} />
@@ -125,12 +125,12 @@ function TrendBandStripe({
     <section className={`py-14 ${bg}`}>
       <div className="mx-auto max-w-[1344px] px-10">
         <div className="flex items-center justify-between gap-8">
-          <h2 className="text-[32px] leading-[39px] font-bold text-black">
+          <h2 className="text-[32px] leading-[39px] font-bold text-landing-ink">
             {title}
           </h2>
           <Link
             href={viewMoreHref}
-            className="flex items-center gap-3 text-[20px] leading-6 font-medium text-[#b0006d] transition-colors hover:text-[#8f0059]"
+            className="flex items-center gap-3 text-[20px] leading-6 font-medium text-landing-title transition-colors hover:text-landing-link"
           >
             {t("viewMore")}
             <CircleArrowRight className="size-7" strokeWidth={1.6} />
@@ -186,13 +186,13 @@ export function TrendsSection({
         <TrendBand
           title={t("latestTitle")}
           sort="latest"
-          bandClassName="bg-[#FFEAF6]"
+          bandClassName="bg-landing-pink"
           initialData={latestInitialData}
         />
         <TrendBand
           title={t("bestSellersTitle")}
           sort="bestseller"
-          bandClassName="bg-[#F5EAFF]"
+          bandClassName="bg-landing-violet"
           initialData={bestSellersInitialData}
         />
       </div>
@@ -201,13 +201,13 @@ export function TrendsSection({
         <TrendBandStripe
           title={t("latestTitle")}
           sort="latest"
-          bg="bg-[#FFEAF6]"
+          bg="bg-landing-pink"
           initialData={latestInitialData}
         />
         <TrendBandStripe
           title={t("bestSellersTitle")}
           sort="bestseller"
-          bg="bg-[#F5EAFF]"
+          bg="bg-landing-violet"
           initialData={bestSellersInitialData}
         />
       </div>

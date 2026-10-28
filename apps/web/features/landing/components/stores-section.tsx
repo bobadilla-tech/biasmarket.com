@@ -10,16 +10,16 @@ function MobileStoreRow({ store }: { store: LandingStore }) {
   return (
     <Link
       href={`/store/${store.slug}`}
-      className="mx-auto flex min-h-[92px] h-auto w-full max-w-[300px] items-center gap-4 rounded-lg border border-[#AAA8A8] bg-white px-3 py-4 pr-4 transition hover:shadow-md"
+      className="mx-auto flex min-h-[92px] h-auto w-full max-w-[300px] items-center gap-4 rounded-xl border border-landing-graphite bg-card px-3 py-4 pr-4 shadow-[var(--shadow-soft)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-raised)]"
     >
       <StoreLogo
         name={store.name}
         logoUrl={store.logoUrl}
         size={64}
         className="shrink-0 text-lg font-bold"
-        gradient={{ from: "#FC17A0", to: "var(--brand-violet)" }}
+        gradient={{ from: "var(--brand-pink)", to: "var(--brand-violet)" }}
       />
-      <span className="min-w-0 flex-1 text-center text-base break-words text-black">
+      <span className="min-w-0 flex-1 text-center text-base break-words text-landing-ink">
         {store.name}
       </span>
     </Link>
@@ -37,7 +37,7 @@ export function StoresSection({ stores }: { stores?: LandingStore[] | null }) {
           {t("title")}
         </h2>
         {list.length === 0 ? (
-          <p className="mt-4 rounded-lg border border-dashed border-[#AAA8A8] px-4 py-6 text-center text-xs text-[#696969]">
+          <p className="mt-4 rounded-xl border border-dashed border-landing-graphite px-4 py-6 text-center text-xs text-muted-foreground">
             {t("empty")}
           </p>
         ) : (
@@ -52,12 +52,12 @@ export function StoresSection({ stores }: { stores?: LandingStore[] | null }) {
       {/* Tablet/desktop — Figma "Descubre tiendas" */}
       <div className="mx-auto hidden max-w-[1344px] px-10 sm:block">
         <div className="flex items-center justify-between gap-8">
-          <h2 className="text-[40px] leading-[48px] font-bold text-black">
+          <h2 className="text-[40px] leading-[48px] font-bold text-landing-ink">
             {t("title")}
           </h2>
           <Link
             href="/stores"
-            className="flex items-center gap-3 text-[24px] leading-[29px] font-medium text-[#b0006d] transition-colors hover:text-[#8f0059]"
+            className="flex items-center gap-3 text-[24px] leading-[29px] font-medium text-landing-title transition-colors hover:text-landing-link"
           >
             {t("viewMore")}
             <CircleArrowRight className="size-7" strokeWidth={1.8} />
@@ -65,7 +65,7 @@ export function StoresSection({ stores }: { stores?: LandingStore[] | null }) {
         </div>
 
         {list.length === 0 ? (
-          <p className="mt-6 rounded-lg border border-dashed border-[#AAA8A8] px-4 py-10 text-center text-sm text-[#696969]">
+          <p className="mt-6 rounded-xl border border-dashed border-landing-graphite px-4 py-10 text-center text-sm text-muted-foreground">
             {t("empty")}
           </p>
         ) : (
@@ -74,16 +74,16 @@ export function StoresSection({ stores }: { stores?: LandingStore[] | null }) {
               <Link
                 key={store.id}
                 href={`/store/${store.slug}`}
-                className="flex min-h-[129px] h-auto items-center gap-6 rounded-[18.8px] border-[1.88px] border-[#AAA8A8] bg-white px-8 py-4 transition hover:shadow-md"
+                className="flex min-h-[129px] h-auto items-center gap-6 rounded-2xl border border-landing-graphite bg-card px-8 py-4 shadow-[var(--shadow-soft)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-raised)]"
               >
                 <StoreLogo
                   name={store.name}
                   logoUrl={store.logoUrl}
                   size={96}
                   className="shrink-0 text-xl font-bold"
-                  gradient={{ from: "#FC17A0", to: "var(--brand-violet)" }}
+                  gradient={{ from: "var(--brand-pink)", to: "var(--brand-violet)" }}
                 />
-                <span className="min-w-0 flex-1 break-words text-[30.08px] leading-[36px] text-black">
+                <span className="min-w-0 flex-1 break-words text-[30.08px] leading-[36px] text-landing-ink">
                   {store.name}
                 </span>
               </Link>
