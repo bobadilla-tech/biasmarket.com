@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import type { Prisma, Store } from '@biasmarket/db';
 import { validatePhone } from '@biasmarket/utils/phone-country';
+import type { WHATSAPP_BUYER_NOTICE_TYPES } from '@biasmarket/utils/whatsapp';
 import {
   AssistedOrderInvariantError,
   assertVendorAssistedOrder,
@@ -18,6 +19,7 @@ import { OrderEventsService } from './order-events.service.js';
 import { buildOrderAccessUrl } from './order-access-url.js';
 
 type Tx = Prisma.TransactionClient;
+type BuyerNoticeType = (typeof WHATSAPP_BUYER_NOTICE_TYPES)[number];
 
 // Seller actions on the private link of a VENDOR_ASSISTED order. The caller
 // has already verified that `userId` owns `store`. Both actions lock the Order
@@ -98,6 +100,30 @@ export class ManageAssistedOrderLinkUseCase {
       await this.record(tx, store.id, userId, orderId, 'PHONE_CORRECTED');
     });
     return { accessUrl: buildOrderAccessUrl(token, store.slug) };
+  }
+
+  // Logs that the seller told the buyer about a step. The wa.me message is
+  // built and opened on the client; this only records which notice, never the
+  // number, the alias, the message or the link, and it leaves the link alone.
+  async recordBuyerNotice(
+    store: Store,
+    orderId: string,
+    notice: BuyerNoticeType,
+  ) {
+    const order = await this.prisma.order.findFirst({
+      where: { id: orderId, storeId: store.id },
+      select: { source: true },
+    });
+    if (!order || order.source !== 'VENDOR_ASSISTED') {
+      throw new NotFoundException('Pedido no encontrado');
+    }
+    await this.events.record(this.prisma, {
+      orderId,
+      storeId: store.id,
+      type: 'BUYER_NOTIFIED',
+      actor: 'SELLER',
+      payload: { notice },
+    });
   }
 
   // 404 for a missing or foreign order (same body), for a marketplace order,

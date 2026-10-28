@@ -1431,6 +1431,20 @@ export interface CreateAssistedOrderDto {
   items: CreateOrderItemDto[];
 }
 
+export type BuyerNoticeDtoNotice =
+  (typeof BuyerNoticeDtoNotice)[keyof typeof BuyerNoticeDtoNotice];
+
+export const BuyerNoticeDtoNotice = {
+  ASSISTED_PAYMENT_VALIDATED: "ASSISTED_PAYMENT_VALIDATED",
+  ASSISTED_IN_TRANSIT: "ASSISTED_IN_TRANSIT",
+  ASSISTED_READY: "ASSISTED_READY",
+  ASSISTED_DELIVERED: "ASSISTED_DELIVERED",
+} as const;
+
+export interface BuyerNoticeDto {
+  notice: BuyerNoticeDtoNotice;
+}
+
 export type CreateOrderDtoDeliveryMethodType =
   (typeof CreateOrderDtoDeliveryMethodType)[keyof typeof CreateOrderDtoDeliveryMethodType];
 
@@ -2632,6 +2646,10 @@ export const WhatsAppTemplateResponseDtoType = {
   NEW_ORDER: "NEW_ORDER",
   PAYMENT_REMINDER: "PAYMENT_REMINDER",
   ASSISTED_ORDER_LINK: "ASSISTED_ORDER_LINK",
+  ASSISTED_PAYMENT_VALIDATED: "ASSISTED_PAYMENT_VALIDATED",
+  ASSISTED_IN_TRANSIT: "ASSISTED_IN_TRANSIT",
+  ASSISTED_READY: "ASSISTED_READY",
+  ASSISTED_DELIVERED: "ASSISTED_DELIVERED",
 } as const;
 
 export interface WhatsAppTemplateResponseDto {
