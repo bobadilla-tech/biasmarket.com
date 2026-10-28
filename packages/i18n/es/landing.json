@@ -89,7 +89,8 @@
     "title": "Más por descubrir",
     "cta": "Ver más productos",
     "empty": "Aún no hay productos.",
-    "error": "Algo salió mal. Inténtalo de nuevo."
+    "error": "Algo salió mal. Inténtalo de nuevo.",
+    "retry": "Reintentar"
   },
   "about": {
     "title": "¿Qué es BIASMARKET?",

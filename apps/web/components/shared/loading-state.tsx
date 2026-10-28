@@ -8,7 +8,7 @@ export function LoadingState({
   className,
   label = "Loading",
 }: {
-  variant?: "page" | "inline";
+  variant?: "page" | "inline" | "cards";
   rows?: number;
   className?: string;
   label?: string;
@@ -22,6 +22,20 @@ export function LoadingState({
       >
         {Array.from({ length: rows }).map((_, i) => (
           <Skeleton key={i} className="h-4 w-full" />
+        ))}
+      </div>
+    );
+  }
+
+  if (variant === "cards") {
+    return (
+      <div
+        className={cn("grid grid-cols-2 gap-2.5 sm:grid-cols-6", className)}
+        role="status"
+        aria-label={label}
+      >
+        {Array.from({ length: rows }).map((_, i) => (
+          <Skeleton key={i} className="aspect-square w-full rounded-lg" />
         ))}
       </div>
     );

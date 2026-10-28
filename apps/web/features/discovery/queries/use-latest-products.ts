@@ -13,7 +13,7 @@ export function useLatestProducts(
   } = {},
 ) {
   const sort = opts.sort ?? "latest";
-  const { data, isPending, error } = useQuery({
+  const { data, isPending, error, refetch } = useQuery({
     queryKey: ["discovery", "latest-products", limit, page, sort] as const,
     queryFn: () =>
       apiClient.productSearch.search({
@@ -30,5 +30,6 @@ export function useLatestProducts(
     result: data ?? null,
     loading: isPending,
     error: error !== null,
+    refetch,
   };
 }

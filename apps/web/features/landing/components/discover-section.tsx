@@ -3,18 +3,11 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import type { ProductSearchResultResponseDto } from "@biasmarket/types";
+import { EmptyState } from "@/components/shared/empty-state";
+import { ErrorState } from "@/components/shared/error-state";
+import { LoadingState } from "@/components/shared/loading-state";
 import { useLatestProducts } from "@/features/discovery";
 import { ProductGridCard } from "./product-grid-card";
-
-const PLACEHOLDER_KEYS = Array.from(
-  { length: 12 },
-  (_, index) => `discover-placeholder-${index}`,
-);
-
-const ROW_PLACEHOLDER_KEYS = Array.from(
-  { length: 4 },
-  (_, index) => `discover-row-placeholder-${index}`,
-);
 
 export function DiscoverSection({
   initialData = null,
@@ -22,8 +15,25 @@ export function DiscoverSection({
   initialData?: ProductSearchResultResponseDto | null;
 }) {
   const t = useTranslations("landing.discover");
-  const { result, loading, error } = useLatestProducts(6, 1, { initialData });
+  const { result, loading, error, refetch } = useLatestProducts(6, 1, {
+    initialData,
+  });
   const products = result?.products ?? [];
+  const collectionState = loading ? (
+    <LoadingState variant="cards" rows={6} className="col-span-full" />
+  ) : error ? (
+    <div className="col-span-full">
+      <ErrorState
+        message={t("error")}
+        retry={() => void refetch()}
+        retryLabel={t("retry")}
+      />
+    </div>
+  ) : products.length === 0 ? (
+    <div className="col-span-full">
+      <EmptyState message={t("empty")} />
+    </div>
+  ) : null;
 
   return (
     <section className="mx-auto max-w-7xl px-6 py-8 sm:px-10 sm:py-14">
@@ -32,25 +42,17 @@ export function DiscoverSection({
           {t("title")}
         </h2>
         <div className="mt-3 grid grid-cols-2 gap-2.5">
-          {loading || error || products.length === 0
-            ? ROW_PLACEHOLDER_KEYS.map((key) => (
-                <div
-                  key={key}
-                  className="fan-skeleton rounded-lg bg-muted p-[9.5px]"
-                >
-                  <div className="aspect-square w-full rounded-lg" />
-                </div>
-              ))
-            : products
-                .slice(0, 4)
-                .map((product) => (
-                  <ProductGridCard
-                    key={product.id}
-                    product={product}
-                    variant="row"
-                    className="w-full"
-                  />
-                ))}
+          {collectionState ??
+            products
+              .slice(0, 4)
+              .map((product) => (
+                <ProductGridCard
+                  key={product.id}
+                  product={product}
+                  variant="row"
+                  className="w-full"
+                />
+              ))}
         </div>
         <div className="mt-5 flex justify-center">
           <Link
@@ -69,23 +71,17 @@ export function DiscoverSection({
         </h2>
 
         <div className="mt-6 grid grid-cols-3 gap-[12.3px] sm:mt-8 sm:grid-cols-6">
-          {loading || error || products.length === 0
-            ? PLACEHOLDER_KEYS.slice(0, 6).map((key) => (
-                <div
-                  key={key}
-                  className="fan-skeleton aspect-square w-full rounded-lg border border-landing-graphite bg-white"
+          {collectionState ??
+            products
+              .slice(0, 6)
+              .map((product) => (
+                <ProductGridCard
+                  key={product.id}
+                  product={product}
+                  variant="row"
+                  className="!w-full !rounded-lg !border-transparent"
                 />
-              ))
-            : products
-                .slice(0, 6)
-                .map((product) => (
-                  <ProductGridCard
-                    key={product.id}
-                    product={product}
-                    variant="row"
-                    className="!w-full !rounded-lg !border-transparent"
-                  />
-                ))}
+              ))}
         </div>
 
         <div className="mt-8 flex justify-center sm:mt-10">
