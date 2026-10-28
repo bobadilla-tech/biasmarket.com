@@ -30,7 +30,7 @@ export function Footer() {
         <h3 className="text-[32px] leading-[39px] font-extrabold tracking-wide text-[#181818] sm:text-[48px] sm:leading-[56px] sm:font-bold sm:tracking-[-0.04em] sm:uppercase">
           Biasmarket
         </h3>
-        <p className="mt-0.5 text-lg leading-[22px] text-[#5F5F5F] sm:mt-3 sm:text-[26px] sm:leading-[32px] sm:text-[#7A7A7A]">
+        <p className="mt-0.5 text-lg leading-[22px] text-[#5F5F5F] sm:mt-3 sm:text-[26px] sm:leading-[32px] sm:text-[#5F5F5F]">
           {t("tagline")}
         </p>
         <p className="mt-3 max-w-3xl text-sm leading-[20px] text-[#5F5F5F] sm:text-lg sm:leading-[26px]">
@@ -48,7 +48,7 @@ export function Footer() {
                   <li key={link.label}>
                     <Link
                       href={link.href}
-                      className="text-sm leading-[18px] font-normal text-[#5F5F5F] hover:text-[#181818] hover:underline sm:text-[24px] sm:leading-[30px] sm:text-[#7A7A7A]"
+                      className="text-sm leading-[18px] font-normal text-[#5F5F5F] hover:text-[#181818] hover:underline sm:text-[24px] sm:leading-[30px] sm:text-[#5F5F5F]"
                     >
                       {link.label}
                     </Link>
