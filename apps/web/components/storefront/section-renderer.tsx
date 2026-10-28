@@ -197,7 +197,15 @@ export function StoreSectionRenderer({
       }
     }, 300);
     return () => window.clearTimeout(timeout);
-  }, [catalogControls, defaultSort, pathname, query, router, searchString, sort]);
+  }, [
+    catalogControls,
+    defaultSort,
+    pathname,
+    query,
+    router,
+    searchString,
+    sort,
+  ]);
 
   function updateCategories(values: string[]) {
     setCategoryIds(values);
