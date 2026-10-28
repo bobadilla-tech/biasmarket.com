@@ -7,6 +7,7 @@
  */
 import type {
   ForgotPasswordDto,
+  GlobalAccountOrderDetailResponseDto,
   GlobalAccountOrderResponseDto,
   GlobalAccountProfileResponseDto,
   LoginCustomerDto,
@@ -40,6 +41,23 @@ export const orders = async (
     ...options,
     method: "GET",
   });
+};
+
+export const getOrderDetailUrl = (orderId: string) => {
+  return `/account/orders/${orderId}`;
+};
+
+export const orderDetail = async (
+  orderId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<GlobalAccountOrderDetailResponseDto> => {
+  return customFetch<GlobalAccountOrderDetailResponseDto>(
+    getOrderDetailUrl(orderId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
 };
 
 export const getLoginUrl = () => {

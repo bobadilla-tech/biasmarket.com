@@ -150,6 +150,10 @@ export function AssistedOrderSection({
     <div className="space-y-4 rounded-[24px] border border-[#eadcf8] bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant="secondary">{t("badge")}</Badge>
+        {order.claimedAt ? (
+          // Only the fact that the buyer saved the order, never who.
+          <Badge variant="outline">{t("claimedBadge")}</Badge>
+        ) : null}
         {order.createdByName ? (
           <span className="text-xs text-[#8f7da8]">
             {t("createdBy", { name: order.createdByName })}

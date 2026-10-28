@@ -456,6 +456,8 @@ export class CustomerAccountService {
         requiredAmount: true,
         currency: true,
         createdAt: true,
+        source: true,
+        claimedAt: true,
         payments: {
           select: {
             amount: true,

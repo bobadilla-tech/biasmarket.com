@@ -16,6 +16,7 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 import { CustomerAccountService } from '../orders/application/customer-account.service.js';
 import { OrderRepository } from '../orders/infrastructure/order.repository.js';
 import { OrderEventsService } from '../orders/application/order-events.service.js';
+import { toPublicTimeline } from '../orders/application/public-order-timeline.js';
 import { countsTowardPaid } from '../../common/payment-summary.js';
 import { linkFingerprint, type ClaimTicket } from './claim-ticket.js';
 import { requiredEnv } from '../../config/env.validation.js';
@@ -456,6 +457,8 @@ export class CustomerAuthService {
         requiredAmount: true,
         currency: true,
         createdAt: true,
+        source: true,
+        claimedAt: true,
         payments: {
           select: {
             amount: true,
@@ -614,6 +617,8 @@ export class CustomerAuthService {
         requiredAmount: true,
         currency: true,
         createdAt: true,
+        source: true,
+        claimedAt: true,
         store: { select: { slug: true, name: true } },
         payments: {
           select: {
@@ -640,7 +645,91 @@ export class CustomerAuthService {
         paidPercentage: summary.paidPercentage,
         storeSlug: order.store.slug,
         storeName: order.store.name,
+        source: order.source,
+        claimedAt: order.claimedAt?.toISOString() ?? null,
       };
     });
+  }
+
+  // One order of this buyer account. The ownership filter is in the query
+  // itself, so a foreign or missing id gives the same 404 and nothing about
+  // its existence. Explicit selects: no proof image URLs, rejection notes,
+  // reviewer ids or void reasons ever reach the buyer.
+  async getGlobalOrderDetail(buyerAccountId: string, orderId: string) {
+    const order = await this.prisma.order.findFirst({
+      where: { id: orderId, buyerAccountId },
+      select: {
+        id: true,
+        status: true,
+        paymentStatus: true,
+        fulfillmentStatus: true,
+        totalAmount: true,
+        requiredAmount: true,
+        currency: true,
+        createdAt: true,
+        source: true,
+        claimedAt: true,
+        trackingNumber: true,
+        trackingUrl: true,
+        buyerConfirmedReceivedAt: true,
+        store: { select: { slug: true, name: true } },
+        items: {
+          select: {
+            quantity: true,
+            unitPriceAtPurchase: true,
+            currency: true,
+            product: { select: { name: true } },
+          },
+        },
+        payments: {
+          orderBy: { createdAt: 'asc' },
+          select: {
+            amount: true,
+            source: true,
+            reviewStatus: true,
+            createdAt: true,
+            voidedAt: true,
+          },
+        },
+      },
+    });
+    if (!order) throw new NotFoundException('Pedido no encontrado');
+
+    const summary = withPaymentSummary(order);
+    const events = await this.events.listForBuyer(order.id);
+    return {
+      id: order.id,
+      status: order.status,
+      paymentStatus: order.paymentStatus,
+      fulfillmentStatus: order.fulfillmentStatus,
+      totalAmount: order.totalAmount.toString(),
+      requiredAmount: order.requiredAmount.toString(),
+      currency: order.currency,
+      createdAt: order.createdAt.toISOString(),
+      paidAmount: summary.paidAmount,
+      pendingAmount: summary.pendingAmount,
+      paidPercentage: summary.paidPercentage,
+      storeSlug: order.store.slug,
+      storeName: order.store.name,
+      source: order.source,
+      claimedAt: order.claimedAt?.toISOString() ?? null,
+      trackingNumber: order.trackingNumber,
+      trackingUrl: order.trackingUrl,
+      receiptConfirmedAt: order.buyerConfirmedReceivedAt?.toISOString() ?? null,
+      items: order.items.map((item) => ({
+        name: item.product.name,
+        quantity: item.quantity,
+        unitPrice: item.unitPriceAtPurchase.toString(),
+        currency: item.currency,
+      })),
+      payments: order.payments.map((payment) => ({
+        source: payment.source,
+        amount: payment.amount.toString(),
+        createdAt: payment.createdAt.toISOString(),
+        voidedAt: payment.voidedAt?.toISOString() ?? null,
+        reviewStatus: payment.reviewStatus,
+      })),
+      timeline: toPublicTimeline(events),
+    };
   }
 }

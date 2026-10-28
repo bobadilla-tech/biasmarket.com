@@ -48,6 +48,15 @@ export class AccountOrderResponseDto {
 
   @ApiProperty({ type: Number })
   paidPercentage: number;
+
+  @ApiProperty({
+    enum: ['MARKETPLACE', 'VENDOR_ASSISTED'],
+    description: 'VENDOR_ASSISTED = created by the store for the buyer.',
+  })
+  source: 'MARKETPLACE' | 'VENDOR_ASSISTED';
+
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  claimedAt: string | null;
 }
 
 // Structural, not `Prisma.Order` — both call sites select this exact field
@@ -63,6 +72,8 @@ export interface AccountOrderRow {
   requiredAmount: { toString(): string };
   currency: string;
   createdAt: Date;
+  source: string;
+  claimedAt: Date | null;
   payments?: Array<{
     amount: { plus(n: number): unknown; toString(): string };
     source: string;
@@ -89,5 +100,7 @@ export function toAccountOrderDto(
     paidAmount: order.paidAmount,
     pendingAmount: order.pendingAmount,
     paidPercentage: order.paidPercentage,
+    source: order.source as AccountOrderResponseDto['source'],
+    claimedAt: order.claimedAt?.toISOString() ?? null,
   };
 }

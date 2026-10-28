@@ -331,7 +331,8 @@
       "proofPending": "Pending review",
       "proofApproved": "Approved",
       "proofRejected": "Rejected",
-      "fulfillmentProgress": "Order status"
+      "fulfillmentProgress": "Order status",
+      "fullHistory": "See the full history in My account"
     },
     "addresses": {
       "title": "Your addresses",
@@ -455,6 +456,14 @@
       "failed": "We couldn't save your order. Open your order link again and try once more.",
       "unavailable": "Saving with Google isn't available right now. Your order link still works.",
       "fallback": "We couldn't save your order. Open your order link again and try once more."
+    },
+    "origin": {
+      "assisted": "Created by the store"
+    },
+    "detail": {
+      "back": "Back to my purchases",
+      "notFound": "We couldn't find this order in your account.",
+      "claimed": "Done! We saved this order to your account. Your original link still works."
     }
   },
   "publicOrder": {

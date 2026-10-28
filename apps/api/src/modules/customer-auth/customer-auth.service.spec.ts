@@ -37,7 +37,7 @@ describe('CustomerAuthService', () => {
     $transaction: Mock;
     $queryRaw: Mock;
   };
-  let events: { record: Mock };
+  let events: { record: Mock; listForBuyer: Mock };
   let customerAccount: {
     sendPasswordResetEmail: Mock;
     sendEmailChangeConfirmation: Mock;
@@ -70,7 +70,7 @@ describe('CustomerAuthService', () => {
       $queryRaw: vi.fn().mockResolvedValue([{ id: 'order-1' }]),
       $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(prisma)),
     };
-    events = { record: vi.fn() };
+    events = { record: vi.fn(), listForBuyer: vi.fn().mockResolvedValue([]) };
     customerAccount = {
       sendPasswordResetEmail: vi.fn(),
       sendEmailChangeConfirmation: vi.fn(),
@@ -630,6 +630,137 @@ describe('CustomerAuthService', () => {
       ).rejects.toBeInstanceOf(ConflictException);
       expect(prisma.buyerAccount.updateMany).not.toHaveBeenCalled();
       expect(prisma.buyerAccount.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getGlobalOrderDetail', () => {
+    const row = {
+      id: 'order-1',
+      status: 'ACTIVE',
+      paymentStatus: 'VERIFIED',
+      fulfillmentStatus: 'IN_TRANSIT',
+      totalAmount: new Prisma.Decimal('50.00'),
+      requiredAmount: new Prisma.Decimal('50.00'),
+      currency: 'PEN',
+      createdAt: new Date('2026-10-01T10:00:00.000Z'),
+      source: 'VENDOR_ASSISTED',
+      claimedAt: new Date('2026-10-02T10:00:00.000Z'),
+      trackingNumber: 'OLV-1',
+      trackingUrl: 'https://olva.example/1',
+      buyerConfirmedReceivedAt: null,
+      store: { slug: 'k-store', name: 'K-Store' },
+      items: [
+        {
+          quantity: 2,
+          unitPriceAtPurchase: new Prisma.Decimal('25.00'),
+          currency: 'PEN',
+          product: { name: 'Lightstick' },
+        },
+      ],
+      payments: [
+        {
+          amount: new Prisma.Decimal('50.00'),
+          source: 'SELLER_RECORDED',
+          reviewStatus: 'N_A',
+          createdAt: new Date('2026-10-01T11:00:00.000Z'),
+          voidedAt: null,
+          // Present on the row only if a select asked for it; must not leak.
+          imageUrl: 'https://private.example/proof.jpg',
+          reviewerId: 'seller-1',
+          rejectionNote: 'blurry',
+          voidReason: 'seller free text',
+        },
+      ],
+    };
+
+    it('filters by id AND buyerAccountId in the query, with an explicit select', async () => {
+      prisma.order.findFirst.mockResolvedValue(row);
+
+      await service.getGlobalOrderDetail('buyer-1', 'order-1');
+
+      const arg = prisma.order.findFirst.mock.calls.at(-1)![0];
+      expect(arg.where).toEqual({ id: 'order-1', buyerAccountId: 'buyer-1' });
+      const selected = JSON.stringify(arg.select);
+      for (const forbidden of [
+        'imageUrl',
+        'reviewerId',
+        'rejectionNote',
+        'voidReason',
+        'voidedBy',
+        'accessToken',
+        'customerPhone',
+        'customerEmail',
+        'deliveryDetails',
+      ]) {
+        expect(selected).not.toContain(forbidden);
+      }
+    });
+
+    it('answers the same 404 for a missing or foreign order', async () => {
+      prisma.order.findFirst.mockResolvedValue(null);
+      await expect(
+        service.getGlobalOrderDetail('buyer-1', 'someone-elses'),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('returns exactly the documented keys, never proof images or seller text', async () => {
+      prisma.order.findFirst.mockResolvedValue(row);
+      events.listForBuyer.mockResolvedValue([
+        {
+          type: 'CLAIMED',
+          createdAt: new Date('2026-10-02T10:00:00.000Z'),
+          payload: { moment: 'banner' },
+        },
+        {
+          type: 'BUYER_NOTIFIED',
+          createdAt: new Date('2026-10-02T11:00:00.000Z'),
+          payload: { notice: 'ASSISTED_READY' },
+        },
+      ]);
+
+      const result = await service.getGlobalOrderDetail('buyer-1', 'order-1');
+
+      expect(Object.keys(result).sort()).toEqual(
+        [
+          'claimedAt',
+          'createdAt',
+          'currency',
+          'fulfillmentStatus',
+          'id',
+          'items',
+          'paidAmount',
+          'paidPercentage',
+          'payments',
+          'paymentStatus',
+          'pendingAmount',
+          'receiptConfirmedAt',
+          'requiredAmount',
+          'source',
+          'status',
+          'storeName',
+          'storeSlug',
+          'timeline',
+          'totalAmount',
+          'trackingNumber',
+          'trackingUrl',
+        ].sort(),
+      );
+      expect(Object.keys(result.payments[0]!).sort()).toEqual(
+        ['amount', 'createdAt', 'reviewStatus', 'source', 'voidedAt'].sort(),
+      );
+      expect(result.timeline.map((i) => i.type)).toEqual(['CLAIMED']);
+      const json = JSON.stringify(result);
+      for (const secret of [
+        'proof.jpg',
+        'seller-1',
+        'blurry',
+        'seller free text',
+        'ASSISTED_READY',
+      ]) {
+        expect(json).not.toContain(secret);
+      }
+      expect(result.claimedAt).toBe('2026-10-02T10:00:00.000Z');
+      expect(result.source).toBe('VENDOR_ASSISTED');
     });
   });
 

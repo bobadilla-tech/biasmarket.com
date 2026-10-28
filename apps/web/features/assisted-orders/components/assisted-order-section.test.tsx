@@ -406,3 +406,30 @@ test("shows when the buyer confirmed receipt, apart from the fulfillment status"
     await screen.findByText(/El comprador confirmó la recepción el/),
   ).toBeTruthy();
 });
+
+test("shows a Reclamado badge only once the buyer claimed the order, and no buyer data", async () => {
+  findTemplate.mockResolvedValue({ template: null });
+  const unclaimed = renderWithProviders(
+    <AssistedOrderSection
+      order={base}
+      storeId="store-1"
+      storeName="Mi Tienda"
+    />,
+  );
+  expect(screen.queryByText("Reclamado")).toBeNull();
+  unclaimed.unmount();
+
+  renderWithProviders(
+    <AssistedOrderSection
+      order={{
+        ...base,
+        claimedAt: "2026-10-02T10:00:00.000Z",
+        buyerAccountId: "buyer-secret-id",
+      }}
+      storeId="store-1"
+      storeName="Mi Tienda"
+    />,
+  );
+  expect(await screen.findByText("Reclamado")).toBeTruthy();
+  expect(document.body.innerHTML).not.toContain("buyer-secret-id");
+});

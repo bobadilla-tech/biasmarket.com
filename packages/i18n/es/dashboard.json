@@ -965,7 +965,8 @@
           "CANCELLED": "Cancelado"
         }
       },
-      "receiptConfirmed": "El comprador confirmó la recepción el {date}"
+      "receiptConfirmed": "El comprador confirmó la recepción el {date}",
+      "claimedBadge": "Reclamado"
     },
     "buyerNotice": {
       "title": "Avisar al comprador",

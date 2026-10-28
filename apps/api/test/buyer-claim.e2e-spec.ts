@@ -16,6 +16,7 @@ import {
   type ClaimTicket,
 } from '../src/modules/customer-auth/claim-ticket.js';
 import { createOrderAccessToken } from '@biasmarket/utils/assisted-order';
+import { createCustomerSessionToken } from '@biasmarket/utils/customer-account-token';
 import {
   deleteOrders,
   mailerDevDir,
@@ -444,5 +445,102 @@ describe('claim order with Google (e2e)', () => {
       where: { id: orderId },
     });
     expect(row.customerPhone).toBe('+51987654321');
+  });
+
+  describe('claimed orders in Mi cuenta', () => {
+    const cookieFor = (token: string) => `bm_customer_session=${token}`;
+
+    it('lists and details the claimed order for its owner, hides it from anyone else', async () => {
+      await reset();
+      // A payment whose proof image must never reach the buyer.
+      await prisma.orderPayment.deleteMany({ where: { orderId } });
+      await prisma.orderPayment.create({
+        data: {
+          orderId,
+          storeId,
+          amount: 10,
+          method: 'YAPE',
+          currency: 'PEN',
+          source: 'BUYER_SUBMITTED',
+          reviewStatus: 'APPROVED',
+          imageUrl: 'https://private.example/proof-secret.jpg',
+          note: 'looks blurry',
+          voidReason: 'seller free text',
+        },
+      });
+      const who = id('account');
+      const { token: session } = await auth.claimWithGoogle(
+        who,
+        await issueTicket('banner'),
+      );
+      const account = await prisma.buyerAccount.findUniqueOrThrow({
+        where: { googleSub: who.sub },
+      });
+      accountIds.push(account.id);
+
+      const list = await request(app.getHttpServer())
+        .get('/api/account/orders')
+        .set('Cookie', cookieFor(session))
+        .expect(200);
+      const row = list.body.find((o: { id: string }) => o.id === orderId);
+      expect(row.source).toBe('VENDOR_ASSISTED');
+      expect(row.claimedAt).not.toBeNull();
+      expect(row.storeSlug).toBe(storeSlug);
+
+      const detail = await request(app.getHttpServer())
+        .get(`/api/account/orders/${orderId}`)
+        .set('Cookie', cookieFor(session))
+        .expect(200);
+      expect(detail.body.source).toBe('VENDOR_ASSISTED');
+      expect(
+        detail.body.timeline.map((i: { type: string }) => i.type),
+      ).toContain('CLAIMED');
+      expect(Object.keys(detail.body.payments[0]).sort()).toEqual(
+        ['amount', 'createdAt', 'reviewStatus', 'source', 'voidedAt'].sort(),
+      );
+      const body = JSON.stringify(detail.body);
+      for (const secret of [
+        'proof-secret',
+        'blurry',
+        'accessToken',
+        '987654321',
+      ]) {
+        expect(body).not.toContain(secret);
+      }
+
+      // Another buyer account, a missing id and no session.
+      const other = await prisma.buyerAccount.create({
+        data: { email: `other-${runId}@example.com`, emailVerified: true },
+      });
+      accountIds.push(other.id);
+      const otherSession = createCustomerSessionToken(
+        other.id,
+        other.passwordVersion,
+        process.env.CUSTOMER_ACCOUNT_TOKEN_SECRET!,
+      );
+      const foreign = await request(app.getHttpServer())
+        .get(`/api/account/orders/${orderId}`)
+        .set('Cookie', cookieFor(otherSession))
+        .expect(404);
+      const missing = await request(app.getHttpServer())
+        .get('/api/account/orders/does-not-exist')
+        .set('Cookie', cookieFor(otherSession))
+        .expect(404);
+      expect({ ...foreign.body, path: '', timestamp: '' }).toEqual({
+        ...missing.body,
+        path: '',
+        timestamp: '',
+      });
+      await request(app.getHttpServer())
+        .get(`/api/account/orders/${orderId}`)
+        .expect(401);
+
+      // The per-store order detail now carries the real claim time.
+      const perStore = await request(app.getHttpServer())
+        .get(`/api/stores/${storeSlug}/account/orders/${orderId}`)
+        .set('Cookie', cookieFor(session))
+        .expect(200);
+      expect(perStore.body.claimedAt).not.toBeNull();
+    });
   });
 });
