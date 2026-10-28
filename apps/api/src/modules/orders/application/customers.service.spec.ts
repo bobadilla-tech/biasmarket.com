@@ -161,8 +161,8 @@ describe('CustomersService', () => {
           id: 'customer-1',
           name: 'Ana',
           phone: '+51987654321',
-          email: null,
-          emailVerified: false,
+          email: 'ana@example.com',
+          emailVerified: true,
           createdAt: new Date(),
         },
       ]);
@@ -386,6 +386,116 @@ describe('CustomersService', () => {
           lastOrderAt: new Date('2026-06-01'),
         }),
       );
+    });
+  });
+
+  describe('findAllForStore: ghost customers (#337)', () => {
+    beforeEach(() => stubOwnedStore());
+
+    const customer = (id: string, phone: string, extra: object = {}) => ({
+      id,
+      name: null,
+      phone,
+      email: null,
+      emailVerified: false,
+      passwordHash: null,
+      pendingEmail: null,
+      pendingPhone: null,
+      createdAt: new Date('2026-01-01'),
+      ...extra,
+    });
+
+    it('hides a zero-order contact with no email, password or verification, even if it has a name', async () => {
+      prisma.customer.findMany.mockResolvedValue([
+        customer('orphan', '+51911000001'),
+        customer('named-orphan', '+51911000002', { name: 'Ana' }),
+      ]);
+      prisma.order.groupBy.mockResolvedValue([]);
+      prisma.orderPayment.findMany.mockResolvedValue([]);
+
+      expect(await service.findAllForStore(storeId, ownerId)).toEqual([]);
+    });
+
+    it.each([
+      ['email', { email: 'a@example.com' }],
+      ['passwordHash', { passwordHash: 'hash' }],
+      ['pendingEmail', { pendingEmail: 'b@example.com' }],
+      ['pendingPhone', { pendingPhone: '+51911000009' }],
+      ['emailVerified', { emailVerified: true }],
+    ])('keeps a registered zero-order customer (%s)', async (_label, extra) => {
+      prisma.customer.findMany.mockResolvedValue([
+        customer('registered', '+51911000003', extra),
+      ]);
+      prisma.order.groupBy.mockResolvedValue([]);
+      prisma.orderPayment.findMany.mockResolvedValue([]);
+
+      const result = await service.findAllForStore(storeId, ownerId);
+
+      expect(result.map((r) => r.id)).toEqual(['registered']);
+    });
+
+    it('keeps a contact whose only orders are guest orders folded in by phone', async () => {
+      prisma.customer.findMany.mockResolvedValue([
+        customer('folded', '+51987654321'),
+      ]);
+      prisma.order.groupBy.mockResolvedValue([]);
+      prisma.orderPayment.findMany.mockResolvedValue([]);
+      prisma.order.findMany.mockResolvedValue([
+        {
+          customerPhone: '51987654321',
+          customerName: null,
+          customerEmail: null,
+          paymentStatus: 'PENDING_PAYMENT',
+          createdAt: new Date('2026-06-01'),
+          payments: [],
+        },
+      ]);
+
+      const result = await service.findAllForStore(storeId, ownerId);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual(
+        expect.objectContaining({ id: 'folded', orderCount: 1 }),
+      );
+    });
+
+    it('keeps a contact with orders of its own', async () => {
+      prisma.customer.findMany.mockResolvedValue([
+        customer('with-orders', '+51911000004'),
+      ]);
+      prisma.order.groupBy.mockResolvedValue([
+        {
+          customerId: 'with-orders',
+          _count: 2,
+          _max: { createdAt: new Date('2026-02-01') },
+        },
+      ]);
+      prisma.orderPayment.findMany.mockResolvedValue([]);
+
+      const result = await service.findAllForStore(storeId, ownerId);
+
+      expect(result.map((r) => r.id)).toEqual(['with-orders']);
+    });
+
+    it('still emits guest synthetic rows for guest-only phones', async () => {
+      prisma.customer.findMany.mockResolvedValue([]);
+      prisma.order.groupBy.mockResolvedValue([]);
+      prisma.orderPayment.findMany.mockResolvedValue([]);
+      prisma.order.findMany.mockResolvedValue([
+        {
+          customerPhone: '+51911000005',
+          customerName: 'Guest',
+          customerEmail: null,
+          paymentStatus: 'PENDING_PAYMENT',
+          createdAt: new Date('2026-06-01'),
+          payments: [],
+        },
+      ]);
+
+      const result = await service.findAllForStore(storeId, ownerId);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]!.id).toMatch(/^guest_/);
     });
   });
 
