@@ -1968,6 +1968,22 @@ export default async () => {
           },
         ],
         [
+          import('./modules/orders/dto/claim-ticket.dto.js'),
+          {
+            ClaimTicketDto: {
+              moment: {
+                required: false,
+                enum: [
+                  'banner',
+                  'entrega',
+                  'pago_validado',
+                  'adelanto_linea_de_tiempo',
+                ],
+              },
+            },
+          },
+        ],
+        [
           import('./modules/orders/dto/receipt-confirmed-response.dto.js'),
           {
             ReceiptConfirmedResponseDto: {
@@ -3413,6 +3429,7 @@ export default async () => {
                   './modules/orders/dto/receipt-confirmed-response.dto.js'
                 ].ReceiptConfirmedResponseDto,
               },
+              claimTicket: {},
             },
           },
         ],

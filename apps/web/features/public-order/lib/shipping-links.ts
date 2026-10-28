@@ -16,7 +16,12 @@ export function safeTrackingUrl(raw: string | null | undefined): string | null {
 // `no-store`, `no-referrer`, `CORP: cross-origin`). The page itself fetches
 // in the browser, so the public API origin is the right base.
 export function packedPhotoSrc(token: string): string {
-  const base =
-    process.env.NEXT_PUBLIC_API_URL ?? process.env.INTERNAL_API_URL ?? "";
-  return `${base}/api/public/orders/${encodeURIComponent(token)}/packed-photo`;
+  return `${publicApiBase()}/api/public/orders/${encodeURIComponent(token)}/packed-photo`;
+}
+
+// The browser-reachable API origin. The claim ticket POST and the OAuth start
+// navigation must use the SAME host: the ticket is a host-scoped cookie that
+// only that host will send back.
+export function publicApiBase(): string {
+  return process.env.NEXT_PUBLIC_API_URL ?? process.env.INTERNAL_API_URL ?? "";
 }

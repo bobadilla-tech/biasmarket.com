@@ -12,6 +12,7 @@ import {
   shouldShowHowToPay,
 } from "../lib/order-state";
 import { HowToPay } from "./how-to-pay";
+import { ClaimOrderButton } from "./claim-order-button";
 import { ReceiptConfirmation } from "./receipt-confirmation";
 import { ShippingDetails } from "./shipping-details";
 import { Timeline } from "./timeline";
@@ -134,7 +135,12 @@ export function PublicOrderView({
         </h2>
         {/* Read as optional: an API that predates these fields omits them. */}
         {order.claimed ? (
-          <Timeline items={order.timeline ?? []} currency={order.currency} />
+          <>
+            <p role="status" className="text-sm font-semibold text-emerald-700">
+              {t("claim.saved")}
+            </p>
+            <Timeline items={order.timeline ?? []} currency={order.currency} />
+          </>
         ) : (
           <>
             {order.lastUpdateAt && (
@@ -145,14 +151,10 @@ export function PublicOrderView({
               </p>
             )}
             {order.hasValidatedPayment && !cancelled && (
-              // Inert on purpose: the save-order invite (and its action)
-              // arrives with the claim flow.
-              <p
-                aria-disabled="true"
-                className="rounded-xl border border-dashed border-gray-200 p-3 text-sm text-gray-400"
-              >
-                {t("timeline.teaser")}
-              </p>
+              <>
+                <p className="text-sm text-gray-700">{t("timeline.teaser")}</p>
+                <ClaimOrderButton token={token} />
+              </>
             )}
           </>
         )}

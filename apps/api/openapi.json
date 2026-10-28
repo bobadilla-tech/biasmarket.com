@@ -2829,6 +2829,37 @@
         "tags": ["PublicOrderEvents"]
       }
     },
+    "/public/orders/{token}/claim-ticket": {
+      "post": {
+        "operationId": "PublicOrderEventsController_claimTicket",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimTicketDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": ["PublicOrderEvents"]
+      }
+    },
     "/stores/{storeId}/payment-methods": {
       "get": {
         "operationId": "PaymentConfigController_findAll",
@@ -9123,6 +9154,21 @@
           }
         },
         "required": ["receiptConfirmedAt"]
+      },
+      "ClaimTicketDto": {
+        "type": "object",
+        "properties": {
+          "moment": {
+            "enum": [
+              "entrega",
+              "pago_validado",
+              "banner",
+              "adelanto_linea_de_tiempo"
+            ],
+            "type": "string",
+            "description": "Where on the order page the buyer chose to save the order."
+          }
+        }
       },
       "PaymentMethodConfigResponseDto": {
         "type": "object",

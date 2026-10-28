@@ -2087,6 +2087,24 @@ export interface ReceiptConfirmedResponseDto {
   receiptConfirmedAt: string;
 }
 
+/**
+ * Where on the order page the buyer chose to save the order.
+ */
+export type ClaimTicketDtoMoment =
+  (typeof ClaimTicketDtoMoment)[keyof typeof ClaimTicketDtoMoment];
+
+export const ClaimTicketDtoMoment = {
+  entrega: "entrega",
+  pago_validado: "pago_validado",
+  banner: "banner",
+  adelanto_linea_de_tiempo: "adelanto_linea_de_tiempo",
+} as const;
+
+export interface ClaimTicketDto {
+  /** Where on the order page the buyer chose to save the order. */
+  moment?: ClaimTicketDtoMoment;
+}
+
 export type PaymentMethodConfigResponseDtoMethod =
   (typeof PaymentMethodConfigResponseDtoMethod)[keyof typeof PaymentMethodConfigResponseDtoMethod];
 

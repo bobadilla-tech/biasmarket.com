@@ -1,6 +1,7 @@
 import {
   ConflictException,
   Injectable,
+  UnprocessableEntityException,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
@@ -12,6 +13,7 @@ import type {
 } from '@biasmarket/db';
 import { hashOrderAccessToken } from '@biasmarket/utils/assisted-order';
 import { PrismaService } from '../../../prisma/prisma.service.js';
+import { countsTowardPaid } from '../../../common/payment-summary.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
 import { INVITE_EVENT_TYPES } from '../dto/record-invite-event.dto.js';
 
@@ -57,6 +59,7 @@ const ALLOWED_PAYLOAD_KEYS = new Set([
   'resolution',
   'paymentId',
   'notice',
+  'moment',
 ]);
 
 const RECEIPT_FULFILLMENT_STATES = new Set<FulfillmentStatus>([
@@ -168,6 +171,64 @@ export class OrderEventsService {
       throw new NotFoundException('Pedido no encontrado');
     }
     return order;
+  }
+
+  // Own select (not `requireOrderForToken`): the claim needs the link hash,
+  // the claim state and the payments, which no other caller should load.
+  // Unknown and revoked tokens give the identical 404, before any other
+  // answer.
+  async loadForClaim(token: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { accessTokenHash: hashOrderAccessToken(token ?? '') },
+      select: {
+        id: true,
+        storeId: true,
+        source: true,
+        status: true,
+        paymentStatus: true,
+        claimedAt: true,
+        buyerAccountId: true,
+        accessTokenHash: true,
+        accessTokenRevokedAt: true,
+        payments: {
+          select: {
+            amount: true,
+            source: true,
+            reviewStatus: true,
+            voidedAt: true,
+          },
+        },
+      },
+    });
+    if (!order || order.accessTokenRevokedAt || !order.accessTokenHash) {
+      throw new NotFoundException('Pedido no encontrado');
+    }
+    return { ...order, accessTokenHash: order.accessTokenHash };
+  }
+
+  // 409 when someone already saved the order; 422 when it cannot be saved
+  // (not assisted, cancelled, or no validated payment yet).
+  assertClaimable(order: {
+    source: string;
+    status: string;
+    paymentStatus: string;
+    claimedAt: Date | null;
+    buyerAccountId: string | null;
+    payments: Parameters<typeof countsTowardPaid>[0][];
+  }) {
+    if (order.claimedAt || order.buyerAccountId) {
+      throw new ConflictException('Este pedido ya fue guardado');
+    }
+    if (
+      order.source !== 'VENDOR_ASSISTED' ||
+      order.status === 'CANCELLED' ||
+      order.paymentStatus === 'CANCELLED' ||
+      !order.payments.some(countsTowardPaid)
+    ) {
+      throw new UnprocessableEntityException(
+        'Este pedido aún no se puede guardar',
+      );
+    }
   }
 
   async recordInvite(token: string, type: InviteEventType) {

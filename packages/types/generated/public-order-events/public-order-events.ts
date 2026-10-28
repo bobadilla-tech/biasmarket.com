@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0
  */
 import type {
+  ClaimTicketDto,
   PublicOrderResponseDto,
   ReceiptConfirmedResponseDto,
   RecordInviteEventDto,
@@ -55,5 +56,22 @@ export const confirmReceipt = async (
   return customFetch<ReceiptConfirmedResponseDto>(getConfirmReceiptUrl(token), {
     ...options,
     method: "POST",
+  });
+};
+
+export const getClaimTicketUrl = (token: string) => {
+  return `/public/orders/${token}/claim-ticket`;
+};
+
+export const claimTicket = async (
+  token: string,
+  claimTicketDto: ClaimTicketDto,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<void> => {
+  return customFetch<void>(getClaimTicketUrl(token), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(claimTicketDto),
   });
 };
