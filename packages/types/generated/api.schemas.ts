@@ -1766,6 +1766,17 @@ export const AccountOrderResponseDtoFulfillmentStatus = {
   COMPLETED: "COMPLETED",
 } as const;
 
+/**
+ * VENDOR_ASSISTED = created by the store for the buyer.
+ */
+export type AccountOrderResponseDtoSource =
+  (typeof AccountOrderResponseDtoSource)[keyof typeof AccountOrderResponseDtoSource];
+
+export const AccountOrderResponseDtoSource = {
+  MARKETPLACE: "MARKETPLACE",
+  VENDOR_ASSISTED: "VENDOR_ASSISTED",
+} as const;
+
 export interface AccountOrderResponseDto {
   id: string;
   paymentStatus: AccountOrderResponseDtoPaymentStatus;
@@ -1776,6 +1787,10 @@ export interface AccountOrderResponseDto {
   paidAmount: number;
   pendingAmount: number;
   paidPercentage: number;
+  /** VENDOR_ASSISTED = created by the store for the buyer. */
+  source: AccountOrderResponseDtoSource;
+  /** @nullable */
+  claimedAt: string | null;
 }
 
 export interface ConfirmAccountResponseDto {
@@ -2677,6 +2692,17 @@ export const GlobalAccountOrderResponseDtoFulfillmentStatus = {
   COMPLETED: "COMPLETED",
 } as const;
 
+/**
+ * VENDOR_ASSISTED = created by the store for the buyer.
+ */
+export type GlobalAccountOrderResponseDtoSource =
+  (typeof GlobalAccountOrderResponseDtoSource)[keyof typeof GlobalAccountOrderResponseDtoSource];
+
+export const GlobalAccountOrderResponseDtoSource = {
+  MARKETPLACE: "MARKETPLACE",
+  VENDOR_ASSISTED: "VENDOR_ASSISTED",
+} as const;
+
 export interface GlobalAccountOrderResponseDto {
   id: string;
   paymentStatus: GlobalAccountOrderResponseDtoPaymentStatus;
@@ -2687,8 +2713,117 @@ export interface GlobalAccountOrderResponseDto {
   paidAmount: number;
   pendingAmount: number;
   paidPercentage: number;
+  /** VENDOR_ASSISTED = created by the store for the buyer. */
+  source: GlobalAccountOrderResponseDtoSource;
+  /** @nullable */
+  claimedAt: string | null;
   storeSlug: string;
   storeName: string;
+}
+
+export type GlobalAccountOrderDetailResponseDtoPaymentStatus =
+  (typeof GlobalAccountOrderDetailResponseDtoPaymentStatus)[keyof typeof GlobalAccountOrderDetailResponseDtoPaymentStatus];
+
+export const GlobalAccountOrderDetailResponseDtoPaymentStatus = {
+  PENDING_PAYMENT: "PENDING_PAYMENT",
+  PARTIALLY_PAID: "PARTIALLY_PAID",
+  PAYMENT_SUBMITTED: "PAYMENT_SUBMITTED",
+  VERIFIED: "VERIFIED",
+  REJECTED: "REJECTED",
+  CANCELLED: "CANCELLED",
+} as const;
+
+export type GlobalAccountOrderDetailResponseDtoFulfillmentStatus =
+  (typeof GlobalAccountOrderDetailResponseDtoFulfillmentStatus)[keyof typeof GlobalAccountOrderDetailResponseDtoFulfillmentStatus];
+
+export const GlobalAccountOrderDetailResponseDtoFulfillmentStatus = {
+  ORDERING: "ORDERING",
+  IN_TRANSIT: "IN_TRANSIT",
+  READY: "READY",
+  COMPLETED: "COMPLETED",
+} as const;
+
+/**
+ * VENDOR_ASSISTED = created by the store for the buyer.
+ */
+export type GlobalAccountOrderDetailResponseDtoSource =
+  (typeof GlobalAccountOrderDetailResponseDtoSource)[keyof typeof GlobalAccountOrderDetailResponseDtoSource];
+
+export const GlobalAccountOrderDetailResponseDtoSource = {
+  MARKETPLACE: "MARKETPLACE",
+  VENDOR_ASSISTED: "VENDOR_ASSISTED",
+} as const;
+
+export type GlobalAccountOrderDetailResponseDtoStatus =
+  (typeof GlobalAccountOrderDetailResponseDtoStatus)[keyof typeof GlobalAccountOrderDetailResponseDtoStatus];
+
+export const GlobalAccountOrderDetailResponseDtoStatus = {
+  ACTIVE: "ACTIVE",
+  CANCELLED: "CANCELLED",
+} as const;
+
+export interface GlobalAccountOrderItemResponseDto {
+  name: string;
+  quantity: number;
+  unitPrice: string;
+  currency: string;
+}
+
+export type GlobalAccountOrderPaymentResponseDtoSource =
+  (typeof GlobalAccountOrderPaymentResponseDtoSource)[keyof typeof GlobalAccountOrderPaymentResponseDtoSource];
+
+export const GlobalAccountOrderPaymentResponseDtoSource = {
+  SELLER_RECORDED: "SELLER_RECORDED",
+  BUYER_SUBMITTED: "BUYER_SUBMITTED",
+} as const;
+
+export type GlobalAccountOrderPaymentResponseDtoReviewStatus =
+  (typeof GlobalAccountOrderPaymentResponseDtoReviewStatus)[keyof typeof GlobalAccountOrderPaymentResponseDtoReviewStatus];
+
+export const GlobalAccountOrderPaymentResponseDtoReviewStatus = {
+  N_A: "N_A",
+  PENDING_REVIEW: "PENDING_REVIEW",
+  APPROVED: "APPROVED",
+  REJECTED: "REJECTED",
+} as const;
+
+export interface GlobalAccountOrderPaymentResponseDto {
+  source: GlobalAccountOrderPaymentResponseDtoSource;
+  amount: string;
+  createdAt: string;
+  /** @nullable */
+  voidedAt: string | null;
+  reviewStatus: GlobalAccountOrderPaymentResponseDtoReviewStatus;
+}
+
+export interface GlobalAccountOrderDetailResponseDto {
+  id: string;
+  paymentStatus: GlobalAccountOrderDetailResponseDtoPaymentStatus;
+  fulfillmentStatus: GlobalAccountOrderDetailResponseDtoFulfillmentStatus;
+  totalAmount: string;
+  currency: string;
+  createdAt: string;
+  paidAmount: number;
+  pendingAmount: number;
+  paidPercentage: number;
+  /** VENDOR_ASSISTED = created by the store for the buyer. */
+  source: GlobalAccountOrderDetailResponseDtoSource;
+  /** @nullable */
+  claimedAt: string | null;
+  storeSlug: string;
+  storeName: string;
+  status: GlobalAccountOrderDetailResponseDtoStatus;
+  requiredAmount: string;
+  /** @nullable */
+  trackingNumber: string | null;
+  /** @nullable */
+  trackingUrl: string | null;
+  /** @nullable */
+  receiptConfirmedAt: string | null;
+  items: GlobalAccountOrderItemResponseDto[];
+  payments: GlobalAccountOrderPaymentResponseDto[];
+  /** Dated buyer-visible steps, oldest first. */
+  timeline: PublicOrderTimelineItemDto[];
 }
 
 export interface CreateRestockRequestDto {

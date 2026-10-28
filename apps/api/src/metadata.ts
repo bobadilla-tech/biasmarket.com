@@ -1646,6 +1646,11 @@ export default async () => {
               paidAmount: { required: true, type: () => Number },
               pendingAmount: { required: true, type: () => Number },
               paidPercentage: { required: true, type: () => Number },
+              source: {
+                required: true,
+                enum: ['MARKETPLACE', 'VENDOR_ASSISTED'],
+              },
+              claimedAt: { required: true, type: () => String, nullable: true },
             },
           },
         ],
@@ -2632,6 +2637,67 @@ export default async () => {
             GlobalAccountOrderResponseDto: {
               storeSlug: { required: true, type: () => String },
               storeName: { required: true, type: () => String },
+            },
+            GlobalAccountOrderItemResponseDto: {
+              name: { required: true, type: () => String },
+              quantity: { required: true, type: () => Number },
+              unitPrice: { required: true, type: () => String },
+              currency: { required: true, type: () => String },
+            },
+            GlobalAccountOrderPaymentResponseDto: {
+              source: {
+                required: true,
+                enum: ['SELLER_RECORDED', 'BUYER_SUBMITTED'],
+              },
+              amount: { required: true, type: () => String },
+              createdAt: { required: true, type: () => String },
+              voidedAt: { required: true, type: () => String, nullable: true },
+              reviewStatus: {
+                required: true,
+                enum: ['REJECTED', 'N_A', 'PENDING_REVIEW', 'APPROVED'],
+              },
+            },
+            GlobalAccountOrderDetailResponseDto: {
+              status: { required: true, enum: ['CANCELLED', 'ACTIVE'] },
+              requiredAmount: { required: true, type: () => String },
+              trackingNumber: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              trackingUrl: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              receiptConfirmedAt: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              items: {
+                required: true,
+                type: () => [
+                  t[
+                    './modules/customer-auth/dto/global-account-response.dto.js'
+                  ].GlobalAccountOrderItemResponseDto,
+                ],
+              },
+              payments: {
+                required: true,
+                type: () => [
+                  t[
+                    './modules/customer-auth/dto/global-account-response.dto.js'
+                  ].GlobalAccountOrderPaymentResponseDto,
+                ],
+              },
+              timeline: {
+                required: true,
+                type: () => [
+                  t['./modules/orders/dto/public-order-response.dto.js']
+                    .PublicOrderTimelineItemDto,
+                ],
+              },
             },
           },
         ],
@@ -3758,6 +3824,11 @@ export default async () => {
                     './modules/customer-auth/dto/global-account-response.dto.js'
                   ].GlobalAccountOrderResponseDto,
                 ],
+              },
+              orderDetail: {
+                type: t[
+                  './modules/customer-auth/dto/global-account-response.dto.js'
+                ].GlobalAccountOrderDetailResponseDto,
               },
               login: {
                 type: t[

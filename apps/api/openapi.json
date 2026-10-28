@@ -4516,6 +4516,39 @@
         "tags": ["GlobalAccount"]
       }
     },
+    "/account/orders/{orderId}": {
+      "get": {
+        "operationId": "GlobalAccountController_orderDetail",
+        "parameters": [
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GlobalAccountOrderDetailResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["GlobalAccount"]
+      }
+    },
     "/account/login": {
       "post": {
         "operationId": "GlobalAccountController_login",
@@ -8659,6 +8692,16 @@
           },
           "paidPercentage": {
             "type": "number"
+          },
+          "source": {
+            "enum": ["MARKETPLACE", "VENDOR_ASSISTED"],
+            "type": "string",
+            "description": "VENDOR_ASSISTED = created by the store for the buyer."
+          },
+          "claimedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
           }
         },
         "required": [
@@ -8670,7 +8713,9 @@
           "createdAt",
           "paidAmount",
           "pendingAmount",
-          "paidPercentage"
+          "paidPercentage",
+          "source",
+          "claimedAt"
         ]
       },
       "ConfirmAccountResponseDto": {
@@ -10414,6 +10459,16 @@
           "paidPercentage": {
             "type": "number"
           },
+          "source": {
+            "enum": ["MARKETPLACE", "VENDOR_ASSISTED"],
+            "type": "string",
+            "description": "VENDOR_ASSISTED = created by the store for the buyer."
+          },
+          "claimedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
           "storeSlug": {
             "type": "string"
           },
@@ -10431,8 +10486,180 @@
           "paidAmount",
           "pendingAmount",
           "paidPercentage",
+          "source",
+          "claimedAt",
           "storeSlug",
           "storeName"
+        ]
+      },
+      "GlobalAccountOrderItemResponseDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unitPrice": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          }
+        },
+        "required": ["name", "quantity", "unitPrice", "currency"]
+      },
+      "GlobalAccountOrderPaymentResponseDto": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "enum": ["SELLER_RECORDED", "BUYER_SUBMITTED"],
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "voidedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "reviewStatus": {
+            "enum": ["N_A", "PENDING_REVIEW", "APPROVED", "REJECTED"],
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "amount",
+          "createdAt",
+          "voidedAt",
+          "reviewStatus"
+        ]
+      },
+      "GlobalAccountOrderDetailResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "paymentStatus": {
+            "enum": [
+              "PENDING_PAYMENT",
+              "PARTIALLY_PAID",
+              "PAYMENT_SUBMITTED",
+              "VERIFIED",
+              "REJECTED",
+              "CANCELLED"
+            ],
+            "type": "string"
+          },
+          "fulfillmentStatus": {
+            "enum": ["ORDERING", "IN_TRANSIT", "READY", "COMPLETED"],
+            "type": "string"
+          },
+          "totalAmount": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paidAmount": {
+            "type": "number"
+          },
+          "pendingAmount": {
+            "type": "number"
+          },
+          "paidPercentage": {
+            "type": "number"
+          },
+          "source": {
+            "enum": ["MARKETPLACE", "VENDOR_ASSISTED"],
+            "type": "string",
+            "description": "VENDOR_ASSISTED = created by the store for the buyer."
+          },
+          "claimedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "storeSlug": {
+            "type": "string"
+          },
+          "storeName": {
+            "type": "string"
+          },
+          "status": {
+            "enum": ["ACTIVE", "CANCELLED"],
+            "type": "string"
+          },
+          "requiredAmount": {
+            "type": "string"
+          },
+          "trackingNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "trackingUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "receiptConfirmedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GlobalAccountOrderItemResponseDto"
+            }
+          },
+          "payments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GlobalAccountOrderPaymentResponseDto"
+            }
+          },
+          "timeline": {
+            "description": "Dated buyer-visible steps, oldest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicOrderTimelineItemDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "paymentStatus",
+          "fulfillmentStatus",
+          "totalAmount",
+          "currency",
+          "createdAt",
+          "paidAmount",
+          "pendingAmount",
+          "paidPercentage",
+          "source",
+          "claimedAt",
+          "storeSlug",
+          "storeName",
+          "status",
+          "requiredAmount",
+          "trackingNumber",
+          "trackingUrl",
+          "receiptConfirmedAt",
+          "items",
+          "payments",
+          "timeline"
         ]
       },
       "CreateRestockRequestDto": {

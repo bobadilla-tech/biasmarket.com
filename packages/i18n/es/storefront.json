@@ -327,7 +327,8 @@
       "proofPending": "Pendiente de revisión",
       "proofApproved": "Aprobado",
       "proofRejected": "Rechazado",
-      "fulfillmentProgress": "Estado del pedido"
+      "fulfillmentProgress": "Estado del pedido",
+      "fullHistory": "Ver el historial completo en Mi cuenta"
     },
     "addresses": {
       "title": "Tus direcciones",
@@ -455,6 +456,14 @@
       "failed": "No pudimos guardar tu pedido. Vuelve a abrir tu enlace del pedido e inténtalo de nuevo.",
       "unavailable": "Guardar con Google no está disponible por ahora. Tu enlace del pedido sigue funcionando.",
       "fallback": "No pudimos guardar tu pedido. Vuelve a abrir tu enlace del pedido e inténtalo de nuevo."
+    },
+    "origin": {
+      "assisted": "Creado por la tienda"
+    },
+    "detail": {
+      "back": "Volver a mis compras",
+      "notFound": "No encontramos este pedido en tu cuenta.",
+      "claimed": "¡Listo! Guardamos este pedido en tu cuenta. Tu enlace original sigue funcionando."
     }
   },
   "publicOrder": {
