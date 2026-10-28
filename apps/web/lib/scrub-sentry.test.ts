@@ -2,6 +2,7 @@ import { expect, test } from "vitest";
 import {
   scrubBreadcrumb,
   scrubSentryEvent,
+  scrubTokenText,
   scrubTokenUrl,
 } from "./scrub-sentry";
 
@@ -54,4 +55,36 @@ test("a single breadcrumb is scrubbed in place", () => {
   });
   expect(JSON.stringify(crumb)).not.toContain(TOKEN);
   expect(crumb.data?.status_code).toBe(200);
+});
+
+test("scrubs the token from every field the SDK can fill, keeping surrounding text", () => {
+  const page = `/es/store/k/pedido/${TOKEN}`;
+  const event = {
+    request: {
+      url: `https://biasmarket.com${page}`,
+      headers: { Referer: `https://biasmarket.com${page}?a=1` },
+    },
+    exception: { values: [{ value: `Failed to fetch ${page}, retry?` }] },
+    spans: [
+      {
+        data: {
+          "http.url": `https://api.biasmarket.com/api/public/orders/${TOKEN}`,
+        },
+      },
+    ],
+    contexts: { trace: { data: { url: `https://biasmarket.com${page}` } } },
+    extra: { request: { pathname: page } },
+  };
+
+  const out = JSON.stringify(scrubSentryEvent(event));
+
+  expect(out).not.toContain(TOKEN);
+  expect(out).toContain("Failed to fetch /es/store/k/pedido/:token, retry?");
+});
+
+test("scrubTokenText replaces only the token segment", () => {
+  expect(scrubTokenText(`see /pedido/${TOKEN}/x and more`)).toBe(
+    "see /pedido/:token/x and more",
+  );
+  expect(scrubTokenText("nothing here")).toBe("nothing here");
 });

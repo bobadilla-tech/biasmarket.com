@@ -9,6 +9,8 @@ interface Scrubbable {
   spans?: { description?: string }[];
 }
 
+type Json = unknown;
+
 // The order token lives in `/store/:slug/pedido/:token` (the page) and in
 // `/public/orders/:token` (the API). Neither belongs in an error-tracking
 // event: a client error path would otherwise attach the private link. Same
@@ -22,6 +24,36 @@ export function scrubTokenUrl(value: string): string {
     .split(/[?#]/)[0]!
     .replace(/(\/public\/orders\/)[^/]+/gi, "$1:token")
     .replace(/(\/pedido\/)[^/]+/gi, "$1:token");
+}
+
+// Free text (an exception message, a header, a span attribute) can embed the
+// private link anywhere, so only the token segment is replaced and the rest of
+// the string is kept.
+export function scrubTokenText(value: string): string {
+  if (!TOKEN_PATH.test(value)) return value;
+  return value
+    .replace(/(\/public\/orders\/)[^/\s?#"'<>),;]+/gi, "$1:token")
+    .replace(/(\/pedido\/)[^/\s?#"'<>),;]+/gi, "$1:token");
+}
+
+// Any other field the SDK fills (request headers such as Referer, exception
+// values, span data, contexts, extra) goes through the same replacement.
+function scrubDeep(value: Json, depth = 0, seen = new WeakSet<object>()): Json {
+  if (typeof value === "string") return scrubTokenText(value);
+  if (value === null || typeof value !== "object" || depth > 10) return value;
+  if (seen.has(value)) return value;
+  seen.add(value);
+  if (Array.isArray(value)) {
+    value.forEach((item, i) => {
+      value[i] = scrubDeep(item, depth + 1, seen);
+    });
+    return value;
+  }
+  const record = value as Record<string, Json>;
+  for (const key of Object.keys(record)) {
+    record[key] = scrubDeep(record[key], depth + 1, seen);
+  }
+  return value;
 }
 
 export function scrubBreadcrumb(breadcrumb: Breadcrumb): Breadcrumb {
@@ -38,7 +70,8 @@ export function scrubBreadcrumb(breadcrumb: Breadcrumb): Breadcrumb {
   return breadcrumb;
 }
 
-export function scrubSentryEvent<T extends Scrubbable>(event: T): T {
+export function scrubSentryEvent<T extends object>(input: T): T {
+  const event = input as Scrubbable;
   if (event.request?.url) {
     event.request.url = scrubTokenUrl(event.request.url);
     if (TOKEN_PATH.test(event.request.url)) delete event.request.query_string;
@@ -57,5 +90,5 @@ export function scrubSentryEvent<T extends Scrubbable>(event: T): T {
       span.description = scrubTokenUrl(span.description);
     }
   }
-  return event;
+  return scrubDeep(event) as T;
 }
