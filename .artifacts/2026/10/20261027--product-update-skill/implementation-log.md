@@ -18,6 +18,6 @@
 ## Validation
 
 - YAML frontmatter parsed successfully with PyYAML.
-- `git diff --check` passed for the skill and work artifacts.
+- `git show --check` passed for the skill and dated work artifacts in `HEAD`; a whitespace scan found no trailing whitespace or em dashes.
 - The bundled `quick_validate.py` is a Codex skill validator and does not accept Claude Code fields such as `disable-model-invocation` or `argument-hint`; it was not used as the format authority. Claude Code's official Skills documentation was checked for the project skill path, frontmatter, invocation control, and argument support.
 - Independent review rounds: three specialist lenses in five rounds. The last two rounds were clean.
