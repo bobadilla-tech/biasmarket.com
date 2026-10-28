@@ -220,6 +220,42 @@ describe("storefront empty states", () => {
     );
   });
 
+  it("clears a selected category from both navigation and filter chips", () => {
+    navigation.url = "/es/store/tienda?tab=productos&categoria=albumes";
+    navigation.push.mockClear();
+    withMessages(
+      <StoreSectionRenderer
+        slug="tienda"
+        sections={[]}
+        catalogControls
+        storeCategories={[
+          { id: "1", slug: "albumes", name: "Álbumes" },
+          { id: "2", slug: "photocards", name: "Photocards" },
+        ]}
+      />,
+    );
+
+    const categoryTabs = within(
+      screen.getByRole("navigation", { name: "Categorías" }),
+    );
+    const categoryChips = within(
+      screen.getByRole("group", { name: "Categorías" }),
+    );
+    expect(
+      categoryTabs.getByRole("button", { name: "Álbumes" }).getAttribute("aria-pressed"),
+    ).toBe("true");
+    expect(
+      categoryChips.getByRole("button", { name: "Álbumes" }).getAttribute("aria-pressed"),
+    ).toBe("true");
+
+    fireEvent.click(categoryTabs.getByRole("button", { name: "Álbumes" }));
+    fireEvent.click(categoryChips.getByRole("button", { name: "Álbumes" }));
+    expect(navigation.push).toHaveBeenLastCalledWith(
+      "/es/store/tienda?tab=productos",
+      { scroll: false },
+    );
+  });
+
   it("filters and sorts public categories by their names and links by slug", () => {
     navigation.url = "/es/store/tienda?tab=categorias";
     withMessages(
