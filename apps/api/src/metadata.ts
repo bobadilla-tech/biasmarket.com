@@ -485,6 +485,25 @@ export default async () => {
           },
         ],
         [
+          import('./modules/stores/dto/storefront-request.dto.js'),
+          {
+            StorefrontRequestDto: {
+              slug: {
+                required: true,
+                type: () => String,
+                pattern: '^[a-z0-9][a-z0-9_-]*$',
+              },
+            },
+            StorefrontCatalogRequestDto: {
+              query: {
+                required: false,
+                type: 'object',
+                additionalProperties: true,
+              },
+            },
+          },
+        ],
+        [
           import('./modules/products/dto/create-variant.dto.js'),
           {
             CreateVariantDto: {
@@ -2831,11 +2850,25 @@ export default async () => {
                 type: t['./modules/stores/dto/store-response.dto.js']
                   .StoreCatalogResponseDto,
               },
+              findStorefrontCatalog: {
+                type: t['./modules/stores/dto/store-response.dto.js']
+                  .StoreCatalogResponseDto,
+              },
               findPublic: {
                 type: t['./modules/stores/dto/store-response.dto.js']
                   .StorePublicDetailResponseDto,
               },
+              findStorefrontPublic: {
+                type: t['./modules/stores/dto/store-response.dto.js']
+                  .StorePublicDetailResponseDto,
+              },
               findCategoriesPublic: {
+                type: [
+                  t['./modules/stores/dto/store-response.dto.js']
+                    .PublicCategoryResponseDto,
+                ],
+              },
+              findStorefrontCategories: {
                 type: [
                   t['./modules/stores/dto/store-response.dto.js']
                     .PublicCategoryResponseDto,

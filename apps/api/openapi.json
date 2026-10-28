@@ -419,6 +419,35 @@
         "tags": ["Stores"]
       }
     },
+    "/stores/storefront/catalog": {
+      "post": {
+        "operationId": "StoresController_findStorefrontCatalog",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StorefrontCatalogRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreCatalogResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Stores"]
+      }
+    },
     "/stores/{slug}/public": {
       "get": {
         "operationId": "StoresController_findPublic",
@@ -447,6 +476,35 @@
         "tags": ["Stores"]
       }
     },
+    "/stores/storefront/public": {
+      "post": {
+        "operationId": "StoresController_findStorefrontPublic",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StorefrontRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorePublicDetailResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Stores"]
+      }
+    },
     "/stores/{slug}/categories/public": {
       "get": {
         "operationId": "StoresController_findCategoriesPublic",
@@ -460,6 +518,38 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicCategoryResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Stores"]
+      }
+    },
+    "/stores/storefront/categories": {
+      "post": {
+        "operationId": "StoresController_findStorefrontCategories",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StorefrontRequestDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -5717,6 +5807,20 @@
         },
         "required": ["items", "total", "page", "limit"]
       },
+      "StorefrontCatalogRequestDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          },
+          "query": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": ["slug"]
+      },
       "SectionCollectionProductResponseDto": {
         "type": "object",
         "properties": {
@@ -5962,6 +6066,16 @@
           "sections",
           "indexable"
         ]
+      },
+      "StorefrontRequestDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          }
+        },
+        "required": ["slug"]
       },
       "PublicCategoryResponseDto": {
         "type": "object",

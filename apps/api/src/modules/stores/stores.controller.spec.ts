@@ -1,4 +1,5 @@
 import { Test, type TestingModule } from '@nestjs/testing';
+import { BadRequestException } from '@nestjs/common';
 import { type Mock, vi } from 'vitest';
 import { StoresController } from './stores.controller.js';
 import { StoresService } from './stores.service.js';
@@ -23,6 +24,7 @@ describe('StoresController', () => {
     assertOwnership: Mock;
     updatePublicHeaderImage: Mock;
     findPublicCatalog: Mock;
+    findCategoriesPublic: Mock;
   };
   let storage: {
     uploadImage: Mock;
@@ -37,6 +39,7 @@ describe('StoresController', () => {
       assertOwnership: vi.fn(),
       updatePublicHeaderImage: vi.fn(),
       findPublicCatalog: vi.fn(),
+      findCategoriesPublic: vi.fn().mockResolvedValue([]),
     };
     storage = {
       uploadImage: vi.fn(),
@@ -115,6 +118,46 @@ describe('StoresController', () => {
         },
       ],
     });
+  });
+
+  it('accepts fixed-route storefront catalog requests and rejects repeated search values', async () => {
+    service.findPublicCatalog.mockResolvedValue({
+      items: [],
+      total: 0,
+      page: 3,
+      limit: 12,
+    });
+    const body = {
+      slug: 'demo-store',
+      query: {
+        q: 'album',
+        categorias: ['photocards', 'bts'],
+        sort: 'precio_asc',
+        page: '3',
+        limit: '12',
+      },
+    };
+
+    await controller.findStorefrontCatalog(body);
+
+    expect(service.findPublicCatalog).toHaveBeenCalledWith('demo-store', {
+      page: 3,
+      limit: 12,
+      q: 'album',
+      categories: ['photocards', 'bts'],
+      sort: 'precio_asc',
+    });
+    await expect(
+      controller.findStorefrontCatalog({
+        slug: 'demo-store',
+        query: { q: ['first', 'second'] },
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('serves storefront categories through the fixed request route', async () => {
+    await controller.findStorefrontCategories({ slug: 'demo-store' });
+    expect(service.findCategoriesPublic).toHaveBeenCalledWith('demo-store');
   });
 
   it('create() delegates to service.create with userId and the dto', async () => {
