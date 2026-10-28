@@ -10,6 +10,8 @@ type InviteOrder = Pick<
   PublicOrderResponseDto,
   "status" | "paymentStatus" | "fulfillmentStatus"
 > & {
+  // Optional like the fields below: an older API omits it.
+  receiptConfirmedAt?: string | null;
   // Optional: an API that predates these fields omits them, and then there is
   // nothing to invite to.
   hasValidatedPayment?: boolean;
@@ -54,6 +56,8 @@ export function pickInviteMoment(input: InviteInput): InviteMoment | null {
     // Receipt confirmed or delivered: shown even if the banner was dismissed.
     entrega:
       input.receiptJustConfirmed ||
+      // A receipt confirmed on an earlier visit still counts after a reload.
+      !!input.order.receiptConfirmedAt ||
       input.order.fulfillmentStatus === "COMPLETED",
     pago_validado: !input.firstSeen && !dismissed,
     // Later visits. If the first-validation block is switched off, the banner

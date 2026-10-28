@@ -154,3 +154,22 @@ test("the dismissal window and the moments come from the config only", () => {
   };
   expect(pickInviteMoment(base({ config: noFirst }))).toBe("banner");
 });
+
+test("a receipt confirmed on an earlier visit still shows the delivery moment", () => {
+  expect(
+    pickInviteMoment(
+      withOrder(
+        {
+          fulfillmentStatus: "IN_TRANSIT",
+          receiptConfirmedAt: "2026-10-27T12:00:00.000Z",
+        },
+        { firstSeen: true, dismissedAt: NOW - 1000 },
+      ),
+    ),
+  ).toBe("entrega");
+  expect(
+    pickInviteMoment(
+      withOrder({ fulfillmentStatus: "IN_TRANSIT", receiptConfirmedAt: null }),
+    ),
+  ).toBe("pago_validado");
+});
