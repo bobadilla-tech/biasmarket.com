@@ -24,10 +24,11 @@ export interface StoreIndexabilityInput {
   publishedProductCount: number;
   bio: string | null;
   aboutMarkdown: string | null;
-  // >=1 TEXT_BLOCK section whose content.body is a non-empty string. The Prisma
-  // `where` used by the sitemap query can't express this refinement, so the
-  // authoritative check lives on the read path that already loads sections
-  // (findPublicBySlug).
+  // >=1 TEXT_BLOCK section whose content.body is a non-empty string. CT13 keeps
+  // these blocks visible in the redesigned storefront's About tab, so they
+  // remain valid prose for the indexability bar. The Prisma `where` used by the
+  // sitemap query can't express this refinement, so the authoritative check
+  // lives on the read path that already loads sections (findPublicBySlug).
   hasRealTextBlockSection: boolean;
 }
 
