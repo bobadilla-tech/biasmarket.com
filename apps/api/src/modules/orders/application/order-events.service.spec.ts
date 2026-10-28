@@ -215,6 +215,9 @@ describe('OrderEventsService', () => {
           id: 'order-1',
           storeId: 'store-1',
           buyerConfirmedReceivedAt: null,
+          paymentStatus: 'VERIFIED',
+          status: { not: 'CANCELLED' },
+          fulfillmentStatus: { in: ['IN_TRANSIT', 'READY', 'COMPLETED'] },
         },
         data: { buyerConfirmedReceivedAt: expect.any(Date) },
       });
@@ -291,6 +294,19 @@ describe('OrderEventsService', () => {
       const result = await service.confirmReceipt(token);
 
       expect(result.receiptConfirmedAt).toBe(stored.toISOString());
+      expect(prisma.orderEvent.create).not.toHaveBeenCalled();
+      expect(notifications.createIfNotOpen).not.toHaveBeenCalled();
+    });
+
+    it('answers 409 when the order stops being eligible between the read and the write', async () => {
+      prisma.order.findUnique
+        .mockResolvedValueOnce(base)
+        .mockResolvedValueOnce({ buyerConfirmedReceivedAt: null });
+      prisma.order.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(service.confirmReceipt(token)).rejects.toBeInstanceOf(
+        ConflictException,
+      );
       expect(prisma.orderEvent.create).not.toHaveBeenCalled();
       expect(notifications.createIfNotOpen).not.toHaveBeenCalled();
     });

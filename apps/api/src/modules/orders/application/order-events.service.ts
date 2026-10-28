@@ -4,7 +4,12 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import type { OrderEventActor, OrderEventType, Prisma } from '@biasmarket/db';
+import type {
+  FulfillmentStatus,
+  OrderEventActor,
+  OrderEventType,
+  Prisma,
+} from '@biasmarket/db';
 import { hashOrderAccessToken } from '@biasmarket/utils/assisted-order';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
@@ -53,7 +58,7 @@ const ALLOWED_PAYLOAD_KEYS = new Set([
   'paymentId',
 ]);
 
-const RECEIPT_FULFILLMENT_STATES = new Set([
+const RECEIPT_FULFILLMENT_STATES = new Set<FulfillmentStatus>([
   'IN_TRANSIT',
   'READY',
   'COMPLETED',
@@ -213,6 +218,11 @@ export class OrderEventsService {
           id: order.id,
           storeId: order.storeId,
           buyerConfirmedReceivedAt: null,
+          // Same gate as above, re-checked atomically: a cancel or void that
+          // lands between the read and this write must not stamp the order.
+          paymentStatus: 'VERIFIED',
+          status: { not: 'CANCELLED' },
+          fulfillmentStatus: { in: [...RECEIPT_FULFILLMENT_STATES] },
         },
         data: { buyerConfirmedReceivedAt: now },
       });
@@ -231,10 +241,12 @@ export class OrderEventsService {
         where: { id: order.id },
         select: { buyerConfirmedReceivedAt: true },
       });
+      // Neither confirmed by a concurrent call nor eligible any more.
+      if (!stored?.buyerConfirmedReceivedAt) {
+        throw new ConflictException('El pedido aún no se puede confirmar');
+      }
       return {
-        receiptConfirmedAt: (
-          stored?.buyerConfirmedReceivedAt ?? now
-        ).toISOString(),
+        receiptConfirmedAt: stored.buyerConfirmedReceivedAt.toISOString(),
       };
     }
 
