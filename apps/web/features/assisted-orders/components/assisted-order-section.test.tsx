@@ -5,20 +5,20 @@ import userEvent from "@testing-library/user-event";
 import type { OrderResponseDto } from "@biasmarket/types";
 import { renderWithProviders } from "../../../test-utils/render-with-providers";
 
-const { regenerateAccessLink, correctBuyerPhone, findTemplate } = vi.hoisted(
-  () => ({
+const { regenerateAccessLink, correctBuyerPhone, findTemplate, findRelated } =
+  vi.hoisted(() => ({
     regenerateAccessLink: vi.fn(),
     correctBuyerPhone: vi.fn(),
     findTemplate: vi.fn(),
-  }),
-);
+    findRelated: vi.fn(),
+  }));
 
 vi.mock("next/navigation", () => ({
   useParams: () => ({ locale: "es", slug: "mi-tienda" }),
 }));
 vi.mock("@/lib/api-client", () => ({
   apiClient: {
-    orders: { regenerateAccessLink, correctBuyerPhone },
+    orders: { regenerateAccessLink, correctBuyerPhone, findRelated },
     whatsappTemplates: { findOne: findTemplate },
   },
 }));
@@ -71,6 +71,7 @@ const newLink = `${window.location.origin}/es/store/mi-tienda/pedido/nuevo-token
 
 beforeEach(() => {
   findTemplate.mockResolvedValue(null);
+  findRelated.mockResolvedValue({ items: [], total: 0 });
   regenerateAccessLink.mockResolvedValue({ order: base, accessUrl: newLink });
   correctBuyerPhone.mockResolvedValue({
     order: { ...base, customerPhone: "+51999111222" },
