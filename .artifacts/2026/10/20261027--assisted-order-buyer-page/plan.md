@@ -1,6 +1,6 @@
 # Plan: Pedido asistido, buyer page (#268) and leftovers
 
-Status: draft v8 (rounds 1-7 findings applied; see review-log.md for review
+Status: draft v10 (rounds 1-9 findings applied; see review-log.md for review
 state)
 
 Date: 2026-10-28. Planned against `origin/main` @ `d88be078` (includes #343,
@@ -50,7 +50,7 @@ resolved by main).
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | checkout customer logic        | `apps/api/src/modules/orders/application/customer-account.service.ts` (`findOrCreateCustomer` 104-217, `change-phone` confirm ~387-405)                                                                                                     |
 | assisted Customer helper       | `apps/api/src/modules/orders/application/assisted-customer.ts`                                                                                                                                                                              |
-| customers service              | `apps/api/src/modules/orders/application/customers.service.ts` (`findAllForStore` 52-209, `upsertStoreContact` 304-313, `lookupByPhone` 322-)                                                                                               |
+| customers service              | `apps/api/src/modules/orders/application/customers.service.ts` (`findAllForStore` 52-222, `upsertStoreContact` 304-313, `lookupByPhone` 322-364)                                                                                            |
 | checkout use case / lock order | `.../application/create-order.usecase.ts:48`, `.../application/order-creation.core.ts:17-20`                                                                                                                                                |
 | public order                   | `.../application/public-order.service.ts`, `.../application/order-events.service.ts:129-145`, `.../infrastructure/public-order-events.controller.ts`, `.../dto/public-order-response.dto.ts`                                                |
 | SDK mutator (hand-written)     | `packages/types/http.ts` (`credentials` at line 93), test `packages/types/http.test.ts`                                                                                                                                                     |
@@ -198,9 +198,10 @@ DTO; #345 edits neighbours) and `OrderStatusBadge`/`getOrderStatus` (seller copy
 from `dashboard.orders`). Build a small buyer-facing status banner in the new
 feature with `storefront.publicOrder.*` copy mapped from (`status`,
 `paymentStatus`, `fulfillmentStatus`). The PR body states the deviation from the
-issue's "reutilizar" for the account detail. Check `pnpm --filter web lint` for
-cross-feature import rules when importing from `features/orders` /
-`features/customer-auth`.
+issue's "reutilizar" for the account detail. Cross-feature imports from
+`features/orders` / `features/customer-auth` are lint-legal
+(`apps/web/eslint.config.mjs` has only jsx-a11y; its errors are blocking, so
+give the disclosure a label and the page a heading structure).
 
 D4. **Order number**: API computes `orderNumber` = last 4 chars of the id,
 uppercase (no `#`; the UI adds it), same rule as web `getOrderNumber`
@@ -240,28 +241,36 @@ Q10 answer) and step 0 checks `gh pr view <n> --json state`.
 `PublicOrderResponseDto` gains, all allow-listed:
 
 - `customerAlias: string | null` from `Order.customerName`, sanitised in the
-  service by code point, not UTF-16 unit: `normalize('NFC')`, remove
-  `/[\p{Cc}\u200B\u200E\u200F\u061C\u202A-\u202E\u2066-\u2069\u2028\u2029\uFEFF]/gu`,
-  collapse whitespace, trim, `Array.from(...).slice(0, 40).join('').trim()`,
-  empty -> null. ZWJ/ZWNJ are kept on purpose (blanket `\p{Cf}` stripping breaks
-  emoji sequences and Persian/Indic text). Tests: emoji at the cut, bidi marks,
-  zero-width characters, control characters, all-whitespace.
+  service (probed in node 26, run it again in the repo's Node): `toWellFormed()`
+  (lone surrogates become U+FFFD), `normalize('NFC')`, **first** collapse every
+  run of whitespace/control whitespace (`\s`, tab, CR, LF) to one space,
+  **then** remove `/[\p{Cc}​‎‏؜‪-‮⁦-⁩  ﻿]/gu` (otherwise `"a\tb\nc"` becomes `"abc"`),
+  trim, then cut to 40 **graphemes** with
+  `Intl.Segmenter(undefined, { granularity: 'grapheme' })` (a code-point cut can
+  leave a dangling ZWJ after a family emoji), trim again, empty -> null.
+  ZWJ/ZWNJ are kept on purpose (blanket `\p{Cf}` stripping breaks emoji
+  sequences and Persian/Indic text). Tests: emoji at the cut, ZWJ family emoji
+  at the cut, bidi marks, NUL, zero-width characters, tabs/newlines, lone
+  surrogate, all-whitespace.
 - `orderNumber: string` (D4).
 - `createdAt: string` (ISO).
 
 `requireOrderForToken` (`order-events.service.ts:129`): before hashing, reject
 tokens not matching `/^[A-Za-z0-9_-]{20,128}$/` with the **same** 404 body
-(avoids hashing megabyte params; confirm the generator yields 43 chars). Also
-affects `recordInvite` (same 404). Nothing else on the controller changes.
-Verify and, if missing, test that the 404/429/500 responses also carry
-`Cache-Control: no-store` and `Referrer-Policy: no-referrer`.
+(cosmetic hardening: the probe measured 0.7 ms to hash 1 MB; the generator
+yields 43 base64url characters). Also affects `recordInvite` (same 404). Nothing
+else on the controller changes. Verify and, if missing, test that the
+404/429/500 responses also carry `Cache-Control: no-store` and
+`Referrer-Policy: no-referrer`.
 
-Regenerate openapi + metadata + SDK. Tests: `public-order.service.spec.ts`
-(alias sanitising, exact response key set, `JSON.stringify(response)` contains
-neither the order id nor `accessTokenHash`), extend
-`assisted-order-links.e2e-spec.ts` ("stamps the first open once...") to assert
-the new fields and that `id`, `createdByName`, `linkFirstOpenedAt`, `claimedAt`,
-`customerId` stay absent; malformed token -> same 404.
+Also update the stale comment in `public-order.service.ts` ("link-preview
+fetches count as that first read") to say previews do not run JS and the page
+fetches client-side. Regenerate openapi + metadata + SDK. Tests:
+`public-order.service.spec.ts` (alias sanitising, exact response key set,
+`JSON.stringify(response)` contains neither the order id nor `accessTokenHash`),
+extend `assisted-order-links.e2e-spec.ts` ("stamps the first open once...") to
+assert the new fields and that `id`, `createdByName`, `linkFirstOpenedAt`,
+`claimedAt`, `customerId` stay absent; malformed token -> same 404.
 
 ### 4.2 PR3: web page (`Refs #268`; see Q8 for who closes it)
 
@@ -290,12 +299,20 @@ follow: false }`, `referrer: "no-referrer"`, generic
     caller passes it today; mobile keeps `config.credentials`), plus a
     `http.test.ts` case. Component test with the **real** `customFetch` (only
     global `fetch` stubbed) asserting `init.credentials === "omit"`.
-    `retry: false`, `staleTime: 30_000`, `refetchOnWindowFocus: true`. Classify
-    by `error instanceof ApiError`: status 404 -> `invalid`, 429 ->
-    `rateLimited` (status only, never the message), anything else (incl. 500
-    from a failed first-open stamp, network errors) -> `error` with retry and
-    copy that does not say "invalid link". No persisted query cache (confirm
-    `QueryProvider`).
+    `retry: false`, `staleTime: 30_000`, `gcTime: 0`,
+    `refetchOnWindowFocus: true`. **Render `isError` before `data`** (React
+    Query keeps the old data when a refetch fails, so an old tab would keep
+    showing the order after the seller rotates the link); on a 404 call
+    `queryClient.removeQueries`; any refetch error (404/429/500) hides the order
+    and shows the matching state. Do the slug check inside `queryFn` (compare
+    `decodeURIComponent(params.slug).toLowerCase()` with `dto.store.slug`) and
+    throw a synthetic invalid error, so mismatched data never enters the cache.
+    Test: first fetch 200, then a focus refetch returns a real `ApiError` 404:
+    the DOM shows the invalid state and none of the order text. Classify by
+    `error instanceof ApiError`: status 404 -> `invalid`, 429 -> `rateLimited`
+    (status only, never the message), anything else (incl. 500 from a failed
+    first-open stamp, network errors) -> `error` with retry and copy that does
+    not say "invalid link". No persisted query cache (confirm `QueryProvider`).
   - `components/public-order-page.tsx` (client): skeleton (`role="status"`,
     `aria-live="polite"`), invalid state (D2), rate-limited, error + retry,
     view; moves focus to the state heading on change. The fixed storefront
@@ -326,12 +343,33 @@ follow: false }`, `referrer: "no-referrer"`, generic
     `useTranslations("storefront.publicOrder")` (tests use a fixed clock). Pass
     i18n labels to `ErrorState` (`retryLabel`, default "Retry") and
     `LoadingState` (`label`, default "Loading").
-  - `components/how-to-pay.tsx`: only when the API returned methods/instructions
-    (it nulls them when cancelled). **Render allow-list**: per method render
-    only string/number values as plain text with fixed labels; no `href` from
-    data, no auto-link, no recursive JSON dump; `paymentInstructions` in
-    `whitespace-pre-wrap` plain text. If none configured and no instructions:
-    "La tienda aun no configuro metodos de pago, escribele".
+  - `components/how-to-pay.tsx`: show it only when `status === "ACTIVE"` and
+    (`paymentStatus` is `PENDING_PAYMENT` or `REJECTED`, or `PARTIALLY_PAID`
+    with `pendingAmount > 0`); never for `PAYMENT_SUBMITTED`, `VERIFIED`,
+    cancelled or fulfilled orders (the API only nulls the methods for cancelled
+    orders, so without this rule a paid order would read as "pay again").
+    **Reuse `features/checkout/components/payment-method-details.tsx`**
+    (`PaymentMethodDetails`): it already renders per-method fixed layouts from
+    known keys only (`bankName`, `accountNumber`, `accountHolder`,
+    `accountType`, `phoneNumber`, `qrImageUrl`) as inert text, a copy button,
+    the QR through `next/image` (restricted `remotePatterns`) and a "not
+    configured" banner; unknown keys are never rendered. If its prop type needs
+    more than `method`/`details`, widen it to
+    `Pick<PaymentMethodConfigResponseDto,
+    "method" | "details">` (tiny
+    change). `paymentInstructions` goes in `whitespace-pre-wrap` plain text, no
+    markdown, no linkify. Amount line: "adelanto S/X (o el total S/Y)" from
+    `requiredAmount`/`totalAmount`. If no configured methods and no
+    instructions: "La tienda aun no configuro metodos de pago, escribele".
+    Include a second `ContactSellerButton` here with `message` = "Hola, ya pague
+    el pedido #XXXX" (order ref only): upload (#269) is out of scope, so "I
+    paid, here is my proof" goes through WhatsApp. A `REJECTED` payment row also
+    shows a one-line "escribele a la tienda".
+  - Status matrix (one banner string per state, es/en): PENDING_PAYMENT,
+    PARTIALLY_PAID, PAYMENT_SUBMITTED ("en revision"), VERIFIED, REJECTED,
+    CANCELLED (also covers expired), plus fulfillment READY and COMPLETED.
+    `FulfillmentTimeline` is hidden for CANCELLED (it always shows "received"
+    with a green check); for unpaid orders it is shown (accepted).
   - Contact: `<ContactSellerButton slug message=... label=... />` with `message`
     = "Hola, el pedido #XXXX no es para mi numero" (**only the order ref, never
     the page URL or token**; the order number comes from `dto.orderNumber`, so
@@ -343,6 +381,12 @@ follow: false }`, `referrer: "no-referrer"`, generic
     `noopener noreferrer` (read the component after #321). No "share/copy link"
     controls.
   - `index.ts` barrel.
+- Seller created screen
+  (`features/assisted-orders/components/created-order-screen.tsx`): check
+  whether the copy already tells the seller that opening the link themselves
+  locks "Corregir numero" (use copy/preview instead); if not, add one line
+  (es/en dashboard i18n). WhatsApp previews are HTML-only fetches that never run
+  JS.
 - `app/robots.ts`: add `"/*/store/*/pedido"` and `"/*/store/*/pedido/*"`
   (anchored, literal; see the comment at lines 12-16). Note: Disallow stops
   crawlers from reading the noindex meta/`X-Robots-Tag`; acceptable because the
@@ -444,31 +488,32 @@ future per-site `log` directive does not inherit it: document that in
 keeps the old inode, so the container may keep the old file while `caddy reload`
 exits 0. One reviewer reproduced it on a Linux VM; another could not on Docker
 Desktop (macOS resolves by path). Step 1 of section 6 reproduces it on a Linux
-runner first. #343's `trusted_proxies` change merged on 2026-10-28 and may
-therefore not be live (Q10). PR4 adds to `infra/vps/deploy.sh`, in `cmd_deploy`
-right after `assert_production_topology` (under the deploy lock, before
-migrations, candidate start and any `active/*.caddy` write; **never inside the
-canary window or `cmd_rollback`**, where a Caddy restart would drop in-flight
-traffic and break the `compose exec` calls under `set -e`): compare `sha256sum`
-of the host Caddyfile with the file in the container
-(`compose exec -T caddy
-sha256sum`, written as `if ! ...; then die`),
-`caddy validate` the new file, and only if the hashes differ run
-`compose up -d --no-deps --force-recreate caddy` (1-5 s on 80/443; named volumes
-keep certificates; never `down -v`), then re-run the topology check.
-Post-deploy: `compose exec -T caddy caddy adapt
---config /etc/caddy/Caddyfile`
-must contain the filter (match the stable substring `request>uri`, retry up to 3
-times, treat an unreachable admin API as a warning when the hashes match).
-Alternative: move the file to `infra/vps/caddy/Caddyfile` and mount the
-directory (a one-time recreate is still needed); keep the hash guard as a
-backstop. This changes production deploy tooling: needs the supervised path in
-`docs/core/deploy.md` and the user's explicit approval before merge and deploy
-(Q10). No tests exist for `infra/vps` scripts: paste `caddy validate`/`adapt`
-output and the probe logs in the PR body and shellcheck the changed scripts;
-hosted CI for an `infra/**`-only PR runs nothing meaningful. Do not edit
-`caddy.sh`'s generated `active/*.caddy` logic. Rollback: revert + a supervised
-deploy.
+runner first; if nobody can provide one, ship the guard anyway (it is a no-op
+when the hashes match) and mark the evidence as unverified. #343's
+`trusted_proxies` change merged on 2026-10-28 and may therefore not be live
+(Q10). PR4 adds to `infra/vps/deploy.sh`, in `cmd_deploy` right after
+`assert_production_topology` (under the deploy lock, before migrations,
+candidate start and any `active/*.caddy` write; **never inside the canary window
+or `cmd_rollback`**, where a Caddy restart would drop in-flight traffic and
+break the `compose exec` calls under `set -e`): compare `sha256sum` of the host
+Caddyfile with the file in the container (`compose exec -T caddy
+sha256sum`,
+written as `if ! ...; then die`), `caddy validate` the new file, and only if the
+hashes differ run `compose up -d --no-deps --force-recreate caddy` (1-5 s on
+80/443; named volumes keep certificates; never `down -v`), then re-run the
+topology check. Post-deploy:
+`compose exec -T caddy caddy adapt
+--config /etc/caddy/Caddyfile` must contain
+the filter (match the stable substring `request>uri`, retry up to 3 times, treat
+an unreachable admin API as a warning when the hashes match). Alternative: move
+the file to `infra/vps/caddy/Caddyfile` and mount the directory (a one-time
+recreate is still needed); keep the hash guard as a backstop. This changes
+production deploy tooling: needs the supervised path in `docs/core/deploy.md`
+and the user's explicit approval before merge and deploy (Q10). No tests exist
+for `infra/vps` scripts: paste `caddy validate`/`adapt` output and the probe
+logs in the PR body and shellcheck the changed scripts; hosted CI for an
+`infra/**`-only PR runs nothing meaningful. Do not edit `caddy.sh`'s generated
+`active/*.caddy` logic. Rollback: revert + a supervised deploy.
 
 ### 4.4 PR1: checkout race (`Closes #333`)
 
@@ -587,7 +632,8 @@ repeat checkouts); say so in the PR.
 ### 4.5 PR5: related orders in order detail (no close)
 
 - API `GET /stores/:storeId/orders/:orderId/related` (`order.controller.ts`,
-  mirror `findOne` at `:377-386`: `AuthGuard`, `assertOwnership`,
+  mirror `findOne` at `:414-428` (controller starts at :382; no route collision
+  with `:orderId/related`): `AuthGuard`, `assertOwnership`,
   `findRowByIdForStore`; foreign/missing -> same 404). Phone =
   `customerPhoneNormalized` else `normalizePhone(customerPhone)`. Indexed query
   `{ storeId, customerPhoneNormalized: phone, id: { not: orderId } }` ordered
@@ -620,16 +666,21 @@ fulfillmentStatus, totalAmount, currency, source }], total }`
 
 ### 4.6 PR6: #337 ghost customers (`Closes #337`)
 
-`CustomersService.findAllForStore` (`customers.service.ts:52-209`): after guest
-folding drop a `Customer` when `orderCount === 0` and no `email`,
-`passwordHash`, `pendingEmail`, `pendingPhone` and `!emailVerified` (in memory;
-a Prisma `where` alone would miss customers whose only orders are guest orders
-folded by phone). Key the filter on the post-fold `row.orderCount`, not the
-by-customer count. A name-only zero-order contact (`upsertStoreContact` creates
-one from the new-order screen) is hidden too, per #337's text (no email, no
-passwordHash); say so in the PR. `findOneForStore` unchanged (still store-scoped
-by id). Unit + e2e: orphan hidden, registered-no-orders kept, only-guest-orders
-kept, a same-phone customer in another store does not affect the result.
+`CustomersService.findAllForStore` (`customers.service.ts:52-222`): the `rows`
+objects do not carry `passwordHash`, `pendingEmail` or `pendingPhone`, so build
+a `Set` of keepable customer ids from the `Customer` records (any of `email`,
+`passwordHash`, `pendingEmail`, `pendingPhone`, `emailVerified`) and filter
+`rows` after the `for` that folds guest orders
+(`row.orderCount += guest.orderCount`, ~:201): drop a `Customer` when
+`orderCount === 0` and no `email`, `passwordHash`, `pendingEmail`,
+`pendingPhone` and `!emailVerified` (in memory; a Prisma `where` alone would
+miss customers whose only orders are guest orders folded by phone). Key the
+filter on the post-fold `row.orderCount`, not the by-customer count. A name-only
+zero-order contact (`upsertStoreContact` creates one from the new-order screen)
+is hidden too, per #337's text (no email, no passwordHash); say so in the PR.
+`findOneForStore` unchanged (still store-scoped by id). Unit + e2e: orphan
+hidden, registered-no-orders kept, only-guest-orders kept, a same-phone customer
+in another store does not affect the result.
 
 ### 4.7 #258 housekeeping
 
@@ -650,6 +701,13 @@ Recommended merge order (give it to the user):
 4. **PR3** (the page), after PR-S, PR4 (deployed) and PR-A.
 5. **PR1** (#333) anywhere: independent.
 6. Phase 2 (can be cut, independent of the buyer page): **PR5**, **PR6**.
+
+**Deploy order and version skew:** deploy PR-A before PR3 (the DTO change is
+additive, so old web + new API is fine; new web + old API, e.g. after an API
+rollback, would show `#undefined` and an invalid date, so `public-order-view`
+hides the number and the date when `orderNumber`/`createdAt` are missing, with
+one test). PR1, PR5 and PR6 have no schema change; PR5 only adds an endpoint.
+Mobile does not consume `publicOrders`, so the `http.ts` change cannot break it.
 
 PR-A and PR5 regenerate openapi/metadata/SDK on top of the then-current main:
 whoever merges second rebases and **regenerates** (never hand-merges generated
@@ -721,11 +779,12 @@ rather than trust them.
    (it reads `dist`). The `packages/types` change also fans CI out to mobile
    lint/typecheck and the api jobs; say so in the PR body. Signal: web
    unit/component tests, `pnpm --filter
-   @biasmarket/types test` (mutator),
-   lint, typecheck, `next build`; the `next
-   start` header curl block green in
-   `scripts/ci/web-e2e.sh` (it runs in the `web-e2e` job, gated on
-   `detect-changes` output `web_e2e`, `ci.yml:~1046`; confirm the filter near
+   @biasmarket/types test` (mutator,
+   plus an assertion that the default stays `include`), mobile `lint` and
+   `typecheck`, lint, typecheck, `next build`; the `next
+   start` header curl
+   block green in `scripts/ci/web-e2e.sh` (it runs in the `web-e2e` job, gated
+   on `detect-changes` output `web_e2e`, `ci.yml:~1046`; confirm the filter near
    `ci.yml:~173` covers `apps/web/**` and the script so a web-only PR triggers
    it); Playwright invalid-state spec (reuse the seeded slug
    `demo-tienda-de-camila` via `WEB_E2E_STORE_SLUG`; the API is up on :3000 in
@@ -763,19 +822,34 @@ rather than trust them.
   `createCustomerAccountToken` (`:27`), `purpose: 'change-phone'`, and
   `pendingPhone` set via prisma) racing a checkout for the same new phone: the
   loser is 409 or guest, never 500; (g) the same Google session with two
-  different phones in parallel: the account's phone equals exactly one phone,
-  the other order is a guest order, there is exactly **one** BuyerAccount with
-  that email and no second verification mail. `Promise.all` x rounds (it
-  reproduced 5/5 in P1/P2); do **not** add a `pg_stat_activity` sync point.
-  Unit: each branch after a conflict, "insert returned nothing and re-find is
-  empty -> ConflictException", every raw statement includes `storeId` where
-  applicable.
+  different phones in parallel: no 500, the account ends with exactly one of the
+  phones, and **every order linked to that account has a
+  `customerPhoneNormalized` equal to the account's phone** (the invariant the
+  row-guarded UPDATE protects). Do not assert "exactly one BuyerAccount with
+  that email": when the second request reads the account after the first
+  committed, main already mints a second BuyerAccount (phone Q, same email) in
+  the _sequential_ case (reproduced); that pre-existing behavior is out of
+  scope, say so in the PR. For (e) and (g) clean up explicitly
+  (`buyerAccount.deleteMany({ where: { id|email } })` after links and orders;
+  `cleanupBuyerTestData` is keyed by phone only and misses phone-less accounts),
+  and use a second fresh phone set (`racePhonesNoSeed`, 5 `+519...` numbers) for
+  the no-pre-seed copy of the "does not deadlock" loop, added to the afterAll
+  cleanup filter (`assisted-orders.e2e-spec.ts` near :143). `Promise.all` x
+  rounds (it reproduced 5/5 in P1/P2); do **not** add a `pg_stat_activity` sync
+  point. Unit: each branch after a conflict, "insert returned nothing and
+  re-find is empty -> ConflictException", every raw statement includes `storeId`
+  where applicable.
 - **PR-A** (API only): sanitising (4.1 cases), exact key set, `JSON.stringify`
-  negatives, malformed-token 404 including a 1 MB token, and a test that the
-  404/429 responses carry `no-store`/`no-referrer` (`AllExceptionsFilter`
-  already sets them for `/public/orders` paths and scrubs the path: test, do not
-  rebuild). Add `apps/api/src/common/filters/all-exceptions.filter.ts` to your
-  reading list.
+  negatives, malformed-token 404 (over HTTP use a ~4 KB token and a
+  129-character boundary case; a 1 MB path never reaches Nest because Node's ~16
+  KB header limit kills the connection, so test 1 MB only by calling
+  `requireOrderForToken` directly; also assert a freshly generated token passes
+  the regex, which settles the 43-character assumption; no production data check
+  is needed because tokens are random and generated) including the
+  `packed-photo` route, and a test that the 404/429 responses carry
+  `no-store`/`no-referrer` (`AllExceptionsFilter` already sets them for
+  `/public/orders` paths and scrubs the path: test, do not rebuild). Add
+  `apps/api/src/common/filters/all-exceptions.filter.ts` to your reading list.
 - **PR3** (web, plus the `packages/types/http.ts` one-liner and the curl block
   in `scripts/ci/web-e2e.sh`): web component tests (jsdom, mocked
   `apiClient.publicOrders`; a fresh QueryClient per test (`renderWithProviders`
@@ -795,9 +869,10 @@ rather than trust them.
   `StoreLogo` (`next/image`, restricted `remotePatterns`), never a raw
   `<img src={store.logoUrl}>`, asserted by a
   `vi.mock("@/components/store-logo")` spy or a source grep for `<img` in
-  `features/public-order`. Static guard test (`readFileSync` like
-  `canonical-regression.test.ts`): assert the file exists, strip comments, then
-  no `\bfetch\s*\(`, no `apiClient|@/lib/api-client`, and imports limited to
+  `features/public-order`. Static guard test (applies to `page.tsx` only, not
+  the view components; `readFileSync` like `canonical-regression.test.ts`):
+  assert the file exists, strip comments, then no `\bfetch\s*\(`, no
+  `apiClient|@/lib/api-client`, and imports limited to
   `@/features/public-order`, `next`, `next-intl`, `react` (a fetch hidden in a
   helper would otherwise slip through). The `refetchOnWindowFocus` behavior is
   tested with fake timers + a `focus` event or not claimed. Robots/i18n
@@ -840,12 +915,33 @@ environmental), `pnpm --filter web test`, `pnpm --filter web test:e2e`,
 - **SDK path does not encode the token**: tokens are base64url; the API rejects
   anything else with the same 404.
 - **Raw SQL ids** are UUIDs while other ids are cuids (harmless).
-- **PII**: masked phone, sanitised alias, delivery address line (already in the
-  DTO allow-list) and store payment details; the seller-controlled free text is
-  rendered as inert text. `paymentMethods[].details` is passed through by the
-  API (existing); a future secret-ish key would leak: follow-up.
-- **Rollback**: PR1/3/5/6 revert cleanly (PR1's revert restores the known 500
-  race); PR3 is a blue/green redeploy with no stateful change; PR4 per 4.3.
+- **PII**: masked phone, sanitised alias, delivery lines (`line1`, `district`,
+  `city`, `reference`, `pickupPointLabel`, already allow-listed by #262 and
+  required by the roadmap's C1 "su dirección si la ingresó"), courier name and
+  store payment details are visible to any holder of the link, which is
+  forwarded over WhatsApp (Q11). Seller text is rendered as inert text.
+  `paymentMethods[].details` is passed through by the API (existing); only the
+  known keys are rendered by `PaymentMethodDetails`; a future secret-ish key
+  would leak at the API level: follow-up. There is no token TTL and no
+  post-completion minimisation: a VERIFIED/COMPLETED order keeps serving its
+  page to the holder of the link (the how-to-pay rule above hides payment
+  details in the UI only); accepted, follow-up.
+- **Rollback**: do not roll back PR-S, PR4 or #343 while PR3 is live (it would
+  re-open the token leaks). PR1/3/5/6 revert cleanly (PR1's revert restores the
+  known 500 race); PR3 is a blue/green redeploy with no stateful change; PR4 per
+  4.3.
+- **CORS**: the browser calls `NEXT_PUBLIC_API_URL` cross-origin; `main.ts`
+  allows exactly `WEB_URL` with credentials. The buyer page therefore only works
+  on the `WEB_URL` origin (not www vs apex, not preview deployments): a wrong
+  origin shows as a TypeError and the generic error state with a retry that
+  cannot succeed. State it in the PR3 body and `docs/core/deploy.md`; the
+  Playwright invalid-state spec must run with `WEB_URL` equal to its origin or
+  its 404 assertion is vacuous. The request is a simple CORS GET (no
+  Authorization header, no preflight) as long as web sets no `getAuthHeader`.
+- **Slow connections**: client-only fetch costs roughly 3-4 RTT before content;
+  mitigate with `<link rel="preconnect">` to the API origin from the page and
+  the fixed-size skeleton; the reused components are already in the storefront
+  bundle; put the `next build` route size in the PR body.
 - **Locale**: seller links are `/es/...`; `/en/...` works on the same route.
 - **Pre-existing, not fixed here**: email comparison in `findOrCreateCustomer`
   is case-sensitive (a differently-cased email silently becomes a guest order);
@@ -856,8 +952,8 @@ environmental), `pnpm --filter web test`, `pnpm --filter web test:e2e`,
   a direct-to-origin client cannot pick its own bucket; the token-bearing GET
   stays browser-side so it is throttled per visitor, never per web-container IP.
 - **Advisory-lock stalls** are bounded by the checkout transaction timeout
-  (Prisma default 5s) and only happen when `customerEmail` is present; optional
-  hardening `SET LOCAL lock_timeout = '3s'` mapped to a guest result.
+  (Prisma default 5s) and only happen when `customerEmail` is present; a
+  `lock_timeout` is out of scope.
 - **Pre-existing, out of scope**: phone squat (checkout with the victim's phone
   and the attacker's email creates the account the attacker can then verify;
   only an OTP proof of the phone fixes it); `POST /public/orders/:token/events`
@@ -886,7 +982,11 @@ environmental), `pnpm --filter web test`, `pnpm --filter web test:e2e`,
    timeline, items, total/adelanto/pagado/falta del adelanto, store data,
    "Pedido para +51 9** *** 321", the "no es tu numero" disclosure with contact
    button, how to pay or the no-methods notice, per-payment
-   source/amount/date/status.
+   source/amount/date/status. 1b. [CI: component] Each state (PENDING_PAYMENT,
+   PARTIALLY_PAID, PAYMENT_SUBMITTED, VERIFIED, REJECTED, CANCELLED, READY,
+   COMPLETED) shows its own banner; how-to-pay appears only under the rule in
+   4.2; an old tab whose link was rotated drops the order and shows the invalid
+   state on the next refetch.
 2. Unknown, revoked/regenerated, malformed and wrong-slug tokens render the
    identical invalid state with a contact path (locale-prefixed URLs; an
    unprefixed token containing a dot skips the intl proxy and gets Next's 404, a
@@ -895,8 +995,8 @@ environmental), `pnpm --filter web test`, `pnpm --filter web test:e2e`,
 3. Page responses (HTML, RSC, redirect) carry `Referrer-Policy: no-referrer`,
    `Cache-Control: no-store`, noindex (`X-Robots-Tag` + meta), frame denial,
    asserted against a production build in CI; `robots.txt` disallows
-   `/*/store/*/pedido/*` [CI]; the route is in no sitemap [manual check of the
-   sitemap sources, or add a sitemap test].
+   `/*/store/*/pedido/*` [CI]; the route is in no sitemap [CI: add a sitemap
+   test that no source emits `/pedido/`].
 4. No third-party script/request from the route; no account invitation; no
    control that exposes the link; wa.me text has no token.
 5. A no-JS fetch of the page URL does not stamp `linkFirstOpenedAt`. [CI: static
@@ -949,3 +1049,10 @@ environmental), `pnpm --filter web test`, `pnpm --filter web test:e2e`,
   **do not merge or deploy PR4 without the user's explicit approval** (deploy is
   supervised per `docs/core/deploy.md`). No existing tests cover `infra/vps`
   scripts: do not imply they do.
+- **Q11** Keep `deliveryDetails.line1` and `reference` (street line and
+  reference) in the public DTO? Default: keep (the roadmap's C1 requires "su
+  dirección si la ingresó" and #262 allow-listed it); the alternative is to drop
+  them for HOME/COURIER and show only district/city/pickup point. Also whether
+  the greeting should use the full alias or the first name (default: the
+  sanitised alias as typed). This is a privacy/product choice; The default keeps
+  today's behavior, so nothing blocks on it.
