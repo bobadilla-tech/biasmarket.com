@@ -7,9 +7,9 @@ import { authClient } from "@/lib/auth-client";
 import { Link, useRouter } from "@/i18n/navigation";
 import { Field } from "@/components/ui/field";
 import {
+  formErrorMessage,
   FormErrorSummary,
   FormField,
-  formErrorMessage,
 } from "@/components/shared/form-a11y";
 import { resolveSellerHomePath } from "../lib/seller-home-path";
 import { type LoginInput, loginSchema } from "../schemas/login.schema";

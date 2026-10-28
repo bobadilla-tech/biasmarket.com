@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  IsSafeMarkdownConstraint,
   containsUnsafeMarkdown,
+  IsSafeMarkdownConstraint,
 } from './is-safe-markdown.validator.js';
 
 describe('containsUnsafeMarkdown', () => {

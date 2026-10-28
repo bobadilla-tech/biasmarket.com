@@ -437,13 +437,15 @@ describe('customer account + customer auth (e2e)', () => {
         );
         const html = readFileSync(mailerFile, 'utf-8');
         const tokenMatch = html.match(/verify-email\?token=([^&"]+)/);
-        if (!tokenMatch)
+        if (!tokenMatch) {
           throw new Error('verification link not found in email');
+        }
         await request(bearerApp.getHttpServer())
           .get(`/api/auth/verify-email?token=${tokenMatch[1]}`)
           .expect((res) => {
-            if (res.status >= 400)
+            if (res.status >= 400) {
               throw new Error(`verify-email failed with status ${res.status}`);
+            }
           });
 
         const signInRes = await request(bearerApp.getHttpServer())
@@ -522,8 +524,9 @@ describe('customer account + customer auth (e2e)', () => {
         );
         const html2 = readFileSync(mailerFile2, 'utf-8');
         const tokenMatch2 = html2.match(/token=([^&"]+)/);
-        if (!tokenMatch2)
+        if (!tokenMatch2) {
           throw new Error('confirm-account link not found in email');
+        }
         const confirmToken = tokenMatch2[1]!;
 
         await request(bearerApp.getHttpServer())
