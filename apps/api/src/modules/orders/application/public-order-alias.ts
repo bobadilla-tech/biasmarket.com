@@ -1,10 +1,11 @@
 const MAX_ALIAS_GRAPHEMES = 40;
 
 // Control characters, zero-width space, bidi marks and
-// overrides, line/paragraph separators and BOM. ZWJ/ZWNJ are kept on
+// overrides, line/paragraph separators, BOM, word joiner/invisible operators,
+// soft hyphen and blank fillers (Hangul filler, braille blank). ZWJ/ZWNJ are kept on
 // purpose: stripping all of \p{Cf} breaks emoji sequences and Persian/Indic text.
 const STRIPPED = new RegExp(
-  '[\\p{Cc}\\u200B\\u200E\\u200F\\u061C\\u202A-\\u202E\\u2066-\\u2069\\u2028\\u2029\\uFEFF]',
+  '[\\p{Cc}\\u200B\\u200E\\u200F\\u061C\\u202A-\\u202E\\u2066-\\u2069\\u2028\\u2029\\uFEFF\\u2060-\\u2064\\u00AD\\u180E\\u034F\\uFFFC\\uFFF9-\\uFFFB\\u3164\\u115F\\u1160\\u2800]',
   'gu',
 );
 
@@ -26,7 +27,8 @@ export function toPublicCustomerAlias(name: string | null): string | null {
     .replace(/\s+/g, ' ')
     .replace(STRIPPED, '')
     .trim();
-  if (!cleaned) return null;
+  // Marks and variation selectors alone render as nothing.
+  if (!/[\p{L}\p{N}\p{S}\p{P}]/u.test(cleaned)) return null;
   const graphemes = Array.from(segmenter.segment(cleaned), (s) => s.segment);
   const cut = graphemes.slice(0, MAX_ALIAS_GRAPHEMES).join('').trim();
   return cut || null;

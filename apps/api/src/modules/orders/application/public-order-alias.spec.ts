@@ -48,4 +48,22 @@ describe('toPublicCustomerAlias', () => {
   it('returns null when only stripped characters remain', () => {
     expect(toPublicCustomerAlias('\u200B\u202E\u0000')).toBeNull();
   });
+
+  it('returns null for names made only of invisible characters', () => {
+    for (const blank of [
+      '\u2060',
+      '\u00AD',
+      '\u3164',
+      '\u2800',
+      '\u200D',
+      '\uFE0F',
+    ]) {
+      expect(toPublicCustomerAlias(blank)).toBeNull();
+    }
+  });
+
+  it('keeps multilingual names and emoji', () => {
+    expect(toPublicCustomerAlias('민지')).toBe('민지');
+    expect(toPublicCustomerAlias('🎉')).toBe('🎉');
+  });
 });
