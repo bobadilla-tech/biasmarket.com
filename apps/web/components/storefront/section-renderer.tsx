@@ -321,7 +321,7 @@ export function StoreSectionRenderer({
               </h2>
             )}
             <div
-              className={`grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 ${catalogControls ? "lg:grid-cols-4 xl:grid-cols-5" : "lg:grid-cols-4"}`}
+              className={`grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 ${catalogControls ? "lg:grid-cols-4 xl:grid-cols-4" : "lg:grid-cols-4"}`}
             >
               {visible.map((cp) => (
                 <ProductCard
@@ -380,71 +380,69 @@ export function StoreSectionRenderer({
         className="space-y-6"
       >
         {catalogControls ? (
-          <div className="grid gap-4 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-6">
+          <div className="space-y-5">
+            <StoreSearchBar
+              value={query}
+              onChange={setQuery}
+              sort={sort}
+              onSortChange={setSort}
+            />
             <CategoryFilter
               categories={categories}
               selected={categoryIds}
               onChange={updateCategories}
             />
-            <div className="min-w-0 space-y-5">
-              <StoreSearchBar
-                value={query}
-                onChange={setQuery}
-                sort={sort}
-                onSortChange={setSort}
-              />
-              {renderSections()}
-              {(normalizedQuery || categoryIds.length > 0) &&
-              !hasVisibleProducts ? (
-                <div
-                  role="status"
-                  aria-live="polite"
-                  className="rounded-2xl bg-(--store-card) px-4 py-10 text-center text-sm text-(--store-muted)"
+            {renderSections()}
+            {(normalizedQuery || categoryIds.length > 0) &&
+            !hasVisibleProducts ? (
+              <div
+                role="status"
+                aria-live="polite"
+                className="rounded-2xl bg-(--store-card) px-4 py-10 text-center text-sm text-(--store-muted)"
+              >
+                <p>{t("noSearchResults")}</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuery("");
+                    updateCategories([]);
+                  }}
+                  className="mt-3 min-h-10 rounded-full bg-(--store-primary) px-4 font-semibold text-(--store-primary-text)"
                 >
-                  <p>{t("noSearchResults")}</p>
+                  {t("clearFilters")}
+                </button>
+              </div>
+            ) : displayedSections.every(
+                (section) => section.collection?.products.length === 0,
+              ) ? (
+              <p className="text-center text-(--store-muted)">
+                {t("noProducts")}
+              </p>
+            ) : null}
+            {catalogPagination &&
+              catalogPagination.page * catalogPagination.limit <
+                catalogPagination.total && (
+                <nav
+                  aria-label={t("catalogPagination")}
+                  className="flex justify-center pt-2"
+                >
                   <button
                     type="button"
+                    disabled={isLoadingMore}
                     onClick={() => {
-                      setQuery("");
-                      updateCategories([]);
+                      const params = new URLSearchParams(searchString);
+                      params.set("page", String(catalogPagination.page + 1));
+                      setIsLoadingMore(true);
+                      router.push(`${pathname}?${params.toString()}`, {
+                        scroll: false,
+                      });
                     }}
-                    className="mt-3 min-h-10 rounded-full bg-(--store-primary) px-4 font-semibold text-(--store-primary-text)"
+                    className="store-theme-primary-button min-h-11 rounded-full px-6 text-sm font-semibold disabled:cursor-wait disabled:opacity-60"
                   >
-                    {t("clearFilters")}
+                    {isLoadingMore ? t("loadingMore") : t("loadMore")}
                   </button>
-                </div>
-              ) : displayedSections.every(
-                  (section) => section.collection?.products.length === 0,
-                ) ? (
-                <p className="text-center text-(--store-muted)">
-                  {t("noProducts")}
-                </p>
-              ) : null}
-              {catalogPagination &&
-                catalogPagination.page * catalogPagination.limit <
-                  catalogPagination.total && (
-                  <nav
-                    aria-label={t("catalogPagination")}
-                    className="flex justify-center pt-2"
-                  >
-                    <button
-                      type="button"
-                      disabled={isLoadingMore}
-                      onClick={() => {
-                        const params = new URLSearchParams(searchString);
-                        params.set("page", String(catalogPagination.page + 1));
-                        setIsLoadingMore(true);
-                        router.push(`${pathname}?${params.toString()}`, {
-                          scroll: false,
-                        });
-                      }}
-                      className="store-theme-primary-button min-h-11 rounded-full px-6 text-sm font-semibold disabled:cursor-wait disabled:opacity-60"
-                    >
-                      {isLoadingMore ? t("loadingMore") : t("loadMore")}
-                    </button>
-                  </nav>
-                )}
-            </div>
+                </nav>
+              )}
           </div>
         ) : (
           <>
