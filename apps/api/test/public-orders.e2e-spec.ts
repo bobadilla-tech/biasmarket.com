@@ -377,7 +377,10 @@ describe('public orders (e2e)', () => {
       const unknown = await confirm(createOrderAccessToken().token).expect(404);
       const revoked = await deliverable({ accessTokenRevokedAt: new Date() });
       const revokedRes = await confirm(revoked.token).expect(404);
-      expect(revokedRes.body).toEqual(unknown.body);
+      expect({ ...revokedRes.body, timestamp: undefined }).toEqual({
+        ...unknown.body,
+        timestamp: undefined,
+      });
 
       const live = await deliverable();
       await request(app.getHttpServer())
