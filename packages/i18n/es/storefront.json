@@ -448,5 +448,82 @@
     "storeAccount": "Cuenta en la tienda",
     "pendingBalance": "Pendiente: {currency} {amount}",
     "signOut": "Cerrar sesión"
+  },
+  "publicOrder": {
+    "metaTitle": "Tu pedido",
+    "metaDescription": "Revisa el estado de tu pedido.",
+    "noscript": "Activa JavaScript para ver tu pedido, o escríbele a la tienda.",
+    "loading": "Cargando tu pedido",
+    "retry": "Reintentar",
+    "invalid": {
+      "title": "Este enlace no es válido",
+      "body": "Este enlace no es válido o fue reemplazado. Pídele a la tienda uno nuevo.",
+      "contact": "Escribir a la tienda"
+    },
+    "rateLimited": {
+      "title": "Demasiados intentos",
+      "body": "Hiciste muchas consultas seguidas. Espera un momento e inténtalo de nuevo."
+    },
+    "error": {
+      "title": "No pudimos cargar tu pedido",
+      "body": "Hubo un problema al cargar tu pedido. Inténtalo de nuevo."
+    },
+    "greeting": "Hola, {name}",
+    "greetingGeneric": "Hola",
+    "orderNumber": "Pedido #{number}",
+    "banner": {
+      "pendingPayment": "Tu pedido está esperando el pago. Abajo te mostramos cómo pagar.",
+      "partiallyPaid": "Recibimos parte de tu pago. Falta completar el adelanto.",
+      "paymentSubmitted": "Recibimos tu pago y está en revisión.",
+      "verified": "Tu pago está confirmado. Estamos preparando tu pedido.",
+      "rejected": "No pudimos confirmar tu pago. Escríbele a la tienda.",
+      "cancelled": "Este pedido fue cancelado.",
+      "ready": "Tu pedido está listo.",
+      "completed": "Tu pedido fue entregado."
+    },
+    "progress": "Avance del pedido",
+    "items": "Tu pedido",
+    "total": "Total",
+    "deposit": "Adelanto",
+    "paid": "Pagado",
+    "pending": "Falta pagar",
+    "pendingDeposit": "Falta del adelanto",
+    "payments": {
+      "title": "Pagos",
+      "voided": "Anulado",
+      "pendingReview": "En revisión",
+      "rejected": "Rechazado",
+      "recorded": "Registrado",
+      "bySelf": "Enviado por ti",
+      "byStore": "Registrado por la tienda",
+      "rejectedNote": "Escríbele a la tienda para resolverlo."
+    },
+    "howToPay": {
+      "title": "Cómo pagar",
+      "amountTotal": "Total a pagar: {total}",
+      "amountDeposit": "Adelanto: {deposit} (o el total: {total})",
+      "amountDue": "Falta pagar: {amount}",
+      "rejectedNote": "Tu último pago no fue aceptado. Escríbele a la tienda.",
+      "noMethods": "La tienda aún no configuró métodos de pago, escríbele.",
+      "paidButton": "Ya pagué, avisar a la tienda",
+      "paidMessage": "Hola, ya pagué el pedido #{number}"
+    },
+    "delivery": {
+      "title": "Entrega",
+      "pickup": "Recojo",
+      "courier": "Envío por courier",
+      "courierNamed": "Envío por {name}"
+    },
+    "phoneLine": "Pedido para {phone}",
+    "notYourNumber": {
+      "summary": "¿No es tu número? Avísale a la tienda",
+      "body": "Si este pedido no es para ti, avísale a la tienda para que lo corrija.",
+      "button": "Avisar a la tienda",
+      "message": "Hola, el pedido #{number} no es para mi número"
+    },
+    "date": {
+      "today": "Hoy {time}",
+      "yesterday": "Ayer {time}"
+    }
   }
 }

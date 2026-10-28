@@ -448,5 +448,82 @@
     "storeAccount": "Store account",
     "pendingBalance": "Pending: {currency} {amount}",
     "signOut": "Sign out"
+  },
+  "publicOrder": {
+    "metaTitle": "Your order",
+    "metaDescription": "Check the status of your order.",
+    "noscript": "Turn on JavaScript to see your order, or message the store.",
+    "loading": "Loading your order",
+    "retry": "Try again",
+    "invalid": {
+      "title": "This link is not valid",
+      "body": "This link is not valid or was replaced. Ask the store for a new one.",
+      "contact": "Message the store"
+    },
+    "rateLimited": {
+      "title": "Too many attempts",
+      "body": "You made too many requests in a row. Wait a moment and try again."
+    },
+    "error": {
+      "title": "We couldn't load your order",
+      "body": "Something went wrong loading your order. Please try again."
+    },
+    "greeting": "Hi, {name}",
+    "greetingGeneric": "Hi",
+    "orderNumber": "Order #{number}",
+    "banner": {
+      "pendingPayment": "Your order is waiting for payment. See below how to pay.",
+      "partiallyPaid": "We received part of your payment. The deposit is not complete yet.",
+      "paymentSubmitted": "We received your payment and it is under review.",
+      "verified": "Your payment is confirmed. We are preparing your order.",
+      "rejected": "We could not confirm your payment. Message the store.",
+      "cancelled": "This order was cancelled.",
+      "ready": "Your order is ready.",
+      "completed": "Your order was delivered."
+    },
+    "progress": "Order progress",
+    "items": "Your order",
+    "total": "Total",
+    "deposit": "Deposit",
+    "paid": "Paid",
+    "pending": "Left to pay",
+    "pendingDeposit": "Left on the deposit",
+    "payments": {
+      "title": "Payments",
+      "voided": "Voided",
+      "pendingReview": "Under review",
+      "rejected": "Rejected",
+      "recorded": "Recorded",
+      "bySelf": "Sent by you",
+      "byStore": "Recorded by the store",
+      "rejectedNote": "Message the store to sort it out."
+    },
+    "howToPay": {
+      "title": "How to pay",
+      "amountTotal": "Total to pay: {total}",
+      "amountDeposit": "Deposit: {deposit} (or the full total: {total})",
+      "amountDue": "Left to pay: {amount}",
+      "rejectedNote": "Your last payment was not accepted. Message the store.",
+      "noMethods": "The store has not set up payment methods yet, message them.",
+      "paidButton": "I already paid, tell the store",
+      "paidMessage": "Hi, I already paid order #{number}"
+    },
+    "delivery": {
+      "title": "Delivery",
+      "pickup": "Pickup",
+      "courier": "Courier shipping",
+      "courierNamed": "Shipping with {name}"
+    },
+    "phoneLine": "Order for {phone}",
+    "notYourNumber": {
+      "summary": "Not your number? Tell the store",
+      "body": "If this order is not for you, tell the store so they can fix it.",
+      "button": "Tell the store",
+      "message": "Hi, order #{number} is not for my number"
+    },
+    "date": {
+      "today": "Today {time}",
+      "yesterday": "Yesterday {time}"
+    }
   }
 }
