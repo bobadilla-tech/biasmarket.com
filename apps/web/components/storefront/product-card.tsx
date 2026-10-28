@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { Bell, Clock } from "lucide-react";
+import { Bell, Check, Clock, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "@/i18n/navigation";
 import { Select } from "@/components/ui/select";
@@ -44,11 +44,8 @@ export function ProductCard({
   const t = useTranslations("storefront");
   const availableStock = (v: Variant) =>
     v.stock === null ? Infinity : v.stock - v.reserved;
-  const [variantId, setVariantId] = useState(
-    () =>
-      product.variants.find((v) => availableStock(v) > 0)?.id ??
-      product.variants[0]?.id ??
-      "",
+  const [variantId, setVariantId] = useState(() =>
+    product.variants.length === 1 ? (product.variants[0]?.id ?? "") : "",
   );
   const [added, setAdded] = useState(false);
   const [restockOpen, setRestockOpen] = useState(false);
@@ -160,8 +157,9 @@ export function ProductCard({
           className="mt-2 min-h-11 w-full"
           selectClassName="rounded-lg border border-(--store-border) py-1.5 pl-2 text-base text-(--store-muted)"
         >
+          <option value="">{t("chooseOption")}</option>
           {product.variants.map((v) => (
-            <option key={v.id} value={v.id} disabled={availableStock(v) <= 0}>
+            <option key={v.id} value={v.id}>
               {v.name}
               {availableStock(v) <= 0 ? ` ${t("variantSoldOut")}` : ""}
             </option>
@@ -169,7 +167,18 @@ export function ProductCard({
         </Select>
       )}
 
-      {outOfStock ? (
+      {product.variants.length > 1 && !selectedVariant ? (
+        <button
+          type="button"
+          disabled
+          className="store-theme-primary-button mt-2 min-h-11 w-full cursor-not-allowed rounded-lg px-3 py-1.5 text-sm font-semibold opacity-50"
+        >
+          <span className="inline-flex items-center justify-center gap-2">
+            <ShoppingCart aria-hidden="true" className="size-4" />
+            {t("addToCart")}
+          </span>
+        </button>
+      ) : outOfStock ? (
         <button
           type="button"
           ref={restockTriggerRef}
@@ -183,9 +192,16 @@ export function ProductCard({
         <button
           type="button"
           onClick={handleAddToCart}
-          className="store-theme-primary-button mt-2 min-h-11 w-full rounded-lg px-3 py-1.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2"
+          className="store-theme-primary-button mt-2 min-h-11 w-full rounded-lg px-3 py-1.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {added ? t("addedToCart") : t("addToCart")}
+          <span className="inline-flex items-center justify-center gap-2">
+            {added ? (
+              <Check aria-hidden="true" className="size-4" />
+            ) : (
+              <ShoppingCart aria-hidden="true" className="size-4" />
+            )}
+            {added ? t("addedToCart") : t("addToCart")}
+          </span>
         </button>
       )}
 
