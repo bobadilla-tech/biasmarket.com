@@ -34,6 +34,38 @@ function withMessages(node: ReactNode) {
   );
 }
 
+function catalogProduct(
+  id: string,
+  name: string,
+  price: string,
+  overrides: Partial<{
+    soldOut: boolean;
+    variants: {
+      id: string;
+      name: string;
+      stock: number | null;
+      reserved: number;
+      priceOverride: string | null;
+      imageOverride: string | null;
+    }[];
+  }> = {},
+) {
+  return {
+    id,
+    name,
+    price,
+    currency: "PEN",
+    soldOut: overrides.soldOut ?? false,
+    discontinued: false,
+    variants: overrides.variants ?? [],
+    availableUntil: null,
+    images: [],
+    categories: [
+      { category: { id: "category-1", slug: "albums", name: "Álbumes" } },
+    ],
+  };
+}
+
 describe("storefront empty states", () => {
   it("shows an empty-results message when search filters out all products", () => {
     withMessages(
@@ -264,6 +296,70 @@ describe("storefront empty states", () => {
         .hasAttribute("disabled"),
     ).toBe(false);
     pushState.mockRestore();
+  });
+
+  it("sorts saved catalog products by availability, effective price, and name", () => {
+    navigation.url = "/es/store/tienda?tab=productos";
+    withMessages(
+      <StoreSectionRenderer
+        slug="tienda"
+        catalogControls
+        sections={[
+          {
+            id: "catalog",
+            type: "COLLECTION",
+            collection: {
+              name: "",
+              products: [
+                {
+                  productId: "zulu",
+                  product: catalogProduct("zulu", "Zulu", "20", {
+                    variants: [
+                      {
+                        id: "zulu-special",
+                        name: "Special",
+                        stock: 3,
+                        reserved: 0,
+                        priceOverride: "5",
+                        imageOverride: null,
+                      },
+                    ],
+                  }),
+                },
+                {
+                  productId: "album",
+                  product: catalogProduct("album", "Álbum", "10"),
+                },
+                {
+                  productId: "bloom",
+                  product: catalogProduct("bloom", "Bloom", "15"),
+                },
+                {
+                  productId: "sold-out",
+                  product: catalogProduct("sold-out", "Sold out", "1", {
+                    soldOut: true,
+                  }),
+                },
+              ],
+            },
+          },
+        ]}
+      />,
+    );
+
+    const sort = screen.getByRole("combobox", { name: "Ordenar por" });
+    const names = () =>
+      screen
+        .getAllByRole("heading", { level: 3 })
+        .map((heading) => heading.textContent);
+
+    expect(names()).toEqual(["Zulu", "Álbum", "Bloom", "Sold out"]);
+    fireEvent.change(sort, { target: { value: "precio_asc" } });
+    expect(names()).toEqual(["Sold out", "Zulu", "Álbum", "Bloom"]);
+    fireEvent.change(sort, { target: { value: "precio_desc" } });
+    expect(names()).toEqual(["Bloom", "Álbum", "Zulu", "Sold out"]);
+    fireEvent.change(sort, { target: { value: "nombre_asc" } });
+    expect(names()).toEqual(["Álbum", "Bloom", "Sold out", "Zulu"]);
   });
 });
 
