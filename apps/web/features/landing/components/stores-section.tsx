@@ -81,7 +81,10 @@ export function StoresSection({ stores }: { stores?: LandingStore[] | null }) {
                   logoUrl={store.logoUrl}
                   size={96}
                   className="shrink-0 text-xl font-bold"
-                  gradient={{ from: "var(--brand-pink)", to: "var(--brand-violet)" }}
+                  gradient={{
+                    from: "var(--brand-pink)",
+                    to: "var(--brand-violet)",
+                  }}
                 />
                 <span className="min-w-0 flex-1 break-words text-[30.08px] leading-[36px] text-landing-ink">
                   {store.name}

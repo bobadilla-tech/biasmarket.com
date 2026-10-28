@@ -112,7 +112,8 @@
   --sidebar-subtle-foreground: #dcc7f2;
   --sidebar-badge-foreground: #f7efff;
   --shadow-soft: 0 2px 8px rgb(52 35 62 / 5%), 0 10px 24px rgb(52 35 62 / 4%);
-  --shadow-raised: 0 14px 30px rgb(52 35 62 / 10%), 0 3px 8px rgb(52 35 62 / 5%);
+  --shadow-raised:
+    0 14px 30px rgb(52 35 62 / 10%), 0 3px 8px rgb(52 35 62 / 5%);
 }
 
 .dark {
