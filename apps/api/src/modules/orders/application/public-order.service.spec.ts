@@ -107,6 +107,7 @@ describe('PublicOrderService', () => {
     const result = await service.getByToken('raw-token');
 
     expect(result.customerPhone).toBe('+51 9** *** 321');
+    expect(result.customerAlias).toBe('Ana');
     expect(result.store).toEqual({
       name: 'Tienda',
       slug: 'tienda',
@@ -134,6 +135,7 @@ describe('PublicOrderService', () => {
     expect(JSON.stringify(result)).not.toContain('store-1');
     expect(JSON.stringify(result)).not.toContain('seller-1');
     expect(JSON.stringify(result)).not.toContain('buyer@example.com');
+    expect(result).not.toHaveProperty('customerEmail');
     expect(JSON.stringify(result)).not.toContain('proof.jpg');
     expect(JSON.stringify(result)).not.toContain('internal');
     expect(result).not.toHaveProperty('storeId');

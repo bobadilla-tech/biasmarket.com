@@ -1564,6 +1564,11 @@ export default async () => {
                     .PublicOrderStoreResponseDto,
               },
               customerPhone: { required: true, type: () => String },
+              customerAlias: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
               items: {
                 required: true,
                 type: () => [

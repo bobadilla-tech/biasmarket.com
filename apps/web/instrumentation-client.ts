@@ -15,5 +15,31 @@ if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
     // LCP PerformanceObserver records). It's upstream noise, not an app fault —
     // drop it so it doesn't flood error tracking.
     ignoreErrors: [/reading 'startTime'/, /reportAllChanges/],
+    beforeSend(event) {
+      redactEvent(event);
+      return event;
+    },
+    beforeSendTransaction(event) {
+      redactEvent(event);
+      return event;
+    },
   });
+}
+
+function redactPublicOrderToken(value: string): string {
+  return value.replace(
+    /(\/(?:en|es)\/store\/[^/?#]+\/pedido\/|\/api\/public\/orders\/)[^/?#]+/g,
+    "$1[redacted]",
+  );
+}
+
+function redactEvent(value: unknown): void {
+  if (!value || typeof value !== "object") return;
+  for (const [key, child] of Object.entries(value)) {
+    if (typeof child === "string") {
+      (value as Record<string, unknown>)[key] = redactPublicOrderToken(child);
+    } else if (child && typeof child === "object") {
+      redactEvent(child);
+    }
+  }
 }

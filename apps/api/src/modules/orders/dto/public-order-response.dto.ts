@@ -93,6 +93,11 @@ export class PublicOrderResponseDto {
   @ApiProperty()
   customerPhone: string;
 
+  // Buyer-provided alias only. Keep email, full phone and recipient details
+  // out of the public token response.
+  @ApiProperty({ type: String, nullable: true })
+  customerAlias: string | null;
+
   @ApiProperty({ type: [PublicOrderItemResponseDto] })
   items: PublicOrderItemResponseDto[];
 

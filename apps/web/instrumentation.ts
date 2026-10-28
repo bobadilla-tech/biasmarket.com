@@ -25,7 +25,33 @@ export async function register() {
   Sentry.init({
     dsn,
     tracesSampleRate: 0.01,
+    beforeSend(event) {
+      redactEvent(event);
+      return event;
+    },
+    beforeSendTransaction(event) {
+      redactEvent(event);
+      return event;
+    },
   });
+}
+
+function redactPublicOrderToken(value: string): string {
+  return value.replace(
+    /(\/(?:en|es)\/store\/[^/?#]+\/pedido\/|\/api\/public\/orders\/)[^/?#]+/g,
+    "$1[redacted]",
+  );
+}
+
+function redactEvent(value: unknown): void {
+  if (!value || typeof value !== "object") return;
+  for (const [key, child] of Object.entries(value)) {
+    if (typeof child === "string") {
+      (value as Record<string, unknown>)[key] = redactPublicOrderToken(child);
+    } else if (child && typeof child === "object") {
+      redactEvent(child);
+    }
+  }
 }
 
 // Captures errors Next surfaces during Server Component rendering, route
@@ -49,7 +75,7 @@ export const onRequestError: Instrumentation.onRequestError = async (
     extra: {
       request: {
         method: request.method,
-        pathname: request.path.split("?")[0],
+        pathname: redactPublicOrderToken(request.path.split("?")[0]),
         routePath: context.routePath,
       },
     },

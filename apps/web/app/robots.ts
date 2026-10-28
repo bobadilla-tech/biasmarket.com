@@ -28,6 +28,7 @@ export default function robots(): MetadataRoute.Robots {
         "/*/store/*/account/confirm",
         "/*/store/*/account/orders",
         "/*/store/*/account/orders/*",
+        "/*/store/*/pedido/*",
         "/*/verify-email",
       ],
     },

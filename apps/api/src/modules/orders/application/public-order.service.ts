@@ -128,6 +128,7 @@ export class PublicOrderService {
         whatsappNumber: order.store.whatsappNumber,
       },
       customerPhone: maskPhone(order.customerPhone),
+      customerAlias: order.customerName?.trim() || null,
       items: order.items.map((item) => ({
         name: item.product.name,
         quantity: item.quantity,

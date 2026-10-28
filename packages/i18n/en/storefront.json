@@ -350,6 +350,53 @@
       "pendingPhone": "Confirmation pending for {phone}"
     }
   },
+  "publicOrder": {
+    "pageTitle": "Your order details",
+    "storeLabel": "Your store",
+    "greeting": "Here is your order",
+    "greetingWithAlias": "Hi, {alias}. Here is your order",
+    "itemsTitle": "Items",
+    "quantity": "Quantity: {quantity}",
+    "total": "Order total",
+    "paid": "Paid so far",
+    "balance": "Remaining balance",
+    "progressTitle": "Order status",
+    "phoneTitle": "Order phone number",
+    "phone": "Order for {phone}",
+    "wrongPhone": "Isn't this your number? Let the store know.",
+    "paymentTitle": "How to pay",
+    "payAmount": "Pay now: {amount}",
+    "depositPercent": "Deposit: {percentage}%",
+    "noPaymentMethods": "The store hasn't set up payment methods yet. Contact them to arrange payment.",
+    "notPayable": "This order no longer accepts payments.",
+    "viewQr": "View payment QR code",
+    "invalidTitle": "This link is no longer available",
+    "invalidBody": "The link may be incorrect, expired, or revoked. Contact the store for help.",
+    "unavailableTitle": "We couldn't load this order",
+    "unavailableBody": "Try again later or contact the store for help.",
+    "paymentStatus": {
+      "pending_payment": "Awaiting payment",
+      "partially_paid": "Partially paid",
+      "payment_submitted": "Payment submitted for review",
+      "verified": "Payment confirmed",
+      "rejected": "Payment rejected",
+      "cancelled": "Order cancelled"
+    },
+    "orderStatus": { "active": "Active", "cancelled": "Cancelled" },
+    "methods": {
+      "yape": "Yape",
+      "plin": "Plin",
+      "transfer": "Bank transfer",
+      "cash": "Cash"
+    },
+    "details": {
+      "phoneNumber": "Number",
+      "accountHolder": "Account holder",
+      "bankName": "Bank",
+      "accountNumber": "Account number",
+      "accountType": "Account type"
+    }
+  },
   "storeDirectory": {
     "title": "Discover stores",
     "subtitle": "Browse every store selling on Bias Market.",

@@ -346,6 +346,53 @@
       "pendingPhone": "Confirmación pendiente para {phone}"
     }
   },
+  "publicOrder": {
+    "pageTitle": "Detalle de tu pedido",
+    "storeLabel": "Tu tienda",
+    "greeting": "Aquí está tu pedido",
+    "greetingWithAlias": "Hola, {alias}. Aquí está tu pedido",
+    "itemsTitle": "Productos",
+    "quantity": "Cantidad: {quantity}",
+    "total": "Total del pedido",
+    "paid": "Pagado hasta ahora",
+    "balance": "Saldo pendiente",
+    "progressTitle": "Estado del pedido",
+    "phoneTitle": "Teléfono del pedido",
+    "phone": "Pedido para {phone}",
+    "wrongPhone": "¿No es tu número? Avísale a la tienda.",
+    "paymentTitle": "Cómo pagar",
+    "payAmount": "Paga ahora: {amount}",
+    "depositPercent": "Adelanto: {percentage}%",
+    "noPaymentMethods": "La tienda todavía no configuró métodos de pago. Escríbele para coordinar.",
+    "notPayable": "Este pedido ya no acepta pagos.",
+    "viewQr": "Ver código QR de pago",
+    "invalidTitle": "Este enlace ya no está disponible",
+    "invalidBody": "El enlace puede ser incorrecto, vencido o revocado. Contacta a la tienda para recibir ayuda.",
+    "unavailableTitle": "No pudimos cargar el pedido",
+    "unavailableBody": "Inténtalo de nuevo más tarde o contacta a la tienda para recibir ayuda.",
+    "paymentStatus": {
+      "pending_payment": "Pendiente de pago",
+      "partially_paid": "Pago parcial",
+      "payment_submitted": "Pago enviado para revisión",
+      "verified": "Pago confirmado",
+      "rejected": "Pago rechazado",
+      "cancelled": "Pedido cancelado"
+    },
+    "orderStatus": { "active": "Activo", "cancelled": "Cancelado" },
+    "methods": {
+      "yape": "Yape",
+      "plin": "Plin",
+      "transfer": "Transferencia bancaria",
+      "cash": "Efectivo"
+    },
+    "details": {
+      "phoneNumber": "Número",
+      "accountHolder": "Titular",
+      "bankName": "Banco",
+      "accountNumber": "Número de cuenta",
+      "accountType": "Tipo de cuenta"
+    }
+  },
   "storeDirectory": {
     "title": "Descubre tiendas",
     "subtitle": "Explora todas las tiendas que venden en Bias Market.",

@@ -7900,6 +7900,10 @@
           "customerPhone": {
             "type": "string"
           },
+          "customerAlias": {
+            "type": "string",
+            "nullable": true
+          },
           "items": {
             "type": "array",
             "items": {
@@ -7981,6 +7985,7 @@
         "required": [
           "store",
           "customerPhone",
+          "customerAlias",
           "items",
           "totalAmount",
           "requiredAmount",
