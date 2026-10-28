@@ -5,7 +5,7 @@ import { parseStoreCatalogQuery } from './store-catalog-query.js';
 const invalidCases: {
   page?: string;
   limit?: string;
-  q?: string;
+  q?: string | string[];
   categories?: string | string[];
   sort?: string;
 }[] = [
@@ -14,6 +14,7 @@ const invalidCases: {
   { limit: '49' },
   { limit: '0' },
   { q: 'x'.repeat(101) },
+  { q: ['album', 'photocard'] },
   { categories: Array.from({ length: 21 }, (_, i) => `c${i}`) },
   { sort: 'unknown' },
 ];

@@ -25,7 +25,7 @@ const MAX_CATEGORIES = 20;
 export function parseStoreCatalogQuery(
   rawPage: string | undefined,
   rawLimit: string | undefined,
-  rawQ: string | undefined,
+  rawQ: string | string[] | undefined,
   rawCategories: string | string[] | undefined,
   rawSort: string | undefined,
 ): StoreCatalogQuery {
@@ -36,6 +36,9 @@ export function parseStoreCatalogQuery(
   const limit = rawLimit === undefined ? DEFAULT_LIMIT : Number(rawLimit);
   if (!Number.isInteger(limit) || limit < 1 || limit > MAX_LIMIT) {
     throw new BadRequestException('limit inválido');
+  }
+  if (rawQ !== undefined && typeof rawQ !== 'string') {
+    throw new BadRequestException('q inválido');
   }
   const q = rawQ?.trim();
   if (q && q.length > MAX_QUERY_LENGTH) {

@@ -308,6 +308,7 @@ export class StoresController {
   }
 
   @Public()
+  @UseGuards(ThrottlerGuard)
   @Throttle({ default: { ttl: 60_000, limit: 60 } })
   @ApiQuery({ name: 'q', required: false, type: String, maxLength: 100 })
   @ApiQuery({ name: 'categorias', required: false, type: [String] })
@@ -322,7 +323,7 @@ export class StoresController {
   @Get(':slug/products/public')
   async findPublicCatalog(
     @Param('slug') slug: string,
-    @Query('q') q: string | undefined,
+    @Query('q') q: string | string[] | undefined,
     @Query('categorias') categories: string | string[] | undefined,
     @Query('sort') sort: string | undefined,
     @Query('page') page: string | undefined,

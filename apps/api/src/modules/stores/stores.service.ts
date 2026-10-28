@@ -497,8 +497,6 @@ export class StoresService {
     const store = await this.prisma.store.findFirst({
       where: {
         slug,
-        ...PUBLIC_STORE_VISIBILITY,
-        owner: { banned: { not: true } },
       },
       select: { id: true },
     });
@@ -575,8 +573,6 @@ export class StoresService {
     const store = await this.prisma.store.findFirst({
       where: {
         slug,
-        ...PUBLIC_STORE_VISIBILITY,
-        owner: { banned: { not: true } },
       },
       select: { id: true },
     });

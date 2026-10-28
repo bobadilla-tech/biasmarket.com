@@ -912,15 +912,10 @@ describe('StoresService', () => {
       ]);
     });
 
-    it('filters by visible store, normalized text and category slugs and returns paginated products', async () => {
+    it('resolves direct-link stores, normalizes text and filters category slugs', async () => {
       const result = await service.findPublicCatalog('my-store', query);
       expect(prisma.store.findFirst).toHaveBeenCalledWith({
-        where: {
-          slug: 'my-store',
-          isPublic: true,
-          isDemo: false,
-          owner: { banned: { not: true } },
-        },
+        where: { slug: 'my-store' },
         select: { id: true },
       });
       const idSql = prisma.$queryRaw.mock.calls[1][0];
@@ -1002,6 +997,11 @@ describe('StoresService', () => {
       ]);
 
       const result = await service.findCategoriesPublic('my-store');
+
+      expect(prisma.store.findFirst).toHaveBeenCalledWith({
+        where: { slug: 'my-store' },
+        select: { id: true },
+      });
 
       expect(prisma.category.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
