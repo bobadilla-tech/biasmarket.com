@@ -1782,6 +1782,42 @@
         "tags": ["Order"]
       }
     },
+    "/stores/{storeId}/orders/{orderId}/related": {
+      "get": {
+        "operationId": "OrderController_findRelated",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelatedOrdersResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Order"]
+      }
+    },
     "/stores/{storeId}/orders/{orderId}/payments/{paymentId}/image": {
       "get": {
         "operationId": "OrderController_getPaymentImage",
@@ -7655,6 +7691,76 @@
           "items",
           "payments"
         ]
+      },
+      "RelatedOrderResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "orderNumber": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "enum": ["ACTIVE", "CANCELLED"],
+            "type": "string"
+          },
+          "paymentStatus": {
+            "enum": [
+              "PENDING_PAYMENT",
+              "PARTIALLY_PAID",
+              "PAYMENT_SUBMITTED",
+              "VERIFIED",
+              "REJECTED",
+              "CANCELLED"
+            ],
+            "type": "string"
+          },
+          "fulfillmentStatus": {
+            "enum": ["ORDERING", "IN_TRANSIT", "READY", "COMPLETED"],
+            "type": "string"
+          },
+          "totalAmount": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "source": {
+            "enum": ["MARKETPLACE", "VENDOR_ASSISTED"],
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "orderNumber",
+          "createdAt",
+          "status",
+          "paymentStatus",
+          "fulfillmentStatus",
+          "totalAmount",
+          "currency",
+          "source"
+        ]
+      },
+      "RelatedOrdersResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RelatedOrderResponseDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": ["items", "total"]
       },
       "UpdateOrderShippingDto": {
         "type": "object",

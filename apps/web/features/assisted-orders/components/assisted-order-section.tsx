@@ -26,6 +26,7 @@ import { useRegenerateAccessLink } from "../mutations/use-regenerate-access-link
 import { useCorrectBuyerPhone } from "../mutations/use-correct-buyer-phone";
 import { buildAssistedLinkMessage } from "../lib/assisted-link-message";
 import { LinkMessagePanel } from "./link-message-panel";
+import { RelatedOrders } from "./related-orders";
 
 type LinkResult = AssistedOrderLinkResponseDto;
 
@@ -172,6 +173,8 @@ export function AssistedOrderSection({
           </Link>
         ) : null
       ) : null}
+
+      <RelatedOrders storeId={storeId} orderId={order.id} />
 
       <div className="space-y-3 border-t border-[#f3ebff] pt-4">
         <h3 className="font-semibold text-[#2d1649]">{t("linkTitle")}</h3>

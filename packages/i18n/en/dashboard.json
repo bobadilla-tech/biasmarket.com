@@ -929,7 +929,23 @@
       "closed": "The order is cancelled or expired: a link can no longer be sent.",
       "correctTitle": "Fix the number",
       "correctBody": "Enter the right WhatsApp. A new link is created and the previous one stops working.",
-      "correctSubmit": "Save number"
+      "correctSubmit": "Save number",
+      "related": {
+        "title": "Other orders from this number",
+        "loading": "Loading…",
+        "empty": "No other orders from this number.",
+        "count": "{total, plural, one {# other order} other {# other orders}} from this number",
+        "more": "Showing {shown} of {total}",
+        "cancelled": "Cancelled",
+        "payment": {
+          "PENDING_PAYMENT": "Awaiting payment",
+          "PARTIALLY_PAID": "Partially paid",
+          "PAYMENT_SUBMITTED": "Payment to review",
+          "VERIFIED": "Paid",
+          "REJECTED": "Payment rejected",
+          "CANCELLED": "Cancelled"
+        }
+      }
     }
   }
 }

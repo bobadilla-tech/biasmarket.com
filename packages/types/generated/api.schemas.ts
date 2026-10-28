@@ -1086,6 +1086,61 @@ export interface OrderDetailResponseDto {
   payments: OrderPaymentResponseDto[];
 }
 
+export type RelatedOrderResponseDtoStatus =
+  (typeof RelatedOrderResponseDtoStatus)[keyof typeof RelatedOrderResponseDtoStatus];
+
+export const RelatedOrderResponseDtoStatus = {
+  ACTIVE: "ACTIVE",
+  CANCELLED: "CANCELLED",
+} as const;
+
+export type RelatedOrderResponseDtoPaymentStatus =
+  (typeof RelatedOrderResponseDtoPaymentStatus)[keyof typeof RelatedOrderResponseDtoPaymentStatus];
+
+export const RelatedOrderResponseDtoPaymentStatus = {
+  PENDING_PAYMENT: "PENDING_PAYMENT",
+  PARTIALLY_PAID: "PARTIALLY_PAID",
+  PAYMENT_SUBMITTED: "PAYMENT_SUBMITTED",
+  VERIFIED: "VERIFIED",
+  REJECTED: "REJECTED",
+  CANCELLED: "CANCELLED",
+} as const;
+
+export type RelatedOrderResponseDtoFulfillmentStatus =
+  (typeof RelatedOrderResponseDtoFulfillmentStatus)[keyof typeof RelatedOrderResponseDtoFulfillmentStatus];
+
+export const RelatedOrderResponseDtoFulfillmentStatus = {
+  ORDERING: "ORDERING",
+  IN_TRANSIT: "IN_TRANSIT",
+  READY: "READY",
+  COMPLETED: "COMPLETED",
+} as const;
+
+export type RelatedOrderResponseDtoSource =
+  (typeof RelatedOrderResponseDtoSource)[keyof typeof RelatedOrderResponseDtoSource];
+
+export const RelatedOrderResponseDtoSource = {
+  MARKETPLACE: "MARKETPLACE",
+  VENDOR_ASSISTED: "VENDOR_ASSISTED",
+} as const;
+
+export interface RelatedOrderResponseDto {
+  id: string;
+  orderNumber: string;
+  createdAt: string;
+  status: RelatedOrderResponseDtoStatus;
+  paymentStatus: RelatedOrderResponseDtoPaymentStatus;
+  fulfillmentStatus: RelatedOrderResponseDtoFulfillmentStatus;
+  totalAmount: string;
+  currency: string;
+  source: RelatedOrderResponseDtoSource;
+}
+
+export interface RelatedOrdersResponseDto {
+  items: RelatedOrderResponseDto[];
+  total: number;
+}
+
 export type ReviewPaymentDtoDecision =
   (typeof ReviewPaymentDtoDecision)[keyof typeof ReviewPaymentDtoDecision];
 

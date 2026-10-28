@@ -16,6 +16,7 @@ import type {
   OrderDetailResponseDto,
   OrderResponseDto,
   OrderStatusResponseDto,
+  RelatedOrdersResponseDto,
   ReviewPaymentDto,
   VoidOrderPaymentDto,
   UpdateOrderShippingDto,
@@ -66,6 +67,24 @@ export const findOne = async (
     ...options,
     method: "GET",
   });
+};
+
+export const getFindRelatedUrl = (storeId: string, orderId: string) => {
+  return `/stores/${storeId}/orders/${orderId}/related`;
+};
+
+export const findRelated = async (
+  storeId: string,
+  orderId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<RelatedOrdersResponseDto> => {
+  return customFetch<RelatedOrdersResponseDto>(
+    getFindRelatedUrl(storeId, orderId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
 };
 
 export const getGetPaymentImageUrl = (

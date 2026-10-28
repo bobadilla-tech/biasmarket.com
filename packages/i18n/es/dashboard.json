@@ -929,7 +929,23 @@
       "closed": "El pedido está cancelado o venció: ya no se puede enviar un enlace.",
       "correctTitle": "Corregir el número",
       "correctBody": "Ingresa el WhatsApp correcto. Se genera un enlace nuevo y el anterior deja de funcionar.",
-      "correctSubmit": "Guardar número"
+      "correctSubmit": "Guardar número",
+      "related": {
+        "title": "Otros pedidos de este número",
+        "loading": "Cargando…",
+        "empty": "No hay otros pedidos de este número.",
+        "count": "{total, plural, one {# otro pedido} other {# otros pedidos}} de este número",
+        "more": "Mostrando {shown} de {total}",
+        "cancelled": "Cancelado",
+        "payment": {
+          "PENDING_PAYMENT": "Pendiente de pago",
+          "PARTIALLY_PAID": "Pago parcial",
+          "PAYMENT_SUBMITTED": "Pago por revisar",
+          "VERIFIED": "Pagado",
+          "REJECTED": "Pago rechazado",
+          "CANCELLED": "Cancelado"
+        }
+      }
     }
   }
 }

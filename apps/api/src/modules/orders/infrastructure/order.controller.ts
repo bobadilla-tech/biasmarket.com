@@ -42,6 +42,7 @@ import { PrismaService } from '../../../prisma/prisma.service.js';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { StorageService } from '../../../storage/storage.service.js';
 import { OrderDetailResponseDto } from '../dto/order-response.dto.js';
+import { RelatedOrdersResponseDto } from '../dto/related-orders-response.dto.js';
 import type {
   OrderItemResponseDto,
   OrderPaymentResponseDto,
@@ -420,6 +421,20 @@ export class OrderController {
     await this.orders.assertOwnership(storeId, session.user.id);
     const row = await this.orders.findRowByIdForStore(orderId, storeId);
     return toOrderDetailDto(row);
+  }
+
+  // Other orders of the same buyer phone in this store. Ownership first, then
+  // the order is resolved inside the store, so a foreign or missing order is
+  // the same 404 as `findOne`.
+  @Get(':orderId/related')
+  async findRelated(
+    @Param('storeId') storeId: string,
+    @Param('orderId') orderId: string,
+    @Session() session: UserSession,
+  ): Promise<RelatedOrdersResponseDto> {
+    await this.orders.assertOwnership(storeId, session.user.id);
+    const row = await this.orders.findRowByIdForStore(orderId, storeId);
+    return this.orders.findRelatedForStore(storeId, row);
   }
 
   // Authenticated streaming read for a payment's proof image — the only

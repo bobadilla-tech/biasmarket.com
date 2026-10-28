@@ -11,6 +11,8 @@ export default async () => {
       await import('./modules/products/dto/product-response.dto.js'),
     ['./modules/products/dto/product-search-response.dto.js']:
       await import('./modules/products/dto/product-search-response.dto.js'),
+    ['./modules/orders/dto/related-orders-response.dto.js']:
+      await import('./modules/orders/dto/related-orders-response.dto.js'),
     ['./modules/orders/dto/order-response.dto.js']:
       await import('./modules/orders/dto/order-response.dto.js'),
     ['./modules/orders/dto/create-order.dto.js']:
@@ -759,6 +761,48 @@ export default async () => {
           },
         ],
         [import('./modules/orders/domain/order.entity.js'), { Order: {} }],
+        [
+          import('./modules/orders/dto/related-orders-response.dto.js'),
+          {
+            RelatedOrderResponseDto: {
+              id: { required: true, type: () => String },
+              orderNumber: { required: true, type: () => String },
+              createdAt: { required: true, type: () => String },
+              status: { required: true, enum: ['CANCELLED', 'ACTIVE'] },
+              paymentStatus: {
+                required: true,
+                enum: [
+                  'PENDING_PAYMENT',
+                  'PARTIALLY_PAID',
+                  'PAYMENT_SUBMITTED',
+                  'VERIFIED',
+                  'REJECTED',
+                  'CANCELLED',
+                ],
+              },
+              fulfillmentStatus: {
+                required: true,
+                enum: ['ORDERING', 'IN_TRANSIT', 'READY', 'COMPLETED'],
+              },
+              totalAmount: { required: true, type: () => String },
+              currency: { required: true, type: () => String },
+              source: {
+                required: true,
+                enum: ['MARKETPLACE', 'VENDOR_ASSISTED'],
+              },
+            },
+            RelatedOrdersResponseDto: {
+              items: {
+                required: true,
+                type: () => [
+                  t['./modules/orders/dto/related-orders-response.dto.js']
+                    .RelatedOrderResponseDto,
+                ],
+              },
+              total: { required: true, type: () => Number },
+            },
+          },
+        ],
         [
           import('./modules/orders/dto/record-invite-event.dto.js'),
           {
@@ -3141,6 +3185,10 @@ export default async () => {
               findOne: {
                 type: t['./modules/orders/dto/order-response.dto.js']
                   .OrderDetailResponseDto,
+              },
+              findRelated: {
+                type: t['./modules/orders/dto/related-orders-response.dto.js']
+                  .RelatedOrdersResponseDto,
               },
               getPaymentImage: {},
               updateShipping: {
