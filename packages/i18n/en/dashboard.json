@@ -483,7 +483,8 @@
     "types": {
       "LOW_STOCK": "Low stock",
       "OUT_OF_STOCK": "Out of stock",
-      "PAYMENT_PROOF_SUBMITTED": "Payment proof submitted"
+      "PAYMENT_PROOF_SUBMITTED": "Payment proof submitted",
+      "RECEIPT_CONFIRMED": "Receipt confirmed"
     }
   },
   "preferences": {
@@ -945,7 +946,8 @@
           "REJECTED": "Payment rejected",
           "CANCELLED": "Cancelled"
         }
-      }
+      },
+      "receiptConfirmed": "The buyer confirmed receipt on {date}"
     }
   }
 }

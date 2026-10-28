@@ -10,9 +10,18 @@ export class NotificationResponseDto {
   storeId: string;
 
   @ApiProperty({
-    enum: ['LOW_STOCK', 'OUT_OF_STOCK', 'PAYMENT_PROOF_SUBMITTED'],
+    enum: [
+      'LOW_STOCK',
+      'OUT_OF_STOCK',
+      'PAYMENT_PROOF_SUBMITTED',
+      'RECEIPT_CONFIRMED',
+    ],
   })
-  type: 'LOW_STOCK' | 'OUT_OF_STOCK' | 'PAYMENT_PROOF_SUBMITTED';
+  type:
+    | 'LOW_STOCK'
+    | 'OUT_OF_STOCK'
+    | 'PAYMENT_PROOF_SUBMITTED'
+    | 'RECEIPT_CONFIRMED';
 
   @ApiProperty()
   entityType: string;

@@ -17,10 +17,14 @@ import { StorageService } from '../../../storage/storage.service.js';
 describe('PublicOrderEventsController rate limit', () => {
   let app: INestApplication;
   let recordInvite: ReturnType<typeof vi.fn>;
+  let confirmReceipt: ReturnType<typeof vi.fn>;
   let storage: { getPaymentImageStream: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
     recordInvite = vi.fn();
+    confirmReceipt = vi.fn().mockResolvedValue({
+      receiptConfirmedAt: '2026-10-01T12:00:00.000Z',
+    });
     storage = { getPaymentImageStream: vi.fn() };
     const module: TestingModule = await Test.createTestingModule({
       // Higher than either route limit, so deleting `@Throttle` fails these
@@ -41,7 +45,7 @@ describe('PublicOrderEventsController rate limit', () => {
         },
         {
           provide: OrderEventsService,
-          useValue: { recordInvite },
+          useValue: { recordInvite, confirmReceipt },
         },
         { provide: StorageService, useValue: storage },
       ],
@@ -166,5 +170,37 @@ describe('PublicOrderEventsController rate limit', () => {
       .expect(429);
     expect(limited.headers['cache-control']).toBe('no-store');
     expect(limited.headers['referrer-policy']).toBe('no-referrer');
+  });
+
+  it('confirms receipt over JSON with private headers and rejects a form body', async () => {
+    const ok = await request(app.getHttpServer())
+      .post('/public/orders/tok/receipt')
+      .send({})
+      .expect(200);
+    expect(ok.body).toEqual({ receiptConfirmedAt: '2026-10-01T12:00:00.000Z' });
+    expect(ok.headers['cache-control']).toBe('no-store');
+    expect(ok.headers['referrer-policy']).toBe('no-referrer');
+    expect(confirmReceipt).toHaveBeenCalledWith('tok');
+
+    await request(app.getHttpServer())
+      .post('/public/orders/tok/receipt')
+      .type('form')
+      .send({ a: 'b' })
+      .expect(415);
+    expect(confirmReceipt).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects the receipt after its own per-IP limit', async () => {
+    for (let i = 0; i < 20; i++) {
+      await request(app.getHttpServer())
+        .post('/public/orders/tok/receipt')
+        .send({})
+        .expect(200);
+    }
+    const limited = await request(app.getHttpServer())
+      .post('/public/orders/tok/receipt')
+      .send({})
+      .expect(429);
+    expect(limited.headers['cache-control']).toBe('no-store');
   });
 });

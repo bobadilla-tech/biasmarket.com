@@ -24,7 +24,11 @@ function toBoolean(value: string | undefined): boolean | undefined {
 interface NotificationRow {
   id: string;
   storeId: string;
-  type: 'LOW_STOCK' | 'OUT_OF_STOCK' | 'PAYMENT_PROOF_SUBMITTED';
+  type:
+    | 'LOW_STOCK'
+    | 'OUT_OF_STOCK'
+    | 'PAYMENT_PROOF_SUBMITTED'
+    | 'RECEIPT_CONFIRMED';
   entityType: string;
   entityId: string;
   title: string;

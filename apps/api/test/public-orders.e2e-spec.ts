@@ -267,4 +267,144 @@ describe('public orders (e2e)', () => {
       }),
     ).toBe(0);
   });
+
+  describe('receipt confirmation', () => {
+    // Checkout is throttled, so one order is created for the whole block and
+    // reset to a delivered, unconfirmed state before every case.
+    let shared: { token: string; tokenHash: string; id: string };
+
+    beforeAll(async () => {
+      const link = createOrderAccessToken();
+      const id = await checkout();
+      await attachToken(id, link.tokenHash);
+      shared = { ...link, id };
+    });
+
+    async function deliverable(patch: Record<string, unknown> = {}) {
+      await prisma.orderEvent.deleteMany({
+        where: { orderId: shared.id, type: 'RECEIPT_CONFIRMED' },
+      });
+      await prisma.notification.deleteMany({
+        where: { entityId: shared.id, type: 'RECEIPT_CONFIRMED' },
+      });
+      await prisma.order.update({
+        where: { id: shared.id },
+        data: {
+          status: 'ACTIVE',
+          paymentStatus: 'VERIFIED',
+          fulfillmentStatus: 'IN_TRANSIT',
+          buyerConfirmedReceivedAt: null,
+          accessTokenRevokedAt: null,
+          ...patch,
+        },
+      });
+      return shared;
+    }
+
+    const confirm = (token: string) =>
+      request(app.getHttpServer())
+        .post(`/api/public/orders/${token}/receipt`)
+        .send({});
+
+    it('is idempotent and exposes the date on the public order and the seller detail', async () => {
+      const { token, id } = await deliverable();
+
+      const first = await confirm(token).expect(200);
+      privateLinkHeaders(first);
+      const second = await confirm(token).expect(200);
+      expect(second.body.receiptConfirmedAt).toBe(
+        first.body.receiptConfirmedAt,
+      );
+
+      expect(
+        await prisma.orderEvent.count({
+          where: { orderId: id, type: 'RECEIPT_CONFIRMED' },
+        }),
+      ).toBe(1);
+      expect(
+        await prisma.notification.count({
+          where: { entityId: id, type: 'RECEIPT_CONFIRMED' },
+        }),
+      ).toBe(1);
+      const stored = await prisma.order.findUniqueOrThrow({
+        where: { id },
+        select: { fulfillmentStatus: true },
+      });
+      expect(stored.fulfillmentStatus).toBe('IN_TRANSIT');
+
+      const pub = await request(app.getHttpServer())
+        .get(`/api/public/orders/${token}`)
+        .expect(200);
+      expect(pub.body.receiptConfirmedAt).toBe(first.body.receiptConfirmedAt);
+
+      const seller = await request(app.getHttpServer())
+        .get(`/api/stores/${storeId}/orders/${id}`)
+        .set('Cookie', sessionCookie)
+        .expect(200);
+      expect(seller.body.buyerConfirmedReceivedAt).toBe(
+        first.body.receiptConfirmedAt,
+      );
+    });
+
+    it('lets exactly one of many concurrent confirmations win', async () => {
+      const { token, id } = await deliverable();
+
+      const results = await Promise.all(
+        Array.from({ length: 8 }, () => confirm(token)),
+      );
+
+      expect(results.map((r) => r.status)).toEqual(Array(8).fill(200));
+      expect(new Set(results.map((r) => r.body.receiptConfirmedAt)).size).toBe(
+        1,
+      );
+      expect(
+        await prisma.orderEvent.count({
+          where: { orderId: id, type: 'RECEIPT_CONFIRMED' },
+        }),
+      ).toBe(1);
+      expect(
+        await prisma.notification.count({
+          where: { entityId: id, type: 'RECEIPT_CONFIRMED' },
+        }),
+      ).toBe(1);
+    });
+
+    it('rejects an order that is not delivered yet, unpaid or cancelled, writing nothing', async () => {
+      for (const patch of [
+        { fulfillmentStatus: 'ORDERING' },
+        { paymentStatus: 'PAYMENT_SUBMITTED' },
+        { status: 'CANCELLED' },
+      ]) {
+        const { token, id } = await deliverable(patch);
+        await confirm(token).expect(409);
+        const row = await prisma.order.findUniqueOrThrow({
+          where: { id },
+          select: { buyerConfirmedReceivedAt: true },
+        });
+        expect(row.buyerConfirmedReceivedAt).toBeNull();
+        expect(
+          await prisma.orderEvent.count({
+            where: { orderId: id, type: 'RECEIPT_CONFIRMED' },
+          }),
+        ).toBe(0);
+      }
+    });
+
+    it('answers unknown and revoked tokens with the same 404, and rejects a form body', async () => {
+      const unknown = await confirm(createOrderAccessToken().token).expect(404);
+      const revoked = await deliverable({ accessTokenRevokedAt: new Date() });
+      const revokedRes = await confirm(revoked.token).expect(404);
+      expect({ ...revokedRes.body, timestamp: undefined }).toEqual({
+        ...unknown.body,
+        timestamp: undefined,
+      });
+
+      const live = await deliverable();
+      await request(app.getHttpServer())
+        .post(`/api/public/orders/${live.token}/receipt`)
+        .type('form')
+        .send({ a: 'b' })
+        .expect(415);
+    });
+  });
 });

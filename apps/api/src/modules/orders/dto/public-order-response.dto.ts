@@ -179,6 +179,13 @@ export class PublicOrderResponseDto {
   })
   packedPhotoAvailable: boolean;
 
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'When the buyer confirmed receiving the order.',
+  })
+  receiptConfirmedAt: string | null;
+
   @ApiProperty({ enum: ['AGENCY', 'HOME'], nullable: true })
   courierModality: 'AGENCY' | 'HOME' | null;
 
