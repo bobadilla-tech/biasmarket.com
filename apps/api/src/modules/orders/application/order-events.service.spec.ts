@@ -1,6 +1,11 @@
 import { Test, type TestingModule } from '@nestjs/testing';
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { type Mock, vi } from 'vitest';
+import { Prisma } from '@biasmarket/db';
 import { createOrderAccessToken } from '@biasmarket/utils/assisted-order';
 import {
   OrderEventsService,
@@ -327,6 +332,74 @@ describe('OrderEventsService', () => {
 
       await expect(service.confirmReceipt(token)).resolves.toBeDefined();
       expect(prisma.orderEvent.create).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('claim ticket checks', () => {
+    const { token } = createOrderAccessToken();
+    const base = {
+      id: 'order-1',
+      storeId: 'store-1',
+      source: 'VENDOR_ASSISTED',
+      status: 'ACTIVE',
+      paymentStatus: 'VERIFIED',
+      claimedAt: null,
+      buyerAccountId: null,
+      accessTokenHash: 'h'.repeat(64),
+      accessTokenRevokedAt: null,
+      payments: [
+        {
+          amount: new Prisma.Decimal(10),
+          source: 'SELLER_RECORDED' as const,
+          reviewStatus: 'N_A' as const,
+          voidedAt: null,
+        },
+      ],
+    };
+
+    it('answers the same 404 for an unknown and a revoked token', async () => {
+      prisma.order.findUnique.mockResolvedValueOnce(null);
+      await expect(service.loadForClaim(token)).rejects.toThrow(
+        'Pedido no encontrado',
+      );
+      prisma.order.findUnique.mockResolvedValueOnce({
+        ...base,
+        accessTokenRevokedAt: new Date(),
+      });
+      await expect(service.loadForClaim(token)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('looks the order up by the token hash only', async () => {
+      prisma.order.findUnique.mockResolvedValueOnce(base);
+      await service.loadForClaim(token);
+      const arg = prisma.order.findUnique.mock.calls.at(-1)![0];
+      expect(Object.keys(arg.where)).toEqual(['accessTokenHash']);
+      expect(arg.where.accessTokenHash).not.toBe(token);
+    });
+
+    it('accepts an assisted, active, validated, unclaimed order', () => {
+      expect(() => service.assertClaimable(base)).not.toThrow();
+    });
+
+    it('answers 409 when claimed and 422 when not claimable', () => {
+      expect(() =>
+        service.assertClaimable({ ...base, claimedAt: new Date() }),
+      ).toThrow(ConflictException);
+      expect(() =>
+        service.assertClaimable({ ...base, buyerAccountId: 'b1' }),
+      ).toThrow(ConflictException);
+      for (const patch of [
+        { source: 'MARKETPLACE' },
+        { status: 'CANCELLED' },
+        { paymentStatus: 'CANCELLED' },
+        { payments: [] },
+      ]) {
+        expect(() => service.assertClaimable({ ...base, ...patch })).toThrow(
+          UnprocessableEntityException,
+        );
+      }
     });
   });
 });

@@ -37,6 +37,23 @@ describe('buyer google oauth', () => {
       });
     });
 
+    it('carries only a claim boolean, never an order id or token', () => {
+      const plain = createBuyerGoogleState('my-store', 'es', 1000);
+      expect(
+        verifyBuyerGoogleState(plain.state, plain.nonce, 2000)?.claim,
+      ).toBe(false);
+      const claiming = createBuyerGoogleState(null, 'es', 1000, true);
+      expect(
+        verifyBuyerGoogleState(claiming.state, claiming.nonce, 2000)?.claim,
+      ).toBe(true);
+      const body = JSON.parse(
+        Buffer.from(claiming.state.split('.')[0]!, 'base64url').toString(),
+      );
+      expect(Object.keys(body).sort()).toEqual(
+        ['claim', 'exp', 'locale', 'nonce', 'slug'].sort(),
+      );
+    });
+
     it('rejects a nonce cookie from a different browser', () => {
       const { state } = createBuyerGoogleState('my-store', 'es');
 

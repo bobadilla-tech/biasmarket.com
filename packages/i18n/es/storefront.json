@@ -447,7 +447,15 @@
     "empty": "Aún no tienes compras.",
     "storeAccount": "Cuenta en la tienda",
     "pendingBalance": "Pendiente: {currency} {amount}",
-    "signOut": "Cerrar sesión"
+    "signOut": "Cerrar sesión",
+    "claimErrors": {
+      "already_claimed": "Este pedido ya fue guardado en otra cuenta. Si crees que es un error, escríbele a la tienda.",
+      "not_claimable": "Este pedido todavía no se puede guardar. Vuelve a abrir tu enlace cuando el pago esté validado.",
+      "invalid": "El enlace para guardar venció o ya no es válido. Vuelve a abrir tu enlace del pedido e inténtalo de nuevo.",
+      "failed": "No pudimos guardar tu pedido. Vuelve a abrir tu enlace del pedido e inténtalo de nuevo.",
+      "unavailable": "Guardar con Google no está disponible por ahora. Tu enlace del pedido sigue funcionando.",
+      "fallback": "No pudimos guardar tu pedido. Vuelve a abrir tu enlace del pedido e inténtalo de nuevo."
+    }
   },
   "publicOrder": {
     "metaTitle": "Tu pedido",
@@ -564,6 +572,19 @@
       "trackLink": "Seguir mi envío",
       "packedPhoto": "Foto de tu paquete",
       "packedPhotoAlt": "Foto del paquete de tu pedido"
+    },
+    "claim": {
+      "explainer": "Al guardar con Google usamos tu correo y tu nombre de Google para crear tu cuenta y asociar este pedido. No pedimos contraseña ni vemos tus correos. Este enlace seguirá funcionando.",
+      "button": "Guardar con Google",
+      "working": "Abriendo Google…",
+      "inAppTitle": "Ábrelo en tu navegador",
+      "inAppBody": "Google no permite iniciar sesión dentro de esta app. Copia el enlace y ábrelo en Safari o Chrome para guardar tu pedido.",
+      "copyLink": "Copiar enlace",
+      "copied": "Enlace copiado",
+      "copyFailed": "No se pudo copiar. Copia la dirección desde la barra del navegador.",
+      "error": "No pudimos iniciar el guardado. Inténtalo de nuevo.",
+      "notYet": "Este pedido todavía no se puede guardar. Vuelve cuando el pago esté validado.",
+      "saved": "Pedido guardado en tu cuenta"
     }
   }
 }

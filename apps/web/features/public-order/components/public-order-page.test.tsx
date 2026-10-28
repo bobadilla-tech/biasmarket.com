@@ -20,7 +20,7 @@ vi.mock("@/components/store-logo", () => ({
 }));
 vi.mock("@/lib/api-client", () => ({
   apiClient: {
-    publicOrders: { getByToken },
+    publicOrders: { getByToken, claimTicket: vi.fn() },
     stores: { findPublic },
   },
 }));
@@ -416,6 +416,29 @@ test("the save teaser needs a validated payment and an open order", async () => 
   getByToken.mockResolvedValue(makeOrder({ hasValidatedPayment: true }));
   renderPage();
   expect(await screen.findByText(/Guarda tu pedido/)).toBeTruthy();
+  expect(
+    screen.getByRole("button", { name: "Guardar con Google" }),
+  ).toBeTruthy();
+});
+
+test("no claim button without a validated payment", async () => {
+  getByToken.mockResolvedValue(makeOrder({ hasValidatedPayment: false }));
+  renderPage();
+  await screen.findByText(/Última actualización/);
+  expect(
+    screen.queryByRole("button", { name: "Guardar con Google" }),
+  ).toBeNull();
+});
+
+test("a claimed order shows 'Pedido guardado' and no claim button", async () => {
+  getByToken.mockResolvedValue(
+    makeOrder({ claimed: true, hasValidatedPayment: true }),
+  );
+  renderPage();
+  expect(await screen.findByText("Pedido guardado en tu cuenta")).toBeTruthy();
+  expect(
+    screen.queryByRole("button", { name: "Guardar con Google" }),
+  ).toBeNull();
 });
 
 test("the save teaser is hidden when cancelled even with a validated payment", async () => {

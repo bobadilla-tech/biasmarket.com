@@ -8,6 +8,7 @@ import { Link } from "@/i18n/navigation";
 import { OrderStatusBadge } from "@/features/orders";
 import { CustomerLoginForm } from "@/features/customer-auth";
 import { LoadingState } from "@/components/shared/loading-state";
+import { ClaimErrorBanner } from "./claim-error-banner";
 import { useGlobalLogout } from "../mutations/use-global-logout";
 import {
   globalAccountKeys,
@@ -38,7 +39,7 @@ function groupByStore(orders: GlobalAccountOrderResponseDto[]): StoreGroup[] {
   return [...groups.values()];
 }
 
-export function MyPurchases() {
+export function MyPurchases({ claimCode }: { claimCode?: string }) {
   const t = useTranslations("storefront.myPurchases");
   const profile = useGlobalAccount();
   const orders = useGlobalOrders(Boolean(profile.data));
@@ -50,6 +51,7 @@ export function MyPurchases() {
   if (profile.isError) {
     return (
       <div className="flex flex-col items-center gap-6">
+        <ClaimErrorBanner code={claimCode} />
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900">
             {t("loggedOutTitle")}
@@ -73,6 +75,7 @@ export function MyPurchases() {
 
   return (
     <div className="flex flex-col gap-8">
+      <ClaimErrorBanner code={claimCode} />
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">{t("title")}</h1>

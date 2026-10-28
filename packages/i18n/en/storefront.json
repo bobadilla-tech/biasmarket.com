@@ -447,7 +447,15 @@
     "empty": "You have no purchases yet.",
     "storeAccount": "Store account",
     "pendingBalance": "Pending: {currency} {amount}",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "claimErrors": {
+      "already_claimed": "This order was already saved to another account. If you think this is a mistake, message the store.",
+      "not_claimable": "This order can't be saved yet. Open your order link again once the payment is validated.",
+      "invalid": "The save link expired or is no longer valid. Open your order link again and try once more.",
+      "failed": "We couldn't save your order. Open your order link again and try once more.",
+      "unavailable": "Saving with Google isn't available right now. Your order link still works.",
+      "fallback": "We couldn't save your order. Open your order link again and try once more."
+    }
   },
   "publicOrder": {
     "metaTitle": "Your order",
@@ -564,6 +572,19 @@
       "trackLink": "Track my shipment",
       "packedPhoto": "Photo of your package",
       "packedPhotoAlt": "Photo of your order's package"
+    },
+    "claim": {
+      "explainer": "When you save with Google we use your Google email and name to create your account and attach this order. We don't ask for a password or read your email. This link will keep working.",
+      "button": "Save with Google",
+      "working": "Opening Google…",
+      "inAppTitle": "Open it in your browser",
+      "inAppBody": "Google doesn't allow signing in inside this app. Copy the link and open it in Safari or Chrome to save your order.",
+      "copyLink": "Copy link",
+      "copied": "Link copied",
+      "copyFailed": "Couldn't copy. Copy the address from the browser's address bar.",
+      "error": "We couldn't start saving. Please try again.",
+      "notYet": "This order can't be saved yet. Come back once the payment is validated.",
+      "saved": "Order saved to your account"
     }
   }
 }

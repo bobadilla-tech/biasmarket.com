@@ -12,6 +12,9 @@ export interface BuyerGoogleState {
   locale: BuyerGoogleLocale;
   nonce: string;
   exp: number;
+  // True only when a claim ticket cookie was verified at the start of the
+  // flow. A boolean on purpose: no order id or token in `state`.
+  claim: boolean;
 }
 
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
@@ -50,6 +53,7 @@ export function createBuyerGoogleState(
   slug: string | null,
   locale: BuyerGoogleLocale,
   now = Date.now(),
+  claim = false,
 ): { state: string; nonce: string } {
   const nonce = randomBytes(16).toString('base64url');
   const body: BuyerGoogleState = {
@@ -57,6 +61,7 @@ export function createBuyerGoogleState(
     locale,
     nonce,
     exp: now + BUYER_GOOGLE_STATE_TTL_MS,
+    claim,
   };
   const payload = Buffer.from(JSON.stringify(body)).toString('base64url');
   return { state: `${payload}.${sign(payload)}`, nonce };
@@ -99,7 +104,11 @@ export function verifyBuyerGoogleState(
     return null;
   }
 
-  return { ...body, locale: normalizeBuyerGoogleLocale(body.locale) };
+  return {
+    ...body,
+    locale: normalizeBuyerGoogleLocale(body.locale),
+    claim: body.claim === true,
+  };
 }
 
 export function buildBuyerGoogleAuthUrl(state: string): string {
