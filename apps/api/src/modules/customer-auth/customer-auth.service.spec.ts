@@ -545,6 +545,67 @@ describe('CustomerAuthService', () => {
       expect(prisma.customerStoreLink.upsert).not.toHaveBeenCalled();
     });
 
+    it('signs in a verified same-email account that a concurrent first login already bound to this sub', async () => {
+      prisma.buyerAccount.findUnique.mockResolvedValue(null);
+      prisma.buyerAccount.findMany.mockResolvedValue([
+        {
+          id: 'buyer-1',
+          passwordVersion: 3,
+          name: null,
+          googleSub: 'google-sub-1',
+        },
+      ]);
+
+      const token = await service.loginWithGoogle('my-store', identity);
+
+      expect(sessionOf(token)).toEqual({
+        buyerAccountId: 'buyer-1',
+        passwordVersion: 3,
+      });
+      expect(prisma.buyerAccount.updateMany).not.toHaveBeenCalled();
+      expect(prisma.buyerAccount.create).not.toHaveBeenCalled();
+    });
+
+    it('returns the winner when the conditional link update loses a race', async () => {
+      prisma.buyerAccount.findUnique
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ id: 'winner', passwordVersion: 0 });
+      prisma.buyerAccount.findMany.mockResolvedValue([
+        { id: 'buyer-1', passwordVersion: 0, name: null, googleSub: null },
+      ]);
+      prisma.buyerAccount.updateMany.mockResolvedValue({ count: 0 });
+
+      const token = await service.loginWithGoogle('my-store', identity);
+
+      expect(sessionOf(token)?.buyerAccountId).toBe('winner');
+    });
+
+    it('conflicts when the link update loses a race and nobody holds the sub', async () => {
+      prisma.buyerAccount.findUnique.mockResolvedValue(null);
+      prisma.buyerAccount.findMany.mockResolvedValue([
+        { id: 'buyer-1', passwordVersion: 0, name: null, googleSub: null },
+      ]);
+      prisma.buyerAccount.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(
+        service.loginWithGoogle('my-store', identity),
+      ).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('rethrows a create P2002 when no account holds the sub', async () => {
+      prisma.buyerAccount.findUnique.mockResolvedValue(null);
+      prisma.buyerAccount.findMany.mockResolvedValue([]);
+      const p2002 = new Prisma.PrismaClientKnownRequestError('unique', {
+        code: 'P2002',
+        clientVersion: 'test',
+      });
+      prisma.buyerAccount.create.mockRejectedValue(p2002);
+
+      await expect(service.loginWithGoogle('my-store', identity)).rejects.toBe(
+        p2002,
+      );
+    });
+
     it('refuses to link when the only verified account already has a different googleSub', async () => {
       prisma.buyerAccount.findUnique.mockResolvedValue(null);
       prisma.buyerAccount.findMany.mockResolvedValue([

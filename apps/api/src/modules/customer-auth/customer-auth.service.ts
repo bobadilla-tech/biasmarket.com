@@ -240,7 +240,10 @@ export class CustomerAuthService {
 
     const existing = matches[0];
     if (existing) {
-      // Already bound to a different Google identity: not ours to take over.
+      // Bound to this very identity (a concurrent first login won the race
+      // after our `googleSub` lookup): sign in. Bound to another one: not ours
+      // to take over.
+      if (existing.googleSub === identity.sub) return existing;
       if (existing.googleSub) {
         throw new ConflictException('Esta cuenta ya está vinculada a Google');
       }
