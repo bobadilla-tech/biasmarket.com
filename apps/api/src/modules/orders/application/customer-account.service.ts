@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import {
   BadRequestException,
   ConflictException,
@@ -16,7 +17,16 @@ import { PrismaService } from '../../../prisma/prisma.service.js';
 import { MailerService } from '../../../mailer/mailer.service.js';
 import { requiredEnv } from '../../../config/env.validation.js';
 import { withPaymentSummary } from '../../../common/payment-summary.js';
+import { upsertAssistedCustomer } from './assisted-customer.js';
 import { toAccountOrderDto } from '../../customer-auth/dto/account-order-response.dto.js';
+
+// The loser of an identity race, or a checkout that must not touch an existing
+// buyer: the order is placed as a guest order and nothing is linked.
+const GUEST_RESULT = {
+  customer: null,
+  buyerAccount: null,
+  needsVerificationEmail: false,
+};
 
 function buildCustomerVerificationEmailHtml(
   url: string,
@@ -101,6 +111,15 @@ export class CustomerAccountService {
   // The identity-mismatch guard now runs against `BuyerAccount` (global)
   // instead of the old per-store `Customer` check, since the phone number is
   // now the global identity key.
+  //
+  // Concurrency (#333): two checkouts for the same new phone used to race on
+  // `BuyerAccount_phone_key` / `CustomerStoreLink_buyerAccountId_storeId_key`
+  // and the loser got a 500. A per-phone advisory lock serialises them, and
+  // every insert is `ON CONFLICT DO NOTHING` + re-read as defence in depth for
+  // writers that do not take the lock. Nothing in here may be wrapped in a
+  // try/catch: a failed statement aborts the transaction (25P02) and Prisma
+  // opens no savepoints. Never `FOR UPDATE` the Customer row (it would block
+  // the Order FK insert, see assisted-customer.ts).
   async findOrCreateCustomer(
     tx: Prisma.TransactionClient | PrismaService,
     storeId: string,
@@ -114,14 +133,15 @@ export class CustomerAccountService {
     needsVerificationEmail: boolean;
   }> {
     const normalizedPhone = normalizePhone(phone);
-    const existing = await tx.buyerAccount.findUnique({
+    await this.lockBuyerPhone(tx, normalizedPhone);
+
+    let buyerAccount = await tx.buyerAccount.findUnique({
       where: { phone: normalizedPhone },
     });
+    let needsVerificationEmail = false;
+    let attachedToSession = false;
 
-    let buyerAccount: BuyerAccount;
-    let needsVerificationEmail: boolean;
-
-    if (!existing) {
+    if (!buyerAccount) {
       // A signed-in buyer who joined with Google has no phone yet: this
       // checkout is where it gets attached to their existing account, so
       // their orders show up under it. Only ever for the verified session
@@ -138,11 +158,20 @@ export class CustomerAccountService {
         own.email?.toLowerCase() === email.toLowerCase();
 
       if (own && sessionOwnsEmail) {
-        buyerAccount = await tx.buyerAccount.update({
-          where: { id: own.id },
+        // The same Google session posting two checkouts with different phones
+        // takes two different advisory locks, so guard on the row itself.
+        const { count } = await tx.buyerAccount.updateMany({
+          where: { id: own.id, phone: null },
           data: { phone: normalizedPhone, name: own.name ?? name },
         });
-        needsVerificationEmail = false;
+        if (count === 0) return GUEST_RESULT;
+        // Never fall through to the create path: the account now holds the
+        // other phone, so `phoneLessOwner` would miss it and a second
+        // BuyerAccount with the same email would be minted.
+        buyerAccount = await tx.buyerAccount.findUniqueOrThrow({
+          where: { id: own.id },
+        });
+        attachedToSession = true;
       } else {
         // An unauthenticated checkout must not create a second account for an
         // email that already belongs to a phone-less (Google) account — that
@@ -151,69 +180,74 @@ export class CustomerAccountService {
         const phoneLessOwner = await tx.buyerAccount.findFirst({
           where: { phone: null, email: { equals: email, mode: 'insensitive' } },
         });
-        if (phoneLessOwner) {
-          return {
-            customer: null,
-            buyerAccount: null,
-            needsVerificationEmail: false,
-          };
+        if (phoneLessOwner) return GUEST_RESULT;
+
+        await tx.$executeRaw`
+          INSERT INTO "BuyerAccount" ("id", "phone", "email", "name", "emailVerified")
+          VALUES (${randomUUID()}, ${normalizedPhone}, ${email}, ${name ?? null}::text, false)
+          ON CONFLICT ("phone") DO NOTHING
+        `;
+        buyerAccount = await tx.buyerAccount.findUnique({
+          where: { phone: normalizedPhone },
+        });
+        if (!buyerAccount) {
+          throw new ConflictException(
+            'No se pudo registrar al comprador, intenta de nuevo',
+          );
         }
-        buyerAccount = await tx.buyerAccount.create({
-          data: { phone: normalizedPhone, email, name, emailVerified: false },
+      }
+    }
+
+    // Existing-account rules run on the row that was found, whether it was
+    // there before us, just inserted by us, or inserted by a concurrent winner.
+    if (!attachedToSession) {
+      if (buyerAccount.email !== email) {
+        // Matching phone with a different email than what's on file — could be
+        // a typo, or someone else's checkout using a phone number they know
+        // but don't own the account for. Never mutate an existing buyer's
+        // identity from an unauthenticated checkout request: don't touch
+        // email/emailVerified, don't link this order to their buyerAccountId,
+        // don't create a store link or Customer row, don't send a
+        // verification email. Falls back to a guest order.
+        return GUEST_RESULT;
+      }
+      if (!buyerAccount.emailVerified) {
+        buyerAccount = await tx.buyerAccount.update({
+          where: { id: buyerAccount.id },
+          data: { email, emailVerified: false },
         });
         needsVerificationEmail = true;
       }
-    } else if (existing.email !== email) {
-      // Matching phone with a different email than what's on file — could be
-      // a typo, or someone else's checkout using a phone number they know
-      // but don't own the account for. Never mutate an existing buyer's
-      // identity from an unauthenticated checkout request: don't touch
-      // email/emailVerified, don't link this order to their buyerAccountId,
-      // don't create a store link or Customer row, don't send a
-      // verification email. Falls back to a guest order.
-      return {
-        customer: null,
-        buyerAccount: null,
-        needsVerificationEmail: false,
-      };
-    } else if (existing.emailVerified) {
-      buyerAccount = existing;
-      needsVerificationEmail = false;
-    } else {
-      buyerAccount = await tx.buyerAccount.update({
-        where: { id: existing.id },
-        data: { email, emailVerified: false },
-      });
-      needsVerificationEmail = true;
     }
 
-    await tx.customerStoreLink.upsert({
-      where: {
-        buyerAccountId_storeId: { buyerAccountId: buyerAccount.id, storeId },
-      },
-      create: { buyerAccountId: buyerAccount.id, storeId },
-      update: {},
-    });
+    await tx.$executeRaw`
+      INSERT INTO "CustomerStoreLink" ("id", "buyerAccountId", "storeId")
+      VALUES (${randomUUID()}, ${buyerAccount.id}, ${storeId})
+      ON CONFLICT ("buyerAccountId", "storeId") DO NOTHING
+    `;
 
-    const existingCustomer = await tx.customer.findUnique({
-      where: { storeId_phone: { storeId, phone: normalizedPhone } },
+    const { id: customerId } = await upsertAssistedCustomer(
+      tx,
+      storeId,
+      normalizedPhone,
+      null,
+    );
+    const customer = await tx.customer.update({
+      where: { id: customerId, storeId },
+      data: { email, name, emailVerified: buyerAccount.emailVerified },
     });
-    const customer = existingCustomer
-      ? await tx.customer.update({
-          where: { id: existingCustomer.id },
-          data: { email, name, emailVerified: buyerAccount.emailVerified },
-        })
-      : await tx.customer.create({
-          data: {
-            storeId,
-            phone: normalizedPhone,
-            email,
-            name,
-            emailVerified: buyerAccount.emailVerified,
-          },
-        });
 
     return { customer, buyerAccount, needsVerificationEmail };
+  }
+
+  // Serialises everything that writes the buyer identity of one phone. The
+  // same technique as `OrderEventsService.recordInvite`; `hashtext` is 32 bits
+  // so a collision only costs a spurious wait.
+  private async lockBuyerPhone(
+    tx: Prisma.TransactionClient | PrismaService,
+    normalizedPhone: string,
+  ): Promise<void> {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`buyer-phone:${normalizedPhone}`}))`;
   }
 
   async sendVerificationEmail(
@@ -388,20 +422,26 @@ export class CustomerAccountService {
       buyerAccount.pendingPhone
     ) {
       const normalizedPhone = normalizePhone(buyerAccount.pendingPhone);
-      const existing = await this.prisma.buyerAccount.findUnique({
-        where: { phone: normalizedPhone },
-      });
-      if (existing && existing.id !== buyerAccount.id) {
-        throw new ConflictException(
-          'Ya existe un comprador con ese número de teléfono',
-        );
-      }
-      buyerAccount = await this.prisma.buyerAccount.update({
-        where: { id: buyerAccount.id },
-        data: {
-          phone: normalizedPhone,
-          pendingPhone: null,
-        },
+      const accountId = buyerAccount.id;
+      // Same advisory lock as checkout, so a confirm racing a checkout for the
+      // same new phone ends in a 409 or a guest order, never a 500.
+      buyerAccount = await this.prisma.$transaction(async (tx) => {
+        await this.lockBuyerPhone(tx, normalizedPhone);
+        const existing = await tx.buyerAccount.findUnique({
+          where: { phone: normalizedPhone },
+        });
+        if (existing && existing.id !== accountId) {
+          throw new ConflictException(
+            'Ya existe un comprador con ese número de teléfono',
+          );
+        }
+        // A double-clicked confirm must not misapply: only the first one still
+        // sees a pending phone, the second just re-reads the account.
+        await tx.buyerAccount.updateMany({
+          where: { id: accountId, pendingPhone: { not: null } },
+          data: { phone: normalizedPhone, pendingPhone: null },
+        });
+        return tx.buyerAccount.findUniqueOrThrow({ where: { id: accountId } });
       });
     }
 
