@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import type { ProductSearchResultResponseDto } from "@biasmarket/types";
@@ -18,22 +19,46 @@ export function DiscoverSection({
   const { result, loading, error, refetch } = useLatestProducts(6, 1, {
     initialData,
   });
+  const [retrying, setRetrying] = useState(false);
   const products = result?.products ?? [];
-  const collectionState = loading ? (
-    <LoadingState variant="cards" rows={6} className="col-span-full" />
-  ) : error ? (
-    <div className="col-span-full">
-      <ErrorState
-        message={t("error")}
-        retry={() => void refetch()}
-        retryLabel={t("retry")}
+  const retry = async () => {
+    if (retrying) return;
+    setRetrying(true);
+    try {
+      await refetch();
+    } finally {
+      setRetrying(false);
+    }
+  };
+  const collectionState =
+    error || retrying ? (
+      <div className="col-span-full">
+        <ErrorState
+          message={t("error")}
+          retry={() => void retry()}
+          retryLabel={t("retry")}
+          retrying={retrying}
+        />
+      </div>
+    ) : loading ? (
+      <LoadingState
+        variant="cards"
+        rows={6}
+        label={t("loading")}
+        className="col-span-full"
       />
+    ) : null;
+  const isEmpty = !loading && !error && !retrying && products.length === 0;
+  const emptyState = (
+    <div
+      className={isEmpty ? "col-span-full" : "sr-only"}
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      {isEmpty ? <EmptyState message={t("empty")} /> : null}
     </div>
-  ) : products.length === 0 ? (
-    <div className="col-span-full">
-      <EmptyState message={t("empty")} />
-    </div>
-  ) : null;
+  );
 
   return (
     <section className="mx-auto max-w-7xl px-6 py-8 sm:px-10 sm:py-14">
@@ -42,17 +67,20 @@ export function DiscoverSection({
           {t("title")}
         </h2>
         <div className="mt-3 grid grid-cols-2 gap-2.5">
-          {collectionState ??
-            products
-              .slice(0, 4)
-              .map((product) => (
-                <ProductGridCard
-                  key={product.id}
-                  product={product}
-                  variant="row"
-                  className="w-full"
-                />
-              ))}
+          {collectionState}
+          {emptyState}
+          {!collectionState && products.length > 0
+            ? products
+                .slice(0, 4)
+                .map((product) => (
+                  <ProductGridCard
+                    key={product.id}
+                    product={product}
+                    variant="row"
+                    className="w-full"
+                  />
+                ))
+            : null}
         </div>
         <div className="mt-5 flex justify-center">
           <Link
@@ -71,17 +99,20 @@ export function DiscoverSection({
         </h2>
 
         <div className="mt-6 grid grid-cols-3 gap-[12.3px] sm:mt-8 sm:grid-cols-6">
-          {collectionState ??
-            products
-              .slice(0, 6)
-              .map((product) => (
-                <ProductGridCard
-                  key={product.id}
-                  product={product}
-                  variant="row"
-                  className="!w-full !rounded-lg !border-transparent"
-                />
-              ))}
+          {collectionState}
+          {emptyState}
+          {!collectionState && products.length > 0
+            ? products
+                .slice(0, 6)
+                .map((product) => (
+                  <ProductGridCard
+                    key={product.id}
+                    product={product}
+                    variant="row"
+                    className="!w-full !rounded-lg !border-transparent"
+                  />
+                ))
+            : null}
         </div>
 
         <div className="mt-8 flex justify-center sm:mt-10">
