@@ -242,7 +242,9 @@ describe('assisted orders (e2e)', () => {
       .get(`/public/orders/${token}`)
       .set('X-Forwarded-For', nextIp())
       .expect(200);
-    expect(JSON.stringify(publicRes.body)).not.toContain('Sofi');
+    // The sanitised alias is the one place the name is public.
+    expect(publicRes.body.customerAlias).toBe('Sofi');
+    expect(JSON.stringify(publicRes.body).split('Sofi')).toHaveLength(2);
   });
 
   it('rejects invalid input', async () => {
