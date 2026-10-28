@@ -1,5 +1,5 @@
 import { Test, type TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { type Mock, vi } from 'vitest';
 import { createOrderAccessToken } from '@biasmarket/utils/assisted-order';
 import {
@@ -7,6 +7,7 @@ import {
   sanitizeOrderEventPayload,
 } from './order-events.service.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
+import { NotificationsService } from '../../notifications/notifications.service.js';
 
 describe('sanitizeOrderEventPayload', () => {
   it('keeps the allowlist and drops phone, token, email, and notes', () => {
@@ -32,12 +33,15 @@ describe('OrderEventsService', () => {
   let service: OrderEventsService;
   let prisma: {
     orderEvent: { create: Mock; findMany: Mock; findFirst: Mock };
-    order: { findUnique: Mock };
+    order: { findUnique: Mock; updateMany: Mock };
     $transaction: Mock;
     $executeRaw: Mock;
   };
 
+  let notifications: { createIfNotOpen: Mock };
+
   beforeEach(async () => {
+    notifications = { createIfNotOpen: vi.fn().mockResolvedValue({}) };
     prisma = {
       orderEvent: {
         create: vi.fn(),
@@ -52,6 +56,7 @@ describe('OrderEventsService', () => {
           status: 'ACTIVE',
           paymentStatus: 'PENDING_PAYMENT',
         }),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
       $executeRaw: vi.fn(),
       $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(prisma)),
@@ -60,6 +65,7 @@ describe('OrderEventsService', () => {
       providers: [
         OrderEventsService,
         { provide: PrismaService, useValue: prisma },
+        { provide: NotificationsService, useValue: notifications },
       ],
     }).compile();
     service = module.get(OrderEventsService);
@@ -182,8 +188,119 @@ describe('OrderEventsService', () => {
         accessTokenRevokedAt: true,
         status: true,
         paymentStatus: true,
+        fulfillmentStatus: true,
         packedPhotoUrl: true,
       },
+    });
+  });
+
+  describe('confirmReceipt', () => {
+    const { token } = createOrderAccessToken();
+    const base = {
+      id: 'order-1',
+      storeId: 'store-1',
+      accessTokenRevokedAt: null,
+      status: 'ACTIVE',
+      paymentStatus: 'VERIFIED',
+      fulfillmentStatus: 'IN_TRANSIT',
+    };
+
+    it('stamps the order, records one buyer event and notifies the seller', async () => {
+      prisma.order.findUnique.mockResolvedValue(base);
+
+      const result = await service.confirmReceipt(token);
+
+      expect(prisma.order.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: 'order-1',
+          storeId: 'store-1',
+          buyerConfirmedReceivedAt: null,
+        },
+        data: { buyerConfirmedReceivedAt: expect.any(Date) },
+      });
+      expect(prisma.orderEvent.create).toHaveBeenCalledTimes(1);
+      expect(prisma.orderEvent.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          type: 'RECEIPT_CONFIRMED',
+          actor: 'BUYER',
+          visibleToBuyer: true,
+          payload: {},
+        }),
+      });
+      const params = notifications.createIfNotOpen.mock.calls[0][0];
+      expect(params).toMatchObject({
+        storeId: 'store-1',
+        type: 'RECEIPT_CONFIRMED',
+        entityType: 'Order',
+        entityId: 'order-1',
+      });
+      expect(JSON.stringify(params)).not.toMatch(/\+?\d{6,}/);
+      expect(Date.parse(result.receiptConfirmedAt)).not.toBeNaN();
+    });
+
+    it.each(['IN_TRANSIT', 'READY', 'COMPLETED'])(
+      'is allowed while fulfillment is %s',
+      async (fulfillmentStatus) => {
+        prisma.order.findUnique.mockResolvedValue({
+          ...base,
+          fulfillmentStatus,
+        });
+        await expect(service.confirmReceipt(token)).resolves.toBeDefined();
+      },
+    );
+
+    it.each([
+      ['still ORDERING', { fulfillmentStatus: 'ORDERING' }],
+      ['payment not verified', { paymentStatus: 'PAYMENT_SUBMITTED' }],
+      ['payment rejected', { paymentStatus: 'REJECTED' }],
+      ['payment cancelled', { paymentStatus: 'CANCELLED' }],
+      ['order cancelled', { status: 'CANCELLED' }],
+    ])('answers 409 and writes nothing when %s', async (_label, patch) => {
+      prisma.order.findUnique.mockResolvedValue({ ...base, ...patch });
+
+      await expect(service.confirmReceipt(token)).rejects.toBeInstanceOf(
+        ConflictException,
+      );
+      expect(prisma.order.updateMany).not.toHaveBeenCalled();
+      expect(prisma.orderEvent.create).not.toHaveBeenCalled();
+      expect(notifications.createIfNotOpen).not.toHaveBeenCalled();
+    });
+
+    it('answers the same 404 for an unknown and a revoked token, before any 409', async () => {
+      prisma.order.findUnique.mockResolvedValueOnce(null);
+      await expect(service.confirmReceipt(token)).rejects.toThrow(
+        'Pedido no encontrado',
+      );
+      prisma.order.findUnique.mockResolvedValueOnce({
+        ...base,
+        status: 'CANCELLED',
+        accessTokenRevokedAt: new Date(),
+      });
+      await expect(service.confirmReceipt(token)).rejects.toThrow(
+        'Pedido no encontrado',
+      );
+    });
+
+    it('is idempotent: a second confirmation returns the stored date with no event or notification', async () => {
+      const stored = new Date('2026-10-01T12:00:00.000Z');
+      prisma.order.findUnique
+        .mockResolvedValueOnce(base)
+        .mockResolvedValueOnce({ buyerConfirmedReceivedAt: stored });
+      prisma.order.updateMany.mockResolvedValue({ count: 0 });
+
+      const result = await service.confirmReceipt(token);
+
+      expect(result.receiptConfirmedAt).toBe(stored.toISOString());
+      expect(prisma.orderEvent.create).not.toHaveBeenCalled();
+      expect(notifications.createIfNotOpen).not.toHaveBeenCalled();
+    });
+
+    it('does not fail the receipt when the seller notification fails', async () => {
+      prisma.order.findUnique.mockResolvedValue(base);
+      notifications.createIfNotOpen.mockRejectedValue(new Error('boom'));
+
+      await expect(service.confirmReceipt(token)).resolves.toBeDefined();
+      expect(prisma.orderEvent.create).toHaveBeenCalledTimes(1);
     });
   });
 });

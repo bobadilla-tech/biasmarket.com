@@ -12,6 +12,7 @@ import {
   shouldShowHowToPay,
 } from "../lib/order-state";
 import { HowToPay } from "./how-to-pay";
+import { ReceiptConfirmation } from "./receipt-confirmation";
 
 const BANNER_TONE: Record<ReturnType<typeof getBannerKey>, string> = {
   cancelled: "border-gray-200 bg-gray-50 text-gray-700",
@@ -35,9 +36,11 @@ function Row({ label, value }: { label: string; value: string }) {
 
 export function PublicOrderView({
   slug,
+  token,
   order,
 }: {
   slug: string;
+  token: string;
   order: PublicOrderResponseDto;
 }) {
   const t = useTranslations("storefront.publicOrder");
@@ -94,6 +97,10 @@ export function PublicOrderView({
       >
         {t(`banner.${bannerKey}`)}
       </div>
+
+      {/* Above everything that can grow (invite blocks later), so it stays
+          on the first screen on a phone. */}
+      <ReceiptConfirmation slug={slug} token={token} order={order} />
 
       {!cancelled && (
         <section

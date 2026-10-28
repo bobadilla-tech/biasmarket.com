@@ -63,6 +63,8 @@ export default async () => {
       await import('./modules/users/dto/user-store-count-response.dto.js'),
     ['./modules/orders/dto/assisted-order-response.dto.js']:
       await import('./modules/orders/dto/assisted-order-response.dto.js'),
+    ['./modules/orders/dto/receipt-confirmed-response.dto.js']:
+      await import('./modules/orders/dto/receipt-confirmed-response.dto.js'),
     ['./modules/payment-config/dto/payment-method-response.dto.js']:
       await import('./modules/payment-config/dto/payment-method-response.dto.js'),
     ['./modules/delivery-config/dto/delivery-method-response.dto.js']:
@@ -725,7 +727,12 @@ export default async () => {
               storeId: { required: true, type: () => String },
               type: {
                 required: true,
-                enum: ['LOW_STOCK', 'OUT_OF_STOCK', 'PAYMENT_PROOF_SUBMITTED'],
+                enum: [
+                  'LOW_STOCK',
+                  'OUT_OF_STOCK',
+                  'PAYMENT_PROOF_SUBMITTED',
+                  'RECEIPT_CONFIRMED',
+                ],
               },
               entityType: { required: true, type: () => String },
               entityId: { required: true, type: () => String },
@@ -1117,6 +1124,11 @@ export default async () => {
                 nullable: true,
               },
               claimedAt: { required: true, type: () => String, nullable: true },
+              buyerConfirmedReceivedAt: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
               createdByName: {
                 required: true,
                 type: () => String,
@@ -1879,6 +1891,11 @@ export default async () => {
                 nullable: true,
               },
               packedPhotoAvailable: { required: true, type: () => Boolean },
+              receiptConfirmedAt: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
               courierModality: {
                 required: true,
                 nullable: true,
@@ -1891,6 +1908,14 @@ export default async () => {
                     .PublicOrderPaymentResponseDto,
                 ],
               },
+            },
+          },
+        ],
+        [
+          import('./modules/orders/dto/receipt-confirmed-response.dto.js'),
+          {
+            ReceiptConfirmedResponseDto: {
+              receiptConfirmedAt: { required: true, type: () => String },
             },
           },
         ],
@@ -3318,6 +3343,11 @@ export default async () => {
               },
               getPackedPhoto: {},
               recordInvite: {},
+              confirmReceipt: {
+                type: t[
+                  './modules/orders/dto/receipt-confirmed-response.dto.js'
+                ].ReceiptConfirmedResponseDto,
+              },
             },
           },
         ],

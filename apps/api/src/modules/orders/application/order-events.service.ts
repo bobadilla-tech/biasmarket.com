@@ -1,7 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import type { OrderEventActor, OrderEventType, Prisma } from '@biasmarket/db';
 import { hashOrderAccessToken } from '@biasmarket/utils/assisted-order';
 import { PrismaService } from '../../../prisma/prisma.service.js';
+import { NotificationsService } from '../../notifications/notifications.service.js';
 import { INVITE_EVENT_TYPES } from '../dto/record-invite-event.dto.js';
 
 // Which later issue writes each type. G2 reads the buyer-visible rows.
@@ -47,6 +53,12 @@ const ALLOWED_PAYLOAD_KEYS = new Set([
   'paymentId',
 ]);
 
+const RECEIPT_FULFILLMENT_STATES = new Set([
+  'IN_TRANSIT',
+  'READY',
+  'COMPLETED',
+]);
+
 export type InviteEventType = (typeof INVITE_EVENT_TYPES)[number];
 
 type EventWriter = {
@@ -85,7 +97,12 @@ export function sanitizeOrderEventPayload(
 
 @Injectable()
 export class OrderEventsService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(OrderEventsService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private notifications: NotificationsService,
+  ) {}
 
   async record(
     tx: EventWriter,
@@ -136,6 +153,7 @@ export class OrderEventsService {
         accessTokenRevokedAt: true,
         status: true,
         paymentStatus: true,
+        fulfillmentStatus: true,
         packedPhotoUrl: true,
       },
     });
@@ -172,5 +190,71 @@ export class OrderEventsService {
         actor: 'BUYER',
       });
     });
+  }
+
+  // Idempotent: the first confirmation stamps the order, writes the event and
+  // notifies the seller; any later call returns the stored date untouched.
+  // The state gate is deliberately generic (409) so the response does not
+  // describe the order beyond what the public page already shows.
+  async confirmReceipt(token: string): Promise<{ receiptConfirmedAt: string }> {
+    const order = await this.requireOrderForToken(token);
+    if (
+      order.paymentStatus !== 'VERIFIED' ||
+      order.status === 'CANCELLED' ||
+      !RECEIPT_FULFILLMENT_STATES.has(order.fulfillmentStatus)
+    ) {
+      throw new ConflictException('El pedido aún no se puede confirmar');
+    }
+
+    const now = new Date();
+    const won = await this.prisma.$transaction(async (tx) => {
+      const { count } = await tx.order.updateMany({
+        where: {
+          id: order.id,
+          storeId: order.storeId,
+          buyerConfirmedReceivedAt: null,
+        },
+        data: { buyerConfirmedReceivedAt: now },
+      });
+      if (count !== 1) return false;
+      await this.record(tx, {
+        orderId: order.id,
+        storeId: order.storeId,
+        type: 'RECEIPT_CONFIRMED',
+        actor: 'BUYER',
+      });
+      return true;
+    });
+
+    if (!won) {
+      const stored = await this.prisma.order.findUnique({
+        where: { id: order.id },
+        select: { buyerConfirmedReceivedAt: true },
+      });
+      return {
+        receiptConfirmedAt: (
+          stored?.buyerConfirmedReceivedAt ?? now
+        ).toISOString(),
+      };
+    }
+
+    // After commit and best effort: a notification failure must not undo or
+    // fail a receipt the buyer already confirmed. No buyer data in the text.
+    try {
+      await this.notifications.createIfNotOpen({
+        storeId: order.storeId,
+        type: 'RECEIPT_CONFIRMED',
+        entityType: 'Order',
+        entityId: order.id,
+        title: 'El comprador confirmó la recepción',
+        body: 'Un comprador confirmó que recibió su pedido.',
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Failed to notify receipt of order ${order.id}`,
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+    return { receiptConfirmedAt: now.toISOString() };
   }
 }

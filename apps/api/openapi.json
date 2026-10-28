@@ -2028,52 +2028,6 @@
         "tags": ["Order"]
       }
     },
-    "/stores/{storeId}/orders/{orderId}/payments/{paymentId}/void": {
-      "patch": {
-        "operationId": "OrderController_voidPayment",
-        "parameters": [
-          {
-            "name": "storeId",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          },
-          {
-            "name": "orderId",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          },
-          {
-            "name": "paymentId",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/VoidOrderPaymentDto" }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrderDetailResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": ["Order"]
-      }
-    },
     "/stores/{storeId}/orders/{orderId}/payments/{paymentId}/review": {
       "patch": {
         "operationId": "OrderController_reviewPaymentProof",
@@ -2109,6 +2063,60 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ReviewPaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDetailResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Order"]
+      }
+    },
+    "/stores/{storeId}/orders/{orderId}/payments/{paymentId}/void": {
+      "patch": {
+        "operationId": "OrderController_voidPayment",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "paymentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoidOrderPaymentDto"
               }
             }
           }
@@ -2749,6 +2757,34 @@
         "responses": {
           "204": {
             "description": ""
+          }
+        },
+        "tags": ["PublicOrderEvents"]
+      }
+    },
+    "/public/orders/{token}/receipt": {
+      "post": {
+        "operationId": "PublicOrderEventsController_confirmReceipt",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptConfirmedResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": ["PublicOrderEvents"]
@@ -6912,7 +6948,12 @@
             "type": "string"
           },
           "type": {
-            "enum": ["LOW_STOCK", "OUT_OF_STOCK", "PAYMENT_PROOF_SUBMITTED"],
+            "enum": [
+              "LOW_STOCK",
+              "OUT_OF_STOCK",
+              "PAYMENT_PROOF_SUBMITTED",
+              "RECEIPT_CONFIRMED"
+            ],
             "type": "string"
           },
           "entityType": {
@@ -7412,6 +7453,11 @@
             "format": "date-time",
             "description": "When the buyer claimed the order into an account."
           },
+          "buyerConfirmedReceivedAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "When the buyer confirmed receiving the order."
+          },
           "createdByName": {
             "type": "string",
             "nullable": true,
@@ -7468,6 +7514,7 @@
           "paidPercentage",
           "linkFirstOpenedAt",
           "claimedAt",
+          "buyerConfirmedReceivedAt",
           "createdByName",
           "items",
           "payments"
@@ -7631,6 +7678,11 @@
             "format": "date-time",
             "description": "When the buyer claimed the order into an account."
           },
+          "buyerConfirmedReceivedAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "When the buyer confirmed receiving the order."
+          },
           "createdByName": {
             "type": "string",
             "nullable": true,
@@ -7687,6 +7739,7 @@
           "paidPercentage",
           "linkFirstOpenedAt",
           "claimedAt",
+          "buyerConfirmedReceivedAt",
           "createdByName",
           "items",
           "payments"
@@ -7791,6 +7844,17 @@
           }
         },
         "required": ["decision"]
+      },
+      "VoidOrderPaymentDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "required": ["reason"]
       },
       "OrderStatusResponseDto": {
         "type": "object",
@@ -8000,13 +8064,6 @@
           }
         },
         "required": ["resolution"]
-      },
-      "VoidOrderPaymentDto": {
-        "type": "object",
-        "properties": {
-          "reason": { "type": "string", "minLength": 1, "maxLength": 500 }
-        },
-        "required": ["reason"]
       },
       "ShippingAddressDto": {
         "type": "object",
@@ -8864,6 +8921,11 @@
             "type": "boolean",
             "description": "Whether a private packed-package photo is available."
           },
+          "receiptConfirmedAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "When the buyer confirmed receiving the order."
+          },
           "courierModality": {
             "nullable": true,
             "enum": ["AGENCY", "HOME"],
@@ -8900,6 +8962,7 @@
           "trackingNumber",
           "trackingUrl",
           "packedPhotoAvailable",
+          "receiptConfirmedAt",
           "courierModality",
           "payments"
         ]
@@ -8913,6 +8976,16 @@
           }
         },
         "required": ["type"]
+      },
+      "ReceiptConfirmedResponseDto": {
+        "type": "object",
+        "properties": {
+          "receiptConfirmedAt": {
+            "type": "string",
+            "description": "When the buyer confirmed receiving the order."
+          }
+        },
+        "required": ["receiptConfirmedAt"]
       },
       "PaymentMethodConfigResponseDto": {
         "type": "object",

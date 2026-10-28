@@ -43,6 +43,7 @@ const base = {
   paidPercentage: 0,
   linkFirstOpenedAt: null,
   claimedAt: null,
+  buyerConfirmedReceivedAt: null,
   createdByName: "Mica Seller",
   currency: "PEN",
   status: "ACTIVE",
@@ -387,4 +388,21 @@ test("the order detail shows the assisted section only for assisted orders", () 
   unmount();
   renderSheet({ ...base, source: "MARKETPLACE" } as OrderResponseDto);
   expect(screen.queryByText("Pedido asistido")).toBeNull();
+});
+
+test("shows when the buyer confirmed receipt, apart from the fulfillment status", async () => {
+  findTemplate.mockResolvedValue({ template: null });
+  renderWithProviders(
+    <AssistedOrderSection
+      order={{
+        ...base,
+        buyerConfirmedReceivedAt: "2026-10-02T15:00:00.000Z",
+      }}
+      storeId="store-1"
+      storeName="Mi Tienda"
+    />,
+  );
+  expect(
+    await screen.findByText(/El comprador confirmó la recepción el/),
+  ).toBeTruthy();
 });

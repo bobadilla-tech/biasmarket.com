@@ -524,6 +524,15 @@
     "date": {
       "today": "Hoy {time}",
       "yesterday": "Ayer {time}"
+    },
+    "receipt": {
+      "title": "¿Ya te llegó tu pedido?",
+      "confirm": "Ya lo recibí",
+      "problem": "Hay un problema",
+      "problemMessage": "Hola, tengo un problema con mi pedido #{number}",
+      "thanks": "¡Gracias por confirmar!",
+      "confirmedOn": "Confirmaste la recepción el {date}.",
+      "error": "No se pudo confirmar. Inténtalo de nuevo."
     }
   }
 }

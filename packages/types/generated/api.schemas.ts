@@ -581,6 +581,7 @@ export const NotificationResponseDtoType = {
   LOW_STOCK: "LOW_STOCK",
   OUT_OF_STOCK: "OUT_OF_STOCK",
   PAYMENT_PROOF_SUBMITTED: "PAYMENT_PROOF_SUBMITTED",
+  RECEIPT_CONFIRMED: "RECEIPT_CONFIRMED",
 } as const;
 
 export type NotificationResponseDtoMetadata = { [key: string]: unknown };
@@ -900,6 +901,11 @@ export interface OrderResponseDto {
    */
   claimedAt: string | null;
   /**
+   * When the buyer confirmed receiving the order.
+   * @nullable
+   */
+  buyerConfirmedReceivedAt: string | null;
+  /**
    * Display name of the seller who created an assisted order.
    * @nullable
    */
@@ -1077,6 +1083,11 @@ export interface OrderDetailResponseDto {
    * @nullable
    */
   claimedAt: string | null;
+  /**
+   * When the buyer confirmed receiving the order.
+   * @nullable
+   */
+  buyerConfirmedReceivedAt: string | null;
   /**
    * Display name of the seller who created an assisted order.
    * @nullable
@@ -1953,6 +1964,11 @@ export interface PublicOrderResponseDto {
   /** @nullable */
   trackingUrl: string | null;
   packedPhotoAvailable: boolean;
+  /**
+   * When the buyer confirmed receiving the order.
+   * @nullable
+   */
+  receiptConfirmedAt: string | null;
   /** @nullable */
   courierModality: PublicOrderResponseDtoCourierModality;
   payments: PublicOrderPaymentResponseDto[];
@@ -1976,6 +1992,11 @@ export const RecordInviteEventDtoType = {
 
 export interface RecordInviteEventDto {
   type: RecordInviteEventDtoType;
+}
+
+export interface ReceiptConfirmedResponseDto {
+  /** When the buyer confirmed receiving the order. */
+  receiptConfirmedAt: string;
 }
 
 export type PaymentMethodConfigResponseDtoMethod =

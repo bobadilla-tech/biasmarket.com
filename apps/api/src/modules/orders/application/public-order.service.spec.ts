@@ -195,6 +195,7 @@ describe('PublicOrderService', () => {
         'trackingNumber',
         'trackingUrl',
         'packedPhotoAvailable',
+        'receiptConfirmedAt',
         'courierModality',
         'payments',
       ].sort(),

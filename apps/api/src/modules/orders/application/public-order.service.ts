@@ -183,6 +183,7 @@ export class PublicOrderService {
       trackingNumber: order.trackingNumber,
       trackingUrl: order.trackingUrl,
       packedPhotoAvailable: Boolean(order.packedPhotoUrl),
+      receiptConfirmedAt: order.buyerConfirmedReceivedAt?.toISOString() ?? null,
       courierModality: order.courierModality,
       payments: order.payments.map((payment) => ({
         source: payment.source,

@@ -21,6 +21,7 @@ import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { OrderEventsService } from '../application/order-events.service.js';
 import { PublicOrderService } from '../application/public-order.service.js';
 import { RecordInviteEventDto } from '../dto/record-invite-event.dto.js';
+import { ReceiptConfirmedResponseDto } from '../dto/receipt-confirmed-response.dto.js';
 import { PublicOrderResponseDto } from '../dto/public-order-response.dto.js';
 import { StorageService } from '../../../storage/storage.service.js';
 
@@ -80,5 +81,24 @@ export class PublicOrderEventsController {
       throw new UnsupportedMediaTypeException();
     }
     await this.events.recordInvite(token, dto.type);
+  }
+
+  @Public()
+  @Post(':token/receipt')
+  @Header('Cache-Control', 'no-store')
+  @Header('Referrer-Policy', 'no-referrer')
+  @HttpCode(200)
+  @ApiOkResponse({ type: ReceiptConfirmedResponseDto })
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 20 } })
+  async confirmReceipt(
+    @Param('token') token: string,
+    @Headers('content-type') contentType: string | undefined,
+  ): Promise<ReceiptConfirmedResponseDto> {
+    // Same JSON-only rule as `events`: a cross-site form post is urlencoded.
+    if (!contentType?.toLowerCase().startsWith('application/json')) {
+      throw new UnsupportedMediaTypeException();
+    }
+    return this.events.confirmReceipt(token);
   }
 }

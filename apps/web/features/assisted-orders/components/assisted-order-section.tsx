@@ -157,6 +157,18 @@ export function AssistedOrderSection({
         ) : null}
       </div>
 
+      {order.buyerConfirmedReceivedAt ? (
+        // Apart from the fulfillment status: the buyer's word, not the
+        // seller's "Entregado".
+        <p role="status" className="text-sm font-medium text-[#159a63]">
+          {t("receiptConfirmed", {
+            date: new Date(order.buyerConfirmedReceivedAt).toLocaleString(
+              locale,
+            ),
+          })}
+        </p>
+      ) : null}
+
       <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
         <span className="font-medium text-[#8f7da8]">{t("buyerNumber")}</span>
         <span className="font-semibold text-[#2d1649]">

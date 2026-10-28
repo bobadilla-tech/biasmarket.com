@@ -82,6 +82,7 @@ function makeOrder(
     trackingNumber: "OLV1",
     trackingUrl: "https://tracking.example/OLV1",
     packedPhotoAvailable: true,
+    receiptConfirmedAt: null,
     courierModality: "HOME",
     payments: [],
     ...overrides,
