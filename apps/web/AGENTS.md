@@ -71,16 +71,17 @@ the re-exported response/request DTO types. Still not for hand-populated
 feature-local types — those belong in `features/<name>/schemas/`.
 
 **OpenAPI-generated client**: landed 2026-08-04, reworked the same day after
-review (see `.artifacts/2026/08/20260804--nestjs-openapi-client-generation/plan.md` and
-`.artifacts/2026/08/20260804--typed-sdk-client-followups/plan.md` for the full history — a
-first pass generated a raw `openapi-fetch` client that turned out to need _more_
-hand-written wiring per call site than the hand-written wrapper it replaced;
-this section describes the redo, not that first pass). `collections` was the
-pilot feature; `products` (money fields + 2 upload endpoints) migrated next per
-`.artifacts/2026/08/20260804--orval-client-rollout/plan.md`'s Batch 1, closing that
-plan's money/upload proof-of-pattern gate. See that doc's "Batch 1 execution
-notes" for what came up migrating a module with more than one response shape
-(`create()` vs. `findAll()`/`findOne()`) and multipart endpoints. Batch 2
+review (see
+`.artifacts/2026/08/20260804--nestjs-openapi-client-generation/plan.md` and
+`.artifacts/2026/08/20260804--typed-sdk-client-followups/plan.md` for the full
+history — a first pass generated a raw `openapi-fetch` client that turned out to
+need _more_ hand-written wiring per call site than the hand-written wrapper it
+replaced; this section describes the redo, not that first pass). `collections`
+was the pilot feature; `products` (money fields + 2 upload endpoints) migrated
+next per `.artifacts/2026/08/20260804--orval-client-rollout/plan.md`'s Batch 1,
+closing that plan's money/upload proof-of-pattern gate. See that doc's "Batch 1
+execution notes" for what came up migrating a module with more than one response
+shape (`create()` vs. `findAll()`/`findOne()`) and multipart endpoints. Batch 2
 (`categories`, `notifications`, `contact`, `suggestions`, `sections`) followed
 the same recipe — see that doc's "Batch 2 execution notes" for a new `@ApiQuery`
 pattern needed for `Notifications.findAll`'s query-string filters (no prior
@@ -90,8 +91,8 @@ limiter (`vitest.config.e2e.ts` now sets `fileParallelism: false` because of it
 better-auth's rate limiter). Batch 3 (`DeliveryConfig`/`PublicDeliveryConfig`,
 `PaymentConfig`/`PublicPaymentConfig`, `PickupPoints`/`PublicPickupPoints`,
 `Stores`/`MyStores`) followed next per
-`.artifacts/2026/08/20260805--orval-rollout-batches-3-6/plan.md` — see that doc's
-"Batch 3 execution notes" for what came up: a real `FindAllParams` naming
+`.artifacts/2026/08/20260805--orval-rollout-batches-3-6/plan.md` — see that
+doc's "Batch 3 execution notes" for what came up: a real `FindAllParams` naming
 collision between `Notifications` and `PaymentConfig` (fixed once, in
 `orval.config.ts`'s `operationName`, not per-tag), `Stores`' deeply-nested
 `findPublicBySlug` join DTO, and a genuine pre-existing app bug
@@ -120,16 +121,17 @@ landed before Batch 5/6 below, so those batches' DTOs didn't need to carry a
 
 Batches 5 (`CustomerAuth`, `CustomerAccount`, `Customers`) and 6
 (`ProductSearch`, `Stats`, `Users`) landed together per
-`.artifacts/2026/08/20260806--orval-rollout-batches-5-6/plan.md` — **this was the last
-batch**; every `apps/web` feature with a real backend tag is now migrated (see
-"Migrated so far" below). `CustomerAuth`'s spec-bug blocker (missing `slug`
-`@ApiParam` on `changePassword`/`logout`) was fixed with the user's explicit
-go-ahead — `unsafeDisableValidation: true` is gone from `orval.config.ts` as a
-result. `Customers.findOne`'s `orders` and `Stats.getOverview`'s `recentOrders`
-both reuse `Order`'s own `OrderResponseDto` directly (a cross-module DTO import,
-confirmed structurally identical by reading the services — the first time this
-rollout had two tags share an entire response shape, not just a nested piece of
-one) rather than each re-declaring the same dozen fields.
+`.artifacts/2026/08/20260806--orval-rollout-batches-5-6/plan.md` — **this was
+the last batch**; every `apps/web` feature with a real backend tag is now
+migrated (see "Migrated so far" below). `CustomerAuth`'s spec-bug blocker
+(missing `slug` `@ApiParam` on `changePassword`/`logout`) was fixed with the
+user's explicit go-ahead — `unsafeDisableValidation: true` is gone from
+`orval.config.ts` as a result. `Customers.findOne`'s `orders` and
+`Stats.getOverview`'s `recentOrders` both reuse `Order`'s own `OrderResponseDto`
+directly (a cross-module DTO import, confirmed structurally identical by reading
+the services — the first time this rollout had two tags share an entire response
+shape, not just a nested piece of one) rather than each re-declaring the same
+dozen fields.
 
 **A real, repo-wide bug found and fixed while regenerating for these batches,
 unrelated to any single tag:** every controller's `@Body()`-decorated request

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  AssistedOrderInvariantError,
   assertVendorAssistedOrder,
+  AssistedOrderInvariantError,
   createOrderAccessToken,
   hashOrderAccessToken,
 } from "./index";

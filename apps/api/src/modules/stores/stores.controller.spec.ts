@@ -1,4 +1,5 @@
 import { Test, type TestingModule } from '@nestjs/testing';
+import { BadRequestException } from '@nestjs/common';
 import { type Mock, vi } from 'vitest';
 import { StoresController } from './stores.controller.js';
 import { StoresService } from './stores.service.js';
@@ -22,6 +23,8 @@ describe('StoresController', () => {
     create: Mock;
     assertOwnership: Mock;
     updatePublicHeaderImage: Mock;
+    findPublicCatalog: Mock;
+    findCategoriesPublic: Mock;
   };
   let storage: {
     uploadImage: Mock;
@@ -35,6 +38,8 @@ describe('StoresController', () => {
       create: vi.fn(),
       assertOwnership: vi.fn(),
       updatePublicHeaderImage: vi.fn(),
+      findPublicCatalog: vi.fn(),
+      findCategoriesPublic: vi.fn().mockResolvedValue([]),
     };
     storage = {
       uploadImage: vi.fn(),
@@ -56,6 +61,103 @@ describe('StoresController', () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
+  });
+
+  it('parses catalog filters and serializes public product values', async () => {
+    service.findPublicCatalog.mockResolvedValue({
+      page: 2,
+      limit: 12,
+      total: 1,
+      items: [
+        {
+          id: 'product-1',
+          price: { toString: () => '12.50' },
+          availableUntil: new Date('2026-10-01T00:00:00.000Z'),
+          deletedAt: null,
+          createdAt: new Date('2026-09-01T00:00:00.000Z'),
+          discontinued: false,
+          variants: [
+            {
+              id: 'variant-1',
+              priceOverride: { toString: () => '11.00' },
+              attributes: {},
+            },
+          ],
+          categories: [],
+        },
+      ],
+    });
+
+    const result = await controller.findPublicCatalog(
+      'my-store',
+      ' album ',
+      ['photocards', 'bts'],
+      'precio_asc',
+      '2',
+      '12',
+    );
+
+    expect(service.findPublicCatalog).toHaveBeenCalledWith('my-store', {
+      page: 2,
+      limit: 12,
+      q: 'album',
+      categories: ['photocards', 'bts'],
+      sort: 'precio_asc',
+    });
+    expect(result).toMatchObject({
+      page: 2,
+      limit: 12,
+      total: 1,
+      items: [
+        {
+          id: 'product-1',
+          price: '12.50',
+          availableUntil: '2026-10-01T00:00:00.000Z',
+          createdAt: '2026-09-01T00:00:00.000Z',
+          variants: [{ id: 'variant-1', priceOverride: '11.00' }],
+        },
+      ],
+    });
+  });
+
+  it('accepts fixed-route storefront catalog requests and rejects repeated search values', async () => {
+    service.findPublicCatalog.mockResolvedValue({
+      items: [],
+      total: 0,
+      page: 3,
+      limit: 12,
+    });
+    const body = {
+      slug: 'demo-store',
+      query: {
+        q: 'album',
+        categorias: ['photocards', 'bts'],
+        sort: 'precio_asc',
+        page: '3',
+        limit: '12',
+      },
+    };
+
+    await controller.findStorefrontCatalog(body);
+
+    expect(service.findPublicCatalog).toHaveBeenCalledWith('demo-store', {
+      page: 3,
+      limit: 12,
+      q: 'album',
+      categories: ['photocards', 'bts'],
+      sort: 'precio_asc',
+    });
+    await expect(
+      controller.findStorefrontCatalog({
+        slug: 'demo-store',
+        query: { q: ['first', 'second'] },
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('serves storefront categories through the fixed request route', async () => {
+    await controller.findStorefrontCategories({ slug: 'demo-store' });
+    expect(service.findCategoriesPublic).toHaveBeenCalledWith('demo-store');
   });
 
   it('create() delegates to service.create with userId and the dto', async () => {

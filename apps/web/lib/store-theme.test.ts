@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  DEFAULT_STORE_PALETTE,
   contrastRatio,
+  DEFAULT_STORE_PALETTE,
   ensureContrast,
   getStoreThemeStyle,
   resolveStorePalette,

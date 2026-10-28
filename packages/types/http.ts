@@ -11,7 +11,10 @@ export interface ApiClientConfig {
   // Native apps use this to clear stale SecureStore credentials.
   onUnauthorized?: (authorization: string) => void | Promise<void>;
   // Called when an authenticated response rotates the bearer session token.
-  onSessionRefresh?: (authorization: string, token: string) => void | Promise<void>;
+  onSessionRefresh?: (
+    authorization: string,
+    token: string,
+  ) => void | Promise<void>;
 }
 
 let config: ApiClientConfig | undefined;

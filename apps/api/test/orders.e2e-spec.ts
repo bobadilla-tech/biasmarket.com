@@ -70,9 +70,10 @@ describe('orders + checkout (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    // Keep each independent attempt below the production checkout limit while
-    // preserving the real throttler in this contract suite.
-    app.getHttpAdapter().getInstance().set('trust proxy', true);
+    // Same hop count as production (main.ts). A single X-Forwarded-For address
+    // is the client, so each checkout stays in its own bucket under the real
+    // limiter. A spoofed prefix would not.
+    app.getHttpAdapter().getInstance().set('trust proxy', 1);
     await app.init();
     prisma = moduleFixture.get(PrismaService);
     storage = moduleFixture.get(StorageService);

@@ -82,6 +82,21 @@ Add:
   limited-stock items — see §9.2 below, this is the main abuse vector this flow
   needs to guard against, since an order exists before payment is confirmed
 
+Public IP limits follow the visitor, not the proxy. The path is client →
+Cloudflare → Caddy → API.
+
+`infra/vps/Caddyfile` trusts only [Cloudflare's published ranges](https://www.cloudflare.com/ips/)
+and reads `CF-Connecting-IP`. Cloudflare sets that header and a direct
+connection to the origin is not in the trusted list, so a forged
+`CF-Connecting-IP` or `X-Forwarded-For` is ignored. Caddy then sends that one
+address to the API.
+
+The API sets Express `trust proxy` to `1` (`apps/api/src/main.ts`), so
+`req.ip` is the address Caddy added. It is not `true`: that setting uses the
+leftmost `X-Forwarded-For` entry, which the visitor can choose. Two different
+rightmost addresses are two throttle buckets; a spoofed prefix on the same
+rightmost address is still one bucket.
+
 ---
 
 ## 8. Server Actions vs tRPC vs REST
