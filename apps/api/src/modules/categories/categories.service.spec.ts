@@ -103,6 +103,25 @@ describe('CategoriesService', () => {
       });
     });
 
+    it('increments the slug suffix until it finds an unused category slug', async () => {
+      prisma.category.findMany.mockResolvedValue([
+        { slug: 'photocards' },
+        { slug: 'photocards-2' },
+      ]);
+      prisma.category.create.mockResolvedValue({ id: categoryId });
+
+      await service.create(storeId, ownerId, { name: 'Photocards' });
+
+      expect(prisma.category.create).toHaveBeenCalledWith({
+        data: {
+          name: 'Photocards',
+          parentId: undefined,
+          storeId,
+          slug: 'photocards-3',
+        },
+      });
+    });
+
     it('throws BadRequestException when parentId does not belong to the store', async () => {
       prisma.category.findUnique.mockResolvedValue({
         id: 'parent-1',

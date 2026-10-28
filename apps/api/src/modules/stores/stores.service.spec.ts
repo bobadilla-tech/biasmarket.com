@@ -23,6 +23,7 @@ describe('StoresService', () => {
     paymentMethodConfig: { createMany: Mock };
     storeSection: { findMany: Mock };
     product: { findMany: Mock; findUnique: Mock };
+    category: { findMany: Mock };
     order: { findMany: Mock };
     $transaction: Mock;
     $queryRaw: Mock;
@@ -44,6 +45,7 @@ describe('StoresService', () => {
       paymentMethodConfig: { createMany: vi.fn() },
       storeSection: { findMany: vi.fn() },
       product: { findMany: vi.fn(), findUnique: vi.fn() },
+      category: { findMany: vi.fn() },
       order: { findMany: vi.fn() },
       $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(prisma)),
       $queryRaw: vi.fn(),
@@ -983,6 +985,39 @@ describe('StoresService', () => {
         NotFoundException,
       );
       expect(prisma.$queryRaw).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('findCategoriesPublic', () => {
+    it('returns public categories with published product counts', async () => {
+      prisma.store.findFirst.mockResolvedValue({ id: 'store-1' });
+      prisma.category.findMany.mockResolvedValue([
+        {
+          id: 'category-1',
+          name: 'Photocards',
+          slug: 'photocards',
+          parentId: null,
+          _count: { products: 3 },
+        },
+      ]);
+
+      const result = await service.findCategoriesPublic('my-store');
+
+      expect(prisma.category.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { storeId: 'store-1' },
+          orderBy: { name: 'asc' },
+        }),
+      );
+      expect(result).toEqual([
+        {
+          id: 'category-1',
+          name: 'Photocards',
+          slug: 'photocards',
+          parentId: null,
+          productCount: 3,
+        },
+      ]);
     });
   });
 
