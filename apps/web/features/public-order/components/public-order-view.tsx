@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import type { PublicOrderResponseDto } from "@biasmarket/types";
 import { StoreLogo } from "@/components/store-logo";
@@ -14,9 +15,11 @@ import {
 import { HowToPay } from "./how-to-pay";
 import { ClaimOrderButton } from "./claim-order-button";
 import { ReceiptConfirmation } from "./receipt-confirmation";
+import { SaveOrderInvite } from "./save-order-invite";
 import { ShippingDetails } from "./shipping-details";
 import { Timeline } from "./timeline";
 import { formatLimaDateTime } from "../lib/format-lima-datetime";
+import { useSaveInvite } from "../hooks/use-save-invite";
 
 const BANNER_TONE: Record<ReturnType<typeof getBannerKey>, string> = {
   cancelled: "border-gray-200 bg-gray-50 text-gray-700",
@@ -49,6 +52,8 @@ export function PublicOrderView({
 }) {
   const t = useTranslations("storefront.publicOrder");
   const locale = useLocale();
+  const [receiptJustConfirmed, setReceiptJustConfirmed] = useState(false);
+  const invite = useSaveInvite({ slug, token, order, receiptJustConfirmed });
   const money = (amount: string | number) => `${order.currency} ${amount}`;
   const cancelled = isCancelled(order);
   const bannerKey = getBannerKey(order);
@@ -104,7 +109,21 @@ export function PublicOrderView({
 
       {/* Above everything that can grow (invite blocks later), so it stays
           on the first screen on a phone. */}
-      <ReceiptConfirmation slug={slug} token={token} order={order} />
+      <ReceiptConfirmation
+        slug={slug}
+        token={token}
+        order={order}
+        onConfirmed={() => setReceiptJustConfirmed(true)}
+      />
+
+      {invite.moment && invite.moment !== "adelanto_linea_de_tiempo" && (
+        <SaveOrderInvite
+          token={token}
+          moment={invite.moment}
+          onClick={invite.clicked}
+          onDismiss={invite.dismiss}
+        />
+      )}
 
       {!cancelled && (
         <section
@@ -150,10 +169,14 @@ export function PublicOrderView({
                 })}
               </p>
             )}
-            {order.hasValidatedPayment && !cancelled && (
+            {invite.moment === "adelanto_linea_de_tiempo" && (
               <>
                 <p className="text-sm text-gray-700">{t("timeline.teaser")}</p>
-                <ClaimOrderButton token={token} />
+                <ClaimOrderButton
+                  token={token}
+                  moment="adelanto_linea_de_tiempo"
+                  onStart={invite.clicked}
+                />
               </>
             )}
           </>

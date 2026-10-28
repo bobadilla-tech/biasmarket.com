@@ -594,6 +594,20 @@
       "error": "We couldn't start saving. Please try again.",
       "notYet": "This order can't be saved yet. Come back once the payment is validated.",
       "saved": "Order saved to your account"
+    },
+    "invite": {
+      "notNow": "Not now",
+      "pago_validado": {
+        "title": "Your payment is validated",
+        "body": "Save this order to your Google account to always see it in full, with dates and tracking. Your current link will keep working."
+      },
+      "banner": {
+        "summary": "Save this order to your account"
+      },
+      "entrega": {
+        "title": "Keep your history",
+        "body": "Your order has arrived. Save it to your account to keep the whole history at hand. Your current link will keep working."
+      }
     }
   }
 }

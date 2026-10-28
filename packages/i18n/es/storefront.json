@@ -594,6 +594,20 @@
       "error": "No pudimos iniciar el guardado. Inténtalo de nuevo.",
       "notYet": "Este pedido todavía no se puede guardar. Vuelve cuando el pago esté validado.",
       "saved": "Pedido guardado en tu cuenta"
+    },
+    "invite": {
+      "notNow": "Ahora no",
+      "pago_validado": {
+        "title": "Tu pago está validado",
+        "body": "Guarda este pedido en tu cuenta de Google para verlo siempre completo, con fechas y seguimiento. Tu enlace actual seguirá funcionando."
+      },
+      "banner": {
+        "summary": "Guarda este pedido en tu cuenta"
+      },
+      "entrega": {
+        "title": "Guarda tu historial",
+        "body": "Tu pedido ya llegó. Guárdalo en tu cuenta para tener todo el historial a mano. Tu enlace actual seguirá funcionando."
+      }
     }
   }
 }

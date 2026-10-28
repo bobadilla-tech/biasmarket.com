@@ -2084,6 +2084,16 @@ export interface UpdateOrderShippingDto {
   trackingUrl?: string | null;
 }
 
+export type RecordInviteEventDtoMoment =
+  (typeof RecordInviteEventDtoMoment)[keyof typeof RecordInviteEventDtoMoment];
+
+export const RecordInviteEventDtoMoment = {
+  entrega: "entrega",
+  pago_validado: "pago_validado",
+  banner: "banner",
+  adelanto_linea_de_tiempo: "adelanto_linea_de_tiempo",
+} as const;
+
 export type RecordInviteEventDtoType =
   (typeof RecordInviteEventDtoType)[keyof typeof RecordInviteEventDtoType];
 
@@ -2094,6 +2104,7 @@ export const RecordInviteEventDtoType = {
 } as const;
 
 export interface RecordInviteEventDto {
+  moment?: RecordInviteEventDtoMoment;
   type: RecordInviteEventDtoType;
 }
 

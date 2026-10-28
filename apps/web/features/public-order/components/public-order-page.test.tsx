@@ -6,6 +6,7 @@ import { focusManager } from "@tanstack/react-query";
 import { ApiError } from "@biasmarket/types";
 import type { PublicOrderResponseDto } from "@biasmarket/types";
 import { renderWithProviders } from "../../../test-utils/render-with-providers";
+import { installLocalStorage } from "../../../test-utils/local-storage";
 
 const { getByToken, findPublic, storeLogo } = vi.hoisted(() => ({
   getByToken: vi.fn(),
@@ -20,7 +21,7 @@ vi.mock("@/components/store-logo", () => ({
 }));
 vi.mock("@/lib/api-client", () => ({
   apiClient: {
-    publicOrders: { getByToken, claimTicket: vi.fn() },
+    publicOrders: { getByToken, claimTicket: vi.fn(), recordInvite: vi.fn() },
     stores: { findPublic },
   },
 }));
@@ -94,6 +95,7 @@ function makeOrder(
 }
 
 beforeEach(() => {
+  installLocalStorage();
   findPublic.mockResolvedValue({
     name: "K-Store",
     whatsappNumber: "+51911111111",
@@ -412,10 +414,10 @@ test("an unclaimed order shows the last update in Lima time and no dated steps",
   expect(screen.queryByText(/Guarda tu pedido/)).toBeNull();
 });
 
-test("the save teaser needs a validated payment and an open order", async () => {
+test("a validated first visit shows the first-validation invite with the claim button", async () => {
   getByToken.mockResolvedValue(makeOrder({ hasValidatedPayment: true }));
   renderPage();
-  expect(await screen.findByText(/Guarda tu pedido/)).toBeTruthy();
+  expect(await screen.findByText("Tu pago está validado")).toBeTruthy();
   expect(
     screen.getByRole("button", { name: "Guardar con Google" }),
   ).toBeTruthy();
@@ -441,13 +443,16 @@ test("a claimed order shows 'Pedido guardado' and no claim button", async () => 
   ).toBeNull();
 });
 
-test("the save teaser is hidden when cancelled even with a validated payment", async () => {
+test("no invitation when cancelled even with a validated payment", async () => {
   getByToken.mockResolvedValue(
     makeOrder({ hasValidatedPayment: true, status: "CANCELLED" }),
   );
   renderPage();
   await screen.findByText(/Última actualización/);
-  expect(screen.queryByText(/Guarda tu pedido/)).toBeNull();
+  expect(screen.queryByText("Tu pago está validado")).toBeNull();
+  expect(
+    screen.queryByRole("button", { name: "Guardar con Google" }),
+  ).toBeNull();
 });
 
 test("a claimed order shows the dated steps in order, with Lima times", async () => {

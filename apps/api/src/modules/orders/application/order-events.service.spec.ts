@@ -167,6 +167,84 @@ describe('OrderEventsService', () => {
     expect(prisma.orderEvent.create).toHaveBeenCalledTimes(1);
   });
 
+  it('stores only the moment for an invite event, and dedupes SHOWN per moment', async () => {
+    const { token } = createOrderAccessToken();
+    prisma.order.findUnique.mockResolvedValue({
+      id: 'order-1',
+      storeId: 'store-1',
+      accessTokenRevokedAt: null,
+      status: 'ACTIVE',
+      paymentStatus: 'VERIFIED',
+      claimedAt: null,
+      buyerAccountId: null,
+    });
+
+    await service.recordInvite(token, 'INVITE_SHOWN', 'pago_validado');
+
+    expect(prisma.orderEvent.findFirst).toHaveBeenCalledWith({
+      where: {
+        orderId: 'order-1',
+        type: 'INVITE_SHOWN',
+        payload: { path: ['moment'], equals: 'pago_validado' },
+      },
+      select: { id: true },
+    });
+    // The stored payload, not the input: only the allow-listed moment.
+    expect(prisma.orderEvent.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        type: 'INVITE_SHOWN',
+        visibleToBuyer: false,
+        payload: { moment: 'pago_validado' },
+      }),
+    });
+    const lock = JSON.stringify(prisma.$executeRaw.mock.calls[0]);
+    expect(lock).toContain('invite-shown:order-1:');
+
+    // The same moment again is skipped; a different moment is a new row.
+    prisma.orderEvent.findFirst.mockResolvedValueOnce({ id: 'e1' });
+    await service.recordInvite(token, 'INVITE_SHOWN', 'pago_validado');
+    expect(prisma.orderEvent.create).toHaveBeenCalledTimes(1);
+    await service.recordInvite(token, 'INVITE_SHOWN', 'banner');
+    expect(prisma.orderEvent.create).toHaveBeenCalledTimes(2);
+    expect(prisma.orderEvent.create).toHaveBeenLastCalledWith({
+      data: expect.objectContaining({ payload: { moment: 'banner' } }),
+    });
+  });
+
+  it('records clicks and dismissals with the moment, and nothing for a claimed order', async () => {
+    const { token } = createOrderAccessToken();
+    const base = {
+      id: 'order-1',
+      storeId: 'store-1',
+      accessTokenRevokedAt: null,
+      status: 'ACTIVE',
+      paymentStatus: 'VERIFIED',
+      claimedAt: null,
+      buyerAccountId: null,
+    };
+    prisma.order.findUnique.mockResolvedValue(base);
+    await service.recordInvite(token, 'INVITE_CLICKED', 'entrega');
+    await service.recordInvite(token, 'INVITE_DISMISSED', 'banner');
+    expect(prisma.orderEvent.create).toHaveBeenCalledTimes(2);
+    expect(prisma.orderEvent.create).toHaveBeenNthCalledWith(1, {
+      data: expect.objectContaining({
+        type: 'INVITE_CLICKED',
+        payload: { moment: 'entrega' },
+      }),
+    });
+
+    prisma.orderEvent.create.mockClear();
+    for (const claimed of [
+      { claimedAt: new Date() },
+      { buyerAccountId: 'buyer-1' },
+    ]) {
+      prisma.order.findUnique.mockResolvedValue({ ...base, ...claimed });
+      await service.recordInvite(token, 'INVITE_SHOWN', 'banner');
+      await service.recordInvite(token, 'INVITE_CLICKED', 'banner');
+    }
+    expect(prisma.orderEvent.create).not.toHaveBeenCalled();
+  });
+
   it('lists only events marked visible to the buyer', async () => {
     prisma.orderEvent.findMany.mockResolvedValue([]);
 
@@ -204,6 +282,8 @@ describe('OrderEventsService', () => {
         status: true,
         paymentStatus: true,
         fulfillmentStatus: true,
+        claimedAt: true,
+        buyerAccountId: true,
         packedPhotoUrl: true,
       },
     });

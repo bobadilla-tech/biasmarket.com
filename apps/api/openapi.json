@@ -9183,6 +9183,15 @@
       "RecordInviteEventDto": {
         "type": "object",
         "properties": {
+          "moment": {
+            "enum": [
+              "entrega",
+              "pago_validado",
+              "banner",
+              "adelanto_linea_de_tiempo"
+            ],
+            "type": "string"
+          },
           "type": {
             "type": "string",
             "enum": ["INVITE_SHOWN", "INVITE_CLICKED", "INVITE_DISMISSED"]

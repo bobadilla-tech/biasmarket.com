@@ -818,6 +818,15 @@ export default async () => {
                 required: true,
                 enum: ['INVITE_SHOWN', 'INVITE_CLICKED', 'INVITE_DISMISSED'],
               },
+              moment: {
+                required: false,
+                enum: [
+                  'banner',
+                  'entrega',
+                  'pago_validado',
+                  'adelanto_linea_de_tiempo',
+                ],
+              },
             },
           },
         ],
