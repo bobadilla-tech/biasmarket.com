@@ -1,8 +1,9 @@
 # Plan: Pedido asistido, buyer page (#268) and leftovers
 
-Status: v11, ready for implementation WITH CAVEATS (rounds 1-10 findings
-applied; the "two consecutive clean rounds" bar was NOT met, see review-log.md;
-see review-log.md for review state)
+Status: v12 (user direction applied: single stack, defaults, security deferred),
+ready for implementation WITH CAVEATS (rounds 1-10 findings applied; the "two
+consecutive clean rounds" bar was NOT met, see review-log.md; see review-log.md
+for review state)
 
 Date: 2026-10-28. Planned against `origin/main` @ `d88be078` (includes #343,
 #345, #347, #321, #344). Re-check `git log origin/main` before starting; main
@@ -15,6 +16,57 @@ into PR-A/PR3). Section 5 is **merge order**; section 6 is **build order**. "E1"
 = issue #279 (security review); "D3"/"F2" = issues #276/#278; "D-12" = the wiki
 decision for the route; open questions Q1-Q8, Q10 and Q11 are in section 10 (Q9
 was resolved by main).
+
+## USER DIRECTION (2026-10-28) - OVERRIDES everything below it
+
+The user is busy and gave these instructions after the reviews; where they
+conflict with later sections, **this block wins**:
+
+1. **Take the default for every open question (Q1-Q11).** Do not ask.
+2. **No users yet, security hardening is an afterthought.** Infra and hardening
+   work is deferred to follow-up tickets, not built in this stack. DEFERRED (do
+   not build; the reviewing agent opens follow-up tickets): PR4 (Caddy error-log
+   filter and deploy hash guard, #340), PR-S (web Sentry/GlitchTip token scrub),
+   the token-format guard in `requireOrderForToken`, the `credentials: "omit"`
+   mutator change in `packages/types/http.ts`, the CI curl header check in
+   `scripts/ci/web-e2e.sh`, the `proxy.ts` header fallback,
+   `<link rel=preconnect>`, CORS docs, DTO minimisation (`line1`/`reference`),
+   token TTL, INVITE event dedupe. Cheap privacy items that stay in PR3 because
+   they cost almost nothing: `headers()` (`Referrer-Policy`,
+   `Cache-Control: no-store`, `X-Robots-Tag`), noindex meta, robots disallow,
+   generic OG metadata, `force-dynamic`, no third-party scripts, inert rendering
+   of seller text, `isError` before `data`. Sections 4.3 (PR-S, PR4), D7 and Q10
+   are therefore NOT work items now.
+3. **Use one optimistic stack of PRs** (each branch based on the previous one,
+   the first on current `main`). Reviewers will code-review them, then they are
+   merged bottom-up and deployed. Hosted CI only runs for PRs whose base is
+   `main`, so run checks locally per PR and retarget each PR to `main` as the
+   one below it merges (`gh pr edit <n> --base main`, after the user/reviewer
+   approves GitHub writes).
+4. **Plan base = current main** (`origin/main` code is unchanged since
+   `d88be078`; later commits are artifacts only). No more external
+   prerequisites: #343, #345, #347, #321 are already merged.
+5. **Ticket handling belongs to the reviewing agent**: it closes tickets that
+   the merged PRs fully satisfy and opens follow-up tickets for new work
+   discovered or deferred here (list in `review-handoff-prompt.md`). The
+   implementation agent only writes `Closes`/`Refs` lines as in the table below.
+
+### The stack (bottom first; every PR is based on the one above it in this list)
+
+| # | Branch                         | Based on | Scope (section)                    | PR line     |
+| - | ------------------------------ | -------- | ---------------------------------- | ----------- |
+| 1 | `feat/public-order-dto-fields` | `main`   | 4.1 minus the token-format guard   | Refs #268   |
+| 2 | `feat/public-order-page`       | #1       | 4.2 minus the deferred items above | Closes #268 |
+| 3 | `fix/checkout-customer-race`   | #2       | 4.4                                | Closes #333 |
+| 4 | `feat/order-related-orders`    | #3       | 4.5                                | Refs #265   |
+| 5 | `fix/hide-ghost-customers`     | #4       | 4.6                                | Closes #337 |
+
+PR 2 is the headline; its `Closes #268` stands because the reviewing agent opens
+follow-up tickets for the deferred Sentry/Caddy/hardening items (they are not
+blockers now). Minimal requirements kept for PR 3 (#333): lock order unchanged,
+no try/catch around transaction statements, e2e (a)-(d) required (no pre-seeded
+Customer), (e)-(g) best effort; the advisory-lock/ON CONFLICT design in 4.4
+stays.
 
 ## 0. Hard rules (CLAUDE.md, restated)
 
@@ -431,7 +483,7 @@ follow: false }`, `referrer: "no-referrer"`, generic
 - Not done on purpose: stripping the token from the address bar
   (`history.replaceState`), because reload must keep working.
 
-### 4.3 PR-S (web error-tracking scrub) and PR4 (Caddy)
+### 4.3 PR-S (web error-tracking scrub) and PR4 (Caddy) - DEFERRED to follow-up tickets (see USER DIRECTION)
 
 **PR-S** (`Refs #268, #279`): web uses `@sentry/react` 10.76.2 (client) and
 `@sentry/node` 10.76.2 (server), no `@sentry/nextjs`. Both `Sentry.init` calls
