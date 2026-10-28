@@ -96,6 +96,18 @@ export class PublicOrderResponseDto {
   @ApiProperty()
   customerPhone: string;
 
+  // `Order.customerName` sanitised for display: single line, no control or
+  // bidi characters, at most 40 graphemes. Null when empty.
+  @ApiProperty({ type: String, nullable: true })
+  customerAlias: string | null;
+
+  // Last 4 characters of the order id, uppercase, without `#`.
+  @ApiProperty()
+  orderNumber: string;
+
+  @ApiProperty({ type: String, format: 'date-time' })
+  createdAt: string;
+
   @ApiProperty({ type: [PublicOrderItemResponseDto] })
   items: PublicOrderItemResponseDto[];
 

@@ -1355,7 +1355,7 @@ export interface CreateAssistedOrderDto {
   customerPhone: string;
   /**
    * @maxLength 60
-   * @pattern ^[^\p{Cc}\u200B\u2028\u2029\u202A-\u202E\u2066-\u2069\uFEFF]*$
+   * @pattern ^[^\p{Cc}\u200B\u2028\u2029\u202A-\u202E\u2066-\u2069\uFEFF\u2060-\u2064\u00AD\u180E\u034F\uFFFC\uFFF9-\uFFFB\u3164\u115F\u1160\u2800]*$
    */
   customerName?: string;
   shippingAddress?: ShippingAddressDto;
@@ -1871,6 +1871,10 @@ export interface PublicOrderPaymentResponseDto {
 export interface PublicOrderResponseDto {
   store: PublicOrderStoreResponseDto;
   customerPhone: string;
+  /** @nullable */
+  customerAlias: string | null;
+  orderNumber: string;
+  createdAt: string;
   items: PublicOrderItemResponseDto[];
   totalAmount: string;
   requiredAmount: string;

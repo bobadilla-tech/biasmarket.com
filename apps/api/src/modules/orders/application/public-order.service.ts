@@ -11,6 +11,7 @@ import { isPaymentMethodConfigured } from '@biasmarket/utils/payment-methods';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { computePaymentSummary } from '../../../common/payment-summary.js';
 import { OrderEventsService } from './order-events.service.js';
+import { toPublicCustomerAlias } from './public-order-alias.js';
 import type {
   PublicOrderDeliveryDetailsResponseDto,
   PublicOrderResponseDto,
@@ -81,9 +82,10 @@ export class PublicOrderService {
     // write. If this transaction fails, do not serve a page whose open was
     // not persisted: sellers use this marker to decide whether the phone can
     // still be corrected.
-    // Link-preview fetches count as that first read; B3 keys phone
-    // correction off the flag, and the issue requires the read itself to
-    // set it. The update is keyed by the presented token's hash: a reader
+    // The web page fetches this endpoint from the browser, never from the
+    // server, so link-preview crawlers (which do not run JS) do not count as
+    // that first read; B3 keys phone correction off the flag, and the issue
+    // requires the read itself to set it. The update is keyed by the presented token's hash: a reader
     // holding an old token whose update lands after the seller rotated the
     // link must not stamp the new link as opened.
     if (order.linkFirstOpenedAt === null) {
@@ -149,6 +151,11 @@ export class PublicOrderService {
         whatsappNumber: order.store.whatsappNumber,
       },
       customerPhone: maskPhone(order.customerPhone),
+      customerAlias: toPublicCustomerAlias(order.customerName),
+      // Same rule as web `getOrderNumber` (last 4 of the id, uppercase, no
+      // `#`); change both together (#339). A display ref, never a lookup key.
+      orderNumber: order.id.slice(-4).toUpperCase(),
+      createdAt: order.createdAt.toISOString(),
       items: order.items.map((item) => ({
         name: item.product.name,
         quantity: item.quantity,
