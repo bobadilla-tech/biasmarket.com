@@ -7,7 +7,7 @@ import { MapPin, MessageCircle, Search, Sparkles } from "lucide-react";
 import { ContactSellerButton } from "@/features/customer-auth";
 import { SocialIcon, socialLabels } from "./social-icon";
 
-export type StorefrontCategory = { id: string; name: string };
+export type StorefrontCategory = { id: string; name: string; slug?: string };
 
 /** Renders the public store identity shared by its catalog tabs. */
 export function StorePublicProfile({
@@ -263,7 +263,19 @@ export function StoreTabs() {
 
   function selectTab(tab: StoreTab) {
     const params = new URLSearchParams(searchParams.toString());
+    params.set(`orden_${active}`, params.get("orden") ?? "recientes");
+    const currentQuery = params.get("q");
+    if (currentQuery) params.set(`q_${active}`, currentQuery);
+    else params.delete(`q_${active}`);
     params.set("tab", tab);
+    const nextQuery = params.get(`q_${tab}`);
+    if (nextQuery) params.set("q", nextQuery);
+    else params.delete("q");
+    params.set(
+      "orden",
+      params.get(`orden_${tab}`) ??
+        (tab === "categorias" ? "nombre_asc" : "recientes"),
+    );
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
@@ -315,22 +327,44 @@ export function StoreTabs() {
 export function StoreSearchBar({
   value,
   onChange,
+  sort,
+  onSortChange,
 }: {
   value: string;
   onChange: (value: string) => void;
+  sort?: string;
+  onSortChange?: (value: string) => void;
 }) {
   const t = useTranslations("storefront");
   return (
-    <label className="flex items-center gap-2 rounded-xl border border-(--store-border) bg-(--store-card) px-3 focus-within:border-(--store-primary) focus-within:ring-2 focus-within:ring-(--store-ring)">
-      <Search aria-hidden="true" className="size-4 text-(--store-muted)" />
-      <span className="sr-only">{t("searchLabel")}</span>
-      <input
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={t("searchPlaceholder")}
-        className="h-11 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-(--store-placeholder)"
-      />
-    </label>
+    <div className="flex flex-col gap-2 sm:flex-row">
+      <label className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-(--store-border) bg-(--store-card) px-3 focus-within:border-(--store-primary) focus-within:ring-2 focus-within:ring-(--store-ring)">
+        <Search aria-hidden="true" className="size-4 text-(--store-muted)" />
+        <span className="sr-only">{t("searchLabel")}</span>
+        <input
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={t("searchStorePlaceholder")}
+          className="h-11 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-(--store-placeholder)"
+        />
+      </label>
+      {sort !== undefined && onSortChange && (
+        <label className="flex min-h-11 items-center gap-2 rounded-xl border border-(--store-border) bg-(--store-card) px-3 text-sm text-(--store-muted) focus-within:border-(--store-primary) focus-within:ring-2 focus-within:ring-(--store-ring)">
+          <span className="shrink-0">{t("sortBy")}</span>
+          <select
+            aria-label={t("sortBy")}
+            value={sort}
+            onChange={(event) => onSortChange(event.target.value)}
+            className="min-w-0 flex-1 bg-transparent font-semibold text-(--store-text) outline-none"
+          >
+            <option value="recientes">{t("sortRecent")}</option>
+            <option value="precio_asc">{t("sortPriceAsc")}</option>
+            <option value="precio_desc">{t("sortPriceDesc")}</option>
+            <option value="nombre_asc">{t("sortNameAsc")}</option>
+          </select>
+        </label>
+      )}
+    </div>
   );
 }
 
