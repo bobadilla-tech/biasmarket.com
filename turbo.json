@@ -5,6 +5,7 @@
     "NEXT_PUBLIC_SANITY_PROJECT_ID",
     "NEXT_PUBLIC_SANITY_DATASET"
   ],
+  "globalPassThroughEnv": ["BASE_REF"],
   "tasks": {
     "build": { "dependsOn": ["^build"], "outputs": ["dist/**", ".next/**"] },
     "dev": { "cache": false, "persistent": true },
@@ -14,6 +15,7 @@
       "persistent": true
     },
     "lint": {
+      "env": ["BASE_REF"],
       "inputs": [
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/eslint.config.mjs",
@@ -21,6 +23,7 @@
       ]
     },
     "web#lint": {
+      "env": ["BASE_REF"],
       "inputs": [
         "$TURBO_DEFAULT$",
         "eslint.config.mjs",

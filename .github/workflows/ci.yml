@@ -7,8 +7,8 @@ on:
       - ".gitignore"
       - "*.md"
       - "**/*.md"
+  # No `branches:` filter: stacked PRs (base != main) get the same CI.
   pull_request:
-    branches: [main]
   workflow_dispatch:
     inputs:
       run_e2e:
@@ -37,6 +37,9 @@ concurrency:
 # run reads.
 
 env:
+  # Prettier changed-files gate (scripts/lint-changed-files.mjs) diffs against
+  # the PR's own base, so a stacked PR is not re-flagged for lower PRs' files.
+  BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || 'origin/main' }}
   TURBO_CACHE_SCOPE: ${{ github.event_name == 'pull_request' && format('pr{0}-', github.event.pull_request.number) || '' }}
   NODE_VERSION: "24"
   PNPM_VERSION: "10.11.0"
