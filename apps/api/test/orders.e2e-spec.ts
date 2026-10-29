@@ -221,6 +221,7 @@ describe('orders + checkout (e2e)', () => {
     }
     const res = await req.expect(201);
     assertMatchesSchema(res.body, checkoutResultSchema, openapi.components);
+    expect(res.body.order).not.toHaveProperty('buyerAccountId');
     expect(typeof res.body.order.totalAmount).toBe('string');
     const orderId = res.body.order.id as string;
     orderIds.push(orderId);
@@ -255,6 +256,7 @@ describe('orders + checkout (e2e)', () => {
     expect(typeof listed.paidAmount).toBe('number');
     for (const order of listRes.body) {
       assertMatchesSchema(order, orderSchema, openapi.components);
+      expect(order).not.toHaveProperty('buyerAccountId');
     }
 
     const findOneRes = await request(app.getHttpServer())
@@ -262,6 +264,7 @@ describe('orders + checkout (e2e)', () => {
       .set('Cookie', sessionCookie)
       .expect(200);
     assertMatchesSchema(findOneRes.body, orderDetailSchema, openapi.components);
+    expect(findOneRes.body).not.toHaveProperty('buyerAccountId');
     expect(findOneRes.body.paymentStatus).toBe('PENDING_PAYMENT');
     const requiredAmount = findOneRes.body.requiredAmount as string;
 
@@ -285,6 +288,7 @@ describe('orders + checkout (e2e)', () => {
       .send({ status: 'IN_TRANSIT' })
       .expect(200);
     assertMatchesSchema(advanceRes.body, orderStatusSchema, openapi.components);
+    expect(advanceRes.body).not.toHaveProperty('buyerAccountId');
     expect(advanceRes.body.fulfillmentStatus).toBe('IN_TRANSIT');
   });
 

@@ -43,7 +43,6 @@ const baseOrder: OrderResponseDto = {
   id: "order-1",
   storeId: "store-1",
   customerId: null,
-  buyerAccountId: null,
   customerEmail: null,
   customerName: "Jane",
   customerPhone: "+51987654321",

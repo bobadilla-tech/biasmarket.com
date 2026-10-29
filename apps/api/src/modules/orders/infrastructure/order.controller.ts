@@ -110,7 +110,6 @@ const PUBLIC_ORDER_FIELDS = [
   'id',
   'storeId',
   'customerId',
-  'buyerAccountId',
   'customerEmail',
   'customerPhone',
   'customerName',

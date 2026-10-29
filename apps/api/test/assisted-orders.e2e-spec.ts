@@ -177,6 +177,8 @@ describe('assisted orders (e2e)', () => {
     expect(res.headers['referrer-policy']).toBe('no-referrer');
     expect(res.body.order.source).toBe('VENDOR_ASSISTED');
     expect(res.body.order.customerPhone).toBe('+51987654321');
+    // The buyer's account id never reaches the seller (#379).
+    expect(res.body.order).not.toHaveProperty('buyerAccountId');
     expect(res.body.order.totalAmount).toBe('50');
     expect(res.body.previousOrders).toBe(0);
 

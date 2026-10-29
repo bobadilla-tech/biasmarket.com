@@ -857,8 +857,6 @@ export interface OrderResponseDto {
   /** @nullable */
   customerId: string | null;
   /** @nullable */
-  buyerAccountId: string | null;
-  /** @nullable */
   customerEmail: string | null;
   customerPhone: string;
   /** @nullable */
@@ -1039,8 +1037,6 @@ export interface OrderDetailResponseDto {
   storeId: string;
   /** @nullable */
   customerId: string | null;
-  /** @nullable */
-  buyerAccountId: string | null;
   /** @nullable */
   customerEmail: string | null;
   customerPhone: string;
@@ -1312,8 +1308,6 @@ export interface OrderStatusResponseDto {
   storeId: string;
   /** @nullable */
   customerId: string | null;
-  /** @nullable */
-  buyerAccountId: string | null;
   /** @nullable */
   customerEmail: string | null;
   customerPhone: string;
@@ -1621,8 +1615,6 @@ export interface CheckoutOrderResponseDto {
   storeId: string;
   /** @nullable */
   customerId: string | null;
-  /** @nullable */
-  buyerAccountId: string | null;
   /** @nullable */
   customerEmail: string | null;
   customerPhone: string;
