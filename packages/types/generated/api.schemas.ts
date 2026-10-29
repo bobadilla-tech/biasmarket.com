@@ -403,6 +403,8 @@ export interface CreateVariantDto {
 }
 
 export interface CreateProductDto {
+  /** @maxItems 6 */
+  images?: string[];
   /** @minLength 2 */
   name: string;
   categoryIds?: string[];
@@ -410,7 +412,6 @@ export interface CreateProductDto {
   price: number;
   soldOut?: boolean;
   discontinued?: boolean;
-  images?: string[];
   availableUntil?: string;
   currency?: string;
   /** @minimum 0 */
@@ -505,6 +506,8 @@ export interface ProductDetailResponseDto {
 }
 
 export interface UpdateProductDto {
+  /** @maxItems 6 */
+  images?: string[];
   /** @minLength 2 */
   name?: string;
   categoryIds?: string[];
@@ -512,7 +515,6 @@ export interface UpdateProductDto {
   price?: number;
   soldOut?: boolean;
   discontinued?: boolean;
-  images?: string[];
   availableUntil?: string;
   currency?: string;
 }

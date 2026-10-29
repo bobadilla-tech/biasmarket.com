@@ -593,12 +593,7 @@ export default async () => {
           import('./modules/products/dto/reorder-images.dto.js'),
           {
             ReorderImagesDto: {
-              images: {
-                required: true,
-                type: () => [String],
-                minItems: 1,
-                maxItems: 6,
-              },
+              images: { required: true, type: () => [String], minItems: 1 },
             },
           },
         ],

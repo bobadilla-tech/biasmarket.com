@@ -193,4 +193,56 @@ describe('products (e2e)', () => {
       openapi.components,
     );
   });
+
+  it('rejects 7 images on create (POST) and update (PATCH) with 400, accepts 6', async () => {
+    const urls = (n: number) =>
+      Array.from(
+        { length: n },
+        (_, i) => `https://cdn.biasmarket.com/e2e-${i}.jpg`,
+      );
+    const capName = `E2E Cap ${Date.now()}`;
+
+    await request(app.getHttpServer())
+      .post(`/stores/${storeId}/products`)
+      .set('Cookie', sessionCookie)
+      .send({
+        name: capName,
+        price: 5,
+        currency: 'USD',
+        stock: 1,
+        images: urls(7),
+      })
+      .expect(400);
+    expect(await prisma.product.count({ where: { name: capName } })).toBe(0);
+
+    const created = await request(app.getHttpServer())
+      .post(`/stores/${storeId}/products`)
+      .set('Cookie', sessionCookie)
+      .send({
+        name: capName,
+        price: 5,
+        currency: 'USD',
+        stock: 1,
+        images: urls(6),
+      })
+      .expect(201);
+    const capProductId = created.body.id as string;
+
+    try {
+      await request(app.getHttpServer())
+        .patch(`/stores/${storeId}/products/${capProductId}`)
+        .set('Cookie', sessionCookie)
+        .send({ images: urls(7) })
+        .expect(400);
+      const row = await prisma.product.findUniqueOrThrow({
+        where: { id: capProductId },
+      });
+      expect(row.images).toHaveLength(6);
+    } finally {
+      await prisma.productVariant.deleteMany({
+        where: { productId: capProductId },
+      });
+      await prisma.product.deleteMany({ where: { id: capProductId } });
+    }
+  });
 });
