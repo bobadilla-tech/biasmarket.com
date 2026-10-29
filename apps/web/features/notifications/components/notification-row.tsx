@@ -57,7 +57,9 @@ export function NotificationRow({
                   : "border-[#f5e0bb] bg-[#fff8ea] text-[#a8730f]",
             )}
           >
-            {t(`types.${item.type}`)}
+            {t.has(`types.${item.type}`)
+              ? t(`types.${item.type}`)
+              : t("types.GENERIC")}
           </Badge>
           {!item.read ? (
             <span className="size-2 rounded-full bg-[var(--store-primary)]" />

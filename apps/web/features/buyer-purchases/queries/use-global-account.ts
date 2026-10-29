@@ -32,7 +32,9 @@ export function useGlobalOrders(enabled: boolean) {
 export function useGlobalOrder(orderId: string) {
   return useQuery({
     queryKey: globalAccountKeys.order(orderId),
-    queryFn: () => apiClient.globalAccount.orderDetail(orderId),
+    // The generated URL builder does not encode path params.
+    queryFn: () =>
+      apiClient.globalAccount.orderDetail(encodeURIComponent(orderId)),
     retry: false,
   });
 }

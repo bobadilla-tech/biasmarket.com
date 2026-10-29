@@ -71,7 +71,7 @@ export class GlobalAccountController {
     return this.customerAuth.getGlobalOrderDetail(
       session.buyerAccountId,
       orderId,
-    ) as Promise<GlobalAccountOrderDetailResponseDto>;
+    );
   }
 
   // Global (no-store) phone + password login, for the My purchases page. Same

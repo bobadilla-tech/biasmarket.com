@@ -37,10 +37,10 @@ export default async () => {
       await import('./modules/store-sections/dto/create-store-section.dto.js'),
     ['./modules/stats/dto/stats-response.dto.js']:
       await import('./modules/stats/dto/stats-response.dto.js'),
-    ['./modules/customer-auth/dto/customer-auth-response.dto.js']:
-      await import('./modules/customer-auth/dto/customer-auth-response.dto.js'),
     ['./modules/customer-auth/dto/global-account-response.dto.js']:
       await import('./modules/customer-auth/dto/global-account-response.dto.js'),
+    ['./modules/customer-auth/dto/customer-auth-response.dto.js']:
+      await import('./modules/customer-auth/dto/customer-auth-response.dto.js'),
     ['./modules/restock/dto/restock-response.dto.js']:
       await import('./modules/restock/dto/restock-response.dto.js'),
     ['./modules/monitoring/dto/kuma-webhook.dto.js']:
@@ -829,6 +829,14 @@ export default async () => {
                   'adelanto_linea_de_tiempo',
                 ],
               },
+            },
+          },
+        ],
+        [
+          import('./modules/orders/dto/receipt-confirmed-response.dto.js'),
+          {
+            ReceiptConfirmedResponseDto: {
+              receiptConfirmedAt: { required: true, type: () => String },
             },
           },
         ],
@@ -2025,14 +2033,6 @@ export default async () => {
           },
         ],
         [
-          import('./modules/orders/dto/receipt-confirmed-response.dto.js'),
-          {
-            ReceiptConfirmedResponseDto: {
-              receiptConfirmedAt: { required: true, type: () => String },
-            },
-          },
-        ],
-        [
           import('./modules/orders/dto/submit-public-payment.dto.js'),
           {
             SubmitPublicPaymentDto: {
@@ -2559,6 +2559,104 @@ export default async () => {
           },
         ],
         [
+          import('./modules/customer-auth/dto/global-account-response.dto.js'),
+          {
+            LinkedStoreResponseDto: {
+              slug: { required: true, type: () => String },
+              name: { required: true, type: () => String },
+            },
+            GlobalAccountProfileResponseDto: {
+              name: { required: true, type: () => String, nullable: true },
+              email: { required: true, type: () => String, nullable: true },
+              phone: { required: true, type: () => String, nullable: true },
+              emailVerified: { required: true, type: () => Boolean },
+              pendingEmail: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              pendingPhone: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              stores: {
+                required: true,
+                type: () => [
+                  t[
+                    './modules/customer-auth/dto/global-account-response.dto.js'
+                  ].LinkedStoreResponseDto,
+                ],
+              },
+            },
+            GlobalAccountOrderResponseDto: {
+              storeSlug: { required: true, type: () => String },
+              storeName: { required: true, type: () => String },
+            },
+            GlobalAccountOrderItemResponseDto: {
+              name: { required: true, type: () => String },
+              quantity: { required: true, type: () => Number },
+              unitPrice: { required: true, type: () => String },
+              currency: { required: true, type: () => String },
+            },
+            GlobalAccountOrderPaymentResponseDto: {
+              source: {
+                required: true,
+                enum: ['SELLER_RECORDED', 'BUYER_SUBMITTED'],
+              },
+              amount: { required: true, type: () => String },
+              createdAt: { required: true, type: () => String },
+              voidedAt: { required: true, type: () => String, nullable: true },
+              reviewStatus: {
+                required: true,
+                enum: ['REJECTED', 'N_A', 'PENDING_REVIEW', 'APPROVED'],
+              },
+            },
+            GlobalAccountOrderDetailResponseDto: {
+              status: { required: true, enum: ['CANCELLED', 'ACTIVE'] },
+              requiredAmount: { required: true, type: () => String },
+              trackingNumber: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              trackingUrl: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              receiptConfirmedAt: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              items: {
+                required: true,
+                type: () => [
+                  t[
+                    './modules/customer-auth/dto/global-account-response.dto.js'
+                  ].GlobalAccountOrderItemResponseDto,
+                ],
+              },
+              payments: {
+                required: true,
+                type: () => [
+                  t[
+                    './modules/customer-auth/dto/global-account-response.dto.js'
+                  ].GlobalAccountOrderPaymentResponseDto,
+                ],
+              },
+              timeline: {
+                required: true,
+                type: () => [
+                  t['./modules/orders/dto/public-order-response.dto.js']
+                    .PublicOrderTimelineItemDto,
+                ],
+              },
+            },
+          },
+        ],
+        [
           import('./modules/customer-auth/dto/register-customer.dto.js'),
           {
             RegisterCustomerDto: {
@@ -2656,104 +2754,6 @@ export default async () => {
                 required: true,
                 type: () => String,
                 nullable: true,
-              },
-            },
-          },
-        ],
-        [
-          import('./modules/customer-auth/dto/global-account-response.dto.js'),
-          {
-            LinkedStoreResponseDto: {
-              slug: { required: true, type: () => String },
-              name: { required: true, type: () => String },
-            },
-            GlobalAccountProfileResponseDto: {
-              name: { required: true, type: () => String, nullable: true },
-              email: { required: true, type: () => String, nullable: true },
-              phone: { required: true, type: () => String, nullable: true },
-              emailVerified: { required: true, type: () => Boolean },
-              pendingEmail: {
-                required: true,
-                type: () => String,
-                nullable: true,
-              },
-              pendingPhone: {
-                required: true,
-                type: () => String,
-                nullable: true,
-              },
-              stores: {
-                required: true,
-                type: () => [
-                  t[
-                    './modules/customer-auth/dto/global-account-response.dto.js'
-                  ].LinkedStoreResponseDto,
-                ],
-              },
-            },
-            GlobalAccountOrderResponseDto: {
-              storeSlug: { required: true, type: () => String },
-              storeName: { required: true, type: () => String },
-            },
-            GlobalAccountOrderItemResponseDto: {
-              name: { required: true, type: () => String },
-              quantity: { required: true, type: () => Number },
-              unitPrice: { required: true, type: () => String },
-              currency: { required: true, type: () => String },
-            },
-            GlobalAccountOrderPaymentResponseDto: {
-              source: {
-                required: true,
-                enum: ['SELLER_RECORDED', 'BUYER_SUBMITTED'],
-              },
-              amount: { required: true, type: () => String },
-              createdAt: { required: true, type: () => String },
-              voidedAt: { required: true, type: () => String, nullable: true },
-              reviewStatus: {
-                required: true,
-                enum: ['REJECTED', 'N_A', 'PENDING_REVIEW', 'APPROVED'],
-              },
-            },
-            GlobalAccountOrderDetailResponseDto: {
-              status: { required: true, enum: ['CANCELLED', 'ACTIVE'] },
-              requiredAmount: { required: true, type: () => String },
-              trackingNumber: {
-                required: true,
-                type: () => String,
-                nullable: true,
-              },
-              trackingUrl: {
-                required: true,
-                type: () => String,
-                nullable: true,
-              },
-              receiptConfirmedAt: {
-                required: true,
-                type: () => String,
-                nullable: true,
-              },
-              items: {
-                required: true,
-                type: () => [
-                  t[
-                    './modules/customer-auth/dto/global-account-response.dto.js'
-                  ].GlobalAccountOrderItemResponseDto,
-                ],
-              },
-              payments: {
-                required: true,
-                type: () => [
-                  t[
-                    './modules/customer-auth/dto/global-account-response.dto.js'
-                  ].GlobalAccountOrderPaymentResponseDto,
-                ],
-              },
-              timeline: {
-                required: true,
-                type: () => [
-                  t['./modules/orders/dto/public-order-response.dto.js']
-                    .PublicOrderTimelineItemDto,
-                ],
               },
             },
           },
