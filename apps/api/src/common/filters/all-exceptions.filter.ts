@@ -17,6 +17,10 @@ import {
   DUPLICATE_OPERATION_CODE,
   DuplicateOperationCodeException,
 } from '../../modules/orders/domain/duplicate-operation-code.exception.js';
+import {
+  DuplicateIdempotencyKeyException,
+  IDEMPOTENT_REPLAY,
+} from '../../modules/orders/domain/duplicate-idempotency-key.exception.js';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -48,6 +52,18 @@ export class AllExceptionsFilter implements ExceptionFilter {
       return response.status(409).json({
         code: DUPLICATE_OPERATION_CODE,
         orderId: exception.orderId,
+      });
+    }
+
+    // The web reads `code` and `orderId` to offer a link to the order the
+    // retried request had already created. The plain HttpException branch
+    // would drop `orderId`.
+    if (exception instanceof DuplicateIdempotencyKeyException) {
+      return response.status(409).json({
+        statusCode: 409,
+        code: IDEMPOTENT_REPLAY,
+        orderId: exception.orderId,
+        message: extractMessage(exception.getResponse()),
       });
     }
 

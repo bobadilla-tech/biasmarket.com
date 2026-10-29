@@ -1,6 +1,7 @@
 import { type ArgumentsHost, BadRequestException } from '@nestjs/common';
 import { vi } from 'vitest';
 import { DuplicateOperationCodeException } from '../../modules/orders/domain/duplicate-operation-code.exception.js';
+import { DuplicateIdempotencyKeyException } from '../../modules/orders/domain/duplicate-idempotency-key.exception.js';
 import { AllExceptionsFilter } from './all-exceptions.filter.js';
 
 function run(exception: unknown) {
@@ -26,6 +27,25 @@ describe('AllExceptionsFilter', () => {
     expect(body).toEqual({
       code: 'DUPLICATE_OPERATION_CODE',
       orderId: 'order-9',
+    });
+  });
+
+  it('answers an idempotent replay with 409 and { statusCode, code, orderId, message }', () => {
+    const { status, body } = run(
+      new DuplicateIdempotencyKeyException('order-7'),
+    );
+    expect(status).toHaveBeenCalledWith(409);
+    expect(Object.keys(body).sort()).toEqual([
+      'code',
+      'message',
+      'orderId',
+      'statusCode',
+    ]);
+    expect(body).toEqual({
+      statusCode: 409,
+      code: 'IDEMPOTENT_REPLAY',
+      orderId: 'order-7',
+      message: 'Este pedido ya fue creado con esta clave',
     });
   });
 

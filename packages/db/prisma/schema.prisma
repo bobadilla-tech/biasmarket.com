@@ -318,6 +318,10 @@ model Order {
   source                  OrderSource             @default(MARKETPLACE)
   // Seller who created a VENDOR_ASSISTED order. Null for marketplace checkout.
   createdByUserId         String?
+  // Optional `Idempotency-Key` of a seller-created assisted order (a retried
+  // request returns the existing order instead of creating a second one).
+  // NULLs are distinct in Postgres, so orders without a key never collide.
+  idempotencyKey          String?
   // SHA-256 of the private-link token. The raw token is never stored.
   accessTokenHash         String?                 @unique
   accessTokenRevokedAt    DateTime?
@@ -383,6 +387,7 @@ model Order {
   @@index([buyerAccountId])
   // ON DELETE SET NULL walks this column when a user is deleted.
   @@index([createdByUserId])
+  @@unique([storeId, createdByUserId, idempotencyKey])
 }
 
 enum OrderEventActor {
