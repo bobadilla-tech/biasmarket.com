@@ -20,6 +20,7 @@ describe('PublicOrderService', () => {
   let prisma: {
     order: { findUnique: Mock; updateMany: Mock };
     paymentMethodConfig: { findMany: Mock };
+    orderPayment?: { findFirst: Mock };
     $transaction: Mock;
   };
 
@@ -73,14 +74,23 @@ describe('PublicOrderService', () => {
         product: { name: 'Lightstick' },
       },
     ],
+    expiresAt: new Date('2026-10-05T12:00:00.000Z'),
+    cancellationReason: null,
+    paymentRejectionReason: null,
     payments: [
       {
+        id: 'payment-1',
         amount: new Prisma.Decimal('40.00'),
         source: 'SELLER_RECORDED',
+        method: 'YAPE',
         reviewStatus: 'N_A',
         createdAt: new Date('2026-10-01T00:00:00.000Z'),
+        paidAt: new Date('2026-09-30T17:00:00.000Z'),
         voidedAt: null,
         imageUrl: 'https://private.example/proof.jpg',
+        operationCode: 'OP123',
+        recordedByUserId: 'seller-1',
+        voidReason: 'secret',
         note: 'internal',
       },
     ],
@@ -139,11 +149,15 @@ describe('PublicOrderService', () => {
     ]);
     expect(result.payments).toEqual([
       {
+        id: 'payment-1',
         source: 'SELLER_RECORDED',
+        method: 'YAPE',
         amount: '40',
         createdAt: '2026-10-01T00:00:00.000Z',
+        paidAt: '2026-09-30T17:00:00.000Z',
         reviewStatus: 'N_A',
         voidedAt: null,
+        hasProof: false,
       },
     ]);
     expect(result.paidAmount).toBe(40);
@@ -157,6 +171,8 @@ describe('PublicOrderService', () => {
     expect(JSON.stringify(result)).not.toContain('proof.jpg');
     expect(JSON.stringify(result)).not.toContain('packed.jpg');
     expect(JSON.stringify(result)).not.toContain('internal');
+    expect(JSON.stringify(result)).not.toContain('OP123');
+    expect(JSON.stringify(result)).not.toContain('secret');
     expect(result).not.toHaveProperty('storeId');
     expect(result).not.toHaveProperty('createdByUserId');
   });
@@ -206,6 +222,9 @@ describe('PublicOrderService', () => {
         'hasValidatedPayment',
         'courierModality',
         'payments',
+        'expiresAt',
+        'paymentRejectionReason',
+        'closure',
       ].sort(),
     );
     expect(result.orderNumber).toBe('WXYZ');
@@ -547,6 +566,167 @@ describe('PublicOrderService', () => {
       expect((await service.getByToken('t')).hasValidatedPayment).toBe(false);
       row([]);
       expect((await service.getByToken('t')).hasValidatedPayment).toBe(false);
+    });
+  });
+
+  describe('payment, closure and deadline fields', () => {
+    const open = (overrides: Record<string, unknown> = {}) => {
+      events.requireOrderForToken.mockResolvedValue({
+        id: 'order-1',
+        storeId: 'store-1',
+      });
+      prisma.order.findUnique.mockResolvedValueOnce({
+        ...orderRow,
+        ...overrides,
+      });
+      return service.getByToken('raw-token');
+    };
+
+    it('flags hasProof only for a buyer upload that has an image', async () => {
+      const row = (id: string, source: string, imageUrl: string | null) => ({
+        ...orderRow.payments[0],
+        id,
+        source,
+        imageUrl,
+      });
+      const result = await open({
+        payments: [
+          row('a', 'BUYER_SUBMITTED', 'https://private.example/a.jpg'),
+          row('b', 'BUYER_SUBMITTED', null),
+          row('c', 'SELLER_RECORDED', 'https://private.example/c.jpg'),
+        ],
+      });
+      expect(result.payments.map((p) => p.hasProof)).toEqual([
+        true,
+        false,
+        false,
+      ]);
+      expect(JSON.stringify(result)).not.toContain('private.example');
+    });
+
+    it('exposes expiresAt only while active and awaiting payment', async () => {
+      expect((await open()).expiresAt).toBe('2026-10-05T12:00:00.000Z');
+      expect((await open({ paymentStatus: 'VERIFIED' })).expiresAt).toBeNull();
+      expect(
+        (await open({ status: 'CANCELLED', paymentStatus: 'CANCELLED' }))
+          .expiresAt,
+      ).toBeNull();
+    });
+
+    it('exposes a sanitized rejection reason only when REJECTED', async () => {
+      const reason = '\u202eFoto\nilegible\u200b';
+      expect(
+        (
+          await open({
+            paymentStatus: 'REJECTED',
+            paymentRejectionReason: reason,
+          })
+        ).paymentRejectionReason,
+      ).toBe('Foto ilegible');
+      expect(
+        (await open({ paymentRejectionReason: reason })).paymentRejectionReason,
+      ).toBeNull();
+      const long = 'x'.repeat(900);
+      const out = (
+        await open({ paymentStatus: 'REJECTED', paymentRejectionReason: long })
+      ).paymentRejectionReason;
+      expect(out).toHaveLength(500);
+    });
+
+    it('has no closure for a live order', async () => {
+      expect((await open()).closure).toBeNull();
+    });
+
+    it('tells a seller cancellation from an expiry by the last event actor', async () => {
+      const cancelled = { status: 'CANCELLED', paymentStatus: 'CANCELLED' };
+      const at = new Date('2026-10-02T00:00:00.000Z');
+      events.listForBuyer.mockResolvedValueOnce([
+        {
+          type: 'ORDER_CANCELLED',
+          actor: 'SELLER',
+          createdAt: at,
+          payload: {},
+        },
+      ]);
+      expect(
+        (
+          await open({
+            ...cancelled,
+            cancellationReason: 'Sin stock\nLo siento',
+          })
+        ).closure,
+      ).toEqual({ kind: 'CANCELLED', reason: 'Sin stock Lo siento' });
+
+      events.listForBuyer.mockResolvedValueOnce([
+        {
+          type: 'ORDER_CANCELLED',
+          actor: 'SYSTEM',
+          createdAt: at,
+          payload: {},
+        },
+      ]);
+      expect((await open(cancelled)).closure).toEqual({
+        kind: 'EXPIRED',
+        reason: null,
+      });
+
+      // Only the last cancellation counts.
+      events.listForBuyer.mockResolvedValueOnce([
+        {
+          type: 'ORDER_CANCELLED',
+          actor: 'SYSTEM',
+          createdAt: at,
+          payload: {},
+        },
+        {
+          type: 'ORDER_CANCELLED',
+          actor: 'SELLER',
+          createdAt: at,
+          payload: {},
+        },
+      ]);
+      expect((await open(cancelled)).closure?.kind).toBe('CANCELLED');
+    });
+
+    it('treats a legacy cancelled order without an event as CANCELLED', async () => {
+      expect(
+        (await open({ status: 'CANCELLED', paymentStatus: 'CANCELLED' }))
+          .closure,
+      ).toEqual({ kind: 'CANCELLED', reason: null });
+    });
+  });
+
+  describe('getBuyerProofImageUrl', () => {
+    it('queries by payment id, order id, buyer source and image in one call', async () => {
+      prisma.orderPayment = {
+        findFirst: vi.fn().mockResolvedValue({ imageUrl: 'https://x/y.jpg' }),
+      };
+      await expect(
+        service.getBuyerProofImageUrl(
+          { id: 'order-1', storeId: 'store-1' },
+          'payment-9',
+        ),
+      ).resolves.toBe('https://x/y.jpg');
+      expect(prisma.orderPayment.findFirst).toHaveBeenCalledWith({
+        where: {
+          id: 'payment-9',
+          orderId: 'order-1',
+          storeId: 'store-1',
+          source: 'BUYER_SUBMITTED',
+          imageUrl: { not: null },
+        },
+        select: { imageUrl: true },
+      });
+    });
+
+    it('answers the same 404 for every miss', async () => {
+      prisma.orderPayment = { findFirst: vi.fn().mockResolvedValue(null) };
+      await expect(
+        service.getBuyerProofImageUrl(
+          { id: 'order-1', storeId: 'store-1' },
+          'nope',
+        ),
+      ).rejects.toThrow('Comprobante no encontrado');
     });
   });
 });

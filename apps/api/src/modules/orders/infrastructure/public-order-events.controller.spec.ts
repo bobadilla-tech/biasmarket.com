@@ -13,6 +13,7 @@ import { PublicOrderEventsController } from './public-order-events.controller.js
 import { OrderEventsService } from '../application/order-events.service.js';
 import { PublicOrderService } from '../application/public-order.service.js';
 import { StorageService } from '../../../storage/storage.service.js';
+import { BuyerPaymentProofService } from '../application/buyer-payment-proof.service.js';
 import { OriginGuard } from '../../customer-auth/origin.guard.js';
 import { verifyClaimTicket } from '../../customer-auth/claim-ticket.js';
 import {
@@ -67,8 +68,10 @@ describe('PublicOrderEventsController rate limit', () => {
             confirmReceipt,
             loadForClaim,
             assertClaimable,
+            loadForProof: vi.fn(),
           },
         },
+        { provide: BuyerPaymentProofService, useValue: { submit: vi.fn() } },
         { provide: StorageService, useValue: storage },
       ],
     }).compile();

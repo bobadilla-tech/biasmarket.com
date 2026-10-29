@@ -11,11 +11,20 @@ import {
   ServiceUnavailableException,
   StreamableFile,
   UnsupportedMediaTypeException,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
+  Body as NestBody,
+  NotFoundException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
+  ApiBody,
+  ApiConsumes,
+  ApiCreatedResponse,
   ApiNoContentResponse,
   ApiOkResponse,
+  ApiParam,
   ApiProduces,
 } from '@nestjs/swagger';
 import type { Response } from 'express';
@@ -36,6 +45,34 @@ import { RecordInviteEventDto } from '../dto/record-invite-event.dto.js';
 import { ReceiptConfirmedResponseDto } from '../dto/receipt-confirmed-response.dto.js';
 import { PublicOrderResponseDto } from '../dto/public-order-response.dto.js';
 import { StorageService } from '../../../storage/storage.service.js';
+import { PAYMENT_PROOF_UPLOAD_LIMITS } from '../../../common/upload-limits.js';
+import {
+  IMAGE_UPLOAD_MIME_TYPES,
+  UploadedFileValidationPipe,
+  type ValidatedUploadedFile,
+} from '../../../common/uploaded-file-validation.pipe.js';
+import {
+  BuyerPaymentProofService,
+  type BuyerProofOrder,
+} from '../application/buyer-payment-proof.service.js';
+import {
+  SubmitPublicPaymentDto,
+  SubmitPublicPaymentResponseDto,
+} from '../dto/submit-public-payment.dto.js';
+import { PublicOrder } from './public-order.decorator.js';
+import { PublicOrderTokenGuard } from './public-order-token.guard.js';
+
+const PUBLIC_PROOF_PIPE = new UploadedFileValidationPipe({
+  allowedMimeTypes: IMAGE_UPLOAD_MIME_TYPES,
+  messages: { missingFile: 'Adjunta un comprobante de pago' },
+});
+
+// The image route only ever serves what the buyer uploaded, so the type is
+// forced from this list instead of trusting the stored object metadata.
+const PROOF_IMAGE_EXTENSIONS: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+};
 
 @Controller('public/orders')
 export class PublicOrderEventsController {
@@ -43,6 +80,7 @@ export class PublicOrderEventsController {
     private events: OrderEventsService,
     private orders: PublicOrderService,
     private storage: StorageService,
+    private proofs: BuyerPaymentProofService,
   ) {}
 
   @Public()
@@ -72,6 +110,89 @@ export class PublicOrderEventsController {
     const { body, contentType } =
       await this.storage.getPaymentImageStream(imageUrl);
     return new StreamableFile(body, { type: contentType });
+  }
+
+  // Buyer uploads the proof for an assisted order with nothing but the link.
+  // Guard order matters: throttle, then the token (identical 404 before any
+  // multipart is parsed, 415 for non-multipart POSTs), then Multer.
+  @Public()
+  @Post(':token/payments')
+  @Header('Cache-Control', 'no-store')
+  @Header('Referrer-Policy', 'no-referrer')
+  @ApiParam({ name: 'token', type: String })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ type: SubmitPublicPaymentDto })
+  @ApiCreatedResponse({ type: SubmitPublicPaymentResponseDto })
+  @UseGuards(ThrottlerGuard, PublicOrderTokenGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
+  @UseInterceptors(
+    FileInterceptor('file', { limits: PAYMENT_PROOF_UPLOAD_LIMITS }),
+  )
+  async submitPayment(
+    @PublicOrder() order: BuyerProofOrder,
+    @NestBody('amount') amount: unknown,
+    @NestBody('method') method: unknown,
+    @NestBody('note') note: unknown,
+    @NestBody('operationCode') operationCode: unknown,
+    @UploadedFile(PUBLIC_PROOF_PIPE) file: ValidatedUploadedFile,
+  ): Promise<SubmitPublicPaymentResponseDto> {
+    const payment = await this.proofs.submit({
+      order,
+      file,
+      amount,
+      method,
+      note,
+      operationCode,
+    });
+    return {
+      id: payment.id,
+      amount: payment.amount.toString(),
+      reviewStatus: 'PENDING_REVIEW',
+      createdAt: payment.createdAt.toISOString(),
+    };
+  }
+
+  // The buyer's own uploaded proof. One compound query, the same 404 on every
+  // miss (other order, seller-recorded payment, no image, unknown id).
+  @Public()
+  @Get(':token/payments/:paymentId/image')
+  @Header('Cache-Control', 'private, no-store')
+  @Header('Referrer-Policy', 'no-referrer')
+  @Header('Cross-Origin-Resource-Policy', 'cross-origin')
+  @Header('X-Content-Type-Options', 'nosniff')
+  @Header('Content-Security-Policy', "default-src 'none'; sandbox")
+  @ApiParam({ name: 'token', type: String })
+  @ApiParam({ name: 'paymentId', type: String })
+  @ApiOkResponse({ schema: { type: 'string', format: 'binary' } })
+  @ApiProduces('image/jpeg', 'image/png')
+  @UseGuards(ThrottlerGuard, PublicOrderTokenGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 30 } })
+  async getPaymentProofImage(
+    @PublicOrder() order: BuyerProofOrder,
+    @Param('paymentId') paymentId: string,
+  ): Promise<StreamableFile> {
+    const imageUrl = await this.orders.getBuyerProofImageUrl(order, paymentId);
+    // The row can outlive its object (lifecycle rule, manual cleanup): answer
+    // the same 404 as every other miss instead of leaking a 500.
+    const stream = await this.storage
+      .getPaymentImageStream(imageUrl)
+      .catch((error: unknown) => {
+        const name = (error as { name?: string } | null)?.name;
+        if (name === 'NoSuchKey' || name === 'NotFound') {
+          throw new NotFoundException('Comprobante no encontrado');
+        }
+        throw error;
+      });
+    const { body, contentType } = stream;
+    const extension = PROOF_IMAGE_EXTENSIONS[contentType ?? ''];
+    if (!extension) {
+      body.destroy?.();
+      throw new NotFoundException('Comprobante no encontrado');
+    }
+    return new StreamableFile(body, {
+      type: contentType,
+      disposition: `inline; filename="comprobante.${extension}"`,
+    });
   }
 
   @Public()

@@ -39,6 +39,26 @@ export class PublicOrderItemResponseDto {
 }
 
 export class PublicOrderPaymentResponseDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty({ enum: ['YAPE', 'PLIN', 'TRANSFER', 'CASH'], nullable: true })
+  method: 'YAPE' | 'PLIN' | 'TRANSFER' | 'CASH' | null;
+
+  @ApiProperty({
+    type: String,
+    format: 'date-time',
+    nullable: true,
+    description: 'When the money was paid, if the store recorded it.',
+  })
+  paidAt: string | null;
+
+  @ApiProperty({
+    description:
+      'True only for a buyer-submitted payment with an uploaded proof; the image is served by the token image route.',
+  })
+  hasProof: boolean;
+
   @ApiProperty({ enum: ['SELLER_RECORDED', 'BUYER_SUBMITTED'] })
   source: 'SELLER_RECORDED' | 'BUYER_SUBMITTED';
 
@@ -132,6 +152,18 @@ export class PublicOrderDeliveryDetailsResponseDto {
 
   @ApiProperty({ type: String, nullable: true })
   pickupPointLabel: string | null;
+}
+
+export class PublicOrderClosureResponseDto {
+  @ApiProperty({ enum: ['CANCELLED', 'EXPIRED'] })
+  kind: 'CANCELLED' | 'EXPIRED';
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'Sanitized reason written by the store, if any.',
+  })
+  reason: string | null;
 }
 
 export class PublicOrderResponseDto {
@@ -263,4 +295,28 @@ export class PublicOrderResponseDto {
 
   @ApiProperty({ type: [PublicOrderPaymentResponseDto] })
   payments: PublicOrderPaymentResponseDto[];
+
+  @ApiProperty({
+    type: String,
+    format: 'date-time',
+    nullable: true,
+    description:
+      'Payment deadline. Only while the order is active and still awaiting payment.',
+  })
+  expiresAt: string | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description:
+      'Sanitized order-level reason, only when the payment was rejected.',
+  })
+  paymentRejectionReason: string | null;
+
+  @ApiProperty({
+    type: PublicOrderClosureResponseDto,
+    nullable: true,
+    description: 'Set when the order is cancelled, or expired unpaid.',
+  })
+  closure: PublicOrderClosureResponseDto | null;
 }

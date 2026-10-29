@@ -19,6 +19,7 @@ import { CancelOrderUseCase } from './application/cancel-order.usecase.js';
 import { ExpireOrdersUseCase } from './application/expire-orders.usecase.js';
 import { CustomerAccountService } from './application/customer-account.service.js';
 import { OrderEventsService } from './application/order-events.service.js';
+import { PublicOrderTokenGuard } from './infrastructure/public-order-token.guard.js';
 import { BuyerPaymentProofService } from './application/buyer-payment-proof.service.js';
 import { OrderPaymentsService } from './application/order-payments.service.js';
 import { VoidOrderPaymentUseCase } from './application/void-order-payment.usecase.js';
@@ -57,6 +58,7 @@ import { PaymentConfigModule } from '../payment-config/payment-config.module.js'
     CustomersService,
     OrderEventsService,
     BuyerPaymentProofService,
+    PublicOrderTokenGuard,
     OrderPaymentsService,
     VoidOrderPaymentUseCase,
     PublicOrderService,

@@ -90,6 +90,9 @@ function makeOrder(
     hasValidatedPayment: false,
     courierModality: "HOME",
     payments: [],
+    expiresAt: null,
+    paymentRejectionReason: null,
+    closure: null,
     ...overrides,
   } as PublicOrderResponseDto;
 }
@@ -155,6 +158,10 @@ test("partial payment shows the pending amount as due, paid and voided rows", as
       pendingAmount: 20,
       payments: [
         {
+          id: "payment-1",
+          method: "YAPE",
+          paidAt: null,
+          hasProof: false,
           source: "SELLER_RECORDED",
           amount: "10",
           createdAt: "2026-09-01T12:00:00.000Z",
@@ -162,6 +169,10 @@ test("partial payment shows the pending amount as due, paid and voided rows", as
           voidedAt: null,
         },
         {
+          id: "payment-2",
+          method: "YAPE",
+          paidAt: null,
+          hasProof: false,
           source: "SELLER_RECORDED",
           amount: "99",
           createdAt: "2026-09-01T12:00:00.000Z",
@@ -169,6 +180,10 @@ test("partial payment shows the pending amount as due, paid and voided rows", as
           voidedAt: "2026-09-02T12:00:00.000Z",
         },
         {
+          id: "payment-3",
+          method: "YAPE",
+          paidAt: null,
+          hasProof: true,
           source: "BUYER_SUBMITTED",
           amount: "5",
           createdAt: "2026-09-01T12:00:00.000Z",
@@ -216,6 +231,10 @@ test("asks only for what is still due when a payment was already recorded", asyn
       pendingAmount: 20,
       payments: [
         {
+          id: "payment-4",
+          method: "YAPE",
+          paidAt: null,
+          hasProof: false,
           source: "SELLER_RECORDED",
           amount: "10",
           createdAt: "2026-09-01T12:00:00.000Z",
