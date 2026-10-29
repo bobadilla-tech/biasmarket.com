@@ -502,7 +502,8 @@
       "LOW_STOCK": "Low stock",
       "OUT_OF_STOCK": "Out of stock",
       "PAYMENT_PROOF_SUBMITTED": "Payment proof submitted",
-      "RECEIPT_CONFIRMED": "Receipt confirmed"
+      "RECEIPT_CONFIRMED": "Receipt confirmed",
+      "GENERIC": "Notification"
     }
   },
   "preferences": {
@@ -1005,6 +1006,7 @@
       "title": "Notify the buyer",
       "notNow": "Not now",
       "dismiss": "Close",
+      "templateError": "We couldn't load your saved message, so this is the default text.",
       "reason": {
         "ASSISTED_PAYMENT_VALIDATED": "You validated their payment. Tell them on WhatsApp if you like.",
         "ASSISTED_IN_TRANSIT": "The order is on its way. Tell them on WhatsApp if you like.",

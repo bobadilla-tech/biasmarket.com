@@ -23,6 +23,7 @@ import { linkFingerprint, type ClaimTicket } from './claim-ticket.js';
 import { requiredEnv } from '../../config/env.validation.js';
 import { withPaymentSummary } from '../../common/payment-summary.js';
 import { toAccountOrderDto } from './dto/account-order-response.dto.js';
+import type { GlobalAccountOrderDetailResponseDto } from './dto/global-account-response.dto.js';
 
 export type ClaimFailureCode = 'already_claimed' | 'not_claimable' | 'invalid';
 
@@ -654,7 +655,10 @@ export class CustomerAuthService {
   // itself, so a foreign or missing id gives the same 404 and nothing about
   // its existence. Explicit selects: no proof image URLs, rejection notes,
   // reviewer ids or void reasons ever reach the buyer.
-  async getGlobalOrderDetail(buyerAccountId: string, orderId: string) {
+  async getGlobalOrderDetail(
+    buyerAccountId: string,
+    orderId: string,
+  ): Promise<GlobalAccountOrderDetailResponseDto> {
     const order = await this.prisma.order.findFirst({
       where: { id: orderId, buyerAccountId },
       select: {

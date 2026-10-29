@@ -439,6 +439,8 @@ describe('OrderEventsService', () => {
       prisma.order.findUnique.mockResolvedValue(base);
 
       const result = await service.confirmReceipt(token);
+      // The documented response shape, and nothing else.
+      expect(Object.keys(result)).toEqual(['receiptConfirmedAt']);
 
       expect(prisma.order.updateMany).toHaveBeenCalledWith({
         where: {

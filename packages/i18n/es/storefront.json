@@ -464,6 +464,8 @@
     "detail": {
       "back": "Volver a mis compras",
       "notFound": "No encontramos este pedido en tu cuenta.",
+      "loginRequired": "Ingresa para ver este pedido.",
+      "loginCta": "Ir a mis compras para ingresar",
       "claimed": "¡Listo! Guardamos este pedido en tu cuenta. Tu enlace original sigue funcionando."
     }
   },

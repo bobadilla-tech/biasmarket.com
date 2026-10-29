@@ -140,6 +140,20 @@ test("an order that is not in the account (404/401) shows the not-found state", 
   ).toBeTruthy();
 });
 
+test("a signed-out buyer (401) gets a login prompt instead of the not-found state", async () => {
+  orderDetail.mockRejectedValue(new ApiError("No autenticado", 401));
+  renderWithProviders(
+    <MyPurchaseOrder orderId="cmabcdefghij" justClaimed={false} />,
+  );
+  expect(await screen.findByText("Ingresa para ver este pedido.")).toBeTruthy();
+  expect(screen.queryByText(/No encontramos este pedido/)).toBeNull();
+  expect(
+    screen
+      .getByRole("link", { name: "Ir a mis compras para ingresar" })
+      .getAttribute("href"),
+  ).toBe("/my-purchases");
+});
+
 test("never turns a non-http tracking URL into a link", async () => {
   orderDetail.mockResolvedValue(order({ trackingUrl: "javascript:alert(1)" }));
   renderWithProviders(

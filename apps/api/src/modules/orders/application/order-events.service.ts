@@ -12,10 +12,12 @@ import type {
   Prisma,
 } from '@biasmarket/db';
 import { hashOrderAccessToken } from '@biasmarket/utils/assisted-order';
+import { RECEIPT_FULFILLMENT_STATES as RECEIPT_STATES } from '@biasmarket/utils/order-receipt';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { countsTowardPaid } from '../../../common/payment-summary.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
 import { INVITE_EVENT_TYPES } from '../dto/record-invite-event.dto.js';
+import type { ReceiptConfirmedResponseDto } from '../dto/receipt-confirmed-response.dto.js';
 import type { ClaimMoment } from '../../customer-auth/claim-ticket.js';
 
 // Which later issue writes each type. G2 reads the buyer-visible rows.
@@ -63,11 +65,8 @@ const ALLOWED_PAYLOAD_KEYS = new Set([
   'moment',
 ]);
 
-const RECEIPT_FULFILLMENT_STATES = new Set<FulfillmentStatus>([
-  'IN_TRANSIT',
-  'READY',
-  'COMPLETED',
-]);
+// Shared with the web's confirm button (`@biasmarket/utils/order-receipt`).
+const RECEIPT_FULFILLMENT_STATES = new Set<FulfillmentStatus>(RECEIPT_STATES);
 
 export type InviteEventType = (typeof INVITE_EVENT_TYPES)[number];
 
@@ -360,7 +359,7 @@ export class OrderEventsService {
   // notifies the seller; any later call returns the stored date untouched.
   // The state gate is deliberately generic (409) so the response does not
   // describe the order beyond what the public page already shows.
-  async confirmReceipt(token: string): Promise<{ receiptConfirmedAt: string }> {
+  async confirmReceipt(token: string): Promise<ReceiptConfirmedResponseDto> {
     const order = await this.requireOrderForToken(token);
     if (
       order.paymentStatus !== 'VERIFIED' ||

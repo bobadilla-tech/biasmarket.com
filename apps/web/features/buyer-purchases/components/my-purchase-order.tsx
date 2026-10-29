@@ -2,6 +2,7 @@
 
 import { ArrowLeft } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import { ApiError } from "@biasmarket/types";
 import { Link } from "@/i18n/navigation";
 import { ErrorState } from "@/components/shared/error-state";
 import { LoadingState } from "@/components/shared/loading-state";
@@ -28,6 +29,23 @@ export function MyPurchaseOrder({
   const order = useGlobalOrder(orderId);
 
   if (order.isPending) return <LoadingState />;
+
+  // A signed-out buyer (session expired, deep link) gets a way to log in, not
+  // "we couldn't find this order". Everything else, a 404 included, stays the
+  // not-found state (the API gives the same answer for someone else's order).
+  if (order.error instanceof ApiError && order.error.status === 401) {
+    return (
+      <div className="flex flex-col gap-4">
+        <ErrorState message={t("detail.loginRequired")} />
+        <Link
+          href="/my-purchases"
+          className="text-sm font-medium text-emerald-700 hover:underline"
+        >
+          {t("detail.loginCta")}
+        </Link>
+      </div>
+    );
+  }
 
   if (order.isError) {
     return (

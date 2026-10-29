@@ -464,6 +464,8 @@
     "detail": {
       "back": "Back to my purchases",
       "notFound": "We couldn't find this order in your account.",
+      "loginRequired": "Log in to see this order.",
+      "loginCta": "Go to my purchases to log in",
       "claimed": "Done! We saved this order to your account. Your original link still works."
     }
   },

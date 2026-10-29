@@ -82,6 +82,25 @@ test("shows the message with the tracking number read from the order, and can be
   expect(recordBuyerNotice).not.toHaveBeenCalled();
 });
 
+test("explains that the default text is shown when the saved template fails to load", async () => {
+  findOne.mockRejectedValue(new Error("boom"));
+  renderWithProviders(<BuyerNoticePrompt storeId="store-1" storeName="K" />);
+  offerIt();
+
+  // The template query retries once (1s backoff) before it reports the error.
+  expect(
+    await screen.findByText(
+      "No pudimos cargar tu mensaje guardado, así que este es el texto por defecto.",
+      {},
+      { timeout: 4000 },
+    ),
+  ).toBeTruthy();
+  const message = (await screen.findByLabelText(
+    "Mensaje para el comprador",
+  )) as HTMLTextAreaElement;
+  await waitFor(() => expect(message.value).toContain("OLV-9"));
+});
+
 test("copying logs the notice once, with only the notice type", async () => {
   Object.assign(navigator, {
     clipboard: { writeText: vi.fn().mockResolvedValue(undefined) },
