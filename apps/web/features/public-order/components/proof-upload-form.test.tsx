@@ -53,6 +53,13 @@ test("offers only the store's configured methods", () => {
   expect(options).toHaveLength(2); // placeholder + YAPE
 });
 
+test("renders no form when the store has no payment methods", () => {
+  render(makeOrder({ paymentMethods: [] }));
+  expect(
+    screen.queryByRole("button", { name: "Enviar comprobante" }),
+  ).toBeNull();
+});
+
 test("shows inline errors and does not call the API on an invalid form", async () => {
   render();
   fireEvent.click(screen.getByRole("button", { name: "Enviar comprobante" }));

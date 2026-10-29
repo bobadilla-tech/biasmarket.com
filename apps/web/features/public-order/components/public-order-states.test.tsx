@@ -181,9 +181,11 @@ test("payments show the method, and the buyer's own proof loads from the token r
   });
   const images = document.querySelectorAll("img[alt='Tu comprobante de pago']");
   expect(images).toHaveLength(1);
-  expect(images[0]!.getAttribute("src")).toMatch(
-    new RegExp(`/api/public/orders/${TOKEN}/payments/pay_1/image$`),
-  );
+  expect(
+    images[0]!
+      .getAttribute("src")
+      ?.endsWith(`/api/public/orders/${TOKEN}/payments/pay_1/image`),
+  ).toBe(true);
   expect(screen.getAllByText(/Yape/).length).toBeGreaterThan(0);
 });
 

@@ -110,6 +110,10 @@ export function ProofUploadForm({
     }
   });
 
+  // The page already tells the buyer to contact the store in this case; a
+  // form with an empty method select could never be submitted.
+  if (methods.length === 0) return null;
+
   return (
     <form onSubmit={submit} noValidate className="flex flex-col gap-3">
       <div className="flex flex-col gap-1">
