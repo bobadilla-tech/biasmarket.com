@@ -17,10 +17,15 @@ export async function generateMetadata({
   return { title: t("title"), robots: { index: false, follow: false } };
 }
 
-export default function MyPurchasesPage() {
+export default async function MyPurchasesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ claim?: string | string[] }>;
+}) {
+  const { claim } = await searchParams;
   return (
     <div className="mx-auto max-w-3xl px-6 py-12 sm:px-10">
-      <MyPurchases />
+      <MyPurchases claimCode={typeof claim === "string" ? claim : undefined} />
     </div>
   );
 }

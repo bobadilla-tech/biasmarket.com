@@ -150,12 +150,28 @@ export function AssistedOrderSection({
     <div className="space-y-4 rounded-[24px] border border-[#eadcf8] bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant="secondary">{t("badge")}</Badge>
+        {order.claimedAt ? (
+          // Only the fact that the buyer saved the order, never who.
+          <Badge variant="outline">{t("claimedBadge")}</Badge>
+        ) : null}
         {order.createdByName ? (
           <span className="text-xs text-[#8f7da8]">
             {t("createdBy", { name: order.createdByName })}
           </span>
         ) : null}
       </div>
+
+      {order.buyerConfirmedReceivedAt ? (
+        // Apart from the fulfillment status: the buyer's word, not the
+        // seller's "Entregado".
+        <p role="status" className="text-sm font-medium text-[#159a63]">
+          {t("receiptConfirmed", {
+            date: new Date(order.buyerConfirmedReceivedAt).toLocaleString(
+              locale,
+            ),
+          })}
+        </p>
+      ) : null}
 
       <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
         <span className="font-medium text-[#8f7da8]">{t("buyerNumber")}</span>

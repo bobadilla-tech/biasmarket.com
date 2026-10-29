@@ -486,4 +486,78 @@ describe('assisted orders (e2e)', () => {
       }
     });
   });
+
+  // The seller routes allow 20 requests/min per user (4xx included), so this
+  // runs as a fresh seller on a fresh store.
+  describe('buyer notices, as a third seller', () => {
+    let noticeCookie: string;
+    let noticeStoreId: string;
+    let noticeOrderId: string;
+    let noticeHashBefore: string | null;
+
+    beforeAll(async () => {
+      noticeCookie = await signUp('d');
+      ({
+        storeId: noticeStoreId,
+        productId,
+        variantId,
+      } = await seedStore(noticeCookie, `assisted-d-${runId}`));
+      extraStoreIds.push(noticeStoreId);
+      const created = await post(body(), noticeCookie, noticeStoreId).expect(
+        201,
+      );
+      noticeOrderId = created.body.order.id;
+      noticeHashBefore = (
+        await prisma.order.findUniqueOrThrow({ where: { id: noticeOrderId } })
+      ).accessTokenHash;
+    });
+
+    const notify = (
+      payload: Record<string, unknown>,
+      cookie = noticeCookie,
+      target = noticeStoreId,
+      orderId = noticeOrderId,
+    ) =>
+      request(app.getHttpServer())
+        .post(`/stores/${target}/orders/${orderId}/buyer-notices`)
+        .set('Cookie', cookie)
+        .send(payload);
+
+    it('logs BUYER_NOTIFIED with only the notice, and never touches the link', async () => {
+      await notify({ notice: 'ASSISTED_IN_TRANSIT' }).expect(204);
+
+      const events = await prisma.orderEvent.findMany({
+        where: { orderId: noticeOrderId, type: 'BUYER_NOTIFIED' },
+      });
+      expect(events).toHaveLength(1);
+      expect(events[0]!.actor).toBe('SELLER');
+      expect(events[0]!.payload).toEqual({ notice: 'ASSISTED_IN_TRANSIT' });
+
+      const row = await prisma.order.findUniqueOrThrow({
+        where: { id: noticeOrderId },
+      });
+      expect(row.accessTokenHash).toBe(noticeHashBefore);
+      expect(row.accessTokenRevokedAt).toBeNull();
+    });
+
+    it('rejects an unknown notice, another seller, a foreign store and no session', async () => {
+      await notify({ notice: 'NOPE' }).expect(400);
+      await notify({ notice: 'ASSISTED_READY' }, otherCookie).expect(403);
+      await notify(
+        { notice: 'ASSISTED_READY' },
+        noticeCookie,
+        noticeStoreId,
+        'does-not-exist',
+      ).expect(404);
+      await request(app.getHttpServer())
+        .post(`/stores/${noticeStoreId}/orders/${noticeOrderId}/buyer-notices`)
+        .send({ notice: 'ASSISTED_READY' })
+        .expect(401);
+      expect(
+        await prisma.orderEvent.count({
+          where: { orderId: noticeOrderId, type: 'BUYER_NOTIFIED' },
+        }),
+      ).toBe(1);
+    });
+  });
 });

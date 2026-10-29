@@ -7,6 +7,8 @@ import {
   HttpCode,
   Param,
   Post,
+  Res,
+  ServiceUnavailableException,
   StreamableFile,
   UnsupportedMediaTypeException,
   UseGuards,
@@ -16,11 +18,22 @@ import {
   ApiOkResponse,
   ApiProduces,
 } from '@nestjs/swagger';
+import type { Response } from 'express';
 import { Public } from '@thallesp/nestjs-better-auth';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import { OriginGuard } from '../../customer-auth/origin.guard.js';
+import { isBuyerGoogleConfigured } from '../../customer-auth/buyer-google-oauth.js';
+import {
+  CLAIM_TICKET_COOKIE,
+  CLAIM_TICKET_TTL_MS,
+  claimCookieOptions,
+  signClaimTicket,
+} from '../../customer-auth/claim-ticket.js';
+import { ClaimTicketDto } from '../dto/claim-ticket.dto.js';
 import { OrderEventsService } from '../application/order-events.service.js';
 import { PublicOrderService } from '../application/public-order.service.js';
 import { RecordInviteEventDto } from '../dto/record-invite-event.dto.js';
+import { ReceiptConfirmedResponseDto } from '../dto/receipt-confirmed-response.dto.js';
 import { PublicOrderResponseDto } from '../dto/public-order-response.dto.js';
 import { StorageService } from '../../../storage/storage.service.js';
 
@@ -79,6 +92,64 @@ export class PublicOrderEventsController {
     if (!contentType?.toLowerCase().startsWith('application/json')) {
       throw new UnsupportedMediaTypeException();
     }
-    await this.events.recordInvite(token, dto.type);
+    await this.events.recordInvite(token, dto.type, dto.moment);
+  }
+
+  @Public()
+  @Post(':token/receipt')
+  @Header('Cache-Control', 'no-store')
+  @Header('Referrer-Policy', 'no-referrer')
+  @HttpCode(200)
+  @ApiOkResponse({ type: ReceiptConfirmedResponseDto })
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 20 } })
+  async confirmReceipt(
+    @Param('token') token: string,
+    @Headers('content-type') contentType: string | undefined,
+  ): Promise<ReceiptConfirmedResponseDto> {
+    // Same JSON-only rule as `events`: a cross-site form post is urlencoded.
+    if (!contentType?.toLowerCase().startsWith('application/json')) {
+      throw new UnsupportedMediaTypeException();
+    }
+    return this.events.confirmReceipt(token);
+  }
+
+  // Step 1 of "save with Google". A browser-side POST (never a Server
+  // Action: server calls go to INTERNAL_API_URL and the cookie would never
+  // reach the browser) that leaves a signed, httpOnly, path-scoped ticket for
+  // the OAuth redirect. The start link alone carries nothing, so it cannot be
+  // used for login-CSRF. Check order is fixed: unknown/revoked token 404
+  // first, then 503 (Google off), 409, 422.
+  @Public()
+  @Post(':token/claim-ticket')
+  @Header('Cache-Control', 'no-store')
+  @Header('Referrer-Policy', 'no-referrer')
+  @HttpCode(204)
+  @ApiNoContentResponse()
+  @UseGuards(ThrottlerGuard, OriginGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
+  async claimTicket(
+    @Param('token') token: string,
+    @Headers('content-type') contentType: string | undefined,
+    @Body() dto: ClaimTicketDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<void> {
+    if (!contentType?.toLowerCase().startsWith('application/json')) {
+      throw new UnsupportedMediaTypeException();
+    }
+    const order = await this.events.loadForClaim(token);
+    if (!isBuyerGoogleConfigured()) {
+      throw new ServiceUnavailableException('Google no está disponible');
+    }
+    this.events.assertClaimable(order);
+    res.cookie(
+      CLAIM_TICKET_COOKIE,
+      signClaimTicket({
+        orderId: order.id,
+        accessTokenHash: order.accessTokenHash,
+        moment: dto.moment,
+      }),
+      { ...claimCookieOptions(), maxAge: CLAIM_TICKET_TTL_MS },
+    );
   }
 }

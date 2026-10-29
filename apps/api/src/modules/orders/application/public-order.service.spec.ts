@@ -15,6 +15,7 @@ describe('PublicOrderService', () => {
   let events: {
     requireOrderForToken: Mock;
     record: Mock;
+    listForBuyer: Mock;
   };
   let prisma: {
     order: { findUnique: Mock; updateMany: Mock };
@@ -36,6 +37,8 @@ describe('PublicOrderService', () => {
     fulfillmentStatus: 'ORDERING',
     status: 'ACTIVE',
     createdAt: new Date('2026-09-30T12:00:00.000Z'),
+    claimedAt: null,
+    buyerConfirmedReceivedAt: null,
     deliveryMethodType: 'COURIER',
     deliveryDetails: {
       shippingAddress: {
@@ -87,6 +90,7 @@ describe('PublicOrderService', () => {
     events = {
       requireOrderForToken: vi.fn(),
       record: vi.fn(),
+      listForBuyer: vi.fn().mockResolvedValue([]),
     };
     prisma = {
       order: {
@@ -195,6 +199,11 @@ describe('PublicOrderService', () => {
         'trackingNumber',
         'trackingUrl',
         'packedPhotoAvailable',
+        'receiptConfirmedAt',
+        'claimed',
+        'lastUpdateAt',
+        'timeline',
+        'hasValidatedPayment',
         'courierModality',
         'payments',
       ].sort(),
@@ -380,5 +389,164 @@ describe('PublicOrderService', () => {
       NotFoundException,
     );
     expect(prisma.order.findUnique).not.toHaveBeenCalled();
+  });
+
+  describe('timeline', () => {
+    const at = (iso: string) => new Date(iso);
+    const events_ = [
+      {
+        type: 'CREATED',
+        createdAt: at('2026-09-30T12:00:00.000Z'),
+        payload: {},
+      },
+      {
+        type: 'LINK_OPENED',
+        createdAt: at('2026-09-30T12:05:00.000Z'),
+        payload: {},
+      },
+      {
+        type: 'BUYER_NOTIFIED',
+        createdAt: at('2026-09-30T12:06:00.000Z'),
+        payload: { notice: 'ASSISTED_READY' },
+      },
+      {
+        type: 'PAYMENT_VOIDED',
+        createdAt: at('2026-10-01T10:00:00.000Z'),
+        payload: {
+          amount: 20,
+          currency: 'PEN',
+          paymentId: 'payment-secret',
+          reason: 'seller free text',
+        },
+      },
+      {
+        type: 'FULFILLMENT_ADVANCED',
+        createdAt: at('2026-10-02T10:00:00.000Z'),
+        payload: { fromStatus: 'ORDERING', toStatus: 'IN_TRANSIT' },
+      },
+      {
+        type: 'ORDER_CANCELLED',
+        createdAt: at('2026-10-03T10:00:00.000Z'),
+        payload: { resolution: 'free text from seller' },
+      },
+    ];
+
+    async function load(claimedAt: Date | null) {
+      events.requireOrderForToken.mockResolvedValue({
+        id: 'order-1',
+        storeId: 'store-1',
+      });
+      prisma.order.findUnique.mockResolvedValueOnce({
+        ...orderRow,
+        claimedAt,
+        linkFirstOpenedAt: new Date(),
+      });
+      events.listForBuyer.mockResolvedValue(events_);
+      return service.getByToken('tok');
+    }
+
+    it('gives an unclaimed order an empty timeline but still the last update', async () => {
+      const result = await load(null);
+
+      expect(result.claimed).toBe(false);
+      expect(result.timeline).toEqual([]);
+      // The latest buyer-visible step, not the internal ones.
+      expect(result.lastUpdateAt).toBe('2026-10-03T10:00:00.000Z');
+    });
+
+    it('gives a claimed order the ordered steps, without internal events', async () => {
+      const result = await load(new Date());
+
+      expect(result.claimed).toBe(true);
+      expect(result.timeline.map((item) => item.type)).toEqual([
+        'CREATED',
+        'PAYMENT_VOIDED',
+        'FULFILLMENT_ADVANCED',
+        'ORDER_CANCELLED',
+      ]);
+    });
+
+    it('exposes exactly the picked keys per item and never the payload extras', async () => {
+      const result = await load(new Date());
+
+      for (const item of result.timeline) {
+        expect(Object.keys(item).sort()).toEqual(
+          ['amount', 'at', 'resolution', 'toStatus', 'type'].sort(),
+        );
+      }
+      const voided = result.timeline.find((i) => i.type === 'PAYMENT_VOIDED')!;
+      expect(voided.amount).toBe('20');
+      const advanced = result.timeline.find(
+        (i) => i.type === 'FULFILLMENT_ADVANCED',
+      )!;
+      expect(advanced.toStatus).toBe('IN_TRANSIT');
+      // Free text in `resolution` is not a known value: dropped.
+      expect(
+        result.timeline.find((i) => i.type === 'ORDER_CANCELLED')!.resolution,
+      ).toBeNull();
+      const json = JSON.stringify(result);
+      for (const secret of [
+        'payment-secret',
+        'seller free text',
+        'free text from seller',
+        'ASSISTED_READY',
+      ]) {
+        expect(json).not.toContain(secret);
+      }
+    });
+
+    it('falls back to the creation time with no buyer-visible step', async () => {
+      events.requireOrderForToken.mockResolvedValue({
+        id: 'order-1',
+        storeId: 'store-1',
+      });
+      prisma.order.findUnique.mockResolvedValueOnce({
+        ...orderRow,
+        linkFirstOpenedAt: new Date(),
+      });
+      events.listForBuyer.mockResolvedValue([events_[1]]);
+
+      const result = await service.getByToken('tok');
+
+      expect(result.lastUpdateAt).toBe(orderRow.createdAt.toISOString());
+    });
+
+    it('computes hasValidatedPayment from payments that count toward paid', async () => {
+      events.requireOrderForToken.mockResolvedValue({
+        id: 'order-1',
+        storeId: 'store-1',
+      });
+      const row = (payments: unknown[]) =>
+        prisma.order.findUnique.mockResolvedValueOnce({
+          ...orderRow,
+          linkFirstOpenedAt: new Date(),
+          payments,
+        });
+      const base = {
+        amount: new Prisma.Decimal('10'),
+        createdAt: new Date(),
+        voidedAt: null,
+      };
+
+      row([{ ...base, source: 'SELLER_RECORDED', reviewStatus: 'N_A' }]);
+      expect((await service.getByToken('t')).hasValidatedPayment).toBe(true);
+      row([{ ...base, source: 'BUYER_SUBMITTED', reviewStatus: 'APPROVED' }]);
+      expect((await service.getByToken('t')).hasValidatedPayment).toBe(true);
+      row([
+        { ...base, source: 'BUYER_SUBMITTED', reviewStatus: 'PENDING_REVIEW' },
+      ]);
+      expect((await service.getByToken('t')).hasValidatedPayment).toBe(false);
+      row([
+        {
+          ...base,
+          source: 'SELLER_RECORDED',
+          reviewStatus: 'N_A',
+          voidedAt: new Date(),
+        },
+      ]);
+      expect((await service.getByToken('t')).hasValidatedPayment).toBe(false);
+      row([]);
+      expect((await service.getByToken('t')).hasValidatedPayment).toBe(false);
+    });
   });
 });

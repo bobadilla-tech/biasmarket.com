@@ -466,6 +466,24 @@
       "assistedOrderLink": {
         "title": "Assisted order link message",
         "description": "Used when you create an order for a buyer and send them their private link. Required variable: '{{link}}'."
+      },
+      "buyerNotices": {
+        "paymentValidated": {
+          "title": "Buyer notice: payment validated",
+          "description": "Used when you validate the payment of an assisted order and tell the buyer. It carries no link: the buyer already has theirs. '{{saveInvite}}' adds the invitation to save the order and is empty once they have saved it."
+        },
+        "inTransit": {
+          "title": "Buyer notice: order on its way",
+          "description": "Used when the order moves to in transit. '{{trackingNumber}}' is the tracking code, if you entered one."
+        },
+        "ready": {
+          "title": "Buyer notice: order ready",
+          "description": "Used when the order is ready for pickup."
+        },
+        "delivered": {
+          "title": "Buyer notice: order delivered",
+          "description": "Used when you mark the order as delivered. '{{saveInvite}}' adds the invitation to save the order and is empty once they have saved it."
+        }
       }
     }
   },
@@ -483,7 +501,8 @@
     "types": {
       "LOW_STOCK": "Low stock",
       "OUT_OF_STOCK": "Out of stock",
-      "PAYMENT_PROOF_SUBMITTED": "Payment proof submitted"
+      "PAYMENT_PROOF_SUBMITTED": "Payment proof submitted",
+      "RECEIPT_CONFIRMED": "Receipt confirmed"
     }
   },
   "preferences": {
@@ -945,6 +964,19 @@
           "REJECTED": "Payment rejected",
           "CANCELLED": "Cancelled"
         }
+      },
+      "receiptConfirmed": "The buyer confirmed receipt on {date}",
+      "claimedBadge": "Claimed"
+    },
+    "buyerNotice": {
+      "title": "Notify the buyer",
+      "notNow": "Not now",
+      "dismiss": "Close",
+      "reason": {
+        "ASSISTED_PAYMENT_VALIDATED": "You validated their payment. Tell them on WhatsApp if you like.",
+        "ASSISTED_IN_TRANSIT": "The order is on its way. Tell them on WhatsApp if you like.",
+        "ASSISTED_READY": "The order is ready. Tell them on WhatsApp if you like.",
+        "ASSISTED_DELIVERED": "You marked the order as delivered. Tell them on WhatsApp if you like."
       }
     }
   }

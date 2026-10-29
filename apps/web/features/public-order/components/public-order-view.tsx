@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import type { PublicOrderResponseDto } from "@biasmarket/types";
+import { Sparkles } from "lucide-react";
 import { StoreLogo } from "@/components/store-logo";
 import { ContactSellerButton } from "@/features/customer-auth/components/contact-seller-button";
 import { FulfillmentTimeline } from "@/features/orders/components/fulfillment-timeline";
@@ -12,6 +14,13 @@ import {
   shouldShowHowToPay,
 } from "../lib/order-state";
 import { HowToPay } from "./how-to-pay";
+import { ClaimOrderButton } from "./claim-order-button";
+import { ReceiptConfirmation } from "./receipt-confirmation";
+import { SaveOrderInvite } from "./save-order-invite";
+import { ShippingDetails } from "./shipping-details";
+import { Timeline } from "./timeline";
+import { formatLimaDateTime } from "../lib/format-lima-datetime";
+import { useSaveInvite } from "../hooks/use-save-invite";
 
 const BANNER_TONE: Record<ReturnType<typeof getBannerKey>, string> = {
   cancelled: "border-gray-200 bg-gray-50 text-gray-700",
@@ -35,16 +44,21 @@ function Row({ label, value }: { label: string; value: string }) {
 
 export function PublicOrderView({
   slug,
+  token,
   order,
 }: {
   slug: string;
+  token: string;
   order: PublicOrderResponseDto;
 }) {
   const t = useTranslations("storefront.publicOrder");
   const locale = useLocale();
+  const [receiptJustConfirmed, setReceiptJustConfirmed] = useState(false);
+  const invite = useSaveInvite({ slug, token, order, receiptJustConfirmed });
   const money = (amount: string | number) => `${order.currency} ${amount}`;
   const cancelled = isCancelled(order);
   const bannerKey = getBannerKey(order);
+  const isMilestone = ["verified", "ready", "completed"].includes(bannerKey);
   // Defensive: an API that predates these fields simply omits them.
   const orderNumber = order.orderNumber ? order.orderNumber : null;
   const depositDiffers =
@@ -90,10 +104,34 @@ export function PublicOrderView({
 
       <div
         role="status"
-        className={`rounded-2xl border p-4 text-sm font-medium ${BANNER_TONE[bannerKey]}`}
+        className={`purchase-milestone flex items-center gap-2.5 rounded-2xl border p-4 text-sm font-semibold ${BANNER_TONE[bannerKey]}`}
       >
-        {t(`banner.${bannerKey}`)}
+        {isMilestone && (
+          <Sparkles
+            aria-hidden="true"
+            className="fan-sparkle size-5 shrink-0 text-amber-500"
+          />
+        )}
+        <span>{t(`banner.${bannerKey}`)}</span>
       </div>
+
+      {/* Above everything that can grow (invite blocks later), so it stays
+          on the first screen on a phone. */}
+      <ReceiptConfirmation
+        slug={slug}
+        token={token}
+        order={order}
+        onConfirmed={() => setReceiptJustConfirmed(true)}
+      />
+
+      {invite.moment && invite.moment !== "adelanto_linea_de_tiempo" && (
+        <SaveOrderInvite
+          token={token}
+          moment={invite.moment}
+          onClick={invite.clicked}
+          onDismiss={invite.dismiss}
+        />
+      )}
 
       {!cancelled && (
         <section
@@ -109,6 +147,49 @@ export function PublicOrderView({
           <FulfillmentTimeline fulfillmentStatus={order.fulfillmentStatus} />
         </section>
       )}
+
+      <ShippingDetails token={token} order={order} />
+
+      <section
+        aria-labelledby="public-order-history"
+        className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"
+      >
+        <h2
+          id="public-order-history"
+          className="text-sm font-semibold text-gray-900"
+        >
+          {t("timeline.title")}
+        </h2>
+        {/* Read as optional: an API that predates these fields omits them. */}
+        {order.claimed ? (
+          <>
+            <p role="status" className="text-sm font-semibold text-emerald-700">
+              {t("claim.saved")}
+            </p>
+            <Timeline items={order.timeline ?? []} currency={order.currency} />
+          </>
+        ) : (
+          <>
+            {order.lastUpdateAt && (
+              <p className="text-sm text-gray-700">
+                {t("timeline.lastUpdate", {
+                  date: formatLimaDateTime(order.lastUpdateAt, locale),
+                })}
+              </p>
+            )}
+            {invite.moment === "adelanto_linea_de_tiempo" && (
+              <>
+                <p className="text-sm text-gray-700">{t("timeline.teaser")}</p>
+                <ClaimOrderButton
+                  token={token}
+                  moment="adelanto_linea_de_tiempo"
+                  onStart={invite.clicked}
+                />
+              </>
+            )}
+          </>
+        )}
+      </section>
 
       <section
         aria-labelledby="public-order-items"

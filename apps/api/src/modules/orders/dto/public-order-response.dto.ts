@@ -57,6 +57,53 @@ export class PublicOrderPaymentResponseDto {
   reviewStatus: 'N_A' | 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED';
 }
 
+export const PUBLIC_TIMELINE_EVENT_TYPES = [
+  'CREATED',
+  'PAYMENT_SUBMITTED',
+  'PAYMENT_VALIDATED',
+  'PAYMENT_REJECTED',
+  'PAYMENT_VOIDED',
+  'FULFILLMENT_ADVANCED',
+  'PACKED_PHOTO_ADDED',
+  'TRACKING_ADDED',
+  'RECEIPT_CONFIRMED',
+  'CLAIMED',
+  'ORDER_CANCELLED',
+] as const;
+export type PublicTimelineEventType =
+  (typeof PUBLIC_TIMELINE_EVENT_TYPES)[number];
+
+// One buyer-visible step. Every key is always present so the shape is stable;
+// nothing from the stored payload beyond these picked fields is exposed.
+export class PublicOrderTimelineItemDto {
+  @ApiProperty({ enum: PUBLIC_TIMELINE_EVENT_TYPES })
+  type: PublicTimelineEventType;
+
+  @ApiProperty({ type: String, format: 'date-time' })
+  at: string;
+
+  @ApiProperty({
+    enum: ['ORDERING', 'IN_TRANSIT', 'READY', 'COMPLETED'],
+    nullable: true,
+    description: 'New fulfillment step, for FULFILLMENT_ADVANCED only.',
+  })
+  toStatus: 'ORDERING' | 'IN_TRANSIT' | 'READY' | 'COMPLETED' | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'Payment amount, for PAYMENT_SUBMITTED / PAYMENT_VOIDED.',
+  })
+  amount: string | null;
+
+  @ApiProperty({
+    enum: ['REFUNDED', 'RETAINED', 'STORE_CREDIT'],
+    nullable: true,
+    description: 'Outcome of a cancellation, for ORDER_CANCELLED only.',
+  })
+  resolution: 'REFUNDED' | 'RETAINED' | 'STORE_CREDIT' | null;
+}
+
 export class PublicOrderPaymentMethodResponseDto {
   @ApiProperty({ enum: ['YAPE', 'PLIN', 'TRANSFER', 'CASH'] })
   method: 'YAPE' | 'PLIN' | 'TRANSFER' | 'CASH';
@@ -178,6 +225,38 @@ export class PublicOrderResponseDto {
     description: 'Whether a private packed-package photo is available.',
   })
   packedPhotoAvailable: boolean;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'When the buyer confirmed receiving the order.',
+  })
+  receiptConfirmedAt: string | null;
+
+  @ApiProperty({
+    description: 'Whether the order was saved to a buyer account.',
+  })
+  claimed: boolean;
+
+  @ApiProperty({
+    type: String,
+    format: 'date-time',
+    description: 'Time of the latest buyer-visible step (creation if none).',
+  })
+  lastUpdateAt: string;
+
+  @ApiProperty({
+    type: [PublicOrderTimelineItemDto],
+    description:
+      'Dated steps, oldest first. Empty unless the order was claimed: it is an incentive to save the order, not an access control.',
+  })
+  timeline: PublicOrderTimelineItemDto[];
+
+  @ApiProperty({
+    description:
+      'Whether a payment counts toward the paid amount (recorded, or an approved proof, and not voided).',
+  })
+  hasValidatedPayment: boolean;
 
   @ApiProperty({ enum: ['AGENCY', 'HOME'], nullable: true })
   courierModality: 'AGENCY' | 'HOME' | null;

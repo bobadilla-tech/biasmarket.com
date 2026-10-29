@@ -77,7 +77,7 @@ export function StorePublicProfile({
         <div
           role="img"
           aria-label={t("bannerImageAlt", { storeName })}
-          className="relative flex h-52 w-full items-center overflow-hidden rounded-2xl border border-(--store-border) px-8 text-white sm:h-[300px] sm:px-12"
+          className="fan-banner-ambient relative flex h-52 w-full items-center overflow-hidden rounded-[1.75rem] border border-white/50 px-8 text-white shadow-[0_18px_42px_var(--store-shadow)] sm:h-[300px] sm:px-12"
           style={{
             backgroundImage:
               "radial-gradient(rgba(255,255,255,.68) 1px, transparent 1.35px), linear-gradient(108deg, var(--store-sidebar-end) 0%, var(--store-primary) 54%, var(--store-accent) 100%)",
@@ -100,7 +100,7 @@ export function StorePublicProfile({
           </div>
           <div
             aria-hidden="true"
-            className="absolute right-[10%] top-1/2 flex size-36 -translate-y-1/2 items-center justify-center rounded-full border border-white/70 sm:size-56"
+            className="fan-float absolute right-[10%] top-1/2 flex size-36 -translate-y-1/2 items-center justify-center rounded-full border border-white/70 bg-white/5 shadow-[0_0_55px_rgb(255_255_255/15%)] sm:size-56"
           >
             <div className="flex size-[82%] items-center justify-center rounded-full border border-white/70">
               <Sparkles

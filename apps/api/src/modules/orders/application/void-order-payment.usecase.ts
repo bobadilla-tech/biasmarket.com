@@ -9,6 +9,7 @@ import {
 } from '../../../common/payment-summary.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { OrderRepository } from '../infrastructure/order.repository.js';
+import { OrderEventsService } from './order-events.service.js';
 
 const toCents = (amount: number) => Math.round(amount * 100);
 
@@ -17,6 +18,7 @@ export class VoidOrderPaymentUseCase {
   constructor(
     private readonly prisma: PrismaService,
     private readonly orders: OrderRepository,
+    private readonly events: OrderEventsService,
   ) {}
 
   async execute(
@@ -46,6 +48,7 @@ export class VoidOrderPaymentUseCase {
           paymentStatus: true,
           fulfillmentStatus: true,
           requiredAmount: true,
+          currency: true,
         },
       });
       if (!order) throw new NotFoundException('Orden no encontrada');
@@ -122,6 +125,19 @@ export class VoidOrderPaymentUseCase {
       await tx.order.update({
         where: { id: orderId },
         data: { paymentStatus },
+      });
+      // Payload is amount/currency/paymentId only: the seller's free-text
+      // reason stays in the audit log. The public mapper drops `paymentId`.
+      await this.events.record(tx, {
+        orderId,
+        storeId,
+        type: 'PAYMENT_VOIDED',
+        actor: 'SELLER',
+        payload: {
+          amount: Number(payment.amount),
+          currency: order.currency,
+          paymentId,
+        },
       });
       await tx.auditLog.create({
         data: {

@@ -1,5 +1,5 @@
 import * as Sentry from "@sentry/react";
-import { redactSentryEvent } from "./lib/sentry-redaction";
+import { scrubBreadcrumb, scrubSentryEvent } from "@/lib/scrub-sentry";
 
 // Client-side error tracking (GlitchTip). Runs in the browser before React
 // hydrates — sets up the global window error / unhandledrejection handlers so
@@ -16,13 +16,10 @@ if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
     // LCP PerformanceObserver records). It's upstream noise, not an app fault —
     // drop it so it doesn't flood error tracking.
     ignoreErrors: [/reading 'startTime'/, /reportAllChanges/],
-    beforeSend(event) {
-      redactSentryEvent(event);
-      return event;
-    },
-    beforeSendTransaction(event) {
-      redactSentryEvent(event);
-      return event;
-    },
+    // The private order link (`/pedido/:token`, `/public/orders/:token`) must
+    // never reach the tracker through a URL, breadcrumb or transaction name.
+    beforeSend: (event) => scrubSentryEvent(event),
+    beforeSendTransaction: (event) => scrubSentryEvent(event),
+    beforeBreadcrumb: (breadcrumb) => scrubBreadcrumb(breadcrumb),
   });
 }

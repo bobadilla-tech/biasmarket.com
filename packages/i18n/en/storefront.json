@@ -331,7 +331,8 @@
       "proofPending": "Pending review",
       "proofApproved": "Approved",
       "proofRejected": "Rejected",
-      "fulfillmentProgress": "Order status"
+      "fulfillmentProgress": "Order status",
+      "fullHistory": "See the full history in My account"
     },
     "addresses": {
       "title": "Your addresses",
@@ -447,7 +448,23 @@
     "empty": "You have no purchases yet.",
     "storeAccount": "Store account",
     "pendingBalance": "Pending: {currency} {amount}",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "claimErrors": {
+      "already_claimed": "This order was already saved to another account. If you think this is a mistake, message the store.",
+      "not_claimable": "This order can't be saved yet. Open your order link again once the payment is validated.",
+      "invalid": "The save link expired or is no longer valid. Open your order link again and try once more.",
+      "failed": "We couldn't save your order. Open your order link again and try once more.",
+      "unavailable": "Saving with Google isn't available right now. Your order link still works.",
+      "fallback": "We couldn't save your order. Open your order link again and try once more."
+    },
+    "origin": {
+      "assisted": "Created by the store"
+    },
+    "detail": {
+      "back": "Back to my purchases",
+      "notFound": "We couldn't find this order in your account.",
+      "claimed": "Done! We saved this order to your account. Your original link still works."
+    }
   },
   "publicOrder": {
     "metaTitle": "Your order",
@@ -524,6 +541,73 @@
     "date": {
       "today": "Today {time}",
       "yesterday": "Yesterday {time}"
+    },
+    "receipt": {
+      "title": "Has your order arrived?",
+      "confirm": "I received it",
+      "problem": "There is a problem",
+      "problemMessage": "Hi, I have a problem with my order #{number}",
+      "thanks": "Thanks for confirming!",
+      "confirmedOn": "You confirmed receipt on {date}.",
+      "error": "Could not confirm. Please try again."
+    },
+    "timeline": {
+      "title": "Your order history",
+      "lastUpdate": "Last update: {date}",
+      "teaser": "Save your order to see the full history with dates.",
+      "types": {
+        "CREATED": "Order created",
+        "PAYMENT_SUBMITTED": "Payment submitted",
+        "PAYMENT_VALIDATED": "Payment validated",
+        "PAYMENT_REJECTED": "Payment rejected",
+        "PAYMENT_VOIDED": "Payment voided",
+        "FULFILLMENT_ADVANCED": "Status updated",
+        "PACKED_PHOTO_ADDED": "Package photo added",
+        "TRACKING_ADDED": "Tracking added",
+        "RECEIPT_CONFIRMED": "Receipt confirmed",
+        "CLAIMED": "Order saved",
+        "ORDER_CANCELLED": "Order cancelled"
+      },
+      "fulfillment": {
+        "ORDERING": "Order received",
+        "IN_TRANSIT": "Your order is on its way",
+        "READY": "Your order is ready",
+        "COMPLETED": "Order delivered"
+      }
+    },
+    "shipping": {
+      "title": "Shipping",
+      "trackingNumber": "Tracking code: {number}",
+      "trackLink": "Track my shipment",
+      "packedPhoto": "Photo of your package",
+      "packedPhotoAlt": "Photo of your order's package"
+    },
+    "claim": {
+      "explainer": "When you save with Google we use your Google email and name to create your account and attach this order. We don't ask for a password or read your email. This link will keep working.",
+      "button": "Save with Google",
+      "working": "Opening Google…",
+      "inAppTitle": "Open it in your browser",
+      "inAppBody": "Google doesn't allow signing in inside this app. Copy the link and open it in Safari or Chrome to save your order.",
+      "copyLink": "Copy link",
+      "copied": "Link copied",
+      "copyFailed": "Couldn't copy. Copy the address from the browser's address bar.",
+      "error": "We couldn't start saving. Please try again.",
+      "notYet": "This order can't be saved yet. Come back once the payment is validated.",
+      "saved": "Order saved to your account"
+    },
+    "invite": {
+      "notNow": "Not now",
+      "pago_validado": {
+        "title": "Your payment is validated",
+        "body": "Save this order to your Google account to always see it in full, with dates and tracking. Your current link will keep working."
+      },
+      "banner": {
+        "summary": "Save this order to your account"
+      },
+      "entrega": {
+        "title": "Keep your history",
+        "body": "Your order has arrived. Save it to your account to keep the whole history at hand. Your current link will keep working."
+      }
     }
   }
 }

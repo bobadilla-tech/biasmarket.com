@@ -1,8 +1,22 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import type { OrderEventActor, OrderEventType, Prisma } from '@biasmarket/db';
+import {
+  ConflictException,
+  Injectable,
+  UnprocessableEntityException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import type {
+  FulfillmentStatus,
+  OrderEventActor,
+  OrderEventType,
+  Prisma,
+} from '@biasmarket/db';
 import { hashOrderAccessToken } from '@biasmarket/utils/assisted-order';
 import { PrismaService } from '../../../prisma/prisma.service.js';
+import { countsTowardPaid } from '../../../common/payment-summary.js';
+import { NotificationsService } from '../../notifications/notifications.service.js';
 import { INVITE_EVENT_TYPES } from '../dto/record-invite-event.dto.js';
+import type { ClaimMoment } from '../../customer-auth/claim-ticket.js';
 
 // Which later issue writes each type. G2 reads the buyer-visible rows.
 // F2 counts them and must keep using the sanitized payload.
@@ -45,6 +59,14 @@ const ALLOWED_PAYLOAD_KEYS = new Set([
   'method',
   'resolution',
   'paymentId',
+  'notice',
+  'moment',
+]);
+
+const RECEIPT_FULFILLMENT_STATES = new Set<FulfillmentStatus>([
+  'IN_TRANSIT',
+  'READY',
+  'COMPLETED',
 ]);
 
 export type InviteEventType = (typeof INVITE_EVENT_TYPES)[number];
@@ -85,7 +107,12 @@ export function sanitizeOrderEventPayload(
 
 @Injectable()
 export class OrderEventsService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(OrderEventsService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private notifications: NotificationsService,
+  ) {}
 
   async record(
     tx: EventWriter,
@@ -121,7 +148,8 @@ export class OrderEventsService {
   async listForBuyer(orderId: string) {
     return this.prisma.orderEvent.findMany({
       where: { orderId, visibleToBuyer: true },
-      orderBy: { createdAt: 'asc' },
+      // `id` breaks ties between events written in the same millisecond.
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
       select: { type: true, createdAt: true, payload: true },
     });
   }
@@ -136,6 +164,9 @@ export class OrderEventsService {
         accessTokenRevokedAt: true,
         status: true,
         paymentStatus: true,
+        fulfillmentStatus: true,
+        claimedAt: true,
+        buyerAccountId: true,
         packedPhotoUrl: true,
       },
     });
@@ -145,22 +176,98 @@ export class OrderEventsService {
     return order;
   }
 
-  async recordInvite(token: string, type: InviteEventType) {
+  // Own select (not `requireOrderForToken`): the claim needs the link hash,
+  // the claim state and the payments, which no other caller should load.
+  // Unknown and revoked tokens give the identical 404, before any other
+  // answer.
+  async loadForClaim(token: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { accessTokenHash: hashOrderAccessToken(token ?? '') },
+      select: {
+        id: true,
+        storeId: true,
+        source: true,
+        status: true,
+        paymentStatus: true,
+        claimedAt: true,
+        buyerAccountId: true,
+        accessTokenHash: true,
+        accessTokenRevokedAt: true,
+        payments: {
+          select: {
+            amount: true,
+            source: true,
+            reviewStatus: true,
+            voidedAt: true,
+          },
+        },
+      },
+    });
+    if (!order || order.accessTokenRevokedAt || !order.accessTokenHash) {
+      throw new NotFoundException('Pedido no encontrado');
+    }
+    return { ...order, accessTokenHash: order.accessTokenHash };
+  }
+
+  // 409 when someone already saved the order; 422 when it cannot be saved
+  // (not assisted, cancelled, or no validated payment yet).
+  assertClaimable(order: {
+    source: string;
+    status: string;
+    paymentStatus: string;
+    claimedAt: Date | null;
+    buyerAccountId: string | null;
+    payments: Parameters<typeof countsTowardPaid>[0][];
+  }) {
+    if (order.claimedAt || order.buyerAccountId) {
+      throw new ConflictException('Este pedido ya fue guardado');
+    }
+    if (
+      order.source !== 'VENDOR_ASSISTED' ||
+      order.status === 'CANCELLED' ||
+      order.paymentStatus === 'CANCELLED' ||
+      !order.payments.some(countsTowardPaid)
+    ) {
+      throw new UnprocessableEntityException(
+        'Este pedido aún no se puede guardar',
+      );
+    }
+  }
+
+  async recordInvite(
+    token: string,
+    type: InviteEventType,
+    moment?: ClaimMoment,
+  ) {
     const order = await this.requireOrderForToken(token);
-    // A cancelled or expired order is not an invite funnel. Counting those
-    // posts would inflate D3/F2.
-    if (order.status === 'CANCELLED' || order.paymentStatus === 'CANCELLED') {
+    // A cancelled or expired order is not an invite funnel, and neither is one
+    // that was already saved: counting those posts would inflate D3/F2.
+    if (
+      order.status === 'CANCELLED' ||
+      order.paymentStatus === 'CANCELLED' ||
+      order.claimedAt ||
+      order.buyerAccountId
+    ) {
       return;
     }
     await this.prisma.$transaction(async (tx) => {
       // INVITE_SHOWN is "the invite was shown", not a page-view counter. One
       // client retrying the beacon must not write a row per retry, so the
-      // check-then-insert runs under a per-order advisory lock: concurrent
-      // beacons queue up and all but the first see the existing row.
+      // check-then-insert runs under an advisory lock: concurrent beacons
+      // queue up and all but the first see the existing row. It is once per
+      // order AND moment, so the first-validation block and a later banner
+      // each count.
       if (type === 'INVITE_SHOWN') {
-        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`invite-shown:${order.id}`}))`;
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`invite-shown:${order.id}:${moment ?? ''}`}))`;
         const existing = await tx.orderEvent.findFirst({
-          where: { orderId: order.id, type: 'INVITE_SHOWN' },
+          where: {
+            orderId: order.id,
+            type: 'INVITE_SHOWN',
+            // Without a moment (older clients) it stays once per order.
+            ...(moment
+              ? { payload: { path: ['moment'], equals: moment } }
+              : {}),
+          },
           select: { id: true },
         });
         if (existing) return;
@@ -170,7 +277,81 @@ export class OrderEventsService {
         storeId: order.storeId,
         type,
         actor: 'BUYER',
+        payload: moment ? { moment } : {},
       });
     });
+  }
+
+  // Idempotent: the first confirmation stamps the order, writes the event and
+  // notifies the seller; any later call returns the stored date untouched.
+  // The state gate is deliberately generic (409) so the response does not
+  // describe the order beyond what the public page already shows.
+  async confirmReceipt(token: string): Promise<{ receiptConfirmedAt: string }> {
+    const order = await this.requireOrderForToken(token);
+    if (
+      order.paymentStatus !== 'VERIFIED' ||
+      order.status === 'CANCELLED' ||
+      !RECEIPT_FULFILLMENT_STATES.has(order.fulfillmentStatus)
+    ) {
+      throw new ConflictException('El pedido aún no se puede confirmar');
+    }
+
+    const now = new Date();
+    const won = await this.prisma.$transaction(async (tx) => {
+      const { count } = await tx.order.updateMany({
+        where: {
+          id: order.id,
+          storeId: order.storeId,
+          buyerConfirmedReceivedAt: null,
+          // Same gate as above, re-checked atomically: a cancel or void that
+          // lands between the read and this write must not stamp the order.
+          paymentStatus: 'VERIFIED',
+          status: { not: 'CANCELLED' },
+          fulfillmentStatus: { in: [...RECEIPT_FULFILLMENT_STATES] },
+        },
+        data: { buyerConfirmedReceivedAt: now },
+      });
+      if (count !== 1) return false;
+      await this.record(tx, {
+        orderId: order.id,
+        storeId: order.storeId,
+        type: 'RECEIPT_CONFIRMED',
+        actor: 'BUYER',
+      });
+      return true;
+    });
+
+    if (!won) {
+      const stored = await this.prisma.order.findUnique({
+        where: { id: order.id },
+        select: { buyerConfirmedReceivedAt: true },
+      });
+      // Neither confirmed by a concurrent call nor eligible any more.
+      if (!stored?.buyerConfirmedReceivedAt) {
+        throw new ConflictException('El pedido aún no se puede confirmar');
+      }
+      return {
+        receiptConfirmedAt: stored.buyerConfirmedReceivedAt.toISOString(),
+      };
+    }
+
+    // After commit and best effort: a notification failure must not undo or
+    // fail a receipt the buyer already confirmed. No buyer data in the text.
+    try {
+      await this.notifications.createIfNotOpen({
+        storeId: order.storeId,
+        type: 'RECEIPT_CONFIRMED',
+        entityType: 'Order',
+        entityId: order.id,
+        title: 'El comprador confirmó la recepción',
+        body: 'Un comprador confirmó que recibió su pedido.',
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Failed to notify receipt of order ${order.id}`,
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+    return { receiptConfirmedAt: now.toISOString() };
   }
 }

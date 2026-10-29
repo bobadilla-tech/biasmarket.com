@@ -1,8 +1,4 @@
 import type { Instrumentation } from "next";
-import {
-  redactPublicOrderToken,
-  redactSentryEvent,
-} from "./lib/sentry-redaction";
 
 // Server-side error tracking (GlitchTip, Sentry-protocol-compatible).
 // Env-gated on WEB_SENTRY_DSN so local dev/CI never needs a GlitchTip
@@ -26,17 +22,14 @@ export async function register() {
   }
 
   const Sentry = await import("@sentry/node");
+  const { scrubSentryEvent } = await import("@/lib/scrub-sentry");
   Sentry.init({
     dsn,
     tracesSampleRate: 0.01,
-    beforeSend(event) {
-      redactSentryEvent(event);
-      return event;
-    },
-    beforeSendTransaction(event) {
-      redactSentryEvent(event);
-      return event;
-    },
+    // The private order link (`/pedido/:token`) must not reach the tracker
+    // through a request path, span or exception message either.
+    beforeSend: (event) => scrubSentryEvent(event),
+    beforeSendTransaction: (event) => scrubSentryEvent(event),
   });
 }
 
@@ -54,6 +47,7 @@ export const onRequestError: Instrumentation.onRequestError = async (
   if (!process.env.WEB_SENTRY_DSN) return;
 
   const Sentry = await import("@sentry/node");
+  const { scrubTokenUrl } = await import("@/lib/scrub-sentry");
   // Only the HTTP method, the pathname without its query string, and the
   // route context are reported — never headers, cookies, authorization
   // credentials, or query-string data.
@@ -61,7 +55,7 @@ export const onRequestError: Instrumentation.onRequestError = async (
     extra: {
       request: {
         method: request.method,
-        pathname: redactPublicOrderToken(request.path.split("?")[0]),
+        pathname: scrubTokenUrl(request.path.split("?")[0]!),
         routePath: context.routePath,
       },
     },

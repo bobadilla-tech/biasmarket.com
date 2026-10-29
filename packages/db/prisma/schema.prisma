@@ -325,6 +325,9 @@ model Order {
   linkFirstOpenedAt       DateTime?
   // When a buyer claimed the order. Who claimed it is buyerAccountId.
   claimedAt               DateTime?
+  // Buyer tapped "Ya lo recibí" on the private link. Independent of
+  // fulfillmentStatus: the seller still owns that transition.
+  buyerConfirmedReceivedAt DateTime?
   // Not set by Google sign-in. Stays false until a later verification step.
   phoneVerified           Boolean                 @default(false)
   deliveryMethodType      DeliveryMethodType
@@ -607,6 +610,10 @@ enum WhatsAppMessageType {
   NEW_ORDER
   PAYMENT_REMINDER
   ASSISTED_ORDER_LINK
+  ASSISTED_PAYMENT_VALIDATED
+  ASSISTED_IN_TRANSIT
+  ASSISTED_READY
+  ASSISTED_DELIVERED
 }
 
 // Per-store override for the WhatsApp message a seller sends to a buyer —
@@ -767,6 +774,7 @@ enum NotificationType {
   LOW_STOCK
   OUT_OF_STOCK
   PAYMENT_PROOF_SUBMITTED
+  RECEIPT_CONFIRMED
 }
 
 model Notification {

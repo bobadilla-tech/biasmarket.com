@@ -327,7 +327,8 @@
       "proofPending": "Pendiente de revisión",
       "proofApproved": "Aprobado",
       "proofRejected": "Rechazado",
-      "fulfillmentProgress": "Estado del pedido"
+      "fulfillmentProgress": "Estado del pedido",
+      "fullHistory": "Ver el historial completo en Mi cuenta"
     },
     "addresses": {
       "title": "Tus direcciones",
@@ -447,7 +448,23 @@
     "empty": "Aún no tienes compras.",
     "storeAccount": "Cuenta en la tienda",
     "pendingBalance": "Pendiente: {currency} {amount}",
-    "signOut": "Cerrar sesión"
+    "signOut": "Cerrar sesión",
+    "claimErrors": {
+      "already_claimed": "Este pedido ya fue guardado en otra cuenta. Si crees que es un error, escríbele a la tienda.",
+      "not_claimable": "Este pedido todavía no se puede guardar. Vuelve a abrir tu enlace cuando el pago esté validado.",
+      "invalid": "El enlace para guardar venció o ya no es válido. Vuelve a abrir tu enlace del pedido e inténtalo de nuevo.",
+      "failed": "No pudimos guardar tu pedido. Vuelve a abrir tu enlace del pedido e inténtalo de nuevo.",
+      "unavailable": "Guardar con Google no está disponible por ahora. Tu enlace del pedido sigue funcionando.",
+      "fallback": "No pudimos guardar tu pedido. Vuelve a abrir tu enlace del pedido e inténtalo de nuevo."
+    },
+    "origin": {
+      "assisted": "Creado por la tienda"
+    },
+    "detail": {
+      "back": "Volver a mis compras",
+      "notFound": "No encontramos este pedido en tu cuenta.",
+      "claimed": "¡Listo! Guardamos este pedido en tu cuenta. Tu enlace original sigue funcionando."
+    }
   },
   "publicOrder": {
     "metaTitle": "Tu pedido",
@@ -524,6 +541,73 @@
     "date": {
       "today": "Hoy {time}",
       "yesterday": "Ayer {time}"
+    },
+    "receipt": {
+      "title": "¿Ya te llegó tu pedido?",
+      "confirm": "Ya lo recibí",
+      "problem": "Hay un problema",
+      "problemMessage": "Hola, tengo un problema con mi pedido #{number}",
+      "thanks": "¡Gracias por confirmar!",
+      "confirmedOn": "Confirmaste la recepción el {date}.",
+      "error": "No se pudo confirmar. Inténtalo de nuevo."
+    },
+    "timeline": {
+      "title": "Historial de tu pedido",
+      "lastUpdate": "Última actualización: {date}",
+      "teaser": "Guarda tu pedido para ver el historial completo con fechas.",
+      "types": {
+        "CREATED": "Pedido creado",
+        "PAYMENT_SUBMITTED": "Pago enviado",
+        "PAYMENT_VALIDATED": "Pago validado",
+        "PAYMENT_REJECTED": "Pago rechazado",
+        "PAYMENT_VOIDED": "Pago anulado",
+        "FULFILLMENT_ADVANCED": "Estado actualizado",
+        "PACKED_PHOTO_ADDED": "Foto del paquete agregada",
+        "TRACKING_ADDED": "Seguimiento agregado",
+        "RECEIPT_CONFIRMED": "Recepción confirmada",
+        "CLAIMED": "Pedido guardado",
+        "ORDER_CANCELLED": "Pedido cancelado"
+      },
+      "fulfillment": {
+        "ORDERING": "Pedido recibido",
+        "IN_TRANSIT": "Tu pedido va en camino",
+        "READY": "Tu pedido está listo",
+        "COMPLETED": "Pedido entregado"
+      }
+    },
+    "shipping": {
+      "title": "Envío",
+      "trackingNumber": "Código de seguimiento: {number}",
+      "trackLink": "Seguir mi envío",
+      "packedPhoto": "Foto de tu paquete",
+      "packedPhotoAlt": "Foto del paquete de tu pedido"
+    },
+    "claim": {
+      "explainer": "Al guardar con Google usamos tu correo y tu nombre de Google para crear tu cuenta y asociar este pedido. No pedimos contraseña ni vemos tus correos. Este enlace seguirá funcionando.",
+      "button": "Guardar con Google",
+      "working": "Abriendo Google…",
+      "inAppTitle": "Ábrelo en tu navegador",
+      "inAppBody": "Google no permite iniciar sesión dentro de esta app. Copia el enlace y ábrelo en Safari o Chrome para guardar tu pedido.",
+      "copyLink": "Copiar enlace",
+      "copied": "Enlace copiado",
+      "copyFailed": "No se pudo copiar. Copia la dirección desde la barra del navegador.",
+      "error": "No pudimos iniciar el guardado. Inténtalo de nuevo.",
+      "notYet": "Este pedido todavía no se puede guardar. Vuelve cuando el pago esté validado.",
+      "saved": "Pedido guardado en tu cuenta"
+    },
+    "invite": {
+      "notNow": "Ahora no",
+      "pago_validado": {
+        "title": "Tu pago está validado",
+        "body": "Guarda este pedido en tu cuenta de Google para verlo siempre completo, con fechas y seguimiento. Tu enlace actual seguirá funcionando."
+      },
+      "banner": {
+        "summary": "Guarda este pedido en tu cuenta"
+      },
+      "entrega": {
+        "title": "Guarda tu historial",
+        "body": "Tu pedido ya llegó. Guárdalo en tu cuenta para tener todo el historial a mano. Tu enlace actual seguirá funcionando."
+      }
     }
   }
 }

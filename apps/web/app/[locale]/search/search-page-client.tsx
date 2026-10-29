@@ -185,16 +185,16 @@ export function ProductSearchPageClient({
                 <Link
                   key={product.id}
                   href={`/store/${product.store.slug}/product/${product.id}`}
-                  className="rounded-2xl border border-border bg-card p-3 transition hover:shadow-md"
+                  className="group rounded-[1.3rem] border border-border bg-card p-2.5 shadow-[var(--shadow-soft)] transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:border-primary/25 hover:shadow-[var(--shadow-pop)] sm:p-3"
                 >
                   {product.images[0] ? (
-                    <div className="relative aspect-square w-full overflow-hidden rounded-xl">
+                    <div className="photocard-frame relative aspect-square w-full overflow-hidden rounded-xl bg-muted">
                       <Image
                         src={product.images[0]}
                         alt={product.name}
                         fill
                         sizes="(min-width: 768px) 220px, 50vw"
-                        className="object-cover"
+                        className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
                       />
                     </div>
                   ) : (

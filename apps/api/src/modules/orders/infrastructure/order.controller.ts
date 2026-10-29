@@ -236,6 +236,7 @@ export interface OrderRow {
   createdAt: Date;
   linkFirstOpenedAt: Date | null;
   claimedAt: Date | null;
+  buyerConfirmedReceivedAt: Date | null;
   createdBy?: { name: string | null } | null;
   paidAmount: number;
   pendingAmount: number;
@@ -351,6 +352,8 @@ export function toOrderDto(row: OrderRow): OrderResponseDto {
     // display name only, never by user id.
     linkFirstOpenedAt: row.linkFirstOpenedAt?.toISOString() ?? null,
     claimedAt: row.claimedAt?.toISOString() ?? null,
+    buyerConfirmedReceivedAt:
+      row.buyerConfirmedReceivedAt?.toISOString() ?? null,
     createdByName: row.createdBy?.name ?? null,
     packedPhotoAvailable: Boolean(row.packedPhotoUrl),
     items: row.items.map(toOrderItemDto),

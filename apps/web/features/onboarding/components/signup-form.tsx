@@ -8,7 +8,7 @@ import { useRouter } from "@/i18n/navigation";
 import { type SignupInput, signupSchema } from "../schemas/signup.schema";
 
 const inputClassName =
-  "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 placeholder:text-gray-600";
+  "w-full rounded-xl border border-input bg-card px-4 py-2.5 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground";
 
 export function SignupForm({ onCheckEmail }: { onCheckEmail: () => void }) {
   const t = useTranslations("onboarding.signup");
@@ -113,7 +113,7 @@ export function SignupForm({ onCheckEmail }: { onCheckEmail: () => void }) {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full rounded-xl bg-emerald-700 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:opacity-60"
+        className="min-h-11 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_8px_18px_rgb(120_73_158/20%)] transition-[transform,box-shadow,background-color] hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgb(120_73_158/26%)] disabled:opacity-60"
       >
         {t("submit")}
       </button>
@@ -121,7 +121,7 @@ export function SignupForm({ onCheckEmail }: { onCheckEmail: () => void }) {
       <button
         type="button"
         onClick={onGoogle}
-        className="w-full rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+        className="min-h-11 w-full rounded-xl border border-border py-2.5 text-sm font-semibold text-foreground transition hover:border-primary/25 hover:bg-secondary"
       >
         {t("google")}
       </button>

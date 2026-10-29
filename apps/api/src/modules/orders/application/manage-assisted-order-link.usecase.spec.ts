@@ -185,4 +185,54 @@ describe('ManageAssistedOrderLinkUseCase', () => {
       ).not.toMatch(/\d{8,}/);
     });
   });
+
+  describe('recordBuyerNotice', () => {
+    function setupNotice(order: Record<string, unknown> | null) {
+      const prisma = {
+        order: {
+          findFirst: vi.fn().mockResolvedValue(order),
+          update: vi.fn(),
+          updateMany: vi.fn(),
+        },
+      };
+      const events = { record: vi.fn() };
+      const useCase = new ManageAssistedOrderLinkUseCase(
+        prisma as never,
+        events as never,
+      );
+      return { useCase, prisma, events };
+    }
+
+    it('scopes the lookup by storeId and logs only the notice type', async () => {
+      const { useCase, prisma, events } = setupNotice({
+        source: 'VENDOR_ASSISTED',
+      });
+
+      await useCase.recordBuyerNotice(store, 'o1', 'ASSISTED_IN_TRANSIT');
+
+      expect(prisma.order.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'o1', storeId: 'store1' } }),
+      );
+      expect(events.record).toHaveBeenCalledWith(prisma, {
+        orderId: 'o1',
+        storeId: 'store1',
+        type: 'BUYER_NOTIFIED',
+        actor: 'SELLER',
+        payload: { notice: 'ASSISTED_IN_TRANSIT' },
+      });
+      // The private link is never rotated or touched by a notice.
+      expect(prisma.order.update).not.toHaveBeenCalled();
+      expect(prisma.order.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('answers 404 for a missing, foreign or marketplace order, logging nothing', async () => {
+      for (const order of [null, { source: 'MARKETPLACE' }]) {
+        const { useCase, events } = setupNotice(order);
+        await expect(
+          useCase.recordBuyerNotice(store, 'o1', 'ASSISTED_READY'),
+        ).rejects.toBeInstanceOf(NotFoundException);
+        expect(events.record).not.toHaveBeenCalled();
+      }
+    });
+  });
 });

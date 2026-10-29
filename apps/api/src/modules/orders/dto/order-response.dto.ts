@@ -341,6 +341,13 @@ export class OrderResponseDto {
   @ApiProperty({
     type: String,
     nullable: true,
+    description: 'When the buyer confirmed receiving the order.',
+  })
+  buyerConfirmedReceivedAt: string | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
     description: 'Display name of the seller who created an assisted order.',
   })
   createdByName: string | null;

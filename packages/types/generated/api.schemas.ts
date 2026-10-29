@@ -581,6 +581,7 @@ export const NotificationResponseDtoType = {
   LOW_STOCK: "LOW_STOCK",
   OUT_OF_STOCK: "OUT_OF_STOCK",
   PAYMENT_PROOF_SUBMITTED: "PAYMENT_PROOF_SUBMITTED",
+  RECEIPT_CONFIRMED: "RECEIPT_CONFIRMED",
 } as const;
 
 export type NotificationResponseDtoMetadata = { [key: string]: unknown };
@@ -900,6 +901,11 @@ export interface OrderResponseDto {
    */
   claimedAt: string | null;
   /**
+   * When the buyer confirmed receiving the order.
+   * @nullable
+   */
+  buyerConfirmedReceivedAt: string | null;
+  /**
    * Display name of the seller who created an assisted order.
    * @nullable
    */
@@ -1077,6 +1083,11 @@ export interface OrderDetailResponseDto {
    * @nullable
    */
   claimedAt: string | null;
+  /**
+   * When the buyer confirmed receiving the order.
+   * @nullable
+   */
+  buyerConfirmedReceivedAt: string | null;
   /**
    * Display name of the seller who created an assisted order.
    * @nullable
@@ -1420,6 +1431,20 @@ export interface CreateAssistedOrderDto {
   items: CreateOrderItemDto[];
 }
 
+export type BuyerNoticeDtoNotice =
+  (typeof BuyerNoticeDtoNotice)[keyof typeof BuyerNoticeDtoNotice];
+
+export const BuyerNoticeDtoNotice = {
+  ASSISTED_PAYMENT_VALIDATED: "ASSISTED_PAYMENT_VALIDATED",
+  ASSISTED_IN_TRANSIT: "ASSISTED_IN_TRANSIT",
+  ASSISTED_READY: "ASSISTED_READY",
+  ASSISTED_DELIVERED: "ASSISTED_DELIVERED",
+} as const;
+
+export interface BuyerNoticeDto {
+  notice: BuyerNoticeDtoNotice;
+}
+
 export type CreateOrderDtoDeliveryMethodType =
   (typeof CreateOrderDtoDeliveryMethodType)[keyof typeof CreateOrderDtoDeliveryMethodType];
 
@@ -1741,6 +1766,17 @@ export const AccountOrderResponseDtoFulfillmentStatus = {
   COMPLETED: "COMPLETED",
 } as const;
 
+/**
+ * VENDOR_ASSISTED = created by the store for the buyer.
+ */
+export type AccountOrderResponseDtoSource =
+  (typeof AccountOrderResponseDtoSource)[keyof typeof AccountOrderResponseDtoSource];
+
+export const AccountOrderResponseDtoSource = {
+  MARKETPLACE: "MARKETPLACE",
+  VENDOR_ASSISTED: "VENDOR_ASSISTED",
+} as const;
+
 export interface AccountOrderResponseDto {
   id: string;
   paymentStatus: AccountOrderResponseDtoPaymentStatus;
@@ -1751,6 +1787,10 @@ export interface AccountOrderResponseDto {
   paidAmount: number;
   pendingAmount: number;
   paidPercentage: number;
+  /** VENDOR_ASSISTED = created by the store for the buyer. */
+  source: AccountOrderResponseDtoSource;
+  /** @nullable */
+  claimedAt: string | null;
 }
 
 export interface ConfirmAccountResponseDto {
@@ -1896,6 +1936,72 @@ export interface PublicOrderDeliveryDetailsResponseDto {
   pickupPointLabel: string | null;
 }
 
+export type PublicOrderTimelineItemDtoType =
+  (typeof PublicOrderTimelineItemDtoType)[keyof typeof PublicOrderTimelineItemDtoType];
+
+export const PublicOrderTimelineItemDtoType = {
+  CREATED: "CREATED",
+  PAYMENT_SUBMITTED: "PAYMENT_SUBMITTED",
+  PAYMENT_VALIDATED: "PAYMENT_VALIDATED",
+  PAYMENT_REJECTED: "PAYMENT_REJECTED",
+  PAYMENT_VOIDED: "PAYMENT_VOIDED",
+  FULFILLMENT_ADVANCED: "FULFILLMENT_ADVANCED",
+  PACKED_PHOTO_ADDED: "PACKED_PHOTO_ADDED",
+  TRACKING_ADDED: "TRACKING_ADDED",
+  RECEIPT_CONFIRMED: "RECEIPT_CONFIRMED",
+  CLAIMED: "CLAIMED",
+  ORDER_CANCELLED: "ORDER_CANCELLED",
+} as const;
+
+/**
+ * New fulfillment step, for FULFILLMENT_ADVANCED only.
+ * @nullable
+ */
+export type PublicOrderTimelineItemDtoToStatus =
+  | (typeof PublicOrderTimelineItemDtoToStatus)[keyof typeof PublicOrderTimelineItemDtoToStatus]
+  | null;
+
+export const PublicOrderTimelineItemDtoToStatus = {
+  ORDERING: "ORDERING",
+  IN_TRANSIT: "IN_TRANSIT",
+  READY: "READY",
+  COMPLETED: "COMPLETED",
+} as const;
+
+/**
+ * Outcome of a cancellation, for ORDER_CANCELLED only.
+ * @nullable
+ */
+export type PublicOrderTimelineItemDtoResolution =
+  | (typeof PublicOrderTimelineItemDtoResolution)[keyof typeof PublicOrderTimelineItemDtoResolution]
+  | null;
+
+export const PublicOrderTimelineItemDtoResolution = {
+  REFUNDED: "REFUNDED",
+  RETAINED: "RETAINED",
+  STORE_CREDIT: "STORE_CREDIT",
+} as const;
+
+export interface PublicOrderTimelineItemDto {
+  type: PublicOrderTimelineItemDtoType;
+  at: string;
+  /**
+   * New fulfillment step, for FULFILLMENT_ADVANCED only.
+   * @nullable
+   */
+  toStatus: PublicOrderTimelineItemDtoToStatus;
+  /**
+   * Payment amount, for PAYMENT_SUBMITTED / PAYMENT_VOIDED.
+   * @nullable
+   */
+  amount: string | null;
+  /**
+   * Outcome of a cancellation, for ORDER_CANCELLED only.
+   * @nullable
+   */
+  resolution: PublicOrderTimelineItemDtoResolution;
+}
+
 export type PublicOrderPaymentResponseDtoSource =
   (typeof PublicOrderPaymentResponseDtoSource)[keyof typeof PublicOrderPaymentResponseDtoSource];
 
@@ -1953,6 +2059,19 @@ export interface PublicOrderResponseDto {
   /** @nullable */
   trackingUrl: string | null;
   packedPhotoAvailable: boolean;
+  /**
+   * When the buyer confirmed receiving the order.
+   * @nullable
+   */
+  receiptConfirmedAt: string | null;
+  /** Whether the order was saved to a buyer account. */
+  claimed: boolean;
+  /** Time of the latest buyer-visible step (creation if none). */
+  lastUpdateAt: string;
+  /** Dated steps, oldest first. Empty unless the order was claimed: it is an incentive to save the order, not an access control. */
+  timeline: PublicOrderTimelineItemDto[];
+  /** Whether a payment counts toward the paid amount (recorded, or an approved proof, and not voided). */
+  hasValidatedPayment: boolean;
   /** @nullable */
   courierModality: PublicOrderResponseDtoCourierModality;
   payments: PublicOrderPaymentResponseDto[];
@@ -1965,6 +2084,16 @@ export interface UpdateOrderShippingDto {
   trackingUrl?: string | null;
 }
 
+export type RecordInviteEventDtoMoment =
+  (typeof RecordInviteEventDtoMoment)[keyof typeof RecordInviteEventDtoMoment];
+
+export const RecordInviteEventDtoMoment = {
+  entrega: "entrega",
+  pago_validado: "pago_validado",
+  banner: "banner",
+  adelanto_linea_de_tiempo: "adelanto_linea_de_tiempo",
+} as const;
+
 export type RecordInviteEventDtoType =
   (typeof RecordInviteEventDtoType)[keyof typeof RecordInviteEventDtoType];
 
@@ -1975,7 +2104,31 @@ export const RecordInviteEventDtoType = {
 } as const;
 
 export interface RecordInviteEventDto {
+  moment?: RecordInviteEventDtoMoment;
   type: RecordInviteEventDtoType;
+}
+
+export interface ReceiptConfirmedResponseDto {
+  /** When the buyer confirmed receiving the order. */
+  receiptConfirmedAt: string;
+}
+
+/**
+ * Where on the order page the buyer chose to save the order.
+ */
+export type ClaimTicketDtoMoment =
+  (typeof ClaimTicketDtoMoment)[keyof typeof ClaimTicketDtoMoment];
+
+export const ClaimTicketDtoMoment = {
+  entrega: "entrega",
+  pago_validado: "pago_validado",
+  banner: "banner",
+  adelanto_linea_de_tiempo: "adelanto_linea_de_tiempo",
+} as const;
+
+export interface ClaimTicketDto {
+  /** Where on the order page the buyer chose to save the order. */
+  moment?: ClaimTicketDtoMoment;
 }
 
 export type PaymentMethodConfigResponseDtoMethod =
@@ -2550,6 +2703,17 @@ export const GlobalAccountOrderResponseDtoFulfillmentStatus = {
   COMPLETED: "COMPLETED",
 } as const;
 
+/**
+ * VENDOR_ASSISTED = created by the store for the buyer.
+ */
+export type GlobalAccountOrderResponseDtoSource =
+  (typeof GlobalAccountOrderResponseDtoSource)[keyof typeof GlobalAccountOrderResponseDtoSource];
+
+export const GlobalAccountOrderResponseDtoSource = {
+  MARKETPLACE: "MARKETPLACE",
+  VENDOR_ASSISTED: "VENDOR_ASSISTED",
+} as const;
+
 export interface GlobalAccountOrderResponseDto {
   id: string;
   paymentStatus: GlobalAccountOrderResponseDtoPaymentStatus;
@@ -2560,8 +2724,117 @@ export interface GlobalAccountOrderResponseDto {
   paidAmount: number;
   pendingAmount: number;
   paidPercentage: number;
+  /** VENDOR_ASSISTED = created by the store for the buyer. */
+  source: GlobalAccountOrderResponseDtoSource;
+  /** @nullable */
+  claimedAt: string | null;
   storeSlug: string;
   storeName: string;
+}
+
+export type GlobalAccountOrderDetailResponseDtoPaymentStatus =
+  (typeof GlobalAccountOrderDetailResponseDtoPaymentStatus)[keyof typeof GlobalAccountOrderDetailResponseDtoPaymentStatus];
+
+export const GlobalAccountOrderDetailResponseDtoPaymentStatus = {
+  PENDING_PAYMENT: "PENDING_PAYMENT",
+  PARTIALLY_PAID: "PARTIALLY_PAID",
+  PAYMENT_SUBMITTED: "PAYMENT_SUBMITTED",
+  VERIFIED: "VERIFIED",
+  REJECTED: "REJECTED",
+  CANCELLED: "CANCELLED",
+} as const;
+
+export type GlobalAccountOrderDetailResponseDtoFulfillmentStatus =
+  (typeof GlobalAccountOrderDetailResponseDtoFulfillmentStatus)[keyof typeof GlobalAccountOrderDetailResponseDtoFulfillmentStatus];
+
+export const GlobalAccountOrderDetailResponseDtoFulfillmentStatus = {
+  ORDERING: "ORDERING",
+  IN_TRANSIT: "IN_TRANSIT",
+  READY: "READY",
+  COMPLETED: "COMPLETED",
+} as const;
+
+/**
+ * VENDOR_ASSISTED = created by the store for the buyer.
+ */
+export type GlobalAccountOrderDetailResponseDtoSource =
+  (typeof GlobalAccountOrderDetailResponseDtoSource)[keyof typeof GlobalAccountOrderDetailResponseDtoSource];
+
+export const GlobalAccountOrderDetailResponseDtoSource = {
+  MARKETPLACE: "MARKETPLACE",
+  VENDOR_ASSISTED: "VENDOR_ASSISTED",
+} as const;
+
+export type GlobalAccountOrderDetailResponseDtoStatus =
+  (typeof GlobalAccountOrderDetailResponseDtoStatus)[keyof typeof GlobalAccountOrderDetailResponseDtoStatus];
+
+export const GlobalAccountOrderDetailResponseDtoStatus = {
+  ACTIVE: "ACTIVE",
+  CANCELLED: "CANCELLED",
+} as const;
+
+export interface GlobalAccountOrderItemResponseDto {
+  name: string;
+  quantity: number;
+  unitPrice: string;
+  currency: string;
+}
+
+export type GlobalAccountOrderPaymentResponseDtoSource =
+  (typeof GlobalAccountOrderPaymentResponseDtoSource)[keyof typeof GlobalAccountOrderPaymentResponseDtoSource];
+
+export const GlobalAccountOrderPaymentResponseDtoSource = {
+  SELLER_RECORDED: "SELLER_RECORDED",
+  BUYER_SUBMITTED: "BUYER_SUBMITTED",
+} as const;
+
+export type GlobalAccountOrderPaymentResponseDtoReviewStatus =
+  (typeof GlobalAccountOrderPaymentResponseDtoReviewStatus)[keyof typeof GlobalAccountOrderPaymentResponseDtoReviewStatus];
+
+export const GlobalAccountOrderPaymentResponseDtoReviewStatus = {
+  N_A: "N_A",
+  PENDING_REVIEW: "PENDING_REVIEW",
+  APPROVED: "APPROVED",
+  REJECTED: "REJECTED",
+} as const;
+
+export interface GlobalAccountOrderPaymentResponseDto {
+  source: GlobalAccountOrderPaymentResponseDtoSource;
+  amount: string;
+  createdAt: string;
+  /** @nullable */
+  voidedAt: string | null;
+  reviewStatus: GlobalAccountOrderPaymentResponseDtoReviewStatus;
+}
+
+export interface GlobalAccountOrderDetailResponseDto {
+  id: string;
+  paymentStatus: GlobalAccountOrderDetailResponseDtoPaymentStatus;
+  fulfillmentStatus: GlobalAccountOrderDetailResponseDtoFulfillmentStatus;
+  totalAmount: string;
+  currency: string;
+  createdAt: string;
+  paidAmount: number;
+  pendingAmount: number;
+  paidPercentage: number;
+  /** VENDOR_ASSISTED = created by the store for the buyer. */
+  source: GlobalAccountOrderDetailResponseDtoSource;
+  /** @nullable */
+  claimedAt: string | null;
+  storeSlug: string;
+  storeName: string;
+  status: GlobalAccountOrderDetailResponseDtoStatus;
+  requiredAmount: string;
+  /** @nullable */
+  trackingNumber: string | null;
+  /** @nullable */
+  trackingUrl: string | null;
+  /** @nullable */
+  receiptConfirmedAt: string | null;
+  items: GlobalAccountOrderItemResponseDto[];
+  payments: GlobalAccountOrderPaymentResponseDto[];
+  /** Dated buyer-visible steps, oldest first. */
+  timeline: PublicOrderTimelineItemDto[];
 }
 
 export interface CreateRestockRequestDto {
@@ -2611,6 +2884,10 @@ export const WhatsAppTemplateResponseDtoType = {
   NEW_ORDER: "NEW_ORDER",
   PAYMENT_REMINDER: "PAYMENT_REMINDER",
   ASSISTED_ORDER_LINK: "ASSISTED_ORDER_LINK",
+  ASSISTED_PAYMENT_VALIDATED: "ASSISTED_PAYMENT_VALIDATED",
+  ASSISTED_IN_TRANSIT: "ASSISTED_IN_TRANSIT",
+  ASSISTED_READY: "ASSISTED_READY",
+  ASSISTED_DELIVERED: "ASSISTED_DELIVERED",
 } as const;
 
 export interface WhatsAppTemplateResponseDto {

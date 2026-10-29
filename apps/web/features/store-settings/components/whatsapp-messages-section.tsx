@@ -5,12 +5,15 @@ import { MessageCircle, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
   buildWhatsAppAssistedOrderLinkMessage,
+  buildWhatsAppBuyerNoticeMessage,
   buildWhatsAppOrderMessage,
   buildWhatsAppPaymentReminderMessage,
   getMissingRequiredTokens,
   WHATSAPP_MESSAGE_TOKENS,
   type WhatsAppMessageType,
   type WhatsAppAssistedOrderLinkInput,
+  type WhatsAppBuyerNoticeInput,
+  type WhatsAppBuyerNoticeType,
   type WhatsAppOrderInput,
   type WhatsAppPaymentReminderInput,
 } from "@biasmarket/utils/whatsapp";
@@ -54,6 +57,25 @@ const SAMPLE_ASSISTED_LINK_INPUT: WhatsAppAssistedOrderLinkInput = {
   link: "https://biasmarket.com/es/store/k-store/pedido/enlace-de-ejemplo",
 };
 
+const SAMPLE_BUYER_NOTICE_INPUT: WhatsAppBuyerNoticeInput = {
+  orderId: "sample-order-123456",
+  storeName: "K-Store",
+  customerName: "Cliente Ejemplo",
+  trackingNumber: "OLV-123456",
+};
+
+// Order of the editors under the assisted-order link editor, and the
+// templates/i18n key each one uses.
+const BUYER_NOTICE_EDITORS: readonly {
+  type: WhatsAppBuyerNoticeType;
+  key: "paymentValidated" | "inTransit" | "ready" | "delivered";
+}[] = [
+  { type: "ASSISTED_PAYMENT_VALIDATED", key: "paymentValidated" },
+  { type: "ASSISTED_IN_TRANSIT", key: "inTransit" },
+  { type: "ASSISTED_READY", key: "ready" },
+  { type: "ASSISTED_DELIVERED", key: "delivered" },
+];
+
 // Exhaustive on purpose: adding a message type without a preview fails to compile.
 function buildPreview(type: WhatsAppMessageType, template?: string): string {
   switch (type) {
@@ -67,6 +89,15 @@ function buildPreview(type: WhatsAppMessageType, template?: string): string {
     case "ASSISTED_ORDER_LINK":
       return buildWhatsAppAssistedOrderLinkMessage(
         SAMPLE_ASSISTED_LINK_INPUT,
+        template,
+      );
+    case "ASSISTED_PAYMENT_VALIDATED":
+    case "ASSISTED_IN_TRANSIT":
+    case "ASSISTED_READY":
+    case "ASSISTED_DELIVERED":
+      return buildWhatsAppBuyerNoticeMessage(
+        type,
+        SAMPLE_BUYER_NOTICE_INPUT,
         template,
       );
   }
@@ -202,6 +233,10 @@ export function WhatsAppMessagesSection({
         newOrder: string | null;
         paymentReminder: string | null;
         assistedOrderLink: string | null;
+        paymentValidated: string | null;
+        inTransit: string | null;
+        ready: string | null;
+        delivered: string | null;
       }
     | undefined;
   loading: boolean;
@@ -241,6 +276,18 @@ export function WhatsAppMessagesSection({
             title={t("assistedOrderLink.title")}
             description={t("assistedOrderLink.description")}
           />
+          {BUYER_NOTICE_EDITORS.map(({ type, key }) => (
+            <div key={type} className="space-y-4">
+              <Separator className="bg-[#f0e7f8]" />
+              <MessageTemplateEditor
+                type={type}
+                storeId={storeId}
+                initialTemplate={templates[key]}
+                title={t(`buyerNotices.${key}.title`)}
+                description={t(`buyerNotices.${key}.description`)}
+              />
+            </div>
+          ))}
         </div>
       )}
     </SectionCard>

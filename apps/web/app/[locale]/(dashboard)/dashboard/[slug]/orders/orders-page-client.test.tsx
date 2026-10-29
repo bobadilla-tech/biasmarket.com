@@ -51,6 +51,7 @@ const order = {
   paidPercentage: 0,
   linkFirstOpenedAt: null,
   claimedAt: null,
+  buyerConfirmedReceivedAt: null,
   createdByName: null,
   currency: "PEN",
   status: "ACTIVE",

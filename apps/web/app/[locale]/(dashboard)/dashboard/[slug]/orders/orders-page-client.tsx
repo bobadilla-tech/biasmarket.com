@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { NewOrderButton } from "@/features/assisted-orders";
+import { BuyerNoticePrompt, NewOrderButton } from "@/features/assisted-orders";
 import { useDashboardStore } from "@/features/stores";
 import type { OrderResponseDto } from "@biasmarket/types";
 import { useCancelOrder } from "@/features/orders";
@@ -277,6 +277,8 @@ export function OrdersPageClient() {
             setDetailsOpen(false);
           }}
         />
+
+        <BuyerNoticePrompt storeId={storeId} storeName={store?.name ?? ""} />
 
         <OrderDetailSheet
           open={detailsOpen}

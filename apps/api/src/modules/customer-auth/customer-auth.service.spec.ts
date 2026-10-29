@@ -16,6 +16,8 @@ import { CustomerAuthService } from './customer-auth.service.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { CustomerAccountService } from '../orders/application/customer-account.service.js';
 import { OrderRepository } from '../orders/infrastructure/order.repository.js';
+import { OrderEventsService } from '../orders/application/order-events.service.js';
+import { ClaimOrderError } from './customer-auth.service.js';
 
 describe('CustomerAuthService', () => {
   let service: CustomerAuthService;
@@ -31,8 +33,11 @@ describe('CustomerAuthService', () => {
     };
     customerStoreLink: { upsert: Mock };
     store: { findUnique: Mock };
-    order: { findMany: Mock };
+    order: { findMany: Mock; findFirst: Mock; updateMany: Mock };
+    $transaction: Mock;
+    $queryRaw: Mock;
   };
+  let events: { record: Mock; listForBuyer: Mock };
   let customerAccount: {
     sendPasswordResetEmail: Mock;
     sendEmailChangeConfirmation: Mock;
@@ -57,8 +62,15 @@ describe('CustomerAuthService', () => {
       },
       customerStoreLink: { upsert: vi.fn() },
       store: { findUnique: vi.fn().mockResolvedValue(store) },
-      order: { findMany: vi.fn() },
+      order: {
+        findMany: vi.fn(),
+        findFirst: vi.fn(),
+        updateMany: vi.fn(),
+      },
+      $queryRaw: vi.fn().mockResolvedValue([{ id: 'order-1' }]),
+      $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(prisma)),
     };
+    events = { record: vi.fn(), listForBuyer: vi.fn().mockResolvedValue([]) };
     customerAccount = {
       sendPasswordResetEmail: vi.fn(),
       sendEmailChangeConfirmation: vi.fn(),
@@ -72,6 +84,7 @@ describe('CustomerAuthService', () => {
         { provide: PrismaService, useValue: prisma },
         { provide: CustomerAccountService, useValue: customerAccount },
         { provide: OrderRepository, useValue: orderRepository },
+        { provide: OrderEventsService, useValue: events },
       ],
     }).compile();
 
@@ -617,6 +630,388 @@ describe('CustomerAuthService', () => {
       ).rejects.toBeInstanceOf(ConflictException);
       expect(prisma.buyerAccount.updateMany).not.toHaveBeenCalled();
       expect(prisma.buyerAccount.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getGlobalOrderDetail', () => {
+    const row = {
+      id: 'order-1',
+      status: 'ACTIVE',
+      paymentStatus: 'VERIFIED',
+      fulfillmentStatus: 'IN_TRANSIT',
+      totalAmount: new Prisma.Decimal('50.00'),
+      requiredAmount: new Prisma.Decimal('50.00'),
+      currency: 'PEN',
+      createdAt: new Date('2026-10-01T10:00:00.000Z'),
+      source: 'VENDOR_ASSISTED',
+      claimedAt: new Date('2026-10-02T10:00:00.000Z'),
+      trackingNumber: 'OLV-1',
+      trackingUrl: 'https://olva.example/1',
+      buyerConfirmedReceivedAt: null,
+      store: { slug: 'k-store', name: 'K-Store' },
+      items: [
+        {
+          quantity: 2,
+          unitPriceAtPurchase: new Prisma.Decimal('25.00'),
+          currency: 'PEN',
+          product: { name: 'Lightstick' },
+        },
+      ],
+      payments: [
+        {
+          amount: new Prisma.Decimal('50.00'),
+          source: 'SELLER_RECORDED',
+          reviewStatus: 'N_A',
+          createdAt: new Date('2026-10-01T11:00:00.000Z'),
+          voidedAt: null,
+          // Present on the row only if a select asked for it; must not leak.
+          imageUrl: 'https://private.example/proof.jpg',
+          reviewerId: 'seller-1',
+          rejectionNote: 'blurry',
+          voidReason: 'seller free text',
+        },
+      ],
+    };
+
+    it('filters by id AND buyerAccountId in the query, with an explicit select', async () => {
+      prisma.order.findFirst.mockResolvedValue(row);
+
+      await service.getGlobalOrderDetail('buyer-1', 'order-1');
+
+      const arg = prisma.order.findFirst.mock.calls.at(-1)![0];
+      expect(arg.where).toEqual({ id: 'order-1', buyerAccountId: 'buyer-1' });
+      const selected = JSON.stringify(arg.select);
+      for (const forbidden of [
+        'imageUrl',
+        'reviewerId',
+        'rejectionNote',
+        'voidReason',
+        'voidedBy',
+        'accessToken',
+        'customerPhone',
+        'customerEmail',
+        'deliveryDetails',
+      ]) {
+        expect(selected).not.toContain(forbidden);
+      }
+    });
+
+    it('answers the same 404 for a missing or foreign order', async () => {
+      prisma.order.findFirst.mockResolvedValue(null);
+      await expect(
+        service.getGlobalOrderDetail('buyer-1', 'someone-elses'),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('returns exactly the documented keys, never proof images or seller text', async () => {
+      prisma.order.findFirst.mockResolvedValue(row);
+      events.listForBuyer.mockResolvedValue([
+        {
+          type: 'CLAIMED',
+          createdAt: new Date('2026-10-02T10:00:00.000Z'),
+          payload: { moment: 'banner' },
+        },
+        {
+          type: 'BUYER_NOTIFIED',
+          createdAt: new Date('2026-10-02T11:00:00.000Z'),
+          payload: { notice: 'ASSISTED_READY' },
+        },
+      ]);
+
+      const result = await service.getGlobalOrderDetail('buyer-1', 'order-1');
+
+      expect(Object.keys(result).sort()).toEqual(
+        [
+          'claimedAt',
+          'createdAt',
+          'currency',
+          'fulfillmentStatus',
+          'id',
+          'items',
+          'paidAmount',
+          'paidPercentage',
+          'payments',
+          'paymentStatus',
+          'pendingAmount',
+          'receiptConfirmedAt',
+          'requiredAmount',
+          'source',
+          'status',
+          'storeName',
+          'storeSlug',
+          'timeline',
+          'totalAmount',
+          'trackingNumber',
+          'trackingUrl',
+        ].sort(),
+      );
+      expect(Object.keys(result.payments[0]!).sort()).toEqual(
+        ['amount', 'createdAt', 'reviewStatus', 'source', 'voidedAt'].sort(),
+      );
+      expect(result.timeline.map((i) => i.type)).toEqual(['CLAIMED']);
+      const json = JSON.stringify(result);
+      for (const secret of [
+        'proof.jpg',
+        'seller-1',
+        'blurry',
+        'seller free text',
+        'ASSISTED_READY',
+      ]) {
+        expect(json).not.toContain(secret);
+      }
+      expect(result.claimedAt).toBe('2026-10-02T10:00:00.000Z');
+      expect(result.source).toBe('VENDOR_ASSISTED');
+    });
+  });
+
+  describe('claimWithGoogle', () => {
+    const identity = { sub: 'g-sub', email: 'b@example.com', name: 'Buyer' };
+    const hash = 'f'.repeat(64);
+    const ticket = { orderId: 'order-1', linkFp: 'f'.repeat(16) };
+    const approved = {
+      amount: 10,
+      source: 'SELLER_RECORDED',
+      reviewStatus: 'N_A',
+      voidedAt: null,
+    };
+    const order = (patch: Record<string, unknown> = {}) => ({
+      id: 'order-1',
+      storeId: 'store-1',
+      source: 'VENDOR_ASSISTED',
+      status: 'ACTIVE',
+      paymentStatus: 'VERIFIED',
+      claimedAt: null,
+      buyerAccountId: null,
+      accessTokenHash: hash,
+      accessTokenRevokedAt: null,
+      payments: [approved],
+      ...patch,
+    });
+
+    beforeEach(() => {
+      // A brand-new Google account by default.
+      prisma.buyerAccount.findUnique.mockResolvedValue(null);
+      prisma.buyerAccount.findMany.mockResolvedValue([]);
+      prisma.buyerAccount.create.mockResolvedValue({
+        id: 'buyer-new',
+        passwordVersion: 0,
+      });
+      prisma.order.findFirst.mockResolvedValue(order());
+      prisma.order.updateMany.mockResolvedValue({ count: 1 });
+    });
+
+    it('creates the account, claims the order once and issues a session', async () => {
+      const result = await service.claimWithGoogle(identity, {
+        ...ticket,
+        moment: 'pago_validado',
+      });
+
+      expect(prisma.buyerAccount.create).toHaveBeenCalledWith({
+        data: {
+          email: identity.email,
+          emailVerified: true,
+          name: 'Buyer',
+          googleSub: 'g-sub',
+        },
+      });
+      expect(prisma.order.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: 'order-1',
+          source: 'VENDOR_ASSISTED',
+          status: { not: 'CANCELLED' },
+          paymentStatus: { not: 'CANCELLED' },
+          claimedAt: null,
+          buyerAccountId: null,
+          accessTokenRevokedAt: null,
+          accessTokenHash: { startsWith: ticket.linkFp },
+        },
+        data: { buyerAccountId: 'buyer-new', claimedAt: expect.any(Date) },
+      });
+      expect(prisma.customerStoreLink.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          create: { buyerAccountId: 'buyer-new', storeId: 'store-1' },
+        }),
+      );
+      expect(events.record).toHaveBeenCalledTimes(1);
+      expect(events.record).toHaveBeenCalledWith(prisma, {
+        orderId: 'order-1',
+        storeId: 'store-1',
+        type: 'CLAIMED',
+        actor: 'BUYER',
+        payload: { moment: 'pago_validado' },
+      });
+      expect(result.orderId).toBe('order-1');
+      expect(verifyCustomerSessionToken(result.token, 'test-secret')).toEqual({
+        buyerAccountId: 'buyer-new',
+        passwordVersion: 0,
+      });
+    });
+
+    it('resolves the account outside the transaction (a P2002 must stay recoverable)', async () => {
+      await service.claimWithGoogle(identity, ticket);
+
+      const order_ = (fn: Mock) => fn.mock.invocationCallOrder[0]!;
+      expect(order_(prisma.buyerAccount.create)).toBeLessThan(
+        order_(prisma.$transaction),
+      );
+    });
+
+    it('uses an existing account found by googleSub', async () => {
+      prisma.buyerAccount.findUnique.mockResolvedValue({
+        id: 'buyer-old',
+        passwordVersion: 3,
+      });
+
+      const result = await service.claimWithGoogle(identity, ticket);
+
+      expect(prisma.buyerAccount.create).not.toHaveBeenCalled();
+      expect(prisma.order.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { buyerAccountId: 'buyer-old', claimedAt: expect.any(Date) },
+        }),
+      );
+      expect(verifyCustomerSessionToken(result.token, 'test-secret')).toEqual({
+        buyerAccountId: 'buyer-old',
+        passwordVersion: 3,
+      });
+    });
+
+    it('never links an unverified same-email account while claiming', async () => {
+      prisma.buyerAccount.findMany.mockImplementation(
+        async ({ where }: { where: { emailVerified?: boolean } }) =>
+          where.emailVerified === true
+            ? []
+            : [{ id: 'attacker', googleSub: null, emailVerified: false }],
+      );
+
+      await service.claimWithGoogle(identity, ticket);
+
+      expect(prisma.buyerAccount.updateMany).not.toHaveBeenCalled();
+      expect(prisma.order.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { buyerAccountId: 'buyer-new', claimedAt: expect.any(Date) },
+        }),
+      );
+    });
+
+    it('locks the order row before deciding', async () => {
+      await service.claimWithGoogle(identity, ticket);
+      expect(prisma.$queryRaw).toHaveBeenCalledTimes(1);
+      expect(prisma.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(
+        prisma.order.findFirst.mock.invocationCallOrder[0]!,
+      );
+    });
+
+    it.each([
+      ['no validated payment', { payments: [] }],
+      [
+        'only a pending proof',
+        {
+          payments: [
+            {
+              ...approved,
+              source: 'BUYER_SUBMITTED',
+              reviewStatus: 'PENDING_REVIEW',
+            },
+          ],
+        },
+      ],
+      [
+        'only a voided payment',
+        { payments: [{ ...approved, voidedAt: new Date() }] },
+      ],
+      ['a cancelled order', { status: 'CANCELLED' }],
+      ['a cancelled payment status', { paymentStatus: 'CANCELLED' }],
+      ['a marketplace order', { source: 'MARKETPLACE' }],
+    ])('refuses %s as not_claimable, writing nothing', async (_l, patch) => {
+      prisma.order.findFirst.mockResolvedValue(order(patch));
+
+      await expect(
+        service.claimWithGoogle(identity, ticket),
+      ).rejects.toMatchObject({ code: 'not_claimable' });
+      expect(prisma.order.updateMany).not.toHaveBeenCalled();
+      expect(events.record).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['a revoked link', { accessTokenRevokedAt: new Date() }],
+      [
+        'a replaced link (regenerate after the ticket was issued)',
+        { accessTokenHash: '0'.repeat(64) },
+      ],
+      ['no link at all', { accessTokenHash: null }],
+    ])('refuses %s as invalid', async (_l, patch) => {
+      prisma.order.findFirst.mockResolvedValue(order(patch));
+
+      await expect(
+        service.claimWithGoogle(identity, ticket),
+      ).rejects.toMatchObject({ code: 'invalid' });
+      expect(prisma.order.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('refuses an order that does not exist', async () => {
+      prisma.$queryRaw.mockResolvedValue([]);
+      await expect(
+        service.claimWithGoogle(identity, ticket),
+      ).rejects.toMatchObject({ code: 'invalid' });
+    });
+
+    it('refuses an order already claimed by someone else, without a second event', async () => {
+      prisma.order.findFirst.mockResolvedValue(
+        order({ claimedAt: new Date(), buyerAccountId: 'someone-else' }),
+      );
+
+      const error = await service
+        .claimWithGoogle(identity, ticket)
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(ClaimOrderError);
+      expect(error).toMatchObject({ code: 'already_claimed' });
+      expect(events.record).not.toHaveBeenCalled();
+    });
+
+    it('treats a re-claim by the same account as success: session, no new event', async () => {
+      prisma.buyerAccount.findUnique.mockResolvedValue({
+        id: 'buyer-old',
+        passwordVersion: 1,
+      });
+      prisma.order.findFirst.mockResolvedValue(
+        order({ claimedAt: new Date(), buyerAccountId: 'buyer-old' }),
+      );
+
+      const result = await service.claimWithGoogle(identity, ticket);
+
+      expect(prisma.order.updateMany).not.toHaveBeenCalled();
+      expect(events.record).not.toHaveBeenCalled();
+      expect(prisma.customerStoreLink.upsert).toHaveBeenCalled();
+      expect(verifyCustomerSessionToken(result.token, 'test-secret')).toEqual({
+        buyerAccountId: 'buyer-old',
+        passwordVersion: 1,
+      });
+    });
+
+    it('loses a race cleanly: a conditional update that matches nothing is already_claimed', async () => {
+      prisma.order.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(
+        service.claimWithGoogle(identity, ticket),
+      ).rejects.toMatchObject({ code: 'already_claimed' });
+      expect(events.record).not.toHaveBeenCalled();
+      expect(prisma.customerStoreLink.upsert).not.toHaveBeenCalled();
+    });
+
+    it('never writes the buyer phone or phoneVerified, and stores no email/phone/token in the event', async () => {
+      await service.claimWithGoogle(identity, { ...ticket, moment: 'banner' });
+
+      const json = JSON.stringify([
+        prisma.order.updateMany.mock.calls,
+        events.record.mock.calls,
+      ]);
+      expect(json).not.toMatch(
+        /phone|b@example\.com|accessToken(?!Revoked|Hash)/i,
+      );
+      expect(prisma.order.updateMany.mock.calls[0]![0].data).not.toHaveProperty(
+        'phoneVerified',
+      );
     });
   });
 

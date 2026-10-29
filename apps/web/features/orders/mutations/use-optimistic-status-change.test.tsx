@@ -49,6 +49,7 @@ const order: OrderResponseDto = {
   paidPercentage: 100,
   linkFirstOpenedAt: null,
   claimedAt: null,
+  buyerConfirmedReceivedAt: null,
   createdByName: null,
   currency: "USD",
   status: "ACTIVE",

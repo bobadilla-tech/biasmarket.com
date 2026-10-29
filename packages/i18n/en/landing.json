@@ -89,7 +89,9 @@
     "title": "More to discover",
     "cta": "View more products",
     "empty": "No products yet.",
-    "error": "Something went wrong. Try again."
+    "error": "Something went wrong. Try again.",
+    "loading": "Loading discovered products",
+    "retry": "Retry"
   },
   "about": {
     "title": "What is BIASMARKET?",

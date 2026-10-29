@@ -6,13 +6,17 @@ import {
 } from '@nestjs/common';
 import type { WhatsAppMessageType } from '@biasmarket/db';
 import { PrismaService } from '../../prisma/prisma.service.js';
-import { getMissingRequiredTokens } from '@biasmarket/utils/whatsapp';
+import {
+  WHATSAPP_BUYER_NOTICE_TYPES,
+  getMissingRequiredTokens,
+} from '@biasmarket/utils/whatsapp';
 import type { UpdateWhatsAppTemplateDto } from './dto/update-whatsapp-template.dto.js';
 
 const WHATSAPP_MESSAGE_TYPES: WhatsAppMessageType[] = [
   'NEW_ORDER',
   'PAYMENT_REMINDER',
   'ASSISTED_ORDER_LINK',
+  ...WHATSAPP_BUYER_NOTICE_TYPES,
 ];
 
 function parseType(type: string): WhatsAppMessageType {

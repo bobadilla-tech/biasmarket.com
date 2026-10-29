@@ -59,6 +59,11 @@ import { PaymentConfigModule } from '../payment-config/payment-config.module.js'
     VoidOrderPaymentUseCase,
     PublicOrderService,
   ],
-  exports: [CustomerAccountService, OrderRepository, OrderPaymentsService],
+  exports: [
+    CustomerAccountService,
+    OrderRepository,
+    OrderPaymentsService,
+    OrderEventsService,
+  ],
 })
 export class OrdersModule {}
