@@ -110,6 +110,10 @@ describe('BuyerPaymentProofService.submit', () => {
     ]);
     await expect(submit({}, '40')).rejects.toThrow('excede el saldo');
     expect(tx.orderPayment.create).not.toHaveBeenCalled();
+    // The read only counts if it happens after the row lock.
+    expect(tx.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(
+      tx.orderPayment.findMany.mock.invocationCallOrder[0],
+    );
   });
 
   it('creates the row, event and notification on success', async () => {
@@ -120,6 +124,8 @@ describe('BuyerPaymentProofService.submit', () => {
       storeId: 'store-1',
       source: 'BUYER_SUBMITTED',
       reviewStatus: 'PENDING_REVIEW',
+      amount: 40,
+      method: 'YAPE',
     });
     expect(events.record).toHaveBeenCalledWith(tx, {
       orderId: 'order-1',
@@ -129,5 +135,13 @@ describe('BuyerPaymentProofService.submit', () => {
       payload: { paymentId: 'payment-1', amount: 40, method: 'YAPE' },
     });
     expect(notifications.createIfNotOpen).toHaveBeenCalledTimes(1);
+    expect(notifications.createIfNotOpen).toHaveBeenCalledWith(
+      expect.objectContaining({
+        storeId: 'store-1',
+        type: 'PAYMENT_PROOF_SUBMITTED',
+        entityId: 'order-1',
+      }),
+      tx,
+    );
   });
 });
