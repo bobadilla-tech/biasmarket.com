@@ -2,6 +2,7 @@ import globals from "globals";
 import jsxA11y from "eslint-plugin-jsx-a11y";
 import reactHooks from "eslint-plugin-react-hooks";
 import babelParser from "@babel/eslint-parser";
+import { baseRules } from "../../eslint.config.mjs";
 
 /**
  * Flat ESLint config for `apps/web` — the a11y regression guard (audit Phase 0).
@@ -127,6 +128,14 @@ export default [
         },
       },
     },
-    rules: a11yRules,
+    rules: {
+      // Shared recommended rules (no-undef etc. off: tsc is the authority).
+      ...baseRules,
+      ...a11yRules,
+      "react-hooks/rules-of-hooks": "error",
+      // Stays a warning: the existing findings are not fixed here, and the
+      // web lint script does not use --max-warnings 0.
+      "react-hooks/exhaustive-deps": "warn",
+    },
   },
 ];

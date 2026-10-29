@@ -14,7 +14,14 @@
       "cache": false,
       "persistent": true
     },
-    "lint": { "env": ["BASE_REF"] },
+    "lint": {
+      "env": ["BASE_REF"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/eslint.config.mjs",
+        "$TURBO_ROOT$/scripts/lint-changed-files.mjs"
+      ]
+    },
     "web#lint": {
       "env": ["BASE_REF"],
       "inputs": [
