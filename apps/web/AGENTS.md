@@ -281,7 +281,9 @@ own `OrderResponseDto`), `stats` (`Stats` tag — `overview`/`analytics`/
 this tag). The hand-written `apiFetch` wrapper is gone entirely — the only
 remaining raw `fetch`/`FormData` call sites are the documented multipart
 carve-outs (`products`' image uploads, `orders`' `registerPayment`, `stores`'
-`uploadLogo`) and server-component fetches in storefront `page`/`layout` files.
+`uploadLogo`, `public-order`'s buyer proof upload in `api/submit-proof.ts`, which
+uses `credentials: "omit"`, sends no custom headers so the browser skips a CORS
+preflight, and throws `ApiError`) and server-component fetches in storefront `page`/`layout` files.
 Error responses are still explicitly out of scope for the generated client (see
 the plan doc's Phase 3 note) — the mutator's defensive `message`-field parsing
 and `fallbackErrorMessage` stay the pattern for error paths even in migrated

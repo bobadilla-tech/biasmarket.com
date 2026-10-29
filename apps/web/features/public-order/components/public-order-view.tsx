@@ -11,8 +11,11 @@ import { formatOrderDate } from "@/features/orders/lib/order-format";
 import {
   getBannerKey,
   isCancelled,
+  isClosedOrder,
   shouldShowHowToPay,
 } from "../lib/order-state";
+import { paymentProofSrc } from "../lib/shipping-links";
+import { ProofUploadSection } from "./proof-upload-section";
 import { HowToPay } from "./how-to-pay";
 import { ClaimOrderButton } from "./claim-order-button";
 import { ReceiptConfirmation } from "./receipt-confirmation";
@@ -24,6 +27,8 @@ import { useSaveInvite } from "../hooks/use-save-invite";
 
 const BANNER_TONE: Record<ReturnType<typeof getBannerKey>, string> = {
   cancelled: "border-gray-200 bg-gray-50 text-gray-700",
+  expired: "border-gray-200 bg-gray-50 text-gray-700",
+  inTransit: "border-sky-200 bg-sky-50 text-sky-800",
   rejected: "border-rose-200 bg-rose-50 text-rose-700",
   pendingPayment: "border-amber-200 bg-amber-50 text-amber-800",
   partiallyPaid: "border-amber-200 bg-amber-50 text-amber-800",
@@ -52,12 +57,19 @@ export function PublicOrderView({
   order: PublicOrderResponseDto;
 }) {
   const t = useTranslations("storefront.publicOrder");
+  const tMethods = useTranslations("storefront.checkoutPage");
   const locale = useLocale();
   const [receiptJustConfirmed, setReceiptJustConfirmed] = useState(false);
   const invite = useSaveInvite({ slug, token, order, receiptJustConfirmed });
   const money = (amount: string | number) => `${order.currency} ${amount}`;
   const cancelled = isCancelled(order);
   const bannerKey = getBannerKey(order);
+  const closed = isClosedOrder(order);
+  const showClosure = cancelled || order.paymentStatus === "REJECTED";
+  const closureReason = cancelled
+    ? (order.closure?.reason ?? null)
+    : (order.paymentRejectionReason ?? null);
+  const hasVoided = order.payments.some((payment) => payment.voidedAt);
   const isMilestone = ["verified", "ready", "completed"].includes(bannerKey);
   // Defensive: an API that predates these fields simply omits them.
   const orderNumber = order.orderNumber ? order.orderNumber : null;
@@ -114,6 +126,46 @@ export function PublicOrderView({
         )}
         <span>{t(`banner.${bannerKey}`)}</span>
       </div>
+
+      {order.expiresAt && !closed && (
+        <p className="-mt-2 text-xs text-gray-600">
+          {t("deadline", { date: formatLimaDateTime(order.expiresAt, locale) })}
+        </p>
+      )}
+
+      {showClosure && (
+        <section
+          aria-labelledby="public-order-closure"
+          className="flex flex-col gap-2 rounded-2xl border border-gray-100 bg-white p-5 text-sm shadow-sm"
+        >
+          <h2
+            id="public-order-closure"
+            className="text-sm font-semibold text-gray-900"
+          >
+            {t("closure.title")}
+          </h2>
+          {/* Seller-written text: rendered as React text, never as HTML. */}
+          {closureReason && (
+            <p className="whitespace-pre-wrap break-words text-gray-700">
+              {t("closure.reason", { reason: closureReason })}
+            </p>
+          )}
+          <p className="text-gray-600">
+            {cancelled
+              ? t(
+                  order.closure?.kind === "EXPIRED"
+                    ? "closure.expiredNote"
+                    : "closure.cancelledNote",
+                )
+              : t("closure.rejectedNote")}
+          </p>
+          <ContactSellerButton
+            slug={slug}
+            message={t("closure.message", { number: orderNumber ?? "" })}
+            label={t("closure.contact")}
+          />
+        </section>
+      )}
 
       {/* Above everything that can grow (invite blocks later), so it stays
           on the first screen on a phone. */}
@@ -238,17 +290,19 @@ export function PublicOrderView({
             {t("payments.title")}
           </h2>
           <ul className="flex flex-col gap-3">
-            {order.payments.map((payment, index) => {
+            {order.payments.map((payment) => {
               // `voidedAt` first: a voided payment has no review label.
               const status = payment.voidedAt
                 ? t("payments.voided")
                 : payment.reviewStatus === "PENDING_REVIEW"
-                  ? t("payments.pendingReview")
+                  ? closed
+                    ? t("payments.closedPending")
+                    : t("payments.pendingReview")
                   : payment.reviewStatus === "REJECTED"
                     ? t("payments.rejected")
                     : t("payments.recorded");
               return (
-                <li key={index} className="flex flex-col gap-0.5 text-sm">
+                <li key={payment.id} className="flex flex-col gap-0.5 text-sm">
                   <div className="flex justify-between gap-3">
                     <span
                       className={
@@ -265,9 +319,32 @@ export function PublicOrderView({
                     {payment.source === "BUYER_SUBMITTED"
                       ? t("payments.bySelf")
                       : t("payments.byStore")}
+                    {payment.method
+                      ? ` · ${tMethods(`paymentMethodLabels.${payment.method}`)}`
+                      : ""}
                     {" · "}
-                    {formatOrderDate(payment.createdAt, locale, t)}
+                    {formatOrderDate(
+                      payment.paidAt ?? payment.createdAt,
+                      locale,
+                      t,
+                    )}
                   </p>
+                  {payment.hasProof && (
+                    <a
+                      href={paymentProofSrc(token, payment.id)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-1 flex items-center gap-2 text-xs font-semibold text-gray-700 underline"
+                    >
+                      <img
+                        src={paymentProofSrc(token, payment.id)}
+                        alt={t("payments.proofAlt")}
+                        loading="lazy"
+                        className="size-12 rounded-lg object-cover"
+                      />
+                      {t("payments.viewProof")}
+                    </a>
+                  )}
                   {payment.reviewStatus === "REJECTED" && !payment.voidedAt && (
                     <p className="text-xs text-rose-600">
                       {t("payments.rejectedNote")}
@@ -277,10 +354,16 @@ export function PublicOrderView({
               );
             })}
           </ul>
+          {hasVoided && (
+            <p className="text-xs text-gray-500">
+              {t("payments.balanceUpdated")}
+            </p>
+          )}
         </section>
       )}
 
       {shouldShowHowToPay(order) && <HowToPay slug={slug} order={order} />}
+      <ProofUploadSection slug={slug} token={token} order={order} />
 
       <section
         aria-labelledby="public-order-delivery"

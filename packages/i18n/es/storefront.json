@@ -492,12 +492,14 @@
     "banner": {
       "pendingPayment": "Tu pedido está esperando el pago. Abajo te mostramos cómo pagar.",
       "partiallyPaid": "Recibimos parte de tu pago. Falta completar el adelanto.",
-      "paymentSubmitted": "Recibimos tu pago y está en revisión.",
+      "paymentSubmitted": "Recibimos tu comprobante y está en revisión.",
       "verified": "Tu pago está confirmado. Estamos preparando tu pedido.",
       "rejected": "No pudimos confirmar tu pago. Escríbele a la tienda.",
       "cancelled": "Este pedido fue cancelado.",
       "ready": "Tu pedido está listo.",
-      "completed": "Tu pedido fue entregado."
+      "completed": "Tu pedido fue entregado.",
+      "inTransit": "Tu pedido está en camino.",
+      "expired": "El tiempo para pagar este pedido terminó y se canceló."
     },
     "progress": "Avance del pedido",
     "items": "Tu pedido",
@@ -514,7 +516,11 @@
       "recorded": "Registrado",
       "bySelf": "Enviado por ti",
       "byStore": "Registrado por la tienda",
-      "rejectedNote": "Escríbele a la tienda para resolverlo."
+      "rejectedNote": "Escríbele a la tienda para resolverlo.",
+      "closedPending": "Sin revisar (pedido cerrado)",
+      "balanceUpdated": "El saldo se actualizó.",
+      "viewProof": "Ver comprobante",
+      "proofAlt": "Tu comprobante de pago"
     },
     "howToPay": {
       "title": "Cómo pagar",
@@ -609,6 +615,47 @@
         "title": "Guarda tu historial",
         "body": "Tu pedido ya llegó. Guárdalo en tu cuenta para tener todo el historial a mano. Tu enlace actual seguirá funcionando."
       }
-    }
+    },
+    "upload": {
+      "title": "Sube tu comprobante",
+      "description": "Paga con uno de los métodos de arriba y sube la captura aquí. La tienda la revisará.",
+      "amount": "Monto pagado",
+      "method": "Método de pago",
+      "selectMethod": "Elige un método",
+      "code": "Número de operación (opcional)",
+      "codeHint": "Ayuda a la tienda a encontrar tu pago más rápido.",
+      "chooseFile": "Elegir captura del pago",
+      "fileHint": "JPG o PNG, hasta 5 MB",
+      "preview": "Vista previa de tu comprobante",
+      "removeFile": "Quitar la imagen",
+      "submit": "Enviar comprobante",
+      "submitting": "Enviando...",
+      "success": "¡Listo! Recibimos tu comprobante. La tienda lo revisará pronto.",
+      "inReview": "Tienes {amount} en revisión.",
+      "waitReview": "Espera la revisión de tu tienda antes de enviar otro comprobante.",
+      "errors": {
+        "amountInvalid": "Escribe un monto válido, por ejemplo 40.50.",
+        "amountTooHigh": "El monto es mayor a lo que falta pagar.",
+        "methodRequired": "Elige un método de pago.",
+        "codeInvalid": "El número de operación no es válido.",
+        "fileRequired": "Adjunta la captura de tu pago.",
+        "fileTooLarge": "La imagen pesa más de 5 MB.",
+        "fileType": "Usa una imagen JPG o PNG.",
+        "tooLarge": "La imagen es demasiado grande.",
+        "invalid": "Este enlace ya no es válido. Pídele uno nuevo a la tienda.",
+        "rateLimited": "Hiciste muchos intentos. Espera un momento.",
+        "generic": "No pudimos enviar tu comprobante. Inténtalo de nuevo."
+      }
+    },
+    "closure": {
+      "title": "Qué pasó con tu pedido",
+      "reason": "Motivo: {reason}",
+      "cancelledNote": "Si tienes dudas o aún lo quieres, escríbele a la tienda.",
+      "expiredNote": "Si aún quieres tu pedido, escríbele a la tienda para ver si puede reservarlo de nuevo.",
+      "rejectedNote": "La tienda no pudo confirmar tu pago. Escríbele para resolverlo.",
+      "contact": "Escribir a la tienda",
+      "message": "Hola, quiero consultar por mi pedido #{number}"
+    },
+    "deadline": "Tienes hasta {date} para pagar."
   }
 }

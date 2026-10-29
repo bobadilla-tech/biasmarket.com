@@ -19,6 +19,11 @@ export function packedPhotoSrc(token: string): string {
   return `${publicApiBase()}/api/public/orders/${encodeURIComponent(token)}/packed-photo`;
 }
 
+// The buyer's own uploaded proof, token-authorized like the packed photo.
+export function paymentProofSrc(token: string, paymentId: string): string {
+  return `${publicApiBase()}/api/public/orders/${encodeURIComponent(token)}/payments/${encodeURIComponent(paymentId)}/image`;
+}
+
 // The browser-reachable API origin. The claim ticket POST and the OAuth start
 // navigation must use the SAME host: the ticket is a host-scoped cookie that
 // only that host will send back.
