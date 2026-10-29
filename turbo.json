@@ -20,6 +20,7 @@
       "inputs": [
         "$TURBO_DEFAULT$",
         "eslint.config.mjs",
+        "$TURBO_ROOT$/eslint.config.mjs",
         "../../scripts/lint-changed-files.mjs"
       ]
     },

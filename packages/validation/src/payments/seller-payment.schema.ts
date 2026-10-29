@@ -12,6 +12,7 @@ const AMOUNT_PATTERN = /^\d{1,9}(\.\d{1,2})?$/;
 const MAX_OPERATION_CODE_LENGTH = 64;
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png"];
 const ACCEPTED_IMAGE_EXTENSION = /\.(jpe?g|png)$/i;
+// eslint-disable-next-line no-control-regex -- control characters are exactly what this rejects
 const CONTROL_CHARS = /[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2028-\u202e]/;
 
 export const SELLER_PAYMENT_ERRORS = {

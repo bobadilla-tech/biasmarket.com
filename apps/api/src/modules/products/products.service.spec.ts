@@ -346,7 +346,6 @@ describe('ProductsService', () => {
       status: string;
       discontinued: boolean;
     } = {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.any() is untyped in Jest's matcher API
       deletedAt: expect.any(Date),
       status: 'DRAFT',
       discontinued: false,
@@ -382,7 +381,6 @@ describe('ProductsService', () => {
         where: { id: storeId },
         data: {
           publishedProductCount: 1,
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.any() is untyped
           contentStaleAt: expect.any(Date),
         },
       });
@@ -394,7 +392,6 @@ describe('ProductsService', () => {
         where: { id: storeId },
         data: {
           publishedProductCount: 0,
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.any() is untyped
           contentStaleAt: expect.any(Date),
         },
       });
@@ -406,7 +403,6 @@ describe('ProductsService', () => {
         where: { id: storeId },
         data: {
           publishedProductCount: 0,
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.any() is untyped
           contentStaleAt: expect.any(Date),
         },
       });

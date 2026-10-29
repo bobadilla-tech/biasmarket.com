@@ -61,6 +61,7 @@ jobs:
       validation: ${{ steps.filter.outputs.validation }}
       query: ${{ steps.filter.outputs.query }}
       mobile: ${{ steps.filter.outputs.mobile }}
+      sanity: ${{ steps.filter.outputs.sanity }}
       web_e2e: ${{ steps.filter.outputs.web_e2e }}
       api_e2e: ${{ steps.filter.outputs.api_e2e }}
     steps:
@@ -84,6 +85,8 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - 'eslint.config.mjs'
+              - 'scripts/lint-changed-files.mjs'
             web:
               - 'apps/web/**'
               - 'packages/design-tokens/**'
@@ -94,6 +97,8 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - 'eslint.config.mjs'
+              - 'scripts/lint-changed-files.mjs'
             workers:
               - 'apps/workers/**'
               - 'packages/queue/**'
@@ -102,6 +107,8 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - 'eslint.config.mjs'
+              - 'scripts/lint-changed-files.mjs'
             db:
               - 'packages/db/**'
               - 'pnpm-lock.yaml'
@@ -109,6 +116,8 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - 'eslint.config.mjs'
+              - 'scripts/lint-changed-files.mjs'
             i18n:
               - 'packages/i18n/**'
               - 'pnpm-lock.yaml'
@@ -116,6 +125,8 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - 'eslint.config.mjs'
+              - 'scripts/lint-changed-files.mjs'
             queue:
               - 'packages/queue/**'
               - 'pnpm-lock.yaml'
@@ -123,6 +134,8 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - 'eslint.config.mjs'
+              - 'scripts/lint-changed-files.mjs'
             types:
               - 'packages/types/**'
               - 'pnpm-lock.yaml'
@@ -130,6 +143,8 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - 'eslint.config.mjs'
+              - 'scripts/lint-changed-files.mjs'
             design_tokens:
               - 'packages/design-tokens/**'
               - 'pnpm-lock.yaml'
@@ -137,6 +152,8 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - 'eslint.config.mjs'
+              - 'scripts/lint-changed-files.mjs'
             utils:
               - 'packages/utils/**'
               - 'pnpm-lock.yaml'
@@ -144,6 +161,8 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - 'eslint.config.mjs'
+              - 'scripts/lint-changed-files.mjs'
             validation:
               - 'packages/validation/**'
               - 'pnpm-lock.yaml'
@@ -151,6 +170,8 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - 'eslint.config.mjs'
+              - 'scripts/lint-changed-files.mjs'
             query:
               - 'packages/query/**'
               - 'pnpm-lock.yaml'
@@ -158,6 +179,8 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - 'eslint.config.mjs'
+              - 'scripts/lint-changed-files.mjs'
             mobile:
               - 'apps/mobile/**'
               - 'packages/design-tokens/**'
@@ -171,6 +194,17 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - 'eslint.config.mjs'
+              - 'scripts/lint-changed-files.mjs'
+            sanity:
+              - 'apps/sanity/**'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'turbo.json'
+              - 'package.json'
+              - '.github/workflows/ci.yml'
+              - 'eslint.config.mjs'
+              - 'scripts/lint-changed-files.mjs'
             # The a11y browser E2E job builds and runs BOTH apps plus the seed,
             # so it is sensitive to api/db/seed changes on top of everything the
             # `web` filter covers.
@@ -418,6 +452,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+          # `lint-changed-files.mjs` diffs against the base branch; a shallow
+          # checkout has no base ref, which would fail the lint step.
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v6
         with:
@@ -483,6 +520,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+          # `lint-changed-files.mjs` diffs against the base branch; a shallow
+          # checkout has no base ref, which would fail the lint step.
+          fetch-depth: 0
 
       - name: Load shared CI test environment
         run: bash scripts/ci/load-e2e-env.sh
@@ -511,6 +551,9 @@ jobs:
 
       - name: Build (prisma generate)
         run: pnpm turbo run build --filter=@biasmarket/db
+
+      - name: Lint
+        run: pnpm turbo run lint --filter=@biasmarket/db
 
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=@biasmarket/db
@@ -562,6 +605,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+          # `lint-changed-files.mjs` diffs against the base branch; a shallow
+          # checkout has no base ref, which would fail the lint step.
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v6
         with:
@@ -588,6 +634,9 @@ jobs:
       - name: Build
         run: pnpm turbo run build --filter=@biasmarket/i18n
 
+      - name: Lint
+        run: pnpm turbo run lint --filter=@biasmarket/i18n
+
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=@biasmarket/i18n
 
@@ -613,6 +662,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+          # `lint-changed-files.mjs` diffs against the base branch; a shallow
+          # checkout has no base ref, which would fail the lint step.
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v6
         with:
@@ -639,6 +691,9 @@ jobs:
       - name: Build
         run: pnpm turbo run build --filter=@biasmarket/queue
 
+      - name: Lint
+        run: pnpm turbo run lint --filter=@biasmarket/queue
+
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=@biasmarket/queue
 
@@ -664,6 +719,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+          # `lint-changed-files.mjs` diffs against the base branch; a shallow
+          # checkout has no base ref, which would fail the lint step.
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v6
         with:
@@ -690,6 +748,9 @@ jobs:
       - name: Build
         run: pnpm turbo run build --filter=@biasmarket/types
 
+      - name: Lint
+        run: pnpm turbo run lint --filter=@biasmarket/types
+
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=@biasmarket/types
 
@@ -715,6 +776,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+          # `lint-changed-files.mjs` diffs against the base branch; a shallow
+          # checkout has no base ref, which would fail the lint step.
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v6
         with:
@@ -741,6 +805,9 @@ jobs:
       - name: Build
         run: pnpm turbo run build --filter=@biasmarket/design-tokens
 
+      - name: Lint
+        run: pnpm turbo run lint --filter=@biasmarket/design-tokens
+
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=@biasmarket/design-tokens
 
@@ -766,6 +833,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+          # `lint-changed-files.mjs` diffs against the base branch; a shallow
+          # checkout has no base ref, which would fail the lint step.
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v6
         with:
@@ -791,6 +861,9 @@ jobs:
 
       - name: Build
         run: pnpm turbo run build --filter=@biasmarket/utils
+
+      - name: Lint
+        run: pnpm turbo run lint --filter=@biasmarket/utils
 
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=@biasmarket/utils
@@ -828,6 +901,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+          # `lint-changed-files.mjs` diffs against the base branch; a shallow
+          # checkout has no base ref, which would fail the lint step.
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v6
         with:
@@ -893,6 +969,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+          # `lint-changed-files.mjs` diffs against the base branch; a shallow
+          # checkout has no base ref, which would fail the lint step.
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v6
         with:
@@ -919,6 +998,9 @@ jobs:
       - name: Build
         run: pnpm turbo run build --filter=@biasmarket/query
 
+      - name: Lint
+        run: pnpm turbo run lint --filter=@biasmarket/query
+
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=@biasmarket/query
 
@@ -933,6 +1015,60 @@ jobs:
         with:
           path: .turbo/cache
           key: ${{ steps.turbo-cache.outputs.cache-primary-key }}
+
+  sanity:
+    name: Sanity
+    needs: detect-changes
+    if: needs.detect-changes.outputs.sanity == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm turbo run lint --filter=project-cerise-globe
+
+      # No `sanity build`: it needs project credentials.
+      - name: Typecheck
+        run: pnpm turbo run typecheck --filter=project-cerise-globe
+
+  # Always runs (no path filter): repo-wide guards that need no install.
+  hygiene:
+    name: Hygiene
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Every workspace defines lint and typecheck
+        run: node scripts/ci/check-workspace-scripts.mjs
+
+      - name: Guard script tests
+        run: node --test scripts/ci/check-workspace-scripts.test.mjs
 
   e2e:
     name: E2E (API)
@@ -1172,6 +1308,8 @@ jobs:
       - utils
       - validation
       - query
+      - sanity
+      - hygiene
       - e2e
       - web-e2e
     if: always()
@@ -1197,6 +1335,8 @@ jobs:
           UTILS_RESULT: ${{ needs.utils.result }}
           VALIDATION_RESULT: ${{ needs.validation.result }}
           QUERY_RESULT: ${{ needs.query.result }}
+          SANITY_RESULT: ${{ needs.sanity.result }}
+          HYGIENE_RESULT: ${{ needs.hygiene.result }}
           E2E_RESULT: ${{ needs.e2e.result }}
           WEB_E2E_RESULT: ${{ needs.web-e2e.result }}
           API_CHANGED: ${{ needs.detect-changes.outputs.api }}
@@ -1211,6 +1351,7 @@ jobs:
           UTILS_CHANGED: ${{ needs.detect-changes.outputs.utils }}
           VALIDATION_CHANGED: ${{ needs.detect-changes.outputs.validation }}
           QUERY_CHANGED: ${{ needs.detect-changes.outputs.query }}
+          SANITY_CHANGED: ${{ needs.detect-changes.outputs.sanity }}
           WEB_E2E_CHANGED: ${{ needs.detect-changes.outputs.web_e2e }}
           API_E2E_CHANGED: ${{ needs.detect-changes.outputs.api_e2e }}
           EVENT_NAME: ${{ github.event_name }}

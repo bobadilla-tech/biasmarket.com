@@ -10,7 +10,8 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
-    "test:cov": "vitest run --coverage --passWithNoTests"
+    "test:cov": "vitest run --coverage --passWithNoTests",
+    "lint": "node ../../scripts/lint-changed-files.mjs packages/types && eslint . --max-warnings 0"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

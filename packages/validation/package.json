@@ -15,7 +15,8 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
-    "test:cov": "vitest run --coverage --passWithNoTests"
+    "test:cov": "vitest run --coverage --passWithNoTests",
+    "lint": "node ../../scripts/lint-changed-files.mjs packages/validation && eslint . --max-warnings 0"
   },
   "dependencies": {
     "@biasmarket/utils": "workspace:*",

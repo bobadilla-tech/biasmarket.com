@@ -143,10 +143,8 @@ describe('OriginGuard', () => {
 
   it('AllowNoOrigin() decorator sets the metadata the guard reads', () => {
     class Routes {
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
       plain(): void {}
       @AllowNoOrigin()
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
       marked(): void {}
     }
     expect(Reflect.getMetadata(ALLOW_NO_ORIGIN, Routes.prototype.marked)).toBe(

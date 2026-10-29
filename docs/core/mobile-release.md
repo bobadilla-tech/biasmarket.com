@@ -19,7 +19,9 @@ workflows, so it will not start this one; use the manual run below instead.
 
 The `detect-changes` job (`scripts/ci/mobile-release-changes.sh`) reuses the
 `mobile` path filter from `ci.yml` (app, shared packages it depends on,
-lockfile, root config), so PR CI and releases share one list.
+lockfile, root config, shared ESLint config and `lint-changed-files.mjs`), so PR
+CI and releases share one list. A lint-config-only change therefore also counts
+as a mobile change for release builds.
 
 Unlike PR CI, a release is compared against the **newest earlier release that
 has both mobile assets**, not the previous release. A release that skipped or

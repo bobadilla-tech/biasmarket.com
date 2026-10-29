@@ -55,6 +55,7 @@ export class CreateAssistedOrderDto {
   // paragraph separators and the BOM would end up in the WhatsApp greeting.
   // ZWJ/ZWNJ stay allowed: emoji sequences and some scripts need them.
   @Matches(
+    // eslint-disable-next-line no-misleading-character-class -- \u034F (combining grapheme joiner) is deliberately rejected
     /^[^\p{Cc}\u200B\u2028\u2029\u202A-\u202E\u2066-\u2069\uFEFF\u2060-\u2064\u00AD\u180E\u034F\uFFFC\uFFF9-\uFFFB\u3164\u115F\u1160\u2800]*$/u,
     {
       message: 'El nombre no puede contener caracteres de control o invisibles',
