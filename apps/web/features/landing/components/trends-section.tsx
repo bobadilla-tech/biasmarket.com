@@ -59,7 +59,9 @@ function TrendBand({
     sort === "bestseller" ? "/search?sort=bestseller" : "/search";
 
   return (
-    <section className={`landing-trend-band ${bandClassName} rounded-[24px] border border-white/80 px-4 py-4 shadow-[var(--shadow-pop)] sm:rounded-[30px] sm:px-6 sm:py-5`}>
+    <section
+      className={`landing-trend-band ${bandClassName} rounded-[24px] border border-white/80 px-4 py-4 shadow-[var(--shadow-pop)] sm:rounded-[30px] sm:px-6 sm:py-5`}
+    >
       <div className="flex items-center justify-between gap-4 py-1.5">
         <h2 className="text-[21px] leading-[26px] font-bold text-landing-ink">
           {title}
@@ -122,7 +124,9 @@ function TrendBandStripe({
     sort === "bestseller" ? "/search?sort=bestseller" : "/search";
 
   return (
-    <section className={`landing-trend-strip mx-auto w-full max-w-[1344px] rounded-[28px] border border-white/80 px-4 py-8 shadow-[var(--shadow-pop)] sm:px-8 sm:py-10 ${bg}`}>
+    <section
+      className={`landing-trend-strip mx-auto w-full max-w-[1344px] rounded-[28px] border border-white/80 px-4 py-8 shadow-[var(--shadow-pop)] sm:px-8 sm:py-10 ${bg}`}
+    >
       <div className="mx-auto max-w-[1240px] px-1 sm:px-3">
         <div className="flex items-center justify-between gap-8">
           <h2 className="text-[32px] leading-[39px] font-bold text-landing-ink">
