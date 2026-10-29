@@ -1,8 +1,17 @@
 #!/usr/bin/env node
-// Guard: every workspace (apps/*, packages/*) must define `lint` and
-// `typecheck`, so `turbo run lint` can never silently skip one. Without a
-// `lint` script turbo reports "No tasks were executed" for that package and
-// CI stays green while checking nothing.
+// Guard: makes it hard to add a workspace or test suite that CI ignores.
+//   1. every workspace (apps/*, packages/*) defines `lint` and `typecheck`;
+//      without `lint` turbo reports "No tasks were executed" for it and CI
+//      stays green while checking nothing;
+//   2. every workspace with a `test` script is run by a `run:` line in
+//      .github/workflows/ci.yml (`--filter <name>` plus `test` or `test:cov`,
+//      no `exec`);
+//   3. no `test`/`test:cov` script uses `--passWithNoTests`, which lets a
+//      deleted or mis-globbed suite pass.
+// Rule 2 proves the invocation text exists, not that its job can trigger, and
+// it does not see multi-line `run: |` blocks: keep test invocations on one
+// line. Workspaces without a `test` script (db, i18n, queue, query, sanity)
+// are not required to have one.
 //
 // Usage: node scripts/ci/check-workspace-scripts.mjs [rootDir]
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -11,9 +20,33 @@ import { fileURLToPath } from "node:url";
 
 const REQUIRED_SCRIPTS = ["lint", "typecheck"];
 const WORKSPACE_PARENTS = ["apps", "packages"];
+const WORKFLOW = ".github/workflows/ci.yml";
+
+const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// Single-line `run:` commands of the workflow, `#` comments stripped.
+function runLines(rootDir) {
+  const file = path.join(rootDir, WORKFLOW);
+  if (!existsSync(file)) return null;
+  return readFileSync(file, "utf8")
+    .split("\n")
+    .map((line) => line.replace(/(^|\s)#.*$/, ""))
+    .map((line) => line.match(/^\s*(?:-\s+)?run:\s*(.+)$/)?.[1])
+    .filter(Boolean);
+}
+
+function isTestRun(line, name) {
+  return (
+    new RegExp(`--filter[ =]${escapeRegExp(name)}(\\s|$)`).test(line) &&
+    /\btest(:cov)?(\s|$)/.test(line) &&
+    !/\bexec\b/.test(line) &&
+    !/test:e2e/.test(line)
+  );
+}
 
 export function checkWorkspaces(rootDir) {
   const problems = [];
+  const runs = runLines(rootDir);
   for (const parent of WORKSPACE_PARENTS) {
     const parentDir = path.join(rootDir, parent);
     if (!existsSync(parentDir)) continue;
@@ -28,6 +61,20 @@ export function checkWorkspaces(rootDir) {
           problems.push(
             `${parent}/${entry.name} (${pkg.name}): missing "${script}" script`,
           );
+        }
+      }
+      if (!pkg.scripts?.test) continue;
+      const where = `${parent}/${entry.name} (${pkg.name})`;
+      if (runs === null) {
+        problems.push(
+          `${where}: has a "test" script but ${WORKFLOW} is missing`,
+        );
+      } else if (!runs.some((line) => isTestRun(line, pkg.name))) {
+        problems.push(`${where}: "test" script is never run in ${WORKFLOW}`);
+      }
+      for (const script of ["test", "test:cov"]) {
+        if (pkg.scripts[script]?.includes("--passWithNoTests")) {
+          problems.push(`${where}: "${script}" uses --passWithNoTests`);
         }
       }
     }

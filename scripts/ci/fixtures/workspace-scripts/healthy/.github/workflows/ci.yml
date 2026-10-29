@@ -1,0 +1,6 @@
+jobs:
+  web:
+    steps:
+      # run: pnpm --filter web test (comment, ignored)
+      - run: pnpm turbo run test:cov --filter=web
+      - run: pnpm --filter web exec playwright test

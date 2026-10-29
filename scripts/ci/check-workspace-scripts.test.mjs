@@ -19,6 +19,19 @@ test("missing lint script is reported", () => {
   ]);
 });
 
+test("a test script that CI never runs is reported", () => {
+  assert.deepEqual(checkWorkspaces(path.join(fixtures, "uncalled-test")), [
+    'packages/lonely (@fixture/lonely): "test" script is never run in .github/workflows/ci.yml',
+  ]);
+});
+
+test("--passWithNoTests is reported", () => {
+  assert.deepEqual(checkWorkspaces(path.join(fixtures, "pass-with-no-tests")), [
+    'packages/lax (@fixture/lax): "test" uses --passWithNoTests',
+    'packages/lax (@fixture/lax): "test:cov" uses --passWithNoTests',
+  ]);
+});
+
 test("the real repo is healthy", () => {
   assert.deepEqual(checkWorkspaces(path.join(fixtures, "../../../..")), []);
 });

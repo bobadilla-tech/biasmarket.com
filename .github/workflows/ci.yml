@@ -427,6 +427,20 @@ jobs:
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=mobile
 
+      - name: Test with coverage
+        run: pnpm turbo run test:cov --filter=mobile
+
+      - name: Check coverage report exists
+        run: test -f apps/mobile/coverage/lcov.info
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: apps/mobile/coverage/lcov.info
+          flags: mobile
+          fail_ci_if_error: false
+
       # See "Turbo cache policy" at the top of this file.
       - name: Prune turbo cache
         if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
@@ -751,6 +765,20 @@ jobs:
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=@biasmarket/types
 
+      - name: Test with coverage
+        run: pnpm turbo run test:cov --filter=@biasmarket/types
+
+      - name: Check coverage report exists
+        run: test -f packages/types/coverage/lcov.info
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: packages/types/coverage/lcov.info
+          flags: types
+          fail_ci_if_error: false
+
       # See "Turbo cache policy" at the top of this file.
       - name: Prune turbo cache
         if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
@@ -807,6 +835,20 @@ jobs:
 
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=@biasmarket/design-tokens
+
+      - name: Test with coverage
+        run: pnpm turbo run test:cov --filter=@biasmarket/design-tokens
+
+      - name: Check coverage report exists
+        run: test -f packages/design-tokens/coverage/lcov.info
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: packages/design-tokens/coverage/lcov.info
+          flags: design-tokens
+          fail_ci_if_error: false
 
       # See "Turbo cache policy" at the top of this file.
       - name: Prune turbo cache
