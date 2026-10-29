@@ -383,6 +383,7 @@ model Order {
   @@index([storeId, paymentStatus])
   @@index([storeId, createdAt])
   @@index([storeId, customerPhoneNormalized, createdAt])
+  @@index([createdByUserId, storeId, source, createdAt, customerPhoneNormalized], map: "Order_seller_store_source_createdAt_phone_idx")
   @@index([paymentStatus, expiresAt])
   @@index([buyerAccountId])
   // ON DELETE SET NULL walks this column when a user is deleted.
