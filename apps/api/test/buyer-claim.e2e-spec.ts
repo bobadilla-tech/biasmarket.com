@@ -1,6 +1,7 @@
 import { Test, type TestingModule } from '@nestjs/testing';
 import { type INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
+import { orderRef } from '@biasmarket/utils/order-ref';
 import { randomUUID } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import { PrismaService } from '../src/prisma/prisma.service.js';
@@ -271,7 +272,7 @@ describe('claim order with Google (e2e)', () => {
     expect(pub.body.timeline.map((i: { type: string }) => i.type)).toContain(
       'CLAIMED',
     );
-    expect(pub.body.orderNumber).toBe(orderId.slice(-4).toUpperCase());
+    expect(pub.body.orderNumber).toBe(orderRef(orderId));
   });
 
   it('lets exactly one of two different accounts claim concurrently', async () => {

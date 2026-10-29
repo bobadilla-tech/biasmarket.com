@@ -31,7 +31,7 @@ export function makeOrder(
     },
     customerPhone: "+51 9** *** 321",
     customerAlias: "Sofi",
-    orderNumber: "AB12",
+    orderNumber: "ABCD12",
     createdAt: "2026-09-01T12:00:00.000Z",
     items: [
       { name: "Lightstick", quantity: 2, unitPrice: "50", currency: "PEN" },

@@ -1,6 +1,7 @@
 import { Test, type TestingModule } from '@nestjs/testing';
 import { ValidationPipe, type INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import { orderRef } from '@biasmarket/utils/order-ref';
 import { randomUUID } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import { PrismaService } from '../src/prisma/prisma.service.js';
@@ -159,7 +160,7 @@ describe('related orders (e2e)', () => {
     ]);
     expect(res.body.items[0]).toEqual({
       id: cancelled.id,
-      orderNumber: cancelled.id.slice(-4).toUpperCase(),
+      orderNumber: orderRef(cancelled.id),
       createdAt: '2026-02-01T00:00:00.000Z',
       status: 'CANCELLED',
       paymentStatus: 'CANCELLED',

@@ -1,8 +1,9 @@
 import type { useTranslations } from "next-intl";
 import type { OrderResponseDto } from "@biasmarket/types";
+import { orderRef } from "@biasmarket/utils/order-ref";
 
 export function getOrderNumber(orderId: string) {
-  return `#${orderId.slice(-4).toUpperCase()}`;
+  return `#${orderRef(orderId)}`;
 }
 
 export function getInitials(name: string | null, phone: string) {

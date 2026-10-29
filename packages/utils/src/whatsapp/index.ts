@@ -1,3 +1,5 @@
+import { orderRef } from "../order-ref/index.js";
+
 export interface WhatsAppOrderItem {
   name: string;
   quantity: number;
@@ -187,9 +189,6 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
   CASH: "Efectivo",
 };
 
-const shortOrderRef = (orderId: string): string =>
-  orderId.slice(-6).toUpperCase();
-
 // UTC getters deliberately, not local — the date is stored/parsed as a
 // UTC-anchored midnight (see CreateOrderUseCase), so reading it back with
 // local getters could shift the displayed day depending on server TZ.
@@ -205,7 +204,7 @@ const formatPickupDate = (date: Date): string => {
 const orderMessageVariables = (
   input: WhatsAppOrderInput,
 ): Record<string, string> => ({
-  orderRef: `#${shortOrderRef(input.orderId)}`,
+  orderRef: `#${orderRef(input.orderId)}`,
   storeName: input.storeName,
   items: input.items
     .map(
@@ -232,7 +231,7 @@ const orderMessageVariables = (
 const buildDefaultOrderMessage = (input: WhatsAppOrderInput): string => {
   const lines = [
     `*Nuevo pedido en ${input.storeName}*`,
-    `Ref: #${shortOrderRef(input.orderId)}`,
+    `Ref: #${orderRef(input.orderId)}`,
     "",
     ...input.items.map(
       (item) =>
@@ -283,7 +282,7 @@ export const buildWhatsAppOrderMessage = (
 const paymentReminderVariables = (
   input: WhatsAppPaymentReminderInput,
 ): Record<string, string> => ({
-  orderRef: `#${shortOrderRef(input.orderId)}`,
+  orderRef: `#${orderRef(input.orderId)}`,
   storeName: input.storeName,
   pendingAmount: input.pendingAmount.toFixed(2),
   currency: input.currency,
@@ -296,7 +295,7 @@ const buildDefaultPaymentReminderMessage = (
   const greeting = input.customerName ? `Hola ${input.customerName},` : "Hola,";
   const lines = [
     greeting,
-    `Sobre tu pedido #${shortOrderRef(input.orderId)} en ${input.storeName}:`,
+    `Sobre tu pedido #${orderRef(input.orderId)} en ${input.storeName}:`,
     `Todavía tenés un saldo pendiente de ${input.pendingAmount.toFixed(
       2,
     )} ${input.currency}.`,
@@ -321,7 +320,7 @@ const assistedOrderLinkVariables = (
   link: input.link,
   customerName: input.customerName ?? "",
   storeName: input.storeName,
-  orderRef: `#${shortOrderRef(input.orderId)}`,
+  orderRef: `#${orderRef(input.orderId)}`,
   totalAmount: input.totalAmount.toFixed(2),
   currency: input.currency,
 });
@@ -334,7 +333,7 @@ const buildDefaultAssistedOrderLinkMessage = (
   const alias = input.customerName?.trim();
   const lines = [
     alias ? `¡Hola ${alias}! 💜` : "¡Hola! 💜",
-    `Preparé tu pedido #${shortOrderRef(input.orderId)} en ${input.storeName} por ${input.totalAmount.toFixed(
+    `Preparé tu pedido #${orderRef(input.orderId)} en ${input.storeName} por ${input.totalAmount.toFixed(
       2,
     )} ${input.currency}.`,
     "Aquí puedes ver el detalle y cómo pagar:",
@@ -366,7 +365,7 @@ const buyerNoticeVariables = (
 ): Record<string, string> => ({
   customerName: input.customerName ?? "",
   storeName: input.storeName,
-  orderRef: `#${shortOrderRef(input.orderId)}`,
+  orderRef: `#${orderRef(input.orderId)}`,
   trackingNumber: input.trackingNumber?.trim() ?? "",
   saveInvite: input.claimed ? "" : BUYER_NOTICE_SAVE_INVITE,
 });
@@ -376,7 +375,7 @@ const buildDefaultBuyerNoticeMessage = (
   input: WhatsAppBuyerNoticeInput,
 ): string => {
   const alias = input.customerName?.trim();
-  const ref = `#${shortOrderRef(input.orderId)}`;
+  const ref = `#${orderRef(input.orderId)}`;
   const tracking = input.trackingNumber?.trim();
   const save = input.claimed ? null : BUYER_NOTICE_SAVE_INVITE;
   const lines: (string | null)[] = [alias ? `¡Hola ${alias}! 💜` : "¡Hola! 💜"];
