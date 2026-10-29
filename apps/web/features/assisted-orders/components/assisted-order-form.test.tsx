@@ -30,8 +30,14 @@ vi.mock("@/lib/api-client", () => ({
     publicCouriers: { findEnabled: m.findCouriers },
     products: { findAll: m.findProducts, findOne: m.findProduct },
     customers: { lookup: m.lookup },
-    orders: { createAssisted: m.createAssisted },
   },
+}));
+
+// The create call is a raw fetch (it must read the 409 body), not the
+// generated client; keep the real IdempotentReplayError class.
+vi.mock("../api/assisted-orders.api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../api/assisted-orders.api")>()),
+  assistedOrdersApi: { create: m.createAssisted },
 }));
 
 const { AssistedOrderForm } = await import("./assisted-order-form");
@@ -479,19 +485,23 @@ test("submits the payload, disables the button while pending, then reports the r
   );
   expect(submitButton().textContent).toBe("Creando pedido…");
   expect(m.createAssisted).toHaveBeenCalledTimes(1);
-  expect(m.createAssisted).toHaveBeenCalledWith("store-1", {
-    deliveryMethodType: "PICKUP",
-    customerPhone: "+51987654321",
-    customerName: "Sofi",
-    items: [{ productId: "p1", variantId: "v1", quantity: 1 }],
-    pickupPointId: "pt1",
-    pickupDate: undefined,
-    paymentMethod: "YAPE",
-    paymentType: "FULL",
-    courierName: undefined,
-    courierModality: undefined,
-    shippingAddress: undefined,
-  });
+  expect(m.createAssisted).toHaveBeenCalledWith(
+    "store-1",
+    {
+      deliveryMethodType: "PICKUP",
+      customerPhone: "+51987654321",
+      customerName: "Sofi",
+      items: [{ productId: "p1", variantId: "v1", quantity: 1 }],
+      pickupPointId: "pt1",
+      pickupDate: undefined,
+      paymentMethod: "YAPE",
+      paymentType: "FULL",
+      courierName: undefined,
+      courierModality: undefined,
+      shippingAddress: undefined,
+    },
+    expect.stringMatching(/^[0-9a-f-]{36}$/),
+  );
 
   const result = {
     order: { id: "o1" },
@@ -514,6 +524,67 @@ test("shows a readable server error and lets the seller retry", async () => {
     within(alert).getByText("Stock insuficiente para Default"),
   ).toBeTruthy();
   expect((submitButton() as HTMLButtonElement).disabled).toBe(false);
+});
+
+const keyOf = (call: number) => m.createAssisted.mock.calls[call]![2] as string;
+
+test("reuses the same Idempotency-Key when the seller retries after an error", async () => {
+  m.createAssisted.mockRejectedValueOnce(new Error("Network error"));
+  const { user } = await renderForm();
+  await fillValidOrder(user);
+  await user.click(submitButton());
+  await screen.findByRole("alert");
+  await waitFor(() =>
+    expect((submitButton() as HTMLButtonElement).disabled).toBe(false),
+  );
+
+  await user.click(submitButton());
+  await waitFor(() => expect(m.createAssisted).toHaveBeenCalledTimes(2));
+  expect(keyOf(1)).toBe(keyOf(0));
+});
+
+test("uses a new Idempotency-Key after any edit of the form values", async () => {
+  m.createAssisted.mockRejectedValueOnce(new Error("Stock insuficiente"));
+  const { user } = await renderForm();
+  await fillValidOrder(user);
+  await user.click(submitButton());
+  await screen.findByRole("alert");
+
+  // A corrected resubmit is a different order, not a replay of the failed one.
+  await user.type(screen.getByLabelText(/Nombre o apodo/), "Sofi");
+  await waitFor(() =>
+    expect((submitButton() as HTMLButtonElement).disabled).toBe(false),
+  );
+  await user.click(submitButton());
+  await waitFor(() => expect(m.createAssisted).toHaveBeenCalledTimes(2));
+  expect(keyOf(1)).not.toBe(keyOf(0));
+});
+
+test("uses a new Idempotency-Key for the next order after a success", async () => {
+  const { user, onCreated } = await renderForm();
+  await fillValidOrder(user);
+  await user.click(submitButton());
+  await waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1));
+
+  await user.click(submitButton());
+  await waitFor(() => expect(m.createAssisted).toHaveBeenCalledTimes(2));
+  expect(keyOf(1)).not.toBe(keyOf(0));
+});
+
+test("explains a replayed create and links to the existing order without navigating", async () => {
+  const { IdempotentReplayError } = await import("../api/assisted-orders.api");
+  m.createAssisted.mockRejectedValueOnce(new IdempotentReplayError("order-77"));
+  const { user, onCreated } = await renderForm();
+  await fillValidOrder(user);
+  await user.click(submitButton());
+
+  const alert = await screen.findByRole("alert");
+  expect(within(alert).getByText("Ya creaste este pedido.")).toBeTruthy();
+  const link = screen.getByRole("link", { name: "Ver el pedido" });
+  expect(link.getAttribute("href")).toBe(
+    "/es/dashboard/mi-tienda/orders?order=order-77",
+  );
+  expect(onCreated).not.toHaveBeenCalled();
 });
 
 test("works on a phone-width viewport with 44px touch targets", async () => {

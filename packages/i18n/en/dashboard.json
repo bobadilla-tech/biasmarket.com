@@ -919,6 +919,8 @@
     "submit": "Create order",
     "submitting": "Creating order…",
     "errors": {
+      "alreadyCreated": "You already created this order.",
+      "viewExistingOrder": "View the order",
       "phoneRequired": "Enter the buyer's WhatsApp.",
       "phoneInvalid": "The number is not valid.",
       "aliasTooLong": "Maximum 60 characters.",
