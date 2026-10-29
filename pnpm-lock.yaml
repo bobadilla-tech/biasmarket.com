@@ -276,6 +276,9 @@ importers:
       "@types/react":
         specifier: 19.2.18
         version: 19.2.18
+      "@vitest/coverage-v8":
+        specifier: ^4.1.11
+        version: 4.1.12(vitest@4.1.12)
       eslint:
         specifier: ^9.39.5
         version: 9.39.5(jiti@1.21.7)
@@ -625,6 +628,9 @@ importers:
 
   packages/design-tokens:
     devDependencies:
+      "@vitest/coverage-v8":
+        specifier: ^4.1.11
+        version: 4.1.12(vitest@4.1.12)
       typescript:
         specifier: ^7.0.2
         version: 7.0.2

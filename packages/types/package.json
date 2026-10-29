@@ -9,8 +9,8 @@
     "generate": "orval --config orval.config.ts && node scripts/fix-esm-extensions.mjs",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests",
-    "test:cov": "vitest run --coverage --passWithNoTests",
+    "test": "vitest run",
+    "test:cov": "vitest run --coverage",
     "lint": "node ../../scripts/lint-changed-files.mjs packages/types && eslint . --max-warnings 0"
   },
   "devDependencies": {

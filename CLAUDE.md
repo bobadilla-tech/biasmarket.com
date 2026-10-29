@@ -212,6 +212,9 @@ automatically on container boot. Full runbook: `docs/core/deploy.md`.
 - `docs/core/security-payments.md` — validation rules, REST-over-tRPC rationale,
   manual payment flow state machine (implemented — see the Database section
   above for where)
+- `docs/core/ci.md` - what CI guarantees per workspace (lint, tests, coverage
+  floors), the guard script, and the 7-place wiring list for new path-filtered
+  jobs
 - `docs/core/product.md`, `docs/core/roadmap.md`, `docs/core/i18n.md`
 - `.artifacts/` — historical plans, audits, handoff prompts, implementation
   logs, and other work records; read `.artifacts/README.md` and
