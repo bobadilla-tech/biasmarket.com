@@ -14,6 +14,7 @@ import { PrismaService } from '../../../prisma/prisma.service.js';
 import { StorageService } from '../../../storage/storage.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
 import { OrderEventsService } from '../application/order-events.service.js';
+import { BuyerPaymentProofService } from '../application/buyer-payment-proof.service.js';
 import { CustomerSessionGuard } from '../../customer-auth/customer-session.guard.js';
 
 describe('CustomerOrderPaymentsController.submit', () => {
@@ -77,6 +78,7 @@ describe('CustomerOrderPaymentsController.submit', () => {
           useValue: { createIfNotOpen: vi.fn() },
         },
         { provide: OrderEventsService, useValue: events },
+        BuyerPaymentProofService,
       ],
     })
       .overrideGuard(CustomerSessionGuard)
