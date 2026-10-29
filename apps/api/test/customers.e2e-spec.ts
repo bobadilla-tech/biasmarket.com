@@ -147,7 +147,7 @@ describe('customers (e2e)', () => {
       .post(`/stores/${storeId}/orders/${orderId}/payments`)
       .set('Cookie', sellerSessionCookie)
       .field('amount', '20')
-      .field('method', 'YAPE')
+      .field('method', 'CASH')
       .expect(201);
 
     // Second checkout, no email → guest order with no linked `Customer` row.
@@ -166,7 +166,7 @@ describe('customers (e2e)', () => {
       .post(`/stores/${storeId}/orders/${guestOrderId}/payments`)
       .set('Cookie', sellerSessionCookie)
       .field('amount', '40')
-      .field('method', 'YAPE')
+      .field('method', 'CASH')
       .expect(201);
   });
 
