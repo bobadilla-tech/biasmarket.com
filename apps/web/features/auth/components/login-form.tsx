@@ -56,9 +56,15 @@ export function LoginForm() {
   return (
     <div className="login-card flex w-full flex-col gap-5 rounded-[26px] border border-white/90 bg-white/90 p-6 shadow-[0_28px_80px_rgba(65,47,105,0.16)] backdrop-blur-xl sm:p-8">
       <div>
-        <p className="mb-2 text-[10px] font-semibold tracking-[0.24em] text-[#8066b4]">YOUR COLLECTION AWAITS</p>
-        <h2 className="font-serif text-3xl font-semibold tracking-[-0.045em] text-[#1e1930] sm:text-[2.1rem]">Welcome back</h2>
-        <p className="mt-1.5 text-sm text-[#6b637f]">Sign in to continue to BiasMarket</p>
+        <p className="mb-2 text-[10px] font-semibold tracking-[0.24em] text-[#8066b4]">
+          YOUR COLLECTION AWAITS
+        </p>
+        <h2 className="font-serif text-3xl font-semibold tracking-[-0.045em] text-[#1e1930] sm:text-[2.1rem]">
+          Welcome back
+        </h2>
+        <p className="mt-1.5 text-sm text-[#6b637f]">
+          Sign in to continue to BiasMarket
+        </p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
@@ -110,7 +116,11 @@ export function LoginForm() {
                 aria-pressed={showPassword}
                 className="absolute inset-y-0 right-1 flex min-h-11 min-w-11 items-center justify-center rounded-lg text-[#776b91] transition hover:text-[#6542ba] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8761d9]"
               >
-                {showPassword ? <EyeOff aria-hidden="true" size={18} /> : <Eye aria-hidden="true" size={18} />}
+                {showPassword ? (
+                  <EyeOff aria-hidden="true" size={18} />
+                ) : (
+                  <Eye aria-hidden="true" size={18} />
+                )}
               </button>
             </div>
           )}
@@ -125,18 +135,23 @@ export function LoginForm() {
         </button>
       </form>
 
-      <div className="relative flex items-center gap-3 text-xs text-[#807694] before:h-px before:flex-1 before:bg-[#e1dbea] after:h-px after:flex-1 after:bg-[#e1dbea]">or</div>
+      <div className="relative flex items-center gap-3 text-xs text-[#807694] before:h-px before:flex-1 before:bg-[#e1dbea] after:h-px after:flex-1 after:bg-[#e1dbea]">
+        or
+      </div>
 
       <button
         type="button"
         onClick={onGoogle}
         className="flex min-h-12 w-full items-center justify-center gap-3 rounded-xl border border-[#d9d2e9] bg-white/70 py-3 text-sm font-semibold text-[#28223a] transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8761d9] focus-visible:ring-offset-2"
       >
-        <span aria-hidden="true" className="font-bold text-base text-[#4285f4]">G</span>{t("google")}
+        <span aria-hidden="true" className="font-bold text-base text-[#4285f4]">
+          G
+        </span>
+        {t("google")}
       </button>
 
       <p className="text-center text-sm text-[#625a74]">
-        {t("noAccount")} {" "}
+        {t("noAccount")}{" "}
         <Link
           href="/onboarding"
           className="font-semibold text-[#744bd2] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8761d9]"
