@@ -2770,6 +2770,87 @@
         "tags": ["PublicOrderEvents"]
       }
     },
+    "/public/orders/{token}/payments": {
+      "post": {
+        "operationId": "PublicOrderEventsController_submitPayment",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitPublicPaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmitPublicPaymentResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["PublicOrderEvents"]
+      }
+    },
+    "/public/orders/{token}/payments/{paymentId}/image": {
+      "get": {
+        "operationId": "PublicOrderEventsController_getPaymentProofImage",
+        "parameters": [
+          {
+            "name": "paymentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["PublicOrderEvents"]
+      }
+    },
     "/public/orders/{token}/events": {
       "post": {
         "operationId": "PublicOrderEventsController_recordInvite",
@@ -8983,6 +9064,24 @@
       "PublicOrderPaymentResponseDto": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "string"
+          },
+          "method": {
+            "nullable": true,
+            "enum": ["YAPE", "PLIN", "TRANSFER", "CASH"],
+            "type": "string"
+          },
+          "paidAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "When the money was paid, if the store recorded it."
+          },
+          "hasProof": {
+            "type": "boolean",
+            "description": "True only for a buyer-submitted payment with an uploaded proof; the image is served by the token image route."
+          },
           "source": {
             "enum": ["SELLER_RECORDED", "BUYER_SUBMITTED"],
             "type": "string"
@@ -9005,12 +9104,31 @@
           }
         },
         "required": [
+          "id",
+          "method",
+          "paidAt",
+          "hasProof",
           "source",
           "amount",
           "createdAt",
           "voidedAt",
           "reviewStatus"
         ]
+      },
+      "PublicOrderClosureResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "enum": ["CANCELLED", "EXPIRED"],
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Sanitized reason written by the store, if any."
+          }
+        },
+        "required": ["kind", "reason"]
       },
       "PublicOrderResponseDto": {
         "type": "object",
@@ -9145,6 +9263,27 @@
             "items": {
               "$ref": "#/components/schemas/PublicOrderPaymentResponseDto"
             }
+          },
+          "expiresAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "Payment deadline. Only while the order is active and still awaiting payment."
+          },
+          "paymentRejectionReason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Sanitized order-level reason, only when the payment was rejected."
+          },
+          "closure": {
+            "nullable": true,
+            "description": "Set when the order is cancelled, or expired unpaid.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublicOrderClosureResponseDto"
+              }
+            ]
           }
         },
         "required": [
@@ -9177,8 +9316,59 @@
           "timeline",
           "hasValidatedPayment",
           "courierModality",
-          "payments"
+          "payments",
+          "expiresAt",
+          "paymentRejectionReason",
+          "closure"
         ]
+      },
+      "SubmitPublicPaymentDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "string",
+            "description": "Amount paid, digits with at most two decimals (\"40.50\").",
+            "example": "40.50"
+          },
+          "method": {
+            "enum": ["YAPE", "PLIN", "TRANSFER", "CASH"],
+            "type": "string"
+          },
+          "operationCode": {
+            "type": "string",
+            "description": "Bank or wallet operation number (max 64 characters)."
+          },
+          "note": {
+            "type": "string",
+            "description": "Free text, max 500 chars."
+          },
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "description": "JPEG or PNG proof of payment, up to 5 MB."
+          }
+        },
+        "required": ["amount", "method", "file"]
+      },
+      "SubmitPublicPaymentResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          },
+          "reviewStatus": {
+            "type": "string",
+            "enum": ["PENDING_REVIEW"]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["id", "amount", "reviewStatus", "createdAt"]
       },
       "RecordInviteEventDto": {
         "type": "object",

@@ -150,7 +150,7 @@ export class OrderEventsService {
       where: { orderId, visibleToBuyer: true },
       // `id` breaks ties between events written in the same millisecond.
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-      select: { type: true, createdAt: true, payload: true },
+      select: { type: true, actor: true, createdAt: true, payload: true },
     });
   }
 
@@ -174,6 +174,39 @@ export class OrderEventsService {
       throw new NotFoundException('Pedido no encontrado');
     }
     return order;
+  }
+
+  // Own select for the proof upload guard: the pre-checks need the money
+  // fields and the payments, nothing else. Unknown and revoked tokens give
+  // the identical 404 as `GET :token`, before any body is parsed.
+  async loadForProof(token: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { accessTokenHash: hashOrderAccessToken(token ?? '') },
+      select: {
+        id: true,
+        storeId: true,
+        status: true,
+        paymentStatus: true,
+        fulfillmentStatus: true,
+        requiredAmount: true,
+        currency: true,
+        expiresAt: true,
+        accessTokenRevokedAt: true,
+        payments: {
+          select: {
+            amount: true,
+            source: true,
+            reviewStatus: true,
+            voidedAt: true,
+          },
+        },
+      },
+    });
+    if (!order || order.accessTokenRevokedAt) {
+      throw new NotFoundException('Pedido no encontrado');
+    }
+    const { accessTokenRevokedAt: _revoked, ...rest } = order;
+    return rest;
   }
 
   // Own select (not `requireOrderForToken`): the claim needs the link hash,

@@ -63,6 +63,8 @@ export default async () => {
       await import('./modules/users/dto/user-store-count-response.dto.js'),
     ['./modules/orders/dto/assisted-order-response.dto.js']:
       await import('./modules/orders/dto/assisted-order-response.dto.js'),
+    ['./modules/orders/dto/submit-public-payment.dto.js']:
+      await import('./modules/orders/dto/submit-public-payment.dto.js'),
     ['./modules/orders/dto/receipt-confirmed-response.dto.js']:
       await import('./modules/orders/dto/receipt-confirmed-response.dto.js'),
     ['./modules/payment-config/dto/payment-method-response.dto.js']:
@@ -1800,6 +1802,14 @@ export default async () => {
               currency: { required: true, type: () => String },
             },
             PublicOrderPaymentResponseDto: {
+              id: { required: true, type: () => String },
+              method: {
+                required: true,
+                nullable: true,
+                enum: ['YAPE', 'PLIN', 'TRANSFER', 'CASH'],
+              },
+              paidAt: { required: true, type: () => String, nullable: true },
+              hasProof: { required: true, type: () => Boolean },
               source: {
                 required: true,
                 enum: ['SELLER_RECORDED', 'BUYER_SUBMITTED'],
@@ -1864,6 +1874,10 @@ export default async () => {
                 type: () => String,
                 nullable: true,
               },
+            },
+            PublicOrderClosureResponseDto: {
+              kind: { required: true, enum: ['CANCELLED', 'EXPIRED'] },
+              reason: { required: true, type: () => String, nullable: true },
             },
             PublicOrderResponseDto: {
               store: {
@@ -1978,6 +1992,19 @@ export default async () => {
                     .PublicOrderPaymentResponseDto,
                 ],
               },
+              expiresAt: { required: true, type: () => String, nullable: true },
+              paymentRejectionReason: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              closure: {
+                required: true,
+                type: () =>
+                  t['./modules/orders/dto/public-order-response.dto.js']
+                    .PublicOrderClosureResponseDto,
+                nullable: true,
+              },
             },
           },
         ],
@@ -2002,6 +2029,27 @@ export default async () => {
           {
             ReceiptConfirmedResponseDto: {
               receiptConfirmedAt: { required: true, type: () => String },
+            },
+          },
+        ],
+        [
+          import('./modules/orders/dto/submit-public-payment.dto.js'),
+          {
+            SubmitPublicPaymentDto: {
+              amount: { required: true, type: () => String },
+              method: {
+                required: true,
+                enum: ['YAPE', 'PLIN', 'TRANSFER', 'CASH'],
+              },
+              operationCode: { required: false, type: () => String },
+              note: { required: false, type: () => String },
+              file: { required: true, type: () => Object },
+            },
+            SubmitPublicPaymentResponseDto: {
+              id: { required: true, type: () => String },
+              amount: { required: true, type: () => String },
+              reviewStatus: { required: true, type: () => String },
+              createdAt: { required: true, type: () => String },
             },
           },
         ],
@@ -3498,6 +3546,11 @@ export default async () => {
                   .PublicOrderResponseDto,
               },
               getPackedPhoto: {},
+              submitPayment: {
+                type: t['./modules/orders/dto/submit-public-payment.dto.js']
+                  .SubmitPublicPaymentResponseDto,
+              },
+              getPaymentProofImage: {},
               recordInvite: {},
               confirmReceipt: {
                 type: t[

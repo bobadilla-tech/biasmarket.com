@@ -104,11 +104,12 @@ export class CustomerOrderPaymentsController {
       order: {
         id: orderId,
         storeId: store.id,
+        status: order.status,
         paymentStatus: order.paymentStatus,
         fulfillmentStatus: order.fulfillmentStatus,
+        expiresAt: order.expiresAt ?? null,
         requiredAmount: order.requiredAmount,
         currency: order.currency,
-        pendingAmount: order.pendingAmount,
         payments: order.payments ?? [],
       },
       file,

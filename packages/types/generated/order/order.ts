@@ -19,8 +19,8 @@ import type {
   OrderStatusResponseDto,
   RelatedOrdersResponseDto,
   ReviewPaymentDto,
-  VoidOrderPaymentDto,
   UpdateOrderShippingDto,
+  VoidOrderPaymentDto,
 } from "../api.schemas.js";
 
 import { customFetch } from "../../http.js";
@@ -103,6 +103,60 @@ export const getPaymentImage = async (
   options?: Parameters<typeof customFetch>[1],
 ): Promise<Blob> => {
   return customFetch<Blob>(getGetPaymentImageUrl(storeId, orderId, paymentId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getUpdateShippingUrl = (storeId: string, orderId: string) => {
+  return `/stores/${storeId}/orders/${orderId}/shipping`;
+};
+
+export const updateShipping = async (
+  storeId: string,
+  orderId: string,
+  updateOrderShippingDto: UpdateOrderShippingDto,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OrderDetailResponseDto> => {
+  return customFetch<OrderDetailResponseDto>(
+    getUpdateShippingUrl(storeId, orderId),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateOrderShippingDto),
+    },
+  );
+};
+
+export const getUploadPackedPhotoUrl = (storeId: string, orderId: string) => {
+  return `/stores/${storeId}/orders/${orderId}/shipping/photo`;
+};
+
+export const uploadPackedPhoto = async (
+  storeId: string,
+  orderId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OrderDetailResponseDto> => {
+  return customFetch<OrderDetailResponseDto>(
+    getUploadPackedPhotoUrl(storeId, orderId),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getGetPackedPhotoUrl = (storeId: string, orderId: string) => {
+  return `/stores/${storeId}/orders/${orderId}/shipping/photo`;
+};
+
+export const getPackedPhoto = async (
+  storeId: string,
+  orderId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<Blob> => {
+  return customFetch<Blob>(getGetPackedPhotoUrl(storeId, orderId), {
     ...options,
     method: "GET",
   });
@@ -310,25 +364,4 @@ export const recordBuyerNotice = async (
     headers: { "Content-Type": "application/json", ...options?.headers },
     body: JSON.stringify(buyerNoticeDto),
   });
-};
-
-export const getUpdateShippingUrl = (storeId: string, orderId: string) => {
-  return `/stores/${storeId}/orders/${orderId}/shipping`;
-};
-
-export const updateShipping = async (
-  storeId: string,
-  orderId: string,
-  updateOrderShippingDto: UpdateOrderShippingDto,
-  options?: Parameters<typeof customFetch>[1],
-): Promise<OrderDetailResponseDto> => {
-  return customFetch<OrderDetailResponseDto>(
-    getUpdateShippingUrl(storeId, orderId),
-    {
-      ...options,
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...options?.headers },
-      body: JSON.stringify(updateOrderShippingDto),
-    },
-  );
 };
