@@ -13,11 +13,18 @@
       "cache": false,
       "persistent": true
     },
-    "lint": {},
+    "lint": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/eslint.config.mjs",
+        "$TURBO_ROOT$/scripts/lint-changed-files.mjs"
+      ]
+    },
     "web#lint": {
       "inputs": [
         "$TURBO_DEFAULT$",
         "eslint.config.mjs",
+        "$TURBO_ROOT$/eslint.config.mjs",
         "../../scripts/lint-changed-files.mjs"
       ]
     },

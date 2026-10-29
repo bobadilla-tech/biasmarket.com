@@ -5,6 +5,7 @@ const MAX_ALIAS_GRAPHEMES = 40;
 // soft hyphen and blank fillers (Hangul filler, braille blank). ZWJ/ZWNJ are kept on
 // purpose: stripping all of \p{Cf} breaks emoji sequences and Persian/Indic text.
 const STRIPPED = new RegExp(
+  // eslint-disable-next-line no-misleading-character-class -- \u034F (combining grapheme joiner) is deliberately part of the stripped set
   '[\\p{Cc}\\u200B\\u200E\\u200F\\u061C\\u202A-\\u202E\\u2066-\\u2069\\u2028\\u2029\\uFEFF\\u2060-\\u2064\\u00AD\\u180E\\u034F\\uFFFC\\uFFF9-\\uFFFB\\u3164\\u115F\\u1160\\u2800]',
   'gu',
 );

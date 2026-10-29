@@ -19,7 +19,8 @@
   "scripts": {
     "build": "tsc && node scripts/write-tailwind-theme.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint": "node ../../scripts/lint-changed-files.mjs packages/design-tokens && eslint . --max-warnings 0"
   },
   "devDependencies": {
     "typescript": "^7.0.2",
