@@ -492,12 +492,14 @@
     "banner": {
       "pendingPayment": "Your order is waiting for payment. See below how to pay.",
       "partiallyPaid": "We received part of your payment. The deposit is not complete yet.",
-      "paymentSubmitted": "We received your payment and it is under review.",
+      "paymentSubmitted": "We received your proof and it is under review.",
       "verified": "Your payment is confirmed. We are preparing your order.",
       "rejected": "We could not confirm your payment. Message the store.",
       "cancelled": "This order was cancelled.",
       "ready": "Your order is ready.",
-      "completed": "Your order was delivered."
+      "completed": "Your order was delivered.",
+      "inTransit": "Your order is on its way.",
+      "expired": "The time to pay for this order ran out and it was cancelled."
     },
     "progress": "Order progress",
     "items": "Your order",
@@ -514,7 +516,11 @@
       "recorded": "Recorded",
       "bySelf": "Sent by you",
       "byStore": "Recorded by the store",
-      "rejectedNote": "Message the store to sort it out."
+      "rejectedNote": "Message the store to sort it out.",
+      "closedPending": "Not reviewed (order closed)",
+      "balanceUpdated": "The balance was updated.",
+      "viewProof": "View proof",
+      "proofAlt": "Your payment proof"
     },
     "howToPay": {
       "title": "How to pay",
@@ -609,6 +615,47 @@
         "title": "Keep your history",
         "body": "Your order has arrived. Save it to your account to keep the whole history at hand. Your current link will keep working."
       }
-    }
+    },
+    "upload": {
+      "title": "Upload your proof",
+      "description": "Pay with one of the methods above and upload the screenshot here. The store will review it.",
+      "amount": "Amount paid",
+      "method": "Payment method",
+      "selectMethod": "Choose a method",
+      "code": "Operation number (optional)",
+      "codeHint": "Helps the store find your payment faster.",
+      "chooseFile": "Choose payment screenshot",
+      "fileHint": "JPG or PNG, up to 5 MB",
+      "preview": "Preview of your proof",
+      "removeFile": "Remove image",
+      "submit": "Send proof",
+      "submitting": "Sending...",
+      "success": "Done! We received your proof. The store will review it soon.",
+      "inReview": "You have {amount} under review.",
+      "waitReview": "Wait for the store to review before sending another proof.",
+      "errors": {
+        "amountInvalid": "Enter a valid amount, for example 40.50.",
+        "amountTooHigh": "The amount is higher than what is left to pay.",
+        "methodRequired": "Choose a payment method.",
+        "codeInvalid": "The operation number is not valid.",
+        "fileRequired": "Attach the screenshot of your payment.",
+        "fileTooLarge": "The image is larger than 5 MB.",
+        "fileType": "Use a JPG or PNG image.",
+        "tooLarge": "The image is too large.",
+        "invalid": "This link is no longer valid. Ask the store for a new one.",
+        "rateLimited": "Too many attempts. Wait a moment.",
+        "generic": "We could not send your proof. Please try again."
+      }
+    },
+    "closure": {
+      "title": "What happened to your order",
+      "reason": "Reason: {reason}",
+      "cancelledNote": "If you have questions or still want it, message the store.",
+      "expiredNote": "If you still want your order, message the store to see if it can hold it again.",
+      "rejectedNote": "The store could not confirm your payment. Message them to sort it out.",
+      "contact": "Message the store",
+      "message": "Hi, I want to ask about my order #{number}"
+    },
+    "deadline": "You have until {date} to pay."
   }
 }
