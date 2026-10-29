@@ -8,7 +8,7 @@ import { useRouter } from "@/i18n/navigation";
 import { type SignupInput, signupSchema } from "../schemas/signup.schema";
 
 const inputClassName =
-  "w-full rounded-xl rounded-xl border border-[#d9d2e9] bg-white/85 px-4 py-3 text-base text-[#27213b] outline-none transition placeholder:text-[#827995] focus:border-[#8761d9] focus:ring-2 focus:ring-[#c8b5f5]/60 md:text-sm";
+  "w-full rounded-xl border border-[#d9d2e9] bg-white/85 px-4 py-3 text-base text-[#27213b] outline-none transition placeholder:text-[#716785] focus:border-[#8761d9] focus:ring-2 focus:ring-[#c8b5f5]/60 md:text-sm";
 
 export function SignupForm({ onCheckEmail }: { onCheckEmail: () => void }) {
   const t = useTranslations("onboarding.signup");
@@ -113,7 +113,7 @@ export function SignupForm({ onCheckEmail }: { onCheckEmail: () => void }) {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="min-h-12 w-full rounded-xl bg-gradient-to-r from-[#7953d5] via-[#9163e6] to-[#a56be9] py-3 text-sm font-semibold text-white shadow-[0_9px_22px_rgba(123,80,206,0.25)] transition hover:-translate-y-0.5 hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7048cf] focus-visible:ring-offset-2 disabled:opacity-60"
+        className="min-h-12 w-full rounded-xl bg-gradient-to-r from-[#7953d5] via-[#7953d5] to-[#7048cf] py-3 text-sm font-semibold text-white shadow-[0_9px_22px_rgba(123,80,206,0.25)] transition hover:-translate-y-0.5 hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7048cf] focus-visible:ring-offset-2 disabled:opacity-60"
       >
         {t("submit")}
       </button>
