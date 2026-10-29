@@ -37,7 +37,14 @@ test("invalidates both orders and stats overview queries on success", async () =
   act(() => {
     result.current.mutate({
       orderId: "o1",
-      values: { amount: "10.00", method: "YAPE", note: "", file: null },
+      values: {
+        amount: "10.00",
+        method: "YAPE",
+        operationCode: "",
+        paidAt: "2026-10-28",
+        note: "",
+        file: null,
+      },
     });
   });
 

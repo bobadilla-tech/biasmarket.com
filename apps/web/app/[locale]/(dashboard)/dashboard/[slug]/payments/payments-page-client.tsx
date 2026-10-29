@@ -469,13 +469,14 @@ export function PaymentsPageClient() {
         fulfillmentLabels={{}}
         enabledMethods={enabledMethods}
         registerPaymentSubmitting={registerPayment.isPending}
-        onRegisterPayment={(values) => {
+        onRegisterPayment={(values, options) => {
           if (!selectedOrder || paymentsLocked(selectedOrder)) {
             return Promise.resolve();
           }
           return registerPayment.mutateAsync({
             orderId: selectedOrder.id,
             values,
+            confirmDuplicate: options?.confirmDuplicate,
           });
         }}
         onPreviewPayment={setPaymentPreviewUrl}
