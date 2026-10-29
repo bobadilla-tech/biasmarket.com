@@ -5,6 +5,7 @@
     "NEXT_PUBLIC_SANITY_PROJECT_ID",
     "NEXT_PUBLIC_SANITY_DATASET"
   ],
+  "globalPassThroughEnv": ["BASE_REF"],
   "tasks": {
     "build": { "dependsOn": ["^build"], "outputs": ["dist/**", ".next/**"] },
     "dev": { "cache": false, "persistent": true },
