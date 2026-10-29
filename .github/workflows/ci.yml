@@ -138,6 +138,8 @@ jobs:
               - 'scripts/lint-changed-files.mjs'
             types:
               - 'packages/types/**'
+              - 'apps/api/openapi.json'
+              - 'scripts/ci/check-types-sdk-drift.sh'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
               - 'turbo.json'
@@ -751,6 +753,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: SDK drift check
+        run: bash scripts/ci/check-types-sdk-drift.sh
 
       - name: Restore turbo cache
         id: turbo-cache
