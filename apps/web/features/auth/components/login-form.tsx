@@ -96,6 +96,14 @@ export function LoginForm() {
           id="seller-login-password"
           label={t("passwordPlaceholder")}
           error={formErrorMessage(errors.password, t("passwordRequired"))}
+          description={
+            <Link
+              href="/my-purchases/forgot-password"
+              className="font-medium text-[#744bd2] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8761d9]"
+            >
+              {t("forgotPassword")}
+            </Link>
+          }
         >
           {(props) => (
             <div className="relative">
