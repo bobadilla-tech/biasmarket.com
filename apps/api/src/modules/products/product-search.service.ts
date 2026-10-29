@@ -29,6 +29,9 @@ export class ProductSearchService {
       status: 'PUBLISHED',
       deletedAt: null,
       discontinued: false,
+      // Marketplace-wide listings (home, search) skip imageless products: they
+      // render as a broken card. A single store's own page still lists them.
+      ...(!storeSlug && { images: { isEmpty: false } }),
       store: {
         ...PUBLIC_STORE_VISIBILITY,
         owner: { banned: { not: true } },
