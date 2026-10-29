@@ -1,5 +1,5 @@
 import { Test, type TestingModule } from '@nestjs/testing';
-import type { INestApplication } from '@nestjs/common';
+import { ValidationPipe, type INestApplication } from '@nestjs/common';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { StorageService } from '../src/storage/storage.service.js';
 import request from 'supertest';
@@ -54,6 +54,10 @@ describe('products (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    // Same global pipe as main.ts, so DTO rules (like the image cap) apply.
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
+    );
     await app.init();
     prisma = moduleFixture.get(PrismaService);
     storage = moduleFixture.get(StorageService);
