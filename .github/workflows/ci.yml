@@ -1067,6 +1067,19 @@ jobs:
       - name: Guard script tests
         run: node --test scripts/ci/check-workspace-scripts.test.mjs
 
+      - name: Install actionlint
+        run: bash scripts/ci/install-actionlint.sh "$RUNNER_TEMP/actionlint"
+
+      # Lints .github/workflows/*.yml (not composite actions).
+      - name: Lint workflows
+        run: |
+          "$RUNNER_TEMP/actionlint/actionlint"
+
+      # scripts/ci only: infra/vps/*.sh are production deploy scripts, any
+      # fix there is behavioral and needs its own supervised change.
+      - name: Shellcheck CI scripts
+        run: shellcheck scripts/ci/*.sh
+
   e2e:
     name: E2E (API)
     # Run on pushes to main, relevant pull request changes, and explicit
