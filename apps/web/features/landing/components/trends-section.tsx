@@ -59,7 +59,7 @@ function TrendBand({
     sort === "bestseller" ? "/search?sort=bestseller" : "/search";
 
   return (
-    <section className={`${bandClassName} px-5 py-2.5`}>
+    <section className={`landing-trend-band ${bandClassName} rounded-[24px] border border-white/80 px-4 py-4 shadow-[var(--shadow-pop)] sm:rounded-[30px] sm:px-6 sm:py-5`}>
       <div className="flex items-center justify-between gap-4 py-1.5">
         <h2 className="text-[21px] leading-[26px] font-bold text-landing-ink">
           {title}
@@ -122,8 +122,8 @@ function TrendBandStripe({
     sort === "bestseller" ? "/search?sort=bestseller" : "/search";
 
   return (
-    <section className={`py-14 ${bg}`}>
-      <div className="mx-auto max-w-[1344px] px-10">
+    <section className={`landing-trend-strip mx-auto w-full max-w-[1344px] rounded-[28px] border border-white/80 px-4 py-8 shadow-[var(--shadow-pop)] sm:px-8 sm:py-10 ${bg}`}>
+      <div className="mx-auto max-w-[1240px] px-1 sm:px-3">
         <div className="flex items-center justify-between gap-8">
           <h2 className="text-[32px] leading-[39px] font-bold text-landing-ink">
             {title}
@@ -182,7 +182,7 @@ export function TrendsSection({
 
   return (
     <>
-      <div className="flex flex-col gap-4 sm:hidden">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 sm:hidden">
         <TrendBand
           title={t("latestTitle")}
           sort="latest"
@@ -197,7 +197,7 @@ export function TrendsSection({
         />
       </div>
 
-      <div className="hidden flex-col gap-4 sm:flex">
+      <div className="hidden flex-col gap-5 px-4 sm:flex sm:px-8 lg:px-10">
         <TrendBandStripe
           title={t("latestTitle")}
           sort="latest"
