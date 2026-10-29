@@ -221,5 +221,25 @@
     "terms": "Términos del Servicio",
     "description": "Bias Market es una plataforma en línea donde creadores y vendedores independientes de merchandising K-pop abren sus propias tiendas y los fans las descubren y hacen pedidos. Los vendedores pueden iniciar sesión con correo o Google.",
     "legalNav": "Legal"
+  },
+  "fanJourney": {
+    "eyebrow": "Un espacio hecho para fans",
+    "title": "De tu próximo hallazgo a una colección que amas.",
+    "subtitle": "Descubre productos, conoce tiendas de fans y encuentra algo especial para llevar a casa.",
+    "step": "PASO {number}",
+    "steps": {
+      "discover": {
+        "title": "Encuentra tu próximo favorito",
+        "body": "Explora álbumes, photocards, lightsticks y más."
+      },
+      "shops": {
+        "title": "Conoce tiendas de fans",
+        "body": "Descubre a las personas detrás de cada hallazgo."
+      },
+      "collect": {
+        "title": "Arma tu colección",
+        "body": "Encuentra ese detalle perfecto para tu fandom."
+      }
+    }
   }
 }

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { Sparkles, Star } from "lucide-react";
+import { ArrowUpRight, Sparkles } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 
 // Colors come from the --hero-* tokens in app/globals.css (#243).
@@ -10,42 +10,49 @@ export function Hero() {
   const t = useTranslations("landing.hero");
 
   return (
-    <section className="mx-auto w-full max-w-[1346px] px-4 pt-6 pb-10 sm:px-10 sm:pt-[35px]">
-      <div className="landing-hero grid items-center gap-8 overflow-hidden rounded-[2rem] border border-white/80 px-5 pt-8 pb-6 shadow-[var(--shadow-pop)] transition-shadow duration-300 hover:shadow-[var(--shadow-raised)] sm:px-10 sm:pt-12 lg:min-h-[525px] lg:grid-cols-2 lg:gap-16 lg:py-12 lg:pr-6 lg:pl-[70px]">
-        <div className="landing-hero-copy flex min-w-0 flex-col items-center gap-3 text-center sm:gap-4">
+    <section className="mx-auto w-full max-w-[1440px] px-4 pt-5 pb-8 sm:px-8 sm:pt-8 sm:pb-12 lg:px-10">
+      <div className="landing-hero-card relative isolate grid items-center gap-3 overflow-hidden rounded-[28px] px-6 pt-9 pb-2 sm:rounded-[36px] sm:px-10 sm:pt-12 lg:min-h-[550px] lg:grid-cols-[0.92fr_1.08fr] lg:gap-8 lg:px-16 lg:py-12">
+        <div
+          aria-hidden="true"
+          className="landing-hero-orbit landing-hero-orbit-one"
+        />
+        <div
+          aria-hidden="true"
+          className="landing-hero-orbit landing-hero-orbit-two"
+        />
+        <div className="landing-hero-copy relative z-10 flex min-w-0 flex-col items-center gap-3 text-center sm:gap-4 lg:items-start lg:text-left">
+          <span
+            aria-hidden="true"
+            className="mb-1 inline-flex size-10 items-center justify-center rounded-full border border-white/20 bg-white/10 text-[#f7b6e2] shadow-[0_0_28px_rgba(255,95,190,.24)]"
+          >
+            <Sparkles className="size-5" />
+          </span>
           <h1
-            className="font-extrabold tracking-tight text-balance text-hero-title"
-            style={{ fontSize: "clamp(36px, 6vw, 88px)", lineHeight: "1" }}
+            className="max-w-[650px] font-extrabold tracking-[-0.055em] text-balance text-white drop-shadow-sm"
+            style={{ fontSize: "clamp(40px, 6vw, 82px)", lineHeight: "0.98" }}
           >
             {t("title1")}
           </h1>
           <p
-            className="font-hero-accent font-semibold text-balance text-hero-accent"
-            style={{ fontSize: "clamp(24px, 3.2vw, 46px)", lineHeight: "1.1" }}
+            className="font-hero-accent font-semibold tracking-[-0.035em] text-balance text-[#ffb5df]"
+            style={{ fontSize: "clamp(25px, 3.2vw, 43px)", lineHeight: "1.08" }}
           >
             {t("title2")}
           </p>
-          <p className="max-w-[420px] text-base leading-snug font-light text-landing-ink sm:text-lg lg:text-xl">
+          <p className="max-w-[440px] text-base leading-relaxed font-light text-white/75 sm:text-lg lg:text-xl">
             {t("subtitle")}
           </p>
           <Link
             href="/search"
-            className="mt-2 inline-flex min-h-[52px] max-w-full items-center justify-center rounded-full bg-hero-accent px-10 py-3 text-center text-[19px] leading-tight font-bold text-white shadow-[0_10px_22px_rgb(171_58_117/22%)] transition-[transform,box-shadow,background-color] duration-200 hover:-translate-y-0.5 hover:bg-hero-accent-hover hover:shadow-[0_14px_28px_rgb(171_58_117/28%)] focus-visible:bg-hero-accent-hover focus-visible:ring-4 focus-visible:ring-hero-title focus-visible:ring-offset-2 focus-visible:ring-offset-hero-bg focus-visible:outline-none"
+            className="landing-hero-cta mt-3 inline-flex min-h-[54px] max-w-full items-center justify-center gap-2 rounded-full bg-[#ed4aa8] px-8 py-3 text-center text-base leading-tight font-bold text-white shadow-[0_12px_28px_rgba(237,74,168,.3)] transition-all hover:-translate-y-0.5 hover:bg-[#f15db2] hover:shadow-[0_16px_32px_rgba(237,74,168,.38)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white sm:px-9 sm:text-lg"
           >
             {t("cta")}
+            <ArrowUpRight aria-hidden="true" className="size-5" />
           </Link>
         </div>
 
-        <div className="landing-hero-art relative flex min-w-0 justify-center lg:justify-end">
-          <Star
-            aria-hidden="true"
-            className="fan-sparkle absolute top-[12%] left-[8%] size-7 fill-[#f2bd54] text-[#d89e35] drop-shadow-[0_4px_8px_rgb(216_158_53/25%)] sm:left-[12%]"
-          />
-          <Sparkles
-            aria-hidden="true"
-            className="fan-float absolute right-[7%] bottom-[13%] size-10 text-[#bd78bd] sm:right-[10%]"
-            strokeWidth={1.4}
-          />
+        <div className="landing-hero-art relative mx-auto flex min-w-0 w-full max-w-[570px] justify-center lg:justify-end">
+          <div aria-hidden="true" className="landing-hero-art-ring" />
           <Image
             src="/landing/bm-props-hero.webp"
             alt=""
@@ -53,8 +60,20 @@ export function Hero() {
             height={741}
             priority
             sizes="(min-width: 1346px) 640px, (min-width: 1024px) 48vw, 90vw"
-            className="pointer-events-none h-auto w-full max-w-[420px] select-none sm:max-w-[520px] lg:max-w-[640px]"
+            className="landing-hero-image pointer-events-none relative z-10 h-auto w-full max-w-[400px] select-none sm:max-w-[500px] lg:max-w-[590px]"
           />
+          <span
+            aria-hidden="true"
+            className="landing-hero-star landing-hero-star-one"
+          >
+            ✦
+          </span>
+          <span
+            aria-hidden="true"
+            className="landing-hero-star landing-hero-star-two"
+          >
+            ✧
+          </span>
         </div>
       </div>
     </section>

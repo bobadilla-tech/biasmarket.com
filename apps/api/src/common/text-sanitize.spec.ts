@@ -49,7 +49,7 @@ describe('hasForbiddenChars', () => {
     ['newline', 'AB\nC'],
     ['DEL', 'AB\u007fC'],
     ['zero-width space (Cf)', 'AB​C'],
-    ['bidi override (Cf)', 'AB‮C'],
+    ['bidi override (Cf)', 'AB\u202EC'],
     ['line separator (Zl)', 'AB C'],
     ['paragraph separator (Zp)', 'AB C'],
   ])('flags %s', (_name, input) => {
@@ -84,8 +84,8 @@ describe('sanitizeDisplayText', () => {
   });
 
   it('strips bidi overrides and isolates', () => {
-    expect(sanitizeDisplayText('a‮b⁦c⁩d')).toBe('abcd');
-    expect(sanitizeDisplayText('a‎b‏c؜d')).toBe('abcd');
+    expect(sanitizeDisplayText('a\u202Eb\u2066c\u2069d')).toBe('abcd');
+    expect(sanitizeDisplayText('a\u200Eb\u200Fc\u061Cd')).toBe('abcd');
   });
 
   it('strips zero-width, word joiner, BOM, soft hyphen and tag chars', () => {
@@ -122,7 +122,7 @@ describe('sanitizeDisplayText', () => {
 
   it('returns null when nothing is left', () => {
     expect(sanitizeDisplayText('   ')).toBeNull();
-    expect(sanitizeDisplayText('‮​')).toBeNull();
+    expect(sanitizeDisplayText('\u202E​')).toBeNull();
     expect(sanitizeDisplayText('')).toBeNull();
   });
 

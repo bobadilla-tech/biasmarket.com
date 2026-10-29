@@ -13,6 +13,10 @@ import { extractMessage, stringifyError } from '@biasmarket/utils/errors';
 import { captureException } from '../error-tracking.js';
 import { scrubRequestUrl } from '../scrub-request-url.js';
 import { InvalidOrderTransitionError } from '../../modules/orders/domain/order-status.vo.js';
+import {
+  DUPLICATE_OPERATION_CODE,
+  DuplicateOperationCodeException,
+} from '../../modules/orders/domain/duplicate-operation-code.exception.js';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -36,6 +40,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
       const httpException = new BadRequestException(exception.message);
 
       return this.handleHttpExpression(httpException, response, request);
+    }
+
+    // The web client reads this body to open its duplicate dialog, so it must
+    // stay exactly `{ code, orderId }`.
+    if (exception instanceof DuplicateOperationCodeException) {
+      return response.status(409).json({
+        code: DUPLICATE_OPERATION_CODE,
+        orderId: exception.orderId,
+      });
     }
 
     if (exception instanceof HttpException) {

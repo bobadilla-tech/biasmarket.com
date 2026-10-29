@@ -28,9 +28,7 @@ export function getImpersonationHistory(): ImpersonationHistory | null {
   }
 }
 
-export function setImpersonationHistory(
-  value: ImpersonationHistory,
-): void {
+export function setImpersonationHistory(value: ImpersonationHistory): void {
   globalThis.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(value));
 }
 

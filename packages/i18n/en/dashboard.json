@@ -678,7 +678,30 @@
       "imagePreview": "Preview",
       "imageSize": "{size} KB",
       "removeImage": "Remove image",
-      "paymentProofDialogTitle": "Payment proof preview"
+      "paymentProofDialogTitle": "Payment proof preview",
+      "paidAt": "Payment date",
+      "operationCode": "Operation number (optional)",
+      "operationCodeLine": "Operation {code}",
+      "pendingProofHint": "There is a buyer proof waiting for review. Validate it instead of creating another payment.",
+      "captureOptionalForCash": "The capture is optional for cash",
+      "errors": {
+        "amountInvalid": "Enter a valid amount, for example 40.50.",
+        "amountTooHigh": "The amount is more than can be recorded (the balance minus proofs under review).",
+        "methodRequired": "Choose a payment method.",
+        "codeInvalid": "The operation number is not valid.",
+        "dateInvalid": "Pick the payment date.",
+        "dateFuture": "The date cannot be in the future.",
+        "fileRequired": "Attach the payment capture (only cash does not need it).",
+        "fileTooLarge": "The image is larger than 5 MB.",
+        "fileType": "Use a JPG or PNG image."
+      },
+      "duplicate": {
+        "title": "This operation number already exists",
+        "body": "You already recorded this operation number on another payment in your store. It may be a repeated payment. Record it anyway?",
+        "viewOrder": "View the other order",
+        "cancel": "Cancel",
+        "confirm": "Record anyway"
+      }
     },
     "approve": "Approve",
     "approveDisabledNoPayment": "Can't approve with no payment registered.",
@@ -734,7 +757,17 @@
     "amountToRetain": "Amount to retain",
     "remaining": "Remaining",
     "refund": "Refund",
-    "retentionBalance": "Balance"
+    "retentionBalance": "Balance",
+    "void": {
+      "button": "Void payment",
+      "title": "Void payment",
+      "description": "The {amount} payment will stop counting and the order balance will update. The history is kept.",
+      "reasonLabel": "Reason (required)",
+      "cancel": "Cancel",
+      "confirm": "Void payment",
+      "error": "The payment could not be voided.",
+      "voidedLine": "Voided on {date}. Reason: {reason}"
+    }
   },
   "overview": {
     "title": "Overview",
