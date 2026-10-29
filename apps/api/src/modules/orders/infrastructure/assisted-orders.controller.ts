@@ -1,11 +1,11 @@
 import {
   Body,
   Controller,
-  Headers,
   HttpCode,
   Param,
   Patch,
   Post,
+  Req,
   Res,
   UseGuards,
 } from '@nestjs/common';
@@ -13,9 +13,12 @@ import { AuthGuard, Session } from '@thallesp/nestjs-better-auth';
 import type { UserSession } from '@thallesp/nestjs-better-auth';
 import { ApiNoContentResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 import { SellerThrottlerGuard } from '../../../common/guards/seller-throttler.guard.js';
-import { parseIdempotencyKey } from '../application/idempotency-key.js';
+import {
+  IDEMPOTENCY_KEY_HEADER,
+  parseIdempotencyKey,
+} from '../application/idempotency-key.js';
 import { CreateAssistedOrderUseCase } from '../application/create-assisted-order.usecase.js';
 import { ManageAssistedOrderLinkUseCase } from '../application/manage-assisted-order-link.usecase.js';
 import { BuyerNoticeDto } from '../dto/buyer-notice.dto.js';
@@ -49,10 +52,13 @@ export class AssistedOrdersController {
     @Session() session: UserSession,
     @Res({ passthrough: true }) res: Response,
     // Optional UUID so a retried submit does not create a second order. Read
-    // here, not declared with @ApiHeader: the OpenAPI contract is unchanged.
-    @Headers('idempotency-key') idempotencyKeyHeader?: string,
+    // from the request, not `@Headers()`: the Swagger plugin would document
+    // that as a required header and change the OpenAPI contract and SDK.
+    @Req() req: Request,
   ): Promise<CreateAssistedOrderResponseDto> {
-    const idempotencyKey = parseIdempotencyKey(idempotencyKeyHeader);
+    const idempotencyKey = parseIdempotencyKey(
+      req.headers[IDEMPOTENCY_KEY_HEADER],
+    );
     const store = await this.orders.assertOwnership(storeId, session.user.id);
     const { order, accessUrl, previousOrders } =
       await this.createAssistedOrder.execute(
