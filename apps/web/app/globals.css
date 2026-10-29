@@ -1151,15 +1151,17 @@
 .landing-fan-journey-orbit {
   position: absolute;
   z-index: -1;
-  top: -10rem;
-  right: -5rem;
-  width: 24rem;
+  top: 50%;
+  right: 0;
+  width: min(24rem, 70%);
   aspect-ratio: 1;
   border: 1px solid rgb(255 255 255 / 12%);
   border-radius: 50%;
+  background: radial-gradient(circle, rgb(202 123 230 / 12%), transparent 68%);
   box-shadow:
-    0 0 0 28px rgb(255 255 255 / 3%),
-    0 0 0 68px rgb(255 255 255 / 2%);
+    inset 0 0 0 28px rgb(255 255 255 / 3%),
+    inset 0 0 0 68px rgb(255 255 255 / 2%);
+  transform: translateY(-50%);
   pointer-events: none;
 }
 
@@ -1391,8 +1393,8 @@
 
 @media (max-width: 639px) {
   .landing-fan-journey-orbit {
-    top: -7rem;
-    right: -12rem;
+    right: 0;
+    width: min(18rem, 72%);
   }
 
   .landing-fan-step {
