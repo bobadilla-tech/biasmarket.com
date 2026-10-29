@@ -32,10 +32,12 @@ describe('product search (e2e)', () => {
   let sellerUserId: string;
   let storeId: string;
   let productId: string;
+  let imagelessProductId: string;
 
   const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const sellerEmail = `product-search-e2e-seller-${runId}@example.com`;
   const productName = `E2E Searchable Product ${runId}`;
+  const imagelessName = `E2E Imageless Product ${runId}`;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -98,6 +100,7 @@ describe('product search (e2e)', () => {
         price: 15.5,
         currency: 'PEN',
         stock: 100,
+        images: ['https://cdn.biasmarket.com/e2e-search.jpg'],
       })
       .expect(201);
     productId = productRes.body.id;
@@ -105,12 +108,24 @@ describe('product search (e2e)', () => {
       .patch(`/stores/${storeId}/products/${productId}/publish`)
       .set('Cookie', sellerSessionCookie)
       .expect(200);
+
+    const imagelessRes = await request(app.getHttpServer())
+      .post(`/stores/${storeId}/products`)
+      .set('Cookie', sellerSessionCookie)
+      .send({ name: imagelessName, price: 9, currency: 'PEN', stock: 5 })
+      .expect(201);
+    imagelessProductId = imagelessRes.body.id;
+    await request(app.getHttpServer())
+      .patch(`/stores/${storeId}/products/${imagelessProductId}/publish`)
+      .set('Cookie', sellerSessionCookie)
+      .expect(200);
   });
 
   afterAll(async () => {
-    if (productId) {
-      await prisma.productVariant.deleteMany({ where: { productId } });
-      await prisma.product.deleteMany({ where: { id: productId } });
+    for (const id of [productId, imagelessProductId]) {
+      if (!id) continue;
+      await prisma.productVariant.deleteMany({ where: { productId: id } });
+      await prisma.product.deleteMany({ where: { id } });
     }
     if (storeId) {
       await prisma.notification.deleteMany({ where: { storeId } });
@@ -145,5 +160,22 @@ describe('product search (e2e)', () => {
     assertMatchesSchema(res.body, resultSchema, openapi.components);
     expect(res.body.page).toBe(1);
     expect(res.body.limit).toBe(1);
+  });
+
+  it('hides imageless products marketplace-wide but keeps them on the store page', async () => {
+    const marketplace = await request(app.getHttpServer())
+      .get(`/products/search?q=${encodeURIComponent(imagelessName)}`)
+      .expect(200);
+    expect(marketplace.body.products).toHaveLength(0);
+    expect(marketplace.body.total).toBe(0);
+
+    const storePage = await request(app.getHttpServer())
+      .get(
+        `/products/search?store=product-search-e2e-${runId}&q=${encodeURIComponent(imagelessName)}`,
+      )
+      .expect(200);
+    expect(storePage.body.products.map((p: { id: string }) => p.id)).toEqual([
+      imagelessProductId,
+    ]);
   });
 });

@@ -1,5 +1,4 @@
 import {
-  ConflictException,
   Controller,
   Get,
   Headers,
@@ -37,7 +36,7 @@ import {
   verifyBuyerGoogleState,
 } from './buyer-google-oauth.js';
 
-type GoogleLoginError = 'unavailable' | 'ambiguous' | 'failed';
+type GoogleLoginError = 'unavailable' | 'failed';
 
 // Codes the web shows on `my-purchases?claim=<code>`; unknown ones fall back
 // to a generic message there.
@@ -227,10 +226,7 @@ export class BuyerGoogleController {
         path: '/',
       });
       this.successRedirect(res, slug, locale);
-    } catch (err) {
-      if (err instanceof ConflictException) {
-        return this.loginRedirect(res, slug, locale, 'ambiguous');
-      }
+    } catch {
       return this.loginRedirect(res, slug, locale, 'failed');
     }
   }
