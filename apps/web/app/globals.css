@@ -950,12 +950,19 @@
   color: white;
 }
 
-
 /* K-pop collector stage for the home page hero and browse cards. */
 .landing-hero-card {
   background:
-    radial-gradient(ellipse at 78% 46%, rgba(157, 75, 198, 0.42), transparent 38%),
-    radial-gradient(ellipse at 12% 5%, rgba(232, 57, 158, 0.22), transparent 36%),
+    radial-gradient(
+      ellipse at 78% 46%,
+      rgba(157, 75, 198, 0.42),
+      transparent 38%
+    ),
+    radial-gradient(
+      ellipse at 12% 5%,
+      rgba(232, 57, 158, 0.22),
+      transparent 36%
+    ),
     linear-gradient(125deg, #261039 0%, #321347 48%, #1f1032 100%);
   box-shadow: 0 30px 90px -42px rgba(60, 20, 82, 0.58);
 }
@@ -967,7 +974,10 @@
   content: "";
   inset: 0;
   opacity: 0.3;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.58) 0.7px, transparent 0.8px);
+  background-image: radial-gradient(
+    rgba(255, 255, 255, 0.58) 0.7px,
+    transparent 0.8px
+  );
   background-size: 23px 23px;
   mask-image: linear-gradient(90deg, transparent 4%, black 100%);
 }
@@ -1011,7 +1021,9 @@
   left: 50%;
   transform: translate(-50%, -50%);
   border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 0 0 22px rgba(255, 255, 255, 0.025), 0 0 90px rgba(238, 125, 220, 0.14);
+  box-shadow:
+    0 0 0 22px rgba(255, 255, 255, 0.025),
+    0 0 90px rgba(238, 125, 220, 0.14);
 }
 
 .landing-hero-star {
@@ -1022,13 +1034,25 @@
   animation: landing-twinkle 2.8s ease-in-out infinite;
 }
 
-.landing-hero-star-one { top: 16%; right: 7%; font-size: 25px; }
-.landing-hero-star-two { bottom: 18%; left: 7%; font-size: 35px; animation-delay: 700ms; }
+.landing-hero-star-one {
+  top: 16%;
+  right: 7%;
+  font-size: 25px;
+}
+.landing-hero-star-two {
+  bottom: 18%;
+  left: 7%;
+  font-size: 35px;
+  animation-delay: 700ms;
+}
 
 .landing-category-card {
   border: 1px solid rgba(129, 65, 157, 0.09);
   box-shadow: 0 8px 18px -14px rgba(78, 35, 107, 0.45);
-  transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease,
+    border-color 220ms ease;
 }
 
 .landing-category-card:hover {
@@ -1038,23 +1062,49 @@
 }
 
 @keyframes landing-rise-in {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes landing-float {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-9px) rotate(0.6deg); }
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-9px) rotate(0.6deg);
+  }
 }
 
 @keyframes landing-twinkle {
-  0%, 100% { opacity: 0.65; transform: scale(0.9); }
-  50% { opacity: 1; transform: scale(1.12); }
+  0%,
+  100% {
+    opacity: 0.65;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
 }
 
 @media (max-width: 639px) {
-  .landing-hero-orbit-one { width: 95vw; right: -45%; top: -52%; }
-  .landing-hero-orbit-two { width: 75vw; right: -32%; top: -40%; }
+  .landing-hero-orbit-one {
+    width: 95vw;
+    right: -45%;
+    top: -52%;
+  }
+  .landing-hero-orbit-two {
+    width: 75vw;
+    right: -32%;
+    top: -40%;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
