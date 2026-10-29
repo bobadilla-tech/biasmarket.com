@@ -184,6 +184,8 @@ to git, not build-generated** — unchanged from the original decision (kept
 step, no live app boot needed in CI). After changing a migrated feature's
 backend response DTOs, regenerate by hand and commit the diff:
 `pnpm --filter api generate:openapi && pnpm --filter @biasmarket/types generate`.
+Orval is pinned to an exact version; bumping it needs `operationName` handling
+first (8.43 renames ~49 call sites), and CI's SDK drift check fails otherwise.
 
 **Orval config notes:** `orval.config.ts`'s `input.filters` includes every tag
 now — `Collections`, `Products`, `Categories`, `Notifications`, `Contact`,
