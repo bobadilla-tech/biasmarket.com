@@ -114,6 +114,13 @@ export function PublicOrderView({
           : t("greetingGeneric")}
       </h1>
 
+      <p
+        role="note"
+        className="break-words rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm leading-5 text-gray-700"
+      >
+        {t("phonePrivacyNotice")}
+      </p>
+
       <div
         role="status"
         className={`purchase-milestone flex items-center gap-2.5 rounded-2xl border p-4 text-sm font-semibold ${BANNER_TONE[bannerKey]}`}
