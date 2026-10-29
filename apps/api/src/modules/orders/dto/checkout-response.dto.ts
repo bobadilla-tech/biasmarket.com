@@ -47,9 +47,6 @@ export class CheckoutOrderResponseDto {
   customerId: string | null;
 
   @ApiProperty({ type: String, nullable: true })
-  buyerAccountId: string | null;
-
-  @ApiProperty({ type: String, nullable: true })
   customerEmail: string | null;
 
   @ApiProperty()

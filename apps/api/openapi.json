@@ -7510,10 +7510,6 @@
             "type": "string",
             "nullable": true
           },
-          "buyerAccountId": {
-            "type": "string",
-            "nullable": true
-          },
           "customerEmail": {
             "type": "string",
             "nullable": true
@@ -7682,7 +7678,6 @@
           "id",
           "storeId",
           "customerId",
-          "buyerAccountId",
           "customerEmail",
           "customerPhone",
           "customerName",
@@ -7735,10 +7730,6 @@
             "type": "string",
             "nullable": true
           },
-          "buyerAccountId": {
-            "type": "string",
-            "nullable": true
-          },
           "customerEmail": {
             "type": "string",
             "nullable": true
@@ -7907,7 +7898,6 @@
           "id",
           "storeId",
           "customerId",
-          "buyerAccountId",
           "customerEmail",
           "customerPhone",
           "customerName",
@@ -8071,10 +8061,6 @@
             "type": "string",
             "nullable": true
           },
-          "buyerAccountId": {
-            "type": "string",
-            "nullable": true
-          },
           "customerEmail": {
             "type": "string",
             "nullable": true
@@ -8200,7 +8186,6 @@
           "id",
           "storeId",
           "customerId",
-          "buyerAccountId",
           "customerEmail",
           "customerPhone",
           "customerName",
@@ -8442,10 +8427,6 @@
             "type": "string",
             "nullable": true
           },
-          "buyerAccountId": {
-            "type": "string",
-            "nullable": true
-          },
           "customerEmail": {
             "type": "string",
             "nullable": true
@@ -8566,7 +8547,6 @@
           "id",
           "storeId",
           "customerId",
-          "buyerAccountId",
           "customerEmail",
           "customerPhone",
           "customerName",

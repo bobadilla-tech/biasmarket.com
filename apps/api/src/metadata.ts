@@ -1004,11 +1004,6 @@ export default async () => {
                 type: () => String,
                 nullable: true,
               },
-              buyerAccountId: {
-                required: true,
-                type: () => String,
-                nullable: true,
-              },
               customerEmail: {
                 required: true,
                 type: () => String,
@@ -1160,11 +1155,6 @@ export default async () => {
               id: { required: true, type: () => String },
               storeId: { required: true, type: () => String },
               customerId: {
-                required: true,
-                type: () => String,
-                nullable: true,
-              },
-              buyerAccountId: {
                 required: true,
                 type: () => String,
                 nullable: true,
@@ -1469,11 +1459,6 @@ export default async () => {
               id: { required: true, type: () => String },
               storeId: { required: true, type: () => String },
               customerId: {
-                required: true,
-                type: () => String,
-                nullable: true,
-              },
-              buyerAccountId: {
                 required: true,
                 type: () => String,
                 nullable: true,

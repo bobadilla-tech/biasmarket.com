@@ -1389,6 +1389,9 @@ describe('pickPublicOrderFields', () => {
       storeId: 'store-1',
       customerPhone: '+51987654321',
       source: 'VENDOR_ASSISTED',
+      // The buyer's account id is internal: sellers get the order, not who the
+      // buyer's account is (#379).
+      buyerAccountId: 'buyer-secret-id',
       accessTokenHash: 'hash',
       accessTokenRevokedAt: new Date(),
       linkFirstOpenedAt: new Date(),
