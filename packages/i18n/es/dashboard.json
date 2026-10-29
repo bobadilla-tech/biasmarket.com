@@ -678,7 +678,30 @@
       "imagePreview": "Vista previa",
       "imageSize": "{size} KB",
       "removeImage": "Eliminar imagen",
-      "paymentProofDialogTitle": "Vista previa del comprobante de pago"
+      "paymentProofDialogTitle": "Vista previa del comprobante de pago",
+      "paidAt": "Fecha del pago",
+      "operationCode": "Número de operación (opcional)",
+      "operationCodeLine": "Operación {code}",
+      "pendingProofHint": "Hay un comprobante del comprador por revisar. Valídalo en vez de crear otro pago.",
+      "captureOptionalForCash": "En efectivo la captura es opcional",
+      "errors": {
+        "amountInvalid": "Escribe un monto válido, por ejemplo 40.50.",
+        "amountTooHigh": "El monto es mayor a lo que se puede registrar (el saldo menos los comprobantes por revisar).",
+        "methodRequired": "Elige un método de pago.",
+        "codeInvalid": "El número de operación no es válido.",
+        "dateInvalid": "Elige la fecha del pago.",
+        "dateFuture": "La fecha no puede ser futura.",
+        "fileRequired": "Adjunta la captura del pago (solo el efectivo no la necesita).",
+        "fileTooLarge": "La imagen pesa más de 5 MB.",
+        "fileType": "Usa una imagen JPG o PNG."
+      },
+      "duplicate": {
+        "title": "Este número de operación ya existe",
+        "body": "Ya registraste este número de operación en otro pago de tu tienda. Puede ser un pago repetido. ¿Quieres registrarlo igual?",
+        "viewOrder": "Ver el otro pedido",
+        "cancel": "Cancelar",
+        "confirm": "Registrar igual"
+      }
     },
     "approve": "Aprobar",
     "approveDisabledNoPayment": "No se puede aprobar sin ningún pago registrado.",
@@ -734,7 +757,17 @@
     "amountToRetain": "Monto a retener",
     "remaining": "Restante",
     "refund": "Reembolso",
-    "retentionBalance": "Saldo"
+    "retentionBalance": "Saldo",
+    "void": {
+      "button": "Anular pago",
+      "title": "Anular pago",
+      "description": "El pago de {amount} dejará de contar y el saldo del pedido se actualizará. El historial se conserva.",
+      "reasonLabel": "Motivo (obligatorio)",
+      "cancel": "Cancelar",
+      "confirm": "Anular pago",
+      "error": "No se pudo anular el pago.",
+      "voidedLine": "Anulado el {date}. Motivo: {reason}"
+    }
   },
   "overview": {
     "title": "Resumen",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { DuplicateOperationCodeError } from "@/features/orders/api/orders.api";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
@@ -75,7 +76,11 @@ export function OrdersPageClient() {
     errorMessage(ordersQuery.error) ??
     errorMessage(reviewPayment.error) ??
     errorMessage(advanceFulfillment.error) ??
-    errorMessage(registerPayment.error) ??
+    errorMessage(
+      registerPayment.error instanceof DuplicateOperationCodeError
+        ? null
+        : registerPayment.error,
+    ) ??
     errorMessage(cancelOrder.error);
 
   const fulfillmentLabels: Record<string, string> = {
@@ -293,13 +298,14 @@ export function OrdersPageClient() {
           fulfillmentLabels={fulfillmentLabels}
           enabledMethods={enabledMethods}
           registerPaymentSubmitting={registerPayment.isPending}
-          onRegisterPayment={(values) => {
+          onRegisterPayment={(values, options) => {
             if (!selectedOrder || paymentsLocked(selectedOrder)) {
               return Promise.resolve();
             }
             return registerPayment.mutateAsync({
               orderId: selectedOrder.id,
               values,
+              confirmDuplicate: options?.confirmDuplicate,
             });
           }}
           onPreviewPayment={setPaymentPreviewUrl}

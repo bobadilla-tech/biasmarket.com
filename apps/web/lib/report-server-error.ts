@@ -6,8 +6,10 @@
 function isNextControlFlowError(error: unknown): boolean {
   const digest = (error as { digest?: string } | null | undefined)?.digest;
   if (!digest) return false;
-  return digest === "DYNAMIC_SERVER_USAGE" ||
-    digest.startsWith("NEXT_HTTP_ERROR_FALLBACK");
+  return (
+    digest === "DYNAMIC_SERVER_USAGE" ||
+    digest.startsWith("NEXT_HTTP_ERROR_FALLBACK")
+  );
 }
 
 export async function reportServerError(
