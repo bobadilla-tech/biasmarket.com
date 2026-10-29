@@ -57,14 +57,12 @@ export function LoginForm() {
     <div className="login-card flex w-full flex-col gap-5 rounded-[26px] border border-white/90 bg-white/90 p-6 shadow-[0_28px_80px_rgba(65,47,105,0.16)] backdrop-blur-xl sm:p-8">
       <div>
         <p className="mb-2 text-[10px] font-semibold tracking-[0.24em] text-[#8066b4]">
-          YOUR COLLECTION AWAITS
+          {t("welcomeEyebrow")}
         </p>
         <h2 className="font-serif text-3xl font-semibold tracking-[-0.045em] text-[#1e1930] sm:text-[2.1rem]">
-          Welcome back
+          {t("welcomeTitle")}
         </h2>
-        <p className="mt-1.5 text-sm text-[#6b637f]">
-          Sign in to continue to BiasMarket
-        </p>
+        <p className="mt-1.5 text-sm text-[#6b637f]">{t("welcomeSubtitle")}</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
@@ -112,7 +110,9 @@ export function LoginForm() {
               <button
                 type="button"
                 onClick={() => setShowPassword((visible) => !visible)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-label={
+                  showPassword ? t("hidePassword") : t("showPassword")
+                }
                 aria-pressed={showPassword}
                 className="absolute inset-y-0 right-1 flex min-h-11 min-w-11 items-center justify-center rounded-lg text-[#776b91] transition hover:text-[#6542ba] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8761d9]"
               >
@@ -136,7 +136,7 @@ export function LoginForm() {
       </form>
 
       <div className="relative flex items-center gap-3 text-xs text-[#807694] before:h-px before:flex-1 before:bg-[#e1dbea] after:h-px after:flex-1 after:bg-[#e1dbea]">
-        or
+        {t("or")}
       </div>
 
       <button

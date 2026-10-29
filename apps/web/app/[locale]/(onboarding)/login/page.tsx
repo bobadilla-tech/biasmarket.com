@@ -15,7 +15,14 @@ export async function generateMetadata({
   return { title: t("title") };
 }
 
-export default function LoginPage() {
+export default async function LoginPage({
+  params,
+}: {
+  params: Promise<{ locale: Locale }>;
+}) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "onboarding.login" });
+
   return (
     <div className="login-editorial min-h-dvh overflow-hidden text-[#211b37]">
       <header className="relative z-10 mx-auto flex max-w-[1440px] items-center justify-between px-5 py-5 sm:px-8 lg:px-12 lg:py-7">
@@ -24,36 +31,36 @@ export default function LoginPage() {
             BiasMarket
           </span>
           <span className="mt-1.5 text-[9px] font-medium tracking-[0.22em] text-[#625a7d] sm:text-[10px]">
-            K-POP MERCHANDISE MARKETPLACE
+            {t("marketplaceTagline")}
           </span>
         </Link>
         <nav
-          aria-label="Main navigation"
+          aria-label={t("navigationLabel")}
           className="hidden items-center gap-8 text-sm font-medium text-[#332b4a] md:flex"
         >
           <Link
             className="transition hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
             href="/search"
           >
-            Shop
+            {t("navShop")}
           </Link>
           <Link
             className="transition hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
             href="/search?q=photocard"
           >
-            Photocards
+            {t("navPhotocards")}
           </Link>
           <Link
             className="transition hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
             href="/search?q=merch"
           >
-            Merch
+            {t("navMerch")}
           </Link>
           <Link
             className="transition hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
             href="/contact"
           >
-            Community
+            {t("navContact")}
           </Link>
         </nav>
         <div className="hidden items-center gap-3 text-right text-[10px] font-semibold leading-[1.55] tracking-[0.2em] text-[#40385d] lg:flex">
@@ -64,11 +71,11 @@ export default function LoginPage() {
             ✦
           </span>
           <span>
-            COLLECT
+            {t("mottoCollect")}
             <br />
-            CONNECT
+            {t("mottoConnect")}
             <br />
-            BELONG
+            {t("mottoBelong")}
           </span>
         </div>
       </header>
@@ -94,33 +101,32 @@ export default function LoginPage() {
         <section className="relative z-[1] order-2 flex min-h-[330px] flex-col justify-center lg:order-1 lg:min-h-[560px]">
           <div className="max-w-[650px]">
             <p className="mb-4 text-[10px] font-semibold tracking-[0.28em] text-[#71658f] sm:text-xs">
-              A LITTLE MAGIC IN EVERY FIND
+              {t("heroEyebrow")}
             </p>
             <h1 className="max-w-[620px] font-serif text-[clamp(3.3rem,8vw,6.8rem)] leading-[0.91] tracking-[-0.055em] text-[#171323]">
-              Find your
+              {t("heroTitleFirst")}
               <br />
-              next favorite
+              {t("heroTitleSecond")}
               <span className="ml-2 inline-block align-[0.1em] text-[0.55em] text-[#8e61e8]">
                 ✦
               </span>
             </h1>
             <p className="mt-5 max-w-[490px] text-base leading-relaxed text-[#423a5c] sm:text-lg">
-              Discover, collect, and trade K-pop favorites with fans around the
-              world.
+              {t("heroDescription")}
             </p>
             <div className="mt-7 hidden items-start gap-5 border-l border-[#9885c5] pl-4 text-[11px] font-medium leading-[1.85] tracking-[0.2em] text-[#51466e] sm:flex">
               <span>
-                PHOTOCARDS
+                {t("categoryPhotocards")}
                 <br />
-                ALBUMS
+                {t("categoryAlbums")}
                 <br />
-                APPAREL
+                {t("categoryApparel")}
               </span>
               <span className="text-[#9c8cb8]">✧</span>
               <span>
-                COLLECTIBLES
+                {t("categoryCollectibles")}
                 <br />
-                AND MORE
+                {t("categoryAndMore")}
               </span>
             </div>
           </div>
@@ -130,14 +136,14 @@ export default function LoginPage() {
               <div className="relative h-full overflow-hidden rounded-[14px] border border-white/80 bg-gradient-to-br from-[#bed1f5] via-[#e7b9e5] to-[#f8e2cf]">
                 <Image
                   src="/landing/photocard.png"
-                  alt="Illustrated photocard collectible"
+                  alt={t("photocardImageAlt")}
                   fill
                   sizes="168px"
                   className="object-cover opacity-90 mix-blend-multiply"
                 />
                 <div className="absolute inset-0 bg-gradient-to-tr from-[#8e7ce7]/25 via-transparent to-white/55" />
                 <span className="absolute bottom-3 left-3 rounded-full border border-white/80 bg-white/50 px-2 py-1 text-[8px] tracking-[0.18em] text-[#44375f] backdrop-blur">
-                  COLLECT MOMENTS
+                  {t("collectMoments")}
                 </span>
               </div>
             </div>
@@ -145,7 +151,7 @@ export default function LoginPage() {
               <div className="relative h-full overflow-hidden rounded-[14px] bg-gradient-to-br from-[#f8d7e7] via-[#c8c7f6] to-[#a8dce2]">
                 <Image
                   src="/landing/album.png"
-                  alt="Pastel album collectible illustration"
+                  alt={t("albumImageAlt")}
                   fill
                   sizes="180px"
                   className="object-cover opacity-80 mix-blend-multiply"
@@ -160,7 +166,7 @@ export default function LoginPage() {
               <div className="relative h-full overflow-hidden rounded-[12px] bg-gradient-to-br from-[#d8c7fa] via-[#f5d4df] to-[#b9e2eb]">
                 <Image
                   src="/landing/sticker.png"
-                  alt="Iridescent star collectible illustration"
+                  alt={t("starImageAlt")}
                   fill
                   sizes="114px"
                   className="object-cover opacity-75 mix-blend-multiply"
@@ -183,7 +189,7 @@ export default function LoginPage() {
         </section>
 
         <section
-          aria-label="Sign in to BiasMarket"
+          aria-label={t("signInRegionLabel")}
           className="relative z-[1] order-1 mx-auto w-full max-w-[460px] lg:order-2"
         >
           <LoginForm />
@@ -193,33 +199,33 @@ export default function LoginPage() {
           <div className="flex items-center gap-3 border-r border-[#796aa3]/40 px-2 first:pl-0">
             <span className="text-2xl">♧</span>
             <span className="text-[9px] font-semibold leading-relaxed tracking-[0.12em]">
-              CURATED
+              {t("footerCurated")}
               <br />
-              COLLECTIBLES
+              {t("footerCollectibles")}
             </span>
           </div>
           <div className="flex items-center gap-3 border-r border-[#796aa3]/40 px-4">
             <span className="text-2xl">◎</span>
             <span className="text-[9px] font-semibold leading-relaxed tracking-[0.12em]">
-              FAN-TO-FAN
+              {t("footerFanToFan")}
               <br />
-              COMMUNITY
+              {t("footerCommunity")}
             </span>
           </div>
           <div className="flex items-center gap-3 border-r border-[#796aa3]/40 px-4">
             <span className="text-2xl">◇</span>
             <span className="text-[9px] font-semibold leading-relaxed tracking-[0.12em]">
-              THOUGHTFUL
+              {t("footerThoughtful")}
               <br />
-              SHOPPING
+              {t("footerShopping")}
             </span>
           </div>
           <div className="flex items-center gap-3 px-4">
             <span className="text-2xl">✧</span>
             <span className="text-[9px] font-semibold leading-relaxed tracking-[0.12em]">
-              A GLOBAL
+              {t("footerGlobal")}
               <br />
-              FAN COMMUNITY
+              {t("footerFanCommunity")}
             </span>
           </div>
         </div>
