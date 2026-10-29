@@ -422,7 +422,9 @@ export function CategoryFilter({
             key={id}
             type="button"
             aria-pressed={active}
-            onClick={() => onChange(active ? [] : [id])}
+            onClick={() =>
+              onChange(active && selected.length === 1 ? [] : [id])
+            }
             className={`min-h-10 shrink-0 rounded-full border px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) ${active ? "border-transparent bg-(--store-tab-active) text-(--store-on-active)" : "border-(--store-border) bg-(--store-card) text-(--store-muted) hover:border-(--store-primary)"}`}
           >
             {category.name}
@@ -446,6 +448,12 @@ export function DesktopCategoryFilter({
   const t = useTranslations("storefront");
   const [isOpen, setIsOpen] = useState(false);
   const panelId = "store-category-filter-options";
+  const selectedNames = categories
+    .filter((category) => selected.includes(category.slug ?? category.id))
+    .map((category) => category.name)
+    .join(", ");
+  const selectionSummary =
+    selectedNames || t("selectedCategoryCount", { count: selected.length });
 
   return (
     <aside className="rounded-2xl border border-(--store-border) bg-(--store-card) p-4 shadow-sm">
@@ -453,10 +461,34 @@ export function DesktopCategoryFilter({
         type="button"
         aria-expanded={isOpen}
         aria-controls={panelId}
+        aria-label={
+          selected.length > 0
+            ? `${t("filterByCategory")}: ${selectionSummary}`
+            : t("filterByCategory")
+        }
         onClick={() => setIsOpen((open) => !open)}
         className="flex min-h-11 w-full items-center justify-between gap-3 text-left font-bold text-(--store-text) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary)"
       >
-        <span>{t("filterByCategory")}</span>
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span>{t("filterByCategory")}</span>
+          {selected.length > 0 && (
+            <span
+              aria-hidden="true"
+              title={selectionSummary}
+              className="truncate text-xs font-medium text-(--store-muted)"
+            >
+              {selectionSummary}
+            </span>
+          )}
+        </span>
+        {selected.length > 0 && (
+          <span
+            aria-hidden="true"
+            className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-(--store-surface) text-xs font-bold text-(--store-primary)"
+          >
+            {selected.length}
+          </span>
+        )}
         {isOpen ? (
           <Minus aria-hidden="true" className="size-4 shrink-0" />
         ) : (
