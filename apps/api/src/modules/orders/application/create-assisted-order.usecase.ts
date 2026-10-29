@@ -150,11 +150,15 @@ export class CreateAssistedOrderUseCase {
         { timeout: 15_000 },
       );
     } catch (err) {
-      // A concurrent request with the same key won the unique index. The
-      // transaction already rolled back (stock released), so this runs outside
-      // it. Any other error, including a unique violation on another index,
-      // is rethrown untouched.
-      if (idempotencyKey && isIdempotencyKeyConflict(err)) {
+      // A concurrent request with the same key may win either the unique
+      // index or the last stock reservation. The transaction has rolled back,
+      // so recheck outside it before returning either error. This lookup is
+      // scoped by store and seller and only converts a failure when a matching
+      // order actually committed.
+      if (
+        idempotencyKey &&
+        (isIdempotencyKeyConflict(err) || err instanceof BadRequestException)
+      ) {
         await this.throwIfReplay(store.id, userId, idempotencyKey);
       }
       throw err;
