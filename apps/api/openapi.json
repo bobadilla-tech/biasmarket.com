@@ -6640,6 +6640,13 @@
       "CreateProductDto": {
         "type": "object",
         "properties": {
+          "images": {
+            "maxItems": 6,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "name": {
             "type": "string",
             "minLength": 2
@@ -6661,12 +6668,6 @@
           },
           "discontinued": {
             "type": "boolean"
-          },
-          "images": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
           },
           "availableUntil": {
             "type": "string"
@@ -6932,6 +6933,13 @@
       "UpdateProductDto": {
         "type": "object",
         "properties": {
+          "images": {
+            "maxItems": 6,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "name": {
             "type": "string",
             "minLength": 2
@@ -6953,12 +6961,6 @@
           },
           "discontinued": {
             "type": "boolean"
-          },
-          "images": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
           },
           "availableUntil": {
             "type": "string"
@@ -7068,8 +7070,8 @@
         "properties": {
           "images": {
             "minItems": 1,
-            "maxItems": 6,
             "description": "Exact image URLs in the desired order",
+            "maxItems": 6,
             "type": "array",
             "items": {
               "type": "string"
