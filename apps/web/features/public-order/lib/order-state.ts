@@ -38,6 +38,22 @@ export function getBannerKey(order: OrderState): BannerKey {
   }
 }
 
+// "Or pay the total" is the second option in the deposit prompt, so it has to
+// be the balance left on the order — not `totalAmount`, which a buyer who
+// already paid part of it would read as paying that part twice. Cents
+// arithmetic so a float artifact cannot display an amount nobody charges.
+export function remainingTotalAmount(
+  order: Pick<PublicOrderResponseDto, "totalAmount" | "paidAmount">,
+): string | number {
+  const totalCents = Math.round(Number(order.totalAmount) * 100);
+  const paidCents = Math.round(order.paidAmount * 100);
+  // Better the raw total than "PEN NaN" on a buyer-facing page.
+  if (!Number.isFinite(totalCents) || !Number.isFinite(paidCents)) {
+    return order.totalAmount;
+  }
+  return Math.max(totalCents - paidCents, 0) / 100;
+}
+
 // The how-to-pay block only for orders that still owe the buyer money. The API
 // only nulls the methods for cancelled orders, so without this a paid order
 // would read as "pay again".
