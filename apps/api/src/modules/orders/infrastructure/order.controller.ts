@@ -506,7 +506,7 @@ export class OrderController {
     await this.prisma.$transaction(async (tx) => {
       const order = await tx.order.findFirst({
         where: { id: orderId, storeId },
-        select: { trackingNumber: true },
+        select: { trackingNumber: true, source: true },
       });
       if (!order) throw new NotFoundException('Orden no encontrada');
 
@@ -531,6 +531,18 @@ export class OrderController {
           type: 'TRACKING_ADDED',
           actor: 'SELLER',
         });
+        if (order.source === 'VENDOR_ASSISTED') {
+          await tx.auditLog.create({
+            data: {
+              actorId: session.user.id,
+              storeId,
+              action: 'order.tracking_added',
+              entityType: 'Order',
+              entityId: orderId,
+              metadata: {},
+            },
+          });
+        }
       }
     });
 
@@ -560,6 +572,12 @@ export class OrderController {
     );
 
     await this.prisma.$transaction(async (tx) => {
+      const order = await tx.order.findFirst({
+        where: { id: orderId, storeId },
+        select: { source: true },
+      });
+      if (!order) throw new NotFoundException('Orden no encontrada');
+
       const updated = await tx.order.updateMany({
         where: { id: orderId, storeId },
         data: { packedPhotoUrl: imageUrl },
@@ -573,6 +591,18 @@ export class OrderController {
         type: 'PACKED_PHOTO_ADDED',
         actor: 'SELLER',
       });
+      if (order.source === 'VENDOR_ASSISTED') {
+        await tx.auditLog.create({
+          data: {
+            actorId: session.user.id,
+            storeId,
+            action: 'order.packed_photo_added',
+            entityType: 'Order',
+            entityId: orderId,
+            metadata: {},
+          },
+        });
+      }
     });
 
     return toOrderDetailDto(
