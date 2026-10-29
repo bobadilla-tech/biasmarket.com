@@ -6,6 +6,7 @@ import { RequestMethod, ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter.js';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { buildCorsOptions } from './common/cors-options.js';
 import { initErrorTracking } from './common/error-tracking.js';
 import { validateEnv } from './config/env.validation.js';
 import metadata from './metadata.js';
@@ -52,12 +53,7 @@ async function bootstrap() {
     exclude: [{ path: 'internal/*splat', method: RequestMethod.ALL }],
   });
 
-  app.enableCors({
-    origin: process.env.WEB_URL ?? 'http://localhost:3001',
-    credentials: true,
-    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'PUT', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  });
+  app.enableCors(buildCorsOptions());
 
   // loadPluginMetadata must run before createDocument — it populates the
   // metadata registry createDocument reads from. Without it, response types
