@@ -232,18 +232,27 @@ describe('assisted order idempotency (e2e)', () => {
     expect(await reserved(variantId)).toBe(reservedAfterFirst);
   });
 
-  it('answers the replay even when the first order took the last unit of stock', async () => {
+  it('answers a same-key race with 409 when the winner takes the last unit', async () => {
     const key = randomUUID();
     const scarce = body(scarceProductId, scarceVariantId);
-    const first = await post(sellerCookie, storeId, key, scarce).expect(201);
+    const results = await Promise.all([
+      post(sellerCookie, storeId, key, scarce),
+      post(sellerCookie, storeId, key, scarce),
+    ]);
+    const winner = results.find((result) => result.status === 201);
+    const loser = results.find((result) => result.status !== 201);
 
-    // A different key now hits the stock rule...
-    await post(sellerCookie, storeId, randomUUID(), scarce).expect(400);
-    // ...but the retried request still gets the replay, not a stock error.
-    const replay = await post(sellerCookie, storeId, key, scarce).expect(409);
-    expect(replay.body.code).toBe('IDEMPOTENT_REPLAY');
-    expect(replay.body.orderId).toBe(first.body.order.id);
+    expect(winner).toBeDefined();
+    expect(loser?.status).toBe(409);
+    expect(loser?.body).toMatchObject({
+      code: 'IDEMPOTENT_REPLAY',
+      orderId: winner?.body.order.id,
+    });
     expect(await ordersWithKey(key)).toBe(1);
+    expect(await reserved(scarceVariantId)).toBe(1);
+
+    // A different key still hits the stock rule.
+    await post(sellerCookie, storeId, randomUUID(), scarce).expect(400);
   });
 
   it('creates exactly one order and one reservation when two identical requests race', async () => {
@@ -257,16 +266,12 @@ describe('assisted order idempotency (e2e)', () => {
       ]);
 
       const statuses = results.map((r) => r.status).sort();
-      // One winner. The loser either hit the unique index (409 replay) or
-      // failed first on the row lock; it is never a second order.
+      // One winner and one 409 replay. A loser that reaches the stock update
+      // after the winner reserves the last unit must still resolve to replay.
       expect(statuses.filter((s) => s === 201)).toHaveLength(1);
-      expect(statuses.filter((s) => s !== 201)).toHaveLength(1);
+      expect(statuses.filter((s) => s === 409)).toHaveLength(1);
       const loser = results.find((r) => r.status !== 201)!;
-      expect(loser.status).toBeGreaterThanOrEqual(400);
-      expect(loser.status).toBeLessThan(500);
-      if (loser.status === 409) {
-        expect(loser.body.code).toBe('IDEMPOTENT_REPLAY');
-      }
+      expect(loser.body.code).toBe('IDEMPOTENT_REPLAY');
 
       expect(await ordersWithKey(key)).toBe(1);
       expect(await reserved(raceVariantId)).toBe(reservedBefore + 1);

@@ -207,6 +207,36 @@ describe('CreateAssistedOrderUseCase', () => {
       },
     );
 
+    it('resolves a stock failure to replay when a same-key winner committed', async () => {
+      const { useCase, prisma } = setup({ lte: () => false });
+      prisma.order.findFirst
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ id: 'order-winner' });
+      const stockFailure = new BadRequestException('Stock insuficiente');
+      prisma.$transaction.mockRejectedValue(stockFailure);
+
+      const err = await useCase
+        .execute(store, 'user1', dto, KEY)
+        .catch((e: unknown) => e);
+
+      expect(err).toBeInstanceOf(DuplicateIdempotencyKeyException);
+      expect((err as DuplicateIdempotencyKeyException).orderId).toBe(
+        'order-winner',
+      );
+      expect(prisma.order.findFirst).toHaveBeenCalledTimes(2);
+    });
+
+    it('preserves a stock failure when no same-key winner committed', async () => {
+      const { useCase, prisma } = setup({ lte: () => false });
+      const stockFailure = new BadRequestException('Stock insuficiente');
+      prisma.$transaction.mockRejectedValue(stockFailure);
+
+      await expect(useCase.execute(store, 'user1', dto, KEY)).rejects.toBe(
+        stockFailure,
+      );
+      expect(prisma.order.findFirst).toHaveBeenCalledTimes(2);
+    });
+
     it('rethrows a unique violation on another index untouched', async () => {
       const { useCase, prisma } = setup({ lte: () => false });
       const other = p2002({ target: ['accessTokenHash'] });
