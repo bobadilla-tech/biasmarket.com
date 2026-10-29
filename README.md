@@ -29,23 +29,6 @@ it starts `api`/`web` only, with no database, and needs you to hand-build your
 own `.env` files. Use `pnpm docker:dev` unless you have a specific reason not
 to.
 
-### Windows
-
-The repo's `.gitattributes` forces LF line endings so the dev scripts in
-`infra/docker/scripts/` run inside the Linux containers. If you cloned before
-that file existed and see `set: Illegal option -` from `api-dev.sh` or
-`workers-dev.sh`, your checkout has CRLF endings. Commit or stash your work
-first (`reset --hard` discards changes), then re-checkout:
-
-```bash
-git pull
-git rm --cached -r . -q
-git reset --hard
-```
-
-To unblock before pulling the fix, run `git config core.autocrlf input` first,
-then the same three commands. Working inside WSL also avoids the problem.
-
 ## Monorepo index
 
 pnpm workspaces + Turborepo.
