@@ -6,7 +6,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "generate": "orval --config orval.config.ts && node scripts/fix-esm-extensions.mjs",
+    "generate": "orval --config orval.config.ts && node scripts/fix-esm-extensions.mjs && pnpm exec prettier --write generated",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -16,7 +16,7 @@
   "devDependencies": {
     "@types/node": "^24.0.0",
     "@vitest/coverage-v8": "^4.1.11",
-    "orval": "^8.23.0",
+    "orval": "8.23.0",
     "typescript": "^5.9.3",
     "vitest": "^4.1.11"
   }
