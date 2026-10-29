@@ -301,7 +301,7 @@ describe('orders + checkout (e2e)', () => {
       .post(`/stores/${storeId}/orders/${orderId}/payments`)
       .set('Cookie', sessionCookie)
       .field('amount', String(requiredAmount / 2))
-      .field('method', 'TRANSFER')
+      .field('method', 'CASH')
       .expect(201)
       .expect((res) => {
         if (res.body.paymentStatus !== 'PARTIALLY_PAID') {
@@ -645,7 +645,7 @@ describe('orders + checkout (e2e)', () => {
       .post(`/stores/${storeId}/orders/${orderId}/payments`)
       .set('Cookie', sessionCookie)
       .field('amount', '40.00')
-      .field('method', 'YAPE')
+      .field('method', 'CASH')
       .expect(201);
     expect(firstPaymentRes.body.paymentStatus).toBe('PARTIALLY_PAID');
     // The exact regression value: under the old Number-subtraction bug this
@@ -657,7 +657,7 @@ describe('orders + checkout (e2e)', () => {
       .post(`/stores/${storeId}/orders/${orderId}/payments`)
       .set('Cookie', sessionCookie)
       .field('amount', String(pendingAmount))
-      .field('method', 'TRANSFER')
+      .field('method', 'CASH')
       .expect(201);
 
     expect(secondPaymentRes.body.paymentStatus).toBe('VERIFIED');

@@ -19,6 +19,7 @@ vi.mock('@thallesp/nestjs-better-auth', async () => {
 
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import { AllExceptionsFilter } from '../../../common/filters/all-exceptions.filter.js';
+import { OrderPaymentsService } from '../application/order-payments.service.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { StorageService } from '../../../storage/storage.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
@@ -117,6 +118,7 @@ const routes: Route[] = [
           { provide: AdvanceFulfillmentUseCase, useValue: {} },
           { provide: CancelOrderUseCase, useValue: {} },
           { provide: VoidOrderPaymentUseCase, useValue: {} },
+          { provide: OrderPaymentsService, useValue: {} },
           { provide: PrismaService, useValue: {} },
           { provide: StorageService, useValue: {} },
           { provide: OrderEventsService, useValue: {} },

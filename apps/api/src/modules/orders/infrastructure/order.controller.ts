@@ -4,6 +4,7 @@ import {
   Controller,
   Get,
   Header,
+  HttpException,
   NotFoundException,
   Param,
   Patch,
@@ -38,11 +39,20 @@ import { AdvanceFulfillmentDto } from '../dto/advance-fulfillment.dto.js';
 import { CancelOrderDto } from '../dto/cancel-order.dto.js';
 import { VoidOrderPaymentDto } from '../dto/void-order-payment.dto.js';
 import { VoidOrderPaymentUseCase } from '../application/void-order-payment.usecase.js';
+import {
+  assertAcceptsSellerPayments,
+  assertSellerPaymentInput,
+  assertWithinSellerLimit,
+  OrderPaymentsService,
+  reservedPendingCents,
+} from '../application/order-payments.service.js';
+import { DuplicateOperationCodeException } from '../domain/duplicate-operation-code.exception.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   isNoteTooLong,
   NOTE_TOO_LONG_MESSAGE,
+  sanitizeDisplayText,
 } from '../../../common/text-sanitize.js';
 import { PAYMENT_PROOF_UPLOAD_LIMITS } from '../../../common/upload-limits.js';
 import { StorageService } from '../../../storage/storage.service.js';
@@ -400,6 +410,7 @@ export class OrderController {
     private storage: StorageService,
     private events: OrderEventsService,
     private voidOrderPayment: VoidOrderPaymentUseCase,
+    private payments: OrderPaymentsService,
   ) {}
 
   @ApiQuery({ name: 'paymentStatus', required: false, type: String })
@@ -606,62 +617,44 @@ export class OrderController {
     @Body('method') method: string,
     @Body('note') note?: string,
     @UploadedFile(OPTIONAL_PAYMENT_IMAGE_PIPE) file?: ValidatedUploadedFile,
+    @Body('operationCode') operationCode?: unknown,
+    @Body('paidAt') paidAt?: unknown,
+    @Body('confirmDuplicate') confirmDuplicate?: unknown,
   ): Promise<OrderDetailResponseDto> {
     await this.orders.assertOwnership(storeId, session.user.id);
     if (isNoteTooLong(note)) {
       throw new BadRequestException(NOTE_TOO_LONG_MESSAGE);
     }
     const order = await this.orders.findRowByIdForStore(orderId, storeId);
-    if (order.paymentStatus === 'CANCELLED') {
-      throw new BadRequestException(
-        'No se pueden registrar abonos en una orden cancelada',
+    assertAcceptsSellerPayments(order);
+    const input = assertSellerPaymentInput({
+      amount,
+      method,
+      operationCode,
+      paidAt,
+      confirmDuplicate,
+      hasCapture: Boolean(file),
+    });
+    const numericAmount = Number(input.amount);
+    // Compare in cents against what is really left: the balance minus buyer
+    // proofs still waiting for review (an approved proof must never push the
+    // order past its required amount).
+    assertWithinSellerLimit(
+      input.amountCents,
+      order.pendingAmount,
+      reservedPendingCents(order.payments ?? []),
+    );
+
+    // Advisory duplicate check, before anything is uploaded or written. The
+    // 409 carries only `{ code, orderId }` (see AllExceptionsFilter).
+    if (input.operationCode && !input.confirmDuplicate) {
+      const duplicate = await this.payments.findDuplicateOperationCode(
+        storeId,
+        input.operationCode,
+        { currentOrderId: orderId },
       );
-    }
-    if (order.paymentStatus === 'REJECTED') {
-      throw new BadRequestException(
-        'No se pueden registrar abonos en una orden rechazada',
-      );
-    }
-    // A VERIFIED order only closes to further payments once its balance is
-    // actually settled. Approving on a deposit (or a legacy pre-guard order
-    // approved with zero money) leaves `pendingAmount > 0`, and the seller
-    // must be able to keep registering the remainder — mirrors the frontend
-    // `paymentsLocked` rule (features/orders/lib/order-status.ts).
-    if (
-      order.paymentStatus === 'VERIFIED' &&
-      Number(order.pendingAmount) <= 0
-    ) {
-      throw new BadRequestException('La orden ya está pagada');
-    }
-    if (
-      order.fulfillmentStatus === 'IN_TRANSIT' ||
-      order.fulfillmentStatus === 'READY' ||
-      order.fulfillmentStatus === 'COMPLETED'
-    ) {
-      throw new BadRequestException(
-        'No se pueden registrar abonos en una orden enviada',
-      );
-    }
-    const numericAmount = Number(amount);
-    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
-      throw new BadRequestException('Monto inválido');
-    }
-    // Belt-and-suspenders on top of the Decimal-space fix in
-    // `computePaymentSummary`: money boundary comparisons compare in cents,
-    // not raw floats, so a residual float-conversion artifact in
-    // `numericAmount`/`pendingAmount` can never reject (or accept) a payment
-    // that's actually exact to the cent.
-    if (toCents(numericAmount) > toCents(order.pendingAmount)) {
-      throw new BadRequestException('El abono excede el saldo pendiente');
-    }
-    const PAYMENT_METHODS: PaymentMethodType[] = [
-      'YAPE',
-      'PLIN',
-      'TRANSFER',
-      'CASH',
-    ];
-    if (!method || !PAYMENT_METHODS.includes(method as PaymentMethodType)) {
-      throw new BadRequestException('Selecciona un método de pago');
+      if (duplicate)
+        throw new DuplicateOperationCodeException(duplicate.orderId);
     }
 
     let imageUrl: string | null = null;
@@ -693,6 +686,8 @@ export class OrderController {
           where: { id: orderId },
           select: {
             paymentStatus: true,
+            fulfillmentStatus: true,
+            status: true,
             requiredAmount: true,
             currency: true,
           },
@@ -704,7 +699,7 @@ export class OrderController {
         // `numericAmount`/`pendingAmount` can never reject (or accept) a payment
         // that's actually exact to the cent.
         const payments = await tx.orderPayment.findMany({
-          where: { orderId },
+          where: { orderId, storeId },
           select: {
             amount: true,
             source: true,
@@ -718,9 +713,17 @@ export class OrderController {
         );
         const currentPaid = paymentSummary.paidAmount;
         const currentPending = paymentSummary.pendingAmount;
-        if (toCents(numericAmount) > toCents(currentPending)) {
-          throw new Error('El abono excede el saldo pendiente');
-        }
+        // The snapshot read before the lock is stale by now: a cancel, a
+        // rejection, a shipment or a concurrent payment may have committed.
+        assertAcceptsSellerPayments({
+          ...current,
+          pendingAmount: currentPending,
+        });
+        assertWithinSellerLimit(
+          input.amountCents,
+          currentPending,
+          reservedPendingCents(payments),
+        );
 
         // Already-VERIFIED orders with a residual balance stay VERIFIED no
         // matter what this payment brings them to: VERIFIED is terminal
@@ -741,9 +744,10 @@ export class OrderController {
             storeId,
             amount: numericAmount,
             currency: current.currency,
-            method: method as PaymentMethodType,
-            note,
-            paidAt: new Date(),
+            method: input.method,
+            note: sanitizeDisplayText(note),
+            operationCode: input.operationCode,
+            paidAt: input.paidAt,
             recordedBy: session.user.id,
             ...(imageUrl && { imageUrl }),
           },
@@ -769,7 +773,7 @@ export class OrderController {
               entityId: orderId,
               metadata: {
                 amount: numericAmount,
-                method,
+                method: input.method,
                 resultingPaymentStatus: 'VERIFIED',
               },
             },
@@ -789,7 +793,7 @@ export class OrderController {
               entityId: orderId,
               metadata: {
                 amount: numericAmount,
-                method,
+                method: input.method,
                 resultingPaymentStatus: nextStatus,
               },
             },
@@ -806,10 +810,17 @@ export class OrderController {
           storeId,
           type: 'PAYMENT_SUBMITTED',
           actor: 'SELLER',
-          payload: { amount: numericAmount, method },
+          payload: { amount: numericAmount, method: input.method },
         });
       });
     } catch (e) {
+      // Do not leave the capture orphaned when nothing was recorded.
+      if (imageUrl) {
+        await this.storage.deleteImage(imageUrl).catch(() => undefined);
+      }
+      // Business errors (400/404/409...) pass through unchanged; only an
+      // unexpected failure is wrapped, without leaking database details.
+      if (e instanceof HttpException) throw e;
       throw new BadRequestException(e instanceof Error ? e.message : String(e));
     }
 
@@ -865,7 +876,50 @@ export class OrderController {
       // two overlapping approvals of two half proofs each sum only their own
       // approval and both write PARTIALLY_PAID, leaving a fully-paid order
       // stuck. Same lock customer-order-payments.controller.ts takes.
-      await tx.$queryRaw`SELECT id FROM "Order" WHERE id = ${orderId} AND "storeId" = ${storeId} FOR UPDATE`;
+      const [locked] = await tx.$queryRaw<
+        Array<{ id: string }>
+      >`SELECT id FROM "Order" WHERE id = ${orderId} AND "storeId" = ${storeId} FOR UPDATE`;
+      if (!locked) throw new NotFoundException('Orden no encontrada');
+
+      const order = await tx.order.findUniqueOrThrow({
+        where: { id: orderId },
+        select: { paymentStatus: true, requiredAmount: true },
+      });
+      if (dto.decision === 'approve') {
+        // Thrown before the claim below, so nothing has been written yet and
+        // the proof stays PENDING_REVIEW. Approving on a dead order would mark
+        // the proof APPROVED and make it count toward paid.
+        if (
+          order.paymentStatus === 'CANCELLED' ||
+          order.paymentStatus === 'REJECTED'
+        ) {
+          throw new BadRequestException(
+            order.paymentStatus === 'CANCELLED'
+              ? 'No se puede aprobar un comprobante de una orden cancelada'
+              : 'No se puede aprobar un comprobante de una orden rechazada',
+          );
+        }
+        const credited = computePaymentSummary(
+          order.requiredAmount,
+          await tx.orderPayment.findMany({
+            where: { orderId, storeId },
+            select: {
+              amount: true,
+              source: true,
+              reviewStatus: true,
+              voidedAt: true,
+            },
+          }),
+        ).paidAmount;
+        if (
+          toCents(Number(payment.amount)) >
+          toCents(Number(order.requiredAmount)) - toCents(credited)
+        ) {
+          throw new BadRequestException(
+            'El comprobante excede el saldo pendiente de la orden',
+          );
+        }
+      }
 
       // Guarded on PENDING_REVIEW so a double approve (or approve racing a
       // reject) of the same proof changes one row and records one event.
@@ -894,7 +948,9 @@ export class OrderController {
               : 'payment_proof.rejected',
           entityType: 'OrderPayment',
           entityId: paymentId,
-          metadata: { reason: dto.reason ?? null },
+          // One string feeds both the audit log and the buyer response, so it
+          // is sanitized and capped here (never the code, note or image).
+          metadata: { reason: sanitizeDisplayText(dto.reason) },
         },
       });
 
@@ -905,10 +961,6 @@ export class OrderController {
       // gets marked reviewed above for the record, but emits no buyer-visible
       // event and does not try to re-drive an order that can no longer legally
       // change state.
-      const order = await tx.order.findUniqueOrThrow({
-        where: { id: orderId },
-        select: { paymentStatus: true, requiredAmount: true },
-      });
       if (
         order.paymentStatus !== 'PENDING_PAYMENT' &&
         order.paymentStatus !== 'PARTIALLY_PAID'
