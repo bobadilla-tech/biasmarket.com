@@ -16,7 +16,10 @@ export function OnboardingPageClient() {
   }, [checkEmail]);
 
   return (
-    <AuthEditorialLayout formSide="left" formLabel={t("title")}>
+    <AuthEditorialLayout
+      formSide="left"
+      formLabel={checkEmail ? t("checkEmailTitle") : t("title")}
+    >
       {checkEmail ? (
         <div className="login-card flex w-full flex-col gap-3 rounded-[26px] border border-white/90 bg-white/90 p-6 text-center shadow-[0_28px_80px_rgba(65,47,105,0.16)] backdrop-blur-xl sm:p-8">
           <ol aria-label={t("progressLabel")} className="sr-only">
