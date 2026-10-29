@@ -1,13 +1,25 @@
 "use client";
 
-import type { KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { MapPin, MessageCircle, Search, Sparkles } from "lucide-react";
+import {
+  MapPin,
+  MessageCircle,
+  Minus,
+  Plus,
+  Search,
+  Sparkles,
+} from "lucide-react";
 import { ContactSellerButton } from "@/features/customer-auth";
 import { SocialIcon, socialLabels } from "./social-icon";
 
-export type StorefrontCategory = { id: string; name: string; slug?: string };
+export type StorefrontCategory = {
+  id: string;
+  name: string;
+  slug?: string;
+  productCount?: number;
+};
 
 /** Renders the public store identity shared by its catalog tabs. */
 export function StorePublicProfile({
@@ -77,7 +89,7 @@ export function StorePublicProfile({
         <div
           role="img"
           aria-label={t("bannerImageAlt", { storeName })}
-          className="fan-banner-ambient relative flex h-52 w-full items-center overflow-hidden rounded-[1.75rem] border border-white/50 px-8 text-white shadow-[0_18px_42px_var(--store-shadow)] sm:h-[300px] sm:px-12"
+          className="relative flex h-52 w-full items-center overflow-hidden rounded-2xl border border-(--store-border) px-8 text-white sm:h-[300px] sm:px-12"
           style={{
             backgroundImage:
               "radial-gradient(rgba(255,255,255,.68) 1px, transparent 1.35px), linear-gradient(108deg, var(--store-sidebar-end) 0%, var(--store-primary) 54%, var(--store-accent) 100%)",
@@ -100,7 +112,7 @@ export function StorePublicProfile({
           </div>
           <div
             aria-hidden="true"
-            className="fan-float absolute right-[10%] top-1/2 flex size-36 -translate-y-1/2 items-center justify-center rounded-full border border-white/70 bg-white/5 shadow-[0_0_55px_rgb(255_255_255/15%)] sm:size-56"
+            className="absolute right-[10%] top-1/2 flex size-36 -translate-y-1/2 items-center justify-center rounded-full border border-white/70 sm:size-56"
           >
             <div className="flex size-[82%] items-center justify-center rounded-full border border-white/70">
               <Sparkles
@@ -410,7 +422,9 @@ export function CategoryFilter({
             key={id}
             type="button"
             aria-pressed={active}
-            onClick={() => onChange(active ? [] : [id])}
+            onClick={() =>
+              onChange(active && selected.length === 1 ? [] : [id])
+            }
             className={`min-h-10 shrink-0 rounded-full border px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) ${active ? "border-transparent bg-(--store-tab-active) text-(--store-on-active)" : "border-(--store-border) bg-(--store-card) text-(--store-muted) hover:border-(--store-primary)"}`}
           >
             {category.name}
@@ -418,6 +432,112 @@ export function CategoryFilter({
         );
       })}
     </div>
+  );
+}
+
+/** Collapsible desktop category filters support selecting multiple categories. */
+export function DesktopCategoryFilter({
+  categories,
+  selected,
+  onChange,
+}: {
+  categories: StorefrontCategory[];
+  selected: string[];
+  onChange: (ids: string[]) => void;
+}) {
+  const t = useTranslations("storefront");
+  const [isOpen, setIsOpen] = useState(false);
+  const panelId = "store-category-filter-options";
+  const selectedNames = categories
+    .filter((category) => selected.includes(category.slug ?? category.id))
+    .map((category) => category.name)
+    .join(", ");
+  const selectionSummary =
+    selectedNames || t("selectedCategoryCount", { count: selected.length });
+
+  return (
+    <aside className="rounded-2xl border border-(--store-border) bg-(--store-card) p-4 shadow-sm">
+      <button
+        type="button"
+        aria-expanded={isOpen}
+        aria-controls={panelId}
+        aria-label={
+          selected.length > 0
+            ? `${t("filterByCategory")}: ${selectionSummary}`
+            : t("filterByCategory")
+        }
+        onClick={() => setIsOpen((open) => !open)}
+        className="flex min-h-11 w-full items-center justify-between gap-3 text-left font-bold text-(--store-text) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary)"
+      >
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span>{t("filterByCategory")}</span>
+          {selected.length > 0 && (
+            <span
+              aria-hidden="true"
+              title={selectionSummary}
+              className="truncate text-xs font-medium text-(--store-muted)"
+            >
+              {selectionSummary}
+            </span>
+          )}
+        </span>
+        {selected.length > 0 && (
+          <span
+            aria-hidden="true"
+            className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-(--store-surface) text-xs font-bold text-(--store-primary)"
+          >
+            {selected.length}
+          </span>
+        )}
+        {isOpen ? (
+          <Minus aria-hidden="true" className="size-4 shrink-0" />
+        ) : (
+          <Plus aria-hidden="true" className="size-4 shrink-0" />
+        )}
+      </button>
+      <fieldset id={panelId} hidden={!isOpen} className="mt-3">
+        <legend className="sr-only">{t("filterByCategory")}</legend>
+        <div className="max-h-80 space-y-1 overflow-y-auto pr-1">
+          {categories.map((category) => {
+            const id = category.slug ?? category.id;
+            return (
+              <label
+                key={id}
+                className="flex min-h-10 cursor-pointer items-center gap-3 rounded-lg px-2 text-sm text-(--store-text) transition-colors hover:bg-(--store-surface) focus-within:ring-2 focus-within:ring-(--store-ring)"
+              >
+                <input
+                  type="checkbox"
+                  checked={selected.includes(id)}
+                  onChange={(event) =>
+                    onChange(
+                      event.target.checked
+                        ? [...selected, id]
+                        : selected.filter((value) => value !== id),
+                    )
+                  }
+                  className="size-4 accent-[var(--store-primary)]"
+                />
+                <span className="min-w-0 flex-1 truncate">{category.name}</span>
+                {typeof category.productCount === "number" && (
+                  <span className="text-xs tabular-nums text-(--store-muted)">
+                    {category.productCount}
+                  </span>
+                )}
+              </label>
+            );
+          })}
+        </div>
+        {selected.length > 0 && (
+          <button
+            type="button"
+            onClick={() => onChange([])}
+            className="mt-3 min-h-10 rounded-full px-2 text-sm font-semibold text-(--store-primary) underline decoration-(--store-primary)/40 underline-offset-4 hover:decoration-(--store-primary) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary)"
+          >
+            {t("clearFilters")}
+          </button>
+        )}
+      </fieldset>
+    </aside>
   );
 }
 

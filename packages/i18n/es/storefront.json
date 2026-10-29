@@ -35,6 +35,7 @@
   "nextPage": "Siguiente",
   "pageOf": "Página {page} de {pages}",
   "filterByCategory": "Filtrar por categoría",
+  "selectedCategoryCount": "{count, plural, one {# categoría seleccionada} other {# categorías seleccionadas}}",
   "loadMore": "Cargar más productos",
   "loadingMore": "Cargando productos...",
   "categories": "Categorías",
