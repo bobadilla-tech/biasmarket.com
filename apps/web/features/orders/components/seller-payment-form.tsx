@@ -72,6 +72,8 @@ export function SellerPaymentForm({
     register,
     handleSubmit,
     watch,
+    getValues,
+    setValue,
     control,
     reset,
     formState: { errors },
@@ -79,6 +81,19 @@ export function SellerPaymentForm({
     resolver: zodResolver(buildSellerPaymentSchema(maxCents, today)),
     defaultValues: defaults(),
   });
+
+  // The balance moves when a payment is recorded or a buyer proof arrives
+  // while the form stays mounted (so typed values survive a background
+  // refetch): keep the prefill in step unless the seller already edited it.
+  const lastPrefill = useRef(maxCents);
+  useEffect(() => {
+    if (lastPrefill.current === maxCents) return;
+    const previous = (lastPrefill.current / 100).toFixed(2);
+    lastPrefill.current = maxCents;
+    if (getValues("amount") === previous) {
+      setValue("amount", (maxCents / 100).toFixed(2));
+    }
+  }, [maxCents, getValues, setValue]);
 
   const method = watch("method");
   const file = watch("file");
@@ -100,6 +115,8 @@ export function SellerPaymentForm({
   };
 
   const clear = () => {
+    // After a successful save the balance has not refetched yet: the prefill
+    // effect above fills the amount once it does.
     reset(defaults());
     if (fileInputRef.current) fileInputRef.current.value = "";
   };

@@ -11,8 +11,9 @@ export function getInitials(name: string | null, phone: string) {
     const parts = source.split(/\s+/).filter(Boolean);
     const initialA = parts[0]?.slice(0, 1) ?? "";
     const initialB = parts[1]?.slice(0, 1) ?? "";
-    return `${initialA}${initialB}`.toUpperCase() ||
-      source.slice(0, 2).toUpperCase();
+    return (
+      `${initialA}${initialB}`.toUpperCase() || source.slice(0, 2).toUpperCase()
+    );
   }
   return phone.slice(-2).toUpperCase();
 }
@@ -50,24 +51,24 @@ export function getDeliveryLabel(
 ) {
   const details = order.deliveryDetails ?? {};
   if (order.deliveryMethodType === "PICKUP") {
-    const address = typeof details.address === "string"
-      ? details.address.trim()
-      : "";
+    const address =
+      typeof details.address === "string" ? details.address.trim() : "";
     return address
       ? `${t("delivery.pickup")} - ${address}`
       : t("delivery.pickup");
   }
 
   const costRaw = details.estimatedCost;
-  const cost = typeof costRaw === "number"
-    ? costRaw
-    : typeof costRaw === "string"
-    ? Number(costRaw)
-    : undefined;
+  const cost =
+    typeof costRaw === "number"
+      ? costRaw
+      : typeof costRaw === "string"
+        ? Number(costRaw)
+        : undefined;
   if (typeof cost === "number" && Number.isFinite(cost) && cost > 0) {
-    return `${t("delivery.courier")} - ${
-      t("delivery.estimatedCost", { cost })
-    }`;
+    return `${t("delivery.courier")} - ${t("delivery.estimatedCost", {
+      cost,
+    })}`;
   }
   return t("delivery.courier");
 }
@@ -94,7 +95,8 @@ export function getShippingAddress(
   const details = order.deliveryDetails ?? {};
   const address = details.shippingAddress;
   if (
-    !address || typeof address !== "object" ||
+    !address ||
+    typeof address !== "object" ||
     typeof (address as Record<string, unknown>).recipientName !== "string" ||
     typeof (address as Record<string, unknown>).phone !== "string" ||
     typeof (address as Record<string, unknown>).line1 !== "string" ||

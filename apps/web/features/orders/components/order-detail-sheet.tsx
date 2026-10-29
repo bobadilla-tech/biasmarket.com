@@ -225,7 +225,7 @@ export function OrderDetailSheet({
                   </Card>
                 ) : (
                   <SellerPaymentForm
-                    key={`${order.id}-${order.payments.length}-${order.pendingAmount}`}
+                    key={order.id}
                     maxCents={recordableCents(
                       order.pendingAmount,
                       order.payments,

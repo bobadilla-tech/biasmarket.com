@@ -2,11 +2,14 @@
 const LIMA_OFFSET = "-05:00";
 
 /**
- * A picked calendar day as an instant: noon in Lima. A date-only string sent
- * to the API would parse as UTC midnight, which is the previous day in Lima;
- * noon keeps the same day in every zone from UTC-12 to UTC+11.
+ * A picked calendar day as an instant. A date-only string sent to the API
+ * would parse as UTC midnight, which is the previous day in Lima; noon keeps
+ * the same day in every zone from UTC-12 to UTC+11. Today is the exception:
+ * noon may still be hours away and the API rejects future instants, so today
+ * is sent as the current instant.
  */
-export function limaNoonIso(date: string): string {
+export function limaDayInstant(date: string, now: Date = new Date()): string {
+  if (date === limaToday(now)) return now.toISOString();
   return `${date}T12:00:00${LIMA_OFFSET}`;
 }
 

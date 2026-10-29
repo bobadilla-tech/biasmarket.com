@@ -1,6 +1,6 @@
 import { apiClient } from "@/lib/api-client";
 import type { SellerPaymentInput } from "@biasmarket/validation";
-import { limaNoonIso } from "@/lib/lima-date";
+import { limaDayInstant } from "@/lib/lima-date";
 
 function apiUrl() {
   return process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
@@ -69,7 +69,7 @@ export const ordersApi = {
       formData.append("operationCode", values.operationCode.trim());
     }
     // A picked day, sent as noon Lima so it never drifts to the day before.
-    formData.append("paidAt", limaNoonIso(values.paidAt));
+    formData.append("paidAt", limaDayInstant(values.paidAt));
     if (options.confirmDuplicate) formData.append("confirmDuplicate", "true");
     if (values.file instanceof File) formData.append("file", values.file);
 

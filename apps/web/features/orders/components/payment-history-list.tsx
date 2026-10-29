@@ -252,7 +252,10 @@ export function PaymentHistoryList({
       <AlertDialog
         open={voiding !== null}
         onOpenChange={(open) => {
-          if (!open) setVoiding(null);
+          if (!open) {
+            setVoiding(null);
+            voidPayment.reset();
+          }
         }}
       >
         <AlertDialogContent className="max-w-md">
