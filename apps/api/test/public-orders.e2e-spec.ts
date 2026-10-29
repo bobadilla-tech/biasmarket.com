@@ -146,6 +146,20 @@ describe('public orders (e2e)', () => {
     return orderId;
   }
 
+  // A seller-recorded payment counts as paid (`countsTowardPaid`), which is
+  // what makes an order eligible for the save-with-Google invite.
+  async function addCountingPayment(orderId: string) {
+    await prisma.orderPayment.create({
+      data: {
+        orderId,
+        storeId,
+        amount: 10,
+        currency: 'PEN',
+        source: 'SELLER_RECORDED',
+      },
+    });
+  }
+
   async function attachToken(orderId: string, tokenHash: string) {
     await prisma.order.update({
       where: { id: orderId },
@@ -233,6 +247,7 @@ describe('public orders (e2e)', () => {
     const shown = createOrderAccessToken();
     const shownOrderId = await checkout();
     await attachToken(shownOrderId, shown.tokenHash);
+    await addCountingPayment(shownOrderId);
 
     await request(app.getHttpServer())
       .post(`/api/public/orders/${shown.token}/events`)
@@ -252,6 +267,7 @@ describe('public orders (e2e)', () => {
     const cancelled = createOrderAccessToken();
     const cancelledOrderId = await checkout();
     await attachToken(cancelledOrderId, cancelled.tokenHash);
+    await addCountingPayment(cancelledOrderId);
     await prisma.order.update({
       where: { id: cancelledOrderId },
       data: { status: 'CANCELLED', paymentStatus: 'CANCELLED' },
@@ -264,6 +280,39 @@ describe('public orders (e2e)', () => {
     expect(
       await prisma.orderEvent.count({
         where: { orderId: cancelledOrderId, type: 'INVITE_SHOWN' },
+      }),
+    ).toBe(0);
+  });
+
+  it('records no invite rows for an order without a counting payment or a rejected one', async () => {
+    const unpaid = createOrderAccessToken();
+    const unpaidOrderId = await checkout();
+    await attachToken(unpaidOrderId, unpaid.tokenHash);
+
+    const rejected = createOrderAccessToken();
+    const rejectedOrderId = await checkout();
+    await attachToken(rejectedOrderId, rejected.tokenHash);
+    await addCountingPayment(rejectedOrderId);
+    await prisma.order.update({
+      where: { id: rejectedOrderId },
+      data: { paymentStatus: 'REJECTED' },
+    });
+
+    for (const { token } of [unpaid, rejected]) {
+      for (const type of ['INVITE_SHOWN', 'INVITE_CLICKED']) {
+        await request(app.getHttpServer())
+          .post(`/api/public/orders/${token}/events`)
+          .send({ type, moment: 'banner' })
+          .expect(204);
+      }
+    }
+
+    expect(
+      await prisma.orderEvent.count({
+        where: {
+          orderId: { in: [unpaidOrderId, rejectedOrderId] },
+          type: { in: ['INVITE_SHOWN', 'INVITE_CLICKED'] },
+        },
       }),
     ).toBe(0);
   });
@@ -281,6 +330,13 @@ describe('public orders (e2e)', () => {
     });
 
     async function deliverable(patch: Record<string, unknown> = {}) {
+      // One counting payment for the shared order, so invite events apply.
+      if (
+        (await prisma.orderPayment.count({ where: { orderId: shared.id } })) ===
+        0
+      ) {
+        await addCountingPayment(shared.id);
+      }
       await prisma.orderEvent.deleteMany({
         where: { orderId: shared.id, type: 'RECEIPT_CONFIRMED' },
       });
@@ -459,6 +515,8 @@ describe('public orders (e2e)', () => {
       await post({ type: 'INVITE_SHOWN', moment: 'pago_validado' }).expect(204);
       await post({ type: 'INVITE_SHOWN', moment: 'pago_validado' }).expect(204);
       await post({ type: 'INVITE_SHOWN', moment: 'banner' }).expect(204);
+      await post({ type: 'INVITE_CLICKED', moment: 'banner' }).expect(204);
+      // A retried press of the same moment is not a second row.
       await post({ type: 'INVITE_CLICKED', moment: 'banner' }).expect(204);
 
       const rows = await prisma.orderEvent.findMany({
