@@ -203,7 +203,10 @@ describe('BuyerPaymentProofService.submit', () => {
     });
 
     it('stores a sanitized note and a normalized operation code', async () => {
-      await submit({}, { note: 'hola\n‮mundo', operationCode: '  ＡＢ-12 ' });
+      await submit(
+        {},
+        { note: 'hola\n\u202Emundo', operationCode: '  ＡＢ-12 ' },
+      );
       const data = tx.orderPayment.create.mock.calls[0][0].data;
       expect(data.note).toBe('hola mundo');
       expect(data.operationCode).toBe('AB-12');

@@ -702,12 +702,16 @@ describe('PublicOrderService', () => {
         findFirst: vi.fn().mockResolvedValue({ imageUrl: 'https://x/y.jpg' }),
       };
       await expect(
-        service.getBuyerProofImageUrl('order-1', 'payment-9'),
+        service.getBuyerProofImageUrl(
+          { id: 'order-1', storeId: 'store-1' },
+          'payment-9',
+        ),
       ).resolves.toBe('https://x/y.jpg');
       expect(prisma.orderPayment.findFirst).toHaveBeenCalledWith({
         where: {
           id: 'payment-9',
           orderId: 'order-1',
+          storeId: 'store-1',
           source: 'BUYER_SUBMITTED',
           imageUrl: { not: null },
         },
@@ -718,7 +722,10 @@ describe('PublicOrderService', () => {
     it('answers the same 404 for every miss', async () => {
       prisma.orderPayment = { findFirst: vi.fn().mockResolvedValue(null) };
       await expect(
-        service.getBuyerProofImageUrl('order-1', 'nope'),
+        service.getBuyerProofImageUrl(
+          { id: 'order-1', storeId: 'store-1' },
+          'nope',
+        ),
       ).rejects.toThrow('Comprobante no encontrado');
     });
   });

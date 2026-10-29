@@ -215,7 +215,10 @@ describe('PublicOrderEventsController proof upload routes', () => {
 
     it('streams the buyer proof with hardened headers (no 415 for a GET)', async () => {
       const res = await get().expect(200);
-      expect(getUrl).toHaveBeenCalledWith('order-1', 'pay_1');
+      expect(getUrl).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'order-1', storeId: 'store-1' }),
+        'pay_1',
+      );
       expect(getPaymentImageStream).toHaveBeenCalledWith(
         'https://private.example/p.jpg',
       );
@@ -238,6 +241,14 @@ describe('PublicOrderEventsController proof upload routes', () => {
         contentType: 'image/svg+xml',
       });
       await get().expect(404);
+    });
+
+    it('answers 404, not 500, when the stored object is gone', async () => {
+      getPaymentImageStream.mockRejectedValue(
+        Object.assign(new Error('gone'), { name: 'NoSuchKey' }),
+      );
+      const res = await get().expect(404);
+      expect(res.body.message).toBe('Comprobante no encontrado');
     });
 
     it('answers the same 404 for every miss', async () => {

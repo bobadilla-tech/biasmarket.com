@@ -256,13 +256,14 @@ export class PublicOrderService {
   // compound filter is the whole access check: it must not be split into an
   // ownership lookup plus an id lookup.
   async getBuyerProofImageUrl(
-    orderId: string,
+    order: { id: string; storeId: string },
     paymentId: string,
   ): Promise<string> {
     const payment = await this.prisma.orderPayment.findFirst({
       where: {
         id: paymentId,
-        orderId,
+        orderId: order.id,
+        storeId: order.storeId,
         source: 'BUYER_SUBMITTED',
         imageUrl: { not: null },
       },

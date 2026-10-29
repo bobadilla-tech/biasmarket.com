@@ -171,12 +171,19 @@ export class PublicOrderEventsController {
     @PublicOrder() order: BuyerProofOrder,
     @Param('paymentId') paymentId: string,
   ): Promise<StreamableFile> {
-    const imageUrl = await this.orders.getBuyerProofImageUrl(
-      order.id,
-      paymentId,
-    );
-    const { body, contentType } =
-      await this.storage.getPaymentImageStream(imageUrl);
+    const imageUrl = await this.orders.getBuyerProofImageUrl(order, paymentId);
+    // The row can outlive its object (lifecycle rule, manual cleanup): answer
+    // the same 404 as every other miss instead of leaking a 500.
+    const stream = await this.storage
+      .getPaymentImageStream(imageUrl)
+      .catch((error: unknown) => {
+        const name = (error as { name?: string } | null)?.name;
+        if (name === 'NoSuchKey' || name === 'NotFound') {
+          throw new NotFoundException('Comprobante no encontrado');
+        }
+        throw error;
+      });
+    const { body, contentType } = stream;
     const extension = PROOF_IMAGE_EXTENSIONS[contentType ?? ''];
     if (!extension) {
       body.destroy?.();
