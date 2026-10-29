@@ -324,16 +324,18 @@ export class OrderEventsService {
       // INVITE_SHOWN and INVITE_CLICKED are "once per order AND moment", not
       // counters: one client retrying the beacon, or pressing "Guardar con
       // Google" again after an error, must not write a row per attempt. The
-      // check-then-insert runs under an advisory lock (one key per type, so
-      // SHOWN and CLICKED do not queue behind each other): concurrent beacons
-      // queue up and all but the first see the existing row. The first
+      // check-then-insert runs under an advisory lock (one key per type and
+      // order, so SHOWN and CLICKED do not queue behind each other): concurrent
+      // beacons queue up and all but the first see the existing row. A shared
+      // key also serializes moment-less older clients with moment-specific
+      // calls, since an omitted moment matches any earlier row. The first
       // validation block and a later banner each count. Without a moment
       // (older clients) the type matches any earlier row, i.e. once per order.
       // INVITE_DISMISSED is not deduped. The collapsed banner counts as shown.
       if (type === 'INVITE_SHOWN' || type === 'INVITE_CLICKED') {
         const lockKey =
           type === 'INVITE_SHOWN' ? 'invite-shown' : 'invite-clicked';
-        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`${lockKey}:${order.id}:${moment ?? ''}`}))`;
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`${lockKey}:${order.id}`}))`;
         const existing = await tx.orderEvent.findFirst({
           where: {
             orderId: order.id,

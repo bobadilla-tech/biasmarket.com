@@ -518,6 +518,8 @@ describe('public orders (e2e)', () => {
       await post({ type: 'INVITE_CLICKED', moment: 'banner' }).expect(204);
       // A retried press of the same moment is not a second row.
       await post({ type: 'INVITE_CLICKED', moment: 'banner' }).expect(204);
+      // An older moment-less client also dedupes against the specific event.
+      await post({ type: 'INVITE_CLICKED' }).expect(204);
 
       const rows = await prisma.orderEvent.findMany({
         where: {
