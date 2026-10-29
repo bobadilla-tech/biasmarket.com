@@ -158,6 +158,7 @@ jobs:
             mobile:
               - 'apps/mobile/**'
               - 'packages/design-tokens/**'
+              - 'packages/i18n/**'
               - 'packages/query/**'
               - 'packages/types/**'
               - 'packages/validation/**'

@@ -59,4 +59,5 @@ pnpm workspaces + Turborepo.
 ## Docs
 
 - [docs/core/](docs/core/) — architecture, product spec, security & payments,
-  i18n, deploy runbooks.
+  i18n, deploy runbooks. Mobile APK/iOS release builds:
+  [docs/core/mobile-release.md](docs/core/mobile-release.md).

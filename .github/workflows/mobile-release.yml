@@ -1,0 +1,254 @@
+name: Mobile Release
+
+# Builds the Expo app for Android and iOS when a GitHub Release is published and
+# attaches the outputs to that release. No signing secrets and no paid services:
+#   - Android: installable APK signed with the Expo template's debug keystore.
+#   - iOS:     UNSIGNED .xcarchive (zipped). Compile proof only, not installable.
+# Whether mobile changed is decided by scripts/ci/mobile-release-changes.sh,
+# which reuses the `mobile` path filter from ci.yml. See docs/core/mobile-release.md.
+#
+# A release created by another workflow using GITHUB_TOKEN does NOT trigger
+# this one (GitHub suppresses that); publish from the UI/CLI as a user, or run
+# this workflow manually with the tag.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to build, e.g. v0.27.0"
+        type: string
+        required: true
+      force:
+        description: "Build even if no mobile-related files changed"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# One run per tag; a rerun waits for the active one instead of cancelling a
+# build that is about to upload.
+concurrency:
+  group: mobile-release-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: "24"
+  PNPM_VERSION: "10.11.0"
+  EXPO_NO_TELEMETRY: "1"
+
+jobs:
+  detect-changes:
+    name: Detect Mobile Changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+      build: ${{ steps.detect.outputs.build }}
+    steps:
+      # The workflow's own ref (scripts live here); the release tag is read
+      # through git, so dispatching an older tag still works.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Resolve tag
+        id: tag
+        env:
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          if ! git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "Tag $TAG does not exist"
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Detect mobile-related changes since the last mobile build
+        id: detect
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
+          FORCE: ${{ inputs.force }}
+        run: bash scripts/ci/mobile-release-changes.sh
+
+  android:
+    name: Android APK (debug-signed)
+    needs: detect-changes
+    if: needs.detect-changes.outputs.build == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      TAG: ${{ needs.detect-changes.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: refs/tags/${{ needs.detect-changes.outputs.tag }}
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Android SDK/NDK come preinstalled on ubuntu-latest. Release runs are
+      # scoped to the tag ref, so this mainly speeds up reruns of the same tag.
+      - name: Cache Gradle
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      # apps/mobile has no committed android/ (gitignored); generate it.
+      - name: Generate native project
+        working-directory: apps/mobile
+        run: pnpm exec expo prebuild --platform android --no-install --clean
+
+      # The Expo template signs `release` with the debug keystore, so this is an
+      # optimized, JS-bundled APK that installs without Metro or a Play account.
+      # arm64 covers phones; x86_64 covers emulators.
+      - name: Build APK
+        working-directory: apps/mobile/android
+        run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a,x86_64 --no-daemon
+
+      - name: Verify and name the APK
+        run: |
+          src=apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          test -f "$src"
+          apksigner="$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -1)"
+          "$apksigner" verify --print-certs "$src"
+          mkdir -p dist
+          cp "$src" "dist/mobile-android-${TAG}-debug.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mobile-android
+          path: dist/mobile-android-*-debug.apk
+          if-no-files-found: error
+
+  ios:
+    name: iOS archive (unsigned)
+    needs: detect-changes
+    if: needs.detect-changes.outputs.build == 'true'
+    # Expo's `.icon` asset (assets/expo.icon) needs the Xcode 26 toolchain.
+    runs-on: macos-26
+    timeout-minutes: 75
+    env:
+      TAG: ${{ needs.detect-changes.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: refs/tags/${{ needs.detect-changes.outputs.tag }}
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Select Xcode 26
+        run: |
+          xcode="$(find /Applications -maxdepth 1 -name 'Xcode_26*.app' | sort -V | tail -1)"
+          test -n "$xcode" || { echo "No Xcode 26 on this runner image"; exit 1; }
+          sudo xcode-select -s "$xcode"
+          xcodebuild -version
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Cache CocoaPods downloads
+        uses: actions/cache@v6
+        with:
+          path: ~/Library/Caches/CocoaPods
+          key: cocoapods-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            cocoapods-${{ runner.os }}-
+
+      - name: Generate native project
+        working-directory: apps/mobile
+        run: |
+          pnpm exec expo prebuild --platform ios --no-install --clean
+          cd ios && pod install
+
+      # Signing is disabled outright: no certificates or profiles are needed,
+      # and the result cannot be installed on a device (see the docs).
+      - name: Archive (unsigned)
+        working-directory: apps/mobile/ios
+        run: |
+          workspace="$(find . -maxdepth 1 -name '*.xcworkspace' | head -1)"
+          scheme="$(basename "$workspace" .xcworkspace)"
+          xcodebuild \
+            -workspace "$workspace" \
+            -scheme "$scheme" \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            archive \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -quiet
+
+      - name: Zip and name the archive
+        run: |
+          test -d "$RUNNER_TEMP/App.xcarchive/Products/Applications"
+          mkdir -p dist
+          ditto -c -k --sequesterRsrc --keepParent \
+            "$RUNNER_TEMP/App.xcarchive" "dist/mobile-ios-${TAG}-unsigned.xcarchive.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mobile-ios
+          path: dist/mobile-ios-*-unsigned.xcarchive.zip
+          if-no-files-found: error
+
+  # The only job with write access; it runs no repository code, only uploads
+  # what the build jobs produced. Uploads whichever platform succeeded.
+  publish:
+    name: Attach to Release
+    needs: [detect-changes, android, ios]
+    if: ${{ !cancelled() && (needs.android.result == 'success' || needs.ios.result == 'success') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: mobile-*
+          path: dist
+          merge-multiple: true
+
+      # --clobber only replaces assets with the same name (a rerun of this tag);
+      # the release notes and unrelated assets are untouched.
+      - name: Upload to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.detect-changes.outputs.tag }}
+        run: |
+          ls -l dist
+          gh release upload "$TAG" dist/* --clobber --repo "$GITHUB_REPOSITORY"
