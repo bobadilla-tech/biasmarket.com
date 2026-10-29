@@ -47,7 +47,7 @@ function order(patch: Partial<PublicOrderResponseDto> = {}) {
     },
     customerPhone: "+51 9** *** 321",
     customerAlias: "Sofi",
-    orderNumber: "AB12",
+    orderNumber: "ABCD12",
     createdAt: "2026-09-01T12:00:00.000Z",
     items: [],
     totalAmount: "100",
@@ -142,7 +142,7 @@ test("the second visit shows the collapsible banner, not the first-validation bl
 });
 
 test("'Ahora no' hides the banner, is remembered, and is reported with the moment", async () => {
-  inviteStorage.setFirstSeen("k-store", "AB12");
+  inviteStorage.setFirstSeen("k-store", "ABCD12");
   getByToken.mockResolvedValue(order());
   const first = renderPage();
   await userEvent.click(
@@ -155,7 +155,7 @@ test("'Ahora no' hides the banner, is remembered, and is reported with the momen
     type: "INVITE_DISMISSED",
     moment: "banner",
   });
-  expect(inviteStorage.getDismissedAt("k-store", "AB12")).not.toBeNull();
+  expect(inviteStorage.getDismissedAt("k-store", "ABCD12")).not.toBeNull();
   first.unmount();
 
   // Next visit within the window: still no banner, only the quiet history line.
@@ -167,8 +167,8 @@ test("'Ahora no' hides the banner, is remembered, and is reported with the momen
 });
 
 test("after the dismissal window the banner is back", async () => {
-  inviteStorage.setFirstSeen("k-store", "AB12");
-  inviteStorage.setDismissedAt("k-store", "AB12", Date.now() - 8 * DAY);
+  inviteStorage.setFirstSeen("k-store", "ABCD12");
+  inviteStorage.setDismissedAt("k-store", "ABCD12", Date.now() - 8 * DAY);
   getByToken.mockResolvedValue(order());
   renderPage();
   expect(
@@ -177,8 +177,8 @@ test("after the dismissal window the banner is back", async () => {
 });
 
 test("a delivered order shows the delivery invitation even after the banner was dismissed", async () => {
-  inviteStorage.setFirstSeen("k-store", "AB12");
-  inviteStorage.setDismissedAt("k-store", "AB12", Date.now() - DAY);
+  inviteStorage.setFirstSeen("k-store", "ABCD12");
+  inviteStorage.setDismissedAt("k-store", "ABCD12", Date.now() - DAY);
   getByToken.mockResolvedValue(order({ fulfillmentStatus: "COMPLETED" }));
   renderPage();
   expect(await screen.findByText("Guarda tu historial")).toBeTruthy();

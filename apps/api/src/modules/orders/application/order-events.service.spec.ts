@@ -44,6 +44,13 @@ describe('sanitizeOrderEventPayload', () => {
   });
 });
 
+const COUNTING_PAYMENT = {
+  amount: 10,
+  source: 'SELLER_RECORDED',
+  reviewStatus: null,
+  voidedAt: null,
+};
+
 describe('OrderEventsService', () => {
   let service: OrderEventsService;
   let prisma: {
@@ -70,6 +77,7 @@ describe('OrderEventsService', () => {
           accessTokenRevokedAt: null,
           status: 'ACTIVE',
           paymentStatus: 'PENDING_PAYMENT',
+          payments: [COUNTING_PAYMENT],
         }),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
@@ -142,6 +150,7 @@ describe('OrderEventsService', () => {
       accessTokenRevokedAt: null,
       status: 'ACTIVE',
       paymentStatus: 'PENDING_PAYMENT',
+      payments: [COUNTING_PAYMENT],
     });
 
     await service.recordInvite(token, 'INVITE_SHOWN');
@@ -162,6 +171,7 @@ describe('OrderEventsService', () => {
       accessTokenRevokedAt: null,
       status: 'CANCELLED',
       paymentStatus: 'CANCELLED',
+      payments: [COUNTING_PAYMENT],
     });
     await service.recordInvite(token, 'INVITE_CLICKED');
     expect(prisma.orderEvent.create).toHaveBeenCalledTimes(1);
@@ -175,6 +185,7 @@ describe('OrderEventsService', () => {
       accessTokenRevokedAt: null,
       status: 'ACTIVE',
       paymentStatus: 'VERIFIED',
+      payments: [COUNTING_PAYMENT],
       claimedAt: null,
       buyerAccountId: null,
     });
@@ -219,6 +230,7 @@ describe('OrderEventsService', () => {
       accessTokenRevokedAt: null,
       status: 'ACTIVE',
       paymentStatus: 'VERIFIED',
+      payments: [COUNTING_PAYMENT],
       claimedAt: null,
       buyerAccountId: null,
     };
@@ -243,6 +255,129 @@ describe('OrderEventsService', () => {
       await service.recordInvite(token, 'INVITE_CLICKED', 'banner');
     }
     expect(prisma.orderEvent.create).not.toHaveBeenCalled();
+  });
+
+  describe('invite preconditions', () => {
+    const base = {
+      id: 'order-1',
+      storeId: 'store-1',
+      accessTokenRevokedAt: null,
+      status: 'ACTIVE',
+      paymentStatus: 'VERIFIED',
+      claimedAt: null,
+      buyerAccountId: null,
+      payments: [COUNTING_PAYMENT],
+    };
+
+    it.each([
+      ['no payments at all', { payments: [] }],
+      [
+        'only an unreviewed buyer proof',
+        {
+          payments: [
+            {
+              amount: 10,
+              source: 'BUYER_SUBMITTED',
+              reviewStatus: 'PENDING_REVIEW',
+              voidedAt: null,
+            },
+          ],
+        },
+      ],
+      [
+        'only a voided payment',
+        { payments: [{ ...COUNTING_PAYMENT, voidedAt: new Date() }] },
+      ],
+      ['a rejected payment status', { paymentStatus: 'REJECTED' }],
+    ])('writes no row for an order with %s', async (_label, patch) => {
+      const { token } = createOrderAccessToken();
+      prisma.order.findUnique.mockResolvedValue({ ...base, ...patch });
+
+      for (const type of [
+        'INVITE_SHOWN',
+        'INVITE_CLICKED',
+        'INVITE_DISMISSED',
+      ] as const) {
+        await expect(
+          service.recordInvite(token, type, 'banner'),
+        ).resolves.toBeUndefined();
+      }
+
+      expect(prisma.orderEvent.create).not.toHaveBeenCalled();
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+
+    it('a rejected order that gets a counting payment becomes eligible again', async () => {
+      const { token } = createOrderAccessToken();
+      prisma.order.findUnique.mockResolvedValue({
+        ...base,
+        paymentStatus: 'REJECTED',
+      });
+      await service.recordInvite(token, 'INVITE_SHOWN', 'banner');
+      expect(prisma.orderEvent.create).not.toHaveBeenCalled();
+
+      prisma.order.findUnique.mockResolvedValue({
+        ...base,
+        paymentStatus: 'PARTIALLY_PAID',
+      });
+      await service.recordInvite(token, 'INVITE_SHOWN', 'banner');
+      expect(prisma.orderEvent.create).toHaveBeenCalledTimes(1);
+    });
+
+    it('dedupes INVITE_CLICKED per moment under its own advisory lock', async () => {
+      const { token } = createOrderAccessToken();
+      prisma.order.findUnique.mockResolvedValue(base);
+
+      await service.recordInvite(token, 'INVITE_CLICKED', 'banner');
+      expect(prisma.orderEvent.findFirst).toHaveBeenCalledWith({
+        where: {
+          orderId: 'order-1',
+          type: 'INVITE_CLICKED',
+          payload: { path: ['moment'], equals: 'banner' },
+        },
+        select: { id: true },
+      });
+      expect(JSON.stringify(prisma.$executeRaw.mock.calls[0])).toContain(
+        'invite-clicked:order-1:banner',
+      );
+      expect(prisma.orderEvent.create).toHaveBeenCalledTimes(1);
+
+      // A second press of the same moment (retry after an error) is skipped.
+      prisma.orderEvent.findFirst.mockResolvedValueOnce({ id: 'c1' });
+      await service.recordInvite(token, 'INVITE_CLICKED', 'banner');
+      expect(prisma.orderEvent.create).toHaveBeenCalledTimes(1);
+
+      // A different moment is a new row.
+      await service.recordInvite(token, 'INVITE_CLICKED', 'entrega');
+      expect(prisma.orderEvent.create).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not dedupe INVITE_DISMISSED', async () => {
+      const { token } = createOrderAccessToken();
+      prisma.order.findUnique.mockResolvedValue(base);
+      prisma.orderEvent.findFirst.mockResolvedValue({ id: 'existing' });
+
+      await service.recordInvite(token, 'INVITE_DISMISSED', 'banner');
+      await service.recordInvite(token, 'INVITE_DISMISSED', 'banner');
+
+      expect(prisma.$executeRaw).not.toHaveBeenCalled();
+      expect(prisma.orderEvent.create).toHaveBeenCalledTimes(2);
+    });
+
+    it('answers the same 404 for a missing or revoked token', async () => {
+      const { token } = createOrderAccessToken();
+      prisma.order.findUnique.mockResolvedValue(null);
+      await expect(service.recordInvite(token, 'INVITE_SHOWN')).rejects.toThrow(
+        'Pedido no encontrado',
+      );
+      prisma.order.findUnique.mockResolvedValue({
+        ...base,
+        accessTokenRevokedAt: new Date(),
+      });
+      await expect(service.recordInvite(token, 'INVITE_SHOWN')).rejects.toThrow(
+        'Pedido no encontrado',
+      );
+    });
   });
 
   it('lists only events marked visible to the buyer', async () => {
@@ -304,6 +439,8 @@ describe('OrderEventsService', () => {
       prisma.order.findUnique.mockResolvedValue(base);
 
       const result = await service.confirmReceipt(token);
+      // The documented response shape, and nothing else.
+      expect(Object.keys(result)).toEqual(['receiptConfirmedAt']);
 
       expect(prisma.order.updateMany).toHaveBeenCalledWith({
         where: {

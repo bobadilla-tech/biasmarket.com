@@ -12,10 +12,12 @@ import type {
   Prisma,
 } from '@biasmarket/db';
 import { hashOrderAccessToken } from '@biasmarket/utils/assisted-order';
+import { RECEIPT_FULFILLMENT_STATES as RECEIPT_STATES } from '@biasmarket/utils/order-receipt';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { countsTowardPaid } from '../../../common/payment-summary.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
 import { INVITE_EVENT_TYPES } from '../dto/record-invite-event.dto.js';
+import type { ReceiptConfirmedResponseDto } from '../dto/receipt-confirmed-response.dto.js';
 import type { ClaimMoment } from '../../customer-auth/claim-ticket.js';
 
 // Which later issue writes each type. G2 reads the buyer-visible rows.
@@ -63,11 +65,8 @@ const ALLOWED_PAYLOAD_KEYS = new Set([
   'moment',
 ]);
 
-const RECEIPT_FULFILLMENT_STATES = new Set<FulfillmentStatus>([
-  'IN_TRANSIT',
-  'READY',
-  'COMPLETED',
-]);
+// Shared with the web's confirm button (`@biasmarket/utils/order-receipt`).
+const RECEIPT_FULFILLMENT_STATES = new Set<FulfillmentStatus>(RECEIPT_STATES);
 
 export type InviteEventType = (typeof INVITE_EVENT_TYPES)[number];
 
@@ -267,36 +266,77 @@ export class OrderEventsService {
     }
   }
 
+  // Own select (not `requireOrderForToken`): the invite gate needs the
+  // payments, which receipt/proof callers should not load. Unknown and revoked
+  // tokens give the identical 404.
+  async loadForInvite(token: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { accessTokenHash: hashOrderAccessToken(token ?? '') },
+      select: {
+        id: true,
+        storeId: true,
+        status: true,
+        paymentStatus: true,
+        claimedAt: true,
+        buyerAccountId: true,
+        accessTokenRevokedAt: true,
+        payments: {
+          select: {
+            amount: true,
+            source: true,
+            reviewStatus: true,
+            voidedAt: true,
+          },
+        },
+      },
+    });
+    if (!order || order.accessTokenRevokedAt) {
+      throw new NotFoundException('Pedido no encontrado');
+    }
+    return order;
+  }
+
   async recordInvite(
     token: string,
     type: InviteEventType,
     moment?: ClaimMoment,
   ) {
-    const order = await this.requireOrderForToken(token);
-    // A cancelled or expired order is not an invite funnel, and neither is one
-    // that was already saved: counting those posts would inflate D3/F2.
+    const order = await this.loadForInvite(token);
+    // Only an order the buyer could really be invited to counts toward the
+    // funnel: not cancelled, not already saved, with at least one payment that
+    // counts as paid, and not rejected right now ("never rejected" is the
+    // current `paymentStatus`; a rejected order that later gets a counting
+    // payment leaves REJECTED and becomes eligible). This mirrors the web's
+    // `isInviteEligible` so a link holder cannot skew D3/F2 by posting for
+    // ineligible orders. The answer is the same silent 204 as a valid event.
     if (
       order.status === 'CANCELLED' ||
       order.paymentStatus === 'CANCELLED' ||
+      order.paymentStatus === 'REJECTED' ||
       order.claimedAt ||
-      order.buyerAccountId
+      order.buyerAccountId ||
+      !order.payments.some(countsTowardPaid)
     ) {
       return;
     }
     await this.prisma.$transaction(async (tx) => {
-      // INVITE_SHOWN is "the invite was shown", not a page-view counter. One
-      // client retrying the beacon must not write a row per retry, so the
-      // check-then-insert runs under an advisory lock: concurrent beacons
-      // queue up and all but the first see the existing row. It is once per
-      // order AND moment, so the first-validation block and a later banner
-      // each count.
-      if (type === 'INVITE_SHOWN') {
-        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`invite-shown:${order.id}:${moment ?? ''}`}))`;
+      // INVITE_SHOWN and INVITE_CLICKED are "once per order AND moment", not
+      // counters: one client retrying the beacon, or pressing "Guardar con
+      // Google" again after an error, must not write a row per attempt. The
+      // check-then-insert runs under an advisory lock (one key per type, so
+      // SHOWN and CLICKED do not queue behind each other): concurrent beacons
+      // queue up and all but the first see the existing row. The first
+      // validation block and a later banner each count. Without a moment
+      // (older clients) the type matches any earlier row, i.e. once per order.
+      // INVITE_DISMISSED is not deduped. The collapsed banner counts as shown.
+      if (type === 'INVITE_SHOWN' || type === 'INVITE_CLICKED') {
+        const lockKey =
+          type === 'INVITE_SHOWN' ? 'invite-shown' : 'invite-clicked';
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`${lockKey}:${order.id}:${moment ?? ''}`}))`;
         const existing = await tx.orderEvent.findFirst({
           where: {
             orderId: order.id,
-            type: 'INVITE_SHOWN',
-            // Without a moment (older clients) it stays once per order.
+            type,
             ...(moment
               ? { payload: { path: ['moment'], equals: moment } }
               : {}),
@@ -319,7 +359,7 @@ export class OrderEventsService {
   // notifies the seller; any later call returns the stored date untouched.
   // The state gate is deliberately generic (409) so the response does not
   // describe the order beyond what the public page already shows.
-  async confirmReceipt(token: string): Promise<{ receiptConfirmedAt: string }> {
+  async confirmReceipt(token: string): Promise<ReceiptConfirmedResponseDto> {
     const order = await this.requireOrderForToken(token);
     if (
       order.paymentStatus !== 'VERIFIED' ||

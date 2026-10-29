@@ -403,6 +403,8 @@ export interface CreateVariantDto {
 }
 
 export interface CreateProductDto {
+  /** @maxItems 6 */
+  images?: string[];
   /** @minLength 2 */
   name: string;
   categoryIds?: string[];
@@ -410,7 +412,6 @@ export interface CreateProductDto {
   price: number;
   soldOut?: boolean;
   discontinued?: boolean;
-  images?: string[];
   availableUntil?: string;
   currency?: string;
   /** @minimum 0 */
@@ -505,6 +506,8 @@ export interface ProductDetailResponseDto {
 }
 
 export interface UpdateProductDto {
+  /** @maxItems 6 */
+  images?: string[];
   /** @minLength 2 */
   name?: string;
   categoryIds?: string[];
@@ -512,7 +515,6 @@ export interface UpdateProductDto {
   price?: number;
   soldOut?: boolean;
   discontinued?: boolean;
-  images?: string[];
   availableUntil?: string;
   currency?: string;
 }
@@ -855,8 +857,6 @@ export interface OrderResponseDto {
   /** @nullable */
   customerId: string | null;
   /** @nullable */
-  buyerAccountId: string | null;
-  /** @nullable */
   customerEmail: string | null;
   customerPhone: string;
   /** @nullable */
@@ -1037,8 +1037,6 @@ export interface OrderDetailResponseDto {
   storeId: string;
   /** @nullable */
   customerId: string | null;
-  /** @nullable */
-  buyerAccountId: string | null;
   /** @nullable */
   customerEmail: string | null;
   customerPhone: string;
@@ -1310,8 +1308,6 @@ export interface OrderStatusResponseDto {
   storeId: string;
   /** @nullable */
   customerId: string | null;
-  /** @nullable */
-  buyerAccountId: string | null;
   /** @nullable */
   customerEmail: string | null;
   customerPhone: string;
@@ -1619,8 +1615,6 @@ export interface CheckoutOrderResponseDto {
   storeId: string;
   /** @nullable */
   customerId: string | null;
-  /** @nullable */
-  buyerAccountId: string | null;
   /** @nullable */
   customerEmail: string | null;
   customerPhone: string;

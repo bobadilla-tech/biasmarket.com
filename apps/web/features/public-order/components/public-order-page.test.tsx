@@ -49,7 +49,7 @@ function makeOrder(
     },
     customerPhone: "+51 9** *** 321",
     customerAlias: "Sofi",
-    orderNumber: "AB12",
+    orderNumber: "ABCD12",
     createdAt: "2026-09-01T12:00:00.000Z",
     items: [
       { name: "Lightstick", quantity: 2, unitPrice: "50", currency: "PEN" },
@@ -117,7 +117,7 @@ test("passes the token to the API and renders greeting, number and amounts", asy
   renderPage();
   expect(await screen.findByText("Hola, Sofi")).toBeTruthy();
   expect(getByToken).toHaveBeenCalledWith(TOKEN);
-  expect(screen.getByText(/Pedido #AB12/)).toBeTruthy();
+  expect(screen.getByText(/Pedido #ABCD12/)).toBeTruthy();
   expect(screen.getByText("Pedido para +51 9** *** 321")).toBeTruthy();
   expect(screen.getByText("PEN 100")).toBeTruthy(); // total
   expect(screen.getAllByText("PEN 30").length).toBeGreaterThan(0); // deposit / pending
@@ -146,7 +146,7 @@ test("pending payment shows how to pay with the method details and a paid button
   ).toBeTruthy();
   const paid = await screen.findByRole("link", { name: /Ya pagué/ });
   const href = paid.getAttribute("href")!;
-  expect(decodeURIComponent(href)).toContain("ya pagué el pedido #AB12");
+  expect(decodeURIComponent(href)).toContain("ya pagué el pedido #ABCD12");
   expect(href).not.toContain(TOKEN);
 });
 
@@ -320,7 +320,7 @@ test("the not-your-number disclosure links to WhatsApp with the order ref only",
   const href = button.getAttribute("href")!;
   expect(href.startsWith("https://wa.me/")).toBe(true);
   expect(decodeURIComponent(href)).toContain(
-    "el pedido #AB12 no es para mi número",
+    "el pedido #ABCD12 no es para mi número",
   );
   expect(href).not.toContain(TOKEN);
   expect(button.getAttribute("rel")).toBe("noopener noreferrer");

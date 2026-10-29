@@ -28,5 +28,11 @@ export function paymentProofSrc(token: string, paymentId: string): string {
 // navigation must use the SAME host: the ticket is a host-scoped cookie that
 // only that host will send back.
 export function publicApiBase(): string {
-  return process.env.NEXT_PUBLIC_API_URL ?? process.env.INTERNAL_API_URL ?? "";
+  return (
+    process.env.NEXT_PUBLIC_API_URL ??
+    process.env.INTERNAL_API_URL ??
+    // Same local-development default as `lib/api-client.ts`, so a dev server
+    // without env vars does not build relative `/api/...` URLs.
+    (process.env.NODE_ENV === "development" ? "http://localhost:3000" : "")
+  );
 }

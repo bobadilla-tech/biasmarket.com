@@ -131,7 +131,7 @@ describe('PublicOrderService', () => {
 
     expect(result.customerPhone).toBe('+51 9** *** 321');
     expect(result.customerAlias).toBe('Ana');
-    expect(result.orderNumber).toBe('ER-1');
+    expect(result.orderNumber).toBe('RDER-1');
     expect(result.createdAt).toBe('2026-09-30T12:00:00.000Z');
     expect(result.store).toEqual({
       name: 'Tienda',
@@ -227,7 +227,7 @@ describe('PublicOrderService', () => {
         'closure',
       ].sort(),
     );
-    expect(result.orderNumber).toBe('WXYZ');
+    expect(result.orderNumber).toBe('34WXYZ');
     expect(JSON.stringify(result)).not.toContain('cmabcdefgh1234wxyz');
     expect(JSON.stringify(result)).not.toContain('hash-secret');
   });

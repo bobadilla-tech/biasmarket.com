@@ -269,9 +269,9 @@
     "submitting": "Logging in...",
     "forgotPasswordLink": "Forgot your password?",
     "google": "Continue with Google",
+    "googleHint": "If you bought with your phone, log in with your phone to see those orders.",
     "googleErrors": {
       "unavailable": "Google sign-in is not available right now",
-      "ambiguous": "More than one account uses that email. Log in with your phone instead.",
       "failed": "Could not log in with Google. Please try again."
     }
   },
@@ -464,6 +464,8 @@
     "detail": {
       "back": "Back to my purchases",
       "notFound": "We couldn't find this order in your account.",
+      "loginRequired": "Log in to see this order.",
+      "loginCta": "Go to my purchases to log in",
       "claimed": "Done! We saved this order to your account. Your original link still works."
     }
   },

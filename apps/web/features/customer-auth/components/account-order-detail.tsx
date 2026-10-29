@@ -21,7 +21,7 @@ import {
   getShippingAddress,
 } from "@/features/orders/lib/order-format";
 import { paymentMethodLabels } from "@/features/orders/lib/payment-method-labels";
-import { OriginLabel } from "@/features/buyer-purchases/components/origin-label";
+import { OriginLabel } from "@/features/buyer-purchases";
 import { ContactSellerButton } from "./contact-seller-button";
 import { orderPaymentsApi } from "../api/order-payments.api";
 import { useSubmitPaymentProof } from "../mutations/use-submit-payment-proof";

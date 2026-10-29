@@ -105,11 +105,21 @@ test("offers Google sign-in that starts the store-scoped buyer flow", () => {
   );
 });
 
-test("explains a Google sign-in that matched several accounts", () => {
+test("tells buyers who bought with their phone to sign in with it, next to the Google button", () => {
+  renderWithProviders(<CustomerLoginForm slug="my-store" />);
+
+  expect(
+    screen.getByText(
+      "Si compraste con tu teléfono, ingresa con tu teléfono para ver esos pedidos.",
+    ),
+  ).toBeDefined();
+});
+
+test("no longer maps the retired ambiguous Google error", () => {
   searchParams = new URLSearchParams("google=ambiguous");
   renderWithProviders(<CustomerLoginForm slug="my-store" />);
 
-  expect(screen.getByText(/Más de una cuenta usa ese correo/)).toBeDefined();
+  expect(screen.queryByText(/Más de una cuenta usa ese correo/)).toBeNull();
 });
 
 test("the global login (no slug) starts the global Google flow and links to the global forgot-password page", () => {

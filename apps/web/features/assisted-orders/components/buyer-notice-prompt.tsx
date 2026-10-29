@@ -113,6 +113,12 @@ export function BuyerNoticePrompt({
         className="w-full rounded-xl border border-input bg-[#fcf9ff] p-3 text-base text-[#341b55] md:text-sm"
       />
 
+      {template.isError ? (
+        <p role="status" className="text-xs text-[#8e7ca7]">
+          {t("templateError")}
+        </p>
+      ) : null}
+
       <div className="flex flex-col gap-2 sm:flex-row">
         <ConfirmNumberAndOpenWhatsApp
           disabled={!ready}

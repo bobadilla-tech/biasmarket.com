@@ -31,7 +31,6 @@ const base = {
   id: "order-abcdef",
   storeId: "store-1",
   customerId: "c1",
-  buyerAccountId: null,
   customerEmail: null,
   customerName: "Sofi",
   customerPhone: "+51987654321",
@@ -424,7 +423,6 @@ test("shows a Reclamado badge only once the buyer claimed the order, and no buye
       order={{
         ...base,
         claimedAt: "2026-10-02T10:00:00.000Z",
-        buyerAccountId: "buyer-secret-id",
       }}
       storeId="store-1"
       storeName="Mi Tienda"

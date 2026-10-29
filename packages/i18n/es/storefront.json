@@ -265,9 +265,9 @@
     "submitting": "Ingresando...",
     "forgotPasswordLink": "¿Olvidaste tu contraseña?",
     "google": "Continuar con Google",
+    "googleHint": "Si compraste con tu teléfono, ingresa con tu teléfono para ver esos pedidos.",
     "googleErrors": {
       "unavailable": "El inicio de sesión con Google no está disponible ahora",
-      "ambiguous": "Más de una cuenta usa ese correo. Ingresa con tu teléfono.",
       "failed": "No se pudo ingresar con Google. Inténtalo de nuevo."
     }
   },
@@ -464,6 +464,8 @@
     "detail": {
       "back": "Volver a mis compras",
       "notFound": "No encontramos este pedido en tu cuenta.",
+      "loginRequired": "Ingresa para ver este pedido.",
+      "loginCta": "Ir a mis compras para ingresar",
       "claimed": "¡Listo! Guardamos este pedido en tu cuenta. Tu enlace original sigue funcionando."
     }
   },

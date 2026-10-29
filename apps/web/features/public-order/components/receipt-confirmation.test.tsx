@@ -21,7 +21,7 @@ const order = (
   overrides: Partial<PublicOrderResponseDto> = {},
 ): PublicOrderResponseDto =>
   ({
-    orderNumber: "AB12",
+    orderNumber: "ABCD12",
     paymentStatus: "VERIFIED",
     status: "ACTIVE",
     fulfillmentStatus: "IN_TRANSIT",

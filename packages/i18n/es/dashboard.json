@@ -502,7 +502,8 @@
       "LOW_STOCK": "Stock bajo",
       "OUT_OF_STOCK": "Sin stock",
       "PAYMENT_PROOF_SUBMITTED": "Comprobante de pago enviado",
-      "RECEIPT_CONFIRMED": "Recepción confirmada"
+      "RECEIPT_CONFIRMED": "Recepción confirmada",
+      "GENERIC": "Notificación"
     }
   },
   "preferences": {
@@ -1007,6 +1008,7 @@
       "title": "Avisar al comprador",
       "notNow": "Ahora no",
       "dismiss": "Cerrar",
+      "templateError": "No pudimos cargar tu mensaje guardado, así que este es el texto por defecto.",
       "reason": {
         "ASSISTED_PAYMENT_VALIDATED": "Validaste su pago. Avísale por WhatsApp si quieres.",
         "ASSISTED_IN_TRANSIT": "El pedido va en camino. Avísale por WhatsApp si quieres.",

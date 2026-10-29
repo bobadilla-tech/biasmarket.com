@@ -199,9 +199,6 @@ export class OrderResponseDto {
   customerId: string | null;
 
   @ApiProperty({ type: String, nullable: true })
-  buyerAccountId: string | null;
-
-  @ApiProperty({ type: String, nullable: true })
   customerEmail: string | null;
 
   @ApiProperty()
@@ -374,9 +371,6 @@ export class OrderStatusResponseDto {
 
   @ApiProperty({ type: String, nullable: true })
   customerId: string | null;
-
-  @ApiProperty({ type: String, nullable: true })
-  buyerAccountId: string | null;
 
   @ApiProperty({ type: String, nullable: true })
   customerEmail: string | null;

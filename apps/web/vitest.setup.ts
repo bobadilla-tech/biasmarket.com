@@ -1,3 +1,4 @@
+import { createElement } from "react";
 import { afterEach, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
 import { installBrowserEnvStubs, resetViewport } from "./test-utils/viewport";
@@ -35,6 +36,25 @@ if (typeof URL.createObjectURL !== "function") {
 if (typeof URL.revokeObjectURL !== "function") {
   URL.revokeObjectURL = vi.fn();
 }
+
+// next/image validates `src` against next.config.ts `images.remotePatterns`
+// when that config reaches the runtime, which makes tests that render a CDN URL
+// depend on how vitest was launched (issue #341). Tests only read the `src`
+// attribute, never the optimizer's `/_next/image` URL or `srcset`, so render a
+// plain <img> and drop the props that are not valid DOM attributes. Next's real
+// config is untouched; `next.config.test.ts` pins the allowed hosts.
+vi.mock("next/image", () => ({
+  default: ({
+    fill: _fill,
+    priority: _priority,
+    unoptimized: _unoptimized,
+    placeholder: _placeholder,
+    blurDataURL: _blurDataURL,
+    loader: _loader,
+    quality: _quality,
+    ...props
+  }: Record<string, unknown>) => createElement("img", props),
+}));
 
 afterEach(() => {
   cleanup();

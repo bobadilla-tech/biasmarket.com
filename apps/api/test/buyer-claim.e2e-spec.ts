@@ -1,6 +1,7 @@
 import { Test, type TestingModule } from '@nestjs/testing';
 import { type INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
+import { orderRef } from '@biasmarket/utils/order-ref';
 import { randomUUID } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import { PrismaService } from '../src/prisma/prisma.service.js';
@@ -271,7 +272,7 @@ describe('claim order with Google (e2e)', () => {
     expect(pub.body.timeline.map((i: { type: string }) => i.type)).toContain(
       'CLAIMED',
     );
-    expect(pub.body.orderNumber).toBe(orderId.slice(-4).toUpperCase());
+    expect(pub.body.orderNumber).toBe(orderRef(orderId));
   });
 
   it('lets exactly one of two different accounts claim concurrently', async () => {
@@ -418,6 +419,41 @@ describe('claim order with Google (e2e)', () => {
     });
     expect(untouched.emailVerified).toBe(false);
     expect(untouched.googleSub).toBeNull();
+    const row = await prisma.order.findUniqueOrThrow({
+      where: { id: orderId },
+    });
+    expect(row.buyerAccountId).toBe(account.id);
+  });
+
+  it('never links a VERIFIED same-email account either: the order binds to a new Google account', async () => {
+    await reset();
+    const who = id('verified-clash');
+    // The #377 scenario: a checkout-created phone account carrying the
+    // victim's email, which the victim then confirmed.
+    const existing = await prisma.buyerAccount.create({
+      data: {
+        email: who.email,
+        emailVerified: true,
+        phone: `+519${Math.floor(Math.random() * 1e8)
+          .toString()
+          .padStart(8, '0')}`,
+        passwordHash: 'attacker-known-password-hash',
+      },
+    });
+    accountIds.push(existing.id);
+
+    await auth.claimWithGoogle(who, await issueTicket());
+
+    const account = await prisma.buyerAccount.findUniqueOrThrow({
+      where: { googleSub: who.sub },
+    });
+    accountIds.push(account.id);
+    expect(account.id).not.toBe(existing.id);
+    const untouched = await prisma.buyerAccount.findUniqueOrThrow({
+      where: { id: existing.id },
+    });
+    expect(untouched.googleSub).toBeNull();
+    expect(untouched.passwordHash).toBe('attacker-known-password-hash');
     const row = await prisma.order.findUniqueOrThrow({
       where: { id: orderId },
     });
