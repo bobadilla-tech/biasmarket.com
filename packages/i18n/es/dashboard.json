@@ -920,6 +920,8 @@
     "submit": "Crear pedido",
     "submitting": "Creando pedido…",
     "errors": {
+      "alreadyCreated": "Ya creaste este pedido.",
+      "viewExistingOrder": "Ver el pedido",
       "phoneRequired": "Ingresa el WhatsApp del comprador.",
       "phoneInvalid": "El número no es válido.",
       "aliasTooLong": "Máximo 60 caracteres.",
