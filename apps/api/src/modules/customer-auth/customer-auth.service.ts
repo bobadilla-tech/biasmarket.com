@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -36,6 +37,8 @@ export class ClaimOrderError extends Error {
 
 @Injectable()
 export class CustomerAuthService {
+  private readonly logger = new Logger(CustomerAuthService.name);
+
   constructor(
     private prisma: PrismaService,
     private customerAccount: CustomerAccountService,
@@ -209,13 +212,14 @@ export class CustomerAuthService {
     return buyerAccount;
   }
 
-  // Google proves ownership of an email, not a phone number. Resolution
-  // order: (1) the account already bound to this Google `sub`; (2) exactly one
-  // account with that email whose email is already VERIFIED, which gets bound
-  // to the `sub`; (3) otherwise a new phone-less account. An unverified
-  // same-email account is never linked nor flipped to verified: anyone can
-  // register a phone account with a victim's email (unverified) and a password
-  // they know, so linking it would hand the victim's Google login to them.
+  // Google proves ownership of an email, not a phone number, and an email
+  // alone is not a safe key to merge accounts on: a checkout can create a
+  // phone account carrying someone else's email, and a victim who then
+  // confirms that email would hand their Google login to an account the
+  // attacker shaped. So Google never links by email. Resolution: (1) the
+  // account already bound to this Google `sub`; (2) otherwise a new phone-less,
+  // Google-verified account. A buyer who bought with their phone signs in with
+  // their phone to see those orders (the web shows a hint).
   // Runs on its own statements (no surrounding transaction) because a P2002
   // aborts a Postgres transaction and could not be recovered from.
   // `slug` is null for the global (no-store) entry point.
@@ -355,43 +359,9 @@ export class CustomerAuthService {
     });
     if (bySub) return bySub;
 
-    const matches = await this.prisma.buyerAccount.findMany({
-      where: {
-        email: { equals: identity.email, mode: 'insensitive' },
-        emailVerified: true,
-      },
-    });
-    if (matches.length > 1) {
-      throw new ConflictException('Hay más de una cuenta con este correo');
-    }
-
-    const existing = matches[0];
-    if (existing) {
-      // Bound to this very identity (a concurrent first login won the race
-      // after our `googleSub` lookup): sign in. Bound to another one: not ours
-      // to take over.
-      if (existing.googleSub === identity.sub) return existing;
-      if (existing.googleSub) {
-        throw new ConflictException('Esta cuenta ya está vinculada a Google');
-      }
-      const { count } = await this.prisma.buyerAccount.updateMany({
-        where: { id: existing.id, googleSub: null },
-        data: {
-          googleSub: identity.sub,
-          ...(existing.name ? {} : { name: identity.name }),
-        },
-      });
-      if (count === 1) return existing;
-      // Lost a race with another first login: whoever bound the sub wins.
-      const winner = await this.prisma.buyerAccount.findUnique({
-        where: { googleSub: identity.sub },
-      });
-      if (winner) return winner;
-      throw new ConflictException('Esta cuenta ya está vinculada a Google');
-    }
-
+    let created: { id: string; passwordVersion: number };
     try {
-      return await this.prisma.buyerAccount.create({
+      created = await this.prisma.buyerAccount.create({
         data: {
           email: identity.email,
           emailVerified: true,
@@ -404,12 +374,41 @@ export class CustomerAuthService {
         err instanceof Prisma.PrismaClientKnownRequestError &&
         err.code === 'P2002'
       ) {
+        // A concurrent first login with this `sub` won the race: sign in.
         const winner = await this.prisma.buyerAccount.findUnique({
           where: { googleSub: identity.sub },
         });
         if (winner) return winner;
       }
       throw err;
+    }
+
+    await this.logSkippedEmailLink(created.id, identity.email);
+    return created;
+  }
+
+  // Support breadcrumb for "I signed in with Google and my orders are gone":
+  // another account already uses this email and was deliberately not linked.
+  // Ids only, never the email or a phone. Best effort: the account exists
+  // already, so a failure here must not fail the login.
+  private async logSkippedEmailLink(buyerAccountId: string, email: string) {
+    try {
+      const existing = await this.prisma.buyerAccount.findFirst({
+        where: {
+          email: { equals: email, mode: 'insensitive' },
+          id: { not: buyerAccountId },
+        },
+        select: { id: true },
+      });
+      if (existing) {
+        this.logger.log({
+          event: 'google-link-skipped',
+          buyerAccountId,
+          existingBuyerAccountId: existing.id,
+        });
+      }
+    } catch {
+      // Intentionally ignored: logging only.
     }
   }
 

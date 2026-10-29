@@ -424,6 +424,41 @@ describe('claim order with Google (e2e)', () => {
     expect(row.buyerAccountId).toBe(account.id);
   });
 
+  it('never links a VERIFIED same-email account either: the order binds to a new Google account', async () => {
+    await reset();
+    const who = id('verified-clash');
+    // The #377 scenario: a checkout-created phone account carrying the
+    // victim's email, which the victim then confirmed.
+    const existing = await prisma.buyerAccount.create({
+      data: {
+        email: who.email,
+        emailVerified: true,
+        phone: `+519${Math.floor(Math.random() * 1e8)
+          .toString()
+          .padStart(8, '0')}`,
+        passwordHash: 'attacker-known-password-hash',
+      },
+    });
+    accountIds.push(existing.id);
+
+    await auth.claimWithGoogle(who, await issueTicket());
+
+    const account = await prisma.buyerAccount.findUniqueOrThrow({
+      where: { googleSub: who.sub },
+    });
+    accountIds.push(account.id);
+    expect(account.id).not.toBe(existing.id);
+    const untouched = await prisma.buyerAccount.findUniqueOrThrow({
+      where: { id: existing.id },
+    });
+    expect(untouched.googleSub).toBeNull();
+    expect(untouched.passwordHash).toBe('attacker-known-password-hash');
+    const row = await prisma.order.findUniqueOrThrow({
+      where: { id: orderId },
+    });
+    expect(row.buyerAccountId).toBe(account.id);
+  });
+
   it('blocks correcting the buyer phone once the order is claimed', async () => {
     await reset();
     const who = id('phone');
