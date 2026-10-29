@@ -34,7 +34,7 @@ export function FanJourneySection() {
               <Link
                 key={key}
                 href={href}
-                className="landing-fan-step group flex min-h-24 items-center gap-4 rounded-2xl px-4 py-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white sm:min-h-28 sm:px-5"
+                className="landing-fan-step group flex h-auto min-h-24 items-center gap-4 rounded-2xl px-4 py-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white sm:min-h-28 sm:px-5"
               >
                 <span className="landing-fan-step-icon inline-flex size-12 shrink-0 items-center justify-center rounded-2xl text-[#ffd2ed]">
                   <Icon
