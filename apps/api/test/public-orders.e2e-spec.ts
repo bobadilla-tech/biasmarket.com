@@ -518,6 +518,8 @@ describe('public orders (e2e)', () => {
       await post({ type: 'INVITE_CLICKED', moment: 'banner' }).expect(204);
       // A retried press of the same moment is not a second row.
       await post({ type: 'INVITE_CLICKED', moment: 'banner' }).expect(204);
+      // An older moment-less client also dedupes against the specific event.
+      await post({ type: 'INVITE_CLICKED' }).expect(204);
 
       const rows = await prisma.orderEvent.findMany({
         where: {
@@ -532,6 +534,31 @@ describe('public orders (e2e)', () => {
         ['INVITE_CLICKED', { moment: 'banner' }],
       ]);
       expect(rows.every((r) => r.visibleToBuyer === false)).toBe(true);
+
+      await prisma.orderEvent.deleteMany({
+        where: { orderId: id, type: 'INVITE_CLICKED' },
+      });
+      await Promise.all([
+        post({ type: 'INVITE_CLICKED' }).expect(204),
+        post({ type: 'INVITE_CLICKED', moment: 'banner' }).expect(204),
+      ]);
+      expect(
+        await prisma.orderEvent.count({
+          where: { orderId: id, type: 'INVITE_CLICKED' },
+        }),
+      ).toBe(1);
+
+      // If an older client records the event first, a later specific moment
+      // must still dedupe against that legacy row.
+      await prisma.orderEvent.deleteMany({
+        where: { orderId: id, type: 'INVITE_SHOWN' },
+      });
+      await post({ type: 'INVITE_SHOWN' }).expect(204);
+      await post({ type: 'INVITE_SHOWN', moment: 'banner' }).expect(204);
+      const legacyFirstRows = await prisma.orderEvent.findMany({
+        where: { orderId: id, type: 'INVITE_SHOWN' },
+      });
+      expect(legacyFirstRows.map((row) => row.payload)).toEqual([{}]);
 
       // Closed set: nothing free-form reaches the stored payload.
       await post({ type: 'INVITE_SHOWN', moment: 'a@b.com' }).expect(400);
@@ -551,7 +578,7 @@ describe('public orders (e2e)', () => {
         await prisma.orderEvent.count({
           where: { orderId: id, type: 'INVITE_SHOWN' },
         }),
-      ).toBe(2);
+      ).toBe(1);
       await prisma.order.update({ where: { id }, data: { claimedAt: null } });
     });
 

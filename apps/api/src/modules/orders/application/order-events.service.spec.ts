@@ -196,7 +196,10 @@ describe('OrderEventsService', () => {
       where: {
         orderId: 'order-1',
         type: 'INVITE_SHOWN',
-        payload: { path: ['moment'], equals: 'pago_validado' },
+        OR: [
+          { payload: { path: ['moment'], equals: 'pago_validado' } },
+          { payload: { equals: {} } },
+        ],
       },
       select: { id: true },
     });
@@ -209,7 +212,8 @@ describe('OrderEventsService', () => {
       }),
     });
     const lock = JSON.stringify(prisma.$executeRaw.mock.calls[0]);
-    expect(lock).toContain('invite-shown:order-1:');
+    expect(lock).toContain('invite-shown:order-1');
+    expect(lock).not.toContain('pago_validado');
 
     // The same moment again is skipped; a different moment is a new row.
     prisma.orderEvent.findFirst.mockResolvedValueOnce({ id: 'e1' });
@@ -217,6 +221,12 @@ describe('OrderEventsService', () => {
     expect(prisma.orderEvent.create).toHaveBeenCalledTimes(1);
     await service.recordInvite(token, 'INVITE_SHOWN', 'banner');
     expect(prisma.orderEvent.create).toHaveBeenCalledTimes(2);
+    expect(JSON.stringify(prisma.$executeRaw.mock.calls[2])).toContain(
+      'invite-shown:order-1',
+    );
+    expect(JSON.stringify(prisma.$executeRaw.mock.calls[2])).not.toContain(
+      'banner',
+    );
     expect(prisma.orderEvent.create).toHaveBeenLastCalledWith({
       data: expect.objectContaining({ payload: { moment: 'banner' } }),
     });
@@ -324,7 +334,7 @@ describe('OrderEventsService', () => {
       expect(prisma.orderEvent.create).toHaveBeenCalledTimes(1);
     });
 
-    it('dedupes INVITE_CLICKED per moment under its own advisory lock', async () => {
+    it('dedupes INVITE_CLICKED per moment under an order-level advisory lock', async () => {
       const { token } = createOrderAccessToken();
       prisma.order.findUnique.mockResolvedValue(base);
 
@@ -333,12 +343,18 @@ describe('OrderEventsService', () => {
         where: {
           orderId: 'order-1',
           type: 'INVITE_CLICKED',
-          payload: { path: ['moment'], equals: 'banner' },
+          OR: [
+            { payload: { path: ['moment'], equals: 'banner' } },
+            { payload: { equals: {} } },
+          ],
         },
         select: { id: true },
       });
       expect(JSON.stringify(prisma.$executeRaw.mock.calls[0])).toContain(
-        'invite-clicked:order-1:banner',
+        'invite-clicked:order-1',
+      );
+      expect(JSON.stringify(prisma.$executeRaw.mock.calls[0])).not.toContain(
+        'banner',
       );
       expect(prisma.orderEvent.create).toHaveBeenCalledTimes(1);
 
