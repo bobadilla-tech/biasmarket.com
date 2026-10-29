@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import type { Prisma } from '@biasmarket/db';
 import { maskPhone } from '@biasmarket/utils/phone-country';
+import { orderRef } from '@biasmarket/utils/order-ref';
 import { hashOrderAccessToken } from '@biasmarket/utils/assisted-order';
 import { isPaymentMethodConfigured } from '@biasmarket/utils/payment-methods';
 import { PrismaService } from '../../../prisma/prisma.service.js';
@@ -173,9 +174,9 @@ export class PublicOrderService {
       },
       customerPhone: maskPhone(order.customerPhone),
       customerAlias: toPublicCustomerAlias(order.customerName),
-      // Same rule as web `getOrderNumber` (last 4 of the id, uppercase, no
-      // `#`); change both together (#339). A display ref, never a lookup key.
-      orderNumber: order.id.slice(-4).toUpperCase(),
+      // Display ref only (shared `orderRef`: last 6 of the id, uppercase, no
+      // `#`), never a lookup key.
+      orderNumber: orderRef(order.id),
       createdAt: order.createdAt.toISOString(),
       items: order.items.map((item) => ({
         name: item.product.name,

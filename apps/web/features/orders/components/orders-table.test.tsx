@@ -106,7 +106,7 @@ test("reveals all order details from a keyboard-accessible mobile disclosure", (
     />,
   );
 
-  const disclosure = screen.getByRole("button", { name: "Pedido #ER-1" });
+  const disclosure = screen.getByRole("button", { name: "Pedido #RDER-1" });
   expect(disclosure.getAttribute("aria-expanded")).toBe("false");
 
   fireEvent.click(disclosure);

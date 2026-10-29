@@ -66,7 +66,7 @@ describe('OrderRepository.findRelatedForStore', () => {
 
   it('returns only allow-listed fields', async () => {
     prisma.order.findMany.mockResolvedValueOnce([
-      row('other-order-AB12', '2026-09-01T00:00:00.000Z', {
+      row('other-order-AB1234', '2026-09-01T00:00:00.000Z', {
         customerPhone: '+51987654321',
         customerName: 'Secret',
         accessTokenHash: 'hash',
@@ -79,8 +79,8 @@ describe('OrderRepository.findRelatedForStore', () => {
     expect(result).toEqual({
       items: [
         {
-          id: 'other-order-AB12',
-          orderNumber: 'AB12',
+          id: 'other-order-AB1234',
+          orderNumber: 'AB1234',
           createdAt: '2026-09-01T00:00:00.000Z',
           status: 'ACTIVE',
           paymentStatus: 'PENDING_PAYMENT',

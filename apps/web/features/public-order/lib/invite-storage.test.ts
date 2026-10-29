@@ -11,23 +11,23 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 test("remembers the first-seen flag and the dismissal per store and order number", () => {
-  expect(inviteStorage.getFirstSeen("k-store", "AB12")).toBe(false);
-  inviteStorage.setFirstSeen("k-store", "AB12");
-  expect(inviteStorage.getFirstSeen("k-store", "AB12")).toBe(true);
-  expect(inviteStorage.getFirstSeen("other", "AB12")).toBe(false);
+  expect(inviteStorage.getFirstSeen("k-store", "ABCD12")).toBe(false);
+  inviteStorage.setFirstSeen("k-store", "ABCD12");
+  expect(inviteStorage.getFirstSeen("k-store", "ABCD12")).toBe(true);
+  expect(inviteStorage.getFirstSeen("other", "ABCD12")).toBe(false);
   expect(inviteStorage.getFirstSeen("k-store", "ZZ99")).toBe(false);
 
-  expect(inviteStorage.getDismissedAt("k-store", "AB12")).toBeNull();
-  inviteStorage.setDismissedAt("k-store", "AB12", 1234);
-  expect(inviteStorage.getDismissedAt("k-store", "AB12")).toBe(1234);
+  expect(inviteStorage.getDismissedAt("k-store", "ABCD12")).toBeNull();
+  inviteStorage.setDismissedAt("k-store", "ABCD12", 1234);
+  expect(inviteStorage.getDismissedAt("k-store", "ABCD12")).toBe(1234);
 });
 
 test("keys never contain the order token, only slug and order number", () => {
-  inviteStorage.setFirstSeen("k-store", "AB12");
-  inviteStorage.setDismissedAt("k-store", "AB12", 1);
+  inviteStorage.setFirstSeen("k-store", "ABCD12");
+  inviteStorage.setDismissedAt("k-store", "ABCD12", 1);
   const keys = [...Array(storage.length).keys()].map((i) => storage.key(i)!);
   expect(keys.length).toBe(2);
-  for (const key of keys) expect(key).toMatch(/^bm-invite:k-store:AB12:/);
+  for (const key of keys) expect(key).toMatch(/^bm-invite:k-store:ABCD12:/);
 });
 
 test("falls back to memory when storage throws (private mode, WebView)", () => {
@@ -37,16 +37,16 @@ test("falls back to memory when storage throws (private mode, WebView)", () => {
   vi.spyOn(storage, "setItem").mockImplementation(() => {
     throw new Error("denied");
   });
-  expect(() => inviteStorage.setFirstSeen("k-store", "AB12")).not.toThrow();
-  expect(inviteStorage.getFirstSeen("k-store", "AB12")).toBe(true);
-  expect(inviteStorage.getDismissedAt("k-store", "AB12")).toBeNull();
-  inviteStorage.setDismissedAt("k-store", "AB12", 99);
-  expect(inviteStorage.getDismissedAt("k-store", "AB12")).toBe(99);
+  expect(() => inviteStorage.setFirstSeen("k-store", "ABCD12")).not.toThrow();
+  expect(inviteStorage.getFirstSeen("k-store", "ABCD12")).toBe(true);
+  expect(inviteStorage.getDismissedAt("k-store", "ABCD12")).toBeNull();
+  inviteStorage.setDismissedAt("k-store", "ABCD12", 99);
+  expect(inviteStorage.getDismissedAt("k-store", "ABCD12")).toBe(99);
 });
 
 test("a corrupted dismissal value reads as not dismissed", () => {
-  storage.setItem("bm-invite:k-store:AB12:dismissedAt", "banana");
-  expect(inviteStorage.getDismissedAt("k-store", "AB12")).toBeNull();
+  storage.setItem("bm-invite:k-store:ABCD12:dismissedAt", "banana");
+  expect(inviteStorage.getDismissedAt("k-store", "ABCD12")).toBeNull();
 });
 
 test("works with no localStorage at all (it can be undefined or blocked)", () => {
@@ -56,6 +56,6 @@ test("works with no localStorage at all (it can be undefined or blocked)", () =>
       throw new Error("SecurityError");
     },
   });
-  expect(() => inviteStorage.setFirstSeen("k-store", "AB12")).not.toThrow();
-  expect(inviteStorage.getFirstSeen("k-store", "AB12")).toBe(true);
+  expect(() => inviteStorage.setFirstSeen("k-store", "ABCD12")).not.toThrow();
+  expect(inviteStorage.getFirstSeen("k-store", "ABCD12")).toBe(true);
 });
