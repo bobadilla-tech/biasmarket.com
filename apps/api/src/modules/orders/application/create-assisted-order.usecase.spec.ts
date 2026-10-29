@@ -1,8 +1,9 @@
 import { BadRequestException } from '@nestjs/common';
-import type { Store } from '@biasmarket/db';
+import { Prisma, type Store } from '@biasmarket/db';
 import { hashOrderAccessToken } from '@biasmarket/utils/assisted-order';
 import { CreateAssistedOrderUseCase } from './create-assisted-order.usecase.js';
 import type { CreateAssistedOrderDto } from '../dto/create-assisted-order.dto.js';
+import { DuplicateIdempotencyKeyException } from '../domain/duplicate-idempotency-key.exception.js';
 
 vi.mock('./order-creation.core.js', () => ({
   validateDeliveryPreTx: vi.fn().mockResolvedValue({}),
@@ -34,6 +35,7 @@ function setup(finalAmount: { lte: (n: number) => boolean }) {
   };
   const prisma = {
     $transaction: vi.fn((cb: (t: unknown) => unknown) => cb(tx)),
+    order: { findFirst: vi.fn().mockResolvedValue(null) },
   };
   const events = { record: vi.fn() };
   const customers = { countPreviousOrders: vi.fn().mockResolvedValue(2) };
@@ -111,5 +113,128 @@ describe('CreateAssistedOrderUseCase', () => {
       useCase.execute(store, 'user1', { ...dto, customerPhone: 'abc' }),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  // The `@biasmarket/db` alias is a fake in unit specs, so these cover the
+  // branches only. The real unique index and the concurrent race are covered
+  // by test/assisted-order-idempotency.e2e-spec.ts against a real database.
+  describe('idempotency key', () => {
+    const KEY = '3f2504e0-4f89-41d3-9a0c-0305e82c3301';
+    const p2002 = (meta: Record<string, unknown>) =>
+      new Prisma.PrismaClientKnownRequestError('unique', {
+        code: 'P2002',
+        clientVersion: 'test',
+        meta,
+      });
+
+    it('changes nothing without a key: no lookup, null column', async () => {
+      const { useCase, tx, prisma } = setup({ lte: () => false });
+      await useCase.execute(store, 'user1', dto);
+
+      expect(prisma.order.findFirst).not.toHaveBeenCalled();
+      expect(tx.order.create.mock.calls[0]![0].data.idempotencyKey).toBeNull();
+    });
+
+    it('looks the key up scoped by store AND user, then stores it', async () => {
+      const { useCase, tx, prisma } = setup({ lte: () => false });
+      await useCase.execute(store, 'user1', dto, KEY);
+
+      expect(prisma.order.findFirst).toHaveBeenCalledWith({
+        where: {
+          storeId: 'store1',
+          createdByUserId: 'user1',
+          idempotencyKey: KEY,
+        },
+        select: { id: true },
+      });
+      expect(tx.order.create.mock.calls[0]![0].data.idempotencyKey).toBe(KEY);
+    });
+
+    it('answers a replay before any stock, delivery or transaction work', async () => {
+      const { useCase, prisma } = setup({ lte: () => false });
+      prisma.order.findFirst.mockResolvedValue({ id: 'order-first' });
+      vi.mocked(core.reserveItems).mockClear();
+      vi.mocked(core.validateDeliveryPreTx).mockClear();
+
+      const err = await useCase
+        .execute(store, 'user1', dto, KEY)
+        .catch((e: unknown) => e);
+
+      expect(err).toBeInstanceOf(DuplicateIdempotencyKeyException);
+      expect((err as DuplicateIdempotencyKeyException).orderId).toBe(
+        'order-first',
+      );
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+      expect(core.reserveItems).not.toHaveBeenCalled();
+      expect(core.validateDeliveryPreTx).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      [
+        'an array target',
+        { target: ['storeId', 'createdByUserId', 'idempotencyKey'] },
+      ],
+      [
+        'a constraint-name target',
+        { target: 'Order_storeId_createdByUserId_idempotencyKey_key' },
+      ],
+      [
+        'a driver-adapter error',
+        {
+          driverAdapterError: {
+            cause: { constraint: { fields: ['"idempotencyKey"'] } },
+          },
+        },
+      ],
+    ])(
+      'maps a concurrent unique violation (%s) to the replay, outside the transaction',
+      async (_label, meta) => {
+        const { useCase, prisma } = setup({ lte: () => false });
+        prisma.order.findFirst
+          .mockResolvedValueOnce(null)
+          .mockResolvedValueOnce({ id: 'order-winner' });
+        prisma.$transaction.mockRejectedValue(p2002(meta));
+
+        const err = await useCase
+          .execute(store, 'user1', dto, KEY)
+          .catch((e: unknown) => e);
+
+        expect(err).toBeInstanceOf(DuplicateIdempotencyKeyException);
+        expect((err as DuplicateIdempotencyKeyException).orderId).toBe(
+          'order-winner',
+        );
+        expect(prisma.order.findFirst).toHaveBeenCalledTimes(2);
+      },
+    );
+
+    it('rethrows a unique violation on another index untouched', async () => {
+      const { useCase, prisma } = setup({ lte: () => false });
+      const other = p2002({ target: ['accessTokenHash'] });
+      prisma.$transaction.mockRejectedValue(other);
+
+      await expect(useCase.execute(store, 'user1', dto, KEY)).rejects.toBe(
+        other,
+      );
+      expect(prisma.order.findFirst).toHaveBeenCalledTimes(1);
+    });
+
+    it('rethrows when the winner row cannot be found after the violation', async () => {
+      const { useCase, prisma } = setup({ lte: () => false });
+      const conflict = p2002({ target: ['idempotencyKey'] });
+      prisma.$transaction.mockRejectedValue(conflict);
+
+      await expect(useCase.execute(store, 'user1', dto, KEY)).rejects.toBe(
+        conflict,
+      );
+    });
+
+    it('never treats a violation as a replay when no key was sent', async () => {
+      const { useCase, prisma } = setup({ lte: () => false });
+      const conflict = p2002({ target: ['idempotencyKey'] });
+      prisma.$transaction.mockRejectedValue(conflict);
+
+      await expect(useCase.execute(store, 'user1', dto)).rejects.toBe(conflict);
+      expect(prisma.order.findFirst).not.toHaveBeenCalled();
+    });
   });
 });
