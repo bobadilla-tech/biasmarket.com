@@ -21,8 +21,8 @@ import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import { AllExceptionsFilter } from '../../../common/filters/all-exceptions.filter.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { StorageService } from '../../../storage/storage.service.js';
-import { NotificationsService } from '../../notifications/notifications.service.js';
 import { CustomerSessionGuard } from '../../customer-auth/customer-session.guard.js';
+import { BuyerPaymentProofService } from '../application/buyer-payment-proof.service.js';
 import { OrderEventsService } from '../application/order-events.service.js';
 import { AdvanceFulfillmentUseCase } from '../application/advance-fulfillment.usecase.js';
 import { CancelOrderUseCase } from '../application/cancel-order.usecase.js';
@@ -79,8 +79,7 @@ const routes: Route[] = [
             },
           },
           { provide: StorageService, useValue: {} },
-          { provide: NotificationsService, useValue: {} },
-          { provide: OrderEventsService, useValue: {} },
+          { provide: BuyerPaymentProofService, useValue: {} },
         ],
       })
         .overrideGuard(CustomerSessionGuard)
