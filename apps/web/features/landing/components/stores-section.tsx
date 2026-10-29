@@ -10,7 +10,7 @@ function MobileStoreRow({ store }: { store: LandingStore }) {
   return (
     <Link
       href={`/store/${store.slug}`}
-      className="mx-auto flex min-h-[92px] h-auto w-full max-w-[300px] items-center gap-4 rounded-xl border border-landing-graphite bg-card px-3 py-4 pr-4 shadow-[var(--shadow-soft)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-raised)]"
+      className="landing-store-card mx-auto flex min-h-[92px] h-auto w-full max-w-[300px] items-center gap-4 rounded-xl border border-landing-graphite bg-card px-3 py-4 pr-4 shadow-[var(--shadow-soft)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-raised)]"
     >
       <StoreLogo
         name={store.name}
@@ -33,7 +33,7 @@ export function StoresSection({ stores }: { stores?: LandingStore[] | null }) {
   return (
     <section className="px-6 py-8 sm:px-10 sm:py-14">
       <div className="sm:hidden">
-        <h2 className="text-center text-[21px] leading-[26px] font-bold text-black">
+        <h2 className="landing-section-title text-center text-[21px] leading-[26px] font-bold text-black">
           {t("title")}
         </h2>
         {list.length === 0 ? (
@@ -52,7 +52,7 @@ export function StoresSection({ stores }: { stores?: LandingStore[] | null }) {
       {/* Tablet/desktop — Figma "Descubre tiendas" */}
       <div className="mx-auto hidden max-w-[1344px] px-10 sm:block">
         <div className="flex items-center justify-between gap-8">
-          <h2 className="text-[40px] leading-[48px] font-bold text-landing-ink">
+          <h2 className="landing-section-title text-[40px] leading-[48px] font-bold text-landing-ink">
             {t("title")}
           </h2>
           <Link
@@ -74,7 +74,7 @@ export function StoresSection({ stores }: { stores?: LandingStore[] | null }) {
               <Link
                 key={store.id}
                 href={`/store/${store.slug}`}
-                className="flex min-h-[129px] h-auto items-center gap-6 rounded-2xl border border-landing-graphite bg-card px-8 py-4 shadow-[var(--shadow-soft)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-raised)]"
+                className="landing-store-card flex min-h-[129px] h-auto items-center gap-6 rounded-2xl border border-landing-graphite bg-card px-8 py-4 shadow-[var(--shadow-soft)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-raised)]"
               >
                 <StoreLogo
                   name={store.name}
