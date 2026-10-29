@@ -43,7 +43,7 @@ export function FanJourneySection() {
                     strokeWidth={1.8}
                   />
                 </span>
-                <span className="min-w-0 flex-1">
+                <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">
                   <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-white/45">
                     {t("step", { number: index + 1 })}
                   </span>
