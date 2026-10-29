@@ -37,7 +37,11 @@ export function FanJourneySection() {
                 className="landing-fan-step group flex min-h-24 items-center gap-4 rounded-2xl px-4 py-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white sm:min-h-28 sm:px-5"
               >
                 <span className="landing-fan-step-icon inline-flex size-12 shrink-0 items-center justify-center rounded-2xl text-[#ffd2ed]">
-                  <Icon aria-hidden="true" className="size-5" strokeWidth={1.8} />
+                  <Icon
+                    aria-hidden="true"
+                    className="size-5"
+                    strokeWidth={1.8}
+                  />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-white/45">
@@ -50,7 +54,10 @@ export function FanJourneySection() {
                     {t(`steps.${key}.body`)}
                   </span>
                 </span>
-                <span aria-hidden="true" className="text-xl text-[#f3aed9] transition-transform group-hover:translate-x-1">
+                <span
+                  aria-hidden="true"
+                  className="text-xl text-[#f3aed9] transition-transform group-hover:translate-x-1"
+                >
                   ↗
                 </span>
               </Link>
