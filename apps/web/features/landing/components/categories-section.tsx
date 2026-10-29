@@ -36,7 +36,7 @@ function MobileCategoryCarousel({
 
   return (
     <div className="lg:hidden">
-      <h2 className="text-[21px] leading-[26px] font-bold text-black">
+      <h2 className="landing-section-title text-[21px] leading-[26px] font-bold text-black">
         {t("title")}
       </h2>
       <div
@@ -101,7 +101,7 @@ export function CategoriesSection() {
       <MobileCategoryCarousel items={items} />
 
       <div className="hidden lg:block">
-        <h2 className="text-[32px] leading-[39px] font-bold text-black">
+        <h2 className="landing-section-title text-[32px] leading-[39px] font-bold text-black">
           {t("title")}
         </h2>
 
