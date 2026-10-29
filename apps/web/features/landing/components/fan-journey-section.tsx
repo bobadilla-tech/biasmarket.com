@@ -15,7 +15,7 @@ export function FanJourneySection() {
 
   return (
     <section className="mx-auto w-full max-w-[1344px] px-4 py-4 sm:px-10 sm:py-7">
-      <div className="landing-fan-journey relative isolate overflow-hidden rounded-[28px] px-5 py-7 text-white sm:rounded-[36px] sm:px-9 sm:py-10 lg:px-12">
+      <div className="landing-fan-journey relative isolate rounded-[28px] px-5 py-7 text-white sm:rounded-[36px] sm:px-9 sm:py-10 lg:px-12">
         <div aria-hidden="true" className="landing-fan-journey-orbit" />
         <div className="relative z-10">
           <div className="max-w-2xl">
