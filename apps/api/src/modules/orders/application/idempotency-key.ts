@@ -10,10 +10,11 @@ const UNIQUE_INDEX_NAME = 'Order_storeId_createdByUserId_idempotencyKey_key';
  * present must be a UUID (a retried form submit reuses the same one).
  */
 export function parseIdempotencyKey(
-  header: string | undefined,
+  header: string | string[] | undefined,
 ): string | undefined {
   if (header === undefined) return undefined;
-  if (!isUUID(header)) {
+  // A repeated header is not one key.
+  if (Array.isArray(header) || !isUUID(header)) {
     throw new BadRequestException('Idempotency-Key debe ser un UUID');
   }
   return header.toLowerCase();

@@ -12,6 +12,15 @@ describe('parseIdempotencyKey', () => {
     );
   });
 
+  it('rejects a repeated header', () => {
+    expect(() =>
+      parseIdempotencyKey([
+        '3f2504e0-4f89-41d3-9a0c-0305e82c3301',
+        '3f2504e0-4f89-41d3-9a0c-0305e82c3302',
+      ]),
+    ).toThrow(BadRequestException);
+  });
+
   it.each(['', 'not-a-uuid', '123', 'a'.repeat(200), '3f2504e0, 3f2504e1'])(
     'rejects %j with a 400',
     (value) => {
