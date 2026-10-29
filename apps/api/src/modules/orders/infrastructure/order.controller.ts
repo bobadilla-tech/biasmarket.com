@@ -40,6 +40,11 @@ import { VoidOrderPaymentDto } from '../dto/void-order-payment.dto.js';
 import { VoidOrderPaymentUseCase } from '../application/void-order-payment.usecase.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  isNoteTooLong,
+  NOTE_TOO_LONG_MESSAGE,
+} from '../../../common/text-sanitize.js';
+import { PAYMENT_PROOF_UPLOAD_LIMITS } from '../../../common/upload-limits.js';
 import { StorageService } from '../../../storage/storage.service.js';
 import { OrderDetailResponseDto } from '../dto/order-response.dto.js';
 import { RelatedOrdersResponseDto } from '../dto/related-orders-response.dto.js';
@@ -588,7 +593,9 @@ export class OrderController {
 
   @Post(':orderId/payments')
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', { limits: PAYMENT_PROOF_UPLOAD_LIMITS }),
+  )
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { ttl: 60_000, limit: 20 } })
   async addPayment(
@@ -601,6 +608,9 @@ export class OrderController {
     @UploadedFile(OPTIONAL_PAYMENT_IMAGE_PIPE) file?: ValidatedUploadedFile,
   ): Promise<OrderDetailResponseDto> {
     await this.orders.assertOwnership(storeId, session.user.id);
+    if (isNoteTooLong(note)) {
+      throw new BadRequestException(NOTE_TOO_LONG_MESSAGE);
+    }
     const order = await this.orders.findRowByIdForStore(orderId, storeId);
     if (order.paymentStatus === 'CANCELLED') {
       throw new BadRequestException(

@@ -14,6 +14,11 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
+  isNoteTooLong,
+  NOTE_TOO_LONG_MESSAGE,
+} from '../../../common/text-sanitize.js';
+import { PAYMENT_PROOF_UPLOAD_LIMITS } from '../../../common/upload-limits.js';
+import {
   ApiBearerAuth,
   ApiConsumes,
   ApiOkResponse,
@@ -81,7 +86,9 @@ export class CustomerOrderPaymentsController {
   @Public()
   @UseGuards(CustomerSessionGuard, ThrottlerGuard)
   @Throttle({ default: { ttl: 60_000, limit: 20 } })
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', { limits: PAYMENT_PROOF_UPLOAD_LIMITS }),
+  )
   @Post()
   async submit(
     @Param('slug') slug: string,
@@ -92,6 +99,9 @@ export class CustomerOrderPaymentsController {
     @Body('note') note: string | undefined,
     @UploadedFile(CUSTOMER_PROOF_PIPE) file: ValidatedUploadedFile,
   ): Promise<OrderPaymentResponseDto> {
+    if (isNoteTooLong(note)) {
+      throw new BadRequestException(NOTE_TOO_LONG_MESSAGE);
+    }
     const store = await this.findStoreBySlug(slug);
     const order = await this.orders.findOrderForBuyer(
       orderId,
