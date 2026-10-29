@@ -20,14 +20,15 @@ import {
   getShippingAddress,
 } from "../lib/order-format";
 import { paymentsLocked } from "../lib/order-status";
-import { RegisterPaymentForm } from "./register-payment-form";
+import { isPendingProof, recordableCents } from "../lib/payment-limits";
+import { SellerPaymentForm } from "./seller-payment-form";
 import { PaymentHistoryList } from "./payment-history-list";
 import { OrderShippingSection } from "./order-shipping-section";
 // Deep path rather than the feature barrel, so the sheet does not load the
 // new-order form and its navigation dependencies.
 import { AssistedOrderSection } from "@/features/assisted-orders/components/assisted-order-section";
 import type { OrderResponseDto } from "@biasmarket/types";
-import type { RegisterPaymentInput } from "@biasmarket/validation";
+import type { SellerPaymentInput } from "@biasmarket/validation";
 
 export function OrderDetailSheet({
   open,
@@ -53,7 +54,10 @@ export function OrderDetailSheet({
   fulfillmentLabels: Record<string, string>;
   enabledMethods: string[];
   registerPaymentSubmitting: boolean;
-  onRegisterPayment: (values: RegisterPaymentInput) => Promise<unknown>;
+  onRegisterPayment: (
+    values: SellerPaymentInput,
+    options?: { confirmDuplicate?: boolean },
+  ) => Promise<unknown>;
   onPreviewPayment: (url: string) => void;
   onApprove: () => void;
   onReject: () => void;
@@ -220,8 +224,13 @@ export function OrderDetailSheet({
                     </CardContent>
                   </Card>
                 ) : (
-                  <RegisterPaymentForm
-                    pendingAmount={order.pendingAmount}
+                  <SellerPaymentForm
+                    key={order.id}
+                    maxCents={recordableCents(
+                      order.pendingAmount,
+                      order.payments,
+                    )}
+                    hasPendingProof={order.payments.some(isPendingProof)}
                     enabledMethods={enabledMethods}
                     submitting={registerPaymentSubmitting}
                     onSubmit={onRegisterPayment}
@@ -231,6 +240,7 @@ export function OrderDetailSheet({
                 <PaymentHistoryList
                   currency={order.currency}
                   payments={order.payments}
+                  order={order}
                   onPreview={onPreviewPayment}
                 />
               </div>

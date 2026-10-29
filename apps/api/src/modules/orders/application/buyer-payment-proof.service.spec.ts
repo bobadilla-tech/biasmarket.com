@@ -301,6 +301,10 @@ describe('BuyerPaymentProofService.submit', () => {
       );
       expect(tx.orderPayment.create).not.toHaveBeenCalled();
       expect(deleteImage).toHaveBeenCalledTimes(1);
+      // The read only counts if it happens after the row lock.
+      expect(tx.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(
+        tx.orderPayment.findMany.mock.invocationCallOrder[0],
+      );
     });
 
     it('uses the required amount read under the lock', async () => {
@@ -363,6 +367,14 @@ describe('BuyerPaymentProofService.submit', () => {
       expect(emitted).not.toContain('private note');
       expect(emitted).not.toContain('secret-name');
       expect(notifications.createIfNotOpen).toHaveBeenCalledTimes(1);
+      expect(notifications.createIfNotOpen).toHaveBeenCalledWith(
+        expect.objectContaining({
+          storeId: 'store-1',
+          type: 'PAYMENT_PROOF_SUBMITTED',
+          entityId: 'order-1',
+        }),
+        tx,
+      );
       expect(deleteImage).not.toHaveBeenCalled();
     });
   });

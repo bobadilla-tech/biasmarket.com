@@ -132,7 +132,9 @@ describe('PublicOrderEventsController proof upload routes', () => {
       const bad = await request(app.getHttpServer())
         .post('/public/orders/missing/payments')
         .set('X-Forwarded-For', nextIp())
-        .attach('file', Buffer.alloc(6 * 1024 * 1024), 'x.exe');
+        // Small on purpose: the server answers 404 before reading the body,
+        // and a large upload races the closing socket (EPIPE).
+        .attach('file', Buffer.from('MZ not an image'), 'x.exe');
       expect(bad.status).toBe(404);
       expect(bad.body.message).toBe(good.body.message);
       expect(bad.body.message).toBe('Pedido no encontrado');

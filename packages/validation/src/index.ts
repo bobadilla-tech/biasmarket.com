@@ -36,6 +36,12 @@ export {
 } from "./payments/register-payment.schema.js";
 
 export {
+  buildSellerPaymentSchema,
+  SELLER_PAYMENT_ERRORS,
+  type SellerPaymentInput,
+} from "./payments/seller-payment.schema.js";
+
+export {
   buildAssistedOrderSchema,
   type AssistedOrderFormInput,
   type AssistedOrderItemInput,

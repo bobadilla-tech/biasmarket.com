@@ -12,7 +12,8 @@ vi.mock('@nestjs/throttler', async (importOriginal) => {
   return { ...actual, ThrottlerGuard: class ThrottlerGuard {} };
 });
 
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { DuplicateOperationCodeException } from '../domain/duplicate-operation-code.exception.js';
 import {
   OrderController,
   pickPublicOrderFields,
@@ -24,6 +25,7 @@ import { ReviewPaymentUseCase } from '../application/review-payment.usecase.js';
 import { AdvanceFulfillmentUseCase } from '../application/advance-fulfillment.usecase.js';
 import { CancelOrderUseCase } from '../application/cancel-order.usecase.js';
 import { VoidOrderPaymentUseCase } from '../application/void-order-payment.usecase.js';
+import { OrderPaymentsService } from '../application/order-payments.service.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { StorageService } from '../../../storage/storage.service.js';
 import { OrderEventsService } from '../application/order-events.service.js';
@@ -68,7 +70,12 @@ describe('OrderController.addPayment', () => {
     saveStatus: Mock;
   };
   let reviewPayment: { execute: Mock };
-  let storage: { uploadPaymentImage: Mock; getPaymentImageStream: Mock };
+  let paymentsService: { findDuplicateOperationCode: Mock };
+  let storage: {
+    uploadPaymentImage: Mock;
+    getPaymentImageStream: Mock;
+    deleteImage: Mock;
+  };
   let events: { record: Mock };
   let prisma: {
     $transaction: Mock;
@@ -84,6 +91,11 @@ describe('OrderController.addPayment', () => {
     orderPayment: { create: Mock; findMany: Mock; aggregate: Mock };
     auditLog: { create: Mock };
   };
+
+  const CAPTURE = {
+    buffer: Buffer.from('x'),
+    detectedMimeType: 'image/png',
+  } as never;
 
   const storeId = 'store-1';
   const orderId = 'order-1';
@@ -155,7 +167,14 @@ describe('OrderController.addPayment', () => {
       saveStatus: vi.fn(),
     };
     reviewPayment = { execute: vi.fn() };
-    storage = { uploadPaymentImage: vi.fn(), getPaymentImageStream: vi.fn() };
+    paymentsService = {
+      findDuplicateOperationCode: vi.fn().mockResolvedValue(null),
+    };
+    storage = {
+      uploadPaymentImage: vi.fn(),
+      getPaymentImageStream: vi.fn(),
+      deleteImage: vi.fn().mockResolvedValue(undefined),
+    };
     events = { record: vi.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -166,6 +185,7 @@ describe('OrderController.addPayment', () => {
         { provide: AdvanceFulfillmentUseCase, useValue: { execute: vi.fn() } },
         { provide: CancelOrderUseCase, useValue: { execute: vi.fn() } },
         { provide: VoidOrderPaymentUseCase, useValue: { execute: vi.fn() } },
+        { provide: OrderPaymentsService, useValue: paymentsService },
         { provide: PrismaService, useValue: prisma },
         { provide: StorageService, useValue: storage },
         { provide: OrderEventsService, useValue: events },
@@ -192,7 +212,15 @@ describe('OrderController.addPayment', () => {
     });
     tx.orderPayment.findMany.mockResolvedValueOnce([]);
 
-    await controller.addPayment(storeId, orderId, session, '40', 'YAPE');
+    await controller.addPayment(
+      storeId,
+      orderId,
+      session,
+      '40',
+      'YAPE',
+      undefined,
+      CAPTURE,
+    );
 
     expect(orders.saveStatus).toHaveBeenCalledWith(
       orderId,
@@ -248,7 +276,15 @@ describe('OrderController.addPayment', () => {
       },
     ]);
 
-    await controller.addPayment(storeId, orderId, session, '40', 'YAPE');
+    await controller.addPayment(
+      storeId,
+      orderId,
+      session,
+      '40',
+      'YAPE',
+      undefined,
+      CAPTURE,
+    );
 
     expect(orders.saveStatus).not.toHaveBeenCalled();
     expect(reviewPayment.execute).toHaveBeenCalledWith(
@@ -291,7 +327,15 @@ describe('OrderController.addPayment', () => {
       },
     ]);
 
-    await controller.addPayment(storeId, orderId, session, '59.99', 'YAPE');
+    await controller.addPayment(
+      storeId,
+      orderId,
+      session,
+      '59.99',
+      'YAPE',
+      undefined,
+      CAPTURE,
+    );
 
     expect(reviewPayment.execute).toHaveBeenCalledWith(
       orderId,
@@ -319,7 +363,15 @@ describe('OrderController.addPayment', () => {
     });
     tx.orderPayment.findMany.mockResolvedValueOnce([]);
 
-    await controller.addPayment(storeId, orderId, session, '27', 'YAPE');
+    await controller.addPayment(
+      storeId,
+      orderId,
+      session,
+      '27',
+      'YAPE',
+      undefined,
+      CAPTURE,
+    );
 
     expect(orders.saveStatus).not.toHaveBeenCalled();
     expect(reviewPayment.execute).not.toHaveBeenCalled();
@@ -330,7 +382,8 @@ describe('OrderController.addPayment', () => {
         amount: 27,
         currency: 'PEN',
         method: 'YAPE',
-        note: undefined,
+        note: null,
+        operationCode: null,
         paidAt: expect.any(Date),
         recordedBy: userId,
       },
@@ -377,7 +430,15 @@ describe('OrderController.addPayment', () => {
     });
     tx.orderPayment.findMany.mockResolvedValueOnce([]);
 
-    await controller.addPayment(storeId, orderId, session, '47', 'YAPE');
+    await controller.addPayment(
+      storeId,
+      orderId,
+      session,
+      '47',
+      'YAPE',
+      undefined,
+      CAPTURE,
+    );
 
     expect(orders.saveStatus).not.toHaveBeenCalled();
     expect(reviewPayment.execute).not.toHaveBeenCalled();
@@ -394,12 +455,292 @@ describe('OrderController.addPayment', () => {
     });
 
     await expect(
-      controller.addPayment(storeId, orderId, session, '10', 'YAPE'),
+      controller.addPayment(
+        storeId,
+        orderId,
+        session,
+        '10',
+        'YAPE',
+        undefined,
+        CAPTURE,
+      ),
     ).rejects.toThrow('La orden ya está pagada');
 
     expect(tx.orderPayment.create).not.toHaveBeenCalled();
     expect(orders.saveStatus).not.toHaveBeenCalled();
     expect(reviewPayment.execute).not.toHaveBeenCalled();
+  });
+
+  describe('seller payment rules', () => {
+    const pendingOrder = (overrides: Record<string, unknown> = {}) => ({
+      currency: 'PEN',
+      paymentStatus: 'PENDING_PAYMENT',
+      fulfillmentStatus: 'ORDERING',
+      paidAmount: 0,
+      pendingAmount: 100,
+      requiredAmount: '100.00',
+      payments: [],
+      ...overrides,
+    });
+    const lockState = (payments: unknown[] = []) => {
+      tx.order.findUniqueOrThrow.mockResolvedValue({
+        paymentStatus: 'PENDING_PAYMENT',
+        fulfillmentStatus: 'ORDERING',
+        status: 'ACTIVE',
+        requiredAmount: new Prisma.Decimal('100.00'),
+        currency: 'PEN',
+      });
+      tx.orderPayment.findMany.mockResolvedValue(payments);
+    };
+    const add = (
+      overrides: {
+        amount?: unknown;
+        method?: unknown;
+        operationCode?: unknown;
+        paidAt?: unknown;
+        confirmDuplicate?: unknown;
+        file?: unknown;
+        note?: string;
+      } = {},
+    ) =>
+      controller.addPayment(
+        storeId,
+        orderId,
+        session,
+        (overrides.amount ?? '40') as string,
+        (overrides.method ?? 'YAPE') as string,
+        overrides.note,
+        ('file' in overrides ? overrides.file : CAPTURE) as never,
+        overrides.operationCode,
+        overrides.paidAt,
+        overrides.confirmDuplicate,
+      );
+
+    beforeEach(() => {
+      orders.findRowByIdForStore
+        .mockResolvedValueOnce(pendingOrder())
+        .mockResolvedValue(fullOrderFixture);
+      lockState();
+    });
+
+    it('persists operationCode (normalized for storage), paidAt and recordedBy, and keeps the code out of events and audit', async () => {
+      await add({
+        operationCode: '  ＡＢ-12 ',
+        paidAt: '2026-10-01T17:00:00.000Z',
+        note: 'a\nb',
+      });
+      expect(tx.orderPayment.create.mock.calls[0]![0].data).toMatchObject({
+        operationCode: 'AB-12',
+        paidAt: new Date('2026-10-01T17:00:00.000Z'),
+        recordedBy: userId,
+        note: 'a b',
+        method: 'YAPE',
+      });
+      const emitted = JSON.stringify([
+        events.record.mock.calls,
+        tx.auditLog.create.mock.calls,
+      ]);
+      expect(emitted).not.toMatch(/AB-12|operationCode/);
+      expect(events.record.mock.calls[0]![1].payload).toEqual({
+        amount: 40,
+        method: 'YAPE',
+      });
+    });
+
+    it('looks up duplicates by the authenticated store, excluding the current order', async () => {
+      await add({ operationCode: 'OP-1' });
+      expect(paymentsService.findDuplicateOperationCode).toHaveBeenCalledWith(
+        storeId,
+        'OP-1',
+        { currentOrderId: orderId },
+      );
+    });
+
+    it('answers 409 with the duplicate order id and writes and uploads nothing', async () => {
+      paymentsService.findDuplicateOperationCode.mockResolvedValue({
+        orderId: 'other-order',
+      });
+      const error = await add({ operationCode: 'OP-1' }).catch((e) => e);
+      expect(error).toBeInstanceOf(DuplicateOperationCodeException);
+      expect(error.getStatus()).toBe(409);
+      expect(error.orderId).toBe('other-order');
+      expect(storage.uploadPaymentImage).not.toHaveBeenCalled();
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+      expect(tx.orderPayment.create).not.toHaveBeenCalled();
+    });
+
+    it('confirmDuplicate=true skips the lookup and records the payment', async () => {
+      paymentsService.findDuplicateOperationCode.mockResolvedValue({
+        orderId: 'other-order',
+      });
+      await add({ operationCode: 'OP-1', confirmDuplicate: 'true' });
+      expect(paymentsService.findDuplicateOperationCode).not.toHaveBeenCalled();
+      expect(tx.orderPayment.create).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not look up a payment without an operation code', async () => {
+      await add({});
+      expect(paymentsService.findDuplicateOperationCode).not.toHaveBeenCalled();
+    });
+
+    it('requires a capture unless the method is CASH', async () => {
+      await expect(add({ file: undefined })).rejects.toThrow('captura');
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+      await add({ file: undefined, method: 'CASH' });
+      expect(tx.orderPayment.create).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+      ['a date-only value', '2026-10-01'],
+      ['a value without an offset', '2026-10-01T10:00:00'],
+      ['an impossible date', '2026-13-45T10:00:00Z'],
+      ['text', 'yesterday'],
+      ['an array', ['2026-10-01T10:00:00Z']],
+    ])('rejects paidAt as %s', async (_n, paidAt) => {
+      await expect(add({ paidAt })).rejects.toThrow('Fecha de pago');
+      expect(tx.orderPayment.create).not.toHaveBeenCalled();
+    });
+
+    it('rejects a future paidAt beyond the 5-minute skew', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-10-28T12:00:00.000Z'));
+      try {
+        await expect(
+          add({ paidAt: '2026-10-28T12:06:00.000Z' }),
+        ).rejects.toThrow('futura');
+        await add({ paidAt: '2026-10-28T12:04:00.000Z' });
+        expect(tx.orderPayment.create).toHaveBeenCalledTimes(1);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('defaults paidAt to now when omitted', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-10-28T12:00:00.000Z'));
+      try {
+        await add({});
+        expect(tx.orderPayment.create.mock.calls[0]![0].data.paidAt).toEqual(
+          new Date('2026-10-28T12:00:00.000Z'),
+        );
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it.each([
+      ['NUL', 'AB\u0000C'],
+      ['a newline', 'AB\nC'],
+      ['too long', 'A'.repeat(65)],
+      ['symbols only', '---'],
+      ['non-string', 42],
+    ])('rejects an operation code that is %s', async (_n, operationCode) => {
+      await expect(add({ operationCode })).rejects.toThrow(
+        'Código de operación',
+      );
+      expect(paymentsService.findDuplicateOperationCode).not.toHaveBeenCalled();
+    });
+
+    it.each(['1e2', '0x10', '0.001', '0', '-1', '1,5', '100.'])(
+      'rejects the amount %j',
+      async (amount) => {
+        await expect(add({ amount })).rejects.toThrow('Monto inválido');
+      },
+    );
+
+    it('cannot exceed pending minus buyer proofs waiting for review', async () => {
+      orders.findRowByIdForStore.mockReset();
+      orders.findRowByIdForStore.mockResolvedValueOnce(
+        pendingOrder({
+          payments: [
+            {
+              amount: new Prisma.Decimal('80.00'),
+              source: 'BUYER_SUBMITTED',
+              reviewStatus: 'PENDING_REVIEW',
+              voidedAt: null,
+            },
+          ],
+        }),
+      );
+      await expect(add({ amount: '30' })).rejects.toThrow(
+        'Rechaza o valida el comprobante pendiente',
+      );
+      expect(storage.uploadPaymentImage).not.toHaveBeenCalled();
+    });
+
+    it('ignores voided pending proofs when reserving', async () => {
+      orders.findRowByIdForStore.mockReset();
+      orders.findRowByIdForStore
+        .mockResolvedValueOnce(
+          pendingOrder({
+            payments: [
+              {
+                amount: new Prisma.Decimal('80.00'),
+                source: 'BUYER_SUBMITTED',
+                reviewStatus: 'PENDING_REVIEW',
+                voidedAt: new Date(),
+              },
+            ],
+          }),
+        )
+        .mockResolvedValue(fullOrderFixture);
+      await add({ amount: '100' });
+      expect(tx.orderPayment.create).toHaveBeenCalledTimes(1);
+    });
+
+    it('re-applies the reserved limit under the lock when a proof arrived meanwhile', async () => {
+      storage.uploadPaymentImage.mockResolvedValue('https://cdn.example/c.png');
+      lockState([
+        {
+          amount: new Prisma.Decimal('80.00'),
+          source: 'BUYER_SUBMITTED',
+          reviewStatus: 'PENDING_REVIEW',
+          voidedAt: null,
+        },
+      ]);
+      await expect(add({ amount: '30' })).rejects.toThrow(
+        'Rechaza o valida el comprobante pendiente',
+      );
+      expect(tx.orderPayment.create).not.toHaveBeenCalled();
+      // The capture was already uploaded: it must not stay orphaned.
+      expect(storage.deleteImage).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+      ['cancelled', { paymentStatus: 'CANCELLED' }, 'cancelada'],
+      ['rejected', { paymentStatus: 'REJECTED' }, 'rechazada'],
+      ['shipped', { fulfillmentStatus: 'IN_TRANSIT' }, 'enviada'],
+    ])(
+      're-checks the state under the lock: %s meanwhile',
+      async (_n, change, message) => {
+        tx.order.findUniqueOrThrow.mockResolvedValue({
+          paymentStatus: 'PENDING_PAYMENT',
+          fulfillmentStatus: 'ORDERING',
+          status: 'ACTIVE',
+          requiredAmount: new Prisma.Decimal('100.00'),
+          currency: 'PEN',
+          ...change,
+        });
+        await expect(add()).rejects.toThrow(message);
+        expect(tx.orderPayment.create).not.toHaveBeenCalled();
+      },
+    );
+
+    it('rethrows HTTP exceptions from the transaction unwrapped and wraps only unexpected errors', async () => {
+      tx.orderPayment.create.mockRejectedValueOnce(
+        new NotFoundException('Orden no encontrada'),
+      );
+      await expect(add()).rejects.toBeInstanceOf(NotFoundException);
+
+      tx.orderPayment.create.mockRejectedValueOnce(new Error('db exploded'));
+      await expect(add()).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('checks ownership before reading the order', async () => {
+      orders.assertOwnership.mockRejectedValueOnce(new Error('forbidden'));
+      await expect(add()).rejects.toThrow('forbidden');
+      expect(orders.findRowByIdForStore).not.toHaveBeenCalled();
+    });
   });
 });
 
@@ -432,6 +773,12 @@ describe('OrderController.getPaymentImage', () => {
         { provide: AdvanceFulfillmentUseCase, useValue: { execute: vi.fn() } },
         { provide: CancelOrderUseCase, useValue: { execute: vi.fn() } },
         { provide: VoidOrderPaymentUseCase, useValue: { execute: vi.fn() } },
+        {
+          provide: OrderPaymentsService,
+          useValue: {
+            findDuplicateOperationCode: vi.fn().mockResolvedValue(null),
+          },
+        },
         { provide: PrismaService, useValue: {} },
         { provide: StorageService, useValue: storage },
         { provide: OrderEventsService, useValue: { record: vi.fn() } },
@@ -588,6 +935,12 @@ describe('OrderController.shipping', () => {
         { provide: StorageService, useValue: storage },
         { provide: OrderEventsService, useValue: events },
         { provide: VoidOrderPaymentUseCase, useValue: { execute: vi.fn() } },
+        {
+          provide: OrderPaymentsService,
+          useValue: {
+            findDuplicateOperationCode: vi.fn().mockResolvedValue(null),
+          },
+        },
       ],
     }).compile();
 
@@ -707,7 +1060,7 @@ describe('OrderController.reviewPaymentProof', () => {
 
   beforeEach(async () => {
     tx = {
-      $queryRaw: vi.fn(),
+      $queryRaw: vi.fn().mockResolvedValue([{ id: orderId }]),
       order: {
         findUniqueOrThrow: vi.fn().mockResolvedValue({
           paymentStatus: 'PENDING_PAYMENT',
@@ -716,7 +1069,7 @@ describe('OrderController.reviewPaymentProof', () => {
       },
       orderPayment: {
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
-        findMany: vi.fn(),
+        findMany: vi.fn().mockResolvedValue([]),
       },
       auditLog: { create: vi.fn() },
     };
@@ -731,6 +1084,7 @@ describe('OrderController.reviewPaymentProof', () => {
         storeId,
         source: 'BUYER_SUBMITTED',
         reviewStatus: 'PENDING_REVIEW',
+        amount: new Prisma.Decimal('40.00'),
       }),
       findRowByIdForStore: vi.fn().mockResolvedValue(detailFixture),
       saveStatus: vi.fn(),
@@ -746,6 +1100,12 @@ describe('OrderController.reviewPaymentProof', () => {
         { provide: AdvanceFulfillmentUseCase, useValue: { execute: vi.fn() } },
         { provide: CancelOrderUseCase, useValue: { execute: vi.fn() } },
         { provide: VoidOrderPaymentUseCase, useValue: { execute: vi.fn() } },
+        {
+          provide: OrderPaymentsService,
+          useValue: {
+            findDuplicateOperationCode: vi.fn().mockResolvedValue(null),
+          },
+        },
         { provide: PrismaService, useValue: prisma },
         {
           provide: StorageService,
@@ -799,18 +1159,23 @@ describe('OrderController.reviewPaymentProof', () => {
       paymentStatus: 'PARTIALLY_PAID',
       requiredAmount: new Prisma.Decimal('100.00'),
     });
-    tx.orderPayment.findMany.mockResolvedValue([
-      {
-        amount: new Prisma.Decimal('60.00'),
-        source: 'SELLER_RECORDED',
-        reviewStatus: 'N_A',
-      },
-      {
-        amount: new Prisma.Decimal('40.00'),
-        source: 'BUYER_SUBMITTED',
-        reviewStatus: 'APPROVED',
-      },
-    ]);
+    const seller60 = {
+      amount: new Prisma.Decimal('60.00'),
+      source: 'SELLER_RECORDED',
+      reviewStatus: 'N_A',
+    };
+    // First read (under the lock, before the claim): only the 60 is credited.
+    // Second read (after the claim): the proof now counts too.
+    tx.orderPayment.findMany
+      .mockResolvedValueOnce([seller60])
+      .mockResolvedValueOnce([
+        seller60,
+        {
+          amount: new Prisma.Decimal('40.00'),
+          source: 'BUYER_SUBMITTED',
+          reviewStatus: 'APPROVED',
+        },
+      ]);
 
     await controller.reviewPaymentProof(storeId, orderId, paymentId, session, {
       decision: 'approve',
@@ -857,7 +1222,10 @@ describe('OrderController.reviewPaymentProof', () => {
   it('locks the order row before reading the paid total', async () => {
     tx.orderPayment.findMany.mockResolvedValue([]);
     const order: string[] = [];
-    tx.$queryRaw.mockImplementation(async () => void order.push('lock'));
+    tx.$queryRaw.mockImplementation(async () => {
+      order.push('lock');
+      return [{ id: orderId }];
+    });
     tx.orderPayment.findMany.mockImplementation(async () => {
       order.push('read');
       return [];
@@ -867,7 +1235,9 @@ describe('OrderController.reviewPaymentProof', () => {
       decision: 'approve',
     });
 
-    expect(order).toEqual(['lock', 'read']);
+    // The lock comes before every read of the paid total.
+    expect(order[0]).toBe('lock');
+    expect(order).toContain('read');
   });
 
   it('rejects a proof another request already reviewed and records no event', async () => {
@@ -883,20 +1253,112 @@ describe('OrderController.reviewPaymentProof', () => {
     expect(tx.auditLog.create).not.toHaveBeenCalled();
   });
 
-  it('marks the proof reviewed on a cancelled order without a buyer-visible event', async () => {
+  it('marks a REJECTED decision on a cancelled order reviewed without a buyer-visible event', async () => {
     tx.order.findUniqueOrThrow.mockResolvedValue({
       paymentStatus: 'CANCELLED',
       requiredAmount: new Prisma.Decimal('100.00'),
     });
 
     await controller.reviewPaymentProof(storeId, orderId, paymentId, session, {
-      decision: 'approve',
+      decision: 'reject',
     });
 
     expect(tx.orderPayment.updateMany).toHaveBeenCalled();
     expect(events.record).not.toHaveBeenCalled();
     expect(orders.saveStatus).not.toHaveBeenCalled();
     expect(reviewPayment.execute).not.toHaveBeenCalled();
+  });
+
+  it.each(['CANCELLED', 'REJECTED'])(
+    'refuses to APPROVE a proof of a %s order and leaves it pending',
+    async (paymentStatus) => {
+      tx.order.findUniqueOrThrow.mockResolvedValue({
+        paymentStatus,
+        requiredAmount: new Prisma.Decimal('100.00'),
+      });
+
+      await expect(
+        controller.reviewPaymentProof(storeId, orderId, paymentId, session, {
+          decision: 'approve',
+        }),
+      ).rejects.toThrow('No se puede aprobar');
+
+      // The guard runs before the claim: nothing was written.
+      expect(tx.orderPayment.updateMany).not.toHaveBeenCalled();
+      expect(tx.auditLog.create).not.toHaveBeenCalled();
+      expect(events.record).not.toHaveBeenCalled();
+    },
+  );
+
+  it('refuses to approve a proof that exceeds the remaining balance', async () => {
+    // 40 proof, 100 required, 70 already credited: only 30 left.
+    tx.orderPayment.findMany.mockResolvedValue([
+      {
+        amount: new Prisma.Decimal('70.00'),
+        source: 'SELLER_RECORDED',
+        reviewStatus: 'N_A',
+        voidedAt: null,
+      },
+    ]);
+
+    await expect(
+      controller.reviewPaymentProof(storeId, orderId, paymentId, session, {
+        decision: 'approve',
+      }),
+    ).rejects.toThrow('excede el saldo pendiente');
+    expect(tx.orderPayment.updateMany).not.toHaveBeenCalled();
+    expect(events.record).not.toHaveBeenCalled();
+  });
+
+  it('approves a proof that fits exactly in the remaining balance', async () => {
+    const credited = {
+      amount: new Prisma.Decimal('60.00'),
+      source: 'SELLER_RECORDED',
+      reviewStatus: 'N_A',
+      voidedAt: null,
+    };
+    tx.orderPayment.findMany
+      .mockResolvedValueOnce([credited])
+      .mockResolvedValueOnce([
+        credited,
+        {
+          amount: new Prisma.Decimal('40.00'),
+          source: 'BUYER_SUBMITTED',
+          reviewStatus: 'APPROVED',
+          voidedAt: null,
+        },
+      ]);
+
+    await controller.reviewPaymentProof(storeId, orderId, paymentId, session, {
+      decision: 'approve',
+    });
+
+    expect(tx.orderPayment.updateMany).toHaveBeenCalledTimes(1);
+    expect(events.record).toHaveBeenCalledWith(
+      tx,
+      expect.objectContaining({ type: 'PAYMENT_VALIDATED' }),
+    );
+  });
+
+  it('404s when the order is not in the store (lock finds nothing)', async () => {
+    tx.$queryRaw.mockResolvedValue([]);
+    await expect(
+      controller.reviewPaymentProof(storeId, orderId, paymentId, session, {
+        decision: 'approve',
+      }),
+    ).rejects.toThrow('Orden no encontrada');
+    expect(tx.orderPayment.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('stores only a sanitized reason in the audit log, never the code, note or image', async () => {
+    await controller.reviewPaymentProof(storeId, orderId, paymentId, session, {
+      decision: 'reject',
+      reason: '\u202eMala\ncaptura',
+    });
+    const audit = tx.auditLog.create.mock.calls[0]![0].data;
+    expect(audit.metadata).toEqual({ reason: 'Mala captura' });
+    const serialized = JSON.stringify(audit);
+    expect(serialized).not.toMatch(/operationCode|imageUrl|note/);
   });
 
   it('refuses a proof that was not submitted by the buyer', async () => {

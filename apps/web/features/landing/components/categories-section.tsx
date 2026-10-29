@@ -36,7 +36,7 @@ function MobileCategoryCarousel({
 
   return (
     <div className="lg:hidden">
-      <h2 className="text-[21px] leading-[26px] font-bold text-black">
+      <h2 className="landing-section-title text-[21px] leading-[26px] font-bold text-black">
         {t("title")}
       </h2>
       <div
@@ -49,7 +49,7 @@ function MobileCategoryCarousel({
             <Link
               key={key}
               href={`/search?category=${encodeURIComponent(name)}`}
-              className={`flex min-h-[106px] h-auto w-[106px] shrink-0 snap-start flex-col items-center justify-between rounded-xl border border-white/70 pt-3 pb-1.5 shadow-[var(--shadow-soft)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-raised)] ${
+              className={`landing-category-card flex min-h-[106px] h-auto w-[106px] shrink-0 snap-start flex-col items-center justify-between rounded-xl border border-white/70 pt-3 pb-1.5 shadow-[var(--shadow-soft)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-raised)] ${
                 index % 2 === 0 ? "bg-landing-violet" : "bg-landing-rose"
               }`}
             >
@@ -101,7 +101,7 @@ export function CategoriesSection() {
       <MobileCategoryCarousel items={items} />
 
       <div className="hidden lg:block">
-        <h2 className="text-[32px] leading-[39px] font-bold text-black">
+        <h2 className="landing-section-title text-[32px] leading-[39px] font-bold text-black">
           {t("title")}
         </h2>
 
@@ -113,7 +113,7 @@ export function CategoriesSection() {
               <Link
                 key={key}
                 href={`/search?category=${encodeURIComponent(name)}`}
-                className="flex min-h-[185px] h-auto flex-1 flex-col items-center justify-between rounded-xl border border-white/70 px-2 pt-[30px] pb-4 shadow-[var(--shadow-soft)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-raised)]"
+                className="landing-category-card flex min-h-[185px] h-auto flex-1 flex-col items-center justify-between rounded-xl border border-white/70 px-2 pt-[30px] pb-4 shadow-[var(--shadow-soft)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-raised)]"
                 style={{
                   background:
                     index % 2 === 0
