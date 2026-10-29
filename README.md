@@ -9,7 +9,7 @@ required.
 
 ## Stack
 
-Next.js · NestJS · Prisma · PostgreSQL · Docker · Cloudflare R2 · JWT · Resend
+Next.js · NestJS · Prisma · PostgreSQL · Docker · Resend
 
 ## Getting started
 
