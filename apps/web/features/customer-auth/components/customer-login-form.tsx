@@ -22,7 +22,6 @@ const inputClassName =
 
 const googleErrorKeys = {
   unavailable: true,
-  ambiguous: true,
   failed: true,
 } as const;
 type GoogleErrorKey = keyof typeof googleErrorKeys;
@@ -151,6 +150,7 @@ export function CustomerLoginForm({
       >
         {t("google")}
       </a>
+      <p className="text-center text-xs text-gray-600">{t("googleHint")}</p>
     </div>
   );
 }
