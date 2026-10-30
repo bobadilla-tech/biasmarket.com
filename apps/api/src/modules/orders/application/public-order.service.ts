@@ -3,26 +3,26 @@ import {
   InternalServerErrorException,
   Logger,
   NotFoundException,
-} from '@nestjs/common';
-import type { Prisma } from '@biasmarket/db';
-import { maskPhone } from '@biasmarket/utils/phone-country';
-import { orderRef } from '@biasmarket/utils/order-ref';
-import { hashOrderAccessToken } from '@biasmarket/utils/assisted-order';
-import { isPaymentMethodConfigured } from '@biasmarket/utils/payment-methods';
-import { PrismaService } from '../../../prisma/prisma.service.js';
+} from "@nestjs/common";
+import type { Prisma } from "@biasmarket/db";
+import { maskPhone } from "@biasmarket/utils/phone-country";
+import { orderRef } from "@biasmarket/utils/order-ref";
+import { hashOrderAccessToken } from "@biasmarket/utils/assisted-order";
+import { isPaymentMethodConfigured } from "@biasmarket/utils/payment-methods";
+import { PrismaService } from "../../../prisma/prisma.service.js";
 import {
   computePaymentSummary,
   countsTowardPaid,
-} from '../../../common/payment-summary.js';
-import { sanitizeDisplayText } from '../../../common/text-sanitize.js';
-import { RESERVED_HOLD_STATUSES } from '../domain/hold-statuses.js';
-import { OrderEventsService } from './order-events.service.js';
-import { toPublicCustomerAlias } from './public-order-alias.js';
-import { isTimelineEvent, toPublicTimeline } from './public-order-timeline.js';
+} from "../../../common/payment-summary.js";
+import { sanitizeDisplayText } from "../../../common/text-sanitize.js";
+import { RESERVED_HOLD_STATUSES } from "../domain/hold-statuses.js";
+import { OrderEventsService } from "./order-events.service.js";
+import { toPublicCustomerAlias } from "./public-order-alias.js";
+import { isTimelineEvent, toPublicTimeline } from "./public-order-timeline.js";
 import type {
   PublicOrderDeliveryDetailsResponseDto,
   PublicOrderResponseDto,
-} from '../dto/public-order-response.dto.js';
+} from "../dto/public-order-response.dto.js";
 
 // Allow-list projection of the stored `deliveryDetails` blob. The COURIER
 // variant also holds `shippingAddress.recipientName` / `phone` /
@@ -34,7 +34,7 @@ function toPublicDeliveryDetails(
   const raw = (details ?? {}) as Record<string, unknown>;
   const address = (raw.shippingAddress ?? {}) as Record<string, unknown>;
   const text = (value: unknown) =>
-    typeof value === 'string' && value.trim() ? value : null;
+    typeof value === "string" && value.trim() ? value : null;
 
   return {
     line1: text(address.line1),
@@ -72,7 +72,7 @@ export class PublicOrderService {
           include: { product: { select: { name: true } } },
         },
         payments: {
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: "desc" },
           select: {
             id: true,
             amount: true,
@@ -88,7 +88,7 @@ export class PublicOrderService {
         },
       },
     });
-    if (!order) throw new NotFoundException('Pedido no encontrado');
+    if (!order) throw new NotFoundException("Pedido no encontrado");
 
     // #262 records the open on the first valid read. Repeat reads skip the
     // write. If this transaction fails, do not serve a page whose open was
@@ -117,8 +117,8 @@ export class PublicOrderService {
               await this.events.record(tx, {
                 orderId: order.id,
                 storeId: order.storeId,
-                type: 'LINK_OPENED',
-                actor: 'BUYER',
+                type: "LINK_OPENED",
+                actor: "BUYER",
               });
             }
           },
@@ -130,7 +130,7 @@ export class PublicOrderService {
           error instanceof Error ? error.message : String(error),
         );
         throw new InternalServerErrorException(
-          'No se pudo registrar la apertura del pedido',
+          "No se pudo registrar la apertura del pedido",
         );
       }
     }
@@ -139,7 +139,7 @@ export class PublicOrderService {
     // "configured" check: an enabled row with empty details is not a method
     // the buyer can pay with.
     const payable =
-      order.status !== 'CANCELLED' && order.paymentStatus !== 'CANCELLED';
+      order.status !== "CANCELLED" && order.paymentStatus !== "CANCELLED";
     const paymentMethods = payable
       ? (
           await this.prisma.paymentMethodConfig.findMany({
@@ -157,11 +157,11 @@ export class PublicOrderService {
     const buyerEvents = await this.events.listForBuyer(order.id);
     const visibleEvents = buyerEvents.filter(isTimelineEvent);
     const cancelled =
-      order.status === 'CANCELLED' || order.paymentStatus === 'CANCELLED';
+      order.status === "CANCELLED" || order.paymentStatus === "CANCELLED";
     // Cancel and expiry both end as CANCELLED; only the actor of the last
     // cancellation event tells them apart (the sweep records SYSTEM).
     const lastCancellation = buyerEvents
-      .filter((event) => event.type === 'ORDER_CANCELLED')
+      .filter((event) => event.type === "ORDER_CANCELLED")
       .at(-1);
     const claimed = order.claimedAt !== null;
 
@@ -214,20 +214,20 @@ export class PublicOrderService {
       hasValidatedPayment: order.payments.some(countsTowardPaid),
       courierModality: order.courierModality,
       expiresAt:
-        order.status === 'ACTIVE' &&
+        order.status === "ACTIVE" &&
         (RESERVED_HOLD_STATUSES as readonly string[]).includes(
           order.paymentStatus,
         )
           ? (order.expiresAt?.toISOString() ?? null)
           : null,
       paymentRejectionReason:
-        order.paymentStatus === 'REJECTED'
+        order.paymentStatus === "REJECTED"
           ? sanitizeDisplayText(order.paymentRejectionReason)
           : null,
       closure: cancelled
         ? {
             kind:
-              lastCancellation?.actor === 'SYSTEM' ? 'EXPIRED' : 'CANCELLED',
+              lastCancellation?.actor === "SYSTEM" ? "EXPIRED" : "CANCELLED",
             reason: sanitizeDisplayText(order.cancellationReason),
           }
         : null,
@@ -240,7 +240,7 @@ export class PublicOrderService {
         paidAt: payment.paidAt?.toISOString() ?? null,
         reviewStatus: payment.reviewStatus,
         voidedAt: payment.voidedAt?.toISOString() ?? null,
-        hasProof: payment.source === 'BUYER_SUBMITTED' && !!payment.imageUrl,
+        hasProof: payment.source === "BUYER_SUBMITTED" && !!payment.imageUrl,
       })),
     };
   }
@@ -248,7 +248,7 @@ export class PublicOrderService {
   async getPackedPhotoUrlByToken(token: string): Promise<string> {
     const order = await this.events.requireOrderForToken(token);
     if (!order.packedPhotoUrl) {
-      throw new NotFoundException('Foto del paquete no encontrada');
+      throw new NotFoundException("Foto del paquete no encontrada");
     }
     return order.packedPhotoUrl;
   }
@@ -265,13 +265,13 @@ export class PublicOrderService {
         id: paymentId,
         orderId: order.id,
         storeId: order.storeId,
-        source: 'BUYER_SUBMITTED',
+        source: "BUYER_SUBMITTED",
         imageUrl: { not: null },
       },
       select: { imageUrl: true },
     });
     if (!payment?.imageUrl) {
-      throw new NotFoundException('Comprobante no encontrado');
+      throw new NotFoundException("Comprobante no encontrado");
     }
     return payment.imageUrl;
   }

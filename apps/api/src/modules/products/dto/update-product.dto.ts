@@ -1,4 +1,4 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional } from "@nestjs/swagger";
 import {
   ArrayMaxSize,
   IsArray,
@@ -9,9 +9,9 @@ import {
   IsOptional,
   IsString,
   MinLength,
-} from 'class-validator';
-import { MAX_PRODUCT_IMAGES } from '../product-images.constants.js';
-import { SUPPORTED_CURRENCIES } from '@biasmarket/utils/currency';
+} from "class-validator";
+import { MAX_PRODUCT_IMAGES } from "../product-images.constants.js";
+import { SUPPORTED_CURRENCIES } from "@biasmarket/utils/currency";
 
 export class UpdateProductDto {
   @IsOptional()

@@ -8,39 +8,39 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
-} from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import type { Request } from 'express';
-import { verifyCustomerSessionToken } from '@biasmarket/utils/customer-account-token';
-import { ApiBody, ApiConsumes } from '@nestjs/swagger';
-import { Public } from '@thallesp/nestjs-better-auth';
-import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
-import { plainToInstance } from 'class-transformer';
-import { validate } from 'class-validator';
-import { isPaymentMethodConfigured } from '@biasmarket/utils/payment-methods';
-import { CreateOrderUseCase } from '../application/create-order.usecase.js';
-import { CreateOrderDto } from '../dto/create-order.dto.js';
-import { StorageService } from '../../../storage/storage.service.js';
-import { pickPublicOrderFields } from './order.controller.js';
-import { requiredEnv } from '../../../config/env.validation.js';
-import { extractCustomerSessionToken } from '../../customer-auth/customer-session-token.js';
-import { PaymentConfigService } from '../../payment-config/payment-config.service.js';
+} from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
+import type { Request } from "express";
+import { verifyCustomerSessionToken } from "@biasmarket/utils/customer-account-token";
+import { ApiBody, ApiConsumes } from "@nestjs/swagger";
+import { Public } from "@thallesp/nestjs-better-auth";
+import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
+import { plainToInstance } from "class-transformer";
+import { validate } from "class-validator";
+import { isPaymentMethodConfigured } from "@biasmarket/utils/payment-methods";
+import { CreateOrderUseCase } from "../application/create-order.usecase.js";
+import { CreateOrderDto } from "../dto/create-order.dto.js";
+import { StorageService } from "../../../storage/storage.service.js";
+import { pickPublicOrderFields } from "./order.controller.js";
+import { requiredEnv } from "../../../config/env.validation.js";
+import { extractCustomerSessionToken } from "../../customer-auth/customer-session-token.js";
+import { PaymentConfigService } from "../../payment-config/payment-config.service.js";
 import type {
   CheckoutOrderItemResponseDto,
   CheckoutOrderResponseDto,
   CheckoutResultResponseDto,
-} from '../dto/checkout-response.dto.js';
-import { CHECKOUT_UPLOAD_LIMITS } from '../../../common/upload-limits.js';
+} from "../dto/checkout-response.dto.js";
+import { CHECKOUT_UPLOAD_LIMITS } from "../../../common/upload-limits.js";
 import {
   PROOF_UPLOAD_MIME_TYPES,
   UploadedFileValidationPipe,
   type ValidatedUploadedFile,
-} from '../../../common/uploaded-file-validation.pipe.js';
+} from "../../../common/uploaded-file-validation.pipe.js";
 
 const CHECKOUT_PROOF_PIPE = new UploadedFileValidationPipe({
   allowedMimeTypes: PROOF_UPLOAD_MIME_TYPES,
   fileIsRequired: false,
-  messages: { unsupportedType: 'Solo JPEG, PNG o PDF' },
+  messages: { unsupportedType: "Solo JPEG, PNG o PDF" },
 });
 
 interface CheckoutOrderItemRow {
@@ -63,29 +63,29 @@ export interface CheckoutOrderRow {
   customerEmail: string | null;
   customerPhone: string;
   customerName: string | null;
-  source: 'MARKETPLACE' | 'VENDOR_ASSISTED';
-  deliveryMethodType: 'PICKUP' | 'COURIER';
+  source: "MARKETPLACE" | "VENDOR_ASSISTED";
+  deliveryMethodType: "PICKUP" | "COURIER";
   deliveryDetails: unknown;
   pickupPointId: string | null;
   pickupDate: Date | null;
   courierName: string | null;
-  courierModality: 'AGENCY' | 'HOME' | null;
-  paymentMethod: 'YAPE' | 'PLIN' | 'TRANSFER' | 'CASH' | null;
+  courierModality: "AGENCY" | "HOME" | null;
+  paymentMethod: "YAPE" | "PLIN" | "TRANSFER" | "CASH" | null;
   paymentStatus:
-    | 'PENDING_PAYMENT'
-    | 'PARTIALLY_PAID'
-    | 'PAYMENT_SUBMITTED'
-    | 'VERIFIED'
-    | 'REJECTED'
-    | 'CANCELLED';
+    | "PENDING_PAYMENT"
+    | "PARTIALLY_PAID"
+    | "PAYMENT_SUBMITTED"
+    | "VERIFIED"
+    | "REJECTED"
+    | "CANCELLED";
   paymentRejectionReason: string | null;
-  fulfillmentStatus: 'ORDERING' | 'IN_TRANSIT' | 'READY' | 'COMPLETED';
-  status: 'ACTIVE' | 'CANCELLED';
-  cancellationResolution: 'REFUNDED' | 'RETAINED' | 'STORE_CREDIT' | null;
+  fulfillmentStatus: "ORDERING" | "IN_TRANSIT" | "READY" | "COMPLETED";
+  status: "ACTIVE" | "CANCELLED";
+  cancellationResolution: "REFUNDED" | "RETAINED" | "STORE_CREDIT" | null;
   cancellationReason: string | null;
   retainedAmount: { toString(): string } | null;
   releasedAmount: { toString(): string } | null;
-  releasedResolution: 'REFUNDED' | 'RETAINED' | 'STORE_CREDIT' | null;
+  releasedResolution: "REFUNDED" | "RETAINED" | "STORE_CREDIT" | null;
   totalAmount: { toString(): string };
   requiredAmount: { toString(): string };
   currency: string;
@@ -128,7 +128,7 @@ export function toCheckoutOrderDto(
 // class-validator pass; scalar fields pass through as strings, which the
 // DTO's decorators (`@IsIn`, `@IsEmail`, `@Matches`, ...) validate as-is.
 function parseJsonField(value: unknown): unknown {
-  if (typeof value !== 'string') return value;
+  if (typeof value !== "string") return value;
   try {
     return JSON.parse(value);
   } catch {
@@ -172,10 +172,10 @@ async function buildValidatedDto(body: Record<string, unknown>) {
 // Yape/Plin/bank-transfer payments need a manual proof-of-payment upload;
 // cash orders don't. The buyer's checkout form shows the upload field only
 // for these three methods.
-const REQUIRES_PROOF = (method: CreateOrderDto['paymentMethod']): boolean =>
-  method !== undefined && method !== 'CASH';
+const REQUIRES_PROOF = (method: CreateOrderDto["paymentMethod"]): boolean =>
+  method !== undefined && method !== "CASH";
 
-@Controller('stores/:slug/checkout')
+@Controller("stores/:slug/checkout")
 export class CheckoutController {
   constructor(
     private createOrder: CreateOrderUseCase,
@@ -186,17 +186,17 @@ export class CheckoutController {
   @Public()
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { ttl: 60_000, limit: 10 } })
-  @ApiConsumes('multipart/form-data')
+  @ApiConsumes("multipart/form-data")
   // The body schema reuses CreateOrderDto so the committed OpenAPI keeps
   // documenting the full checkout contract. The DTO's `items`/`shippingAddress`
   // arrive as JSON-string form fields (parsed in buildValidatedDto); swagger
   // marks non-primitive properties as application/json-encoded under
   // multipart/form-data, which matches that transport.
   @ApiBody({ type: CreateOrderDto })
-  @UseInterceptors(FileInterceptor('file', { limits: CHECKOUT_UPLOAD_LIMITS }))
+  @UseInterceptors(FileInterceptor("file", { limits: CHECKOUT_UPLOAD_LIMITS }))
   @Post()
   async create(
-    @Param('slug') slug: string,
+    @Param("slug") slug: string,
     @Body() body: Record<string, unknown>,
     @UploadedFile(CHECKOUT_PROOF_PIPE) file: ValidatedUploadedFile | undefined,
     @Req() req: Request,
@@ -204,7 +204,7 @@ export class CheckoutController {
     const dto = await buildValidatedDto(body ?? {});
 
     let configured = false;
-    if (dto.paymentMethod && dto.paymentMethod !== 'CASH') {
+    if (dto.paymentMethod && dto.paymentMethod !== "CASH") {
       const enabledMethods = await this.paymentConfig.findEnabledForSlug(slug);
       const row = enabledMethods.find((m) => m.method === dto.paymentMethod);
       configured = row
@@ -216,7 +216,7 @@ export class CheckoutController {
     }
 
     if (REQUIRES_PROOF(dto.paymentMethod) && configured && !file) {
-      throw new BadRequestException('Adjunta un comprobante de pago');
+      throw new BadRequestException("Adjunta un comprobante de pago");
     }
 
     let proofImageUrl: string | undefined;
@@ -247,7 +247,7 @@ export class CheckoutController {
     return (
       verifyCustomerSessionToken(
         token,
-        requiredEnv('CUSTOMER_ACCOUNT_TOKEN_SECRET'),
+        requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET"),
       ) ?? undefined
     );
   }

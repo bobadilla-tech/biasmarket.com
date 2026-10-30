@@ -1,4 +1,4 @@
-import { Transform, Type } from 'class-transformer';
+import { Transform, Type } from "class-transformer";
 import {
   ArrayMinSize,
   IsDefined,
@@ -9,19 +9,19 @@ import {
   MaxLength,
   ValidateIf,
   ValidateNested,
-} from 'class-validator';
-import { IsValidBuyerPhone } from './is-valid-buyer-phone.js';
-import { CreateOrderItemDto, ShippingAddressDto } from './create-order.dto.js';
+} from "class-validator";
+import { IsValidBuyerPhone } from "./is-valid-buyer-phone.js";
+import { CreateOrderItemDto, ShippingAddressDto } from "./create-order.dto.js";
 
 const trimString = ({ value }: { value: unknown }) =>
-  typeof value === 'string' ? value.trim() : value;
+  typeof value === "string" ? value.trim() : value;
 
 // The seller creates the order on the buyer's behalf, so there is no email,
 // proof of payment, or caller-chosen source/owner/expiry: the global
 // ValidationPipe (`forbidNonWhitelisted`) rejects any of those with a 400.
 export class CreateAssistedOrderDto {
-  @IsIn(['PICKUP', 'COURIER'])
-  deliveryMethodType: 'PICKUP' | 'COURIER';
+  @IsIn(["PICKUP", "COURIER"])
+  deliveryMethodType: "PICKUP" | "COURIER";
 
   @IsOptional()
   @IsString()
@@ -29,17 +29,17 @@ export class CreateAssistedOrderDto {
 
   @IsOptional()
   @Matches(/^\d{4}-\d{2}-\d{2}$/, {
-    message: 'pickupDate debe tener el formato YYYY-MM-DD',
+    message: "pickupDate debe tener el formato YYYY-MM-DD",
   })
   pickupDate?: string;
 
   @IsOptional()
-  @IsIn(['YAPE', 'PLIN', 'TRANSFER', 'CASH'])
-  paymentMethod?: 'YAPE' | 'PLIN' | 'TRANSFER' | 'CASH';
+  @IsIn(["YAPE", "PLIN", "TRANSFER", "CASH"])
+  paymentMethod?: "YAPE" | "PLIN" | "TRANSFER" | "CASH";
 
   @IsOptional()
-  @IsIn(['FULL', 'PARTIAL'])
-  paymentType?: 'FULL' | 'PARTIAL';
+  @IsIn(["FULL", "PARTIAL"])
+  paymentType?: "FULL" | "PARTIAL";
 
   // WhatsApp number of the buyer; stored in canonical E.164.
   @IsString()
@@ -58,12 +58,12 @@ export class CreateAssistedOrderDto {
     // eslint-disable-next-line no-misleading-character-class -- \u034F (combining grapheme joiner) is deliberately rejected
     /^[^\p{Cc}\u200B\u2028\u2029\u202A-\u202E\u2066-\u2069\uFEFF\u2060-\u2064\u00AD\u180E\u034F\uFFFC\uFFF9-\uFFFB\u3164\u115F\u1160\u2800]*$/u,
     {
-      message: 'El nombre no puede contener caracteres de control o invisibles',
+      message: "El nombre no puede contener caracteres de control o invisibles",
     },
   )
   customerName?: string;
 
-  @ValidateIf((o) => o.deliveryMethodType === 'COURIER')
+  @ValidateIf((o) => o.deliveryMethodType === "COURIER")
   @IsDefined()
   @ValidateNested()
   @Type(() => ShippingAddressDto)
@@ -74,8 +74,8 @@ export class CreateAssistedOrderDto {
   courierName?: string;
 
   @IsOptional()
-  @IsIn(['AGENCY', 'HOME'])
-  courierModality?: 'AGENCY' | 'HOME';
+  @IsIn(["AGENCY", "HOME"])
+  courierModality?: "AGENCY" | "HOME";
 
   @ArrayMinSize(1)
   @ValidateNested({ each: true })

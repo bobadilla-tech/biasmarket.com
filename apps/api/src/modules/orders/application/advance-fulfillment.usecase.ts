@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
-import type { FulfillmentStatus } from '@biasmarket/db';
-import { PrismaService } from '../../../prisma/prisma.service.js';
-import { OrderRepository } from '../infrastructure/order.repository.js';
-import { Order } from '../domain/order.entity.js';
-import { OrderEventsService } from './order-events.service.js';
+import { Injectable } from "@nestjs/common";
+import type { FulfillmentStatus } from "@biasmarket/db";
+import { PrismaService } from "../../../prisma/prisma.service.js";
+import { OrderRepository } from "../infrastructure/order.repository.js";
+import { Order } from "../domain/order.entity.js";
+import { OrderEventsService } from "./order-events.service.js";
 
 @Injectable()
 export class AdvanceFulfillmentUseCase {
@@ -38,7 +38,7 @@ export class AdvanceFulfillmentUseCase {
         orderId,
         {
           fulfillmentStatus: toStatus,
-          ...(toStatus === 'COMPLETED' ? { closedAt: new Date() } : {}),
+          ...(toStatus === "COMPLETED" ? { closedAt: new Date() } : {}),
         },
         tx,
       );
@@ -47,8 +47,8 @@ export class AdvanceFulfillmentUseCase {
         data: {
           actorId: userId,
           storeId,
-          action: 'fulfillment.advanced',
-          entityType: 'Order',
+          action: "fulfillment.advanced",
+          entityType: "Order",
           entityId: orderId,
           metadata: { fromStatus, toStatus },
         },
@@ -56,8 +56,8 @@ export class AdvanceFulfillmentUseCase {
       await this.events.record(tx, {
         orderId,
         storeId,
-        type: 'FULFILLMENT_ADVANCED',
-        actor: 'SELLER',
+        type: "FULFILLMENT_ADVANCED",
+        actor: "SELLER",
         payload: { fromStatus, toStatus },
       });
 

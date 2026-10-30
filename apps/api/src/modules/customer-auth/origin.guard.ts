@@ -4,11 +4,11 @@ import {
   ForbiddenException,
   Injectable,
   SetMetadata,
-} from '@nestjs/common';
-import type { Request } from 'express';
-import { verifyCustomerSessionToken } from '@biasmarket/utils/customer-account-token';
-import { requiredEnv } from '../../config/env.validation.js';
-import { extractBearerTokenFromAuthorization } from './customer-session-token.js';
+} from "@nestjs/common";
+import type { Request } from "express";
+import { verifyCustomerSessionToken } from "@biasmarket/utils/customer-account-token";
+import { requiredEnv } from "../../config/env.validation.js";
+import { extractBearerTokenFromAuthorization } from "./customer-session-token.js";
 
 // Marks a route whose OriginGuard is allowed to skip the Origin/Referer
 // check for requests that carry NO origin header at all (i.e. non-browser
@@ -22,7 +22,7 @@ import { extractBearerTokenFromAuthorization } from './customer-session-token.js
 // Only apply to routes that cannot present a bearer token yet (unauthenticated
 // token-issuing endpoints: register/login/forgot-password). Authenticated
 // routes go through the verified-bearer exemption instead.
-export const ALLOW_NO_ORIGIN = 'customerAuth:allowNoOrigin';
+export const ALLOW_NO_ORIGIN = "customerAuth:allowNoOrigin";
 export const AllowNoOrigin = () =>
   SetMetadata<string, true>(ALLOW_NO_ORIGIN, true);
 
@@ -65,7 +65,7 @@ export class OriginGuard implements CanActivate {
     // Exemption 1 (verified bearer only). Do NOT skip on the mere presence
     // of an Authorization header — only when the token actually validates.
     if (bearerToken) {
-      const secret = requiredEnv('CUSTOMER_ACCOUNT_TOKEN_SECRET');
+      const secret = requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET");
       if (verifyCustomerSessionToken(bearerToken, secret)) return true;
       // Invalid bearer token: fall through to the Origin check unchanged.
       // (Per-request precedence is cookie first; but an authenticated route
@@ -80,22 +80,22 @@ export class OriginGuard implements CanActivate {
       // IS supplied we enforce it below regardless of the marker.
       const allowNoOrigin = Reflect.getMetadata(ALLOW_NO_ORIGIN, handler);
       if (allowNoOrigin === true) return true;
-      throw new ForbiddenException('Missing origin');
+      throw new ForbiddenException("Missing origin");
     }
 
     const allowedOrigin = new URL(
-      process.env.WEB_URL ?? 'http://localhost:3001',
+      process.env.WEB_URL ?? "http://localhost:3001",
     ).origin;
 
     let sourceOrigin: string;
     try {
       sourceOrigin = new URL(source).origin;
     } catch {
-      throw new ForbiddenException('Invalid origin');
+      throw new ForbiddenException("Invalid origin");
     }
 
     if (sourceOrigin !== allowedOrigin) {
-      throw new ForbiddenException('Cross-origin request blocked');
+      throw new ForbiddenException("Cross-origin request blocked");
     }
     return true;
   }

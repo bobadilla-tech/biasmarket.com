@@ -2,14 +2,14 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-} from '@nestjs/common';
-import type { FulfillmentStatus, PaymentStatus, Prisma } from '@biasmarket/db';
-import { PrismaService } from '../../../prisma/prisma.service.js';
-import { Order } from '../domain/order.entity.js';
-import { normalizePhone } from '@biasmarket/utils/phone-country';
-import { orderRef } from '@biasmarket/utils/order-ref';
-import { withPaymentSummary } from '../../../common/payment-summary.js';
-import type { RelatedOrdersResponseDto } from '../dto/related-orders-response.dto.js';
+} from "@nestjs/common";
+import type { FulfillmentStatus, PaymentStatus, Prisma } from "@biasmarket/db";
+import { PrismaService } from "../../../prisma/prisma.service.js";
+import { Order } from "../domain/order.entity.js";
+import { normalizePhone } from "@biasmarket/utils/phone-country";
+import { orderRef } from "@biasmarket/utils/order-ref";
+import { withPaymentSummary } from "../../../common/payment-summary.js";
+import type { RelatedOrdersResponseDto } from "../dto/related-orders-response.dto.js";
 
 const RELATED_ORDERS_LIMIT = 10;
 // Main had no cap on the legacy scan; documented as a lower bound beyond it.
@@ -23,9 +23,9 @@ export class OrderRepository {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
-    if (!store) throw new NotFoundException('Store no encontrada');
+    if (!store) throw new NotFoundException("Store no encontrada");
     if (store.ownerId !== userId) {
-      throw new ForbiddenException('No sos dueño de esta store');
+      throw new ForbiddenException("No sos dueño de esta store");
     }
     return store;
   }
@@ -34,7 +34,7 @@ export class OrderRepository {
     const includeWithPayments = {
       items: { include: { product: true, variant: true } },
       createdBy: { select: { name: true } },
-      payments: { orderBy: { createdAt: 'desc' } },
+      payments: { orderBy: { createdAt: "desc" } },
     } as const;
 
     const includeWithoutPayments = {
@@ -58,7 +58,7 @@ export class OrderRepository {
       }
     }
     if (!order || order.storeId !== storeId) {
-      throw new NotFoundException('Orden no encontrada');
+      throw new NotFoundException("Orden no encontrada");
     }
     return withPaymentSummary(order);
   }
@@ -72,7 +72,7 @@ export class OrderRepository {
       where: { id: paymentId, orderId, storeId },
     });
     if (!payment) {
-      throw new NotFoundException('Pago no encontrado');
+      throw new NotFoundException("Pago no encontrado");
     }
     return payment;
   }
@@ -115,7 +115,7 @@ export class OrderRepository {
       this.prisma.order.findMany({
         where,
         select,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         take: limit,
       }),
       this.prisma.order.count({ where }),
@@ -126,13 +126,13 @@ export class OrderRepository {
           id: { not: order.id },
         },
         select: { ...select, customerPhone: true },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         take: LEGACY_SCAN_CAP,
       }),
     ]);
     const legacyMatches = legacy.filter(
       (row) =>
-        row.customerPhone.trim() !== '' &&
+        row.customerPhone.trim() !== "" &&
         normalizePhone(row.customerPhone) === phone,
     );
 
@@ -171,7 +171,7 @@ export class OrderRepository {
       (order as { buyerAccountId: string | null }).buyerAccountId !==
       buyerAccountId
     ) {
-      throw new NotFoundException('Orden no encontrada');
+      throw new NotFoundException("Orden no encontrada");
     }
     return order;
   }
@@ -190,7 +190,7 @@ export class OrderRepository {
       where: { id: paymentId, orderId, order: { buyerAccountId } },
     });
     if (!payment) {
-      throw new NotFoundException('Pago no encontrado');
+      throw new NotFoundException("Pago no encontrado");
     }
     return payment;
   }
@@ -213,7 +213,7 @@ export class OrderRepository {
     const includeWithPayments = {
       items: { include: { product: true, variant: true } },
       createdBy: { select: { name: true } },
-      payments: { orderBy: { createdAt: 'desc' } },
+      payments: { orderBy: { createdAt: "desc" } },
     } as const;
 
     const includeWithoutPayments = {
@@ -225,14 +225,14 @@ export class OrderRepository {
       const orders = await this.prisma.order.findMany({
         where,
         include: includeWithPayments,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       });
       return orders.map((order) => withPaymentSummary(order));
     } catch {
       const orders = await this.prisma.order.findMany({
         where,
         include: includeWithoutPayments,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       });
       return orders.map((order) =>
         withPaymentSummary({ ...order, payments: [] }),

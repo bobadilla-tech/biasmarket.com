@@ -1,12 +1,12 @@
-import { BadRequestException } from '@nestjs/common';
-import { Prisma } from '@biasmarket/db';
-import { type Mock, vi } from 'vitest';
-import { VoidOrderPaymentUseCase } from './void-order-payment.usecase.js';
-import { PrismaService } from '../../../prisma/prisma.service.js';
-import { OrderRepository } from '../infrastructure/order.repository.js';
-import { OrderEventsService } from './order-events.service.js';
+import { BadRequestException } from "@nestjs/common";
+import { Prisma } from "@biasmarket/db";
+import { type Mock, vi } from "vitest";
+import { VoidOrderPaymentUseCase } from "./void-order-payment.usecase.js";
+import { PrismaService } from "../../../prisma/prisma.service.js";
+import { OrderRepository } from "../infrastructure/order.repository.js";
+import { OrderEventsService } from "./order-events.service.js";
 
-describe('VoidOrderPaymentUseCase', () => {
+describe("VoidOrderPaymentUseCase", () => {
   let useCase: VoidOrderPaymentUseCase;
   let orders: { assertOwnership: Mock };
   let events: { record: Mock };
@@ -17,20 +17,20 @@ describe('VoidOrderPaymentUseCase', () => {
     auditLog: { create: Mock };
   };
 
-  const storeId = 'store-1';
-  const orderId = 'order-1';
-  const paymentId = 'payment-1';
-  const userId = 'seller-1';
+  const storeId = "store-1";
+  const orderId = "order-1";
+  const paymentId = "payment-1";
+  const userId = "seller-1";
 
   beforeEach(() => {
     tx = {
       $queryRaw: vi.fn().mockResolvedValue([{ id: orderId }]),
       order: {
         findFirst: vi.fn().mockResolvedValue({
-          paymentStatus: 'PARTIALLY_PAID',
-          fulfillmentStatus: 'ORDERING',
+          paymentStatus: "PARTIALLY_PAID",
+          fulfillmentStatus: "ORDERING",
           requiredAmount: new Prisma.Decimal(100),
-          currency: 'PEN',
+          currency: "PEN",
         }),
         update: vi.fn(),
       },
@@ -38,21 +38,21 @@ describe('VoidOrderPaymentUseCase', () => {
         findFirst: vi.fn().mockResolvedValue({
           id: paymentId,
           amount: new Prisma.Decimal(20),
-          source: 'SELLER_RECORDED',
-          reviewStatus: 'N_A',
+          source: "SELLER_RECORDED",
+          reviewStatus: "N_A",
           voidedAt: null,
         }),
         findMany: vi.fn().mockResolvedValue([
           {
             amount: new Prisma.Decimal(20),
-            source: 'SELLER_RECORDED',
-            reviewStatus: 'N_A',
+            source: "SELLER_RECORDED",
+            reviewStatus: "N_A",
             voidedAt: new Date(),
           },
           {
             amount: new Prisma.Decimal(30),
-            source: 'SELLER_RECORDED',
-            reviewStatus: 'N_A',
+            source: "SELLER_RECORDED",
+            reviewStatus: "N_A",
             voidedAt: null,
           },
         ]),
@@ -74,13 +74,13 @@ describe('VoidOrderPaymentUseCase', () => {
     );
   });
 
-  it('allows voiding a payment before fulfillment advances and recalculates to PARTIALLY_PAID', async () => {
+  it("allows voiding a payment before fulfillment advances and recalculates to PARTIALLY_PAID", async () => {
     const result = await useCase.execute(
       orderId,
       paymentId,
       storeId,
       userId,
-      'Duplicate entry',
+      "Duplicate entry",
     );
 
     expect(orders.assertOwnership).toHaveBeenCalledWith(storeId, userId);
@@ -89,98 +89,98 @@ describe('VoidOrderPaymentUseCase', () => {
       data: {
         voidedAt: expect.any(Date),
         voidedBy: userId,
-        voidReason: 'Duplicate entry',
+        voidReason: "Duplicate entry",
       },
     });
     expect(tx.order.update).toHaveBeenCalledWith({
       where: { id: orderId },
-      data: { paymentStatus: 'PARTIALLY_PAID' },
+      data: { paymentStatus: "PARTIALLY_PAID" },
     });
     expect(tx.auditLog.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         actorId: userId,
         storeId,
-        action: 'payment.voided',
-        entityType: 'OrderPayment',
+        action: "payment.voided",
+        entityType: "OrderPayment",
         entityId: paymentId,
-        metadata: { orderId, reason: 'Duplicate entry' },
+        metadata: { orderId, reason: "Duplicate entry" },
       }),
     });
-    expect(result.paymentStatus).toBe('PARTIALLY_PAID');
+    expect(result.paymentStatus).toBe("PARTIALLY_PAID");
   });
 
-  it('records PAYMENT_VOIDED inside the transaction without the seller reason', async () => {
+  it("records PAYMENT_VOIDED inside the transaction without the seller reason", async () => {
     await useCase.execute(
       orderId,
       paymentId,
       storeId,
       userId,
-      'Duplicate entry, buyer was rude',
+      "Duplicate entry, buyer was rude",
     );
 
     expect(events.record).toHaveBeenCalledTimes(1);
     expect(events.record).toHaveBeenCalledWith(tx, {
       orderId,
       storeId,
-      type: 'PAYMENT_VOIDED',
-      actor: 'SELLER',
-      payload: { amount: 20, currency: 'PEN', paymentId },
+      type: "PAYMENT_VOIDED",
+      actor: "SELLER",
+      payload: { amount: 20, currency: "PEN", paymentId },
     });
-    expect(JSON.stringify(events.record.mock.calls)).not.toContain('rude');
+    expect(JSON.stringify(events.record.mock.calls)).not.toContain("rude");
   });
 
-  it('records nothing when the void is rejected', async () => {
+  it("records nothing when the void is rejected", async () => {
     tx.order.findFirst.mockResolvedValueOnce({
-      paymentStatus: 'VERIFIED',
-      fulfillmentStatus: 'ORDERING',
+      paymentStatus: "VERIFIED",
+      fulfillmentStatus: "ORDERING",
       requiredAmount: new Prisma.Decimal(100),
-      currency: 'PEN',
+      currency: "PEN",
     });
     await expect(
-      useCase.execute(orderId, paymentId, storeId, userId, 'Mistake'),
+      useCase.execute(orderId, paymentId, storeId, userId, "Mistake"),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(events.record).not.toHaveBeenCalled();
   });
 
-  it('rejects voiding after an order has been verified', async () => {
+  it("rejects voiding after an order has been verified", async () => {
     tx.order.findFirst.mockResolvedValueOnce({
-      paymentStatus: 'VERIFIED',
-      fulfillmentStatus: 'ORDERING',
+      paymentStatus: "VERIFIED",
+      fulfillmentStatus: "ORDERING",
       requiredAmount: new Prisma.Decimal(100),
     });
 
     await expect(
-      useCase.execute(orderId, paymentId, storeId, userId, 'Mistake'),
+      useCase.execute(orderId, paymentId, storeId, userId, "Mistake"),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(tx.orderPayment.update).not.toHaveBeenCalled();
     expect(tx.auditLog.create).not.toHaveBeenCalled();
   });
 
-  it('rejects voiding after fulfillment advances', async () => {
+  it("rejects voiding after fulfillment advances", async () => {
     tx.order.findFirst.mockResolvedValueOnce({
-      paymentStatus: 'VERIFIED',
-      fulfillmentStatus: 'IN_TRANSIT',
+      paymentStatus: "VERIFIED",
+      fulfillmentStatus: "IN_TRANSIT",
       requiredAmount: new Prisma.Decimal(100),
     });
 
     await expect(
-      useCase.execute(orderId, paymentId, storeId, userId, 'Mistake'),
+      useCase.execute(orderId, paymentId, storeId, userId, "Mistake"),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(tx.orderPayment.update).not.toHaveBeenCalled();
     expect(tx.auditLog.create).not.toHaveBeenCalled();
   });
 
-  it('does not void a buyer proof before review', async () => {
+  it("does not void a buyer proof before review", async () => {
     tx.orderPayment.findFirst.mockResolvedValueOnce({
       id: paymentId,
       amount: new Prisma.Decimal(20),
-      source: 'BUYER_SUBMITTED',
-      reviewStatus: 'PENDING_REVIEW',
+      source: "BUYER_SUBMITTED",
+      reviewStatus: "PENDING_REVIEW",
       voidedAt: null,
     });
 
     await expect(
-      useCase.execute(orderId, paymentId, storeId, userId, 'Mistake'),
+      useCase.execute(orderId, paymentId, storeId, userId, "Mistake"),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(tx.orderPayment.update).not.toHaveBeenCalled();
   });

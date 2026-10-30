@@ -1,22 +1,22 @@
-import { randomUUID } from 'node:crypto';
-import { Test, type TestingModule } from '@nestjs/testing';
-import type { INestApplication } from '@nestjs/common';
-import { PrismaService } from '../src/prisma/prisma.service.js';
-import request from 'supertest';
-import { readdirSync, readFileSync } from 'node:fs';
-import { AppModule } from './../src/app.module.js';
+import { randomUUID } from "node:crypto";
+import { Test, type TestingModule } from "@nestjs/testing";
+import type { INestApplication } from "@nestjs/common";
+import { PrismaService } from "../src/prisma/prisma.service.js";
+import request from "supertest";
+import { readdirSync, readFileSync } from "node:fs";
+import { AppModule } from "./../src/app.module.js";
 import {
   cleanupBuyerTestData,
   deleteOrders,
   mailerDevDir,
   waitForNewMailerFile,
-} from './schema-assert.js';
+} from "./schema-assert.js";
 
 // Validates that better-auth's Bearer plugin (auth.config.ts) exposes the
 // session token via set-auth-token on sign-in, and that the token can be used
 // on the Authorization header to access seller-protected endpoints — no
 // cookie, no Origin header — proving the mobile seller path works end-to-end.
-describe('seller bearer auth (e2e)', () => {
+describe("seller bearer auth (e2e)", () => {
   let app: INestApplication;
   let prisma: PrismaService;
   let sellerUserId: string | undefined;
@@ -25,7 +25,7 @@ describe('seller bearer auth (e2e)', () => {
 
   const runId = `sba-e2e-${randomUUID()}`;
   const sellerEmail = `sba-e2e-${runId}@example.com`;
-  const password = 'correcthorsebatterystaple';
+  const password = "correcthorsebatterystaple";
   const storeSlug = `sba-store-${runId}`;
 
   beforeAll(async () => {
@@ -41,8 +41,8 @@ describe('seller bearer auth (e2e)', () => {
     const existingMailerFiles = new Set(readdirSync(mailerDevDir));
 
     const signUpRes = await request(app.getHttpServer())
-      .post('/api/auth/sign-up/email')
-      .send({ email: sellerEmail, password, name: 'Bearer E2E Seller' })
+      .post("/api/auth/sign-up/email")
+      .send({ email: sellerEmail, password, name: "Bearer E2E Seller" })
       .expect(200);
     sellerUserId = signUpRes.body.user.id;
 
@@ -50,9 +50,9 @@ describe('seller bearer auth (e2e)', () => {
       existingMailerFiles,
       sellerEmail,
     );
-    const html = readFileSync(mailerFile, 'utf-8');
+    const html = readFileSync(mailerFile, "utf-8");
     const tokenMatch = html.match(/verify-email\?token=([^&"]+)/);
-    if (!tokenMatch) throw new Error('verification link not found in email');
+    if (!tokenMatch) throw new Error("verification link not found in email");
     await request(app.getHttpServer())
       .get(`/api/auth/verify-email?token=${tokenMatch[1]}`)
       .expect((res) => {
@@ -84,36 +84,36 @@ describe('seller bearer auth (e2e)', () => {
   });
 
   it(
-    'sign-in returns set-auth-token; bearer token grants access to seller ' +
-      'endpoint with no cookie and no Origin',
+    "sign-in returns set-auth-token; bearer token grants access to seller " +
+      "endpoint with no cookie and no Origin",
     async () => {
       // Sign in — Bearer plugin AFTER hook exposes raw token via
       // set-auth-token response header.
       const signInRes = await request(app.getHttpServer())
-        .post('/api/auth/sign-in/email')
+        .post("/api/auth/sign-in/email")
         .send({ email: sellerEmail, password })
         .expect(200);
 
-      const bearerToken = signInRes.headers['set-auth-token'] as
+      const bearerToken = signInRes.headers["set-auth-token"] as
         string | undefined;
       expect(bearerToken).toBeDefined();
-      expect(typeof bearerToken).toBe('string');
+      expect(typeof bearerToken).toBe("string");
       expect(bearerToken!.length).toBeGreaterThan(10);
 
       // Cookie must also be set (cookie-mode is still the default).
-      const setCookie = signInRes.headers['set-cookie'] as unknown as string[];
-      const rawCookie = setCookie?.find((c) => c.includes('session_token'));
+      const setCookie = signInRes.headers["set-cookie"] as unknown as string[];
+      const rawCookie = setCookie?.find((c) => c.includes("session_token"));
       expect(rawCookie).toBeDefined();
 
       // Create a store using the cookie (proving cookie-mode still works).
       storeId = (
         await request(app.getHttpServer())
-          .post('/stores')
-          .set('Cookie', rawCookie!.split(';')[0]!)
+          .post("/stores")
+          .set("Cookie", rawCookie!.split(";")[0]!)
           .send({
-            name: 'Bearer E2E Store',
+            name: "Bearer E2E Store",
             slug: storeSlug,
-            whatsappNumber: '+51900000003',
+            whatsappNumber: "+51900000003",
           })
           .expect(201)
       ).body.id;
@@ -122,28 +122,28 @@ describe('seller bearer auth (e2e)', () => {
       // header.  Bearer plugin converts the token → cookie → AuthGuard passes.
       const productRes = await request(app.getHttpServer())
         .post(`/stores/${storeId}/products`)
-        .set('Authorization', `Bearer ${bearerToken}`)
+        .set("Authorization", `Bearer ${bearerToken}`)
         .send({
-          name: 'Bearer E2E Product',
+          name: "Bearer E2E Product",
           price: 20,
-          currency: 'PEN',
+          currency: "PEN",
           stock: 50,
         })
         .expect(201);
       productId = productRes.body.id;
-      expect(productRes.body.name).toBe('Bearer E2E Product');
+      expect(productRes.body.name).toBe("Bearer E2E Product");
 
       // Forged bearer token → 401.
       await request(app.getHttpServer())
         .post(`/stores/${storeId}/products`)
-        .set('Authorization', 'Bearer absolutely-not-a-real-token')
-        .send({ name: 'Should Fail', price: 1, currency: 'PEN', stock: 1 })
+        .set("Authorization", "Bearer absolutely-not-a-real-token")
+        .send({ name: "Should Fail", price: 1, currency: "PEN", stock: 1 })
         .expect(401);
 
       // Cookie path still works (regression guard).
       const listRes = await request(app.getHttpServer())
         .get(`/stores/${storeId}/products`)
-        .set('Cookie', rawCookie!.split(';')[0]!)
+        .set("Cookie", rawCookie!.split(";")[0]!)
         .expect(200);
       expect(
         (listRes.body as { id: string }[]).some(
@@ -153,22 +153,22 @@ describe('seller bearer auth (e2e)', () => {
     },
   );
 
-  it('bearer token is rejected when the session has been revoked (sign-out)', async () => {
+  it("bearer token is rejected when the session has been revoked (sign-out)", async () => {
     // Sign in fresh to get a valid token.
     const signInRes = await request(app.getHttpServer())
-      .post('/api/auth/sign-in/email')
+      .post("/api/auth/sign-in/email")
       .send({ email: sellerEmail, password })
       .expect(200);
-    const token = signInRes.headers['set-auth-token'] as string;
+    const token = signInRes.headers["set-auth-token"] as string;
     const rawCookie = (
-      signInRes.headers['set-cookie'] as unknown as string[]
-    )?.find((c) => c.includes('session_token'));
+      signInRes.headers["set-cookie"] as unknown as string[]
+    )?.find((c) => c.includes("session_token"));
     expect(token).toBeDefined();
 
     // Sign out (revokes session in DB).
     await request(app.getHttpServer())
-      .post('/api/auth/sign-out')
-      .set('Cookie', rawCookie!.split(';')[0]!)
+      .post("/api/auth/sign-out")
+      .set("Cookie", rawCookie!.split(";")[0]!)
       .expect(200);
 
     // The bearer token must now be rejected (session revoked in DB).
@@ -178,8 +178,8 @@ describe('seller bearer auth (e2e)', () => {
     // AuthGuard), which must 401 once the session row is gone.
     await request(app.getHttpServer())
       .post(`/stores/${storeId}/products`)
-      .set('Authorization', `Bearer ${token}`)
-      .send({ name: 'Should Fail', price: 1, currency: 'PEN', stock: 1 })
+      .set("Authorization", `Bearer ${token}`)
+      .send({ name: "Should Fail", price: 1, currency: "PEN", stock: 1 })
       .expect(401);
   });
 });

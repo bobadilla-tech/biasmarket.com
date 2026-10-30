@@ -5,34 +5,34 @@ import {
   Logger,
   NotFoundException,
   UnauthorizedException,
-} from '@nestjs/common';
-import { Prisma } from '@biasmarket/db';
-import { hashPassword, verifyPassword } from 'better-auth/crypto';
+} from "@nestjs/common";
+import { Prisma } from "@biasmarket/db";
+import { hashPassword, verifyPassword } from "better-auth/crypto";
 import {
   createCustomerSessionToken,
   verifyCustomerAccountToken,
-} from '@biasmarket/utils/customer-account-token';
-import { normalizePhone } from '@biasmarket/utils/phone-country';
-import { PrismaService } from '../../prisma/prisma.service.js';
-import { CustomerAccountService } from '../orders/application/customer-account.service.js';
-import { OrderRepository } from '../orders/infrastructure/order.repository.js';
-import { OrderEventsService } from '../orders/application/order-events.service.js';
-import { toPublicTimeline } from '../orders/application/public-order-timeline.js';
-import { countsTowardPaid } from '../../common/payment-summary.js';
-import { type ClaimTicket, linkFingerprint } from './claim-ticket.js';
-import { requiredEnv } from '../../config/env.validation.js';
-import { withPaymentSummary } from '../../common/payment-summary.js';
-import { toAccountOrderDto } from './dto/account-order-response.dto.js';
-import type { GlobalAccountOrderDetailResponseDto } from './dto/global-account-response.dto.js';
+} from "@biasmarket/utils/customer-account-token";
+import { normalizePhone } from "@biasmarket/utils/phone-country";
+import { PrismaService } from "../../prisma/prisma.service.js";
+import { CustomerAccountService } from "../orders/application/customer-account.service.js";
+import { OrderRepository } from "../orders/infrastructure/order.repository.js";
+import { OrderEventsService } from "../orders/application/order-events.service.js";
+import { toPublicTimeline } from "../orders/application/public-order-timeline.js";
+import { countsTowardPaid } from "../../common/payment-summary.js";
+import { type ClaimTicket, linkFingerprint } from "./claim-ticket.js";
+import { requiredEnv } from "../../config/env.validation.js";
+import { withPaymentSummary } from "../../common/payment-summary.js";
+import { toAccountOrderDto } from "./dto/account-order-response.dto.js";
+import type { GlobalAccountOrderDetailResponseDto } from "./dto/global-account-response.dto.js";
 
-export type ClaimFailureCode = 'already_claimed' | 'not_claimable' | 'invalid';
+export type ClaimFailureCode = "already_claimed" | "not_claimable" | "invalid";
 
 // Why a claim was refused. The callback maps the code to a redirect; nothing
 // here carries the order token, email or ticket.
 export class ClaimOrderError extends Error {
   constructor(readonly code: ClaimFailureCode) {
     super(`claim refused: ${code}`);
-    this.name = 'ClaimOrderError';
+    this.name = "ClaimOrderError";
   }
 }
 
@@ -49,7 +49,7 @@ export class CustomerAuthService {
 
   private async findStoreBySlug(slug: string) {
     const store = await this.prisma.store.findUnique({ where: { slug } });
-    if (!store) throw new NotFoundException('Store no encontrada');
+    if (!store) throw new NotFoundException("Store no encontrada");
     return store;
   }
 
@@ -61,7 +61,7 @@ export class CustomerAuthService {
     buyerAccountId: string,
     passwordVersion: number,
   ): string {
-    const secret = requiredEnv('CUSTOMER_ACCOUNT_TOKEN_SECRET');
+    const secret = requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET");
     return createCustomerSessionToken(buyerAccountId, passwordVersion, secret);
   }
 
@@ -99,20 +99,20 @@ export class CustomerAuthService {
     token: string,
     password: string,
   ): Promise<{ ok: true }> {
-    const secret = requiredEnv('CUSTOMER_ACCOUNT_TOKEN_SECRET');
+    const secret = requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET");
     const verified = verifyCustomerAccountToken(token, secret);
     if (
       !verified ||
-      (verified.purpose !== 'confirm' && verified.purpose !== 'reset')
+      (verified.purpose !== "confirm" && verified.purpose !== "reset")
     ) {
-      throw new BadRequestException('Enlace inválido o expirado');
+      throw new BadRequestException("Enlace inválido o expirado");
     }
 
     const buyerAccount = await this.prisma.buyerAccount.findUnique({
       where: { id: verified.buyerAccountId },
     });
     if (!buyerAccount) {
-      throw new BadRequestException('Enlace inválido o expirado');
+      throw new BadRequestException("Enlace inválido o expirado");
     }
 
     // The magic-link token itself is the "verified proof of email ownership"
@@ -124,9 +124,9 @@ export class CustomerAuthService {
     // "reset"-purpose token is exempt — that's the whole point of forgot
     // password — and gets a much shorter TTL to bound the risk (see
     // `ttlForPurpose` in the token util).
-    if (verified.purpose === 'confirm' && buyerAccount.passwordHash) {
+    if (verified.purpose === "confirm" && buyerAccount.passwordHash) {
       throw new ConflictException(
-        'Esta cuenta ya tiene una contraseña configurada',
+        "Esta cuenta ya tiene una contraseña configurada",
       );
     }
 
@@ -134,7 +134,7 @@ export class CustomerAuthService {
     await this.prisma.buyerAccount.update({
       where: { id: buyerAccount.id },
       data:
-        verified.purpose === 'confirm'
+        verified.purpose === "confirm"
           ? {
               passwordHash,
               emailVerified: true,
@@ -199,7 +199,7 @@ export class CustomerAuthService {
     // Same generic error whether the phone doesn't exist or the password is
     // wrong — never leak which one it was.
     if (!buyerAccount?.passwordHash) {
-      throw new UnauthorizedException('Teléfono o contraseña inválidos');
+      throw new UnauthorizedException("Teléfono o contraseña inválidos");
     }
 
     const valid = await verifyPassword({
@@ -207,7 +207,7 @@ export class CustomerAuthService {
       password,
     });
     if (!valid) {
-      throw new UnauthorizedException('Teléfono o contraseña inválidos');
+      throw new UnauthorizedException("Teléfono o contraseña inválidos");
     }
 
     return buyerAccount;
@@ -248,7 +248,7 @@ export class CustomerAuthService {
   // Never touches `BuyerAccount.phone` or `Order.phoneVerified`.
   async claimWithGoogle(
     identity: { sub: string; email: string; name: string | null },
-    ticket: Pick<ClaimTicket, 'orderId' | 'linkFp' | 'moment'>,
+    ticket: Pick<ClaimTicket, "orderId" | "linkFp" | "moment">,
   ): Promise<{ token: string; orderId: string }> {
     const account = await this.resolveGoogleAccount(identity);
 
@@ -256,7 +256,7 @@ export class CustomerAuthService {
       const locked = await tx.$queryRaw<{ id: string }[]>`
         SELECT id FROM "Order" WHERE id = ${ticket.orderId} FOR UPDATE
       `;
-      if (!locked.length) throw new ClaimOrderError('invalid');
+      if (!locked.length) throw new ClaimOrderError("invalid");
 
       const select = {
         id: true,
@@ -281,7 +281,7 @@ export class CustomerAuthService {
         where: { id: ticket.orderId },
         select,
       });
-      if (!order) throw new ClaimOrderError('invalid');
+      if (!order) throw new ClaimOrderError("invalid");
 
       if (order.claimedAt || order.buyerAccountId) {
         // Same account re-claiming is a success; anyone else is too late.
@@ -289,30 +289,30 @@ export class CustomerAuthService {
           await this.upsertStoreLink(tx, account.id, order.storeId);
           return;
         }
-        throw new ClaimOrderError('already_claimed');
+        throw new ClaimOrderError("already_claimed");
       }
       if (
         order.accessTokenRevokedAt ||
         !order.accessTokenHash ||
         linkFingerprint(order.accessTokenHash) !== ticket.linkFp
       ) {
-        throw new ClaimOrderError('invalid');
+        throw new ClaimOrderError("invalid");
       }
       if (
-        order.source !== 'VENDOR_ASSISTED' ||
-        order.status === 'CANCELLED' ||
-        order.paymentStatus === 'CANCELLED' ||
+        order.source !== "VENDOR_ASSISTED" ||
+        order.status === "CANCELLED" ||
+        order.paymentStatus === "CANCELLED" ||
         !order.payments.some(countsTowardPaid)
       ) {
-        throw new ClaimOrderError('not_claimable');
+        throw new ClaimOrderError("not_claimable");
       }
 
       const { count } = await tx.order.updateMany({
         where: {
           id: order.id,
-          source: 'VENDOR_ASSISTED',
-          status: { not: 'CANCELLED' },
-          paymentStatus: { not: 'CANCELLED' },
+          source: "VENDOR_ASSISTED",
+          status: { not: "CANCELLED" },
+          paymentStatus: { not: "CANCELLED" },
           claimedAt: null,
           buyerAccountId: null,
           accessTokenRevokedAt: null,
@@ -320,24 +320,24 @@ export class CustomerAuthService {
         },
         data: { buyerAccountId: account.id, claimedAt: new Date() },
       });
-      if (count !== 1) throw new ClaimOrderError('already_claimed');
+      if (count !== 1) throw new ClaimOrderError("already_claimed");
 
       await this.upsertStoreLink(tx, account.id, order.storeId);
       await this.events.record(tx, {
         orderId: order.id,
         storeId: order.storeId,
-        type: 'CLAIMED',
-        actor: 'BUYER',
+        type: "CLAIMED",
+        actor: "BUYER",
         payload: ticket.moment ? { moment: ticket.moment } : {},
       });
       await tx.auditLog.create({
         data: {
           actorId: account.id,
           storeId: order.storeId,
-          action: 'order.claimed',
-          entityType: 'Order',
+          action: "order.claimed",
+          entityType: "Order",
           entityId: order.id,
-          metadata: { actorType: 'BUYER' },
+          metadata: { actorType: "BUYER" },
         },
       });
     });
@@ -383,7 +383,7 @@ export class CustomerAuthService {
     } catch (err) {
       if (
         err instanceof Prisma.PrismaClientKnownRequestError &&
-        err.code === 'P2002'
+        err.code === "P2002"
       ) {
         // A concurrent first login with this `sub` won the race: sign in.
         const winner = await this.prisma.buyerAccount.findUnique({
@@ -406,14 +406,14 @@ export class CustomerAuthService {
     try {
       const existing = await this.prisma.buyerAccount.findFirst({
         where: {
-          email: { equals: email, mode: 'insensitive' },
+          email: { equals: email, mode: "insensitive" },
           id: { not: buyerAccountId },
         },
         select: { id: true },
       });
       if (existing) {
         this.logger.log({
-          event: 'google-link-skipped',
+          event: "google-link-skipped",
           buyerAccountId,
           existingBuyerAccountId: existing.id,
         });
@@ -432,14 +432,14 @@ export class CustomerAuthService {
       where: { id: buyerAccountId },
     });
     if (!buyerAccount?.passwordHash) {
-      throw new UnauthorizedException('No autenticado');
+      throw new UnauthorizedException("No autenticado");
     }
 
     const valid = await verifyPassword({
       hash: buyerAccount.passwordHash,
       password: currentPassword,
     });
-    if (!valid) throw new BadRequestException('Contraseña actual incorrecta');
+    if (!valid) throw new BadRequestException("Contraseña actual incorrecta");
 
     const passwordHash = await hashPassword(newPassword);
     const updated = await this.prisma.buyerAccount.update({
@@ -458,7 +458,7 @@ export class CustomerAuthService {
     });
     const orders = await this.prisma.order.findMany({
       where: { buyerAccountId: buyerAccount.id, storeId: store.id },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       select: {
         id: true,
         paymentStatus: true,
@@ -510,7 +510,7 @@ export class CustomerAuthService {
       store.id,
     );
     if (row.buyerAccountId !== session.buyerAccountId) {
-      throw new NotFoundException('Orden no encontrada');
+      throw new NotFoundException("Orden no encontrada");
     }
     return row;
   }
@@ -544,7 +544,7 @@ export class CustomerAuthService {
           NOT: { id: buyerAccount.id },
         },
       });
-      if (clash) throw new ConflictException('Este correo ya está en uso');
+      if (clash) throw new ConflictException("Este correo ya está en uso");
 
       data.pendingEmail = dto.email;
       sendEmailChangeTo = dto.email;
@@ -554,13 +554,13 @@ export class CustomerAuthService {
     if (normalizedPhone && normalizedPhone !== buyerAccount.phone) {
       if (!buyerAccount.emailVerified) {
         throw new BadRequestException(
-          'Verifica tu correo antes de cambiar tu teléfono',
+          "Verifica tu correo antes de cambiar tu teléfono",
         );
       }
       const clash = await this.prisma.buyerAccount.findUnique({
         where: { phone: normalizedPhone },
       });
-      if (clash) throw new ConflictException('Este teléfono ya está en uso');
+      if (clash) throw new ConflictException("Este teléfono ya está en uso");
 
       data.pendingPhone = normalizedPhone;
       sendPhoneChange = true;
@@ -618,7 +618,7 @@ export class CustomerAuthService {
   async getGlobalOrders(buyerAccountId: string) {
     const orders = await this.prisma.order.findMany({
       where: { buyerAccountId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       select: {
         id: true,
         paymentStatus: true,
@@ -695,7 +695,7 @@ export class CustomerAuthService {
           },
         },
         payments: {
-          orderBy: { createdAt: 'asc' },
+          orderBy: { createdAt: "asc" },
           select: {
             amount: true,
             source: true,
@@ -706,7 +706,7 @@ export class CustomerAuthService {
         },
       },
     });
-    if (!order) throw new NotFoundException('Pedido no encontrado');
+    if (!order) throw new NotFoundException("Pedido no encontrado");
 
     const summary = withPaymentSummary(order);
     const events = await this.events.listForBuyer(order.id);

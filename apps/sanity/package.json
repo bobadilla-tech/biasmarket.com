@@ -31,11 +31,5 @@
     "eslint": "^9.28",
     "prettier": "^3.5",
     "typescript": "^5.8"
-  },
-  "prettier": {
-    "bracketSpacing": false,
-    "printWidth": 100,
-    "semi": false,
-    "singleQuote": true
   }
 }

@@ -3,28 +3,28 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
-} from '@nestjs/common';
-import type { Prisma, Store } from '@biasmarket/db';
-import { validatePhone } from '@biasmarket/utils/phone-country';
+} from "@nestjs/common";
+import type { Prisma, Store } from "@biasmarket/db";
+import { validatePhone } from "@biasmarket/utils/phone-country";
 import {
   assertVendorAssistedOrder,
   AssistedOrderInvariantError,
   createOrderAccessToken,
-} from '@biasmarket/utils/assisted-order';
-import { PrismaService } from '../../../prisma/prisma.service.js';
-import { NotificationsService } from '../../notifications/notifications.service.js';
-import type { CreateAssistedOrderDto } from '../dto/create-assisted-order.dto.js';
-import { upsertAssistedCustomer } from './assisted-customer.js';
-import { CustomersService } from './customers.service.js';
-import { OrderEventsService } from './order-events.service.js';
-import { buildOrderAccessUrl } from './order-access-url.js';
-import { DuplicateIdempotencyKeyException } from '../domain/duplicate-idempotency-key.exception.js';
-import { isIdempotencyKeyConflict } from './idempotency-key.js';
+} from "@biasmarket/utils/assisted-order";
+import { PrismaService } from "../../../prisma/prisma.service.js";
+import { NotificationsService } from "../../notifications/notifications.service.js";
+import type { CreateAssistedOrderDto } from "../dto/create-assisted-order.dto.js";
+import { upsertAssistedCustomer } from "./assisted-customer.js";
+import { CustomersService } from "./customers.service.js";
+import { OrderEventsService } from "./order-events.service.js";
+import { buildOrderAccessUrl } from "./order-access-url.js";
+import { DuplicateIdempotencyKeyException } from "../domain/duplicate-idempotency-key.exception.js";
+import { isIdempotencyKeyConflict } from "./idempotency-key.js";
 import {
   lockAndValidate,
   reserveItems,
   validateDeliveryPreTx,
-} from './order-creation.core.js';
+} from "./order-creation.core.js";
 
 // A seller may create assisted orders for up to five distinct recipients per
 // store in a rolling ten-minute window. Repeated orders for a recipient
@@ -98,18 +98,18 @@ export class CreateAssistedOrderUseCase {
             this.notifications,
             store,
             { ...dto, ...pre, ...locked },
-            'ASSISTED_ORDER_V1',
+            "ASSISTED_ORDER_V1",
           );
           // Rolls the whole transaction back, releasing the reserved stock.
           if (finalAmount.lte(0)) {
             throw new BadRequestException(
-              'El total del pedido debe ser mayor a 0',
+              "El total del pedido debe ser mayor a 0",
             );
           }
 
           try {
             assertVendorAssistedOrder({
-              source: 'VENDOR_ASSISTED',
+              source: "VENDOR_ASSISTED",
               customerPhone: phone,
               createdByUserId: userId,
             });
@@ -127,7 +127,7 @@ export class CreateAssistedOrderUseCase {
               customerPhone: phone,
               customerPhoneNormalized: phone,
               customerName: alias,
-              source: 'VENDOR_ASSISTED',
+              source: "VENDOR_ASSISTED",
               createdByUserId: userId,
               idempotencyKey: idempotencyKey ?? null,
               accessTokenHash: tokenHash,
@@ -139,19 +139,19 @@ export class CreateAssistedOrderUseCase {
           await this.events.record(tx, {
             orderId: created.id,
             storeId: store.id,
-            type: 'CREATED',
-            actor: 'SELLER',
+            type: "CREATED",
+            actor: "SELLER",
           });
           // No phone, alias or token in the audit trail.
           await tx.auditLog.create({
             data: {
               actorId: userId,
               storeId: store.id,
-              action: 'order.assisted_created',
-              entityType: 'Order',
+              action: "order.assisted_created",
+              entityType: "Order",
               entityId: created.id,
               metadata: {
-                source: 'VENDOR_ASSISTED',
+                source: "VENDOR_ASSISTED",
                 itemCount: dto.items.length,
                 deliveryMethodType: dto.deliveryMethodType,
                 paymentMethod: dto.paymentMethod ?? null,
@@ -212,14 +212,14 @@ export class CreateAssistedOrderUseCase {
     const since = new Date(Date.now() - ASSISTED_ORDER_RECIPIENT_WINDOW_MS);
     const recentRecipients = await tx.order.findMany({
       where: {
-        source: 'VENDOR_ASSISTED',
+        source: "VENDOR_ASSISTED",
         storeId,
         createdByUserId: userId,
         createdAt: { gte: since },
         customerPhoneNormalized: { not: null },
       },
       select: { customerPhoneNormalized: true },
-      distinct: ['customerPhoneNormalized'],
+      distinct: ["customerPhoneNormalized"],
     });
 
     if (
@@ -229,7 +229,7 @@ export class CreateAssistedOrderUseCase {
       )
     ) {
       throw new HttpException(
-        'Límite temporal de nuevos destinatarios para pedidos asistidos',
+        "Límite temporal de nuevos destinatarios para pedidos asistidos",
         HttpStatus.TOO_MANY_REQUESTS,
       );
     }

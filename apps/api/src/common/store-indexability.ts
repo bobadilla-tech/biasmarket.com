@@ -13,7 +13,7 @@
 // `robots: { index: false }`. D7 applies it to the sitemap query via
 // SITEMAP_INDEXABLE_STORE_WHERE below.
 
-import type { Prisma } from '@biasmarket/db';
+import type { Prisma } from "@biasmarket/db";
 
 export const MIN_INDEXABLE_PRODUCTS = 2;
 
@@ -60,6 +60,6 @@ export const SITEMAP_INDEXABLE_STORE_WHERE = {
   OR: [
     { bio: { not: null } },
     { aboutMarkdown: { not: null } },
-    { sections: { some: { type: 'TEXT_BLOCK' } } },
+    { sections: { some: { type: "TEXT_BLOCK" } } },
   ],
 } as const satisfies Prisma.StoreWhereInput;

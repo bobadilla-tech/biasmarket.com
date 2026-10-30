@@ -1,10 +1,10 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException } from "@nestjs/common";
 
 export const STORE_CATALOG_SORTS = [
-  'recientes',
-  'precio_asc',
-  'precio_desc',
-  'nombre_asc',
+  "recientes",
+  "precio_asc",
+  "precio_desc",
+  "nombre_asc",
 ] as const;
 export type StoreCatalogSort = (typeof STORE_CATALOG_SORTS)[number];
 
@@ -31,32 +31,32 @@ export function parseStoreCatalogQuery(
 ): StoreCatalogQuery {
   const page = rawPage === undefined ? 1 : Number(rawPage);
   if (!Number.isSafeInteger(page) || page < 1) {
-    throw new BadRequestException('page inválido');
+    throw new BadRequestException("page inválido");
   }
   const limit = rawLimit === undefined ? DEFAULT_LIMIT : Number(rawLimit);
   if (!Number.isInteger(limit) || limit < 1 || limit > MAX_LIMIT) {
-    throw new BadRequestException('limit inválido');
+    throw new BadRequestException("limit inválido");
   }
-  if (rawQ !== undefined && typeof rawQ !== 'string') {
-    throw new BadRequestException('q inválido');
+  if (rawQ !== undefined && typeof rawQ !== "string") {
+    throw new BadRequestException("q inválido");
   }
   const q = rawQ?.trim();
   if (q && q.length > MAX_QUERY_LENGTH) {
-    throw new BadRequestException('q demasiado largo');
+    throw new BadRequestException("q demasiado largo");
   }
   const categories =
-    (Array.isArray(rawCategories) ? rawCategories : rawCategories?.split(','))
+    (Array.isArray(rawCategories) ? rawCategories : rawCategories?.split(","))
       ?.map((slug) => slug.trim())
       .filter(Boolean) ?? [];
   if (
     categories.length > MAX_CATEGORIES ||
     categories.some((slug) => slug.length > MAX_CATEGORY_SLUG_LENGTH)
   ) {
-    throw new BadRequestException('categorias inválidas');
+    throw new BadRequestException("categorias inválidas");
   }
-  const sort = rawSort ?? 'recientes';
+  const sort = rawSort ?? "recientes";
   if (!STORE_CATALOG_SORTS.includes(sort as StoreCatalogSort)) {
-    throw new BadRequestException('sort inválido');
+    throw new BadRequestException("sort inválido");
   }
   return {
     page,

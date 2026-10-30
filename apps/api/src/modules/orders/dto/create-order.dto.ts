@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Type } from "class-transformer";
 import {
   ArrayMinSize,
   IsDefined,
@@ -13,7 +13,7 @@ import {
   MinLength,
   ValidateIf,
   ValidateNested,
-} from 'class-validator';
+} from "class-validator";
 
 export class CreateOrderItemDto {
   @IsString()
@@ -54,8 +54,8 @@ export class ShippingAddressDto {
   phone: string;
 
   @IsOptional()
-  @IsEnum(['DNI', 'CE', 'RUC', 'PASSPORT'] as const)
-  documentType?: 'DNI' | 'CE' | 'RUC' | 'PASSPORT';
+  @IsEnum(["DNI", "CE", "RUC", "PASSPORT"] as const)
+  documentType?: "DNI" | "CE" | "RUC" | "PASSPORT";
 
   @IsOptional()
   @IsString()
@@ -103,8 +103,8 @@ export class ShippingAddressDto {
 }
 
 export class CreateOrderDto {
-  @IsIn(['PICKUP', 'COURIER'])
-  deliveryMethodType: 'PICKUP' | 'COURIER';
+  @IsIn(["PICKUP", "COURIER"])
+  deliveryMethodType: "PICKUP" | "COURIER";
 
   @IsOptional()
   @IsString()
@@ -114,17 +114,17 @@ export class CreateOrderDto {
   // selected point isn't open today (see CreateOrderUseCase).
   @IsOptional()
   @Matches(/^\d{4}-\d{2}-\d{2}$/, {
-    message: 'pickupDate debe tener el formato YYYY-MM-DD',
+    message: "pickupDate debe tener el formato YYYY-MM-DD",
   })
   pickupDate?: string;
 
   @IsOptional()
-  @IsIn(['YAPE', 'PLIN', 'TRANSFER', 'CASH'])
-  paymentMethod?: 'YAPE' | 'PLIN' | 'TRANSFER' | 'CASH';
+  @IsIn(["YAPE", "PLIN", "TRANSFER", "CASH"])
+  paymentMethod?: "YAPE" | "PLIN" | "TRANSFER" | "CASH";
 
   @IsOptional()
-  @IsIn(['FULL', 'PARTIAL'])
-  paymentType?: 'FULL' | 'PARTIAL';
+  @IsIn(["FULL", "PARTIAL"])
+  paymentType?: "FULL" | "PARTIAL";
 
   @IsString()
   @MinLength(6)
@@ -140,7 +140,7 @@ export class CreateOrderDto {
 
   // Required when deliveryMethodType is COURIER (validated in use case),
   // unused for PICKUP — see the plan doc referenced on ShippingAddressDto.
-  @ValidateIf((o) => o.deliveryMethodType === 'COURIER')
+  @ValidateIf((o) => o.deliveryMethodType === "COURIER")
   @IsDefined()
   @ValidateNested()
   @Type(() => ShippingAddressDto)
@@ -155,8 +155,8 @@ export class CreateOrderDto {
   // AGENCY or HOME, required when deliveryMethodType is COURIER (validated in
   // use case). Snapshot into Order.courierModality.
   @IsOptional()
-  @IsIn(['AGENCY', 'HOME'])
-  courierModality?: 'AGENCY' | 'HOME';
+  @IsIn(["AGENCY", "HOME"])
+  courierModality?: "AGENCY" | "HOME";
 
   @ArrayMinSize(1)
   @ValidateNested({ each: true })

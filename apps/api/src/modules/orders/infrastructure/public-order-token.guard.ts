@@ -3,10 +3,10 @@ import {
   type ExecutionContext,
   Injectable,
   UnsupportedMediaTypeException,
-} from '@nestjs/common';
-import type { Request } from 'express';
-import { OrderEventsService } from '../application/order-events.service.js';
-import { PUBLIC_ORDER_KEY } from './public-order.decorator.js';
+} from "@nestjs/common";
+import type { Request } from "express";
+import { OrderEventsService } from "../application/order-events.service.js";
+import { PUBLIC_ORDER_KEY } from "./public-order.decorator.js";
 
 /**
  * Resolves `:token` before the multipart parser runs, so an unknown or
@@ -22,15 +22,15 @@ export class PublicOrderTokenGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
     const order = await this.events.loadForProof(
-      String(request.params.token ?? ''),
+      String(request.params.token ?? ""),
     );
     (request as unknown as Record<symbol, unknown>)[PUBLIC_ORDER_KEY] = order;
 
     // Only POST has a body. After the 404 so unknown tokens never see a
     // different answer; the image GET must not be rejected.
-    if (request.method === 'POST') {
-      const contentType = request.headers['content-type'];
-      if (!contentType?.toLowerCase().startsWith('multipart/form-data')) {
+    if (request.method === "POST") {
+      const contentType = request.headers["content-type"];
+      if (!contentType?.toLowerCase().startsWith("multipart/form-data")) {
         throw new UnsupportedMediaTypeException();
       }
     }

@@ -1,6 +1,6 @@
-import { ConflictException } from '@nestjs/common';
+import { ConflictException } from "@nestjs/common";
 
-export const IDEMPOTENT_REPLAY = 'IDEMPOTENT_REPLAY';
+export const IDEMPOTENT_REPLAY = "IDEMPOTENT_REPLAY";
 
 /**
  * A seller retried `POST /stores/:storeId/orders/assisted` with an
@@ -11,6 +11,6 @@ export const IDEMPOTENT_REPLAY = 'IDEMPOTENT_REPLAY';
  */
 export class DuplicateIdempotencyKeyException extends ConflictException {
   constructor(readonly orderId: string) {
-    super('Este pedido ya fue creado con esta clave');
+    super("Este pedido ya fue creado con esta clave");
   }
 }

@@ -1,4 +1,4 @@
-import { MAX_UPLOAD_SIZE_BYTES } from './uploaded-file-validation.pipe.js';
+import { MAX_UPLOAD_SIZE_BYTES } from "./uploaded-file-validation.pipe.js";
 
 /**
  * Multer limits for payment-proof multipart routes. `fileSize` is one byte

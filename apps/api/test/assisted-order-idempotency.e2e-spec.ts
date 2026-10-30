@@ -1,29 +1,29 @@
-import { Test, type TestingModule } from '@nestjs/testing';
-import { type INestApplication, ValidationPipe } from '@nestjs/common';
-import request from 'supertest';
-import { randomUUID } from 'node:crypto';
-import { readdirSync, readFileSync } from 'node:fs';
-import { PrismaService } from '../src/prisma/prisma.service.js';
-import { AppModule } from './../src/app.module.js';
-import { AllExceptionsFilter } from '../src/common/filters/all-exceptions.filter.js';
-import { buildCorsOptions } from '../src/common/cors-options.js';
-import { isIdempotencyKeyConflict } from '../src/modules/orders/application/idempotency-key.js';
+import { Test, type TestingModule } from "@nestjs/testing";
+import { type INestApplication, ValidationPipe } from "@nestjs/common";
+import request from "supertest";
+import { randomUUID } from "node:crypto";
+import { readdirSync, readFileSync } from "node:fs";
+import { PrismaService } from "../src/prisma/prisma.service.js";
+import { AppModule } from "./../src/app.module.js";
+import { AllExceptionsFilter } from "../src/common/filters/all-exceptions.filter.js";
+import { buildCorsOptions } from "../src/common/cors-options.js";
+import { isIdempotencyKeyConflict } from "../src/modules/orders/application/idempotency-key.js";
 import {
   deleteOrders,
   mailerDevDir,
   waitForNewMailerFile,
-} from './schema-assert.js';
+} from "./schema-assert.js";
 
 // #336: POST /stores/:storeId/orders/assisted with an `Idempotency-Key`. A
 // retried request must never create a second order or reserve stock twice,
 // even when two identical requests race. Needs a real database: the guarantee
 // is the unique index on (storeId, createdByUserId, idempotencyKey), which the
 // unit specs' fake Prisma cannot exercise.
-describe('assisted order idempotency (e2e)', () => {
+describe("assisted order idempotency (e2e)", () => {
   let app: INestApplication;
   let prisma: PrismaService;
   const runId = `${Date.now()}-${randomUUID().slice(0, 8)}`;
-  const password = 'correcthorsebatterystaple';
+  const password = "correcthorsebatterystaple";
   const userIds: string[] = [];
   const storeIds: string[] = [];
   let sellerCookie: string;
@@ -54,46 +54,46 @@ describe('assisted order idempotency (e2e)', () => {
     const email = `assisted-${label}-${runId}@example.com`;
     const existing = new Set(readdirSync(mailerDevDir));
     const res = await request(app.getHttpServer())
-      .post('/api/auth/sign-up/email')
-      .set('X-Forwarded-For', nextIp())
+      .post("/api/auth/sign-up/email")
+      .set("X-Forwarded-For", nextIp())
       .send({ email, password, name: `Seller ${label}` })
       .expect(200);
     userIds.push(res.body.user.id);
     const html = readFileSync(
       await waitForNewMailerFile(existing, email, 20_000),
-      'utf-8',
+      "utf-8",
     );
     const token = html.match(/verify-email\?token=([^&"]+)/)?.[1];
-    if (!token) throw new Error('verification link not found in email');
+    if (!token) throw new Error("verification link not found in email");
     await request(app.getHttpServer()).get(
       `/api/auth/verify-email?token=${token}`,
     );
     const signIn = await request(app.getHttpServer())
-      .post('/api/auth/sign-in/email')
-      .set('X-Forwarded-For', nextIp())
+      .post("/api/auth/sign-in/email")
+      .set("X-Forwarded-For", nextIp())
       .send({ email, password })
       .expect(200);
-    const raw = (signIn.headers['set-cookie'] as unknown as string[]).find(
-      (c) => c.includes('session_token'),
+    const raw = (signIn.headers["set-cookie"] as unknown as string[]).find(
+      (c) => c.includes("session_token"),
     );
-    if (!raw) throw new Error('sign-in did not return a session cookie');
-    return raw.split(';')[0]!;
+    if (!raw) throw new Error("sign-in did not return a session cookie");
+    return raw.split(";")[0]!;
   }
 
   async function seedStore(cookie: string, slug: string, price = 25) {
     const store = await request(app.getHttpServer())
-      .post('/stores')
-      .set('Cookie', cookie)
-      .send({ name: slug, slug, whatsappNumber: '+51900000000' })
+      .post("/stores")
+      .set("Cookie", cookie)
+      .send({ name: slug, slug, whatsappNumber: "+51900000000" })
       .expect(201);
     const product = await request(app.getHttpServer())
       .post(`/stores/${store.body.id}/products`)
-      .set('Cookie', cookie)
-      .send({ name: 'Album', price, currency: 'PEN', stock: 50 })
+      .set("Cookie", cookie)
+      .send({ name: "Album", price, currency: "PEN", stock: 50 })
       .expect(201);
     await request(app.getHttpServer())
       .patch(`/stores/${store.body.id}/products/${product.body.id}/publish`)
-      .set('Cookie', cookie)
+      .set("Cookie", cookie)
       .expect(200);
     return {
       storeId: store.body.id as string,
@@ -106,12 +106,12 @@ describe('assisted order idempotency (e2e)', () => {
   async function seedScarceProduct(cookie: string, id: string) {
     const product = await request(app.getHttpServer())
       .post(`/stores/${id}/products`)
-      .set('Cookie', cookie)
-      .send({ name: 'Last one', price: 10, currency: 'PEN', stock: 1 })
+      .set("Cookie", cookie)
+      .send({ name: "Last one", price: 10, currency: "PEN", stock: 1 })
       .expect(201);
     await request(app.getHttpServer())
       .patch(`/stores/${id}/products/${product.body.id}/publish`)
-      .set('Cookie', cookie)
+      .set("Cookie", cookie)
       .expect(200);
     return {
       productId: product.body.id as string,
@@ -124,7 +124,7 @@ describe('assisted order idempotency (e2e)', () => {
       imports: [AppModule],
     }).compile();
     app = moduleFixture.createNestApplication();
-    app.getHttpAdapter().getInstance().set('trust proxy', true);
+    app.getHttpAdapter().getInstance().set("trust proxy", true);
     app.enableCors(buildCorsOptions());
     app.useGlobalPipes(
       new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
@@ -133,9 +133,9 @@ describe('assisted order idempotency (e2e)', () => {
     await app.init();
     prisma = moduleFixture.get(PrismaService);
 
-    sellerCookie = await signUp('idem-a');
-    otherCookie = await signUp('idem-b');
-    raceCookie = await signUp('idem-c');
+    sellerCookie = await signUp("idem-a");
+    otherCookie = await signUp("idem-b");
+    raceCookie = await signUp("idem-c");
     ({ storeId, productId, variantId } = await seedStore(
       sellerCookie,
       `idem-a-${runId}`,
@@ -179,9 +179,9 @@ describe('assisted order idempotency (e2e)', () => {
   });
 
   const body = (pId = productId, vId = variantId) => ({
-    deliveryMethodType: 'PICKUP',
-    customerPhone: '+51987654321',
-    customerName: 'Idem',
+    deliveryMethodType: "PICKUP",
+    customerPhone: "+51987654321",
+    customerName: "Idem",
     items: [{ productId: pId, variantId: vId, quantity: 1 }],
   });
 
@@ -193,8 +193,8 @@ describe('assisted order idempotency (e2e)', () => {
   ) => {
     const req = request(app.getHttpServer())
       .post(`/stores/${id}/orders/assisted`)
-      .set('Cookie', cookie);
-    if (key !== undefined) req.set('Idempotency-Key', key);
+      .set("Cookie", cookie);
+    if (key !== undefined) req.set("Idempotency-Key", key);
     return req.send(payload);
   };
 
@@ -210,13 +210,13 @@ describe('assisted order idempotency (e2e)', () => {
     expect(await prisma.order.count({ where: { storeId } })).toBe(before + 2);
   });
 
-  it('rejects a key that is not a UUID with 400 and creates nothing', async () => {
+  it("rejects a key that is not a UUID with 400 and creates nothing", async () => {
     const before = await prisma.order.count({ where: { storeId } });
-    await post(sellerCookie, storeId, 'not-a-uuid').expect(400);
+    await post(sellerCookie, storeId, "not-a-uuid").expect(400);
     expect(await prisma.order.count({ where: { storeId } })).toBe(before);
   });
 
-  it('answers a sequential replay with 409 IDEMPOTENT_REPLAY naming the first order', async () => {
+  it("answers a sequential replay with 409 IDEMPOTENT_REPLAY naming the first order", async () => {
     const key = randomUUID();
     const first = await post(sellerCookie, storeId, key).expect(201);
     const reservedAfterFirst = await reserved(variantId);
@@ -224,15 +224,15 @@ describe('assisted order idempotency (e2e)', () => {
     const replay = await post(sellerCookie, storeId, key).expect(409);
     expect(replay.body).toMatchObject({
       statusCode: 409,
-      code: 'IDEMPOTENT_REPLAY',
+      code: "IDEMPOTENT_REPLAY",
       orderId: first.body.order.id,
     });
-    expect(JSON.stringify(replay.body)).not.toContain('accessUrl');
+    expect(JSON.stringify(replay.body)).not.toContain("accessUrl");
     expect(await ordersWithKey(key)).toBe(1);
     expect(await reserved(variantId)).toBe(reservedAfterFirst);
   });
 
-  it('answers a same-key race with 409 when the winner takes the last unit', async () => {
+  it("answers a same-key race with 409 when the winner takes the last unit", async () => {
     const key = randomUUID();
     const scarce = body(scarceProductId, scarceVariantId);
     const results = await Promise.all([
@@ -245,7 +245,7 @@ describe('assisted order idempotency (e2e)', () => {
     expect(winner).toBeDefined();
     expect(loser?.status).toBe(409);
     expect(loser?.body).toMatchObject({
-      code: 'IDEMPOTENT_REPLAY',
+      code: "IDEMPOTENT_REPLAY",
       orderId: winner?.body.order.id,
     });
     expect(await ordersWithKey(key)).toBe(1);
@@ -255,7 +255,7 @@ describe('assisted order idempotency (e2e)', () => {
     await post(sellerCookie, storeId, randomUUID(), scarce).expect(400);
   });
 
-  it('creates exactly one order and one reservation when two identical requests race', async () => {
+  it("creates exactly one order and one reservation when two identical requests race", async () => {
     for (let round = 0; round < ROUNDS; round++) {
       const key = randomUUID();
       const reservedBefore = await reserved(raceVariantId);
@@ -271,14 +271,14 @@ describe('assisted order idempotency (e2e)', () => {
       expect(statuses.filter((s) => s === 201)).toHaveLength(1);
       expect(statuses.filter((s) => s === 409)).toHaveLength(1);
       const loser = results.find((r) => r.status !== 201)!;
-      expect(loser.body.code).toBe('IDEMPOTENT_REPLAY');
+      expect(loser.body.code).toBe("IDEMPOTENT_REPLAY");
 
       expect(await ordersWithKey(key)).toBe(1);
       expect(await reserved(raceVariantId)).toBe(reservedBefore + 1);
     }
   }, 120_000);
 
-  it('treats the same key from another seller or another store as independent', async () => {
+  it("treats the same key from another seller or another store as independent", async () => {
     const key = randomUUID();
     await post(sellerCookie, storeId, key).expect(201);
     await post(
@@ -306,7 +306,7 @@ describe('assisted order idempotency (e2e)', () => {
     expect(JSON.stringify(res.body)).not.toContain(mine.body.order.id);
   });
 
-  it('surfaces a real unique violation in the shape isIdempotencyKeyConflict matches', async () => {
+  it("surfaces a real unique violation in the shape isIdempotencyKeyConflict matches", async () => {
     // Probe the actual Prisma 7 + driver-adapter error, not a hand-built one.
     const a = await post(sellerCookie, storeId).expect(201);
     const b = await post(sellerCookie, storeId).expect(201);
@@ -323,14 +323,14 @@ describe('assisted order idempotency (e2e)', () => {
     expect(isIdempotencyKeyConflict(err)).toBe(true);
   });
 
-  it('lets the browser preflight send Idempotency-Key', async () => {
+  it("lets the browser preflight send Idempotency-Key", async () => {
     const res = await request(app.getHttpServer())
       .options(`/stores/${storeId}/orders/assisted`)
-      .set('Origin', process.env.WEB_URL ?? 'http://localhost:3001')
-      .set('Access-Control-Request-Method', 'POST')
-      .set('Access-Control-Request-Headers', 'content-type,idempotency-key');
+      .set("Origin", process.env.WEB_URL ?? "http://localhost:3001")
+      .set("Access-Control-Request-Method", "POST")
+      .set("Access-Control-Request-Headers", "content-type,idempotency-key");
     expect(res.status).toBeLessThan(300);
-    expect(res.headers['access-control-allow-headers']).toMatch(
+    expect(res.headers["access-control-allow-headers"]).toMatch(
       /idempotency-key/i,
     );
   });
