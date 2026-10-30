@@ -644,8 +644,7 @@ export class StoresService {
           imageUrl,
           productCount: productIds.size,
         };
-      })
-      .filter((category) => category.productCount > 0);
+      });
   }
 
   async findPublicProduct(slug: string, productId: string) {
